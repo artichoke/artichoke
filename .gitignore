@@ -161,3 +161,10 @@ Cargo.lock
 *.scss.map
 
 # End of https://www.gitignore.io/api/node,sass,rust,ruby
+
+# Overrides
+
+# ignore all targets, not just the root (sub-crates in workspace and webpack)
+target/
+# rube is an application
+!Cargo.lock
