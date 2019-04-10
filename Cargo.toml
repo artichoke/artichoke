@@ -1,0 +1,5 @@
+[workspace]
+members = [
+  "mruby",
+  "mruby-sys",
+]
