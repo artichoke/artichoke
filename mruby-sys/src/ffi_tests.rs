@@ -1,3 +1,8 @@
+#![allow(non_snake_case)]
+
+// Tests derived from mrusty @ 1.0.0
+// <https://github.com/anima-engine/mrusty/tree/v1.0.0>
+
 // mrusty. mruby safe bindings for Rust
 // Copyright (C) 2016  Dragoș Tiselice
 //
@@ -8,6 +13,9 @@
 use std::ffi::{CStr, CString};
 
 use super::*;
+
+const TEST_CLASS: &str = "TestClass";
+const TEST_MODULE: &str = "TestModule";
 
 #[test]
 fn open_close() {
@@ -28,9 +36,8 @@ fn symbol_to_string() {
         let symbol = mrb_intern_cstr(mrb, literal);
 
         let s = mrb_sym2name(mrb, symbol) as *const i8;
-        let cstr = CStr::from_ptr(s);
-        let sym_name = cstr.to_str().expect(":symbol name").clone();
-        assert_eq!(sym_name, r#"":symbol""#);
+        let s = CStr::from_ptr(s).to_str().expect(":symbol name").clone();
+        assert_eq!(s, r#"":symbol""#);
 
         let mut s = mrb_sym2str(mrb, symbol);
         assert_eq!(s.tt, mrb_vtype_MRB_TT_STRING);
@@ -42,7 +49,6 @@ fn symbol_to_string() {
     }
 }
 
-/*
 #[test]
 fn define_method() {
     unsafe {
@@ -51,22 +57,36 @@ fn define_method() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new("Mine").unwrap();
+        let new_class_str = CString::new(TEST_CLASS).unwrap();
         let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
-        extern "C" fn job(_mrb: *const MrState, _slf: MrValue) -> MrValue {
-            unsafe {
-                MrValue::fixnum(2)
+        extern "C" fn rust__mruby__test_class__method__value(
+            _mrb: *mut mrb_state,
+            _slf: mrb_value,
+        ) -> mrb_value {
+            // TODO write extension code to expose inline function
+            // `mrb_fixnum_value`.
+            mrb_value {
+                value: mrb_value__bindgen_ty_1 { i: 2 },
+                tt: mrb_vtype_MRB_TT_FIXNUM,
             }
         }
 
-        let job_str = CString::new("job").unwrap();
+        let new_method_str = CString::new("value").unwrap();
 
-        mrb_define_method(mrb, new_class, job_str.as_ptr(), job, 0);
+        mrb_define_method(
+            mrb,
+            new_class,
+            new_method_str.as_ptr(),
+            Some(rust__mruby__test_class__method__value),
+            0,
+        );
 
-        let code = "Mine.new.job";
-
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context).to_i32().unwrap(), 2);
+        let code = "TestClass.new.value";
+        let (code_len, code) = (code.len(), CString::new(code).unwrap());
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code_len, context);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
+        assert_eq!(result.value.i, 2);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -80,9 +100,11 @@ fn class_defined() {
 
         let obj_str = CString::new("Object").unwrap();
         let kernel_str = CString::new("Kernel").unwrap();
+        let unknown_str = CString::new(TEST_CLASS).unwrap();
 
-        assert_eq!(mrb_class_defined(mrb, obj_str.as_ptr()), true);
-        assert_eq!(mrb_class_defined(mrb, kernel_str.as_ptr()), true);
+        assert_eq!(mrb_class_defined(mrb, obj_str.as_ptr()), 1_u8);
+        assert_eq!(mrb_class_defined(mrb, kernel_str.as_ptr()), 1_u8);
+        assert_eq!(mrb_class_defined(mrb, unknown_str.as_ptr()), 0_u8);
 
         mrb_close(mrb);
     }
@@ -95,7 +117,7 @@ fn class_name() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new("Mine").unwrap();
+        let new_class_str = CString::new(TEST_CLASS).unwrap();
         let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
         let kernel_str = CString::new("Kernel").unwrap();
@@ -103,7 +125,7 @@ fn class_name() {
 
         let name = mrb_class_name(mrb, new_class);
 
-        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "Mine");
+        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "TestClass");
 
         let name = mrb_class_name(mrb, kernel);
 
@@ -120,7 +142,14 @@ fn class_value() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let obj_class = mrb_ext_class_value(obj_class);
+        // TODO: implement `mrb_ext_class_value(obj_class)`
+        let obj_class = mrb_value {
+            value: mrb_value__bindgen_ty_1 {
+                p: obj_class as *mut std::ffi::c_void,
+            },
+            tt: mrb_vtype_MRB_TT_CLASS,
+        };
+
         let to_s_str = CString::new("to_s").unwrap();
         let args = &[];
 
@@ -128,19 +157,21 @@ fn class_value() {
 
         let result = mrb_funcall_argv(mrb, obj_class, sym, 0, args.as_ptr());
 
-        assert_eq!(result.to_str(mrb).unwrap(), "Object");
+        let s = mrb_str_to_cstr(mrb, result) as *const i8;
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_STRING);
+        assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "Object");
 
         mrb_close(mrb);
     }
 }
 
 #[test]
-fn value_class() {
+fn nil_class() {
     unsafe {
         let mrb = mrb_open();
 
-        let nil = MrValue::nil();
-        let nil_class = mrb_ext_class(mrb, nil);
+        let nil = CString::new("NilClass").unwrap();
+        let nil_class = mrb_class_get(mrb, nil.as_ptr() as *const i8);
 
         let name = mrb_class_name(mrb, nil_class);
 
@@ -151,16 +182,37 @@ fn value_class() {
 }
 
 #[test]
-fn value_to_class() {
+fn nil_class_eval() {
     unsafe {
         let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
 
-        let obj_str = CString::new("Object").unwrap();
-        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let obj_class_value = mrb_ext_class_value(obj_class);
+        let code = "nil.class";
+        let (code_len, code) = (code.len(), CString::new(code).unwrap());
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code_len, context);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_CLASS);
+        let s = mrb_class_name(mrb, result.value.p as *mut ffi::RClass);
+        assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "NilClass");
 
-        assert_eq!(obj_class_value.to_class().unwrap(), obj_class);
+        mrbc_context_free(mrb, context);
+        mrb_close(mrb);
+    }
+}
 
+#[test]
+fn nil_class_name_eval() {
+    unsafe {
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
+
+        let code = "nil.class.to_s";
+        let (code_len, code) = (code.len(), CString::new(code).unwrap());
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code_len, context);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_STRING);
+        let s = mrb_str_to_cstr(mrb, result) as *const i8;
+        assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "NilClass");
+
+        mrbc_context_free(mrb, context);
         mrb_close(mrb);
     }
 }
@@ -170,11 +222,13 @@ fn define_module() {
     unsafe {
         let mrb = mrb_open();
 
-        let mod_str = CString::new("MyMod").unwrap();
+        let mod_str = CString::new(TEST_MODULE).unwrap();
+        let unknown_str = CString::new("UnknownModule").unwrap();
 
         mrb_define_module(mrb, mod_str.as_ptr());
 
-        assert_eq!(mrb_class_defined(mrb, mod_str.as_ptr()), true);
+        assert_eq!(mrb_class_defined(mrb, mod_str.as_ptr()), 1_u8);
+        assert_eq!(mrb_class_defined(mrb, unknown_str.as_ptr()), 0_u8);
 
         mrb_close(mrb);
     }
@@ -187,17 +241,25 @@ fn defined_under() {
 
         let kernel_str = CString::new("Kernel").unwrap();
         let kernel = mrb_module_get(mrb, kernel_str.as_ptr());
-        let name_str = CString::new("Mine").unwrap();
+        let name_str = CString::new(TEST_MODULE).unwrap();
         let name = name_str.as_ptr();
 
         mrb_define_module_under(mrb, kernel, name);
+        assert_eq!(mrb_class_defined_under(mrb, kernel, name), 1_u8);
 
-        assert!(mrb_ext_class_defined_under(mrb, kernel, name));
+        let mod_str = CString::new(TEST_MODULE).unwrap();
+        let module = mrb_module_get(mrb, mod_str.as_ptr());
+        let module_name = mrb_class_name(mrb, module);
+        assert_eq!(
+            CStr::from_ptr(module_name).to_str().unwrap(),
+            "Kernel::TestModule"
+        );
 
         mrb_close(mrb);
     }
 }
 
+/*
 #[test]
 fn class_under() {
     unsafe {
