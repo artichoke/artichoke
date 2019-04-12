@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+#![allow(non_upper_case_globals)]
 
 // Tests derived from mrusty @ 1.0.0
 // <https://github.com/anima-engine/mrusty/tree/v1.0.0>
@@ -9,6 +10,23 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+//! The tests for crate `mruby-sys` defined in this module serve as an
+//! implementation guide and API examples for the `mruby` higher-level
+//! Rust bindings.
+//!
+//! ## Implementation Notes
+//!
+//! ### Strings
+//!
+//! There are two ways to pass Rust strings across an FFI boundary:
+//!
+//! - Call `as_ptr` on a `&str` and pass the length of the `&str`. This does
+//!   not create a NUL-terminated ("\0") *char. An mruby function that has this
+//!   API is `mrb_load_nstring_cxt`.
+//! - Create a CString from a `&str` for a traditional *char C string. This
+//!   creates a NUL-terminated ("\0") *char. An mruby functino that has this API
+//!   is `mrb_define_class`.
 
 use std::ffi::{CStr, CString};
 
@@ -83,8 +101,7 @@ fn define_method() {
         );
 
         let code = "TestClass.new.value";
-        let (code_len, code) = (code.len(), CString::new(code).unwrap());
-        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code_len, context);
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
         assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
         assert_eq!(result.value.i, 2);
 
@@ -188,8 +205,7 @@ fn nil_class_eval() {
         let context = mrbc_context_new(mrb);
 
         let code = "nil.class";
-        let (code_len, code) = (code.len(), CString::new(code).unwrap());
-        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code_len, context);
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
         assert_eq!(result.tt, mrb_vtype_MRB_TT_CLASS);
         let s = mrb_class_name(mrb, result.value.p as *mut ffi::RClass);
         assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "NilClass");
@@ -206,8 +222,7 @@ fn nil_class_name_eval() {
         let context = mrbc_context_new(mrb);
 
         let code = "nil.class.to_s";
-        let (code_len, code) = (code.len(), CString::new(code).unwrap());
-        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code_len, context);
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
         assert_eq!(result.tt, mrb_vtype_MRB_TT_STRING);
         let s = mrb_str_to_cstr(mrb, result) as *const i8;
         assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "NilClass");
@@ -259,7 +274,6 @@ fn defined_under() {
     }
 }
 
-/*
 #[test]
 fn class_under() {
     unsafe {
@@ -267,7 +281,7 @@ fn class_under() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let name_str = CString::new("Mine").unwrap();
+        let name_str = CString::new(TEST_CLASS).unwrap();
         let name = name_str.as_ptr();
 
         mrb_define_class_under(mrb, obj_class, name, obj_class);
@@ -275,7 +289,7 @@ fn class_under() {
 
         let name = mrb_class_name(mrb, new_class);
 
-        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "Mine");
+        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "TestClass");
 
         mrb_close(mrb);
     }
@@ -288,7 +302,7 @@ fn module_under() {
 
         let kernel_str = CString::new("Kernel").unwrap();
         let kernel = mrb_module_get(mrb, kernel_str.as_ptr());
-        let name_str = CString::new("Mine").unwrap();
+        let name_str = CString::new(TEST_MODULE).unwrap();
         let name = name_str.as_ptr();
 
         mrb_define_module_under(mrb, kernel, name);
@@ -296,7 +310,7 @@ fn module_under() {
 
         let name = mrb_class_name(mrb, new_module);
 
-        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "Kernel::Mine");
+        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "Kernel::TestModule");
 
         mrb_close(mrb);
     }
@@ -310,7 +324,7 @@ fn include_module() {
 
         let code = "module Increment; def inc; self + 1; end; end";
 
-        mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context);
+        mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
 
         let fixnum_str = CString::new("Fixnum").unwrap();
         let fixnum = mrb_class_get(mrb, fixnum_str.as_ptr());
@@ -321,8 +335,65 @@ fn include_module() {
 
         let code = "1.inc";
 
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context)
-                   .to_i32().unwrap(), 2);
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
+        assert_eq!(result.value.i, 2);
+
+        mrbc_context_free(mrb, context);
+        mrb_close(mrb);
+    }
+}
+
+#[test]
+fn define_and_include_module() {
+    unsafe {
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
+
+        let name_str = CString::new("Increment").unwrap();
+        let name = name_str.as_ptr();
+        mrb_define_module(mrb, name);
+        let increment = mrb_module_get(mrb, name);
+
+        extern "C" fn rust__mruby__increment__method__inc(
+            _mrb: *mut mrb_state,
+            slf: mrb_value,
+        ) -> mrb_value {
+            assert_eq!(slf.tt, mrb_vtype_MRB_TT_FIXNUM);
+            // TODO write extension code to expose inline function
+            // `mrb_fixnum_value`.
+            //
+            // `unsafe` block required because we're accessing a union field
+            // which might access uninitialized memory. We know we this
+            // operation is safe because of the above assert on `slf.tt`.
+            unsafe {
+                mrb_value {
+                    value: mrb_value__bindgen_ty_1 { i: slf.value.i + 1 },
+                    tt: mrb_vtype_MRB_TT_FIXNUM,
+                }
+            }
+        }
+
+        let inc_method_str = CString::new("inc").unwrap();
+
+        mrb_define_method(
+            mrb,
+            increment,
+            inc_method_str.as_ptr(),
+            Some(rust__mruby__increment__method__inc),
+            0,
+        );
+
+        let fixnum_str = CString::new("Fixnum").unwrap();
+        let fixnum = mrb_class_get(mrb, fixnum_str.as_ptr());
+
+        mrb_include_module(mrb, fixnum, increment);
+
+        let code = "1.inc";
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
+        assert_eq!(result.value.i, 2);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -337,23 +408,94 @@ fn define_class_method() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new("Mine").unwrap();
+        let new_class_str = CString::new(TEST_CLASS).unwrap();
         let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
-        extern "C" fn job(_mrb: *const MrState, _slf: MrValue) -> MrValue {
-            unsafe {
-                MrValue::fixnum(2)
+        extern "C" fn rust__mruby__test_class__class_method__value(
+            _mrb: *mut mrb_state,
+            _slf: mrb_value,
+        ) -> mrb_value {
+            // TODO write extension code to expose inline function
+            // `mrb_fixnum_value`.
+            mrb_value {
+                value: mrb_value__bindgen_ty_1 { i: 2 },
+                tt: mrb_vtype_MRB_TT_FIXNUM,
             }
         }
 
-        let job_str = CString::new("job").unwrap();
+        let new_method_str = CString::new("value").unwrap();
 
-        mrb_define_class_method(mrb, new_class, job_str.as_ptr(), job, 0);
+        mrb_define_class_method(
+            mrb,
+            new_class,
+            new_method_str.as_ptr(),
+            Some(rust__mruby__test_class__class_method__value),
+            0,
+        );
 
-        let code = "Mine.job";
+        let code = "TestClass.value";
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
+        assert_eq!(result.value.i, 2);
 
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context)
-                   .to_i32().unwrap(), 2);
+        mrbc_context_free(mrb, context);
+        mrb_close(mrb);
+    }
+}
+
+#[test]
+fn define_class_and_instance_method_with_one_rust_function() {
+    unsafe {
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
+
+        let obj_str = CString::new("Object").unwrap();
+        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
+        let new_class_str = CString::new(TEST_CLASS).unwrap();
+        let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
+
+        extern "C" fn rust__mruby__test_class__method__value(
+            _mrb: *mut mrb_state,
+            slf: mrb_value,
+        ) -> mrb_value {
+            // TODO write extension code to expose inline function
+            // `mrb_fixnum_value`.
+            match slf.tt {
+                mrb_vtype_MRB_TT_OBJECT => mrb_value {
+                    value: mrb_value__bindgen_ty_1 { i: 2 },
+                    tt: mrb_vtype_MRB_TT_FIXNUM,
+                },
+                mrb_vtype_MRB_TT_CLASS => mrb_value {
+                    value: mrb_value__bindgen_ty_1 { i: 3 },
+                    tt: mrb_vtype_MRB_TT_FIXNUM,
+                },
+                tt => unreachable!("unexpected mrb_value type: {}", tt),
+            }
+        }
+        let rust__mruby__test_class__class_method__value = rust__mruby__test_class__method__value;
+
+        let new_method_str = CString::new("value").unwrap();
+        let new_class_method_str = CString::new("value").unwrap();
+
+        mrb_define_method(
+            mrb,
+            new_class,
+            new_method_str.as_ptr(),
+            Some(rust__mruby__test_class__method__value),
+            0,
+        );
+        mrb_define_class_method(
+            mrb,
+            new_class,
+            new_class_method_str.as_ptr(),
+            Some(rust__mruby__test_class__class_method__value),
+            0,
+        );
+
+        let code = "TestClass.value + TestClass.new.value";
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
+        assert_eq!(result.value.i, 5);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -371,50 +513,28 @@ fn define_constant() {
         let kernel_str = CString::new("Kernel").unwrap();
         let kernel = mrb_module_get(mrb, kernel_str.as_ptr());
 
-        let one = MrValue::fixnum(1);
+        let one = mrb_value {
+            value: mrb_value__bindgen_ty_1 { i: 1 },
+            tt: mrb_vtype_MRB_TT_FIXNUM,
+        };
         let one_str = CString::new("ONE").unwrap();
 
+        // Define constant on Class
         mrb_define_const(mrb, obj_class, one_str.as_ptr(), one);
+        // Define constant on Module
         mrb_define_const(mrb, kernel, one_str.as_ptr(), one);
 
         let code = "Object::ONE";
 
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context)
-                   .to_i32().unwrap(), 1);
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
+        assert_eq!(result.value.i, 1);
 
         let code = "Kernel::ONE";
 
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context)
-                   .to_i32().unwrap(), 1);
-
-        mrbc_context_free(mrb, context);
-        mrb_close(mrb);
-    }
-}
-
-#[test]
-fn define_module_function() {
-    unsafe {
-        let mrb = mrb_open();
-        let context = mrbc_context_new(mrb);
-
-        let kernel_str = CString::new("Kernel").unwrap();
-        let kernel = mrb_module_get(mrb, kernel_str.as_ptr());
-
-        extern "C" fn hi(mrb: *const MrState, _slf: MrValue) -> MrValue {
-            unsafe {
-                MrValue::string(mrb, "hi")
-            }
-        }
-
-        let hi_str = CString::new("hi").unwrap();
-
-        mrb_define_module_function(mrb, kernel, hi_str.as_ptr(), hi, 0);
-
-        let code = "hi";
-
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context)
-                   .to_str(mrb).unwrap(), "hi");
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
+        assert_eq!(result.value.i, 1);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -428,39 +548,76 @@ fn protect() {
     unsafe {
         let mrb = mrb_open();
 
-        extern "C" fn job(mrb: *const MrState, _data: MrValue) -> MrValue {
+        // This rust function raises a runtime error in mruby
+        extern "C" fn rust__mruby__test_class__method__value(
+            mrb: *mut mrb_state,
+            _data: mrb_value,
+        ) -> mrb_value {
             unsafe {
-                let runtime_str = CString::new("RuntimeError").unwrap();
-                let excepting_str = CString::new("excepting").unwrap();
+                let eclass = CString::new("RuntimeError").unwrap();
+                let msg = CString::new("excepting").unwrap();
+                mrb_raise(
+                    mrb as *mut mrb_state,
+                    mrb_class_get(mrb as *mut mrb_state, eclass.as_ptr()),
+                    msg.as_ptr(),
+                );
 
-                mrb_ext_raise(mrb, runtime_str.as_ptr(), excepting_str.as_ptr());
-
-                MrValue::nil()
+                mrb_value {
+                    tt: mrb_vtype_MRB_TT_FIXNUM,
+                    value: mrb_value__bindgen_ty_1 { i: 7 },
+                }
             }
         }
 
-        let state = uninitialized::<bool>();
+        let mut state = uninitialized::<u8>();
+        let nil = mrb_value {
+            tt: mrb_vtype_MRB_TT_FALSE,
+            value: mrb_value__bindgen_ty_1 { i: 0 },
+        };
 
-        let exc = mrb_protect(mrb, job, MrValue::nil(), &state as *const bool);
+        // `mrb_protect` calls the passed function with `data` as an argument.
+        // Protect wraps the execution of the provided function in a try catch.
+        // If the passed function raises, the `state` out variable is set to
+        // true and the returned `mrb_value` will be an exception. If no
+        // exception is thrown, the returned `mrb_value` is the value returned
+        // by the provided function.
+        //
+        // The function we are passing below raises a `RuntimeException`, so we
+        // expect `exc` to be an `Exception`.
+        let exc = mrb_protect(
+            mrb as *mut mrb_state,
+            Some(rust__mruby__test_class__method__value),
+            nil,
+            &mut state,
+        );
 
-        assert_eq!(state, true);
+        // state == true means an exception was thrown by the protected function
+        assert_eq!(state, 1_u8);
+        assert_eq!(exc.tt, mrb_vtype_MRB_TT_EXCEPTION);
 
         let args = &[];
 
-        let class_str = CString::new("class").unwrap();
-        let class_sym = mrb_intern(mrb, class_str.as_ptr(), 5usize);
-        let to_s_str = CString::new("to_s").unwrap();
-        let to_s_sym = mrb_intern(mrb, to_s_str.as_ptr(), 4usize);
+        // This code calls `.class.to_s` on the `RuntimeException` our
+        // protected `value` method raised.
+        let class_str = "class";
+        let class_sym = mrb_intern(mrb, class_str.as_ptr() as *const i8, class_str.len());
+        let to_s_str = "to_s";
+        let to_s_sym = mrb_intern(mrb, to_s_str.as_ptr() as *const i8, to_s_str.len());
 
+        // `mrb_funcall_argv` calls a method named by a symbol with a list of
+        // arguments on an `mrb_value`.
         let class = mrb_funcall_argv(mrb, exc, class_sym, 0, args.as_ptr());
         let result = mrb_funcall_argv(mrb, class, to_s_sym, 0, args.as_ptr());
 
-        assert_eq!(result.to_str(mrb).unwrap(), "RuntimeError");
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_STRING);
+        let s = mrb_str_to_cstr(mrb, result) as *const i8;
+        assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "RuntimeError");
 
         mrb_close(mrb);
     }
 }
 
+/*
 #[test]
 pub fn args() {
     use std::mem::uninitialized;
