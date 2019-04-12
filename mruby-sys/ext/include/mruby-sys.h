@@ -1,0 +1,123 @@
+/**
+ * C extension bindings of mruby to make implementing the mruby-sys crate
+ * easier. The functions defined in mruby-sys.h are limited to those that are
+ * either not possible to implment in Rust (e.g. because the functions are
+ * inlined) or are simpler to implement in C (e.g. any of the mrb_value
+ * initializers).
+ */
+
+#include <mruby.h>
+#include <mruby/array.h>
+#include <mruby/class.h>
+#include <mruby/data.h>
+#include <mruby/error.h>
+#include <mruby/proc.h>
+#include <mruby/value.h>
+#include <mruby/variable.h>
+
+/**
+ * Extract the integer value from a Fixnum `mrb_value`
+ */
+mrb_int mrb_sys_fixnum_to_cint(mrb_value value);
+
+/**
+ * Extract the float value from a Float `mrb_value`
+ */
+mrb_float mrb_sys_float_to_cdouble(mrb_value value);
+
+/**
+ * Extract the `RClass` from a Class `mrb_value`
+ */
+struct RClass *mrb_sys_class_to_rclass(mrb_value value);
+
+/**
+ * Create an `mrb_value` representing `nil`
+ */
+mrb_value mrb_sys_nil_value(void);
+
+/**
+ * Create an `mrb_value` representing `false`
+ */
+mrb_value mrb_sys_false_value(void);
+
+/**
+ * Create an `mrb_value` representing `true`
+ */
+mrb_value mrb_sys_true(void);
+
+/**
+ * Create an `mrb_value` representing an integer (a `Fixnum`)
+ */
+mrb_value mrb_sys_fixnum_value(mrb_int value);
+
+/**
+ * Create an `mrb_value` representing a float
+ */
+mrb_value mrb_sys_float_value(struct mrb_state *mrb, mrb_float value);
+
+/**
+ * Create an `mrb_value` from an `RProc`
+ */
+mrb_value mrb_sys_proc_value(struct mrb_state *mrb, struct RProc *proc);
+
+/**
+ * Create a `Class` `mrb_value` from an `RClass`
+ */
+mrb_value mrb_sys_class_value(struct RClass *klass);
+
+/**
+ * Create a `Module` `mrb_value` from an `RClass`
+ */
+mrb_value mrb_sys_module_value(struct RClass *module);
+
+/**
+ * Create an `mrb_value` from an `RData`
+ */
+mrb_value mrb_sys_data_value(struct RData *data);
+
+/**
+ * Get a C string with the name of the symbol identified by an `mrb_value`
+ */
+const char *mrb_sys_symbol_name(struct mrb_state *mrb, mrb_value value);
+
+/**
+ * Create a new symbol from a C string
+ */
+mrb_value mrb_sys_new_symbol(struct mrb_state *mrb, const char *string,
+                             size_t len);
+
+// TODO: document purpose
+void mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type);
+
+/**
+ * Create a `String` `mrb_value` containing exception info and a backtrace for
+ * the most recent thrown exception on `mrb_state`
+ */
+mrb_value mrb_sys_get_current_exception(struct mrb_state *mrb);
+
+/**
+ * Raise the most recent thrown exception on `mrb_state`
+ */
+void mrb_sys_raise_current_exception(struct mrb_state *mrb);
+
+/**
+ * Generate a String `mrb_value` from a value suitable for debug logging
+ */
+mrb_value mrb_sys_value_debug_str(struct mrb_state *mrb, mrb_value value);
+
+/**
+ * Raise an exception class with a message
+ */
+mrb_noreturn void mrb_sys_raise(struct mrb_state *mrb, const char *eclass,
+                                const char *msg);
+
+/**
+ * Check if a class is defined under another class or module
+ */
+mrb_bool mrb_sys_class_defined_under(struct mrb_state *mrb,
+                                     struct RClass *outer, const char *name);
+
+/**
+ * Get the `RClass` representing the `Class` of an `mrb_value`
+ */
+struct RClass *mrb_sys_class_of_value(struct mrb_state *mrb, mrb_value value);

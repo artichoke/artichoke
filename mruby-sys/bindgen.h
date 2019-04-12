@@ -23,3 +23,5 @@
 #include <mruby/value.h>
 #include <mruby/variable.h>
 #include <mruby/version.h>
+
+#include <mruby-sys.h>

@@ -10653,6 +10653,130 @@ extern "C" {
         p: *mut ::std::os::raw::c_void,
     );
 }
+extern "C" {
+    /// Extract the integer value from a Fixnum `mrb_value`
+    #[link_name = "\u{1}_mrb_sys_fixnum_to_cint"]
+    pub fn mrb_sys_fixnum_to_cint(value: mrb_value) -> mrb_int;
+}
+extern "C" {
+    /// Extract the float value from a Float `mrb_value`
+    #[link_name = "\u{1}_mrb_sys_float_to_cdouble"]
+    pub fn mrb_sys_float_to_cdouble(value: mrb_value) -> mrb_float;
+}
+extern "C" {
+    /// Extract the `RClass` from a Class `mrb_value`
+    #[link_name = "\u{1}_mrb_sys_class_to_rclass"]
+    pub fn mrb_sys_class_to_rclass(value: mrb_value) -> *mut RClass;
+}
+extern "C" {
+    /// Create an `mrb_value` representing `nil`
+    #[link_name = "\u{1}_mrb_sys_nil_value"]
+    pub fn mrb_sys_nil_value() -> mrb_value;
+}
+extern "C" {
+    /// Create an `mrb_value` representing `false`
+    #[link_name = "\u{1}_mrb_sys_false_value"]
+    pub fn mrb_sys_false_value() -> mrb_value;
+}
+extern "C" {
+    /// Create an `mrb_value` representing `true`
+    #[link_name = "\u{1}_mrb_sys_true"]
+    pub fn mrb_sys_true() -> mrb_value;
+}
+extern "C" {
+    /// Create an `mrb_value` representing an integer (a `Fixnum`)
+    #[link_name = "\u{1}_mrb_sys_fixnum_value"]
+    pub fn mrb_sys_fixnum_value(value: mrb_int) -> mrb_value;
+}
+extern "C" {
+    /// Create an `mrb_value` representing a float
+    #[link_name = "\u{1}_mrb_sys_float_value"]
+    pub fn mrb_sys_float_value(mrb: *mut mrb_state, value: mrb_float) -> mrb_value;
+}
+extern "C" {
+    /// Create an `mrb_value` from an `RProc`
+    #[link_name = "\u{1}_mrb_sys_proc_value"]
+    pub fn mrb_sys_proc_value(mrb: *mut mrb_state, proc_: *mut RProc) -> mrb_value;
+}
+extern "C" {
+    /// Create a `Class` `mrb_value` from an `RClass`
+    #[link_name = "\u{1}_mrb_sys_class_value"]
+    pub fn mrb_sys_class_value(klass: *mut RClass) -> mrb_value;
+}
+extern "C" {
+    /// Create a `Module` `mrb_value` from an `RClass`
+    #[link_name = "\u{1}_mrb_sys_module_value"]
+    pub fn mrb_sys_module_value(module: *mut RClass) -> mrb_value;
+}
+extern "C" {
+    /// Create an `mrb_value` from an `RData`
+    #[link_name = "\u{1}_mrb_sys_data_value"]
+    pub fn mrb_sys_data_value(data: *mut RData) -> mrb_value;
+}
+extern "C" {
+    /// Get a C string with the name of the symbol identified by an `mrb_value`
+    #[link_name = "\u{1}_mrb_sys_symbol_name"]
+    pub fn mrb_sys_symbol_name(
+        mrb: *mut mrb_state,
+        value: mrb_value,
+    ) -> *const ::std::os::raw::c_char;
+}
+extern "C" {
+    /// Create a new symbol from a C string
+    #[link_name = "\u{1}_mrb_sys_new_symbol"]
+    pub fn mrb_sys_new_symbol(
+        mrb: *mut mrb_state,
+        string: *const ::std::os::raw::c_char,
+        len: usize,
+    ) -> mrb_value;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_data_init"]
+    pub fn mrb_sys_data_init(
+        value: *mut mrb_value,
+        ptr: *mut ::std::os::raw::c_void,
+        type_: *const mrb_data_type,
+    );
+}
+extern "C" {
+    /// Create a `String` `mrb_value` containing exception info and a backtrace for
+    /// the most recent thrown exception on `mrb_state`
+    #[link_name = "\u{1}_mrb_sys_get_current_exception"]
+    pub fn mrb_sys_get_current_exception(mrb: *mut mrb_state) -> mrb_value;
+}
+extern "C" {
+    /// Raise the most recent thrown exception on `mrb_state`
+    #[link_name = "\u{1}_mrb_sys_raise_current_exception"]
+    pub fn mrb_sys_raise_current_exception(mrb: *mut mrb_state);
+}
+extern "C" {
+    /// Generate a String `mrb_value` from a value suitable for debug logging
+    #[link_name = "\u{1}_mrb_sys_value_debug_str"]
+    pub fn mrb_sys_value_debug_str(mrb: *mut mrb_state, value: mrb_value) -> mrb_value;
+}
+extern "C" {
+    /// Raise an exception class with a message
+    #[link_name = "\u{1}_mrb_sys_raise"]
+    pub fn mrb_sys_raise(
+        mrb: *mut mrb_state,
+        eclass: *const ::std::os::raw::c_char,
+        msg: *const ::std::os::raw::c_char,
+    );
+}
+extern "C" {
+    /// Check if a class is defined under another class or module
+    #[link_name = "\u{1}_mrb_sys_class_defined_under"]
+    pub fn mrb_sys_class_defined_under(
+        mrb: *mut mrb_state,
+        outer: *mut RClass,
+        name: *const ::std::os::raw::c_char,
+    ) -> mrb_bool;
+}
+extern "C" {
+    /// Get the `RClass` representing the `Class` of an `mrb_value`
+    #[link_name = "\u{1}_mrb_sys_class_of_value"]
+    pub fn mrb_sys_class_of_value(mrb: *mut mrb_state, value: mrb_value) -> *mut RClass;
+}
 pub type __builtin_va_list = [__va_list_tag; 1usize];
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

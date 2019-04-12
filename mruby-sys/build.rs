@@ -72,25 +72,29 @@ fn main() {
         MRUBY_OUT_DIR,
     );
 
+    // Build the extension library
+    cc::Build::new()
+        .file(format!("{}/ext/src/mruby-sys.c", root()))
+        .include(MRUBY_INCLUDE_DIR)
+        .include(format!("{}/ext/include", root()))
+        .compile("libmrubysys.a");
+
     // Only run bindgen if this is a clean build. The source doesn't change so
     // we can "cache" the headers.
     if should_run_bindgen(&build_root) {
         let bindings_path: PathBuf = [&root(), "src", "ffi.rs"].iter().collect();
         let header_path: PathBuf = [&root(), "bindgen.h"].iter().collect();
         let bindings = bindgen::Builder::default()
-            // The input header we would like to generate
-            // bindings for.
             .header(header_path.to_str().expect("bindgen.h path"))
+            .header(format!("{}/ext/include/mruby-sys.h", root()))
             .clang_arg(format!("-I{}", MRUBY_INCLUDE_DIR))
-            // Finish the builder and generate the bindings.
+            .clang_arg(format!("-I{}/ext/include", root()))
             .generate()
-            // Unwrap the Result and panic on failure.
-            .expect("Unable to generate bindings");
-
-        // Write the bindings to src so we can check them in.
+            .expect("Unable to generate mruby bindings");
         bindings
             .write_to_file(bindings_path)
-            .expect("Couldn't write bindings!");
+            .expect("Unable to write mruby bindings");
     }
+
     println!("cargo:rerun-if-env-changed={}", MRUBY_SYS_CLEAN);
 }
