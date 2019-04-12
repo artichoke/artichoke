@@ -778,27 +778,36 @@ pub fn array_args() {
         mrb_close(mrb);
     }
 }
+*/
 
 #[test]
 fn funcall_argv() {
     unsafe {
         let mrb = mrb_open();
 
-        let one = MrValue::fixnum(1);
-        let args = &[MrValue::fixnum(2)];
+        let one = mrb_value {
+            value: mrb_value__bindgen_ty_1 { i: 1 },
+            tt: mrb_vtype_MRB_TT_FIXNUM,
+        };
+        let two = mrb_value {
+            value: mrb_value__bindgen_ty_1 { i: 2 },
+            tt: mrb_vtype_MRB_TT_FIXNUM,
+        };
+        let args = &[two];
 
         let plus_str = CString::new("+").unwrap();
-
         let sym = mrb_intern(mrb, plus_str.as_ptr(), 1usize);
 
         let result = mrb_funcall_argv(mrb, one, sym, 1, args.as_ptr());
 
-        assert_eq!(result.to_i32().unwrap(), 3);
+        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
+        assert_eq!(result.value.i, 3);
 
         mrb_close(mrb);
     }
 }
 
+/*
 #[test]
 fn iv() {
     unsafe {
