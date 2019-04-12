@@ -27,6 +27,18 @@
 //! - Create a CString from a `&str` for a traditional *char C string. This
 //!   creates a NUL-terminated ("\0") *char. An mruby functino that has this API
 //!   is `mrb_define_class`.
+//!
+//! ### Exceptions
+//!
+//! If a Rust function that manipulates mruby state can raise a Ruby exception,
+//! calling the function via `mrb_protect` executes the function surrounded by
+//! a try catch and will return the result of the Rust function unless the code
+//! raises, in which case it returns the exception.
+//!
+//! `mrb_protect` is useful in the context of executing untrusted code. Wrapping
+//! all eval'd code in a rust function which is called via `mrb_protect`
+//! ensures that code exits cleanly and we can report runtime errors to the
+//! caller.
 
 use std::ffi::{CStr, CString};
 
