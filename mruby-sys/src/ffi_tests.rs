@@ -24,7 +24,7 @@
 //! - Call `as_ptr` on a `&str` and pass the length of the `&str`. This does
 //!   not create a NUL-terminated ("\0") *char. An mruby function that has this
 //!   API is `mrb_load_nstring_cxt`.
-//! - Create a CString from a `&str` for a traditional *char C string. This
+//! - Create a `CString` from a `&str` for a traditional *char C string. This
 //!   creates a NUL-terminated ("\0") *char. An mruby functino that has this API
 //!   is `mrb_define_class`.
 //!
@@ -66,13 +66,13 @@ fn symbol_to_string() {
         let symbol = mrb_intern_cstr(mrb, literal);
 
         let s = mrb_sym2name(mrb, symbol) as *const i8;
-        let s = CStr::from_ptr(s).to_str().expect(":symbol name").clone();
+        let s = CStr::from_ptr(s).to_str().expect(":symbol name");
         assert_eq!(s, r#"":symbol""#);
 
         let mut s = mrb_sym2str(mrb, symbol);
         assert_eq!(s.tt, mrb_vtype_MRB_TT_STRING);
         let s = mrb_string_value_cstr(mrb, &mut s) as *const i8;
-        let s = CStr::from_ptr(s).to_str().expect(":symbol.to_s").clone();
+        let s = CStr::from_ptr(s).to_str().expect(":symbol.to_s");
         assert_eq!(s, ":symbol");
 
         mrb_close(mrb);
@@ -82,14 +82,6 @@ fn symbol_to_string() {
 #[test]
 fn define_method() {
     unsafe {
-        let mrb = mrb_open();
-        let context = mrbc_context_new(mrb);
-
-        let obj_str = CString::new("Object").unwrap();
-        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new(TEST_CLASS).unwrap();
-        let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
-
         extern "C" fn rust__mruby__test_class__method__value(
             _mrb: *mut mrb_state,
             _slf: mrb_value,
@@ -101,6 +93,14 @@ fn define_method() {
                 tt: mrb_vtype_MRB_TT_FIXNUM,
             }
         }
+
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
+
+        let obj_str = CString::new("Object").unwrap();
+        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
+        let new_class_str = CString::new(TEST_CLASS).unwrap();
+        let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
         let new_method_str = CString::new("value").unwrap();
 
@@ -152,13 +152,13 @@ fn class_name() {
         let kernel_str = CString::new("Kernel").unwrap();
         let kernel = mrb_module_get(mrb, kernel_str.as_ptr());
 
-        let name = mrb_class_name(mrb, new_class);
+        let class_name = mrb_class_name(mrb, new_class);
 
-        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "TestClass");
+        assert_eq!(CStr::from_ptr(class_name).to_str().unwrap(), "TestClass");
 
-        let name = mrb_class_name(mrb, kernel);
+        let kernel_name = mrb_class_name(mrb, kernel);
 
-        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "Kernel");
+        assert_eq!(CStr::from_ptr(kernel_name).to_str().unwrap(), "Kernel");
 
         mrb_close(mrb);
     }
@@ -182,7 +182,7 @@ fn class_value() {
         let to_s_str = CString::new("to_s").unwrap();
         let args = &[];
 
-        let sym = mrb_intern(mrb, to_s_str.as_ptr(), 4usize);
+        let sym = mrb_intern(mrb, to_s_str.as_ptr(), 4_usize);
 
         let result = mrb_funcall_argv(mrb, obj_class, sym, 0, args.as_ptr());
 
@@ -299,9 +299,9 @@ fn class_under() {
         mrb_define_class_under(mrb, obj_class, name, obj_class);
         let new_class = mrb_class_get_under(mrb, obj_class, name);
 
-        let name = mrb_class_name(mrb, new_class);
+        let class_name = mrb_class_name(mrb, new_class);
 
-        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "TestClass");
+        assert_eq!(CStr::from_ptr(class_name).to_str().unwrap(), "TestClass");
 
         mrb_close(mrb);
     }
@@ -320,9 +320,12 @@ fn module_under() {
         mrb_define_module_under(mrb, kernel, name);
         let new_module = mrb_module_get_under(mrb, kernel, name);
 
-        let name = mrb_class_name(mrb, new_module);
+        let module_name = mrb_class_name(mrb, new_module);
 
-        assert_eq!(CStr::from_ptr(name).to_str().unwrap(), "Kernel::TestModule");
+        assert_eq!(
+            CStr::from_ptr(module_name).to_str().unwrap(),
+            "Kernel::TestModule"
+        );
 
         mrb_close(mrb);
     }
@@ -334,9 +337,13 @@ fn include_module() {
         let mrb = mrb_open();
         let context = mrbc_context_new(mrb);
 
-        let code = "module Increment; def inc; self + 1; end; end";
-
-        mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        let module_code = "module Increment; def inc; self + 1; end; end";
+        mrb_load_nstring_cxt(
+            mrb,
+            module_code.as_ptr() as *const i8,
+            module_code.len(),
+            context,
+        );
 
         let fixnum_str = CString::new("Fixnum").unwrap();
         let fixnum = mrb_class_get(mrb, fixnum_str.as_ptr());
@@ -346,7 +353,6 @@ fn include_module() {
         mrb_include_module(mrb, fixnum, increment);
 
         let code = "1.inc";
-
         let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
         assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
         assert_eq!(result.value.i, 2);
@@ -359,14 +365,6 @@ fn include_module() {
 #[test]
 fn define_and_include_module() {
     unsafe {
-        let mrb = mrb_open();
-        let context = mrbc_context_new(mrb);
-
-        let name_str = CString::new("Increment").unwrap();
-        let name = name_str.as_ptr();
-        mrb_define_module(mrb, name);
-        let increment = mrb_module_get(mrb, name);
-
         extern "C" fn rust__mruby__increment__method__inc(
             _mrb: *mut mrb_state,
             slf: mrb_value,
@@ -385,6 +383,14 @@ fn define_and_include_module() {
                 }
             }
         }
+
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
+
+        let name_str = CString::new("Increment").unwrap();
+        let name = name_str.as_ptr();
+        mrb_define_module(mrb, name);
+        let increment = mrb_module_get(mrb, name);
 
         let inc_method_str = CString::new("inc").unwrap();
 
@@ -415,14 +421,6 @@ fn define_and_include_module() {
 #[test]
 fn define_class_method() {
     unsafe {
-        let mrb = mrb_open();
-        let context = mrbc_context_new(mrb);
-
-        let obj_str = CString::new("Object").unwrap();
-        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new(TEST_CLASS).unwrap();
-        let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
-
         extern "C" fn rust__mruby__test_class__class_method__value(
             _mrb: *mut mrb_state,
             _slf: mrb_value,
@@ -434,6 +432,14 @@ fn define_class_method() {
                 tt: mrb_vtype_MRB_TT_FIXNUM,
             }
         }
+
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
+
+        let obj_str = CString::new("Object").unwrap();
+        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
+        let new_class_str = CString::new(TEST_CLASS).unwrap();
+        let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
         let new_method_str = CString::new("value").unwrap();
 
@@ -458,14 +464,6 @@ fn define_class_method() {
 #[test]
 fn define_class_and_instance_method_with_one_rust_function() {
     unsafe {
-        let mrb = mrb_open();
-        let context = mrbc_context_new(mrb);
-
-        let obj_str = CString::new("Object").unwrap();
-        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new(TEST_CLASS).unwrap();
-        let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
-
         extern "C" fn rust__mruby__test_class__method__value(
             _mrb: *mut mrb_state,
             slf: mrb_value,
@@ -484,6 +482,15 @@ fn define_class_and_instance_method_with_one_rust_function() {
                 tt => unreachable!("unexpected mrb_value type: {}", tt),
             }
         }
+
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
+
+        let obj_str = CString::new("Object").unwrap();
+        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
+        let new_class_str = CString::new(TEST_CLASS).unwrap();
+        let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
+
         let rust__mruby__test_class__class_method__value = rust__mruby__test_class__method__value;
 
         let new_method_str = CString::new("value").unwrap();
@@ -536,15 +543,25 @@ fn define_constant() {
         // Define constant on Module
         mrb_define_const(mrb, kernel, one_str.as_ptr(), one);
 
-        let code = "Object::ONE";
+        let object_one_code = "Object::ONE";
 
-        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        let result = mrb_load_nstring_cxt(
+            mrb,
+            object_one_code.as_ptr() as *const i8,
+            object_one_code.len(),
+            context,
+        );
         assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
         assert_eq!(result.value.i, 1);
 
-        let code = "Kernel::ONE";
+        let kernel_one_code = "Kernel::ONE";
 
-        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        let result = mrb_load_nstring_cxt(
+            mrb,
+            kernel_one_code.as_ptr() as *const i8,
+            kernel_one_code.len(),
+            context,
+        );
         assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
         assert_eq!(result.value.i, 1);
 
@@ -558,8 +575,6 @@ fn protect() {
     use std::mem::uninitialized;
 
     unsafe {
-        let mrb = mrb_open();
-
         // This rust function raises a runtime error in mruby
         extern "C" fn rust__mruby__test_class__method__value(
             mrb: *mut mrb_state,
@@ -580,6 +595,8 @@ fn protect() {
                 }
             }
         }
+
+        let mrb = mrb_open();
 
         let mut state = uninitialized::<u8>();
         let nil = mrb_value {
@@ -796,7 +813,7 @@ fn funcall_argv() {
         let args = &[two];
 
         let plus_str = CString::new("+").unwrap();
-        let sym = mrb_intern(mrb, plus_str.as_ptr(), 1usize);
+        let sym = mrb_intern(mrb, plus_str.as_ptr(), 1_usize);
 
         let result = mrb_funcall_argv(mrb, one, sym, 1, args.as_ptr());
 
