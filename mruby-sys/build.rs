@@ -2,11 +2,12 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// mruby source root
-const MRUBY: &str = "mruby-2.0.1";
+/// vendored mruby version
+const MRUBY_VERSION: &str = "2.0.1";
 /// env var to force a clean build
 const MRUBY_SYS_CLEAN: &str = "MRUBY_SYS_CLEAN";
 
+/// Path helpers
 struct Build;
 
 impl Build {
@@ -23,7 +24,7 @@ impl Build {
     }
 
     fn mruby_source_dir() -> String {
-        format!("{}/{}", &Build::root(), MRUBY)
+        format!("{}/vendor/mruby-{}", &Build::root(), MRUBY_VERSION)
     }
 
     fn mruby_include_dir() -> String {
