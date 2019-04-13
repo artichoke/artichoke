@@ -1,3 +1,11 @@
+/**
+ * mruby-sys is a C extension library written for the mruby-sys crate.
+ * `mruby-sys.h` includes all public headers for mruby. This file is parsed by
+ * `bindgen` in `build.rs` to generate Rust bindings for the C functions and
+ * types defined in these the mruby and mruby-sys C headers. These bindings are
+ * checked in at `src/ffi.rs`.
+ */
+
 #include <mruby.h>
 #include <mruby/array.h>
 #include <mruby/boxing_no.h>
@@ -24,4 +32,4 @@
 #include <mruby/variable.h>
 #include <mruby/version.h>
 
-#include <mruby-sys.h>
+#include <mruby-sys/ext.h>

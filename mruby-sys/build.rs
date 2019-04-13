@@ -16,7 +16,7 @@ impl Build {
     }
 
     fn ext_source_dir() -> String {
-        format!("{}/ext", &Build::root())
+        format!("{}/mruby-sys", &Build::root())
     }
 
     fn ext_include_dir() -> String {
@@ -44,7 +44,7 @@ impl Build {
     }
 
     fn bindgen_source_header() -> String {
-        format!("{}/bindgen.h", &Build::root())
+        format!("{}/mruby-sys.h", &Build::ext_include_dir())
     }
 }
 
@@ -91,7 +91,7 @@ fn main() {
 
     // Build the extension library
     cc::Build::new()
-        .file(format!("{}/src/mruby-sys.c", Build::ext_source_dir()))
+        .file(format!("{}/src/mruby-sys/ext.c", Build::ext_source_dir()))
         .include(Build::mruby_include_dir())
         .include(Build::ext_include_dir())
         .compile("libmrubysys.a");
