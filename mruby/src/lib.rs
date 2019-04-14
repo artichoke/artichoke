@@ -1,7 +1,5 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+#![deny(clippy::all, clippy::pedantic)]
+
+mod value;
+
+pub use self::value::*;
