@@ -72,6 +72,9 @@ fn open_close() {
 #[test]
 fn sys_ext_nil_check() {
     unsafe {
+        // mruby implements `nil` and `false` with `MRB_TT_FALSE` value type.
+        // The difference between the two is the value of `value.i`. Ensure we
+        // can tell the difference.
         let value = mrb_sys_nil_value();
         assert_eq!(mrb_sys_value_is_nil(value), true);
         assert_eq!(mrb_sys_value_is_false(value), false);
@@ -82,6 +85,9 @@ fn sys_ext_nil_check() {
 #[test]
 fn sys_ext_false_check() {
     unsafe {
+        // mruby implements `nil` and `false` with `MRB_TT_FALSE` value type.
+        // The difference between the two is the value of `value.i`. Ensure we
+        // can tell the difference.
         let value = mrb_sys_false_value();
         assert_eq!(mrb_sys_value_is_nil(value), false);
         assert_eq!(mrb_sys_value_is_false(value), true);
@@ -92,6 +98,9 @@ fn sys_ext_false_check() {
 #[test]
 fn sys_ext_true_check() {
     unsafe {
+        // mruby implements `nil` and `false` with `MRB_TT_FALSE` value type.
+        // The difference between the two is the value of `value.i`. Ensure we
+        // can tell the difference.
         let value = mrb_sys_true_value();
         assert_eq!(mrb_sys_value_is_nil(value), false);
         assert_eq!(mrb_sys_value_is_false(value), false);
