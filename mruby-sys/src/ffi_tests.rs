@@ -57,6 +57,36 @@ fn open_close() {
 }
 
 #[test]
+fn sys_ext_nil_check() {
+    unsafe {
+        let value = mrb_sys_nil_value();
+        assert_eq!(mrb_sys_value_is_nil(value), true);
+        assert_eq!(mrb_sys_value_is_false(value), false);
+        assert_eq!(mrb_sys_value_is_true(value), false);
+    }
+}
+
+#[test]
+fn sys_ext_false_check() {
+    unsafe {
+        let value = mrb_sys_false_value();
+        assert_eq!(mrb_sys_value_is_nil(value), false);
+        assert_eq!(mrb_sys_value_is_false(value), true);
+        assert_eq!(mrb_sys_value_is_true(value), false);
+    }
+}
+
+#[test]
+fn sys_ext_true_check() {
+    unsafe {
+        let value = mrb_sys_true_value();
+        assert_eq!(mrb_sys_value_is_nil(value), false);
+        assert_eq!(mrb_sys_value_is_false(value), false);
+        assert_eq!(mrb_sys_value_is_true(value), true);
+    }
+}
+
+#[test]
 fn symbol_to_string() {
     unsafe {
         let mrb = mrb_open();
@@ -86,12 +116,7 @@ fn define_method() {
             _mrb: *mut mrb_state,
             _slf: mrb_value,
         ) -> mrb_value {
-            // TODO write extension code to expose inline function
-            // `mrb_fixnum_value`.
-            mrb_value {
-                value: mrb_value__bindgen_ty_1 { i: 2 },
-                tt: mrb_vtype_MRB_TT_FIXNUM,
-            }
+            unsafe { mrb_sys_fixnum_value(2) }
         }
 
         let mrb = mrb_open();
@@ -114,8 +139,7 @@ fn define_method() {
 
         let code = "TestClass.new.value";
         let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
-        assert_eq!(result.value.i, 2);
+        assert_eq!(mrb_sys_fixnum_to_cint(result), 2);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -171,13 +195,7 @@ fn class_value() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        // TODO: implement `mrb_ext_class_value(obj_class)`
-        let obj_class = mrb_value {
-            value: mrb_value__bindgen_ty_1 {
-                p: obj_class as *mut std::ffi::c_void,
-            },
-            tt: mrb_vtype_MRB_TT_CLASS,
-        };
+        let obj_class = mrb_sys_class_value(obj_class);
 
         let to_s_str = CString::new("to_s").unwrap();
         let args = &[];
@@ -354,8 +372,7 @@ fn include_module() {
 
         let code = "1.inc";
         let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
-        assert_eq!(result.value.i, 2);
+        assert_eq!(mrb_sys_fixnum_to_cint(result), 2);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -366,20 +383,30 @@ fn include_module() {
 fn define_and_include_module() {
     unsafe {
         extern "C" fn rust__mruby__increment__method__inc(
-            _mrb: *mut mrb_state,
+            mrb: *mut mrb_state,
             slf: mrb_value,
         ) -> mrb_value {
-            assert_eq!(slf.tt, mrb_vtype_MRB_TT_FIXNUM);
-            // TODO write extension code to expose inline function
-            // `mrb_fixnum_value`.
-            //
-            // `unsafe` block required because we're accessing a union field
-            // which might access uninitialized memory. We know we this
-            // operation is safe because of the above assert on `slf.tt`.
             unsafe {
-                mrb_value {
-                    value: mrb_value__bindgen_ty_1 { i: slf.value.i + 1 },
-                    tt: mrb_vtype_MRB_TT_FIXNUM,
+                // Assert self is a Fixnum and raise an ArgumentError otherwise.
+                // This function requires self to be a Fixnum to safely access
+                // the `i` field of the value union in the unsafe block.
+                //
+                // TODO: Write a standalone test for this behavior
+                if slf.tt == mrb_vtype_MRB_TT_FIXNUM {
+                    // `unsafe` block required because we're accessing a union
+                    // field which might access uninitialized memory. We know we
+                    // this operation is safe because of the above assert on
+                    // `slf.tt`.
+                    mrb_sys_fixnum_value(slf.value.i + 1)
+                } else {
+                    let eclass = "ArgumentError";
+                    let emsg = "expected Fixnum";
+                    mrb_sys_raise(
+                        mrb,
+                        eclass.as_ptr() as *const i8,
+                        emsg.as_ptr() as *const i8,
+                    );
+                    mrb_sys_nil_value()
                 }
             }
         }
@@ -409,9 +436,7 @@ fn define_and_include_module() {
 
         let code = "1.inc";
         let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
-        assert_eq!(result.value.i, 2);
+        assert_eq!(mrb_sys_fixnum_to_cint(result), 2);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -425,12 +450,7 @@ fn define_class_method() {
             _mrb: *mut mrb_state,
             _slf: mrb_value,
         ) -> mrb_value {
-            // TODO write extension code to expose inline function
-            // `mrb_fixnum_value`.
-            mrb_value {
-                value: mrb_value__bindgen_ty_1 { i: 2 },
-                tt: mrb_vtype_MRB_TT_FIXNUM,
-            }
+            unsafe { mrb_sys_fixnum_value(2) }
         }
 
         let mrb = mrb_open();
@@ -453,8 +473,7 @@ fn define_class_method() {
 
         let code = "TestClass.value";
         let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
-        assert_eq!(result.value.i, 2);
+        assert_eq!(mrb_sys_fixnum_to_cint(result), 2);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -468,18 +487,12 @@ fn define_class_and_instance_method_with_one_rust_function() {
             _mrb: *mut mrb_state,
             slf: mrb_value,
         ) -> mrb_value {
-            // TODO write extension code to expose inline function
-            // `mrb_fixnum_value`.
-            match slf.tt {
-                mrb_vtype_MRB_TT_OBJECT => mrb_value {
-                    value: mrb_value__bindgen_ty_1 { i: 2 },
-                    tt: mrb_vtype_MRB_TT_FIXNUM,
-                },
-                mrb_vtype_MRB_TT_CLASS => mrb_value {
-                    value: mrb_value__bindgen_ty_1 { i: 3 },
-                    tt: mrb_vtype_MRB_TT_FIXNUM,
-                },
-                tt => unreachable!("unexpected mrb_value type: {}", tt),
+            unsafe {
+                match slf.tt {
+                    mrb_vtype_MRB_TT_OBJECT => mrb_sys_fixnum_value(2),
+                    mrb_vtype_MRB_TT_CLASS => mrb_sys_fixnum_value(3),
+                    tt => unreachable!("unexpected mrb_value type: {}", tt),
+                }
             }
         }
 
@@ -513,8 +526,7 @@ fn define_class_and_instance_method_with_one_rust_function() {
 
         let code = "TestClass.value + TestClass.new.value";
         let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
-        assert_eq!(result.value.i, 5);
+        assert_eq!(mrb_sys_fixnum_to_cint(result), 5);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -532,10 +544,7 @@ fn define_constant() {
         let kernel_str = CString::new("Kernel").unwrap();
         let kernel = mrb_module_get(mrb, kernel_str.as_ptr());
 
-        let one = mrb_value {
-            value: mrb_value__bindgen_ty_1 { i: 1 },
-            tt: mrb_vtype_MRB_TT_FIXNUM,
-        };
+        let one = mrb_sys_fixnum_value(1);
         let one_str = CString::new("ONE").unwrap();
 
         // Define constant on Class
@@ -551,8 +560,7 @@ fn define_constant() {
             object_one_code.len(),
             context,
         );
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
-        assert_eq!(result.value.i, 1);
+        assert_eq!(mrb_sys_fixnum_to_cint(result), 1);
 
         let kernel_one_code = "Kernel::ONE";
 
@@ -562,8 +570,7 @@ fn define_constant() {
             kernel_one_code.len(),
             context,
         );
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
-        assert_eq!(result.value.i, 1);
+        assert_eq!(mrb_sys_fixnum_to_cint(result), 1);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -583,26 +590,15 @@ fn protect() {
             unsafe {
                 let eclass = CString::new("RuntimeError").unwrap();
                 let msg = CString::new("excepting").unwrap();
-                mrb_raise(
-                    mrb as *mut mrb_state,
-                    mrb_class_get(mrb as *mut mrb_state, eclass.as_ptr()),
-                    msg.as_ptr(),
-                );
-
-                mrb_value {
-                    tt: mrb_vtype_MRB_TT_FIXNUM,
-                    value: mrb_value__bindgen_ty_1 { i: 7 },
-                }
+                mrb_sys_raise(mrb as *mut mrb_state, eclass.as_ptr(), msg.as_ptr());
+                mrb_sys_fixnum_value(7)
             }
         }
 
         let mrb = mrb_open();
 
         let mut state = uninitialized::<u8>();
-        let nil = mrb_value {
-            tt: mrb_vtype_MRB_TT_FALSE,
-            value: mrb_value__bindgen_ty_1 { i: 0 },
-        };
+        let nil = mrb_sys_nil_value();
 
         // `mrb_protect` calls the passed function with `data` as an argument.
         // Protect wraps the execution of the provided function in a try catch.
@@ -802,14 +798,8 @@ fn funcall_argv() {
     unsafe {
         let mrb = mrb_open();
 
-        let one = mrb_value {
-            value: mrb_value__bindgen_ty_1 { i: 1 },
-            tt: mrb_vtype_MRB_TT_FIXNUM,
-        };
-        let two = mrb_value {
-            value: mrb_value__bindgen_ty_1 { i: 2 },
-            tt: mrb_vtype_MRB_TT_FIXNUM,
-        };
+        let one = mrb_sys_fixnum_value(1);
+        let two = mrb_sys_fixnum_value(2);
         let args = &[two];
 
         let plus_str = CString::new("+").unwrap();
@@ -817,8 +807,7 @@ fn funcall_argv() {
 
         let result = mrb_funcall_argv(mrb, one, sym, 1, args.as_ptr());
 
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_FIXNUM);
-        assert_eq!(result.value.i, 3);
+        assert_eq!(mrb_sys_fixnum_to_cint(result), 3);
 
         mrb_close(mrb);
     }

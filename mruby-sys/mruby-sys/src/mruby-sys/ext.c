@@ -6,6 +6,21 @@ mrb_int mrb_sys_fixnum_to_cint(mrb_value value) { return mrb_fixnum(value); }
 
 mrb_float mrb_sys_float_to_cdouble(mrb_value value) { return mrb_float(value); }
 
+bool mrb_sys_value_is_nil(mrb_value value) {
+  mrb_value test = mrb_nil_value();
+  return mrb_type(value) == mrb_type(test) && value.value.i == test.value.i;
+}
+
+bool mrb_sys_value_is_false(mrb_value value) {
+  mrb_value test = mrb_false_value();
+  return mrb_type(value) == mrb_type(test) && value.value.i == test.value.i;
+}
+
+bool mrb_sys_value_is_true(mrb_value value) {
+  mrb_value test = mrb_true_value();
+  return mrb_type(value) == mrb_type(test) && value.value.i == test.value.i;
+}
+
 struct RClass *mrb_sys_class_to_rclass(mrb_value value) {
   return (struct RClass *)value.value.p;
 }
@@ -22,7 +37,7 @@ mrb_value mrb_sys_false_value(void) {
   return mrb_false_value();
 }
 
-mrb_value mrb_sys_true(void) {
+mrb_value mrb_sys_true_value(void) {
   // `mrb_true_value` is defined as `MRB_INLINE` which means bindgen won't find
   // it, so we wrap it here so we can link to it.
   return mrb_true_value();

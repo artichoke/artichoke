@@ -750,6 +750,9 @@ pub const MRB_STR_EMBED: u32 = 32;
 pub const MRB_STR_EMBED_LEN_MASK: u32 = 1984;
 pub const MRB_STR_EMBED_LEN_SHIFT: u32 = 6;
 pub const _JBLEN: u32 = 37;
+pub const true_: u32 = 1;
+pub const false_: u32 = 0;
+pub const __bool_true_false_are_defined: u32 = 1;
 pub type va_list = __builtin_va_list;
 pub type __gnuc_va_list = __builtin_va_list;
 pub type int_least8_t = i8;
@@ -10664,6 +10667,21 @@ extern "C" {
     pub fn mrb_sys_float_to_cdouble(value: mrb_value) -> mrb_float;
 }
 extern "C" {
+    /// Test if an `mrb_value` is a Ruby `nil`
+    #[link_name = "\u{1}_mrb_sys_value_is_nil"]
+    pub fn mrb_sys_value_is_nil(value: mrb_value) -> bool;
+}
+extern "C" {
+    /// Test if an `mrb_value` is a Ruby `false`
+    #[link_name = "\u{1}_mrb_sys_value_is_false"]
+    pub fn mrb_sys_value_is_false(value: mrb_value) -> bool;
+}
+extern "C" {
+    /// Test if an `mrb_value` is a Ruby `true`
+    #[link_name = "\u{1}_mrb_sys_value_is_true"]
+    pub fn mrb_sys_value_is_true(value: mrb_value) -> bool;
+}
+extern "C" {
     /// Extract the `RClass` from a Class `mrb_value`
     #[link_name = "\u{1}_mrb_sys_class_to_rclass"]
     pub fn mrb_sys_class_to_rclass(value: mrb_value) -> *mut RClass;
@@ -10680,8 +10698,8 @@ extern "C" {
 }
 extern "C" {
     /// Create an `mrb_value` representing `true`
-    #[link_name = "\u{1}_mrb_sys_true"]
-    pub fn mrb_sys_true() -> mrb_value;
+    #[link_name = "\u{1}_mrb_sys_true_value"]
+    pub fn mrb_sys_true_value() -> mrb_value;
 }
 extern "C" {
     /// Create an `mrb_value` representing an integer (a `Fixnum`)
