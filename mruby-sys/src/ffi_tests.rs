@@ -37,9 +37,9 @@
 //! - Call `as_ptr` on a `&str` and pass the length of the `&str`. This does
 //!   not create a NUL-terminated ("\0") *char. An mruby function that has this
 //!   API is `mrb_load_nstring_cxt`.
-//! - Create a `CString` from a `&str` for a traditional *char C string. This
-//!   creates a NUL-terminated ("\0") *char. An mruby functino that has this API
-//!   is `mrb_define_class`.
+//! - Create a `CString` from a `&str` for a traditional `char *` C string. This
+//!   creates a NUL-terminated ("\0") `char *`. An mruby functino that has this
+//!   API is `mrb_define_class`.
 //!
 //! ### Exceptions
 //!
