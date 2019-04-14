@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include <mruby-sys/ext.h>
 
 mrb_int mrb_sys_fixnum_to_cint(mrb_value value) { return mrb_fixnum(value); }
