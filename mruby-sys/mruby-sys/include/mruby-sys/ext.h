@@ -6,8 +6,6 @@
  * initializers).
  */
 
-#include <stdbool.h>
-
 #include <mruby.h>
 #include <mruby/array.h>
 #include <mruby/class.h>
@@ -30,17 +28,18 @@ mrb_float mrb_sys_float_to_cdouble(mrb_value value);
 /**
  * Test if an `mrb_value` is a Ruby `nil`
  */
-bool mrb_sys_value_is_nil(mrb_value value);
+_Bool mrb_sys_value_is_nil(mrb_value value);
 
 /**
  * Test if an `mrb_value` is a Ruby `false`
  */
-bool mrb_sys_value_is_false(mrb_value value);
+_Bool mrb_sys_value_is_false(mrb_value value);
 
 /**
  * Test if an `mrb_value` is a Ruby `true`
  */
-bool mrb_sys_value_is_true(mrb_value value);
+_Bool mrb_sys_value_is_true(mrb_value value);
+
 /**
  * Extract the `RClass` from a Class `mrb_value`
  */
