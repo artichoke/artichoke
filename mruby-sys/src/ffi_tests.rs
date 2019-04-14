@@ -17,6 +17,19 @@
 //!
 //! ## Implementation Notes
 //!
+//! ### `mrb_value` Types
+//!
+//! `mrb_type` is defined in the `boxing*.h` family of headers. `mruby-sys`
+//! includes `mruby/boxing_no.h` in `mrb-sys.h` which defines `mrb_type` with a
+//! macro:
+//!
+//! ```c
+//! #define mrb_type(o)     (o).tt
+//! ```
+//!
+//! It is safe to directly access the `tt` field of an `mrb_value` to determine
+//! its type.
+//!
 //! ### Strings
 //!
 //! There are two ways to pass Rust strings across an FFI boundary:
