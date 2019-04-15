@@ -18,13 +18,12 @@ fn convert_error() -> ConvertError<types::Rust, types::Ruby> {
     }
 }
 
-impl TryValue for String {
+impl TryValue for &str {
     type Error = ConvertError<types::Rust, types::Ruby>;
 
     fn try_value(&self, mrb: *mut mrb_state) -> Result<Value, Self::Error> {
         unsafe {
-            let s: &str = self;
-            match CString::new(s) {
+            match CString::new(*self) {
                 Ok(cstr) => Ok(Value(mrb_str_new_cstr(mrb, cstr.as_ptr()))),
                 Err(_) => Err(convert_error()),
             }
@@ -32,7 +31,7 @@ impl TryValue for String {
     }
 }
 
-impl TryFrom<Value> for String {
+impl TryFrom<Value> for &str {
     type Error = ConvertError<types::Ruby, types::Rust>;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
@@ -43,7 +42,7 @@ impl TryFrom<Value> for String {
                 let mut value = value.0;
                 let cstr = mrb_string_value_cstr(mrb, &mut value);
                 let result = match CStr::from_ptr(cstr).to_str() {
-                    Ok(string) => Ok(string.to_owned()),
+                    Ok(string) => Ok(string),
                     Err(_) => Err(type_error(type_tag)),
                 };
                 mrb_close(mrb);
@@ -54,7 +53,7 @@ impl TryFrom<Value> for String {
     }
 }
 
-impl TryValue for Option<String> {
+impl TryValue for Option<&str> {
     type Error = ConvertError<types::Rust, types::Ruby>;
 
     fn try_value(&self, mrb: *mut mrb_state) -> Result<Value, Self::Error> {
@@ -65,13 +64,13 @@ impl TryValue for Option<String> {
     }
 }
 
-impl TryFrom<Value> for Option<String> {
+impl TryFrom<Value> for Option<&str> {
     type Error = ConvertError<types::Ruby, types::Rust>;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value.ruby_type() {
             types::Ruby::Nil => Ok(None),
-            _ => Ok(Some(String::try_from(value)?)),
+            _ => Ok(Some(<&str>::try_from(value)?)),
         }
     }
 }
@@ -80,14 +79,14 @@ impl TryFrom<Value> for Option<String> {
 mod tests {
     use mruby_sys::*;
 
-    use crate::value::string::*;
+    use crate::value::str::*;
     use crate::value::*;
 
     #[test]
     fn value_from_string() {
         unsafe {
             let mrb = mrb_open();
-            let value = "foo".to_owned().try_value(mrb).expect("convert");
+            let value = "foo".try_value(mrb).expect("convert");
             assert_eq!(value.ruby_type(), types::Ruby::String);
             assert_eq!(mrb_sys_value_is_nil(value.0), false);
             assert_eq!(value.to_s(), "foo".to_owned());
@@ -99,7 +98,7 @@ mod tests {
     fn value_from_empty_string() {
         unsafe {
             let mrb = mrb_open();
-            let value = "".to_owned().try_value(mrb).expect("convert");
+            let value = "".try_value(mrb).expect("convert");
             assert_eq!(value.ruby_type(), types::Ruby::String);
             assert_eq!(mrb_sys_value_is_nil(value.0), false);
             assert_eq!(value.to_s(), "".to_owned());
@@ -115,7 +114,7 @@ mod tests {
             let cstr_raw = CString::new(cstr).unwrap();
             let rb_value = mrb_str_new_cstr(mrb, cstr_raw.as_ptr());
             let value = String::try_from(Value(rb_value)).expect("convert");
-            assert_eq!(value, "foo".to_owned());
+            assert_eq!(value, "foo");
         }
     }
 
@@ -127,7 +126,7 @@ mod tests {
             let cstr_raw = CString::new(cstr).unwrap();
             let rb_value = mrb_str_new_cstr(mrb, cstr_raw.as_ptr());
             let value = String::try_from(Value(rb_value)).expect("convert");
-            assert_eq!(value, "".to_owned());
+            assert_eq!(value, "");
         }
     }
 
@@ -159,7 +158,7 @@ mod tests {
     fn value_from_some_string() {
         unsafe {
             let mrb = mrb_open();
-            let value = Some("foo".to_owned()).try_value(mrb).expect("convert");
+            let value = Some("foo").try_value(mrb).expect("convert");
             assert_eq!(value.ruby_type(), types::Ruby::String);
             assert_eq!(mrb_sys_value_is_nil(value.0), false);
             assert_eq!(value.to_s(), "foo".to_owned());
@@ -171,7 +170,7 @@ mod tests {
     fn value_from_some_empty_string() {
         unsafe {
             let mrb = mrb_open();
-            let value = Some("".to_owned()).try_value(mrb).expect("convert");
+            let value = Some("").try_value(mrb).expect("convert");
             assert_eq!(value.ruby_type(), types::Ruby::String);
             assert_eq!(mrb_sys_value_is_nil(value.0), false);
             assert_eq!(value.to_s(), "".to_owned());
@@ -183,7 +182,7 @@ mod tests {
     fn value_from_none() {
         unsafe {
             let mrb = mrb_open();
-            let value = (None as Option<String>).try_value(mrb).expect("convert");
+            let value = (None as Option<&str>).try_value(mrb).expect("convert");
             assert_eq!(value.ruby_type(), types::Ruby::Nil);
             assert_eq!(mrb_sys_value_is_nil(value.0), true);
             mrb_close(mrb);
@@ -197,8 +196,8 @@ mod tests {
             let cstr = "foo";
             let cstr_raw = CString::new(cstr).unwrap();
             let rb_value = mrb_str_new_cstr(mrb, cstr_raw.as_ptr());
-            let value = Option::<String>::try_from(Value(rb_value)).expect("convert");
-            assert_eq!(value, Some("foo".to_owned()));
+            let value = Option::<&str>::try_from(Value(rb_value)).expect("convert");
+            assert_eq!(value, Some("foo"));
         }
     }
 
@@ -209,15 +208,15 @@ mod tests {
             let cstr = "";
             let cstr_raw = CString::new(cstr).unwrap();
             let rb_value = mrb_str_new_cstr(mrb, cstr_raw.as_ptr());
-            let value = Option::<String>::try_from(Value(rb_value)).expect("convert");
-            assert_eq!(value, Some("".to_owned()));
+            let value = Option::<&str>::try_from(Value(rb_value)).expect("convert");
+            assert_eq!(value, Some(""));
         }
     }
 
     #[test]
     fn option_none_from_nil_value() {
         unsafe {
-            let value = Option::<String>::try_from(Value(mrb_sys_nil_value())).expect("convert");
+            let value = Option::<&str>::try_from(Value(mrb_sys_nil_value())).expect("convert");
             assert_eq!(value, None);
         }
     }
@@ -225,7 +224,7 @@ mod tests {
     #[test]
     fn option_err_from_fixnum_value() {
         unsafe {
-            let err = Option::<String>::try_from(Value(mrb_sys_fixnum_value(17)));
+            let err = Option::<&str>::try_from(Value(mrb_sys_fixnum_value(17)));
             let expected = ConvertError {
                 from: types::Ruby::Fixnum,
                 to: types::Rust::String,
