@@ -3,7 +3,6 @@ use mruby_sys::*;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Rust {
     Bool,
-    #[allow(dead_code)]
     SignedInt,
     UnsignedInt,
 }

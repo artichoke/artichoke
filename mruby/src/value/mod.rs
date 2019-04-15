@@ -4,6 +4,10 @@ use std::ffi::CStr;
 use std::fmt;
 
 mod bool;
+mod i16;
+mod i32;
+mod i64;
+mod i8;
 mod types;
 mod u16;
 mod u32;
@@ -11,6 +15,10 @@ mod u64;
 mod u8;
 
 pub use self::bool::*;
+pub use self::i16::*;
+pub use self::i32::*;
+pub use self::i64::*;
+pub use self::i8::*;
 pub use self::types::*;
 pub use self::u16::*;
 pub use self::u32::*;
