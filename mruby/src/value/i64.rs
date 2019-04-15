@@ -24,7 +24,6 @@ impl TryFrom<Int> for Value {
     type Error = ConvertError<types::Rust, types::Ruby>;
 
     fn try_from(value: Int) -> Result<Self, Self::Error> {
-        let value = i64::from(value);
         Ok(Self(unsafe { mrb_sys_fixnum_value(value) }))
     }
 }

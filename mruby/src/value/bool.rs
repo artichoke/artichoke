@@ -54,7 +54,7 @@ impl TryFrom<Option<bool>> for Value {
 
     fn try_from(value: Option<bool>) -> Result<Self, Self::Error> {
         match value {
-            Some(value) => Value::try_from(value),
+            Some(value) => Self::try_from(value),
             None => Ok(Self(unsafe { mrb_sys_nil_value() })),
         }
     }

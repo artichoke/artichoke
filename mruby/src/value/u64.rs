@@ -79,8 +79,7 @@ mod tests {
     use super::*;
     use crate::value::*;
 
-    const MAX: i64 = Int::max_value() as i64;
-    const MIN: i64 = Int::min_value() as i64;
+    const MIN: i64 = 0_i64;
     const ZERO: Int = 0;
 
     #[test]
@@ -236,18 +235,6 @@ mod tests {
         unsafe {
             let value = Option::<Int>::try_from(Value(mrb_sys_fixnum_value(0))).expect("convert");
             assert_eq!(value, Some(ZERO));
-        }
-    }
-
-    #[test]
-    fn err_from_max_value() {
-        unsafe {
-            let value = Option::<Int>::try_from(Value(mrb_sys_fixnum_value(MAX)));
-            let expected = ConvertError {
-                from: types::Ruby::Fixnum,
-                to: types::Rust::UnsignedInt,
-            };
-            assert_eq!(value, Err(expected));
         }
     }
 
