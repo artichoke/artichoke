@@ -171,3 +171,9 @@ struct RClass *mrb_sys_class_of_value(struct mrb_state *mrb, mrb_value value) {
   // we wrap it here so we can link to it.
   return mrb_class(mrb, value);
 }
+
+mrb_int mrb_sys_ary_len(mrb_value value) {
+  // `ARY_LEN` is defined as a macro which means bindgen won't find it, so we
+  // wrap it here so we can link to it.
+  return ARY_LEN(mrb_ary_ptr(value));
+}

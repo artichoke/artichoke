@@ -10792,6 +10792,11 @@ extern "C" {
     #[link_name = "\u{1}_mrb_sys_class_of_value"]
     pub fn mrb_sys_class_of_value(mrb: *mut mrb_state, value: mrb_value) -> *mut RClass;
 }
+extern "C" {
+    /// Get length of an `Array`
+    #[link_name = "\u{1}_mrb_sys_ary_len"]
+    pub fn mrb_sys_ary_len(value: mrb_value) -> mrb_int;
+}
 pub type __builtin_va_list = [__va_list_tag; 1usize];
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

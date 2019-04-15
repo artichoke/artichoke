@@ -6,10 +6,12 @@ pub enum Rust {
     SignedInt,
     String,
     UnsignedInt,
+    Vec,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Ruby {
+    Array,
     Bool,
     Class,
     CPointer,
@@ -35,7 +37,7 @@ impl From<mrb_value> for Ruby {
 
         // switch on the type tag in the `mrb_value`
         match value.tt {
-            mrb_vtype_MRB_TT_ARRAY => unimplemented!("mruby type array"),
+            mrb_vtype_MRB_TT_ARRAY => Ruby::Array,
             mrb_vtype_MRB_TT_FALSE | mrb_vtype_MRB_TT_TRUE => Ruby::Bool,
             mrb_vtype_MRB_TT_BREAK => unimplemented!("mruby type break"), // TODO: what is this?
             mrb_vtype_MRB_TT_CLASS => Ruby::Class,

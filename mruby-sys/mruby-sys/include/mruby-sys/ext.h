@@ -146,3 +146,8 @@ mrb_bool mrb_sys_class_defined_under(struct mrb_state *mrb,
  * Get the `RClass` representing the `Class` of an `mrb_value`
  */
 struct RClass *mrb_sys_class_of_value(struct mrb_state *mrb, mrb_value value);
+
+/**
+ * Get length of an `Array`
+ */
+mrb_int mrb_sys_ary_len(mrb_value value);

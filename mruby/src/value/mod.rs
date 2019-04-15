@@ -15,6 +15,7 @@ mod u16;
 mod u32;
 mod u64;
 mod u8;
+mod vec;
 
 pub use self::bool::*;
 pub use self::i16::*;
