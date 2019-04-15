@@ -8,6 +8,7 @@ mod i16;
 mod i32;
 mod i64;
 mod i8;
+mod string;
 mod types;
 mod u16;
 mod u32;
@@ -19,6 +20,7 @@ pub use self::i16::*;
 pub use self::i32::*;
 pub use self::i64::*;
 pub use self::i8::*;
+pub use self::string::*;
 pub use self::types::*;
 pub use self::u16::*;
 pub use self::u32::*;
@@ -55,6 +57,12 @@ impl Value {
     }
 }
 
+trait TryValue {
+    type Error;
+
+    fn try_value(&self, mrb: *mut mrb_state) -> Result<Value, Self::Error>;
+}
+
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let debug = unsafe {
@@ -80,7 +88,7 @@ struct ConvertError<F, T> {
     to: T,
 }
 
-#[cfg(test)]
+#[cfg(__nope__)]
 mod tests {
     use crate::value::*;
     use std::convert::TryFrom;

@@ -4,6 +4,7 @@ use mruby_sys::*;
 pub enum Rust {
     Bool,
     SignedInt,
+    String,
     UnsignedInt,
 }
 

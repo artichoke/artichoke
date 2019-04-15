@@ -1,12 +1,20 @@
 use mruby_sys::*;
 use std::convert::TryFrom;
 
-use crate::value::{types, ConvertError, Value};
+use crate::value::{types, ConvertError, TryValue, Value};
 
 fn type_error(type_tag: types::Ruby) -> ConvertError<types::Ruby, types::Rust> {
     ConvertError {
         from: type_tag,
         to: types::Rust::Bool,
+    }
+}
+
+impl TryValue for bool {
+    type Error = ConvertError<types::Rust, types::Ruby>;
+
+    fn try_value(&self, _mrb: *mut mrb_state) -> Result<Value, Self::Error> {
+        Value::try_from(*self)
     }
 }
 
@@ -26,12 +34,17 @@ impl TryFrom<Value> for bool {
     type Error = ConvertError<types::Ruby, types::Rust>;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
-        if unsafe { mrb_sys_value_is_true(value.0) } {
-            Ok(true)
-        } else if unsafe { mrb_sys_value_is_false(value.0) } {
-            Ok(false)
-        } else {
-            Err(type_error(value.ruby_type()))
+        match value.ruby_type() {
+            type_tag @ types::Ruby::Bool => {
+                if unsafe { mrb_sys_value_is_true(value.0) } {
+                    Ok(true)
+                } else if unsafe { mrb_sys_value_is_false(value.0) } {
+                    Ok(false)
+                } else {
+                    Err(type_error(type_tag))
+                }
+            }
+            type_tag => Err(type_error(type_tag)),
         }
     }
 }
@@ -41,8 +54,7 @@ impl TryFrom<Option<bool>> for Value {
 
     fn try_from(value: Option<bool>) -> Result<Self, Self::Error> {
         match value {
-            Some(value) if value => Ok(Self(unsafe { mrb_sys_true_value() })),
-            Some(_) => Ok(Self(unsafe { mrb_sys_false_value() })),
+            Some(value) => Value::try_from(value),
             None => Ok(Self(unsafe { mrb_sys_nil_value() })),
         }
     }
@@ -52,14 +64,18 @@ impl TryFrom<Value> for Option<bool> {
     type Error = ConvertError<types::Ruby, types::Rust>;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
-        if unsafe { mrb_sys_value_is_true(value.0) } {
-            Ok(Some(true))
-        } else if unsafe { mrb_sys_value_is_false(value.0) } {
-            Ok(Some(false))
-        } else if unsafe { mrb_sys_value_is_nil(value.0) } {
-            Ok(None)
-        } else {
-            Err(type_error(value.ruby_type()))
+        match value.ruby_type() {
+            types::Ruby::Nil => Ok(None),
+            type_tag @ types::Ruby::Bool => {
+                if unsafe { mrb_sys_value_is_true(value.0) } {
+                    Ok(Some(true))
+                } else if unsafe { mrb_sys_value_is_false(value.0) } {
+                    Ok(Some(false))
+                } else {
+                    Err(type_error(type_tag))
+                }
+            }
+            type_tag => Err(type_error(type_tag)),
         }
     }
 }
