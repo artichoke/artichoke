@@ -1,3 +1,13 @@
+// ext derived from mrusty @ 1.0.0
+// <https://github.com/anima-engine/mrusty/tree/v1.0.0>
+
+// mrusty. mruby safe bindings for Rust
+// Copyright (C) 2016  Dragoș Tiselice
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #include <mruby-sys/ext.h>
 
 mrb_int mrb_sys_fixnum_to_cint(mrb_value value) { return mrb_fixnum(value); }

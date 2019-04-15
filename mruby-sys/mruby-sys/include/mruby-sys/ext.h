@@ -1,3 +1,13 @@
+// ext derived from mrusty @ 1.0.0
+// <https://github.com/anima-engine/mrusty/tree/v1.0.0>
+
+// mrusty. mruby safe bindings for Rust
+// Copyright (C) 2016  Dragoș Tiselice
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 /**
  * C extension bindings of mruby to make implementing the mruby-sys crate
  * easier. The functions defined in mruby-sys.h are limited to those that are
