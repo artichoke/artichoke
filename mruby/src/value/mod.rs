@@ -1,49 +1,55 @@
 use mruby_sys::*;
 
 use std::ffi::CStr;
-use std::fmt;
 
-mod bool;
+/*mod bool;
 mod i16;
 mod i32;
 mod i64;
 mod i8;
 mod str;
-mod string;
+mod string;*/
 mod types;
-mod u16;
+/*mod u16;
 mod u32;
 mod u64;
 mod u8;
-mod vec;
+mod vec;*/
 
-pub use self::bool::*;
+/*pub use self::bool::*;
 pub use self::i16::*;
 pub use self::i32::*;
 pub use self::i64::*;
 pub use self::i8::*;
 pub use self::str::*;
-pub use self::string::*;
+pub use self::string::*;*/
 pub use self::types::*;
-pub use self::u16::*;
+/*pub use self::u16::*;
 pub use self::u32::*;
 pub use self::u64::*;
-pub use self::u8::*;
+pub use self::u8::*;*/
 
 // We can't impl `fmt::Debug` because `mrb_sys_value_debug_str` requires a
 // `mrb_state` interpreter, which we can't store on the `Value` because we
 // construct it from Rust native types.
-struct Value(mrb_value);
+pub struct Value(mrb_value);
 
 impl Value {
+    pub fn new(inner: mrb_value) -> Self {
+        Self(inner)
+    }
+
+    pub fn inner(&self) -> mrb_value {
+        self.0
+    }
+
     pub fn ruby_type(&self) -> types::Ruby {
         types::Ruby::from(self.0)
     }
 
-    pub fn to_s(&self) -> String {
+    #[allow(dead_code)]
+    pub fn to_s(&self, mrb: *mut mrb_state) -> String {
         unsafe {
-            // TODO: handle null pointer return value
-            let mrb = mrb_open();
             // `mrb_str_to_str` is defined in object.h. This function has
             // specialized to_s implementations for String, Fixnum, Class, and
             // Module. For all other type tags, it calls `to_s` in the
@@ -53,24 +59,13 @@ impl Value {
             let string = CStr::from_ptr(to_s_str)
                 .to_str()
                 .unwrap_or_else(|_| "<unknown>");
-            let owned = string.to_owned();
-            mrb_close(mrb);
-            owned
+            string.to_owned()
         }
     }
-}
 
-trait TryValue {
-    type Error;
-
-    fn try_value(&self, mrb: *mut mrb_state) -> Result<Value, Self::Error>;
-}
-
-impl fmt::Debug for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    #[allow(dead_code)]
+    fn to_s_debug(&self, mrb: *mut mrb_state) -> String {
         let debug = unsafe {
-            // TODO: handle null pointer return value
-            let mrb = mrb_open();
             let debug = mrb_sys_value_debug_str(mrb, self.0);
             let debug_str = mrb_str_to_cstr(mrb, debug);
             let string = CStr::from_ptr(debug_str)
@@ -80,8 +75,14 @@ impl fmt::Debug for Value {
             mrb_close(mrb);
             owned
         };
-        write!(f, "{:?}<{}>", self.ruby_type(), debug)
+        format!("{}<{}>", self.ruby_type().class_name(), debug)
     }
+}
+
+trait TryValue {
+    type Error;
+
+    fn try_value(&self, mrb: *mut mrb_state) -> Result<Value, Self::Error>;
 }
 
 #[allow(dead_code)]

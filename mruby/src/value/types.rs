@@ -1,12 +1,24 @@
 use mruby_sys::*;
+use std::fmt;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Rust {
     Bool,
     SignedInt,
     String,
-    UnsignedInt,
     Vec,
+}
+
+impl fmt::Display for Rust {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "rust ")?;
+        match self {
+            Rust::Bool => write!(f, "bool"),
+            Rust::SignedInt => write!(f, "i64"),
+            Rust::String => write!(f, "String"),
+            Rust::Vec => write!(f, "Vec"),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -23,6 +35,32 @@ pub enum Ruby {
     Object,
     String,
     Symbol,
+}
+
+impl Ruby {
+    pub fn class_name(&self) -> String {
+        match self {
+            Ruby::Array => "Array",
+            Ruby::Bool => "Boolean",
+            Ruby::Class => "Class",
+            Ruby::CPointer => "C Pointer (mruby internal)",
+            Ruby::Exception => "Exception",
+            Ruby::Fixnum => "Fixnum",
+            Ruby::Float => "Float",
+            Ruby::Module => "Module",
+            Ruby::Nil => "NilClass",
+            Ruby::Object => "Object",
+            Ruby::String => "String",
+            Ruby::Symbol => "Symbol",
+        }
+        .to_owned()
+    }
+}
+
+impl fmt::Display for Ruby {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ruby {}", self.class_name())
+    }
 }
 
 impl From<mrb_value> for Ruby {
