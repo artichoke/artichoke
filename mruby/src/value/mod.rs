@@ -2,32 +2,9 @@ use mruby_sys::*;
 
 use std::ffi::CStr;
 
-/*mod bool;
-mod i16;
-mod i32;
-mod i64;
-mod i8;
-mod str;
-mod string;*/
 mod types;
-/*mod u16;
-mod u32;
-mod u64;
-mod u8;
-mod vec;*/
 
-/*pub use self::bool::*;
-pub use self::i16::*;
-pub use self::i32::*;
-pub use self::i64::*;
-pub use self::i8::*;
-pub use self::str::*;
-pub use self::string::*;*/
 pub use self::types::*;
-/*pub use self::u16::*;
-pub use self::u32::*;
-pub use self::u64::*;
-pub use self::u8::*;*/
 
 // We can't impl `fmt::Debug` because `mrb_sys_value_debug_str` requires a
 // `mrb_state` interpreter, which we can't store on the `Value` because we
