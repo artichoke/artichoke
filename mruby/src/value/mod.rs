@@ -62,64 +62,166 @@ struct ConvertError<F, T> {
     to: T,
 }
 
-#[cfg(__nope__)]
+#[cfg(test)]
 mod tests {
+    use mruby_sys::*;
+
+    use crate::convert::*;
     use crate::value::*;
-    use std::convert::TryFrom;
 
     #[test]
     fn to_s_true() {
-        let value = Value::try_from(true).expect("convert");
-        let string = value.to_s();
-        assert_eq!(string, "true");
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, true).expect("convert");
+            let string = value.to_s(mrb);
+            assert_eq!(string, "true");
+
+            mrb_close(mrb);
+        }
     }
 
     #[test]
     fn debug_true() {
-        let value = Value::try_from(true).expect("convert");
-        let debug = format!("{:?}", value);
-        assert_eq!(debug, "Bool<true>");
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, true).expect("convert");
+            let debug = value.to_s_debug(mrb);
+            assert_eq!(debug, "Boolean<true>");
+
+            mrb_close(mrb);
+        }
     }
 
     #[test]
     fn to_s_false() {
-        let value = Value::try_from(false).expect("convert");
-        let string = value.to_s();
-        assert_eq!(string, "false");
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, false).expect("convert");
+            let string = value.to_s(mrb);
+            assert_eq!(string, "false");
+
+            mrb_close(mrb);
+        }
     }
 
     #[test]
     fn debug_false() {
-        let value = Value::try_from(false).expect("convert");
-        let debug = format!("{:?}", value);
-        assert_eq!(debug, "Bool<false>");
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, false).expect("convert");
+            let debug = value.to_s_debug(mrb);
+            assert_eq!(debug, "Boolean<false>");
+
+            mrb_close(mrb);
+        }
     }
 
     #[test]
     fn to_s_nil() {
-        let value = Value::try_from(None as Option<bool>).expect("convert");
-        let string = value.to_s();
-        assert_eq!(string, "");
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, None as Option<i64>).expect("convert");
+            let string = value.to_s(mrb);
+            assert_eq!(string, "");
+
+            mrb_close(mrb);
+        }
     }
 
     #[test]
     fn debug_nil() {
-        let value = Value::try_from(None as Option<bool>).expect("convert");
-        let debug = format!("{:?}", value);
-        assert_eq!(debug, "Nil<nil>");
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, None as Option<i64>).expect("convert");
+            let debug = value.to_s_debug(mrb);
+            assert_eq!(debug, "NilClass<nil>");
+
+            mrb_close(mrb);
+        }
     }
 
     #[test]
-    fn to_s_unsigned_fixnum() {
-        let value = Value::try_from(255_u64).expect("convert");
-        let string = value.to_s();
-        assert_eq!(string, "255");
+    fn to_s_fixnum() {
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, 255).expect("convert");
+            let string = value.to_s(mrb);
+            assert_eq!(string, "255");
+
+            mrb_close(mrb);
+        }
     }
 
     #[test]
-    fn debug_unsigned_fixnum() {
-        let value = Value::try_from(255_u64).expect("convert");
-        let debug = format!("{:?}", value);
-        assert_eq!(debug, "Fixnum<255>");
+    fn debug_fixnum() {
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, 255).expect("convert");
+            let debug = value.to_s_debug(mrb);
+            assert_eq!(debug, "Fixnum<255>");
+
+            mrb_close(mrb);
+        }
+    }
+
+    #[test]
+    fn to_s_string() {
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, "interstate").expect("convert");
+            let string = value.to_s(mrb);
+            assert_eq!(string, "interstate");
+
+            mrb_close(mrb);
+        }
+    }
+
+    #[test]
+    fn debug_string() {
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, "interstate").expect("convert");
+            let debug = value.to_s_debug(mrb);
+            assert_eq!(debug, r#"String<"interstate">"#);
+
+            mrb_close(mrb);
+        }
+    }
+
+    #[test]
+    fn to_s_empty_string() {
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, "").expect("convert");
+            let string = value.to_s(mrb);
+            assert_eq!(string, "");
+
+            mrb_close(mrb);
+        }
+    }
+
+    #[test]
+    fn debug_empty_string() {
+        unsafe {
+            let mrb = mrb_open();
+
+            let value = Value::try_ruby_convert(mrb, "").expect("convert");
+            let debug = value.to_s_debug(mrb);
+            assert_eq!(debug, r#"String<"">"#);
+
+            mrb_close(mrb);
+        }
     }
 }

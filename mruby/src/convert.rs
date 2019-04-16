@@ -9,6 +9,12 @@ mod fixnum;
 mod nilable;
 mod string;
 
+pub use self::array::*;
+pub use self::boolean::*;
+pub use self::fixnum::*;
+pub use self::nilable::*;
+pub use self::string::*;
+
 pub trait TryRuby<From>
 where
     Self: Sized,
