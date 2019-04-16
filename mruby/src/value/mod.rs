@@ -26,11 +26,12 @@ impl Value {
 
     #[allow(dead_code)]
     pub fn to_s(&self, mrb: *mut mrb_state) -> String {
+        let inner = self.inner();
         // `mrb_str_to_str` is defined in object.h. This function has
         // specialized to_s implementations for String, Fixnum, Class, and
         // Module. For all other type tags, it calls `to_s` in the
         // mrb interpreter.
-        let to_s = unsafe { mrb_str_to_str(mrb, self.0) };
+        let to_s = unsafe { mrb_str_to_str(mrb, inner) };
         let cstr = unsafe { mrb_str_to_cstr(mrb, to_s) };
         unsafe { CStr::from_ptr(cstr) }
             .to_str()
@@ -40,26 +41,14 @@ impl Value {
 
     #[allow(dead_code)]
     fn to_s_debug(&self, mrb: *mut mrb_state) -> String {
-        let debug = unsafe { mrb_sys_value_debug_str(mrb, self.0) };
+        let inner = self.inner();
+        let debug = unsafe { mrb_sys_value_debug_str(mrb, inner) };
         let cstr = unsafe { mrb_str_to_cstr(mrb, debug) };
         let string = unsafe { CStr::from_ptr(cstr) }
             .to_str()
             .unwrap_or_else(|_| "<unknown>");
         format!("{}<{}>", self.ruby_type().class_name(), string)
     }
-}
-
-trait TryValue {
-    type Error;
-
-    fn try_value(&self, mrb: *mut mrb_state) -> Result<Value, Self::Error>;
-}
-
-#[allow(dead_code)]
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct ConvertError<F, T> {
-    from: F,
-    to: T,
 }
 
 #[cfg(test)]
