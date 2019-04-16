@@ -26,33 +26,26 @@ impl Value {
 
     #[allow(dead_code)]
     pub fn to_s(&self, mrb: *mut mrb_state) -> String {
-        unsafe {
-            // `mrb_str_to_str` is defined in object.h. This function has
-            // specialized to_s implementations for String, Fixnum, Class, and
-            // Module. For all other type tags, it calls `to_s` in the
-            // mrb interpreter.
-            let to_s = mrb_str_to_str(mrb, self.0);
-            let to_s_str = mrb_str_to_cstr(mrb, to_s);
-            let string = CStr::from_ptr(to_s_str)
-                .to_str()
-                .unwrap_or_else(|_| "<unknown>");
-            string.to_owned()
-        }
+        // `mrb_str_to_str` is defined in object.h. This function has
+        // specialized to_s implementations for String, Fixnum, Class, and
+        // Module. For all other type tags, it calls `to_s` in the
+        // mrb interpreter.
+        let to_s = unsafe { mrb_str_to_str(mrb, self.0) };
+        let cstr = unsafe { mrb_str_to_cstr(mrb, to_s) };
+        unsafe { CStr::from_ptr(cstr) }
+            .to_str()
+            .unwrap_or_else(|_| "<unknown>")
+            .to_owned()
     }
 
     #[allow(dead_code)]
     fn to_s_debug(&self, mrb: *mut mrb_state) -> String {
-        let debug = unsafe {
-            let debug = mrb_sys_value_debug_str(mrb, self.0);
-            let debug_str = mrb_str_to_cstr(mrb, debug);
-            let string = CStr::from_ptr(debug_str)
-                .to_str()
-                .unwrap_or_else(|_| "<unknown>");
-            let owned = string.to_owned();
-            mrb_close(mrb);
-            owned
-        };
-        format!("{}<{}>", self.ruby_type().class_name(), debug)
+        let debug = unsafe { mrb_sys_value_debug_str(mrb, self.0) };
+        let cstr = unsafe { mrb_str_to_cstr(mrb, debug) };
+        let string = unsafe { CStr::from_ptr(cstr) }
+            .to_str()
+            .unwrap_or_else(|_| "<unknown>");
+        format!("{}<{}>", self.ruby_type().class_name(), string)
     }
 }
 
