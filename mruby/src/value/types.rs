@@ -4,6 +4,7 @@ use std::fmt;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Rust {
     Bool,
+    Bytes,
     SignedInt,
     String,
     Vec,
@@ -14,6 +15,7 @@ impl fmt::Display for Rust {
         write!(f, "rust ")?;
         match self {
             Rust::Bool => write!(f, "bool"),
+            Rust::Bytes => write!(f, "&[u8]"),
             Rust::SignedInt => write!(f, "i64"),
             Rust::String => write!(f, "String"),
             Rust::Vec => write!(f, "Vec"),

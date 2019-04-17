@@ -4,12 +4,14 @@ use std::fmt;
 
 mod array;
 mod boolean;
+mod bytes;
 mod fixnum;
 mod nilable;
 mod string;
 
 pub use self::array::*;
 pub use self::boolean::*;
+pub use self::bytes::*;
 pub use self::fixnum::*;
 pub use self::nilable::*;
 pub use self::string::*;

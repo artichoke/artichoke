@@ -97,6 +97,7 @@ mod tests {
             to: Rust::Vec,
         };
         let result = <Vec<i64>>::try_from_mrb(mrb, value).map(|_| ());
+        unsafe { mrb_close(mrb) };
         assert_eq!(result, Err(expected));
     }
 
