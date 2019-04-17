@@ -26,8 +26,13 @@ impl TryFromMrb<&str> for Value {
     fn try_from_mrb(mrb: *mut mrb_state, value: &str) -> Result<Self, Error<Self::From, Self::To>> {
         // mruby has the API `mrb_str_new` which takes a char* and size_t but
         // Rust `CString` does not support &str that contain NUL interior bytes.
+        // To create a Ruby String that has NULs, use `TryFromMrb<&[u8]>` or
+        // `TryFromMrb<Vec<u8>>`.
         match CString::new(value) {
-            Ok(cstr) => Ok(Self::new(unsafe { mrb_str_new_cstr(mrb, cstr.as_ptr()) })),
+            Ok(cstr) => {
+                let ptr = cstr.as_ptr();
+                Ok(Self::new(unsafe { mrb_str_new_cstr(mrb, ptr) }))
+            }
             Err(_) => Err(Error {
                 from: Rust::String,
                 to: Ruby::String,
