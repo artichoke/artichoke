@@ -4,6 +4,9 @@ use std::ffi::{CStr, CString};
 use crate::convert::{Error, TryFromMrb};
 use crate::value::{Ruby, Rust, Value};
 
+// TODO: document encoding assumptions - can only convert UTF-8 data to a Rust
+// String.
+//
 // TODO: Document danger associated with lifetimes.
 // If the mrb_value lives longer than the `String` or `&str` the mrb_value may
 // point to garbage.
