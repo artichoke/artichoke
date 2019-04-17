@@ -27,7 +27,8 @@ impl TryFromMrb<&[u8]> for Value {
         // mruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
         let raw = value.as_ptr() as *const i8;
-        Ok(Self::new(unsafe { mrb_str_new(mrb, raw, value.len()) }))
+        let len = value.len();
+        Ok(Self::new(unsafe { mrb_str_new(mrb, raw, len) }))
     }
 }
 
