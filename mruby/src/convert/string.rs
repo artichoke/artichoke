@@ -16,8 +16,7 @@ impl TryFromMrb<String> for Value {
         mrb: *mut mrb_state,
         value: String,
     ) -> Result<Self, Error<Self::From, Self::To>> {
-        let value: &str = &value;
-        Self::try_from_mrb(mrb, value)
+        Self::try_from_mrb(mrb, value.as_str())
     }
 }
 impl TryFromMrb<&str> for Value {
@@ -158,7 +157,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         #[quickcheck]
         fn convert_to_str(s: String) -> bool {
-            let s: &str = &s;
+            let s = s.as_str();
             let mrb = unsafe { mrb_open() };
             let value = Value::try_from_mrb(mrb, s);
             let good = match value {
@@ -178,7 +177,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         #[quickcheck]
         fn str_with_value(s: String) -> bool {
-            let s: &str = &s;
+            let s = s.as_str();
             let mrb = unsafe { mrb_open() };
             let value = Value::try_from_mrb(mrb, s);
             let good = match value {

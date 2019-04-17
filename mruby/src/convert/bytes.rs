@@ -16,8 +16,7 @@ impl TryFromMrb<Vec<u8>> for Value {
         mrb: *mut mrb_state,
         value: Vec<u8>,
     ) -> Result<Self, Error<Self::From, Self::To>> {
-        let value: &[u8] = &value;
-        Self::try_from_mrb(mrb, value)
+        Self::try_from_mrb(mrb, value.as_slice())
     }
 }
 impl TryFromMrb<&[u8]> for Value {
@@ -128,7 +127,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         #[quickcheck]
         fn convert_to_slice(v: Vec<u8>) -> bool {
-            let v: &[u8] = &v;
+            let v = v.as_slice();
             let mrb = unsafe { mrb_open() };
             let value = Value::try_from_mrb(mrb, v).expect("convert");
             let good = value.ruby_type() == Ruby::String;
@@ -139,7 +138,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         #[quickcheck]
         fn slice_with_value(v: Vec<u8>) -> bool {
-            let v: &[u8] = &v;
+            let v = v.as_slice();
             let mrb = unsafe { mrb_open() };
             let value = Value::try_from_mrb(mrb, v).expect("convert");
             let inner = value.inner();
