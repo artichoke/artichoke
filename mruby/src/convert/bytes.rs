@@ -4,6 +4,10 @@ use std::convert::TryFrom;
 use crate::convert::{Error, TryFromMrb};
 use crate::value::{Ruby, Rust, Value};
 
+// TODO: Document danger associated with lifetimes.
+// If the mrb_value lives longer than the `Vec<u8>` or `&[u8]` the mrb_value
+// may point to garbage.
+
 impl TryFromMrb<Vec<u8>> for Value {
     type From = Rust;
     type To = Ruby;

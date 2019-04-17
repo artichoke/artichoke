@@ -4,6 +4,10 @@ use std::ffi::{CStr, CString};
 use crate::convert::{Error, TryFromMrb};
 use crate::value::{Ruby, Rust, Value};
 
+// TODO: Document danger associated with lifetimes.
+// If the mrb_value lives longer than the `String` or `&str` the mrb_value may
+// point to garbage.
+
 impl TryFromMrb<String> for Value {
     type From = Rust;
     type To = Ruby;
