@@ -2,16 +2,17 @@ use mruby_sys::*;
 use std::convert::TryFrom;
 
 use crate::convert::fixnum::Int;
-use crate::convert::{Error, RubyToRustError, RustToRubyError, TryRuby};
+use crate::convert::{Error, TryFromMrb};
 use crate::value::{Ruby, Rust, Value};
 
-impl TryRuby<Vec<Int>> for Value {
-    type RubyConvertError = RustToRubyError;
+impl TryFromMrb<Vec<Int>> for Value {
+    type From = Rust;
+    type To = Ruby;
 
-    fn try_ruby_convert(
+    fn try_from_mrb(
         mrb: *mut mrb_state,
         value: Vec<Int>,
-    ) -> Result<Self, Self::RubyConvertError> {
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         let size = i64::try_from(value.len()).map_err(|_| Error {
             from: Rust::Vec,
             to: Ruby::Array,
@@ -22,7 +23,7 @@ impl TryRuby<Vec<Int>> for Value {
                 from: Rust::Vec,
                 to: Ruby::Array,
             })?;
-            let ary_item = Self::try_ruby_convert(mrb, *item)?;
+            let ary_item = Self::try_from_mrb(mrb, *item)?;
             let inner = ary_item.inner();
             unsafe { mrb_ary_set(mrb, array, idx, inner) };
         }
@@ -30,10 +31,14 @@ impl TryRuby<Vec<Int>> for Value {
     }
 }
 
-impl TryRuby<Value> for Vec<Int> {
-    type RubyConvertError = RubyToRustError;
+impl TryFromMrb<Value> for Vec<Int> {
+    type From = Ruby;
+    type To = Rust;
 
-    fn try_ruby_convert(mrb: *mut mrb_state, value: Value) -> Result<Self, Self::RubyConvertError> {
+    fn try_from_mrb(
+        mrb: *mut mrb_state,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
             Ruby::Array => {
                 let inner = value.inner();
@@ -49,7 +54,7 @@ impl TryRuby<Value> for Vec<Int> {
                         to: Rust::Vec,
                     })?;
                     let item = Value::new(unsafe { mrb_ary_ref(mrb, inner, idx) });
-                    vec.push(Int::try_ruby_convert(mrb, item)?);
+                    vec.push(Int::try_from_mrb(mrb, item)?);
                 }
                 Ok(vec)
             }
@@ -91,19 +96,19 @@ mod tests {
             from: Ruby::Bool,
             to: Rust::Vec,
         };
-        let result = <Vec<i64>>::try_ruby_convert(mrb, value).map(|_| ());
+        let result = <Vec<i64>>::try_from_mrb(mrb, value).map(|_| ());
         assert_eq!(result, Err(expected));
     }
 
     #[allow(clippy::needless_pass_by_value)]
     fn convert_to_value<T>(v: Vec<T>) -> bool
     where
-        T: Clone + PartialEq + TryRuby<Value, RubyConvertError = RubyToRustError>,
-        Value: TryRuby<Vec<T>, RubyConvertError = RustToRubyError>,
-        Vec<T>: Clone + TryRuby<Value, RubyConvertError = RubyToRustError>,
+        T: Clone + PartialEq + TryFromMrb<Value, From = Ruby, To = Rust>,
+        Value: TryFromMrb<Vec<T>, From = Rust, To = Ruby>,
+        Vec<T>: Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
     {
         let mrb = unsafe { mrb_open() };
-        let value = match Value::try_ruby_convert(mrb, v.clone()) {
+        let value = match Value::try_from_mrb(mrb, v.clone()) {
             Ok(value) => value,
             // we don't care about inner conversion failures for `T`
             Err(_) => return true,
@@ -118,17 +123,17 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     fn roundtrip<T>(v: Vec<T>) -> bool
     where
-        T: Clone + PartialEq + TryRuby<Value, RubyConvertError = RubyToRustError>,
-        Value: TryRuby<Vec<T>, RubyConvertError = RustToRubyError>,
-        Vec<T>: Clone + TryRuby<Value, RubyConvertError = RubyToRustError>,
+        T: Clone + PartialEq + TryFromMrb<Value, From = Ruby, To = Rust>,
+        Value: TryFromMrb<Vec<T>, From = Rust, To = Ruby>,
+        Vec<T>: Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
     {
         let mrb = unsafe { mrb_open() };
-        let value = match Value::try_ruby_convert(mrb, v.clone()) {
+        let value = match Value::try_from_mrb(mrb, v.clone()) {
             Ok(value) => value,
             // we don't care about inner conversion failures for `T`
             Err(_) => return true,
         };
-        let good = <Vec<T>>::try_ruby_convert(mrb, value).expect("convert") == v;
+        let good = <Vec<T>>::try_from_mrb(mrb, value).expect("convert") == v;
         unsafe { mrb_close(mrb) };
         good
     }

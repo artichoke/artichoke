@@ -3,4 +3,5 @@
 mod convert;
 mod value;
 
-// pub use self::value::*;
+pub use self::convert::*;
+pub use self::value::*;

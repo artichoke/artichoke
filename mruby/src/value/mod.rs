@@ -1,5 +1,6 @@
 use mruby_sys::*;
 
+#[cfg(test)]
 use std::ffi::CStr;
 
 mod types;
@@ -24,7 +25,7 @@ impl Value {
         types::Ruby::from(self.0)
     }
 
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn to_s(&self, mrb: *mut mrb_state) -> String {
         let inner = self.inner();
         // `mrb_str_to_str` is defined in object.h. This function has
@@ -39,7 +40,7 @@ impl Value {
             .to_owned()
     }
 
-    #[allow(dead_code)]
+    #[cfg(test)]
     fn to_s_debug(&self, mrb: *mut mrb_state) -> String {
         let inner = self.inner();
         let debug = unsafe { mrb_sys_value_debug_str(mrb, inner) };
@@ -63,7 +64,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, true).expect("convert");
+            let value = Value::try_from_mrb(mrb, true).expect("convert");
             let string = value.to_s(mrb);
             assert_eq!(string, "true");
 
@@ -76,7 +77,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, true).expect("convert");
+            let value = Value::try_from_mrb(mrb, true).expect("convert");
             let debug = value.to_s_debug(mrb);
             assert_eq!(debug, "Boolean<true>");
 
@@ -89,7 +90,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, false).expect("convert");
+            let value = Value::try_from_mrb(mrb, false).expect("convert");
             let string = value.to_s(mrb);
             assert_eq!(string, "false");
 
@@ -102,7 +103,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, false).expect("convert");
+            let value = Value::try_from_mrb(mrb, false).expect("convert");
             let debug = value.to_s_debug(mrb);
             assert_eq!(debug, "Boolean<false>");
 
@@ -115,7 +116,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, None as Option<i64>).expect("convert");
+            let value = Value::try_from_mrb(mrb, None as Option<i64>).expect("convert");
             let string = value.to_s(mrb);
             assert_eq!(string, "");
 
@@ -128,7 +129,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, None as Option<i64>).expect("convert");
+            let value = Value::try_from_mrb(mrb, None as Option<i64>).expect("convert");
             let debug = value.to_s_debug(mrb);
             assert_eq!(debug, "NilClass<nil>");
 
@@ -141,7 +142,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, 255).expect("convert");
+            let value = Value::try_from_mrb(mrb, 255).expect("convert");
             let string = value.to_s(mrb);
             assert_eq!(string, "255");
 
@@ -154,7 +155,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, 255).expect("convert");
+            let value = Value::try_from_mrb(mrb, 255).expect("convert");
             let debug = value.to_s_debug(mrb);
             assert_eq!(debug, "Fixnum<255>");
 
@@ -167,7 +168,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, "interstate").expect("convert");
+            let value = Value::try_from_mrb(mrb, "interstate").expect("convert");
             let string = value.to_s(mrb);
             assert_eq!(string, "interstate");
 
@@ -180,7 +181,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, "interstate").expect("convert");
+            let value = Value::try_from_mrb(mrb, "interstate").expect("convert");
             let debug = value.to_s_debug(mrb);
             assert_eq!(debug, r#"String<"interstate">"#);
 
@@ -193,7 +194,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, "").expect("convert");
+            let value = Value::try_from_mrb(mrb, "").expect("convert");
             let string = value.to_s(mrb);
             assert_eq!(string, "");
 
@@ -206,7 +207,7 @@ mod tests {
         unsafe {
             let mrb = mrb_open();
 
-            let value = Value::try_ruby_convert(mrb, "").expect("convert");
+            let value = Value::try_from_mrb(mrb, "").expect("convert");
             let debug = value.to_s_debug(mrb);
             assert_eq!(debug, r#"String<"">"#);
 

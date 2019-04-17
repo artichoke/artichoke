@@ -2,8 +2,6 @@ use mruby_sys::*;
 use std::error;
 use std::fmt;
 
-use crate::value::{Ruby, Rust};
-
 mod array;
 mod boolean;
 mod fixnum;
@@ -16,16 +14,14 @@ pub use self::fixnum::*;
 pub use self::nilable::*;
 pub use self::string::*;
 
-pub type RubyToRustError = Error<Ruby, Rust>;
-pub type RustToRubyError = Error<Rust, Ruby>;
-
-pub trait TryRuby<From>
+pub trait TryFromMrb<T>
 where
     Self: Sized,
 {
-    type RubyConvertError;
+    type From;
+    type To;
 
-    fn try_ruby_convert(mrb: *mut mrb_state, value: From) -> Result<Self, Self::RubyConvertError>;
+    fn try_from_mrb(mrb: *mut mrb_state, value: T) -> Result<Self, Error<Self::From, Self::To>>;
 }
 
 #[derive(Clone, Eq, PartialEq)]
@@ -71,10 +67,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::value::*;
 
     #[test]
     fn ruby_to_rust_error_display() {
-        let err: RubyToRustError = Error {
+        let err = Error {
             from: Ruby::Fixnum,
             to: Rust::Vec,
         };
@@ -86,7 +83,7 @@ mod tests {
 
     #[test]
     fn ruby_to_rust_error_debug() {
-        let err: RubyToRustError = Error {
+        let err = Error {
             from: Ruby::Fixnum,
             to: Rust::Vec,
         };
@@ -98,7 +95,7 @@ mod tests {
 
     #[test]
     fn rust_to_ruby_error_display() {
-        let err: RustToRubyError = Error {
+        let err = Error {
             from: Rust::Bool,
             to: Ruby::String,
         };
@@ -110,7 +107,7 @@ mod tests {
 
     #[test]
     fn rust_to_ruby_error_debug() {
-        let err: RustToRubyError = Error {
+        let err = Error {
             from: Rust::Bool,
             to: Ruby::String,
         };
