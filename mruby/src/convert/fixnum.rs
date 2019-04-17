@@ -37,141 +37,47 @@ impl TryRuby<Value> for Int {
 #[cfg(test)]
 mod tests {
     use mruby_sys::*;
+    use quickcheck_macros::quickcheck;
 
     use super::*;
 
-    const MAX: i64 = Int::max_value() as i64;
-    const MIN: i64 = Int::min_value() as i64;
-    const ZERO: Int = 0;
-
-    #[test]
-    fn try_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = Value::try_ruby_convert(mrb, ZERO).expect("convert");
-            assert_eq!(value.ruby_type(), Ruby::Fixnum);
-            assert_eq!(mrb_sys_fixnum_to_cint(value.inner()), 0);
-
-            let value = Value::try_ruby_convert(mrb, Int::max_value()).expect("convert");
-            assert_eq!(value.ruby_type(), Ruby::Fixnum);
-            assert_eq!(mrb_sys_fixnum_to_cint(value.inner()), MAX);
-
-            let value = Value::try_ruby_convert(mrb, Int::min_value()).expect("convert");
-            assert_eq!(value.ruby_type(), Ruby::Fixnum);
-            assert_eq!(mrb_sys_fixnum_to_cint(value.inner()), MIN);
-
-            mrb_close(mrb);
-        }
+    #[quickcheck]
+    fn convert_to_fixnum(i: Int) -> bool {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::try_ruby_convert(mrb, i).expect("convert");
+        unsafe { mrb_close(mrb) };
+        value.ruby_type() == Ruby::Fixnum
     }
 
-    #[test]
-    fn value_from_zero() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = Value::try_ruby_convert(mrb, ZERO).expect("convert");
-            assert_eq!(value.ruby_type(), Ruby::Fixnum);
-            assert_eq!(mrb_sys_fixnum_to_cint(value.inner()), 0);
-
-            mrb_close(mrb);
-        }
+    #[quickcheck]
+    fn fixnum_with_value(i: Int) -> bool {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::try_ruby_convert(mrb, i).expect("convert");
+        let inner = value.inner();
+        let cint = unsafe { mrb_sys_fixnum_to_cint(inner) };
+        unsafe { mrb_close(mrb) };
+        cint == i
     }
 
-    #[test]
-    fn value_from_max() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = Value::try_ruby_convert(mrb, Int::max_value()).expect("convert");
-            assert_eq!(value.ruby_type(), Ruby::Fixnum);
-            assert_eq!(mrb_sys_fixnum_to_cint(value.inner()), MAX);
-
-            mrb_close(mrb);
-        }
+    #[quickcheck]
+    fn roundtrip(i: Int) -> bool {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::try_ruby_convert(mrb, i).expect("convert");
+        let value = Int::try_ruby_convert(mrb, value).expect("convert");
+        unsafe { mrb_close(mrb) };
+        value == i
     }
 
-    #[test]
-    fn value_from_min() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = Value::try_ruby_convert(mrb, Int::min_value()).expect("convert");
-            assert_eq!(value.ruby_type(), Ruby::Fixnum);
-            assert_eq!(mrb_sys_fixnum_to_cint(value.inner()), MIN);
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn int_from_zero_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value =
-                Int::try_ruby_convert(mrb, Value::new(mrb_sys_fixnum_value(0))).expect("convert");
-            assert_eq!(value, ZERO);
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn int_from_max_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value =
-                Int::try_ruby_convert(mrb, Value::new(mrb_sys_fixnum_value(MAX))).expect("convert");
-            assert_eq!(value, Int::max_value());
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn int_from_min_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value =
-                Int::try_ruby_convert(mrb, Value::new(mrb_sys_fixnum_value(MIN))).expect("convert");
-            assert_eq!(value, Int::min_value());
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn err_from_nil_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let err = Int::try_ruby_convert(mrb, Value::new(mrb_sys_nil_value()));
-            let expected = Error {
-                from: Ruby::Nil,
-                to: Rust::SignedInt,
-            };
-            assert_eq!(err, Err(expected));
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn err_from_bool_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let err = Int::try_ruby_convert(mrb, Value::new(mrb_sys_true_value()));
-            let expected = Error {
-                from: Ruby::Bool,
-                to: Rust::SignedInt,
-            };
-            assert_eq!(err, Err(expected));
-
-            mrb_close(mrb);
-        }
+    #[quickcheck]
+    fn roundtrip_err(b: bool) -> bool {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::try_ruby_convert(mrb, b).expect("convert");
+        let value = Int::try_ruby_convert(mrb, value);
+        unsafe { mrb_close(mrb) };
+        let expected = Err(Error {
+            from: Ruby::Bool,
+            to: Rust::SignedInt,
+        });
+        value == expected
     }
 }

@@ -19,6 +19,8 @@ impl TryRuby<&str> for Value {
     type RubyConvertError = RustToRubyError;
 
     fn try_ruby_convert(mrb: *mut mrb_state, value: &str) -> Result<Self, Self::RubyConvertError> {
+        // mruby has the API `mrb_str_new` which takes a char* and size_t but
+        // Rust `CString` does not support &str that contain NUL interior bytes.
         match CString::new(value) {
             Ok(cstr) => Ok(Self::new(unsafe { mrb_str_new_cstr(mrb, cstr.as_ptr()) })),
             Err(_) => Err(Error {
@@ -56,96 +58,134 @@ impl TryRuby<Value> for String {
 #[cfg(test)]
 mod tests {
     use mruby_sys::*;
+    use quickcheck_macros::quickcheck;
 
     use super::*;
 
-    #[test]
-    fn try_value_from_string() {
-        unsafe {
-            let mrb = mrb_open();
+    mod string {
+        use super::*;
 
-            let value = "rust-mruby-bindings".to_owned();
-            let value = Value::try_ruby_convert(mrb, value).expect("convert");
-            let to_s = value.to_s(mrb);
-            assert_eq!(value.ruby_type(), Ruby::String);
-            assert_eq!(&to_s, "rust-mruby-bindings");
+        #[allow(clippy::needless_pass_by_value)]
+        #[quickcheck]
+        fn convert_to_string(s: String) -> bool {
+            let mrb = unsafe { mrb_open() };
+            let value = Value::try_ruby_convert(mrb, s.clone());
+            let good = match value {
+                Ok(value) => value.ruby_type() == Ruby::String,
+                Err(err) => {
+                    let expected = Error {
+                        from: Rust::String,
+                        to: Ruby::String,
+                    };
+                    s.contains('\u{0}') && err == expected
+                }
+            };
+            unsafe { mrb_close(mrb) };
+            good
+        }
 
-            mrb_close(mrb);
+        #[allow(clippy::needless_pass_by_value)]
+        #[quickcheck]
+        fn string_with_value(s: String) -> bool {
+            let mrb = unsafe { mrb_open() };
+            let value = Value::try_ruby_convert(mrb, s.clone());
+            let good = match value {
+                Ok(value) => {
+                    let to_s = value.to_s(mrb);
+                    to_s == s
+                }
+                Err(err) => {
+                    let expected = Error {
+                        from: Rust::String,
+                        to: Ruby::String,
+                    };
+                    s.contains('\u{0}') && err == expected
+                }
+            };
+            unsafe { mrb_close(mrb) };
+            good
+        }
+
+        #[allow(clippy::needless_pass_by_value)]
+        #[quickcheck]
+        fn roundtrip(s: String) -> bool {
+            let mrb = unsafe { mrb_open() };
+            let value = Value::try_ruby_convert(mrb, s.clone());
+            let good = match value {
+                Ok(value) => {
+                    let value = String::try_ruby_convert(mrb, value).expect("convert");
+                    value == s
+                }
+                Err(err) => {
+                    let expected = Error {
+                        from: Rust::String,
+                        to: Ruby::String,
+                    };
+                    s.contains('\u{0}') && err == expected
+                }
+            };
+            unsafe { mrb_close(mrb) };
+            good
+        }
+
+        #[quickcheck]
+        fn roundtrip_err(b: bool) -> bool {
+            let mrb = unsafe { mrb_open() };
+            let value = Value::try_ruby_convert(mrb, b).expect("convert");
+            let value = String::try_ruby_convert(mrb, value);
+            unsafe { mrb_close(mrb) };
+            let expected = Err(Error {
+                from: Ruby::Bool,
+                to: Rust::String,
+            });
+            value == expected
         }
     }
 
-    #[test]
-    fn try_value_from_empty_string() {
-        unsafe {
-            let mrb = mrb_open();
+    mod str {
+        use super::*;
 
-            let value = "".to_owned();
-            let value = Value::try_ruby_convert(mrb, value).expect("convert");
-            let to_s = value.to_s(mrb);
-            assert_eq!(value.ruby_type(), Ruby::String);
-            assert_eq!(&to_s, "");
-
-            mrb_close(mrb);
+        #[allow(clippy::needless_pass_by_value)]
+        #[quickcheck]
+        fn convert_to_str(s: String) -> bool {
+            let s: &str = &s;
+            let mrb = unsafe { mrb_open() };
+            let value = Value::try_ruby_convert(mrb, s);
+            let good = match value {
+                Ok(value) => value.ruby_type() == Ruby::String,
+                Err(err) => {
+                    let expected = Error {
+                        from: Rust::String,
+                        to: Ruby::String,
+                    };
+                    s.contains('\u{0}') && err == expected
+                }
+            };
+            unsafe { mrb_close(mrb) };
+            good
         }
-    }
 
-    #[test]
-    fn try_value_from_str() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = "rust-mruby-bindings";
-            let value = Value::try_ruby_convert(mrb, value).expect("convert");
-            let to_s = value.to_s(mrb);
-            assert_eq!(value.ruby_type(), Ruby::String);
-            assert_eq!(&to_s, "rust-mruby-bindings");
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn try_value_from_empty_str() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = "";
-            let value = Value::try_ruby_convert(mrb, value).expect("convert");
-            let to_s = value.to_s(mrb);
-            assert_eq!(value.ruby_type(), Ruby::String);
-            assert_eq!(&to_s, "");
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn string_from_value() {
-        unsafe {
-            let mrb = mrb_open();
-            let context = mrbc_context_new(mrb);
-
-            let code = "'rust-mruby-bindings'";
-            let value = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-            let vec = String::try_ruby_convert(mrb, Value::new(value)).expect("convert");
-            assert_eq!(vec, "rust-mruby-bindings".to_owned());
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn string_from_empty_value() {
-        unsafe {
-            let mrb = mrb_open();
-            let context = mrbc_context_new(mrb);
-
-            let code = "''";
-            let value = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-            let vec = String::try_ruby_convert(mrb, Value::new(value)).expect("convert");
-            assert_eq!(vec, "".to_owned());
-
-            mrb_close(mrb);
+        #[allow(clippy::needless_pass_by_value)]
+        #[quickcheck]
+        fn str_with_value(s: String) -> bool {
+            let s: &str = &s;
+            let mrb = unsafe { mrb_open() };
+            let value = Value::try_ruby_convert(mrb, s);
+            let good = match value {
+                Ok(value) => {
+                    let to_s = value.to_s(mrb);
+                    to_s == s
+                }
+                Err(err) => {
+                    let expected = Error {
+                        from: Rust::String,
+                        to: Ruby::String,
+                    };
+                    s.contains('\u{0}') && err == expected
+                }
+            };
+            unsafe { mrb_close(mrb) };
+            good
         }
     }
 }

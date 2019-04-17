@@ -33,65 +33,76 @@ impl TryRuby<Value> for Option<Int> {
 mod tests {
     use mruby_sys::*;
 
-    use super::*;
+    use crate::convert::*;
+    use crate::value::*;
 
-    #[test]
-    fn try_value_from_some() {
-        unsafe {
-            let mrb = mrb_open();
+    mod fixnum {
+        use quickcheck_macros::quickcheck;
 
-            let value = Some(100);
-            let value = Value::try_ruby_convert(mrb, value).expect("convert");
-            let to_s = value.to_s(mrb);
-            assert_eq!(value.ruby_type(), Ruby::Fixnum);
-            assert_eq!(&to_s, "100");
+        #[quickcheck]
+        fn convert_to_value(v: Option<i64>) -> bool {
+            super::convert_to_value(v)
+        }
 
-            mrb_close(mrb);
+        #[quickcheck]
+        fn roundtrip(v: Option<i64>) -> bool {
+            super::roundtrip(v)
         }
     }
 
     #[test]
-    fn try_value_from_none() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = None as Option<i64>;
-            let value = Value::try_ruby_convert(mrb, value).expect("convert");
-            let to_s = value.to_s(mrb);
-            assert_eq!(value.ruby_type(), Ruby::Nil);
-            assert_eq!(&to_s, "");
-
-            mrb_close(mrb);
-        }
+    fn fail_covert() {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::new(unsafe { mrb_sys_true_value() });
+        let expected = Error {
+            from: Ruby::Bool,
+            to: Rust::SignedInt,
+        };
+        let result = <Option<i64>>::try_ruby_convert(mrb, value).map(|_| ());
+        assert_eq!(result, Err(expected));
     }
 
-    #[test]
-    fn some_from_value() {
-        unsafe {
-            let mrb = mrb_open();
-            let context = mrbc_context_new(mrb);
-
-            let code = "100";
-            let value = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-            let vec = <Option<i64>>::try_ruby_convert(mrb, Value::new(value)).expect("convert");
-            assert_eq!(vec, Some(100));
-
-            mrb_close(mrb);
-        }
+    fn convert_to_value<T>(v: Option<T>) -> bool
+    where
+        T: Clone + PartialEq + TryRuby<Value, RubyConvertError = RubyToRustError>,
+        Value: TryRuby<Option<T>, RubyConvertError = RustToRubyError>,
+        Option<T>: Clone + TryRuby<Value, RubyConvertError = RubyToRustError>,
+    {
+        let mrb = unsafe { mrb_open() };
+        let value = match Value::try_ruby_convert(mrb, v.clone()) {
+            Ok(value) => value,
+            // we don't care about inner conversion failures for `T`
+            Err(_) => return true,
+        };
+        let good = if let Some(v) = v {
+            T::try_ruby_convert(mrb, value).expect("convert") == v
+        } else {
+            let inner = value.inner();
+            unsafe { mrb_sys_value_is_nil(inner) }
+        };
+        unsafe { mrb_close(mrb) };
+        good
     }
 
-    #[test]
-    fn none_from_nil_value() {
-        unsafe {
-            let mrb = mrb_open();
-            let context = mrbc_context_new(mrb);
-
-            let code = "nil";
-            let value = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-            let vec = <Option<i64>>::try_ruby_convert(mrb, Value::new(value)).expect("convert");
-            assert_eq!(vec, None);
-
-            mrb_close(mrb);
-        }
+    fn roundtrip<T>(v: Option<T>) -> bool
+    where
+        T: Clone + PartialEq + TryRuby<Value, RubyConvertError = RubyToRustError>,
+        Value: TryRuby<Option<T>, RubyConvertError = RustToRubyError>,
+        Option<T>: Clone + TryRuby<Value, RubyConvertError = RubyToRustError>,
+    {
+        let mrb = unsafe { mrb_open() };
+        let value = match Value::try_ruby_convert(mrb, v.clone()) {
+            Ok(value) => value,
+            // we don't care about inner conversion failures for `T`
+            Err(_) => return true,
+        };
+        let good = match v {
+            Some(v) => T::try_ruby_convert(mrb, value).expect("convert") == v,
+            None => <Option<T>>::try_ruby_convert(mrb, value)
+                .expect("convert")
+                .is_none(),
+        };
+        unsafe { mrb_close(mrb) };
+        good
     }
 }

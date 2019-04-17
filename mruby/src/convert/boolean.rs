@@ -48,94 +48,53 @@ impl TryRuby<Value> for bool {
 #[cfg(test)]
 mod tests {
     use mruby_sys::*;
+    use quickcheck_macros::quickcheck;
 
     use super::*;
 
-    #[test]
-    fn value_from_true_bool() {
-        unsafe {
-            let mrb = mrb_open();
+    #[quickcheck]
+    fn convert_to_bool(b: bool) -> bool {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::try_ruby_convert(mrb, b).expect("convert");
+        unsafe { mrb_close(mrb) };
+        value.ruby_type() == Ruby::Bool
+    }
 
-            let value = Value::try_ruby_convert(mrb, true).expect("convert");
-            assert_eq!(value.ruby_type(), Ruby::Bool);
-            assert_eq!(mrb_sys_value_is_nil(value.inner()), false);
-            assert_eq!(mrb_sys_value_is_false(value.inner()), false);
-            assert_eq!(mrb_sys_value_is_true(value.inner()), true);
-
-            mrb_close(mrb);
+    #[quickcheck]
+    fn bool_with_value(b: bool) -> bool {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::try_ruby_convert(mrb, b).expect("convert");
+        let inner = value.inner();
+        let is_false = unsafe { mrb_sys_value_is_false(inner) };
+        let is_true = unsafe { mrb_sys_value_is_true(inner) };
+        let is_nil = unsafe { mrb_sys_value_is_nil(inner) };
+        unsafe { mrb_close(mrb) };
+        if b {
+            is_true && !is_nil
+        } else {
+            is_false && !is_nil
         }
     }
 
-    #[test]
-    fn value_from_false_bool() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = Value::try_ruby_convert(mrb, false).expect("convert");
-            assert_eq!(value.ruby_type(), Ruby::Bool);
-            assert_eq!(mrb_sys_value_is_nil(value.inner()), false);
-            assert_eq!(mrb_sys_value_is_false(value.inner()), true);
-            assert_eq!(mrb_sys_value_is_true(value.inner()), false);
-
-            mrb_close(mrb);
-        }
+    #[quickcheck]
+    fn roundtrip(b: bool) -> bool {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::try_ruby_convert(mrb, b).expect("convert");
+        let value = bool::try_ruby_convert(mrb, value).expect("convert");
+        unsafe { mrb_close(mrb) };
+        value == b
     }
 
-    #[test]
-    fn bool_from_true_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value =
-                bool::try_ruby_convert(mrb, Value::new(mrb_sys_true_value())).expect("convert");
-            assert_eq!(value, true);
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn bool_from_false_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value =
-                bool::try_ruby_convert(mrb, Value::new(mrb_sys_false_value())).expect("convert");
-            assert_eq!(value, false);
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn err_from_nil_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let err = bool::try_ruby_convert(mrb, Value::new(mrb_sys_nil_value()));
-            let expected = Error {
-                from: Ruby::Nil,
-                to: Rust::Bool,
-            };
-            assert_eq!(err, Err(expected));
-
-            mrb_close(mrb);
-        }
-    }
-
-    #[test]
-    fn err_from_fixnum_value() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let err = bool::try_ruby_convert(mrb, Value::new(mrb_sys_fixnum_value(17)));
-            let expected = Error {
-                from: Ruby::Fixnum,
-                to: Rust::Bool,
-            };
-            assert_eq!(err, Err(expected));
-
-            mrb_close(mrb);
-        }
+    #[quickcheck]
+    fn roundtrip_err(i: i64) -> bool {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::try_ruby_convert(mrb, i).expect("convert");
+        let value = bool::try_ruby_convert(mrb, value);
+        unsafe { mrb_close(mrb) };
+        let expected = Err(Error {
+            from: Ruby::Fixnum,
+            to: Rust::Bool,
+        });
+        value == expected
     }
 }

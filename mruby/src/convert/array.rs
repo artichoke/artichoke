@@ -64,66 +64,72 @@ impl TryRuby<Value> for Vec<Int> {
 #[cfg(test)]
 mod tests {
     use mruby_sys::*;
+    use std::convert::TryFrom;
 
-    use super::*;
+    use crate::convert::*;
+    use crate::value::*;
 
-    #[test]
-    fn try_value_from_vec() {
-        unsafe {
-            let mrb = mrb_open();
+    mod fixnum {
+        use quickcheck_macros::quickcheck;
 
-            let value = vec![-100, 0, 100];
-            let value = Value::try_ruby_convert(mrb, value).expect("convert");
-            let to_s = value.to_s(mrb);
-            assert_eq!(value.ruby_type(), Ruby::Array);
-            assert_eq!(&to_s, "[-100, 0, 100]");
+        #[quickcheck]
+        fn convert_to_value(v: Vec<i64>) -> bool {
+            super::convert_to_value(v)
+        }
 
-            mrb_close(mrb);
+        #[quickcheck]
+        fn roundtrip(v: Vec<i64>) -> bool {
+            super::roundtrip(v)
         }
     }
 
     #[test]
-    fn try_value_from_empty_vec() {
-        unsafe {
-            let mrb = mrb_open();
-
-            let value = vec![];
-            let value = Value::try_ruby_convert(mrb, value).expect("convert");
-            let to_s = value.to_s(mrb);
-            assert_eq!(value.ruby_type(), Ruby::Array);
-            assert_eq!(&to_s, "[]");
-
-            mrb_close(mrb);
-        }
+    fn fail_covert() {
+        let mrb = unsafe { mrb_open() };
+        let value = Value::new(unsafe { mrb_sys_true_value() });
+        let expected = Error {
+            from: Ruby::Bool,
+            to: Rust::Vec,
+        };
+        let result = <Vec<i64>>::try_ruby_convert(mrb, value).map(|_| ());
+        assert_eq!(result, Err(expected));
     }
 
-    #[test]
-    fn vec_from_value() {
-        unsafe {
-            let mrb = mrb_open();
-            let context = mrbc_context_new(mrb);
-
-            let code = "[-100, 0, 100]";
-            let value = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-            let vec = <Vec<i64>>::try_ruby_convert(mrb, Value::new(value)).expect("convert");
-            assert_eq!(vec, vec![-100, 0, 100]);
-
-            mrb_close(mrb);
-        }
+    #[allow(clippy::needless_pass_by_value)]
+    fn convert_to_value<T>(v: Vec<T>) -> bool
+    where
+        T: Clone + PartialEq + TryRuby<Value, RubyConvertError = RubyToRustError>,
+        Value: TryRuby<Vec<T>, RubyConvertError = RustToRubyError>,
+        Vec<T>: Clone + TryRuby<Value, RubyConvertError = RubyToRustError>,
+    {
+        let mrb = unsafe { mrb_open() };
+        let value = match Value::try_ruby_convert(mrb, v.clone()) {
+            Ok(value) => value,
+            // we don't care about inner conversion failures for `T`
+            Err(_) => return true,
+        };
+        let inner = value.inner();
+        let size = i64::try_from(v.len()).expect("vec size");
+        let good = unsafe { mrb_sys_ary_len(inner) } == size;
+        unsafe { mrb_close(mrb) };
+        good
     }
 
-    #[test]
-    fn empty_vec_from_value() {
-        unsafe {
-            let mrb = mrb_open();
-            let context = mrbc_context_new(mrb);
-
-            let code = "[]";
-            let value = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-            let vec = <Vec<i64>>::try_ruby_convert(mrb, Value::new(value)).expect("convert");
-            assert_eq!(vec, vec![]);
-
-            mrb_close(mrb);
-        }
+    #[allow(clippy::needless_pass_by_value)]
+    fn roundtrip<T>(v: Vec<T>) -> bool
+    where
+        T: Clone + PartialEq + TryRuby<Value, RubyConvertError = RubyToRustError>,
+        Value: TryRuby<Vec<T>, RubyConvertError = RustToRubyError>,
+        Vec<T>: Clone + TryRuby<Value, RubyConvertError = RubyToRustError>,
+    {
+        let mrb = unsafe { mrb_open() };
+        let value = match Value::try_ruby_convert(mrb, v.clone()) {
+            Ok(value) => value,
+            // we don't care about inner conversion failures for `T`
+            Err(_) => return true,
+        };
+        let good = <Vec<T>>::try_ruby_convert(mrb, value).expect("convert") == v;
+        unsafe { mrb_close(mrb) };
+        good
     }
 }
