@@ -25,8 +25,7 @@ impl Drop for Mrb {
 impl Mrb {
     pub fn new() -> Result<Self, MrbError> {
         let mrb = unsafe { mrb_open() };
-        let null = std::ptr::null::<mrb_state>() as *mut mrb_state;
-        if mrb == null {
+        if mrb.is_null() {
             Err(MrbError::New)
         } else {
             Ok(Self { mrb: Some(mrb) })
