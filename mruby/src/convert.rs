@@ -26,7 +26,10 @@ where
     type From;
     type To;
 
-    fn try_from_mrb(mrb: *mut mrb_state, value: T) -> Result<Self, Error<Self::From, Self::To>>;
+    unsafe fn try_from_mrb(
+        mrb: *mut mrb_state,
+        value: T,
+    ) -> Result<Self, Error<Self::From, Self::To>>;
 }
 
 #[derive(Clone, Eq, PartialEq)]

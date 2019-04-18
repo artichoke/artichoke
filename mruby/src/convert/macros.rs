@@ -1,11 +1,12 @@
 #[macro_export]
 macro_rules! mrb_vec_impl {
     ($type:ty as $wrapper_module:ident) => {
+        #[allow(clippy::use_self)]
         impl $crate::TryFromMrb<std::vec::Vec<$type>> for $crate::Value {
             type From = $crate::Rust;
             type To = $crate::Ruby;
 
-            fn try_from_mrb(
+            unsafe fn try_from_mrb(
                 mrb: *mut $crate::sys::mrb_state,
                 value: Vec<$type>,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
@@ -14,7 +15,7 @@ macro_rules! mrb_vec_impl {
                     from: $crate::Rust::Vec,
                     to: $crate::Ruby::Array,
                 })?;
-                let array = unsafe { $crate::sys::mrb_ary_new_capa(mrb, size) };
+                let array = $crate::sys::mrb_ary_new_capa(mrb, size);
                 for (i, item) in value.into_iter().enumerate() {
                     let idx = i64::try_from(i).map_err(|_| $crate::convert::Error {
                         from: $crate::Rust::Vec,
@@ -22,17 +23,18 @@ macro_rules! mrb_vec_impl {
                     })?;
                     let ary_item = Self::try_from_mrb(mrb, item)?;
                     let inner = ary_item.inner();
-                    unsafe { $crate::sys::mrb_ary_set(mrb, array, idx, inner) };
+                    $crate::sys::mrb_ary_set(mrb, array, idx, inner);
                 }
                 Ok(Self::new(array))
             }
         }
 
+        #[allow(clippy::use_self)]
         impl $crate::TryFromMrb<$crate::Value> for Vec<$type> {
             type From = $crate::Ruby;
             type To = $crate::Rust;
 
-            fn try_from_mrb(
+            unsafe fn try_from_mrb(
                 mrb: *mut $crate::sys::mrb_state,
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
@@ -40,7 +42,7 @@ macro_rules! mrb_vec_impl {
                 match value.ruby_type() {
                     $crate::Ruby::Array => {
                         let inner = value.inner();
-                        let len = unsafe { $crate::sys::mrb_sys_ary_len(inner) };
+                        let len = $crate::sys::mrb_sys_ary_len(inner);
                         let cap = usize::try_from(len).map_err(|_| $crate::convert::Error {
                             from: $crate::Ruby::Array,
                             to: $crate::Rust::Vec,
@@ -51,9 +53,8 @@ macro_rules! mrb_vec_impl {
                                 from: $crate::Ruby::Array,
                                 to: $crate::Rust::Vec,
                             })?;
-                            let item = $crate::Value::new(unsafe {
-                                $crate::sys::mrb_ary_ref(mrb, inner, idx)
-                            });
+                            let item =
+                                $crate::Value::new($crate::sys::mrb_ary_ref(mrb, inner, idx));
                             vec.push(<$type>::try_from_mrb(mrb, item)?);
                         }
                         Ok(vec)
@@ -76,15 +77,17 @@ macro_rules! mrb_vec_impl {
 
             #[test]
             fn fail_covert() {
-                let mrb = unsafe { mrb_open() };
-                let value = Value::new(unsafe { mrb_sys_true_value() });
-                let expected = Error {
-                    from: Ruby::Bool,
-                    to: Rust::Vec,
-                };
-                let result = <Vec<i64>>::try_from_mrb(mrb, value).map(|_| ());
-                unsafe { mrb_close(mrb) };
-                assert_eq!(result, Err(expected));
+                unsafe {
+                    let mrb = mrb_open();
+                    let value = Value::new(mrb_sys_true_value());
+                    let expected = Error {
+                        from: Ruby::Bool,
+                        to: Rust::Vec,
+                    };
+                    let result = <Vec<i64>>::try_from_mrb(mrb, value).map(|_| ());
+                    mrb_close(mrb);
+                    assert_eq!(result, Err(expected));
+                }
             }
 
             #[allow(clippy::needless_pass_by_value)]
@@ -95,17 +98,19 @@ macro_rules! mrb_vec_impl {
                 Value: TryFromMrb<Vec<$type>, From = Rust, To = Ruby>,
                 Vec<$type>: Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
             {
-                let mrb = unsafe { mrb_open() };
-                let value = match Value::try_from_mrb(mrb, v.clone()) {
-                    Ok(value) => value,
-                    // we don't care about inner conversion failures for `T`
-                    Err(_) => return true,
-                };
-                let inner = value.inner();
-                let size = i64::try_from(v.len()).expect("vec size");
-                let good = unsafe { mrb_sys_ary_len(inner) } == size;
-                unsafe { mrb_close(mrb) };
-                good
+                unsafe {
+                    let mrb = mrb_open();
+                    let value = match Value::try_from_mrb(mrb, v.clone()) {
+                        Ok(value) => value,
+                        // we don't care about inner conversion failures for `T`
+                        Err(_) => return true,
+                    };
+                    let inner = value.inner();
+                    let size = i64::try_from(v.len()).expect("vec size");
+                    let good = mrb_sys_ary_len(inner) == size;
+                    mrb_close(mrb);
+                    good
+                }
             }
 
             #[allow(clippy::needless_pass_by_value)]
@@ -116,15 +121,17 @@ macro_rules! mrb_vec_impl {
                 Value: TryFromMrb<Vec<$type>, From = Rust, To = Ruby>,
                 Vec<$type>: Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
             {
-                let mrb = unsafe { mrb_open() };
-                let value = match Value::try_from_mrb(mrb, v.clone()) {
-                    Ok(value) => value,
-                    // we don't care about inner conversion failures for `T`
-                    Err(_) => return true,
-                };
-                let good = <Vec<$type>>::try_from_mrb(mrb, value).expect("convert") == v;
-                unsafe { mrb_close(mrb) };
-                good
+                unsafe {
+                    let mrb = mrb_open();
+                    let value = match Value::try_from_mrb(mrb, v.clone()) {
+                        Ok(value) => value,
+                        // we don't care about inner conversion failures for `T`
+                        Err(_) => return true,
+                    };
+                    let good = <Vec<$type>>::try_from_mrb(mrb, value).expect("convert") == v;
+                    mrb_close(mrb);
+                    good
+                }
             }
         }
     };

@@ -38,7 +38,7 @@ impl Mrb {
 
     pub fn bool(&self, b: bool) -> Result<Value, MrbError> {
         if let Some(mrb) = self.mrb {
-            Value::try_from_mrb(mrb, b).map_err(MrbError::Convert)
+            unsafe { Value::try_from_mrb(mrb, b) }.map_err(MrbError::Convert)
         } else {
             Err(MrbError::Closed)
         }
@@ -46,7 +46,7 @@ impl Mrb {
 
     pub fn bytes<T: AsRef<[u8]>>(&self, b: T) -> Result<Value, MrbError> {
         if let Some(mrb) = self.mrb {
-            Value::try_from_mrb(mrb, b.as_ref()).map_err(MrbError::Convert)
+            unsafe { Value::try_from_mrb(mrb, b.as_ref()) }.map_err(MrbError::Convert)
         } else {
             Err(MrbError::Closed)
         }
@@ -54,7 +54,7 @@ impl Mrb {
 
     pub fn fixnum(&self, i: Int) -> Result<Value, MrbError> {
         if let Some(mrb) = self.mrb {
-            Value::try_from_mrb(mrb, i).map_err(MrbError::Convert)
+            unsafe { Value::try_from_mrb(mrb, i) }.map_err(MrbError::Convert)
         } else {
             Err(MrbError::Closed)
         }
@@ -62,7 +62,7 @@ impl Mrb {
 
     pub fn string<T: AsRef<str>>(&self, s: T) -> Result<Value, MrbError> {
         if let Some(mrb) = self.mrb {
-            Value::try_from_mrb(mrb, s.as_ref()).map_err(MrbError::Convert)
+            unsafe { Value::try_from_mrb(mrb, s.as_ref()) }.map_err(MrbError::Convert)
         } else {
             Err(MrbError::Closed)
         }
