@@ -69,6 +69,7 @@ mod tests {
     use quickcheck_macros::quickcheck;
 
     use super::*;
+    use crate::interpreter::*;
 
     mod vec {
         use super::*;
@@ -77,11 +78,9 @@ mod tests {
         #[quickcheck]
         fn convert_to_vec(v: Vec<u8>) -> bool {
             unsafe {
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, v.clone()).expect("convert");
-                let good = value.ruby_type() == Ruby::String;
-                mrb_close(mrb);
-                good
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), v.clone()).expect("convert");
+                value.ruby_type() == Ruby::String
             }
         }
 
@@ -89,14 +88,12 @@ mod tests {
         #[quickcheck]
         fn vec_with_value(v: Vec<u8>) -> bool {
             unsafe {
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, v.clone()).expect("convert");
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), v.clone()).expect("convert");
                 let inner = value.inner();
-                let len = mrb_string_value_len(mrb, inner);
+                let len = mrb_string_value_len(mrb.inner().unwrap(), inner);
                 let len = usize::try_from(len).expect("usize");
-                let good = v.len() == len;
-                mrb_close(mrb);
-                good
+                v.len() == len
             }
         }
 
@@ -104,22 +101,19 @@ mod tests {
         #[quickcheck]
         fn roundtrip(v: Vec<u8>) -> bool {
             unsafe {
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, v.clone()).expect("convert");
-                let value = <Vec<u8>>::try_from_mrb(mrb, value).expect("convert");
-                let good = value == v;
-                mrb_close(mrb);
-                good
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), v.clone()).expect("convert");
+                let value = <Vec<u8>>::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+                value == v
             }
         }
 
         #[quickcheck]
         fn roundtrip_err(b: bool) -> bool {
             unsafe {
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, b).expect("convert");
-                let value = <Vec<u8>>::try_from_mrb(mrb, value);
-                mrb_close(mrb);
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
+                let value = <Vec<u8>>::try_from_mrb(mrb.inner().unwrap(), value);
                 let expected = Err(Error {
                     from: Ruby::Bool,
                     to: Rust::Bytes,
@@ -137,11 +131,9 @@ mod tests {
         fn convert_to_slice(v: Vec<u8>) -> bool {
             unsafe {
                 let v = v.as_slice();
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, v).expect("convert");
-                let good = value.ruby_type() == Ruby::String;
-                mrb_close(mrb);
-                good
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), v).expect("convert");
+                value.ruby_type() == Ruby::String
             }
         }
 
@@ -150,14 +142,12 @@ mod tests {
         fn slice_with_value(v: Vec<u8>) -> bool {
             unsafe {
                 let v = v.as_slice();
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, v).expect("convert");
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), v).expect("convert");
                 let inner = value.inner();
-                let len = mrb_string_value_len(mrb, inner);
+                let len = mrb_string_value_len(mrb.inner().unwrap(), inner);
                 let len = usize::try_from(len).expect("usize");
-                let good = v.len() == len;
-                mrb_close(mrb);
-                good
+                v.len() == len
             }
         }
     }

@@ -44,13 +44,13 @@ mod tests {
     use quickcheck_macros::quickcheck;
 
     use super::*;
+    use crate::interpreter::*;
 
     #[quickcheck]
     fn convert_to_fixnum(i: Int) -> bool {
         unsafe {
-            let mrb = mrb_open();
-            let value = Value::try_from_mrb(mrb, i).expect("convert");
-            mrb_close(mrb);
+            let mrb = Mrb::new().expect("mrb init");
+            let value = Value::try_from_mrb(mrb.inner().unwrap(), i).expect("convert");
             value.ruby_type() == Ruby::Fixnum
         }
     }
@@ -58,11 +58,10 @@ mod tests {
     #[quickcheck]
     fn fixnum_with_value(i: Int) -> bool {
         unsafe {
-            let mrb = mrb_open();
-            let value = Value::try_from_mrb(mrb, i).expect("convert");
+            let mrb = Mrb::new().expect("mrb init");
+            let value = Value::try_from_mrb(mrb.inner().unwrap(), i).expect("convert");
             let inner = value.inner();
             let cint = mrb_sys_fixnum_to_cint(inner);
-            mrb_close(mrb);
             cint == i
         }
     }
@@ -70,10 +69,9 @@ mod tests {
     #[quickcheck]
     fn roundtrip(i: Int) -> bool {
         unsafe {
-            let mrb = mrb_open();
-            let value = Value::try_from_mrb(mrb, i).expect("convert");
-            let value = Int::try_from_mrb(mrb, value).expect("convert");
-            mrb_close(mrb);
+            let mrb = Mrb::new().expect("mrb init");
+            let value = Value::try_from_mrb(mrb.inner().unwrap(), i).expect("convert");
+            let value = Int::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
             value == i
         }
     }
@@ -81,10 +79,9 @@ mod tests {
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
         unsafe {
-            let mrb = mrb_open();
-            let value = Value::try_from_mrb(mrb, b).expect("convert");
-            let value = Int::try_from_mrb(mrb, value);
-            mrb_close(mrb);
+            let mrb = Mrb::new().expect("mrb init");
+            let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
+            let value = Int::try_from_mrb(mrb.inner().unwrap(), value);
             let expected = Err(Error {
                 from: Ruby::Bool,
                 to: Rust::SignedInt,

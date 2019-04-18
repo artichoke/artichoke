@@ -8,6 +8,7 @@ pub struct Mrb {
     mrb: Option<*mut mrb_state>,
 }
 
+#[derive(Clone, Debug)]
 pub enum MrbError {
     Closed,
     Convert(Error<Rust, Ruby>),
@@ -34,6 +35,10 @@ impl Mrb {
 
     pub fn close(self) {
         drop(self)
+    }
+
+    pub unsafe fn inner(&self) -> Option<*mut mrb_state> {
+        self.mrb
     }
 
     pub fn bool(&self, b: bool) -> Result<Value, MrbError> {

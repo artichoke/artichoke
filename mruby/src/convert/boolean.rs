@@ -56,13 +56,13 @@ mod tests {
     use quickcheck_macros::quickcheck;
 
     use super::*;
+    use crate::interpreter::*;
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
         unsafe {
-            let mrb = mrb_open();
-            let value = Value::try_from_mrb(mrb, b).expect("convert");
-            mrb_close(mrb);
+            let mrb = Mrb::new().expect("mrb init");
+            let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
             value.ruby_type() == Ruby::Bool
         }
     }
@@ -70,13 +70,12 @@ mod tests {
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
         unsafe {
-            let mrb = mrb_open();
-            let value = Value::try_from_mrb(mrb, b).expect("convert");
+            let mrb = Mrb::new().expect("mrb init");
+            let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
             let inner = value.inner();
             let is_false = mrb_sys_value_is_false(inner);
             let is_true = mrb_sys_value_is_true(inner);
             let is_nil = mrb_sys_value_is_nil(inner);
-            mrb_close(mrb);
             if b {
                 is_true && !is_nil
             } else {
@@ -88,10 +87,9 @@ mod tests {
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
         unsafe {
-            let mrb = mrb_open();
-            let value = Value::try_from_mrb(mrb, b).expect("convert");
-            let value = bool::try_from_mrb(mrb, value).expect("convert");
-            mrb_close(mrb);
+            let mrb = Mrb::new().expect("mrb init");
+            let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
+            let value = bool::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
             value == b
         }
     }
@@ -99,10 +97,9 @@ mod tests {
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
         unsafe {
-            let mrb = mrb_open();
-            let value = Value::try_from_mrb(mrb, i).expect("convert");
-            let value = bool::try_from_mrb(mrb, value);
-            mrb_close(mrb);
+            let mrb = Mrb::new().expect("mrb init");
+            let value = Value::try_from_mrb(mrb.inner().unwrap(), i).expect("convert");
+            let value = bool::try_from_mrb(mrb.inner().unwrap(), value);
             let expected = Err(Error {
                 from: Ruby::Fixnum,
                 to: Rust::Bool,

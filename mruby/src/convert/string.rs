@@ -77,10 +77,10 @@ impl TryFromMrb<Value> for String {
 
 #[cfg(test)]
 mod tests {
-    use mruby_sys::*;
     use quickcheck_macros::quickcheck;
 
     use super::*;
+    use crate::interpreter::*;
 
     mod string {
         use super::*;
@@ -89,9 +89,9 @@ mod tests {
         #[quickcheck]
         fn convert_to_string(s: String) -> bool {
             unsafe {
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, s.clone());
-                let good = match value {
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), s.clone());
+                match value {
                     Ok(value) => value.ruby_type() == Ruby::String,
                     Err(err) => {
                         let expected = Error {
@@ -100,9 +100,7 @@ mod tests {
                         };
                         s.contains('\u{0}') && err == expected
                     }
-                };
-                mrb_close(mrb);
-                good
+                }
             }
         }
 
@@ -110,11 +108,11 @@ mod tests {
         #[quickcheck]
         fn string_with_value(s: String) -> bool {
             unsafe {
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, s.clone());
-                let good = match value {
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), s.clone());
+                match value {
                     Ok(value) => {
-                        let to_s = value.to_s(mrb);
+                        let to_s = value.to_s(mrb.inner().unwrap());
                         to_s == s
                     }
                     Err(err) => {
@@ -124,9 +122,7 @@ mod tests {
                         };
                         s.contains('\u{0}') && err == expected
                     }
-                };
-                mrb_close(mrb);
-                good
+                }
             }
         }
 
@@ -134,11 +130,12 @@ mod tests {
         #[quickcheck]
         fn roundtrip(s: String) -> bool {
             unsafe {
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, s.clone());
-                let good = match value {
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), s.clone());
+                match value {
                     Ok(value) => {
-                        let value = String::try_from_mrb(mrb, value).expect("convert");
+                        let value =
+                            String::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
                         value == s
                     }
                     Err(err) => {
@@ -148,19 +145,16 @@ mod tests {
                         };
                         s.contains('\u{0}') && err == expected
                     }
-                };
-                mrb_close(mrb);
-                good
+                }
             }
         }
 
         #[quickcheck]
         fn roundtrip_err(b: bool) -> bool {
             unsafe {
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, b).expect("convert");
-                let value = String::try_from_mrb(mrb, value);
-                mrb_close(mrb);
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
+                let value = String::try_from_mrb(mrb.inner().unwrap(), value);
                 let expected = Err(Error {
                     from: Ruby::Bool,
                     to: Rust::String,
@@ -178,9 +172,9 @@ mod tests {
         fn convert_to_str(s: String) -> bool {
             unsafe {
                 let s = s.as_str();
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, s);
-                let good = match value {
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), s);
+                match value {
                     Ok(value) => value.ruby_type() == Ruby::String,
                     Err(err) => {
                         let expected = Error {
@@ -189,9 +183,7 @@ mod tests {
                         };
                         s.contains('\u{0}') && err == expected
                     }
-                };
-                mrb_close(mrb);
-                good
+                }
             }
         }
 
@@ -200,11 +192,11 @@ mod tests {
         fn str_with_value(s: String) -> bool {
             unsafe {
                 let s = s.as_str();
-                let mrb = mrb_open();
-                let value = Value::try_from_mrb(mrb, s);
-                let good = match value {
+                let mrb = Mrb::new().expect("mrb init");
+                let value = Value::try_from_mrb(mrb.inner().unwrap(), s);
+                match value {
                     Ok(value) => {
-                        let to_s = value.to_s(mrb);
+                        let to_s = value.to_s(mrb.inner().unwrap());
                         to_s == s
                     }
                     Err(err) => {
@@ -214,9 +206,7 @@ mod tests {
                         };
                         s.contains('\u{0}') && err == expected
                     }
-                };
-                mrb_close(mrb);
-                good
+                }
             }
         }
     }

@@ -74,19 +74,21 @@ macro_rules! mrb_array_impl {
                 use std::convert::TryFrom;
 
                 use $crate::convert::*;
+                use $crate::interpreter::*;
                 use $crate::value::*;
 
                 #[test]
                 fn fail_convert() {
                     unsafe {
-                        let mrb = mrb_open();
-                        let value = Value::new(mrb_sys_true_value());
+                        let mrb = Mrb::new().expect("mrb init");
+                        let value = mrb.bool(true).expect("convert");
                         let expected = Error {
                             from: Ruby::Bool,
                             to: Rust::Vec,
                         };
-                        let result = <std::vec::Vec<$type>>::try_from_mrb(mrb, value).map(|_| ());
-                        mrb_close(mrb);
+                        let result =
+                            <std::vec::Vec<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
+                                .map(|_| ());
                         assert_eq!(result, Err(expected));
                     }
                 }
@@ -103,17 +105,15 @@ macro_rules! mrb_array_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let mrb = mrb_open();
-                        let value = match Value::try_from_mrb(mrb, v.clone()) {
+                        let mrb = Mrb::new().expect("mrb init");
+                        let value = match Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
                         let inner = value.inner();
                         let size = i64::try_from(v.len()).expect("vec size");
-                        let good = mrb_sys_ary_len(inner) == size;
-                        mrb_close(mrb);
-                        good
+                        mrb_sys_ary_len(inner) == size
                     }
                 }
 
@@ -129,16 +129,15 @@ macro_rules! mrb_array_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let mrb = mrb_open();
-                        let value = match Value::try_from_mrb(mrb, v.clone()) {
+                        let mrb = Mrb::new().expect("mrb init");
+                        let value = match Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
-                        let good =
-                            <std::vec::Vec<$type>>::try_from_mrb(mrb, value).expect("convert") == v;
-                        mrb_close(mrb);
-                        good
+                        <std::vec::Vec<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
+                            .expect("convert")
+                            == v
                     }
                 }
             }
@@ -189,26 +188,27 @@ macro_rules! mrb_nilable_impl {
                 use quickcheck_macros::quickcheck;
 
                 use $crate::convert::*;
+                use $crate::interpreter::*;
                 use $crate::value::*;
 
                 #[test]
                 fn fail_convert() {
                     unsafe {
-                        let mrb = mrb_open();
-                        let context = mrbc_context_new(mrb);
+                        let mrb = Mrb::new().expect("mrb init");
+                        let context = mrbc_context_new(mrb.inner().unwrap());
                         // get a mrb_value that can't be converted to a
                         // primitive type.
                         let code = "Object.new";
                         let value = mrb_load_nstring_cxt(
-                            mrb,
+                            mrb.inner().unwrap(),
                             code.as_ptr() as *const i8,
                             code.len(),
                             context,
                         );
                         let value = Value::new(value);
                         let result =
-                            <std::option::Option<$type>>::try_from_mrb(mrb, value).map(|_| ());
-                        mrb_close(mrb);
+                            <std::option::Option<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
+                                .map(|_| ());
                         assert_eq!(
                             result.map_err(|e| e.from),
                             std::result::Result::Err(Ruby::Object)
@@ -228,20 +228,19 @@ macro_rules! mrb_nilable_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let mrb = mrb_open();
-                        let value = match Value::try_from_mrb(mrb, v.clone()) {
+                        let mrb = Mrb::new().expect("mrb init");
+                        let value = match Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
-                        let good = if let std::option::Option::Some(v) = v {
-                            <$type>::try_from_mrb(mrb, value).expect("convert") == v
+                        if let std::option::Option::Some(v) = v {
+                            <$type>::try_from_mrb(mrb.inner().unwrap(), value).expect("convert")
+                                == v
                         } else {
                             let inner = value.inner();
                             mrb_sys_value_is_nil(inner)
-                        };
-                        mrb_close(mrb);
-                        good
+                        }
                     }
                 }
 
@@ -257,17 +256,15 @@ macro_rules! mrb_nilable_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let mrb = mrb_open();
-                        let value = match Value::try_from_mrb(mrb, v.clone()) {
+                        let mrb = Mrb::new().expect("mrb init");
+                        let value = match Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
-                        let good = <std::option::Option<$type>>::try_from_mrb(mrb, value)
+                        <std::option::Option<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
                             .expect("convert")
-                            == v;
-                        mrb_close(mrb);
-                        good
+                            == v
                     }
                 }
             }
