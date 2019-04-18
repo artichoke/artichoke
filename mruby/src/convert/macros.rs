@@ -10,16 +10,20 @@ macro_rules! mrb_array_impl {
                 mrb: *mut $crate::sys::mrb_state,
                 value: std::vec::Vec<$type>,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                use std::convert::TryFrom;
-                let size = i64::try_from(value.len()).map_err(|_| $crate::convert::Error {
-                    from: $crate::Rust::Vec,
-                    to: $crate::Ruby::Array,
-                })?;
+                let size =
+                    <$crate::convert::fixnum::Int as std::convert::TryFrom<usize>>::try_from(value.len()).map_err(|_| {
+                        $crate::convert::Error {
+                            from: $crate::Rust::Vec,
+                            to: $crate::Ruby::Array,
+                        }
+                    })?;
                 let array = $crate::sys::mrb_ary_new_capa(mrb, size);
                 for (i, item) in value.into_iter().enumerate() {
-                    let idx = i64::try_from(i).map_err(|_| $crate::convert::Error {
-                        from: $crate::Rust::Vec,
-                        to: $crate::Ruby::Array,
+                    let idx = <$crate::convert::fixnum::Int as std::convert::TryFrom<usize>>::try_from(i).map_err(|_| {
+                        $crate::convert::Error {
+                            from: $crate::Rust::Vec,
+                            to: $crate::Ruby::Array,
+                        }
                     })?;
                     let ary_item = Self::try_from_mrb(mrb, item)?;
                     let inner = ary_item.inner();
@@ -38,21 +42,25 @@ macro_rules! mrb_array_impl {
                 mrb: *mut $crate::sys::mrb_state,
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                use std::convert::TryFrom;
                 match value.ruby_type() {
                     $crate::Ruby::Array => {
                         let inner = value.inner();
                         let len = $crate::sys::mrb_sys_ary_len(inner);
-                        let cap = usize::try_from(len).map_err(|_| $crate::convert::Error {
-                            from: $crate::Ruby::Array,
-                            to: $crate::Rust::Vec,
-                        })?;
+                        let cap =
+                            <usize as std::convert::TryFrom<$crate::convert::fixnum::Int>>::try_from(len).map_err(|_| {
+                                $crate::convert::Error {
+                                    from: $crate::Ruby::Array,
+                                    to: $crate::Rust::Vec,
+                                }
+                            })?;
                         let mut vec = Self::with_capacity(cap);
                         for i in 0..cap {
-                            let idx = i64::try_from(i).map_err(|_| $crate::convert::Error {
-                                from: $crate::Ruby::Array,
-                                to: $crate::Rust::Vec,
-                            })?;
+                            let idx = <$crate::convert::fixnum::Int as std::convert::TryFrom<usize>>::try_from(i).map_err(
+                                |_| $crate::convert::Error {
+                                    from: $crate::Ruby::Array,
+                                    to: $crate::Rust::Vec,
+                                },
+                            )?;
                             let item =
                                 $crate::Value::new($crate::sys::mrb_ary_ref(mrb, inner, idx));
                             vec.push(<$type>::try_from_mrb(mrb, item)?);
@@ -106,7 +114,7 @@ macro_rules! mrb_array_impl {
                 {
                     unsafe {
                         let mrb = Mrb::new().expect("mrb init");
-                        let value = match Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
+                        let value = match $crate::Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
@@ -124,13 +132,13 @@ macro_rules! mrb_array_impl {
                     $type: std::clone::Clone
                         + std::cmp::PartialEq
                         + TryFromMrb<Value, From = Ruby, To = Rust>,
-                    Value: TryFromMrb<std::vec::Vec<$type>, From = Rust, To = Ruby>,
+                    $crate::Value: TryFromMrb<std::vec::Vec<$type>, From = Rust, To = Ruby>,
                     std::vec::Vec<$type>:
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
                         let mrb = Mrb::new().expect("mrb init");
-                        let value = match Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
+                        let value = match $crate::Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
@@ -176,7 +184,7 @@ macro_rules! mrb_nilable_impl {
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
                 match value.ruby_type() {
-                    $crate::Ruby::Nil => std::result::Result::Ok(None),
+                    $crate::Ruby::Nil => std::result::Result::Ok(std::option::Option::None),
                     _ => <$type>::try_from_mrb(mrb, value).map(std::option::Option::Some),
                 }
             }
