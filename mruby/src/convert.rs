@@ -2,6 +2,9 @@ use mruby_sys::*;
 use std::error;
 use std::fmt;
 
+#[macro_use]
+pub mod macros;
+
 mod array;
 mod boolean;
 mod bytes;
