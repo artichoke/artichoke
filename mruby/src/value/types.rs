@@ -5,6 +5,7 @@ use std::fmt;
 pub enum Rust {
     Bool,
     Bytes,
+    Float,
     SignedInt,
     String,
     Vec,
@@ -16,6 +17,7 @@ impl fmt::Display for Rust {
         match self {
             Rust::Bool => write!(f, "bool"),
             Rust::Bytes => write!(f, "&[u8]"),
+            Rust::Float => write!(f, "f64"),
             Rust::SignedInt => write!(f, "i64"),
             Rust::String => write!(f, "String"),
             Rust::Vec => write!(f, "Vec"),
