@@ -1,6 +1,7 @@
 #[macro_export]
 macro_rules! mrb_array_impl {
     ($type:ty as $wrapper_module:ident) => {
+        #[allow(clippy::use_self)]
         impl $crate::TryFromMrb<std::vec::Vec<$type>> for $crate::Value {
             type From = $crate::Rust;
             type To = $crate::Ruby;
@@ -121,6 +122,7 @@ macro_rules! mrb_nilable_impl {
         mrb_nilable_impl!($type as $wrapper_module with eq = |a: $type, b: $type| a == b);
     };
     ($type:ty as $wrapper_module:ident with eq = $eq:expr) => {
+        #[allow(clippy::use_self)]
         impl $crate::TryFromMrb<std::option::Option<$type>> for $crate::Value {
             type From = $crate::Rust;
             type To = $crate::Ruby;
@@ -136,6 +138,7 @@ macro_rules! mrb_nilable_impl {
             }
         }
 
+        #[allow(clippy::use_self)]
         impl $crate::TryFromMrb<$crate::Value> for std::option::Option<$type> {
             type From = $crate::Ruby;
             type To = $crate::Rust;
