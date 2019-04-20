@@ -15,6 +15,7 @@ impl File for Container {
     fn require(mrb: &Mrb) {
         extern "C" fn free(_mrb: *mut mrb_state, mut data: *mut ::std::ffi::c_void) {
             unsafe {
+                debug!("preparing to free Container instance");
                 let inner = &mut data as *mut _ as *mut Rc<RefCell<Container>>;
                 debug!("freeing Container instance: {}", (*inner).borrow().inner);
                 // TODO: Find out what the right thing to do here is
@@ -152,5 +153,7 @@ mod tests {
 
             mrbc_context_free(mrb.inner().expect("mrb open"), context);
         }
+        // TODO: Why does this segfault?
+        // mrb.close();
     }
 }
