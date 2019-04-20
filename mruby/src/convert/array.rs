@@ -1,5 +1,10 @@
+use mruby_sys::*;
+use std::convert::TryFrom;
+
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
+use crate::convert::Error;
+use crate::{Ruby, Rust, TryFromMrb, Value};
 
 mrb_array_impl!(bool as bool);
 mrb_array_impl!(Option<bool> as nilable_bool);
@@ -25,3 +30,64 @@ mrb_array_impl!(String as string);
 mrb_array_impl!(Option<String> as nilable_string);
 mrb_array_impl!(Vec<String> as string_array);
 mrb_array_impl!(Vec<Option<String>> as nilable_string_array);
+
+// bail out implementation for mixed-type collections
+impl TryFromMrb<Vec<Value>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    unsafe fn try_from_mrb(
+        mrb: *mut mrb_state,
+        value: Vec<Self>,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
+        let size = Int::try_from(value.len()).map_err(|_| Error {
+            from: Rust::Vec,
+            to: Ruby::Array,
+        })?;
+        let array = mrb_ary_new_capa(mrb, size);
+        for (i, item) in value.into_iter().enumerate() {
+            let idx = Int::try_from(i).map_err(|_| Error {
+                from: Rust::Vec,
+                to: Ruby::Array,
+            })?;
+            let inner = item.inner();
+            mrb_ary_set(mrb, array, idx, inner);
+        }
+        Ok(Self::new(array))
+    }
+}
+
+impl TryFromMrb<Value> for Vec<Value> {
+    type From = Ruby;
+    type To = Rust;
+
+    unsafe fn try_from_mrb(
+        mrb: *mut mrb_state,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
+        match value.ruby_type() {
+            Ruby::Array => {
+                let inner = value.inner();
+                let len = mrb_sys_ary_len(inner);
+                let cap = usize::try_from(len).map_err(|_| Error {
+                    from: Ruby::Array,
+                    to: Rust::Vec,
+                })?;
+                let mut vec = Self::with_capacity(cap);
+                for i in 0..cap {
+                    let idx = Int::try_from(i).map_err(|_| Error {
+                        from: Ruby::Array,
+                        to: Rust::Vec,
+                    })?;
+                    let item = Value::new(mrb_ary_ref(mrb, inner, idx));
+                    vec.push(item);
+                }
+                Ok(vec)
+            }
+            type_tag => Err(Error {
+                from: type_tag,
+                to: Rust::Vec,
+            }),
+        }
+    }
+}
