@@ -10,6 +10,7 @@ mod boolean;
 mod bytes;
 mod fixnum;
 mod float;
+mod hash;
 mod nilable;
 mod string;
 
@@ -18,6 +19,7 @@ pub use self::boolean::*;
 pub use self::bytes::*;
 pub use self::fixnum::*;
 pub use self::float::*;
+pub use self::hash::*;
 pub use self::nilable::*;
 pub use self::string::*;
 
