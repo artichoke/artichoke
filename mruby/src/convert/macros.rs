@@ -9,26 +9,11 @@ macro_rules! mrb_array_impl {
                 mrb: *mut $crate::sys::mrb_state,
                 value: std::vec::Vec<$type>,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                let size =
-                    <$crate::convert::fixnum::Int as std::convert::TryFrom<usize>>::try_from(value.len()).map_err(|_| {
-                        $crate::convert::Error {
-                            from: $crate::Rust::Vec,
-                            to: $crate::Ruby::Array,
-                        }
-                    })?;
-                let array = $crate::sys::mrb_ary_new_capa(mrb, size);
-                for (i, item) in value.into_iter().enumerate() {
-                    let idx = <$crate::convert::fixnum::Int as std::convert::TryFrom<usize>>::try_from(i).map_err(|_| {
-                        $crate::convert::Error {
-                            from: $crate::Rust::Vec,
-                            to: $crate::Ruby::Array,
-                        }
-                    })?;
-                    let ary_item = Self::try_from_mrb(mrb, item)?;
-                    let inner = ary_item.inner();
-                    $crate::sys::mrb_ary_set(mrb, array, idx, inner);
+                let mut values = std::vec::Vec::with_capacity(value.len());
+                for item in value {
+                    values.push($crate::Value::try_from_mrb(mrb, item)?);
                 }
-                std::result::Result::Ok(Self::new(array))
+                $crate::Value::try_from_mrb(mrb, values)
             }
         }
 
@@ -41,36 +26,12 @@ macro_rules! mrb_array_impl {
                 mrb: *mut $crate::sys::mrb_state,
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                match value.ruby_type() {
-                    $crate::Ruby::Array => {
-                        let inner = value.inner();
-                        let len = $crate::sys::mrb_sys_ary_len(inner);
-                        let cap =
-                            <usize as std::convert::TryFrom<$crate::convert::fixnum::Int>>::try_from(len).map_err(|_| {
-                                $crate::convert::Error {
-                                    from: $crate::Ruby::Array,
-                                    to: $crate::Rust::Vec,
-                                }
-                            })?;
-                        let mut vec = Self::with_capacity(cap);
-                        for i in 0..cap {
-                            let idx = <$crate::convert::fixnum::Int as std::convert::TryFrom<usize>>::try_from(i).map_err(
-                                |_| $crate::convert::Error {
-                                    from: $crate::Ruby::Array,
-                                    to: $crate::Rust::Vec,
-                                },
-                            )?;
-                            let item =
-                                $crate::Value::new($crate::sys::mrb_ary_ref(mrb, inner, idx));
-                            vec.push(<$type>::try_from_mrb(mrb, item)?);
-                        }
-                        std::result::Result::Ok(vec)
-                    }
-                    type_tag => std::result::Result::Err($crate::convert::Error {
-                        from: type_tag,
-                        to: $crate::Rust::Vec,
-                    }),
+                let values = <std::vec::Vec<$crate::Value>>::try_from_mrb(mrb, value)?;
+                let mut vec = std::vec::Vec::with_capacity(values.len());
+                for item in values {
+                    vec.push(<$type>::try_from_mrb(mrb, item)?);
                 }
+                std::result::Result::Ok(vec)
             }
         }
 
