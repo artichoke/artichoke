@@ -129,9 +129,7 @@ macro_rules! mrb_nilable_impl {
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
                 match value {
                     std::option::Option::Some(value) => Self::try_from_mrb(mrb, value),
-                    std::option::Option::None => {
-                        std::result::Result::Ok(Self::new($crate::sys::mrb_sys_nil_value()))
-                    }
+                    std::option::Option::None => Self::try_from_mrb(mrb, None as Option<Value>),
                 }
             }
         }
@@ -144,10 +142,13 @@ macro_rules! mrb_nilable_impl {
                 mrb: *mut $crate::sys::mrb_state,
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                match value.ruby_type() {
-                    $crate::Ruby::Nil => std::result::Result::Ok(std::option::Option::None),
-                    _ => <$type>::try_from_mrb(mrb, value).map(std::option::Option::Some),
-                }
+                let value = <std::option::Option<Value>>::try_from_mrb(mrb, value)?;
+                let value = if let std::option::Option::Some(item) = value {
+                    std::option::Option::Some(<$type>::try_from_mrb(mrb, item)?)
+                } else {
+                    std::option::Option::None
+                };
+                std::result::Result::Ok(value)
             }
         }
 
