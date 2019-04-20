@@ -62,7 +62,7 @@ mod tests {
             let value = Value::try_from_mrb(mrb.inner().unwrap(), f).expect("convert");
             let inner = value.inner();
             let cdouble = mrb_sys_float_to_cdouble(inner);
-            cdouble == f
+            (cdouble - f).abs() < std::f64::EPSILON
         }
     }
 
@@ -72,7 +72,7 @@ mod tests {
             let mrb = Mrb::new().expect("mrb init");
             let value = Value::try_from_mrb(mrb.inner().unwrap(), f).expect("convert");
             let value = Float::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
-            value == f
+            (value - f).abs() < std::f64::EPSILON
         }
     }
 

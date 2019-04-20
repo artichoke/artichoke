@@ -156,6 +156,9 @@ macro_rules! mrb_array_impl {
 #[macro_export]
 macro_rules! mrb_nilable_impl {
     ($type:ty as $wrapper_module:ident) => {
+        mrb_nilable_impl!($type as $wrapper_module with eq = |a: $type, b: $type| a == b);
+    };
+    ($type:ty as $wrapper_module:ident with eq = $eq:expr) => {
         #[allow(clippy::use_self)]
         impl $crate::TryFromMrb<std::option::Option<$type>> for $crate::Value {
             type From = $crate::Rust;
@@ -225,6 +228,7 @@ macro_rules! mrb_nilable_impl {
                 }
 
                 #[allow(clippy::clone_on_copy)]
+                #[allow(clippy::redundant_closure_call)]
                 #[quickcheck]
                 fn convert_to_value(v: std::option::Option<$type>) -> bool
                 where
@@ -243,8 +247,8 @@ macro_rules! mrb_nilable_impl {
                             std::result::Result::Err(_) => return true,
                         };
                         if let std::option::Option::Some(v) = v {
-                            <$type>::try_from_mrb(mrb.inner().unwrap(), value).expect("convert")
-                                == v
+                            let value = <$type>::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+                            ($eq)(value, v)
                         } else {
                             let inner = value.inner();
                             mrb_sys_value_is_nil(inner)
@@ -253,6 +257,7 @@ macro_rules! mrb_nilable_impl {
                 }
 
                 #[allow(clippy::clone_on_copy)]
+                #[allow(clippy::redundant_closure_call)]
                 #[quickcheck]
                 fn roundtrip(v: std::option::Option<$type>) -> bool
                 where
@@ -270,9 +275,12 @@ macro_rules! mrb_nilable_impl {
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
-                        <std::option::Option<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
-                            .expect("convert")
-                            == v
+                        let value = <std::option::Option<$type>>::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+                        if value.is_none() && v.is_none() {
+                            true
+                        } else {
+                            ($eq)(value.unwrap(), v.unwrap())
+                        }
                     }
                 }
             }
