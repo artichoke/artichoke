@@ -74,11 +74,12 @@ macro_rules! mrb_array_impl {
                 {
                     unsafe {
                         let mrb = Mrb::new().expect("mrb init");
-                        let value = match $crate::Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
-                            std::result::Result::Ok(value) => value,
-                            // we don't care about inner conversion failures for `T`
-                            std::result::Result::Err(_) => return true,
-                        };
+                        let value =
+                            match $crate::Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
+                                std::result::Result::Ok(value) => value,
+                                // we don't care about inner conversion failures for `T`
+                                std::result::Result::Err(_) => return true,
+                            };
                         let inner = value.inner();
                         let size = i64::try_from(v.len()).expect("vec size");
                         mrb_sys_ary_len(inner) == size
@@ -98,11 +99,12 @@ macro_rules! mrb_array_impl {
                 {
                     unsafe {
                         let mrb = Mrb::new().expect("mrb init");
-                        let value = match $crate::Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
-                            std::result::Result::Ok(value) => value,
-                            // we don't care about inner conversion failures for `T`
-                            std::result::Result::Err(_) => return true,
-                        };
+                        let value =
+                            match $crate::Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
+                                std::result::Result::Ok(value) => value,
+                                // we don't care about inner conversion failures for `T`
+                                std::result::Result::Err(_) => return true,
+                            };
                         <std::vec::Vec<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
                             .expect("convert")
                             == v
