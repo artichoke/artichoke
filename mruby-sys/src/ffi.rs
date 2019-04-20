@@ -10729,6 +10729,11 @@ extern "C" {
     pub fn mrb_sys_data_value(data: *mut RData) -> mrb_value;
 }
 extern "C" {
+    /// Set instance type tag
+    #[link_name = "\u{1}_mrb_sys_set_instance_tt"]
+    pub fn mrb_sys_set_instance_tt(class: *mut RClass, type_: mrb_vtype);
+}
+extern "C" {
     /// Get a C string with the name of the symbol identified by an `mrb_value`
     #[link_name = "\u{1}_mrb_sys_symbol_name"]
     pub fn mrb_sys_symbol_name(

@@ -4,9 +4,13 @@ version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 
+[dependencies]
+log = "0.4.6"
+
 [dependencies.mruby-sys]
 path = "../mruby-sys"
 
 [dev-dependencies]
+env_logger = "0.6.1"
 quickcheck = "0.8"
 quickcheck_macros = "0.8"

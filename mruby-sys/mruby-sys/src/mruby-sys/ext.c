@@ -98,6 +98,12 @@ mrb_value mrb_sys_data_value(struct RData *data) {
   return value;
 }
 
+void mrb_sys_set_instance_tt(struct RClass *class, enum mrb_vtype type) {
+  // `MRB_SET_INSTANCE_TT` is defined as a macro which means bindgen won't find
+  // it, so we wrap it here so we can link to it.
+  MRB_SET_INSTANCE_TT(class, type);
+}
+
 const char *mrb_sys_symbol_name(struct mrb_state *mrb, mrb_value value) {
   return mrb_sym2name(mrb, mrb_symbol(value));
 }

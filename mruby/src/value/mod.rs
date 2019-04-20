@@ -1,6 +1,5 @@
 use mruby_sys::*;
 
-#[cfg(test)]
 use std::ffi::CStr;
 
 mod types;
@@ -25,7 +24,6 @@ impl Value {
         types::Ruby::from(self.0)
     }
 
-    #[cfg(test)]
     pub unsafe fn to_s(&self, mrb: *mut mrb_state) -> String {
         let inner = self.inner();
         // `mrb_str_to_str` is defined in object.h. This function has
@@ -40,14 +38,11 @@ impl Value {
             .to_owned()
     }
 
-    #[cfg(test)]
     pub unsafe fn to_s_debug(&self, mrb: *mut mrb_state) -> String {
         let inner = self.inner();
         let debug = mrb_sys_value_debug_str(mrb, inner);
         let cstr = mrb_str_to_cstr(mrb, debug);
-        let string = CStr::from_ptr(cstr)
-            .to_str()
-            .unwrap_or_else(|_| "<unknown>");
+        let string = CStr::from_ptr(cstr).to_string_lossy();
         format!("{}<{}>", self.ruby_type().class_name(), string)
     }
 }

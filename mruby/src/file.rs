@@ -1,5 +1,5 @@
 use crate::interpreter::Mrb;
 
 pub trait File {
-    fn require(mrb: Mrb);
+    fn require(mrb: &Mrb);
 }

@@ -101,6 +101,11 @@ mrb_value mrb_sys_module_value(struct RClass *module);
 mrb_value mrb_sys_data_value(struct RData *data);
 
 /**
+ * Set instance type tag
+ */
+void mrb_sys_set_instance_tt(struct RClass *class, enum mrb_vtype type);
+
+/**
  * Get a C string with the name of the symbol identified by an `mrb_value`
  */
 const char *mrb_sys_symbol_name(struct mrb_state *mrb, mrb_value value);
