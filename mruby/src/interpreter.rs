@@ -31,7 +31,7 @@ impl Interpreter {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MrbError {
     Convert(Error<Rust, Ruby>),
     New,
@@ -121,5 +121,41 @@ impl MrbApi {
 
     pub fn string<T: AsRef<str>>(&self, s: T) -> Result<Value, MrbError> {
         unsafe { Value::try_from_mrb(self, s.as_ref()) }.map_err(MrbError::Convert)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_user_data_null_pointer() {
+        unsafe {
+            let err = Interpreter::from_user_data(std::ptr::null_mut());
+            assert_eq!(err.err(), Some(MrbError::Uninitialized));
+        }
+    }
+
+    #[test]
+    fn from_user_data_null_user_data() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+            let api = interp.borrow_mut();
+            let mrb = api.mrb();
+            let err = Interpreter::from_user_data(mrb);
+            assert_eq!(err.err(), Some(MrbError::Uninitialized));
+        }
+    }
+
+    #[test]
+    fn from_user_data() {
+        unsafe {
+            let mut interp = Interpreter::create().expect("mrb init");
+            let ptr = &mut interp as *mut _ as *mut std::ffi::c_void;
+            let mrb = interp.borrow_mut().mrb();
+            (*mrb).ud = ptr;
+            let res = Interpreter::from_user_data(mrb);
+            assert!(res.is_ok());
+        }
     }
 }
