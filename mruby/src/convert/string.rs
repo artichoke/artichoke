@@ -23,6 +23,7 @@ impl TryFromMrb<String> for Value {
         Self::try_from_mrb(api, value.as_str())
     }
 }
+
 impl TryFromMrb<&str> for Value {
     type From = Rust;
     type To = Ruby;
