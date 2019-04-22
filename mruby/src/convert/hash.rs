@@ -73,7 +73,7 @@ mod value {
         #[test]
         fn roundtrip_kv() {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let api = interp.borrow_mut();
 
                 let mut map = vec![];

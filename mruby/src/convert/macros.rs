@@ -50,7 +50,7 @@ macro_rules! mrb_array_impl {
                 #[test]
                 fn fail_convert() {
                     unsafe {
-                        let interp = Interpreter::new().expect("mrb init");
+                        let interp = Interpreter::create().expect("mrb init");
                         let api = interp.borrow_mut();
                         let value = api.bool(true).expect("convert");
                         let expected = Error {
@@ -74,7 +74,7 @@ macro_rules! mrb_array_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let interp = Interpreter::new().expect("mrb init");
+                        let interp = Interpreter::create().expect("mrb init");
                         let api = interp.borrow_mut();
                         let value = match $crate::Value::try_from_mrb(&api, v.clone()) {
                             std::result::Result::Ok(value) => value,
@@ -99,7 +99,7 @@ macro_rules! mrb_array_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let interp = Interpreter::new().expect("mrb init");
+                        let interp = Interpreter::create().expect("mrb init");
                         let api = interp.borrow_mut();
                         let value = match $crate::Value::try_from_mrb(&api, v.clone()) {
                             std::result::Result::Ok(value) => value,
@@ -168,7 +168,7 @@ macro_rules! mrb_nilable_impl {
                 #[test]
                 fn fail_convert() {
                     unsafe {
-                        let interp = Interpreter::new().expect("mrb init");
+                        let interp = Interpreter::create().expect("mrb init");
                         let api = interp.borrow_mut();
                         let context = mrbc_context_new(api.mrb());
                         // get a mrb_value that can't be converted to a
@@ -204,7 +204,7 @@ macro_rules! mrb_nilable_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let interp = Interpreter::new().expect("mrb init");
+                        let interp = Interpreter::create().expect("mrb init");
                         let api = interp.borrow_mut();
                         let value = match Value::try_from_mrb(&api, v.clone()) {
                             std::result::Result::Ok(value) => value,
@@ -234,7 +234,7 @@ macro_rules! mrb_nilable_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let interp = Interpreter::new().expect("mrb init");
+                        let interp = Interpreter::create().expect("mrb init");
                         let api = interp.borrow_mut();
                         let value = match Value::try_from_mrb(&api, v.clone()) {
                             std::result::Result::Ok(value) => value,

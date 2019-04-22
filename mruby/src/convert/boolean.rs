@@ -62,7 +62,7 @@ mod tests {
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let mrb = interp.borrow_mut();
             let value = Value::try_from_mrb(&mrb, b).expect("convert");
             value.ruby_type() == Ruby::Bool
@@ -72,7 +72,7 @@ mod tests {
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let mrb = interp.borrow_mut();
             let value = Value::try_from_mrb(&mrb, b).expect("convert");
             let inner = value.inner();
@@ -90,7 +90,7 @@ mod tests {
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let mrb = interp.borrow_mut();
             let value = Value::try_from_mrb(&mrb, b).expect("convert");
             let value = bool::try_from_mrb(&mrb, value).expect("convert");
@@ -101,7 +101,7 @@ mod tests {
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let mrb = interp.borrow_mut();
             let value = Value::try_from_mrb(&mrb, i).expect("convert");
             let value = bool::try_from_mrb(&mrb, value);

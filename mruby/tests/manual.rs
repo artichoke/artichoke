@@ -111,7 +111,7 @@ mod tests {
     fn define_rust_backed_ruby_class() {
         env_logger::Builder::from_env("MRUBY_LOG").init();
 
-        let mut interp = Interpreter::new().expect("mrb init");
+        let mut interp = Interpreter::create().expect("mrb init");
         Container::require(&interp.borrow_mut());
 
         unsafe {

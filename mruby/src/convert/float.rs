@@ -50,7 +50,7 @@ mod tests {
     #[quickcheck]
     fn convert_to_float(f: Float) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
             let value = Value::try_from_mrb(&api, f).expect("convert");
             value.ruby_type() == Ruby::Float
@@ -60,7 +60,7 @@ mod tests {
     #[quickcheck]
     fn float_with_value(f: Float) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
             let value = Value::try_from_mrb(&api, f).expect("convert");
             let inner = value.inner();
@@ -72,7 +72,7 @@ mod tests {
     #[quickcheck]
     fn roundtrip(f: Float) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
             let value = Value::try_from_mrb(&api, f).expect("convert");
             let value = Float::try_from_mrb(&api, value).expect("convert");
@@ -83,7 +83,7 @@ mod tests {
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
             let value = Value::try_from_mrb(&api, b).expect("convert");
             let value = Float::try_from_mrb(&api, value);

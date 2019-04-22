@@ -87,7 +87,7 @@ mod tests {
         #[quickcheck]
         fn convert_to_string(s: String) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let mrb = interp.borrow_mut();
                 let value = Value::try_from_mrb(&mrb, s.clone());
                 match value {
@@ -107,7 +107,7 @@ mod tests {
         #[quickcheck]
         fn string_with_value(s: String) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let mrb = interp.borrow_mut();
                 let value = Value::try_from_mrb(&mrb, s.clone());
                 match value {
@@ -130,7 +130,7 @@ mod tests {
         #[quickcheck]
         fn roundtrip(s: String) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let mrb = interp.borrow_mut();
                 let value = Value::try_from_mrb(&mrb, s.clone());
                 match value {
@@ -152,7 +152,7 @@ mod tests {
         #[quickcheck]
         fn roundtrip_err(b: bool) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let mrb = interp.borrow_mut();
                 let value = Value::try_from_mrb(&mrb, b).expect("convert");
                 let value = String::try_from_mrb(&mrb, value);
@@ -173,7 +173,7 @@ mod tests {
         fn convert_to_str(s: String) -> bool {
             unsafe {
                 let s = s.as_str();
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let mrb = interp.borrow_mut();
                 let value = Value::try_from_mrb(&mrb, s);
                 match value {
@@ -194,7 +194,7 @@ mod tests {
         fn str_with_value(s: String) -> bool {
             unsafe {
                 let s = s.as_str();
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let mrb = interp.borrow_mut();
                 let value = Value::try_from_mrb(&mrb, s);
                 match value {

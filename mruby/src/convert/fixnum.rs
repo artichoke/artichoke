@@ -47,7 +47,7 @@ mod tests {
     #[quickcheck]
     fn convert_to_fixnum(i: Int) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let mrb = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&mrb, i).expect("convert");
@@ -58,7 +58,7 @@ mod tests {
     #[quickcheck]
     fn fixnum_with_value(i: Int) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let mrb = interp.borrow_mut();
             let value = Value::try_from_mrb(&mrb, i).expect("convert");
             let inner = value.inner();
@@ -70,7 +70,7 @@ mod tests {
     #[quickcheck]
     fn roundtrip(i: Int) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let mrb = interp.borrow_mut();
             let value = Value::try_from_mrb(&mrb, i).expect("convert");
             let value = Int::try_from_mrb(&mrb, value).expect("convert");
@@ -81,7 +81,7 @@ mod tests {
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let mrb = interp.borrow_mut();
             let value = Value::try_from_mrb(&mrb, b).expect("convert");
             let value = Int::try_from_mrb(&mrb, value);

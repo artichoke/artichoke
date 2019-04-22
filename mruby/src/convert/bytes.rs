@@ -80,7 +80,7 @@ mod tests {
         #[quickcheck]
         fn convert_to_vec(v: Vec<u8>) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let api = interp.borrow_mut();
                 let value = Value::try_from_mrb(&api, v.clone()).expect("convert");
                 value.ruby_type() == Ruby::String
@@ -91,7 +91,7 @@ mod tests {
         #[quickcheck]
         fn vec_with_value(v: Vec<u8>) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let api = interp.borrow_mut();
                 let value = Value::try_from_mrb(&api, v.clone()).expect("convert");
                 let inner = value.inner();
@@ -105,7 +105,7 @@ mod tests {
         #[quickcheck]
         fn roundtrip(v: Vec<u8>) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let api = interp.borrow_mut();
                 let value = Value::try_from_mrb(&api, v.clone()).expect("convert");
                 let value = <Vec<u8>>::try_from_mrb(&api, value).expect("convert");
@@ -116,7 +116,7 @@ mod tests {
         #[quickcheck]
         fn roundtrip_err(b: bool) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let api = interp.borrow_mut();
                 let value = Value::try_from_mrb(&api, b).expect("convert");
                 let value = <Vec<u8>>::try_from_mrb(&api, value);
@@ -136,7 +136,7 @@ mod tests {
         #[quickcheck]
         fn convert_to_slice(v: Vec<u8>) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let api = interp.borrow_mut();
                 let v = v.as_slice();
                 let value = Value::try_from_mrb(&api, v).expect("convert");
@@ -148,7 +148,7 @@ mod tests {
         #[quickcheck]
         fn slice_with_value(v: Vec<u8>) -> bool {
             unsafe {
-                let interp = Interpreter::new().expect("mrb init");
+                let interp = Interpreter::create().expect("mrb init");
                 let api = interp.borrow_mut();
                 let v = v.as_slice();
                 let value = Value::try_from_mrb(&api, v).expect("convert");

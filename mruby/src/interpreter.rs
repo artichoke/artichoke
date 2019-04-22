@@ -14,7 +14,7 @@ pub type MrbFreeFunc = unsafe extern "C" fn(mrb: *mut mrb_state, arg1: *mut ::st
 pub struct Interpreter;
 
 impl Interpreter {
-    pub fn new() -> Result<Mrb, MrbError> {
+    pub fn create() -> Result<Mrb, MrbError> {
         let api = MrbApi::new()?;
         Ok(Rc::new(RefCell::new(api)))
     }
@@ -86,8 +86,8 @@ impl MrbApi {
             .data_types
             .entry(class.clone())
             .or_insert_with(|| {
-                let class =
-                    CString::new(class.clone()).expect(&format!("class {} to CString", class));
+                let class = CString::new(class.clone())
+                    .unwrap_or_else(|_| panic!("class {} to CString", class));
                 let data_type = mrb_data_type {
                     struct_name: class.as_ptr(),
                     dfree: free,

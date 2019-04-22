@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn to_s_true() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, true).expect("convert");
@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn debug_true() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, true).expect("convert");
@@ -81,7 +81,7 @@ mod tests {
     #[test]
     fn to_s_false() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, false).expect("convert");
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn debug_false() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, false).expect("convert");
@@ -105,7 +105,7 @@ mod tests {
     #[test]
     fn to_s_nil() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, None as Option<Value>).expect("convert");
@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn debug_nil() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, None as Option<Value>).expect("convert");
@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn to_s_fixnum() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, 255).expect("convert");
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn debug_fixnum() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, 255).expect("convert");
@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn to_s_string() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, "interstate").expect("convert");
@@ -165,7 +165,7 @@ mod tests {
     #[test]
     fn debug_string() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, "interstate").expect("convert");
@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn to_s_empty_string() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, "").expect("convert");
@@ -189,7 +189,7 @@ mod tests {
     #[test]
     fn debug_empty_string() {
         unsafe {
-            let interp = Interpreter::new().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
 
             let value = Value::try_from_mrb(&api, "").expect("convert");
