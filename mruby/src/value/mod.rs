@@ -1,6 +1,7 @@
 use mruby_sys::*;
-
 use std::ffi::CStr;
+
+use crate::interpreter::MrbApi;
 
 mod types;
 
@@ -24,24 +25,24 @@ impl Value {
         types::Ruby::from(self.0)
     }
 
-    pub unsafe fn to_s(&self, mrb: *mut mrb_state) -> String {
+    pub unsafe fn to_s(&self, api: &MrbApi) -> String {
         let inner = self.inner();
         // `mrb_str_to_str` is defined in object.h. This function has
         // specialized to_s implementations for String, Fixnum, Class, and
         // Module. For all other type tags, it calls `to_s` in the
         // mrb interpreter.
-        let to_s = mrb_str_to_str(mrb, inner);
-        let cstr = mrb_str_to_cstr(mrb, to_s);
+        let to_s = mrb_str_to_str(api.mrb(), inner);
+        let cstr = mrb_str_to_cstr(api.mrb(), to_s);
         CStr::from_ptr(cstr)
             .to_str()
             .unwrap_or_else(|_| "<unknown>")
             .to_owned()
     }
 
-    pub unsafe fn to_s_debug(&self, mrb: *mut mrb_state) -> String {
+    pub unsafe fn to_s_debug(&self, api: &MrbApi) -> String {
         let inner = self.inner();
-        let debug = mrb_sys_value_debug_str(mrb, inner);
-        let cstr = mrb_str_to_cstr(mrb, debug);
+        let debug = mrb_sys_value_debug_str(api.mrb(), inner);
+        let cstr = mrb_str_to_cstr(api.mrb(), debug);
         let string = CStr::from_ptr(cstr).to_string_lossy();
         format!("{}<{}>", self.ruby_type().class_name(), string)
     }
@@ -49,164 +50,151 @@ impl Value {
 
 #[cfg(test)]
 mod tests {
-    use mruby_sys::*;
-
     use crate::convert::*;
+    use crate::interpreter::*;
     use crate::value::*;
 
     #[test]
     fn to_s_true() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, true).expect("convert");
-            let string = value.to_s(mrb);
+            let value = Value::try_from_mrb(&api, true).expect("convert");
+            let string = value.to_s(&api);
             assert_eq!(string, "true");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn debug_true() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, true).expect("convert");
-            let debug = value.to_s_debug(mrb);
+            let value = Value::try_from_mrb(&api, true).expect("convert");
+            let debug = value.to_s_debug(&api);
             assert_eq!(debug, "Boolean<true>");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn to_s_false() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, false).expect("convert");
-            let string = value.to_s(mrb);
+            let value = Value::try_from_mrb(&api, false).expect("convert");
+            let string = value.to_s(&api);
             assert_eq!(string, "false");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn debug_false() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, false).expect("convert");
-            let debug = value.to_s_debug(mrb);
+            let value = Value::try_from_mrb(&api, false).expect("convert");
+            let debug = value.to_s_debug(&api);
             assert_eq!(debug, "Boolean<false>");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn to_s_nil() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, None as Option<i64>).expect("convert");
-            let string = value.to_s(mrb);
+            let value = Value::try_from_mrb(&api, None as Option<Value>).expect("convert");
+            let string = value.to_s(&api);
             assert_eq!(string, "");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn debug_nil() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, None as Option<i64>).expect("convert");
-            let debug = value.to_s_debug(mrb);
+            let value = Value::try_from_mrb(&api, None as Option<Value>).expect("convert");
+            let debug = value.to_s_debug(&api);
             assert_eq!(debug, "NilClass<nil>");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn to_s_fixnum() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, 255).expect("convert");
-            let string = value.to_s(mrb);
+            let value = Value::try_from_mrb(&api, 255).expect("convert");
+            let string = value.to_s(&api);
             assert_eq!(string, "255");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn debug_fixnum() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, 255).expect("convert");
-            let debug = value.to_s_debug(mrb);
+            let value = Value::try_from_mrb(&api, 255).expect("convert");
+            let debug = value.to_s_debug(&api);
             assert_eq!(debug, "Fixnum<255>");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn to_s_string() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, "interstate").expect("convert");
-            let string = value.to_s(mrb);
+            let value = Value::try_from_mrb(&api, "interstate").expect("convert");
+            let string = value.to_s(&api);
             assert_eq!(string, "interstate");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn debug_string() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, "interstate").expect("convert");
-            let debug = value.to_s_debug(mrb);
+            let value = Value::try_from_mrb(&api, "interstate").expect("convert");
+            let debug = value.to_s_debug(&api);
             assert_eq!(debug, r#"String<"interstate">"#);
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn to_s_empty_string() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, "").expect("convert");
-            let string = value.to_s(mrb);
+            let value = Value::try_from_mrb(&api, "").expect("convert");
+            let string = value.to_s(&api);
             assert_eq!(string, "");
-
-            mrb_close(mrb);
         }
     }
 
     #[test]
     fn debug_empty_string() {
         unsafe {
-            let mrb = mrb_open();
+            let interp = Interpreter::new().expect("mrb init");
+            let api = interp.borrow_mut();
 
-            let value = Value::try_from_mrb(mrb, "").expect("convert");
-            let debug = value.to_s_debug(mrb);
+            let value = Value::try_from_mrb(&api, "").expect("convert");
+            let debug = value.to_s_debug(&api);
             assert_eq!(debug, r#"String<"">"#);
-
-            mrb_close(mrb);
         }
     }
 }

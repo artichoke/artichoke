@@ -128,12 +128,12 @@ macro_rules! mrb_nilable_impl {
             type To = $crate::Ruby;
 
             unsafe fn try_from_mrb(
-                mrb: *mut $crate::sys::mrb_state,
+                api: &$crate::interpreter::MrbApi,
                 value: std::option::Option<$type>,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
                 match value {
-                    std::option::Option::Some(value) => Self::try_from_mrb(mrb, value),
-                    std::option::Option::None => Self::try_from_mrb(mrb, None as Option<Value>),
+                    std::option::Option::Some(value) => Self::try_from_mrb(api, value),
+                    std::option::Option::None => Self::try_from_mrb(api, None as Option<Value>),
                 }
             }
         }
@@ -144,12 +144,12 @@ macro_rules! mrb_nilable_impl {
             type To = $crate::Rust;
 
             unsafe fn try_from_mrb(
-                mrb: *mut $crate::sys::mrb_state,
+                api: &$crate::interpreter::MrbApi,
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                let value = <std::option::Option<Value>>::try_from_mrb(mrb, value)?;
+                let value = <std::option::Option<Value>>::try_from_mrb(api, value)?;
                 let value = if let std::option::Option::Some(item) = value {
-                    std::option::Option::Some(<$type>::try_from_mrb(mrb, item)?)
+                    std::option::Option::Some(<$type>::try_from_mrb(api, item)?)
                 } else {
                     std::option::Option::None
                 };
@@ -164,25 +164,27 @@ macro_rules! mrb_nilable_impl {
 
                 use $crate::convert::*;
                 use $crate::interpreter::*;
+                use $crate::sys::*;
                 use $crate::value::*;
 
                 #[test]
                 fn fail_convert() {
                     unsafe {
-                        let mrb = Mrb::new().expect("mrb init");
-                        let context = mrbc_context_new(mrb.inner().unwrap());
+                        let interp = Interpreter::new().expect("mrb init");
+                        let api = interp.borrow_mut();
+                        let context = mrbc_context_new(api.mrb());
                         // get a mrb_value that can't be converted to a
                         // primitive type.
                         let code = "Object.new";
                         let value = mrb_load_nstring_cxt(
-                            mrb.inner().unwrap(),
+                            api.mrb(),
                             code.as_ptr() as *const i8,
                             code.len(),
                             context,
                         );
                         let value = Value::new(value);
                         let result =
-                            <std::option::Option<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
+                            <std::option::Option<$type>>::try_from_mrb(&api, value)
                                 .map(|_| ());
                         assert_eq!(
                             result.map_err(|e| e.from),
@@ -204,14 +206,15 @@ macro_rules! mrb_nilable_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let mrb = Mrb::new().expect("mrb init");
-                        let value = match Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
+                        let interp = Interpreter::new().expect("mrb init");
+                        let api = interp.borrow_mut();
+                        let value = match Value::try_from_mrb(&api, v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
                         if let std::option::Option::Some(v) = v {
-                            let value = <$type>::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+                            let value = <$type>::try_from_mrb(&api, value).expect("convert");
                             ($eq)(value, v)
                         } else {
                             let inner = value.inner();
@@ -233,13 +236,14 @@ macro_rules! mrb_nilable_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let mrb = Mrb::new().expect("mrb init");
-                        let value = match Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
+                        let interp = Interpreter::new().expect("mrb init");
+                        let api = interp.borrow_mut();
+                        let value = match Value::try_from_mrb(&api, v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
-                        let value = <std::option::Option<$type>>::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+                        let value = <std::option::Option<$type>>::try_from_mrb(&api, value).expect("convert");
                         if value.is_none() && v.is_none() {
                             true
                         } else {

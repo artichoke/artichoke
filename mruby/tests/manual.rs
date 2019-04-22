@@ -1,4 +1,6 @@
-use log::{debug, info, warn};
+#[macro_use]
+extern crate log;
+
 use mruby::*;
 use mruby_sys::*;
 use std::cell::RefCell;
@@ -6,13 +8,12 @@ use std::ffi::{CStr, CString};
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
-#[repr(C)]
 struct Container {
     inner: i64,
 }
 
 impl File for Container {
-    fn require(mrb: &Mrb) {
+    fn require(api: &MrbApi) {
         extern "C" fn free(_mrb: *mut mrb_state, mut data: *mut ::std::ffi::c_void) {
             unsafe {
                 debug!("preparing to free Container instance");
@@ -30,8 +31,10 @@ impl File for Container {
                 let data = Rc::new(RefCell::new(cont));
                 debug!("Storing this data in self instance: {:?}", data);
 
+                let interp = Interpreter::from_user_data(mrb).expect("interpreter");
+                let mut api = (*interp).borrow_mut();
+                let data_type = api.get_or_create_data_type("Container", Some(free));
                 let ptr: *mut std::ffi::c_void = std::mem::transmute(data);
-                let data_type = (*mrb).ud as *mut _ as *mut mrb_data_type;
                 mrb_sys_data_init(&mut slf, ptr, data_type);
 
                 slf
@@ -40,26 +43,18 @@ impl File for Container {
 
         extern "C" fn value(mrb: *mut mrb_state, slf: mrb_value) -> mrb_value {
             unsafe {
-                let ptr = (*mrb).ud;
-                // make sure we don't panic if we have a null pointer
-                if ptr.is_null() {
-                    warn!("Got a null pointer from mrb_state->ud");
-                    info!("Attempting to recover by returning nil");
-                    return Value::try_from_mrb(mrb, None as Option<bool>)
-                        .expect("nil")
-                        .inner();
-                }
+                let interp = Interpreter::from_user_data(mrb).expect("interpreter");
+                let mut api = (*interp).borrow_mut();
+                let data_type = api.get_or_create_data_type("Container", Some(free));
 
-                let data_type = ptr as *const mrb_data_type;
                 debug!(
                     "pulled mrb_data_type from user data with class: {:?}",
-                    // TODO: figure out why this is poiinting to garbage
                     CStr::from_ptr((*data_type).struct_name).to_string_lossy()
                 );
                 let mut ptr = mrb_data_get_ptr(mrb, slf, data_type);
                 let data = &mut ptr as *mut _ as *mut Rc<RefCell<Container>>;
 
-                match Value::try_from_mrb(mrb, (*data).borrow().inner) {
+                match Value::try_from_mrb(&api, (*data).borrow().inner) {
                     Ok(value) => value.inner(),
                     Err(err) => {
                         // could not convert Container->inner to mrb_value.
@@ -68,33 +63,26 @@ impl File for Container {
                         let eclass = CString::new("RuntimeError").expect("eclass");
                         let message = CString::new(format!("{}", err)).expect("message");
                         mrb_sys_raise(mrb, eclass.as_ptr(), message.as_ptr());
-                        Value::try_from_mrb(mrb, None as Option<i64>)
-                            .expect("nil")
-                            .inner()
+                        api.nil().expect("nil").inner()
                     }
                 }
             }
         }
 
         unsafe {
+            // this `CString` needs to stay in scope for the life of the mruby
+            // interpreter, otherwise `mrb_close` will segfault.
             let class = CString::new("Container").expect("Container class");
-            let mrb_class = mrb_define_class(
-                mrb.inner().expect("mrb open"),
-                class.as_ptr(),
-                (*mrb.inner().expect("mrb open")).object_class,
-            );
-            mrb_sys_set_instance_tt(mrb_class, mrb_vtype_MRB_TT_DATA);
-
-            let mut data_type = mrb_data_type {
-                struct_name: class.as_ptr(),
-                dfree: Some(free),
+            let mrb_class = {
+                let mrb = api.mrb();
+                let mrb_class = mrb_define_class(mrb, class.as_ptr(), (*mrb).object_class);
+                mrb_sys_set_instance_tt(mrb_class, mrb_vtype_MRB_TT_DATA);
+                mrb_class
             };
-            let ptr = &mut data_type as *mut _ as *mut std::ffi::c_void;
-            (*mrb.inner().expect("mrb open")).ud = ptr;
 
             let initialize_method = CString::new("initialize").expect("initialize method");
             mrb_define_method(
-                mrb.inner().expect("mrb open"),
+                api.mrb(),
                 mrb_class,
                 initialize_method.as_ptr(),
                 Some(initialize),
@@ -104,7 +92,7 @@ impl File for Container {
 
             let value_method = CString::new("value").expect("value method");
             mrb_define_method(
-                mrb.inner().expect("mrb open"),
+                api.mrb(),
                 mrb_class,
                 value_method.as_ptr(),
                 Some(value),
@@ -123,37 +111,34 @@ mod tests {
     fn define_rust_backed_ruby_class() {
         env_logger::Builder::from_env("MRUBY_LOG").init();
 
-        let mrb = Mrb::new().expect("mrb init");
-        Container::require(&mrb);
+        let mut interp = Interpreter::new().expect("mrb init");
+        Container::require(&interp.borrow_mut());
 
         unsafe {
-            let context = mrbc_context_new(mrb.inner().expect("mrb open"));
-            let code = "Container.new.value";
-            let result = mrb_load_nstring_cxt(
-                mrb.inner().expect("mrb open"),
-                code.as_ptr() as *const i8,
-                code.len(),
-                context,
-            );
-            let result = Value::new(result);
-            let exception = Value::new(mrb_sys_get_current_exception(
-                mrb.inner().expect("mrb open"),
-            ));
+            let ptr = &mut interp as *mut _ as *mut std::ffi::c_void;
+            (*interp.borrow_mut().mrb()).ud = ptr;
 
-            assert_eq!(
-                "NilClass<nil>",
-                exception.to_s_debug(mrb.inner().expect("mrb open"))
-            );
-            let exception =
-                <Option<String>>::try_from_mrb(mrb.inner().expect("mrb open"), exception)
-                    .expect("convert");
+            let context = {
+                let mrb = interp.borrow_mut().mrb();
+                mrbc_context_new(mrb)
+            };
+            let result = {
+                let mrb = interp.borrow_mut().mrb();
+                let code = "Container.new.value";
+                mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context)
+            };
+            let api = interp.borrow_mut();
+            let result = Value::new(result);
+            let exception = Value::new(mrb_sys_get_current_exception(api.mrb()));
+
+            assert_eq!(exception.ruby_type(), Ruby::Nil);
+            let exception = <Option<String>>::try_from_mrb(&api, exception).expect("convert");
             assert_eq!(None, exception);
-            let cint = i64::try_from_mrb(mrb.inner().expect("mrb open"), result).expect("convert");
+            let cint = i64::try_from_mrb(&api, result).expect("convert");
             assert_eq!(cint, 15);
 
-            mrbc_context_free(mrb.inner().expect("mrb open"), context);
+            mrbc_context_free(api.mrb(), context);
         }
-        // TODO: Why does this segfault?
-        // mrb.close();
+        drop(interp);
     }
 }

@@ -1,6 +1,7 @@
 use mruby_sys::*;
 
 use crate::convert::{Error, TryFromMrb};
+use crate::interpreter::MrbApi;
 use crate::value::{Ruby, Rust, Value};
 
 impl TryFromMrb<bool> for Value {
@@ -8,7 +9,7 @@ impl TryFromMrb<bool> for Value {
     type To = Ruby;
 
     unsafe fn try_from_mrb(
-        _mrb: *mut mrb_state,
+        _mrb: &MrbApi,
         value: bool,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         if value {
@@ -24,7 +25,7 @@ impl TryFromMrb<Value> for bool {
     type To = Rust;
 
     unsafe fn try_from_mrb(
-        _mrb: *mut mrb_state,
+        _mrb: &MrbApi,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
@@ -61,8 +62,9 @@ mod tests {
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
         unsafe {
-            let mrb = Mrb::new().expect("mrb init");
-            let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
+            let interp = Interpreter::new().expect("mrb init");
+            let mrb = interp.borrow_mut();
+            let value = Value::try_from_mrb(&mrb, b).expect("convert");
             value.ruby_type() == Ruby::Bool
         }
     }
@@ -70,8 +72,9 @@ mod tests {
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
         unsafe {
-            let mrb = Mrb::new().expect("mrb init");
-            let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
+            let interp = Interpreter::new().expect("mrb init");
+            let mrb = interp.borrow_mut();
+            let value = Value::try_from_mrb(&mrb, b).expect("convert");
             let inner = value.inner();
             let is_false = mrb_sys_value_is_false(inner);
             let is_true = mrb_sys_value_is_true(inner);
@@ -87,9 +90,10 @@ mod tests {
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
         unsafe {
-            let mrb = Mrb::new().expect("mrb init");
-            let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
-            let value = bool::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+            let interp = Interpreter::new().expect("mrb init");
+            let mrb = interp.borrow_mut();
+            let value = Value::try_from_mrb(&mrb, b).expect("convert");
+            let value = bool::try_from_mrb(&mrb, value).expect("convert");
             value == b
         }
     }
@@ -97,9 +101,10 @@ mod tests {
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
         unsafe {
-            let mrb = Mrb::new().expect("mrb init");
-            let value = Value::try_from_mrb(mrb.inner().unwrap(), i).expect("convert");
-            let value = bool::try_from_mrb(mrb.inner().unwrap(), value);
+            let interp = Interpreter::new().expect("mrb init");
+            let mrb = interp.borrow_mut();
+            let value = Value::try_from_mrb(&mrb, i).expect("convert");
+            let value = bool::try_from_mrb(&mrb, value);
             let expected = Err(Error {
                 from: Ruby::Fixnum,
                 to: Rust::Bool,
