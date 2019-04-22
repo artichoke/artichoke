@@ -107,19 +107,19 @@ impl MrbApi {
         unsafe { Value::try_from_mrb(self, nil) }.map_err(MrbError::Convert)
     }
 
-    //pub fn bool(&self, b: bool) -> Result<Value, MrbError> {
-    //    unsafe { Value::try_from_mrb(self, b) }.map_err(MrbError::Convert)
-    //}
+    pub fn bool(&self, b: bool) -> Result<Value, MrbError> {
+        unsafe { Value::try_from_mrb(self, b) }.map_err(MrbError::Convert)
+    }
 
-    //pub fn bytes<T: AsRef<[u8]>>(&self, b: T) -> Result<Value, MrbError> {
-    //    unsafe { Value::try_from_mrb(self, b.as_ref()) }.map_err(MrbError::Convert)
-    //}
+    pub fn bytes<T: AsRef<[u8]>>(&self, b: T) -> Result<Value, MrbError> {
+        unsafe { Value::try_from_mrb(self, b.as_ref()) }.map_err(MrbError::Convert)
+    }
 
     pub fn fixnum(&self, i: Int) -> Result<Value, MrbError> {
         unsafe { Value::try_from_mrb(self, i) }.map_err(MrbError::Convert)
     }
 
-    //pub fn string<T: AsRef<str>>(&self, s: T) -> Result<Value, MrbError> {
-    //    unsafe { Value::try_from_mrb(self, s.as_ref()) }.map_err(MrbError::Convert)
-    //}
+    pub fn string<T: AsRef<str>>(&self, s: T) -> Result<Value, MrbError> {
+        unsafe { Value::try_from_mrb(self, s.as_ref()) }.map_err(MrbError::Convert)
+    }
 }

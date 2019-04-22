@@ -4,6 +4,7 @@ use std::convert::TryFrom;
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
 use crate::convert::Error;
+use crate::interpreter::MrbApi;
 use crate::{Ruby, Rust, TryFromMrb, Value};
 
 mrb_array_impl!(bool as bool);
@@ -37,21 +38,21 @@ impl TryFromMrb<Vec<Value>> for Value {
     type To = Ruby;
 
     unsafe fn try_from_mrb(
-        mrb: *mut mrb_state,
+        api: &MrbApi,
         value: Vec<Self>,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         let size = Int::try_from(value.len()).map_err(|_| Error {
             from: Rust::Vec,
             to: Ruby::Array,
         })?;
-        let array = mrb_ary_new_capa(mrb, size);
+        let array = mrb_ary_new_capa(api.mrb(), size);
         for (i, item) in value.into_iter().enumerate() {
             let idx = Int::try_from(i).map_err(|_| Error {
                 from: Rust::Vec,
                 to: Ruby::Array,
             })?;
             let inner = item.inner();
-            mrb_ary_set(mrb, array, idx, inner);
+            mrb_ary_set(api.mrb(), array, idx, inner);
         }
         Ok(Self::new(array))
     }
@@ -62,7 +63,7 @@ impl TryFromMrb<Value> for Vec<Value> {
     type To = Rust;
 
     unsafe fn try_from_mrb(
-        mrb: *mut mrb_state,
+        api: &MrbApi,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
@@ -79,7 +80,7 @@ impl TryFromMrb<Value> for Vec<Value> {
                         from: Ruby::Array,
                         to: Rust::Vec,
                     })?;
-                    let item = Value::new(mrb_ary_ref(mrb, inner, idx));
+                    let item = Value::new(mrb_ary_ref(api.mrb(), inner, idx));
                     vec.push(item);
                 }
                 Ok(vec)

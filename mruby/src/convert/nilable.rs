@@ -7,7 +7,7 @@ use crate::interpreter::MrbApi;
 use crate::{Ruby, Rust, TryFromMrb, Value};
 
 mrb_nilable_impl!(bool as bool);
-//mrb_nilable_impl!(Vec<u8> as bytes);
+mrb_nilable_impl!(Vec<u8> as bytes);
 mrb_nilable_impl!(Int as fixnum);
 mrb_nilable_impl!(Float as float with eq = |a: Float, b: Float| {
     (a - b).abs() < std::f64::EPSILON

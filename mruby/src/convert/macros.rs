@@ -7,14 +7,14 @@ macro_rules! mrb_array_impl {
             type To = $crate::Ruby;
 
             unsafe fn try_from_mrb(
-                mrb: *mut $crate::sys::mrb_state,
+                api: &$crate::interpreter::MrbApi,
                 value: std::vec::Vec<$type>,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
                 let mut values = std::vec::Vec::with_capacity(value.len());
                 for item in value {
-                    values.push($crate::Value::try_from_mrb(mrb, item)?);
+                    values.push($crate::Value::try_from_mrb(api, item)?);
                 }
-                $crate::Value::try_from_mrb(mrb, values)
+                $crate::Value::try_from_mrb(api, values)
             }
         }
 
@@ -24,13 +24,13 @@ macro_rules! mrb_array_impl {
             type To = $crate::Rust;
 
             unsafe fn try_from_mrb(
-                mrb: *mut $crate::sys::mrb_state,
+                api: &$crate::interpreter::MrbApi,
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                let values = <std::vec::Vec<$crate::Value>>::try_from_mrb(mrb, value)?;
+                let values = <std::vec::Vec<$crate::Value>>::try_from_mrb(api, value)?;
                 let mut vec = std::vec::Vec::with_capacity(values.len());
                 for item in values {
-                    vec.push(<$type>::try_from_mrb(mrb, item)?);
+                    vec.push(<$type>::try_from_mrb(api, item)?);
                 }
                 std::result::Result::Ok(vec)
             }
@@ -44,20 +44,20 @@ macro_rules! mrb_array_impl {
 
                 use $crate::convert::*;
                 use $crate::interpreter::*;
+                use $crate::sys::*;
                 use $crate::value::*;
 
                 #[test]
                 fn fail_convert() {
                     unsafe {
-                        let mrb = Mrb::new().expect("mrb init");
-                        let value = mrb.bool(true).expect("convert");
+                        let interp = Interpreter::new().expect("mrb init");
+                        let api = interp.borrow_mut();
+                        let value = api.bool(true).expect("convert");
                         let expected = Error {
                             from: Ruby::Bool,
                             to: Rust::Vec,
                         };
-                        let result =
-                            <std::vec::Vec<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
-                                .map(|_| ());
+                        let result = <std::vec::Vec<$type>>::try_from_mrb(&api, value).map(|_| ());
                         assert_eq!(result, Err(expected));
                     }
                 }
@@ -74,13 +74,13 @@ macro_rules! mrb_array_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let mrb = Mrb::new().expect("mrb init");
-                        let value =
-                            match $crate::Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
-                                std::result::Result::Ok(value) => value,
-                                // we don't care about inner conversion failures for `T`
-                                std::result::Result::Err(_) => return true,
-                            };
+                        let interp = Interpreter::new().expect("mrb init");
+                        let api = interp.borrow_mut();
+                        let value = match $crate::Value::try_from_mrb(&api, v.clone()) {
+                            std::result::Result::Ok(value) => value,
+                            // we don't care about inner conversion failures for `T`
+                            std::result::Result::Err(_) => return true,
+                        };
                         let inner = value.inner();
                         let size = i64::try_from(v.len()).expect("vec size");
                         mrb_sys_ary_len(inner) == size
@@ -99,16 +99,14 @@ macro_rules! mrb_array_impl {
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
-                        let mrb = Mrb::new().expect("mrb init");
-                        let value =
-                            match $crate::Value::try_from_mrb(mrb.inner().unwrap(), v.clone()) {
-                                std::result::Result::Ok(value) => value,
-                                // we don't care about inner conversion failures for `T`
-                                std::result::Result::Err(_) => return true,
-                            };
-                        <std::vec::Vec<$type>>::try_from_mrb(mrb.inner().unwrap(), value)
-                            .expect("convert")
-                            == v
+                        let interp = Interpreter::new().expect("mrb init");
+                        let api = interp.borrow_mut();
+                        let value = match $crate::Value::try_from_mrb(&api, v.clone()) {
+                            std::result::Result::Ok(value) => value,
+                            // we don't care about inner conversion failures for `T`
+                            std::result::Result::Err(_) => return true,
+                        };
+                        <std::vec::Vec<$type>>::try_from_mrb(&api, value).expect("convert") == v
                     }
                 }
             }

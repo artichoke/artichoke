@@ -6,21 +6,21 @@ use crate::interpreter::MrbApi;
 #[macro_use]
 pub mod macros;
 
-// mod array;
+mod array;
 mod boolean;
-// mod bytes;
+mod bytes;
 mod fixnum;
 mod float;
-// mod hash;
+mod hash;
 mod nilable;
 mod string;
-//
-// pub use self::array::*;
+
+pub use self::array::*;
 pub use self::boolean::*;
-// pub use self::bytes::*;
+pub use self::bytes::*;
 pub use self::fixnum::*;
 pub use self::float::*;
-// pub use self::hash::*;
+pub use self::hash::*;
 pub use self::nilable::*;
 pub use self::string::*;
 

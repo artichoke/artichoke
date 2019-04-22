@@ -2,6 +2,7 @@ use mruby_sys::*;
 use std::convert::TryFrom;
 
 use crate::convert::{Error, TryFromMrb};
+use crate::interpreter::MrbApi;
 use crate::value::{Ruby, Rust, Value};
 
 // TODO: Document danger associated with lifetimes.
@@ -13,25 +14,26 @@ impl TryFromMrb<Vec<u8>> for Value {
     type To = Ruby;
 
     unsafe fn try_from_mrb(
-        mrb: *mut mrb_state,
+        api: &MrbApi,
         value: Vec<u8>,
     ) -> Result<Self, Error<Self::From, Self::To>> {
-        Self::try_from_mrb(mrb, value.as_slice())
+        Self::try_from_mrb(api, value.as_slice())
     }
 }
+
 impl TryFromMrb<&[u8]> for Value {
     type From = Rust;
     type To = Ruby;
 
     unsafe fn try_from_mrb(
-        mrb: *mut mrb_state,
+        api: &MrbApi,
         value: &[u8],
     ) -> Result<Self, Error<Self::From, Self::To>> {
         // mruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
         let raw = value.as_ptr() as *const i8;
         let len = value.len();
-        Ok(Self::new(mrb_str_new(mrb, raw, len)))
+        Ok(Self::new(mrb_str_new(api.mrb(), raw, len)))
     }
 }
 
@@ -40,14 +42,14 @@ impl TryFromMrb<Value> for Vec<u8> {
     type To = Rust;
 
     unsafe fn try_from_mrb(
-        mrb: *mut mrb_state,
+        api: &MrbApi,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
             Ruby::String => {
                 let value = value.inner();
-                let raw = mrb_string_value_ptr(mrb, value) as *const u8;
-                let len = mrb_string_value_len(mrb, value);
+                let raw = mrb_string_value_ptr(api.mrb(), value) as *const u8;
+                let len = mrb_string_value_len(api.mrb(), value);
                 let len = usize::try_from(len).map_err(|_| Error {
                     from: Ruby::String,
                     to: Rust::Bytes,
@@ -78,8 +80,9 @@ mod tests {
         #[quickcheck]
         fn convert_to_vec(v: Vec<u8>) -> bool {
             unsafe {
-                let mrb = Mrb::new().expect("mrb init");
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), v.clone()).expect("convert");
+                let interp = Interpreter::new().expect("mrb init");
+                let api = interp.borrow_mut();
+                let value = Value::try_from_mrb(&api, v.clone()).expect("convert");
                 value.ruby_type() == Ruby::String
             }
         }
@@ -88,10 +91,11 @@ mod tests {
         #[quickcheck]
         fn vec_with_value(v: Vec<u8>) -> bool {
             unsafe {
-                let mrb = Mrb::new().expect("mrb init");
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), v.clone()).expect("convert");
+                let interp = Interpreter::new().expect("mrb init");
+                let api = interp.borrow_mut();
+                let value = Value::try_from_mrb(&api, v.clone()).expect("convert");
                 let inner = value.inner();
-                let len = mrb_string_value_len(mrb.inner().unwrap(), inner);
+                let len = mrb_string_value_len(api.mrb(), inner);
                 let len = usize::try_from(len).expect("usize");
                 v.len() == len
             }
@@ -101,9 +105,10 @@ mod tests {
         #[quickcheck]
         fn roundtrip(v: Vec<u8>) -> bool {
             unsafe {
-                let mrb = Mrb::new().expect("mrb init");
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), v.clone()).expect("convert");
-                let value = <Vec<u8>>::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+                let interp = Interpreter::new().expect("mrb init");
+                let api = interp.borrow_mut();
+                let value = Value::try_from_mrb(&api, v.clone()).expect("convert");
+                let value = <Vec<u8>>::try_from_mrb(&api, value).expect("convert");
                 value == v
             }
         }
@@ -111,9 +116,10 @@ mod tests {
         #[quickcheck]
         fn roundtrip_err(b: bool) -> bool {
             unsafe {
-                let mrb = Mrb::new().expect("mrb init");
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), b).expect("convert");
-                let value = <Vec<u8>>::try_from_mrb(mrb.inner().unwrap(), value);
+                let interp = Interpreter::new().expect("mrb init");
+                let api = interp.borrow_mut();
+                let value = Value::try_from_mrb(&api, b).expect("convert");
+                let value = <Vec<u8>>::try_from_mrb(&api, value);
                 let expected = Err(Error {
                     from: Ruby::Bool,
                     to: Rust::Bytes,
@@ -130,9 +136,10 @@ mod tests {
         #[quickcheck]
         fn convert_to_slice(v: Vec<u8>) -> bool {
             unsafe {
+                let interp = Interpreter::new().expect("mrb init");
+                let api = interp.borrow_mut();
                 let v = v.as_slice();
-                let mrb = Mrb::new().expect("mrb init");
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), v).expect("convert");
+                let value = Value::try_from_mrb(&api, v).expect("convert");
                 value.ruby_type() == Ruby::String
             }
         }
@@ -141,11 +148,12 @@ mod tests {
         #[quickcheck]
         fn slice_with_value(v: Vec<u8>) -> bool {
             unsafe {
+                let interp = Interpreter::new().expect("mrb init");
+                let api = interp.borrow_mut();
                 let v = v.as_slice();
-                let mrb = Mrb::new().expect("mrb init");
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), v).expect("convert");
+                let value = Value::try_from_mrb(&api, v).expect("convert");
                 let inner = value.inner();
-                let len = mrb_string_value_len(mrb.inner().unwrap(), inner);
+                let len = mrb_string_value_len(api.mrb(), inner);
                 let len = usize::try_from(len).expect("usize");
                 v.len() == len
             }

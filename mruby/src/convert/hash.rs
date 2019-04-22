@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 
 use crate::convert::fixnum::Int;
 use crate::convert::Error;
+use crate::interpreter::MrbApi;
 use crate::{Ruby, Rust, TryFromMrb, Value};
 
 // bail out implementation for mixed-type collections
@@ -15,16 +16,16 @@ impl TryFromMrb<Vec<(Value, Value)>> for Value {
     type To = Ruby;
 
     unsafe fn try_from_mrb(
-        mrb: *mut mrb_state,
+        api: &MrbApi,
         value: Vec<(Self, Self)>,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         let size = Int::try_from(value.len()).map_err(|_| Error {
             from: Rust::Map,
             to: Ruby::Hash,
         })?;
-        let hash = mrb_hash_new_capa(mrb, size);
+        let hash = mrb_hash_new_capa(api.mrb(), size);
         for (key, value) in value {
-            mrb_hash_set(mrb, hash, key.inner(), value.inner());
+            mrb_hash_set(api.mrb(), hash, key.inner(), value.inner());
         }
         Ok(Self::new(hash))
     }
@@ -36,20 +37,21 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
     type To = Rust;
 
     unsafe fn try_from_mrb(
-        mrb: *mut mrb_state,
+        api: &MrbApi,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
             Ruby::Hash => {
                 let inner = value.inner();
-                let keys = <Vec<Value>>::try_from_mrb(mrb, Value::new(mrb_hash_keys(mrb, inner)));
+                let keys =
+                    <Vec<Value>>::try_from_mrb(api, Value::new(mrb_hash_keys(api.mrb(), inner)));
                 let keys = keys.map_err(|_| Error {
                     from: Ruby::Hash,
                     to: Rust::Map,
                 })?;
                 let mut kv_pairs = Self::with_capacity(keys.len());
                 for key in keys {
-                    let value = mrb_hash_get(mrb, inner, key.inner());
+                    let value = mrb_hash_get(api.mrb(), inner, key.inner());
                     let value = Value::new(value);
                     kv_pairs.push((key, value));
                 }
@@ -71,32 +73,33 @@ mod value {
         #[test]
         fn roundtrip_kv() {
             unsafe {
-                let mrb = Mrb::new().expect("mrb init");
+                let interp = Interpreter::new().expect("mrb init");
+                let api = interp.borrow_mut();
 
                 let mut map = vec![];
-                let key = Value::try_from_mrb(mrb.inner().unwrap(), 1).expect("convert");
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), 2).expect("convert");
+                let key = Value::try_from_mrb(&api, 1).expect("convert");
+                let value = Value::try_from_mrb(&api, 2).expect("convert");
                 map.push((key, value));
-                let key = Value::try_from_mrb(mrb.inner().unwrap(), 100).expect("convert");
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), 1000).expect("convert");
+                let key = Value::try_from_mrb(&api, 100).expect("convert");
+                let value = Value::try_from_mrb(&api, 1000).expect("convert");
                 map.push((key, value));
 
-                let value = Value::try_from_mrb(mrb.inner().unwrap(), map).expect("convert");
+                let value = Value::try_from_mrb(&api, map).expect("convert");
 
-                assert_eq!("{1=>2, 100=>1000}", value.to_s(mrb.inner().unwrap()));
+                assert_eq!("{1=>2, 100=>1000}", value.to_s(&api));
 
-                let mut kv_pairs = <Vec<(Value, Value)>>::try_from_mrb(mrb.inner().unwrap(), value)
-                    .expect("convert");
+                let mut kv_pairs =
+                    <Vec<(Value, Value)>>::try_from_mrb(&api, value).expect("convert");
                 let mut rt = vec![];
 
                 let (key, value) = kv_pairs.pop().expect("index");
-                let key = Int::try_from_mrb(mrb.inner().unwrap(), key).expect("convert");
-                let value = Int::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+                let key = Int::try_from_mrb(&api, key).expect("convert");
+                let value = Int::try_from_mrb(&api, value).expect("convert");
                 rt.push((key, value));
 
                 let (key, value) = kv_pairs.pop().expect("index");
-                let key = Int::try_from_mrb(mrb.inner().unwrap(), key).expect("convert");
-                let value = Int::try_from_mrb(mrb.inner().unwrap(), value).expect("convert");
+                let key = Int::try_from_mrb(&api, key).expect("convert");
+                let value = Int::try_from_mrb(&api, value).expect("convert");
                 rt.push((key, value));
 
                 rt.sort();
