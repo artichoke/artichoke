@@ -14,10 +14,10 @@ struct Container {
 
 impl File for Container {
     fn require(api: &MrbApi) {
-        extern "C" fn free(_mrb: *mut mrb_state, mut data: *mut ::std::ffi::c_void) {
+        extern "C" fn free(_mrb: *mut mrb_state, data: *mut ::std::ffi::c_void) {
             unsafe {
                 debug!("preparing to free Container instance");
-                let inner = &mut data as *mut _ as *mut Rc<RefCell<Container>>;
+                let inner = data as *mut Rc<RefCell<Container>>;
                 debug!("freeing Container instance: {}", (*inner).borrow().inner);
                 // TODO: Find out what the right thing to do here is
                 #[allow(clippy::drop_copy)]
@@ -115,7 +115,7 @@ mod tests {
         Container::require(&interp.borrow_mut());
 
         unsafe {
-            let ptr = &mut interp as *mut _ as *mut std::ffi::c_void;
+            let ptr = &mut interp as *mut Mrb as *mut std::ffi::c_void;
             (*interp.borrow_mut().mrb()).ud = ptr;
 
             let context = {

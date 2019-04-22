@@ -23,7 +23,7 @@ impl Interpreter {
         if mrb.is_null() {
             return Err(MrbError::Uninitialized);
         }
-        let mrb = (*mrb).ud as *mut _ as *mut Mrb;
+        let mrb = (*mrb).ud as *mut Mrb;
         if mrb.is_null() {
             return Err(MrbError::Uninitialized);
         }
@@ -151,7 +151,7 @@ mod tests {
     fn from_user_data() {
         unsafe {
             let mut interp = Interpreter::create().expect("mrb init");
-            let ptr = &mut interp as *mut _ as *mut std::ffi::c_void;
+            let ptr = &mut interp as *mut Mrb as *mut std::ffi::c_void;
             let mrb = interp.borrow_mut().mrb();
             (*mrb).ud = ptr;
             let res = Interpreter::from_user_data(mrb);
