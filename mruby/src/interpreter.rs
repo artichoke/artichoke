@@ -15,19 +15,52 @@ pub struct Interpreter;
 
 impl Interpreter {
     pub fn create() -> Result<Mrb, MrbError> {
-        let api = MrbApi::new()?;
-        Ok(Rc::new(RefCell::new(api)))
+        unsafe {
+            let mrb = mrb_open();
+            if mrb.is_null() {
+                return Err(MrbError::New);
+            }
+
+            let context = mrbc_context_new(mrb);
+            let api = Rc::new(RefCell::new(MrbApi {
+                mrb,
+                ctx: context,
+                data_types: HashMap::new(),
+            }));
+
+            // Clone the smart pointer that wraps the API and store it in the
+            // user data of the mrb interpreter. After this operation,
+            // `Rc::strong_count` will be 2.
+            let ud = Rc::clone(&api);
+            let ptr = std::mem::transmute::<Mrb, *mut std::ffi::c_void>(ud);
+            (*mrb).ud = ptr;
+
+            Ok(api)
+        }
     }
 
-    pub unsafe fn from_user_data(mrb: *mut mrb_state) -> Result<*mut Mrb, MrbError> {
+    // TODO: Add a benchmark to make sure this function does not leak memory.
+    pub unsafe fn from_user_data(mrb: *mut mrb_state) -> Result<Mrb, MrbError> {
         if mrb.is_null() {
             return Err(MrbError::Uninitialized);
         }
-        let mrb = (*mrb).ud as *mut Mrb;
-        if mrb.is_null() {
+        let ptr = (*mrb).ud;
+        if ptr.is_null() {
             return Err(MrbError::Uninitialized);
         }
-        Ok(mrb)
+        // Extract the smart pointer that wraps the API from the user data on
+        // the mrb interpreter. The `mrb_state` should retain ownership of its
+        // copy of the smart pointer.
+        let ud = std::mem::transmute::<*mut std::ffi::c_void, Mrb>(ptr);
+        // Clone the API smart pointer and increase its ref count to return a
+        // reference to the caller.
+        let api = Rc::clone(&ud);
+        // Forget the transmuted API extracted from the user data to make sure
+        // the `mrb_state` maintains ownership and the smart pointer does not
+        // get deallocated before `mrb_close` is called.
+        std::mem::forget(ud);
+        // At this point, `Rc::strong_count` will be increased by 1.
+        Ok(api)
     }
 }
 
@@ -40,34 +73,48 @@ pub enum MrbError {
 
 pub struct MrbApi {
     mrb: *mut mrb_state,
+    ctx: *mut mrbc_context,
     data_types: HashMap<String, (CString, mrb_data_type)>,
 }
 
 impl Drop for MrbApi {
     fn drop(&mut self) {
-        unsafe { mrb_close(self.mrb) };
+        unsafe {
+            // At this point, the only ref to the smart poitner wrapping the
+            // API is stored in the `mrb_state->ud` pointer. Rematerialize the
+            // `Rc`, set the userdata pointer to null, and drop the `Rc` to
+            // ensure no memory leaks. After this operation, `Rc::strong_count`
+            // will be 0 and the `Rc`, `RefCell`, and `MrbApi` will be
+            // deallocated.
+            let ptr = (*self.mrb).ud;
+            if !ptr.is_null() {
+                let ud = std::mem::transmute::<*mut std::ffi::c_void, Mrb>(ptr);
+                // cleanup pointers
+                (*self.mrb).ud = std::ptr::null_mut();
+                std::mem::drop(ud);
+            }
+
+            // Free mrb data structures
+            mrbc_context_free(self.mrb, self.ctx);
+            mrb_close(self.mrb);
+            // Cleanup dangling pointers in `MrbApi`
+            self.ctx = std::ptr::null_mut();
+            self.mrb = std::ptr::null_mut();
+        };
     }
 }
 
 impl MrbApi {
-    fn new() -> Result<Self, MrbError> {
-        let mrb = unsafe { mrb_open() };
-        if mrb.is_null() {
-            Err(MrbError::New)
-        } else {
-            Ok(Self {
-                mrb,
-                data_types: HashMap::new(),
-            })
-        }
-    }
-
     pub fn close(self) {
         drop(self)
     }
 
     pub fn mrb(&self) -> *mut mrb_state {
         self.mrb
+    }
+
+    pub fn ctx(&self) -> *mut mrbc_context {
+        self.ctx
     }
 
     pub fn get_class_cstr<T: AsRef<str>>(&self, class: T) -> Option<&CString> {
@@ -142,6 +189,8 @@ mod tests {
             let interp = Interpreter::create().expect("mrb init");
             let api = interp.borrow_mut();
             let mrb = api.mrb();
+            // fake null user data
+            (*mrb).ud = std::ptr::null_mut();
             let err = Interpreter::from_user_data(mrb);
             assert_eq!(err.err(), Some(MrbError::Uninitialized));
         }
@@ -156,6 +205,23 @@ mod tests {
             (*mrb).ud = ptr;
             let res = Interpreter::from_user_data(mrb);
             assert!(res.is_ok());
+        }
+    }
+
+    #[test]
+    fn open_close() {
+        let interp = Interpreter::create().expect("mrb init");
+        drop(interp);
+    }
+
+    #[test]
+    fn load_code() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+            let (mrb, ctx) = { (interp.borrow().mrb(), interp.borrow().ctx()) };
+            let code = "255";
+            let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx);
+            assert_eq!(mrb_sys_fixnum_to_cint(result), 255);
         }
     }
 }

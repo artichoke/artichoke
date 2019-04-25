@@ -13,15 +13,14 @@ struct Container {
 }
 
 impl File for Container {
-    fn require(api: &MrbApi) {
+    fn require(interp: Mrb) {
         extern "C" fn free(_mrb: *mut mrb_state, data: *mut ::std::ffi::c_void) {
             unsafe {
                 debug!("preparing to free Container instance");
-                let inner = data as *mut Rc<RefCell<Container>>;
-                debug!("freeing Container instance: {}", (*inner).borrow().inner);
-                // TODO: Find out what the right thing to do here is
-                #[allow(clippy::drop_copy)]
-                std::mem::drop(inner);
+                // Implictly dropped by going out of scope
+                let inner =
+                    std::mem::transmute::<*mut std::ffi::c_void, Rc<RefCell<Container>>>(data);
+                debug!("freeing Container instance: {}", inner.borrow().inner);
             }
         }
 
@@ -29,12 +28,17 @@ impl File for Container {
             unsafe {
                 let cont = Container { inner: 15 };
                 let data = Rc::new(RefCell::new(cont));
-                debug!("Storing this data in self instance: {:?}", data);
+                debug!("Storing `Container` refcell in self instance: {:?}", data);
+                let ptr =
+                    std::mem::transmute::<Rc<RefCell<Container>>, *mut std::ffi::c_void>(data);
 
                 let interp = Interpreter::from_user_data(mrb).expect("interpreter");
-                let mut api = (*interp).borrow_mut();
+                debug!(
+                    "interpreter strong ref count = {}",
+                    Rc::strong_count(&interp)
+                );
+                let mut api = interp.borrow_mut();
                 let data_type = api.get_or_create_data_type("Container", Some(free));
-                let ptr: *mut std::ffi::c_void = std::mem::transmute(data);
                 mrb_sys_data_init(&mut slf, ptr, data_type);
 
                 slf
@@ -44,7 +48,7 @@ impl File for Container {
         extern "C" fn value(mrb: *mut mrb_state, slf: mrb_value) -> mrb_value {
             unsafe {
                 let interp = Interpreter::from_user_data(mrb).expect("interpreter");
-                let mut api = (*interp).borrow_mut();
+                let mut api = interp.borrow_mut();
                 let data_type = api.get_or_create_data_type("Container", Some(free));
 
                 debug!(
@@ -57,7 +61,7 @@ impl File for Container {
                 match Value::try_from_mrb(&api, (*data).borrow().inner) {
                     Ok(value) => value.inner(),
                     Err(err) => {
-                        // could not convert Container->inner to mrb_value.
+                        // could not convert Container::inner to mrb_value.
                         // This should be unreachable since inner is an i64 and
                         // conversion between i64 and Value always succeeds.
                         let eclass = CString::new("RuntimeError").expect("eclass");
@@ -70,19 +74,16 @@ impl File for Container {
         }
 
         unsafe {
+            let mrb = { interp.borrow().mrb() };
             // this `CString` needs to stay in scope for the life of the mruby
             // interpreter, otherwise `mrb_close` will segfault.
             let class = CString::new("Container").expect("Container class");
-            let mrb_class = {
-                let mrb = api.mrb();
-                let mrb_class = mrb_define_class(mrb, class.as_ptr(), (*mrb).object_class);
-                mrb_sys_set_instance_tt(mrb_class, mrb_vtype_MRB_TT_DATA);
-                mrb_class
-            };
+            let mrb_class = mrb_define_class(mrb, class.as_ptr(), (*mrb).object_class);
+            mrb_sys_set_instance_tt(mrb_class, mrb_vtype_MRB_TT_DATA);
 
             let initialize_method = CString::new("initialize").expect("initialize method");
             mrb_define_method(
-                api.mrb(),
+                mrb,
                 mrb_class,
                 initialize_method.as_ptr(),
                 Some(initialize),
@@ -92,7 +93,7 @@ impl File for Container {
 
             let value_method = CString::new("value").expect("value method");
             mrb_define_method(
-                api.mrb(),
+                mrb,
                 mrb_class,
                 value_method.as_ptr(),
                 Some(value),
@@ -111,22 +112,13 @@ mod tests {
     fn define_rust_backed_ruby_class() {
         env_logger::Builder::from_env("MRUBY_LOG").init();
 
-        let mut interp = Interpreter::create().expect("mrb init");
-        Container::require(&interp.borrow_mut());
+        let interp = Interpreter::create().expect("mrb init");
+        Container::require(Rc::clone(&interp));
 
         unsafe {
-            let ptr = &mut interp as *mut Mrb as *mut std::ffi::c_void;
-            (*interp.borrow_mut().mrb()).ud = ptr;
-
-            let context = {
-                let mrb = interp.borrow_mut().mrb();
-                mrbc_context_new(mrb)
-            };
-            let result = {
-                let mrb = interp.borrow_mut().mrb();
-                let code = "Container.new.value";
-                mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context)
-            };
+            let (mrb, context) = { (interp.borrow().mrb(), interp.borrow().ctx()) };
+            let code = "Container.new.value";
+            let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
             let api = interp.borrow_mut();
             let result = Value::new(result);
             let exception = Value::new(mrb_sys_get_current_exception(api.mrb()));
@@ -136,8 +128,6 @@ mod tests {
             assert_eq!(None, exception);
             let cint = i64::try_from_mrb(&api, result).expect("convert");
             assert_eq!(cint, 15);
-
-            mrbc_context_free(api.mrb(), context);
         }
         drop(interp);
     }

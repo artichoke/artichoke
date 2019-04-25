@@ -1,5 +1,5 @@
-use crate::interpreter::MrbApi;
+use crate::interpreter::Mrb;
 
 pub trait File {
-    fn require(api: &MrbApi);
+    fn require(interp: Mrb);
 }
