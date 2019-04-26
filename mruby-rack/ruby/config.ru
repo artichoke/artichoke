@@ -10,18 +10,29 @@ run (lambda do |env|
       <html>
         <head>
           <title>
-            FoolsGold Rack in Rust Server Extravaganza
+            FoolsGold Ruby Rack in Rust Server Extravaganza
           </title>
+          <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
         </head>
         <body>
-          <h1>FoolsGold Rack in Rust Server Extravaganza</h1>
-          <p align="center"><img src="https://geology.com/gold/fools-gold/pyrite.jpg" alt="Fool's Gold"></img></p>
-          <h2>Request ID</h2>
-          <p>Generated in Rust</p>
-          <p>#{request_id}</p>
-          <h2>Total Seen Requests Across All Threads and All mruby Interpreters</h2>
-          <p>Tracked in a static AtomicI64 in Rust</p>
-          <p>#{seen}</p>
+          <div class="container my-2">
+            <h1>FoolsGold Ruby Rack in Rust Server Extravaganza</h1>
+            <p align="center">
+              <a href="/fools-gold">
+                <img class="mw-100" src="/img/pyrite.jpg" alt="FoolsGold"></img>
+              </a>
+            </p>
+            <h2>Request ID</h2>
+            <p>Request IDs are generated in Rust with the uuid crate.</p>
+            <p>Trace: <code>#{request_id}</code></p>
+            <h2>Request Count</h2>
+            <p>
+              Request count tracks the total number of seen requests across all
+              threads and all mruby interpreters. Request count is tracked in a
+              static <code>AtomicI64</code> in Rust.
+            </p>
+            <p>Counter: <code>#{seen}</code></p>
+          </div>
         </body>
       </html>
     HTML

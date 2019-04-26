@@ -3,7 +3,7 @@
 
 use log::{debug, info, trace, warn};
 use mruby::*;
-use rocket::http::Status;
+use rocket::http::{ContentType, Status};
 use rocket::{get, routes, Response};
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -14,6 +14,7 @@ use std::sync::atomic::{AtomicI64, Ordering};
 use uuid::Uuid;
 
 static SEEN_REQUESTS_COUNTER: AtomicI64 = AtomicI64::new(0);
+// Ruby sources
 const RACK_BUILDER_SOURCE: &str = include_str!("../ruby/rack/builder.rb");
 const FOOLS_GOLD_SOURCE: &str = include_str!("../ruby/fools-gold/adapter/in_memory.rb");
 const RACKUP_SOURCE: &str = include_str!("../ruby/config.ru");
@@ -21,6 +22,11 @@ const REQUIRE_PREAMBLE: &str = r#"
 require 'rack/builder'
 require 'fools-gold'
 "#;
+
+// static resources
+const INDEX: &str = include_str!("../static/index.html");
+const PYRITE: &[u8] = include_bytes!("../static/pyrite.jpg");
+const RESF: &[u8] = include_bytes!("../static/resf.png");
 
 struct RackBuilder;
 
@@ -254,11 +260,32 @@ pub fn main() -> Result<(), i32> {
 }
 
 pub fn spawn() -> Result<(), String> {
-    let err = rocket::ignite().mount("/", routes![fools_gold]).launch();
+    let err = rocket::ignite()
+        .mount("/", routes![index, fools_gold])
+        .mount("/img", routes![pyrite, resf])
+        .launch();
     // This log is only reachable is Rocket has an error during startup,
     // otherwise `rocket::ignite().launch()` blocks forever.
     warn!("Failed to launch rocket: {}", err);
     Err(err.to_string())
+}
+
+#[get("/")]
+fn index<'a>() -> Response<'a> {
+    Response::build()
+        .sized_body(Cursor::new(INDEX.to_owned()))
+        .header(ContentType::HTML)
+        .finalize()
+}
+
+#[get("/pyrite.jpg")]
+fn pyrite() -> Vec<u8> {
+    PYRITE.to_vec()
+}
+
+#[get("/resf.png")]
+fn resf() -> Vec<u8> {
+    RESF.to_vec()
 }
 
 #[get("/fools-gold")]
