@@ -5,4 +5,13 @@ authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 
 [dependencies]
+env_logger = "0.6.1"
+log = "0.4.6"
+rocket = "0.4.0"
 
+[dependencies.mruby]
+path = "../mruby"
+
+[dependencies.uuid]
+version = "0.7"
+features = ["v4"]

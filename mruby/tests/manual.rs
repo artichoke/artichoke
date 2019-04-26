@@ -12,7 +12,7 @@ struct Container {
     inner: i64,
 }
 
-impl File for Container {
+impl MrbFile for Container {
     fn require(interp: Mrb) {
         extern "C" fn free(_mrb: *mut mrb_state, data: *mut ::std::ffi::c_void) {
             unsafe {
@@ -26,7 +26,10 @@ impl File for Container {
 
         extern "C" fn initialize(mrb: *mut mrb_state, mut slf: mrb_value) -> mrb_value {
             unsafe {
-                let cont = Container { inner: 15 };
+                let int = std::mem::uninitialized::<mrb_int>();
+                let argspec = CString::new(specifiers::INTEGER).expect("argspec");
+                mrb_get_args(mrb, argspec.as_ptr(), &int);
+                let cont = Container { inner: int };
                 let data = Rc::new(RefCell::new(cont));
                 debug!("Storing `Container` refcell in self instance: {:?}", data);
                 let ptr =
@@ -88,7 +91,7 @@ impl File for Container {
                 initialize_method.as_ptr(),
                 Some(initialize),
                 // TODO: expose arg count c functions
-                0,
+                mrb_args_req(1),
             );
 
             let value_method = CString::new("value").expect("value method");
@@ -98,7 +101,7 @@ impl File for Container {
                 value_method.as_ptr(),
                 Some(value),
                 // TODO: expose arg count c functions
-                0,
+                mrb_args_none(),
             );
         }
     }
@@ -113,13 +116,16 @@ mod tests {
         env_logger::Builder::from_env("MRUBY_LOG").init();
 
         let interp = Interpreter::create().expect("mrb init");
-        Container::require(Rc::clone(&interp));
+        {
+            let mut borrow = interp.borrow_mut();
+            borrow.def_file_for_type::<_, Container>("container");
+        }
 
         unsafe {
             let (mrb, context) = { (interp.borrow().mrb(), interp.borrow().ctx()) };
-            let code = "Container.new.value";
+            let code = "require 'container'; Container.new(15).value";
             let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-            let api = interp.borrow_mut();
+            let api = interp.borrow();
             let result = Value::new(result);
             let exception = Value::new(mrb_sys_get_current_exception(api.mrb()));
 
