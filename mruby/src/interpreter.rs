@@ -21,11 +21,7 @@ extern "C" fn require(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
         // Extract required filename from arguments
         let name = std::mem::uninitialized::<*const std::os::raw::c_char>();
         let argspec = CString::new(specifiers::CSTRING).expect("argspec");
-        mrb_get_args(
-            mrb,
-            argspec.as_ptr(),
-            &name,
-        );
+        mrb_get_args(mrb, argspec.as_ptr(), &name);
         let name = CStr::from_ptr(name).to_str().expect("required filename");
 
         if { interp.borrow().required_files.contains(name) } {
@@ -80,11 +76,10 @@ impl Interpreter {
                 required_files: HashSet::new(),
             }));
 
-            // Clone the smart pointer that wraps the API and store it in the
-            // user data of the mrb interpreter. After this operation,
-            // `Rc::strong_count` will be 2.
-            let ud = Rc::clone(&api);
-            let ptr = std::mem::transmute::<Mrb, *mut std::ffi::c_void>(ud);
+            // Transmute the smart pointer that wraps the API and store it in
+            // the user data of the mrb interpreter. After this operation,
+            // `Rc::strong_count` will still be 1.
+            let ptr = std::mem::transmute::<Mrb, *mut std::ffi::c_void>(api);
             (*mrb).ud = ptr;
 
             // Add global extension functions
@@ -101,7 +96,11 @@ impl Interpreter {
                 aspec,
             );
 
-            Ok(api)
+            // Transmute the void * pointer to the Rc back into the Mrb type.
+            // After this operation `Rc::strong_count` will still be 1. This
+            // dance is required to avoid leaking Mrb objects, which will let
+            // the `Drop` impl close the mrb context and interpreter.
+            Ok(std::mem::transmute::<*mut std::ffi::c_void, Mrb>(ptr))
         }
     }
 
