@@ -1,7 +1,7 @@
 #![feature(integer_atomics)]
 #![feature(proc_macro_hygiene, decl_macro)]
 
-use log::{debug, info, warn};
+use log::{debug, info, trace, warn};
 use mruby::*;
 use rocket::http::Status;
 use rocket::{get, routes, Response};
@@ -270,7 +270,10 @@ fn fools_gold<'a>() -> Response<'a> {
         api.def_file_for_type::<_, RackBuilder>("rack/builder");
         api.def_file_for_type::<_, FoolsGold>("fools-gold");
     }
-    let code = format!("{}{}", REQUIRE_PREAMBLE, RACKUP_SOURCE);
+    let code = format!(
+        "{}\nFoolsGold::Adapter::InMemory.new(Rack::Builder.new {{ {} }}).call({{}})",
+        REQUIRE_PREAMBLE, RACKUP_SOURCE
+    );
     let (status, body) = unsafe {
         let (mrb, ctx) = {
             let api = interp.borrow();
@@ -303,6 +306,7 @@ fn fools_gold<'a>() -> Response<'a> {
         let body = String::try_from_mrb(&api, body_inner_value).expect("convert");
         (status, body)
     };
+    trace!("done with interp: refcount = {}", Rc::strong_count(&interp));
     drop(interp);
     let response_code = u16::try_from(status)
         .ok()
