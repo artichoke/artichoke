@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// vendored mruby version
-const MRUBY_VERSION: &str = "2.0.1";
+const MRUBY_VERSION: &str = "c078758";
 /// env var to force a clean build
 const MRUBY_SYS_CLEAN: &str = "MRUBY_SYS_CLEAN";
 

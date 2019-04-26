@@ -675,8 +675,6 @@ pub const MRUBY_BIRTH_YEAR: u32 = 2010;
 pub const MRUBY_AUTHOR: &'static [u8; 17usize] = b"mruby developers\0";
 pub const MRB_FIXED_STATE_ATEXIT_STACK_SIZE: u32 = 5;
 pub const MRB_METHOD_CACHE_SIZE: u32 = 128;
-pub const MRB_STATE_NO_REGEXP: u32 = 1;
-pub const MRB_STATE_REGEXP: u32 = 2;
 pub const MRB_ARY_EMBED_MASK: u32 = 7;
 pub const MRB_ARY_SHARED: u32 = 256;
 pub const MRB_FL_CLASS_IS_PREPENDED: u32 = 524288;
@@ -2724,10 +2722,6 @@ fn bindgen_test_layout_mrb_value() {
         )
     );
 }
-extern "C" {
-    #[link_name = "\u{1}_mrb_regexp_p"]
-    pub fn mrb_regexp_p(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_bool;
-}
 pub type mrb_each_object_callback = ::std::option::Option<
     unsafe extern "C" fn(
         mrb: *mut mrb_state,
@@ -3511,7 +3505,6 @@ pub type mrb_atexit_func = ::std::option::Option<unsafe extern "C" fn(arg1: *mut
 #[derive(Copy, Clone)]
 pub struct mrb_state {
     pub jmp: *mut mrb_jmpbuf,
-    pub flags: u32,
     pub allocf: mrb_allocf,
     pub allocf_ud: *mut ::std::os::raw::c_void,
     pub c: *mut mrb_context,
@@ -3554,7 +3547,7 @@ pub struct mrb_state {
 fn bindgen_test_layout_mrb_state() {
     assert_eq!(
         ::std::mem::size_of::<mrb_state>(),
-        1424usize,
+        1416usize,
         concat!("Size of: ", stringify!(mrb_state))
     );
     assert_eq!(
@@ -3573,18 +3566,8 @@ fn bindgen_test_layout_mrb_state() {
         )
     );
     assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).flags as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(flags)
-        )
-    );
-    assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).allocf as *const _ as usize },
-        16usize,
+        8usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3594,7 +3577,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).allocf_ud as *const _ as usize },
-        24usize,
+        16usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3604,7 +3587,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).c as *const _ as usize },
-        32usize,
+        24usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3614,7 +3597,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).root_c as *const _ as usize },
-        40usize,
+        32usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3624,7 +3607,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).globals as *const _ as usize },
-        48usize,
+        40usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3634,7 +3617,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).exc as *const _ as usize },
-        56usize,
+        48usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3644,7 +3627,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).top_self as *const _ as usize },
-        64usize,
+        56usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3654,7 +3637,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).object_class as *const _ as usize },
-        72usize,
+        64usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3664,7 +3647,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).class_class as *const _ as usize },
-        80usize,
+        72usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3674,7 +3657,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).module_class as *const _ as usize },
-        88usize,
+        80usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3684,7 +3667,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).proc_class as *const _ as usize },
-        96usize,
+        88usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3694,7 +3677,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).string_class as *const _ as usize },
-        104usize,
+        96usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3704,7 +3687,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).array_class as *const _ as usize },
-        112usize,
+        104usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3714,7 +3697,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).hash_class as *const _ as usize },
-        120usize,
+        112usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3724,7 +3707,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).range_class as *const _ as usize },
-        128usize,
+        120usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3734,7 +3717,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).float_class as *const _ as usize },
-        136usize,
+        128usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3744,7 +3727,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).fixnum_class as *const _ as usize },
-        144usize,
+        136usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3754,7 +3737,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).true_class as *const _ as usize },
-        152usize,
+        144usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3764,7 +3747,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).false_class as *const _ as usize },
-        160usize,
+        152usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3774,7 +3757,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).nil_class as *const _ as usize },
-        168usize,
+        160usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3784,7 +3767,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).symbol_class as *const _ as usize },
-        176usize,
+        168usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3794,7 +3777,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).kernel_module as *const _ as usize },
-        184usize,
+        176usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3804,7 +3787,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).mems as *const _ as usize },
-        192usize,
+        184usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3814,7 +3797,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).gc as *const _ as usize },
-        200usize,
+        192usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3824,7 +3807,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).symidx as *const _ as usize },
-        312usize,
+        304usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3834,7 +3817,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).symtbl as *const _ as usize },
-        320usize,
+        312usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3844,7 +3827,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).symhash as *const _ as usize },
-        328usize,
+        320usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3854,7 +3837,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).symcapa as *const _ as usize },
-        1352usize,
+        1344usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3864,7 +3847,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).symbuf as *const _ as usize },
-        1360usize,
+        1352usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3874,7 +3857,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).eException_class as *const _ as usize },
-        1368usize,
+        1360usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3884,7 +3867,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).eStandardError_class as *const _ as usize },
-        1376usize,
+        1368usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3894,7 +3877,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).nomem_err as *const _ as usize },
-        1384usize,
+        1376usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3904,7 +3887,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).stack_err as *const _ as usize },
-        1392usize,
+        1384usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3914,7 +3897,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).ud as *const _ as usize },
-        1400usize,
+        1392usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3924,7 +3907,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).atexit_stack as *const _ as usize },
-        1408usize,
+        1400usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3934,7 +3917,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).atexit_stack_len as *const _ as usize },
-        1416usize,
+        1408usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -3944,7 +3927,7 @@ fn bindgen_test_layout_mrb_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_state>())).ecall_nest as *const _ as usize },
-        1418usize,
+        1410usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_state),
@@ -4299,10 +4282,6 @@ extern "C" {
         argc: mrb_int,
         argv: *const mrb_value,
     ) -> mrb_value;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_instance_new"]
-    pub fn mrb_instance_new(mrb: *mut mrb_state, cv: mrb_value) -> mrb_value;
 }
 extern "C" {
     /// Creates a new instance of Class, Class.
@@ -5034,6 +5013,10 @@ extern "C" {
     );
 }
 extern "C" {
+    #[link_name = "\u{1}_mrb_frozen_error"]
+    pub fn mrb_frozen_error(mrb: *mut mrb_state, frozen_obj: *mut ::std::os::raw::c_void);
+}
+extern "C" {
     #[link_name = "\u{1}_mrb_warn"]
     pub fn mrb_warn(mrb: *mut mrb_state, fmt: *const ::std::os::raw::c_char, ...);
 }
@@ -5302,7 +5285,6 @@ pub struct RArray {
 #[derive(Copy, Clone)]
 pub union RArray__bindgen_ty_1 {
     pub heap: RArray__bindgen_ty_1__bindgen_ty_1,
-    pub embed: [mrb_value; 1usize],
     _bindgen_union_align: [u64; 3usize],
 }
 #[repr(C)]
@@ -5436,16 +5418,6 @@ fn bindgen_test_layout_RArray__bindgen_ty_1() {
             stringify!(RArray__bindgen_ty_1),
             "::",
             stringify!(heap)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RArray__bindgen_ty_1>())).embed as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray__bindgen_ty_1),
-            "::",
-            stringify!(embed)
         )
     );
 }
@@ -5839,6 +5811,10 @@ extern "C" {
 extern "C" {
     #[link_name = "\u{1}_mrb_class_real"]
     pub fn mrb_class_real(cl: *mut RClass) -> *mut RClass;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_instance_new"]
+    pub fn mrb_instance_new(mrb: *mut mrb_state, cv: mrb_value) -> mrb_value;
 }
 extern "C" {
     #[link_name = "\u{1}_mrb_class_name_class"]
@@ -9450,6 +9426,10 @@ extern "C" {
     pub fn mrb_proc_copy(a: *mut RProc, b: *mut RProc);
 }
 extern "C" {
+    #[link_name = "\u{1}_mrb_proc_arity"]
+    pub fn mrb_proc_arity(p: *const RProc) -> mrb_int;
+}
+extern "C" {
     #[link_name = "\u{1}_mrb_f_send"]
     pub fn mrb_f_send(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
@@ -10253,14 +10233,6 @@ extern "C" {
 extern "C" {
     #[link_name = "\u{1}_mrb_str_inspect"]
     pub fn mrb_str_inspect(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_noregexp"]
-    pub fn mrb_noregexp(mrb: *mut mrb_state, self_: mrb_value);
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_regexp_check"]
-    pub fn mrb_regexp_check(mrb: *mut mrb_state, obj: mrb_value);
 }
 pub type jmp_buf = [::std::os::raw::c_int; 37usize];
 pub type sigjmp_buf = [::std::os::raw::c_int; 38usize];
