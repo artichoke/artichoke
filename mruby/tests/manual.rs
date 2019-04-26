@@ -58,10 +58,15 @@ impl MrbFile for Container {
                     "pulled mrb_data_type from user data with class: {:?}",
                     CStr::from_ptr((*data_type).struct_name).to_string_lossy()
                 );
-                let mut ptr = mrb_data_get_ptr(mrb, slf, data_type);
-                let data = &mut ptr as *mut _ as *mut Rc<RefCell<Container>>;
+                let ptr = mrb_data_get_ptr(mrb, slf, data_type);
+                let data =
+                    std::mem::transmute::<*mut std::ffi::c_void, Rc<RefCell<Container>>>(ptr);
+                let clone = Rc::clone(&data);
+                let cont = clone.borrow();
 
-                unwrap_or_raise!(api, Value::try_from_mrb(&api, (*data).borrow().inner))
+                let value = unwrap_or_raise!(api, Value::try_from_mrb(&api, cont.inner));
+                std::mem::forget(data);
+                value
             }
         }
 
