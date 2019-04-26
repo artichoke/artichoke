@@ -33,13 +33,13 @@ shared nothing.
 that uses Rocket, mruby, and a Rust implementation of the `RequestStats` class.
 To bench, run the following to launch the application server:
 
-```console
+```sh
 FOOLS_GOLD_LOG=mruby=debug,rocket=info cargo run --release
 ```
 
 In a separate shell, run the following to generate load:
 
-```console
+```sh
 # Rocket launches with 16 threads by default
 ab -c 16 -n 5000 -l http://localhost:8000/fools-gold
 ```
@@ -55,7 +55,7 @@ implementation has a p99 latency of 36ms and serves 820 requests per second.
 that uses Thin, YARV Ruby, and a pure Ruby implementation of the `RequestStats`
 class. To bench, run the following to launch the application server:
 
-```console
+```sh
 cd ruby
 bundle install
 # set Servers to 16 to match Rocket
@@ -64,7 +64,7 @@ bundle exec rackup -o 127.0.0.1 -p 9000 -I. -O Servers=16 bench/config.ru
 
 In a separate shell, run the following to generate load:
 
-```console
+```sh
 # Thin launches with 16 workers
 ab -c 16 -n 5000 -l http://127.0.0.1:9000/fools-gold
 ```
