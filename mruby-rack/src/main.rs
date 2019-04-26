@@ -17,11 +17,12 @@ use uuid::Uuid;
 static SEEN_REQUESTS_COUNTER: AtomicI64 = AtomicI64::new(0);
 // Ruby sources
 const RACK_BUILDER_SOURCE: &str = include_str!("../ruby/rack/builder.rb");
-const FOOLS_GOLD_SOURCE: &str = include_str!("../ruby/fools-gold/adapter/in_memory.rb");
+const FOOLS_GOLD_SOURCE: &str = include_str!("../ruby/foolsgold.rb");
+const FOOLS_GOLD_ADAPTER_SOURCE: &str = include_str!("../ruby/foolsgold/adapter/memory.rb");
 const RACKUP_SOURCE: &str = include_str!("../ruby/config.ru");
 const REQUIRE_PREAMBLE: &str = r#"
 require 'rack/builder'
-require 'fools-gold'
+require 'foolsgold'
 "#;
 
 // static resources
@@ -57,6 +58,12 @@ impl MrbFile for FoolsGold {
                 mrb,
                 FOOLS_GOLD_SOURCE.as_ptr() as *const i8,
                 FOOLS_GOLD_SOURCE.len(),
+                ctx,
+            );
+            sys::mrb_load_nstring_cxt(
+                mrb,
+                FOOLS_GOLD_ADAPTER_SOURCE.as_ptr() as *const i8,
+                FOOLS_GOLD_ADAPTER_SOURCE.len(),
                 ctx,
             );
             RequestStats::require(interp);
@@ -274,10 +281,10 @@ fn fools_gold<'a>() -> Response<'a> {
     {
         let mut api = interp.borrow_mut();
         api.def_file_for_type::<_, RackBuilder>("rack/builder");
-        api.def_file_for_type::<_, FoolsGold>("fools-gold");
+        api.def_file_for_type::<_, FoolsGold>("foolsgold");
     }
     let code = format!(
-        "{}\nFoolsGold::Adapter::InMemory.new(Rack::Builder.new {{ {} }}).call({{}})",
+        "{}\nFoolsGold::Adapter::Memory.new(Rack::Builder.new {{ {} }}).call({{}})",
         REQUIRE_PREAMBLE, RACKUP_SOURCE
     );
     let (status, body) = unsafe {

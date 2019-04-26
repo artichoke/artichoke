@@ -1,5 +1,5 @@
 require 'securerandom'
-require 'fools-gold/counter'
+require 'foolsgold/counter'
 
 COUNTER = FoolsGold::Counter.new
 

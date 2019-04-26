@@ -1,9 +1,7 @@
 module FoolsGold
-  REQ_STATS = 'FOOLS_GOLD_REQ_STATS'.freeze
-
   module Adapter
     # In memory adapter that directly calls the rack app supplied in the block.
-    class InMemory
+    class Memory
       def initialize(app)
         @app = app
       end
