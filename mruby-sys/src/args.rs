@@ -84,11 +84,11 @@ pub fn mrb_args_none() -> mrb_aspec {
     0
 }
 
-/// Format specifiers for {mrb_get_args} function
+/// Format specifiers for `mrb_get_args` function
 ///
 /// Must be a C string composed of the following format specifiers:
 ///
-/// retrieve arguments from mrb_state.
+/// retrieve arguments from `mrb_state`.
 ///
 /// ```c
 /// mrb_get_args(mrb, format, ...)
@@ -100,24 +100,24 @@ pub fn mrb_args_none() -> mrb_aspec {
 ///
 ///   string  mruby type     C type                 note
 ///   ----------------------------------------------------------------------------------------------
-///   o:      Object         [mrb_value]
-///   C:      class/module   [mrb_value]
-///   S:      String         [mrb_value]            when ! follows, the value may be nil
-///   A:      Array          [mrb_value]            when ! follows, the value may be nil
-///   H:      Hash           [mrb_value]            when ! follows, the value may be nil
-///   s:      String         [char*,mrb_int]        Receive two arguments; s! gives (NULL,0) for nil
-///   z:      String         [char*]                NUL terminated string; z! gives NULL for nil
-///   a:      Array          [mrb_value*,mrb_int]   Receive two arguments; a! gives (NULL,0) for nil
-///   f:      Float          [mrb_float]
-///   i:      Integer        [mrb_int]
-///   b:      Boolean        [mrb_bool]
-///   n:      Symbol         [mrb_sym]
-///   d:      Data           [void*,mrb_data_type const] 2nd argument will be used to check data type so it won't be modified
-///   I:      Inline struct  [void*]
-///   &:      Block          [mrb_value]            &! raises exception if no block given
-///   *:      rest argument  [mrb_value*,mrb_int]   The rest of the arguments as an array; *! avoid copy of the stack
+///   o:      Object         `mrb_value`
+///   C:      class/module   `mrb_value`
+///   S:      String         `mrb_value`            when ! follows, the value may be nil
+///   A:      Array          `mrb_value`            when ! follows, the value may be nil
+///   H:      Hash           `mrb_value`            when ! follows, the value may be nil
+///   s:      String         `char*`,`mrb_int`      Receive two arguments; s! gives (NULL,0) for nil
+///   z:      String         `char*`                NUL terminated string; z! gives NULL for nil
+///   a:      Array          `mrb_value*`,`mrb_int` Receive two arguments; a! gives (NULL,0) for nil
+///   f:      Float          `mrb_float`
+///   i:      Integer        `mrb_int`
+///   b:      Boolean        `mrb_bool`
+///   n:      Symbol         `mrb_sym`
+///   d:      Data           `void*`,`mrb_data_type`  2nd argument will be used to check data type so it won't be modified
+///   I:      Inline struct  `void*`
+///   &:      Block          `mrb_value`            &! raises exception if no block given
+///   *:      rest argument  `mrb_value*`,`mrb_int` The rest of the arguments as an array; *! avoid copy of the stack
 ///   |:      optional                              Following arguments are optional
-///   ?:      optional given [mrb_bool]             true if preceding argument (optional) is given
+///   ?:      optional given `mrb_bool`             true if preceding argument (optional) is given
 pub mod specifiers {
     /// Could be used to retrieve any type of argument
     pub const OBJECT: &str = "o";
@@ -137,19 +137,19 @@ pub mod specifiers {
     pub const HASH: &str = "H";
     /// Retrieve a Hash argument or `nil`
     pub const NILABLE_HASH: &str = "H!";
-    /// Retrieve a CString and its length. Usable like:
+    /// Retrieve a `CString` and its length. Usable like:
     /// ```ignore
     /// mrb_get_args(mrb, "s", &ptr, &plen);
     /// ```
     pub const CSTRING_AND_LEN: &str = "s";
-    /// Retrieve a CString and its length. Gives (NULL, 0) for `nil`. Usable like:
+    /// Retrieve a `CString` and its length. Gives (NULL, 0) for `nil`. Usable like:
     /// ```c
     /// mrb_get_args(mrb, "s", &ptr, &plen);
     /// ```
     pub const NULLABLE_CSTRING_AND_LEN: &str = "s!";
-    /// Retrieve a NUL-terminated CString argument
+    /// Retrieve a NUL-terminated `CString` argument
     pub const CSTRING: &str = "z";
-    /// Retrieve a NUL-terminated CString argument. Gives NULL for `nil`
+    /// Retrieve a NUL-terminated `CString` argument. Gives NULL for `nil`
     pub const NULLABLE_CSTRING: &str = "z!";
     /// Receive two arguments, a C Array of `mrb_value`s and len. Usable like:
     /// ```c
@@ -170,7 +170,8 @@ pub mod specifiers {
     pub const BOOLEAN: &str = "b";
     /// Retrieve a Symbol argument.
     pub const SYMBOL: &str = "n";
-    /// Receive two arguments, a `void *` pointer to data and an mrb_data_type.
+    /// Receive two arguments, a `void *` pointer to data and an
+    /// `mrb_data_type`.
     ///
     /// 2nd argument will be used to check data type so it won't be modified.
     pub const DATA: &str = "d";

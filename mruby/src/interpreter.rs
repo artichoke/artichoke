@@ -24,7 +24,11 @@ extern "C" fn require(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
         mrb_get_args(mrb, argspec.as_ptr(), &name);
         let name = CStr::from_ptr(name).to_str().expect("required filename");
 
-        if { interp.borrow().required_files.contains(name) } {
+        let already_required = {
+            let borrow = interp.borrow();
+            borrow.required_files.contains(name)
+        };
+        if already_required {
             return interp.borrow().bool(false).expect("bool").inner();
         }
 
@@ -38,23 +42,20 @@ extern "C" fn require(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
                 .map(Clone::clone)
         };
 
-        match req {
-            Some(req) => {
-                req(Rc::clone(&interp));
-                {
-                    let mut borrow = interp.borrow_mut();
-                    borrow.required_files.insert(name.to_owned());
-                }
-                interp.borrow().bool(true).expect("bool").inner()
+        if let Some(req) = req {
+            req(Rc::clone(&interp));
+            {
+                let mut borrow = interp.borrow_mut();
+                borrow.required_files.insert(name.to_owned());
             }
-            None => {
-                let borrow = interp.borrow();
-                let eclass = CString::new("RuntimeError").expect("RuntimeError class");
-                let message = format!("cannot load such file -- {}", name);
-                let msg = CString::new(message).expect("error message");
-                mrb_sys_raise(borrow.mrb(), eclass.as_ptr(), msg.as_ptr());
-                borrow.bool(false).expect("bool").inner()
-            }
+            interp.borrow().bool(true).expect("bool").inner()
+        } else {
+            let borrow = interp.borrow();
+            let eclass = CString::new("RuntimeError").expect("RuntimeError class");
+            let message = format!("cannot load such file -- {}", name);
+            let msg = CString::new(message).expect("error message");
+            mrb_sys_raise(borrow.mrb(), eclass.as_ptr(), msg.as_ptr());
+            borrow.bool(false).expect("bool").inner()
         }
     }
 }

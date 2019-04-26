@@ -122,7 +122,7 @@ impl MrbFile for RequestStats {
                     data.borrow().id,
                     mrb
                 );
-                let id = data.borrow().id.clone();
+                let id = data.borrow().id;
                 std::mem::forget(data);
                 match Value::try_from_mrb(&api, id.to_string()) {
                     Ok(value) => value.inner(),
