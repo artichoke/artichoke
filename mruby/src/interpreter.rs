@@ -9,6 +9,22 @@ use crate::convert::*;
 use crate::file::MrbFile;
 use crate::value::*;
 
+#[macro_export]
+macro_rules! unwrap_or_raise {
+    ($api:expr, $result:expr) => {
+        match $result {
+            std::result::Result::Err(err) => {
+                // There was a TypeError converting to the desired Rust type.
+                let eclass = std::ffi::CString::new("RuntimeError").expect("eclass");
+                let message = CString::new(format!("{}", err)).expect("message");
+                $crate::sys::mrb_sys_raise($api.mrb(), eclass.as_ptr(), message.as_ptr());
+                return $crate::sys::mrb_sys_nil_value();
+            }
+            std::result::Result::Ok(value) => value.inner(),
+        }
+    };
+}
+
 pub type Mrb = Rc<RefCell<MrbApi>>;
 pub type MrbFreeFunc = unsafe extern "C" fn(mrb: *mut mrb_state, arg1: *mut std::ffi::c_void);
 pub type RequireFunc = fn(interp: Mrb);

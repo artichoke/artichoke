@@ -1,8 +1,10 @@
 #![deny(clippy::all, clippy::pedantic)]
 
+#[macro_use]
+mod interpreter;
+
 mod convert;
 mod file;
-mod interpreter;
 mod value;
 
 pub use self::convert::*;

@@ -125,18 +125,7 @@ impl MrbFile for RequestStats {
                 );
                 let id = data.borrow().id;
                 std::mem::forget(data);
-                match Value::try_from_mrb(&api, id.to_string()) {
-                    Ok(value) => value.inner(),
-                    Err(err) => {
-                        // could not convert V4 UUID string to mrb_value.
-                        // This should be unreachable since request_id is a
-                        // Rust String which cannot contain NUL bytes.
-                        let eclass = CString::new("RuntimeError").expect("eclass");
-                        let message = CString::new(format!("{}", err)).expect("message");
-                        sys::mrb_sys_raise(mrb, eclass.as_ptr(), message.as_ptr());
-                        api.nil().expect("nil").inner()
-                    }
-                }
+                unwrap_or_raise!(api, Value::try_from_mrb(&api, id.to_string()))
             }
         }
 
@@ -157,18 +146,7 @@ impl MrbFile for RequestStats {
                 );
                 std::mem::forget(data);
                 let seen_count = SEEN_REQUESTS_COUNTER.load(Ordering::SeqCst);
-                match Value::try_from_mrb(&api, seen_count) {
-                    Ok(value) => value.inner(),
-                    Err(err) => {
-                        // could not convert req counter i64 to mrb_value.
-                        // This should be unreachable since convering from i64
-                        // to mrb_value is infallible.
-                        let eclass = CString::new("RuntimeError").expect("eclass");
-                        let message = CString::new(format!("{}", err)).expect("message");
-                        sys::mrb_sys_raise(mrb, eclass.as_ptr(), message.as_ptr());
-                        api.nil().expect("nil").inner()
-                    }
-                }
+                unwrap_or_raise!(api, Value::try_from_mrb(&api, seen_count))
             }
         }
 

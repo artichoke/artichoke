@@ -61,18 +61,7 @@ impl MrbFile for Container {
                 let mut ptr = mrb_data_get_ptr(mrb, slf, data_type);
                 let data = &mut ptr as *mut _ as *mut Rc<RefCell<Container>>;
 
-                match Value::try_from_mrb(&api, (*data).borrow().inner) {
-                    Ok(value) => value.inner(),
-                    Err(err) => {
-                        // could not convert Container::inner to mrb_value.
-                        // This should be unreachable since inner is an i64 and
-                        // conversion between i64 and Value always succeeds.
-                        let eclass = CString::new("RuntimeError").expect("eclass");
-                        let message = CString::new(format!("{}", err)).expect("message");
-                        mrb_sys_raise(mrb, eclass.as_ptr(), message.as_ptr());
-                        api.nil().expect("nil").inner()
-                    }
-                }
+                unwrap_or_raise!(api, Value::try_from_mrb(&api, (*data).borrow().inner))
             }
         }
 
