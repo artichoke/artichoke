@@ -8,7 +8,7 @@ rackup = File.read(File.join(File.dirname(__FILE__), '..', 'config.ru'))
 builder = Rack::Builder.new_from_string(rackup)
 app = FoolsGold::Adapter::InMemory.new(builder)
 
-map '/' do
+map '/fools-gold' do
   run app
 end
 
