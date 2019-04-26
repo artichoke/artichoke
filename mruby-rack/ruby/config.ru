@@ -1,7 +1,6 @@
-# rubocop:disable Metrics/BlockLength
 # mruby cannot resolve the parser ambiguity without the parens around the
 # lambda expression.
-run (lambda do |env|
+run(lambda do |env|
   begin
     request_id = env[FoolsGold::REQ_STATS].req_start
     seen = env[FoolsGold::REQ_STATS].seen_count
@@ -41,4 +40,3 @@ run (lambda do |env|
     env[FoolsGold::REQ_STATS].req_finalize
   end
 end)
-# rubocop:enable Metrics/BlockLength
