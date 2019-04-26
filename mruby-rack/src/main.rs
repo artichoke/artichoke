@@ -1,5 +1,6 @@
 #![feature(integer_atomics)]
 #![feature(proc_macro_hygiene, decl_macro)]
+#![deny(clippy::all, clippy::pedantic)]
 
 use log::{debug, info, trace, warn};
 use mruby::*;
