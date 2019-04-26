@@ -16,9 +16,9 @@ use uuid::Uuid;
 
 static SEEN_REQUESTS_COUNTER: AtomicI64 = AtomicI64::new(0);
 // Ruby sources
-const RACK_BUILDER_SOURCE: &str = include_str!("../ruby/rack/builder.rb");
-const FOOLS_GOLD_SOURCE: &str = include_str!("../ruby/foolsgold.rb");
-const FOOLS_GOLD_ADAPTER_SOURCE: &str = include_str!("../ruby/foolsgold/adapter/memory.rb");
+const RACK_BUILDER_SOURCE: &str = include_str!("../ruby/lib/rack/builder.rb");
+const FOOLS_GOLD_SOURCE: &str = include_str!("../ruby/lib/foolsgold.rb");
+const FOOLS_GOLD_ADAPTER_SOURCE: &str = include_str!("../ruby/lib/foolsgold/adapter/memory.rb");
 const RACKUP_SOURCE: &str = include_str!("../ruby/config.ru");
 const REQUIRE_PREAMBLE: &str = r#"
 require 'rack/builder'

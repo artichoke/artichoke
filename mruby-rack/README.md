@@ -61,17 +61,16 @@ class. To bench, run the following to launch the application server:
 ```sh
 cd ruby
 bundle install
-# set Servers to 16 to match Rocket
+# TODO set Servers to 16 to match Rocket
 # with logging
-bundle exec rackup -o 127.0.0.1 -p 9000 -I. -O Servers=16 bench/config.ru
+bundle exec rackup -o 127.0.0.1 -p 9000 -I./lib bench/config.ru
 # without logging
-bundle exec rackup -q -o 127.0.0.1 -p 9000 -I. -O Servers=16 bench/config.ru
+bundle exec rackup -q -o 127.0.0.1 -p 9000 -I./lib bench/config.ru
 ```
 
 In a separate shell, run the following to generate load:
 
 ```sh
-# Thin launches with 16 workers
 ab -c 16 -n 5000 -l http://127.0.0.1:9000/fools-gold
 ```
 
