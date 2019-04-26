@@ -34,7 +34,10 @@ that uses Rocket, mruby, and a Rust implementation of the `RequestStats` class.
 To bench, run the following to launch the application server:
 
 ```sh
+# with logging
 FOOLS_GOLD_LOG=mruby=debug,rocket=info cargo run --release
+# without logging
+cargo run --release
 ```
 
 In a separate shell, run the following to generate load:
@@ -59,7 +62,10 @@ class. To bench, run the following to launch the application server:
 cd ruby
 bundle install
 # set Servers to 16 to match Rocket
+# with logging
 bundle exec rackup -o 127.0.0.1 -p 9000 -I. -O Servers=16 bench/config.ru
+# without logging
+bundle exec rackup -q -o 127.0.0.1 -p 9000 -I. -O Servers=16 bench/config.ru
 ```
 
 In a separate shell, run the following to generate load:
