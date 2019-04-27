@@ -1,28 +1,35 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <title>
       FoolsGold Ruby Rack in Rust Server Extravaganza
     </title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
   </head>
   <body>
     <div class="container my-2">
       <h1>FoolsGold Ruby Rack in Rust Server Extravaganza</h1>
       <p align="center">
         <a href="/fools-gold">
-          <img class="mw-100" src="/img/resf.png" alt="Rust Evangelism Strike Force"></img>
+          <img
+            class="mw-100"
+            src="/img/resf.png"
+            alt="Rust Evangelism Strike Force"
+          />
         </a>
       </p>
       <h2>What Is This?</h2>
       <p>
-        FoolsGold is a Rust webserver that executes a Ruby Rack application on an
-        embedded mruby interpreter.
+        FoolsGold is a Rust webserver that executes a Ruby Rack application on
+        an embedded mruby interpreter.
       </p>
       <p>
-        The Rust webserver is Rocket, which is based on Hyper and Tokio. It is an
-        incredibly fast, async webserver with statically typed route functions
-        and typed, thread-safe shared state.
+        The Rust webserver is Rocket, which is based on Hyper and Tokio. It is
+        an incredibly fast, async webserver with statically typed route
+        functions and typed, thread-safe shared state.
       </p>
       <p>
         Rust exposes a <code>RequestStats</code> class to the mruby interpreter

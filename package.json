@@ -80,6 +80,6 @@
   "scripts": {
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
     "fmt": "prettier --write --prose-wrap always './*.{css,html,js,json,md}' 'mruby*/**/*.{css,html,js,json,md}'",
-    "lint": "for crate in mruby*; do cargo clean -p $crate; done && cargo clippy --all-targets"
+    "lint": "for crate in mruby*; do cargo clean -p $crate; done && cargo clippy --all-targets && cd mruby-rack/ruby && bundle exec rubocop"
   }
 }

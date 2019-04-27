@@ -1,8 +1,8 @@
 # mruby-rack
 
 Crate mruby-rack implements a multi-threaded, shared-nothing Unicorn-like
-application server using Rocket and an embedded mruby interpeter via the
-`mruby` crate.
+application server using Rocket and an embedded mruby interpeter via the `mruby`
+crate.
 
 # FoolsGold
 

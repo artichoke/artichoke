@@ -2,7 +2,7 @@ AllCops:
   TargetRubyVersion: 1.9
   DisplayCopNames: true
   Exclude:
-    - 'rack/**/*.rb'
+    - 'lib/rack/**/*.rb'
 Metrics:
   Enabled: false
 Style/Documentation:
