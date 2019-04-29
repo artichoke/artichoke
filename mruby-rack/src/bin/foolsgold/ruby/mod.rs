@@ -13,7 +13,15 @@ pub mod rackup;
 use foolsgold::FoolsGold;
 
 ref_thread_local! {
-    static managed INTERPRETER: Mrb = Interpreter::create().expect("interp");
+    static managed INTERPRETER: Mrb = {
+        let interp = Interpreter::create().expect("interp");
+        {
+            let mut api = interp.borrow_mut();
+            api.def_file_for_type::<_, rack::Builder>("rack/builder");
+            api.def_file_for_type::<_, FoolsGold>("foolsgold");
+        }
+        interp
+    };
 }
 
 // TODO: resolve path relative to CARGO_MANIFEST_DIR

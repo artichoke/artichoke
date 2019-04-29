@@ -137,13 +137,13 @@ FoolsGold will be running on <http://127.0.0.1:8000/fools-gold/prefork>.
 
 | p99 Latency | p90 Latency | Requests Per Second |
 | :---------: | :---------: | :-----------------: |
-|     4ms     |     3ms     |      5365 RPS       |
+|     6ms     |     3ms     |      5220 RPS       |
 
 **Concurrency = 64**
 
 | p99 Latency | p90 Latency | Requests Per Second |
 | :---------: | :---------: | :-----------------: |
-|    18ms     |    14ms     |      5747 RPS       |
+|    18ms     |    14ms     |      4950 RPS       |
 
 ### Ruby
 
