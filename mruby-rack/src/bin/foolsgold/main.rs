@@ -5,6 +5,8 @@
 #[macro_use]
 extern crate log;
 #[macro_use]
+extern crate ref_thread_local;
+#[macro_use]
 extern crate rust_embed;
 
 use rocket::routes;
@@ -24,7 +26,7 @@ pub fn main() -> Result<(), i32> {
 
 pub fn spawn() -> Result<(), String> {
     let err = rocket::ignite()
-        .mount("/", routes![assets::index, ruby::rack_app])
+        .mount("/", routes![assets::index, ruby::shared_nothing_rack_app, ruby::threaded_rack_app])
         .mount("/img", routes![assets::pyrite, assets::resf])
         .launch();
     // This log is only reachable is Rocket has an error during startup,
