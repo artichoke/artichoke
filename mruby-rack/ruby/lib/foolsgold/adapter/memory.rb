@@ -7,7 +7,7 @@ module FoolsGold
       end
 
       def call(env)
-        @env = env.merge(REQ_STATS => FoolsGold::RequestStats.new)
+        @env = env.merge(CONTEXT => FoolsGold::RequestContext.new)
 
         @app.call(@env)
       end

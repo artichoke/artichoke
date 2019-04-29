@@ -1,4 +1,4 @@
 module FoolsGold
   VERSION = '0.0.1'.freeze
-  REQ_STATS = 'FOOLS_GOLD_REQ_STATS'.freeze
+  CONTEXT = 'FOOLSGOLD_REQUEST_CONTEXT'.freeze
 end

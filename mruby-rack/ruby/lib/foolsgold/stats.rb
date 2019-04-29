@@ -1,24 +1,16 @@
 require 'securerandom'
-require 'foolsgold/counter'
-
-COUNTER = FoolsGold::Counter.new
+require 'foolsgold/metrics'
 
 module FoolsGold
-  class RequestStats
+  class RequestContext
+    attr_accessor :trace_id
+
     def initialize
-      @id = SecureRandom.uuid
+      @trace_id = SecureRandom.uuid
     end
 
-    def req_start
-      @id
-    end
-
-    def seen_count
-      COUNTER.get
-    end
-
-    def req_finalize
-      COUNTER.inc
+    def metrics
+      FoolsGold::Metrics
     end
   end
 end

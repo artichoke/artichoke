@@ -12,6 +12,10 @@ rocket = "0.4.0"
 [dependencies.mruby]
 path = "../mruby"
 
+[dependencies.rust-embed]
+version = "4.3.0"
+features = ["debug-embed"]
+
 [dependencies.uuid]
 version = "0.7"
 features = ["v4"]

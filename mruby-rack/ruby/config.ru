@@ -11,8 +11,6 @@ end
 # lambda expression.
 run(lambda do |env|
   begin
-    request_id = env[FoolsGold::REQ_STATS].req_start
-    seen = env[FoolsGold::REQ_STATS].seen_count
     body = <<-HTML.strip_heredoc_indent(6)
       <!DOCTYPE html>
       <html>
@@ -35,20 +33,20 @@ run(lambda do |env|
             </p>
             <h2>Request ID</h2>
             <p>Request IDs are generated in Rust with the uuid crate.</p>
-            <p>Trace: <code>#{request_id}</code></p>
+            <p>Trace: <code>#{env[FoolsGold::CONTEXT].trace_id}</code></p>
             <h2>Request Count</h2>
             <p>
               Request count tracks the total number of seen requests across all
               threads and all mruby interpreters. Request count is tracked in a static
               <code>AtomicI64</code> in Rust.
             </p>
-            <p>Counter: <code>#{seen}</code></p>
+            <p>Counter: <code>#{env[FoolsGold::CONTEXT].metrics.total_requests.get}</code></p>
           </div>
         </body>
       </html>
     HTML
     [200, { 'Content-Type'.freeze => 'text/html'.freeze }, [body]]
   ensure
-    env[FoolsGold::REQ_STATS].req_finalize
+    env[FoolsGold::CONTEXT].metrics.total_requests.inc
   end
 end)

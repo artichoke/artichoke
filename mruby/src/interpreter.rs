@@ -2,7 +2,9 @@ use mruby_sys::*;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::convert::AsRef;
+use std::error;
 use std::ffi::{CStr, CString};
+use std::fmt;
 use std::rc::Rc;
 
 use crate::convert::*;
@@ -10,14 +12,39 @@ use crate::file::MrbFile;
 use crate::value::*;
 
 #[macro_export]
+macro_rules! interpreter_or_raise {
+    ($mrb:expr) => {
+        match $crate::Interpreter::from_user_data($mrb) {
+            std::result::Result::Err(err) => {
+                // Unable to retrieve interpreter from user data pointer in
+                // `mrb_state`.
+                let eclass = std::ffi::CString::new("RuntimeError");
+                let message = std::ffi::CString::new(format!("{}", err));
+                if let (std::result::Result::Ok(eclass), std::result::Result::Ok(message)) =
+                    (eclass, message)
+                {
+                    $crate::sys::mrb_sys_raise($mrb, eclass.as_ptr(), message.as_ptr());
+                }
+                return $crate::sys::mrb_sys_nil_value();
+            }
+            std::result::Result::Ok(interpreter) => interpreter,
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! unwrap_or_raise {
     ($api:expr, $result:expr) => {
         match $result {
             std::result::Result::Err(err) => {
                 // There was a TypeError converting to the desired Rust type.
-                let eclass = std::ffi::CString::new("RuntimeError").expect("eclass");
-                let message = CString::new(format!("{}", err)).expect("message");
-                $crate::sys::mrb_sys_raise($api.mrb(), eclass.as_ptr(), message.as_ptr());
+                let eclass = std::ffi::CString::new("RuntimeError");
+                let message = std::ffi::CString::new(format!("{}", err));
+                if let (std::result::Result::Ok(eclass), std::result::Result::Ok(message)) =
+                    (eclass, message)
+                {
+                    $crate::sys::mrb_sys_raise($api.mrb(), eclass.as_ptr(), message.as_ptr());
+                }
                 return $crate::sys::mrb_sys_nil_value();
             }
             std::result::Result::Ok(value) => value.inner(),
@@ -153,6 +180,29 @@ pub enum MrbError {
     Uninitialized,
 }
 
+impl fmt::Display for MrbError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MrbError::Convert(inner) => write!(f, "conversion error: {}", inner),
+            MrbError::New => write!(f, "failed to create mrb interpreter"),
+            MrbError::Uninitialized => write!(f, "mrb interpreter not initialized"),
+        }
+    }
+}
+
+impl error::Error for MrbError {
+    fn description(&self) -> &str {
+        "mruby interpreter error"
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            MrbError::Convert(inner) => Some(inner),
+            _ => None,
+        }
+    }
+}
+
 pub struct MrbApi {
     mrb: *mut mrb_state,
     ctx: *mut mrbc_context,
@@ -207,18 +257,20 @@ impl MrbApi {
             .map(|class_def| &class_def.0)
     }
 
+    // NOTE: This function must return a reference. mruby expects mrb_data_type
+    // structs to live the life of the mrb interpreter. If a data type is
+    // deallocated because it is dropped, mrb_close will segfault.
     pub fn get_or_create_data_type<T: AsRef<str>>(
         &mut self,
         class: T,
         free: Option<MrbFreeFunc>,
-    ) -> &mut mrb_data_type {
+    ) -> &mrb_data_type {
         let class = class.as_ref().to_owned();
-        &mut self
+        &self
             .data_types
             .entry(class.clone())
             .or_insert_with(|| {
-                let class = CString::new(class.clone())
-                    .unwrap_or_else(|_| panic!("class {} to CString", class));
+                let class = CString::new(class).expect("class for data type");
                 let data_type = mrb_data_type {
                     struct_name: class.as_ptr(),
                     dfree: free,
