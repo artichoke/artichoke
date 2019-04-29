@@ -5,7 +5,7 @@ Crate mruby-sys provides Rust bindings for the
 
 This crate uses bindgen to generate Rust FFI bindings.
 
-**Requires Ruby to compile.** In _very Ruby_ fashion, mruby uses Make to build
+**Requires Ruby to compile.** In _very Ruby_ fashion, mruby uses Rake to build
 _and_ uses Ruby to dynamically generate C sources at build time.
 
 mruby supports
