@@ -18,12 +18,7 @@ impl MrbFile for Builder {
         unsafe {
             // load Rack::Builder by evaling the source file on the mruby
             // interpreter.
-            sys::mrb_load_nstring_cxt(
-                mrb,
-                builder.as_ptr() as *const i8,
-                builder.len(),
-                ctx,
-            );
+            sys::mrb_load_nstring_cxt(mrb, builder.as_ptr() as *const i8, builder.len(), ctx);
         }
     }
 }
