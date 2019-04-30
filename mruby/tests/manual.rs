@@ -76,7 +76,7 @@ impl MrbFile for Container {
             // interpreter, otherwise `mrb_close` will segfault.
             let class = CString::new("Container").expect("Container class");
             let mrb_class = mrb_define_class(mrb, class.as_ptr(), (*mrb).object_class);
-            mrb_sys_set_instance_tt(mrb_class, mrb_vtype_MRB_TT_DATA);
+            mrb_sys_set_instance_tt(mrb_class, mrb_vtype::MRB_TT_DATA);
 
             let initialize_method = CString::new("initialize").expect("initialize method");
             mrb_define_method(

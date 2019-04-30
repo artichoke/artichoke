@@ -266,7 +266,7 @@ impl MrbFile for RequestContext {
                 class.as_ptr(),
                 (*mrb).object_class,
             );
-            sys::mrb_sys_set_instance_tt(mrb_class, sys::mrb_vtype_MRB_TT_DATA);
+            sys::mrb_sys_set_instance_tt(mrb_class, sys::mrb_vtype::MRB_TT_DATA);
 
             let initialize_method = CString::new("initialize").expect("method");
             sys::mrb_define_method(

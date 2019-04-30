@@ -33,15 +33,19 @@ pub enum Ruby {
     Bool,
     Class,
     CPointer,
+    Data,
     Exception,
     Fixnum,
     Float,
     Hash,
+    InlineStruct,
     Module,
     Nil,
     Object,
+    SingletonClass,
     String,
     Symbol,
+    Unreachable,
 }
 
 impl Ruby {
@@ -50,16 +54,20 @@ impl Ruby {
             Ruby::Array => "Array",
             Ruby::Bool => "Boolean",
             Ruby::Class => "Class",
-            Ruby::CPointer => "C Pointer (mruby internal)",
+            Ruby::CPointer => "C Pointer",
+            Ruby::Data => "Rust-backed Ruby instance",
             Ruby::Exception => "Exception",
             Ruby::Fixnum => "Fixnum",
             Ruby::Float => "Float",
             Ruby::Hash => "Hash",
+            Ruby::InlineStruct => "Inline Struct",
             Ruby::Module => "Module",
             Ruby::Nil => "NilClass",
             Ruby::Object => "Object",
+            Ruby::SingletonClass => "Singleton (anonymous) class",
             Ruby::String => "String",
             Ruby::Symbol => "Symbol",
+            Ruby::Unreachable => "mruby internal and unreachable",
         }
         .to_owned()
     }
@@ -71,45 +79,93 @@ impl fmt::Display for Ruby {
     }
 }
 
+// This conversion has to be from mrb_value instead of mrb_vtype to disambiguate
+// between `Ruby::Nil` and a false `Ruby::Bool`.
 impl From<mrb_value> for Ruby {
     #[allow(non_upper_case_globals)]
     fn from(value: mrb_value) -> Self {
-        // `nil` is implemented with the FALSE type tag in mruby (since both
-        // values are falsy). The difference is that booleans are non-zero
-        // `Fixnum`s.
+        // `nil` is implemented with the `MRB_TT_FALSE` type tag in mruby
+        // (since both values are falsy). The difference is that booleans are
+        // non-zero `Fixnum`s.
         if unsafe { mrb_sys_value_is_nil(value) } {
             return Ruby::Nil;
         }
 
         // switch on the type tag in the `mrb_value`
+        #[allow(clippy::match_same_arms)] // to map to the `mrb_vtype` enum def
         match value.tt {
-            mrb_vtype_MRB_TT_ARRAY => Ruby::Array,
-            mrb_vtype_MRB_TT_FALSE | mrb_vtype_MRB_TT_TRUE => Ruby::Bool,
-            mrb_vtype_MRB_TT_BREAK => unimplemented!("mruby type break"), // TODO: what is this?
-            mrb_vtype_MRB_TT_CLASS => Ruby::Class,
-            mrb_vtype_MRB_TT_CPTR => Ruby::CPointer,
-            mrb_vtype_MRB_TT_DATA => unimplemented!("mruby type data"), // TODO: what is this?
-            mrb_vtype_MRB_TT_ENV => unimplemented!("mruby type env"),   // TODO: what is this?
-            mrb_vtype_MRB_TT_EXCEPTION => Ruby::Exception,
-            mrb_vtype_MRB_TT_FIBER => unimplemented!("mruby type fiber"), // WONTFIX
-            mrb_vtype_MRB_TT_FILE => unimplemented!("mruby type file"),
-            mrb_vtype_MRB_TT_FIXNUM => Ruby::Fixnum,
-            mrb_vtype_MRB_TT_FLOAT => Ruby::Float,
-            mrb_vtype_MRB_TT_HASH => Ruby::Hash,
-            mrb_vtype_MRB_TT_ICLASS => unimplemented!("mruby type iclass"),
-            mrb_vtype_MRB_TT_ISTRUCT => unimplemented!("mruby type istruct"),
-            mrb_vtype_MRB_TT_MAXDEFINE => unimplemented!("mruby type maxdefine"),
-            mrb_vtype_MRB_TT_MODULE => Ruby::Module,
-            mrb_vtype_MRB_TT_PROC => unimplemented!("mruby type proc"),
-            mrb_vtype_MRB_TT_OBJECT => Ruby::Object,
-            mrb_vtype_MRB_TT_RANGE => unimplemented!("mruby type range"),
-            mrb_vtype_MRB_TT_SCLASS => unimplemented!("mruby type sclass"),
-            mrb_vtype_MRB_TT_STRING => Ruby::String,
-            mrb_vtype_MRB_TT_SYMBOL => Ruby::Symbol,
-            mrb_vtype_MRB_TT_UNDEF => unimplemented!("mruby type undef"), // TODO: what is this?
-            _ => unreachable!(
-                "Unknown mruby type. See include/mruby/value.h in vendored mruby source."
-            ),
+            mrb_vtype::MRB_TT_FALSE => Ruby::Bool,
+            // `MRB_TT_FREE` is a marker type tag that indicates to the mruby
+            // VM that an object should be garbage collected.
+            mrb_vtype::MRB_TT_FREE => Ruby::Unreachable,
+            mrb_vtype::MRB_TT_TRUE => Ruby::Bool,
+            mrb_vtype::MRB_TT_FIXNUM => Ruby::Fixnum,
+            mrb_vtype::MRB_TT_SYMBOL => Ruby::Symbol,
+            // internal use: #undef; should not happen
+            mrb_vtype::MRB_TT_UNDEF => Ruby::Unreachable,
+            mrb_vtype::MRB_TT_FLOAT => Ruby::Float,
+            // `MRB_TT_CPTR` wraps a `void *` pointer.
+            mrb_vtype::MRB_TT_CPTR => Ruby::CPointer,
+            mrb_vtype::MRB_TT_OBJECT => Ruby::Object,
+            mrb_vtype::MRB_TT_CLASS => Ruby::Class,
+            mrb_vtype::MRB_TT_MODULE => Ruby::Module,
+            // `MRB_TT_ICLASS` is an internal use type tag meant for holding
+            // mixed in modules.
+            mrb_vtype::MRB_TT_ICLASS => Ruby::Unreachable,
+            // `MRB_TT_SCLASS` represents a singleton class, or a class that is
+            // defined anonymously, e.g. `c1` or `c2` below:
+            //
+            // ```ruby
+            // c1 = Class.new {
+            //   def foo; :foo; end
+            // }
+            // c2 = (class <<cls; self; end)
+            // ```
+            //
+            // mruby also uses the term singleton method to refer to methods
+            // defined on an object's eigenclass, e.g. `bar` below:
+            //
+            // ```ruby
+            // class Foo; end
+            // obj = Foo.new
+            // def obj.bar; 'bar'; end
+            // ```
+            mrb_vtype::MRB_TT_SCLASS => Ruby::SingletonClass,
+            mrb_vtype::MRB_TT_PROC => unimplemented!("mruby type proc"),
+            mrb_vtype::MRB_TT_ARRAY => Ruby::Array,
+            mrb_vtype::MRB_TT_HASH => Ruby::Hash,
+            mrb_vtype::MRB_TT_STRING => Ruby::String,
+            // TODO: how to surface this?
+            mrb_vtype::MRB_TT_RANGE => unimplemented!("mruby type range"),
+            mrb_vtype::MRB_TT_EXCEPTION => Ruby::Exception,
+            // TODO: how to surface this?
+            mrb_vtype::MRB_TT_FILE => unimplemented!("mruby type file"),
+            // TODO: how to surface this?
+            mrb_vtype::MRB_TT_ENV => unimplemented!("mruby type env"),
+            // `MRB_TT_DATA` is a type tag for wrapped C pointers. It is used
+            // to indicate that an `mrb_value` has a pointer to an external data
+            // structure stored in its `value.p` field.
+            // TODO: how to handle this?
+            mrb_vtype::MRB_TT_DATA => Ruby::Data,
+            // Fibers are only implemented in a gem which mruby-sys does not
+            // build.
+            mrb_vtype::MRB_TT_FIBER => Ruby::Unreachable,
+            // MRB_TT_ISTRUCT is an "inline structure", or a mrb_value that
+            // stores data in a char* buffer inside an mrb_value. These
+            // mrb_values cannot have a finalizer and cannot have instance
+            // variables.
+            //
+            // See vendor/mruby-*/include/mruby/istruct.h
+            mrb_vtype::MRB_TT_ISTRUCT => Ruby::InlineStruct,
+            // `MRB_TT_BREAK` is used internally to the mruby VM and appears to
+            // have something to do with resuming continuations from Fibers.
+            // mruby-sys does not build support for Fibers so this type tag is
+            // unreachable.
+            mrb_vtype::MRB_TT_BREAK => Ruby::Unreachable,
+            // `MRB_TT_MAXDEFINE` is a marker enum value used by the mruby VM to
+            // dynamically check if a type tag is valid using the less than
+            // operator. It does not correspond to an instantiated type.
+            mrb_vtype::MRB_TT_MAXDEFINE => Ruby::Unreachable,
         }
     }
 }

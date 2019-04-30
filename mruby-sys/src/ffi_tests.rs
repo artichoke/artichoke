@@ -122,7 +122,7 @@ fn symbol_to_string() {
         assert_eq!(s, r#"":symbol""#);
 
         let mut s = mrb_sym2str(mrb, symbol);
-        assert_eq!(s.tt, mrb_vtype_MRB_TT_STRING);
+        assert_eq!(s.tt, mrb_vtype::MRB_TT_STRING);
         let s = mrb_string_value_cstr(mrb, &mut s) as *const i8;
         let s = CStr::from_ptr(s).to_str().expect(":symbol.to_s");
         assert_eq!(s, ":symbol");
@@ -227,7 +227,7 @@ fn class_value() {
         let result = mrb_funcall_argv(mrb, obj_class, sym, 0, args.as_ptr());
 
         let s = mrb_str_to_cstr(mrb, result) as *const i8;
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_STRING);
+        assert_eq!(result.tt, mrb_vtype::MRB_TT_STRING);
         assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "Object");
 
         mrb_close(mrb);
@@ -258,7 +258,7 @@ fn nil_class_eval() {
 
         let code = "nil.class";
         let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_CLASS);
+        assert_eq!(result.tt, mrb_vtype::MRB_TT_CLASS);
         let s = mrb_class_name(mrb, result.value.p as *mut ffi::RClass);
         assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "NilClass");
 
@@ -275,7 +275,7 @@ fn nil_class_name_eval() {
 
         let code = "nil.class.to_s";
         let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_STRING);
+        assert_eq!(result.tt, mrb_vtype::MRB_TT_STRING);
         let s = mrb_str_to_cstr(mrb, result) as *const i8;
         assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "NilClass");
 
@@ -414,7 +414,7 @@ fn define_and_include_module() {
                 // the `i` field of the value union in the unsafe block.
                 //
                 // TODO: Write a standalone test for this behavior
-                if slf.tt == mrb_vtype_MRB_TT_FIXNUM {
+                if slf.tt == mrb_vtype::MRB_TT_FIXNUM {
                     // `unsafe` block required because we're accessing a union
                     // field which might access uninitialized memory. We know we
                     // this operation is safe because of the above assert on
@@ -511,9 +511,9 @@ fn define_class_and_instance_method_with_one_rust_function() {
         ) -> mrb_value {
             unsafe {
                 match slf.tt {
-                    mrb_vtype_MRB_TT_OBJECT => mrb_sys_fixnum_value(2),
-                    mrb_vtype_MRB_TT_CLASS => mrb_sys_fixnum_value(3),
-                    tt => unreachable!("unexpected mrb_value type: {}", tt),
+                    mrb_vtype::MRB_TT_OBJECT => mrb_sys_fixnum_value(2),
+                    mrb_vtype::MRB_TT_CLASS => mrb_sys_fixnum_value(3),
+                    tt => unreachable!("unexpected mrb_value type: {:?}", tt),
                 }
             }
         }
@@ -640,7 +640,7 @@ fn protect() {
 
         // state == true means an exception was thrown by the protected function
         assert_eq!(state, 1_u8);
-        assert_eq!(exc.tt, mrb_vtype_MRB_TT_EXCEPTION);
+        assert_eq!(exc.tt, mrb_vtype::MRB_TT_EXCEPTION);
 
         let args = &[];
 
@@ -656,7 +656,7 @@ fn protect() {
         let class = mrb_funcall_argv(mrb, exc, class_sym, 0, args.as_ptr());
         let result = mrb_funcall_argv(mrb, class, to_s_sym, 0, args.as_ptr());
 
-        assert_eq!(result.tt, mrb_vtype_MRB_TT_STRING);
+        assert_eq!(result.tt, mrb_vtype::MRB_TT_STRING);
         let s = mrb_str_to_cstr(mrb, result) as *const i8;
         assert_eq!(CStr::from_ptr(s).to_str().unwrap(), "RuntimeError");
 
