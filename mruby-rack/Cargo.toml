@@ -4,19 +4,9 @@ version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 
-[dependencies]
-env_logger = "0.6.1"
-log = "0.4.6"
-ref_thread_local = "0.0"
-rocket = "0.4.0"
-
 [dependencies.mruby]
 path = "../mruby"
 
 [dependencies.rust-embed]
 version = "4.3.0"
 features = ["debug-embed"]
-
-[dependencies.uuid]
-version = "0.7"
-features = ["v4"]
