@@ -10,5 +10,8 @@ MRuby::Build.new do |conf|
     conf.cc.flags << '-fPIC'
   end
 
-  conf.gembox 'default'
+  # gemset for mruby-sys
+  # NOTE: Disable some gems from `default.gembox` because they violate our
+  # expectations around sandboxing (e.g. no filesystem access).
+  conf.gembox File.join(File.dirname(__FILE__), 'sys')
 end

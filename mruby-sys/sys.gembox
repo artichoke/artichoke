@@ -1,0 +1,90 @@
+# frozen_string_literal: true
+
+MRuby::GemBox.new do |conf|
+  # mrb_protect
+  conf.gem core: 'mruby-error'
+
+  # Meta-programming features
+  conf.gem core: 'mruby-metaprog'
+
+  # TODO: We must implement File and IO in Rust with a virtual file system to
+  # get the sandboxing properties we want.
+  # Use standard IO/File class
+  # conf.gem core: 'mruby-io'
+
+  # Use standard Array#pack, String#unpack methods
+  conf.gem core: 'mruby-pack'
+
+  # Use standard Kernel#sprintf method
+  conf.gem core: 'mruby-sprintf'
+
+  # TODO: We must implement print in Rust to allow piping stdout and stderr to
+  # either logs or a configurable stream.
+  # Use standard print/puts/p
+  conf.gem core: 'mruby-print'
+
+  # Use standard Math module
+  conf.gem core: 'mruby-math'
+
+  # Use standard Time class
+  conf.gem core: 'mruby-time'
+
+  # Use standard Struct class
+  conf.gem core: 'mruby-struct'
+
+  # Use Comparable module extension
+  conf.gem core: 'mruby-compar-ext'
+
+  # Use Enumerable module extension
+  conf.gem core: 'mruby-enum-ext'
+
+  # Use String class extension
+  conf.gem core: 'mruby-string-ext'
+
+  # Use Numeric class extension
+  conf.gem core: 'mruby-numeric-ext'
+
+  # Use Array class extension
+  conf.gem core: 'mruby-array-ext'
+
+  # Use Hash class extension
+  conf.gem core: 'mruby-hash-ext'
+
+  # Use Range class extension
+  conf.gem core: 'mruby-range-ext'
+
+  # Use Proc class extension
+  conf.gem core: 'mruby-proc-ext'
+
+  # Use Symbol class extension
+  conf.gem core: 'mruby-symbol-ext'
+
+  # Use Random class
+  conf.gem core: 'mruby-random'
+
+  # Use Object class extension
+  conf.gem core: 'mruby-object-ext'
+
+  # Use Kernel module extension
+  conf.gem core: 'mruby-kernel-ext'
+
+  # Use class/module extension
+  conf.gem core: 'mruby-class-ext'
+
+  # NOTE: Disable ObjectSpace in sandboxed code.
+  # Use ObjectSpace class
+  # conf.gem core: 'mruby-objectspace'
+
+  # NOTE: Disable Fibers in sandboxed code.
+  # Use Fiber class
+  # conf.gem core: 'mruby-fiber'
+
+  # Use Enumerator class (require mruby-fiber)
+  conf.gem core: 'mruby-enumerator'
+
+  # Use Enumerator::Lazy class (require mruby-enumerator)
+  conf.gem core: 'mruby-enum-lazy'
+
+  # Use toplevel object (main) methods extension
+  conf.gem core: 'mruby-toplevel-ext'
+end
