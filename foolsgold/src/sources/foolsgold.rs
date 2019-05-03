@@ -1,4 +1,4 @@
-use mruby::{interpreter_or_raise, sys, unwrap_or_raise, Mrb, MrbFile, TryFromMrb, Value};
+use mruby::{interpreter_or_raise, sys, unwrap_or_raise, Mrb, MrbApi, MrbFile, TryFromMrb, Value};
 use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::mem;
@@ -14,24 +14,16 @@ pub struct Lib;
 
 impl MrbFile for Lib {
     fn require(interp: Mrb) {
+        // Ruby sources
         let lib = Source::contents("foolsgold.rb");
-        let adapter_memory = Source::contents("foolsgold/adapter/memory.rb");
-        unsafe {
-            let mrb = interp.borrow().mrb();
-            let ctx = interp.borrow().ctx();
-            sys::mrb_load_nstring_cxt(mrb, lib.as_ptr() as *const i8, lib.len(), ctx);
-            sys::mrb_load_nstring_cxt(
-                mrb,
-                adapter_memory.as_ptr() as *const i8,
-                adapter_memory.len(),
-                ctx,
-            );
-        }
-        {
-            RequestContext::require(Rc::clone(&interp));
-            Metrics::require(Rc::clone(&interp));
-            Counter::require(Rc::clone(&interp));
-        }
+        let adapter = Source::contents("foolsgold/adapter/memory.rb");
+        interp.eval(lib).expect("foolsgold.rb");
+        interp.eval(adapter).expect("foolsgold/adapter/memory.rb");
+
+        // Rust sources
+        RequestContext::require(Rc::clone(&interp));
+        Metrics::require(Rc::clone(&interp));
+        Counter::require(Rc::clone(&interp));
     }
 }
 
@@ -52,21 +44,12 @@ impl MrbFile for Counter {
 
                 // We can probably relax the ordering constraint.
                 let value = SEEN_REQUESTS_COUNTER.load(Ordering::SeqCst);
-                {
-                    let api = interp.borrow();
-                    unwrap_or_raise!(api, Value::try_from_mrb(&api, value))
-                }
+                unwrap_or_raise!(interp, Value::try_from_mrb(&interp, value))
             }
         }
 
         extern "C" fn inc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
-                let interp = interpreter_or_raise!(mrb);
-                let mrb = {
-                    let api = interp.borrow();
-                    api.mrb()
-                };
-
                 let total_requests = SEEN_REQUESTS_COUNTER.fetch_add(1, Ordering::SeqCst);
                 debug!(
                     "Logged request number {} in interpreter {:p}",
@@ -77,22 +60,22 @@ impl MrbFile for Counter {
         }
 
         unsafe {
-            let mrb = { interp.borrow().mrb() };
             let foolsgold = CString::new("FoolsGold").expect("FoolsGold");
-            let foolsgold_module = sys::mrb_module_get(mrb, foolsgold.as_ptr());
+            let foolsgold_module = sys::mrb_module_get(interp.borrow().mrb, foolsgold.as_ptr());
             let metrics = CString::new("Metrics").expect("Metrics");
-            let metrics_module = sys::mrb_module_get_under(mrb, foolsgold_module, metrics.as_ptr());
+            let metrics_module =
+                sys::mrb_module_get_under(interp.borrow().mrb, foolsgold_module, metrics.as_ptr());
             let class = CString::new("Counter").expect("Counter class");
             let mrb_class = sys::mrb_define_class_under(
-                mrb,
+                interp.borrow().mrb,
                 metrics_module,
                 class.as_ptr(),
-                (*mrb).object_class,
+                (*interp.borrow().mrb).object_class,
             );
 
             let get_method = CString::new("get").expect("method");
             sys::mrb_define_method(
-                mrb,
+                interp.borrow().mrb,
                 mrb_class,
                 get_method.as_ptr(),
                 Some(get),
@@ -101,7 +84,7 @@ impl MrbFile for Counter {
 
             let inc_method = CString::new("inc").expect("method");
             sys::mrb_define_method(
-                mrb,
+                interp.borrow().mrb,
                 mrb_class,
                 inc_method.as_ptr(),
                 Some(inc),
@@ -127,11 +110,6 @@ impl MrbFile for Metrics {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             unsafe {
-                let interp = interpreter_or_raise!(mrb);
-                let mrb = {
-                    let api = interp.borrow();
-                    api.mrb()
-                };
                 let foolsgold = CString::new("FoolsGold").expect("FoolsGold");
                 let foolsgold_module = sys::mrb_module_get(mrb, foolsgold.as_ptr());
                 let metrics = CString::new("Metrics").expect("Metrics");
@@ -144,15 +122,18 @@ impl MrbFile for Metrics {
         }
 
         unsafe {
-            let mrb = { interp.borrow().mrb() };
             let foolsgold = CString::new("FoolsGold").expect("FoolsGold module");
-            let foolsgold_module = sys::mrb_module_get(mrb, foolsgold.as_ptr());
+            let foolsgold_module = sys::mrb_module_get(interp.borrow().mrb, foolsgold.as_ptr());
             let module = CString::new("Metrics").expect("Metrics module");
-            let mrb_module = sys::mrb_define_module_under(mrb, foolsgold_module, module.as_ptr());
+            let mrb_module = sys::mrb_define_module_under(
+                interp.borrow().mrb,
+                foolsgold_module,
+                module.as_ptr(),
+            );
 
             let total_requests_method = CString::new("total_requests").expect("method");
             sys::mrb_define_method(
-                mrb,
+                interp.borrow().mrb,
                 mrb_module,
                 total_requests_method.as_ptr(),
                 Some(total_requests),
@@ -160,7 +141,7 @@ impl MrbFile for Metrics {
             );
 
             sys::mrb_define_class_method(
-                mrb,
+                interp.borrow().mrb,
                 mrb_module,
                 total_requests_method.as_ptr(),
                 Some(total_requests),
@@ -210,10 +191,6 @@ impl MrbFile for RequestContext {
         extern "C" fn trace_id(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
-                let mrb = {
-                    let api = interp.borrow();
-                    api.mrb()
-                };
 
                 let ptr = {
                     let mut api = interp.borrow_mut();
@@ -224,21 +201,12 @@ impl MrbFile for RequestContext {
                 let trace_id = data.borrow().trace_id;
                 info!("Retrieved trace id {} in interpreter {:p}", trace_id, mrb);
                 mem::forget(data);
-                {
-                    let api = interp.borrow();
-                    unwrap_or_raise!(api, Value::try_from_mrb(&api, trace_id.to_string()))
-                }
+                unwrap_or_raise!(interp, Value::try_from_mrb(&interp, trace_id.to_string()))
             }
         }
 
         extern "C" fn metrics(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
-                let interp = interpreter_or_raise!(mrb);
-                let mrb = {
-                    let api = interp.borrow();
-                    api.mrb()
-                };
-
                 let foolsgold = CString::new("FoolsGold").expect("FoolsGold module");
                 let foolsgold_module = sys::mrb_module_get(mrb, foolsgold.as_ptr());
                 let module = CString::new("Metrics").expect("Metrics module");
@@ -249,21 +217,20 @@ impl MrbFile for RequestContext {
         }
 
         unsafe {
-            let mrb = { interp.borrow().mrb() };
             let foolsgold = CString::new("FoolsGold").expect("FoolsGold module");
-            let foolsgold_module = sys::mrb_module_get(mrb, foolsgold.as_ptr());
+            let foolsgold_module = sys::mrb_module_get(interp.borrow().mrb, foolsgold.as_ptr());
             let class = CString::new("RequestContext").expect("RequestContext class");
             let mrb_class = sys::mrb_define_class_under(
-                mrb,
+                interp.borrow().mrb,
                 foolsgold_module,
                 class.as_ptr(),
-                (*mrb).object_class,
+                (*interp.borrow().mrb).object_class,
             );
             sys::mrb_sys_set_instance_tt(mrb_class, sys::mrb_vtype::MRB_TT_DATA);
 
             let initialize_method = CString::new("initialize").expect("method");
             sys::mrb_define_method(
-                mrb,
+                interp.borrow().mrb,
                 mrb_class,
                 initialize_method.as_ptr(),
                 Some(initialize),
@@ -272,7 +239,7 @@ impl MrbFile for RequestContext {
 
             let trace_id_method = CString::new("trace_id").expect("method");
             sys::mrb_define_method(
-                mrb,
+                interp.borrow().mrb,
                 mrb_class,
                 trace_id_method.as_ptr(),
                 Some(trace_id),
@@ -281,7 +248,7 @@ impl MrbFile for RequestContext {
 
             let metrics_method = CString::new("metrics").expect("method");
             sys::mrb_define_method(
-                mrb,
+                interp.borrow().mrb,
                 mrb_class,
                 metrics_method.as_ptr(),
                 Some(metrics),

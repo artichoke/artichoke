@@ -7,14 +7,14 @@ macro_rules! mrb_array_impl {
             type To = $crate::Ruby;
 
             unsafe fn try_from_mrb(
-                api: &$crate::interpreter::MrbApi,
+                mrb: &$crate::interpreter::Mrb,
                 value: std::vec::Vec<$type>,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
                 let mut values = std::vec::Vec::with_capacity(value.len());
                 for item in value {
-                    values.push($crate::Value::try_from_mrb(api, item)?);
+                    values.push($crate::Value::try_from_mrb(mrb, item)?);
                 }
-                $crate::Value::try_from_mrb(api, values)
+                $crate::Value::try_from_mrb(mrb, values)
             }
         }
 
@@ -24,13 +24,13 @@ macro_rules! mrb_array_impl {
             type To = $crate::Rust;
 
             unsafe fn try_from_mrb(
-                api: &$crate::interpreter::MrbApi,
+                mrb: &$crate::interpreter::Mrb,
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                let values = <std::vec::Vec<$crate::Value>>::try_from_mrb(api, value)?;
+                let values = <std::vec::Vec<$crate::Value>>::try_from_mrb(mrb, value)?;
                 let mut vec = std::vec::Vec::with_capacity(values.len());
                 for item in values {
-                    vec.push(<$type>::try_from_mrb(api, item)?);
+                    vec.push(<$type>::try_from_mrb(mrb, item)?);
                 }
                 std::result::Result::Ok(vec)
             }
@@ -44,20 +44,20 @@ macro_rules! mrb_array_impl {
 
                 use $crate::convert::*;
                 use $crate::interpreter::*;
-                use $crate::sys::*;
+                use $crate::sys;
                 use $crate::value::*;
 
                 #[test]
                 fn fail_convert() {
                     unsafe {
                         let interp = Interpreter::create().expect("mrb init");
-                        let api = interp.borrow_mut();
-                        let value = api.bool(true).expect("convert");
+                        let value = interp.bool(true);
                         let expected = Error {
                             from: Ruby::Bool,
                             to: Rust::Vec,
                         };
-                        let result = <std::vec::Vec<$type>>::try_from_mrb(&api, value).map(|_| ());
+                        let result =
+                            <std::vec::Vec<$type>>::try_from_mrb(&interp, value).map(|_| ());
                         assert_eq!(result, Err(expected));
                     }
                 }
@@ -75,15 +75,14 @@ macro_rules! mrb_array_impl {
                 {
                     unsafe {
                         let interp = Interpreter::create().expect("mrb init");
-                        let api = interp.borrow_mut();
-                        let value = match $crate::Value::try_from_mrb(&api, v.clone()) {
+                        let value = match $crate::Value::try_from_mrb(&interp, v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
                         let inner = value.inner();
                         let size = i64::try_from(v.len()).expect("vec size");
-                        mrb_sys_ary_len(inner) == size
+                        sys::mrb_sys_ary_len(inner) == size
                     }
                 }
 
@@ -100,13 +99,12 @@ macro_rules! mrb_array_impl {
                 {
                     unsafe {
                         let interp = Interpreter::create().expect("mrb init");
-                        let api = interp.borrow_mut();
-                        let value = match $crate::Value::try_from_mrb(&api, v.clone()) {
+                        let value = match $crate::Value::try_from_mrb(&interp, v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
-                        <std::vec::Vec<$type>>::try_from_mrb(&api, value).expect("convert") == v
+                        <std::vec::Vec<$type>>::try_from_mrb(&interp, value).expect("convert") == v
                     }
                 }
             }
@@ -126,12 +124,12 @@ macro_rules! mrb_nilable_impl {
             type To = $crate::Ruby;
 
             unsafe fn try_from_mrb(
-                api: &$crate::interpreter::MrbApi,
+                mrb: &$crate::interpreter::Mrb,
                 value: std::option::Option<$type>,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
                 match value {
-                    std::option::Option::Some(value) => Self::try_from_mrb(api, value),
-                    std::option::Option::None => Self::try_from_mrb(api, None as Option<Value>),
+                    std::option::Option::Some(value) => Self::try_from_mrb(mrb, value),
+                    std::option::Option::None => Self::try_from_mrb(mrb, std::option::Option::None::<Value>),
                 }
             }
         }
@@ -142,12 +140,12 @@ macro_rules! mrb_nilable_impl {
             type To = $crate::Rust;
 
             unsafe fn try_from_mrb(
-                api: &$crate::interpreter::MrbApi,
+                mrb: &$crate::interpreter::Mrb,
                 value: $crate::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                let value = <std::option::Option<Value>>::try_from_mrb(api, value)?;
+                let value = <std::option::Option<Value>>::try_from_mrb(mrb, value)?;
                 let value = if let std::option::Option::Some(item) = value {
-                    std::option::Option::Some(<$type>::try_from_mrb(api, item)?)
+                    std::option::Option::Some(<$type>::try_from_mrb(mrb, item)?)
                 } else {
                     std::option::Option::None
                 };
@@ -162,27 +160,18 @@ macro_rules! mrb_nilable_impl {
 
                 use $crate::convert::*;
                 use $crate::interpreter::*;
-                use $crate::sys::*;
+                use $crate::sys;
                 use $crate::value::*;
 
                 #[test]
                 fn fail_convert() {
                     unsafe {
                         let interp = Interpreter::create().expect("mrb init");
-                        let api = interp.borrow_mut();
-                        let context = mrbc_context_new(api.mrb());
                         // get a mrb_value that can't be converted to a
                         // primitive type.
-                        let code = "Object.new";
-                        let value = mrb_load_nstring_cxt(
-                            api.mrb(),
-                            code.as_ptr() as *const i8,
-                            code.len(),
-                            context,
-                        );
-                        let value = Value::new(value);
+                        let value = interp.eval("Object.new").expect("eval");
                         let result =
-                            <std::option::Option<$type>>::try_from_mrb(&api, value)
+                            <std::option::Option<$type>>::try_from_mrb(&interp, value)
                                 .map(|_| ());
                         assert_eq!(
                             result.map_err(|e| e.from),
@@ -205,18 +194,17 @@ macro_rules! mrb_nilable_impl {
                 {
                     unsafe {
                         let interp = Interpreter::create().expect("mrb init");
-                        let api = interp.borrow_mut();
-                        let value = match Value::try_from_mrb(&api, v.clone()) {
+                        let value = match Value::try_from_mrb(&interp, v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
                         if let std::option::Option::Some(v) = v {
-                            let value = <$type>::try_from_mrb(&api, value).expect("convert");
+                            let value = <$type>::try_from_mrb(&interp, value).expect("convert");
                             ($eq)(value, v)
                         } else {
                             let inner = value.inner();
-                            mrb_sys_value_is_nil(inner)
+                            sys::mrb_sys_value_is_nil(inner)
                         }
                     }
                 }
@@ -235,13 +223,12 @@ macro_rules! mrb_nilable_impl {
                 {
                     unsafe {
                         let interp = Interpreter::create().expect("mrb init");
-                        let api = interp.borrow_mut();
-                        let value = match Value::try_from_mrb(&api, v.clone()) {
+                        let value = match Value::try_from_mrb(&interp, v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
                         };
-                        let value = <std::option::Option<$type>>::try_from_mrb(&api, value).expect("convert");
+                        let value = <std::option::Option<$type>>::try_from_mrb(&interp, value).expect("convert");
                         if value.is_none() && v.is_none() {
                             true
                         } else {

@@ -1,4 +1,4 @@
-use mruby::{sys, Error, Mrb, Ruby, Rust, TryFromMrb, Value};
+use mruby::{Error, Mrb, MrbApi, MrbError, Ruby, Rust, TryFromMrb, Value};
 use rocket::http::Status;
 use rocket::{get, Response};
 
@@ -6,30 +6,30 @@ use crate::execmodel::{exec, Interpreter};
 use crate::sources::{foolsgold, rackup};
 
 impl Interpreter for Mrb {
-    fn mrb(&self) -> *mut sys::mrb_state {
-        self.borrow().mrb()
+    fn eval<T>(&self, code: T) -> Result<Value, MrbError>
+    where
+        T: AsRef<[u8]>,
+    {
+        MrbApi::eval(self, code.as_ref())
     }
 
-    fn ctx(&self) -> *mut sys::mrbc_context {
-        self.borrow().ctx()
+    fn stringify(&self, value: Value) -> String {
+        unsafe { value.to_s(self) }
     }
 
     fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
     where
         T: TryFromMrb<Value, From = Ruby, To = Rust>,
     {
-        unsafe { <T>::try_from_mrb(&self.borrow(), value) }
+        unsafe { <T>::try_from_mrb(self, value) }
     }
 }
 
 #[get("/fools-gold")]
 pub fn rack_app<'a>() -> Result<Response<'a>, Status> {
     info!("Initializing fresh shared nothing mruby interpreter");
-    let interp = mruby::Interpreter::create().map_err(|_| Status::InternalServerError)?;
-    {
-        let mut api = interp.borrow_mut();
-        api.def_file_for_type::<_, mruby_rack::Builder>("rack/builder");
-        api.def_file_for_type::<_, foolsgold::Lib>("foolsgold");
-    }
+    let mut interp = mruby::Interpreter::create().map_err(|_| Status::InternalServerError)?;
+    interp.def_file_for_type::<_, mruby_rack::Builder>("rack/builder");
+    interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold");
     exec(&interp, rackup::rack_adapter())
 }

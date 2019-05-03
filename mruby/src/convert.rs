@@ -1,7 +1,7 @@
 use std::error;
 use std::fmt;
 
-use crate::interpreter::MrbApi;
+use crate::interpreter::Mrb;
 
 #[macro_use]
 pub mod macros;
@@ -31,7 +31,7 @@ where
     type From;
     type To;
 
-    unsafe fn try_from_mrb(api: &MrbApi, value: T) -> Result<Self, Error<Self::From, Self::To>>;
+    unsafe fn try_from_mrb(mrb: &Mrb, value: T) -> Result<Self, Error<Self::From, Self::To>>;
 }
 
 #[derive(Clone, Eq, PartialEq)]

@@ -1,9 +1,8 @@
-use mruby_sys::*;
-
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
 use crate::convert::Error;
-use crate::interpreter::MrbApi;
+use crate::interpreter::Mrb;
+use crate::sys;
 use crate::{Ruby, Rust, TryFromMrb, Value};
 
 mrb_nilable_impl!(bool as bool);
@@ -20,12 +19,12 @@ impl TryFromMrb<Option<Value>> for Value {
     type To = Ruby;
 
     unsafe fn try_from_mrb(
-        _api: &MrbApi,
+        _mrb: &Mrb,
         value: Option<Self>,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         match value {
             Some(value) => Ok(value),
-            None => Ok(Self::new(mrb_sys_nil_value())),
+            None => Ok(Self::new(sys::mrb_sys_nil_value())),
         }
     }
 }
@@ -35,7 +34,7 @@ impl TryFromMrb<Value> for Option<Value> {
     type To = Rust;
 
     unsafe fn try_from_mrb(
-        _mrb: &MrbApi,
+        _mrb: &Mrb,
         value: Value,
     ) -> std::result::Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {

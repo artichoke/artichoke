@@ -1,8 +1,8 @@
-use mruby_sys::*;
 use std::ffi::{CStr, CString};
 
 use crate::convert::{Error, TryFromMrb};
-use crate::interpreter::MrbApi;
+use crate::interpreter::Mrb;
+use crate::sys;
 use crate::value::{Ruby, Rust, Value};
 
 // TODO: document encoding assumptions - can only convert UTF-8 data to a Rust
@@ -16,11 +16,8 @@ impl TryFromMrb<String> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(
-        api: &MrbApi,
-        value: String,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        Self::try_from_mrb(api, value.as_str())
+    unsafe fn try_from_mrb(mrb: &Mrb, value: String) -> Result<Self, Error<Self::From, Self::To>> {
+        Self::try_from_mrb(mrb, value.as_str())
     }
 }
 
@@ -28,7 +25,7 @@ impl TryFromMrb<&str> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(api: &MrbApi, value: &str) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_from_mrb(mrb: &Mrb, value: &str) -> Result<Self, Error<Self::From, Self::To>> {
         // mruby has the API `mrb_str_new` which takes a char* and size_t but
         // Rust `CString` does not support &str that contain NUL interior bytes.
         // To create a Ruby String that has NULs, use `TryFromMrb<&[u8]>` or
@@ -36,7 +33,7 @@ impl TryFromMrb<&str> for Value {
         match CString::new(value) {
             Ok(cstr) => {
                 let ptr = cstr.as_ptr();
-                Ok(Self::new(mrb_str_new_cstr(api.mrb(), ptr)))
+                Ok(Self::new(sys::mrb_str_new_cstr(mrb.borrow().mrb, ptr)))
             }
             Err(_) => Err(Error {
                 from: Rust::String,
@@ -50,14 +47,11 @@ impl TryFromMrb<Value> for String {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        api: &MrbApi,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_from_mrb(mrb: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
             Ruby::String => {
                 let mut value = value.inner();
-                let cstr = mrb_string_value_cstr(api.mrb(), &mut value);
+                let cstr = sys::mrb_string_value_cstr(mrb.borrow().mrb, &mut value);
                 match CStr::from_ptr(cstr).to_str() {
                     Ok(string) => Ok(string.to_owned()),
                     Err(_) => Err(Error {
@@ -78,8 +72,9 @@ impl TryFromMrb<Value> for String {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use super::*;
+    use crate::convert::*;
     use crate::interpreter::*;
+    use crate::value::*;
 
     mod string {
         use super::*;
@@ -89,8 +84,7 @@ mod tests {
         fn convert_to_string(s: String) -> bool {
             unsafe {
                 let interp = Interpreter::create().expect("mrb init");
-                let mrb = interp.borrow_mut();
-                let value = Value::try_from_mrb(&mrb, s.clone());
+                let value = Value::try_from_mrb(&interp, s.clone());
                 match value {
                     Ok(value) => value.ruby_type() == Ruby::String,
                     Err(err) => {
@@ -109,11 +103,10 @@ mod tests {
         fn string_with_value(s: String) -> bool {
             unsafe {
                 let interp = Interpreter::create().expect("mrb init");
-                let mrb = interp.borrow_mut();
-                let value = Value::try_from_mrb(&mrb, s.clone());
+                let value = Value::try_from_mrb(&interp, s.clone());
                 match value {
                     Ok(value) => {
-                        let to_s = value.to_s(&mrb);
+                        let to_s = value.to_s(&interp);
                         to_s == s
                     }
                     Err(err) => {
@@ -132,11 +125,10 @@ mod tests {
         fn roundtrip(s: String) -> bool {
             unsafe {
                 let interp = Interpreter::create().expect("mrb init");
-                let mrb = interp.borrow_mut();
-                let value = Value::try_from_mrb(&mrb, s.clone());
+                let value = Value::try_from_mrb(&interp, s.clone());
                 match value {
                     Ok(value) => {
-                        let value = String::try_from_mrb(&mrb, value).expect("convert");
+                        let value = String::try_from_mrb(&interp, value).expect("convert");
                         value == s
                     }
                     Err(err) => {
@@ -154,9 +146,8 @@ mod tests {
         fn roundtrip_err(b: bool) -> bool {
             unsafe {
                 let interp = Interpreter::create().expect("mrb init");
-                let mrb = interp.borrow_mut();
-                let value = Value::try_from_mrb(&mrb, b).expect("convert");
-                let value = String::try_from_mrb(&mrb, value);
+                let value = Value::try_from_mrb(&interp, b).expect("convert");
+                let value = String::try_from_mrb(&interp, value);
                 let expected = Err(Error {
                     from: Ruby::Bool,
                     to: Rust::String,
@@ -175,8 +166,7 @@ mod tests {
             unsafe {
                 let s = s.as_str();
                 let interp = Interpreter::create().expect("mrb init");
-                let mrb = interp.borrow_mut();
-                let value = Value::try_from_mrb(&mrb, s);
+                let value = Value::try_from_mrb(&interp, s);
                 match value {
                     Ok(value) => value.ruby_type() == Ruby::String,
                     Err(err) => {
@@ -196,11 +186,10 @@ mod tests {
             unsafe {
                 let s = s.as_str();
                 let interp = Interpreter::create().expect("mrb init");
-                let mrb = interp.borrow_mut();
-                let value = Value::try_from_mrb(&mrb, s);
+                let value = Value::try_from_mrb(&interp, s);
                 match value {
                     Ok(value) => {
-                        let to_s = value.to_s(&mrb);
+                        let to_s = value.to_s(&interp);
                         to_s == s
                     }
                     Err(err) => {

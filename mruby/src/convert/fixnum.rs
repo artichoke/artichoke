@@ -1,7 +1,6 @@
-use mruby_sys::*;
-
 use crate::convert::{Error, TryFromMrb};
-use crate::interpreter::MrbApi;
+use crate::interpreter::Mrb;
+use crate::sys;
 use crate::value::{Ruby, Rust, Value};
 
 pub type Int = i64;
@@ -10,8 +9,8 @@ impl TryFromMrb<Int> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(_api: &MrbApi, value: Int) -> Result<Self, Error<Self::From, Self::To>> {
-        Ok(Self::new(mrb_sys_fixnum_value(value)))
+    unsafe fn try_from_mrb(_mrb: &Mrb, value: Int) -> Result<Self, Error<Self::From, Self::To>> {
+        Ok(Self::new(sys::mrb_sys_fixnum_value(value)))
     }
 }
 
@@ -19,15 +18,9 @@ impl TryFromMrb<Value> for Int {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        _mrb: &MrbApi,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_from_mrb(_mrb: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
-            Ruby::Fixnum => {
-                let inner = value.inner();
-                Ok(mrb_sys_fixnum_to_cint(inner))
-            }
+            Ruby::Fixnum => Ok(sys::mrb_sys_fixnum_to_cint(value.inner())),
             type_tag => Err(Error {
                 from: type_tag,
                 to: Rust::SignedInt,
@@ -38,19 +31,18 @@ impl TryFromMrb<Value> for Int {
 
 #[cfg(test)]
 mod tests {
-    use mruby_sys::*;
     use quickcheck_macros::quickcheck;
 
-    use super::*;
+    use crate::convert::*;
     use crate::interpreter::*;
+    use crate::sys;
+    use crate::value::*;
 
     #[quickcheck]
     fn convert_to_fixnum(i: Int) -> bool {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
-            let mrb = interp.borrow_mut();
-
-            let value = Value::try_from_mrb(&mrb, i).expect("convert");
+            let value = Value::try_from_mrb(&interp, i).expect("convert");
             value.ruby_type() == Ruby::Fixnum
         }
     }
@@ -59,10 +51,9 @@ mod tests {
     fn fixnum_with_value(i: Int) -> bool {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
-            let mrb = interp.borrow_mut();
-            let value = Value::try_from_mrb(&mrb, i).expect("convert");
+            let value = Value::try_from_mrb(&interp, i).expect("convert");
             let inner = value.inner();
-            let cint = mrb_sys_fixnum_to_cint(inner);
+            let cint = sys::mrb_sys_fixnum_to_cint(inner);
             cint == i
         }
     }
@@ -71,9 +62,8 @@ mod tests {
     fn roundtrip(i: Int) -> bool {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
-            let mrb = interp.borrow_mut();
-            let value = Value::try_from_mrb(&mrb, i).expect("convert");
-            let value = Int::try_from_mrb(&mrb, value).expect("convert");
+            let value = Value::try_from_mrb(&interp, i).expect("convert");
+            let value = Int::try_from_mrb(&interp, value).expect("convert");
             value == i
         }
     }
@@ -82,9 +72,8 @@ mod tests {
     fn roundtrip_err(b: bool) -> bool {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
-            let mrb = interp.borrow_mut();
-            let value = Value::try_from_mrb(&mrb, b).expect("convert");
-            let value = Int::try_from_mrb(&mrb, value);
+            let value = Value::try_from_mrb(&interp, b).expect("convert");
+            let value = Int::try_from_mrb(&interp, value);
             let expected = Err(Error {
                 from: Ruby::Bool,
                 to: Rust::SignedInt,

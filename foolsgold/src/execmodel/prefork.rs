@@ -1,4 +1,4 @@
-use mruby::{sys, Error, Mrb, Ruby, Rust, TryFromMrb, Value};
+use mruby::{Error, Mrb, MrbApi, MrbError, Ruby, Rust, TryFromMrb, Value};
 use ref_thread_local::RefThreadLocal;
 use rocket::http::Status;
 use rocket::{get, Response};
@@ -8,36 +8,30 @@ use crate::sources::{foolsgold, rackup};
 
 ref_thread_local! {
     static managed INTERPRETER: Mrb = {
-        let interp = mruby::Interpreter::create().expect("mrb interpreter");
-        {
-            let mut api = interp.borrow_mut();
-            api.def_file_for_type::<_, mruby_rack::Builder>("rack/builder");
-            api.def_file_for_type::<_, foolsgold::Lib>("foolsgold");
-        }
+        let mut interp = mruby::Interpreter::create().expect("mrb interpreter");
+        interp.def_file_for_type::<_, mruby_rack::Builder>("rack/builder");
+        interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold");
         interp
     };
 }
 
 impl Interpreter for &INTERPRETER {
-    fn mrb(&self) -> *mut sys::mrb_state {
-        let interp = self.borrow();
-        let api = interp.borrow();
-        api.mrb()
+    fn eval<T>(&self, code: T) -> Result<Value, MrbError>
+    where
+        T: AsRef<[u8]>,
+    {
+        MrbApi::eval(&*self.borrow(), code.as_ref())
     }
 
-    fn ctx(&self) -> *mut sys::mrbc_context {
-        let interp = self.borrow();
-        let api = interp.borrow();
-        api.ctx()
+    fn stringify(&self, value: Value) -> String {
+        unsafe { value.to_s(&*self.borrow()) }
     }
 
     fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
     where
         T: TryFromMrb<Value, From = Ruby, To = Rust>,
     {
-        let interp = self.borrow();
-        let api = interp.borrow();
-        unsafe { <T>::try_from_mrb(&api, value) }
+        unsafe { <T>::try_from_mrb(&self.borrow(), value) }
     }
 }
 

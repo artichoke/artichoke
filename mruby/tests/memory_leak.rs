@@ -32,9 +32,9 @@
 //! ```
 
 use mruby::*;
-use mruby_sys::*;
 use std::cell::RefCell;
-use std::ffi::{CStr, CString};
+use std::ffi::{c_void, CStr, CString};
+use std::mem;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
@@ -44,48 +44,54 @@ struct Container {
 
 impl MrbFile for Container {
     fn require(interp: Mrb) {
-        extern "C" fn free(_mrb: *mut mrb_state, data: *mut ::std::ffi::c_void) {
+        extern "C" fn free(_mrb: *mut sys::mrb_state, data: *mut c_void) {
             unsafe {
                 // Implictly dropped by going out of scope
-                let _ = std::mem::transmute::<*mut std::ffi::c_void, Rc<RefCell<Container>>>(data);
+                let _ = mem::transmute::<*mut std::ffi::c_void, Rc<RefCell<Container>>>(data);
             }
         }
 
-        extern "C" fn initialize(mrb: *mut mrb_state, mut slf: mrb_value) -> mrb_value {
+        extern "C" fn initialize(
+            mrb: *mut sys::mrb_state,
+            mut slf: sys::mrb_value,
+        ) -> sys::mrb_value {
             unsafe {
-                let string = std::mem::uninitialized::<*const std::os::raw::c_char>();
-                let argspec = CString::new(specifiers::CSTRING).expect("argspec");
-                mrb_get_args(mrb, argspec.as_ptr(), &string);
+                let interp = interpreter_or_raise!(mrb);
+                let mut api = interp.borrow_mut();
+
+                let string = mem::uninitialized::<*const std::os::raw::c_char>();
+                let argspec = CString::new(sys::specifiers::CSTRING).expect("argspec");
+                sys::mrb_get_args(mrb, argspec.as_ptr(), &string);
                 let string = CStr::from_ptr(string).to_string_lossy().to_string();
                 let cont = Container { inner: string };
                 let data = Rc::new(RefCell::new(cont));
-                let ptr =
-                    std::mem::transmute::<Rc<RefCell<Container>>, *mut std::ffi::c_void>(data);
+                let ptr = mem::transmute::<Rc<RefCell<Container>>, *mut c_void>(data);
 
-                let interp = Interpreter::from_user_data(mrb).expect("interpreter");
-                let mut api = interp.borrow_mut();
                 let data_type = api.get_or_create_data_type("Container", Some(free));
-                mrb_sys_data_init(&mut slf, ptr, data_type);
+                sys::mrb_sys_data_init(&mut slf, ptr, data_type);
 
                 slf
             }
         }
 
         unsafe {
-            let mrb = { interp.borrow().mrb() };
             // this `CString` needs to stay in scope for the life of the mruby
             // interpreter, otherwise `mrb_close` will segfault.
             let class = CString::new("Container").expect("Container class");
-            let mrb_class = mrb_define_class(mrb, class.as_ptr(), (*mrb).object_class);
-            mrb_sys_set_instance_tt(mrb_class, mrb_vtype::MRB_TT_DATA);
+            let mrb_class = sys::mrb_define_class(
+                interp.borrow().mrb,
+                class.as_ptr(),
+                (*interp.borrow().mrb).object_class,
+            );
+            sys::mrb_sys_set_instance_tt(mrb_class, sys::mrb_vtype::MRB_TT_DATA);
 
             let initialize_method = CString::new("initialize").expect("initialize method");
-            mrb_define_method(
-                mrb,
+            sys::mrb_define_method(
+                interp.borrow().mrb,
                 mrb_class,
                 initialize_method.as_ptr(),
                 Some(initialize),
-                mrb_args_req(1),
+                sys::mrb_args_req(1),
             );
         }
     }
@@ -115,29 +121,18 @@ mod tests {
     }
 
     fn resident_memsize() -> i64 {
-        let mut out: libc::rusage = unsafe { std::mem::zeroed() };
+        let mut out: libc::rusage = unsafe { mem::zeroed() };
         assert!(unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut out) } == 0);
         out.ru_maxrss
     }
 
     fn eval() {
-        let interp = Interpreter::create().expect("mrb init");
-        {
-            let mut borrow = interp.borrow_mut();
-            borrow.def_file_for_type::<_, Container>("container");
-        }
+        let mut interp = Interpreter::create().expect("mrb init");
+        interp.def_file_for_type::<_, Container>("container");
 
-        unsafe {
-            let (mrb, context) = { (interp.borrow().mrb(), interp.borrow().ctx()) };
-            // Create a Container with a 1MB String
-            let code = "require 'container'; Container.new('a' * 1024 * 1024)";
-            mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
-            let api = interp.borrow();
-
-            let exception = Value::new(mrb_sys_get_current_exception(api.mrb()));
-            let exception = <Option<String>>::try_from_mrb(&api, exception).expect("convert");
-            assert_eq!(None, exception);
-        }
+        let code = "require 'container'; Container.new('a' * 1024 * 1024)";
+        let result = interp.eval(code);
+        assert_eq!(true, result.is_ok());
         drop(interp);
     }
 }

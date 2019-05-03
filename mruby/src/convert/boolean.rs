@@ -1,21 +1,17 @@
-use mruby_sys::*;
-
 use crate::convert::{Error, TryFromMrb};
-use crate::interpreter::MrbApi;
+use crate::interpreter::Mrb;
+use crate::sys;
 use crate::value::{Ruby, Rust, Value};
 
 impl TryFromMrb<bool> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(
-        _mrb: &MrbApi,
-        value: bool,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_from_mrb(_mrb: &Mrb, value: bool) -> Result<Self, Error<Self::From, Self::To>> {
         if value {
-            Ok(Self::new(mrb_sys_true_value()))
+            Ok(Self::new(sys::mrb_sys_true_value()))
         } else {
-            Ok(Self::new(mrb_sys_false_value()))
+            Ok(Self::new(sys::mrb_sys_false_value()))
         }
     }
 }
@@ -24,16 +20,13 @@ impl TryFromMrb<Value> for bool {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        _mrb: &MrbApi,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_from_mrb(_mrb: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
             Ruby::Bool => {
                 let inner = value.inner();
-                if mrb_sys_value_is_true(inner) {
+                if sys::mrb_sys_value_is_true(inner) {
                     Ok(true)
-                } else if mrb_sys_value_is_false(inner) {
+                } else if sys::mrb_sys_value_is_false(inner) {
                     Ok(false)
                 } else {
                     // This should be unreachable
@@ -53,18 +46,18 @@ impl TryFromMrb<Value> for bool {
 
 #[cfg(test)]
 mod tests {
-    use mruby_sys::*;
     use quickcheck_macros::quickcheck;
 
-    use super::*;
+    use crate::convert::*;
     use crate::interpreter::*;
+    use crate::sys;
+    use crate::value::*;
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
-            let mrb = interp.borrow_mut();
-            let value = Value::try_from_mrb(&mrb, b).expect("convert");
+            let value = Value::try_from_mrb(&interp, b).expect("convert");
             value.ruby_type() == Ruby::Bool
         }
     }
@@ -73,12 +66,11 @@ mod tests {
     fn bool_with_value(b: bool) -> bool {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
-            let mrb = interp.borrow_mut();
-            let value = Value::try_from_mrb(&mrb, b).expect("convert");
+            let value = Value::try_from_mrb(&interp, b).expect("convert");
             let inner = value.inner();
-            let is_false = mrb_sys_value_is_false(inner);
-            let is_true = mrb_sys_value_is_true(inner);
-            let is_nil = mrb_sys_value_is_nil(inner);
+            let is_false = sys::mrb_sys_value_is_false(inner);
+            let is_true = sys::mrb_sys_value_is_true(inner);
+            let is_nil = sys::mrb_sys_value_is_nil(inner);
             if b {
                 is_true && !is_nil
             } else {
@@ -91,9 +83,8 @@ mod tests {
     fn roundtrip(b: bool) -> bool {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
-            let mrb = interp.borrow_mut();
-            let value = Value::try_from_mrb(&mrb, b).expect("convert");
-            let value = bool::try_from_mrb(&mrb, value).expect("convert");
+            let value = Value::try_from_mrb(&interp, b).expect("convert");
+            let value = bool::try_from_mrb(&interp, value).expect("convert");
             value == b
         }
     }
@@ -102,9 +93,8 @@ mod tests {
     fn roundtrip_err(i: i64) -> bool {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
-            let mrb = interp.borrow_mut();
-            let value = Value::try_from_mrb(&mrb, i).expect("convert");
-            let value = bool::try_from_mrb(&mrb, value);
+            let value = Value::try_from_mrb(&interp, i).expect("convert");
+            let value = bool::try_from_mrb(&interp, value);
             let expected = Err(Error {
                 from: Ruby::Fixnum,
                 to: Rust::Bool,

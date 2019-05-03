@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rust_embed;
 
-use mruby::{sys, Mrb, MrbFile};
+use mruby::{Mrb, MrbApi, MrbFile};
 use std::borrow::Cow;
 use std::convert::AsRef;
 
@@ -18,8 +18,8 @@ impl Source {
     }
 }
 
-/// [`RackBuilder`] is an empty struct that implements `MrbFile`. Requiring
-/// [`RackBuilder`] on an [`MrbApi`] exposes the Ruby class
+/// [`Builder`] is an empty struct that implements `MrbFile`. Requiring
+/// [`Builder`] on an [`Mrb`] exposes the Ruby class
 /// [`Rack::Builder`](https://github.com/rack/rack/blob/2.0.7/lib/rack/builder.rb).
 ///
 /// `Rack::Builder` can generate a Rack-compatible app from a `config.ru`
@@ -29,12 +29,6 @@ pub struct Builder;
 impl MrbFile for Builder {
     fn require(interp: Mrb) {
         let builder = Source::contents("lib/rack/builder.rb");
-        let mrb = interp.borrow().mrb();
-        let ctx = interp.borrow().ctx();
-        unsafe {
-            // load Rack::Builder by evaling the source file on the mruby
-            // interpreter.
-            sys::mrb_load_nstring_cxt(mrb, builder.as_ptr() as *const i8, builder.len(), ctx);
-        }
+        interp.eval(builder).expect("rack/builder source");
     }
 }

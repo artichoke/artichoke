@@ -1,5 +1,6 @@
-use mruby_sys::*;
 use std::fmt;
+
+use crate::sys;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Rust {
@@ -81,37 +82,37 @@ impl fmt::Display for Ruby {
 
 // This conversion has to be from mrb_value instead of mrb_vtype to disambiguate
 // between `Ruby::Nil` and a false `Ruby::Bool`.
-impl From<mrb_value> for Ruby {
+impl From<sys::mrb_value> for Ruby {
     #[allow(non_upper_case_globals)]
-    fn from(value: mrb_value) -> Self {
+    fn from(value: sys::mrb_value) -> Self {
         // `nil` is implemented with the `MRB_TT_FALSE` type tag in mruby
         // (since both values are falsy). The difference is that booleans are
         // non-zero `Fixnum`s.
-        if unsafe { mrb_sys_value_is_nil(value) } {
+        if unsafe { sys::mrb_sys_value_is_nil(value) } {
             return Ruby::Nil;
         }
 
         // switch on the type tag in the `mrb_value`
         #[allow(clippy::match_same_arms)] // to map to the `mrb_vtype` enum def
         match value.tt {
-            mrb_vtype::MRB_TT_FALSE => Ruby::Bool,
+            sys::mrb_vtype::MRB_TT_FALSE => Ruby::Bool,
             // `MRB_TT_FREE` is a marker type tag that indicates to the mruby
             // VM that an object should be garbage collected.
-            mrb_vtype::MRB_TT_FREE => Ruby::Unreachable,
-            mrb_vtype::MRB_TT_TRUE => Ruby::Bool,
-            mrb_vtype::MRB_TT_FIXNUM => Ruby::Fixnum,
-            mrb_vtype::MRB_TT_SYMBOL => Ruby::Symbol,
+            sys::mrb_vtype::MRB_TT_FREE => Ruby::Unreachable,
+            sys::mrb_vtype::MRB_TT_TRUE => Ruby::Bool,
+            sys::mrb_vtype::MRB_TT_FIXNUM => Ruby::Fixnum,
+            sys::mrb_vtype::MRB_TT_SYMBOL => Ruby::Symbol,
             // internal use: #undef; should not happen
-            mrb_vtype::MRB_TT_UNDEF => Ruby::Unreachable,
-            mrb_vtype::MRB_TT_FLOAT => Ruby::Float,
+            sys::mrb_vtype::MRB_TT_UNDEF => Ruby::Unreachable,
+            sys::mrb_vtype::MRB_TT_FLOAT => Ruby::Float,
             // `MRB_TT_CPTR` wraps a `void *` pointer.
-            mrb_vtype::MRB_TT_CPTR => Ruby::CPointer,
-            mrb_vtype::MRB_TT_OBJECT => Ruby::Object,
-            mrb_vtype::MRB_TT_CLASS => Ruby::Class,
-            mrb_vtype::MRB_TT_MODULE => Ruby::Module,
+            sys::mrb_vtype::MRB_TT_CPTR => Ruby::CPointer,
+            sys::mrb_vtype::MRB_TT_OBJECT => Ruby::Object,
+            sys::mrb_vtype::MRB_TT_CLASS => Ruby::Class,
+            sys::mrb_vtype::MRB_TT_MODULE => Ruby::Module,
             // `MRB_TT_ICLASS` is an internal use type tag meant for holding
             // mixed in modules.
-            mrb_vtype::MRB_TT_ICLASS => Ruby::Unreachable,
+            sys::mrb_vtype::MRB_TT_ICLASS => Ruby::Unreachable,
             // `MRB_TT_SCLASS` represents a singleton class, or a class that is
             // defined anonymously, e.g. `c1` or `c2` below:
             //
@@ -130,57 +131,57 @@ impl From<mrb_value> for Ruby {
             // obj = Foo.new
             // def obj.bar; 'bar'; end
             // ```
-            mrb_vtype::MRB_TT_SCLASS => Ruby::SingletonClass,
-            mrb_vtype::MRB_TT_PROC => unimplemented!("mruby type proc"),
-            mrb_vtype::MRB_TT_ARRAY => Ruby::Array,
-            mrb_vtype::MRB_TT_HASH => Ruby::Hash,
-            mrb_vtype::MRB_TT_STRING => Ruby::String,
+            sys::mrb_vtype::MRB_TT_SCLASS => Ruby::SingletonClass,
+            sys::mrb_vtype::MRB_TT_PROC => unimplemented!("mruby type proc"),
+            sys::mrb_vtype::MRB_TT_ARRAY => Ruby::Array,
+            sys::mrb_vtype::MRB_TT_HASH => Ruby::Hash,
+            sys::mrb_vtype::MRB_TT_STRING => Ruby::String,
             // TODO: how to surface this?
-            mrb_vtype::MRB_TT_RANGE => unimplemented!("mruby type range"),
-            mrb_vtype::MRB_TT_EXCEPTION => Ruby::Exception,
+            sys::mrb_vtype::MRB_TT_RANGE => unimplemented!("mruby type range"),
+            sys::mrb_vtype::MRB_TT_EXCEPTION => Ruby::Exception,
             // TODO: how to surface this?
-            mrb_vtype::MRB_TT_FILE => unimplemented!("mruby type file"),
+            sys::mrb_vtype::MRB_TT_FILE => unimplemented!("mruby type file"),
             // TODO: how to surface this?
-            mrb_vtype::MRB_TT_ENV => unimplemented!("mruby type env"),
+            sys::mrb_vtype::MRB_TT_ENV => unimplemented!("mruby type env"),
             // `MRB_TT_DATA` is a type tag for wrapped C pointers. It is used
             // to indicate that an `mrb_value` has a pointer to an external data
             // structure stored in its `value.p` field.
             // TODO: how to handle this?
-            mrb_vtype::MRB_TT_DATA => Ruby::Data,
+            sys::mrb_vtype::MRB_TT_DATA => Ruby::Data,
             // Fibers are only implemented in a gem which mruby-sys does not
             // build.
-            mrb_vtype::MRB_TT_FIBER => Ruby::Unreachable,
+            sys::mrb_vtype::MRB_TT_FIBER => Ruby::Unreachable,
             // MRB_TT_ISTRUCT is an "inline structure", or a mrb_value that
             // stores data in a char* buffer inside an mrb_value. These
             // mrb_values cannot have a finalizer and cannot have instance
             // variables.
             //
             // See vendor/mruby-*/include/mruby/istruct.h
-            mrb_vtype::MRB_TT_ISTRUCT => Ruby::InlineStruct,
+            sys::mrb_vtype::MRB_TT_ISTRUCT => Ruby::InlineStruct,
             // `MRB_TT_BREAK` is used internally to the mruby VM and appears to
             // have something to do with resuming continuations from Fibers.
             // mruby-sys does not build support for Fibers so this type tag is
             // unreachable.
-            mrb_vtype::MRB_TT_BREAK => Ruby::Unreachable,
+            sys::mrb_vtype::MRB_TT_BREAK => Ruby::Unreachable,
             // `MRB_TT_MAXDEFINE` is a marker enum value used by the mruby VM to
             // dynamically check if a type tag is valid using the less than
             // operator. It does not correspond to an instantiated type.
-            mrb_vtype::MRB_TT_MAXDEFINE => Ruby::Unreachable,
+            sys::mrb_vtype::MRB_TT_MAXDEFINE => Ruby::Unreachable,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use mruby_sys::*;
     use std::ffi::CString;
 
+    use crate::sys;
     use crate::value::types::*;
 
     #[test]
     fn nil_type() {
         unsafe {
-            let value = mrb_sys_nil_value();
+            let value = sys::mrb_sys_nil_value();
             assert_eq!(Ruby::from(value), Ruby::Nil);
         }
     }
@@ -188,9 +189,9 @@ mod tests {
     #[test]
     fn bool_type() {
         unsafe {
-            let value = mrb_sys_false_value();
+            let value = sys::mrb_sys_false_value();
             assert_eq!(Ruby::from(value), Ruby::Bool);
-            let value = mrb_sys_true_value();
+            let value = sys::mrb_sys_true_value();
             assert_eq!(Ruby::from(value), Ruby::Bool);
         }
     }
@@ -198,7 +199,7 @@ mod tests {
     #[test]
     fn fixnum_type() {
         unsafe {
-            let value = mrb_sys_fixnum_value(17);
+            let value = sys::mrb_sys_fixnum_value(17);
             assert_eq!(Ruby::from(value), Ruby::Fixnum);
         }
     }
@@ -206,12 +207,12 @@ mod tests {
     #[test]
     fn string_type() {
         unsafe {
-            let mrb = mrb_open();
+            let mrb = sys::mrb_open();
             let literal = "dinner plate";
             let cstr = CString::new(literal).unwrap();
-            let value = mrb_str_new_cstr(mrb, cstr.as_ptr());
+            let value = sys::mrb_str_new_cstr(mrb, cstr.as_ptr());
             assert_eq!(Ruby::from(value), Ruby::String);
-            mrb_close(mrb);
+            sys::mrb_close(mrb);
         }
     }
 }
