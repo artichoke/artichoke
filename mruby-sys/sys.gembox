@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 MRuby::GemBox.new do |conf|
+  # Compiler, parser, and context
+  conf.gem core: 'mruby-compiler'
+
   # mrb_protect
   conf.gem core: 'mruby-error'
 
@@ -21,7 +24,7 @@ MRuby::GemBox.new do |conf|
   # TODO: We must implement print in Rust to allow piping stdout and stderr to
   # either logs or a configurable stream.
   # Use standard print/puts/p
-  conf.gem core: 'mruby-print'
+  # conf.gem core: 'mruby-print'
 
   # Use standard Math module
   conf.gem core: 'mruby-math'

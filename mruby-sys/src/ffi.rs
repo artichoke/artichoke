@@ -329,140 +329,6 @@ pub const _XOPEN_IOV_MAX: u32 = 16;
 pub const IOV_MAX: u32 = 1024;
 pub const _XOPEN_NAME_MAX: u32 = 255;
 pub const _XOPEN_PATH_MAX: u32 = 1024;
-pub const __API_TO_BE_DEPRECATED: u32 = 100000;
-pub const __MAC_10_0: u32 = 1000;
-pub const __MAC_10_1: u32 = 1010;
-pub const __MAC_10_2: u32 = 1020;
-pub const __MAC_10_3: u32 = 1030;
-pub const __MAC_10_4: u32 = 1040;
-pub const __MAC_10_5: u32 = 1050;
-pub const __MAC_10_6: u32 = 1060;
-pub const __MAC_10_7: u32 = 1070;
-pub const __MAC_10_8: u32 = 1080;
-pub const __MAC_10_9: u32 = 1090;
-pub const __MAC_10_10: u32 = 101000;
-pub const __MAC_10_10_2: u32 = 101002;
-pub const __MAC_10_10_3: u32 = 101003;
-pub const __MAC_10_11: u32 = 101100;
-pub const __MAC_10_11_2: u32 = 101102;
-pub const __MAC_10_11_3: u32 = 101103;
-pub const __MAC_10_11_4: u32 = 101104;
-pub const __MAC_10_12: u32 = 101200;
-pub const __MAC_10_12_1: u32 = 101201;
-pub const __MAC_10_12_2: u32 = 101202;
-pub const __MAC_10_12_4: u32 = 101204;
-pub const __MAC_10_13: u32 = 101300;
-pub const __MAC_10_13_1: u32 = 101301;
-pub const __MAC_10_13_2: u32 = 101302;
-pub const __MAC_10_13_4: u32 = 101304;
-pub const __MAC_10_14: u32 = 101400;
-pub const __MAC_10_14_1: u32 = 101401;
-pub const __MAC_10_14_4: u32 = 101404;
-pub const __IPHONE_2_0: u32 = 20000;
-pub const __IPHONE_2_1: u32 = 20100;
-pub const __IPHONE_2_2: u32 = 20200;
-pub const __IPHONE_3_0: u32 = 30000;
-pub const __IPHONE_3_1: u32 = 30100;
-pub const __IPHONE_3_2: u32 = 30200;
-pub const __IPHONE_4_0: u32 = 40000;
-pub const __IPHONE_4_1: u32 = 40100;
-pub const __IPHONE_4_2: u32 = 40200;
-pub const __IPHONE_4_3: u32 = 40300;
-pub const __IPHONE_5_0: u32 = 50000;
-pub const __IPHONE_5_1: u32 = 50100;
-pub const __IPHONE_6_0: u32 = 60000;
-pub const __IPHONE_6_1: u32 = 60100;
-pub const __IPHONE_7_0: u32 = 70000;
-pub const __IPHONE_7_1: u32 = 70100;
-pub const __IPHONE_8_0: u32 = 80000;
-pub const __IPHONE_8_1: u32 = 80100;
-pub const __IPHONE_8_2: u32 = 80200;
-pub const __IPHONE_8_3: u32 = 80300;
-pub const __IPHONE_8_4: u32 = 80400;
-pub const __IPHONE_9_0: u32 = 90000;
-pub const __IPHONE_9_1: u32 = 90100;
-pub const __IPHONE_9_2: u32 = 90200;
-pub const __IPHONE_9_3: u32 = 90300;
-pub const __IPHONE_10_0: u32 = 100000;
-pub const __IPHONE_10_1: u32 = 100100;
-pub const __IPHONE_10_2: u32 = 100200;
-pub const __IPHONE_10_3: u32 = 100300;
-pub const __IPHONE_11_0: u32 = 110000;
-pub const __IPHONE_11_1: u32 = 110100;
-pub const __IPHONE_11_2: u32 = 110200;
-pub const __IPHONE_11_3: u32 = 110300;
-pub const __IPHONE_11_4: u32 = 110400;
-pub const __IPHONE_12_0: u32 = 120000;
-pub const __IPHONE_12_1: u32 = 120100;
-pub const __IPHONE_12_2: u32 = 120200;
-pub const __TVOS_9_0: u32 = 90000;
-pub const __TVOS_9_1: u32 = 90100;
-pub const __TVOS_9_2: u32 = 90200;
-pub const __TVOS_10_0: u32 = 100000;
-pub const __TVOS_10_0_1: u32 = 100001;
-pub const __TVOS_10_1: u32 = 100100;
-pub const __TVOS_10_2: u32 = 100200;
-pub const __TVOS_11_0: u32 = 110000;
-pub const __TVOS_11_1: u32 = 110100;
-pub const __TVOS_11_2: u32 = 110200;
-pub const __TVOS_11_3: u32 = 110300;
-pub const __TVOS_11_4: u32 = 110400;
-pub const __TVOS_12_0: u32 = 120000;
-pub const __TVOS_12_1: u32 = 120100;
-pub const __TVOS_12_2: u32 = 120200;
-pub const __WATCHOS_1_0: u32 = 10000;
-pub const __WATCHOS_2_0: u32 = 20000;
-pub const __WATCHOS_2_1: u32 = 20100;
-pub const __WATCHOS_2_2: u32 = 20200;
-pub const __WATCHOS_3_0: u32 = 30000;
-pub const __WATCHOS_3_1: u32 = 30100;
-pub const __WATCHOS_3_1_1: u32 = 30101;
-pub const __WATCHOS_3_2: u32 = 30200;
-pub const __WATCHOS_4_0: u32 = 40000;
-pub const __WATCHOS_4_1: u32 = 40100;
-pub const __WATCHOS_4_2: u32 = 40200;
-pub const __WATCHOS_4_3: u32 = 40300;
-pub const __WATCHOS_5_0: u32 = 50000;
-pub const __WATCHOS_5_1: u32 = 50100;
-pub const __WATCHOS_5_2: u32 = 50200;
-pub const __MAC_OS_X_VERSION_MAX_ALLOWED: u32 = 101404;
-pub const __DARWIN_WCHAR_MIN: i32 = -2147483648;
-pub const _FORTIFY_SOURCE: u32 = 2;
-pub const RENAME_SECLUDE: u32 = 1;
-pub const RENAME_SWAP: u32 = 2;
-pub const RENAME_EXCL: u32 = 4;
-pub const __SLBF: u32 = 1;
-pub const __SNBF: u32 = 2;
-pub const __SRD: u32 = 4;
-pub const __SWR: u32 = 8;
-pub const __SRW: u32 = 16;
-pub const __SEOF: u32 = 32;
-pub const __SERR: u32 = 64;
-pub const __SMBF: u32 = 128;
-pub const __SAPP: u32 = 256;
-pub const __SSTR: u32 = 512;
-pub const __SOPT: u32 = 1024;
-pub const __SNPT: u32 = 2048;
-pub const __SOFF: u32 = 4096;
-pub const __SMOD: u32 = 8192;
-pub const __SALC: u32 = 16384;
-pub const __SIGN: u32 = 32768;
-pub const _IOFBF: u32 = 0;
-pub const _IOLBF: u32 = 1;
-pub const _IONBF: u32 = 2;
-pub const BUFSIZ: u32 = 1024;
-pub const EOF: i32 = -1;
-pub const FOPEN_MAX: u32 = 20;
-pub const FILENAME_MAX: u32 = 1024;
-pub const P_tmpdir: &'static [u8; 10usize] = b"/var/tmp/\0";
-pub const L_tmpnam: u32 = 1024;
-pub const TMP_MAX: u32 = 308915776;
-pub const SEEK_SET: u32 = 0;
-pub const SEEK_CUR: u32 = 1;
-pub const SEEK_END: u32 = 2;
-pub const L_ctermid: u32 = 1024;
-pub const __CTERMID_DEFINED: u32 = 1;
-pub const _USE_FORTIFY_LEVEL: u32 = 2;
 pub const FALSE: u32 = 0;
 pub const TRUE: u32 = 1;
 pub const TARGET_OS_MAC: u32 = 1;
@@ -652,6 +518,105 @@ pub const SCNiMAX: &'static [u8; 3usize] = b"ji\0";
 pub const SCNoMAX: &'static [u8; 3usize] = b"jo\0";
 pub const SCNuMAX: &'static [u8; 3usize] = b"ju\0";
 pub const SCNxMAX: &'static [u8; 3usize] = b"jx\0";
+pub const __API_TO_BE_DEPRECATED: u32 = 100000;
+pub const __MAC_10_0: u32 = 1000;
+pub const __MAC_10_1: u32 = 1010;
+pub const __MAC_10_2: u32 = 1020;
+pub const __MAC_10_3: u32 = 1030;
+pub const __MAC_10_4: u32 = 1040;
+pub const __MAC_10_5: u32 = 1050;
+pub const __MAC_10_6: u32 = 1060;
+pub const __MAC_10_7: u32 = 1070;
+pub const __MAC_10_8: u32 = 1080;
+pub const __MAC_10_9: u32 = 1090;
+pub const __MAC_10_10: u32 = 101000;
+pub const __MAC_10_10_2: u32 = 101002;
+pub const __MAC_10_10_3: u32 = 101003;
+pub const __MAC_10_11: u32 = 101100;
+pub const __MAC_10_11_2: u32 = 101102;
+pub const __MAC_10_11_3: u32 = 101103;
+pub const __MAC_10_11_4: u32 = 101104;
+pub const __MAC_10_12: u32 = 101200;
+pub const __MAC_10_12_1: u32 = 101201;
+pub const __MAC_10_12_2: u32 = 101202;
+pub const __MAC_10_12_4: u32 = 101204;
+pub const __MAC_10_13: u32 = 101300;
+pub const __MAC_10_13_1: u32 = 101301;
+pub const __MAC_10_13_2: u32 = 101302;
+pub const __MAC_10_13_4: u32 = 101304;
+pub const __MAC_10_14: u32 = 101400;
+pub const __MAC_10_14_1: u32 = 101401;
+pub const __MAC_10_14_4: u32 = 101404;
+pub const __IPHONE_2_0: u32 = 20000;
+pub const __IPHONE_2_1: u32 = 20100;
+pub const __IPHONE_2_2: u32 = 20200;
+pub const __IPHONE_3_0: u32 = 30000;
+pub const __IPHONE_3_1: u32 = 30100;
+pub const __IPHONE_3_2: u32 = 30200;
+pub const __IPHONE_4_0: u32 = 40000;
+pub const __IPHONE_4_1: u32 = 40100;
+pub const __IPHONE_4_2: u32 = 40200;
+pub const __IPHONE_4_3: u32 = 40300;
+pub const __IPHONE_5_0: u32 = 50000;
+pub const __IPHONE_5_1: u32 = 50100;
+pub const __IPHONE_6_0: u32 = 60000;
+pub const __IPHONE_6_1: u32 = 60100;
+pub const __IPHONE_7_0: u32 = 70000;
+pub const __IPHONE_7_1: u32 = 70100;
+pub const __IPHONE_8_0: u32 = 80000;
+pub const __IPHONE_8_1: u32 = 80100;
+pub const __IPHONE_8_2: u32 = 80200;
+pub const __IPHONE_8_3: u32 = 80300;
+pub const __IPHONE_8_4: u32 = 80400;
+pub const __IPHONE_9_0: u32 = 90000;
+pub const __IPHONE_9_1: u32 = 90100;
+pub const __IPHONE_9_2: u32 = 90200;
+pub const __IPHONE_9_3: u32 = 90300;
+pub const __IPHONE_10_0: u32 = 100000;
+pub const __IPHONE_10_1: u32 = 100100;
+pub const __IPHONE_10_2: u32 = 100200;
+pub const __IPHONE_10_3: u32 = 100300;
+pub const __IPHONE_11_0: u32 = 110000;
+pub const __IPHONE_11_1: u32 = 110100;
+pub const __IPHONE_11_2: u32 = 110200;
+pub const __IPHONE_11_3: u32 = 110300;
+pub const __IPHONE_11_4: u32 = 110400;
+pub const __IPHONE_12_0: u32 = 120000;
+pub const __IPHONE_12_1: u32 = 120100;
+pub const __IPHONE_12_2: u32 = 120200;
+pub const __TVOS_9_0: u32 = 90000;
+pub const __TVOS_9_1: u32 = 90100;
+pub const __TVOS_9_2: u32 = 90200;
+pub const __TVOS_10_0: u32 = 100000;
+pub const __TVOS_10_0_1: u32 = 100001;
+pub const __TVOS_10_1: u32 = 100100;
+pub const __TVOS_10_2: u32 = 100200;
+pub const __TVOS_11_0: u32 = 110000;
+pub const __TVOS_11_1: u32 = 110100;
+pub const __TVOS_11_2: u32 = 110200;
+pub const __TVOS_11_3: u32 = 110300;
+pub const __TVOS_11_4: u32 = 110400;
+pub const __TVOS_12_0: u32 = 120000;
+pub const __TVOS_12_1: u32 = 120100;
+pub const __TVOS_12_2: u32 = 120200;
+pub const __WATCHOS_1_0: u32 = 10000;
+pub const __WATCHOS_2_0: u32 = 20000;
+pub const __WATCHOS_2_1: u32 = 20100;
+pub const __WATCHOS_2_2: u32 = 20200;
+pub const __WATCHOS_3_0: u32 = 30000;
+pub const __WATCHOS_3_1: u32 = 30100;
+pub const __WATCHOS_3_1_1: u32 = 30101;
+pub const __WATCHOS_3_2: u32 = 30200;
+pub const __WATCHOS_4_0: u32 = 40000;
+pub const __WATCHOS_4_1: u32 = 40100;
+pub const __WATCHOS_4_2: u32 = 40200;
+pub const __WATCHOS_4_3: u32 = 40300;
+pub const __WATCHOS_5_0: u32 = 50000;
+pub const __WATCHOS_5_1: u32 = 50100;
+pub const __WATCHOS_5_2: u32 = 50200;
+pub const __MAC_OS_X_VERSION_MAX_ALLOWED: u32 = 101404;
+pub const __DARWIN_WCHAR_MIN: i32 = -2147483648;
+pub const _FORTIFY_SOURCE: u32 = 2;
 pub const MRB_INT_BIT: u32 = 64;
 pub const MRB_PRIo: &'static [u8; 4usize] = b"llo\0";
 pub const MRB_PRId: &'static [u8; 4usize] = b"lld\0";
@@ -721,6 +686,7 @@ pub const MRB_DUMP_DEFAULT_STR_LEN: u32 = 128;
 pub const RITE_LV_NULL_MARK: u32 = 65535;
 pub const MRB_HASH_DEFAULT: u32 = 1;
 pub const MRB_HASH_PROC_DEFAULT: u32 = 2;
+pub const _USE_FORTIFY_LEVEL: u32 = 2;
 pub const __HAS_FIXED_CHK_PROTOTYPES: u32 = 1;
 pub const KHASH_DEFAULT_SIZE: u32 = 32;
 pub const KHASH_MIN_SIZE: u32 = 8;
@@ -1312,897 +1278,12 @@ pub type uintmax_t = ::std::os::raw::c_ulong;
 pub type rsize_t = ::std::os::raw::c_ulong;
 pub type wchar_t = ::std::os::raw::c_int;
 pub type max_align_t = f64;
-pub type __darwin_nl_item = ::std::os::raw::c_int;
-pub type __darwin_wctrans_t = ::std::os::raw::c_int;
-pub type __darwin_wctype_t = __uint32_t;
-extern "C" {
-    #[link_name = "\u{1}_renameat"]
-    pub fn renameat(
-        arg1: ::std::os::raw::c_int,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: ::std::os::raw::c_int,
-        arg4: *const ::std::os::raw::c_char,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_renamex_np"]
-    pub fn renamex_np(
-        arg1: *const ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: ::std::os::raw::c_uint,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_renameatx_np"]
-    pub fn renameatx_np(
-        arg1: ::std::os::raw::c_int,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: ::std::os::raw::c_int,
-        arg4: *const ::std::os::raw::c_char,
-        arg5: ::std::os::raw::c_uint,
-    ) -> ::std::os::raw::c_int;
-}
-pub type fpos_t = __darwin_off_t;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct __sbuf {
-    pub _base: *mut ::std::os::raw::c_uchar,
-    pub _size: ::std::os::raw::c_int,
-}
-#[test]
-fn bindgen_test_layout___sbuf() {
-    assert_eq!(
-        ::std::mem::size_of::<__sbuf>(),
-        16usize,
-        concat!("Size of: ", stringify!(__sbuf))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<__sbuf>(),
-        8usize,
-        concat!("Alignment of ", stringify!(__sbuf))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sbuf>()))._base as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sbuf),
-            "::",
-            stringify!(_base)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sbuf>()))._size as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sbuf),
-            "::",
-            stringify!(_size)
-        )
-    );
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct __sFILEX {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct __sFILE {
-    pub _p: *mut ::std::os::raw::c_uchar,
-    pub _r: ::std::os::raw::c_int,
-    pub _w: ::std::os::raw::c_int,
-    pub _flags: ::std::os::raw::c_short,
-    pub _file: ::std::os::raw::c_short,
-    pub _bf: __sbuf,
-    pub _lbfsize: ::std::os::raw::c_int,
-    pub _cookie: *mut ::std::os::raw::c_void,
-    pub _close: ::std::option::Option<
-        unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> ::std::os::raw::c_int,
-    >,
-    pub _read: ::std::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut ::std::os::raw::c_void,
-            arg2: *mut ::std::os::raw::c_char,
-            arg3: ::std::os::raw::c_int,
-        ) -> ::std::os::raw::c_int,
-    >,
-    pub _seek: ::std::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut ::std::os::raw::c_void,
-            arg2: fpos_t,
-            arg3: ::std::os::raw::c_int,
-        ) -> fpos_t,
-    >,
-    pub _write: ::std::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut ::std::os::raw::c_void,
-            arg2: *const ::std::os::raw::c_char,
-            arg3: ::std::os::raw::c_int,
-        ) -> ::std::os::raw::c_int,
-    >,
-    pub _ub: __sbuf,
-    pub _extra: *mut __sFILEX,
-    pub _ur: ::std::os::raw::c_int,
-    pub _ubuf: [::std::os::raw::c_uchar; 3usize],
-    pub _nbuf: [::std::os::raw::c_uchar; 1usize],
-    pub _lb: __sbuf,
-    pub _blksize: ::std::os::raw::c_int,
-    pub _offset: fpos_t,
-}
-#[test]
-fn bindgen_test_layout___sFILE() {
-    assert_eq!(
-        ::std::mem::size_of::<__sFILE>(),
-        152usize,
-        concat!("Size of: ", stringify!(__sFILE))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<__sFILE>(),
-        8usize,
-        concat!("Alignment of ", stringify!(__sFILE))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._p as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_p)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._r as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_r)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._w as *const _ as usize },
-        12usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_w)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._flags as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_flags)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._file as *const _ as usize },
-        18usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_file)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._bf as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_bf)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._lbfsize as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_lbfsize)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._cookie as *const _ as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_cookie)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._close as *const _ as usize },
-        56usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_close)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._read as *const _ as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_read)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._seek as *const _ as usize },
-        72usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_seek)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._write as *const _ as usize },
-        80usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_write)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._ub as *const _ as usize },
-        88usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_ub)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._extra as *const _ as usize },
-        104usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_extra)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._ur as *const _ as usize },
-        112usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_ur)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._ubuf as *const _ as usize },
-        116usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_ubuf)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._nbuf as *const _ as usize },
-        119usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_nbuf)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._lb as *const _ as usize },
-        120usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_lb)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._blksize as *const _ as usize },
-        136usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_blksize)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__sFILE>()))._offset as *const _ as usize },
-        144usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__sFILE),
-            "::",
-            stringify!(_offset)
-        )
-    );
-}
-pub type FILE = __sFILE;
-extern "C" {
-    #[link_name = "\u{1}___stdinp"]
-    pub static mut __stdinp: *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}___stdoutp"]
-    pub static mut __stdoutp: *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}___stderrp"]
-    pub static mut __stderrp: *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}_clearerr"]
-    pub fn clearerr(arg1: *mut FILE);
-}
-extern "C" {
-    #[link_name = "\u{1}_fclose"]
-    pub fn fclose(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_feof"]
-    pub fn feof(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_ferror"]
-    pub fn ferror(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fflush"]
-    pub fn fflush(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fgetc"]
-    pub fn fgetc(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fgetpos"]
-    pub fn fgetpos(arg1: *mut FILE, arg2: *mut fpos_t) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fgets"]
-    pub fn fgets(
-        arg1: *mut ::std::os::raw::c_char,
-        arg2: ::std::os::raw::c_int,
-        arg3: *mut FILE,
-    ) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    #[link_name = "\u{1}_fopen"]
-    pub fn fopen(
-        __filename: *const ::std::os::raw::c_char,
-        __mode: *const ::std::os::raw::c_char,
-    ) -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}_fprintf"]
-    pub fn fprintf(
-        arg1: *mut FILE,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fputc"]
-    pub fn fputc(arg1: ::std::os::raw::c_int, arg2: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fputs"]
-    pub fn fputs(arg1: *const ::std::os::raw::c_char, arg2: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fread"]
-    pub fn fread(
-        __ptr: *mut ::std::os::raw::c_void,
-        __size: usize,
-        __nitems: usize,
-        __stream: *mut FILE,
-    ) -> ::std::os::raw::c_ulong;
-}
-extern "C" {
-    #[link_name = "\u{1}_freopen"]
-    pub fn freopen(
-        arg1: *const ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: *mut FILE,
-    ) -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}_fscanf"]
-    pub fn fscanf(
-        arg1: *mut FILE,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fseek"]
-    pub fn fseek(
-        arg1: *mut FILE,
-        arg2: ::std::os::raw::c_long,
-        arg3: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_fsetpos"]
-    pub fn fsetpos(arg1: *mut FILE, arg2: *const fpos_t) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_ftell"]
-    pub fn ftell(arg1: *mut FILE) -> ::std::os::raw::c_long;
-}
-extern "C" {
-    #[link_name = "\u{1}_fwrite"]
-    pub fn fwrite(
-        __ptr: *const ::std::os::raw::c_void,
-        __size: usize,
-        __nitems: usize,
-        __stream: *mut FILE,
-    ) -> ::std::os::raw::c_ulong;
-}
-extern "C" {
-    #[link_name = "\u{1}_getc"]
-    pub fn getc(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_getchar"]
-    pub fn getchar() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_gets"]
-    pub fn gets(arg1: *mut ::std::os::raw::c_char) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    #[link_name = "\u{1}_perror"]
-    pub fn perror(arg1: *const ::std::os::raw::c_char);
-}
-extern "C" {
-    #[link_name = "\u{1}_printf"]
-    pub fn printf(arg1: *const ::std::os::raw::c_char, ...) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_putc"]
-    pub fn putc(arg1: ::std::os::raw::c_int, arg2: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_putchar"]
-    pub fn putchar(arg1: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_puts"]
-    pub fn puts(arg1: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_remove"]
-    pub fn remove(arg1: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_rename"]
-    pub fn rename(
-        __old: *const ::std::os::raw::c_char,
-        __new: *const ::std::os::raw::c_char,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_rewind"]
-    pub fn rewind(arg1: *mut FILE);
-}
-extern "C" {
-    #[link_name = "\u{1}_scanf"]
-    pub fn scanf(arg1: *const ::std::os::raw::c_char, ...) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_setbuf"]
-    pub fn setbuf(arg1: *mut FILE, arg2: *mut ::std::os::raw::c_char);
-}
-extern "C" {
-    #[link_name = "\u{1}_setvbuf"]
-    pub fn setvbuf(
-        arg1: *mut FILE,
-        arg2: *mut ::std::os::raw::c_char,
-        arg3: ::std::os::raw::c_int,
-        arg4: usize,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_sprintf"]
-    pub fn sprintf(
-        arg1: *mut ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_sscanf"]
-    pub fn sscanf(
-        arg1: *const ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_tmpfile"]
-    pub fn tmpfile() -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}_tmpnam"]
-    pub fn tmpnam(arg1: *mut ::std::os::raw::c_char) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    #[link_name = "\u{1}_ungetc"]
-    pub fn ungetc(arg1: ::std::os::raw::c_int, arg2: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vfprintf"]
-    pub fn vfprintf(
-        arg1: *mut FILE,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vprintf"]
-    pub fn vprintf(
-        arg1: *const ::std::os::raw::c_char,
-        arg2: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vsprintf"]
-    pub fn vsprintf(
-        arg1: *mut ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_ctermid"]
-    pub fn ctermid(arg1: *mut ::std::os::raw::c_char) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    #[link_name = "\u{1}_fdopen"]
-    pub fn fdopen(arg1: ::std::os::raw::c_int, arg2: *const ::std::os::raw::c_char) -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}_fileno"]
-    pub fn fileno(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_pclose"]
-    pub fn pclose(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_popen"]
-    pub fn popen(
-        arg1: *const ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-    ) -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}___srget"]
-    pub fn __srget(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}___svfscanf"]
-    pub fn __svfscanf(
-        arg1: *mut FILE,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}___swbuf"]
-    pub fn __swbuf(arg1: ::std::os::raw::c_int, arg2: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_flockfile"]
-    pub fn flockfile(arg1: *mut FILE);
-}
-extern "C" {
-    #[link_name = "\u{1}_ftrylockfile"]
-    pub fn ftrylockfile(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_funlockfile"]
-    pub fn funlockfile(arg1: *mut FILE);
-}
-extern "C" {
-    #[link_name = "\u{1}_getc_unlocked"]
-    pub fn getc_unlocked(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_getchar_unlocked"]
-    pub fn getchar_unlocked() -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_putc_unlocked"]
-    pub fn putc_unlocked(arg1: ::std::os::raw::c_int, arg2: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_putchar_unlocked"]
-    pub fn putchar_unlocked(arg1: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_getw"]
-    pub fn getw(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_putw"]
-    pub fn putw(arg1: ::std::os::raw::c_int, arg2: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_tempnam"]
-    pub fn tempnam(
-        __dir: *const ::std::os::raw::c_char,
-        __prefix: *const ::std::os::raw::c_char,
-    ) -> *mut ::std::os::raw::c_char;
-}
-pub type off_t = __darwin_off_t;
-extern "C" {
-    #[link_name = "\u{1}_fseeko"]
-    pub fn fseeko(
-        __stream: *mut FILE,
-        __offset: off_t,
-        __whence: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_ftello"]
-    pub fn ftello(__stream: *mut FILE) -> off_t;
-}
-extern "C" {
-    #[link_name = "\u{1}_snprintf"]
-    pub fn snprintf(
-        __str: *mut ::std::os::raw::c_char,
-        __size: usize,
-        __format: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vfscanf"]
-    pub fn vfscanf(
-        __stream: *mut FILE,
-        __format: *const ::std::os::raw::c_char,
-        arg1: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vscanf"]
-    pub fn vscanf(
-        __format: *const ::std::os::raw::c_char,
-        arg1: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vsnprintf"]
-    pub fn vsnprintf(
-        __str: *mut ::std::os::raw::c_char,
-        __size: usize,
-        __format: *const ::std::os::raw::c_char,
-        arg1: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vsscanf"]
-    pub fn vsscanf(
-        __str: *const ::std::os::raw::c_char,
-        __format: *const ::std::os::raw::c_char,
-        arg1: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_dprintf"]
-    pub fn dprintf(
-        arg1: ::std::os::raw::c_int,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vdprintf"]
-    pub fn vdprintf(
-        arg1: ::std::os::raw::c_int,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_getdelim"]
-    pub fn getdelim(
-        __linep: *mut *mut ::std::os::raw::c_char,
-        __linecapp: *mut usize,
-        __delimiter: ::std::os::raw::c_int,
-        __stream: *mut FILE,
-    ) -> isize;
-}
-extern "C" {
-    #[link_name = "\u{1}_getline"]
-    pub fn getline(
-        __linep: *mut *mut ::std::os::raw::c_char,
-        __linecapp: *mut usize,
-        __stream: *mut FILE,
-    ) -> isize;
-}
-extern "C" {
-    #[link_name = "\u{1}_fmemopen"]
-    pub fn fmemopen(
-        __buf: *mut ::std::os::raw::c_void,
-        __size: usize,
-        __mode: *const ::std::os::raw::c_char,
-    ) -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}_open_memstream"]
-    pub fn open_memstream(
-        __bufp: *mut *mut ::std::os::raw::c_char,
-        __sizep: *mut usize,
-    ) -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}_sys_nerr"]
-    pub static mut sys_nerr: ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_sys_errlist"]
-    pub static mut sys_errlist: [*const ::std::os::raw::c_char; 0usize];
-}
-extern "C" {
-    #[link_name = "\u{1}_asprintf"]
-    pub fn asprintf(
-        arg1: *mut *mut ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_ctermid_r"]
-    pub fn ctermid_r(arg1: *mut ::std::os::raw::c_char) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    #[link_name = "\u{1}_fgetln"]
-    pub fn fgetln(arg1: *mut FILE, arg2: *mut usize) -> *mut ::std::os::raw::c_char;
-}
-extern "C" {
-    #[link_name = "\u{1}_fmtcheck"]
-    pub fn fmtcheck(
-        arg1: *const ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-    ) -> *const ::std::os::raw::c_char;
-}
-extern "C" {
-    #[link_name = "\u{1}_fpurge"]
-    pub fn fpurge(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_setbuffer"]
-    pub fn setbuffer(
-        arg1: *mut FILE,
-        arg2: *mut ::std::os::raw::c_char,
-        arg3: ::std::os::raw::c_int,
-    );
-}
-extern "C" {
-    #[link_name = "\u{1}_setlinebuf"]
-    pub fn setlinebuf(arg1: *mut FILE) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_vasprintf"]
-    pub fn vasprintf(
-        arg1: *mut *mut ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_zopen"]
-    pub fn zopen(
-        arg1: *const ::std::os::raw::c_char,
-        arg2: *const ::std::os::raw::c_char,
-        arg3: ::std::os::raw::c_int,
-    ) -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}_funopen"]
-    pub fn funopen(
-        arg1: *const ::std::os::raw::c_void,
-        arg2: ::std::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::std::os::raw::c_void,
-                arg2: *mut ::std::os::raw::c_char,
-                arg3: ::std::os::raw::c_int,
-            ) -> ::std::os::raw::c_int,
-        >,
-        arg3: ::std::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::std::os::raw::c_void,
-                arg2: *const ::std::os::raw::c_char,
-                arg3: ::std::os::raw::c_int,
-            ) -> ::std::os::raw::c_int,
-        >,
-        arg4: ::std::option::Option<
-            unsafe extern "C" fn(
-                arg1: *mut ::std::os::raw::c_void,
-                arg2: fpos_t,
-                arg3: ::std::os::raw::c_int,
-            ) -> fpos_t,
-        >,
-        arg5: ::std::option::Option<
-            unsafe extern "C" fn(arg1: *mut ::std::os::raw::c_void) -> ::std::os::raw::c_int,
-        >,
-    ) -> *mut FILE;
-}
-extern "C" {
-    #[link_name = "\u{1}___sprintf_chk"]
-    pub fn __sprintf_chk(
-        arg1: *mut ::std::os::raw::c_char,
-        arg2: ::std::os::raw::c_int,
-        arg3: usize,
-        arg4: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}___snprintf_chk"]
-    pub fn __snprintf_chk(
-        arg1: *mut ::std::os::raw::c_char,
-        arg2: usize,
-        arg3: ::std::os::raw::c_int,
-        arg4: usize,
-        arg5: *const ::std::os::raw::c_char,
-        ...
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}___vsprintf_chk"]
-    pub fn __vsprintf_chk(
-        arg1: *mut ::std::os::raw::c_char,
-        arg2: ::std::os::raw::c_int,
-        arg3: usize,
-        arg4: *const ::std::os::raw::c_char,
-        arg5: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}___vsnprintf_chk"]
-    pub fn __vsnprintf_chk(
-        arg1: *mut ::std::os::raw::c_char,
-        arg2: usize,
-        arg3: ::std::os::raw::c_int,
-        arg4: usize,
-        arg5: *const ::std::os::raw::c_char,
-        arg6: *mut __va_list_tag,
-    ) -> ::std::os::raw::c_int;
-}
 /// MRuby Value definition functions and macros.
 pub type mrb_sym = u32;
 pub type mrb_bool = u8;
+pub type __darwin_nl_item = ::std::os::raw::c_int;
+pub type __darwin_wctrans_t = ::std::os::raw::c_int;
+pub type __darwin_wctype_t = __uint32_t;
 extern "C" {
     #[link_name = "\u{1}_imaxabs"]
     pub fn imaxabs(j: intmax_t) -> intmax_t;
@@ -6333,7 +5414,6 @@ pub struct mrb_parser_state {
     pub cells: *mut mrb_ast_node,
     pub s: *const ::std::os::raw::c_char,
     pub send: *const ::std::os::raw::c_char,
-    pub f: *mut FILE,
     pub cxt: *mut mrbc_context,
     pub filename_sym: mrb_sym,
     pub lineno: ::std::os::raw::c_int,
@@ -6373,7 +5453,7 @@ pub struct mrb_parser_state {
 fn bindgen_test_layout_mrb_parser_state() {
     assert_eq!(
         ::std::mem::size_of::<mrb_parser_state>(),
-        816usize,
+        808usize,
         concat!("Size of: ", stringify!(mrb_parser_state))
     );
     assert_eq!(
@@ -6432,18 +5512,8 @@ fn bindgen_test_layout_mrb_parser_state() {
         )
     );
     assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).f as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(f)
-        )
-    );
-    assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).cxt as *const _ as usize },
-        48usize,
+        40usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6453,7 +5523,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).filename_sym as *const _ as usize },
-        56usize,
+        48usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6463,7 +5533,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).lineno as *const _ as usize },
-        60usize,
+        52usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6473,7 +5543,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).column as *const _ as usize },
-        64usize,
+        56usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6483,7 +5553,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).lstate as *const _ as usize },
-        68usize,
+        60usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6493,7 +5563,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).lex_strterm as *const _ as usize },
-        72usize,
+        64usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6503,7 +5573,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).cond_stack as *const _ as usize },
-        80usize,
+        72usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6513,7 +5583,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).cmdarg_stack as *const _ as usize },
-        84usize,
+        76usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6523,7 +5593,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).paren_nest as *const _ as usize },
-        88usize,
+        80usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6533,7 +5603,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).lpar_beg as *const _ as usize },
-        92usize,
+        84usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6543,7 +5613,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).in_def as *const _ as usize },
-        96usize,
+        88usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6553,7 +5623,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).in_single as *const _ as usize },
-        100usize,
+        92usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6563,7 +5633,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).locals as *const _ as usize },
-        112usize,
+        104usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6573,7 +5643,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).pb as *const _ as usize },
-        120usize,
+        112usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6583,7 +5653,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).tokbuf as *const _ as usize },
-        128usize,
+        120usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6593,7 +5663,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).buf as *const _ as usize },
-        136usize,
+        128usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6603,7 +5673,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).tidx as *const _ as usize },
-        392usize,
+        384usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6613,7 +5683,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).tsiz as *const _ as usize },
-        396usize,
+        388usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6623,7 +5693,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).all_heredocs as *const _ as usize },
-        400usize,
+        392usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6635,7 +5705,7 @@ fn bindgen_test_layout_mrb_parser_state() {
         unsafe {
             &(*(::std::ptr::null::<mrb_parser_state>())).heredocs_from_nextline as *const _ as usize
         },
-        408usize,
+        400usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6647,7 +5717,7 @@ fn bindgen_test_layout_mrb_parser_state() {
         unsafe {
             &(*(::std::ptr::null::<mrb_parser_state>())).parsing_heredoc as *const _ as usize
         },
-        416usize,
+        408usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6660,7 +5730,7 @@ fn bindgen_test_layout_mrb_parser_state() {
             &(*(::std::ptr::null::<mrb_parser_state>())).lex_strterm_before_heredoc as *const _
                 as usize
         },
-        424usize,
+        416usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6670,7 +5740,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).ylval as *const _ as usize },
-        432usize,
+        424usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6680,7 +5750,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).nerr as *const _ as usize },
-        440usize,
+        432usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6690,7 +5760,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).nwarn as *const _ as usize },
-        448usize,
+        440usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6700,7 +5770,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).tree as *const _ as usize },
-        456usize,
+        448usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6710,7 +5780,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).error_buffer as *const _ as usize },
-        472usize,
+        464usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6720,7 +5790,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).warn_buffer as *const _ as usize },
-        632usize,
+        624usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6730,7 +5800,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).filename_table as *const _ as usize },
-        792usize,
+        784usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6742,7 +5812,7 @@ fn bindgen_test_layout_mrb_parser_state() {
         unsafe {
             &(*(::std::ptr::null::<mrb_parser_state>())).filename_table_length as *const _ as usize
         },
-        800usize,
+        792usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6754,7 +5824,7 @@ fn bindgen_test_layout_mrb_parser_state() {
         unsafe {
             &(*(::std::ptr::null::<mrb_parser_state>())).current_filename_index as *const _ as usize
         },
-        802usize,
+        794usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6764,7 +5834,7 @@ fn bindgen_test_layout_mrb_parser_state() {
     );
     assert_eq!(
         unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).jmp as *const _ as usize },
-        808usize,
+        800usize,
         concat!(
             "Offset of field: ",
             stringify!(mrb_parser_state),
@@ -6875,14 +5945,6 @@ extern "C" {
     pub fn mrb_parser_get_filename(arg1: *mut mrb_parser_state, idx: u16) -> mrb_sym;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_parse_file"]
-    pub fn mrb_parse_file(
-        arg1: *mut mrb_state,
-        arg2: *mut FILE,
-        arg3: *mut mrbc_context,
-    ) -> *mut mrb_parser_state;
-}
-extern "C" {
     #[link_name = "\u{1}_mrb_parse_string"]
     pub fn mrb_parse_string(
         arg1: *mut mrb_state,
@@ -6909,18 +5971,6 @@ extern "C" {
         mrb: *mut mrb_state,
         p: *mut mrb_parser_state,
         c: *mut mrbc_context,
-    ) -> mrb_value;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_load_file"]
-    pub fn mrb_load_file(arg1: *mut mrb_state, arg2: *mut FILE) -> mrb_value;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_load_file_cxt"]
-    pub fn mrb_load_file_cxt(
-        arg1: *mut mrb_state,
-        arg2: *mut FILE,
-        cxt: *mut mrbc_context,
     ) -> mrb_value;
 }
 extern "C" {
@@ -7470,41 +6520,6 @@ extern "C" {
         bin: *mut *mut u8,
         bin_size: *mut usize,
     ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_dump_irep_binary"]
-    pub fn mrb_dump_irep_binary(
-        arg1: *mut mrb_state,
-        arg2: *mut mrb_irep,
-        arg3: u8,
-        arg4: *mut FILE,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_dump_irep_cfunc"]
-    pub fn mrb_dump_irep_cfunc(
-        mrb: *mut mrb_state,
-        arg1: *mut mrb_irep,
-        flags: u8,
-        f: *mut FILE,
-        initname: *const ::std::os::raw::c_char,
-    ) -> ::std::os::raw::c_int;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_read_irep_file"]
-    pub fn mrb_read_irep_file(arg1: *mut mrb_state, arg2: *mut FILE) -> *mut mrb_irep;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_load_irep_file"]
-    pub fn mrb_load_irep_file(arg1: *mut mrb_state, arg2: *mut FILE) -> mrb_value;
-}
-extern "C" {
-    #[link_name = "\u{1}_mrb_load_irep_file_cxt"]
-    pub fn mrb_load_irep_file_cxt(
-        arg1: *mut mrb_state,
-        arg2: *mut FILE,
-        arg3: *mut mrbc_context,
-    ) -> mrb_value;
 }
 extern "C" {
     #[link_name = "\u{1}_mrb_read_irep"]

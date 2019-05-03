@@ -46,7 +46,7 @@ impl Build {
     }
 
     fn mruby_out_dir() -> String {
-        format!("{}/host/lib", &Build::mruby_build_dir())
+        format!("{}/sys/lib", &Build::mruby_build_dir())
     }
 
     fn bindgen_source_header() -> String {
@@ -86,6 +86,7 @@ fn main() {
         .header(Build::bindgen_source_header())
         .clang_arg(format!("-I{}", Build::mruby_include_dir()))
         .clang_arg(format!("-I{}", Build::ext_include_dir()))
+        .clang_arg("-DMRB_DISABLE_STDIO")
         .rustified_enum("mrb_vtype")
         .generate()
         .expect("Unable to generate mruby bindings");
