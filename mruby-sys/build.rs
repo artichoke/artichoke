@@ -87,6 +87,12 @@ fn main() {
         .clang_arg(format!("-I{}", Build::mruby_include_dir()))
         .clang_arg(format!("-I{}", Build::ext_include_dir()))
         .clang_arg("-DMRB_DISABLE_STDIO")
+        .whitelist_function("^mrb.*")
+        .whitelist_type("^mrb.*")
+        .whitelist_var("^mrb.*")
+        .whitelist_var("^MRB.*")
+        .whitelist_var("^MRUBY.*")
+        .whitelist_var("REGEXP_CLASS")
         .rustified_enum("mrb_vtype")
         .generate()
         .expect("Unable to generate mruby bindings");
