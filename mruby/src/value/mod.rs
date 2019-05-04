@@ -3,9 +3,7 @@ use std::ffi::CStr;
 use crate::interpreter::Mrb;
 use crate::sys;
 
-mod types;
-
-pub use self::types::*;
+pub mod types;
 
 // We can't impl `fmt::Debug` because `mrb_sys_value_debug_str` requires a
 // `mrb_state` interpreter, which we can't store on the `Value` because we

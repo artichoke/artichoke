@@ -1,9 +1,10 @@
 use std::ffi::{CStr, CString};
 
+use crate::value::types::{Ruby, Rust};
 use crate::convert::{Error, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
-use crate::value::{Ruby, Rust, Value};
+use crate::value::Value;
 
 // TODO: document encoding assumptions - can only convert UTF-8 data to a Rust
 // String.

@@ -17,11 +17,12 @@ use crate::file::MrbFile;
 use crate::module;
 use crate::sys;
 use crate::value::*;
+use crate::value::types::{Ruby, Rust};
 
 #[macro_export]
 macro_rules! interpreter_or_raise {
     ($mrb:expr) => {
-        match $crate::Interpreter::from_user_data($mrb) {
+        match $crate::interpreter::Interpreter::from_user_data($mrb) {
             std::result::Result::Err(err) => {
                 // Unable to retrieve interpreter from user data pointer in
                 // `mrb_state`.
@@ -56,7 +57,7 @@ macro_rules! unwrap_or_raise {
                         message.as_ptr(),
                     );
                 }
-                return $crate::MrbApi::nil(&$interp).inner();
+                return $crate::interpreter::MrbApi::nil(&$interp).inner();
             }
             std::result::Result::Ok(value) => value.inner(),
         }

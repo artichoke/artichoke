@@ -1,4 +1,7 @@
-use mruby::{Error, Mrb, MrbApi, MrbError, Ruby, Rust, TryFromMrb, Value};
+use mruby::convert::{Error, TryFromMrb};
+use mruby::interpreter::{self, Mrb, MrbApi, MrbError};
+use mruby::value::types::{Ruby, Rust};
+use mruby::value::Value;
 use ref_thread_local::RefThreadLocal;
 use rocket::http::Status;
 use rocket::{get, Response};
@@ -8,7 +11,7 @@ use crate::sources::{foolsgold, rackup};
 
 ref_thread_local! {
     static managed INTERPRETER: Mrb = {
-        let mut interp = mruby::Interpreter::create().expect("mrb interpreter");
+        let mut interp = interpreter::Interpreter::create().expect("mrb interpreter");
         interp.def_file_for_type::<_, mruby_rack::Builder>("rack/builder");
         interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold");
         interp

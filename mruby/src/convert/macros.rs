@@ -2,9 +2,9 @@
 macro_rules! mrb_array_impl {
     ($type:ty as $wrapper_module:ident) => {
         #[allow(clippy::use_self)]
-        impl $crate::TryFromMrb<std::vec::Vec<$type>> for $crate::Value {
-            type From = $crate::Rust;
-            type To = $crate::Ruby;
+        impl $crate::convert::TryFromMrb<std::vec::Vec<$type>> for $crate::value::Value {
+            type From = $crate::value::types::Rust;
+            type To = $crate::value::types::Ruby;
 
             unsafe fn try_from_mrb(
                 mrb: &$crate::interpreter::Mrb,
@@ -12,22 +12,22 @@ macro_rules! mrb_array_impl {
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
                 let mut values = std::vec::Vec::with_capacity(value.len());
                 for item in value {
-                    values.push($crate::Value::try_from_mrb(mrb, item)?);
+                    values.push($crate::value::Value::try_from_mrb(mrb, item)?);
                 }
-                $crate::Value::try_from_mrb(mrb, values)
+                $crate::value::Value::try_from_mrb(mrb, values)
             }
         }
 
         #[allow(clippy::use_self)]
-        impl $crate::TryFromMrb<$crate::Value> for std::vec::Vec<$type> {
-            type From = $crate::Ruby;
-            type To = $crate::Rust;
+        impl $crate::convert::TryFromMrb<$crate::value::Value> for std::vec::Vec<$type> {
+            type From = $crate::value::types::Ruby;
+            type To = $crate::value::types::Rust;
 
             unsafe fn try_from_mrb(
                 mrb: &$crate::interpreter::Mrb,
-                value: $crate::Value,
+                value: $crate::value::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
-                let values = <std::vec::Vec<$crate::Value>>::try_from_mrb(mrb, value)?;
+                let values = <std::vec::Vec<$crate::value::Value>>::try_from_mrb(mrb, value)?;
                 let mut vec = std::vec::Vec::with_capacity(values.len());
                 for item in values {
                     vec.push(<$type>::try_from_mrb(mrb, item)?);
@@ -75,7 +75,7 @@ macro_rules! mrb_array_impl {
                 {
                     unsafe {
                         let interp = Interpreter::create().expect("mrb init");
-                        let value = match $crate::Value::try_from_mrb(&interp, v.clone()) {
+                        let value = match $crate::value::Value::try_from_mrb(&interp, v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
@@ -93,13 +93,13 @@ macro_rules! mrb_array_impl {
                     $type: std::clone::Clone
                         + std::cmp::PartialEq
                         + TryFromMrb<Value, From = Ruby, To = Rust>,
-                    $crate::Value: TryFromMrb<std::vec::Vec<$type>, From = Rust, To = Ruby>,
+                    $crate::value::Value: TryFromMrb<std::vec::Vec<$type>, From = Rust, To = Ruby>,
                     std::vec::Vec<$type>:
                         std::clone::Clone + TryFromMrb<Value, From = Ruby, To = Rust>,
                 {
                     unsafe {
                         let interp = Interpreter::create().expect("mrb init");
-                        let value = match $crate::Value::try_from_mrb(&interp, v.clone()) {
+                        let value = match $crate::value::Value::try_from_mrb(&interp, v.clone()) {
                             std::result::Result::Ok(value) => value,
                             // we don't care about inner conversion failures for `T`
                             std::result::Result::Err(_) => return true,
@@ -119,9 +119,9 @@ macro_rules! mrb_nilable_impl {
     };
     ($type:ty as $wrapper_module:ident with eq = $eq:expr) => {
         #[allow(clippy::use_self)]
-        impl $crate::TryFromMrb<std::option::Option<$type>> for $crate::Value {
-            type From = $crate::Rust;
-            type To = $crate::Ruby;
+        impl $crate::convert::TryFromMrb<std::option::Option<$type>> for $crate::value::Value {
+            type From = $crate::value::types::Rust;
+            type To = $crate::value::types::Ruby;
 
             unsafe fn try_from_mrb(
                 mrb: &$crate::interpreter::Mrb,
@@ -135,13 +135,13 @@ macro_rules! mrb_nilable_impl {
         }
 
         #[allow(clippy::use_self)]
-        impl $crate::TryFromMrb<$crate::Value> for std::option::Option<$type> {
-            type From = $crate::Ruby;
-            type To = $crate::Rust;
+        impl $crate::convert::TryFromMrb<$crate::value::Value> for std::option::Option<$type> {
+            type From = $crate::value::types::Ruby;
+            type To = $crate::value::types::Rust;
 
             unsafe fn try_from_mrb(
                 mrb: &$crate::interpreter::Mrb,
-                value: $crate::Value,
+                value: $crate::value::Value,
             ) -> std::result::Result<Self, $crate::convert::Error<Self::From, Self::To>> {
                 let value = <std::option::Option<Value>>::try_from_mrb(mrb, value)?;
                 let value = if let std::option::Option::Some(item) = value {

@@ -1,7 +1,8 @@
 #[macro_use]
 extern crate rust_embed;
 
-use mruby::{Mrb, MrbApi, MrbFile};
+use mruby::file::MrbFile;
+use mruby::interpreter::{Mrb, MrbApi};
 use std::borrow::Cow;
 use std::convert::AsRef;
 

@@ -1,7 +1,8 @@
+use crate::value::types::{Ruby, Rust};
 use crate::convert::{Error, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
-use crate::value::{Ruby, Rust, Value};
+use crate::value::Value;
 
 pub type Int = i64;
 

@@ -1,9 +1,10 @@
 use std::convert::TryFrom;
 
+use crate::value::types::{Ruby, Rust};
 use crate::convert::{Error, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
-use crate::value::{Ruby, Rust, Value};
+use crate::value::Value;
 
 // TODO: Document danger associated with lifetimes.
 // If the mrb_value lives longer than the `Vec<u8>` or `&[u8]` the mrb_value

@@ -2,10 +2,11 @@ use std::convert::TryFrom;
 
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
-use crate::convert::Error;
+use crate::convert::{Error, TryFromMrb};
+use crate::value::types::{Ruby, Rust};
 use crate::interpreter::Mrb;
 use crate::sys;
-use crate::{Ruby, Rust, TryFromMrb, Value};
+use crate::value::Value;
 
 mrb_array_impl!(bool as bool);
 mrb_array_impl!(Option<bool> as nilable_bool);

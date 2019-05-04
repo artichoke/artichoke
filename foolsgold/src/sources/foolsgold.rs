@@ -1,5 +1,10 @@
+use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define, Parent};
-use mruby::{interpreter_or_raise, sys, unwrap_or_raise, Mrb, MrbApi, MrbFile, TryFromMrb, Value};
+use mruby::file::MrbFile;
+use mruby::interpreter::{Mrb, MrbApi};
+use mruby::sys;
+use mruby::value::Value;
+use mruby::{interpreter_or_raise, unwrap_or_raise};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
