@@ -15,18 +15,18 @@
 //!
 //! ```txt
 //! running 1 test
-//! test tests::check_leaks ... FAILED
+//! test tests::rust_backed_mrb_value_smart_pointer_leak ... FAILED
 //!
 //! failures:
 //!
-//! ---- tests::check_leaks stdout ----
-//! thread 'tests::check_leaks' panicked at 'Plausible memory leak!
-//! After 2000 iterations, usage before: 1228800, usage after: 4094840832', mruby/tests/memory_leak.rs:75:9
+//! ---- tests::rust_backed_mrb_value_smart_pointer_leak stdout ----
+//! thread 'tests::rust_backed_mrb_value_smart_pointer_leak' panicked at 'Plausible memory leak!
+//! After 2000 iterations, usage before: 1228800, usage after: 4094840832', mruby/tests/mrb_tt_data_rc_memory_leak.rs:75:9
 //! note: Run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
 //!
 //!
 //! failures:
-//!     tests::check_leaks
+//!     tests::rust_backed_mrb_value_smart_pointer_leak
 //!
 //! test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
 //! ```
@@ -47,7 +47,7 @@ impl MrbFile for Container {
         extern "C" fn free(_mrb: *mut sys::mrb_state, data: *mut c_void) {
             unsafe {
                 // Implictly dropped by going out of scope
-                let _ = mem::transmute::<*mut std::ffi::c_void, Rc<RefCell<Container>>>(data);
+                let _ = mem::transmute::<*mut c_void, Rc<RefCell<Container>>>(data);
             }
         }
 
@@ -104,11 +104,13 @@ mod tests {
     const LEAK_TOLERANCE: i64 = 1024 * 1024 * 10;
     const ITERATIONS: usize = 2000;
 
-    #[test]
-    fn check_leaks() {
+    fn check_leaks<F>(mut execute: F)
+    where
+        F: FnMut() -> (),
+    {
         let start_mem = resident_memsize();
         for _ in 0..ITERATIONS {
-            eval();
+            execute();
         }
         let end_mem = resident_memsize();
         assert!(
@@ -126,13 +128,16 @@ mod tests {
         out.ru_maxrss
     }
 
-    fn eval() {
-        let mut interp = Interpreter::create().expect("mrb init");
-        interp.def_file_for_type::<_, Container>("container");
+    #[test]
+    fn rust_backed_mrb_value_smart_pointer_leak() {
+        check_leaks(|| {
+            let mut interp = Interpreter::create().expect("mrb init");
+            interp.def_file_for_type::<_, Container>("container");
 
-        let code = "require 'container'; Container.new('a' * 1024 * 1024)";
-        let result = interp.eval(code);
-        assert_eq!(true, result.is_ok());
-        drop(interp);
+            let code = "require 'container'; Container.new('a' * 1024 * 1024)";
+            let result = interp.eval(code);
+            assert_eq!(true, result.is_ok());
+            drop(interp);
+        })
     }
 }

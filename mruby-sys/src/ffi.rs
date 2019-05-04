@@ -7269,6 +7269,11 @@ extern "C" {
     pub fn mrb_sys_data_value(data: *mut RData) -> mrb_value;
 }
 extern "C" {
+    /// Create an `mrb_value` from a `void *`
+    #[link_name = "\u{1}_mrb_sys_obj_value"]
+    pub fn mrb_sys_obj_value(p: *mut ::std::os::raw::c_void) -> mrb_value;
+}
+extern "C" {
     /// Set instance type tag
     #[link_name = "\u{1}_mrb_sys_set_instance_tt"]
     pub fn mrb_sys_set_instance_tt(class: *mut RClass, type_: mrb_vtype);
@@ -7297,12 +7302,6 @@ extern "C" {
         ptr: *mut ::std::os::raw::c_void,
         type_: *const mrb_data_type,
     );
-}
-extern "C" {
-    /// Create a `String` `mrb_value` containing exception info and a backtrace for
-    /// the most recent thrown exception on `mrb_state`
-    #[link_name = "\u{1}_mrb_sys_get_current_exception"]
-    pub fn mrb_sys_get_current_exception(mrb: *mut mrb_state) -> mrb_value;
 }
 extern "C" {
     /// Raise the most recent thrown exception on `mrb_state`
@@ -7341,6 +7340,24 @@ extern "C" {
     /// Get length of an `Array`
     #[link_name = "\u{1}_mrb_sys_ary_len"]
     pub fn mrb_sys_ary_len(value: mrb_value) -> mrb_int;
+}
+extern "C" {
+    /// Set save point for garbage collection arena to recycle `mrb_value` objects
+    /// created with C function calls. Returns an index in the arena stack to restore
+    /// to when calling `mrb_sys_gc_arena_restore`.
+    #[link_name = "\u{1}_mrb_sys_gc_arena_save"]
+    pub fn mrb_sys_gc_arena_save(mrb: *mut mrb_state) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    /// Restore save point for garbage collection arena to recycle `mrb_value`
+    /// objects created with C function calls.
+    #[link_name = "\u{1}_mrb_sys_gc_arena_restore"]
+    pub fn mrb_sys_gc_arena_restore(mrb: *mut mrb_state, arena_index: ::std::os::raw::c_int);
+}
+extern "C" {
+    /// Get an `RBasic` pointer to an mruby object.
+    #[link_name = "\u{1}_mrb_sys_basic_ptr"]
+    pub fn mrb_sys_basic_ptr(value: mrb_value) -> *mut RBasic;
 }
 pub type __builtin_va_list = [__va_list_tag; 1usize];
 #[repr(C)]

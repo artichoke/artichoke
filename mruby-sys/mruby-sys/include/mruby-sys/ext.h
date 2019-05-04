@@ -101,6 +101,11 @@ mrb_value mrb_sys_module_value(struct RClass *module);
 mrb_value mrb_sys_data_value(struct RData *data);
 
 /**
+ * Create an `mrb_value` from a `void *`
+ */
+mrb_value mrb_sys_obj_value(void *p);
+
+/**
  * Set instance type tag
  */
 void mrb_sys_set_instance_tt(struct RClass *class, enum mrb_vtype type);
@@ -118,12 +123,6 @@ mrb_value mrb_sys_new_symbol(struct mrb_state *mrb, const char *string,
 
 // TODO: document purpose
 void mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type);
-
-/**
- * Create a `String` `mrb_value` containing exception info and a backtrace for
- * the most recent thrown exception on `mrb_state`
- */
-mrb_value mrb_sys_get_current_exception(struct mrb_state *mrb);
 
 /**
  * Raise the most recent thrown exception on `mrb_state`
@@ -156,3 +155,21 @@ struct RClass *mrb_sys_class_of_value(struct mrb_state *mrb, mrb_value value);
  * Get length of an `Array`
  */
 mrb_int mrb_sys_ary_len(mrb_value value);
+
+/**
+ * Set save point for garbage collection arena to recycle `mrb_value` objects
+ * created with C function calls. Returns an index in the arena stack to restore
+ * to when calling `mrb_sys_gc_arena_restore`.
+ */
+int mrb_sys_gc_arena_save(mrb_state *mrb);
+
+/**
+ * Restore save point for garbage collection arena to recycle `mrb_value`
+ * objects created with C function calls.
+ */
+void mrb_sys_gc_arena_restore(mrb_state *mrb, int arena_index);
+
+/**
+ * Get an `RBasic` pointer to an mruby object.
+ */
+struct RBasic *mrb_sys_basic_ptr(mrb_value value);

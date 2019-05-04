@@ -98,6 +98,12 @@ mrb_value mrb_sys_data_value(struct RData *data) {
   return value;
 }
 
+mrb_value mrb_sys_obj_value(void *p) {
+  // `mrb_obj_value` is defined as `MRB_INLINE` which means bindgen won't find
+  // it, so we wrap it here so we can link to it.
+  return mrb_obj_value(p);
+}
+
 void mrb_sys_set_instance_tt(struct RClass *class, enum mrb_vtype type) {
   // `MRB_SET_INSTANCE_TT` is defined as a macro which means bindgen won't find
   // it, so we wrap it here so we can link to it.
@@ -123,26 +129,6 @@ void mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type) {
   // `mrb_data_init` is defined as `inline` which means bindgen won't find it,
   // so we wrap it here so we can link to it.
   mrb_data_init(*value, ptr, type);
-}
-
-mrb_value mrb_sys_get_current_exception(struct mrb_state *mrb) {
-  if (!mrb->exc) {
-    return mrb_nil_value();
-  }
-
-  // exception_info = exc.inspect
-  // backtrace = exc.backtrace
-  // backtrace.unshift(exception_info)
-  // backtrace.join("\n")
-  mrb_value exc = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
-  mrb_value backtrace = mrb_exc_backtrace(mrb, mrb_obj_value(mrb->exc));
-
-  mrb_funcall(mrb, backtrace, "unshift", 1, exc);
-
-  // clear exception from interpreter
-  mrb->exc = NULL;
-
-  return mrb_funcall(mrb, backtrace, "join", 1, mrb_str_new_cstr(mrb, "\n"));
 }
 
 void mrb_sys_raise_current_exception(struct mrb_state *mrb) {
@@ -182,4 +168,22 @@ mrb_int mrb_sys_ary_len(mrb_value value) {
   // `ARY_LEN` is defined as a macro which means bindgen won't find it, so we
   // wrap it here so we can link to it.
   return ARY_LEN(mrb_ary_ptr(value));
+}
+
+int mrb_sys_gc_arena_save(mrb_state *mrb) {
+  // `mrb_gc_arena_save` is defined as `MRB_INLINE` which means bindgen won't
+  // find it, so we wrap it here so we can link to it.
+  return mrb_gc_arena_save(mrb);
+}
+
+void mrb_sys_gc_arena_restore(mrb_state *mrb, int arena_index) {
+  // `mrb_gc_arena_restore` is defined as `MRB_INLINE` which means bindgen won't
+  // find it, so we wrap it here so we can link to it.
+  mrb_gc_arena_restore(mrb, arena_index);
+}
+
+struct RBasic *mrb_sys_basic_ptr(mrb_value value) {
+  // `mrb_basic_ptr` is defined as a macro which means bindgen won't find it, so
+  // we wrap it here so we can link to it.
+  return mrb_basic_ptr(value);
 }

@@ -1,9 +1,11 @@
+use log::{debug, trace};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::convert::AsRef;
 use std::error;
 use std::ffi::{c_void, CStr, CString};
 use std::fmt;
+use std::mem;
 use std::rc::Rc;
 
 use crate::convert::*;
@@ -64,7 +66,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
     unsafe {
         let interp = interpreter_or_raise!(mrb);
         // Extract required filename from arguments
-        let name = std::mem::uninitialized::<*const std::os::raw::c_char>();
+        let name = mem::uninitialized::<*const std::os::raw::c_char>();
         let argspec = CString::new(sys::specifiers::CSTRING).expect("argspec");
         sys::mrb_get_args(mrb, argspec.as_ptr(), &name);
         let name = match CStr::from_ptr(name).to_str() {
@@ -136,7 +138,7 @@ impl Interpreter {
             // Transmute the smart pointer that wraps the API and store it in
             // the user data of the mrb interpreter. After this operation,
             // `Rc::strong_count` will still be 1.
-            let ptr = std::mem::transmute::<Mrb, *mut c_void>(api);
+            let ptr = mem::transmute::<Mrb, *mut c_void>(api);
             (*mrb).ud = ptr;
 
             // Add global extension functions
@@ -157,7 +159,7 @@ impl Interpreter {
             // After this operation `Rc::strong_count` will still be 1. This
             // dance is required to avoid leaking Mrb objects, which will let
             // the `Drop` impl close the mrb context and interpreter.
-            Ok(std::mem::transmute::<*mut c_void, Mrb>(ptr))
+            Ok(mem::transmute::<*mut c_void, Mrb>(ptr))
         }
     }
 
@@ -173,14 +175,14 @@ impl Interpreter {
         // Extract the smart pointer that wraps the API from the user data on
         // the mrb interpreter. The `mrb_state` should retain ownership of its
         // copy of the smart pointer.
-        let ud = std::mem::transmute::<*mut c_void, Mrb>(ptr);
+        let ud = mem::transmute::<*mut c_void, Mrb>(ptr);
         // Clone the API smart pointer and increase its ref count to return a
         // reference to the caller.
         let api = Rc::clone(&ud);
         // Forget the transmuted API extracted from the user data to make sure
         // the `mrb_state` maintains ownership and the smart pointer does not
         // get deallocated before `mrb_close` is called.
-        std::mem::forget(ud);
+        mem::forget(ud);
         // At this point, `Rc::strong_count` will be increased by 1.
         Ok(api)
     }
@@ -271,10 +273,10 @@ impl Drop for MrbState {
             // deallocated.
             let ptr = (*self.mrb).ud;
             if !ptr.is_null() {
-                let ud = std::mem::transmute::<*mut c_void, Mrb>(ptr);
+                let ud = mem::transmute::<*mut c_void, Mrb>(ptr);
                 // cleanup pointers
                 (*self.mrb).ud = std::ptr::null_mut();
-                std::mem::drop(ud);
+                mem::drop(ud);
             }
 
             // Free mrb data structures
@@ -294,6 +296,8 @@ pub trait MrbApi {
     fn eval<T>(&self, code: T) -> Result<Value, MrbError>
     where
         T: AsRef<[u8]>;
+
+    fn current_exception(&self) -> Option<String>;
 
     fn def_file<T>(&mut self, filename: T, require_func: RequireFunc)
     where
@@ -317,27 +321,118 @@ pub trait MrbApi {
     fn string<T: AsRef<str>>(&self, s: T) -> Value;
 }
 
-// We need to implement the `MrbApi` on the `Rc` instead of the `MrbState`
-// because we need to not have a borrow on the `MrbState` when evaling code
-// because eval may recurse through the interpreter, e.g. a nested require.
+/// We need to implement the [`MrbApi`] on the [`Rc`] smart pointer [`Mrb`]
+/// type instead of the [`MrbState`] because we store the [`Rc`] in the userdata
+/// pointer of the [`sys::mrb_state`]. If the `MrbApi` were implemented on the
+/// `MrbState`, there would be duplicate borrows on the `Mrb` smart pointer
+/// during nested access to the interpreter.
+///
+/// Implementing `MrbApi` on `Mrb` means callers do not need to manipulate
+/// borrows when evaling code. This is convenient because eval may recursively
+/// call [`MrbApi::eval`], e.g. during a nested require.
 impl MrbApi for Mrb {
     fn eval<T>(&self, code: T) -> Result<Value, MrbError>
     where
         T: AsRef<[u8]>,
     {
+        // Ensure the borrow is out of scope by the time we eval code since
+        // Rust-backed files and types may need to mutably borrow the `Mrb` to
+        // get access to the underlying `MrbState`.
         let (mrb, ctx) = {
             let borrow = self.borrow();
             (borrow.mrb, borrow.ctx)
         };
         let code = code.as_ref();
-        let result =
-            unsafe { sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx) };
-        let exception = Value::new(unsafe { sys::mrb_sys_get_current_exception(mrb) });
-        let exception = unsafe { <Option<String>>::try_from_mrb(&self, exception) };
-        if let Some(backtrace) = exception.map_err(MrbError::ConvertToRust)? {
+        let result = unsafe {
+            // Create a savepoint in the GC arena which will allow mruby to
+            // deallocate all of the objects we create via the C API. Normally
+            // objects created via the C API are marked as permannently alive
+            // ("white" GC color) with a call to `mrb_gc_protect`.
+            let arena_index = sys::mrb_sys_gc_arena_save(mrb);
+            // Execute arbitrary ruby code, which may generate objects with C
+            // APIs if backed by Rust functions.
+            trace!("Evaling code on mruby interpreter {:p}", mrb);
+            let result =
+                sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx);
+            // Restore the GC arena to its stack position before calling `eval`
+            // to allow objects created via the evaled to get garbage collected.
+            sys::mrb_sys_gc_arena_restore(mrb, arena_index);
+            // Force a full garbage collection to clean up the objects we have
+            // stranded beyond the restored end of the arena.
+            trace!(
+                "Initiating full garbage collection on mruby interpreter {:p}",
+                mrb
+            );
+            sys::mrb_garbage_collect(mrb);
+            result
+        };
+        if let Some(backtrace) = self.current_exception() {
+            debug!(
+                "mruby runtime error with exception backtrace: {}",
+                backtrace
+            );
             return Err(MrbError::Exec(backtrace));
         }
         Ok(Value::new(result))
+    }
+
+    /// Extract a `String` representation of the current exception on the mruby
+    /// interpreter if there is one. The string will contain the exception
+    /// class, message, and backtrace.
+    fn current_exception(&self) -> Option<String> {
+        let mrb = self.borrow().mrb;
+        let exc = unsafe { (*mrb).exc };
+        if exc.is_null() {
+            return None;
+        }
+        let error = unsafe {
+            // Do operations that can early return before accesing the GC arena
+            let inspect = CString::new("inspect").ok()?;
+            let unshift = CString::new("unshift").ok()?;
+
+            // Create a savepoint in the GC arena which will allow mruby to
+            // deallocate all of the objects we create via the C API which are
+            // normally marked as permanently live ("white" GC color).
+            let arena_index = sys::mrb_sys_gc_arena_save(mrb);
+
+            // Generate an exception backtrace in a `String` by executing the
+            // following Ruby code with the C API:
+            //
+            // ```ruby
+            // exception = exc.inspect
+            // backtrace = exc.backtrace
+            // backtrace.unshift(exception)
+            // backtrace.join("\n")
+            // ```
+            let exc = mem::transmute::<*mut sys::RObject, *mut c_void>(exc);
+            let exception = sys::mrb_funcall(mrb, sys::mrb_sys_obj_value(exc), inspect.as_ptr(), 0);
+            let backtrace = sys::mrb_exc_backtrace(mrb, sys::mrb_sys_obj_value(exc));
+            sys::mrb_funcall(mrb, backtrace, unshift.as_ptr(), 1, exception);
+
+            let error = <Vec<String>>::try_from_mrb(self, Value::new(backtrace));
+
+            // Clear the current exception from the mruby interpreter so
+            // subsequent calls to eval are not tainted by an error they did
+            // not generate.
+            (*mrb).exc = std::ptr::null_mut();
+            trace!(
+                "Extracting exception backtrace allocated {} protected objects on the arena",
+                sys::mrb_sys_gc_arena_save(mrb) - arena_index
+            );
+            // Restore the GC arena to its stack position before calling
+            // `current_exception` to allow `exception` and `backtrace` to get
+            // garbage collected.
+            sys::mrb_sys_gc_arena_restore(mrb, arena_index);
+            // Force a full garbage collection to clean up the objects we have
+            // stranded beyond the restored end of the arena.
+            trace!(
+                "Initiating full garbage collection on mruby interpreter {:p}",
+                mrb
+            );
+            sys::mrb_garbage_collect(mrb);
+            error
+        };
+        error.ok().map(|exception| exception.join("\n"))
     }
 
     fn def_file<T>(&mut self, filename: T, require_func: RequireFunc)
@@ -488,6 +583,21 @@ mod tests {
                     "RuntimeError: cannot load such file -- non-existent-source".to_owned()
                 ))
             );
+        }
+    }
+
+    #[test]
+    fn no_unbounded_arena_growth() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+            let start_arena_index = sys::mrb_sys_gc_arena_save(interp.borrow().mrb);
+            for _ in 0..2000 {
+                let result = interp.eval(":arena_test");
+                assert!(result.is_ok());
+            }
+            let end_arena_index = sys::mrb_sys_gc_arena_save(interp.borrow().mrb);
+            let arena_objects = end_arena_index - start_arena_index;
+            assert_eq!(arena_objects, 0, "After 2000 iterations, the GC arena has grown to {} objects. Potential memory leak!", arena_objects);
         }
     }
 }
