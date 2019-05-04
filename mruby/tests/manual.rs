@@ -1,9 +1,15 @@
 #[macro_use]
 extern crate log;
 
-use mruby::*;
+use mruby::convert::TryFromMrb;
+use mruby::def::{ClassLike, Define};
+use mruby::file::MrbFile;
+use mruby::interpreter::{Interpreter, Mrb};
+use mruby::sys;
+use mruby::value::Value;
+use mruby::{interpreter_or_raise, unwrap_or_raise};
 use std::cell::RefCell;
-use std::ffi::{c_void, CStr, CString};
+use std::ffi::{c_void, CString};
 use std::mem;
 use std::rc::Rc;
 
@@ -32,7 +38,7 @@ impl MrbFile for Container {
         ) -> sys::mrb_value {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
-                let mut api = interp.borrow_mut();
+                let api = interp.borrow();
 
                 let int = mem::uninitialized::<sys::mrb_int>();
                 let argspec = CString::new(sys::specifiers::INTEGER).expect("argspec");
@@ -46,8 +52,8 @@ impl MrbFile for Container {
                     "interpreter strong ref count = {}",
                     Rc::strong_count(&interp)
                 );
-                let data_type = api.get_or_create_data_type("Container", Some(free));
-                sys::mrb_sys_data_init(&mut slf, ptr, data_type);
+                let spec = api.class_spec::<Container>();
+                sys::mrb_sys_data_init(&mut slf, ptr, spec.data_type());
 
                 slf
             }
@@ -56,14 +62,11 @@ impl MrbFile for Container {
         extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
-                let mut api = interp.borrow_mut();
-                let data_type = api.get_or_create_data_type("Container", Some(free));
+                let api = interp.borrow();
+                let spec = api.class_spec::<Container>();
 
-                debug!(
-                    "pulled mrb_data_type from user data with class: {:?}",
-                    CStr::from_ptr((*data_type).struct_name).to_string_lossy()
-                );
-                let ptr = sys::mrb_data_get_ptr(mrb, slf, data_type);
+                debug!("pulled mrb_data_type from user data with class: {:?}", spec);
+                let ptr = sys::mrb_data_get_ptr(mrb, slf, spec.data_type());
                 let data = mem::transmute::<*mut c_void, Rc<RefCell<Container>>>(ptr);
                 let clone = Rc::clone(&data);
                 let cont = clone.borrow();
@@ -74,40 +77,24 @@ impl MrbFile for Container {
             }
         }
 
-        unsafe {
-            // this `CString` needs to stay in scope for the life of the mruby
-            // interpreter, otherwise `mrb_close` will segfault.
-            let class = CString::new("Container").expect("Container class");
-            let mrb_class = sys::mrb_define_class(
-                interp.borrow().mrb,
-                class.as_ptr(),
-                (*interp.borrow().mrb).object_class,
-            );
-            sys::mrb_sys_set_instance_tt(mrb_class, sys::mrb_vtype::MRB_TT_DATA);
-
-            let initialize_method = CString::new("initialize").expect("initialize method");
-            sys::mrb_define_method(
-                interp.borrow().mrb,
-                mrb_class,
-                initialize_method.as_ptr(),
-                Some(initialize),
-                sys::mrb_args_req(1),
-            );
-
-            let value_method = CString::new("value").expect("value method");
-            sys::mrb_define_method(
-                interp.borrow().mrb,
-                mrb_class,
-                value_method.as_ptr(),
-                Some(value),
-                sys::mrb_args_none(),
-            );
+        {
+            let mut api = interp.borrow_mut();
+            api.def_class::<Container>("Container", None, Some(free));
+            let spec = api.class_spec_mut::<Self>();
+            spec.add_method("initialize", initialize, sys::mrb_args_req(1));
+            spec.add_method("value", value, sys::mrb_args_none());
+            spec.mrb_value_is_rust_backed(true);
         }
+        let api = interp.borrow();
+        let spec = api.class_spec::<Self>();
+        spec.define(Rc::clone(&interp)).expect("class install");
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use mruby::interpreter::MrbApi;
+
     use super::*;
 
     #[test]

@@ -1,11 +1,15 @@
 #![deny(clippy::all, clippy::pedantic)]
 
 #[macro_use]
-mod interpreter;
+pub mod interpreter;
 
-mod convert;
-mod file;
-mod value;
+pub mod class;
+pub mod convert;
+pub mod def;
+pub mod file;
+pub mod method;
+pub mod module;
+pub mod value;
 
 pub use self::convert::*;
 pub use self::file::*;

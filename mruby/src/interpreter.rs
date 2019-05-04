@@ -1,4 +1,5 @@
 use log::{debug, trace};
+use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::convert::AsRef;
@@ -8,8 +9,12 @@ use std::fmt;
 use std::mem;
 use std::rc::Rc;
 
+use crate::class;
 use crate::convert::*;
+use crate::def;
+use crate::def::ClassLike;
 use crate::file::MrbFile;
+use crate::module;
 use crate::sys;
 use crate::value::*;
 
@@ -59,8 +64,6 @@ macro_rules! unwrap_or_raise {
 }
 
 pub type Mrb = Rc<RefCell<MrbState>>;
-pub type MrbFreeFunc = unsafe extern "C" fn(mrb: *mut sys::mrb_state, arg1: *mut c_void);
-pub type RequireFunc = fn(interp: Mrb);
 
 extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     unsafe {
@@ -130,7 +133,8 @@ impl Interpreter {
             let api = Rc::new(RefCell::new(MrbState {
                 mrb,
                 ctx: context,
-                data_types: HashMap::new(),
+                classes: HashMap::new(),
+                modules: HashMap::new(),
                 file_registry: HashMap::new(),
                 required_files: HashSet::new(),
             }));
@@ -223,13 +227,16 @@ impl error::Error for MrbError {
     }
 }
 
+// NOTE: MrbState assumes that it it is stored in `mrb_state->ud` wrapped in a
+// [`Rc`] with type [`Mrb`] as created by [`Interpreter::create`].
 pub struct MrbState {
     // TODO: Make this private
     pub mrb: *mut sys::mrb_state,
     // TODO: Make this private
     pub ctx: *mut sys::mrbc_context,
-    data_types: HashMap<String, (CString, sys::mrb_data_type)>,
-    file_registry: HashMap<String, Box<RequireFunc>>,
+    classes: HashMap<TypeId, Rc<class::Spec>>,
+    modules: HashMap<TypeId, Rc<module::Spec>>,
+    file_registry: HashMap<String, Box<fn(Mrb)>>,
     required_files: HashSet<String>,
 }
 
@@ -238,27 +245,63 @@ impl MrbState {
         drop(self)
     }
 
-    // NOTE: This function must return a reference. mruby expects mrb_data_type
-    // structs to live the life of the mrb interpreter. If a data type is
-    // deallocated because it is dropped, mrb_close will segfault.
-    pub fn get_or_create_data_type<T: AsRef<str>>(
+    pub fn def_class<T: Any>(
         &mut self,
-        class: T,
-        free: Option<MrbFreeFunc>,
-    ) -> &sys::mrb_data_type {
-        let class = class.as_ref().to_owned();
-        &self
-            .data_types
-            .entry(class.clone())
-            .or_insert_with(|| {
-                let class = CString::new(class).expect("class for data type");
-                let data_type = sys::mrb_data_type {
-                    struct_name: class.as_ptr(),
-                    dfree: free,
-                };
-                (class, data_type)
-            })
-            .1
+        name: &str,
+        parent: Option<def::Parent>,
+        free: Option<def::Free>,
+    ) {
+        let spec = class::Spec::new(name, parent, free);
+        self.classes.insert(TypeId::of::<T>(), Rc::new(spec));
+    }
+
+    // NOTE: This function must return a reference with a smart pointer. `Class`
+    // specs are bound to the lifetime of the `Mrb` interpreter because if the
+    // sys pointers are deallocated, mruby may segfault.
+    pub fn class_spec<T: Any>(&self) -> Rc<class::Spec> {
+        let spec = self.classes.get(&TypeId::of::<T>()).expect("class spec");
+        Rc::clone(spec)
+    }
+
+    // NOTE: This function will panic if there is more than one `Rc` pointing
+    // to the `class::Spec` backing the type `T`. There may be more than one
+    // `Rc` if a class has been used as a parent for another `Module` or
+    // `Class`. In practice, this means that `mruby` modules are closed once
+    // they are `define`d on an `Mrb` interpreter.
+    pub fn class_spec_mut<T: Any>(&mut self) -> &mut class::Spec {
+        let spec = self
+            .classes
+            .get_mut(&TypeId::of::<T>())
+            .expect("class spec");
+        let name = spec.name().to_owned();
+        Rc::get_mut(spec).unwrap_or_else(|| panic!("mutable class spec for {}", name))
+    }
+
+    pub fn def_module<T: Any>(&mut self, name: &str, parent: Option<def::Parent>) {
+        let spec = module::Spec::new(name, parent);
+        self.modules.insert(TypeId::of::<T>(), Rc::new(spec));
+    }
+
+    // NOTE: This function must return a reference with a smart pointer.
+    // `Module` specs are bound to the lifetime of the `Mrb` interpreter because
+    // if the sys pointers are deallocated, mruby may segfault.
+    pub fn module_spec<T: Any>(&self) -> Rc<module::Spec> {
+        let spec = self.modules.get(&TypeId::of::<T>()).expect("module spec");
+        Rc::clone(spec)
+    }
+
+    // NOTE: This function will panic if there is more than one `Rc` pointing
+    // to the `module::Spec` backing the type `T`. There may be more than one
+    // `Rc` if a module has been used as a parent for another `Module` or
+    // `Class`. In practice, this means that `mruby` modules are closed once
+    // they are `define`d on an `Mrb` interpreter.
+    pub fn module_spec_mut<T: Any>(&mut self) -> &mut module::Spec {
+        let spec = self
+            .modules
+            .get_mut(&TypeId::of::<T>())
+            .expect("module spec");
+        let name = spec.name().to_owned();
+        Rc::get_mut(spec).unwrap_or_else(|| panic!("mutable module spec for {}", name))
     }
 }
 
@@ -266,10 +309,10 @@ impl Drop for MrbState {
     fn drop(&mut self) {
         unsafe {
             // At this point, the only ref to the smart poitner wrapping the
-            // API is stored in the `mrb_state->ud` pointer. Rematerialize the
+            // state is stored in the `mrb_state->ud` pointer. Rematerialize the
             // `Rc`, set the userdata pointer to null, and drop the `Rc` to
             // ensure no memory leaks. After this operation, `Rc::strong_count`
-            // will be 0 and the `Rc`, `RefCell`, and `MrbApi` will be
+            // will be 0 and the `Rc`, `RefCell`, and `MrbState` will be
             // deallocated.
             let ptr = (*self.mrb).ud;
             if !ptr.is_null() {
@@ -299,7 +342,7 @@ pub trait MrbApi {
 
     fn current_exception(&self) -> Option<String>;
 
-    fn def_file<T>(&mut self, filename: T, require_func: RequireFunc)
+    fn def_file<T>(&mut self, filename: T, require: fn(Self))
     where
         T: AsRef<str>;
 
@@ -355,7 +398,8 @@ impl MrbApi for Mrb {
             let result =
                 sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx);
             // Restore the GC arena to its stack position before calling `eval`
-            // to allow objects created via the evaled to get garbage collected.
+            // to allow objects created via the evaled code to get garbage
+            // collected.
             sys::mrb_sys_gc_arena_restore(mrb, arena_index);
             // Force a full garbage collection to clean up the objects we have
             // stranded beyond the restored end of the arena.
@@ -435,13 +479,13 @@ impl MrbApi for Mrb {
         error.ok().map(|exception| exception.join("\n"))
     }
 
-    fn def_file<T>(&mut self, filename: T, require_func: RequireFunc)
+    fn def_file<T>(&mut self, filename: T, require: fn(Self))
     where
         T: AsRef<str>,
     {
         self.borrow_mut()
             .file_registry
-            .insert(filename.as_ref().to_owned(), Box::new(require_func));
+            .insert(filename.as_ref().to_owned(), Box::new(require));
     }
 
     fn def_file_for_type<T, F>(&mut self, filename: T)
@@ -449,8 +493,7 @@ impl MrbApi for Mrb {
         T: AsRef<str>,
         F: MrbFile,
     {
-        let require_func = |interp: Self| F::require(interp);
-        self.def_file(filename.as_ref(), require_func);
+        self.def_file(filename.as_ref(), |interp: Self| F::require(interp));
     }
 
     fn nil(&self) -> Value {
