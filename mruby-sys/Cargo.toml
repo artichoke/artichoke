@@ -16,5 +16,5 @@ doctest = false
 [dependencies]
 
 [build-dependencies]
-bindgen = "0.42.2"
+bindgen = "0.49.0"
 cc = "1.0"

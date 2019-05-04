@@ -9,7 +9,6 @@ where
     storage: Storage,
     align: [Align; 0],
 }
-
 impl<Storage, Align> __BindgenBitfieldUnit<Storage, Align>
 where
     Storage: AsRef<[u8]> + AsMut<[u8]>,
@@ -18,38 +17,29 @@ where
     pub fn new(storage: Storage) -> Self {
         Self { storage, align: [] }
     }
-
     #[inline]
     pub fn get_bit(&self, index: usize) -> bool {
         debug_assert!(index / 8 < self.storage.as_ref().len());
-
         let byte_index = index / 8;
         let byte = self.storage.as_ref()[byte_index];
-
         let bit_index = if cfg!(target_endian = "big") {
             7 - (index % 8)
         } else {
             index % 8
         };
-
         let mask = 1 << bit_index;
-
         byte & mask == mask
     }
-
     #[inline]
     pub fn set_bit(&mut self, index: usize, val: bool) {
         debug_assert!(index / 8 < self.storage.as_ref().len());
-
         let byte_index = index / 8;
         let byte = &mut self.storage.as_mut()[byte_index];
-
         let bit_index = if cfg!(target_endian = "big") {
             7 - (index % 8)
         } else {
             index % 8
         };
-
         let mask = 1 << bit_index;
         if val {
             *byte |= mask;
@@ -57,15 +47,12 @@ where
             *byte &= !mask;
         }
     }
-
     #[inline]
     pub fn get(&self, bit_offset: usize, bit_width: u8) -> u64 {
         debug_assert!(bit_width <= 64);
         debug_assert!(bit_offset / 8 < self.storage.as_ref().len());
         debug_assert!((bit_offset + (bit_width as usize)) / 8 <= self.storage.as_ref().len());
-
         let mut val = 0;
-
         for i in 0..(bit_width as usize) {
             if self.get_bit(i + bit_offset) {
                 let index = if cfg!(target_endian = "big") {
@@ -76,16 +63,13 @@ where
                 val |= 1 << index;
             }
         }
-
         val
     }
-
     #[inline]
     pub fn set(&mut self, bit_offset: usize, bit_width: u8, val: u64) {
         debug_assert!(bit_width <= 64);
         debug_assert!(bit_offset / 8 < self.storage.as_ref().len());
         debug_assert!((bit_offset + (bit_width as usize)) / 8 <= self.storage.as_ref().len());
-
         for i in 0..(bit_width as usize) {
             let mask = 1 << i;
             let val_bit_is_set = val & mask == mask;
@@ -100,11 +84,11 @@ where
 }
 #[repr(C)]
 #[derive(Default)]
-pub struct __IncompleteArrayField<T>(::std::marker::PhantomData<T>);
+pub struct __IncompleteArrayField<T>(::std::marker::PhantomData<T>, [T; 0]);
 impl<T> __IncompleteArrayField<T> {
     #[inline]
     pub fn new() -> Self {
-        __IncompleteArrayField(::std::marker::PhantomData)
+        __IncompleteArrayField(::std::marker::PhantomData, [])
     }
     #[inline]
     pub unsafe fn as_ptr(&self) -> *const T {
@@ -134,7 +118,6 @@ impl<T> ::std::clone::Clone for __IncompleteArrayField<T> {
         Self::new()
     }
 }
-impl<T> ::std::marker::Copy for __IncompleteArrayField<T> {}
 pub const MRB_INT_BIT: u32 = 64;
 pub const MRB_PRIo: &'static [u8; 4usize] = b"llo\0";
 pub const MRB_PRId: &'static [u8; 4usize] = b"lld\0";
@@ -195,7 +178,7 @@ pub const MRB_STR_EMBED: u32 = 32;
 pub const MRB_STR_EMBED_LEN_MASK: u32 = 1984;
 pub const MRB_STR_EMBED_LEN_SHIFT: u32 = 6;
 pub type va_list = __builtin_va_list;
-/// MRuby Value definition functions and macros.
+#[doc = " MRuby Value definition functions and macros."]
 pub type mrb_sym = u32;
 pub type mrb_bool = u8;
 pub type mrb_int = i64;
@@ -243,34 +226,6 @@ pub struct RBasic {
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 4usize], u32>,
     pub c: *mut RClass,
     pub gcnext: *mut RBasic,
-}
-#[test]
-fn bindgen_test_layout_RBasic() {
-    assert_eq!(
-        ::std::mem::size_of::<RBasic>(),
-        24usize,
-        concat!("Size of: ", stringify!(RBasic))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RBasic>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RBasic))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RBasic>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(RBasic), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RBasic>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RBasic),
-            "::",
-            stringify!(gcnext)
-        )
-    );
 }
 impl RBasic {
     #[inline]
@@ -337,49 +292,6 @@ pub struct RObject {
     pub gcnext: *mut RBasic,
     pub iv: *mut iv_tbl,
 }
-#[test]
-fn bindgen_test_layout_RObject() {
-    assert_eq!(
-        ::std::mem::size_of::<RObject>(),
-        32usize,
-        concat!("Size of: ", stringify!(RObject))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RObject>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RObject))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RObject>())).c as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RObject),
-            "::",
-            stringify!(c)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RObject>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RObject),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RObject>())).iv as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RObject),
-            "::",
-            stringify!(iv)
-        )
-    );
-}
 impl RObject {
     #[inline]
     pub fn tt(&self) -> mrb_vtype {
@@ -444,44 +356,6 @@ pub struct RFiber {
     pub c: *mut RClass,
     pub gcnext: *mut RBasic,
     pub cxt: *mut mrb_context,
-}
-#[test]
-fn bindgen_test_layout_RFiber() {
-    assert_eq!(
-        ::std::mem::size_of::<RFiber>(),
-        32usize,
-        concat!("Size of: ", stringify!(RFiber))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RFiber>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RFiber))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RFiber>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(RFiber), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RFiber>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RFiber),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RFiber>())).cxt as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RFiber),
-            "::",
-            stringify!(cxt)
-        )
-    );
 }
 impl RFiber {
     #[inline]
@@ -555,92 +429,6 @@ pub union mrb_value__bindgen_ty_1 {
     pub sym: mrb_sym,
     _bindgen_union_align: u64,
 }
-#[test]
-fn bindgen_test_layout_mrb_value__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_value__bindgen_ty_1>(),
-        8usize,
-        concat!("Size of: ", stringify!(mrb_value__bindgen_ty_1))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_value__bindgen_ty_1>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_value__bindgen_ty_1))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_value__bindgen_ty_1>())).f as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_value__bindgen_ty_1),
-            "::",
-            stringify!(f)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_value__bindgen_ty_1>())).p as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_value__bindgen_ty_1),
-            "::",
-            stringify!(p)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_value__bindgen_ty_1>())).i as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_value__bindgen_ty_1),
-            "::",
-            stringify!(i)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_value__bindgen_ty_1>())).sym as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_value__bindgen_ty_1),
-            "::",
-            stringify!(sym)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_mrb_value() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_value>(),
-        16usize,
-        concat!("Size of: ", stringify!(mrb_value))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_value>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_value))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_value>())).value as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_value),
-            "::",
-            stringify!(value)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_value>())).tt as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_value),
-            "::",
-            stringify!(tt)
-        )
-    );
-}
 pub type mrb_each_object_callback = ::std::option::Option<
     unsafe extern "C" fn(
         mrb: *mut mrb_state,
@@ -675,19 +463,6 @@ pub struct mrb_heap_page {
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize], u8>,
     pub objects: __IncompleteArrayField<*mut ::std::os::raw::c_void>,
     pub __bindgen_padding_0: [u8; 7usize],
-}
-#[test]
-fn bindgen_test_layout_mrb_heap_page() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_heap_page>(),
-        48usize,
-        concat!("Size of: ", stringify!(mrb_heap_page))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_heap_page>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_heap_page))
-    );
 }
 impl mrb_heap_page {
     #[inline]
@@ -732,179 +507,6 @@ pub struct mrb_gc {
     pub step_ratio: ::std::os::raw::c_int,
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize], u8>,
     pub majorgc_old_threshold: usize,
-}
-#[test]
-fn bindgen_test_layout_mrb_gc() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_gc>(),
-        112usize,
-        concat!("Size of: ", stringify!(mrb_gc))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_gc>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_gc))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).heaps as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(heaps)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).sweeps as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(sweeps)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).free_heaps as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(free_heaps)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).live as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(live)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).arena as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(arena)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).arena_capa as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(arena_capa)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).arena_idx as *const _ as usize },
-        44usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(arena_idx)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).state as *const _ as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(state)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).current_white_part as *const _ as usize },
-        52usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(current_white_part)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).gray_list as *const _ as usize },
-        56usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(gray_list)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).atomic_gray_list as *const _ as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(atomic_gray_list)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).live_after_mark as *const _ as usize },
-        72usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(live_after_mark)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).threshold as *const _ as usize },
-        80usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(threshold)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).interval_ratio as *const _ as usize },
-        88usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(interval_ratio)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).step_ratio as *const _ as usize },
-        92usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(step_ratio)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_gc>())).majorgc_old_threshold as *const _ as usize },
-        104usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_gc),
-            "::",
-            stringify!(majorgc_old_threshold)
-        )
-    );
 }
 impl mrb_gc {
     #[inline]
@@ -999,17 +601,17 @@ extern "C" {
     #[link_name = "\u{1}_mrb_object_dead_p"]
     pub fn mrb_object_dead_p(mrb: *mut mrb_state, object: *mut RBasic) -> mrb_bool;
 }
-/// MRuby C API entry point
+#[doc = " MRuby C API entry point"]
 pub type mrb_code = u8;
-/// Required arguments signature type.
+#[doc = " Required arguments signature type."]
 pub type mrb_aspec = u32;
-/// Function pointer type of custom allocator used in @see mrb_open_allocf.
-///
-/// The function pointing it must behave similarly as realloc except:
-/// - If ptr is NULL it must allocate new space.
-/// - If s is NULL, ptr must be freed.
-///
-/// See @see mrb_default_allocf for the default implementation.
+#[doc = " Function pointer type of custom allocator used in @see mrb_open_allocf."]
+#[doc = ""]
+#[doc = " The function pointing it must behave similarly as realloc except:"]
+#[doc = " - If ptr is NULL it must allocate new space."]
+#[doc = " - If s is NULL, ptr must be freed."]
+#[doc = ""]
+#[doc = " See @see mrb_default_allocf for the default implementation."]
 pub type mrb_allocf = ::std::option::Option<
     unsafe extern "C" fn(
         mrb: *mut mrb_state,
@@ -1032,129 +634,6 @@ pub struct mrb_callinfo {
     pub argc: ::std::os::raw::c_int,
     pub acc: ::std::os::raw::c_int,
     pub target_class: *mut RClass,
-}
-#[test]
-fn bindgen_test_layout_mrb_callinfo() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_callinfo>(),
-        72usize,
-        concat!("Size of: ", stringify!(mrb_callinfo))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_callinfo>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_callinfo))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).mid as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(mid)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).proc_ as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(proc_)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).stackent as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(stackent)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).ridx as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(ridx)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).epos as *const _ as usize },
-        26usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(epos)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).env as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(env)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).pc as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(pc)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).err as *const _ as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(err)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).argc as *const _ as usize },
-        56usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(argc)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).acc as *const _ as usize },
-        60usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(acc)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_callinfo>())).target_class as *const _ as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_callinfo),
-            "::",
-            stringify!(target_class)
-        )
-    );
 }
 pub const mrb_fiber_state_MRB_FIBER_CREATED: mrb_fiber_state = 0;
 pub const mrb_fiber_state_MRB_FIBER_RUNNING: mrb_fiber_state = 1;
@@ -1182,169 +661,6 @@ pub struct mrb_context {
     pub vmexec: mrb_bool,
     pub fib: *mut RFiber,
 }
-#[test]
-fn bindgen_test_layout_mrb_context() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_context>(),
-        104usize,
-        concat!("Size of: ", stringify!(mrb_context))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_context>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_context))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).prev as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(prev)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).stack as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(stack)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).stbase as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(stbase)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).stend as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(stend)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).ci as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(ci)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).cibase as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(cibase)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).ciend as *const _ as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(ciend)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).rescue as *const _ as usize },
-        56usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(rescue)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).rsize as *const _ as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(rsize)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).ensure as *const _ as usize },
-        72usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(ensure)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).esize as *const _ as usize },
-        80usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(esize)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).eidx as *const _ as usize },
-        82usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(eidx)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).status as *const _ as usize },
-        84usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(status)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).vmexec as *const _ as usize },
-        88usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(vmexec)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_context>())).fib as *const _ as usize },
-        96usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_context),
-            "::",
-            stringify!(fib)
-        )
-    );
-}
 pub type mrb_func_t =
     ::std::option::Option<unsafe extern "C" fn(mrb: *mut mrb_state, arg1: mrb_value) -> mrb_value>;
 #[repr(C)]
@@ -1360,66 +676,8 @@ pub union mrb_method_t__bindgen_ty_1 {
     pub func: mrb_func_t,
     _bindgen_union_align: u64,
 }
-#[test]
-fn bindgen_test_layout_mrb_method_t__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_method_t__bindgen_ty_1>(),
-        8usize,
-        concat!("Size of: ", stringify!(mrb_method_t__bindgen_ty_1))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_method_t__bindgen_ty_1>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_method_t__bindgen_ty_1))
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<mrb_method_t__bindgen_ty_1>())).proc_ as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_method_t__bindgen_ty_1),
-            "::",
-            stringify!(proc_)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_method_t__bindgen_ty_1>())).func as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_method_t__bindgen_ty_1),
-            "::",
-            stringify!(func)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_mrb_method_t() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_method_t>(),
-        16usize,
-        concat!("Size of: ", stringify!(mrb_method_t))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_method_t>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_method_t))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_method_t>())).func_p as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_method_t),
-            "::",
-            stringify!(func_p)
-        )
-    );
-}
 pub type mrb_atexit_func = ::std::option::Option<unsafe extern "C" fn(arg1: *mut mrb_state)>;
-/// Uncommon memory management stuffs.
+#[doc = " Uncommon memory management stuffs."]
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mrb_state {
@@ -1462,419 +720,26 @@ pub struct mrb_state {
     pub atexit_stack_len: u16,
     pub ecall_nest: u16,
 }
-#[test]
-fn bindgen_test_layout_mrb_state() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_state>(),
-        1416usize,
-        concat!("Size of: ", stringify!(mrb_state))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_state>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_state))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).jmp as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(jmp)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).allocf as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(allocf)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).allocf_ud as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(allocf_ud)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).c as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(c)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).root_c as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(root_c)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).globals as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(globals)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).exc as *const _ as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(exc)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).top_self as *const _ as usize },
-        56usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(top_self)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).object_class as *const _ as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(object_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).class_class as *const _ as usize },
-        72usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(class_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).module_class as *const _ as usize },
-        80usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(module_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).proc_class as *const _ as usize },
-        88usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(proc_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).string_class as *const _ as usize },
-        96usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(string_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).array_class as *const _ as usize },
-        104usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(array_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).hash_class as *const _ as usize },
-        112usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(hash_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).range_class as *const _ as usize },
-        120usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(range_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).float_class as *const _ as usize },
-        128usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(float_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).fixnum_class as *const _ as usize },
-        136usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(fixnum_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).true_class as *const _ as usize },
-        144usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(true_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).false_class as *const _ as usize },
-        152usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(false_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).nil_class as *const _ as usize },
-        160usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(nil_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).symbol_class as *const _ as usize },
-        168usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(symbol_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).kernel_module as *const _ as usize },
-        176usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(kernel_module)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).mems as *const _ as usize },
-        184usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(mems)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).gc as *const _ as usize },
-        192usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(gc)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).symidx as *const _ as usize },
-        304usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(symidx)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).symtbl as *const _ as usize },
-        312usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(symtbl)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).symhash as *const _ as usize },
-        320usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(symhash)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).symcapa as *const _ as usize },
-        1344usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(symcapa)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).symbuf as *const _ as usize },
-        1352usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(symbuf)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).eException_class as *const _ as usize },
-        1360usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(eException_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).eStandardError_class as *const _ as usize },
-        1368usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(eStandardError_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).nomem_err as *const _ as usize },
-        1376usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(nomem_err)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).stack_err as *const _ as usize },
-        1384usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(stack_err)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).ud as *const _ as usize },
-        1392usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(ud)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).atexit_stack as *const _ as usize },
-        1400usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(atexit_stack)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).atexit_stack_len as *const _ as usize },
-        1408usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(atexit_stack_len)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_state>())).ecall_nest as *const _ as usize },
-        1410usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_state),
-            "::",
-            stringify!(ecall_nest)
-        )
-    );
-}
 extern "C" {
-    /// Defines a new class.
-    ///
-    /// If you're creating a gem it may look something like this:
-    ///
-    ///      !!!c
-    ///      void mrb_example_gem_init(mrb_state* mrb) {
-    ///          struct RClass *example_class;
-    ///          example_class = mrb_define_class(mrb, "Example_Class", mrb->object_class);
-    ///      }
-    ///
-    ///      void mrb_example_gem_final(mrb_state* mrb) {
-    ///          //free(TheAnimals);
-    ///      }
-    ///
-    /// @param [mrb_state *] mrb The current mruby state.
-    /// @param [const char *] name The name of the defined class.
-    /// @param [struct RClass *] super The new class parent.
-    /// @return [struct RClass *] Reference to the newly defined class.
-    /// @see mrb_define_class_under
+    #[doc = " Defines a new class."]
+    #[doc = ""]
+    #[doc = " If you're creating a gem it may look something like this:"]
+    #[doc = ""]
+    #[doc = "      !!!c"]
+    #[doc = "      void mrb_example_gem_init(mrb_state* mrb) {"]
+    #[doc = "          struct RClass *example_class;"]
+    #[doc = "          example_class = mrb_define_class(mrb, \"Example_Class\", mrb->object_class);"]
+    #[doc = "      }"]
+    #[doc = ""]
+    #[doc = "      void mrb_example_gem_final(mrb_state* mrb) {"]
+    #[doc = "          //free(TheAnimals);"]
+    #[doc = "      }"]
+    #[doc = ""]
+    #[doc = " @param [mrb_state *] mrb The current mruby state."]
+    #[doc = " @param [const char *] name The name of the defined class."]
+    #[doc = " @param [struct RClass *] super The new class parent."]
+    #[doc = " @return [struct RClass *] Reference to the newly defined class."]
+    #[doc = " @see mrb_define_class_under"]
     #[link_name = "\u{1}_mrb_define_class"]
     pub fn mrb_define_class(
         mrb: *mut mrb_state,
@@ -1883,11 +748,11 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    /// Defines a new module.
-    ///
-    /// @param [mrb_state *] mrb_state* The current mruby state.
-    /// @param [const char *] char* The name of the module.
-    /// @return [struct RClass *] Reference to the newly defined module.
+    #[doc = " Defines a new module."]
+    #[doc = ""]
+    #[doc = " @param [mrb_state *] mrb_state* The current mruby state."]
+    #[doc = " @param [const char *] char* The name of the module."]
+    #[doc = " @return [struct RClass *] Reference to the newly defined module."]
     #[link_name = "\u{1}_mrb_define_module"]
     pub fn mrb_define_module(
         arg1: *mut mrb_state,
@@ -1899,55 +764,55 @@ extern "C" {
     pub fn mrb_singleton_class(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    /// Include a module in another class or module.
-    /// Equivalent to:
-    ///
-    ///   module B
-    ///     include A
-    ///   end
-    /// @param [mrb_state *] mrb_state* The current mruby state.
-    /// @param [struct RClass *] RClass* A reference to module or a class.
-    /// @param [struct RClass *] RClass* A reference to the module to be included.
+    #[doc = " Include a module in another class or module."]
+    #[doc = " Equivalent to:"]
+    #[doc = ""]
+    #[doc = "   module B"]
+    #[doc = "     include A"]
+    #[doc = "   end"]
+    #[doc = " @param [mrb_state *] mrb_state* The current mruby state."]
+    #[doc = " @param [struct RClass *] RClass* A reference to module or a class."]
+    #[doc = " @param [struct RClass *] RClass* A reference to the module to be included."]
     #[link_name = "\u{1}_mrb_include_module"]
     pub fn mrb_include_module(arg1: *mut mrb_state, arg2: *mut RClass, arg3: *mut RClass);
 }
 extern "C" {
-    /// Prepends a module in another class or module.
-    ///
-    /// Equivalent to:
-    ///  module B
-    ///    prepend A
-    ///  end
-    /// @param [mrb_state *] mrb_state* The current mruby state.
-    /// @param [struct RClass *] RClass* A reference to module or a class.
-    /// @param [struct RClass *] RClass* A reference to the module to be prepended.
+    #[doc = " Prepends a module in another class or module."]
+    #[doc = ""]
+    #[doc = " Equivalent to:"]
+    #[doc = "  module B"]
+    #[doc = "    prepend A"]
+    #[doc = "  end"]
+    #[doc = " @param [mrb_state *] mrb_state* The current mruby state."]
+    #[doc = " @param [struct RClass *] RClass* A reference to module or a class."]
+    #[doc = " @param [struct RClass *] RClass* A reference to the module to be prepended."]
     #[link_name = "\u{1}_mrb_prepend_module"]
     pub fn mrb_prepend_module(arg1: *mut mrb_state, arg2: *mut RClass, arg3: *mut RClass);
 }
 extern "C" {
-    /// Defines a global function in ruby.
-    ///
-    /// If you're creating a gem it may look something like this
-    ///
-    /// Example:
-    ///
-    ///     !!!c
-    ///     mrb_value example_method(mrb_state* mrb, mrb_value self)
-    ///     {
-    ///          puts("Executing example command!");
-    ///          return self;
-    ///     }
-    ///
-    ///     void mrb_example_gem_init(mrb_state* mrb)
-    ///     {
-    ///           mrb_define_method(mrb, mrb->kernel_module, "example_method", example_method, MRB_ARGS_NONE());
-    ///     }
-    ///
-    /// @param [mrb_state *] mrb The MRuby state reference.
-    /// @param [struct RClass *] cla The class pointer where the method will be defined.
-    /// @param [const char *] name The name of the method being defined.
-    /// @param [mrb_func_t] func The function pointer to the method definition.
-    /// @param [mrb_aspec] aspec The method parameters declaration.
+    #[doc = " Defines a global function in ruby."]
+    #[doc = ""]
+    #[doc = " If you're creating a gem it may look something like this"]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "     !!!c"]
+    #[doc = "     mrb_value example_method(mrb_state* mrb, mrb_value self)"]
+    #[doc = "     {"]
+    #[doc = "          puts(\"Executing example command!\");"]
+    #[doc = "          return self;"]
+    #[doc = "     }"]
+    #[doc = ""]
+    #[doc = "     void mrb_example_gem_init(mrb_state* mrb)"]
+    #[doc = "     {"]
+    #[doc = "           mrb_define_method(mrb, mrb->kernel_module, \"example_method\", example_method, MRB_ARGS_NONE());"]
+    #[doc = "     }"]
+    #[doc = ""]
+    #[doc = " @param [mrb_state *] mrb The MRuby state reference."]
+    #[doc = " @param [struct RClass *] cla The class pointer where the method will be defined."]
+    #[doc = " @param [const char *] name The name of the method being defined."]
+    #[doc = " @param [mrb_func_t] func The function pointer to the method definition."]
+    #[doc = " @param [mrb_aspec] aspec The method parameters declaration."]
     #[link_name = "\u{1}_mrb_define_method"]
     pub fn mrb_define_method(
         mrb: *mut mrb_state,
@@ -1958,29 +823,29 @@ extern "C" {
     );
 }
 extern "C" {
-    /// Defines a class method.
-    ///
-    /// Example:
-    ///
-    ///     # Ruby style
-    ///     class Foo
-    ///       def Foo.bar
-    ///       end
-    ///     end
-    ///     // C style
-    ///     mrb_value bar_method(mrb_state* mrb, mrb_value self){
-    ///       return mrb_nil_value();
-    ///     }
-    ///     void mrb_example_gem_init(mrb_state* mrb){
-    ///       struct RClass *foo;
-    ///       foo = mrb_define_class(mrb, "Foo", mrb->object_class);
-    ///       mrb_define_class_method(mrb, foo, "bar", bar_method, MRB_ARGS_NONE());
-    ///     }
-    /// @param [mrb_state *] mrb_state* The MRuby state reference.
-    /// @param [struct RClass *] RClass* The class where the class method will be defined.
-    /// @param [const char *] char* The name of the class method being defined.
-    /// @param [mrb_func_t] mrb_func_t The function pointer to the class method definition.
-    /// @param [mrb_aspec] mrb_aspec The method parameters declaration.
+    #[doc = " Defines a class method."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "     # Ruby style"]
+    #[doc = "     class Foo"]
+    #[doc = "       def Foo.bar"]
+    #[doc = "       end"]
+    #[doc = "     end"]
+    #[doc = "     // C style"]
+    #[doc = "     mrb_value bar_method(mrb_state* mrb, mrb_value self){"]
+    #[doc = "       return mrb_nil_value();"]
+    #[doc = "     }"]
+    #[doc = "     void mrb_example_gem_init(mrb_state* mrb){"]
+    #[doc = "       struct RClass *foo;"]
+    #[doc = "       foo = mrb_define_class(mrb, \"Foo\", mrb->object_class);"]
+    #[doc = "       mrb_define_class_method(mrb, foo, \"bar\", bar_method, MRB_ARGS_NONE());"]
+    #[doc = "     }"]
+    #[doc = " @param [mrb_state *] mrb_state* The MRuby state reference."]
+    #[doc = " @param [struct RClass *] RClass* The class where the class method will be defined."]
+    #[doc = " @param [const char *] char* The name of the class method being defined."]
+    #[doc = " @param [mrb_func_t] mrb_func_t The function pointer to the class method definition."]
+    #[doc = " @param [mrb_aspec] mrb_aspec The method parameters declaration."]
     #[link_name = "\u{1}_mrb_define_class_method"]
     pub fn mrb_define_class_method(
         arg1: *mut mrb_state,
@@ -2001,29 +866,29 @@ extern "C" {
     );
 }
 extern "C" {
-    ///  Defines a module function.
-    ///
-    /// Example:
-    ///
-    ///        # Ruby style
-    ///        module Foo
-    ///          def Foo.bar
-    ///          end
-    ///        end
-    ///        // C style
-    ///        mrb_value bar_method(mrb_state* mrb, mrb_value self){
-    ///          return mrb_nil_value();
-    ///        }
-    ///        void mrb_example_gem_init(mrb_state* mrb){
-    ///          struct RClass *foo;
-    ///          foo = mrb_define_module(mrb, "Foo");
-    ///          mrb_define_module_function(mrb, foo, "bar", bar_method, MRB_ARGS_NONE());
-    ///        }
-    ///  @param [mrb_state *] mrb_state* The MRuby state reference.
-    ///  @param [struct RClass *] RClass* The module where the module function will be defined.
-    ///  @param [const char *] char* The name of the module function being defined.
-    ///  @param [mrb_func_t] mrb_func_t The function pointer to the module function definition.
-    ///  @param [mrb_aspec] mrb_aspec The method parameters declaration.
+    #[doc = "  Defines a module function."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "        # Ruby style"]
+    #[doc = "        module Foo"]
+    #[doc = "          def Foo.bar"]
+    #[doc = "          end"]
+    #[doc = "        end"]
+    #[doc = "        // C style"]
+    #[doc = "        mrb_value bar_method(mrb_state* mrb, mrb_value self){"]
+    #[doc = "          return mrb_nil_value();"]
+    #[doc = "        }"]
+    #[doc = "        void mrb_example_gem_init(mrb_state* mrb){"]
+    #[doc = "          struct RClass *foo;"]
+    #[doc = "          foo = mrb_define_module(mrb, \"Foo\");"]
+    #[doc = "          mrb_define_module_function(mrb, foo, \"bar\", bar_method, MRB_ARGS_NONE());"]
+    #[doc = "        }"]
+    #[doc = "  @param [mrb_state *] mrb_state* The MRuby state reference."]
+    #[doc = "  @param [struct RClass *] RClass* The module where the module function will be defined."]
+    #[doc = "  @param [const char *] char* The name of the module function being defined."]
+    #[doc = "  @param [mrb_func_t] mrb_func_t The function pointer to the module function definition."]
+    #[doc = "  @param [mrb_aspec] mrb_aspec The method parameters declaration."]
     #[link_name = "\u{1}_mrb_define_module_function"]
     pub fn mrb_define_module_function(
         arg1: *mut mrb_state,
@@ -2034,30 +899,30 @@ extern "C" {
     );
 }
 extern "C" {
-    ///  Defines a constant.
-    ///
-    /// Example:
-    ///
-    ///          # Ruby style
-    ///          class ExampleClass
-    ///            AGE = 22
-    ///          end
-    ///          // C style
-    ///          #include <stdio.h>
-    ///          #include <mruby.h>
-    ///
-    ///          void
-    ///          mrb_example_gem_init(mrb_state* mrb){
-    ///            mrb_define_const(mrb, mrb->kernel_module, "AGE", mrb_fixnum_value(22));
-    ///          }
-    ///
-    ///          mrb_value
-    ///          mrb_example_gem_final(mrb_state* mrb){
-    ///          }
-    ///  @param [mrb_state *] mrb_state* The MRuby state reference.
-    ///  @param [struct RClass *] RClass* A class or module the constant is defined in.
-    ///  @param [const char *] name The name of the constant being defined.
-    ///  @param [mrb_value] mrb_value The value for the constant.
+    #[doc = "  Defines a constant."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "          # Ruby style"]
+    #[doc = "          class ExampleClass"]
+    #[doc = "            AGE = 22"]
+    #[doc = "          end"]
+    #[doc = "          // C style"]
+    #[doc = "          #include <stdio.h>"]
+    #[doc = "          #include <mruby.h>"]
+    #[doc = ""]
+    #[doc = "          void"]
+    #[doc = "          mrb_example_gem_init(mrb_state* mrb){"]
+    #[doc = "            mrb_define_const(mrb, mrb->kernel_module, \"AGE\", mrb_fixnum_value(22));"]
+    #[doc = "          }"]
+    #[doc = ""]
+    #[doc = "          mrb_value"]
+    #[doc = "          mrb_example_gem_final(mrb_state* mrb){"]
+    #[doc = "          }"]
+    #[doc = "  @param [mrb_state *] mrb_state* The MRuby state reference."]
+    #[doc = "  @param [struct RClass *] RClass* A class or module the constant is defined in."]
+    #[doc = "  @param [const char *] name The name of the constant being defined."]
+    #[doc = "  @param [mrb_value] mrb_value The value for the constant."]
     #[link_name = "\u{1}_mrb_define_const"]
     pub fn mrb_define_const(
         arg1: *mut mrb_state,
@@ -2067,52 +932,52 @@ extern "C" {
     );
 }
 extern "C" {
-    /// Undefines a method.
-    ///
-    /// Example:
-    ///
-    ///     # Ruby style
-    ///
-    ///     class ExampleClassA
-    ///       def example_method
-    ///         "example"
-    ///       end
-    ///     end
-    ///     ExampleClassA.new.example_method # => example
-    ///
-    ///     class ExampleClassB < ExampleClassA
-    ///       undef_method :example_method
-    ///     end
-    ///
-    ///     ExampleClassB.new.example_method # => undefined method 'example_method' for ExampleClassB (NoMethodError)
-    ///
-    ///     // C style
-    ///     #include <stdio.h>
-    ///     #include <mruby.h>
-    ///
-    ///     mrb_value
-    ///     mrb_example_method(mrb_state *mrb){
-    ///       return mrb_str_new_lit(mrb, "example");
-    ///     }
-    ///
-    ///     void
-    ///     mrb_example_gem_init(mrb_state* mrb){
-    ///       struct RClass *example_class_a;
-    ///       struct RClass *example_class_b;
-    ///       struct RClass *example_class_c;
-    ///
-    ///       example_class_a = mrb_define_class(mrb, "ExampleClassA", mrb->object_class);
-    ///       mrb_define_method(mrb, example_class_a, "example_method", mrb_example_method, MRB_ARGS_NONE());
-    ///       example_class_b = mrb_define_class(mrb, "ExampleClassB", example_class_a);
-    ///       example_class_c = mrb_define_class(mrb, "ExampleClassC", example_class_b);
-    ///       mrb_undef_method(mrb, example_class_c, "example_method");
-    ///     }
-    ///
-    ///     mrb_example_gem_final(mrb_state* mrb){
-    ///     }
-    /// @param [mrb_state*] mrb_state* The mruby state reference.
-    /// @param [struct RClass*] RClass* A class the method will be undefined from.
-    /// @param [const char*] const char* The name of the method to be undefined.
+    #[doc = " Undefines a method."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "     # Ruby style"]
+    #[doc = ""]
+    #[doc = "     class ExampleClassA"]
+    #[doc = "       def example_method"]
+    #[doc = "         \"example\""]
+    #[doc = "       end"]
+    #[doc = "     end"]
+    #[doc = "     ExampleClassA.new.example_method # => example"]
+    #[doc = ""]
+    #[doc = "     class ExampleClassB < ExampleClassA"]
+    #[doc = "       undef_method :example_method"]
+    #[doc = "     end"]
+    #[doc = ""]
+    #[doc = "     ExampleClassB.new.example_method # => undefined method 'example_method' for ExampleClassB (NoMethodError)"]
+    #[doc = ""]
+    #[doc = "     // C style"]
+    #[doc = "     #include <stdio.h>"]
+    #[doc = "     #include <mruby.h>"]
+    #[doc = ""]
+    #[doc = "     mrb_value"]
+    #[doc = "     mrb_example_method(mrb_state *mrb){"]
+    #[doc = "       return mrb_str_new_lit(mrb, \"example\");"]
+    #[doc = "     }"]
+    #[doc = ""]
+    #[doc = "     void"]
+    #[doc = "     mrb_example_gem_init(mrb_state* mrb){"]
+    #[doc = "       struct RClass *example_class_a;"]
+    #[doc = "       struct RClass *example_class_b;"]
+    #[doc = "       struct RClass *example_class_c;"]
+    #[doc = ""]
+    #[doc = "       example_class_a = mrb_define_class(mrb, \"ExampleClassA\", mrb->object_class);"]
+    #[doc = "       mrb_define_method(mrb, example_class_a, \"example_method\", mrb_example_method, MRB_ARGS_NONE());"]
+    #[doc = "       example_class_b = mrb_define_class(mrb, \"ExampleClassB\", example_class_a);"]
+    #[doc = "       example_class_c = mrb_define_class(mrb, \"ExampleClassC\", example_class_b);"]
+    #[doc = "       mrb_undef_method(mrb, example_class_c, \"example_method\");"]
+    #[doc = "     }"]
+    #[doc = ""]
+    #[doc = "     mrb_example_gem_final(mrb_state* mrb){"]
+    #[doc = "     }"]
+    #[doc = " @param [mrb_state*] mrb_state* The mruby state reference."]
+    #[doc = " @param [struct RClass*] RClass* A class the method will be undefined from."]
+    #[doc = " @param [const char*] const char* The name of the method to be undefined."]
     #[link_name = "\u{1}_mrb_undef_method"]
     pub fn mrb_undef_method(
         arg1: *mut mrb_state,
@@ -2125,41 +990,41 @@ extern "C" {
     pub fn mrb_undef_method_id(arg1: *mut mrb_state, arg2: *mut RClass, arg3: mrb_sym);
 }
 extern "C" {
-    /// Undefine a class method.
-    /// Example:
-    ///
-    ///      # Ruby style
-    ///      class ExampleClass
-    ///        def self.example_method
-    ///          "example"
-    ///        end
-    ///      end
-    ///
-    ///     ExampleClass.example_method
-    ///
-    ///     // C style
-    ///     #include <stdio.h>
-    ///     #include <mruby.h>
-    ///
-    ///     mrb_value
-    ///     mrb_example_method(mrb_state *mrb){
-    ///       return mrb_str_new_lit(mrb, "example");
-    ///     }
-    ///
-    ///     void
-    ///     mrb_example_gem_init(mrb_state* mrb){
-    ///       struct RClass *example_class;
-    ///       example_class = mrb_define_class(mrb, "ExampleClass", mrb->object_class);
-    ///       mrb_define_class_method(mrb, example_class, "example_method", mrb_example_method, MRB_ARGS_NONE());
-    ///       mrb_undef_class_method(mrb, example_class, "example_method");
-    ///      }
-    ///
-    ///      void
-    ///      mrb_example_gem_final(mrb_state* mrb){
-    ///      }
-    /// @param [mrb_state*] mrb_state* The mruby state reference.
-    /// @param [RClass*] RClass* A class the class method will be undefined from.
-    /// @param [const char*] const char* The name of the class method to be undefined.
+    #[doc = " Undefine a class method."]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "      # Ruby style"]
+    #[doc = "      class ExampleClass"]
+    #[doc = "        def self.example_method"]
+    #[doc = "          \"example\""]
+    #[doc = "        end"]
+    #[doc = "      end"]
+    #[doc = ""]
+    #[doc = "     ExampleClass.example_method"]
+    #[doc = ""]
+    #[doc = "     // C style"]
+    #[doc = "     #include <stdio.h>"]
+    #[doc = "     #include <mruby.h>"]
+    #[doc = ""]
+    #[doc = "     mrb_value"]
+    #[doc = "     mrb_example_method(mrb_state *mrb){"]
+    #[doc = "       return mrb_str_new_lit(mrb, \"example\");"]
+    #[doc = "     }"]
+    #[doc = ""]
+    #[doc = "     void"]
+    #[doc = "     mrb_example_gem_init(mrb_state* mrb){"]
+    #[doc = "       struct RClass *example_class;"]
+    #[doc = "       example_class = mrb_define_class(mrb, \"ExampleClass\", mrb->object_class);"]
+    #[doc = "       mrb_define_class_method(mrb, example_class, \"example_method\", mrb_example_method, MRB_ARGS_NONE());"]
+    #[doc = "       mrb_undef_class_method(mrb, example_class, \"example_method\");"]
+    #[doc = "      }"]
+    #[doc = ""]
+    #[doc = "      void"]
+    #[doc = "      mrb_example_gem_final(mrb_state* mrb){"]
+    #[doc = "      }"]
+    #[doc = " @param [mrb_state*] mrb_state* The mruby state reference."]
+    #[doc = " @param [RClass*] RClass* A class the class method will be undefined from."]
+    #[doc = " @param [const char*] const char* The name of the class method to be undefined."]
     #[link_name = "\u{1}_mrb_undef_class_method"]
     pub fn mrb_undef_class_method(
         arg1: *mut mrb_state,
@@ -2168,32 +1033,32 @@ extern "C" {
     );
 }
 extern "C" {
-    /// Initialize a new object instance of c class.
-    ///
-    /// Example:
-    ///
-    ///     # Ruby style
-    ///     class ExampleClass
-    ///     end
-    ///
-    ///     p ExampleClass # => #<ExampleClass:0x9958588>
-    ///     // C style
-    ///     #include <stdio.h>
-    ///     #include <mruby.h>
-    ///
-    ///     void
-    ///     mrb_example_gem_init(mrb_state* mrb) {
-    ///       struct RClass *example_class;
-    ///       mrb_value obj;
-    ///       example_class = mrb_define_class(mrb, "ExampleClass", mrb->object_class); # => class ExampleClass; end
-    ///       obj = mrb_obj_new(mrb, example_class, 0, NULL); # => ExampleClass.new
-    ///       mrb_p(mrb, obj); // => Kernel#p
-    ///      }
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [RClass*] c Reference to the class of the new object.
-    /// @param [mrb_int] argc Number of arguments in argv
-    /// @param [const mrb_value *] argv Array of mrb_value to initialize the object
-    /// @return [mrb_value] The newly initialized object
+    #[doc = " Initialize a new object instance of c class."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "     # Ruby style"]
+    #[doc = "     class ExampleClass"]
+    #[doc = "     end"]
+    #[doc = ""]
+    #[doc = "     p ExampleClass # => #<ExampleClass:0x9958588>"]
+    #[doc = "     // C style"]
+    #[doc = "     #include <stdio.h>"]
+    #[doc = "     #include <mruby.h>"]
+    #[doc = ""]
+    #[doc = "     void"]
+    #[doc = "     mrb_example_gem_init(mrb_state* mrb) {"]
+    #[doc = "       struct RClass *example_class;"]
+    #[doc = "       mrb_value obj;"]
+    #[doc = "       example_class = mrb_define_class(mrb, \"ExampleClass\", mrb->object_class); # => class ExampleClass; end"]
+    #[doc = "       obj = mrb_obj_new(mrb, example_class, 0, NULL); # => ExampleClass.new"]
+    #[doc = "       mrb_p(mrb, obj); // => Kernel#p"]
+    #[doc = "      }"]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [RClass*] c Reference to the class of the new object."]
+    #[doc = " @param [mrb_int] argc Number of arguments in argv"]
+    #[doc = " @param [const mrb_value *] argv Array of mrb_value to initialize the object"]
+    #[doc = " @return [mrb_value] The newly initialized object"]
     #[link_name = "\u{1}_mrb_obj_new"]
     pub fn mrb_obj_new(
         mrb: *mut mrb_state,
@@ -2203,114 +1068,114 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Creates a new instance of Class, Class.
-    ///
-    /// Example:
-    ///
-    ///      void
-    ///      mrb_example_gem_init(mrb_state* mrb) {
-    ///        struct RClass *example_class;
-    ///
-    ///        mrb_value obj;
-    ///        example_class = mrb_class_new(mrb, mrb->object_class);
-    ///        obj = mrb_obj_new(mrb, example_class, 0, NULL); // => #<#<Class:0x9a945b8>:0x9a94588>
-    ///        mrb_p(mrb, obj); // => Kernel#p
-    ///       }
-    ///
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [struct RClass *] super The super class or parent.
-    /// @return [struct RClass *] Reference to the new class.
+    #[doc = " Creates a new instance of Class, Class."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "      void"]
+    #[doc = "      mrb_example_gem_init(mrb_state* mrb) {"]
+    #[doc = "        struct RClass *example_class;"]
+    #[doc = ""]
+    #[doc = "        mrb_value obj;"]
+    #[doc = "        example_class = mrb_class_new(mrb, mrb->object_class);"]
+    #[doc = "        obj = mrb_obj_new(mrb, example_class, 0, NULL); // => #<#<Class:0x9a945b8>:0x9a94588>"]
+    #[doc = "        mrb_p(mrb, obj); // => Kernel#p"]
+    #[doc = "       }"]
+    #[doc = ""]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [struct RClass *] super The super class or parent."]
+    #[doc = " @return [struct RClass *] Reference to the new class."]
     #[link_name = "\u{1}_mrb_class_new"]
     pub fn mrb_class_new(mrb: *mut mrb_state, super_: *mut RClass) -> *mut RClass;
 }
 extern "C" {
-    /// Creates a new module, Module.
-    ///
-    /// Example:
-    ///      void
-    ///      mrb_example_gem_init(mrb_state* mrb) {
-    ///        struct RClass *example_module;
-    ///
-    ///        example_module = mrb_module_new(mrb);
-    ///      }
-    ///
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @return [struct RClass *] Reference to the new module.
+    #[doc = " Creates a new module, Module."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = "      void"]
+    #[doc = "      mrb_example_gem_init(mrb_state* mrb) {"]
+    #[doc = "        struct RClass *example_module;"]
+    #[doc = ""]
+    #[doc = "        example_module = mrb_module_new(mrb);"]
+    #[doc = "      }"]
+    #[doc = ""]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @return [struct RClass *] Reference to the new module."]
     #[link_name = "\u{1}_mrb_module_new"]
     pub fn mrb_module_new(mrb: *mut mrb_state) -> *mut RClass;
 }
 extern "C" {
-    /// Returns an mrb_bool. True if class was defined, and false if the class was not defined.
-    ///
-    /// Example:
-    ///     void
-    ///     mrb_example_gem_init(mrb_state* mrb) {
-    ///       struct RClass *example_class;
-    ///       mrb_bool cd;
-    ///
-    ///       example_class = mrb_define_class(mrb, "ExampleClass", mrb->object_class);
-    ///       cd = mrb_class_defined(mrb, "ExampleClass");
-    ///
-    ///       // If mrb_class_defined returns 1 then puts "True"
-    ///       // If mrb_class_defined returns 0 then puts "False"
-    ///       if (cd == 1){
-    ///         puts("True");
-    ///       }
-    ///       else {
-    ///         puts("False");
-    ///       }
-    ///      }
-    ///
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [const char *] name A string representing the name of the class.
-    /// @return [mrb_bool] A boolean value.
+    #[doc = " Returns an mrb_bool. True if class was defined, and false if the class was not defined."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = "     void"]
+    #[doc = "     mrb_example_gem_init(mrb_state* mrb) {"]
+    #[doc = "       struct RClass *example_class;"]
+    #[doc = "       mrb_bool cd;"]
+    #[doc = ""]
+    #[doc = "       example_class = mrb_define_class(mrb, \"ExampleClass\", mrb->object_class);"]
+    #[doc = "       cd = mrb_class_defined(mrb, \"ExampleClass\");"]
+    #[doc = ""]
+    #[doc = "       // If mrb_class_defined returns 1 then puts \"True\""]
+    #[doc = "       // If mrb_class_defined returns 0 then puts \"False\""]
+    #[doc = "       if (cd == 1){"]
+    #[doc = "         puts(\"True\");"]
+    #[doc = "       }"]
+    #[doc = "       else {"]
+    #[doc = "         puts(\"False\");"]
+    #[doc = "       }"]
+    #[doc = "      }"]
+    #[doc = ""]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [const char *] name A string representing the name of the class."]
+    #[doc = " @return [mrb_bool] A boolean value."]
     #[link_name = "\u{1}_mrb_class_defined"]
     pub fn mrb_class_defined(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> mrb_bool;
 }
 extern "C" {
-    /// Gets a class.
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [const char *] name The name of the class.
-    /// @return [struct RClass *] A reference to the class.
+    #[doc = " Gets a class."]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [const char *] name The name of the class."]
+    #[doc = " @return [struct RClass *] A reference to the class."]
     #[link_name = "\u{1}_mrb_class_get"]
     pub fn mrb_class_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    /// Gets a exception class.
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [const char *] name The name of the class.
-    /// @return [struct RClass *] A reference to the class.
+    #[doc = " Gets a exception class."]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [const char *] name The name of the class."]
+    #[doc = " @return [struct RClass *] A reference to the class."]
     #[link_name = "\u{1}_mrb_exc_get"]
     pub fn mrb_exc_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    /// Returns an mrb_bool. True if inner class was defined, and false if the inner class was not defined.
-    ///
-    /// Example:
-    ///     void
-    ///     mrb_example_gem_init(mrb_state* mrb) {
-    ///       struct RClass *example_outer, *example_inner;
-    ///       mrb_bool cd;
-    ///
-    ///       example_outer = mrb_define_module(mrb, "ExampleOuter");
-    ///
-    ///       example_inner = mrb_define_class_under(mrb, example_outer, "ExampleInner", mrb->object_class);
-    ///       cd = mrb_class_defined_under(mrb, example_outer, "ExampleInner");
-    ///
-    ///       // If mrb_class_defined_under returns 1 then puts "True"
-    ///       // If mrb_class_defined_under returns 0 then puts "False"
-    ///       if (cd == 1){
-    ///         puts("True");
-    ///       }
-    ///       else {
-    ///         puts("False");
-    ///       }
-    ///      }
-    ///
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [struct RClass *] outer The name of the outer class.
-    /// @param [const char *] name A string representing the name of the inner class.
-    /// @return [mrb_bool] A boolean value.
+    #[doc = " Returns an mrb_bool. True if inner class was defined, and false if the inner class was not defined."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = "     void"]
+    #[doc = "     mrb_example_gem_init(mrb_state* mrb) {"]
+    #[doc = "       struct RClass *example_outer, *example_inner;"]
+    #[doc = "       mrb_bool cd;"]
+    #[doc = ""]
+    #[doc = "       example_outer = mrb_define_module(mrb, \"ExampleOuter\");"]
+    #[doc = ""]
+    #[doc = "       example_inner = mrb_define_class_under(mrb, example_outer, \"ExampleInner\", mrb->object_class);"]
+    #[doc = "       cd = mrb_class_defined_under(mrb, example_outer, \"ExampleInner\");"]
+    #[doc = ""]
+    #[doc = "       // If mrb_class_defined_under returns 1 then puts \"True\""]
+    #[doc = "       // If mrb_class_defined_under returns 0 then puts \"False\""]
+    #[doc = "       if (cd == 1){"]
+    #[doc = "         puts(\"True\");"]
+    #[doc = "       }"]
+    #[doc = "       else {"]
+    #[doc = "         puts(\"False\");"]
+    #[doc = "       }"]
+    #[doc = "      }"]
+    #[doc = ""]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [struct RClass *] outer The name of the outer class."]
+    #[doc = " @param [const char *] name A string representing the name of the inner class."]
+    #[doc = " @return [mrb_bool] A boolean value."]
     #[link_name = "\u{1}_mrb_class_defined_under"]
     pub fn mrb_class_defined_under(
         mrb: *mut mrb_state,
@@ -2319,11 +1184,11 @@ extern "C" {
     ) -> mrb_bool;
 }
 extern "C" {
-    /// Gets a child class.
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [struct RClass *] outer The name of the parent class.
-    /// @param [const char *] name The name of the class.
-    /// @return [struct RClass *] A reference to the class.
+    #[doc = " Gets a child class."]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [struct RClass *] outer The name of the parent class."]
+    #[doc = " @param [const char *] name The name of the class."]
+    #[doc = " @return [struct RClass *] A reference to the class."]
     #[link_name = "\u{1}_mrb_class_get_under"]
     pub fn mrb_class_get_under(
         mrb: *mut mrb_state,
@@ -2332,19 +1197,19 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    /// Gets a module.
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [const char *] name The name of the module.
-    /// @return [struct RClass *] A reference to the module.
+    #[doc = " Gets a module."]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [const char *] name The name of the module."]
+    #[doc = " @return [struct RClass *] A reference to the module."]
     #[link_name = "\u{1}_mrb_module_get"]
     pub fn mrb_module_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    /// Gets a module defined under another module.
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [struct RClass *] outer The name of the outer module.
-    /// @param [const char *] name The name of the module.
-    /// @return [struct RClass *] A reference to the module.
+    #[doc = " Gets a module defined under another module."]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [struct RClass *] outer The name of the outer module."]
+    #[doc = " @param [const char *] name The name of the module."]
+    #[doc = " @return [struct RClass *] A reference to the module."]
     #[link_name = "\u{1}_mrb_module_get_under"]
     pub fn mrb_module_get_under(
         mrb: *mut mrb_state,
@@ -2361,67 +1226,67 @@ extern "C" {
     pub fn mrb_notimplement_m(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    /// Duplicate an object.
-    ///
-    /// Equivalent to:
-    ///   Object#dup
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [mrb_value] obj Object to be duplicate.
-    /// @return [mrb_value] The newly duplicated object.
+    #[doc = " Duplicate an object."]
+    #[doc = ""]
+    #[doc = " Equivalent to:"]
+    #[doc = "   Object#dup"]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [mrb_value] obj Object to be duplicate."]
+    #[doc = " @return [mrb_value] The newly duplicated object."]
     #[link_name = "\u{1}_mrb_obj_dup"]
     pub fn mrb_obj_dup(mrb: *mut mrb_state, obj: mrb_value) -> mrb_value;
 }
 extern "C" {
-    /// Returns true if obj responds to the given method. If the method was defined for that
-    /// class it returns true, it returns false otherwise.
-    ///
-    ///      Example:
-    ///      # Ruby style
-    ///      class ExampleClass
-    ///        def example_method
-    ///        end
-    ///      end
-    ///
-    ///      ExampleClass.new.respond_to?(:example_method) # => true
-    ///
-    ///      // C style
-    ///      void
-    ///      mrb_example_gem_init(mrb_state* mrb) {
-    ///        struct RClass *example_class;
-    ///        mrb_sym mid;
-    ///        mrb_bool obj_resp;
-    ///
-    ///        example_class = mrb_define_class(mrb, "ExampleClass", mrb->object_class);
-    ///        mrb_define_method(mrb, example_class, "example_method", exampleMethod, MRB_ARGS_NONE());
-    ///        mid = mrb_intern_str(mrb, mrb_str_new_lit(mrb, "example_method" ));
-    ///        obj_resp = mrb_obj_respond_to(mrb, example_class, mid); // => 1(true in Ruby world)
-    ///
-    ///        // If mrb_obj_respond_to returns 1 then puts "True"
-    ///        // If mrb_obj_respond_to returns 0 then puts "False"
-    ///        if (obj_resp == 1) {
-    ///          puts("True");
-    ///        }
-    ///        else if (obj_resp == 0) {
-    ///          puts("False");
-    ///        }
-    ///      }
-    ///
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [struct RClass *] c A reference to a class.
-    /// @param [mrb_sym] mid A symbol referencing a method id.
-    /// @return [mrb_bool] A boolean value.
+    #[doc = " Returns true if obj responds to the given method. If the method was defined for that"]
+    #[doc = " class it returns true, it returns false otherwise."]
+    #[doc = ""]
+    #[doc = "      Example:"]
+    #[doc = "      # Ruby style"]
+    #[doc = "      class ExampleClass"]
+    #[doc = "        def example_method"]
+    #[doc = "        end"]
+    #[doc = "      end"]
+    #[doc = ""]
+    #[doc = "      ExampleClass.new.respond_to?(:example_method) # => true"]
+    #[doc = ""]
+    #[doc = "      // C style"]
+    #[doc = "      void"]
+    #[doc = "      mrb_example_gem_init(mrb_state* mrb) {"]
+    #[doc = "        struct RClass *example_class;"]
+    #[doc = "        mrb_sym mid;"]
+    #[doc = "        mrb_bool obj_resp;"]
+    #[doc = ""]
+    #[doc = "        example_class = mrb_define_class(mrb, \"ExampleClass\", mrb->object_class);"]
+    #[doc = "        mrb_define_method(mrb, example_class, \"example_method\", exampleMethod, MRB_ARGS_NONE());"]
+    #[doc = "        mid = mrb_intern_str(mrb, mrb_str_new_lit(mrb, \"example_method\" ));"]
+    #[doc = "        obj_resp = mrb_obj_respond_to(mrb, example_class, mid); // => 1(true in Ruby world)"]
+    #[doc = ""]
+    #[doc = "        // If mrb_obj_respond_to returns 1 then puts \"True\""]
+    #[doc = "        // If mrb_obj_respond_to returns 0 then puts \"False\""]
+    #[doc = "        if (obj_resp == 1) {"]
+    #[doc = "          puts(\"True\");"]
+    #[doc = "        }"]
+    #[doc = "        else if (obj_resp == 0) {"]
+    #[doc = "          puts(\"False\");"]
+    #[doc = "        }"]
+    #[doc = "      }"]
+    #[doc = ""]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [struct RClass *] c A reference to a class."]
+    #[doc = " @param [mrb_sym] mid A symbol referencing a method id."]
+    #[doc = " @return [mrb_bool] A boolean value."]
     #[link_name = "\u{1}_mrb_obj_respond_to"]
     pub fn mrb_obj_respond_to(mrb: *mut mrb_state, c: *mut RClass, mid: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    /// Defines a new class under a given module
-    ///
-    /// @param [mrb_state*] mrb The current mruby state.
-    /// @param [struct RClass *] outer Reference to the module under which the new class will be defined
-    /// @param [const char *] name The name of the defined class
-    /// @param [struct RClass *] super The new class parent
-    /// @return [struct RClass *] Reference to the newly defined class
-    /// @see mrb_define_class
+    #[doc = " Defines a new class under a given module"]
+    #[doc = ""]
+    #[doc = " @param [mrb_state*] mrb The current mruby state."]
+    #[doc = " @param [struct RClass *] outer Reference to the module under which the new class will be defined"]
+    #[doc = " @param [const char *] name The name of the defined class"]
+    #[doc = " @param [struct RClass *] super The new class parent"]
+    #[doc = " @return [struct RClass *] Reference to the newly defined class"]
+    #[doc = " @see mrb_define_class"]
     #[link_name = "\u{1}_mrb_define_class_under"]
     pub fn mrb_define_class_under(
         mrb: *mut mrb_state,
@@ -2438,46 +1303,46 @@ extern "C" {
         name: *const ::std::os::raw::c_char,
     ) -> *mut RClass;
 }
-/// Format specifiers for {mrb_get_args} function
-///
-/// Must be a C string composed of the following format specifiers:
-///
-/// | char | Ruby type      | C types           | Notes                                              |
-/// |:----:|----------------|-------------------|----------------------------------------------------|
-/// | `o`  | {Object}       | {mrb_value}       | Could be used to retrieve any type of argument     |
-/// | `C`  | {Class}/{Module} | {mrb_value}     |                                                    |
-/// | `S`  | {String}       | {mrb_value}       | when `!` follows, the value may be `nil`           |
-/// | `A`  | {Array}        | {mrb_value}       | when `!` follows, the value may be `nil`           |
-/// | `H`  | {Hash}         | {mrb_value}       | when `!` follows, the value may be `nil`           |
-/// | `s`  | {String}       | char *, {mrb_int} | Receive two arguments; `s!` gives (`NULL`,`0`) for `nil`       |
-/// | `z`  | {String}       | char *            | `NULL` terminated string; `z!` gives `NULL` for `nil`           |
-/// | `a`  | {Array}        | {mrb_value} *, {mrb_int} | Receive two arguments; `a!` gives (`NULL`,`0`) for `nil` |
-/// | `f`  | {Float}        | {mrb_float}       |                                                    |
-/// | `i`  | {Integer}      | {mrb_int}         |                                                    |
-/// | `b`  | boolean        | {mrb_bool}        |                                                    |
-/// | `n`  | {Symbol}       | {mrb_sym}         |                                                    |
-/// | `&`  | block          | {mrb_value}       | &! raises exception if no block given.             |
-/// | `*`  | rest arguments | {mrb_value} *, {mrb_int} | Receive the rest of arguments as an array; *! avoid copy of the stack.  |
-/// | &vert; | optional     |                   | After this spec following specs would be optional. |
-/// | `?`  | optional given | {mrb_bool}        | `TRUE` if preceding argument is given. Used to check optional argument is given. |
-///
-/// @see mrb_get_args
+#[doc = " Format specifiers for {mrb_get_args} function"]
+#[doc = ""]
+#[doc = " Must be a C string composed of the following format specifiers:"]
+#[doc = ""]
+#[doc = " | char | Ruby type      | C types           | Notes                                              |"]
+#[doc = " |:----:|----------------|-------------------|----------------------------------------------------|"]
+#[doc = " | `o`  | {Object}       | {mrb_value}       | Could be used to retrieve any type of argument     |"]
+#[doc = " | `C`  | {Class}/{Module} | {mrb_value}     |                                                    |"]
+#[doc = " | `S`  | {String}       | {mrb_value}       | when `!` follows, the value may be `nil`           |"]
+#[doc = " | `A`  | {Array}        | {mrb_value}       | when `!` follows, the value may be `nil`           |"]
+#[doc = " | `H`  | {Hash}         | {mrb_value}       | when `!` follows, the value may be `nil`           |"]
+#[doc = " | `s`  | {String}       | char *, {mrb_int} | Receive two arguments; `s!` gives (`NULL`,`0`) for `nil`       |"]
+#[doc = " | `z`  | {String}       | char *            | `NULL` terminated string; `z!` gives `NULL` for `nil`           |"]
+#[doc = " | `a`  | {Array}        | {mrb_value} *, {mrb_int} | Receive two arguments; `a!` gives (`NULL`,`0`) for `nil` |"]
+#[doc = " | `f`  | {Float}        | {mrb_float}       |                                                    |"]
+#[doc = " | `i`  | {Integer}      | {mrb_int}         |                                                    |"]
+#[doc = " | `b`  | boolean        | {mrb_bool}        |                                                    |"]
+#[doc = " | `n`  | {Symbol}       | {mrb_sym}         |                                                    |"]
+#[doc = " | `&`  | block          | {mrb_value}       | &! raises exception if no block given.             |"]
+#[doc = " | `*`  | rest arguments | {mrb_value} *, {mrb_int} | Receive the rest of arguments as an array; *! avoid copy of the stack.  |"]
+#[doc = " | &vert; | optional     |                   | After this spec following specs would be optional. |"]
+#[doc = " | `?`  | optional given | {mrb_bool}        | `TRUE` if preceding argument is given. Used to check optional argument is given. |"]
+#[doc = ""]
+#[doc = " @see mrb_get_args"]
 pub type mrb_args_format = *const ::std::os::raw::c_char;
 extern "C" {
-    /// Retrieve arguments from mrb_state.
-    ///
-    /// @param mrb The current MRuby state.
-    /// @param format [mrb_args_format] is a list of format specifiers
-    /// @param ... The passing variadic arguments must be a pointer of retrieving type.
-    /// @return the number of arguments retrieved.
-    /// @see mrb_args_format
+    #[doc = " Retrieve arguments from mrb_state."]
+    #[doc = ""]
+    #[doc = " @param mrb The current MRuby state."]
+    #[doc = " @param format [mrb_args_format] is a list of format specifiers"]
+    #[doc = " @param ... The passing variadic arguments must be a pointer of retrieving type."]
+    #[doc = " @return the number of arguments retrieved."]
+    #[doc = " @see mrb_args_format"]
     #[link_name = "\u{1}_mrb_get_args"]
     pub fn mrb_get_args(mrb: *mut mrb_state, format: mrb_args_format, ...) -> mrb_int;
 }
 extern "C" {
-    /// Retrieve number of arguments from mrb_state.
-    ///
-    /// Correctly handles *splat arguments.
+    #[doc = " Retrieve number of arguments from mrb_state."]
+    #[doc = ""]
+    #[doc = " Correctly handles *splat arguments."]
     #[link_name = "\u{1}_mrb_get_argc"]
     pub fn mrb_get_argc(mrb: *mut mrb_state) -> mrb_int;
 }
@@ -2486,31 +1351,31 @@ extern "C" {
     pub fn mrb_get_argv(mrb: *mut mrb_state) -> *mut mrb_value;
 }
 extern "C" {
-    /// Call existing ruby functions.
-    ///
-    ///      #include <stdio.h>
-    ///      #include <mruby.h>
-    ///      #include "mruby/compile.h"
-    ///
-    ///      int
-    ///      main()
-    ///      {
-    ///        mrb_int i = 99;
-    ///        mrb_state *mrb = mrb_open();
-    ///
-    ///        if (!mrb) { }
-    ///        FILE *fp = fopen("test.rb","r");
-    ///        mrb_value obj = mrb_load_file(mrb,fp);
-    ///        mrb_funcall(mrb, obj, "method_name", 1, mrb_fixnum_value(i));
-    ///        fclose(fp);
-    ///        mrb_close(mrb);
-    ///       }
-    /// @param [mrb_state*] mrb_state* The current mruby state.
-    /// @param [mrb_value] mrb_value A reference to an mruby value.
-    /// @param [const char*] const char* The name of the method.
-    /// @param [mrb_int] mrb_int The number of arguments the method has.
-    /// @param [...] ... Variadic values(not type safe!).
-    /// @return [mrb_value] mrb_value mruby function value.
+    #[doc = " Call existing ruby functions."]
+    #[doc = ""]
+    #[doc = "      #include <stdio.h>"]
+    #[doc = "      #include <mruby.h>"]
+    #[doc = "      #include \"mruby/compile.h\""]
+    #[doc = ""]
+    #[doc = "      int"]
+    #[doc = "      main()"]
+    #[doc = "      {"]
+    #[doc = "        mrb_int i = 99;"]
+    #[doc = "        mrb_state *mrb = mrb_open();"]
+    #[doc = ""]
+    #[doc = "        if (!mrb) { }"]
+    #[doc = "        FILE *fp = fopen(\"test.rb\",\"r\");"]
+    #[doc = "        mrb_value obj = mrb_load_file(mrb,fp);"]
+    #[doc = "        mrb_funcall(mrb, obj, \"method_name\", 1, mrb_fixnum_value(i));"]
+    #[doc = "        fclose(fp);"]
+    #[doc = "        mrb_close(mrb);"]
+    #[doc = "       }"]
+    #[doc = " @param [mrb_state*] mrb_state* The current mruby state."]
+    #[doc = " @param [mrb_value] mrb_value A reference to an mruby value."]
+    #[doc = " @param [const char*] const char* The name of the method."]
+    #[doc = " @param [mrb_int] mrb_int The number of arguments the method has."]
+    #[doc = " @param [...] ... Variadic values(not type safe!)."]
+    #[doc = " @return [mrb_value] mrb_value mruby function value."]
     #[link_name = "\u{1}_mrb_funcall"]
     pub fn mrb_funcall(
         arg1: *mut mrb_state,
@@ -2521,33 +1386,33 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Call existing ruby functions. This is basically the type safe version of mrb_funcall.
-    ///
-    ///      #include <stdio.h>
-    ///      #include <mruby.h>
-    ///      #include "mruby/compile.h"
-    ///      int
-    ///      main()
-    ///      {
-    ///        mrb_int i = 99;
-    ///        mrb_state *mrb = mrb_open();
-    ///
-    ///        if (!mrb) { }
-    ///        mrb_sym m_sym = mrb_intern_lit(mrb, "method_name"); // Symbol for method.
-    ///
-    ///        FILE *fp = fopen("test.rb","r");
-    ///        mrb_value obj = mrb_load_file(mrb,fp);
-    ///        mrb_funcall_argv(mrb, obj, m_sym, 1, &obj); // Calling ruby function from test.rb.
-    ///        fclose(fp);
-    ///        mrb_close(mrb);
-    ///       }
-    /// @param [mrb_state*] mrb_state* The current mruby state.
-    /// @param [mrb_value] mrb_value A reference to an mruby value.
-    /// @param [mrb_sym] mrb_sym The symbol representing the method.
-    /// @param [mrb_int] mrb_int The number of arguments the method has.
-    /// @param [const mrb_value*] mrb_value* Pointer to the object.
-    /// @return [mrb_value] mrb_value mruby function value.
-    /// @see mrb_funcall
+    #[doc = " Call existing ruby functions. This is basically the type safe version of mrb_funcall."]
+    #[doc = ""]
+    #[doc = "      #include <stdio.h>"]
+    #[doc = "      #include <mruby.h>"]
+    #[doc = "      #include \"mruby/compile.h\""]
+    #[doc = "      int"]
+    #[doc = "      main()"]
+    #[doc = "      {"]
+    #[doc = "        mrb_int i = 99;"]
+    #[doc = "        mrb_state *mrb = mrb_open();"]
+    #[doc = ""]
+    #[doc = "        if (!mrb) { }"]
+    #[doc = "        mrb_sym m_sym = mrb_intern_lit(mrb, \"method_name\"); // Symbol for method."]
+    #[doc = ""]
+    #[doc = "        FILE *fp = fopen(\"test.rb\",\"r\");"]
+    #[doc = "        mrb_value obj = mrb_load_file(mrb,fp);"]
+    #[doc = "        mrb_funcall_argv(mrb, obj, m_sym, 1, &obj); // Calling ruby function from test.rb."]
+    #[doc = "        fclose(fp);"]
+    #[doc = "        mrb_close(mrb);"]
+    #[doc = "       }"]
+    #[doc = " @param [mrb_state*] mrb_state* The current mruby state."]
+    #[doc = " @param [mrb_value] mrb_value A reference to an mruby value."]
+    #[doc = " @param [mrb_sym] mrb_sym The symbol representing the method."]
+    #[doc = " @param [mrb_int] mrb_int The number of arguments the method has."]
+    #[doc = " @param [const mrb_value*] mrb_value* Pointer to the object."]
+    #[doc = " @return [mrb_value] mrb_value mruby function value."]
+    #[doc = " @see mrb_funcall"]
     #[link_name = "\u{1}_mrb_funcall_argv"]
     pub fn mrb_funcall_argv(
         arg1: *mut mrb_state,
@@ -2558,7 +1423,7 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Call existing ruby functions with a block.
+    #[doc = " Call existing ruby functions with a block."]
     #[link_name = "\u{1}_mrb_funcall_with_block"]
     pub fn mrb_funcall_with_block(
         arg1: *mut mrb_state,
@@ -2570,16 +1435,16 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Create a symbol
-    ///
-    ///     # Ruby style:
-    ///     :pizza # => :pizza
-    ///
-    ///     // C style:
-    ///     mrb_sym m_sym = mrb_intern_lit(mrb, "pizza"); //  => :pizza
-    /// @param [mrb_state*] mrb_state* The current mruby state.
-    /// @param [const char*] const char* The name of the method.
-    /// @return [mrb_sym] mrb_sym A symbol.
+    #[doc = " Create a symbol"]
+    #[doc = ""]
+    #[doc = "     # Ruby style:"]
+    #[doc = "     :pizza # => :pizza"]
+    #[doc = ""]
+    #[doc = "     // C style:"]
+    #[doc = "     mrb_sym m_sym = mrb_intern_lit(mrb, \"pizza\"); //  => :pizza"]
+    #[doc = " @param [mrb_state*] mrb_state* The current mruby state."]
+    #[doc = " @param [const char*] const char* The name of the method."]
+    #[doc = " @return [mrb_sym] mrb_sym A symbol."]
     #[link_name = "\u{1}_mrb_intern_cstr"]
     pub fn mrb_intern_cstr(arg1: *mut mrb_state, arg2: *const ::std::os::raw::c_char) -> mrb_sym;
 }
@@ -2687,7 +1552,7 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Turns a C string into a Ruby string value.
+    #[doc = " Turns a C string into a Ruby string value."]
     #[link_name = "\u{1}_mrb_str_new_cstr"]
     pub fn mrb_str_new_cstr(arg1: *mut mrb_state, arg2: *const ::std::os::raw::c_char)
         -> mrb_value;
@@ -2701,52 +1566,52 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Creates new mrb_state.
-    ///
-    /// @return
-    ///      Pointer to the newly created mrb_state.
+    #[doc = " Creates new mrb_state."]
+    #[doc = ""]
+    #[doc = " @return"]
+    #[doc = "      Pointer to the newly created mrb_state."]
     #[link_name = "\u{1}_mrb_open"]
     pub fn mrb_open() -> *mut mrb_state;
 }
 extern "C" {
-    /// Create new mrb_state with custom allocators.
-    ///
-    /// @param f
-    ///      Reference to the allocation function.
-    /// @param ud
-    ///      User data will be passed to custom allocator f.
-    ///      If user data isn't required just pass NULL.
-    /// @return
-    ///      Pointer to the newly created mrb_state.
+    #[doc = " Create new mrb_state with custom allocators."]
+    #[doc = ""]
+    #[doc = " @param f"]
+    #[doc = "      Reference to the allocation function."]
+    #[doc = " @param ud"]
+    #[doc = "      User data will be passed to custom allocator f."]
+    #[doc = "      If user data isn't required just pass NULL."]
+    #[doc = " @return"]
+    #[doc = "      Pointer to the newly created mrb_state."]
     #[link_name = "\u{1}_mrb_open_allocf"]
     pub fn mrb_open_allocf(f: mrb_allocf, ud: *mut ::std::os::raw::c_void) -> *mut mrb_state;
 }
 extern "C" {
-    /// Create new mrb_state with just the MRuby core
-    ///
-    /// @param f
-    ///      Reference to the allocation function.
-    ///      Use mrb_default_allocf for the default
-    /// @param ud
-    ///      User data will be passed to custom allocator f.
-    ///      If user data isn't required just pass NULL.
-    /// @return
-    ///      Pointer to the newly created mrb_state.
+    #[doc = " Create new mrb_state with just the MRuby core"]
+    #[doc = ""]
+    #[doc = " @param f"]
+    #[doc = "      Reference to the allocation function."]
+    #[doc = "      Use mrb_default_allocf for the default"]
+    #[doc = " @param ud"]
+    #[doc = "      User data will be passed to custom allocator f."]
+    #[doc = "      If user data isn't required just pass NULL."]
+    #[doc = " @return"]
+    #[doc = "      Pointer to the newly created mrb_state."]
     #[link_name = "\u{1}_mrb_open_core"]
     pub fn mrb_open_core(f: mrb_allocf, ud: *mut ::std::os::raw::c_void) -> *mut mrb_state;
 }
 extern "C" {
-    /// Closes and frees a mrb_state.
-    ///
-    /// @param mrb
-    ///      Pointer to the mrb_state to be closed.
+    #[doc = " Closes and frees a mrb_state."]
+    #[doc = ""]
+    #[doc = " @param mrb"]
+    #[doc = "      Pointer to the mrb_state to be closed."]
     #[link_name = "\u{1}_mrb_close"]
     pub fn mrb_close(mrb: *mut mrb_state);
 }
 extern "C" {
-    /// The default allocation function.
-    ///
-    /// @see mrb_allocf
+    #[doc = " The default allocation function."]
+    #[doc = ""]
+    #[doc = " @see mrb_allocf"]
     #[link_name = "\u{1}_mrb_default_allocf"]
     pub fn mrb_default_allocf(
         arg1: *mut mrb_state,
@@ -3144,49 +2009,6 @@ pub struct mrb_shared_array {
     pub len: mrb_int,
     pub ptr: *mut mrb_value,
 }
-#[test]
-fn bindgen_test_layout_mrb_shared_array() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_shared_array>(),
-        24usize,
-        concat!("Size of: ", stringify!(mrb_shared_array))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_shared_array>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_shared_array))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_shared_array>())).refcnt as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_shared_array),
-            "::",
-            stringify!(refcnt)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_shared_array>())).len as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_shared_array),
-            "::",
-            stringify!(len)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_shared_array>())).ptr as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_shared_array),
-            "::",
-            stringify!(ptr)
-        )
-    );
-}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct RArray {
@@ -3214,164 +2036,6 @@ pub union RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1 {
     pub capa: mrb_int,
     pub shared: *mut mrb_shared_array,
     _bindgen_union_align: u64,
-}
-#[test]
-fn bindgen_test_layout_RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>(),
-        8usize,
-        concat!(
-            "Size of: ",
-            stringify!(RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1)
-        )
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>(),
-        8usize,
-        concat!(
-            "Alignment of ",
-            stringify!(RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>())).capa
-                as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(capa)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>())).shared
-                as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(shared)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_RArray__bindgen_ty_1__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<RArray__bindgen_ty_1__bindgen_ty_1>(),
-        24usize,
-        concat!("Size of: ", stringify!(RArray__bindgen_ty_1__bindgen_ty_1))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RArray__bindgen_ty_1__bindgen_ty_1>(),
-        8usize,
-        concat!(
-            "Alignment of ",
-            stringify!(RArray__bindgen_ty_1__bindgen_ty_1)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RArray__bindgen_ty_1__bindgen_ty_1>())).len as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(len)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RArray__bindgen_ty_1__bindgen_ty_1>())).aux as *const _ as usize
-        },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(aux)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RArray__bindgen_ty_1__bindgen_ty_1>())).ptr as *const _ as usize
-        },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(ptr)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_RArray__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<RArray__bindgen_ty_1>(),
-        24usize,
-        concat!("Size of: ", stringify!(RArray__bindgen_ty_1))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RArray__bindgen_ty_1>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RArray__bindgen_ty_1))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RArray__bindgen_ty_1>())).heap as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray__bindgen_ty_1),
-            "::",
-            stringify!(heap)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_RArray() {
-    assert_eq!(
-        ::std::mem::size_of::<RArray>(),
-        48usize,
-        concat!("Size of: ", stringify!(RArray))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RArray>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RArray))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RArray>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(RArray), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RArray>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RArray>())).as_ as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RArray),
-            "::",
-            stringify!(as_)
-        )
-    );
 }
 impl RArray {
     #[inline]
@@ -3528,7 +2192,7 @@ extern "C" {
     #[link_name = "\u{1}_mrb_ary_resize"]
     pub fn mrb_ary_resize(mrb: *mut mrb_state, ary: mrb_value, new_len: mrb_int) -> mrb_value;
 }
-/// Class class
+#[doc = " Class class"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct RClass {
@@ -3538,64 +2202,6 @@ pub struct RClass {
     pub iv: *mut iv_tbl,
     pub mt: *mut kh_mt,
     pub super_: *mut RClass,
-}
-#[test]
-fn bindgen_test_layout_RClass() {
-    assert_eq!(
-        ::std::mem::size_of::<RClass>(),
-        48usize,
-        concat!("Size of: ", stringify!(RClass))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RClass>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RClass))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RClass>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(RClass), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RClass>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RClass),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RClass>())).iv as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RClass),
-            "::",
-            stringify!(iv)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RClass>())).mt as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RClass),
-            "::",
-            stringify!(mt)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RClass>())).super_ as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RClass),
-            "::",
-            stringify!(super_)
-        )
-    );
 }
 impl RClass {
     #[inline]
@@ -3770,99 +2376,6 @@ pub struct mrbc_context {
     pub _bitfield_1: __BindgenBitfieldUnit<[u8; 1usize], u8>,
     pub parser_nerr: usize,
 }
-#[test]
-fn bindgen_test_layout_mrbc_context() {
-    assert_eq!(
-        ::std::mem::size_of::<mrbc_context>(),
-        72usize,
-        concat!("Size of: ", stringify!(mrbc_context))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrbc_context>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrbc_context))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrbc_context>())).syms as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrbc_context),
-            "::",
-            stringify!(syms)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrbc_context>())).slen as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrbc_context),
-            "::",
-            stringify!(slen)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrbc_context>())).filename as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrbc_context),
-            "::",
-            stringify!(filename)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrbc_context>())).lineno as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrbc_context),
-            "::",
-            stringify!(lineno)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrbc_context>())).partial_hook as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrbc_context),
-            "::",
-            stringify!(partial_hook)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrbc_context>())).partial_data as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrbc_context),
-            "::",
-            stringify!(partial_data)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrbc_context>())).target_class as *const _ as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrbc_context),
-            "::",
-            stringify!(target_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrbc_context>())).parser_nerr as *const _ as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrbc_context),
-            "::",
-            stringify!(parser_nerr)
-        )
-    );
-}
 impl mrbc_context {
     #[inline]
     pub fn capture_errors(&self) -> mrb_bool {
@@ -4003,59 +2516,6 @@ pub struct mrb_ast_node {
     pub lineno: u16,
     pub filename_index: u16,
 }
-#[test]
-fn bindgen_test_layout_mrb_ast_node() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_ast_node>(),
-        24usize,
-        concat!("Size of: ", stringify!(mrb_ast_node))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_ast_node>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_ast_node))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_ast_node>())).car as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_ast_node),
-            "::",
-            stringify!(car)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_ast_node>())).cdr as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_ast_node),
-            "::",
-            stringify!(cdr)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_ast_node>())).lineno as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_ast_node),
-            "::",
-            stringify!(lineno)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_ast_node>())).filename_index as *const _ as usize },
-        18usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_ast_node),
-            "::",
-            stringify!(filename_index)
-        )
-    );
-}
 pub const mrb_lex_state_enum_EXPR_BEG: mrb_lex_state_enum = 0;
 pub const mrb_lex_state_enum_EXPR_END: mrb_lex_state_enum = 1;
 pub const mrb_lex_state_enum_EXPR_ENDARG: mrb_lex_state_enum = 2;
@@ -4075,49 +2535,6 @@ pub struct mrb_parser_message {
     pub lineno: ::std::os::raw::c_int,
     pub column: ::std::os::raw::c_int,
     pub message: *mut ::std::os::raw::c_char,
-}
-#[test]
-fn bindgen_test_layout_mrb_parser_message() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_parser_message>(),
-        16usize,
-        concat!("Size of: ", stringify!(mrb_parser_message))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_parser_message>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_parser_message))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_message>())).lineno as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_message),
-            "::",
-            stringify!(lineno)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_message>())).column as *const _ as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_message),
-            "::",
-            stringify!(column)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_message>())).message as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_message),
-            "::",
-            stringify!(message)
-        )
-    );
 }
 pub const mrb_string_type_str_not_parsing: mrb_string_type = 0;
 pub const mrb_string_type_str_squote: mrb_string_type = 1;
@@ -4139,61 +2556,6 @@ pub struct mrb_parser_heredoc_info {
     pub term: *const ::std::os::raw::c_char,
     pub term_len: ::std::os::raw::c_int,
     pub doc: *mut mrb_ast_node,
-}
-#[test]
-fn bindgen_test_layout_mrb_parser_heredoc_info() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_parser_heredoc_info>(),
-        32usize,
-        concat!("Size of: ", stringify!(mrb_parser_heredoc_info))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_parser_heredoc_info>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_parser_heredoc_info))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_heredoc_info>())).type_ as *const _ as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_heredoc_info),
-            "::",
-            stringify!(type_)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_heredoc_info>())).term as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_heredoc_info),
-            "::",
-            stringify!(term)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<mrb_parser_heredoc_info>())).term_len as *const _ as usize
-        },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_heredoc_info),
-            "::",
-            stringify!(term_len)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_heredoc_info>())).doc as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_heredoc_info),
-            "::",
-            stringify!(doc)
-        )
-    );
 }
 impl mrb_parser_heredoc_info {
     #[inline]
@@ -4278,400 +2640,6 @@ pub struct mrb_parser_state {
     pub filename_table_length: u16,
     pub current_filename_index: u16,
     pub jmp: *mut mrb_jmpbuf,
-}
-#[test]
-fn bindgen_test_layout_mrb_parser_state() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_parser_state>(),
-        808usize,
-        concat!("Size of: ", stringify!(mrb_parser_state))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_parser_state>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_parser_state))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).mrb as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(mrb)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).pool as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(pool)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).cells as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(cells)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).s as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(s)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).send as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(send)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).cxt as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(cxt)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).filename_sym as *const _ as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(filename_sym)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).lineno as *const _ as usize },
-        52usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(lineno)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).column as *const _ as usize },
-        56usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(column)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).lstate as *const _ as usize },
-        60usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(lstate)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).lex_strterm as *const _ as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(lex_strterm)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).cond_stack as *const _ as usize },
-        72usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(cond_stack)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).cmdarg_stack as *const _ as usize },
-        76usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(cmdarg_stack)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).paren_nest as *const _ as usize },
-        80usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(paren_nest)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).lpar_beg as *const _ as usize },
-        84usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(lpar_beg)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).in_def as *const _ as usize },
-        88usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(in_def)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).in_single as *const _ as usize },
-        92usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(in_single)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).locals as *const _ as usize },
-        104usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(locals)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).pb as *const _ as usize },
-        112usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(pb)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).tokbuf as *const _ as usize },
-        120usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(tokbuf)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).buf as *const _ as usize },
-        128usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(buf)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).tidx as *const _ as usize },
-        384usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(tidx)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).tsiz as *const _ as usize },
-        388usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(tsiz)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).all_heredocs as *const _ as usize },
-        392usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(all_heredocs)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<mrb_parser_state>())).heredocs_from_nextline as *const _ as usize
-        },
-        400usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(heredocs_from_nextline)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<mrb_parser_state>())).parsing_heredoc as *const _ as usize
-        },
-        408usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(parsing_heredoc)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<mrb_parser_state>())).lex_strterm_before_heredoc as *const _
-                as usize
-        },
-        416usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(lex_strterm_before_heredoc)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).ylval as *const _ as usize },
-        424usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(ylval)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).nerr as *const _ as usize },
-        432usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(nerr)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).nwarn as *const _ as usize },
-        440usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(nwarn)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).tree as *const _ as usize },
-        448usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(tree)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).error_buffer as *const _ as usize },
-        464usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(error_buffer)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).warn_buffer as *const _ as usize },
-        624usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(warn_buffer)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).filename_table as *const _ as usize },
-        784usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(filename_table)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<mrb_parser_state>())).filename_table_length as *const _ as usize
-        },
-        792usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(filename_table_length)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<mrb_parser_state>())).current_filename_index as *const _ as usize
-        },
-        794usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(current_filename_index)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_parser_state>())).jmp as *const _ as usize },
-        800usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_parser_state),
-            "::",
-            stringify!(jmp)
-        )
-    );
 }
 impl mrb_parser_state {
     #[inline]
@@ -4832,49 +2800,16 @@ extern "C" {
         cxt: *mut mrbc_context,
     ) -> mrb_value;
 }
-/// Custom data type description.
+#[doc = " Custom data type description."]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct mrb_data_type {
-    /// data type name
+    #[doc = " data type name"]
     pub struct_name: *const ::std::os::raw::c_char,
-    /// data type release function pointer
+    #[doc = " data type release function pointer"]
     pub dfree: ::std::option::Option<
         unsafe extern "C" fn(mrb: *mut mrb_state, arg1: *mut ::std::os::raw::c_void),
     >,
-}
-#[test]
-fn bindgen_test_layout_mrb_data_type() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_data_type>(),
-        16usize,
-        concat!("Size of: ", stringify!(mrb_data_type))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_data_type>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_data_type))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_data_type>())).struct_name as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_data_type),
-            "::",
-            stringify!(struct_name)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_data_type>())).dfree as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_data_type),
-            "::",
-            stringify!(dfree)
-        )
-    );
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -4885,59 +2820,6 @@ pub struct RData {
     pub iv: *mut iv_tbl,
     pub type_: *const mrb_data_type,
     pub data: *mut ::std::os::raw::c_void,
-}
-#[test]
-fn bindgen_test_layout_RData() {
-    assert_eq!(
-        ::std::mem::size_of::<RData>(),
-        48usize,
-        concat!("Size of: ", stringify!(RData))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RData>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RData))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RData>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(RData), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RData>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RData),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RData>())).iv as *const _ as usize },
-        24usize,
-        concat!("Offset of field: ", stringify!(RData), "::", stringify!(iv))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RData>())).type_ as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RData),
-            "::",
-            stringify!(type_)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RData>())).data as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RData),
-            "::",
-            stringify!(data)
-        )
-    );
 }
 impl RData {
     #[inline]
@@ -5031,39 +2913,6 @@ pub struct mrb_locals {
     pub name: mrb_sym,
     pub r: u16,
 }
-#[test]
-fn bindgen_test_layout_mrb_locals() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_locals>(),
-        8usize,
-        concat!("Size of: ", stringify!(mrb_locals))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_locals>(),
-        4usize,
-        concat!("Alignment of ", stringify!(mrb_locals))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_locals>())).name as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_locals),
-            "::",
-            stringify!(name)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_locals>())).r as *const _ as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_locals),
-            "::",
-            stringify!(r)
-        )
-    );
-}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct mrb_irep {
@@ -5081,159 +2930,6 @@ pub struct mrb_irep {
     pub slen: u16,
     pub rlen: u16,
     pub refcnt: u32,
-}
-#[test]
-fn bindgen_test_layout_mrb_irep() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_irep>(),
-        72usize,
-        concat!("Size of: ", stringify!(mrb_irep))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_irep>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_irep))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).nlocals as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(nlocals)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).nregs as *const _ as usize },
-        2usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(nregs)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).flags as *const _ as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(flags)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).iseq as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(iseq)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).pool as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(pool)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).syms as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(syms)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).reps as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(reps)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).lv as *const _ as usize },
-        40usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(lv)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).debug_info as *const _ as usize },
-        48usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(debug_info)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).ilen as *const _ as usize },
-        56usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(ilen)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).plen as *const _ as usize },
-        58usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(plen)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).slen as *const _ as usize },
-        60usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(slen)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).rlen as *const _ as usize },
-        62usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(rlen)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_irep>())).refcnt as *const _ as usize },
-        64usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_irep),
-            "::",
-            stringify!(refcnt)
-        )
-    );
 }
 extern "C" {
     #[link_name = "\u{1}_mrb_add_irep"]
@@ -5278,59 +2974,6 @@ pub struct mrb_insn_data {
     pub a: u16,
     pub b: u16,
     pub c: u8,
-}
-#[test]
-fn bindgen_test_layout_mrb_insn_data() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_insn_data>(),
-        8usize,
-        concat!("Size of: ", stringify!(mrb_insn_data))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_insn_data>(),
-        2usize,
-        concat!("Alignment of ", stringify!(mrb_insn_data))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_insn_data>())).insn as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_insn_data),
-            "::",
-            stringify!(insn)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_insn_data>())).a as *const _ as usize },
-        2usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_insn_data),
-            "::",
-            stringify!(a)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_insn_data>())).b as *const _ as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_insn_data),
-            "::",
-            stringify!(b)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_insn_data>())).c as *const _ as usize },
-        6usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_insn_data),
-            "::",
-            stringify!(c)
-        )
-    );
 }
 extern "C" {
     #[link_name = "\u{1}_mrb_decode_insn"]
@@ -5389,9 +3032,9 @@ extern "C" {
     pub fn mrb_f_raise(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    /// Protect
-    ///
-    /// @mrbgem mruby-error
+    #[doc = " Protect"]
+    #[doc = ""]
+    #[doc = " @mrbgem mruby-error"]
     #[link_name = "\u{1}_mrb_protect"]
     pub fn mrb_protect(
         mrb: *mut mrb_state,
@@ -5401,9 +3044,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Ensure
-    ///
-    /// @mrbgem mruby-error
+    #[doc = " Ensure"]
+    #[doc = ""]
+    #[doc = " @mrbgem mruby-error"]
     #[link_name = "\u{1}_mrb_ensure"]
     pub fn mrb_ensure(
         mrb: *mut mrb_state,
@@ -5414,9 +3057,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Rescue
-    ///
-    /// @mrbgem mruby-error
+    #[doc = " Rescue"]
+    #[doc = ""]
+    #[doc = " @mrbgem mruby-error"]
     #[link_name = "\u{1}_mrb_rescue"]
     pub fn mrb_rescue(
         mrb: *mut mrb_state,
@@ -5427,9 +3070,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    /// Rescue exception
-    ///
-    /// @mrbgem mruby-error
+    #[doc = " Rescue exception"]
+    #[doc = ""]
+    #[doc = " @mrbgem mruby-error"]
     #[link_name = "\u{1}_mrb_rescue_exceptions"]
     pub fn mrb_rescue_exceptions(
         mrb: *mut mrb_state,
@@ -5441,7 +3084,7 @@ extern "C" {
         classes: *mut *mut RClass,
     ) -> mrb_value;
 }
-/// Hash class
+#[doc = " Hash class"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct RHash {
@@ -5450,44 +3093,6 @@ pub struct RHash {
     pub gcnext: *mut RBasic,
     pub iv: *mut iv_tbl,
     pub ht: *mut htable,
-}
-#[test]
-fn bindgen_test_layout_RHash() {
-    assert_eq!(
-        ::std::mem::size_of::<RHash>(),
-        40usize,
-        concat!("Size of: ", stringify!(RHash))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RHash>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RHash))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RHash>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(RHash), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RHash>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RHash),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RHash>())).iv as *const _ as usize },
-        24usize,
-        concat!("Offset of field: ", stringify!(RHash), "::", stringify!(iv))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RHash>())).ht as *const _ as usize },
-        32usize,
-        concat!("Offset of field: ", stringify!(RHash), "::", stringify!(ht))
-    );
 }
 impl RHash {
     #[inline]
@@ -5621,39 +3226,6 @@ pub struct mrb_hash_value {
     pub v: mrb_value,
     pub n: mrb_int,
 }
-#[test]
-fn bindgen_test_layout_mrb_hash_value() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_hash_value>(),
-        24usize,
-        concat!("Size of: ", stringify!(mrb_hash_value))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_hash_value>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_hash_value))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_hash_value>())).v as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_hash_value),
-            "::",
-            stringify!(v)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_hash_value>())).n as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_hash_value),
-            "::",
-            stringify!(n)
-        )
-    );
-}
 extern "C" {
     #[link_name = "\u{1}_mrb_gc_mark_hash"]
     pub fn mrb_gc_mark_hash(arg1: *mut mrb_state, arg2: *mut RHash);
@@ -5683,7 +3255,7 @@ extern "C" {
         p: *mut ::std::os::raw::c_void,
     );
 }
-/// khash definitions used in mruby's hash table.
+#[doc = " khash definitions used in mruby's hash table."]
 pub type khint_t = u32;
 extern "C" {
     #[link_name = "\u{1}_mrb_flo_to_fixnum"]
@@ -5826,7 +3398,7 @@ pub const mrb_insn_OP_EXT2: mrb_insn = 101;
 pub const mrb_insn_OP_EXT3: mrb_insn = 102;
 pub const mrb_insn_OP_STOP: mrb_insn = 103;
 pub type mrb_insn = u32;
-/// Proc class
+#[doc = " Proc class"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct REnv {
@@ -5836,54 +3408,6 @@ pub struct REnv {
     pub stack: *mut mrb_value,
     pub cxt: *mut mrb_context,
     pub mid: mrb_sym,
-}
-#[test]
-fn bindgen_test_layout_REnv() {
-    assert_eq!(
-        ::std::mem::size_of::<REnv>(),
-        48usize,
-        concat!("Size of: ", stringify!(REnv))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<REnv>(),
-        8usize,
-        concat!("Alignment of ", stringify!(REnv))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<REnv>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(REnv), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<REnv>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(REnv),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<REnv>())).stack as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(REnv),
-            "::",
-            stringify!(stack)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<REnv>())).cxt as *const _ as usize },
-        32usize,
-        concat!("Offset of field: ", stringify!(REnv), "::", stringify!(cxt))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<REnv>())).mid as *const _ as usize },
-        40usize,
-        concat!("Offset of field: ", stringify!(REnv), "::", stringify!(mid))
-    );
 }
 impl REnv {
     #[inline]
@@ -5963,133 +3487,12 @@ pub union RProc__bindgen_ty_1 {
     pub func: mrb_func_t,
     _bindgen_union_align: u64,
 }
-#[test]
-fn bindgen_test_layout_RProc__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<RProc__bindgen_ty_1>(),
-        8usize,
-        concat!("Size of: ", stringify!(RProc__bindgen_ty_1))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RProc__bindgen_ty_1>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RProc__bindgen_ty_1))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RProc__bindgen_ty_1>())).irep as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RProc__bindgen_ty_1),
-            "::",
-            stringify!(irep)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RProc__bindgen_ty_1>())).func as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RProc__bindgen_ty_1),
-            "::",
-            stringify!(func)
-        )
-    );
-}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union RProc__bindgen_ty_2 {
     pub target_class: *mut RClass,
     pub env: *mut REnv,
     _bindgen_union_align: u64,
-}
-#[test]
-fn bindgen_test_layout_RProc__bindgen_ty_2() {
-    assert_eq!(
-        ::std::mem::size_of::<RProc__bindgen_ty_2>(),
-        8usize,
-        concat!("Size of: ", stringify!(RProc__bindgen_ty_2))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RProc__bindgen_ty_2>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RProc__bindgen_ty_2))
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RProc__bindgen_ty_2>())).target_class as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RProc__bindgen_ty_2),
-            "::",
-            stringify!(target_class)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RProc__bindgen_ty_2>())).env as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RProc__bindgen_ty_2),
-            "::",
-            stringify!(env)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_RProc() {
-    assert_eq!(
-        ::std::mem::size_of::<RProc>(),
-        48usize,
-        concat!("Size of: ", stringify!(RProc))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RProc>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RProc))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RProc>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(RProc), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RProc>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RProc),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RProc>())).body as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RProc),
-            "::",
-            stringify!(body)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RProc>())).upper as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RProc),
-            "::",
-            stringify!(upper)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RProc>())).e as *const _ as usize },
-        40usize,
-        concat!("Offset of field: ", stringify!(RProc), "::", stringify!(e))
-    );
 }
 impl RProc {
     #[inline]
@@ -6203,117 +3606,11 @@ pub struct kh_mt {
     pub keys: *mut mrb_sym,
     pub vals: *mut mrb_method_t,
 }
-#[test]
-fn bindgen_test_layout_kh_mt() {
-    assert_eq!(
-        ::std::mem::size_of::<kh_mt>(),
-        40usize,
-        concat!("Size of: ", stringify!(kh_mt))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<kh_mt>(),
-        8usize,
-        concat!("Alignment of ", stringify!(kh_mt))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<kh_mt>())).n_buckets as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(kh_mt),
-            "::",
-            stringify!(n_buckets)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<kh_mt>())).size as *const _ as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(kh_mt),
-            "::",
-            stringify!(size)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<kh_mt>())).n_occupied as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(kh_mt),
-            "::",
-            stringify!(n_occupied)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<kh_mt>())).ed_flags as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(kh_mt),
-            "::",
-            stringify!(ed_flags)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<kh_mt>())).keys as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(kh_mt),
-            "::",
-            stringify!(keys)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<kh_mt>())).vals as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(kh_mt),
-            "::",
-            stringify!(vals)
-        )
-    );
-}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mrb_range_edges {
     pub beg: mrb_value,
     pub end: mrb_value,
-}
-#[test]
-fn bindgen_test_layout_mrb_range_edges() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_range_edges>(),
-        32usize,
-        concat!("Size of: ", stringify!(mrb_range_edges))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_range_edges>(),
-        8usize,
-        concat!("Alignment of ", stringify!(mrb_range_edges))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_range_edges>())).beg as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_range_edges),
-            "::",
-            stringify!(beg)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_range_edges>())).end as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_range_edges),
-            "::",
-            stringify!(end)
-        )
-    );
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -6323,54 +3620,6 @@ pub struct RRange {
     pub gcnext: *mut RBasic,
     pub edges: *mut mrb_range_edges,
     pub excl: mrb_bool,
-}
-#[test]
-fn bindgen_test_layout_RRange() {
-    assert_eq!(
-        ::std::mem::size_of::<RRange>(),
-        40usize,
-        concat!("Size of: ", stringify!(RRange))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RRange>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RRange))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RRange>())).c as *const _ as usize },
-        8usize,
-        concat!("Offset of field: ", stringify!(RRange), "::", stringify!(c))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RRange>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RRange),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RRange>())).edges as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RRange),
-            "::",
-            stringify!(edges)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RRange>())).excl as *const _ as usize },
-        32usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RRange),
-            "::",
-            stringify!(excl)
-        )
-    );
 }
 impl RRange {
     #[inline]
@@ -6503,192 +3752,6 @@ pub union RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1 {
     pub shared: *mut mrb_shared_string,
     pub fshared: *mut RString,
     _bindgen_union_align: u64,
-}
-#[test]
-fn bindgen_test_layout_RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>(),
-        8usize,
-        concat!(
-            "Size of: ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1)
-        )
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>(),
-        8usize,
-        concat!(
-            "Alignment of ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>())).capa
-                as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(capa)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>())).shared
-                as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(shared)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1>())).fshared
-                as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(fshared)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_RString__bindgen_ty_1__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<RString__bindgen_ty_1__bindgen_ty_1>(),
-        24usize,
-        concat!("Size of: ", stringify!(RString__bindgen_ty_1__bindgen_ty_1))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RString__bindgen_ty_1__bindgen_ty_1>(),
-        8usize,
-        concat!(
-            "Alignment of ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RString__bindgen_ty_1__bindgen_ty_1>())).len as *const _ as usize
-        },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(len)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RString__bindgen_ty_1__bindgen_ty_1>())).aux as *const _ as usize
-        },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(aux)
-        )
-    );
-    assert_eq!(
-        unsafe {
-            &(*(::std::ptr::null::<RString__bindgen_ty_1__bindgen_ty_1>())).ptr as *const _ as usize
-        },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString__bindgen_ty_1__bindgen_ty_1),
-            "::",
-            stringify!(ptr)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_RString__bindgen_ty_1() {
-    assert_eq!(
-        ::std::mem::size_of::<RString__bindgen_ty_1>(),
-        24usize,
-        concat!("Size of: ", stringify!(RString__bindgen_ty_1))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RString__bindgen_ty_1>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RString__bindgen_ty_1))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RString__bindgen_ty_1>())).heap as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString__bindgen_ty_1),
-            "::",
-            stringify!(heap)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RString__bindgen_ty_1>())).ary as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString__bindgen_ty_1),
-            "::",
-            stringify!(ary)
-        )
-    );
-}
-#[test]
-fn bindgen_test_layout_RString() {
-    assert_eq!(
-        ::std::mem::size_of::<RString>(),
-        48usize,
-        concat!("Size of: ", stringify!(RString))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<RString>(),
-        8usize,
-        concat!("Alignment of ", stringify!(RString))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RString>())).c as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString),
-            "::",
-            stringify!(c)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RString>())).gcnext as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString),
-            "::",
-            stringify!(gcnext)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<RString>())).as_ as *const _ as usize },
-        24usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(RString),
-            "::",
-            stringify!(as_)
-        )
-    );
 }
 impl RString {
     #[inline]
@@ -6941,29 +4004,6 @@ pub type jmp_buf = [::std::os::raw::c_int; 37usize];
 pub struct mrb_jmpbuf {
     pub impl_: jmp_buf,
 }
-#[test]
-fn bindgen_test_layout_mrb_jmpbuf() {
-    assert_eq!(
-        ::std::mem::size_of::<mrb_jmpbuf>(),
-        148usize,
-        concat!("Size of: ", stringify!(mrb_jmpbuf))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<mrb_jmpbuf>(),
-        4usize,
-        concat!("Alignment of ", stringify!(mrb_jmpbuf))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<mrb_jmpbuf>())).impl_ as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(mrb_jmpbuf),
-            "::",
-            stringify!(impl_)
-        )
-    );
-}
 extern "C" {
     #[link_name = "\u{1}_mrb_vm_special_get"]
     pub fn mrb_vm_special_get(arg1: *mut mrb_state, arg2: mrb_sym) -> mrb_value;
@@ -7049,62 +4089,62 @@ extern "C" {
     pub fn mrb_const_defined_at(mrb: *mut mrb_state, mod_: mrb_value, id: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    /// Get a global variable. Will return nil if the var does not exist
-    ///
-    /// Example:
-    ///
-    ///     !!!ruby
-    ///     # Ruby style
-    ///     var = $value
-    ///
-    ///     !!!c
-    ///     // C style
-    ///     mrb_sym sym = mrb_intern_lit(mrb, "$value");
-    ///     mrb_value var = mrb_gv_get(mrb, sym);
-    ///
-    /// @param mrb The mruby state reference
-    /// @param sym The name of the global variable
-    /// @return The value of that global variable. May be nil
+    #[doc = " Get a global variable. Will return nil if the var does not exist"]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "     !!!ruby"]
+    #[doc = "     # Ruby style"]
+    #[doc = "     var = $value"]
+    #[doc = ""]
+    #[doc = "     !!!c"]
+    #[doc = "     // C style"]
+    #[doc = "     mrb_sym sym = mrb_intern_lit(mrb, \"$value\");"]
+    #[doc = "     mrb_value var = mrb_gv_get(mrb, sym);"]
+    #[doc = ""]
+    #[doc = " @param mrb The mruby state reference"]
+    #[doc = " @param sym The name of the global variable"]
+    #[doc = " @return The value of that global variable. May be nil"]
     #[link_name = "\u{1}_mrb_gv_get"]
     pub fn mrb_gv_get(mrb: *mut mrb_state, sym: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    /// Set a global variable
-    ///
-    /// Example:
-    ///
-    ///     !!!ruby
-    ///     # Ruby style
-    ///     $value = "foo"
-    ///
-    ///     !!!c
-    ///     // C style
-    ///     mrb_sym sym = mrb_intern_lit(mrb, "$value");
-    ///     mrb_gv_set(mrb, sym, mrb_str_new_lit("foo"));
-    ///
-    /// @param mrb The mruby state reference
-    /// @param sym The name of the global variable
-    /// @param val The value of the global variable
+    #[doc = " Set a global variable"]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "     !!!ruby"]
+    #[doc = "     # Ruby style"]
+    #[doc = "     $value = \"foo\""]
+    #[doc = ""]
+    #[doc = "     !!!c"]
+    #[doc = "     // C style"]
+    #[doc = "     mrb_sym sym = mrb_intern_lit(mrb, \"$value\");"]
+    #[doc = "     mrb_gv_set(mrb, sym, mrb_str_new_lit(\"foo\"));"]
+    #[doc = ""]
+    #[doc = " @param mrb The mruby state reference"]
+    #[doc = " @param sym The name of the global variable"]
+    #[doc = " @param val The value of the global variable"]
     #[link_name = "\u{1}_mrb_gv_set"]
     pub fn mrb_gv_set(mrb: *mut mrb_state, sym: mrb_sym, val: mrb_value);
 }
 extern "C" {
-    /// Remove a global variable.
-    ///
-    /// Example:
-    ///
-    ///     !!!ruby
-    ///     # Ruby style
-    ///     $value = nil
-    ///
-    ///     !!!c
-    ///     // C style
-    ///     mrb_sym sym = mrb_intern_lit(mrb, "$value");
-    ///     mrb_gv_remove(mrb, sym);
-    ///
-    /// @param mrb The mruby state reference
-    /// @param sym The name of the global variable
-    /// @param val The value of the global variable
+    #[doc = " Remove a global variable."]
+    #[doc = ""]
+    #[doc = " Example:"]
+    #[doc = ""]
+    #[doc = "     !!!ruby"]
+    #[doc = "     # Ruby style"]
+    #[doc = "     $value = nil"]
+    #[doc = ""]
+    #[doc = "     !!!c"]
+    #[doc = "     // C style"]
+    #[doc = "     mrb_sym sym = mrb_intern_lit(mrb, \"$value\");"]
+    #[doc = "     mrb_gv_remove(mrb, sym);"]
+    #[doc = ""]
+    #[doc = " @param mrb The mruby state reference"]
+    #[doc = " @param sym The name of the global variable"]
+    #[doc = " @param val The value of the global variable"]
     #[link_name = "\u{1}_mrb_gv_remove"]
     pub fn mrb_gv_remove(mrb: *mut mrb_state, sym: mrb_sym);
 }
@@ -7194,92 +4234,92 @@ extern "C" {
     );
 }
 extern "C" {
-    /// Extract the integer value from a Fixnum `mrb_value`
+    #[doc = " Extract the integer value from a Fixnum `mrb_value`"]
     #[link_name = "\u{1}_mrb_sys_fixnum_to_cint"]
     pub fn mrb_sys_fixnum_to_cint(value: mrb_value) -> mrb_int;
 }
 extern "C" {
-    /// Extract the float value from a Float `mrb_value`
+    #[doc = " Extract the float value from a Float `mrb_value`"]
     #[link_name = "\u{1}_mrb_sys_float_to_cdouble"]
     pub fn mrb_sys_float_to_cdouble(value: mrb_value) -> mrb_float;
 }
 extern "C" {
-    /// Test if an `mrb_value` is a Ruby `nil`
+    #[doc = " Test if an `mrb_value` is a Ruby `nil`"]
     #[link_name = "\u{1}_mrb_sys_value_is_nil"]
     pub fn mrb_sys_value_is_nil(value: mrb_value) -> bool;
 }
 extern "C" {
-    /// Test if an `mrb_value` is a Ruby `false`
+    #[doc = " Test if an `mrb_value` is a Ruby `false`"]
     #[link_name = "\u{1}_mrb_sys_value_is_false"]
     pub fn mrb_sys_value_is_false(value: mrb_value) -> bool;
 }
 extern "C" {
-    /// Test if an `mrb_value` is a Ruby `true`
+    #[doc = " Test if an `mrb_value` is a Ruby `true`"]
     #[link_name = "\u{1}_mrb_sys_value_is_true"]
     pub fn mrb_sys_value_is_true(value: mrb_value) -> bool;
 }
 extern "C" {
-    /// Extract the `RClass` from a Class `mrb_value`
+    #[doc = " Extract the `RClass` from a Class `mrb_value`"]
     #[link_name = "\u{1}_mrb_sys_class_to_rclass"]
     pub fn mrb_sys_class_to_rclass(value: mrb_value) -> *mut RClass;
 }
 extern "C" {
-    /// Create an `mrb_value` representing `nil`
+    #[doc = " Create an `mrb_value` representing `nil`"]
     #[link_name = "\u{1}_mrb_sys_nil_value"]
     pub fn mrb_sys_nil_value() -> mrb_value;
 }
 extern "C" {
-    /// Create an `mrb_value` representing `false`
+    #[doc = " Create an `mrb_value` representing `false`"]
     #[link_name = "\u{1}_mrb_sys_false_value"]
     pub fn mrb_sys_false_value() -> mrb_value;
 }
 extern "C" {
-    /// Create an `mrb_value` representing `true`
+    #[doc = " Create an `mrb_value` representing `true`"]
     #[link_name = "\u{1}_mrb_sys_true_value"]
     pub fn mrb_sys_true_value() -> mrb_value;
 }
 extern "C" {
-    /// Create an `mrb_value` representing an integer (a `Fixnum`)
+    #[doc = " Create an `mrb_value` representing an integer (a `Fixnum`)"]
     #[link_name = "\u{1}_mrb_sys_fixnum_value"]
     pub fn mrb_sys_fixnum_value(value: mrb_int) -> mrb_value;
 }
 extern "C" {
-    /// Create an `mrb_value` representing a float
+    #[doc = " Create an `mrb_value` representing a float"]
     #[link_name = "\u{1}_mrb_sys_float_value"]
     pub fn mrb_sys_float_value(mrb: *mut mrb_state, value: mrb_float) -> mrb_value;
 }
 extern "C" {
-    /// Create an `mrb_value` from an `RProc`
+    #[doc = " Create an `mrb_value` from an `RProc`"]
     #[link_name = "\u{1}_mrb_sys_proc_value"]
     pub fn mrb_sys_proc_value(mrb: *mut mrb_state, proc_: *mut RProc) -> mrb_value;
 }
 extern "C" {
-    /// Create a `Class` `mrb_value` from an `RClass`
+    #[doc = " Create a `Class` `mrb_value` from an `RClass`"]
     #[link_name = "\u{1}_mrb_sys_class_value"]
     pub fn mrb_sys_class_value(klass: *mut RClass) -> mrb_value;
 }
 extern "C" {
-    /// Create a `Module` `mrb_value` from an `RClass`
+    #[doc = " Create a `Module` `mrb_value` from an `RClass`"]
     #[link_name = "\u{1}_mrb_sys_module_value"]
     pub fn mrb_sys_module_value(module: *mut RClass) -> mrb_value;
 }
 extern "C" {
-    /// Create an `mrb_value` from an `RData`
+    #[doc = " Create an `mrb_value` from an `RData`"]
     #[link_name = "\u{1}_mrb_sys_data_value"]
     pub fn mrb_sys_data_value(data: *mut RData) -> mrb_value;
 }
 extern "C" {
-    /// Create an `mrb_value` from a `void *`
+    #[doc = " Create an `mrb_value` from a `void *`"]
     #[link_name = "\u{1}_mrb_sys_obj_value"]
     pub fn mrb_sys_obj_value(p: *mut ::std::os::raw::c_void) -> mrb_value;
 }
 extern "C" {
-    /// Set instance type tag
+    #[doc = " Set instance type tag"]
     #[link_name = "\u{1}_mrb_sys_set_instance_tt"]
     pub fn mrb_sys_set_instance_tt(class: *mut RClass, type_: mrb_vtype);
 }
 extern "C" {
-    /// Get a C string with the name of the symbol identified by an `mrb_value`
+    #[doc = " Get a C string with the name of the symbol identified by an `mrb_value`"]
     #[link_name = "\u{1}_mrb_sys_symbol_name"]
     pub fn mrb_sys_symbol_name(
         mrb: *mut mrb_state,
@@ -7287,7 +4327,7 @@ extern "C" {
     ) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    /// Create a new symbol from a C string
+    #[doc = " Create a new symbol from a C string"]
     #[link_name = "\u{1}_mrb_sys_new_symbol"]
     pub fn mrb_sys_new_symbol(
         mrb: *mut mrb_state,
@@ -7304,17 +4344,17 @@ extern "C" {
     );
 }
 extern "C" {
-    /// Raise the most recent thrown exception on `mrb_state`
+    #[doc = " Raise the most recent thrown exception on `mrb_state`"]
     #[link_name = "\u{1}_mrb_sys_raise_current_exception"]
     pub fn mrb_sys_raise_current_exception(mrb: *mut mrb_state);
 }
 extern "C" {
-    /// Generate a String `mrb_value` from a value suitable for debug logging
+    #[doc = " Generate a String `mrb_value` from a value suitable for debug logging"]
     #[link_name = "\u{1}_mrb_sys_value_debug_str"]
     pub fn mrb_sys_value_debug_str(mrb: *mut mrb_state, value: mrb_value) -> mrb_value;
 }
 extern "C" {
-    /// Raise an exception class with a message
+    #[doc = " Raise an exception class with a message"]
     #[link_name = "\u{1}_mrb_sys_raise"]
     pub fn mrb_sys_raise(
         mrb: *mut mrb_state,
@@ -7323,7 +4363,7 @@ extern "C" {
     );
 }
 extern "C" {
-    /// Check if a class is defined under another class or module
+    #[doc = " Check if a class is defined under another class or module"]
     #[link_name = "\u{1}_mrb_sys_class_defined_under"]
     pub fn mrb_sys_class_defined_under(
         mrb: *mut mrb_state,
@@ -7332,30 +4372,30 @@ extern "C" {
     ) -> mrb_bool;
 }
 extern "C" {
-    /// Get the `RClass` representing the `Class` of an `mrb_value`
+    #[doc = " Get the `RClass` representing the `Class` of an `mrb_value`"]
     #[link_name = "\u{1}_mrb_sys_class_of_value"]
     pub fn mrb_sys_class_of_value(mrb: *mut mrb_state, value: mrb_value) -> *mut RClass;
 }
 extern "C" {
-    /// Get length of an `Array`
+    #[doc = " Get length of an `Array`"]
     #[link_name = "\u{1}_mrb_sys_ary_len"]
     pub fn mrb_sys_ary_len(value: mrb_value) -> mrb_int;
 }
 extern "C" {
-    /// Set save point for garbage collection arena to recycle `mrb_value` objects
-    /// created with C function calls. Returns an index in the arena stack to restore
-    /// to when calling `mrb_sys_gc_arena_restore`.
+    #[doc = " Set save point for garbage collection arena to recycle `mrb_value` objects"]
+    #[doc = " created with C function calls. Returns an index in the arena stack to restore"]
+    #[doc = " to when calling `mrb_sys_gc_arena_restore`."]
     #[link_name = "\u{1}_mrb_sys_gc_arena_save"]
     pub fn mrb_sys_gc_arena_save(mrb: *mut mrb_state) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    /// Restore save point for garbage collection arena to recycle `mrb_value`
-    /// objects created with C function calls.
+    #[doc = " Restore save point for garbage collection arena to recycle `mrb_value`"]
+    #[doc = " objects created with C function calls."]
     #[link_name = "\u{1}_mrb_sys_gc_arena_restore"]
     pub fn mrb_sys_gc_arena_restore(mrb: *mut mrb_state, arena_index: ::std::os::raw::c_int);
 }
 extern "C" {
-    /// Get an `RBasic` pointer to an mruby object.
+    #[doc = " Get an `RBasic` pointer to an mruby object."]
     #[link_name = "\u{1}_mrb_sys_basic_ptr"]
     pub fn mrb_sys_basic_ptr(value: mrb_value) -> *mut RBasic;
 }
@@ -7367,59 +4407,6 @@ pub struct __va_list_tag {
     pub fp_offset: ::std::os::raw::c_uint,
     pub overflow_arg_area: *mut ::std::os::raw::c_void,
     pub reg_save_area: *mut ::std::os::raw::c_void,
-}
-#[test]
-fn bindgen_test_layout___va_list_tag() {
-    assert_eq!(
-        ::std::mem::size_of::<__va_list_tag>(),
-        24usize,
-        concat!("Size of: ", stringify!(__va_list_tag))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<__va_list_tag>(),
-        8usize,
-        concat!("Alignment of ", stringify!(__va_list_tag))
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__va_list_tag>())).gp_offset as *const _ as usize },
-        0usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__va_list_tag),
-            "::",
-            stringify!(gp_offset)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__va_list_tag>())).fp_offset as *const _ as usize },
-        4usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__va_list_tag),
-            "::",
-            stringify!(fp_offset)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__va_list_tag>())).overflow_arg_area as *const _ as usize },
-        8usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__va_list_tag),
-            "::",
-            stringify!(overflow_arg_area)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(::std::ptr::null::<__va_list_tag>())).reg_save_area as *const _ as usize },
-        16usize,
-        concat!(
-            "Offset of field: ",
-            stringify!(__va_list_tag),
-            "::",
-            stringify!(reg_save_area)
-        )
-    );
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

@@ -93,6 +93,8 @@ fn main() {
         .whitelist_var("^MRB.*")
         .whitelist_var("^MRUBY.*")
         .whitelist_var("REGEXP_CLASS")
+        // As of bindgen 0.49.0, `mrb_heap_page` type fails a layout test.
+        .layout_tests(false)
         .rustified_enum("mrb_vtype")
         .generate()
         .expect("Unable to generate mruby bindings");
