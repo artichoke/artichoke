@@ -9,6 +9,7 @@ pub mod def;
 pub mod file;
 pub mod method;
 pub mod module;
+pub mod state;
 pub mod value;
 
 pub use mruby_sys as sys;
