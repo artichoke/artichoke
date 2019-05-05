@@ -87,7 +87,7 @@ impl MrbFile for Container {
         }
         let api = interp.borrow();
         let spec = api.class_spec::<Self>();
-        spec.define(Rc::clone(&interp)).expect("class install");
+        spec.define(&interp).expect("class install");
     }
 }
 

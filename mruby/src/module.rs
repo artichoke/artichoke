@@ -95,7 +95,7 @@ impl PartialEq for Spec {
 }
 
 impl Define for Spec {
-    fn define(&self, interp: Mrb) -> Result<*mut sys::RClass, MrbError> {
+    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError> {
         let mrb = interp.borrow().mrb;
         let rclass = if let Some(ref parent) = self.parent {
             unsafe {
@@ -108,8 +108,10 @@ impl Define for Spec {
         } else {
             unsafe { sys::mrb_define_module(mrb, self.cstring().as_ptr()) }
         };
-        for method in self.methods.iter() {
-            method.define(Rc::clone(&interp), rclass)?;
+        for method in &self.methods {
+            unsafe {
+                method.define(&interp, rclass)?;
+            }
         }
         Ok(rclass)
     }

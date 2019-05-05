@@ -28,7 +28,7 @@ impl MrbFile for Lib {
 
         {
             let mut api = interp.borrow_mut();
-            api.def_module::<Lib>("FoolsGold", None);
+            api.def_module::<Self>("FoolsGold", None);
         }
         // Rust sources
         Metrics::require(Rc::clone(&interp));
@@ -81,7 +81,7 @@ impl MrbFile for Counter {
             spec.add_method("inc", inc, sys::mrb_args_none());
         }
         let spec = interp.borrow().class_spec::<Self>();
-        spec.define(Rc::clone(&interp)).expect("class install");
+        spec.define(&interp).expect("class install");
     }
 }
 
@@ -119,7 +119,7 @@ impl MrbFile for Metrics {
             spec.add_self_method("total_requests", total_requests, sys::mrb_args_none());
         }
         let spec = interp.borrow().module_spec::<Self>();
-        spec.define(Rc::clone(&interp)).expect("module install");
+        spec.define(&interp).expect("module install");
     }
 }
 
@@ -200,6 +200,6 @@ impl MrbFile for RequestContext {
         }
         let api = interp.borrow();
         let spec = api.class_spec::<Self>();
-        spec.define(Rc::clone(&interp)).expect("class install");
+        spec.define(&interp).expect("class install");
     }
 }

@@ -115,7 +115,7 @@ impl PartialEq for Spec {
 }
 
 impl Define for Spec {
-    fn define(&self, interp: Mrb) -> Result<*mut sys::RClass, MrbError> {
+    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError> {
         let mrb = interp.borrow().mrb;
         let rclass = if let Some(ref parent) = self.parent {
             unsafe {
@@ -129,8 +129,10 @@ impl Define for Spec {
         } else {
             unsafe { sys::mrb_define_class(mrb, self.cstring().as_ptr(), (*mrb).object_class) }
         };
-        for method in self.methods.iter() {
-            method.define(Rc::clone(&interp), rclass)?;
+        for method in &self.methods {
+            unsafe {
+                method.define(&interp, rclass)?;
+            }
         }
         // If a `Spec` defines a `Class` whose isntances own a pointer to a
         // Rust object, mark them as `MRB_TT_DATA`.

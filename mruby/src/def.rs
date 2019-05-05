@@ -33,7 +33,7 @@ pub trait Define
 where
     Self: ClassLike,
 {
-    fn define(&self, interp: Mrb) -> Result<*mut sys::RClass, MrbError>;
+    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError>;
 }
 
 /// `ClassLike` trait unifies `class::Spec` and `module::Spec`.
@@ -127,22 +127,22 @@ mod tests {
 
         let api = interp.borrow();
         api.module_spec::<Root>()
-            .define(Rc::clone(&interp))
+            .define(&interp)
             .expect("def module");
         api.module_spec::<ModuleUnderRoot>()
-            .define(Rc::clone(&interp))
+            .define(&interp)
             .expect("def module");
         api.class_spec::<ClassUnderRoot>()
-            .define(Rc::clone(&interp))
+            .define(&interp)
             .expect("def class");
         api.class_spec::<ClassUnderModule>()
-            .define(Rc::clone(&interp))
+            .define(&interp)
             .expect("def class");
         api.module_spec::<ModuleUnderClass>()
-            .define(Rc::clone(&interp))
+            .define(&interp)
             .expect("def module");
         api.class_spec::<ClassUnderClass>()
-            .define(Rc::clone(&interp))
+            .define(&interp)
             .expect("def class");
 
         let spec = api.module_spec::<Root>();

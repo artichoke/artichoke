@@ -449,7 +449,7 @@ impl MrbApi for Mrb {
             // backtrace.unshift(exception)
             // backtrace.join("\n")
             // ```
-            let exc = mem::transmute::<*mut sys::RObject, *mut c_void>(exc);
+            let exc = exc as *mut c_void;
             let exception = sys::mrb_funcall(mrb, sys::mrb_sys_obj_value(exc), inspect.as_ptr(), 0);
             let backtrace = sys::mrb_exc_backtrace(mrb, sys::mrb_sys_obj_value(exc));
             sys::mrb_funcall(mrb, backtrace, unshift.as_ptr(), 1, exception);
@@ -494,7 +494,7 @@ impl MrbApi for Mrb {
         T: AsRef<str>,
         F: MrbFile,
     {
-        self.def_file(filename.as_ref(), |interp: Self| F::require(interp));
+        self.def_file(filename.as_ref(), F::require);
     }
 
     fn nil(&self) -> Value {

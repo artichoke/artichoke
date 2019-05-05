@@ -49,10 +49,10 @@ impl Spec {
         &self.cstring
     }
 
-    pub fn define(&self, interp: Mrb, into: *mut sys::RClass) -> Result<(), MrbError> {
+    pub unsafe fn define(&self, interp: &Mrb, into: *mut sys::RClass) -> Result<(), MrbError> {
         let mrb = interp.borrow().mrb;
         match self.method_type {
-            Type::Class => unsafe {
+            Type::Class => {
                 sys::mrb_define_class_method(
                     mrb,
                     into,
@@ -61,8 +61,8 @@ impl Spec {
                     self.args,
                 );
                 Ok(())
-            },
-            Type::Global => unsafe {
+            }
+            Type::Global => {
                 sys::mrb_define_singleton_method(
                     mrb,
                     (*mrb).top_self,
@@ -71,8 +71,8 @@ impl Spec {
                     self.args,
                 );
                 Ok(())
-            },
-            Type::Instance => unsafe {
+            }
+            Type::Instance => {
                 sys::mrb_define_method(
                     mrb,
                     into,
@@ -81,7 +81,7 @@ impl Spec {
                     self.args,
                 );
                 Ok(())
-            },
+            }
         }
     }
 }
