@@ -52,4 +52,116 @@ where
     fn parent(&self) -> Option<Parent>;
 
     fn rclass(&self, interp: Mrb) -> *mut sys::RClass;
+
+    fn fqname(&self) -> String {
+        if let Some(parent) = self.parent() {
+            let parentfq = match parent {
+                Parent::Class { spec } => spec.fqname(),
+                Parent::Module { spec } => spec.fqname(),
+            };
+            format!("{}::{}", parentfq, self.name())
+        } else {
+            self.name().to_owned()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+
+    use crate::def::{ClassLike, Define, Parent};
+    use crate::interpreter::Interpreter;
+
+    #[test]
+    fn fqname() {
+        struct Root; // A
+        struct ModuleUnderRoot; // A::B
+        struct ClassUnderRoot; // A::C
+        struct ClassUnderModule; // A::B::D
+        struct ModuleUnderClass; // A::C::E
+        struct ClassUnderClass; // A::C::F
+
+        // Setup: define module and class hierarchy
+        let interp = Interpreter::create().expect("mrb init");
+        {
+            let mut api = interp.borrow_mut();
+            api.def_module::<Root>("A", None);
+            let spec = api.module_spec::<Root>();
+            api.def_module::<ModuleUnderRoot>(
+                "B",
+                Some(Parent::Module {
+                    spec: Rc::clone(&spec),
+                }),
+            );
+            api.def_class::<ClassUnderRoot>(
+                "C",
+                Some(Parent::Module {
+                    spec: Rc::clone(&spec),
+                }),
+                None,
+            );
+            let spec = api.module_spec::<ModuleUnderRoot>();
+            api.def_class::<ClassUnderModule>(
+                "D",
+                Some(Parent::Module {
+                    spec: Rc::clone(&spec),
+                }),
+                None,
+            );
+            let spec = api.class_spec::<ClassUnderRoot>();
+            api.def_module::<ModuleUnderClass>(
+                "E",
+                Some(Parent::Class {
+                    spec: Rc::clone(&spec),
+                }),
+            );
+            api.def_class::<ClassUnderClass>(
+                "F",
+                Some(Parent::Class {
+                    spec: Rc::clone(&spec),
+                }),
+                None,
+            );
+        }
+
+        let api = interp.borrow();
+        api.module_spec::<Root>()
+            .define(Rc::clone(&interp))
+            .expect("def module");
+        api.module_spec::<ModuleUnderRoot>()
+            .define(Rc::clone(&interp))
+            .expect("def module");
+        api.class_spec::<ClassUnderRoot>()
+            .define(Rc::clone(&interp))
+            .expect("def class");
+        api.class_spec::<ClassUnderModule>()
+            .define(Rc::clone(&interp))
+            .expect("def class");
+        api.module_spec::<ModuleUnderClass>()
+            .define(Rc::clone(&interp))
+            .expect("def module");
+        api.class_spec::<ClassUnderClass>()
+            .define(Rc::clone(&interp))
+            .expect("def class");
+
+        let spec = api.module_spec::<Root>();
+        assert_eq!(&spec.fqname(), "A");
+        assert_eq!(&format!("{}", spec), "mruby module spec -- A");
+        let spec = api.module_spec::<ModuleUnderRoot>();
+        assert_eq!(&spec.fqname(), "A::B");
+        assert_eq!(&format!("{}", spec), "mruby module spec -- A::B");
+        let spec = api.class_spec::<ClassUnderRoot>();
+        assert_eq!(&spec.fqname(), "A::C");
+        assert_eq!(&format!("{}", spec), "mruby class spec -- A::C");
+        let spec = api.class_spec::<ClassUnderModule>();
+        assert_eq!(&spec.fqname(), "A::B::D");
+        assert_eq!(&format!("{}", spec), "mruby class spec -- A::B::D");
+        let spec = api.module_spec::<ModuleUnderClass>();
+        assert_eq!(&spec.fqname(), "A::C::E");
+        assert_eq!(&format!("{}", spec), "mruby module spec -- A::C::E");
+        let spec = api.class_spec::<ClassUnderClass>();
+        assert_eq!(&spec.fqname(), "A::C::F");
+        assert_eq!(&format!("{}", spec), "mruby class spec -- A::C::F");
+    }
 }

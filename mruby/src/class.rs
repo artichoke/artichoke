@@ -95,7 +95,7 @@ impl fmt::Debug for Spec {
 
 impl fmt::Display for Spec {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "mruby class spec -- {}", self.name)
+        write!(f, "mruby class spec -- {}", self.fqname())
     }
 }
 
