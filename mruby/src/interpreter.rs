@@ -16,8 +16,8 @@ use crate::def::ClassLike;
 use crate::file::MrbFile;
 use crate::module;
 use crate::sys;
-use crate::value::*;
 use crate::value::types::{Ruby, Rust};
+use crate::value::*;
 
 #[macro_export]
 macro_rules! interpreter_or_raise {

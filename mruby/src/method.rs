@@ -116,3 +116,9 @@ impl Hash for Spec {
         self.method_type.hash(state);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn sd() {}
+}

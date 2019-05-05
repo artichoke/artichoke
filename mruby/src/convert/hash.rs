@@ -2,9 +2,9 @@ use std::convert::TryFrom;
 
 use crate::convert::fixnum::Int;
 use crate::convert::{Error, TryFromMrb};
-use crate::value::types::{Ruby, Rust};
 use crate::interpreter::Mrb;
 use crate::sys;
+use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
 // bail out implementation for mixed-type collections

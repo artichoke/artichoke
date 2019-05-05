@@ -76,8 +76,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::value::*;
+    use crate::convert::Error;
+    use crate::value::types::*;
 
     #[test]
     fn ruby_to_rust_error_display() {

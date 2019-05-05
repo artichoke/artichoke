@@ -45,6 +45,7 @@ macro_rules! mrb_array_impl {
                 use $crate::convert::*;
                 use $crate::interpreter::*;
                 use $crate::sys;
+                use $crate::value::types::*;
                 use $crate::value::*;
 
                 #[test]
@@ -161,6 +162,7 @@ macro_rules! mrb_nilable_impl {
                 use $crate::convert::*;
                 use $crate::interpreter::*;
                 use $crate::sys;
+                use $crate::value::types::*;
                 use $crate::value::*;
 
                 #[test]

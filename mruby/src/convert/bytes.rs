@@ -1,9 +1,9 @@
 use std::convert::TryFrom;
 
-use crate::value::types::{Ruby, Rust};
 use crate::convert::{Error, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
+use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
 // TODO: Document danger associated with lifetimes.
@@ -64,6 +64,7 @@ mod tests {
     use crate::convert::*;
     use crate::interpreter::*;
     use crate::sys;
+    use crate::value::types::*;
     use crate::value::*;
 
     mod vec {

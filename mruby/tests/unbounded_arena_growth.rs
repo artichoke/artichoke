@@ -39,7 +39,7 @@
 
 #[cfg(test)]
 mod tests {
-    use mruby::*;
+    use mruby::interpreter::{Interpreter, MrbApi, MrbError};
     use std::mem;
     use std::rc::Rc;
 
