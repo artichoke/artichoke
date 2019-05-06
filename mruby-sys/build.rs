@@ -29,6 +29,10 @@ impl Build {
         format!("{}/include", Build::ext_source_dir())
     }
 
+    fn ext_source_file() -> String {
+        format!("{}/src/mruby-sys/ext.c", &Build::ext_source_dir())
+    }
+
     fn mruby_source_dir() -> String {
         format!("{}/vendor/mruby-{}", &Build::root(), MRUBY_VERSION)
     }
@@ -58,6 +62,9 @@ fn main() {
     // Build the mruby static library with its built in minirake build system.
     // minirake dynamically generates some c source files so we can't build
     // directly with the `cc` crate.
+    env::set_var("MRUBY_VERSION", MRUBY_VERSION);
+    println!("cargo:rustc-env=MRUBY_VERSION={}", MRUBY_VERSION);
+    println!("cargo:rerun-if-env-changed=MRUBY_VERSION");
     if !Command::new(Build::mruby_minirake())
         .env("MRUBY_BUILD_DIR", Build::mruby_build_dir())
         .env("MRUBY_CONFIG", Build::build_config())
@@ -75,12 +82,14 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", Build::mruby_out_dir());
 
     // Build the extension library
+    println!("cargo:rerun-if-changed={}", Build::ext_source_file());
     cc::Build::new()
-        .file(format!("{}/src/mruby-sys/ext.c", Build::ext_source_dir()))
+        .file(Build::ext_source_file())
         .include(Build::mruby_include_dir())
         .include(Build::ext_include_dir())
         .compile("libmrubysys.a");
 
+    println!("cargo:rerun-if-changed={}", Build::bindgen_source_header());
     let bindings_path: PathBuf = [&Build::root(), "src", "ffi.rs"].iter().collect();
     let bindings = bindgen::Builder::default()
         .header(Build::bindgen_source_header())
