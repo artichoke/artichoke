@@ -1,9 +1,5 @@
-#[cfg(any(feature = "mock", test))]
-extern crate pseudo;
 #[cfg(feature = "temp")]
 extern crate rand;
-#[cfg(feature = "temp")]
-extern crate tempdir;
 
 use std::ffi::OsString;
 use std::io::Result;
@@ -11,17 +7,9 @@ use std::path::{Path, PathBuf};
 
 #[cfg(feature = "fake")]
 pub use fake::{FakeFileSystem, FakeTempDir};
-#[cfg(any(feature = "mock", test))]
-pub use mock::{FakeError, MockFileSystem};
-pub use os::OsFileSystem;
-#[cfg(feature = "temp")]
-pub use os::OsTempDir;
 
 #[cfg(feature = "fake")]
 mod fake;
-#[cfg(any(feature = "mock", test))]
-mod mock;
-mod os;
 
 /// Provides standard file system operations.
 pub trait FileSystem {
@@ -177,7 +165,6 @@ pub trait FileSystem {
     fn len<P: AsRef<Path>>(&self, path: P) -> u64;
 }
 
-#[cfg(unix)]
 pub trait UnixFileSystem {
     /// Returns the current mode bits of `path`.
     ///

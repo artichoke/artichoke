@@ -6,8 +6,9 @@
 
 ### Added
 
-* `FileSystem::read_file_into` method (thanks @jean-airoldie)
+- `FileSystem::read_file_into` method (thanks @jean-airoldie)
 
 ### Fixed
 
-* `FakeFilesystem::read_dir` now returns only children, not all descendants (thanks @jean-airoldie)
+- `FakeFilesystem::read_dir` now returns only children, not all descendants
+  (thanks @jean-airoldie)

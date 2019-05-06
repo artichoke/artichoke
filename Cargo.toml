@@ -4,4 +4,5 @@ members = [
   "mruby",
   "mruby-rack",
   "mruby-sys",
+  "mruby-vfs",
 ]

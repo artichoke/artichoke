@@ -1,11 +1,9 @@
-extern crate filesystem;
+extern crate mruby_vfs;
 
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-#[cfg(unix)]
-use filesystem::UnixFileSystem;
-use filesystem::{DirEntry, FakeFileSystem, FileSystem, OsFileSystem, TempDir, TempFileSystem};
+use mruby_vfs::{DirEntry, FakeFileSystem, FileSystem, TempDir, TempFileSystem, UnixFileSystem};
 
 macro_rules! make_test {
     ($test:ident, $fs:expr) => {
@@ -112,14 +110,10 @@ macro_rules! test_fs {
             make_test!(len_returns_size_of_directory, $fs);
             make_test!(len_returns_0_if_node_does_not_exist, $fs);
 
-            #[cfg(unix)]
             make_test!(mode_returns_permissions, $fs);
-            #[cfg(unix)]
             make_test!(mode_fails_if_node_does_not_exist, $fs);
 
-            #[cfg(unix)]
             make_test!(set_mode_sets_permissions, $fs);
-            #[cfg(unix)]
             make_test!(set_mode_fails_if_node_does_not_exist, $fs);
 
             make_test!(temp_dir_creates_tempdir, $fs);
@@ -128,7 +122,6 @@ macro_rules! test_fs {
     };
 }
 
-test_fs!(os, OsFileSystem::new);
 test_fs!(fake, FakeFileSystem::new);
 
 fn set_current_dir_fails_if_node_does_not_exists<T: FileSystem>(fs: &T, parent: &Path) {
@@ -932,7 +925,6 @@ fn len_returns_0_if_node_does_not_exist<T: FileSystem>(fs: &T, parent: &Path) {
     assert_eq!(len, 0);
 }
 
-#[cfg(unix)]
 fn mode_returns_permissions<T: FileSystem + UnixFileSystem>(fs: &T, parent: &Path) {
     let path = parent.join("file");
 
@@ -959,7 +951,6 @@ fn mode_returns_permissions<T: FileSystem + UnixFileSystem>(fs: &T, parent: &Pat
     assert_eq!(result.unwrap() % 0o100_000, 0o400);
 }
 
-#[cfg(unix)]
 fn mode_fails_if_node_does_not_exist<T: UnixFileSystem>(fs: &T, parent: &Path) {
     let result = fs.mode(parent.join("does_not_exist"));
 
@@ -967,7 +958,6 @@ fn mode_fails_if_node_does_not_exist<T: UnixFileSystem>(fs: &T, parent: &Path) {
     assert_eq!(result.unwrap_err().kind(), ErrorKind::NotFound);
 }
 
-#[cfg(unix)]
 fn set_mode_sets_permissions<T: FileSystem + UnixFileSystem>(fs: &T, parent: &Path) {
     let path = parent.join("file");
 
@@ -1019,7 +1009,6 @@ fn set_mode_sets_permissions<T: FileSystem + UnixFileSystem>(fs: &T, parent: &Pa
     assert!(!readonly_result.unwrap());
 }
 
-#[cfg(unix)]
 fn set_mode_fails_if_node_does_not_exist<T: UnixFileSystem>(fs: &T, parent: &Path) {
     let result = fs.set_mode(parent.join("does_not_exist"), 0o644);
 

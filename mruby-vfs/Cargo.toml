@@ -1,0 +1,38 @@
+[package]
+name = "mruby-vfs"
+version = "0.5.0-alpha"
+description = "Fake implementation of a unix file system for an mruby sandbox"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+license = "MIT"
+repository = "https://github.com/lopopolo/foolsgold"
+readme = "README.md"
+categories = [
+  "development-tools::testing",
+  "filesystem"
+]
+keywords = [
+  "filesystem",
+  "testing",
+  "virtual",
+  "fake"
+]
+
+[lib]
+bench = false
+doctest = false
+test = false
+
+[[test]]
+name = "fs"
+required-features = ["fake", "temp"]
+
+[features]
+default = ["fake", "temp"]
+
+fake = []
+temp = ["rand"]
+testing = ["fake"]
+
+[dependencies.rand]
+version = "0.6.5"
+optional = true

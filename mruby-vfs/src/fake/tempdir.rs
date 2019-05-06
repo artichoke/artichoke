@@ -1,7 +1,9 @@
+use std::iter;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, Weak};
 
 use rand;
+use rand::distributions::Alphanumeric;
 use rand::Rng;
 
 use TempDir;
@@ -19,7 +21,10 @@ pub struct FakeTempDir {
 impl FakeTempDir {
     pub fn new(registry: Weak<Mutex<Registry>>, base: &Path, prefix: &str) -> Self {
         let mut rng = rand::thread_rng();
-        let suffix: String = rng.gen_ascii_chars().take(SUFFIX_LENGTH).collect();
+        let suffix: String = iter::repeat(())
+            .map(|_| rng.sample(Alphanumeric))
+            .take(SUFFIX_LENGTH)
+            .collect();
         let name = format!("{}_{}", prefix, suffix);
         let path = base.join(prefix).join(name);
 

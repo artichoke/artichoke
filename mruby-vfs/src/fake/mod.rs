@@ -7,7 +7,6 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::vec::IntoIter;
 
 use FileSystem;
-#[cfg(unix)]
 use UnixFileSystem;
 #[cfg(feature = "temp")]
 use {TempDir, TempFileSystem};
@@ -282,7 +281,6 @@ impl FileSystem for FakeFileSystem {
     }
 }
 
-#[cfg(unix)]
 impl UnixFileSystem for FakeFileSystem {
     fn mode<P: AsRef<Path>>(&self, path: P) -> Result<u32> {
         self.apply(path.as_ref(), |r, p| r.mode(p))
