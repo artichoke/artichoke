@@ -8,7 +8,9 @@ use crate::ffi::mrb_aspec;
 ///     The number of required arguments.
 #[inline]
 pub fn mrb_args_req(n: u32) -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_REQ(n)     ((mrb_aspec)((n)&0x1f) << 18)
+    // ```
     (n & 0x1f) << 18
 }
 
@@ -18,7 +20,9 @@ pub fn mrb_args_req(n: u32) -> mrb_aspec {
 ///      The number of optional arguments.
 #[inline]
 pub fn mrb_args_opt(n: u32) -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_OPT(n)     ((mrb_aspec)((n)&0x1f) << 13)
+    // ```
     (n & 0x1f) << 13
 }
 
@@ -30,7 +34,9 @@ pub fn mrb_args_opt(n: u32) -> mrb_aspec {
 ///      The number of optional arguments.
 #[inline]
 pub fn mrb_args_req_and_opt(n_req: u32, n_opt: u32) -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_ARG(n1,n2)   (MRB_ARGS_REQ(n1)|MRB_ARGS_OPT(n2))
+    // ```
     mrb_args_req(n_req) | mrb_args_opt(n_opt)
 }
 
@@ -41,21 +47,27 @@ pub fn mrb_args_req_and_opt(n_req: u32, n_opt: u32) -> mrb_aspec {
 /// ```
 #[inline]
 pub fn mrb_args_rest() -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_REST()     ((mrb_aspec)(1 << 12))
+    // ```
     1 << 12
 }
 
 /// required arguments after rest
 #[inline]
 pub fn mrb_args_post(n: u32) -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_POST(n)    ((mrb_aspec)((n)&0x1f) << 7)
+    // ```
     (n & 0x1f) << 7
 }
 
 /// keyword arguments (n of keys, kdict)
 #[inline]
 pub fn mrb_args_key(n1: u32, n2: u32) -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_KEY(n1,n2) ((mrb_aspec)((((n1)&0x1f) << 2) | ((n2)?(1<<1):0)))
+    // ```
     if n2 == 0 {
         (n1 & 0x1f) << 2
     } else {
@@ -66,21 +78,27 @@ pub fn mrb_args_key(n1: u32, n2: u32) -> mrb_aspec {
 /// Function takes a block argument
 #[inline]
 pub fn mrb_args_block() -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_BLOCK()    ((mrb_aspec)1)
+    // ```
     1
 }
 
 /// Function accepts any number of arguments
 #[inline]
 pub fn mrb_args_any() -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_ANY()      MRB_ARGS_REST()
+    // ```
     mrb_args_rest()
 }
 
 /// Function accepts no arguments
 #[inline]
 pub fn mrb_args_none() -> mrb_aspec {
+    // ```c
     // #define MRB_ARGS_NONE()     ((mrb_aspec)0)
+    // ```
     0
 }
 
@@ -98,6 +116,7 @@ pub fn mrb_args_none() -> mrb_aspec {
 ///
 /// format specifiers:
 ///
+/// ```text
 ///   string  mruby type     C type                 note
 ///   ----------------------------------------------------------------------------------------------
 ///   o:      Object         `mrb_value`
@@ -118,6 +137,7 @@ pub fn mrb_args_none() -> mrb_aspec {
 ///   *:      rest argument  `mrb_value*`,`mrb_int` The rest of the arguments as an array; *! avoid copy of the stack
 ///   |:      optional                              Following arguments are optional
 ///   ?:      optional given `mrb_bool`             true if preceding argument (optional) is given
+/// ```
 pub mod specifiers {
     /// Could be used to retrieve any type of argument
     pub const OBJECT: &str = "o";
@@ -138,11 +158,14 @@ pub mod specifiers {
     /// Retrieve a Hash argument or `nil`
     pub const NILABLE_HASH: &str = "H!";
     /// Retrieve a `CString` and its length. Usable like:
-    /// ```ignore
+    ///
+    /// ```c
     /// mrb_get_args(mrb, "s", &ptr, &plen);
     /// ```
     pub const CSTRING_AND_LEN: &str = "s";
-    /// Retrieve a `CString` and its length. Gives (NULL, 0) for `nil`. Usable like:
+    /// Retrieve a `CString` and its length. Gives (NULL, 0) for `nil`. Usable
+    /// like:
+    ///
     /// ```c
     /// mrb_get_args(mrb, "s", &ptr, &plen);
     /// ```
@@ -152,12 +175,14 @@ pub mod specifiers {
     /// Retrieve a NUL-terminated `CString` argument. Gives NULL for `nil`
     pub const NULLABLE_CSTRING: &str = "z!";
     /// Receive two arguments, a C Array of `mrb_value`s and len. Usable like:
+    ///
     /// ```c
     /// mrb_get_args(mrb, "a", &ptr, &blen);
     /// ```
     pub const CARRAY_AND_LEN: &str = "a";
     /// Receive two arguments, a C Array of `mrb_value`s and len. Gives
     /// (NULL, 0) for `nil`. Usable like:
+    ///
     /// ```c
     /// mrb_get_args(mrb, "a", &ptr, &blen);
     /// ```
@@ -182,11 +207,13 @@ pub mod specifiers {
     /// Retrieve a Block argument and raise an exception if none is given.
     pub const BLOCK_REQUIRED: &str = "&!";
     /// Retrieve the rest of arguments as an array; Usable like:
+    ///
     /// ```c
     /// mrb_get_args(mrb, "*", &argv, &argc);
     /// ```
     pub const REST: &str = "*";
     /// Retrieve the rest of arguments as an array; avoid copy of the stack.
+    ///
     /// ```c
     /// mrb_get_args(mrb, "*", &argv, &argc);
     /// ```

@@ -470,8 +470,7 @@ mod tests {
 
     #[test]
     // Test that require behaves as expected:
-    // - require side effects (e.g. ivar set or class def) affect the
-    //   interpreter
+    // - require side effects (e.g. ivar set or class def) affect the interpreter
     // - Successful first require returns `true`.
     // - Second require returns `false`.
     // - Second require does not cause require side effects.

@@ -18,7 +18,6 @@
 //! the following message:
 //!
 //! ```txt
-//!
 //! running 1 test
 //! test tests::unbounded_arena_growth ... FAILED
 //!
