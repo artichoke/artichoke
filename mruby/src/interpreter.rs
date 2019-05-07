@@ -1,4 +1,4 @@
-use log::{debug, trace};
+use log::{debug, error, trace, warn};
 use std::cell::RefCell;
 use std::convert::AsRef;
 use std::error;
@@ -10,7 +10,7 @@ use std::rc::Rc;
 use crate::convert::{Error, Float, Int, TryFromMrb};
 use crate::file::MrbFile;
 use crate::state::State;
-use crate::sys;
+use crate::sys::{self, DescribeState};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
@@ -69,7 +69,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
         let argspec = CString::new(sys::specifiers::CSTRING).expect("argspec");
         sys::mrb_get_args(mrb, argspec.as_ptr(), &name);
         let name = match CStr::from_ptr(name).to_str() {
-            Ok(name) => name,
+            Ok(name) => name.to_owned(),
             Err(err) => {
                 let eclass = CString::new("ArgumentError");
                 let message = CString::new(format!("{}", err));
@@ -82,7 +82,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
 
         let already_required = {
             let borrow = interp.borrow();
-            borrow.required_files.contains(name)
+            borrow.required_files.contains(&name)
         };
         if already_required {
             return interp.bool(false).inner();
@@ -92,7 +92,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
             let borrow = interp.borrow();
             borrow
                 .file_registry
-                .get(name)
+                .get(&name)
                 .or_else(|| borrow.file_registry.get(&format!("{}.rb", name)))
                 .or_else(|| borrow.file_registry.get(&format!("{}.mrb", name)))
                 .map(Clone::clone)
@@ -104,12 +104,14 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                 let mut borrow = interp.borrow_mut();
                 borrow.required_files.insert(name.to_owned());
             }
+            trace!("Successful require of '{}' on {:?}", name, interp.borrow());
             interp.bool(true).inner()
         } else {
             let eclass = CString::new("RuntimeError").expect("RuntimeError class");
             let message = format!("cannot load such file -- {}", name);
             let msg = CString::new(message).expect("error message");
             sys::mrb_sys_raise(interp.borrow().mrb, eclass.as_ptr(), msg.as_ptr());
+            debug!("Failed require '{}' on {:?}", name, interp.borrow());
             interp.bool(false).inner()
         }
     }
@@ -122,6 +124,7 @@ impl Interpreter {
         unsafe {
             let mrb = sys::mrb_open();
             if mrb.is_null() {
+                error!("Failed to allocate mrb interprter");
                 return Err(MrbError::New);
             }
 
@@ -147,6 +150,8 @@ impl Interpreter {
                 Some(require),
                 aspec,
             );
+            trace!("Installed Kernel#require on {}", mrb.debug());
+            debug!("Allocated {}", mrb.debug());
 
             // Transmute the void * pointer to the Rc back into the Mrb type.
             // After this operation `Rc::strong_count` will still be 1. This
@@ -159,10 +164,12 @@ impl Interpreter {
     // TODO: Add a benchmark to make sure this function does not leak memory.
     pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Mrb, MrbError> {
         if mrb.is_null() {
+            error!("Attempted to extract Mrb from null mrb_state");
             return Err(MrbError::Uninitialized);
         }
         let ptr = (*mrb).ud;
         if ptr.is_null() {
+            error!("Attempted to extract Mrb from null mrb_state->ud pointer");
             return Err(MrbError::Uninitialized);
         }
         // Extract the smart pointer that wraps the API from the user data on
@@ -177,6 +184,7 @@ impl Interpreter {
         // get deallocated before `mrb_close` is called.
         mem::forget(ud);
         // At this point, `Rc::strong_count` will be increased by 1.
+        trace!("Extracted Mrb from user data pointer on {}", mrb.debug());
         Ok(api)
     }
 }
@@ -278,7 +286,7 @@ impl MrbApi for Mrb {
             let arena_index = sys::mrb_sys_gc_arena_save(mrb);
             // Execute arbitrary ruby code, which may generate objects with C
             // APIs if backed by Rust functions.
-            trace!("Evaling code on {:?}", self);
+            debug!("Evaling code on {}", mrb.debug());
             let result =
                 sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx);
             // Restore the GC arena to its stack position before calling `eval`
@@ -287,15 +295,12 @@ impl MrbApi for Mrb {
             sys::mrb_sys_gc_arena_restore(mrb, arena_index);
             // Force a full garbage collection to clean up the objects we have
             // stranded beyond the restored end of the arena.
-            trace!("Initiating full garbage collection on {:?}", mrb);
+            trace!("Initiating full garbage collection on {}", mrb.debug());
             sys::mrb_garbage_collect(mrb);
             result
         };
         if let Some(backtrace) = self.current_exception() {
-            debug!(
-                "mruby runtime error with exception backtrace: {}",
-                backtrace
-            );
+            warn!("runtime error with exception backtrace: {}", backtrace);
             return Err(MrbError::Exec(backtrace));
         }
         Ok(Value::new(result))
@@ -308,6 +313,7 @@ impl MrbApi for Mrb {
         let mrb = self.borrow().mrb;
         let exc = unsafe { (*mrb).exc };
         if exc.is_null() {
+            trace!("Last eval had no runtime errors: mrb_state has no current exception");
             return None;
         }
         let error = unsafe {
@@ -350,7 +356,7 @@ impl MrbApi for Mrb {
             sys::mrb_sys_gc_arena_restore(mrb, arena_index);
             // Force a full garbage collection to clean up the objects we have
             // stranded beyond the restored end of the arena.
-            trace!("Initiating full garbage collection on {:?}", mrb);
+            trace!("Initiating full garbage collection on {}", mrb.debug());
             sys::mrb_garbage_collect(mrb);
             error
         };

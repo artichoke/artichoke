@@ -61,7 +61,11 @@ impl MrbFile for Counter {
         extern "C" fn inc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
                 let total_requests = SEEN_REQUESTS_COUNTER.fetch_add(1, Ordering::SeqCst);
-                debug!("Logged request number {} in {}", total_requests, mrb.debug());
+                debug!(
+                    "Logged request number {} in {}",
+                    total_requests,
+                    mrb.debug()
+                );
                 sys::mrb_sys_nil_value()
             }
         }
