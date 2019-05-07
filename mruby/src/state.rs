@@ -1,6 +1,7 @@
 use std::any::{Any, TypeId};
 use std::collections::{HashMap, HashSet};
 use std::ffi::c_void;
+use std::fmt;
 use std::mem;
 use std::rc::Rc;
 
@@ -8,7 +9,7 @@ use crate::class;
 use crate::def::{ClassLike, Free, Parent};
 use crate::interpreter::Mrb;
 use crate::module;
-use crate::sys;
+use crate::sys::{self, DescribeState};
 
 // NOTE: MrbState assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Mrb`] as created by [`Interpreter::create`].
@@ -120,5 +121,17 @@ impl Drop for State {
             self.ctx = std::ptr::null_mut();
             self.mrb = std::ptr::null_mut();
         };
+    }
+}
+
+impl fmt::Debug for State {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.mrb.debug())
+    }
+}
+
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.mrb.info())
     }
 }

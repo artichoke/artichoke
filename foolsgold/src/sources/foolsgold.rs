@@ -2,7 +2,7 @@ use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define, Parent};
 use mruby::file::MrbFile;
 use mruby::interpreter::{Mrb, MrbApi};
-use mruby::sys;
+use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
 use mruby::{interpreter_or_raise, unwrap_or_raise};
 use std::cell::RefCell;
@@ -61,10 +61,7 @@ impl MrbFile for Counter {
         extern "C" fn inc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
                 let total_requests = SEEN_REQUESTS_COUNTER.fetch_add(1, Ordering::SeqCst);
-                debug!(
-                    "Logged request number {} in interpreter {:p}",
-                    total_requests, mrb
-                );
+                debug!("Logged request number {} in {}", total_requests, mrb.debug());
                 sys::mrb_sys_nil_value()
             }
         }
@@ -171,7 +168,7 @@ impl MrbFile for RequestContext {
                 };
                 let data = mem::transmute::<*mut c_void, Rc<RefCell<RequestContext>>>(ptr);
                 let trace_id = data.borrow().trace_id;
-                info!("Retrieved trace id {} in interpreter {:p}", trace_id, mrb);
+                info!("Retrieved trace id {} in {:?}", trace_id, interp);
                 mem::forget(data);
                 unwrap_or_raise!(interp, Value::try_from_mrb(&interp, trace_id.to_string()))
             }

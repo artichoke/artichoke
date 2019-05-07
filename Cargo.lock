@@ -367,7 +367,7 @@ dependencies = [
  "env_logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "mruby-sys 0.1.0",
+ "mruby-sys 2.0.1-sys.1.c078758",
  "quickcheck 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck_macros 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "mruby-sys"
-version = "0.1.0"
+version = "2.0.1-sys.1.c078758"
 dependencies = [
  "bindgen 0.49.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.36 (registry+https://github.com/rust-lang/crates.io-index)",

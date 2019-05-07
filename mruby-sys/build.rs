@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 /// vendored mruby version
-const MRUBY_VERSION: &str = "c078758";
+const MRUBY_REVISION: &str = "c078758";
 
 /// Path helpers
 struct Build;
@@ -34,7 +34,7 @@ impl Build {
     }
 
     fn mruby_source_dir() -> String {
-        format!("{}/vendor/mruby-{}", &Build::root(), MRUBY_VERSION)
+        format!("{}/vendor/mruby-{}", &Build::root(), MRUBY_REVISION)
     }
 
     fn mruby_minirake() -> String {
@@ -62,9 +62,9 @@ fn main() {
     // Build the mruby static library with its built in minirake build system.
     // minirake dynamically generates some c source files so we can't build
     // directly with the `cc` crate.
-    env::set_var("MRUBY_VERSION", MRUBY_VERSION);
-    println!("cargo:rustc-env=MRUBY_VERSION={}", MRUBY_VERSION);
-    println!("cargo:rerun-if-env-changed=MRUBY_VERSION");
+    env::set_var("MRUBY_REVISION", MRUBY_REVISION);
+    println!("cargo:rustc-env=MRUBY_REVISION={}", MRUBY_REVISION);
+    println!("cargo:rerun-if-env-changed=MRUBY_REVISION");
     if !Command::new(Build::mruby_minirake())
         .env("MRUBY_BUILD_DIR", Build::mruby_build_dir())
         .env("MRUBY_CONFIG", Build::build_config())

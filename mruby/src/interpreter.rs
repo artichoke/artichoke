@@ -278,7 +278,7 @@ impl MrbApi for Mrb {
             let arena_index = sys::mrb_sys_gc_arena_save(mrb);
             // Execute arbitrary ruby code, which may generate objects with C
             // APIs if backed by Rust functions.
-            trace!("Evaling code on mruby interpreter {:p}", mrb);
+            trace!("Evaling code on {:?}", self);
             let result =
                 sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx);
             // Restore the GC arena to its stack position before calling `eval`
@@ -287,10 +287,7 @@ impl MrbApi for Mrb {
             sys::mrb_sys_gc_arena_restore(mrb, arena_index);
             // Force a full garbage collection to clean up the objects we have
             // stranded beyond the restored end of the arena.
-            trace!(
-                "Initiating full garbage collection on mruby interpreter {:p}",
-                mrb
-            );
+            trace!("Initiating full garbage collection on {:?}", mrb);
             sys::mrb_garbage_collect(mrb);
             result
         };
@@ -353,10 +350,7 @@ impl MrbApi for Mrb {
             sys::mrb_sys_gc_arena_restore(mrb, arena_index);
             // Force a full garbage collection to clean up the objects we have
             // stranded beyond the restored end of the arena.
-            trace!(
-                "Initiating full garbage collection on mruby interpreter {:p}",
-                mrb
-            );
+            trace!("Initiating full garbage collection on {:?}", mrb);
             sys::mrb_garbage_collect(mrb);
             error
         };
