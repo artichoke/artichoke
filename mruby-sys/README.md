@@ -12,11 +12,12 @@ mruby supports
 [cross compilation](https://github.com/mruby/mruby/blob/master/doc/guides/compile.md#cross-compilation-1),
 but this crate does not.
 
-## mruby-sys Extension Library
+## mruby-sys C Extension
 
-mruby-sys provides a small extension library (functions prefixed with
-`mrb_sys_`) that is primarily focused on providing wrappers around macros found
-in mruby headers.
+mruby-sys provides a small C extension library (functions prefixed with
+`mrb_sys_`) that is provides wrappers around macros and inline functions found
+in mruby headers. The C extension also includes functions for doing fiddly
+things with C unions that are more convenient to do in C.
 
 ## LICENSE
 
