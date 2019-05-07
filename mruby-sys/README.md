@@ -19,7 +19,7 @@ mruby-sys provides a small C extension library (functions prefixed with
 in mruby headers. The C extension also includes functions for doing fiddly
 things with C unions that are more convenient to do in C.
 
-## LICENSE
+## License
 
 mruby-sys is licensed under the [MIT License](../LICENCE). Some portions of
 mruby-sys are derived from
