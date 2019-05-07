@@ -6,10 +6,10 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::vec::IntoIter;
 
-use FileSystem;
-use UnixFileSystem;
+use crate::FileSystem;
+use crate::UnixFileSystem;
 #[cfg(feature = "temp")]
-use {TempDir, TempFileSystem};
+use crate::{TempDir, TempFileSystem};
 
 #[cfg(feature = "temp")]
 pub use self::tempdir::FakeTempDir;
@@ -40,7 +40,7 @@ impl DirEntry {
     }
 }
 
-impl ::DirEntry for DirEntry {
+impl crate::DirEntry for DirEntry {
     fn file_name(&self) -> OsString {
         self.file_name.clone()
     }
@@ -67,7 +67,7 @@ impl Iterator for ReadDir {
     }
 }
 
-impl ::ReadDir<DirEntry> for ReadDir {}
+impl crate::ReadDir<DirEntry> for ReadDir {}
 
 /// An in-memory file system.
 #[derive(Clone, Debug, Default)]

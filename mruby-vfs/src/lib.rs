@@ -6,7 +6,7 @@ use std::io::Result;
 use std::path::{Path, PathBuf};
 
 #[cfg(feature = "fake")]
-pub use fake::{FakeFileSystem, FakeTempDir};
+pub use crate::fake::{FakeFileSystem, FakeTempDir};
 
 #[cfg(feature = "fake")]
 mod fake;

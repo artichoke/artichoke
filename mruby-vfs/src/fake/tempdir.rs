@@ -6,7 +6,7 @@ use rand;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 
-use TempDir;
+use crate::TempDir;
 
 use super::Registry;
 
