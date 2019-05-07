@@ -7,7 +7,7 @@ pub struct File {
 impl File {
     pub fn new(contents: Vec<u8>) -> Self {
         File {
-            contents: contents,
+            contents,
             mode: 0o644,
         }
     }

@@ -17,10 +17,7 @@ impl Registry {
 
         files.insert(cwd.clone(), Node::Dir(Dir::new()));
 
-        Registry {
-            cwd: cwd,
-            files: files,
-        }
+        Registry { cwd, files }
     }
 
     pub fn current_dir(&self) -> Result<PathBuf> {
