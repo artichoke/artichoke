@@ -15,8 +15,6 @@ pub trait Interpreter {
     where
         T: AsRef<[u8]>;
 
-    fn stringify(&self, value: Value) -> String;
-
     fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
     where
         T: TryFromMrb<Value, From = Ruby, To = Rust>;
@@ -81,10 +79,7 @@ where
             return Err(Status::InternalServerError);
         }
     };
-    let body: String = body
-        .into_iter()
-        .map(|part| interp.stringify(part))
-        .collect();
+    let body: String = body.into_iter().map(|part| part.to_s()).collect();
     let status = u16::try_from(status)
         .ok()
         .and_then(Status::from_code)

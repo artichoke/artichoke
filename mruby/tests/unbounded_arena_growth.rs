@@ -85,9 +85,12 @@ mod tests {
         check_leaks(|| {
             let interp = Rc::clone(&interp);
             let code = "bad_code";
+            let arena = interp.create_arena_savepoint();
             let result = interp.eval(code).map(|_| ());
+            interp.restore_arena(arena);
             assert_eq!(result, expected);
             drop(result);
+            interp.incremental_gc();
         })
     }
 }

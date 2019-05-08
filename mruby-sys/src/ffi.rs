@@ -4234,92 +4234,90 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " Extract the integer value from a Fixnum `mrb_value`"]
-    #[link_name = "\u{1}_mrb_sys_fixnum_to_cint"]
-    pub fn mrb_sys_fixnum_to_cint(value: mrb_value) -> mrb_int;
-}
-extern "C" {
-    #[doc = " Extract the float value from a Float `mrb_value`"]
-    #[link_name = "\u{1}_mrb_sys_float_to_cdouble"]
-    pub fn mrb_sys_float_to_cdouble(value: mrb_value) -> mrb_float;
-}
-extern "C" {
-    #[doc = " Test if an `mrb_value` is a Ruby `nil`"]
     #[link_name = "\u{1}_mrb_sys_value_is_nil"]
     pub fn mrb_sys_value_is_nil(value: mrb_value) -> bool;
 }
 extern "C" {
-    #[doc = " Test if an `mrb_value` is a Ruby `false`"]
     #[link_name = "\u{1}_mrb_sys_value_is_false"]
     pub fn mrb_sys_value_is_false(value: mrb_value) -> bool;
 }
 extern "C" {
-    #[doc = " Test if an `mrb_value` is a Ruby `true`"]
     #[link_name = "\u{1}_mrb_sys_value_is_true"]
     pub fn mrb_sys_value_is_true(value: mrb_value) -> bool;
 }
 extern "C" {
-    #[doc = " Extract the `RClass` from a Class `mrb_value`"]
+    #[link_name = "\u{1}_mrb_sys_fixnum_to_cint"]
+    pub fn mrb_sys_fixnum_to_cint(value: mrb_value) -> mrb_int;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_float_to_cdouble"]
+    pub fn mrb_sys_float_to_cdouble(value: mrb_value) -> mrb_float;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_basic_ptr"]
+    pub fn mrb_sys_basic_ptr(value: mrb_value) -> *mut RBasic;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_obj_ptr"]
+    pub fn mrb_sys_obj_ptr(value: mrb_value) -> *mut RObject;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_proc_ptr"]
+    pub fn mrb_sys_proc_ptr(value: mrb_value) -> *mut RProc;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_class_ptr"]
+    pub fn mrb_sys_class_ptr(value: mrb_value) -> *mut RClass;
+}
+extern "C" {
     #[link_name = "\u{1}_mrb_sys_class_to_rclass"]
     pub fn mrb_sys_class_to_rclass(value: mrb_value) -> *mut RClass;
 }
 extern "C" {
-    #[doc = " Create an `mrb_value` representing `nil`"]
+    #[link_name = "\u{1}_mrb_sys_class_of_value"]
+    pub fn mrb_sys_class_of_value(mrb: *mut mrb_state, value: mrb_value) -> *mut RClass;
+}
+extern "C" {
     #[link_name = "\u{1}_mrb_sys_nil_value"]
     pub fn mrb_sys_nil_value() -> mrb_value;
 }
 extern "C" {
-    #[doc = " Create an `mrb_value` representing `false`"]
     #[link_name = "\u{1}_mrb_sys_false_value"]
     pub fn mrb_sys_false_value() -> mrb_value;
 }
 extern "C" {
-    #[doc = " Create an `mrb_value` representing `true`"]
     #[link_name = "\u{1}_mrb_sys_true_value"]
     pub fn mrb_sys_true_value() -> mrb_value;
 }
 extern "C" {
-    #[doc = " Create an `mrb_value` representing an integer (a `Fixnum`)"]
     #[link_name = "\u{1}_mrb_sys_fixnum_value"]
     pub fn mrb_sys_fixnum_value(value: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Create an `mrb_value` representing a float"]
     #[link_name = "\u{1}_mrb_sys_float_value"]
     pub fn mrb_sys_float_value(mrb: *mut mrb_state, value: mrb_float) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Create an `mrb_value` from an `RProc`"]
-    #[link_name = "\u{1}_mrb_sys_proc_value"]
-    pub fn mrb_sys_proc_value(mrb: *mut mrb_state, proc_: *mut RProc) -> mrb_value;
-}
-extern "C" {
-    #[doc = " Create a `Class` `mrb_value` from an `RClass`"]
-    #[link_name = "\u{1}_mrb_sys_class_value"]
-    pub fn mrb_sys_class_value(klass: *mut RClass) -> mrb_value;
-}
-extern "C" {
-    #[doc = " Create a `Module` `mrb_value` from an `RClass`"]
-    #[link_name = "\u{1}_mrb_sys_module_value"]
-    pub fn mrb_sys_module_value(module: *mut RClass) -> mrb_value;
-}
-extern "C" {
-    #[doc = " Create an `mrb_value` from an `RData`"]
-    #[link_name = "\u{1}_mrb_sys_data_value"]
-    pub fn mrb_sys_data_value(data: *mut RData) -> mrb_value;
-}
-extern "C" {
-    #[doc = " Create an `mrb_value` from a `void *`"]
     #[link_name = "\u{1}_mrb_sys_obj_value"]
     pub fn mrb_sys_obj_value(p: *mut ::std::os::raw::c_void) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Set instance type tag"]
-    #[link_name = "\u{1}_mrb_sys_set_instance_tt"]
-    pub fn mrb_sys_set_instance_tt(class: *mut RClass, type_: mrb_vtype);
+    #[link_name = "\u{1}_mrb_sys_class_value"]
+    pub fn mrb_sys_class_value(klass: *mut RClass) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Get a C string with the name of the symbol identified by an `mrb_value`"]
+    #[link_name = "\u{1}_mrb_sys_module_value"]
+    pub fn mrb_sys_module_value(module: *mut RClass) -> mrb_value;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_data_value"]
+    pub fn mrb_sys_data_value(data: *mut RData) -> mrb_value;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_proc_value"]
+    pub fn mrb_sys_proc_value(mrb: *mut mrb_state, proc_: *mut RProc) -> mrb_value;
+}
+extern "C" {
     #[link_name = "\u{1}_mrb_sys_symbol_name"]
     pub fn mrb_sys_symbol_name(
         mrb: *mut mrb_state,
@@ -4327,13 +4325,16 @@ extern "C" {
     ) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[doc = " Create a new symbol from a C string"]
     #[link_name = "\u{1}_mrb_sys_new_symbol"]
     pub fn mrb_sys_new_symbol(
         mrb: *mut mrb_state,
         string: *const ::std::os::raw::c_char,
         len: usize,
     ) -> mrb_value;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_set_instance_tt"]
+    pub fn mrb_sys_set_instance_tt(class: *mut RClass, type_: mrb_vtype);
 }
 extern "C" {
     #[link_name = "\u{1}_mrb_sys_data_init"]
@@ -4344,17 +4345,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " Raise the most recent thrown exception on `mrb_state`"]
-    #[link_name = "\u{1}_mrb_sys_raise_current_exception"]
-    pub fn mrb_sys_raise_current_exception(mrb: *mut mrb_state);
-}
-extern "C" {
-    #[doc = " Generate a String `mrb_value` from a value suitable for debug logging"]
-    #[link_name = "\u{1}_mrb_sys_value_debug_str"]
-    pub fn mrb_sys_value_debug_str(mrb: *mut mrb_state, value: mrb_value) -> mrb_value;
-}
-extern "C" {
-    #[doc = " Raise an exception class with a message"]
     #[link_name = "\u{1}_mrb_sys_raise"]
     pub fn mrb_sys_raise(
         mrb: *mut mrb_state,
@@ -4363,21 +4353,14 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " Check if a class is defined under another class or module"]
-    #[link_name = "\u{1}_mrb_sys_class_defined_under"]
-    pub fn mrb_sys_class_defined_under(
-        mrb: *mut mrb_state,
-        outer: *mut RClass,
-        name: *const ::std::os::raw::c_char,
-    ) -> mrb_bool;
+    #[link_name = "\u{1}_mrb_sys_raise_current_exception"]
+    pub fn mrb_sys_raise_current_exception(mrb: *mut mrb_state);
 }
 extern "C" {
-    #[doc = " Get the `RClass` representing the `Class` of an `mrb_value`"]
-    #[link_name = "\u{1}_mrb_sys_class_of_value"]
-    pub fn mrb_sys_class_of_value(mrb: *mut mrb_state, value: mrb_value) -> *mut RClass;
+    #[link_name = "\u{1}_mrb_sys_value_debug_str"]
+    pub fn mrb_sys_value_debug_str(mrb: *mut mrb_state, value: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Get length of an `Array`"]
     #[link_name = "\u{1}_mrb_sys_ary_len"]
     pub fn mrb_sys_ary_len(value: mrb_value) -> mrb_int;
 }
@@ -4395,9 +4378,28 @@ extern "C" {
     pub fn mrb_sys_gc_arena_restore(mrb: *mut mrb_state, arena_index: ::std::os::raw::c_int);
 }
 extern "C" {
-    #[doc = " Get an `RBasic` pointer to an mruby object."]
-    #[link_name = "\u{1}_mrb_sys_basic_ptr"]
-    pub fn mrb_sys_basic_ptr(value: mrb_value) -> *mut RBasic;
+    #[link_name = "\u{1}_mrb_sys_gc_disable"]
+    pub fn mrb_sys_gc_disable(mrb: *mut mrb_state);
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_gc_enable"]
+    pub fn mrb_sys_gc_enable(mrb: *mut mrb_state);
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_value_is_dead"]
+    pub fn mrb_sys_value_is_dead(_mrb: *mut mrb_state, value: mrb_value) -> bool;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_gc_live_objects"]
+    pub fn mrb_sys_gc_live_objects(mrb: *mut mrb_state) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    #[link_name = "\u{1}_mrb_sys_class_defined_under"]
+    pub fn mrb_sys_class_defined_under(
+        mrb: *mut mrb_state,
+        outer: *mut RClass,
+        name: *const ::std::os::raw::c_char,
+    ) -> bool;
 }
 pub type __builtin_va_list = [__va_list_tag; 1usize];
 #[repr(C)]

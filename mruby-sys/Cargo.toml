@@ -1,6 +1,6 @@
 [package]
 name = "mruby-sys"
-version = "2.0.1-sys.1.c078758"
+version = "2.0.1-sys.2.c078758"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 links = "mruby"

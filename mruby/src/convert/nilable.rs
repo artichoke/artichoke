@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
 use crate::convert::{Error, TryFromMrb};
@@ -20,12 +22,12 @@ impl TryFromMrb<Option<Value>> for Value {
     type To = Ruby;
 
     unsafe fn try_from_mrb(
-        _mrb: &Mrb,
+        mrb: &Mrb,
         value: Option<Self>,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         match value {
             Some(value) => Ok(value),
-            None => Ok(Self::new(sys::mrb_sys_nil_value())),
+            None => Ok(Self::new(Rc::clone(mrb), sys::mrb_sys_nil_value())),
         }
     }
 }

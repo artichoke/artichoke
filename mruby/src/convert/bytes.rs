@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::rc::Rc;
 
 use crate::convert::{Error, TryFromMrb};
 use crate::interpreter::Mrb;
@@ -28,7 +29,10 @@ impl TryFromMrb<&[u8]> for Value {
         // `char *` and `size_t`.
         let raw = value.as_ptr() as *const i8;
         let len = value.len();
-        Ok(Self::new(sys::mrb_str_new(mrb.borrow().mrb, raw, len)))
+        Ok(Self::new(
+            Rc::clone(mrb),
+            sys::mrb_str_new(mrb.borrow().mrb, raw, len),
+        ))
     }
 }
 

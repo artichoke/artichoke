@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::rc::Rc;
 
 use crate::convert::fixnum::Int;
 use crate::convert::{Error, TryFromMrb};
@@ -28,7 +29,7 @@ impl TryFromMrb<Vec<(Value, Value)>> for Value {
         for (key, value) in value {
             sys::mrb_hash_set(mrb.borrow().mrb, hash, key.inner(), value.inner());
         }
-        Ok(Self::new(hash))
+        Ok(Self::new(Rc::clone(mrb), hash))
     }
 }
 
@@ -43,7 +44,7 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
                 let inner = value.inner();
                 let keys = <Vec<Value>>::try_from_mrb(
                     mrb,
-                    Value::new(sys::mrb_hash_keys(mrb.borrow().mrb, inner)),
+                    Value::new(Rc::clone(mrb), sys::mrb_hash_keys(mrb.borrow().mrb, inner)),
                 );
                 let keys = keys.map_err(|_| Error {
                     from: Ruby::Hash,
@@ -52,7 +53,7 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
                 let mut kv_pairs = Self::with_capacity(keys.len());
                 for key in keys {
                     let value = sys::mrb_hash_get(mrb.borrow().mrb, inner, key.inner());
-                    let value = Value::new(value);
+                    let value = Value::new(Rc::clone(mrb), value);
                     kv_pairs.push((key, value));
                 }
                 Ok(kv_pairs)
@@ -87,7 +88,7 @@ mod value {
 
                 let value = Value::try_from_mrb(&interp, map).expect("convert");
 
-                assert_eq!("{1=>2, 100=>1000}", value.to_s(&interp));
+                assert_eq!("{1=>2, 100=>1000}", value.to_s());
 
                 let mut kv_pairs =
                     <Vec<(Value, Value)>>::try_from_mrb(&interp, value).expect("convert");

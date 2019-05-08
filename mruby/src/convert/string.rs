@@ -1,4 +1,5 @@
 use std::ffi::{CStr, CString};
+use std::rc::Rc;
 
 use crate::convert::{Error, TryFromMrb};
 use crate::interpreter::Mrb;
@@ -34,7 +35,10 @@ impl TryFromMrb<&str> for Value {
         match CString::new(value) {
             Ok(cstr) => {
                 let ptr = cstr.as_ptr();
-                Ok(Self::new(sys::mrb_str_new_cstr(mrb.borrow().mrb, ptr)))
+                Ok(Self::new(
+                    Rc::clone(mrb),
+                    sys::mrb_str_new_cstr(mrb.borrow().mrb, ptr),
+                ))
             }
             Err(_) => Err(Error {
                 from: Rust::String,
@@ -108,7 +112,7 @@ mod tests {
                 let value = Value::try_from_mrb(&interp, s.clone());
                 match value {
                     Ok(value) => {
-                        let to_s = value.to_s(&interp);
+                        let to_s = value.to_s();
                         to_s == s
                     }
                     Err(err) => {
@@ -191,7 +195,7 @@ mod tests {
                 let value = Value::try_from_mrb(&interp, s);
                 match value {
                     Ok(value) => {
-                        let to_s = value.to_s(&interp);
+                        let to_s = value.to_s();
                         to_s == s
                     }
                     Err(err) => {

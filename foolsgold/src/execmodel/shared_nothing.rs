@@ -16,10 +16,6 @@ impl Interpreter for Mrb {
         MrbApi::eval(self, code.as_ref())
     }
 
-    fn stringify(&self, value: Value) -> String {
-        unsafe { value.to_s(self) }
-    }
-
     fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
     where
         T: TryFromMrb<Value, From = Ruby, To = Rust>,

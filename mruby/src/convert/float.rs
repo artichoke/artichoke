@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::convert::{Error, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
@@ -11,7 +13,10 @@ impl TryFromMrb<Float> for Value {
     type To = Ruby;
 
     unsafe fn try_from_mrb(mrb: &Mrb, value: Float) -> Result<Self, Error<Self::From, Self::To>> {
-        Ok(Self::new(sys::mrb_sys_float_value(mrb.borrow().mrb, value)))
+        Ok(Self::new(
+            Rc::clone(mrb),
+            sys::mrb_sys_float_value(mrb.borrow().mrb, value),
+        ))
     }
 }
 

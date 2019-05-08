@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::rc::Rc;
 
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
@@ -55,7 +56,7 @@ impl TryFromMrb<Vec<Value>> for Value {
             let inner = item.inner();
             sys::mrb_ary_set(mrb.borrow().mrb, array, idx, inner);
         }
-        Ok(Self::new(array))
+        Ok(Self::new(Rc::clone(mrb), array))
     }
 }
 
@@ -78,7 +79,10 @@ impl TryFromMrb<Value> for Vec<Value> {
                         from: Ruby::Array,
                         to: Rust::Vec,
                     })?;
-                    let item = Value::new(sys::mrb_ary_ref(mrb.borrow().mrb, inner, idx));
+                    let item = Value::new(
+                        Rc::clone(mrb),
+                        sys::mrb_ary_ref(mrb.borrow().mrb, inner, idx),
+                    );
                     vec.push(item);
                 }
                 Ok(vec)

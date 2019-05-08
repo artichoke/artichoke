@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::convert::{Error, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
@@ -10,8 +12,8 @@ impl TryFromMrb<Int> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(_mrb: &Mrb, value: Int) -> Result<Self, Error<Self::From, Self::To>> {
-        Ok(Self::new(sys::mrb_sys_fixnum_value(value)))
+    unsafe fn try_from_mrb(mrb: &Mrb, value: Int) -> Result<Self, Error<Self::From, Self::To>> {
+        Ok(Self::new(Rc::clone(mrb), sys::mrb_sys_fixnum_value(value)))
     }
 }
 

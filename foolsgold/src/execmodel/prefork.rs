@@ -26,10 +26,6 @@ impl Interpreter for &INTERPRETER {
         MrbApi::eval(&*self.borrow(), code.as_ref())
     }
 
-    fn stringify(&self, value: Value) -> String {
-        unsafe { value.to_s(&*self.borrow()) }
-    }
-
     fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
     where
         T: TryFromMrb<Value, From = Ruby, To = Rust>,
