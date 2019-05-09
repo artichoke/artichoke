@@ -23,7 +23,12 @@ impl Interpreter for &INTERPRETER {
     where
         T: AsRef<[u8]>,
     {
-        MrbApi::eval(&*self.borrow(), code.as_ref())
+        // there is still a leak, 10MB per 10,000 requests
+        let arena = MrbApi::create_arena_savepoint(&*self.borrow());
+        let result = MrbApi::eval(&*self.borrow(), code.as_ref());
+        MrbApi::restore_arena(&*self.borrow(), arena);
+        MrbApi::incremental_gc(&*self.borrow());
+        result
     }
 
     fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
