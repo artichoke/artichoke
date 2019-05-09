@@ -343,6 +343,10 @@ impl MrbApi for Mrb {
         let result = unsafe {
             // Execute arbitrary ruby code, which may generate objects with C
             // APIs if backed by Rust functions.
+            //
+            // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
+            // which means the most recent value returned by eval will always be
+            // considered live by the GC.
             sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx)
         };
         if let Some(backtrace) = self.current_exception() {
@@ -555,16 +559,18 @@ mod tests {
         interp
             .eval(
                 r#"
-                # this value will be garbage collected because it is unreachable
+                # this value will be garbage collected because it is eventually
+                # shadowed and becomes unreachable
                 a = []
-                # this value will not be garbage collected because it is bound
-                # to a global variable
+                # this value will not be garbage collected because it is a local
+                # variable in top self
                 a = []
-                # this value will be garbage collected because it is unreachable
+                # this value will not be garbage collected because it is a local
+                # variable in top self
                 b = []
-                # this value will be garbage collected because we unprotect it
-                # by restoring the arena.
-                b = []
+                # this value will not be garbage collected because the last value
+                # returned by eval is retained with "stack keep"
+                []
                 "#,
             )
             .expect("eval");
@@ -580,7 +586,7 @@ mod tests {
         interp.full_gc();
         assert_eq!(
             interp.live_object_count(),
-            live - 3,
+            live - 2,
             "Arrays should be collected after enabling GC and running a full GC"
         );
     }
