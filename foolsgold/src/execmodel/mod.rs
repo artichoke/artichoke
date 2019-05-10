@@ -79,7 +79,10 @@ where
             return Err(Status::InternalServerError);
         }
     };
-    let body = parts.into_iter().flat_map(convert::identity).collect::<Vec<u8>>();
+    let body = parts
+        .into_iter()
+        .flat_map(convert::identity)
+        .collect::<Vec<u8>>();
     let status = u16::try_from(status)
         .ok()
         .and_then(Status::from_code)

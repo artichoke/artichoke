@@ -9,37 +9,25 @@
 //! If resident memory increases more than 10MB during the test, we likely are
 //! leaking memory.
 //!
-//! This test fails when reverting commit
-//! `34ee3ddc1c5f4eb1d20f19dd772b0ca348391b2f` with a fairly massive leak and
-//! the following message:
-//!
-//! ```txt
-//! running 1 test
-//! test tests::rust_backed_mrb_value_smart_pointer_leak ... FAILED
-//!
-//! failures:
-//!
-//! ---- tests::rust_backed_mrb_value_smart_pointer_leak stdout ----
-//! thread 'tests::rust_backed_mrb_value_smart_pointer_leak' panicked at 'Plausible memory leak!
-//! After 2000 iterations, usage before: 1228800, usage after: 4094840832', mruby/tests/mrb_tt_data_rc_memory_leak.rs:75:9
-//! note: Run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
-//!
-//!
-//! failures:
-//!     tests::rust_backed_mrb_value_smart_pointer_leak
-//!
-//! test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
-//! ```
+//! This test fails before commit
+//! `34ee3ddc1c5f4eb1d20f19dd772b0ca348391b2f` with a fairly massive leak.
 
 use mruby::def::{ClassLike, Define};
 use mruby::file::MrbFile;
-use mruby::interpreter::{Interpreter, Mrb};
+use mruby::interpreter::{Interpreter, Mrb, MrbApi};
 use mruby::interpreter_or_raise;
 use mruby::sys;
 use std::cell::RefCell;
 use std::ffi::{c_void, CStr, CString};
 use std::mem;
 use std::rc::Rc;
+
+mod leak;
+
+use leak::LeakDetector;
+
+const ITERATIONS: usize = 2000;
+const LEAK_TOLERANCE: i64 = 1024 * 1024 * 10;
 
 #[derive(Clone, Debug, Default)]
 struct Container {
@@ -91,49 +79,15 @@ impl MrbFile for Container {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use mruby::interpreter::MrbApi;
+#[test]
+fn rust_backed_mrb_value_smart_pointer_leak() {
+    LeakDetector::new("smart pointer", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
+        let mut interp = Interpreter::create().expect("mrb init");
+        interp.def_file_for_type::<_, Container>("container");
 
-    use super::*;
-
-    const LEAK_TOLERANCE: i64 = 1024 * 1024 * 10;
-    const ITERATIONS: usize = 2000;
-
-    fn check_leaks<F>(mut execute: F)
-    where
-        F: FnMut() -> (),
-    {
-        let start_mem = resident_memsize();
-        for _ in 0..ITERATIONS {
-            execute();
-        }
-        let end_mem = resident_memsize();
-        assert!(
-            end_mem <= start_mem + LEAK_TOLERANCE,
-            "Plausible memory leak!\nAfter {} iterations, usage before: {}, usage after: {}",
-            ITERATIONS,
-            start_mem,
-            end_mem
-        );
-    }
-
-    fn resident_memsize() -> i64 {
-        let mut out: libc::rusage = unsafe { mem::zeroed() };
-        assert!(unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut out) } == 0);
-        out.ru_maxrss
-    }
-
-    #[test]
-    fn rust_backed_mrb_value_smart_pointer_leak() {
-        check_leaks(|| {
-            let mut interp = Interpreter::create().expect("mrb init");
-            interp.def_file_for_type::<_, Container>("container");
-
-            let code = "require 'container'; Container.new('a' * 1024 * 1024)";
-            let result = interp.eval(code);
-            assert_eq!(true, result.is_ok());
-            drop(interp);
-        })
-    }
+        let code = "require 'container'; Container.new('a' * 1024 * 1024)";
+        let result = interp.eval(code);
+        assert_eq!(true, result.is_ok());
+        drop(interp);
+    });
 }

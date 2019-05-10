@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use crate::interpreter::Mrb;
+use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 
 pub mod types;
@@ -31,14 +31,15 @@ impl Value {
     }
 
     pub fn to_s(&self) -> String {
+        let arena = self.interp.create_arena_savepoint();
         let mrb = { self.interp.borrow().mrb };
         // `mrb_str_to_str` is defined in object.h. This function has
         // specialized to_s implementations for String, Fixnum, Class, and
         // Module. For all other type tags, it calls `to_s` in the
         // mrb interpreter.
-        // TODO: These function calls generate objects in the arena
         let to_s = unsafe { sys::mrb_str_to_str(mrb, self.value) };
         let cstr = unsafe { sys::mrb_str_to_cstr(mrb, to_s) };
+        self.interp.restore_arena(arena);
         unsafe { CStr::from_ptr(cstr) }
             .to_str()
             .unwrap_or_else(|_| "<unknown>")
@@ -46,11 +47,12 @@ impl Value {
     }
 
     pub fn to_s_debug(&self) -> String {
+        let arena = self.interp.create_arena_savepoint();
         let mrb = { self.interp.borrow().mrb };
-        // TODO: These function calls generate objects in the arena
         let debug = unsafe { sys::mrb_sys_value_debug_str(mrb, self.value) };
         let cstr = unsafe { sys::mrb_str_to_cstr(mrb, debug) };
         let string = unsafe { CStr::from_ptr(cstr) }.to_string_lossy();
+        self.interp.restore_arena(arena);
         format!("{}<{}>", self.ruby_type().class_name(), string)
     }
 }
