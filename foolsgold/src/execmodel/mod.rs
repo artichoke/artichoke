@@ -4,7 +4,7 @@ use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
 use rocket::http::Status;
 use rocket::Response;
-use std::convert::{AsRef, TryFrom};
+use std::convert::{self, AsRef, TryFrom};
 use std::io::Cursor;
 
 pub mod prefork;
@@ -72,14 +72,14 @@ where
         warn!("rack response unexpected length: missing body");
         return Err(Status::InternalServerError);
     };
-    let body = match interp.try_value::<Vec<Value>>(body) {
-        Ok(body) => body,
+    let parts = match interp.try_value::<Vec<Vec<u8>>>(body) {
+        Ok(parts) => parts,
         Err(err) => {
             warn!("rack response type error: {}", err);
             return Err(Status::InternalServerError);
         }
     };
-    let body: String = body.into_iter().map(|part| part.to_s()).collect();
+    let body = parts.into_iter().flat_map(convert::identity).collect::<Vec<u8>>();
     let status = u16::try_from(status)
         .ok()
         .and_then(Status::from_code)
