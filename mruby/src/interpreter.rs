@@ -588,4 +588,14 @@ mod tests {
         let required = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
         assert!(!required);
     }
+
+    #[test]
+    fn require_directory() {
+        let interp = Interpreter::create().expect("mrb init");
+        let result = interp.eval("require '/src'").map(|_| ());
+        let expected = Err(MrbError::Exec(
+            "LoadError: cannot load such file -- /src".to_owned(),
+        ));
+        assert_eq!(result, expected);
+    }
 }
