@@ -16,6 +16,7 @@ use mruby::def::{ClassLike, Define};
 use mruby::file::MrbFile;
 use mruby::interpreter::{Interpreter, Mrb, MrbApi};
 use mruby::interpreter_or_raise;
+use mruby::load::MrbLoadSources;
 use mruby::sys;
 use std::cell::RefCell;
 use std::ffi::{c_void, CStr, CString};
@@ -83,7 +84,9 @@ impl MrbFile for Container {
 fn rust_backed_mrb_value_smart_pointer_leak() {
     LeakDetector::new("smart pointer", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let mut interp = Interpreter::create().expect("mrb init");
-        interp.def_file_for_type::<_, Container>("container");
+        interp
+            .def_file_for_type::<_, Container>("container")
+            .expect("def file");
 
         let code = "require 'container'; Container.new('a' * 1024 * 1024)";
         let result = interp.eval(code);

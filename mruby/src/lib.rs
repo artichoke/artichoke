@@ -8,6 +8,7 @@ pub mod convert;
 pub mod def;
 pub mod file;
 pub mod gc;
+pub mod load;
 pub mod method;
 pub mod module;
 pub mod state;

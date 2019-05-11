@@ -5,6 +5,7 @@ use std::convert::AsRef;
 use std::error;
 use std::ffi::{c_void, CStr, CString};
 use std::fmt;
+use std::io;
 use std::mem;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -12,7 +13,6 @@ use std::rc::Rc;
 use crate::class;
 use crate::convert::{Error, Float, Int, TryFromMrb};
 use crate::def::{ClassLike, Define};
-use crate::file::MrbFile;
 use crate::gc::GarbageCollection;
 use crate::module;
 use crate::state::{State, VfsMetadata};
@@ -256,13 +256,22 @@ impl Interpreter {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub enum MrbError {
     ConvertToRuby(Error<Rust, Ruby>),
     ConvertToRust(Error<Ruby, Rust>),
     Exec(String),
     New,
     Uninitialized,
+    Vfs(io::Error),
+}
+
+impl Eq for MrbError {}
+
+impl PartialEq for MrbError {
+    fn eq(&self, other: &Self) -> bool {
+        format!("{}", self) == format!("{}", other)
+    }
 }
 
 impl fmt::Display for MrbError {
@@ -273,6 +282,7 @@ impl fmt::Display for MrbError {
             MrbError::ConvertToRuby(inner) => write!(f, "conversion error: {}", inner),
             MrbError::ConvertToRust(inner) => write!(f, "conversion error: {}", inner),
             MrbError::Uninitialized => write!(f, "mrb interpreter not initialized"),
+            MrbError::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
         }
     }
 }
@@ -286,6 +296,7 @@ impl error::Error for MrbError {
         match self {
             MrbError::ConvertToRuby(inner) => Some(inner),
             MrbError::ConvertToRust(inner) => Some(inner),
+            MrbError::Vfs(inner) => Some(inner),
             _ => None,
         }
     }
@@ -300,15 +311,6 @@ pub trait MrbApi {
         T: AsRef<[u8]>;
 
     fn current_exception(&self) -> Option<String>;
-
-    fn def_file<T>(&mut self, filename: T, require: fn(Self))
-    where
-        T: AsRef<str>;
-
-    fn def_file_for_type<T, F>(&mut self, filename: T)
-    where
-        T: AsRef<str>,
-        F: MrbFile;
 
     fn nil(&self) -> Value;
 
@@ -408,41 +410,6 @@ impl MrbApi for Mrb {
         error.ok().map(|exception| exception.join("\n"))
     }
 
-    fn def_file<T>(&mut self, filename: T, require: fn(Self))
-    where
-        T: AsRef<str>,
-    {
-        let mut path = PathBuf::from(filename.as_ref());
-        if path.is_relative() {
-            path = PathBuf::from(RUBY_LOAD_PATH).join(path);
-        }
-        if let Some(parent) = path.parent() {
-            self.borrow()
-                .vfs
-                .create_dir_all(parent)
-                .expect("create ancestors in vfs");
-        }
-        let metadata = VfsMetadata::new(Some(require));
-        let content = format!("# virtual source file -- {}", filename.as_ref());
-        self.borrow()
-            .vfs
-            .create_file(&path, content)
-            .expect("create file in vfs");
-        self.borrow()
-            .vfs
-            .set_metadata(&path, metadata)
-            .expect("set metadata in vfs");
-        trace!("Defined file {:?}", path);
-    }
-
-    fn def_file_for_type<T, F>(&mut self, filename: T)
-    where
-        T: AsRef<str>,
-        F: MrbFile,
-    {
-        self.def_file(filename.as_ref(), F::require);
-    }
-
     fn nil(&self) -> Value {
         let nil = None::<Value>;
         unsafe { Value::try_from_mrb(self, nil) }.expect("None -> nil conversion is infallible")
@@ -471,7 +438,11 @@ impl MrbApi for Mrb {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::convert::TryFromMrb;
+    use crate::file::MrbFile;
+    use crate::interpreter::{Interpreter, Mrb, MrbApi, MrbError};
+    use crate::load::MrbLoadSources;
+    use crate::sys;
 
     #[test]
     fn from_user_data_null_pointer() {
@@ -548,7 +519,9 @@ mod tests {
 
         unsafe {
             let mut interp = Interpreter::create().expect("mrb init");
-            interp.def_file_for_type::<_, InterpreterRequireTest>("interpreter-require-test");
+            interp
+                .def_file_for_type::<_, InterpreterRequireTest>("interpreter-require-test")
+                .expect("def file");
             let result = interp
                 .eval("require 'interpreter-require-test'")
                 .expect("eval");
@@ -577,23 +550,14 @@ mod tests {
 
     #[test]
     fn require_absolute_path() {
-        let interp = Interpreter::create().expect("mrb init");
+        let mut interp = Interpreter::create().expect("mrb init");
         interp
-            .borrow()
-            .vfs
-            .create_dir_all("/foo/bar")
-            .expect("dirs");
-        interp
-            .borrow()
-            .vfs
-            .create_file("/foo/bar/source.rb", "# source file")
-            .expect("source file");
+            .def_rb_source_file("/foo/bar/source.rb", "# a source file")
+            .expect("def file");
         let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
-        let required = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
-        assert!(required);
+        assert!(unsafe { bool::try_from_mrb(&interp, result).expect("convert") });
         let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
-        let required = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
-        assert!(!required);
+        assert!(!unsafe { bool::try_from_mrb(&interp, result).expect("convert") });
     }
 
     #[test]

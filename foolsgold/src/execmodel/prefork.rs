@@ -1,6 +1,7 @@
 use mruby::convert::{Error, TryFromMrb};
 use mruby::gc::GarbageCollection;
 use mruby::interpreter::{self, Mrb, MrbApi, MrbError};
+use mruby::load::MrbLoadSources;
 use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
 use ref_thread_local::RefThreadLocal;
@@ -13,8 +14,8 @@ use crate::sources::{foolsgold, rackup};
 ref_thread_local! {
     static managed INTERPRETER: Mrb = {
         let mut interp = interpreter::Interpreter::create().expect("mrb interpreter");
-        interp.def_file_for_type::<_, mruby_rack::Builder>("rack/builder");
-        interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold");
+        interp.def_file_for_type::<_, mruby_rack::Builder>("rack/builder").expect("def rack");
+        interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold").expect("def foolsgold");
         interp
     };
 }

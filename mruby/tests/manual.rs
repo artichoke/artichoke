@@ -5,6 +5,7 @@ use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define};
 use mruby::file::MrbFile;
 use mruby::interpreter::{Interpreter, Mrb};
+use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
 use mruby::{interpreter_or_raise, unwrap_or_raise};
@@ -102,7 +103,9 @@ mod tests {
         env_logger::Builder::from_env("MRUBY_LOG").init();
 
         let mut interp = Interpreter::create().expect("mrb init");
-        interp.def_file_for_type::<_, Container>("container");
+        interp
+            .def_file_for_type::<_, Container>("container")
+            .expect("def file");
 
         let code = "require 'container'; Container.new(15).value";
         let result = interp.eval(code).expect("no exceptions");
