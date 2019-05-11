@@ -39,7 +39,7 @@ impl ClassLike for Spec {
     }
 
     fn add_self_method(&mut self, name: &str, method: Method, args: sys::mrb_aspec) {
-        let spec = method::Spec::new(method::Type::Class, name, method, args);
+        let spec = method::Spec::new(method::Type::Module, name, method, args);
         self.methods.insert(spec);
     }
 

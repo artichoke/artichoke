@@ -1,5 +1,6 @@
+use mruby_vfs::{FakeFileSystem, FileSystem};
 use std::any::{Any, TypeId};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ffi::c_void;
 use std::fmt;
 use std::mem;
@@ -11,6 +12,32 @@ use crate::interpreter::Mrb;
 use crate::module;
 use crate::sys::{self, DescribeState};
 
+#[derive(Clone, Debug)]
+pub struct VfsMetadata {
+    pub require: Option<fn(Mrb)>,
+    already_required: bool,
+}
+
+impl VfsMetadata {
+    pub fn new(require: Option<fn(Mrb)>) -> Self {
+        Self {
+            require,
+            already_required: false,
+        }
+    }
+
+    pub fn mark_required(&self) -> Self {
+        Self {
+            require: self.require,
+            already_required: true,
+        }
+    }
+
+    pub fn is_already_required(&self) -> bool {
+        self.already_required
+    }
+}
+
 // NOTE: MrbState assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Mrb`] as created by [`Interpreter::create`].
 pub struct State {
@@ -21,20 +48,19 @@ pub struct State {
     classes: HashMap<TypeId, Rc<class::Spec>>,
     modules: HashMap<TypeId, Rc<module::Spec>>,
     // TODO: Make this private
-    pub(crate) file_registry: HashMap<String, Box<fn(Mrb)>>,
-    // TODO: Make this private
-    pub(crate) required_files: HashSet<String>,
+    pub(crate) vfs: FakeFileSystem<VfsMetadata>,
 }
 
 impl State {
-    pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context) -> Self {
+    pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context, source_dir: &str) -> Self {
+        let vfs = FakeFileSystem::new();
+        vfs.create_dir_all(source_dir).expect("vfs init");
         Self {
             mrb,
             ctx,
             classes: HashMap::new(),
             modules: HashMap::new(),
-            file_registry: HashMap::new(),
-            required_files: HashSet::new(),
+            vfs,
         }
     }
 

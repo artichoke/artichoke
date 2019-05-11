@@ -1,0 +1,10 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+nofications:
+  email: false
+script:
+  - cargo build --verbose --all-features
+  - cargo test --verbose --all-features
