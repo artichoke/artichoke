@@ -7,17 +7,14 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::vec::IntoIter;
 
 use crate::UnixFileSystem;
-#[cfg(feature = "temp")]
 use crate::{TempDir, TempFileSystem};
 
-#[cfg(feature = "temp")]
 pub use self::tempdir::FakeTempDir;
 
 use self::registry::Registry;
 
 mod node;
 mod registry;
-#[cfg(feature = "temp")]
 mod tempdir;
 
 #[derive(Debug, Clone)]
@@ -299,7 +296,6 @@ impl<Metadata: Clone> UnixFileSystem for FileSystem<Metadata> {
     }
 }
 
-#[cfg(feature = "temp")]
 impl<Metadata: Clone> TempFileSystem for FileSystem<Metadata> {
     type TempDir = FakeTempDir<Metadata>;
 

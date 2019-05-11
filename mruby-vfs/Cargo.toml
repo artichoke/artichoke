@@ -25,15 +25,6 @@ test = false
 
 [[test]]
 name = "fs"
-required-features = ["fake", "temp"]
-
-[features]
-default = ["fake", "temp"]
-
-fake = []
-temp = ["rand"]
-testing = ["fake"]
 
 [dependencies.rand]
 version = "0.6.5"
-optional = true

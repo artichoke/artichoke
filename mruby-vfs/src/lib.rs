@@ -1,18 +1,12 @@
 #![deny(clippy::all, clippy::pedantic)]
 
-#[cfg(feature = "temp")]
-extern crate rand;
-
 use std::ffi::OsString;
 use std::io::Result;
 use std::path::{Path, PathBuf};
 
-#[cfg(feature = "fake")]
-pub use crate::fake::FileSystem as FakeFileSystem;
-#[cfg(feature = "fake")]
 pub use crate::fake::FakeTempDir;
+pub use crate::fake::FileSystem as FakeFileSystem;
 
-#[cfg(feature = "fake")]
 mod fake;
 
 /// Provides standard file system operations.
@@ -216,7 +210,6 @@ pub trait UnixFileSystem {
     fn set_mode<P: AsRef<Path>>(&self, path: P, mode: u32) -> Result<()>;
 }
 
-#[cfg(feature = "temp")]
 /// Tracks a temporary directory that will be deleted once the struct goes out of scope.
 pub trait TempDir {
     /// Returns the [`Path`] of the temporary directory.
@@ -225,7 +218,6 @@ pub trait TempDir {
     fn path(&self) -> &Path;
 }
 
-#[cfg(feature = "temp")]
 pub trait TempFileSystem {
     type TempDir: TempDir;
 
