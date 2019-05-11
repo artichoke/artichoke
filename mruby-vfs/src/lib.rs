@@ -21,6 +21,7 @@ pub trait FileSystem {
     ///
     /// [`std::env::current_dir`]: https://doc.rust-lang.org/std/env/fn.current_dir.html
     fn current_dir(&self) -> Result<PathBuf>;
+
     /// Updates the current working directory.
     /// This is based on [`std::env::set_current_dir`].
     ///
@@ -29,6 +30,7 @@ pub trait FileSystem {
 
     /// Determines whether the path exists and points to a directory.
     fn is_dir<P: AsRef<Path>>(&self, path: P) -> bool;
+
     /// Determines whether the path exists and points to a file.
     fn is_file<P: AsRef<Path>>(&self, path: P) -> bool;
 
@@ -37,21 +39,25 @@ pub trait FileSystem {
     ///
     /// [`std::fs::create_dir`]: https://doc.rust-lang.org/std/fs/fn.create_dir.html
     fn create_dir<P: AsRef<Path>>(&self, path: P) -> Result<()>;
+
     /// Recursively creates a directory and any missing parents.
     /// This is based on [`std::fs::create_dir`].
     ///
     /// [`std::fs::create_dir_all`]: https://doc.rust-lang.org/std/fs/fn.create_dir_all.html
     fn create_dir_all<P: AsRef<Path>>(&self, path: P) -> Result<()>;
+
     /// Removes an empty directory.
     /// This is based on [`std::fs::remove_dir`].
     ///
     /// [`std::fs::remove_dir`]: https://doc.rust-lang.org/std/fs/fn.remove_dir.html
     fn remove_dir<P: AsRef<Path>>(&self, path: P) -> Result<()>;
+
     /// Removes a directory and any child files or directories.
     /// This is based on [`std::fs::remove_dir_all`].
     ///
     /// [`std::fs::remove_dir_all`]: https://doc.rust-lang.org/std/fs/fn.remove_dir_all.html
     fn remove_dir_all<P: AsRef<Path>>(&self, path: P) -> Result<()>;
+
     /// Returns an iterator over the entries in a directory.
     /// This is based on [`std::fs::read_dir`].
     ///
@@ -69,6 +75,7 @@ pub trait FileSystem {
     where
         P: AsRef<Path>,
         B: AsRef<[u8]>;
+
     /// Writes `buf` to a new or existing file at `buf`.
     /// This will overwrite any contents that already exist.
     ///
@@ -80,6 +87,7 @@ pub trait FileSystem {
     where
         P: AsRef<Path>,
         B: AsRef<[u8]>;
+
     /// Writes `buf` to an existing file at `buf`.
     /// This will overwrite any contents that already exist.
     ///
@@ -92,6 +100,7 @@ pub trait FileSystem {
     where
         P: AsRef<Path>,
         B: AsRef<[u8]>;
+
     /// Returns the contents of `path`.
     ///
     /// # Errors
@@ -100,6 +109,7 @@ pub trait FileSystem {
     /// * `path` is a directory.
     /// * Current user has insufficient permissions.
     fn read_file<P: AsRef<Path>>(&self, path: P) -> Result<Vec<u8>>;
+
     /// Returns the contents of `path` as a string.
     ///
     /// # Errors
@@ -109,6 +119,7 @@ pub trait FileSystem {
     /// * Current user has insufficient permissions.
     /// * Contents are not valid UTF-8
     fn read_file_to_string<P: AsRef<Path>>(&self, path: P) -> Result<String>;
+
     /// Writes the contents of `path` into the buffer. If successful, returns
     /// the number of bytes that were read.
     ///
@@ -121,11 +132,13 @@ pub trait FileSystem {
     where
         P: AsRef<Path>,
         B: AsMut<Vec<u8>>;
+
     /// Removes the file at `path`.
     /// This is based on [`std::fs::remove_file`].
     ///
     /// [`std::fs::remove_file`]: https://doc.rust-lang.org/std/fs/fn.remove_file.html
     fn remove_file<P: AsRef<Path>>(&self, path: P) -> Result<()>;
+
     /// Copies the file at path `from` to the path `to`.
     /// This is based on [`std::fs::copy`].
     ///
@@ -152,6 +165,7 @@ pub trait FileSystem {
     /// * `path` does not exist.
     /// * Current user has insufficient permissions.
     fn readonly<P: AsRef<Path>>(&self, path: P) -> Result<bool>;
+
     /// Sets or unsets the readonly flag of `path`.
     ///
     /// # Errors
@@ -173,6 +187,7 @@ pub trait UnixFileSystem {
     /// * `path` does not exist.
     /// * Current user has insufficient permissions.
     fn mode<P: AsRef<Path>>(&self, path: P) -> Result<u32>;
+
     /// Sets the mode bits of `path`.
     ///
     /// # Errors
