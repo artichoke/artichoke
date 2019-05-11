@@ -78,9 +78,8 @@ MRuby::GemBox.new do |conf|
   # Use ObjectSpace class
   # conf.gem core: 'mruby-objectspace'
 
-  # NOTE: Disable Fibers in sandboxed code.
   # Use Fiber class
-  # conf.gem core: 'mruby-fiber'
+  conf.gem core: 'mruby-fiber'
 
   # Use Enumerator class (require mruby-fiber)
   conf.gem core: 'mruby-enumerator'
