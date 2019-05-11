@@ -164,4 +164,91 @@ mod tests {
         assert_eq!(&spec.fqname(), "A::C::F");
         assert_eq!(&format!("{}", spec), "mruby class spec -- A::C::F");
     }
+
+    mod functional {
+        use crate::convert::TryFromMrb;
+        use crate::def::{ClassLike, Define};
+        use crate::interpreter::{Interpreter, MrbApi};
+        use crate::sys;
+
+        #[test]
+        fn define_method() {
+            struct Class;
+            struct Module;
+
+            extern "C" fn value(_mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+                unsafe {
+                    match slf.tt {
+                        sys::mrb_vtype::MRB_TT_CLASS => sys::mrb_sys_fixnum_value(8),
+                        sys::mrb_vtype::MRB_TT_MODULE => sys::mrb_sys_fixnum_value(27),
+                        sys::mrb_vtype::MRB_TT_OBJECT => sys::mrb_sys_fixnum_value(64),
+                        _ => sys::mrb_sys_fixnum_value(125),
+                    }
+                }
+            }
+            let interp = Interpreter::create().expect("mrb init");
+            {
+                let mut api = interp.borrow_mut();
+                api.def_class::<Class>("DefineMethodTestClass", None, None);
+                api.def_module::<Module>("DefineMethodTestModule", None);
+            }
+            {
+                let mut api = interp.borrow_mut();
+                let spec = api.class_spec_mut::<Class>();
+                spec.add_method("value", value, sys::mrb_args_none());
+                spec.add_self_method("value", value, sys::mrb_args_none());
+            }
+            {
+                let mut api = interp.borrow_mut();
+                let spec = api.module_spec_mut::<Module>();
+                spec.add_method("value", value, sys::mrb_args_none());
+                spec.add_self_method("value", value, sys::mrb_args_none());
+            }
+            {
+                let api = interp.borrow();
+                api.class_spec::<Class>()
+                    .define(&interp)
+                    .expect("class install");
+                api.module_spec::<Module>()
+                    .define(&interp)
+                    .expect("module install");
+            }
+
+            interp
+                .eval(
+                    r#"
+                    class DynamicTestClass
+                        include DefineMethodTestModule
+                        extend DefineMethodTestModule
+                    end
+
+                    module DynamicTestModule
+                        extend DefineMethodTestModule
+                    end
+                    "#,
+                )
+                .expect("eval");
+
+            let result = interp
+                .eval("DefineMethodTestClass.new.value")
+                .expect("eval");
+            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            assert_eq!(result, 64);
+            let result = interp.eval("DefineMethodTestClass.value").expect("eval");
+            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            assert_eq!(result, 8);
+            let result = interp.eval("DefineMethodTestModule.value").expect("eval");
+            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            assert_eq!(result, 27);
+            let result = interp.eval("DynamicTestClass.new.value").expect("eval");
+            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            assert_eq!(result, 64);
+            let result = interp.eval("DynamicTestClass.value").expect("eval");
+            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            assert_eq!(result, 8);
+            let result = interp.eval("DynamicTestModule.value").expect("eval");
+            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            assert_eq!(result, 27);
+        }
+    }
 }
