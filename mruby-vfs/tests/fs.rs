@@ -110,6 +110,12 @@ macro_rules! test_fs {
             make_test!(len_returns_size_of_directory, $fs);
             make_test!(len_returns_0_if_node_does_not_exist, $fs);
 
+            make_test!(metadata_returns_none_if_node_is_directory, $fs);
+            make_test!(metadata_returns_none_if_node_does_not_exist, $fs);
+            make_test!(set_metadata_returns_err_if_node_is_directory, $fs);
+            make_test!(set_metadata_returns_err_if_node_does_not_exist, $fs);
+            make_test!(metadata_set_and_get_roundtrips, $fs);
+
             make_test!(mode_returns_permissions, $fs);
             make_test!(mode_fails_if_node_does_not_exist, $fs);
 
@@ -122,7 +128,7 @@ macro_rules! test_fs {
     };
 }
 
-test_fs!(fake, FakeFileSystem::new);
+test_fs!(fake, FakeFileSystem::<String>::new);
 
 fn set_current_dir_fails_if_node_does_not_exists<T: FileSystem>(fs: &T, parent: &Path) {
     let path = parent.join("does_not_exist");
@@ -923,6 +929,62 @@ fn len_returns_0_if_node_does_not_exist<T: FileSystem>(fs: &T, parent: &Path) {
     let len = fs.len(&path);
 
     assert_eq!(len, 0);
+}
+
+fn metadata_returns_none_if_node_is_directory<T: FileSystem>(fs: &T, parent: &Path) {
+    let path = parent.join("directory");
+    let result = fs.create_dir(&path);
+
+    assert!(result.is_ok());
+
+    let metadata = fs.metadata(&path);
+
+    assert!(metadata.is_none());
+}
+
+fn metadata_returns_none_if_node_does_not_exist<T: FileSystem>(fs: &T, parent: &Path) {
+    let path = parent.join("does-not-exist");
+    let metadata = fs.metadata(&path);
+
+    assert!(metadata.is_none());
+}
+
+fn set_metadata_returns_err_if_node_is_directory<T: FileSystem<Metadata = String>>(
+    fs: &T,
+    parent: &Path,
+) {
+    let path = parent.join("directory");
+    let result = fs.create_dir(&path);
+
+    assert!(result.is_ok());
+
+    let result = fs.set_metadata(&path, "metadata".to_owned());
+
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err().kind(), ErrorKind::Other);
+}
+
+fn set_metadata_returns_err_if_node_does_not_exist<T: FileSystem<Metadata = String>>(
+    fs: &T,
+    parent: &Path,
+) {
+    let path = parent.join("does-not-exist");
+    let result = fs.set_metadata(&path, "metadata".to_owned());
+
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err().kind(), ErrorKind::NotFound);
+}
+
+fn metadata_set_and_get_roundtrips<T: FileSystem<Metadata = String>>(fs: &T, parent: &Path) {
+    let path = parent.join("file");
+
+    fs.create_file(&path, "").unwrap();
+
+    let result = fs.set_metadata(&path, "metadata".to_owned());
+    assert!(result.is_ok());
+
+    let metadata = fs.metadata(&path);
+    assert_eq!(metadata, Some("metadata".to_owned()));
 }
 
 fn mode_returns_permissions<T: FileSystem + UnixFileSystem>(fs: &T, parent: &Path) {

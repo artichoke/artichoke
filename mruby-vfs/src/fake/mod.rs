@@ -71,11 +71,11 @@ impl crate::ReadDir<DirEntry> for ReadDir {}
 
 /// An in-memory file system.
 #[derive(Clone, Debug, Default)]
-pub struct FakeFileSystem {
-    registry: Arc<Mutex<Registry>>,
+pub struct FakeFileSystem<Metadata: Clone> {
+    registry: Arc<Mutex<Registry<Metadata>>>,
 }
 
-impl FakeFileSystem {
+impl<Metadata: Clone> FakeFileSystem<Metadata> {
     pub fn new() -> Self {
         let registry = Registry::new();
 
@@ -86,7 +86,7 @@ impl FakeFileSystem {
 
     fn apply<F, T>(&self, path: &Path, f: F) -> T
     where
-        F: FnOnce(&MutexGuard<Registry>, &Path) -> T,
+        F: FnOnce(&MutexGuard<Registry<Metadata>>, &Path) -> T,
     {
         let registry = self.registry.lock().unwrap();
         let storage;
@@ -105,7 +105,7 @@ impl FakeFileSystem {
 
     fn apply_mut<F, T>(&self, path: &Path, mut f: F) -> T
     where
-        F: FnMut(&mut MutexGuard<Registry>, &Path) -> T,
+        F: FnMut(&mut MutexGuard<Registry<Metadata>>, &Path) -> T,
     {
         let mut registry = self.registry.lock().unwrap();
         let storage;
@@ -124,7 +124,7 @@ impl FakeFileSystem {
 
     fn apply_mut_from_to<F, T>(&self, from: &Path, to: &Path, mut f: F) -> T
     where
-        F: FnMut(&mut MutexGuard<Registry>, &Path, &Path) -> T,
+        F: FnMut(&mut MutexGuard<Registry<Metadata>>, &Path, &Path) -> T,
     {
         let mut registry = self.registry.lock().unwrap();
         let from_storage;
@@ -152,9 +152,10 @@ impl FakeFileSystem {
     }
 }
 
-impl FileSystem for FakeFileSystem {
+impl<Metadata: Clone> FileSystem for FakeFileSystem<Metadata> {
     type DirEntry = DirEntry;
     type ReadDir = ReadDir;
+    type Metadata = Metadata;
 
     fn current_dir(&self) -> Result<PathBuf> {
         let registry = self.registry.lock().unwrap();
@@ -279,9 +280,17 @@ impl FileSystem for FakeFileSystem {
     fn len<P: AsRef<Path>>(&self, path: P) -> u64 {
         self.apply(path.as_ref(), |r, p| r.len(p))
     }
+
+    fn metadata<P: AsRef<Path>>(&self, path: P) -> Option<Self::Metadata> {
+        self.apply(path.as_ref(), |r, p| r.get_metadata(p))
+    }
+
+    fn set_metadata<P: AsRef<Path>>(&self, path: P, metadata: Self::Metadata) -> Result<()> {
+        self.apply_mut(path.as_ref(), |r, p| r.set_metadata(p, metadata.clone()))
+    }
 }
 
-impl UnixFileSystem for FakeFileSystem {
+impl<Metadata: Clone> UnixFileSystem for FakeFileSystem<Metadata> {
     fn mode<P: AsRef<Path>>(&self, path: P) -> Result<u32> {
         self.apply(path.as_ref(), |r, p| r.mode(p))
     }
@@ -292,8 +301,8 @@ impl UnixFileSystem for FakeFileSystem {
 }
 
 #[cfg(feature = "temp")]
-impl TempFileSystem for FakeFileSystem {
-    type TempDir = FakeTempDir;
+impl<Metadata: Clone> TempFileSystem for FakeFileSystem<Metadata> {
+    type TempDir = FakeTempDir<Metadata>;
 
     fn temp_dir<S: AsRef<str>>(&self, prefix: S) -> Result<Self::TempDir> {
         let base = env::temp_dir();

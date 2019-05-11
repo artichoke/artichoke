@@ -5,12 +5,12 @@ use std::path::{Path, PathBuf};
 use super::node::{Dir, File, Node};
 
 #[derive(Debug, Clone, Default)]
-pub struct Registry {
+pub struct Registry<Metadata: Clone> {
     cwd: PathBuf,
-    files: HashMap<PathBuf, Node>,
+    files: HashMap<PathBuf, Node<Metadata>>,
 }
 
-impl Registry {
+impl<Metadata: Clone> Registry<Metadata> {
     pub fn new() -> Self {
         let cwd = PathBuf::from("/");
         let mut files = HashMap::new();
@@ -264,7 +264,7 @@ impl Registry {
         }
     }
 
-    fn get_file(&self, path: &Path) -> Result<&File> {
+    fn get_file(&self, path: &Path) -> Result<&File<Metadata>> {
         match self.files.get(path) {
             Some(&Node::File(ref file)) => Ok(file),
             Some(_) => Err(create_error(ErrorKind::Other)),
@@ -272,7 +272,7 @@ impl Registry {
         }
     }
 
-    fn get_file_mut(&mut self, path: &Path) -> Result<&mut File> {
+    fn get_file_mut(&mut self, path: &Path) -> Result<&mut File<Metadata>> {
         match self.files.get_mut(path) {
             Some(&mut Node::File(ref mut file)) => {
                 if file.mode & 0o222 == 0 {
@@ -286,7 +286,7 @@ impl Registry {
         }
     }
 
-    fn insert(&mut self, path: PathBuf, file: Node) -> Result<()> {
+    fn insert(&mut self, path: PathBuf, file: Node<Metadata>) -> Result<()> {
         if self.files.contains_key(&path) {
             return Err(create_error(ErrorKind::AlreadyExists));
         } else if let Some(p) = path.parent() {
@@ -298,7 +298,7 @@ impl Registry {
         Ok(())
     }
 
-    fn remove(&mut self, path: &Path) -> Result<Node> {
+    fn remove(&mut self, path: &Path) -> Result<Node<Metadata>> {
         match self.files.remove(path) {
             Some(f) => Ok(f),
             None => Err(create_error(ErrorKind::NotFound)),
@@ -337,6 +337,24 @@ impl Registry {
         }
 
         Ok(())
+    }
+
+    pub fn get_metadata(&self, path: &Path) -> Option<Metadata> {
+        match self.files.get(path) {
+            Some(&Node::File(ref file)) => file.metadata.clone(),
+            _ => None,
+        }
+    }
+
+    pub fn set_metadata(&mut self, path: &Path, metadata: Metadata) -> Result<()> {
+        match self.files.get_mut(path) {
+            Some(&mut Node::File(ref mut file)) => {
+                file.metadata = Some(metadata);
+                Ok(())
+            }
+            Some(_) => Err(create_error(ErrorKind::Other)),
+            None => Err(create_error(ErrorKind::NotFound)),
+        }
     }
 }
 

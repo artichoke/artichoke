@@ -1,14 +1,16 @@
 #[derive(Debug, Clone)]
-pub struct File {
+pub struct File<Metadata> {
     pub contents: Vec<u8>,
     pub mode: u32,
+    pub metadata: Option<Metadata>
 }
 
-impl File {
+impl<Metadata> File<Metadata> {
     pub fn new(contents: Vec<u8>) -> Self {
         File {
             contents,
             mode: 0o644,
+            metadata: None,
         }
     }
 }
@@ -25,12 +27,12 @@ impl Dir {
 }
 
 #[derive(Debug, Clone)]
-pub enum Node {
-    File(File),
+pub enum Node<Metadata> {
+    File(File<Metadata>),
     Dir(Dir),
 }
 
-impl Node {
+impl<Metadata> Node<Metadata> {
     pub fn is_file(&self) -> bool {
         match *self {
             Node::File(_) => true,

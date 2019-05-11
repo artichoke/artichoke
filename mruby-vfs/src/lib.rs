@@ -1,3 +1,5 @@
+#![feature(inner_deref)]
+
 #[cfg(feature = "temp")]
 extern crate rand;
 
@@ -15,6 +17,7 @@ mod fake;
 pub trait FileSystem {
     type DirEntry: DirEntry;
     type ReadDir: ReadDir<Self::DirEntry>;
+    type Metadata: Clone;
 
     /// Returns the current working directory.
     /// This is based on [`std::env::current_dir`].
@@ -177,6 +180,20 @@ pub trait FileSystem {
     /// Returns the length of the node at the path
     /// or 0 if the node does not exist.
     fn len<P: AsRef<Path>>(&self, path: P) -> u64;
+
+    /// Read metadata of `path`.
+    ///
+    /// If `path` does not exist, return None. If `path` is a directory, return
+    /// None. If `path` has no metadata, return None.
+    fn metadata<P: AsRef<Path>>(&self, path: P) -> Option<Self::Metadata>;
+
+    /// Set metadata of `path`.
+    ///
+    /// # Errors
+    ///
+    /// * `path` does not exist.
+    /// * `path` is not a file.
+    fn set_metadata<P: AsRef<Path>>(&self, path: P, metadata: Self::Metadata) -> Result<()>;
 }
 
 pub trait UnixFileSystem {

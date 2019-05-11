@@ -13,13 +13,13 @@ use super::Registry;
 const SUFFIX_LENGTH: usize = 10;
 
 #[derive(Debug, Clone)]
-pub struct FakeTempDir {
-    registry: Weak<Mutex<Registry>>,
+pub struct FakeTempDir<Metadata: Clone> {
+    registry: Weak<Mutex<Registry<Metadata>>>,
     path: PathBuf,
 }
 
-impl FakeTempDir {
-    pub fn new(registry: Weak<Mutex<Registry>>, base: &Path, prefix: &str) -> Self {
+impl<Metadata: Clone> FakeTempDir<Metadata> {
+    pub fn new(registry: Weak<Mutex<Registry<Metadata>>>, base: &Path, prefix: &str) -> Self {
         let mut rng = rand::thread_rng();
         let suffix: String = iter::repeat(())
             .map(|_| rng.sample(Alphanumeric))
@@ -32,13 +32,13 @@ impl FakeTempDir {
     }
 }
 
-impl TempDir for FakeTempDir {
+impl<Metadata: Clone> TempDir for FakeTempDir<Metadata> {
     fn path(&self) -> &Path {
         self.path.as_ref()
     }
 }
 
-impl Drop for FakeTempDir {
+impl<Metadata: Clone> Drop for FakeTempDir<Metadata> {
     fn drop(&mut self) {
         if let Some(registry) = self.registry.upgrade() {
             let _ = registry.lock().unwrap().remove_dir_all(&self.path);
