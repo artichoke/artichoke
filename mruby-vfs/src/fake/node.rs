@@ -7,7 +7,7 @@ pub struct File<Metadata> {
 
 impl<Metadata> File<Metadata> {
     pub fn new(contents: Vec<u8>) -> Self {
-        File {
+        Self {
             contents,
             mode: 0o644,
             metadata: None,
@@ -22,7 +22,7 @@ pub struct Dir {
 
 impl Dir {
     pub fn new() -> Self {
-        Dir { mode: 0o644 }
+        Self { mode: 0o644 }
     }
 }
 

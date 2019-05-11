@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::vec::IntoIter;
 
-use crate::FileSystem;
 use crate::UnixFileSystem;
 #[cfg(feature = "temp")]
 use crate::{TempDir, TempFileSystem};
@@ -33,7 +32,7 @@ impl DirEntry {
         P: AsRef<Path>,
         S: AsRef<OsStr>,
     {
-        DirEntry {
+        Self {
             parent: parent.as_ref().to_path_buf(),
             file_name: file_name.as_ref().to_os_string(),
         }
@@ -55,7 +54,7 @@ pub struct ReadDir(IntoIter<Result<DirEntry>>);
 
 impl ReadDir {
     fn new(entries: Vec<Result<DirEntry>>) -> Self {
-        ReadDir(entries.into_iter())
+        Self(entries.into_iter())
     }
 }
 
@@ -71,15 +70,15 @@ impl crate::ReadDir<DirEntry> for ReadDir {}
 
 /// An in-memory file system.
 #[derive(Clone, Debug, Default)]
-pub struct FakeFileSystem<Metadata: Clone> {
+pub struct FileSystem<Metadata: Clone> {
     registry: Arc<Mutex<Registry<Metadata>>>,
 }
 
-impl<Metadata: Clone> FakeFileSystem<Metadata> {
+impl<Metadata: Clone> FileSystem<Metadata> {
     pub fn new() -> Self {
         let registry = Registry::new();
 
-        FakeFileSystem {
+        Self {
             registry: Arc::new(Mutex::new(registry)),
         }
     }
@@ -152,7 +151,7 @@ impl<Metadata: Clone> FakeFileSystem<Metadata> {
     }
 }
 
-impl<Metadata: Clone> FileSystem for FakeFileSystem<Metadata> {
+impl<Metadata: Clone> crate::FileSystem for FileSystem<Metadata> {
     type DirEntry = DirEntry;
     type ReadDir = ReadDir;
     type Metadata = Metadata;
@@ -290,7 +289,7 @@ impl<Metadata: Clone> FileSystem for FakeFileSystem<Metadata> {
     }
 }
 
-impl<Metadata: Clone> UnixFileSystem for FakeFileSystem<Metadata> {
+impl<Metadata: Clone> UnixFileSystem for FileSystem<Metadata> {
     fn mode<P: AsRef<Path>>(&self, path: P) -> Result<u32> {
         self.apply(path.as_ref(), |r, p| r.mode(p))
     }
@@ -301,13 +300,13 @@ impl<Metadata: Clone> UnixFileSystem for FakeFileSystem<Metadata> {
 }
 
 #[cfg(feature = "temp")]
-impl<Metadata: Clone> TempFileSystem for FakeFileSystem<Metadata> {
+impl<Metadata: Clone> TempFileSystem for FileSystem<Metadata> {
     type TempDir = FakeTempDir<Metadata>;
 
     fn temp_dir<S: AsRef<str>>(&self, prefix: S) -> Result<Self::TempDir> {
         let base = env::temp_dir();
         let dir = FakeTempDir::new(Arc::downgrade(&self.registry), &base, prefix.as_ref());
 
-        self.create_dir_all(&dir.path()).and(Ok(dir))
+        crate::FileSystem::create_dir_all(self, &dir.path()).and(Ok(dir))
     }
 }

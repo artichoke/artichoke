@@ -1,4 +1,4 @@
-#![feature(inner_deref)]
+#![deny(clippy::all, clippy::pedantic)]
 
 #[cfg(feature = "temp")]
 extern crate rand;
@@ -8,7 +8,9 @@ use std::io::Result;
 use std::path::{Path, PathBuf};
 
 #[cfg(feature = "fake")]
-pub use crate::fake::{FakeFileSystem, FakeTempDir};
+pub use crate::fake::FileSystem as FakeFileSystem;
+#[cfg(feature = "fake")]
+pub use crate::fake::FakeTempDir;
 
 #[cfg(feature = "fake")]
 mod fake;

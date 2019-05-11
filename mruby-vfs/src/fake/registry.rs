@@ -17,7 +17,7 @@ impl<Metadata: Clone> Registry<Metadata> {
 
         files.insert(cwd.clone(), Node::Dir(Dir::new()));
 
-        Registry { cwd, files }
+        Self { cwd, files }
     }
 
     pub fn current_dir(&self) -> Result<PathBuf> {
@@ -35,11 +35,11 @@ impl<Metadata: Clone> Registry<Metadata> {
     }
 
     pub fn is_dir(&self, path: &Path) -> bool {
-        self.files.get(path).map(Node::is_dir).unwrap_or(false)
+        self.files.get(path).map_or(false, Node::is_dir)
     }
 
     pub fn is_file(&self, path: &Path) -> bool {
-        self.files.get(path).map(Node::is_file).unwrap_or(false)
+        self.files.get(path).map_or(false, Node::is_file)
     }
 
     pub fn create_dir(&mut self, path: &Path) -> Result<()> {
@@ -308,16 +308,28 @@ impl<Metadata: Clone> Registry<Metadata> {
     fn descendants(&self, path: &Path) -> Vec<PathBuf> {
         self.files
             .keys()
-            .filter(|p| p.starts_with(path) && *p != path)
-            .map(|p| p.to_path_buf())
+            .filter_map(|p| {
+                if p.starts_with(path) && *p != path {
+                    Some(p.to_path_buf())
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
     fn children(&self, path: &Path) -> Vec<PathBuf> {
         self.files
             .keys()
-            .filter(|p| p.parent().map(|parent| parent == path).unwrap_or(false))
-            .map(|p| p.to_path_buf())
+            .filter_map(|p| {
+                p.parent().and_then(|parent| {
+                    if parent == path {
+                        Some(p.to_path_buf())
+                    } else {
+                        None
+                    }
+                })
+            })
             .collect()
     }
 
