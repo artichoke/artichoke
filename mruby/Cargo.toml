@@ -10,6 +10,9 @@ log = "0.4.6"
 [dependencies.mruby-sys]
 path = "../mruby-sys"
 
+[dependencies.mruby-vfs]
+path = "../mruby-vfs"
+
 [dev-dependencies]
 env_logger = "0.6.1"
 libc = "0.2"

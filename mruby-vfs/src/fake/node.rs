@@ -2,7 +2,7 @@
 pub struct File<Metadata> {
     pub contents: Vec<u8>,
     pub mode: u32,
-    pub metadata: Option<Metadata>
+    pub metadata: Option<Metadata>,
 }
 
 impl<Metadata> File<Metadata> {

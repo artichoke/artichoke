@@ -12,6 +12,7 @@ pub enum Type {
     Class,
     Global,
     Instance,
+    Module,
 }
 
 pub struct Spec {
@@ -82,6 +83,16 @@ impl Spec {
                 );
                 Ok(())
             }
+            Type::Module => {
+                sys::mrb_define_module_function(
+                    mrb,
+                    into,
+                    self.cstring().as_ptr(),
+                    Some(self.method),
+                    self.args,
+                );
+                Ok(())
+            }
         }
     }
 }
@@ -98,6 +109,7 @@ impl fmt::Display for Spec {
             Type::Class => write!(f, "mruby self method spec -- {}", self.name),
             Type::Global => write!(f, "mruby global method spec -- {}", self.name),
             Type::Instance => write!(f, "mruby instance method spec -- {}", self.name),
+            Type::Module => write!(f, "mruby module method spec -- {}", self.name),
         }
     }
 }
@@ -115,10 +127,4 @@ impl Hash for Spec {
         self.name.hash(state);
         self.method_type.hash(state);
     }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn sd() {}
 }

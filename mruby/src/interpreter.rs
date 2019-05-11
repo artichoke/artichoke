@@ -1,19 +1,26 @@
 use log::{debug, error, trace, warn};
+use mruby_vfs::FileSystem;
 use std::cell::RefCell;
 use std::convert::AsRef;
 use std::error;
 use std::ffi::{c_void, CStr, CString};
 use std::fmt;
 use std::mem;
+use std::path::PathBuf;
 use std::rc::Rc;
 
+use crate::class;
 use crate::convert::{Error, Float, Int, TryFromMrb};
+use crate::def::{ClassLike, Define};
 use crate::file::MrbFile;
 use crate::gc::GarbageCollection;
-use crate::state::State;
+use crate::module;
+use crate::state::{State, VfsMetadata};
 use crate::sys::{self, DescribeState};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+
+pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
 #[macro_export]
 macro_rules! interpreter_or_raise {
@@ -81,34 +88,76 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
             }
         };
 
-        let already_required = {
-            let borrow = interp.borrow();
-            borrow.required_files.contains(&name)
-        };
-        if already_required {
-            return interp.bool(false).inner();
+        let mut path = PathBuf::from(&name);
+        if path.is_relative() {
+            path = PathBuf::from(RUBY_LOAD_PATH);
         }
-
-        let req = {
-            let borrow = interp.borrow();
-            borrow
-                .file_registry
-                .get(&name)
-                .or_else(|| borrow.file_registry.get(&format!("{}.rb", name)))
-                .or_else(|| borrow.file_registry.get(&format!("{}.mrb", name)))
-                .map(Clone::clone)
+        let (path, metadata) = {
+            let api = interp.borrow();
+            let candidates = vec![
+                path.join(&name),
+                path.join(format!("{}.rb", name)),
+                path.join(format!("{}.mrb", name)),
+            ];
+            let path = candidates.into_iter().find(|path| api.vfs.is_file(path));
+            let metadata = path.as_ref().and_then(|path| api.vfs.metadata(path));
+            (path.clone(), metadata)
         };
-
-        if let Some(req) = req {
-            req(Rc::clone(&interp));
-            {
-                let mut borrow = interp.borrow_mut();
-                borrow.required_files.insert(name.to_owned());
+        if let Some(ref path) = path {
+            if let Some(metadata) = metadata {
+                if metadata.is_already_required() {
+                    return interp.bool(false).inner();
+                }
+                if let Some(require) = metadata.require {
+                    // dynamic, Rust-backed require
+                    require(Rc::clone(&interp));
+                } else {
+                    // source-backed require
+                    {
+                        let api = interp.borrow();
+                        // this should be infallible because the mrb interpreter
+                        // is single threaded.
+                        if let Ok(contents) = api.vfs.read_file(path) {
+                            unwrap_or_raise!(interp, interp.eval(contents));
+                        }
+                    }
+                }
+                {
+                    let api = interp.borrow();
+                    unwrap_or_raise!(
+                        interp,
+                        api.vfs
+                            .set_metadata(path, metadata.mark_required())
+                            .map(|_| interp.nil())
+                    );
+                }
+            } else {
+                // maybe a source-backed require
+                {
+                    let api = interp.borrow();
+                    // this should be infallible because the mrb interpreter
+                    // is single threaded.
+                    if let Ok(contents) = api.vfs.read_file(path) {
+                        unwrap_or_raise!(interp, interp.eval(contents));
+                    }
+                    // Create the missing metadata struct to prevent double
+                    // requires.
+                    let metadata = VfsMetadata::new(None).mark_required();
+                    unwrap_or_raise!(
+                        interp,
+                        api.vfs.set_metadata(path, metadata).map(|_| interp.nil())
+                    );
+                }
             }
-            trace!("Successful require of '{}' on {:?}", name, interp.borrow());
+            trace!(
+                r#"Successful require of "{}" at {:?} on {:?}"#,
+                name,
+                path,
+                interp.borrow()
+            );
             interp.bool(true).inner()
         } else {
-            let eclass = CString::new("RuntimeError").expect("RuntimeError class");
+            let eclass = CString::new("LoadError").expect("RuntimeError class");
             let message = format!("cannot load such file -- {}", name);
             let msg = CString::new(message).expect("error message");
             sys::mrb_sys_raise(interp.borrow().mrb, eclass.as_ptr(), msg.as_ptr());
@@ -130,7 +179,7 @@ impl Interpreter {
             }
 
             let context = sys::mrbc_context_new(mrb);
-            let api = Rc::new(RefCell::new(State::new(mrb, context)));
+            let api = Rc::new(RefCell::new(State::new(mrb, context, RUBY_LOAD_PATH)));
 
             // Transmute the smart pointer that wraps the API and store it in
             // the user data of the mrb interpreter. After this operation,
@@ -138,27 +187,28 @@ impl Interpreter {
             let ptr = mem::transmute::<Mrb, *mut c_void>(api);
             (*mrb).ud = ptr;
 
-            // Add global extension functions
-            // Support for requiring files via `Kernel#require`
-            let kernel = CString::new("Kernel").expect("Kernel module");
-            let kernel_module = sys::mrb_module_get(mrb, kernel.as_ptr());
-            let require_method = CString::new("require").expect("require method");
-            let aspec = sys::mrb_args_rest();
-            sys::mrb_define_module_function(
-                mrb,
-                kernel_module,
-                require_method.as_ptr(),
-                Some(require),
-                aspec,
-            );
-            trace!("Installed Kernel#require on {}", mrb.debug());
-            debug!("Allocated {}", mrb.debug());
-
             // Transmute the void * pointer to the Rc back into the Mrb type.
             // After this operation `Rc::strong_count` will still be 1. This
             // dance is required to avoid leaking Mrb objects, which will let
             // the `Drop` impl close the mrb context and interpreter.
             let interp = mem::transmute::<*mut c_void, Mrb>(ptr);
+
+            // Add global extension functions
+            // Support for requiring files via `Kernel#require`
+            let mut kernel = module::Spec::new("Kernel", None);
+            kernel.add_self_method("require", require, sys::mrb_args_rest());
+            kernel.define(&interp).map_err(|_| MrbError::New)?;
+            trace!("Installed Kernel#require on {}", mrb.debug());
+            let exception = class::Spec::new("Exception", None, None);
+            let mut script_error = class::Spec::new("ScriptError", None, None);
+            script_error.with_super_class(Rc::new(exception));
+            script_error.define(&interp).map_err(|_| MrbError::New)?;
+            let mut load_error = class::Spec::new("LoadError", None, None);
+            load_error.with_super_class(Rc::new(script_error));
+            load_error.define(&interp).map_err(|_| MrbError::New)?;
+            trace!("Installed LoadError on {}", mrb.debug());
+
+            debug!("Allocated {}", mrb.debug());
 
             // mruby lazily initializes some core objects like top_self and
             // generates a lot of garbage on startup. Eagerly initialize the
@@ -355,9 +405,27 @@ impl MrbApi for Mrb {
     where
         T: AsRef<str>,
     {
-        self.borrow_mut()
-            .file_registry
-            .insert(filename.as_ref().to_owned(), Box::new(require));
+        let mut path = PathBuf::from(filename.as_ref());
+        if path.is_relative() {
+            path = PathBuf::from(RUBY_LOAD_PATH).join(path);
+        }
+        if let Some(parent) = path.parent() {
+            self.borrow()
+                .vfs
+                .create_dir_all(parent)
+                .expect("create ancestors in vfs");
+        }
+        let metadata = VfsMetadata::new(Some(require));
+        let content = format!("# virtual source file -- {}", filename.as_ref());
+        self.borrow()
+            .vfs
+            .create_file(&path, content)
+            .expect("create file in vfs");
+        self.borrow()
+            .vfs
+            .set_metadata(&path, metadata)
+            .expect("set metadata in vfs");
+        trace!("Defined file {:?}", path);
     }
 
     fn def_file_for_type<T, F>(&mut self, filename: T)
@@ -494,9 +562,30 @@ mod tests {
             assert_eq!(
                 result,
                 Err(MrbError::Exec(
-                    "RuntimeError: cannot load such file -- non-existent-source".to_owned()
+                    "LoadError: cannot load such file -- non-existent-source".to_owned()
                 ))
             );
         }
+    }
+
+    #[test]
+    fn require_absolute_path() {
+        let interp = Interpreter::create().expect("mrb init");
+        interp
+            .borrow()
+            .vfs
+            .create_dir_all("/foo/bar")
+            .expect("dirs");
+        interp
+            .borrow()
+            .vfs
+            .create_file("/foo/bar/source.rb", "# source file")
+            .expect("source file");
+        let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
+        let required = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        assert!(required);
+        let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
+        let required = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        assert!(!required);
     }
 }
