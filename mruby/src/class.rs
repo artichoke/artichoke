@@ -16,6 +16,7 @@ pub struct Spec {
     data_type: sys::mrb_data_type,
     methods: HashSet<method::Spec>,
     parent: Option<Parent>,
+    super_class: Option<Rc<Spec>>,
     is_mrb_tt_data: bool,
 }
 
@@ -35,6 +36,7 @@ impl Spec {
             data_type,
             methods: HashSet::new(),
             parent,
+            super_class: None,
             is_mrb_tt_data: false,
         }
     }
@@ -45,6 +47,10 @@ impl Spec {
 
     pub fn mrb_value_is_rust_backed(&mut self, is_mrb_tt_data: bool) {
         self.is_mrb_tt_data = is_mrb_tt_data;
+    }
+
+    pub fn with_super_class(&mut self, super_class: Rc<Self>) {
+        self.super_class = Some(super_class);
     }
 }
 
@@ -117,17 +123,22 @@ impl PartialEq for Spec {
 impl Define for Spec {
     fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError> {
         let mrb = interp.borrow().mrb;
+        let super_class = if let Some(ref spec) = self.super_class {
+            spec.rclass(Rc::clone(interp))
+        } else {
+            unsafe { (*mrb).object_class }
+        };
         let rclass = if let Some(ref parent) = self.parent {
             unsafe {
                 sys::mrb_define_class_under(
                     mrb,
                     parent.rclass(Rc::clone(&interp)),
                     self.cstring().as_ptr(),
-                    (*mrb).object_class,
+                    super_class,
                 )
             }
         } else {
-            unsafe { sys::mrb_define_class(mrb, self.cstring().as_ptr(), (*mrb).object_class) }
+            unsafe { sys::mrb_define_class(mrb, self.cstring().as_ptr(), super_class) }
         };
         for method in &self.methods {
             unsafe {
@@ -142,5 +153,41 @@ impl Define for Spec {
             }
         }
         Ok(rclass)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+
+    use crate::class::Spec;
+    use crate::convert::TryFromMrb;
+    use crate::def::Define;
+    use crate::interpreter::{Interpreter, MrbApi};
+
+    #[test]
+    fn super_class() {
+        let interp = Interpreter::create().expect("mrb init");
+        let standard_error = Rc::new(Spec::new("StandardError", None, None));
+        {
+            let mut api = interp.borrow_mut();
+            api.def_class::<()>("RustError", None, None);
+            let spec = api.class_spec_mut::<()>();
+            spec.with_super_class(standard_error);
+        }
+        {
+            let api = interp.borrow();
+            let spec = api.class_spec::<()>();
+            spec.define(&interp).expect("class install");
+        }
+
+        let result = interp
+            .eval("RustError.new.is_a?(StandardError)")
+            .expect("eval");
+        let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        assert!(result, "RustError instances are instance of StandardError");
+        let result = interp.eval("RustError < StandardError").expect("eval");
+        let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        assert!(result, "RustError inherits from StandardError");
     }
 }
