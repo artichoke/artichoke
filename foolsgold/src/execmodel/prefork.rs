@@ -1,4 +1,5 @@
 use mruby::convert::{Error, TryFromMrb};
+use mruby::gc::GarbageCollection;
 use mruby::interpreter::{self, Mrb, MrbApi, MrbError};
 use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
@@ -23,11 +24,10 @@ impl Interpreter for &INTERPRETER {
     where
         T: AsRef<[u8]>,
     {
-        // there is still a leak, 10MB per 10,000 requests
-        let arena = MrbApi::create_arena_savepoint(&*self.borrow());
+        let arena = GarbageCollection::create_arena_savepoint(&*self.borrow());
         let result = MrbApi::eval(&*self.borrow(), code.as_ref());
-        MrbApi::restore_arena(&*self.borrow(), arena);
-        MrbApi::incremental_gc(&*self.borrow());
+        arena.restore();
+        GarbageCollection::incremental_gc(&*self.borrow());
         result
     }
 

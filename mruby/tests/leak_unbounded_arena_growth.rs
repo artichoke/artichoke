@@ -16,6 +16,7 @@
 //! This test fails before commit
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
+use mruby::gc::GarbageCollection;
 use mruby::interpreter::{Interpreter, MrbApi, MrbError};
 use std::rc::Rc;
 
@@ -46,7 +47,7 @@ fn unbounded_arena_growth() {
         let code = "bad_code";
         let arena = interp.create_arena_savepoint();
         let result = interp.eval(code).map(|_| ());
-        interp.restore_arena(arena);
+        arena.restore();
         assert_eq!(result, expected);
         drop(result);
         interp.incremental_gc();
@@ -60,7 +61,7 @@ fn unbounded_arena_growth() {
             let interp = Rc::clone(&interp);
             let arena = interp.create_arena_savepoint();
             let result = interp.eval(code).expect("eval");
-            interp.restore_arena(arena);
+            arena.restore();
             assert_eq!(result.to_s(), expected);
             drop(result);
             interp.incremental_gc();
@@ -76,7 +77,7 @@ fn unbounded_arena_growth() {
             let interp = Rc::clone(&interp);
             let arena = interp.create_arena_savepoint();
             let result = interp.eval(code).expect("eval");
-            interp.restore_arena(arena);
+            arena.restore();
             assert_eq!(result.to_s_debug(), expected);
             drop(result);
             interp.incremental_gc();

@@ -1,6 +1,7 @@
 use std::ffi::CStr;
 
-use crate::interpreter::{Mrb, MrbApi};
+use crate::gc::GarbageCollection;
+use crate::interpreter::Mrb;
 use crate::sys;
 
 pub mod types;
@@ -39,7 +40,7 @@ impl Value {
         // mrb interpreter.
         let to_s = unsafe { sys::mrb_str_to_str(mrb, self.value) };
         let cstr = unsafe { sys::mrb_str_to_cstr(mrb, to_s) };
-        self.interp.restore_arena(arena);
+        arena.restore();
         unsafe { CStr::from_ptr(cstr) }
             .to_str()
             .unwrap_or_else(|_| "<unknown>")
@@ -52,7 +53,7 @@ impl Value {
         let debug = unsafe { sys::mrb_sys_value_debug_str(mrb, self.value) };
         let cstr = unsafe { sys::mrb_str_to_cstr(mrb, debug) };
         let string = unsafe { CStr::from_ptr(cstr) }.to_string_lossy();
-        self.interp.restore_arena(arena);
+        arena.restore();
         format!("{}<{}>", self.ruby_type().class_name(), string)
     }
 }
@@ -203,7 +204,7 @@ mod tests {
         assert!(!live.is_dead());
         let dead = live;
         let live = interp.eval("'live'").expect("value");
-        interp.restore_arena(arena);
+        arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
         assert!(dead.is_dead());

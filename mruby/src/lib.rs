@@ -7,6 +7,7 @@ pub mod class;
 pub mod convert;
 pub mod def;
 pub mod file;
+pub mod gc;
 pub mod method;
 pub mod module;
 pub mod state;

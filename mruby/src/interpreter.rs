@@ -9,6 +9,7 @@ use std::rc::Rc;
 
 use crate::convert::{Error, Float, Int, TryFromMrb};
 use crate::file::MrbFile;
+use crate::gc::GarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
 use crate::value::types::{Ruby, Rust};
@@ -60,9 +61,6 @@ macro_rules! unwrap_or_raise {
 }
 
 pub type Mrb = Rc<RefCell<State>>;
-
-#[derive(Debug, Clone, Copy)]
-pub struct ArenaIndex(i32);
 
 extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     unsafe {
@@ -167,7 +165,7 @@ impl Interpreter {
             // interpreter to provide predictable initialization behavior.
             let arena = interp.create_arena_savepoint();
             interp.eval("").map_err(|_| MrbError::New)?;
-            interp.restore_arena(arena);
+            arena.restore();
             interp.full_gc();
             Ok(interp)
         }
@@ -240,20 +238,6 @@ impl error::Error for MrbError {
 /// safe wrappers around unsafe functions from [`mruby_sys`] and the
 /// [`TryFromMrb`] converters.
 pub trait MrbApi {
-    fn create_arena_savepoint(&self) -> ArenaIndex;
-
-    fn restore_arena(&self, savepoint: ArenaIndex);
-
-    fn live_object_count(&self) -> i32;
-
-    fn incremental_gc(&self);
-
-    fn full_gc(&self);
-
-    fn enable_gc(&self);
-
-    fn disable_gc(&self);
-
     fn eval<T>(&self, code: T) -> Result<Value, MrbError>
     where
         T: AsRef<[u8]>;
@@ -292,41 +276,6 @@ pub trait MrbApi {
 /// borrows when evaling code. This is convenient because eval may recursively
 /// call [`MrbApi::eval`], e.g. during a nested require.
 impl MrbApi for Mrb {
-    fn create_arena_savepoint(&self) -> ArenaIndex {
-        // Create a savepoint in the GC arena which will allow mruby to
-        // deallocate all of the objects we create via the C API. Normally
-        // objects created via the C API are marked as permannently alive
-        // ("white" GC color) with a call to `mrb_gc_protect`.
-        ArenaIndex(unsafe { sys::mrb_sys_gc_arena_save(self.borrow().mrb) })
-    }
-
-    fn restore_arena(&self, savepoint: ArenaIndex) {
-        // Restore the GC arena to its stack position before calling `eval`
-        // to allow objects created via the evaled code to get garbage
-        // collected.
-        unsafe { sys::mrb_sys_gc_arena_restore(self.borrow().mrb, savepoint.0) };
-    }
-
-    fn live_object_count(&self) -> i32 {
-        unsafe { sys::mrb_sys_gc_live_objects(self.borrow().mrb) }
-    }
-
-    fn incremental_gc(&self) {
-        unsafe { sys::mrb_incremental_gc(self.borrow().mrb) };
-    }
-
-    fn full_gc(&self) {
-        unsafe { sys::mrb_full_gc(self.borrow().mrb) };
-    }
-
-    fn enable_gc(&self) {
-        unsafe { sys::mrb_sys_gc_enable(self.borrow().mrb) };
-    }
-
-    fn disable_gc(&self) {
-        unsafe { sys::mrb_sys_gc_disable(self.borrow().mrb) };
-    }
-
     fn eval<T>(&self, code: T) -> Result<Value, MrbError>
     where
         T: AsRef<[u8]>,
@@ -391,7 +340,7 @@ impl MrbApi for Mrb {
             let error = <Vec<String>>::try_from_mrb(self, Value::new(Rc::clone(self), backtrace));
             // Mark all C created objects as garbage now that we've extracted a
             // Rust value.
-            self.restore_arena(arena);
+            arena.restore();
 
             // Clear the current exception from the mruby interpreter so
             // subsequent calls to eval are not tainted by an error they did not
@@ -547,92 +496,6 @@ mod tests {
                 Err(MrbError::Exec(
                     "RuntimeError: cannot load such file -- non-existent-source".to_owned()
                 ))
-            );
-        }
-    }
-
-    #[test]
-    fn enable_disable_gc() {
-        let interp = Interpreter::create().expect("mrb init");
-        interp.disable_gc();
-        let arena = interp.create_arena_savepoint();
-        interp
-            .eval(
-                r#"
-                # this value will be garbage collected because it is eventually
-                # shadowed and becomes unreachable
-                a = []
-                # this value will not be garbage collected because it is a local
-                # variable in top self
-                a = []
-                # this value will not be garbage collected because it is a local
-                # variable in top self
-                b = []
-                # this value will not be garbage collected because the last value
-                # returned by eval is retained with "stack keep"
-                []
-                "#,
-            )
-            .expect("eval");
-        let live = interp.live_object_count();
-        interp.full_gc();
-        assert_eq!(
-            interp.live_object_count(),
-            live,
-            "GC is disabled. No objects should be collected"
-        );
-        interp.restore_arena(arena);
-        interp.enable_gc();
-        interp.full_gc();
-        assert_eq!(
-            interp.live_object_count(),
-            live - 2,
-            "Arrays should be collected after enabling GC and running a full GC"
-        );
-    }
-
-    mod functional {
-        use super::*;
-
-        #[test]
-        fn empty_eval() {
-            let interp = Interpreter::create().expect("mrb init");
-            let arena = interp.create_arena_savepoint();
-            let live = interp.live_object_count();
-            drop(interp.eval("").expect("eval"));
-            interp.restore_arena(arena);
-            interp.full_gc();
-            assert_eq!(interp.live_object_count(), live);
-        }
-
-        #[test]
-        fn gc() {
-            let slack = 1; // The most recent evaled object is always live
-            let interp = Interpreter::create().expect("mrb init");
-            let initial_objects = interp.live_object_count();
-            let initial_arena = interp.create_arena_savepoint();
-            for _ in 0..2000 {
-                let arena = interp.create_arena_savepoint();
-                let result = interp.eval("'gc test'");
-                let value = result.unwrap();
-                assert!(!value.is_dead());
-                interp.restore_arena(arena);
-                interp.incremental_gc();
-            }
-            interp.restore_arena(initial_arena);
-            interp.full_gc();
-            let ending_arena = interp.create_arena_savepoint();
-            assert!(
-                interp.live_object_count() <= initial_objects + slack,
-                "Started with {} live ojectes, ended with {}. Potential memory leak!",
-                initial_objects,
-                interp.live_object_count()
-            );
-            assert_eq!(
-                ending_arena.0,
-                initial_arena.0,
-                "After 2000 iterations, the GC arena has grown to {} objects. Potential memory leak!",
-                ending_arena.0 - initial_arena.0
             );
         }
     }
