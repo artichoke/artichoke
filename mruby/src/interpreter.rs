@@ -69,6 +69,15 @@ macro_rules! unwrap_or_raise {
 
 pub type Mrb = Rc<RefCell<State>>;
 
+fn raise_load_error(interp: &Mrb, file: &str) -> sys::mrb_value {
+    let eclass = CString::new("LoadError").expect("RuntimeError class");
+    let message = format!("cannot load such file -- {}", file);
+    let msg = CString::new(message).expect("error message");
+    unsafe { sys::mrb_sys_raise(interp.borrow().mrb, eclass.as_ptr(), msg.as_ptr()) };
+    debug!("Failed require '{}' on {:?}", file, interp.borrow());
+    interp.bool(false).inner()
+}
+
 extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     unsafe {
         let interp = interpreter_or_raise!(mrb);
@@ -113,13 +122,16 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                     require(Rc::clone(&interp));
                 } else {
                     // source-backed require
-                    {
+                    let contents = {
                         let api = interp.borrow();
-                        // this should be infallible because the mrb interpreter
-                        // is single threaded.
-                        if let Ok(contents) = api.vfs.read_file(path) {
-                            unwrap_or_raise!(interp, interp.eval(contents));
-                        }
+                        api.vfs.read_file(path)
+                    };
+                    // this should be infallible because the mrb interpreter is
+                    // single threaded.
+                    if let Ok(contents) = contents {
+                        unwrap_or_raise!(interp, interp.eval(contents));
+                    } else {
+                        return raise_load_error(&interp, &name);
                     }
                 }
                 {
@@ -157,12 +169,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
             );
             interp.bool(true).inner()
         } else {
-            let eclass = CString::new("LoadError").expect("RuntimeError class");
-            let message = format!("cannot load such file -- {}", name);
-            let msg = CString::new(message).expect("error message");
-            sys::mrb_sys_raise(interp.borrow().mrb, eclass.as_ptr(), msg.as_ptr());
-            debug!("Failed require '{}' on {:?}", name, interp.borrow());
-            interp.bool(false).inner()
+            raise_load_error(&interp, &name)
         }
     }
 }
