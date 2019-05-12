@@ -1,9 +1,10 @@
 use mruby::convert::{Error, TryFromMrb};
 use mruby::gc::GarbageCollection;
-use mruby::interpreter::{self, Mrb, MrbApi, MrbError};
+use mruby::interpreter::{self, Mrb, MrbApi};
 use mruby::load::MrbLoadSources;
 use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
+use mruby::MrbError;
 use ref_thread_local::RefThreadLocal;
 use rocket::http::Status;
 use rocket::{get, Response};

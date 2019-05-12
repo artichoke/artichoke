@@ -17,7 +17,8 @@
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
 use mruby::gc::GarbageCollection;
-use mruby::interpreter::{Interpreter, MrbApi, MrbError};
+use mruby::interpreter::{Interpreter, MrbApi};
+use mruby::MrbError;
 use std::rc::Rc;
 
 mod leak;

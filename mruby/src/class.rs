@@ -6,9 +6,10 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use crate::def::{ClassLike, Define, Free, Method, Parent};
-use crate::interpreter::{Mrb, MrbError};
+use crate::interpreter::Mrb;
 use crate::method;
 use crate::sys;
+use crate::MrbError;
 
 pub struct Spec {
     name: String,

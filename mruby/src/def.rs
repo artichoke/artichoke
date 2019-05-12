@@ -3,9 +3,10 @@ use std::fmt;
 use std::rc::Rc;
 
 use crate::class;
-use crate::interpreter::{Mrb, MrbError};
+use crate::interpreter::Mrb;
 use crate::module;
 use crate::sys;
+use crate::MrbError;
 
 // Types
 pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void);

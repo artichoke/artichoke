@@ -1,7 +1,7 @@
 use mruby::convert::{Error, TryFromMrb};
-use mruby::interpreter::MrbError;
 use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
+use mruby::MrbError;
 use rocket::http::Status;
 use rocket::Response;
 use std::convert::{self, AsRef, TryFrom};

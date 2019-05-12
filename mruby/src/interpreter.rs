@@ -2,23 +2,20 @@ use log::{debug, error, trace, warn};
 use mruby_vfs::FileSystem;
 use std::cell::RefCell;
 use std::convert::AsRef;
-use std::error;
 use std::ffi::{c_void, CStr, CString};
-use std::fmt;
-use std::io;
 use std::mem;
 use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::class;
-use crate::convert::{Error, Float, Int, TryFromMrb};
+use crate::convert::{Float, Int, TryFromMrb};
 use crate::def::{ClassLike, Define};
 use crate::gc::GarbageCollection;
 use crate::module;
 use crate::state::{State, VfsMetadata};
 use crate::sys::{self, DescribeState};
-use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::MrbError;
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
@@ -253,52 +250,6 @@ impl Interpreter {
         // At this point, `Rc::strong_count` will be increased by 1.
         trace!("Extracted Mrb from user data pointer on {}", mrb.debug());
         Ok(api)
-    }
-}
-
-#[derive(Debug)]
-pub enum MrbError {
-    ConvertToRuby(Error<Rust, Ruby>),
-    ConvertToRust(Error<Ruby, Rust>),
-    Exec(String),
-    New,
-    Uninitialized,
-    Vfs(io::Error),
-}
-
-impl Eq for MrbError {}
-
-impl PartialEq for MrbError {
-    fn eq(&self, other: &Self) -> bool {
-        format!("{}", self) == format!("{}", other)
-    }
-}
-
-impl fmt::Display for MrbError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            MrbError::Exec(backtrace) => write!(f, "mruby exception: {}", backtrace),
-            MrbError::New => write!(f, "failed to create mrb interpreter"),
-            MrbError::ConvertToRuby(inner) => write!(f, "conversion error: {}", inner),
-            MrbError::ConvertToRust(inner) => write!(f, "conversion error: {}", inner),
-            MrbError::Uninitialized => write!(f, "mrb interpreter not initialized"),
-            MrbError::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
-        }
-    }
-}
-
-impl error::Error for MrbError {
-    fn description(&self) -> &str {
-        "mruby interpreter error"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            MrbError::ConvertToRuby(inner) => Some(inner),
-            MrbError::ConvertToRust(inner) => Some(inner),
-            MrbError::Vfs(inner) => Some(inner),
-            _ => None,
-        }
     }
 }
 
