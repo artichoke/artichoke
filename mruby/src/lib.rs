@@ -27,7 +27,6 @@ pub enum MrbError {
     ConvertToRust(convert::Error<value::types::Ruby, value::types::Rust>),
     Exec(String),
     New,
-    NoEvalContext,
     Uninitialized,
     Vfs(io::Error),
 }
@@ -48,7 +47,6 @@ impl fmt::Display for MrbError {
             MrbError::ConvertToRust(inner) => write!(f, "conversion error: {}", inner),
             MrbError::Exec(backtrace) => write!(f, "mruby exception: {}", backtrace),
             MrbError::New => write!(f, "failed to create mrb interpreter"),
-            MrbError::NoEvalContext => write!(f, "tried to pop an eval context when none present"),
             MrbError::Uninitialized => write!(f, "mrb interpreter not initialized"),
             MrbError::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
         }
