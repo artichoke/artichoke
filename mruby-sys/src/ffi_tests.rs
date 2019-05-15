@@ -61,9 +61,6 @@ use std::ffi::{CStr, CString};
 
 use super::*;
 
-const TEST_CLASS: &str = "TestClass";
-const TEST_MODULE: &str = "TestModule";
-
 #[test]
 fn open_close() {
     unsafe {
@@ -150,7 +147,7 @@ fn define_method() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new(TEST_CLASS).unwrap();
+        let new_class_str = CString::new("TestClass").unwrap();
         let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
         let new_method_str = CString::new("value").unwrap();
@@ -179,7 +176,7 @@ fn class_defined() {
 
         let obj_str = CString::new("Object").unwrap();
         let kernel_str = CString::new("Kernel").unwrap();
-        let unknown_str = CString::new(TEST_CLASS).unwrap();
+        let unknown_str = CString::new("TestClass").unwrap();
 
         assert_eq!(mrb_class_defined(mrb, obj_str.as_ptr()), 1_u8);
         assert_eq!(mrb_class_defined(mrb, kernel_str.as_ptr()), 1_u8);
@@ -196,7 +193,7 @@ fn class_name() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new(TEST_CLASS).unwrap();
+        let new_class_str = CString::new("TestClass").unwrap();
         let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
         let kernel_str = CString::new("Kernel").unwrap();
@@ -293,7 +290,7 @@ fn define_module() {
     unsafe {
         let mrb = mrb_open();
 
-        let mod_str = CString::new(TEST_MODULE).unwrap();
+        let mod_str = CString::new("TestModule").unwrap();
         let unknown_str = CString::new("UnknownModule").unwrap();
 
         mrb_define_module(mrb, mod_str.as_ptr());
@@ -312,13 +309,13 @@ fn defined_under() {
 
         let kernel_str = CString::new("Kernel").unwrap();
         let kernel = mrb_module_get(mrb, kernel_str.as_ptr());
-        let name_str = CString::new(TEST_MODULE).unwrap();
+        let name_str = CString::new("TestModule").unwrap();
         let name = name_str.as_ptr();
 
         mrb_define_module_under(mrb, kernel, name);
         assert_eq!(mrb_class_defined_under(mrb, kernel, name), 1_u8);
 
-        let mod_str = CString::new(TEST_MODULE).unwrap();
+        let mod_str = CString::new("TestModule").unwrap();
         let module = mrb_module_get(mrb, mod_str.as_ptr());
         let module_name = mrb_class_name(mrb, module);
         assert_eq!(
@@ -337,7 +334,7 @@ fn class_under() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let name_str = CString::new(TEST_CLASS).unwrap();
+        let name_str = CString::new("TestClass").unwrap();
         let name = name_str.as_ptr();
 
         mrb_define_class_under(mrb, obj_class, name, obj_class);
@@ -358,7 +355,7 @@ fn module_under() {
 
         let kernel_str = CString::new("Kernel").unwrap();
         let kernel = mrb_module_get(mrb, kernel_str.as_ptr());
-        let name_str = CString::new(TEST_MODULE).unwrap();
+        let name_str = CString::new("TestModule").unwrap();
         let name = name_str.as_ptr();
 
         mrb_define_module_under(mrb, kernel, name);
@@ -484,7 +481,7 @@ fn define_class_method() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new(TEST_CLASS).unwrap();
+        let new_class_str = CString::new("TestClass").unwrap();
         let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
         let new_method_str = CString::new("value").unwrap();
@@ -527,7 +524,7 @@ fn define_class_and_instance_method_with_one_rust_function() {
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new(TEST_CLASS).unwrap();
+        let new_class_str = CString::new("TestClass").unwrap();
         let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
 
         let rust__mruby__test_class__class_method__value = rust__mruby__test_class__method__value;
