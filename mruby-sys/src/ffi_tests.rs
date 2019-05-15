@@ -54,7 +54,7 @@
 //!
 //! ### Boolean return values
 //!
-//! mrb methods that return `mrb_bool` return a `u8`. FALSE <=> 0_u8. TRUE <=>
+//! mrb methods that return `mrb_bool` return a `u8`. FALSE <=> `0_u8`. TRUE <=>
 //! any non-zero `u8`.
 
 use std::ffi::{CStr, CString};
@@ -673,9 +673,6 @@ pub fn args() {
     use std::mem;
 
     unsafe {
-        let mrb = mrb_open();
-        let context = mrbc_context_new(mrb);
-
         extern "C" fn add(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
             unsafe {
                 let a = mem::uninitialized::<mrb_value>();
@@ -694,6 +691,9 @@ pub fn args() {
                 mrb_funcall_argv(mrb, a, sym, 1, args.as_ptr())
             }
         }
+
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
@@ -734,9 +734,6 @@ pub fn str_args() {
     use std::os::raw::c_char;
 
     unsafe {
-        let mrb = mrb_open();
-        let context = mrbc_context_new(mrb);
-
         extern "C" fn add(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
             unsafe {
                 let a = mem::uninitialized::<*const c_char>();
@@ -753,11 +750,14 @@ pub fn str_args() {
                 let args = [mrb_str_new_cstr(mrb, b.as_ptr() as *const i8)];
 
                 let plus_str = CString::new("+").unwrap();
-                let sym = mrb_intern(mrb, plus_str.as_ptr(), 1usize);
+                let sym = mrb_intern(mrb, plus_str.as_ptr(), 1);
 
                 mrb_funcall_argv(mrb, value, sym, 1, args.as_ptr())
             }
         }
+
+        let mrb = mrb_open();
+        let context = mrbc_context_new(mrb);
 
         let obj_str = CString::new("Object").unwrap();
         let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
