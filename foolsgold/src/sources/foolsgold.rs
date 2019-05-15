@@ -1,7 +1,8 @@
 use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define, Parent};
+use mruby::eval::{EvalContext, MrbEval};
 use mruby::file::MrbFile;
-use mruby::interpreter::{Mrb, MrbApi};
+use mruby::interpreter::Mrb;
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
 use mruby::{interpreter_or_raise, unwrap_or_raise};
@@ -21,10 +22,15 @@ pub struct Lib;
 impl MrbFile for Lib {
     fn require(interp: Mrb) {
         // Ruby sources
-        let lib = Source::contents("foolsgold.rb");
-        let adapter = Source::contents("foolsgold/adapter/memory.rb");
-        interp.eval(lib).expect("foolsgold.rb");
-        interp.eval(adapter).expect("foolsgold/adapter/memory.rb");
+        // TODO: Implement ruby sources with `MrbLoadSources::def_rb_source_file`
+        let contents = Source::contents("foolsgold.rb");
+        interp
+            .eval_with_context(contents, EvalContext::new("foolsgold.rb"))
+            .expect("foolsgold source");
+        let contents = Source::contents("foolsgold/adapter/memory.rb");
+        interp
+            .eval_with_context(contents, EvalContext::new("foolsgold/adapter/memory.rb"))
+            .expect("foolsgold source");
 
         {
             let mut api = interp.borrow_mut();

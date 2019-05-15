@@ -160,6 +160,7 @@ macro_rules! mrb_nilable_impl {
                 use quickcheck_macros::quickcheck;
 
                 use $crate::convert::*;
+                use $crate::eval::MrbEval;
                 use $crate::interpreter::*;
                 use $crate::sys;
                 use $crate::value::types::*;

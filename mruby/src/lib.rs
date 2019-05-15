@@ -10,6 +10,7 @@ pub mod interpreter;
 pub mod class;
 pub mod convert;
 pub mod def;
+pub mod eval;
 pub mod file;
 pub mod gc;
 pub mod load;
@@ -26,6 +27,7 @@ pub enum MrbError {
     ConvertToRust(convert::Error<value::types::Ruby, value::types::Rust>),
     Exec(String),
     New,
+    NoEvalContext,
     Uninitialized,
     Vfs(io::Error),
 }
@@ -42,10 +44,11 @@ impl PartialEq for MrbError {
 impl fmt::Display for MrbError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            MrbError::Exec(backtrace) => write!(f, "mruby exception: {}", backtrace),
-            MrbError::New => write!(f, "failed to create mrb interpreter"),
             MrbError::ConvertToRuby(inner) => write!(f, "conversion error: {}", inner),
             MrbError::ConvertToRust(inner) => write!(f, "conversion error: {}", inner),
+            MrbError::Exec(backtrace) => write!(f, "mruby exception: {}", backtrace),
+            MrbError::New => write!(f, "failed to create mrb interpreter"),
+            MrbError::NoEvalContext => write!(f, "tried to pop an eval context when none present"),
             MrbError::Uninitialized => write!(f, "mrb interpreter not initialized"),
             MrbError::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
         }

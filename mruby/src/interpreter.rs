@@ -1,4 +1,4 @@
-use log::{debug, error, trace, warn};
+use log::{debug, error, trace};
 use mruby_vfs::FileSystem;
 use std::cell::RefCell;
 use std::convert::AsRef;
@@ -10,6 +10,7 @@ use std::rc::Rc;
 use crate::class;
 use crate::convert::{Float, Int, TryFromMrb};
 use crate::def::{ClassLike, Define};
+use crate::eval::{EvalContext, MrbEval};
 use crate::gc::GarbageCollection;
 use crate::module;
 use crate::state::{State, VfsMetadata};
@@ -110,12 +111,14 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
             (path.clone(), metadata)
         };
         if let Some(ref path) = path {
+            let context = EvalContext::new(path.to_string_lossy());
             if let Some(metadata) = metadata {
                 if metadata.is_already_required() {
                     return interp.bool(false).inner();
                 }
                 if let Some(require) = metadata.require {
                     // dynamic, Rust-backed require
+                    interp.push_context(context);
                     require(Rc::clone(&interp));
                 } else {
                     // source-backed require
@@ -126,7 +129,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                     // this should be infallible because the mrb interpreter is
                     // single threaded.
                     if let Ok(contents) = contents {
-                        unwrap_or_raise!(interp, interp.eval(contents));
+                        unwrap_or_raise!(interp, interp.eval_with_context(contents, context));
                     } else {
                         return raise_load_error(&interp, &name);
                     }
@@ -147,7 +150,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                     // this should be infallible because the mrb interpreter
                     // is single threaded.
                     if let Ok(contents) = api.vfs.read_file(path) {
-                        unwrap_or_raise!(interp, interp.eval(contents));
+                        unwrap_or_raise!(interp, interp.eval_with_context(contents, context));
                     }
                     // Create the missing metadata struct to prevent double
                     // requires.
@@ -257,10 +260,6 @@ impl Interpreter {
 /// safe wrappers around unsafe functions from [`mruby_sys`] and the
 /// [`TryFromMrb`] converters.
 pub trait MrbApi {
-    fn eval<T>(&self, code: T) -> Result<Value, MrbError>
-    where
-        T: AsRef<[u8]>;
-
     fn current_exception(&self) -> Option<String>;
 
     fn nil(&self) -> Value;
@@ -286,35 +285,6 @@ pub trait MrbApi {
 /// borrows when evaling code. This is convenient because eval may recursively
 /// call [`MrbApi::eval`], e.g. during a nested require.
 impl MrbApi for Mrb {
-    fn eval<T>(&self, code: T) -> Result<Value, MrbError>
-    where
-        T: AsRef<[u8]>,
-    {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Mrb` to
-        // get access to the underlying `MrbState`.
-        let (mrb, ctx) = {
-            let borrow = self.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
-        let code = code.as_ref();
-        debug!("Evaling code on {}", mrb.debug());
-        let result = unsafe {
-            // Execute arbitrary ruby code, which may generate objects with C
-            // APIs if backed by Rust functions.
-            //
-            // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
-            // which means the most recent value returned by eval will always be
-            // considered live by the GC.
-            sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx)
-        };
-        if let Some(backtrace) = self.current_exception() {
-            warn!("runtime error with exception backtrace: {}", backtrace);
-            return Err(MrbError::Exec(backtrace));
-        }
-        Ok(Value::new(Rc::clone(self), result))
-    }
-
     /// Extract a `String` representation of the current exception on the mruby
     /// interpreter if there is one. The string will contain the exception
     /// class, message, and backtrace.
@@ -390,8 +360,9 @@ impl MrbApi for Mrb {
 #[cfg(test)]
 mod tests {
     use crate::convert::TryFromMrb;
+    use crate::eval::MrbEval;
     use crate::file::MrbFile;
-    use crate::interpreter::{Interpreter, Mrb, MrbApi, MrbError};
+    use crate::interpreter::{Interpreter, Mrb, MrbError};
     use crate::load::MrbLoadSources;
     use crate::sys;
 
@@ -447,10 +418,11 @@ mod tests {
         let result = interp
             .eval("raise ArgumentError.new('waffles')")
             .map(|_| ());
-        assert_eq!(
-            result,
-            Err(MrbError::Exec("ArgumentError: waffles".to_owned()))
-        );
+        let expected = r#"
+(eval):1: waffles (ArgumentError)
+(eval):1
+       "#;
+        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
     }
 
     #[test]
@@ -471,18 +443,16 @@ mod tests {
         unsafe {
             let mut interp = Interpreter::create().expect("mrb init");
             interp
-                .def_file_for_type::<_, InterpreterRequireTest>("interpreter-require-test")
+                .def_file_for_type::<_, InterpreterRequireTest>("require-test.rb")
                 .expect("def file");
-            let result = interp
-                .eval("require 'interpreter-require-test'")
-                .expect("eval");
+            let result = interp.eval("require 'require-test'").expect("eval");
             let require_result = bool::try_from_mrb(&interp, result);
             assert_eq!(require_result, Ok(true));
             let result = interp.eval("@i").expect("eval");
             let i_result = i64::try_from_mrb(&interp, result);
             assert_eq!(i_result, Ok(255));
             let result = interp
-                .eval("@i = 1000; require 'interpreter-require-test'")
+                .eval("@i = 1000; require 'require-test'")
                 .expect("eval");
             let second_require_result = bool::try_from_mrb(&interp, result);
             assert_eq!(second_require_result, Ok(false));
@@ -490,12 +460,11 @@ mod tests {
             let second_i_result = i64::try_from_mrb(&interp, result);
             assert_eq!(second_i_result, Ok(1000));
             let result = interp.eval("require 'non-existent-source'").map(|_| ());
-            assert_eq!(
-                result,
-                Err(MrbError::Exec(
-                    "LoadError: cannot load such file -- non-existent-source".to_owned()
-                ))
-            );
+            let expected = r#"
+(eval):1: cannot load such file -- non-existent-source (LoadError)
+(eval):1
+            "#;
+            assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
         }
     }
 
@@ -515,9 +484,10 @@ mod tests {
     fn require_directory() {
         let interp = Interpreter::create().expect("mrb init");
         let result = interp.eval("require '/src'").map(|_| ());
-        let expected = Err(MrbError::Exec(
-            "LoadError: cannot load such file -- /src".to_owned(),
-        ));
-        assert_eq!(result, expected);
+        let expected = r#"
+(eval):1: cannot load such file -- /src (LoadError)
+(eval):1
+        "#;
+        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
     }
 }

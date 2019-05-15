@@ -79,8 +79,9 @@ impl GarbageCollection for Mrb {
 
 #[cfg(test)]
 mod tests {
+    use crate::eval::MrbEval;
     use crate::gc::GarbageCollection;
-    use crate::interpreter::{Interpreter, MrbApi};
+    use crate::interpreter::Interpreter;
 
     #[test]
     fn arena_restore_on_explicit_restore() {

@@ -13,8 +13,9 @@
 //! `34ee3ddc1c5f4eb1d20f19dd772b0ca348391b2f` with a fairly massive leak.
 
 use mruby::def::{ClassLike, Define};
+use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
-use mruby::interpreter::{Interpreter, Mrb, MrbApi};
+use mruby::interpreter::{Interpreter, Mrb};
 use mruby::interpreter_or_raise;
 use mruby::load::MrbLoadSources;
 use mruby::sys;

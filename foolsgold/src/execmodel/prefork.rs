@@ -1,6 +1,7 @@
 use mruby::convert::{Error, TryFromMrb};
+use mruby::eval::MrbEval;
 use mruby::gc::GarbageCollection;
-use mruby::interpreter::{self, Mrb, MrbApi};
+use mruby::interpreter::{self, Mrb};
 use mruby::load::MrbLoadSources;
 use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
@@ -27,7 +28,7 @@ impl Interpreter for &INTERPRETER {
         T: AsRef<[u8]>,
     {
         let arena = GarbageCollection::create_arena_savepoint(&*self.borrow());
-        let result = MrbApi::eval(&*self.borrow(), code.as_ref());
+        let result = MrbEval::eval(&*self.borrow(), code.as_ref());
         arena.restore();
         GarbageCollection::incremental_gc(&*self.borrow());
         result
