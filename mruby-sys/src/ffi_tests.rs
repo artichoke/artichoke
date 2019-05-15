@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
-
 // Tests derived from mrusty @ 1.0.0
 // <https://github.com/anima-engine/mrusty/tree/v1.0.0>
 
@@ -52,6 +51,11 @@
 //! all eval'd code in a rust function which is called via `mrb_protect`
 //! ensures that code exits cleanly and we can report runtime errors to the
 //! caller.
+//!
+//! ### Boolean return values
+//!
+//! mrb methods that return `mrb_bool` return a `u8`. FALSE <=> 0_u8. TRUE <=>
+//! any non-zero `u8`.
 
 use std::ffi::{CStr, CString};
 
@@ -664,30 +668,28 @@ fn protect() {
     }
 }
 
-/*
 #[test]
 pub fn args() {
-    use std::mem::uninitialized;
+    use std::mem;
 
     unsafe {
         let mrb = mrb_open();
         let context = mrbc_context_new(mrb);
 
-        extern "C" fn add(mrb: *const MrState, _slf: MrValue) -> MrValue {
+        extern "C" fn add(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
             unsafe {
-                let a = uninitialized::<MrValue>();
-                let b = uninitialized::<MrValue>();
+                let a = mem::uninitialized::<mrb_value>();
+                let b = mem::uninitialized::<mrb_value>();
 
                 let sig_str = CString::new("oo").unwrap();
 
-                mrb_get_args(mrb, sig_str.as_ptr(), &a as *const MrValue,
-                             &b as *const MrValue);
+                mrb_get_args(mrb, sig_str.as_ptr(), &a, &b);
 
                 let args = &[b];
 
                 let plus_str = CString::new("+").unwrap();
 
-                let sym = mrb_intern(mrb, plus_str.as_ptr(), 1usize);
+                let sym = mrb_intern(mrb, plus_str.as_ptr(), 1);
 
                 mrb_funcall_argv(mrb, a, sym, 1, args.as_ptr())
             }
@@ -700,13 +702,25 @@ pub fn args() {
 
         let add_str = CString::new("add").unwrap();
 
-        mrb_define_method(mrb, new_class, add_str.as_ptr(), add,
-                          (2 & 0x1f) << 18);
+        mrb_define_method(
+            mrb,
+            new_class,
+            add_str.as_ptr(),
+            Some(add),
+            crate::args::mrb_args_req(2),
+        );
 
-        let code = "Mine.new.add 1, 1";
+        let code = "Mine.new.add(1, 1)";
 
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context)
-                   .to_i32().unwrap(), 2);
+        assert_eq!(
+            mrb_sys_fixnum_to_cint(mrb_load_nstring_cxt(
+                mrb,
+                code.as_ptr() as *const i8,
+                code.len(),
+                context
+            )),
+            2
+        );
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
@@ -716,33 +730,32 @@ pub fn args() {
 #[test]
 pub fn str_args() {
     use std::ffi::CStr;
-    use std::mem::uninitialized;
+    use std::mem;
     use std::os::raw::c_char;
 
     unsafe {
         let mrb = mrb_open();
         let context = mrbc_context_new(mrb);
 
-        extern "C" fn add(mrb: *const MrState, _slf: MrValue) -> MrValue {
+        extern "C" fn add(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
             unsafe {
-                let a = uninitialized::<*const c_char>();
-                let b = uninitialized::<*const c_char>();
+                let a = mem::uninitialized::<*const c_char>();
+                let b = mem::uninitialized::<*const c_char>();
 
                 let sig_str = CString::new("zz").unwrap();
 
-                mrb_get_args(mrb, sig_str.as_ptr(), &a as *const *const c_char,
-                             &b as *const *const c_char);
+                mrb_get_args(mrb, sig_str.as_ptr(), &a, &b);
 
                 let a = CStr::from_ptr(a).to_str().unwrap();
                 let b = CStr::from_ptr(b).to_str().unwrap();
 
-                let args = &[MrValue::string(mrb, b)];
+                let value = mrb_str_new_cstr(mrb, a.as_ptr() as *const i8);
+                let args = [mrb_str_new_cstr(mrb, b.as_ptr() as *const i8)];
 
                 let plus_str = CString::new("+").unwrap();
-
                 let sym = mrb_intern(mrb, plus_str.as_ptr(), 1usize);
 
-                mrb_funcall_argv(mrb, MrValue::string(mrb, a), sym, 1, args.as_ptr())
+                mrb_funcall_argv(mrb, value, sym, 1, args.as_ptr())
             }
         }
 
@@ -753,67 +766,24 @@ pub fn str_args() {
 
         let add_str = CString::new("add").unwrap();
 
-        mrb_define_method(mrb, new_class, add_str.as_ptr(), add,
-                          (2 & 0x1f) << 18);
+        mrb_define_method(
+            mrb,
+            new_class,
+            add_str.as_ptr(),
+            Some(add),
+            args::mrb_args_req(2),
+        );
 
-        let code = "Mine.new.add 'a', 'b'";
+        let code = "Mine.new.add('a', 'b')";
 
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context)
-                   .to_str(mrb).unwrap(), "ab");
-
-        mrbc_context_free(mrb, context);
-        mrb_close(mrb);
-    }
-}
-
-#[test]
-pub fn array_args() {
-    use std::mem::uninitialized;
-
-    unsafe {
-        let mrb = mrb_open();
-        let context = mrbc_context_new(mrb);
-
-        extern "C" fn add(mrb: *const MrState, _slf: MrValue) -> MrValue {
-            unsafe {
-                let array = uninitialized::<MrValue>();
-
-                let a_str = CString::new("A").unwrap();
-
-                mrb_get_args(mrb, a_str.as_ptr(), &array as *const MrValue);
-
-                let vec = array.to_vec(mrb).unwrap();
-
-                let args = &[vec[1]];
-
-                let plus_str = CString::new("+").unwrap();
-
-                let sym = mrb_intern(mrb, plus_str.as_ptr(), 1usize);
-
-                mrb_funcall_argv(mrb, vec[0], sym, 1, args.as_ptr())
-            }
-        }
-
-        let obj_str = CString::new("Object").unwrap();
-        let obj_class = mrb_class_get(mrb, obj_str.as_ptr());
-        let new_class_str = CString::new("Mine").unwrap();
-        let new_class = mrb_define_class(mrb, new_class_str.as_ptr(), obj_class);
-
-        let add_str = CString::new("add").unwrap();
-
-        mrb_define_method(mrb, new_class, add_str.as_ptr(), add,
-                          (2 & 0x1f) << 18);
-
-        let code = "Mine.new.add [1, 1]";
-
-        assert_eq!(mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context)
-                   .to_i32().unwrap(), 2);
+        let result = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
+        let result = mrb_string_value_ptr(mrb, result);
+        assert_eq!(CStr::from_ptr(result).to_str().unwrap(), "ab");
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
     }
 }
-*/
 
 #[test]
 fn funcall_argv() {
@@ -835,7 +805,6 @@ fn funcall_argv() {
     }
 }
 
-/*
 #[test]
 fn iv() {
     unsafe {
@@ -848,24 +817,23 @@ fn iv() {
 
         mrb_define_class(mrb, new_str.as_ptr(), obj_class);
 
-        let one = MrValue::fixnum(1);
+        let one = mrb_sys_fixnum_value(1);
 
         let code = "Mine.new";
-        let obj = mrb_load_nstring_cxt(mrb, code.as_ptr(), code.len() as i32, context);
+        let obj = mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context);
 
         let value_str = CString::new("value").unwrap();
 
-        let sym = mrb_intern(mrb, value_str.as_ptr(), 1usize);
+        let sym = mrb_intern(mrb, value_str.as_ptr(), 1);
 
-        assert!(!mrb_iv_defined(mrb, obj, sym));
+        assert_eq!(mrb_iv_defined(mrb, obj, sym), 0_u8);
 
         mrb_iv_set(mrb, obj, sym, one);
 
-        assert!(mrb_iv_defined(mrb, obj, sym));
-        assert_eq!(mrb_iv_get(mrb, obj, sym).to_i32().unwrap(), 1);
+        assert_eq!(mrb_iv_defined(mrb, obj, sym), 1_u8);
+        assert_eq!(mrb_sys_fixnum_to_cint(mrb_iv_get(mrb, obj, sym)), 1);
 
         mrbc_context_free(mrb, context);
         mrb_close(mrb);
     }
 }
-*/
