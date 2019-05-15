@@ -8,6 +8,7 @@ use std::rc::Rc;
 
 use crate::class;
 use crate::def::{ClassLike, Free, Parent};
+use crate::eval::EvalContext;
 use crate::interpreter::Mrb;
 use crate::module;
 use crate::sys::{self, DescribeState};
@@ -49,6 +50,8 @@ pub struct State {
     modules: HashMap<TypeId, Rc<module::Spec>>,
     // TODO: Make this private
     pub(crate) vfs: FakeFileSystem<VfsMetadata>,
+    // TODO: make this private
+    pub(crate) context_stack: Vec<EvalContext>,
 }
 
 impl State {
@@ -61,6 +64,7 @@ impl State {
             classes: HashMap::new(),
             modules: HashMap::new(),
             vfs,
+            context_stack: vec![],
         }
     }
 

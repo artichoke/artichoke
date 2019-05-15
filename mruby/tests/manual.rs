@@ -3,6 +3,7 @@ extern crate log;
 
 use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define};
+use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::load::MrbLoadSources;
@@ -92,26 +93,19 @@ impl MrbFile for Container {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use mruby::interpreter::MrbApi;
+#[test]
+fn define_rust_backed_ruby_class() {
+    env_logger::Builder::from_env("MRUBY_LOG").init();
 
-    use super::*;
+    let mut interp = Interpreter::create().expect("mrb init");
+    interp
+        .def_file_for_type::<_, Container>("container")
+        .expect("def file");
 
-    #[test]
-    fn define_rust_backed_ruby_class() {
-        env_logger::Builder::from_env("MRUBY_LOG").init();
+    let code = "require 'container'; Container.new(15).value";
+    let result = interp.eval(code).expect("no exceptions");
+    let cint = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+    assert_eq!(cint, 15);
 
-        let mut interp = Interpreter::create().expect("mrb init");
-        interp
-            .def_file_for_type::<_, Container>("container")
-            .expect("def file");
-
-        let code = "require 'container'; Container.new(15).value";
-        let result = interp.eval(code).expect("no exceptions");
-        let cint = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
-        assert_eq!(cint, 15);
-
-        drop(interp);
-    }
+    drop(interp);
 }

@@ -1,8 +1,9 @@
 #[macro_use]
 extern crate rust_embed;
 
+use mruby::eval::{EvalContext, MrbEval};
 use mruby::file::MrbFile;
-use mruby::interpreter::{Mrb, MrbApi};
+use mruby::interpreter::Mrb;
 use std::borrow::Cow;
 use std::convert::AsRef;
 
@@ -29,7 +30,11 @@ pub struct Builder;
 
 impl MrbFile for Builder {
     fn require(interp: Mrb) {
-        let builder = Source::contents("lib/rack/builder.rb");
-        interp.eval(builder).expect("rack/builder source");
+        let file = "lib/rack/builder.rb";
+        let contents = Source::contents(file);
+        // TODO: Implement rack with `MrbLoadSources::def_rb_source_file`
+        interp
+            .eval_with_context(contents, EvalContext::new(file))
+            .expect("rack/builder source");
     }
 }

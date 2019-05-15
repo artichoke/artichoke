@@ -164,7 +164,8 @@ mod tests {
     use crate::class::Spec;
     use crate::convert::TryFromMrb;
     use crate::def::Define;
-    use crate::interpreter::{Interpreter, MrbApi};
+    use crate::eval::MrbEval;
+    use crate::interpreter::Interpreter;
 
     #[test]
     fn super_class() {

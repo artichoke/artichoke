@@ -16,8 +16,9 @@
 //! This test fails before commit
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
+use mruby::eval::MrbEval;
 use mruby::gc::GarbageCollection;
-use mruby::interpreter::{Interpreter, MrbApi};
+use mruby::interpreter::Interpreter;
 use mruby::MrbError;
 use std::rc::Rc;
 
@@ -32,24 +33,28 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 10;
 fn unbounded_arena_growth() {
     let interp = Interpreter::create().expect("mrb init");
 
-    //MrbApi::current_exception
+    // MrbApi::current_exception
     let code = r#"
-        def bad_code
-          raise ArgumentError.new("n" * 1024 * 1024)
-        end
+def bad_code
+  raise ArgumentError.new("n" * 1024 * 1024)
+end
     "#;
-    interp.eval(code).expect("eval");
-    let expected = Err(MrbError::Exec(format!(
-        "ArgumentError: {}",
+    interp.eval(code.trim()).expect("eval");
+    let expected = format!(
+        r#"
+(eval):2: {} (ArgumentError)
+(eval):2:in bad_code
+(eval):1
+        "#,
         "n".repeat(1024 * 1024)
-    )));
+    );
     LeakDetector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let interp = Rc::clone(&interp);
         let code = "bad_code";
         let arena = interp.create_arena_savepoint();
         let result = interp.eval(code).map(|_| ());
         arena.restore();
-        assert_eq!(result, expected);
+        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
         drop(result);
         interp.incremental_gc();
     });

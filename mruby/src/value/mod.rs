@@ -61,6 +61,7 @@ impl Value {
 #[cfg(test)]
 mod tests {
     use crate::convert::*;
+    use crate::eval::MrbEval;
     use crate::interpreter::*;
     use crate::value::*;
 

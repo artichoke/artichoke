@@ -169,7 +169,8 @@ mod tests {
     mod functional {
         use crate::convert::TryFromMrb;
         use crate::def::{ClassLike, Define};
-        use crate::interpreter::{Interpreter, MrbApi};
+        use crate::eval::MrbEval;
+        use crate::interpreter::Interpreter;
         use crate::sys;
 
         #[test]

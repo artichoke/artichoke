@@ -1,5 +1,6 @@
 use mruby::convert::{Error, TryFromMrb};
-use mruby::interpreter::{self, Mrb, MrbApi};
+use mruby::eval::MrbEval;
+use mruby::interpreter::{self, Mrb};
 use mruby::load::MrbLoadSources;
 use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
@@ -15,7 +16,7 @@ impl Interpreter for Mrb {
     where
         T: AsRef<[u8]>,
     {
-        MrbApi::eval(self, code.as_ref())
+        MrbEval::eval(self, code.as_ref())
     }
 
     fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
