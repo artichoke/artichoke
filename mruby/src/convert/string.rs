@@ -7,12 +7,11 @@ use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
-// TODO: document encoding assumptions - can only convert UTF-8 data to a Rust
-// String.
+// TODO: Add a define for `MRB_UTF8_STRING` to mruby-sys build config to add
+// UTF-8 encoding support to character-oriented String instance methods.
+// Without this define, only ASCII is supported.
 //
-// TODO: Document danger associated with lifetimes.
-// If the mrb_value lives longer than the `String` or `&str` the mrb_value may
-// point to garbage.
+// https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
 
 impl TryFromMrb<String> for Value {
     type From = Rust;
@@ -37,6 +36,9 @@ impl TryFromMrb<&str> for Value {
                 let ptr = cstr.as_ptr();
                 Ok(Self::new(
                     Rc::clone(mrb),
+                    // internally, `mrb_str_new_cstr` calls `memcpy` to create
+                    // an owned copy of the C string that is stored on the mruby
+                    // heap.
                     sys::mrb_str_new_cstr(mrb.borrow().mrb, ptr),
                 ))
             }
@@ -57,6 +59,9 @@ impl TryFromMrb<Value> for String {
             Ruby::String => {
                 let mut value = value.inner();
                 let cstr = sys::mrb_string_value_cstr(mrb.borrow().mrb, &mut value);
+                // This converter requires that the bytes in `cstr` be valid
+                // UTF-8 data. If the `mrb_value` is binary data, use the
+                // `Vec<u8>` converter.
                 match CStr::from_ptr(cstr).to_str() {
                     Ok(string) => Ok(string.to_owned()),
                     Err(_) => Err(Error {
