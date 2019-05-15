@@ -81,7 +81,7 @@ impl MrbFile for Container {
 
         {
             let mut api = interp.borrow_mut();
-            api.def_class::<Container>("Container", None, Some(free));
+            api.def_class::<Self>("Container", None, Some(free));
             let spec = api.class_spec_mut::<Self>();
             spec.add_method("initialize", initialize, sys::mrb_args_req(1));
             spec.add_method("value", value, sys::mrb_args_none());
