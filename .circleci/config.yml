@@ -73,7 +73,7 @@ jobs:
             bundle exec rubocop
   docs:
     docker:
-      -image: circleci/node:lts
+      - image: circleci/node:lts
     steps:
       - checkout
       - restore_cache:
