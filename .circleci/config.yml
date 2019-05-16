@@ -61,16 +61,31 @@ jobs:
               fi
             done
   ruby:
-      docker:
-        - image: circleci/ruby:2.6
-      steps:
-        - checkout
-        - run:
-            name: rubocop
-            command: |
-              cd foolsgold/ruby
-              bundle install
-              bundle exec rubocop
+    docker:
+      - image: circleci/ruby:2.6
+    steps:
+      - checkout
+      - run:
+          name: rubocop
+          command: |
+            cd foolsgold/ruby
+            bundle install
+            bundle exec rubocop
+  docs:
+    docker:
+      -image: circleci/node:lts
+    steps:
+      - checkout
+      - restore_cache:
+          key: yarn-deps
+      - run:
+          name: Yarn Install
+          command: yarn install
+      - run:
+          name: Format Markdown
+          command: |
+            yarn run fmt
+            git diff -q
 workflows:
   version: 2
   build_test_lint:
