@@ -6,7 +6,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: project-cache
+          key: cargo-{{ checksum "Cargo.lock" }}
       - run:
           name: Install Nightly Toolchain
           command: |
@@ -23,6 +23,11 @@ jobs:
           command: |
             cargo build
             cargo build --release
+      - save_cache:
+          key: cargo-{{ checksum "Cargo.lock" }}
+          paths:
+            - "~/.cargo"
+            - "./target"
       - run:
           name: Test
           command: cargo test --all-features
@@ -37,11 +42,6 @@ jobs:
           command: |
             rustup component add clippy
             cargo clippy --all-targets --all-features
-      - save_cache:
-          key: project-cache
-          paths:
-            - "~/.cargo"
-            - "./target"
   c:
     docker:
       - image: silkeh/clang:latest
@@ -77,7 +77,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: yarn-deps
+          key: yarn-deps-{{ checksum "yarn.lock" }}
       - run:
           name: Yarn Install
           command: yarn install
@@ -87,7 +87,7 @@ jobs:
             yarn run fmt
             git diff -q
       - save_cache:
-          key: yarn-deps
+          key: yarn-deps-{{ checksum "yarn.lock" }}
           paths:
             - ~/.cache/yarn
 workflows:
