@@ -57,7 +57,7 @@ jobs:
             done
   ruby:
       docker:
-        -image: circleci/ruby:2.6
+        - image: circleci/ruby:2.6
       steps:
         - checkout
         - run:
