@@ -20,6 +20,12 @@ jobs:
             sudo apt-get install -y binutils bison ruby-full
             ruby --version
       - run:
+          # needed for cc crate in build.rs
+          name: Install mruby-sys Build Dependencies
+          command: |
+            sudo apt-get install -y clang
+            ruby --version
+      - run:
           name: Build Workspace
           command: |
             cargo build
