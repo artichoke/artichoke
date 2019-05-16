@@ -213,4 +213,25 @@ mod tests {
         // garbage collection
         assert!(!live.is_dead());
     }
+
+    #[test]
+    fn immediate_is_dead() {
+        let interp = Interpreter::create().expect("mrb init");
+        let arena = interp.create_arena_savepoint();
+        let live = interp.eval("27").expect("value");
+        assert!(!live.is_dead());
+        let immediate = live;
+        let live = interp.eval("64").expect("value");
+        arena.restore();
+        interp.full_gc();
+        // immediate objects are never dead
+        assert!(!immediate.is_dead());
+        // the result of the most recent eval is always live even after a full
+        // garbage collection
+        assert!(!live.is_dead());
+        // Fixnums are immediate even if they are created directly without an
+        // interpreter.
+        let fixnum = interp.fixnum(99);
+        assert!(!fixnum.is_dead());
+    }
 }

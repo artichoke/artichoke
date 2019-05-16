@@ -78,6 +78,7 @@
     }
   },
   "scripts": {
+    "clang-fmt": "find . \\( -name '*.h' -or -name '*.c' \\) -and -not -path '*vendor*' -and -not -path '*target*' | xargs clang-format -i",
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
     "fmt": "prettier --write --prose-wrap always './*.{css,html,js,json,md}' '{mruby*,foolsgold}/**/*.{css,html,js,json,md}'",
     "lint": "cargo clean -p foolsgold; for crate in mruby*; do cargo clean -p $crate; done && cargo clippy --all-targets && cd foolsgold/ruby && bundle exec rubocop"

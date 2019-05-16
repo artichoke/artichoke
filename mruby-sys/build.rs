@@ -85,6 +85,7 @@ fn main() {
 
     // Build the extension library
     println!("cargo:rerun-if-changed={}", Build::ext_source_file());
+    println!("cargo:rerun-if-changed={}/mruby-sys/ext.h", Build::ext_include_dir());
     cc::Build::new()
         .file(Build::ext_source_file())
         .include(Build::mruby_include_dir())
