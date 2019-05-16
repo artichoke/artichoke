@@ -85,7 +85,10 @@ fn main() {
 
     // Build the extension library
     println!("cargo:rerun-if-changed={}", Build::ext_source_file());
-    println!("cargo:rerun-if-changed={}/mruby-sys/ext.h", Build::ext_include_dir());
+    println!(
+        "cargo:rerun-if-changed={}/mruby-sys/ext.h",
+        Build::ext_include_dir()
+    );
     cc::Build::new()
         .file(Build::ext_source_file())
         .include(Build::mruby_include_dir())
@@ -108,6 +111,7 @@ fn main() {
         // As of bindgen 0.49.0, `mrb_heap_page` type fails a layout test.
         .layout_tests(false)
         .rustified_enum("mrb_vtype")
+        .rustfmt_bindings(true)
         .generate()
         .expect("Unable to generate mruby bindings");
     bindings
