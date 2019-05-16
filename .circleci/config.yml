@@ -14,9 +14,10 @@ jobs:
             rustc --version --verbose
             cargo --version --verbose
       - run:
-          name: Install Ruby for Building mruby
+          # https://github.com/mruby/mruby/blob/master/doc/guides/compile.md#prerequisites
+          name: Install mruby Build Dependencies
           command: |
-            sudo apt-get install -y ruby-full
+            sudo apt-get install -y binutils bison ruby-full
             ruby --version
       - run:
           name: Build Workspace
