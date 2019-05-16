@@ -65,6 +65,7 @@ fn main() {
     env::set_var("MRUBY_REVISION", MRUBY_REVISION);
     println!("cargo:rustc-env=MRUBY_REVISION={}", MRUBY_REVISION);
     println!("cargo:rerun-if-env-changed=MRUBY_REVISION");
+    println!("cargo:rerun-if-env-changed=PROFILE");
     println!("cargo:rerun-if-changed={}", Build::build_config());
     println!("cargo:rerun-if-changed={}/sys.gembox", Build::root());
     if !Command::new(Build::mruby_minirake())
