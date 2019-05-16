@@ -1,5 +1,7 @@
 # ferrocarril
 
+[![CircleCI](https://circleci.com/gh/lopopolo/ferrocarril.svg?style=svg)](https://circleci.com/gh/lopopolo/ferrocarril)
+
 ferrocarril aims to embed a [Ruby on Rails](https://github.com/rails/rails) web
 application that talks to an external MySQL database in Rust and serve the app
 with [Rocket](https://rocket.rs/).
