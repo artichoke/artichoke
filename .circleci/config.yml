@@ -14,6 +14,11 @@ jobs:
             rustc --version --verbose
             cargo --version --verbose
       - run:
+          name: Install Ruby for Building mruby
+          command: |
+            sudo apt-get install -y ruby-full
+            ruby --version
+      - run:
           name: Build Workspace
           command: |
             cargo build
