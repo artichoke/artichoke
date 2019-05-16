@@ -54,7 +54,7 @@ jobs:
             for SOURCE in $SOURCES
             do
               clang-format -output-replacements-xml "$SOURCE" > /tmp/clang-format-replacements
-              if [ ! grep -q "offset" /tmp/clang-format-replacements ]; then
+              if ! grep -q "offset" /tmp/clang-format-replacements; then
                 echo "Source file '$SOURCE' contains formatting issues."
                 echo "Please use clang-format tool to resolve found issues."
                 exit 1
