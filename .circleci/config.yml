@@ -97,3 +97,4 @@ workflows:
       - rust
       - c
       - ruby
+      - docs
