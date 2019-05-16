@@ -19,6 +19,8 @@ jobs:
           command: |
             sudo apt-get install -y binutils bison ruby-full
             ruby --version
+            rustup component add rustfmt
+            rustfmt --version
       - run:
           # needed for cc crate in build.rs
           name: Install mruby-sys Build Dependencies
