@@ -1,8 +1,13 @@
-# foolsgold
+# ferrocarril
 
-foolsgold aims to embed a [Ruby on Rails](https://github.com/rails/rails) web
+ferrocarril aims to embed a [Ruby on Rails](https://github.com/rails/rails) web
 application that talks to an external MySQL database in Rust and serve the app
 with [Rocket](https://rocket.rs/).
+
+_ferrocarril_ means _railway_ in Spanish and is sounds like _ferrous_ which
+means _containing iron_.
+
+## foolsgold
 
 The [foolsgold crate](/foolsgold) is an early attempt to achieve this goal. The
 foolsgold crate:
