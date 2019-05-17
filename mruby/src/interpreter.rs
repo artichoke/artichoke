@@ -120,6 +120,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                     // dynamic, Rust-backed require
                     interp.push_context(context);
                     require(Rc::clone(&interp));
+                    interp.pop_context();
                 } else {
                     // source-backed require
                     let contents = {
