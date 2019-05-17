@@ -112,6 +112,7 @@ fn main() {
         // As of bindgen 0.49.0, `mrb_heap_page` type fails a layout test.
         .layout_tests(false)
         .rustified_enum("mrb_vtype")
+        .rustified_enum("mrb_lex_state_enum")
         .rustfmt_bindings(true)
         .generate()
         .expect("Unable to generate mruby bindings");

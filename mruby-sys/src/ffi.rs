@@ -2516,19 +2516,22 @@ pub struct mrb_ast_node {
     pub lineno: u16,
     pub filename_index: u16,
 }
-pub const mrb_lex_state_enum_EXPR_BEG: mrb_lex_state_enum = 0;
-pub const mrb_lex_state_enum_EXPR_END: mrb_lex_state_enum = 1;
-pub const mrb_lex_state_enum_EXPR_ENDARG: mrb_lex_state_enum = 2;
-pub const mrb_lex_state_enum_EXPR_ENDFN: mrb_lex_state_enum = 3;
-pub const mrb_lex_state_enum_EXPR_ARG: mrb_lex_state_enum = 4;
-pub const mrb_lex_state_enum_EXPR_CMDARG: mrb_lex_state_enum = 5;
-pub const mrb_lex_state_enum_EXPR_MID: mrb_lex_state_enum = 6;
-pub const mrb_lex_state_enum_EXPR_FNAME: mrb_lex_state_enum = 7;
-pub const mrb_lex_state_enum_EXPR_DOT: mrb_lex_state_enum = 8;
-pub const mrb_lex_state_enum_EXPR_CLASS: mrb_lex_state_enum = 9;
-pub const mrb_lex_state_enum_EXPR_VALUE: mrb_lex_state_enum = 10;
-pub const mrb_lex_state_enum_EXPR_MAX_STATE: mrb_lex_state_enum = 11;
-pub type mrb_lex_state_enum = u32;
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum mrb_lex_state_enum {
+    EXPR_BEG = 0,
+    EXPR_END = 1,
+    EXPR_ENDARG = 2,
+    EXPR_ENDFN = 3,
+    EXPR_ARG = 4,
+    EXPR_CMDARG = 5,
+    EXPR_MID = 6,
+    EXPR_FNAME = 7,
+    EXPR_DOT = 8,
+    EXPR_CLASS = 9,
+    EXPR_VALUE = 10,
+    EXPR_MAX_STATE = 11,
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct mrb_parser_message {
