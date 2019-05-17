@@ -6,104 +6,138 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: cargo-{{ checksum "Cargo.lock" }}
+          key: rust-cargo-v1-{{ checksum "Cargo.lock" }}
       - run:
-          name: Install Nightly Toolchain
+          name: Install Rust Toolchain
           command: |
-            rustup toolchain install nightly
+            rustup toolchain install "$(cat rust-toolchain)"
+            rustup component add rustfmt
+            rustup component add clippy
             rustc --version --verbose
             cargo --version --verbose
+            rustfmt --version
+            cargo clippy -- --version
       - run:
           # https://github.com/mruby/mruby/blob/master/doc/guides/compile.md#prerequisites
           name: Install mruby Build Dependencies
           command: |
             sudo apt-get install -y binutils bison ruby-full
-            ruby --version
-            rustup component add rustfmt
             rustfmt --version
+            ruby --version
       - run:
           # needed for cc crate in build.rs
           name: Install mruby-sys Build Dependencies
           command: |
             sudo apt-get install -y clang
-            ruby --version
+            clang --version
       - run:
           name: Build Workspace
           command: |
             cargo build
-            cargo build --release
       - save_cache:
-          key: cargo-{{ checksum "Cargo.lock" }}
+          key: rust-cargo-v1-{{ checksum "Cargo.lock" }}
           paths:
             - "~/.cargo"
             - "./target"
       - run:
-          name: Test
+          name: Test Workspace
           command: cargo test --all-features
       - run:
-          name: Check Formatting
+          name: Format Rust Sources
           command: |
-            rustup component add rustfmt
             rustfmt --version
             cargo fmt -- --check --color=auto
       - run:
-          name: Lint With Clippy
+          name: Lint Rust With Clippy
           command: |
-            rustup component add clippy
+            cargo clippy -- --version
             cargo clippy --all-targets --all-features
   c:
-    docker:
-      - image: silkeh/clang:latest
-    steps:
-      - checkout
-      - run:
-          name: clang-format
-          command: |
-            SOURCES="$(find . -type f \( -name '*.h' -or -name '*.c' \) -and -not -path '*vendor*' -and -not -path '*target*')"
-            for SOURCE in $SOURCES
-            do
-              clang-format -output-replacements-xml "$SOURCE" > /tmp/clang-format-replacements
-              if grep -q "offset" /tmp/clang-format-replacements; then
-                echo "Source file '$SOURCE' contains formatting issues."
-                echo "Please use clang-format tool to resolve found issues."
-                exit 1
-              fi
-            done
-  ruby:
-    docker:
-      - image: circleci/ruby:2.6
-    steps:
-      - checkout
-      - run:
-          name: rubocop
-          command: |
-            cd foolsgold/ruby
-            bundle install
-            bundle exec rubocop
-  docs:
     docker:
       - image: circleci/node:lts
     steps:
       - checkout
       - restore_cache:
-          key: yarn-deps-{{ checksum "yarn.lock" }}
+          key: c-yarn-v1-{{ checksum "yarn.lock" }}
       - run:
           name: Yarn Install
           command: yarn install
       - save_cache:
-          key: yarn-deps-{{ checksum "yarn.lock" }}
+          key: c-yarn-v1-{{ checksum "yarn.lock" }}
           paths:
             - ~/.cache/yarn
       - run:
-          name: Format Markdown
+          name: Format C Sources
           command: |
-            yarn run fmt
-            git diff -q
+            yarn run clang-format --version
+
+            _check_clang_format() {
+              if yarn run clang-format -output-replacements-xml "$1" | grep -q "offset"; then
+                echo "KO: $1"
+                echo "    Please run 'yarn fmt-c' to resolve C formatting issues"
+                return 1
+              else
+                echo "OK: $1"
+              fi
+            }
+            export -f _check_clang_format
+
+            find . \
+              -type f \( -name '*.h' -or -name '*.c' \) \
+              -and -not -path '*vendor*' -and -not -path '*target*' \
+              -print0 | xargs -0 -n1 bash -c '_check_clang_format "$@"' _
+  ruby:
+    docker:
+      - image: circleci/ruby:2.6
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - ruby-bundler-v1-{{ checksum "Gemfile.lock" }}
+      - run:
+          name: Bundle Install
+          working_directory: ./foolsgold/ruby
+          command: bundle install --path ~/vendor/bundle
+      - save_cache:
+          key: ruby-bundler-v1-{{ checksum "Gemfile.lock" }}
+          paths:
+            - ~/vendor/bundle
+      - run:
+          name: Lint Ruby With RuboCop
+          working_directory: ./foolsgold/ruby
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+  text:
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - checkout
+      - restore_cache:
+          key: text-yarn-v1-{{ checksum "yarn.lock" }}
+      - run:
+          name: Yarn Install
+          command: yarn install
+      - save_cache:
+          key: text-yarn-v1-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
+      - run:
+          name: Format Text Sources
+          command: |
+            yarn run prettier --version
+            yarn run fmt-text
+            if ! git diff -q; then
+              echo "KO: Text files not formatted"
+              git status --porcelain
+              echo "    Please run 'yarn fmt-text' to resolve text formatting issues"
+              exit 1
+            fi
 workflows:
   version: 2
-  build_test_lint:
+  build:
     jobs:
       - rust
       - c
       - ruby
-      - docs
+      - text
