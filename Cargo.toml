@@ -2,6 +2,7 @@
 members = [
   "foolsgold",
   "mruby",
+  "mruby-bin",
   "mruby-rack",
   "mruby-sys",
   "mruby-vfs",

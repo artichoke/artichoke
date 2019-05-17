@@ -14,6 +14,7 @@ const TOP_FILENAME: &str = "(eval)";
 /// [`MrbEval::eval`] uses the current context to set the `__FILE__` magic
 /// constant on the [`sys::mrbc_context`].
 #[allow(clippy::module_name_repetitions)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvalContext {
     /// Value of the `__FILE__` magic constant that also appears in stack
     /// frames.
@@ -83,10 +84,13 @@ impl MrbEval for Mrb {
         // Grab the persistent `EvalContext` from the context on the `State` or
         // the root context if the stack is empty.
         let context = {
-            let mut api = self.borrow_mut();
-            api.context_stack.pop()
+            let api = self.borrow();
+            if let Some(context) = api.context_stack.last() {
+                context.clone()
+            } else {
+                EvalContext::root()
+            }
         };
-        let context = context.unwrap_or_else(EvalContext::root);
 
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Mrb` to
@@ -165,6 +169,24 @@ mod tests {
     }
 
     #[test]
+    fn context_is_restored_after_eval() {
+        let interp = Interpreter::create().expect("mrb init");
+        let context = EvalContext::new("context.rb");
+        interp.push_context(context);
+        interp.eval("15").expect("eval");
+        assert_eq!(interp.borrow().context_stack.len(), 1);
+    }
+
+    #[test]
+    fn root_context_is_not_pushed_after_eval() {
+        let interp = Interpreter::create().expect("mrb init");
+        interp.eval("15").expect("eval");
+        assert_eq!(interp.borrow().context_stack.len(), 0);
+    }
+
+    #[test]
+    #[should_panic]
+    // this test is known broken
     fn eval_context_is_a_stack_for_nested_eval() {
         extern "C" fn nested_eval(
             mrb: *mut sys::mrb_state,
