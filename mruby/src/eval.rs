@@ -72,7 +72,7 @@ pub trait MrbEval {
     fn push_context(&self, context: EvalContext);
 
     /// Pop an [`EvalContext`] from the stack.
-    fn post_context(&self);
+    fn pop_context(&self);
 }
 
 impl MrbEval for Mrb {
@@ -130,7 +130,7 @@ impl MrbEval for Mrb {
     {
         self.push_context(context);
         let result = self.eval(code.as_ref());
-        self.post_context();
+        self.pop_context();
         result
     }
 
@@ -139,7 +139,7 @@ impl MrbEval for Mrb {
         api.context_stack.push(context);
     }
 
-    fn post_context(&self) {
+    fn pop_context(&self) {
         let mut api = self.borrow_mut();
         api.context_stack.pop();
     }
