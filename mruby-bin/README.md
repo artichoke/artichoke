@@ -1,11 +1,11 @@
 # mruby-bin
 
-Crate mruby-bin binaries for interacting with the mruby interpreter in the
-[mruby crate](/mruby).
+Crate mruby-bin provides binaries for interacting with the mruby interpreter in
+the [mruby crate](/mruby).
 
 ## rirb
 
-`rirb` is a Rust implementation of `irb` and is an interactive mruby shell or a
+`rirb` is a Rust implementation of `irb` and is an interactive mruby shell and
 [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop).
 `rirb` includes all extensions that are implemented as part of the `mruby`
 crate.
