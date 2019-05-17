@@ -9,12 +9,19 @@ use crate::MrbError;
 
 const TOP_FILENAME: &str = "(eval)";
 
+/// `EvalContext` is used to manipulate the state of a wrapped
+/// [`sys::mrb_state`]. [`Mrb`] maintains a stack of `EvalContext`s and
+/// [`MrbEval::eval`] uses the current context to set the `__FILE__` magic
+/// constant on the [`sys::mrbc_context`].
 #[allow(clippy::module_name_repetitions)]
 pub struct EvalContext {
+    /// Value of the `__FILE__` magic constant that also appears in stack
+    /// frames.
     pub filename: String,
 }
 
 impl EvalContext {
+    /// Create a new [`EvalContext`].
     pub fn new<T>(filename: T) -> Self
     where
         T: AsRef<str>,
@@ -24,6 +31,8 @@ impl EvalContext {
         }
     }
 
+    /// Create a root, or default, [`EvalContext`]. The root context sets the
+    /// `__FILE__` magic constant to "(eval)".
     pub fn root() -> Self {
         Self::default()
     }
@@ -37,9 +46,16 @@ impl Default for EvalContext {
     }
 }
 
+/// Interpreters that implement [`MrbEval`] expose methods for injecting code
+/// into a [`sys::mrb_state`] and extracting [`Value`]s from the interpereter.
+///
+/// Implementations are expected to maintain a stack of [`EvalContext`] objects
+/// that maintain filename context across nested invocations of
+/// [`MrbEval::eval`].
 #[allow(clippy::module_name_repetitions)]
 pub trait MrbEval {
-    /// Eval code on the mruby interpreter using the default [`EvalContext`].
+    /// Eval code on the mruby interpreter using the current [`EvalContext`] or
+    /// [`EvalContext::root`] if none is present on the stack.
     fn eval<T>(&self, code: T) -> Result<Value, MrbError>
     where
         T: AsRef<[u8]>;
