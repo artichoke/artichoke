@@ -126,10 +126,8 @@ jobs:
           name: Format Text Sources
           command: |
             yarn run prettier --version
-            yarn run fmt-text
-            if ! git diff -q; then
+            if ! yarn run prettier --check --prose-wrap always './*.{css,html,js,json,md}' '{mruby*,foolsgold}/**/*.{css,html,js,json,md}'; then
               echo "KO: Text files not formatted"
-              git status --porcelain
               echo "    Please run 'yarn fmt-text' to resolve text formatting issues"
               exit 1
             fi
