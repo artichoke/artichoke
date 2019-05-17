@@ -14,6 +14,7 @@ const TOP_FILENAME: &str = "(eval)";
 /// [`MrbEval::eval`] uses the current context to set the `__FILE__` magic
 /// constant on the [`sys::mrbc_context`].
 #[allow(clippy::module_name_repetitions)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EvalContext {
     /// Value of the `__FILE__` magic constant that also appears in stack
     /// frames.
@@ -116,6 +117,9 @@ impl MrbEval for Mrb {
             sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx)
         };
 
+        if context != EvalContext::root() {
+            self.push_context(context);
+        }
         if let Some(backtrace) = self.current_exception() {
             warn!("runtime error with exception backtrace: {}", backtrace);
             return Err(MrbError::Exec(backtrace));
@@ -162,6 +166,22 @@ mod tests {
         let result = interp.eval("__FILE__").expect("eval");
         let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
         assert_eq!(&result, "(eval)");
+    }
+
+    #[test]
+    fn context_is_restored_after_eval() {
+        let interp = Interpreter::create().expect("mrb init");
+        let context = EvalContext::new("context.rb");
+        interp.push_context(context);
+        interp.eval("15").expect("eval");
+        assert_eq!(interp.borrow().context_stack.len(), 1);
+    }
+
+    #[test]
+    fn root_context_is_not_pushed_after_eval() {
+        let interp = Interpreter::create().expect("mrb init");
+        interp.eval("15").expect("eval");
+        assert_eq!(interp.borrow().context_stack.len(), 0);
     }
 
     #[test]
