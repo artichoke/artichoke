@@ -48,13 +48,17 @@ impl Value {
     }
 
     pub fn to_s_debug(&self) -> String {
+        format!("{}<{}>", self.ruby_type().class_name(), self.inspect())
+    }
+
+    pub fn inspect(&self) -> String {
         let arena = self.interp.create_arena_savepoint();
         let mrb = { self.interp.borrow().mrb };
         let debug = unsafe { sys::mrb_sys_value_debug_str(mrb, self.value) };
         let cstr = unsafe { sys::mrb_str_to_cstr(mrb, debug) };
         let string = unsafe { CStr::from_ptr(cstr) }.to_string_lossy();
         arena.restore();
-        format!("{}<{}>", self.ruby_type().class_name(), string)
+        string.into_owned()
     }
 }
 
@@ -88,6 +92,17 @@ mod tests {
     }
 
     #[test]
+    fn inspect_true() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+
+            let value = Value::try_from_mrb(&interp, true).expect("convert");
+            let debug = value.inspect();
+            assert_eq!(debug, "true");
+        }
+    }
+
+    #[test]
     fn to_s_false() {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
@@ -106,6 +121,17 @@ mod tests {
             let value = Value::try_from_mrb(&interp, false).expect("convert");
             let debug = value.to_s_debug();
             assert_eq!(debug, "Boolean<false>");
+        }
+    }
+
+    #[test]
+    fn inspect_false() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+
+            let value = Value::try_from_mrb(&interp, false).expect("convert");
+            let debug = value.inspect();
+            assert_eq!(debug, "false");
         }
     }
 
@@ -132,6 +158,17 @@ mod tests {
     }
 
     #[test]
+    fn inspect_nil() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+
+            let value = Value::try_from_mrb(&interp, None::<Value>).expect("convert");
+            let debug = value.inspect();
+            assert_eq!(debug, "nil");
+        }
+    }
+
+    #[test]
     fn to_s_fixnum() {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
@@ -150,6 +187,17 @@ mod tests {
             let value = Value::try_from_mrb(&interp, 255).expect("convert");
             let debug = value.to_s_debug();
             assert_eq!(debug, "Fixnum<255>");
+        }
+    }
+
+    #[test]
+    fn inspect_fixnum() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+
+            let value = Value::try_from_mrb(&interp, 255).expect("convert");
+            let debug = value.inspect();
+            assert_eq!(debug, "255");
         }
     }
 
@@ -176,6 +224,17 @@ mod tests {
     }
 
     #[test]
+    fn inspect_string() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+
+            let value = Value::try_from_mrb(&interp, "interstate").expect("convert");
+            let debug = value.inspect();
+            assert_eq!(debug, r#""interstate""#);
+        }
+    }
+
+    #[test]
     fn to_s_empty_string() {
         unsafe {
             let interp = Interpreter::create().expect("mrb init");
@@ -194,6 +253,17 @@ mod tests {
             let value = Value::try_from_mrb(&interp, "").expect("convert");
             let debug = value.to_s_debug();
             assert_eq!(debug, r#"String<"">"#);
+        }
+    }
+
+    #[test]
+    fn inspect_empty_string() {
+        unsafe {
+            let interp = Interpreter::create().expect("mrb init");
+
+            let value = Value::try_from_mrb(&interp, "").expect("convert");
+            let debug = value.inspect();
+            assert_eq!(debug, r#""""#);
         }
     }
 
