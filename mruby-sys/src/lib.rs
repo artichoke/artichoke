@@ -22,6 +22,22 @@ mod ffi_tests;
 pub use self::args::*;
 pub use self::ffi::*;
 
+/// Version metadata `String` for mruby-sys and embedded mruby.
+pub fn mruby_sys_version(verbose: bool) -> String {
+    if verbose {
+        let engine = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_ENGINE) };
+        let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
+        format!(
+            "{} {} [{}]",
+            engine.to_str().expect("mruby engine name"),
+            version.to_str().expect("mruby engine version"),
+            env!("CARGO_PKG_VERSION")
+        )
+    } else {
+        env!("CARGO_PKG_VERSION").to_owned()
+    }
+}
+
 /// Methods to describe an [`mrb_state`].
 pub trait DescribeState {
     /// Wraper around [`fmt::Display`] for [`mrb_state`]. Returns Ruby engine
