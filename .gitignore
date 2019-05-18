@@ -262,3 +262,10 @@ tags
 [._]*.un~
 
 # End of https://www.gitignore.io/api/vim,node,sass,rust,ruby,intellij
+
+# Overrides
+
+# ignore all targets, not just the root (sub-crates in workspace and webpack)
+target/
+# rube is an application
+!Cargo.lock
