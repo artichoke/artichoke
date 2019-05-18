@@ -88,7 +88,7 @@ impl State {
     // NOTE: This function will panic if there is more than one `Rc` pointing
     // to the `class::Spec` backing the type `T`. There may be more than one
     // `Rc` if a class has been used as a parent for another `Module` or
-    // `Class`. In practice, this means that `mruby` modules are closed once
+    // `Class`. In practice, this means that `mruby` classes are closed once
     // they are `define`d on an `Mrb` interpreter.
     pub fn class_spec_mut<T: Any>(&mut self) -> &mut class::Spec {
         let spec = self
