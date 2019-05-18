@@ -1,5 +1,6 @@
 use mruby_vfs::{FakeFileSystem, FileSystem};
 use std::any::{Any, TypeId};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::c_void;
 use std::fmt;
@@ -7,7 +8,7 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::class;
-use crate::def::{ClassLike, Free, Parent};
+use crate::def::{Free, Parent};
 use crate::eval::EvalContext;
 use crate::interpreter::Mrb;
 use crate::module;
@@ -46,8 +47,8 @@ pub struct State {
     pub mrb: *mut sys::mrb_state,
     // TODO: Make this private
     pub ctx: *mut sys::mrbc_context,
-    classes: HashMap<TypeId, Rc<class::Spec>>,
-    modules: HashMap<TypeId, Rc<module::Spec>>,
+    classes: HashMap<TypeId, Rc<RefCell<class::Spec>>>,
+    modules: HashMap<TypeId, Rc<RefCell<module::Spec>>>,
     // TODO: Make this private
     pub(crate) vfs: FakeFileSystem<VfsMetadata>,
     // TODO: make this private
@@ -55,6 +56,13 @@ pub struct State {
 }
 
 impl State {
+    /// Create a new [`State`] from a [`sys::mrb_state`] and
+    /// [`sys::mrbc_context`] with a fake in memory virtual filesystem
+    /// ([`FakeFileSystem`]).
+    ///
+    /// This constructor creates the directory `source_dir` in the VFS to act as
+    /// the source path for new Ruby files. See
+    /// [`MrbLoadSources::def_rb_source_file`].
     pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context, source_dir: &str) -> Self {
         let vfs = FakeFileSystem::new();
         vfs.create_dir_all(source_dir).expect("vfs init");
@@ -68,62 +76,87 @@ impl State {
         }
     }
 
+    /// Close a [`State`] and free underlying mruby structs and memory.
     pub fn close(self) {
         drop(self)
     }
 
-    pub fn def_class<T: Any>(&mut self, name: &str, parent: Option<Parent>, free: Option<Free>) {
+    /// Create a class definition bound to a Rust type `T`. Class definitions
+    /// have the same lifetime as the [`State`] because the class def owns the
+    /// `mrb_data_type` for the type, which must be long-lived. Class defs are
+    /// stored by [`TypeId`] of `T`.
+    ///
+    /// Internally, [`class::Spec`]s are stored in an `Rc<RefCell<_>>` which
+    /// allows class specs to have multiple owners, such as being a super class
+    /// or a parent for a class or a module. To mutate the class spec, call
+    /// `borrow_mut` on the return value of this method to get a mutable
+    /// reference to the class spec.
+    ///
+    /// Class specs can also be retrieved from the state after creation with
+    /// [`State::class_spec`].
+    pub fn def_class<T: Any>(
+        &mut self,
+        name: &str,
+        parent: Option<Parent>,
+        free: Option<Free>,
+    ) -> Rc<RefCell<class::Spec>> {
         let spec = class::Spec::new(name, parent, free);
-        self.classes.insert(TypeId::of::<T>(), Rc::new(spec));
+        let spec = Rc::new(RefCell::new(spec));
+        self.classes.insert(TypeId::of::<T>(), Rc::clone(&spec));
+        spec
     }
 
-    // NOTE: This function must return a reference with a smart pointer. `Class`
-    // specs are bound to the lifetime of the `Mrb` interpreter because if the
-    // sys pointers are deallocated, mruby may segfault.
-    pub fn class_spec<T: Any>(&self) -> Rc<class::Spec> {
+    /// Retrieve a class definition from the state bound to Rust type `T`.
+    ///
+    /// This function panics if type `T` has not had a class spec registered
+    /// for it using [`State::def_class`].
+    ///
+    /// Internally, [`class::Spec`]s are stored in an `Rc<RefCell<_>>` which
+    /// allows class specs to have multiple owners, such as being a super class
+    /// or a parent for a class or a module. To mutate the class spec, call
+    /// `borrow_mut` on the return value of this method to get a mutable
+    /// reference to the class spec.
+    pub fn class_spec<T: Any>(&self) -> Rc<RefCell<class::Spec>> {
         let spec = self.classes.get(&TypeId::of::<T>()).expect("class spec");
         Rc::clone(spec)
     }
 
-    // NOTE: This function will panic if there is more than one `Rc` pointing
-    // to the `class::Spec` backing the type `T`. There may be more than one
-    // `Rc` if a class has been used as a parent for another `Module` or
-    // `Class`. In practice, this means that `mruby` classes are closed once
-    // they are `define`d on an `Mrb` interpreter.
-    pub fn class_spec_mut<T: Any>(&mut self) -> &mut class::Spec {
-        let spec = self
-            .classes
-            .get_mut(&TypeId::of::<T>())
-            .expect("class spec");
-        let name = spec.name().to_owned();
-        Rc::get_mut(spec).unwrap_or_else(|| panic!("mutable class spec for {}", name))
-    }
-
-    pub fn def_module<T: Any>(&mut self, name: &str, parent: Option<Parent>) {
+    /// Create a module definition bound to a Rust type `T`. Module definitions
+    /// have the same lifetime as the [`State`]. Module defs are stored by
+    /// [`TypeId`] of `T`.
+    ///
+    /// Internally, [`module::Spec`]s are stored in an `Rc<RefCell<_>>` which
+    /// allows module specs to have multiple owners, such as being a parent for
+    /// a class or a module. To mutate the module spec, call `borrow_mut` on the
+    /// return value of this method to get a mutable reference to the module
+    /// spec.
+    ///
+    /// Class specs can also be retrieved from the state after creation with
+    /// [`State::class_spec`].
+    pub fn def_module<T: Any>(
+        &mut self,
+        name: &str,
+        parent: Option<Parent>,
+    ) -> Rc<RefCell<module::Spec>> {
         let spec = module::Spec::new(name, parent);
-        self.modules.insert(TypeId::of::<T>(), Rc::new(spec));
+        let spec = Rc::new(RefCell::new(spec));
+        self.modules.insert(TypeId::of::<T>(), Rc::clone(&spec));
+        spec
     }
 
-    // NOTE: This function must return a reference with a smart pointer.
-    // `Module` specs are bound to the lifetime of the `Mrb` interpreter because
-    // if the sys pointers are deallocated, mruby may segfault.
-    pub fn module_spec<T: Any>(&self) -> Rc<module::Spec> {
+    /// Retrieve a module definition from the state bound to Rust type `T`.
+    ///
+    /// This function panics if type `T` has not had a class spec registered
+    /// for it using [`State::def_module`].
+    ///
+    /// Internally, [`module::Spec`]s are stored in an `Rc<RefCell<_>>` which
+    /// allows module specs to have multiple owners, such as being a parent for
+    /// a class or a module. To mutate the module spec, call `borrow_mut` on the
+    /// return value of this method to get a mutable reference to the module
+    /// spec.
+    pub fn module_spec<T: Any>(&self) -> Rc<RefCell<module::Spec>> {
         let spec = self.modules.get(&TypeId::of::<T>()).expect("module spec");
         Rc::clone(spec)
-    }
-
-    // NOTE: This function will panic if there is more than one `Rc` pointing
-    // to the `module::Spec` backing the type `T`. There may be more than one
-    // `Rc` if a module has been used as a parent for another `Module` or
-    // `Class`. In practice, this means that `mruby` modules are closed once
-    // they are `define`d on an `Mrb` interpreter.
-    pub fn module_spec_mut<T: Any>(&mut self) -> &mut module::Spec {
-        let spec = self
-            .modules
-            .get_mut(&TypeId::of::<T>())
-            .expect("module spec");
-        let name = spec.name().to_owned();
-        Rc::get_mut(spec).unwrap_or_else(|| panic!("mutable module spec for {}", name))
     }
 }
 

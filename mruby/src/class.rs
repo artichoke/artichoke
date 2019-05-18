@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::HashSet;
 use std::convert::AsRef;
 use std::ffi::CString;
@@ -17,7 +18,7 @@ pub struct Spec {
     data_type: sys::mrb_data_type,
     methods: HashSet<method::Spec>,
     parent: Option<Parent>,
-    super_class: Option<Rc<Spec>>,
+    super_class: Option<Rc<RefCell<Spec>>>,
     is_mrb_tt_data: bool,
 }
 
@@ -50,7 +51,7 @@ impl Spec {
         self.is_mrb_tt_data = is_mrb_tt_data;
     }
 
-    pub fn with_super_class(&mut self, super_class: Rc<Self>) {
+    pub fn with_super_class(&mut self, super_class: Rc<RefCell<Self>>) {
         self.super_class = Some(super_class);
     }
 }
@@ -125,7 +126,7 @@ impl Define for Spec {
     fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError> {
         let mrb = interp.borrow().mrb;
         let super_class = if let Some(ref spec) = self.super_class {
-            spec.rclass(Rc::clone(interp))
+            spec.borrow().rclass(Rc::clone(&interp))
         } else {
             unsafe { (*mrb).object_class }
         };
@@ -159,6 +160,7 @@ impl Define for Spec {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
     use std::rc::Rc;
 
     use crate::class::Spec;
@@ -170,18 +172,15 @@ mod tests {
     #[test]
     fn super_class() {
         let interp = Interpreter::create().expect("mrb init");
-        let standard_error = Rc::new(Spec::new("StandardError", None, None));
-        {
+        let standard_error = Rc::new(RefCell::new(Spec::new("StandardError", None, None)));
+        let spec = {
             let mut api = interp.borrow_mut();
-            api.def_class::<()>("RustError", None, None);
-            let spec = api.class_spec_mut::<()>();
-            spec.with_super_class(standard_error);
-        }
-        {
-            let api = interp.borrow();
-            let spec = api.class_spec::<()>();
-            spec.define(&interp).expect("class install");
-        }
+            let spec = api.def_class::<()>("RustError", None, None);
+            spec.borrow_mut()
+                .with_super_class(Rc::clone(&standard_error));
+            spec
+        };
+        spec.borrow().define(&interp).expect("class install");
 
         let result = interp
             .eval("RustError.new.is_a?(StandardError)")
@@ -191,5 +190,31 @@ mod tests {
         let result = interp.eval("RustError < StandardError").expect("eval");
         let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
         assert!(result, "RustError inherits from StandardError");
+    }
+
+    #[test]
+    fn weak_ref_allows_mutable_class_specs_after_attached_as_parent() {
+        struct BaseClass;
+        struct SubClass;
+        let interp = Interpreter::create().expect("mrb init");
+        {
+            let mut api = interp.borrow_mut();
+            let base = api.def_class::<BaseClass>("BaseClass", None, None);
+            let sub = api.def_class::<SubClass>("SubClass", None, None);
+            sub.borrow_mut().with_super_class(Rc::clone(&base));
+        }
+        {
+            let api = interp.borrow();
+            let base = api.class_spec::<BaseClass>();
+            base.borrow().define(&interp).expect("def class");
+            let sub = api.class_spec::<SubClass>();
+            sub.borrow().define(&interp).expect("def class");
+        }
+        {
+            let api = interp.borrow();
+            // this should not panic
+            let _ = api.class_spec::<BaseClass>().borrow_mut();
+            let _ = api.class_spec::<SubClass>().borrow_mut();
+        }
     }
 }

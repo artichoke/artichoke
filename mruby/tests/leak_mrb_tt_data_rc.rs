@@ -62,22 +62,21 @@ impl MrbFile for Container {
                 let ptr = mem::transmute::<Rc<RefCell<Container>>, *mut c_void>(data);
 
                 let spec = api.class_spec::<Container>();
-                sys::mrb_sys_data_init(&mut slf, ptr, spec.data_type());
+                sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
 
                 slf
             }
         }
 
-        {
+        let spec = {
             let mut api = interp.borrow_mut();
-            api.def_class::<Container>("Container", None, Some(free));
-            let spec = api.class_spec_mut::<Self>();
-            spec.add_method("initialize", initialize, sys::mrb_args_req(1));
-            spec.mrb_value_is_rust_backed(true);
-        }
-        let api = interp.borrow();
-        let spec = api.class_spec::<Self>();
-        spec.define(&interp).expect("class install");
+            let spec = api.def_class::<Self>("Container", None, Some(free));
+            spec.borrow_mut()
+                .add_method("initialize", initialize, sys::mrb_args_req(1));
+            spec.borrow_mut().mrb_value_is_rust_backed(true);
+            spec
+        };
+        spec.borrow().define(&interp).expect("class install");
     }
 }
 

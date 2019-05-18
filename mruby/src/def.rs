@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use crate::class;
@@ -13,18 +15,27 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 pub type Method =
     unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Parent {
-    Class { spec: Rc<class::Spec> },
-    Module { spec: Rc<module::Spec> },
+    Class { spec: Rc<RefCell<class::Spec>> },
+    Module { spec: Rc<RefCell<module::Spec>> },
 }
 
 impl Parent {
     pub fn rclass(&self, interp: Mrb) -> *mut sys::RClass {
         match self {
-            Parent::Class { spec } => spec.rclass(interp),
-            Parent::Module { spec } => spec.rclass(interp),
+            Parent::Class { spec } => spec.borrow().rclass(interp),
+            Parent::Module { spec } => spec.borrow().rclass(interp),
         }
+    }
+}
+
+impl Hash for Parent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Parent::Class { spec } => spec.borrow().hash(state),
+            Parent::Module { spec } => spec.borrow().hash(state),
+        };
     }
 }
 
@@ -57,8 +68,8 @@ where
     fn fqname(&self) -> String {
         if let Some(parent) = self.parent() {
             let parentfq = match parent {
-                Parent::Class { spec } => spec.fqname(),
-                Parent::Module { spec } => spec.fqname(),
+                Parent::Class { spec } => spec.borrow().fqname(),
+                Parent::Module { spec } => spec.borrow().fqname(),
             };
             format!("{}::{}", parentfq, self.name())
         } else {
@@ -87,40 +98,37 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         {
             let mut api = interp.borrow_mut();
-            api.def_module::<Root>("A", None);
-            let spec = api.module_spec::<Root>();
-            api.def_module::<ModuleUnderRoot>(
+            let root = api.def_module::<Root>("A", None);
+            let mod_under_root = api.def_module::<ModuleUnderRoot>(
                 "B",
                 Some(Parent::Module {
-                    spec: Rc::clone(&spec),
+                    spec: Rc::clone(&root),
                 }),
             );
-            api.def_class::<ClassUnderRoot>(
+            let cls_under_root = api.def_class::<ClassUnderRoot>(
                 "C",
                 Some(Parent::Module {
-                    spec: Rc::clone(&spec),
+                    spec: Rc::clone(&root),
                 }),
                 None,
             );
-            let spec = api.module_spec::<ModuleUnderRoot>();
-            api.def_class::<ClassUnderModule>(
+            let _cls_under_mod = api.def_class::<ClassUnderModule>(
                 "D",
                 Some(Parent::Module {
-                    spec: Rc::clone(&spec),
+                    spec: Rc::clone(&mod_under_root),
                 }),
                 None,
             );
-            let spec = api.class_spec::<ClassUnderRoot>();
-            api.def_module::<ModuleUnderClass>(
+            let _mod_under_cls = api.def_module::<ModuleUnderClass>(
                 "E",
                 Some(Parent::Class {
-                    spec: Rc::clone(&spec),
+                    spec: Rc::clone(&cls_under_root),
                 }),
             );
-            api.def_class::<ClassUnderClass>(
+            let _cls_under_cls = api.def_class::<ClassUnderClass>(
                 "F",
                 Some(Parent::Class {
-                    spec: Rc::clone(&spec),
+                    spec: Rc::clone(&cls_under_root),
                 }),
                 None,
             );
@@ -128,42 +136,51 @@ mod tests {
 
         let api = interp.borrow();
         api.module_spec::<Root>()
+            .borrow()
             .define(&interp)
             .expect("def module");
         api.module_spec::<ModuleUnderRoot>()
+            .borrow()
             .define(&interp)
             .expect("def module");
         api.class_spec::<ClassUnderRoot>()
+            .borrow()
             .define(&interp)
             .expect("def class");
         api.class_spec::<ClassUnderModule>()
+            .borrow()
             .define(&interp)
             .expect("def class");
         api.module_spec::<ModuleUnderClass>()
+            .borrow()
             .define(&interp)
             .expect("def module");
         api.class_spec::<ClassUnderClass>()
+            .borrow()
             .define(&interp)
             .expect("def class");
 
         let spec = api.module_spec::<Root>();
-        assert_eq!(&spec.fqname(), "A");
-        assert_eq!(&format!("{}", spec), "mruby module spec -- A");
+        assert_eq!(&spec.borrow().fqname(), "A");
+        assert_eq!(&format!("{}", spec.borrow()), "mruby module spec -- A");
         let spec = api.module_spec::<ModuleUnderRoot>();
-        assert_eq!(&spec.fqname(), "A::B");
-        assert_eq!(&format!("{}", spec), "mruby module spec -- A::B");
+        assert_eq!(&spec.borrow().fqname(), "A::B");
+        assert_eq!(&format!("{}", spec.borrow()), "mruby module spec -- A::B");
         let spec = api.class_spec::<ClassUnderRoot>();
-        assert_eq!(&spec.fqname(), "A::C");
-        assert_eq!(&format!("{}", spec), "mruby class spec -- A::C");
+        assert_eq!(&spec.borrow().fqname(), "A::C");
+        assert_eq!(&format!("{}", spec.borrow()), "mruby class spec -- A::C");
         let spec = api.class_spec::<ClassUnderModule>();
-        assert_eq!(&spec.fqname(), "A::B::D");
-        assert_eq!(&format!("{}", spec), "mruby class spec -- A::B::D");
+        assert_eq!(&spec.borrow().fqname(), "A::B::D");
+        assert_eq!(&format!("{}", spec.borrow()), "mruby class spec -- A::B::D");
         let spec = api.module_spec::<ModuleUnderClass>();
-        assert_eq!(&spec.fqname(), "A::C::E");
-        assert_eq!(&format!("{}", spec), "mruby module spec -- A::C::E");
+        assert_eq!(&spec.borrow().fqname(), "A::C::E");
+        assert_eq!(
+            &format!("{}", spec.borrow()),
+            "mruby module spec -- A::C::E"
+        );
         let spec = api.class_spec::<ClassUnderClass>();
-        assert_eq!(&spec.fqname(), "A::C::F");
-        assert_eq!(&format!("{}", spec), "mruby class spec -- A::C::F");
+        assert_eq!(&spec.borrow().fqname(), "A::C::F");
+        assert_eq!(&format!("{}", spec.borrow()), "mruby class spec -- A::C::F");
     }
 
     mod functional {
@@ -189,32 +206,22 @@ mod tests {
                 }
             }
             let interp = Interpreter::create().expect("mrb init");
-            {
+            let (cls, module) = {
                 let mut api = interp.borrow_mut();
-                api.def_class::<Class>("DefineMethodTestClass", None, None);
-                api.def_module::<Module>("DefineMethodTestModule", None);
-            }
-            {
-                let mut api = interp.borrow_mut();
-                let spec = api.class_spec_mut::<Class>();
-                spec.add_method("value", value, sys::mrb_args_none());
-                spec.add_self_method("value", value, sys::mrb_args_none());
-            }
-            {
-                let mut api = interp.borrow_mut();
-                let spec = api.module_spec_mut::<Module>();
-                spec.add_method("value", value, sys::mrb_args_none());
-                spec.add_self_method("value", value, sys::mrb_args_none());
-            }
-            {
-                let api = interp.borrow();
-                api.class_spec::<Class>()
-                    .define(&interp)
-                    .expect("class install");
-                api.module_spec::<Module>()
-                    .define(&interp)
-                    .expect("module install");
-            }
+                let cls = api.def_class::<Class>("DefineMethodTestClass", None, None);
+                let module = api.def_module::<Module>("DefineMethodTestModule", None);
+                cls.borrow_mut()
+                    .add_method("value", value, sys::mrb_args_none());
+                cls.borrow_mut()
+                    .add_self_method("value", value, sys::mrb_args_none());
+                module.borrow_mut()
+                    .add_method("value", value, sys::mrb_args_none());
+                module.borrow_mut()
+                    .add_self_method("value", value, sys::mrb_args_none());
+                (cls, module)
+            };
+            cls.borrow().define(&interp).expect("class install");
+            module.borrow().define(&interp).expect("module install");
 
             interp
                 .eval(

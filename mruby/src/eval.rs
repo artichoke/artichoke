@@ -201,12 +201,13 @@ mod tests {
                 {
                     let mut api = interp.borrow_mut();
                     api.def_module::<Self>("NestedEval", None);
-                    let spec = api.module_spec_mut::<Self>();
-                    spec.add_self_method("file", nested_eval, sys::mrb_args_none());
+                    let spec = api.module_spec::<Self>();
+                    spec.borrow_mut()
+                        .add_self_method("file", nested_eval, sys::mrb_args_none());
                 }
                 let api = interp.borrow();
                 let spec = api.module_spec::<Self>();
-                spec.define(&interp).expect("def method");
+                spec.borrow().define(&interp).expect("def method");
             }
         }
         let mut interp = Interpreter::create().expect("mrb init");

@@ -208,11 +208,13 @@ impl Interpreter {
             kernel.define(&interp).map_err(|_| MrbError::New)?;
             trace!("Installed Kernel#require on {}", mrb.debug());
             let exception = class::Spec::new("Exception", None, None);
+            let exception_rc = Rc::new(RefCell::new(exception));
             let mut script_error = class::Spec::new("ScriptError", None, None);
-            script_error.with_super_class(Rc::new(exception));
+            script_error.with_super_class(Rc::clone(&exception_rc));
             script_error.define(&interp).map_err(|_| MrbError::New)?;
+            let script_error_rc = Rc::new(RefCell::new(script_error));
             let mut load_error = class::Spec::new("LoadError", None, None);
-            load_error.with_super_class(Rc::new(script_error));
+            load_error.with_super_class(Rc::clone(&script_error_rc));
             load_error.define(&interp).map_err(|_| MrbError::New)?;
             trace!("Installed LoadError on {}", mrb.debug());
 
