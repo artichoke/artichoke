@@ -37,7 +37,7 @@ pub fn spawn() -> Result<(), String> {
         )
         .mount("/img", routes![assets::pyrite, assets::resf])
         .launch();
-    // This log is only reachable is Rocket has an error during startup,
+    // This log is only reachable if Rocket has an error during startup,
     // otherwise `rocket::ignite().launch()` blocks forever.
     warn!("Failed to launch rocket: {}", err);
     Err(err.to_string())

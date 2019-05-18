@@ -70,6 +70,9 @@ typings/
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 
+# IntelliJ config dir
+.idea/
+
 # next.js build output
 .next
 

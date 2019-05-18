@@ -9,6 +9,14 @@ with [Rocket](https://rocket.rs/).
 _ferrocarril_ means _railway_ in Spanish and sounds like _ferrous_ which means
 _containing iron_.
 
+## Usage
+
+```bash
+cargo run --bin foolsgold
+```
+
+Then, open `http://localhost:8000` on your browser.
+
 ## foolsgold
 
 The [foolsgold crate](/foolsgold) is an early attempt to achieve this goal. The
