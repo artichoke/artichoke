@@ -21,24 +21,32 @@ cargo run -p mruby-bin rirb
 The REPL looks like this:
 
 ```console
-[2.0 (v2.0.1)] > 12 +
-[2.0 (v2.0.1)] * 25
+mruby 2.0 [2.0.1-sys.3.c078758]
+[Compiled with rustc 1.36.0-nightly a19cf18 2019-05-06]
+>>> 12 +
+... 25
 => 37
-[2.0 (v2.0.1)] > 12.times.map do |i|
-[2.0 (v2.0.1)] * i.to_s
-[2.0 (v2.0.1)] * end
+>>> 12.times.map do |i|
+...   i.to_s
+... end
 => ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
-[2.0 (v2.0.1)] > def foo
-[2.0 (v2.0.1)] * 'foo'
-[2.0 (v2.0.1)] * end
+>>> def foo
+...   'bar'
+... end
 => :foo
-[2.0 (v2.0.1)] > foo
-=> "foo"
-[2.0 (v2.0.1)] > undefined_method
-mruby exception: (rirb):1: undefined method 'undefined_method' (NoMethodError)
-(rirb):1
-[2.0 (v2.0.1)] > raise 'error'
-mruby exception: (rirb):1: error (RuntimeError)
-(rirb):1
-[2.0 (v2.0.1)] >
+>>> foo
+=> "bar"
+>>> not_foo
+Backtrace:
+    (rirb):10: undefined method 'not_foo' (NoMethodError)
+    (rirb):10
+>>> raise "oh no!"
+Backtrace:
+    (rirb):11: oh no! (RuntimeError)
+    (rirb):11
+>>> [3, 6, 9].inject(0) do |sum, i|
+...   sum += i
+...
+^C
+>>>
 ```
