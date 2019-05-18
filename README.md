@@ -11,6 +11,14 @@ _containing iron_.
 
 ## foolsgold
 
+### Usage
+
+```bash
+cargo run --bin foolsgold
+```
+
+Then, open `http://localhost:8000` on your browser.
+
 The [foolsgold crate](/foolsgold) is an early attempt to achieve this goal. The
 foolsgold crate:
 
