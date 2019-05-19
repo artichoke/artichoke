@@ -217,7 +217,7 @@ impl Interpreter {
     }
 }
 
-/// `MrbApi` is the mutable API around the [`MrbState`]. `MrbApi` should provide
+/// `MrbApi` is the mutable API around the [`State`]. `MrbApi` should provide
 /// safe wrappers around unsafe functions from [`mruby_sys`] and the
 /// [`TryFromMrb`] converters.
 pub trait MrbApi {
@@ -237,14 +237,14 @@ pub trait MrbApi {
 }
 
 /// We need to implement the [`MrbApi`] on the [`Rc`] smart pointer [`Mrb`]
-/// type instead of the [`MrbState`] because we store the [`Rc`] in the userdata
+/// type instead of the [`State`] because we store the [`Rc`] in the userdata
 /// pointer of the [`sys::mrb_state`]. If the `MrbApi` were implemented on the
 /// `MrbState`, there would be duplicate borrows on the `Mrb` smart pointer
 /// during nested access to the interpreter.
 ///
 /// Implementing `MrbApi` on `Mrb` means callers do not need to manipulate
 /// borrows when evaling code. This is convenient because eval may recursively
-/// call [`MrbApi::eval`], e.g. during a nested require.
+/// call [`MrbEval::eval`], e.g. during a nested require.
 impl MrbApi for Mrb {
     /// Extract a `String` representation of the current exception on the mruby
     /// interpreter if there is one. The string will contain the exception

@@ -12,7 +12,7 @@ where
     Self: MrbApi,
 {
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
-    /// Ruby file is added to the filesystem and [`require`] will dynamically
+    /// Ruby file is added to the filesystem and `require` will dynamically
     /// define Ruby items when invoked via `Kernel#require`.
     ///
     /// If filename is a relative path, the Ruby source is added to the
