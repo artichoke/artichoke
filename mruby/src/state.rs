@@ -134,17 +134,16 @@ impl State {
 
     /// Retrieve a class definition from the state bound to Rust type `T`.
     ///
-    /// This function panics if type `T` has not had a class spec registered
-    /// for it using [`State::def_class`].
+    /// This function returns `None` if type `T` has not had a class spec
+    /// registered for it using [`State::def_class`].
     ///
     /// Internally, [`class::Spec`]s are stored in an `Rc<RefCell<_>>` which
     /// allows class specs to have multiple owners, such as being a super class
     /// or a parent for a class or a module. To mutate the class spec, call
     /// `borrow_mut` on the return value of this method to get a mutable
     /// reference to the class spec.
-    pub fn class_spec<T: Any>(&self) -> Rc<RefCell<class::Spec>> {
-        let spec = self.classes.get(&TypeId::of::<T>()).expect("class spec");
-        Rc::clone(spec)
+    pub fn class_spec<T: Any>(&self) -> Option<Rc<RefCell<class::Spec>>> {
+        self.classes.get(&TypeId::of::<T>()).map(Rc::clone)
     }
 
     /// Create a module definition bound to a Rust type `T`. Module definitions
@@ -197,17 +196,16 @@ impl State {
 
     /// Retrieve a module definition from the state bound to Rust type `T`.
     ///
-    /// This function panics if type `T` has not had a class spec registered
-    /// for it using [`State::def_module`].
+    /// This function returns `None` if type `T` has not had a class spec
+    /// registered for it using [`State::def_module`].
     ///
     /// Internally, [`module::Spec`]s are stored in an `Rc<RefCell<_>>` which
     /// allows module specs to have multiple owners, such as being a parent for
     /// a class or a module. To mutate the module spec, call `borrow_mut` on the
     /// return value of this method to get a mutable reference to the module
     /// spec.
-    pub fn module_spec<T: Any>(&self) -> Rc<RefCell<module::Spec>> {
-        let spec = self.modules.get(&TypeId::of::<T>()).expect("module spec");
-        Rc::clone(spec)
+    pub fn module_spec<T: Any>(&self) -> Option<Rc<RefCell<module::Spec>>> {
+        self.modules.get(&TypeId::of::<T>()).map(Rc::clone)
     }
 }
 

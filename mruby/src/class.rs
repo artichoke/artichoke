@@ -197,24 +197,20 @@ mod tests {
         struct BaseClass;
         struct SubClass;
         let interp = Interpreter::create().expect("mrb init");
-        {
+        let (base, sub) = {
             let mut api = interp.borrow_mut();
             let base = api.def_class::<BaseClass>("BaseClass", None, None);
             let sub = api.def_class::<SubClass>("SubClass", None, None);
             sub.borrow_mut().with_super_class(Rc::clone(&base));
-        }
-        {
-            let api = interp.borrow();
-            let base = api.class_spec::<BaseClass>();
-            base.borrow().define(&interp).expect("def class");
-            let sub = api.class_spec::<SubClass>();
-            sub.borrow().define(&interp).expect("def class");
-        }
+            (base, sub)
+        };
+        base.borrow().define(&interp).expect("def class");
+        sub.borrow().define(&interp).expect("def class");
         {
             let api = interp.borrow();
             // this should not panic
-            let _ = api.class_spec::<BaseClass>().borrow_mut();
-            let _ = api.class_spec::<SubClass>().borrow_mut();
+            let _ = api.class_spec::<BaseClass>().unwrap().borrow_mut();
+            let _ = api.class_spec::<SubClass>().unwrap().borrow_mut();
         }
     }
 }

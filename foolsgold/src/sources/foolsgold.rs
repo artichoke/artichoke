@@ -78,7 +78,9 @@ impl MrbFile for Counter {
 
         let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.module_spec::<Metrics>();
+            // TODO: return Err instead of expects when require is fallible. See
+            // GH-25.
+            let spec = api.module_spec::<Metrics>().expect("Metrics not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
@@ -110,14 +112,17 @@ impl MrbFile for Metrics {
         ) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
             let api = interp.borrow();
-            let spec = api.class_spec::<Counter>();
+            // TODO: raise instead of expects
+            let spec = api.class_spec::<Counter>().expect("Counter not defined");
             let rclass = spec.borrow().rclass(Rc::clone(&interp));
             unsafe { sys::mrb_obj_new(mrb, rclass, 0, std::ptr::null()) }
         }
 
         let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.module_spec::<Lib>();
+            // TODO: return Err instead of expects when require is fallible. See
+            // GH-25.
+            let spec = api.module_spec::<Lib>().expect("lib not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
@@ -163,8 +168,12 @@ impl MrbFile for RequestContext {
                 let interp = interpreter_or_raise!(mrb);
                 {
                     let api = interp.borrow();
-                    let spec = api.class_spec::<RequestContext>();
-                    sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
+                    // TODO: raise instead of expect
+                    let spec = api
+                        .class_spec::<RequestContext>()
+                        .expect("RequestContext not defined");
+                    let borrow = spec.borrow();
+                    sys::mrb_sys_data_init(&mut slf, ptr, borrow.data_type());
                 };
 
                 info!("initialized RequestContext with trace id {}", request_id);
@@ -178,7 +187,10 @@ impl MrbFile for RequestContext {
 
                 let ptr = {
                     let api = interp.borrow();
-                    let spec = api.class_spec::<RequestContext>();
+                    // TODO: raise instead of expects
+                    let spec = api
+                        .class_spec::<RequestContext>()
+                        .expect("RequestContext not defined");
                     let borrow = spec.borrow();
                     sys::mrb_data_get_ptr(mrb, slf, borrow.data_type())
                 };
@@ -193,14 +205,17 @@ impl MrbFile for RequestContext {
         extern "C" fn metrics(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
             let api = interp.borrow();
-            let spec = api.module_spec::<Metrics>();
+            // TODO: raise instead of expects
+            let spec = api.module_spec::<Metrics>().expect("Metrics not defined");
             let rclass = spec.borrow().rclass(Rc::clone(&interp));
             unsafe { sys::mrb_sys_class_value(rclass) }
         }
 
         let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.module_spec::<Lib>();
+            // TODO: return Err instead of expects when require is fallible. See
+            // GH-25.
+            let spec = api.module_spec::<Lib>().expect("lib not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };

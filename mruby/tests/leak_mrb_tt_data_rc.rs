@@ -61,8 +61,12 @@ impl MrbFile for Container {
                 let data = Rc::new(RefCell::new(cont));
                 let ptr = mem::transmute::<Rc<RefCell<Container>>, *mut c_void>(data);
 
-                let spec = api.class_spec::<Container>();
-                sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
+                // TODO: raise instead of expect
+                let spec = api
+                    .class_spec::<Container>()
+                    .expect("Container not defined");
+                let borrow = spec.borrow();
+                sys::mrb_sys_data_init(&mut slf, ptr, borrow.data_type());
 
                 slf
             }

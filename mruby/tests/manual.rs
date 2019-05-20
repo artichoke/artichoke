@@ -54,7 +54,10 @@ impl MrbFile for Container {
                     "interpreter strong ref count = {}",
                     Rc::strong_count(&interp)
                 );
-                let spec = api.class_spec::<Container>();
+                // TODO: raise instead of expect
+                let spec = api
+                    .class_spec::<Container>()
+                    .expect("Container not defined");
                 sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
 
                 slf
@@ -65,10 +68,14 @@ impl MrbFile for Container {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
                 let api = interp.borrow();
-                let spec = api.class_spec::<Container>();
+                // TODO: raise instead of expect
+                let spec = api
+                    .class_spec::<Container>()
+                    .expect("Container not defined");
 
                 debug!("pulled mrb_data_type from user data with class: {:?}", spec);
-                let ptr = sys::mrb_data_get_ptr(mrb, slf, spec.borrow().data_type());
+                let borrow = spec.borrow();
+                let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
                 let data = mem::transmute::<*mut c_void, Rc<RefCell<Container>>>(ptr);
                 let clone = Rc::clone(&data);
                 let cont = clone.borrow();

@@ -200,8 +200,7 @@ mod tests {
             fn require(interp: Mrb) {
                 let spec = {
                     let mut api = interp.borrow_mut();
-                    api.def_module::<Self>("NestedEval", None);
-                    let spec = api.module_spec::<Self>();
+                    let spec = api.def_module::<Self>("NestedEval", None);
                     spec.borrow_mut()
                         .add_self_method("file", nested_eval, sys::mrb_args_none());
                     spec
