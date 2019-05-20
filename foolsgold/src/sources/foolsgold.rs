@@ -179,8 +179,8 @@ impl MrbFile for RequestContext {
                 let ptr = {
                     let api = interp.borrow();
                     let spec = api.class_spec::<RequestContext>();
-                    let ispec = spec.borrow();
-                    sys::mrb_data_get_ptr(mrb, slf, ispec.data_type())
+                    let borrow = spec.borrow();
+                    sys::mrb_data_get_ptr(mrb, slf, borrow.data_type())
                 };
                 let data = mem::transmute::<*mut c_void, Rc<RefCell<RequestContext>>>(ptr);
                 let trace_id = data.borrow().trace_id;

@@ -15,7 +15,7 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 pub type Method =
     unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum Parent {
     Class { spec: Rc<RefCell<class::Spec>> },
     Module { spec: Rc<RefCell<module::Spec>> },
@@ -26,6 +26,22 @@ impl Parent {
         match self {
             Parent::Class { spec } => spec.borrow().rclass(interp),
             Parent::Module { spec } => spec.borrow().rclass(interp),
+        }
+    }
+}
+
+impl Eq for Parent {}
+
+impl PartialEq for Parent {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Parent::Class { spec: self_spec }, Parent::Class { spec: other_spec }) => {
+                self_spec == other_spec
+            }
+            (Parent::Module { spec: self_spec }, Parent::Module { spec: other_spec }) => {
+                self_spec == other_spec
+            }
+            _ => false,
         }
     }
 }
