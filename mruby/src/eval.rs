@@ -198,15 +198,14 @@ mod tests {
         struct NestedEval;
         impl MrbFile for NestedEval {
             fn require(interp: Mrb) {
-                {
+                let spec = {
                     let mut api = interp.borrow_mut();
                     api.def_module::<Self>("NestedEval", None);
                     let spec = api.module_spec::<Self>();
                     spec.borrow_mut()
                         .add_self_method("file", nested_eval, sys::mrb_args_none());
-                }
-                let api = interp.borrow();
-                let spec = api.module_spec::<Self>();
+                    spec
+                };
                 spec.borrow().define(&interp).expect("def method");
             }
         }

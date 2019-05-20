@@ -203,6 +203,7 @@ impl Interpreter {
 
             // Add global extension functions
             // Support for requiring files via `Kernel#require`
+            // TODO: clean this up by making a spec factory
             let mut kernel = module::Spec::new("Kernel", None);
             kernel.add_self_method("require", require, sys::mrb_args_rest());
             kernel.define(&interp).map_err(|_| MrbError::New)?;

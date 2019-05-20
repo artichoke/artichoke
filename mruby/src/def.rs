@@ -214,9 +214,11 @@ mod tests {
                     .add_method("value", value, sys::mrb_args_none());
                 cls.borrow_mut()
                     .add_self_method("value", value, sys::mrb_args_none());
-                module.borrow_mut()
+                module
+                    .borrow_mut()
                     .add_method("value", value, sys::mrb_args_none());
-                module.borrow_mut()
+                module
+                    .borrow_mut()
                     .add_self_method("value", value, sys::mrb_args_none());
                 (cls, module)
             };

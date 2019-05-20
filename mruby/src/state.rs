@@ -94,6 +94,32 @@ impl State {
     ///
     /// Class specs can also be retrieved from the state after creation with
     /// [`State::class_spec`].
+    ///
+    /// The recommended pattern for using `def_class` looks like this:
+    ///
+    /// ```rust
+    /// use mruby::def::{ClassLike, Define};
+    /// use mruby::interpreter::{Interpreter, MrbApi};
+    /// use mruby::interpreter_or_raise;
+    /// use mruby::sys;
+    ///
+    /// extern "C" fn value(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value
+    /// {
+    ///     let interp = unsafe { interpreter_or_raise!(mrb) };
+    ///     interp.fixnum(29).inner()
+    /// }
+    ///
+    /// let interp = Interpreter::create().expect("mrb init");
+    /// let spec = {
+    ///     let mut api = interp.borrow_mut();
+    ///     let spec = api.def_class::<()>("Container", None, None);
+    ///     spec.borrow_mut().add_method("value", value, sys::mrb_args_none());
+    ///     spec.borrow_mut().add_self_method("value", value, sys::mrb_args_none());
+    ///     spec.borrow_mut().mrb_value_is_rust_backed(true);
+    ///     spec
+    /// };
+    /// spec.borrow().define(&interp).expect("class install");
+    /// ```
     pub fn def_class<T: Any>(
         &mut self,
         name: &str,
@@ -133,6 +159,31 @@ impl State {
     ///
     /// Class specs can also be retrieved from the state after creation with
     /// [`State::class_spec`].
+    ///
+    /// The recommended pattern for using `def_class` looks like this:
+    ///
+    /// ```rust
+    /// use mruby::def::{ClassLike, Define};
+    /// use mruby::interpreter::{Interpreter, MrbApi};
+    /// use mruby::interpreter_or_raise;
+    /// use mruby::sys;
+    ///
+    /// extern "C" fn value(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value
+    /// {
+    ///     let interp = unsafe { interpreter_or_raise!(mrb) };
+    ///     interp.fixnum(29).inner()
+    /// }
+    ///
+    /// let interp = Interpreter::create().expect("mrb init");
+    /// let spec = {
+    ///     let mut api = interp.borrow_mut();
+    ///     let spec = api.def_module::<()>("Container", None);
+    ///     spec.borrow_mut().add_method("value", value, sys::mrb_args_none());
+    ///     spec.borrow_mut().add_self_method("value", value, sys::mrb_args_none());
+    ///     spec
+    /// };
+    /// spec.borrow().define(&interp).expect("class install");
+    /// ```
     pub fn def_module<T: Any>(
         &mut self,
         name: &str,
