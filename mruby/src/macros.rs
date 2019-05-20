@@ -59,6 +59,9 @@ macro_rules! unwrap_value_or_raise {
 
 /// Lookup a [`class::Spec`] by a Rust type `T`. If the spec does not exist,
 /// raise on the interpreter and return `nil`.
+///
+/// This macro is `unsafe` and assumes it is being called from an `extern "C" fn`
+/// that is embedded in an mruby class, module, or function definition.
 #[macro_export]
 macro_rules! class_spec_or_raise {
     ($interp:expr, $type:ty) => {
@@ -81,6 +84,9 @@ macro_rules! class_spec_or_raise {
 
 /// Lookup a [`module::Spec`] by a Rust type `T`. If the spec does not exist,
 /// raise on the interpreter and return `nil`.
+///
+/// This macro is `unsafe` and assumes it is being called from an `extern "C" fn`
+/// that is embedded in an mruby class, module, or function definition.
 #[macro_export]
 macro_rules! module_spec_or_raise {
     ($interp:expr, $type:ty) => {
