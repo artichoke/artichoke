@@ -83,8 +83,10 @@ impl MrbFile for Counter {
                 spec: Rc::clone(&spec),
             };
             let spec = api.def_class::<Self>("Counter", Some(parent), None);
-            spec.borrow_mut().add_method("get", get, sys::mrb_args_none());
-            spec.borrow_mut().add_method("inc", inc, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("get", get, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("inc", inc, sys::mrb_args_none());
             spec
         };
         spec.borrow().define(&interp).expect("class install");
@@ -120,8 +122,13 @@ impl MrbFile for Metrics {
                 spec: Rc::clone(&spec),
             };
             let spec = api.def_module::<Self>("Metrics", Some(parent));
-            spec.borrow_mut().add_method("total_requests", total_requests, sys::mrb_args_none());
-            spec.borrow_mut().add_self_method("total_requests", total_requests, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("total_requests", total_requests, sys::mrb_args_none());
+            spec.borrow_mut().add_self_method(
+                "total_requests",
+                total_requests,
+                sys::mrb_args_none(),
+            );
             spec
         };
         spec.borrow().define(&interp).expect("module install");
@@ -199,9 +206,12 @@ impl MrbFile for RequestContext {
             };
             let spec = api.def_class::<Self>("RequestContext", Some(parent), Some(free));
             spec.borrow_mut().mrb_value_is_rust_backed(true);
-            spec.borrow_mut().add_method("initialize", initialize, sys::mrb_args_none());
-            spec.borrow_mut().add_method("trace_id", trace_id, sys::mrb_args_none());
-            spec.borrow_mut().add_method("metrics", metrics, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("initialize", initialize, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("trace_id", trace_id, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("metrics", metrics, sys::mrb_args_none());
             spec
         };
         spec.borrow().define(&interp).expect("class install");
