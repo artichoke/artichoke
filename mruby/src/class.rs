@@ -193,7 +193,7 @@ mod tests {
     }
 
     #[test]
-    fn weak_ref_allows_mutable_class_specs_after_attached_as_parent() {
+    fn refcell_allows_mutable_class_specs_after_attached_as_parent() {
         struct BaseClass;
         struct SubClass;
         let interp = Interpreter::create().expect("mrb init");
