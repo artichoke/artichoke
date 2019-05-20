@@ -5,7 +5,7 @@ use mruby::file::MrbFile;
 use mruby::interpreter::Mrb;
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
-use mruby::{interpreter_or_raise, unwrap_or_raise};
+use mruby::{interpreter_or_raise, unwrap_value_or_raise};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
@@ -60,7 +60,7 @@ impl MrbFile for Counter {
 
                 // We can probably relax the ordering constraint.
                 let value = SEEN_REQUESTS_COUNTER.load(Ordering::SeqCst);
-                unwrap_or_raise!(interp, Value::try_from_mrb(&interp, value))
+                unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, value))
             }
         }
 
@@ -198,7 +198,7 @@ impl MrbFile for RequestContext {
                 let trace_id = data.borrow().trace_id;
                 info!("Retrieved trace id {} in {:?}", trace_id, interp);
                 mem::forget(data);
-                unwrap_or_raise!(interp, Value::try_from_mrb(&interp, trace_id.to_string()))
+                unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, trace_id.to_string()))
             }
         }
 

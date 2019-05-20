@@ -9,7 +9,7 @@ use mruby::interpreter::{Interpreter, Mrb};
 use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
-use mruby::{interpreter_or_raise, unwrap_or_raise};
+use mruby::{interpreter_or_raise, unwrap_value_or_raise};
 use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::mem;
@@ -80,7 +80,8 @@ impl MrbFile for Container {
                 let clone = Rc::clone(&data);
                 let cont = clone.borrow();
 
-                let value = unwrap_or_raise!(interp, Value::try_from_mrb(&interp, cont.inner));
+                let value =
+                    unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, cont.inner));
                 mem::forget(data);
                 value
             }

@@ -20,51 +20,6 @@ use crate::MrbError;
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
-#[macro_export]
-macro_rules! interpreter_or_raise {
-    ($mrb:expr) => {
-        match $crate::interpreter::Interpreter::from_user_data($mrb) {
-            std::result::Result::Err(err) => {
-                // Unable to retrieve interpreter from user data pointer in
-                // `mrb_state`.
-                let eclass = std::ffi::CString::new("RuntimeError");
-                let message = std::ffi::CString::new(format!("{}", err));
-                if let (std::result::Result::Ok(eclass), std::result::Result::Ok(message)) =
-                    (eclass, message)
-                {
-                    $crate::sys::mrb_sys_raise($mrb, eclass.as_ptr(), message.as_ptr());
-                }
-                return $crate::sys::mrb_sys_nil_value();
-            }
-            std::result::Result::Ok(interpreter) => interpreter,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! unwrap_or_raise {
-    ($interp:expr, $result:expr) => {
-        match $result {
-            std::result::Result::Err(err) => {
-                // There was a TypeError converting to the desired Rust type.
-                let eclass = std::ffi::CString::new("RuntimeError");
-                let message = std::ffi::CString::new(format!("{}", err));
-                if let (std::result::Result::Ok(eclass), std::result::Result::Ok(message)) =
-                    (eclass, message)
-                {
-                    $crate::sys::mrb_sys_raise(
-                        $interp.borrow().mrb,
-                        eclass.as_ptr(),
-                        message.as_ptr(),
-                    );
-                }
-                return $crate::interpreter::MrbApi::nil(&$interp).inner();
-            }
-            std::result::Result::Ok(value) => value.inner(),
-        }
-    };
-}
-
 pub type Mrb = Rc<RefCell<State>>;
 
 fn raise_load_error(interp: &Mrb, file: &str) -> sys::mrb_value {
@@ -130,14 +85,14 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                     // this should be infallible because the mrb interpreter is
                     // single threaded.
                     if let Ok(contents) = contents {
-                        unwrap_or_raise!(interp, interp.eval_with_context(contents, context));
+                        unwrap_value_or_raise!(interp, interp.eval_with_context(contents, context));
                     } else {
                         return raise_load_error(&interp, &name);
                     }
                 }
                 {
                     let api = interp.borrow();
-                    unwrap_or_raise!(
+                    unwrap_value_or_raise!(
                         interp,
                         api.vfs
                             .set_metadata(path, metadata.mark_required())
@@ -151,12 +106,12 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                     // this should be infallible because the mrb interpreter
                     // is single threaded.
                     if let Ok(contents) = api.vfs.read_file(path) {
-                        unwrap_or_raise!(interp, interp.eval_with_context(contents, context));
+                        unwrap_value_or_raise!(interp, interp.eval_with_context(contents, context));
                     }
                     // Create the missing metadata struct to prevent double
                     // requires.
                     let metadata = VfsMetadata::new(None).mark_required();
-                    unwrap_or_raise!(
+                    unwrap_value_or_raise!(
                         interp,
                         api.vfs.set_metadata(path, metadata).map(|_| interp.nil())
                     );

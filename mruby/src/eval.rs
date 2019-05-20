@@ -158,7 +158,7 @@ mod tests {
     use crate::interpreter::{Interpreter, Mrb};
     use crate::load::MrbLoadSources;
     use crate::sys;
-    use crate::{interpreter_or_raise, unwrap_or_raise};
+    use crate::{interpreter_or_raise, unwrap_value_or_raise};
 
     #[test]
     fn root_eval_context() {
@@ -193,7 +193,7 @@ mod tests {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
-            unsafe { unwrap_or_raise!(interp, interp.eval("__FILE__")) }
+            unsafe { unwrap_value_or_raise!(interp, interp.eval("__FILE__")) }
         }
         struct NestedEval;
         impl MrbFile for NestedEval {
