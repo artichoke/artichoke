@@ -9,7 +9,7 @@ use mruby::interpreter::{Interpreter, Mrb};
 use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
-use mruby::{interpreter_or_raise, unwrap_value_or_raise};
+use mruby::{class_spec_or_raise, interpreter_or_raise, unwrap_value_or_raise};
 use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::mem;
@@ -40,7 +40,6 @@ impl MrbFile for Container {
         ) -> sys::mrb_value {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
-                let api = interp.borrow();
 
                 let int = mem::uninitialized::<sys::mrb_int>();
                 let argspec = CString::new(sys::specifiers::INTEGER).expect("argspec");
@@ -54,10 +53,7 @@ impl MrbFile for Container {
                     "interpreter strong ref count = {}",
                     Rc::strong_count(&interp)
                 );
-                // TODO: raise instead of expect
-                let spec = api
-                    .class_spec::<Container>()
-                    .expect("Container not defined");
+                let spec = class_spec_or_raise!(interp, Container);
                 sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
 
                 slf
@@ -67,11 +63,7 @@ impl MrbFile for Container {
         extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
-                let api = interp.borrow();
-                // TODO: raise instead of expect
-                let spec = api
-                    .class_spec::<Container>()
-                    .expect("Container not defined");
+                let spec = class_spec_or_raise!(interp, Container);
 
                 debug!("pulled mrb_data_type from user data with class: {:?}", spec);
                 let borrow = spec.borrow();

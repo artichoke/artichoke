@@ -5,7 +5,9 @@ use mruby::file::MrbFile;
 use mruby::interpreter::Mrb;
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
-use mruby::{interpreter_or_raise, unwrap_value_or_raise};
+use mruby::{
+    class_spec_or_raise, interpreter_or_raise, module_spec_or_raise, unwrap_value_or_raise,
+};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
@@ -111,9 +113,7 @@ impl MrbFile for Metrics {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
-            let api = interp.borrow();
-            // TODO: raise instead of expects
-            let spec = api.class_spec::<Counter>().expect("Counter not defined");
+            let spec = unsafe { class_spec_or_raise!(interp, Counter) };
             let rclass = spec.borrow().rclass(Rc::clone(&interp));
             unsafe { sys::mrb_obj_new(mrb, rclass, 0, std::ptr::null()) }
         }
@@ -167,11 +167,7 @@ impl MrbFile for RequestContext {
 
                 let interp = interpreter_or_raise!(mrb);
                 {
-                    let api = interp.borrow();
-                    // TODO: raise instead of expect
-                    let spec = api
-                        .class_spec::<RequestContext>()
-                        .expect("RequestContext not defined");
+                    let spec = class_spec_or_raise!(interp, RequestContext);
                     let borrow = spec.borrow();
                     sys::mrb_sys_data_init(&mut slf, ptr, borrow.data_type());
                 };
@@ -186,11 +182,7 @@ impl MrbFile for RequestContext {
                 let interp = interpreter_or_raise!(mrb);
 
                 let ptr = {
-                    let api = interp.borrow();
-                    // TODO: raise instead of expects
-                    let spec = api
-                        .class_spec::<RequestContext>()
-                        .expect("RequestContext not defined");
+                    let spec = class_spec_or_raise!(interp, RequestContext);
                     let borrow = spec.borrow();
                     sys::mrb_data_get_ptr(mrb, slf, borrow.data_type())
                 };
@@ -204,9 +196,7 @@ impl MrbFile for RequestContext {
 
         extern "C" fn metrics(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
-            let api = interp.borrow();
-            // TODO: raise instead of expects
-            let spec = api.module_spec::<Metrics>().expect("Metrics not defined");
+            let spec = unsafe { module_spec_or_raise!(interp, Metrics) };
             let rclass = spec.borrow().rclass(Rc::clone(&interp));
             unsafe { sys::mrb_sys_class_value(rclass) }
         }
