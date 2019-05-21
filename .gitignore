@@ -267,5 +267,5 @@ tags
 
 # ignore all targets, not just the root (sub-crates in workspace and webpack)
 target/
-# rube is an application
+# ferrocarril is an application
 !Cargo.lock

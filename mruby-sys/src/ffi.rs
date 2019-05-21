@@ -178,7 +178,6 @@ pub const MRB_STR_EMBED: u32 = 32;
 pub const MRB_STR_EMBED_LEN_MASK: u32 = 1984;
 pub const MRB_STR_EMBED_LEN_SHIFT: u32 = 6;
 pub type va_list = __builtin_va_list;
-#[doc = " MRuby Value definition functions and macros."]
 pub type mrb_sym = u32;
 pub type mrb_bool = u8;
 pub type mrb_int = i64;
@@ -601,17 +600,8 @@ extern "C" {
     #[link_name = "\u{1}_mrb_object_dead_p"]
     pub fn mrb_object_dead_p(mrb: *mut mrb_state, object: *mut RBasic) -> mrb_bool;
 }
-#[doc = " MRuby C API entry point"]
 pub type mrb_code = u8;
-#[doc = " Required arguments signature type."]
 pub type mrb_aspec = u32;
-#[doc = " Function pointer type of custom allocator used in @see mrb_open_allocf."]
-#[doc = ""]
-#[doc = " The function pointing it must behave similarly as realloc except:"]
-#[doc = " - If ptr is NULL it must allocate new space."]
-#[doc = " - If s is NULL, ptr must be freed."]
-#[doc = ""]
-#[doc = " See @see mrb_default_allocf for the default implementation."]
 pub type mrb_allocf = ::std::option::Option<
     unsafe extern "C" fn(
         mrb: *mut mrb_state,
@@ -677,7 +667,6 @@ pub union mrb_method_t__bindgen_ty_1 {
     _bindgen_union_align: u64,
 }
 pub type mrb_atexit_func = ::std::option::Option<unsafe extern "C" fn(arg1: *mut mrb_state)>;
-#[doc = " Uncommon memory management stuffs."]
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mrb_state {
@@ -721,25 +710,6 @@ pub struct mrb_state {
     pub ecall_nest: u16,
 }
 extern "C" {
-    #[doc = " Defines a new class."]
-    #[doc = ""]
-    #[doc = " If you're creating a gem it may look something like this:"]
-    #[doc = ""]
-    #[doc = "      !!!c"]
-    #[doc = "      void mrb_example_gem_init(mrb_state* mrb) {"]
-    #[doc = "          struct RClass *example_class;"]
-    #[doc = "          example_class = mrb_define_class(mrb, \"Example_Class\", mrb->object_class);"]
-    #[doc = "      }"]
-    #[doc = ""]
-    #[doc = "      void mrb_example_gem_final(mrb_state* mrb) {"]
-    #[doc = "          //free(TheAnimals);"]
-    #[doc = "      }"]
-    #[doc = ""]
-    #[doc = " @param [mrb_state *] mrb The current mruby state."]
-    #[doc = " @param [const char *] name The name of the defined class."]
-    #[doc = " @param [struct RClass *] super The new class parent."]
-    #[doc = " @return [struct RClass *] Reference to the newly defined class."]
-    #[doc = " @see mrb_define_class_under"]
     #[link_name = "\u{1}_mrb_define_class"]
     pub fn mrb_define_class(
         mrb: *mut mrb_state,
@@ -748,11 +718,6 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[doc = " Defines a new module."]
-    #[doc = ""]
-    #[doc = " @param [mrb_state *] mrb_state* The current mruby state."]
-    #[doc = " @param [const char *] char* The name of the module."]
-    #[doc = " @return [struct RClass *] Reference to the newly defined module."]
     #[link_name = "\u{1}_mrb_define_module"]
     pub fn mrb_define_module(
         arg1: *mut mrb_state,
@@ -764,55 +729,14 @@ extern "C" {
     pub fn mrb_singleton_class(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Include a module in another class or module."]
-    #[doc = " Equivalent to:"]
-    #[doc = ""]
-    #[doc = "   module B"]
-    #[doc = "     include A"]
-    #[doc = "   end"]
-    #[doc = " @param [mrb_state *] mrb_state* The current mruby state."]
-    #[doc = " @param [struct RClass *] RClass* A reference to module or a class."]
-    #[doc = " @param [struct RClass *] RClass* A reference to the module to be included."]
     #[link_name = "\u{1}_mrb_include_module"]
     pub fn mrb_include_module(arg1: *mut mrb_state, arg2: *mut RClass, arg3: *mut RClass);
 }
 extern "C" {
-    #[doc = " Prepends a module in another class or module."]
-    #[doc = ""]
-    #[doc = " Equivalent to:"]
-    #[doc = "  module B"]
-    #[doc = "    prepend A"]
-    #[doc = "  end"]
-    #[doc = " @param [mrb_state *] mrb_state* The current mruby state."]
-    #[doc = " @param [struct RClass *] RClass* A reference to module or a class."]
-    #[doc = " @param [struct RClass *] RClass* A reference to the module to be prepended."]
     #[link_name = "\u{1}_mrb_prepend_module"]
     pub fn mrb_prepend_module(arg1: *mut mrb_state, arg2: *mut RClass, arg3: *mut RClass);
 }
 extern "C" {
-    #[doc = " Defines a global function in ruby."]
-    #[doc = ""]
-    #[doc = " If you're creating a gem it may look something like this"]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "     !!!c"]
-    #[doc = "     mrb_value example_method(mrb_state* mrb, mrb_value self)"]
-    #[doc = "     {"]
-    #[doc = "          puts(\"Executing example command!\");"]
-    #[doc = "          return self;"]
-    #[doc = "     }"]
-    #[doc = ""]
-    #[doc = "     void mrb_example_gem_init(mrb_state* mrb)"]
-    #[doc = "     {"]
-    #[doc = "           mrb_define_method(mrb, mrb->kernel_module, \"example_method\", example_method, MRB_ARGS_NONE());"]
-    #[doc = "     }"]
-    #[doc = ""]
-    #[doc = " @param [mrb_state *] mrb The MRuby state reference."]
-    #[doc = " @param [struct RClass *] cla The class pointer where the method will be defined."]
-    #[doc = " @param [const char *] name The name of the method being defined."]
-    #[doc = " @param [mrb_func_t] func The function pointer to the method definition."]
-    #[doc = " @param [mrb_aspec] aspec The method parameters declaration."]
     #[link_name = "\u{1}_mrb_define_method"]
     pub fn mrb_define_method(
         mrb: *mut mrb_state,
@@ -823,29 +747,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " Defines a class method."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "     # Ruby style"]
-    #[doc = "     class Foo"]
-    #[doc = "       def Foo.bar"]
-    #[doc = "       end"]
-    #[doc = "     end"]
-    #[doc = "     // C style"]
-    #[doc = "     mrb_value bar_method(mrb_state* mrb, mrb_value self){"]
-    #[doc = "       return mrb_nil_value();"]
-    #[doc = "     }"]
-    #[doc = "     void mrb_example_gem_init(mrb_state* mrb){"]
-    #[doc = "       struct RClass *foo;"]
-    #[doc = "       foo = mrb_define_class(mrb, \"Foo\", mrb->object_class);"]
-    #[doc = "       mrb_define_class_method(mrb, foo, \"bar\", bar_method, MRB_ARGS_NONE());"]
-    #[doc = "     }"]
-    #[doc = " @param [mrb_state *] mrb_state* The MRuby state reference."]
-    #[doc = " @param [struct RClass *] RClass* The class where the class method will be defined."]
-    #[doc = " @param [const char *] char* The name of the class method being defined."]
-    #[doc = " @param [mrb_func_t] mrb_func_t The function pointer to the class method definition."]
-    #[doc = " @param [mrb_aspec] mrb_aspec The method parameters declaration."]
     #[link_name = "\u{1}_mrb_define_class_method"]
     pub fn mrb_define_class_method(
         arg1: *mut mrb_state,
@@ -866,29 +767,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = "  Defines a module function."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "        # Ruby style"]
-    #[doc = "        module Foo"]
-    #[doc = "          def Foo.bar"]
-    #[doc = "          end"]
-    #[doc = "        end"]
-    #[doc = "        // C style"]
-    #[doc = "        mrb_value bar_method(mrb_state* mrb, mrb_value self){"]
-    #[doc = "          return mrb_nil_value();"]
-    #[doc = "        }"]
-    #[doc = "        void mrb_example_gem_init(mrb_state* mrb){"]
-    #[doc = "          struct RClass *foo;"]
-    #[doc = "          foo = mrb_define_module(mrb, \"Foo\");"]
-    #[doc = "          mrb_define_module_function(mrb, foo, \"bar\", bar_method, MRB_ARGS_NONE());"]
-    #[doc = "        }"]
-    #[doc = "  @param [mrb_state *] mrb_state* The MRuby state reference."]
-    #[doc = "  @param [struct RClass *] RClass* The module where the module function will be defined."]
-    #[doc = "  @param [const char *] char* The name of the module function being defined."]
-    #[doc = "  @param [mrb_func_t] mrb_func_t The function pointer to the module function definition."]
-    #[doc = "  @param [mrb_aspec] mrb_aspec The method parameters declaration."]
     #[link_name = "\u{1}_mrb_define_module_function"]
     pub fn mrb_define_module_function(
         arg1: *mut mrb_state,
@@ -899,30 +777,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = "  Defines a constant."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "          # Ruby style"]
-    #[doc = "          class ExampleClass"]
-    #[doc = "            AGE = 22"]
-    #[doc = "          end"]
-    #[doc = "          // C style"]
-    #[doc = "          #include <stdio.h>"]
-    #[doc = "          #include <mruby.h>"]
-    #[doc = ""]
-    #[doc = "          void"]
-    #[doc = "          mrb_example_gem_init(mrb_state* mrb){"]
-    #[doc = "            mrb_define_const(mrb, mrb->kernel_module, \"AGE\", mrb_fixnum_value(22));"]
-    #[doc = "          }"]
-    #[doc = ""]
-    #[doc = "          mrb_value"]
-    #[doc = "          mrb_example_gem_final(mrb_state* mrb){"]
-    #[doc = "          }"]
-    #[doc = "  @param [mrb_state *] mrb_state* The MRuby state reference."]
-    #[doc = "  @param [struct RClass *] RClass* A class or module the constant is defined in."]
-    #[doc = "  @param [const char *] name The name of the constant being defined."]
-    #[doc = "  @param [mrb_value] mrb_value The value for the constant."]
     #[link_name = "\u{1}_mrb_define_const"]
     pub fn mrb_define_const(
         arg1: *mut mrb_state,
@@ -932,52 +786,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " Undefines a method."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "     # Ruby style"]
-    #[doc = ""]
-    #[doc = "     class ExampleClassA"]
-    #[doc = "       def example_method"]
-    #[doc = "         \"example\""]
-    #[doc = "       end"]
-    #[doc = "     end"]
-    #[doc = "     ExampleClassA.new.example_method # => example"]
-    #[doc = ""]
-    #[doc = "     class ExampleClassB < ExampleClassA"]
-    #[doc = "       undef_method :example_method"]
-    #[doc = "     end"]
-    #[doc = ""]
-    #[doc = "     ExampleClassB.new.example_method # => undefined method 'example_method' for ExampleClassB (NoMethodError)"]
-    #[doc = ""]
-    #[doc = "     // C style"]
-    #[doc = "     #include <stdio.h>"]
-    #[doc = "     #include <mruby.h>"]
-    #[doc = ""]
-    #[doc = "     mrb_value"]
-    #[doc = "     mrb_example_method(mrb_state *mrb){"]
-    #[doc = "       return mrb_str_new_lit(mrb, \"example\");"]
-    #[doc = "     }"]
-    #[doc = ""]
-    #[doc = "     void"]
-    #[doc = "     mrb_example_gem_init(mrb_state* mrb){"]
-    #[doc = "       struct RClass *example_class_a;"]
-    #[doc = "       struct RClass *example_class_b;"]
-    #[doc = "       struct RClass *example_class_c;"]
-    #[doc = ""]
-    #[doc = "       example_class_a = mrb_define_class(mrb, \"ExampleClassA\", mrb->object_class);"]
-    #[doc = "       mrb_define_method(mrb, example_class_a, \"example_method\", mrb_example_method, MRB_ARGS_NONE());"]
-    #[doc = "       example_class_b = mrb_define_class(mrb, \"ExampleClassB\", example_class_a);"]
-    #[doc = "       example_class_c = mrb_define_class(mrb, \"ExampleClassC\", example_class_b);"]
-    #[doc = "       mrb_undef_method(mrb, example_class_c, \"example_method\");"]
-    #[doc = "     }"]
-    #[doc = ""]
-    #[doc = "     mrb_example_gem_final(mrb_state* mrb){"]
-    #[doc = "     }"]
-    #[doc = " @param [mrb_state*] mrb_state* The mruby state reference."]
-    #[doc = " @param [struct RClass*] RClass* A class the method will be undefined from."]
-    #[doc = " @param [const char*] const char* The name of the method to be undefined."]
     #[link_name = "\u{1}_mrb_undef_method"]
     pub fn mrb_undef_method(
         arg1: *mut mrb_state,
@@ -990,41 +798,6 @@ extern "C" {
     pub fn mrb_undef_method_id(arg1: *mut mrb_state, arg2: *mut RClass, arg3: mrb_sym);
 }
 extern "C" {
-    #[doc = " Undefine a class method."]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "      # Ruby style"]
-    #[doc = "      class ExampleClass"]
-    #[doc = "        def self.example_method"]
-    #[doc = "          \"example\""]
-    #[doc = "        end"]
-    #[doc = "      end"]
-    #[doc = ""]
-    #[doc = "     ExampleClass.example_method"]
-    #[doc = ""]
-    #[doc = "     // C style"]
-    #[doc = "     #include <stdio.h>"]
-    #[doc = "     #include <mruby.h>"]
-    #[doc = ""]
-    #[doc = "     mrb_value"]
-    #[doc = "     mrb_example_method(mrb_state *mrb){"]
-    #[doc = "       return mrb_str_new_lit(mrb, \"example\");"]
-    #[doc = "     }"]
-    #[doc = ""]
-    #[doc = "     void"]
-    #[doc = "     mrb_example_gem_init(mrb_state* mrb){"]
-    #[doc = "       struct RClass *example_class;"]
-    #[doc = "       example_class = mrb_define_class(mrb, \"ExampleClass\", mrb->object_class);"]
-    #[doc = "       mrb_define_class_method(mrb, example_class, \"example_method\", mrb_example_method, MRB_ARGS_NONE());"]
-    #[doc = "       mrb_undef_class_method(mrb, example_class, \"example_method\");"]
-    #[doc = "      }"]
-    #[doc = ""]
-    #[doc = "      void"]
-    #[doc = "      mrb_example_gem_final(mrb_state* mrb){"]
-    #[doc = "      }"]
-    #[doc = " @param [mrb_state*] mrb_state* The mruby state reference."]
-    #[doc = " @param [RClass*] RClass* A class the class method will be undefined from."]
-    #[doc = " @param [const char*] const char* The name of the class method to be undefined."]
     #[link_name = "\u{1}_mrb_undef_class_method"]
     pub fn mrb_undef_class_method(
         arg1: *mut mrb_state,
@@ -1033,32 +806,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " Initialize a new object instance of c class."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "     # Ruby style"]
-    #[doc = "     class ExampleClass"]
-    #[doc = "     end"]
-    #[doc = ""]
-    #[doc = "     p ExampleClass # => #<ExampleClass:0x9958588>"]
-    #[doc = "     // C style"]
-    #[doc = "     #include <stdio.h>"]
-    #[doc = "     #include <mruby.h>"]
-    #[doc = ""]
-    #[doc = "     void"]
-    #[doc = "     mrb_example_gem_init(mrb_state* mrb) {"]
-    #[doc = "       struct RClass *example_class;"]
-    #[doc = "       mrb_value obj;"]
-    #[doc = "       example_class = mrb_define_class(mrb, \"ExampleClass\", mrb->object_class); # => class ExampleClass; end"]
-    #[doc = "       obj = mrb_obj_new(mrb, example_class, 0, NULL); # => ExampleClass.new"]
-    #[doc = "       mrb_p(mrb, obj); // => Kernel#p"]
-    #[doc = "      }"]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [RClass*] c Reference to the class of the new object."]
-    #[doc = " @param [mrb_int] argc Number of arguments in argv"]
-    #[doc = " @param [const mrb_value *] argv Array of mrb_value to initialize the object"]
-    #[doc = " @return [mrb_value] The newly initialized object"]
     #[link_name = "\u{1}_mrb_obj_new"]
     pub fn mrb_obj_new(
         mrb: *mut mrb_state,
@@ -1068,114 +815,26 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Creates a new instance of Class, Class."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "      void"]
-    #[doc = "      mrb_example_gem_init(mrb_state* mrb) {"]
-    #[doc = "        struct RClass *example_class;"]
-    #[doc = ""]
-    #[doc = "        mrb_value obj;"]
-    #[doc = "        example_class = mrb_class_new(mrb, mrb->object_class);"]
-    #[doc = "        obj = mrb_obj_new(mrb, example_class, 0, NULL); // => #<#<Class:0x9a945b8>:0x9a94588>"]
-    #[doc = "        mrb_p(mrb, obj); // => Kernel#p"]
-    #[doc = "       }"]
-    #[doc = ""]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [struct RClass *] super The super class or parent."]
-    #[doc = " @return [struct RClass *] Reference to the new class."]
     #[link_name = "\u{1}_mrb_class_new"]
     pub fn mrb_class_new(mrb: *mut mrb_state, super_: *mut RClass) -> *mut RClass;
 }
 extern "C" {
-    #[doc = " Creates a new module, Module."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = "      void"]
-    #[doc = "      mrb_example_gem_init(mrb_state* mrb) {"]
-    #[doc = "        struct RClass *example_module;"]
-    #[doc = ""]
-    #[doc = "        example_module = mrb_module_new(mrb);"]
-    #[doc = "      }"]
-    #[doc = ""]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @return [struct RClass *] Reference to the new module."]
     #[link_name = "\u{1}_mrb_module_new"]
     pub fn mrb_module_new(mrb: *mut mrb_state) -> *mut RClass;
 }
 extern "C" {
-    #[doc = " Returns an mrb_bool. True if class was defined, and false if the class was not defined."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = "     void"]
-    #[doc = "     mrb_example_gem_init(mrb_state* mrb) {"]
-    #[doc = "       struct RClass *example_class;"]
-    #[doc = "       mrb_bool cd;"]
-    #[doc = ""]
-    #[doc = "       example_class = mrb_define_class(mrb, \"ExampleClass\", mrb->object_class);"]
-    #[doc = "       cd = mrb_class_defined(mrb, \"ExampleClass\");"]
-    #[doc = ""]
-    #[doc = "       // If mrb_class_defined returns 1 then puts \"True\""]
-    #[doc = "       // If mrb_class_defined returns 0 then puts \"False\""]
-    #[doc = "       if (cd == 1){"]
-    #[doc = "         puts(\"True\");"]
-    #[doc = "       }"]
-    #[doc = "       else {"]
-    #[doc = "         puts(\"False\");"]
-    #[doc = "       }"]
-    #[doc = "      }"]
-    #[doc = ""]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [const char *] name A string representing the name of the class."]
-    #[doc = " @return [mrb_bool] A boolean value."]
     #[link_name = "\u{1}_mrb_class_defined"]
     pub fn mrb_class_defined(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> mrb_bool;
 }
 extern "C" {
-    #[doc = " Gets a class."]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [const char *] name The name of the class."]
-    #[doc = " @return [struct RClass *] A reference to the class."]
     #[link_name = "\u{1}_mrb_class_get"]
     pub fn mrb_class_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    #[doc = " Gets a exception class."]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [const char *] name The name of the class."]
-    #[doc = " @return [struct RClass *] A reference to the class."]
     #[link_name = "\u{1}_mrb_exc_get"]
     pub fn mrb_exc_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    #[doc = " Returns an mrb_bool. True if inner class was defined, and false if the inner class was not defined."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = "     void"]
-    #[doc = "     mrb_example_gem_init(mrb_state* mrb) {"]
-    #[doc = "       struct RClass *example_outer, *example_inner;"]
-    #[doc = "       mrb_bool cd;"]
-    #[doc = ""]
-    #[doc = "       example_outer = mrb_define_module(mrb, \"ExampleOuter\");"]
-    #[doc = ""]
-    #[doc = "       example_inner = mrb_define_class_under(mrb, example_outer, \"ExampleInner\", mrb->object_class);"]
-    #[doc = "       cd = mrb_class_defined_under(mrb, example_outer, \"ExampleInner\");"]
-    #[doc = ""]
-    #[doc = "       // If mrb_class_defined_under returns 1 then puts \"True\""]
-    #[doc = "       // If mrb_class_defined_under returns 0 then puts \"False\""]
-    #[doc = "       if (cd == 1){"]
-    #[doc = "         puts(\"True\");"]
-    #[doc = "       }"]
-    #[doc = "       else {"]
-    #[doc = "         puts(\"False\");"]
-    #[doc = "       }"]
-    #[doc = "      }"]
-    #[doc = ""]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [struct RClass *] outer The name of the outer class."]
-    #[doc = " @param [const char *] name A string representing the name of the inner class."]
-    #[doc = " @return [mrb_bool] A boolean value."]
     #[link_name = "\u{1}_mrb_class_defined_under"]
     pub fn mrb_class_defined_under(
         mrb: *mut mrb_state,
@@ -1184,11 +843,6 @@ extern "C" {
     ) -> mrb_bool;
 }
 extern "C" {
-    #[doc = " Gets a child class."]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [struct RClass *] outer The name of the parent class."]
-    #[doc = " @param [const char *] name The name of the class."]
-    #[doc = " @return [struct RClass *] A reference to the class."]
     #[link_name = "\u{1}_mrb_class_get_under"]
     pub fn mrb_class_get_under(
         mrb: *mut mrb_state,
@@ -1197,19 +851,10 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[doc = " Gets a module."]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [const char *] name The name of the module."]
-    #[doc = " @return [struct RClass *] A reference to the module."]
     #[link_name = "\u{1}_mrb_module_get"]
     pub fn mrb_module_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    #[doc = " Gets a module defined under another module."]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [struct RClass *] outer The name of the outer module."]
-    #[doc = " @param [const char *] name The name of the module."]
-    #[doc = " @return [struct RClass *] A reference to the module."]
     #[link_name = "\u{1}_mrb_module_get_under"]
     pub fn mrb_module_get_under(
         mrb: *mut mrb_state,
@@ -1226,67 +871,14 @@ extern "C" {
     pub fn mrb_notimplement_m(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Duplicate an object."]
-    #[doc = ""]
-    #[doc = " Equivalent to:"]
-    #[doc = "   Object#dup"]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [mrb_value] obj Object to be duplicate."]
-    #[doc = " @return [mrb_value] The newly duplicated object."]
     #[link_name = "\u{1}_mrb_obj_dup"]
     pub fn mrb_obj_dup(mrb: *mut mrb_state, obj: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Returns true if obj responds to the given method. If the method was defined for that"]
-    #[doc = " class it returns true, it returns false otherwise."]
-    #[doc = ""]
-    #[doc = "      Example:"]
-    #[doc = "      # Ruby style"]
-    #[doc = "      class ExampleClass"]
-    #[doc = "        def example_method"]
-    #[doc = "        end"]
-    #[doc = "      end"]
-    #[doc = ""]
-    #[doc = "      ExampleClass.new.respond_to?(:example_method) # => true"]
-    #[doc = ""]
-    #[doc = "      // C style"]
-    #[doc = "      void"]
-    #[doc = "      mrb_example_gem_init(mrb_state* mrb) {"]
-    #[doc = "        struct RClass *example_class;"]
-    #[doc = "        mrb_sym mid;"]
-    #[doc = "        mrb_bool obj_resp;"]
-    #[doc = ""]
-    #[doc = "        example_class = mrb_define_class(mrb, \"ExampleClass\", mrb->object_class);"]
-    #[doc = "        mrb_define_method(mrb, example_class, \"example_method\", exampleMethod, MRB_ARGS_NONE());"]
-    #[doc = "        mid = mrb_intern_str(mrb, mrb_str_new_lit(mrb, \"example_method\" ));"]
-    #[doc = "        obj_resp = mrb_obj_respond_to(mrb, example_class, mid); // => 1(true in Ruby world)"]
-    #[doc = ""]
-    #[doc = "        // If mrb_obj_respond_to returns 1 then puts \"True\""]
-    #[doc = "        // If mrb_obj_respond_to returns 0 then puts \"False\""]
-    #[doc = "        if (obj_resp == 1) {"]
-    #[doc = "          puts(\"True\");"]
-    #[doc = "        }"]
-    #[doc = "        else if (obj_resp == 0) {"]
-    #[doc = "          puts(\"False\");"]
-    #[doc = "        }"]
-    #[doc = "      }"]
-    #[doc = ""]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [struct RClass *] c A reference to a class."]
-    #[doc = " @param [mrb_sym] mid A symbol referencing a method id."]
-    #[doc = " @return [mrb_bool] A boolean value."]
     #[link_name = "\u{1}_mrb_obj_respond_to"]
     pub fn mrb_obj_respond_to(mrb: *mut mrb_state, c: *mut RClass, mid: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[doc = " Defines a new class under a given module"]
-    #[doc = ""]
-    #[doc = " @param [mrb_state*] mrb The current mruby state."]
-    #[doc = " @param [struct RClass *] outer Reference to the module under which the new class will be defined"]
-    #[doc = " @param [const char *] name The name of the defined class"]
-    #[doc = " @param [struct RClass *] super The new class parent"]
-    #[doc = " @return [struct RClass *] Reference to the newly defined class"]
-    #[doc = " @see mrb_define_class"]
     #[link_name = "\u{1}_mrb_define_class_under"]
     pub fn mrb_define_class_under(
         mrb: *mut mrb_state,
@@ -1303,46 +895,12 @@ extern "C" {
         name: *const ::std::os::raw::c_char,
     ) -> *mut RClass;
 }
-#[doc = " Format specifiers for {mrb_get_args} function"]
-#[doc = ""]
-#[doc = " Must be a C string composed of the following format specifiers:"]
-#[doc = ""]
-#[doc = " | char | Ruby type      | C types           | Notes                                              |"]
-#[doc = " |:----:|----------------|-------------------|----------------------------------------------------|"]
-#[doc = " | `o`  | {Object}       | {mrb_value}       | Could be used to retrieve any type of argument     |"]
-#[doc = " | `C`  | {Class}/{Module} | {mrb_value}     |                                                    |"]
-#[doc = " | `S`  | {String}       | {mrb_value}       | when `!` follows, the value may be `nil`           |"]
-#[doc = " | `A`  | {Array}        | {mrb_value}       | when `!` follows, the value may be `nil`           |"]
-#[doc = " | `H`  | {Hash}         | {mrb_value}       | when `!` follows, the value may be `nil`           |"]
-#[doc = " | `s`  | {String}       | char *, {mrb_int} | Receive two arguments; `s!` gives (`NULL`,`0`) for `nil`       |"]
-#[doc = " | `z`  | {String}       | char *            | `NULL` terminated string; `z!` gives `NULL` for `nil`           |"]
-#[doc = " | `a`  | {Array}        | {mrb_value} *, {mrb_int} | Receive two arguments; `a!` gives (`NULL`,`0`) for `nil` |"]
-#[doc = " | `f`  | {Float}        | {mrb_float}       |                                                    |"]
-#[doc = " | `i`  | {Integer}      | {mrb_int}         |                                                    |"]
-#[doc = " | `b`  | boolean        | {mrb_bool}        |                                                    |"]
-#[doc = " | `n`  | {Symbol}       | {mrb_sym}         |                                                    |"]
-#[doc = " | `&`  | block          | {mrb_value}       | &! raises exception if no block given.             |"]
-#[doc = " | `*`  | rest arguments | {mrb_value} *, {mrb_int} | Receive the rest of arguments as an array; *! avoid copy of the stack.  |"]
-#[doc = " | &vert; | optional     |                   | After this spec following specs would be optional. |"]
-#[doc = " | `?`  | optional given | {mrb_bool}        | `TRUE` if preceding argument is given. Used to check optional argument is given. |"]
-#[doc = ""]
-#[doc = " @see mrb_get_args"]
 pub type mrb_args_format = *const ::std::os::raw::c_char;
 extern "C" {
-    #[doc = " Retrieve arguments from mrb_state."]
-    #[doc = ""]
-    #[doc = " @param mrb The current MRuby state."]
-    #[doc = " @param format [mrb_args_format] is a list of format specifiers"]
-    #[doc = " @param ... The passing variadic arguments must be a pointer of retrieving type."]
-    #[doc = " @return the number of arguments retrieved."]
-    #[doc = " @see mrb_args_format"]
     #[link_name = "\u{1}_mrb_get_args"]
     pub fn mrb_get_args(mrb: *mut mrb_state, format: mrb_args_format, ...) -> mrb_int;
 }
 extern "C" {
-    #[doc = " Retrieve number of arguments from mrb_state."]
-    #[doc = ""]
-    #[doc = " Correctly handles *splat arguments."]
     #[link_name = "\u{1}_mrb_get_argc"]
     pub fn mrb_get_argc(mrb: *mut mrb_state) -> mrb_int;
 }
@@ -1351,31 +909,6 @@ extern "C" {
     pub fn mrb_get_argv(mrb: *mut mrb_state) -> *mut mrb_value;
 }
 extern "C" {
-    #[doc = " Call existing ruby functions."]
-    #[doc = ""]
-    #[doc = "      #include <stdio.h>"]
-    #[doc = "      #include <mruby.h>"]
-    #[doc = "      #include \"mruby/compile.h\""]
-    #[doc = ""]
-    #[doc = "      int"]
-    #[doc = "      main()"]
-    #[doc = "      {"]
-    #[doc = "        mrb_int i = 99;"]
-    #[doc = "        mrb_state *mrb = mrb_open();"]
-    #[doc = ""]
-    #[doc = "        if (!mrb) { }"]
-    #[doc = "        FILE *fp = fopen(\"test.rb\",\"r\");"]
-    #[doc = "        mrb_value obj = mrb_load_file(mrb,fp);"]
-    #[doc = "        mrb_funcall(mrb, obj, \"method_name\", 1, mrb_fixnum_value(i));"]
-    #[doc = "        fclose(fp);"]
-    #[doc = "        mrb_close(mrb);"]
-    #[doc = "       }"]
-    #[doc = " @param [mrb_state*] mrb_state* The current mruby state."]
-    #[doc = " @param [mrb_value] mrb_value A reference to an mruby value."]
-    #[doc = " @param [const char*] const char* The name of the method."]
-    #[doc = " @param [mrb_int] mrb_int The number of arguments the method has."]
-    #[doc = " @param [...] ... Variadic values(not type safe!)."]
-    #[doc = " @return [mrb_value] mrb_value mruby function value."]
     #[link_name = "\u{1}_mrb_funcall"]
     pub fn mrb_funcall(
         arg1: *mut mrb_state,
@@ -1386,33 +919,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Call existing ruby functions. This is basically the type safe version of mrb_funcall."]
-    #[doc = ""]
-    #[doc = "      #include <stdio.h>"]
-    #[doc = "      #include <mruby.h>"]
-    #[doc = "      #include \"mruby/compile.h\""]
-    #[doc = "      int"]
-    #[doc = "      main()"]
-    #[doc = "      {"]
-    #[doc = "        mrb_int i = 99;"]
-    #[doc = "        mrb_state *mrb = mrb_open();"]
-    #[doc = ""]
-    #[doc = "        if (!mrb) { }"]
-    #[doc = "        mrb_sym m_sym = mrb_intern_lit(mrb, \"method_name\"); // Symbol for method."]
-    #[doc = ""]
-    #[doc = "        FILE *fp = fopen(\"test.rb\",\"r\");"]
-    #[doc = "        mrb_value obj = mrb_load_file(mrb,fp);"]
-    #[doc = "        mrb_funcall_argv(mrb, obj, m_sym, 1, &obj); // Calling ruby function from test.rb."]
-    #[doc = "        fclose(fp);"]
-    #[doc = "        mrb_close(mrb);"]
-    #[doc = "       }"]
-    #[doc = " @param [mrb_state*] mrb_state* The current mruby state."]
-    #[doc = " @param [mrb_value] mrb_value A reference to an mruby value."]
-    #[doc = " @param [mrb_sym] mrb_sym The symbol representing the method."]
-    #[doc = " @param [mrb_int] mrb_int The number of arguments the method has."]
-    #[doc = " @param [const mrb_value*] mrb_value* Pointer to the object."]
-    #[doc = " @return [mrb_value] mrb_value mruby function value."]
-    #[doc = " @see mrb_funcall"]
     #[link_name = "\u{1}_mrb_funcall_argv"]
     pub fn mrb_funcall_argv(
         arg1: *mut mrb_state,
@@ -1423,7 +929,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Call existing ruby functions with a block."]
     #[link_name = "\u{1}_mrb_funcall_with_block"]
     pub fn mrb_funcall_with_block(
         arg1: *mut mrb_state,
@@ -1435,16 +940,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Create a symbol"]
-    #[doc = ""]
-    #[doc = "     # Ruby style:"]
-    #[doc = "     :pizza # => :pizza"]
-    #[doc = ""]
-    #[doc = "     // C style:"]
-    #[doc = "     mrb_sym m_sym = mrb_intern_lit(mrb, \"pizza\"); //  => :pizza"]
-    #[doc = " @param [mrb_state*] mrb_state* The current mruby state."]
-    #[doc = " @param [const char*] const char* The name of the method."]
-    #[doc = " @return [mrb_sym] mrb_sym A symbol."]
     #[link_name = "\u{1}_mrb_intern_cstr"]
     pub fn mrb_intern_cstr(arg1: *mut mrb_state, arg2: *const ::std::os::raw::c_char) -> mrb_sym;
 }
@@ -1552,7 +1047,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Turns a C string into a Ruby string value."]
     #[link_name = "\u{1}_mrb_str_new_cstr"]
     pub fn mrb_str_new_cstr(arg1: *mut mrb_state, arg2: *const ::std::os::raw::c_char)
         -> mrb_value;
@@ -1566,52 +1060,22 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Creates new mrb_state."]
-    #[doc = ""]
-    #[doc = " @return"]
-    #[doc = "      Pointer to the newly created mrb_state."]
     #[link_name = "\u{1}_mrb_open"]
     pub fn mrb_open() -> *mut mrb_state;
 }
 extern "C" {
-    #[doc = " Create new mrb_state with custom allocators."]
-    #[doc = ""]
-    #[doc = " @param f"]
-    #[doc = "      Reference to the allocation function."]
-    #[doc = " @param ud"]
-    #[doc = "      User data will be passed to custom allocator f."]
-    #[doc = "      If user data isn't required just pass NULL."]
-    #[doc = " @return"]
-    #[doc = "      Pointer to the newly created mrb_state."]
     #[link_name = "\u{1}_mrb_open_allocf"]
     pub fn mrb_open_allocf(f: mrb_allocf, ud: *mut ::std::os::raw::c_void) -> *mut mrb_state;
 }
 extern "C" {
-    #[doc = " Create new mrb_state with just the MRuby core"]
-    #[doc = ""]
-    #[doc = " @param f"]
-    #[doc = "      Reference to the allocation function."]
-    #[doc = "      Use mrb_default_allocf for the default"]
-    #[doc = " @param ud"]
-    #[doc = "      User data will be passed to custom allocator f."]
-    #[doc = "      If user data isn't required just pass NULL."]
-    #[doc = " @return"]
-    #[doc = "      Pointer to the newly created mrb_state."]
     #[link_name = "\u{1}_mrb_open_core"]
     pub fn mrb_open_core(f: mrb_allocf, ud: *mut ::std::os::raw::c_void) -> *mut mrb_state;
 }
 extern "C" {
-    #[doc = " Closes and frees a mrb_state."]
-    #[doc = ""]
-    #[doc = " @param mrb"]
-    #[doc = "      Pointer to the mrb_state to be closed."]
     #[link_name = "\u{1}_mrb_close"]
     pub fn mrb_close(mrb: *mut mrb_state);
 }
 extern "C" {
-    #[doc = " The default allocation function."]
-    #[doc = ""]
-    #[doc = " @see mrb_allocf"]
     #[link_name = "\u{1}_mrb_default_allocf"]
     pub fn mrb_default_allocf(
         arg1: *mut mrb_state,
@@ -2192,7 +1656,6 @@ extern "C" {
     #[link_name = "\u{1}_mrb_ary_resize"]
     pub fn mrb_ary_resize(mrb: *mut mrb_state, ary: mrb_value, new_len: mrb_int) -> mrb_value;
 }
-#[doc = " Class class"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct RClass {
@@ -2803,13 +2266,10 @@ extern "C" {
         cxt: *mut mrbc_context,
     ) -> mrb_value;
 }
-#[doc = " Custom data type description."]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct mrb_data_type {
-    #[doc = " data type name"]
     pub struct_name: *const ::std::os::raw::c_char,
-    #[doc = " data type release function pointer"]
     pub dfree: ::std::option::Option<
         unsafe extern "C" fn(mrb: *mut mrb_state, arg1: *mut ::std::os::raw::c_void),
     >,
@@ -3035,9 +2495,6 @@ extern "C" {
     pub fn mrb_f_raise(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Protect"]
-    #[doc = ""]
-    #[doc = " @mrbgem mruby-error"]
     #[link_name = "\u{1}_mrb_protect"]
     pub fn mrb_protect(
         mrb: *mut mrb_state,
@@ -3047,9 +2504,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Ensure"]
-    #[doc = ""]
-    #[doc = " @mrbgem mruby-error"]
     #[link_name = "\u{1}_mrb_ensure"]
     pub fn mrb_ensure(
         mrb: *mut mrb_state,
@@ -3060,9 +2514,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Rescue"]
-    #[doc = ""]
-    #[doc = " @mrbgem mruby-error"]
     #[link_name = "\u{1}_mrb_rescue"]
     pub fn mrb_rescue(
         mrb: *mut mrb_state,
@@ -3073,9 +2524,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Rescue exception"]
-    #[doc = ""]
-    #[doc = " @mrbgem mruby-error"]
     #[link_name = "\u{1}_mrb_rescue_exceptions"]
     pub fn mrb_rescue_exceptions(
         mrb: *mut mrb_state,
@@ -3087,7 +2535,6 @@ extern "C" {
         classes: *mut *mut RClass,
     ) -> mrb_value;
 }
-#[doc = " Hash class"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct RHash {
@@ -3258,7 +2705,6 @@ extern "C" {
         p: *mut ::std::os::raw::c_void,
     );
 }
-#[doc = " khash definitions used in mruby's hash table."]
 pub type khint_t = u32;
 extern "C" {
     #[link_name = "\u{1}_mrb_flo_to_fixnum"]
@@ -3401,7 +2847,6 @@ pub const mrb_insn_OP_EXT2: mrb_insn = 101;
 pub const mrb_insn_OP_EXT3: mrb_insn = 102;
 pub const mrb_insn_OP_STOP: mrb_insn = 103;
 pub type mrb_insn = u32;
-#[doc = " Proc class"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct REnv {
@@ -4092,62 +3537,14 @@ extern "C" {
     pub fn mrb_const_defined_at(mrb: *mut mrb_state, mod_: mrb_value, id: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[doc = " Get a global variable. Will return nil if the var does not exist"]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "     !!!ruby"]
-    #[doc = "     # Ruby style"]
-    #[doc = "     var = $value"]
-    #[doc = ""]
-    #[doc = "     !!!c"]
-    #[doc = "     // C style"]
-    #[doc = "     mrb_sym sym = mrb_intern_lit(mrb, \"$value\");"]
-    #[doc = "     mrb_value var = mrb_gv_get(mrb, sym);"]
-    #[doc = ""]
-    #[doc = " @param mrb The mruby state reference"]
-    #[doc = " @param sym The name of the global variable"]
-    #[doc = " @return The value of that global variable. May be nil"]
     #[link_name = "\u{1}_mrb_gv_get"]
     pub fn mrb_gv_get(mrb: *mut mrb_state, sym: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[doc = " Set a global variable"]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "     !!!ruby"]
-    #[doc = "     # Ruby style"]
-    #[doc = "     $value = \"foo\""]
-    #[doc = ""]
-    #[doc = "     !!!c"]
-    #[doc = "     // C style"]
-    #[doc = "     mrb_sym sym = mrb_intern_lit(mrb, \"$value\");"]
-    #[doc = "     mrb_gv_set(mrb, sym, mrb_str_new_lit(\"foo\"));"]
-    #[doc = ""]
-    #[doc = " @param mrb The mruby state reference"]
-    #[doc = " @param sym The name of the global variable"]
-    #[doc = " @param val The value of the global variable"]
     #[link_name = "\u{1}_mrb_gv_set"]
     pub fn mrb_gv_set(mrb: *mut mrb_state, sym: mrb_sym, val: mrb_value);
 }
 extern "C" {
-    #[doc = " Remove a global variable."]
-    #[doc = ""]
-    #[doc = " Example:"]
-    #[doc = ""]
-    #[doc = "     !!!ruby"]
-    #[doc = "     # Ruby style"]
-    #[doc = "     $value = nil"]
-    #[doc = ""]
-    #[doc = "     !!!c"]
-    #[doc = "     // C style"]
-    #[doc = "     mrb_sym sym = mrb_intern_lit(mrb, \"$value\");"]
-    #[doc = "     mrb_gv_remove(mrb, sym);"]
-    #[doc = ""]
-    #[doc = " @param mrb The mruby state reference"]
-    #[doc = " @param sym The name of the global variable"]
-    #[doc = " @param val The value of the global variable"]
     #[link_name = "\u{1}_mrb_gv_remove"]
     pub fn mrb_gv_remove(mrb: *mut mrb_state, sym: mrb_sym);
 }
@@ -4368,15 +3765,10 @@ extern "C" {
     pub fn mrb_sys_ary_len(value: mrb_value) -> mrb_int;
 }
 extern "C" {
-    #[doc = " Set save point for garbage collection arena to recycle `mrb_value` objects"]
-    #[doc = " created with C function calls. Returns an index in the arena stack to restore"]
-    #[doc = " to when calling `mrb_sys_gc_arena_restore`."]
     #[link_name = "\u{1}_mrb_sys_gc_arena_save"]
     pub fn mrb_sys_gc_arena_save(mrb: *mut mrb_state) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    #[doc = " Restore save point for garbage collection arena to recycle `mrb_value`"]
-    #[doc = " objects created with C function calls."]
     #[link_name = "\u{1}_mrb_sys_gc_arena_restore"]
     pub fn mrb_sys_gc_arena_restore(mrb: *mut mrb_state, arena_index: ::std::os::raw::c_int);
 }

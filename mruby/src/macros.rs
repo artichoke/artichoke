@@ -3,9 +3,9 @@
 //! available to all modules within the mruby crate in addition to being
 //! exported.
 
-/// Extract an [`Mrb`] instance from the userdata on a [`sys::mrb_state`]. If
-/// there is an error when extracting the Rust wrapper around the interpreter,
-/// attempt to raise a `RuntimeError` and return `nil`.
+/// Extract an [`Mrb`](interpreter::Mrb) instance from the userdata on a
+/// [`sys::mrb_state`]. If there is an error when extracting the Rust wrapper
+/// around the interpreter, attempt to raise a `RuntimeError` and return `nil`.
 ///
 /// This macro is `unsafe` and assumes it is being called from an `extern "C" fn`
 /// that is embedded in an mruby class, module, or function definition.
