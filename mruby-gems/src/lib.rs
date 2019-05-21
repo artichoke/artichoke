@@ -1,7 +1,13 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+#![deny(warnings, intra_doc_link_resolution_failure)]
+
+#[macro_use]
+extern crate rust_embed;
+
+use mruby::interpreter::Mrb;
+use mruby::MrbError;
+
+pub mod rubygems;
+
+pub trait Gem {
+    fn install(interp: &mut Mrb) -> Result<(), MrbError>;
 }
