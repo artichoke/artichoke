@@ -6,7 +6,6 @@ use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
 use mruby::MrbError;
 use mruby_gems::rubygems::rack;
-use mruby_gems::Gem;
 use rocket::http::Status;
 use rocket::{get, Response};
 
@@ -33,7 +32,7 @@ impl Interpreter for Mrb {
 pub fn rack_app<'a>() -> Result<Response<'a>, Status> {
     info!("Initializing fresh shared nothing mruby interpreter");
     let mut interp = interpreter::Interpreter::create().map_err(|_| Status::InternalServerError)?;
-    rack::Rack::init(&mut interp).map_err(|_| Status::InternalServerError)?;
+    rack::init(&mut interp).map_err(|_| Status::InternalServerError)?;
     interp
         .def_file_for_type::<_, foolsgold::Lib>("foolsgold")
         .map_err(|_| Status::InternalServerError)?;

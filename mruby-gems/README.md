@@ -12,7 +12,7 @@ Ruby and/or Rust-backed gem to be installed into an interpreter.
 
 ## Implementing a Gem
 
-## Vendor Gem Dependencies
+### Vendor Gem Dependencies
 
 The first step in implementing a new gem is adding it to the
 [`Gemfile`](Gemfile). Peg a gem to a _specific_ version with an `= x.y.z`
@@ -24,6 +24,16 @@ gem 'rack', '= 2.0.7'
 
 Then run `bundle install` and check in the resulting [lock file](Gemfile.lock)
 and vendored gem sources.
+
+### Public Interface
+
+Gem modules should expose one public function:
+
+```rust
+pub fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+    unimplemented!()
+}
+```
 
 ### Pure Ruby
 
@@ -41,9 +51,13 @@ use std::convert::AsRef;
 
 use crate::Gem;
 
+pub fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+    Rack::init(interp)
+}
+
 #[derive(RustEmbed)]
 #[folder = "mruby-gems/vendor/ruby/2.6.0/gems/rack-2.0.7/lib"]
-pub struct Rack;
+struct Rack;
 
 impl Rack {
     fn contents<T: AsRef<str>>(path: T) -> Result<Vec<u8>, MrbError> {
