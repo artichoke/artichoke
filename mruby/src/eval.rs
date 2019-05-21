@@ -158,7 +158,7 @@ mod tests {
     use crate::interpreter::{Interpreter, Mrb};
     use crate::load::MrbLoadSources;
     use crate::sys;
-    use crate::{interpreter_or_raise, unwrap_or_raise};
+    use crate::{interpreter_or_raise, unwrap_value_or_raise};
 
     #[test]
     fn root_eval_context() {
@@ -193,20 +193,19 @@ mod tests {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
-            unsafe { unwrap_or_raise!(interp, interp.eval("__FILE__")) }
+            unsafe { unwrap_value_or_raise!(interp, interp.eval("__FILE__")) }
         }
         struct NestedEval;
         impl MrbFile for NestedEval {
             fn require(interp: Mrb) {
-                {
+                let spec = {
                     let mut api = interp.borrow_mut();
-                    api.def_module::<Self>("NestedEval", None);
-                    let spec = api.module_spec_mut::<Self>();
-                    spec.add_self_method("file", nested_eval, sys::mrb_args_none());
-                }
-                let api = interp.borrow();
-                let spec = api.module_spec::<Self>();
-                spec.define(&interp).expect("def method");
+                    let spec = api.def_module::<Self>("NestedEval", None);
+                    spec.borrow_mut()
+                        .add_self_method("file", nested_eval, sys::mrb_args_none());
+                    spec
+                };
+                spec.borrow().define(&interp).expect("def method");
             }
         }
         let mut interp = Interpreter::create().expect("mrb init");

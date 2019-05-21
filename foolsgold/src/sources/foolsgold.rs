@@ -5,7 +5,9 @@ use mruby::file::MrbFile;
 use mruby::interpreter::Mrb;
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
-use mruby::{interpreter_or_raise, unwrap_or_raise};
+use mruby::{
+    class_spec_or_raise, interpreter_or_raise, module_spec_or_raise, unwrap_value_or_raise,
+};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
@@ -60,7 +62,7 @@ impl MrbFile for Counter {
 
                 // We can probably relax the ordering constraint.
                 let value = SEEN_REQUESTS_COUNTER.load(Ordering::SeqCst);
-                unwrap_or_raise!(interp, Value::try_from_mrb(&interp, value))
+                unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, value))
             }
         }
 
@@ -76,19 +78,22 @@ impl MrbFile for Counter {
             }
         }
 
-        {
+        let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.module_spec::<Metrics>();
+            // TODO: return Err instead of expects when require is fallible. See
+            // GH-25.
+            let spec = api.module_spec::<Metrics>().expect("Metrics not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
-            api.def_class::<Self>("Counter", Some(parent), None);
-            let spec = api.class_spec_mut::<Self>();
-            spec.add_method("get", get, sys::mrb_args_none());
-            spec.add_method("inc", inc, sys::mrb_args_none());
-        }
-        let spec = interp.borrow().class_spec::<Self>();
-        spec.define(&interp).expect("class install");
+            let spec = api.def_class::<Self>("Counter", Some(parent), None);
+            spec.borrow_mut()
+                .add_method("get", get, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("inc", inc, sys::mrb_args_none());
+            spec
+        };
+        spec.borrow().define(&interp).expect("class install");
     }
 }
 
@@ -108,25 +113,30 @@ impl MrbFile for Metrics {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
-            let api = interp.borrow();
-            let spec = api.class_spec::<Counter>();
-            let rclass = spec.rclass(Rc::clone(&interp));
+            let spec = unsafe { class_spec_or_raise!(interp, Counter) };
+            let rclass = spec.borrow().rclass(Rc::clone(&interp));
             unsafe { sys::mrb_obj_new(mrb, rclass, 0, std::ptr::null()) }
         }
 
-        {
+        let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.module_spec::<Lib>();
+            // TODO: return Err instead of expects when require is fallible. See
+            // GH-25.
+            let spec = api.module_spec::<Lib>().expect("lib not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
-            api.def_module::<Self>("Metrics", Some(parent));
-            let spec = api.module_spec_mut::<Self>();
-            spec.add_method("total_requests", total_requests, sys::mrb_args_none());
-            spec.add_self_method("total_requests", total_requests, sys::mrb_args_none());
-        }
-        let spec = interp.borrow().module_spec::<Self>();
-        spec.define(&interp).expect("module install");
+            let spec = api.def_module::<Self>("Metrics", Some(parent));
+            spec.borrow_mut()
+                .add_method("total_requests", total_requests, sys::mrb_args_none());
+            spec.borrow_mut().add_self_method(
+                "total_requests",
+                total_requests,
+                sys::mrb_args_none(),
+            );
+            spec
+        };
+        spec.borrow().define(&interp).expect("module install");
     }
 }
 
@@ -157,9 +167,9 @@ impl MrbFile for RequestContext {
 
                 let interp = interpreter_or_raise!(mrb);
                 {
-                    let api = interp.borrow();
-                    let spec = api.class_spec::<RequestContext>();
-                    sys::mrb_sys_data_init(&mut slf, ptr, spec.data_type());
+                    let spec = class_spec_or_raise!(interp, RequestContext);
+                    let borrow = spec.borrow();
+                    sys::mrb_sys_data_init(&mut slf, ptr, borrow.data_type());
                 };
 
                 info!("initialized RequestContext with trace id {}", request_id);
@@ -172,41 +182,43 @@ impl MrbFile for RequestContext {
                 let interp = interpreter_or_raise!(mrb);
 
                 let ptr = {
-                    let api = interp.borrow();
-                    let spec = api.class_spec::<RequestContext>();
-                    sys::mrb_data_get_ptr(mrb, slf, spec.data_type())
+                    let spec = class_spec_or_raise!(interp, RequestContext);
+                    let borrow = spec.borrow();
+                    sys::mrb_data_get_ptr(mrb, slf, borrow.data_type())
                 };
                 let data = mem::transmute::<*mut c_void, Rc<RefCell<RequestContext>>>(ptr);
                 let trace_id = data.borrow().trace_id;
                 info!("Retrieved trace id {} in {:?}", trace_id, interp);
                 mem::forget(data);
-                unwrap_or_raise!(interp, Value::try_from_mrb(&interp, trace_id.to_string()))
+                unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, trace_id.to_string()))
             }
         }
 
         extern "C" fn metrics(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
-            let api = interp.borrow();
-            let spec = api.module_spec::<Metrics>();
-            let rclass = spec.rclass(Rc::clone(&interp));
+            let spec = unsafe { module_spec_or_raise!(interp, Metrics) };
+            let rclass = spec.borrow().rclass(Rc::clone(&interp));
             unsafe { sys::mrb_sys_class_value(rclass) }
         }
 
-        {
+        let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.module_spec::<Lib>();
+            // TODO: return Err instead of expects when require is fallible. See
+            // GH-25.
+            let spec = api.module_spec::<Lib>().expect("lib not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
-            api.def_class::<Self>("RequestContext", Some(parent), Some(free));
-            let spec = api.class_spec_mut::<Self>();
-            spec.mrb_value_is_rust_backed(true);
-            spec.add_method("initialize", initialize, sys::mrb_args_none());
-            spec.add_method("trace_id", trace_id, sys::mrb_args_none());
-            spec.add_method("metrics", metrics, sys::mrb_args_none());
-        }
-        let api = interp.borrow();
-        let spec = api.class_spec::<Self>();
-        spec.define(&interp).expect("class install");
+            let spec = api.def_class::<Self>("RequestContext", Some(parent), Some(free));
+            spec.borrow_mut().mrb_value_is_rust_backed(true);
+            spec.borrow_mut()
+                .add_method("initialize", initialize, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("trace_id", trace_id, sys::mrb_args_none());
+            spec.borrow_mut()
+                .add_method("metrics", metrics, sys::mrb_args_none());
+            spec
+        };
+        spec.borrow().define(&interp).expect("class install");
     }
 }

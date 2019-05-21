@@ -9,7 +9,7 @@ use mruby::interpreter::{Interpreter, Mrb};
 use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
-use mruby::{interpreter_or_raise, unwrap_or_raise};
+use mruby::{class_spec_or_raise, interpreter_or_raise, unwrap_value_or_raise};
 use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::mem;
@@ -40,7 +40,6 @@ impl MrbFile for Container {
         ) -> sys::mrb_value {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
-                let api = interp.borrow();
 
                 let int = mem::uninitialized::<sys::mrb_int>();
                 let argspec = CString::new(sys::specifiers::INTEGER).expect("argspec");
@@ -54,8 +53,8 @@ impl MrbFile for Container {
                     "interpreter strong ref count = {}",
                     Rc::strong_count(&interp)
                 );
-                let spec = api.class_spec::<Container>();
-                sys::mrb_sys_data_init(&mut slf, ptr, spec.data_type());
+                let spec = class_spec_or_raise!(interp, Container);
+                sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
 
                 slf
             }
@@ -64,32 +63,33 @@ impl MrbFile for Container {
         extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
-                let api = interp.borrow();
-                let spec = api.class_spec::<Container>();
+                let spec = class_spec_or_raise!(interp, Container);
 
                 debug!("pulled mrb_data_type from user data with class: {:?}", spec);
-                let ptr = sys::mrb_data_get_ptr(mrb, slf, spec.data_type());
+                let borrow = spec.borrow();
+                let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
                 let data = mem::transmute::<*mut c_void, Rc<RefCell<Container>>>(ptr);
                 let clone = Rc::clone(&data);
                 let cont = clone.borrow();
 
-                let value = unwrap_or_raise!(interp, Value::try_from_mrb(&interp, cont.inner));
+                let value =
+                    unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, cont.inner));
                 mem::forget(data);
                 value
             }
         }
 
-        {
+        let spec = {
             let mut api = interp.borrow_mut();
-            api.def_class::<Self>("Container", None, Some(free));
-            let spec = api.class_spec_mut::<Self>();
-            spec.add_method("initialize", initialize, sys::mrb_args_req(1));
-            spec.add_method("value", value, sys::mrb_args_none());
-            spec.mrb_value_is_rust_backed(true);
-        }
-        let api = interp.borrow();
-        let spec = api.class_spec::<Self>();
-        spec.define(&interp).expect("class install");
+            let spec = api.def_class::<Self>("Container", None, Some(free));
+            spec.borrow_mut()
+                .add_method("initialize", initialize, sys::mrb_args_req(1));
+            spec.borrow_mut()
+                .add_method("value", value, sys::mrb_args_none());
+            spec.borrow_mut().mrb_value_is_rust_backed(true);
+            spec
+        };
+        spec.borrow().define(&interp).expect("class install");
     }
 }
 

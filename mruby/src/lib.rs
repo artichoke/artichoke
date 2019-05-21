@@ -5,7 +5,7 @@ use std::fmt;
 use std::io;
 
 #[macro_use]
-pub mod interpreter;
+pub mod macros;
 
 pub mod class;
 pub mod convert;
@@ -13,6 +13,7 @@ pub mod def;
 pub mod eval;
 pub mod file;
 pub mod gc;
+pub mod interpreter;
 pub mod load;
 pub mod method;
 pub mod module;
