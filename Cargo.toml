@@ -3,7 +3,7 @@ members = [
   "foolsgold",
   "mruby",
   "mruby-bin",
-  "mruby-rack",
+  "mruby-gems",
   "mruby-sys",
   "mruby-vfs",
 ]
