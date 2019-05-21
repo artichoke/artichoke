@@ -433,14 +433,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mruby-rack"
-version = "0.1.0"
-dependencies = [
- "mruby 0.1.0",
- "rust-embed 4.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "mruby-sys"
 version = "2.0.1-sys.3.c078758"
 dependencies = [
