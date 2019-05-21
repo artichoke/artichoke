@@ -52,6 +52,10 @@ jobs:
           command: |
             cargo clippy -- --version
             cargo clippy --all-targets --all-features
+      - run:
+          name: Check Docs
+          command: |
+            cargo doc --no-deps --all
   c:
     docker:
       - image: circleci/node:lts
