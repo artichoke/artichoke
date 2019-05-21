@@ -114,6 +114,10 @@ fn main() {
         .rustified_enum("mrb_vtype")
         .rustified_enum("mrb_lex_state_enum")
         .rustfmt_bindings(true)
+        // work around warnings caused by cargo doc interpreting Ruby doc blocks
+        // as Rust code.
+        // See: https://github.com/rust-lang/rust-bindgen/issues/426
+        .generate_comments(false)
         .generate()
         .expect("Unable to generate mruby bindings");
     bindings
