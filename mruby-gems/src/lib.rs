@@ -8,6 +8,8 @@ use mruby::MrbError;
 
 pub mod rubygems;
 
+/// Define a Rubygem that can be installed into an [`Mrb`] interpreter.
 pub trait Gem {
-    fn install(interp: &mut Mrb) -> Result<(), MrbError>;
+    /// Initialize a gem in the [`Mrb`] interpreter.
+    fn init(interp: &mut Mrb) -> Result<(), MrbError>;
 }

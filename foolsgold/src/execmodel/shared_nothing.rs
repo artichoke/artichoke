@@ -33,7 +33,7 @@ impl Interpreter for Mrb {
 pub fn rack_app<'a>() -> Result<Response<'a>, Status> {
     info!("Initializing fresh shared nothing mruby interpreter");
     let mut interp = interpreter::Interpreter::create().map_err(|_| Status::InternalServerError)?;
-    rack::Rack::install(&mut interp).map_err(|_| Status::InternalServerError)?;
+    rack::Rack::init(&mut interp).map_err(|_| Status::InternalServerError)?;
     interp
         .def_file_for_type::<_, foolsgold::Lib>("foolsgold")
         .map_err(|_| Status::InternalServerError)?;

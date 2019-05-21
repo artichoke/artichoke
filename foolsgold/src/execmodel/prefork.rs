@@ -18,7 +18,7 @@ use crate::sources::{foolsgold, rackup};
 ref_thread_local! {
     static managed INTERPRETER: Mrb = {
         let mut interp = interpreter::Interpreter::create().expect("mrb interpreter");
-        rack::Rack::install(&mut interp).expect("Rack gem");
+        rack::Rack::init(&mut interp).expect("Rack gem");
         interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold").expect("def foolsgold");
         interp
     };
