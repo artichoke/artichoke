@@ -1,4 +1,5 @@
 #![deny(clippy::all, clippy::pedantic)]
+#![deny(intra_doc_link_resolution_failure)]
 
 use std::error;
 use std::fmt;

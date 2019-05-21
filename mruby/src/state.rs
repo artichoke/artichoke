@@ -62,7 +62,7 @@ impl State {
     ///
     /// This constructor creates the directory `source_dir` in the VFS to act as
     /// the source path for new Ruby files. See
-    /// [`MrbLoadSources::def_rb_source_file`].
+    /// [`MrbLoadSources::def_rb_source_file`](crate::load::MrbLoadSources::def_rb_source_file).
     pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context, source_dir: &str) -> Self {
         let vfs = FakeFileSystem::new();
         vfs.create_dir_all(source_dir).expect("vfs init");
