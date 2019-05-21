@@ -272,7 +272,7 @@ dependencies = [
  "env_logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "mruby 0.1.0",
- "mruby-rack 0.1.0",
+ "mruby-gems 0.1.0",
  "ref_thread_local 0.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-embed 4.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -422,6 +422,14 @@ dependencies = [
  "mruby 0.1.0",
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustyline 4.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "mruby-gems"
+version = "0.1.0"
+dependencies = [
+ "mruby 0.1.0",
+ "rust-embed 4.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

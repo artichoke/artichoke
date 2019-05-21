@@ -6,6 +6,8 @@ use mruby::load::MrbLoadSources;
 use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
 use mruby::MrbError;
+use mruby_gems::rubygems::rack;
+use mruby_gems::Gem;
 use ref_thread_local::RefThreadLocal;
 use rocket::http::Status;
 use rocket::{get, Response};
@@ -16,7 +18,7 @@ use crate::sources::{foolsgold, rackup};
 ref_thread_local! {
     static managed INTERPRETER: Mrb = {
         let mut interp = interpreter::Interpreter::create().expect("mrb interpreter");
-        interp.def_file_for_type::<_, mruby_rack::Builder>("rack/builder").expect("def rack");
+        rack::Rack::install(&mut interp).expect("Rack gem");
         interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold").expect("def foolsgold");
         interp
     };

@@ -22,8 +22,8 @@ rocket = "0.4.0"
 [dependencies.mruby]
 path = "../mruby"
 
-[dependencies.mruby-rack]
-path = "../mruby-rack"
+[dependencies.mruby-gems]
+path = "../mruby-gems"
 
 [dependencies.rust-embed]
 version = "4.3.0"
