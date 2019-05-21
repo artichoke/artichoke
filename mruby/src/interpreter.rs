@@ -92,6 +92,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                 }
                 {
                     let api = interp.borrow();
+                    // TODO: fix this abuse of the `unwrap_value_or_raise` macro
                     unwrap_value_or_raise!(
                         interp,
                         api.vfs
@@ -111,6 +112,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                     // Create the missing metadata struct to prevent double
                     // requires.
                     let metadata = VfsMetadata::new(None).mark_required();
+                    // TODO: fix this abuse of the `unwrap_value_or_raise` macro
                     unwrap_value_or_raise!(
                         interp,
                         api.vfs.set_metadata(path, metadata).map(|_| interp.nil())
