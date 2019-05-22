@@ -4,7 +4,7 @@ use rocket::http::Status;
 use rocket::{get, Response};
 use std::io::Cursor;
 
-use crate::sources::rackup;
+use crate::foolsgold::RACKUP;
 
 #[get("/fools-gold")]
 #[allow(clippy::needless_pass_by_value)]
@@ -16,7 +16,7 @@ pub fn rack_app<'a>(req: RackRequest) -> Result<Response<'a>, Response<'a>> {
             .sized_body(Cursor::new(format!("{}", err)))
             .finalize()
     })?;
-    let adapter = handler::adapter_from_rackup(&interp, rackup::rack_adapter()).map_err(|err| {
+    let adapter = handler::adapter_from_rackup(&interp, RACKUP).map_err(|err| {
         Response::build()
             .status(Status::InternalServerError)
             .sized_body(Cursor::new(format!("{}", err)))

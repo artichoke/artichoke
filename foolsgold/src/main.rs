@@ -14,7 +14,7 @@ use rocket::routes;
 
 mod assets;
 mod execmodel;
-mod sources;
+mod foolsgold;
 
 pub fn main() -> Result<(), i32> {
     env_logger::Builder::from_env("FOOLSGOLD_LOG").init();
