@@ -83,26 +83,24 @@ impl ClassLike for Spec {
         let mrb = interp.borrow().mrb;
         if let Some(ref parent) = self.parent {
             if let Some(parent) = parent.rclass(interp) {
-                if unsafe { sys::mrb_class_defined_under(mrb, parent, self.cstring.as_ptr()) } != 0
+                if unsafe { sys::mrb_class_defined_under(mrb, parent, self.cstring.as_ptr()) } == 0
                 {
-                    // parent exists class is defined under parent
-                    Some(unsafe { sys::mrb_class_get_under(mrb, parent, self.cstring().as_ptr()) })
-                } else {
                     // parent exists and class is NOT defined under parent
                     None
+                } else {
+                    // parent exists class is defined under parent
+                    Some(unsafe { sys::mrb_class_get_under(mrb, parent, self.cstring().as_ptr()) })
                 }
             } else {
                 // parent does not exist
                 None
             }
+        } else if unsafe { sys::mrb_class_defined(mrb, self.cstring.as_ptr()) } == 0 {
+            // class does NOT exist in root namespace
+            None
         } else {
-            if unsafe { sys::mrb_class_defined(mrb, self.cstring.as_ptr()) } != 0 {
-                // class exists in root namespace
-                Some(unsafe { sys::mrb_class_get(mrb, self.cstring().as_ptr()) })
-            } else {
-                // class does NOT exist in root namespace
-                None
-            }
+            // class exists in root namespace
+            Some(unsafe { sys::mrb_class_get(mrb, self.cstring().as_ptr()) })
         }
     }
 }

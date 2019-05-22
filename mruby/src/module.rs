@@ -67,12 +67,12 @@ impl ClassLike for Spec {
                         sys::mrb_intern_cstr(mrb, self.cstring.as_ptr()),
                     )
                 };
-                if defined != 0 {
-                    // parent exists module is defined under parent
-                    Some(unsafe { sys::mrb_module_get_under(mrb, parent, self.cstring().as_ptr()) })
-                } else {
+                if defined == 0 {
                     // parent exists and module is NOT defined under parent
                     None
+                } else {
+                    // parent exists module is defined under parent
+                    Some(unsafe { sys::mrb_module_get_under(mrb, parent, self.cstring().as_ptr()) })
                 }
             } else {
                 // parent does not exist
@@ -86,12 +86,12 @@ impl ClassLike for Spec {
                     sys::mrb_intern_cstr(mrb, self.cstring.as_ptr()),
                 )
             };
-            if defined != 0 {
-                // module exists in root namespace
-                Some(unsafe { sys::mrb_module_get(mrb, self.cstring().as_ptr()) })
-            } else {
+            if defined == 0 {
                 // class does NOT exist in root namespace
                 None
+            } else {
+                // module exists in root namespace
+                Some(unsafe { sys::mrb_module_get(mrb, self.cstring().as_ptr()) })
             }
         }
     }

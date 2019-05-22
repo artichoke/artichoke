@@ -90,7 +90,7 @@ impl RackResponse {
         let rclass = class
             .rclass(Rc::clone(interp))
             .ok_or_else(|| ResponseError::Mrb(MrbError::NotDefined(class.fqname())))?;
-        let args = response.iter().map(|part| part.inner()).collect::<Vec<_>>();
+        let args = response.iter().map(Value::inner).collect::<Vec<_>>();
         // Nemesis::Response.new(status, headers, body)
         let response = unsafe { sys::mrb_obj_new(interp.borrow().mrb, rclass, 3, args.as_ptr()) };
         let status = unsafe {
