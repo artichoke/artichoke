@@ -20,13 +20,12 @@ pub fn rack_app<'a>(req: RackRequest) -> Result<Response<'a>, Response<'a>> {
     info!("Using prefork thread local mruby interpreter");
     match *INTERPRETER.borrow() {
         Ok(ref interp) => {
-            let adapter =
-                handler::adapter_from_rackup(interp, RACKUP).map_err(|err| {
-                    Response::build()
-                        .status(Status::InternalServerError)
-                        .sized_body(Cursor::new(format!("{}", err)))
-                        .finalize()
-                })?;
+            let adapter = handler::adapter_from_rackup(interp, RACKUP).map_err(|err| {
+                Response::build()
+                    .status(Status::InternalServerError)
+                    .sized_body(Cursor::new(format!("{}", err)))
+                    .finalize()
+            })?;
             let arena = interp.create_arena_savepoint();
             let response = handler::run(interp, &adapter, &req).map_err(|err| {
                 Response::build()
