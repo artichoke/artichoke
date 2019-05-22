@@ -1,40 +1,18 @@
-use mruby::convert::{Error, TryFromMrb};
-use mruby::eval::MrbEval;
-use mruby::interpreter::{self, Mrb};
-use mruby::load::MrbLoadSources;
-use mruby::value::types::{Ruby, Rust};
-use mruby::value::Value;
-use mruby::MrbError;
-use mruby_gems::rubygems::rack;
-use rocket::http::Status;
+use nemesis::handler::RackRequest;
+use nemesis::{self, handler};
 use rocket::{get, Response};
 
-use crate::execmodel::{exec, Interpreter};
-use crate::sources::{foolsgold, rackup};
-
-impl Interpreter for Mrb {
-    fn eval<T>(&self, code: T) -> Result<Value, MrbError>
-    where
-        T: AsRef<[u8]>,
-    {
-        MrbEval::eval(self, code.as_ref())
-    }
-
-    fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
-    where
-        T: TryFromMrb<Value, From = Ruby, To = Rust>,
-    {
-        unsafe { <T>::try_from_mrb(self, value) }
-    }
-}
+use crate::execmodel::Error;
+use crate::foolsgold::RACKUP;
 
 #[get("/fools-gold")]
-pub fn rack_app<'a>() -> Result<Response<'a>, Status> {
+#[allow(clippy::needless_pass_by_value)]
+pub fn rack_app<'a>(req: RackRequest) -> Result<Response<'a>, Error> {
     info!("Initializing fresh shared nothing mruby interpreter");
-    let mut interp = interpreter::Interpreter::create().map_err(|_| Status::InternalServerError)?;
-    rack::init(&mut interp).map_err(|_| Status::InternalServerError)?;
-    interp
-        .def_file_for_type::<_, foolsgold::Lib>("foolsgold")
-        .map_err(|_| Status::InternalServerError)?;
-    exec(&interp, rackup::rack_adapter())
+    let interp = super::interpreter()?;
+    let adapter = handler::adapter_from_rackup(&interp, RACKUP)?;
+    // GC and managing the arena are unnecessary since we throw the interpreter
+    // away at the end of the request.
+    let response = handler::run(&interp, &adapter, &req)?;
+    Ok(response)
 }

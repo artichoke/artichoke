@@ -1,47 +1,61 @@
 use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define, Parent};
-use mruby::eval::{EvalContext, MrbEval};
 use mruby::file::MrbFile;
-use mruby::interpreter::Mrb;
+use mruby::interpreter::{Mrb, MrbApi};
+use mruby::load::MrbLoadSources;
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
+use mruby::MrbError;
 use mruby::{
     class_spec_or_raise, interpreter_or_raise, module_spec_or_raise, unwrap_value_or_raise,
 };
+use std::borrow::Cow;
 use std::cell::RefCell;
+use std::convert::AsRef;
 use std::ffi::c_void;
 use std::mem;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicI64, Ordering};
 use uuid::Uuid;
 
-use crate::sources::Source;
+use mruby_gems::Gem;
+
+pub const RACKUP: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/ruby/config.ru"));
 
 static SEEN_REQUESTS_COUNTER: AtomicI64 = AtomicI64::new(0);
 
-pub struct Lib;
+pub fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+    FoolsGold::init(interp)
+}
 
-impl MrbFile for Lib {
-    fn require(interp: Mrb) {
-        // Ruby sources
-        // TODO: Implement ruby sources with `MrbLoadSources::def_rb_source_file`
-        let contents = Source::contents("foolsgold.rb");
-        interp
-            .eval_with_context(contents, EvalContext::new("foolsgold.rb"))
-            .expect("foolsgold source");
-        let contents = Source::contents("foolsgold/adapter/memory.rb");
-        interp
-            .eval_with_context(contents, EvalContext::new("foolsgold/adapter/memory.rb"))
-            .expect("foolsgold source");
+#[derive(RustEmbed)]
+// TODO: resolve path relative to CARGO_MANIFEST_DIR
+// https://github.com/pyros2097/rust-embed/pull/59
+#[folder = "foolsgold/ruby/lib"]
+struct FoolsGold;
 
-        {
-            let mut api = interp.borrow_mut();
-            api.def_module::<Self>("FoolsGold", None);
+impl FoolsGold {
+    fn contents<T: AsRef<str>>(path: T) -> Result<Vec<u8>, MrbError> {
+        let path = path.as_ref();
+        Self::get(path)
+            .map(Cow::into_owned)
+            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))
+    }
+}
+
+impl Gem for FoolsGold {
+    fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+        for source in Self::iter() {
+            let contents = Self::contents(&source)?;
+            interp.def_rb_source_file(source, contents)?;
         }
         // Rust sources
-        Metrics::require(Rc::clone(&interp));
-        Counter::require(Rc::clone(&interp));
-        RequestContext::require(Rc::clone(&interp));
+        let spec = interp.borrow_mut().def_module::<Self>("FoolsGold", None);
+        spec.borrow().define(&interp)?;
+        Metrics::require(Rc::clone(interp));
+        Counter::require(Rc::clone(interp));
+        RequestContext::require(Rc::clone(interp));
+        Ok(())
     }
 }
 
@@ -115,14 +129,19 @@ impl MrbFile for Metrics {
             let interp = unsafe { interpreter_or_raise!(mrb) };
             let spec = unsafe { class_spec_or_raise!(interp, Counter) };
             let rclass = spec.borrow().rclass(Rc::clone(&interp));
-            unsafe { sys::mrb_obj_new(mrb, rclass, 0, std::ptr::null()) }
+            if let Some(rclass) = rclass {
+                let args = &[];
+                unsafe { sys::mrb_obj_new(mrb, rclass, 0, args.as_ptr()) }
+            } else {
+                interp.nil().inner()
+            }
         }
 
         let spec = {
             let mut api = interp.borrow_mut();
             // TODO: return Err instead of expects when require is fallible. See
             // GH-25.
-            let spec = api.module_spec::<Lib>().expect("lib not defined");
+            let spec = api.module_spec::<FoolsGold>().expect("lib not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
@@ -198,14 +217,15 @@ impl MrbFile for RequestContext {
             let interp = unsafe { interpreter_or_raise!(mrb) };
             let spec = unsafe { module_spec_or_raise!(interp, Metrics) };
             let rclass = spec.borrow().rclass(Rc::clone(&interp));
-            unsafe { sys::mrb_sys_class_value(rclass) }
+            unsafe { rclass.map(|cls| sys::mrb_sys_class_value(cls)) }
+                .unwrap_or_else(|| interp.nil().inner())
         }
 
         let spec = {
             let mut api = interp.borrow_mut();
             // TODO: return Err instead of expects when require is fallible. See
             // GH-25.
-            let spec = api.module_spec::<Lib>().expect("lib not defined");
+            let spec = api.module_spec::<FoolsGold>().expect("lib not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };

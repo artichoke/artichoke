@@ -1,51 +1,31 @@
-use mruby::convert::{Error, TryFromMrb};
-use mruby::eval::MrbEval;
 use mruby::gc::GarbageCollection;
-use mruby::interpreter::{self, Mrb};
-use mruby::load::MrbLoadSources;
-use mruby::value::types::{Ruby, Rust};
-use mruby::value::Value;
+use mruby::interpreter::Mrb;
 use mruby::MrbError;
-use mruby_gems::rubygems::rack;
+use nemesis::handler::RackRequest;
+use nemesis::{self, handler};
 use ref_thread_local::RefThreadLocal;
-use rocket::http::Status;
 use rocket::{get, Response};
 
-use crate::execmodel::{exec, Interpreter};
-use crate::sources::{foolsgold, rackup};
+use crate::execmodel::Error;
+use crate::foolsgold::RACKUP;
 
 ref_thread_local! {
-    static managed INTERPRETER: Mrb = {
-        let mut interp = interpreter::Interpreter::create().expect("mrb interpreter");
-        rack::init(&mut interp).expect("Rack gem");
-        interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold").expect("def foolsgold");
-        interp
-    };
-}
-
-impl Interpreter for &INTERPRETER {
-    fn eval<T>(&self, code: T) -> Result<Value, MrbError>
-    where
-        T: AsRef<[u8]>,
-    {
-        let arena = GarbageCollection::create_arena_savepoint(&*self.borrow());
-        let result = MrbEval::eval(&*self.borrow(), code.as_ref());
-        arena.restore();
-        GarbageCollection::incremental_gc(&*self.borrow());
-        result
-    }
-
-    fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
-    where
-        T: TryFromMrb<Value, From = Ruby, To = Rust>,
-    {
-        unsafe { <T>::try_from_mrb(&self.borrow(), value) }
-    }
+    static managed INTERPRETER: Result<Mrb, MrbError> = super::interpreter();
 }
 
 #[get("/fools-gold/prefork")]
-pub fn rack_app<'a>() -> Result<Response<'a>, Status> {
+#[allow(clippy::needless_pass_by_value)]
+pub fn rack_app<'a>(req: RackRequest) -> Result<Response<'a>, Error> {
     info!("Using prefork thread local mruby interpreter");
-    let interp = &INTERPRETER;
-    exec(&interp, rackup::rack_adapter())
+    match *INTERPRETER.borrow() {
+        Ok(ref interp) => {
+            let adapter = handler::adapter_from_rackup(interp, RACKUP)?;
+            let arena = interp.create_arena_savepoint();
+            let response = handler::run(interp, &adapter, &req)?;
+            arena.restore();
+            interp.incremental_gc();
+            Ok(response)
+        }
+        Err(_) => Err(Error::from(MrbError::New)),
+    }
 }

@@ -6,4 +6,5 @@ members = [
   "mruby-gems",
   "mruby-sys",
   "mruby-vfs",
+  "nemesis",
 ]
