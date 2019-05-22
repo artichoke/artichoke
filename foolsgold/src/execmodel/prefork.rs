@@ -1,6 +1,5 @@
 use mruby::gc::GarbageCollection;
-use mruby::interpreter::{Interpreter, Mrb};
-use mruby::load::MrbLoadSources;
+use mruby::interpreter::Mrb;
 use mruby::MrbError;
 use nemesis::handler::RackRequest;
 use nemesis::{self, handler};
@@ -9,17 +8,10 @@ use rocket::http::Status;
 use rocket::{get, Response};
 use std::io::Cursor;
 
-use crate::sources::{foolsgold, rackup};
-
-fn interpreter() -> Result<Mrb, MrbError> {
-    let mut interp = Interpreter::create()?;
-    nemesis::init(&mut interp)?;
-    interp.def_file_for_type::<_, foolsgold::Lib>("foolsgold")?;
-    Ok(interp)
-}
+use crate::sources::rackup;
 
 ref_thread_local! {
-    static managed INTERPRETER: Result<Mrb, MrbError> = interpreter();
+    static managed INTERPRETER: Result<Mrb, MrbError> = super::interpreter();
 }
 
 #[get("/fools-gold/prefork")]
