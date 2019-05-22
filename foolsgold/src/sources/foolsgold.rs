@@ -2,7 +2,7 @@ use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define, Parent};
 use mruby::eval::{EvalContext, MrbEval};
 use mruby::file::MrbFile;
-use mruby::interpreter::Mrb;
+use mruby::interpreter::{Mrb, MrbApi};
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
 use mruby::{
@@ -115,7 +115,12 @@ impl MrbFile for Metrics {
             let interp = unsafe { interpreter_or_raise!(mrb) };
             let spec = unsafe { class_spec_or_raise!(interp, Counter) };
             let rclass = spec.borrow().rclass(Rc::clone(&interp));
-            unsafe { sys::mrb_obj_new(mrb, rclass, 0, std::ptr::null()) }
+            if let Some(rclass) = rclass {
+                let args = &[];
+                unsafe { sys::mrb_obj_new(mrb, rclass, 0, args.as_ptr()) }
+            } else {
+                interp.nil().inner()
+            }
         }
 
         let spec = {
@@ -198,7 +203,8 @@ impl MrbFile for RequestContext {
             let interp = unsafe { interpreter_or_raise!(mrb) };
             let spec = unsafe { module_spec_or_raise!(interp, Metrics) };
             let rclass = spec.borrow().rclass(Rc::clone(&interp));
-            unsafe { sys::mrb_sys_class_value(rclass) }
+            unsafe { rclass.map(|cls| sys::mrb_sys_class_value(cls)) }
+                .unwrap_or_else(|| interp.nil().inner())
         }
 
         let spec = {

@@ -273,6 +273,7 @@ dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "mruby 0.1.0",
  "mruby-gems 0.1.0",
+ "nemesis 0.1.0",
  "ref_thread_local 0.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-embed 4.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -445,6 +446,17 @@ name = "mruby-vfs"
 version = "0.5.0-alpha"
 dependencies = [
  "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "nemesis"
+version = "0.1.0"
+dependencies = [
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mruby 0.1.0",
+ "mruby-gems 0.1.0",
+ "rocket 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rust-embed 4.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

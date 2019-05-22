@@ -1,4 +1,4 @@
-use mruby::convert::{Error, TryFromMrb};
+use mruby::convert::TryFromMrb;
 use mruby::value::types::{Ruby, Rust};
 use mruby::value::Value;
 use mruby::MrbError;
@@ -15,7 +15,7 @@ pub trait Interpreter {
     where
         T: AsRef<[u8]>;
 
-    fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
+    fn try_value<T>(&self, value: Value) -> Result<T, MrbError>
     where
         T: TryFromMrb<Value, From = Ruby, To = Rust>;
 }

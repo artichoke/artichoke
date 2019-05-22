@@ -1,4 +1,4 @@
-use mruby::convert::{Error, TryFromMrb};
+use mruby::convert::TryFromMrb;
 use mruby::eval::MrbEval;
 use mruby::interpreter::{self, Mrb};
 use mruby::load::MrbLoadSources;
@@ -20,11 +20,11 @@ impl Interpreter for Mrb {
         MrbEval::eval(self, code.as_ref())
     }
 
-    fn try_value<T>(&self, value: Value) -> Result<T, Error<Ruby, Rust>>
+    fn try_value<T>(&self, value: Value) -> Result<T, MrbError>
     where
         T: TryFromMrb<Value, From = Ruby, To = Rust>,
     {
-        unsafe { <T>::try_from_mrb(self, value) }
+        unsafe { <T>::try_from_mrb(self, value) }.map_err(MrbError::ConvertToRust)
     }
 }
 

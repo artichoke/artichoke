@@ -1,3 +1,5 @@
+require 'foolsgold'
+
 # Monkeypatch String to add String#strip_heredoc_indent
 class String
   # mruby doesn't support Regexp natively, so use a fixed width
@@ -6,6 +8,8 @@ class String
     each_line.map { |line| line[n..-1] }.join
   end
 end
+
+use FoolsGold::Adapter::Memory
 
 # mruby cannot resolve the parser ambiguity without the parens around the
 # lambda expression.
