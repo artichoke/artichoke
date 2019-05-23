@@ -148,9 +148,7 @@ impl From<sys::mrb_value> for Ruby {
             // structure stored in its `value.p` field.
             // TODO: how to handle this?
             sys::mrb_vtype::MRB_TT_DATA => Ruby::Data,
-            // Fibers are only implemented in a gem which mruby-sys does not
-            // build.
-            sys::mrb_vtype::MRB_TT_FIBER => Ruby::Unreachable,
+            sys::mrb_vtype::MRB_TT_FIBER => unimplemented!("mruby type fiber"),
             // MRB_TT_ISTRUCT is an "inline structure", or a mrb_value that
             // stores data in a char* buffer inside an mrb_value. These
             // mrb_values cannot have a finalizer and cannot have instance

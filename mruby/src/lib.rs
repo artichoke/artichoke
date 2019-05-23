@@ -32,6 +32,7 @@ pub enum MrbError {
     NotDefined(String),
     SourceNotFound(String),
     Uninitialized,
+    UnreachableValue(sys::mrb_vtype),
     Vfs(io::Error),
 }
 
@@ -54,6 +55,9 @@ impl fmt::Display for MrbError {
             MrbError::NotDefined(fqname) => write!(f, "{} not defined", fqname),
             MrbError::SourceNotFound(source) => write!(f, "Could not load Ruby source {}", source),
             MrbError::Uninitialized => write!(f, "mrb interpreter not initialized"),
+            MrbError::UnreachableValue(tt) => {
+                write!(f, "extracted unreachable type {:?} from interpreter", tt)
+            }
             MrbError::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
         }
     }
