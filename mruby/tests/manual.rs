@@ -97,7 +97,7 @@ impl MrbFile for Container {
 fn define_rust_backed_ruby_class() {
     env_logger::Builder::from_env("MRUBY_LOG").init();
 
-    let mut interp = Interpreter::create().expect("mrb init");
+    let interp = Interpreter::create().expect("mrb init");
     interp
         .def_file_for_type::<_, Container>("container")
         .expect("def file");

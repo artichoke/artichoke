@@ -13,9 +13,9 @@ pub mod prefork;
 pub mod shared_nothing;
 
 fn interpreter() -> Result<Mrb, MrbError> {
-    let mut interp = Interpreter::create()?;
-    nemesis::init(&mut interp)?;
-    foolsgold::init(&mut interp)?;
+    let interp = Interpreter::create()?;
+    nemesis::init(&interp)?;
+    foolsgold::init(&interp)?;
     // preload foolsgold sources
     interp.eval("require 'foolsgold'")?;
     interp.eval("require 'foolsgold/adapter/memory'")?;

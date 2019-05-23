@@ -402,7 +402,7 @@ mod tests {
         }
 
         unsafe {
-            let mut interp = Interpreter::create().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
             interp
                 .def_file_for_type::<_, InterpreterRequireTest>("require-test.rb")
                 .expect("def file");
@@ -431,7 +431,7 @@ mod tests {
 
     #[test]
     fn require_absolute_path() {
-        let mut interp = Interpreter::create().expect("mrb init");
+        let interp = Interpreter::create().expect("mrb init");
         interp
             .def_rb_source_file("/foo/bar/source.rb", "# a source file")
             .expect("def file");

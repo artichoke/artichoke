@@ -24,7 +24,7 @@ pub const RACKUP: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/ruby
 
 static SEEN_REQUESTS_COUNTER: AtomicI64 = AtomicI64::new(0);
 
-pub fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     FoolsGold::init(interp)
 }
 
@@ -44,7 +44,7 @@ impl FoolsGold {
 }
 
 impl Gem for FoolsGold {
-    fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+    fn init(interp: &Mrb) -> Result<(), MrbError> {
         for source in Self::iter() {
             let contents = Self::contents(&source)?;
             interp.def_rb_source_file(source, contents)?;

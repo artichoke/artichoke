@@ -9,7 +9,7 @@ use mruby_gems::rubygems::rack;
 mod gem;
 pub mod handler;
 
-pub fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     rack::init(interp)?;
     gem::init(interp)?;
     // TODO: properly implement Module#autoload and remove this hack to allow

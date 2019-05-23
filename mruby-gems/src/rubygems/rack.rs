@@ -6,7 +6,7 @@ use std::convert::AsRef;
 
 use crate::Gem;
 
-pub fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Rack::init(interp)
 }
 
@@ -27,7 +27,7 @@ impl Rack {
 }
 
 impl Gem for Rack {
-    fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+    fn init(interp: &Mrb) -> Result<(), MrbError> {
         for source in Self::iter() {
             let contents = Self::contents(&source)?;
             interp.def_rb_source_file(source, contents)?;

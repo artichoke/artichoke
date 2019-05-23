@@ -5,7 +5,7 @@ use mruby_gems::Gem;
 use std::borrow::Cow;
 use std::convert::AsRef;
 
-pub fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Nemesis::init(interp)
 }
 
@@ -25,7 +25,7 @@ impl Nemesis {
 }
 
 impl Gem for Nemesis {
-    fn init(interp: &mut Mrb) -> Result<(), MrbError> {
+    fn init(interp: &Mrb) -> Result<(), MrbError> {
         for source in Self::iter() {
             let contents = Self::contents(&source)?;
             interp.def_rb_source_file(source, contents)?;

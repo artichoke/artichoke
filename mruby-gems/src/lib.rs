@@ -11,5 +11,5 @@ pub mod rubygems;
 /// Define a Rubygem that can be installed into an [`Mrb`] interpreter.
 pub trait Gem {
     /// Initialize a gem in the [`Mrb`] interpreter.
-    fn init(interp: &mut Mrb) -> Result<(), MrbError>;
+    fn init(interp: &Mrb) -> Result<(), MrbError>;
 }

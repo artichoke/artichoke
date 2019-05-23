@@ -19,7 +19,7 @@ where
     /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_file<T>(&mut self, filename: T, require: fn(Self)) -> Result<(), MrbError>
+    fn def_file<T>(&self, filename: T, require: fn(Self)) -> Result<(), MrbError>
     where
         T: AsRef<str>;
 
@@ -31,7 +31,7 @@ where
     /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_file_for_type<T, F>(&mut self, filename: T) -> Result<(), MrbError>
+    fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), MrbError>
     where
         T: AsRef<str>,
         F: MrbFile;
@@ -42,7 +42,7 @@ where
     /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_rb_source_file<T, F>(&mut self, filename: T, contents: F) -> Result<(), MrbError>
+    fn def_rb_source_file<T, F>(&self, filename: T, contents: F) -> Result<(), MrbError>
     where
         T: AsRef<str>,
         F: AsRef<[u8]>;
@@ -62,7 +62,7 @@ where
 }
 
 impl MrbLoadSources for Mrb {
-    fn def_file<T>(&mut self, filename: T, require: fn(Self)) -> Result<(), MrbError>
+    fn def_file<T>(&self, filename: T, require: fn(Self)) -> Result<(), MrbError>
     where
         T: AsRef<str>,
     {
@@ -84,7 +84,7 @@ impl MrbLoadSources for Mrb {
         Ok(())
     }
 
-    fn def_file_for_type<T, F>(&mut self, filename: T) -> Result<(), MrbError>
+    fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), MrbError>
     where
         T: AsRef<str>,
         F: MrbFile,
@@ -92,7 +92,7 @@ impl MrbLoadSources for Mrb {
         self.def_file(filename.as_ref(), F::require)
     }
 
-    fn def_rb_source_file<T, F>(&mut self, filename: T, contents: F) -> Result<(), MrbError>
+    fn def_rb_source_file<T, F>(&self, filename: T, contents: F) -> Result<(), MrbError>
     where
         T: AsRef<str>,
         F: AsRef<[u8]>,
