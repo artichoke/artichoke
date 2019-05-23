@@ -218,7 +218,7 @@ mod tests {
                 spec.borrow().define(&interp).expect("def method");
             }
         }
-        let mut interp = Interpreter::create().expect("mrb init");
+        let interp = Interpreter::create().expect("mrb init");
         interp
             .def_file_for_type::<_, NestedEval>("nested_eval.rb")
             .expect("def file");
@@ -277,7 +277,7 @@ NestedEval.file
 
     #[test]
     fn file_magic_constant() {
-        let mut interp = Interpreter::create().expect("mrb init");
+        let interp = Interpreter::create().expect("mrb init");
         interp
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
@@ -288,7 +288,7 @@ NestedEval.file
 
     #[test]
     fn file_not_persistent() {
-        let mut interp = Interpreter::create().expect("mrb init");
+        let interp = Interpreter::create().expect("mrb init");
         interp
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
