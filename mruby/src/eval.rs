@@ -125,7 +125,17 @@ impl MrbEval for Mrb {
             return Err(MrbError::Exec(backtrace));
         }
 
-        Ok(Value::new(Rc::clone(self), result))
+        let value = Value::new(Rc::clone(self), result);
+        // Unreachable values are internal to the mruby interpreter and
+        // interacting with them via the C API is unspecified and may result in
+        // a segfault.
+        //
+        // See: https://github.com/mruby/mruby/issues/4460
+        if value.is_unreachable() {
+            Err(MrbError::UnreachableValue(value.inner().tt))
+        } else {
+            Ok(value)
+        }
     }
 
     fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, MrbError>
@@ -158,7 +168,7 @@ mod tests {
     use crate::interpreter::{Interpreter, Mrb};
     use crate::load::MrbLoadSources;
     use crate::sys;
-    use crate::{interpreter_or_raise, unwrap_value_or_raise};
+    use crate::{interpreter_or_raise, unwrap_value_or_raise, MrbError};
 
     #[test]
     fn root_eval_context() {
@@ -239,6 +249,30 @@ NestedEval.file
             .expect("eval");
         let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
         assert_eq!(&result, "main.rb");
+    }
+
+    #[test]
+    fn unparseable_code_returns_err_undef() {
+        let interp = Interpreter::create().expect("mrb init");
+        let result = interp.eval("'a").map(|_| ());
+        assert_eq!(
+            result,
+            Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
+        );
+    }
+
+    #[test]
+    fn interpreter_is_usable_after_returning_undef() {
+        let interp = Interpreter::create().expect("mrb init");
+        let result = interp.eval("'a").map(|_| ());
+        assert_eq!(
+            result,
+            Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
+        );
+        // Ensure interpreter is usable after evaling unparseable code
+        let result = interp.eval("'a' * 10 ").expect("eval");
+        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        assert_eq!(result, "a".repeat(10));
     }
 
     #[test]

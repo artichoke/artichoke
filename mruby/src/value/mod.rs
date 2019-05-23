@@ -27,6 +27,19 @@ impl Value {
         types::Ruby::from(self.value)
     }
 
+    /// Some types like [`sys::mrb_vtype::MRB_TT_UNDEF`] are internal to the
+    /// mruby VM and manipulating them with the [`sys`] API is unspecified and
+    /// may result in a segfault.
+    ///
+    /// After extracting a [`sys::mrb_value`] from the interpreter, check to see
+    /// if the value is [unreachable](types::Ruby::Unreachable) and propagate an
+    /// [`MrbError::UnreachableValue`](crate::MrbError::UnreachableValue) error.
+    ///
+    /// See: <https://github.com/mruby/mruby/issues/4460>
+    pub fn is_unreachable(&self) -> bool {
+        self.ruby_type() == types::Ruby::Unreachable
+    }
+
     pub fn is_dead(&self) -> bool {
         unsafe { sys::mrb_sys_value_is_dead(self.interp.borrow().mrb, self.value) }
     }
