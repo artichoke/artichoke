@@ -112,8 +112,13 @@ impl error::Error for ResponseError {
 impl RackResponse {
     fn from(interp: &Mrb, value: Value) -> Result<Self, ResponseError> {
         let response = unsafe { <Vec<Value>>::try_from_mrb(interp, value) }
-            .map_err(|_| ResponseError::RackResponseNot3Tuple)?;
+            .map_err(MrbError::ConvertToRust)
+            .map_err(ResponseError::Mrb)?;
         if response.len() != 3 {
+            warn!(
+                "malformed rack response: {:?}",
+                response.iter().map(Value::to_s_debug).collect::<Vec<_>>()
+            );
             return Err(ResponseError::RackResponseNot3Tuple);
         }
         let nemesis = module::Spec::new("Nemesis", None);
