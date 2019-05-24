@@ -94,9 +94,12 @@ jobs:
               -print0 | xargs -0 -n1 bash -c '_check_clang_format "$@"' _
   ruby:
     docker:
-      - image: circleci/ruby:2.6
+      - image: circleci/ruby:2.6.0
     steps:
       - checkout
+      - run:
+          name: Install bundler 2
+          command: sudo gem install bundler
       - restore_cache:
           keys:
             - ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/ruby/Gemfile.lock" }}
