@@ -37,7 +37,7 @@ impl<'a> RackRequest<'a> {
             .eval(format!(
                 r#"
                 {{
-                    Rack::REQUEST_METHOD => '{method}'
+                    Rack::REQUEST_METHOD => '{method}',
                     Rack::SCRIPT_NAME => '', # mount path
                     Rack::PATH_INFO => '{path}',
                     Rack::QUERY_STRING => '{query}',
