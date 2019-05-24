@@ -1,12 +1,7 @@
 AllCops:
   TargetRubyVersion: 2.5
   DisplayCopNames: true
-  Exclude:
-    - 'lib/rack/**/*.rb'
 Metrics:
   Enabled: false
 Style/Documentation:
-  Enabled: false
-Style/MutableConstant:
-  # freeze is not implemented on mruby
   Enabled: false
