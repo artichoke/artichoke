@@ -42,18 +42,13 @@ impl FoolsGold {
 }
 
 impl MrbFile for FoolsGold {
-    fn require(interp: Mrb) {
+    fn require(interp: Mrb) -> Result<(), MrbError> {
         interp.borrow_mut().def_module::<Self>("FoolsGold", None);
-        // TODO: make MrbFile::require fallible
-        interp.eval("require 'foolsgold/ext/stats'").expect("eval");
-        interp.eval("require 'foolsgold/metrics'").expect("eval");
-        interp
-            .eval("require 'foolsgold/ext/counter'")
-            .expect("eval");
-        interp
-            .eval("require 'foolsgold/middleware/request'")
-            .expect("eval");
-        interp.pop_context();
+        interp.eval("require 'foolsgold/ext/stats'")?;
+        interp.eval("require 'foolsgold/metrics'")?;
+        interp.eval("require 'foolsgold/ext/counter'")?;
+        interp.eval("require 'foolsgold/middleware/request'")?;
+        Ok(())
     }
 }
 
@@ -76,7 +71,7 @@ impl Gem for FoolsGold {
 struct Counter;
 
 impl MrbFile for Counter {
-    fn require(interp: Mrb) {
+    fn require(interp: Mrb) -> Result<(), MrbError> {
         // We do not need to define a free method since we are not storing any
         // data in the `mrb_value`.
 
@@ -121,26 +116,28 @@ impl MrbFile for Counter {
                 .add_method("inc", inc, sys::mrb_args_none());
             spec
         };
-        spec.borrow().define(&interp).expect("class install");
+        spec.borrow().define(&interp)?;
+        Ok(())
     }
 }
 
 struct Metrics;
 
 impl MrbFile for Metrics {
-    fn require(interp: Mrb) {
+    fn require(interp: Mrb) -> Result<(), MrbError> {
         // TODO: return Err instead of expects when require is fallible. See
         // GH-25.
         let parent = interp
             .borrow()
             .module_spec::<FoolsGold>()
-            .expect("lib not defined");
+            .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
         let parent = Parent::Module {
             spec: Rc::clone(&parent),
         };
         interp
             .borrow_mut()
             .def_module::<Self>("Metrics", Some(parent));
+        Ok(())
     }
 }
 
@@ -149,7 +146,7 @@ struct RequestContext {
 }
 
 impl MrbFile for RequestContext {
-    fn require(interp: Mrb) {
+    fn require(interp: Mrb) -> Result<(), MrbError> {
         extern "C" fn free(_mrb: *mut sys::mrb_state, data: *mut c_void) {
             unsafe {
                 // Implictly dropped by going out of scope
@@ -210,7 +207,9 @@ impl MrbFile for RequestContext {
             let mut api = interp.borrow_mut();
             // TODO: return Err instead of expects when require is fallible. See
             // GH-25.
-            let spec = api.module_spec::<FoolsGold>().expect("lib not defined");
+            let spec = api
+                .module_spec::<FoolsGold>()
+                .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
@@ -224,6 +223,7 @@ impl MrbFile for RequestContext {
                 .add_method("metrics", metrics, sys::mrb_args_none());
             spec
         };
-        spec.borrow().define(&interp).expect("class install");
+        spec.borrow().define(&interp)?;
+        Ok(())
     }
 }

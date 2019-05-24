@@ -68,7 +68,12 @@ macro_rules! unwrap_or_raise {
 #[macro_export]
 macro_rules! unwrap_value_or_raise {
     ($interp:expr, $result:expr) => {
-        unwrap_or_raise!($interp, $result, $crate::interpreter::MrbApi::nil(&$interp).inner()).inner()
+        unwrap_or_raise!(
+            $interp,
+            $result,
+            $crate::interpreter::MrbApi::nil(&$interp).inner()
+        )
+        .inner()
     };
 }
 

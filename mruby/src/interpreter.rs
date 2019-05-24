@@ -98,7 +98,7 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
         if let Some(require) = metadata.require {
             // dynamic, Rust-backed `MrbFile` require
             interp.push_context(context);
-            unwrap_or_raise!(require(Rc::clone(&interp)));
+            unsafe { unwrap_or_raise!(interp, require(Rc::clone(&interp)), interp.nil().inner()) };
             interp.pop_context();
         }
         let metadata = metadata.mark_required();
@@ -389,8 +389,9 @@ mod tests {
     fn require() {
         struct InterpreterRequireTest;
         impl MrbFile for InterpreterRequireTest {
-            fn require(interp: Mrb) {
-                interp.eval("@i = 255").expect("eval");
+            fn require(interp: Mrb) -> Result<(), MrbError> {
+                interp.eval("@i = 255")?;
+                Ok(())
             }
         }
 
@@ -449,8 +450,9 @@ mod tests {
     fn require_path_defined_as_source_then_mrbfile() {
         struct Foo;
         impl MrbFile for Foo {
-            fn require(interp: Mrb) {
-                interp.eval("module Foo; RUST = 7; end").expect("eval");
+            fn require(interp: Mrb) -> Result<(), MrbError> {
+                interp.eval("module Foo; RUST = 7; end")?;
+                Ok(())
             }
         }
         let interp = Interpreter::create().expect("mrb init");
@@ -473,8 +475,9 @@ mod tests {
     fn require_path_defined_as_mrbfile_then_source() {
         struct Foo;
         impl MrbFile for Foo {
-            fn require(interp: Mrb) {
-                interp.eval("module Foo; RUST = 7; end").expect("eval");
+            fn require(interp: Mrb) -> Result<(), MrbError> {
+                interp.eval("module Foo; RUST = 7; end")?;
+                Ok(())
             }
         }
         let interp = Interpreter::create().expect("mrb init");
