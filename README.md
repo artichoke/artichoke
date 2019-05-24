@@ -64,11 +64,17 @@ tagged with
 [_good first issue_](https://github.com/lopopolo/ferrocarril/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 might be a good introduction to the codebase.
 
-To see an integration test that stitches all pieces of the [mruby crate](/mruby)
-together, see [manual.rs](/mruby/tests/manual.rs). For a good overview of how to
-use the C API, take a look at [the FFI test suite](/mruby-sys/src/ffi_tests.rs)
-in `mruby-sys`. To see how to intereact with the interpreter with eval, take a
-look at the [REPL implementation](/mruby-bin/src/repl.rs).
+### Code Overview
+
+To familiarize yourself with the code in this workspace, consider reviewing
+these source files:
+
+| File                                          | Purpose                                | Learning Objective                            |
+| --------------------------------------------- | -------------------------------------- | --------------------------------------------- |
+| [manual.rs](/mruby/tests/manual.rs)           | [mruby crate](/mruby) integration test | Define Rust-backed Ruby sources               |
+| [nemesis.rs](nemesis/src/rubygems/nemesis.rs) | [nemesis crate](/nemesis) Ruby runtime | Define a [Gem](mruby-gems/src/lib.rs)         |
+| [ffi_tests.rs](/mruby-sys/src/ffi_tests.rs)   | C API test suite                       | Manipulate an interpreter with the C API      |
+| [repl.rs](/mruby-bin/src/repl.rs)             | REPL loop for `rirb`                   | Eval code on an interpreter and handle errors |
 
 ### Known Missing Features
 
