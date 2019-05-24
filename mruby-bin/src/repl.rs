@@ -104,7 +104,7 @@ pub fn run(
             config.simple.as_str()
         };
 
-        let readline = rl.readline(&prompt);
+        let readline = rl.readline(prompt);
         match readline {
             Ok(line) => {
                 buf.push_str(line.as_str());
