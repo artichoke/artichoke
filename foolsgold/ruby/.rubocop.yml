@@ -1,5 +1,5 @@
 AllCops:
-  TargetRubyVersion: 1.9
+  TargetRubyVersion: 2.5
   DisplayCopNames: true
   Exclude:
     - 'lib/rack/**/*.rb'

@@ -6,12 +6,14 @@ use mruby::interpreter::Mrb;
 use mruby::MrbError;
 use mruby_gems::rubygems::rack;
 
-mod gem;
 pub mod handler;
+mod rubygems;
+
+use rubygems::nemesis;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     rack::init(interp)?;
-    gem::init(interp)?;
+    nemesis::init(interp)?;
     // TODO: properly implement Module#autoload and remove this hack to allow
     // access to Rack constants defined in rack.rb.
     interp.eval(r#"class Module; def autoload(*args); end; end"#)?;

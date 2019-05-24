@@ -1,4 +1,4 @@
-require 'foolsgold/counter'
+# frozen_string_literal: true
 
 module FoolsGold
   module Metrics
