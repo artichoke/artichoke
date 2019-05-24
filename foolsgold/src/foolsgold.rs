@@ -1,5 +1,6 @@
 use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define, Parent};
+use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
 use mruby::interpreter::{Mrb, MrbApi};
 use mruby::load::MrbLoadSources;
@@ -43,6 +44,24 @@ impl FoolsGold {
     }
 }
 
+impl MrbFile for FoolsGold {
+    fn require(interp: Mrb) {
+        interp.borrow_mut().def_module::<Self>("FoolsGold", None);
+        // TODO: make MrbFile::require fallible
+        interp.eval("require 'foolsgold/ext/stats'").expect("eval");
+        interp
+            .eval("require 'foolsgold/ext/metrics'")
+            .expect("eval");
+        interp
+            .eval("require 'foolsgold/ext/counter'")
+            .expect("eval");
+        interp
+            .eval("require 'foolsgold/adapter/memory'")
+            .expect("eval");
+        interp.pop_context();
+    }
+}
+
 impl Gem for FoolsGold {
     fn init(interp: &Mrb) -> Result<(), MrbError> {
         for source in Self::iter() {
@@ -50,11 +69,12 @@ impl Gem for FoolsGold {
             interp.def_rb_source_file(source, contents)?;
         }
         // Rust sources
-        let spec = interp.borrow_mut().def_module::<Self>("FoolsGold", None);
-        spec.borrow().define(&interp)?;
-        Metrics::require(Rc::clone(interp));
-        Counter::require(Rc::clone(interp));
-        RequestContext::require(Rc::clone(interp));
+        interp.def_file_for_type::<_, Self>("foolsgold.rb")?;
+        // these Rust sources are nested under `ext` because they replace the
+        // Ruby source versions. We do not want to include the Ruby sources.
+        interp.def_file_for_type::<_, RequestContext>("foolsgold/ext/stats.rb")?;
+        interp.def_file_for_type::<_, Metrics>("foolsgold/ext/metrics.rb")?;
+        interp.def_file_for_type::<_, Counter>("foolsgold/ext/counter.rb")?;
         Ok(())
     }
 }

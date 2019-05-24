@@ -18,7 +18,6 @@ fn interpreter() -> Result<Mrb, MrbError> {
     foolsgold::init(&interp)?;
     // preload foolsgold sources
     interp.eval("require 'foolsgold'")?;
-    interp.eval("require 'foolsgold/adapter/memory'")?;
     Ok(interp)
 }
 
