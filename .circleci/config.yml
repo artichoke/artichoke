@@ -94,23 +94,43 @@ jobs:
               -print0 | xargs -0 -n1 bash -c '_check_clang_format "$@"' _
   ruby:
     docker:
-      - image: circleci/ruby:2.6
+      - image: circleci/ruby:2.6.0
     steps:
       - checkout
+      - run:
+          name: Install bundler 2
+          command: sudo gem install bundler
       - restore_cache:
           keys:
             - ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/ruby/Gemfile.lock" }}
       - run:
-          name: Bundle Install
+          name: FoolsGold Bundle Install
           working_directory: ./foolsgold/ruby
-          command: bundle install --path ~/vendor/bundle
+          command: bundle install --path ~/vendor/foolsgold-bundle
       - save_cache:
           key: ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/ruby/Gemfile.lock" }}
           paths:
-            - ~/vendor/bundle
+            - ~/vendor/foolsgold-bundle
       - run:
-          name: Lint Ruby With RuboCop
+          name: FoolsGold Lint Ruby With RuboCop
           working_directory: ./foolsgold/ruby
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+      - restore_cache:
+          keys:
+            - ruby-bundler-v1-nemesis-{{ checksum "./nemesis/ruby/Gemfile.lock" }}
+      - run:
+          name: Nemesis Bundle Install
+          working_directory: ./nemesis/ruby
+          command: bundle install --path ~/vendor/nemesis-bundle
+      - save_cache:
+          key: ruby-bundler-v1-nemesis-{{ checksum "./nemesis/ruby/Gemfile.lock" }}
+          paths:
+            - ~/vendor/nemesis-bundle
+      - run:
+          name: Nemesis Lint Ruby With RuboCop
+          working_directory: ./nemesis/ruby
           command: |
             bundle exec rubocop --version
             bundle exec rubocop
