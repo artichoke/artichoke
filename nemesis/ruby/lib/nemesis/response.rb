@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Nemesis
   class Response
     attr_accessor :length, :status, :body
