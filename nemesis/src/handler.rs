@@ -1,8 +1,9 @@
 //! A Rack handler that glues together a [`rocket::Request`] and a Rack app.
 //!
 //! Based on `Rack::Handler::Webrick`:
-//! <https://github.com/rack/rack/blob/2.0.7/lib/rack/handler/cgi.rb>
+//! <https://github.com/rack/rack/blob/2.0.7/lib/rack/handler/webrick.rb>
 
+use log::warn;
 use mruby::class;
 use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Parent};
@@ -13,7 +14,7 @@ use mruby::sys;
 use mruby::value::Value;
 use mruby::MrbError;
 use rocket::http::uri::Origin;
-use rocket::http::Status;
+use rocket::http::{Method, Status};
 use rocket::request::{self, FromRequest, Request};
 use rocket::{Outcome, Response};
 use std::cell::RefCell;
@@ -25,7 +26,39 @@ use std::io::Cursor;
 use std::rc::Rc;
 
 pub struct RackRequest<'a> {
+    method: Method,
     origin: Origin<'a>,
+}
+
+impl<'a> RackRequest<'a> {
+    pub fn to_env(&self, interp: &Mrb) -> Result<Value, ResponseError> {
+        // https://www.rubydoc.info/github/rack/rack/file/SPEC
+        interp
+            .eval(format!(
+                r#"
+                {{
+                    Rack::REQUEST_METHOD => '{method}'
+                    Rack::SCRIPT_NAME => '', # mount path
+                    Rack::PATH_INFO => '{path}',
+                    Rack::QUERY_STRING => '{query}',
+                    Rack::SERVER_NAME => 'localhost', # TODO: set this correctly
+                    Rack::SERVER_PORT => 8000, # TODO: set this correctly
+                    Rack::HTTP_VERSION => '1.1', # TODO: set this correctly
+                    Rack::RACK_VERSION => Rack::VERSION,
+                    Rack::RACK_URL_SCHEME => 'http', # TODO: set this correctly
+                    Rack::RACK_INPUT => nil, # TODO: implement IO
+                    Rack::RACK_ERRORS => nil, # TODO: implement IO
+                    Rack::RACK_MULTITHREAD => false,
+                    Rack::RACK_MULTIPROCESS => false,
+                    Rack::RACK_RUNONCE => false,
+                }}
+                "#,
+                method = self.method,
+                path = self.origin.path(),
+                query = self.origin.query().unwrap_or_else(|| "")
+            ))
+            .map_err(ResponseError::Mrb)
+    }
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for RackRequest<'a> {
@@ -33,6 +66,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for RackRequest<'a> {
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
         Outcome::Success(RackRequest {
+            method: request.method(),
             origin: request.uri().clone(),
         })
     }
@@ -178,28 +212,7 @@ pub fn run<'a>(
     request: &RackRequest,
 ) -> Result<Response<'a>, ResponseError> {
     // build env hash that is passed to app.call
-    let env = interp
-        .eval(format!(
-            r#"
-            {{
-                Rack::RACK_VERSION => Rack::VERSION,
-                Rack::RACK_INPUT => nil,
-                Rack::RACK_ERRORS => nil,
-                Rack::RACK_MULTITHREAD => false,
-                Rack::RACK_MULTIPROCESS => true,
-                Rack::RACK_RUNONCE => false,
-                Rack::RACK_URL_SCHEME => 'http', # TODO: set this correctly
-                Rack::HTTP_VERSION => '1.1', # TODO: set this correctly
-                Rack::PATH_INFO => '',
-                Rack::SCRIPT_NAME => '{script}',
-                Rack::QUERY_STRING => '{query}',
-            }}
-            "#,
-            script = request.origin.path(),
-            query = request.origin.query().unwrap_or_else(|| "")
-        ))
-        .map_err(ResponseError::Mrb)?;
-    let args = &[env.inner()];
+    let args = &[request.to_env(interp)?.inner()];
     let response = unsafe {
         let call_str = "call";
         let call_sym = sys::mrb_intern(
