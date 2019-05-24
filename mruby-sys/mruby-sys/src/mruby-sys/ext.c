@@ -194,16 +194,3 @@ int mrb_sys_gc_live_objects(mrb_state *mrb) {
   mrb_gc *gc = &mrb->gc;
   return gc->live;
 }
-
-// Inspect class hierarchy
-
-// TODO: implement this utility function in Rust
-_Bool mrb_sys_class_defined_under(struct mrb_state *mrb, struct RClass *outer,
-                                  const char *name) {
-  mrb_value sym = mrb_check_intern_cstr(mrb, name);
-
-  if (mrb_nil_p(sym))
-    return FALSE;
-
-  return mrb_const_defined(mrb, mrb_obj_value(outer), mrb_symbol(sym));
-}
