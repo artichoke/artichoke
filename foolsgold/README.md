@@ -1,12 +1,12 @@
 # FoolsGold
 
-FoolsGold crate is an integration test for the mruby crates that implements a
-Rust web application that executes a
+foolsgold crate is an integration test for the crates in this workspace that
+implements a Rust web application that executes a
 [Ruby Rack application](/foolsgold/ruby/config.ru) on an embedded
 [mruby](/mruby) interpreter.
 
-FoolsGold serves the Rack application with [Rocket](https://rocket.rs/), which
-acts similarly to [Unicorn](https://bogomips.org/unicorn/) or
+FoolsGold serves the Rack application with [Rocket](https://rocket.rs/) and
+[nemesis](/nemesis), which acts similarly to
 [Thin](https://github.com/macournoyer/thin) in a traditional Ruby web stack.
 Rocket is based on [hyper](https://hyper.rs/) and [Tokio](https://tokio.rs/), so
 it is asynchronous and incredibly fast.
@@ -19,23 +19,34 @@ Both exeuction modes share the same global Rust state.
 
 ### Shared Nothing
 
-With mruby and Rocket, FoolsGold implements a shared nothing Ruby webserver.
-Each request to <http://127.0.0.1:8000/fools-gold> creates an isolated instance
-of an mruby interpreter and initializes the interpreter by requiring the rackup
-file and Rack sources which are implemented in Ruby and the FoolsGold sources
-which are implemented in Rust.
+With mruby and Rocket, FoolsGold implements a
+[shared nothing](/foolsgold/src/execmodel/shared_nothing.rs) Ruby webserver.
+Each request to
+[`http://127.0.0.1:8000/fools-gold`](http://127.0.0.1:8000/fools-gold) creates
+an isolated instance of an mruby interpreter. The route
+[initializes the interpreter](/foolsgold/src/execmodel/mod.rs) by
+[generating a Rack app from the rackup file](/nemesis/src/handler.rs), requiring
+the [Rack sources](/mruby-gems/src/rubygems/rack.rs) which are implemented in
+Ruby and requiring the FoolsGold sources which are implemented in
+[Ruby](/foolsgold/ruby/lib/foolsgold) and [Rust](/foolsgold/src/foolsgold.rs).
 
 ### Prefork
 
-With mruby and Rocket, FoolsGold implements a "prefork" Ruby webserver. Each
-request to <http://127.0.0.1:8000/fools-gold/prefork> uses a thread local mruby
-interpreter that is initialized with Rack and FoolsGold sources on first
-request.
+With mruby and Rocket, FoolsGold implements a
+["prefork"](/foolsgold/src/execmodel/prefork.rs) Ruby webserver. Each request to
+[`http://127.0.0.1:8000/fools-gold/prefork`](http://127.0.0.1:8000/fools-gold/prefork)
+uses a thread local mruby interpreter that is created on the first request a
+thread serves. The route
+[initializes the interpreter](/foolsgold/src/execmodel/mod.rs) once by
+[generating a Rack app from the rackup file](/nemesis/src/handler.rs), requiring
+the [Rack sources](/mruby-gems/src/rubygems/rack.rs) which are implemented in
+Ruby and requiring the FoolsGold sources which are implemented in
+[Ruby](/foolsgold/ruby/lib/foolsgold) and [Rust](/foolsgold/src/foolsgold.rs).
 
 ## App
 
 The
-[`FoolsGold::Adapter::Memory`](/foolsgold/ruby/lib/foolsgold/adapter/memory.rb)
+[`FoolsGold::Middleware::Request`](/foolsgold/ruby/lib/foolsgold/middleware/request.rb)
 Rack adapter injects a
 [`RequestContext`](/foolsgold/ruby/lib/foolsgold/stats.rb) instance into the
 Rack environment. The `RequestContext` is implemented in pure Rust. The context
@@ -51,6 +62,8 @@ env[FoolsGold::CONTEXT].metrics.total_requests.inc
 ```
 
 ## Performance
+
+_Note_: These tests may not run since the introduction of [nemesis](/nemesis).
 
 The pieces of FoolsGold that are implemented in Rust vs Ruby are not performance
 critical—a mutex and a call to /dev/urandom—so Rust is not expected to provide
