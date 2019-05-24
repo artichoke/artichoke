@@ -1,5 +1,3 @@
-require 'foolsgold/counter'
-
 module FoolsGold
   module Metrics
     attr_accessor :total_requests

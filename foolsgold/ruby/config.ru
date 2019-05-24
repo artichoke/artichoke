@@ -9,7 +9,7 @@ class String
   end
 end
 
-use FoolsGold::Adapter::Memory
+use FoolsGold::Middleware::Request
 
 # mruby cannot resolve the parser ambiguity without the parens around the
 # lambda expression.

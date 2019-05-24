@@ -49,14 +49,12 @@ impl MrbFile for FoolsGold {
         interp.borrow_mut().def_module::<Self>("FoolsGold", None);
         // TODO: make MrbFile::require fallible
         interp.eval("require 'foolsgold/ext/stats'").expect("eval");
-        interp
-            .eval("require 'foolsgold/ext/metrics'")
-            .expect("eval");
+        interp.eval("require 'foolsgold/metrics'").expect("eval");
         interp
             .eval("require 'foolsgold/ext/counter'")
             .expect("eval");
         interp
-            .eval("require 'foolsgold/adapter/memory'")
+            .eval("require 'foolsgold/middleware/request'")
             .expect("eval");
         interp.pop_context();
     }
@@ -68,12 +66,11 @@ impl Gem for FoolsGold {
             let contents = Self::contents(&source)?;
             interp.def_rb_source_file(source, contents)?;
         }
-        // Rust sources
+        // Rust and Ruby backed sources
         interp.def_file_for_type::<_, Self>("foolsgold.rb")?;
-        // these Rust sources are nested under `ext` because they replace the
-        // Ruby source versions. We do not want to include the Ruby sources.
+        interp.def_file_for_type::<_, Metrics>("foolsgold/metrics.rb")?;
+        // Pure Rust sources
         interp.def_file_for_type::<_, RequestContext>("foolsgold/ext/stats.rb")?;
-        interp.def_file_for_type::<_, Metrics>("foolsgold/ext/metrics.rb")?;
         interp.def_file_for_type::<_, Counter>("foolsgold/ext/counter.rb")?;
         Ok(())
     }
@@ -116,7 +113,7 @@ impl MrbFile for Counter {
             let mut api = interp.borrow_mut();
             // TODO: return Err instead of expects when require is fallible. See
             // GH-25.
-            let spec = api.module_spec::<Metrics>().expect("Metrics not defined");
+            let spec = api.module_spec::<FoolsGold>().expect("Metrics not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
@@ -135,47 +132,18 @@ struct Metrics;
 
 impl MrbFile for Metrics {
     fn require(interp: Mrb) {
-        // We do not need to define a free method since we are not storing any
-        // data in the `mrb_value`.
-
-        // We do not need to define an initialize method since there is no need
-        // to store any state on the `mrb_value` since counters are stateless.
-        // We can just create a new Counter instance every time it is accessed.
-
-        extern "C" fn total_requests(
-            mrb: *mut sys::mrb_state,
-            _slf: sys::mrb_value,
-        ) -> sys::mrb_value {
-            let interp = unsafe { interpreter_or_raise!(mrb) };
-            let spec = unsafe { class_spec_or_raise!(interp, Counter) };
-            let rclass = spec.borrow().rclass(Rc::clone(&interp));
-            if let Some(rclass) = rclass {
-                let args = &[];
-                unsafe { sys::mrb_obj_new(mrb, rclass, 0, args.as_ptr()) }
-            } else {
-                interp.nil().inner()
-            }
-        }
-
-        let spec = {
-            let mut api = interp.borrow_mut();
-            // TODO: return Err instead of expects when require is fallible. See
-            // GH-25.
-            let spec = api.module_spec::<FoolsGold>().expect("lib not defined");
-            let parent = Parent::Module {
-                spec: Rc::clone(&spec),
-            };
-            let spec = api.def_module::<Self>("Metrics", Some(parent));
-            spec.borrow_mut()
-                .add_method("total_requests", total_requests, sys::mrb_args_none());
-            spec.borrow_mut().add_self_method(
-                "total_requests",
-                total_requests,
-                sys::mrb_args_none(),
-            );
-            spec
+        // TODO: return Err instead of expects when require is fallible. See
+        // GH-25.
+        let parent = interp
+            .borrow()
+            .module_spec::<FoolsGold>()
+            .expect("lib not defined");
+        let parent = Parent::Module {
+            spec: Rc::clone(&parent),
         };
-        spec.borrow().define(&interp).expect("module install");
+        interp
+            .borrow_mut()
+            .def_module::<Self>("Metrics", Some(parent));
     }
 }
 
