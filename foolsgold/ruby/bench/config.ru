@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rack/builder'
 require 'thin'
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))

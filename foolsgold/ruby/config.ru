@@ -1,21 +1,21 @@
+# frozen_string_literal: true
+
 require 'foolsgold'
 
 # Monkeypatch String to add String#strip_heredoc_indent
 class String
   # mruby doesn't support Regexp natively, so use a fixed width
   # strip technique.
-  def strip_heredoc_indent(n)
-    each_line.map { |line| line[n..-1] }.join
+  def strip_indent(indent)
+    each_line.map { |line| line[indent..-1] }.join
   end
 end
 
 use FoolsGold::Middleware::Request
 
-# mruby cannot resolve the parser ambiguity without the parens around the
-# lambda expression.
-run(lambda do |env|
-  begin
-    body = <<-HTML.strip_heredoc_indent(6)
+class App
+  def self.body(trace_id, req_counter)
+    <<-HTML.strip_indent(6)
       <!DOCTYPE html>
       <html>
         <head>
@@ -37,20 +37,28 @@ run(lambda do |env|
             </p>
             <h2>Request ID</h2>
             <p>Request IDs are generated in Rust with the uuid crate.</p>
-            <p>Trace: <code>#{env[FoolsGold::CONTEXT].trace_id}</code></p>
+            <p>Trace: <code>#{trace_id}</code></p>
             <h2>Request Count</h2>
             <p>
               Request count tracks the total number of seen requests across all
               threads and all mruby interpreters. Request count is tracked in a static
               <code>AtomicI64</code> in Rust.
             </p>
-            <p>Counter: <code>#{env[FoolsGold::CONTEXT].metrics.total_requests.get}</code></p>
+            <p>Counter: <code>#{req_counter}</code></p>
           </div>
         </body>
       </html>
     HTML
-    [200, { 'Content-Type'.freeze => 'text/html'.freeze }, [body]]
-  ensure
-    env[FoolsGold::CONTEXT].metrics.total_requests.inc
   end
-end)
+
+  def self.call(env)
+    context = env[FoolsGold::CONTEXT]
+    trace_id = context.trace_id
+    req_counter = context.metrics.total_requests.get
+    [200, { 'Content-Type' => 'text/html' }, [body(trace_id, req_counter)]]
+  ensure
+    context.metrics.total_requests.inc
+  end
+end
+
+run App

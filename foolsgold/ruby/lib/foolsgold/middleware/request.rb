@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module FoolsGold
   module Middleware
     # Add a RequestContext to the Rack ENV
