@@ -32,13 +32,13 @@ fn raise_load_error(interp: &Mrb, file: &str) -> sys::mrb_value {
 }
 
 extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-    unsafe {
-        let interp = interpreter_or_raise!(mrb);
-        // Extract required filename from arguments
+    let interp = unsafe { interpreter_or_raise!(mrb) };
+    // Extract required filename from arguments
+    let name = unsafe {
         let name = mem::uninitialized::<*const std::os::raw::c_char>();
         let argspec = CString::new(sys::specifiers::CSTRING).expect("argspec");
         sys::mrb_get_args(mrb, argspec.as_ptr(), &name);
-        let name = match CStr::from_ptr(name).to_str() {
+        match CStr::from_ptr(name).to_str() {
             Ok(name) => name.to_owned(),
             Err(err) => {
                 let eclass = CString::new("ArgumentError");
@@ -48,87 +48,80 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
                 }
                 return interp.nil().inner();
             }
-        };
+        }
+    };
 
-        let mut path = PathBuf::from(&name);
-        if path.is_relative() {
-            path = PathBuf::from(RUBY_LOAD_PATH);
-        }
-        let (path, metadata) = {
+    // track whether any iterations of the loop successfully required a file
+    let mut success = false;
+    let mut path = PathBuf::from(&name);
+    if path.is_relative() {
+        path = PathBuf::from(RUBY_LOAD_PATH);
+    }
+    let files = vec![path.join(&name), path.join(format!("{}.rb", name))];
+    for path in files {
+        let is_file = {
             let api = interp.borrow();
-            let candidates = vec![
-                path.join(&name),
-                path.join(format!("{}.rb", name)),
-                path.join(format!("{}.mrb", name)),
-            ];
-            let path = candidates.into_iter().find(|path| api.vfs.is_file(path));
-            let metadata = path.as_ref().and_then(|path| api.vfs.metadata(path));
-            (path.clone(), metadata)
+            api.vfs.is_file(&path)
         };
-        if let Some(ref path) = path {
-            let context = EvalContext::new(path.to_string_lossy());
-            if let Some(metadata) = metadata {
-                if metadata.is_already_required() {
-                    return interp.bool(false).inner();
-                }
-                if let Some(require) = metadata.require {
-                    // dynamic, Rust-backed require
-                    interp.push_context(context);
-                    require(Rc::clone(&interp));
-                    interp.pop_context();
-                } else {
-                    // source-backed require
-                    let contents = {
-                        let api = interp.borrow();
-                        api.vfs.read_file(path)
-                    };
-                    // this should be infallible because the mrb interpreter is
-                    // single threaded.
-                    if let Ok(contents) = contents {
-                        unwrap_value_or_raise!(interp, interp.eval_with_context(contents, context));
-                    } else {
-                        return raise_load_error(&interp, &name);
-                    }
-                }
-                {
-                    let api = interp.borrow();
-                    // TODO: fix this abuse of the `unwrap_value_or_raise` macro
-                    unwrap_value_or_raise!(
-                        interp,
-                        api.vfs
-                            .set_metadata(path, metadata.mark_required())
-                            .map(|_| interp.nil())
-                    );
-                }
-            } else {
-                // maybe a source-backed require
-                {
-                    let api = interp.borrow();
-                    // this should be infallible because the mrb interpreter
-                    // is single threaded.
-                    if let Ok(contents) = api.vfs.read_file(path) {
-                        unwrap_value_or_raise!(interp, interp.eval_with_context(contents, context));
-                    }
-                    // Create the missing metadata struct to prevent double
-                    // requires.
-                    let metadata = VfsMetadata::new(None).mark_required();
-                    // TODO: fix this abuse of the `unwrap_value_or_raise` macro
-                    unwrap_value_or_raise!(
-                        interp,
-                        api.vfs.set_metadata(path, metadata).map(|_| interp.nil())
-                    );
-                }
-            }
-            trace!(
-                r#"Successful require of "{}" at {:?} on {:?}"#,
-                name,
-                path,
-                interp.borrow()
-            );
-            interp.bool(true).inner()
-        } else {
-            raise_load_error(&interp, &name)
+        if !is_file {
+            // If no paths are files in the VFS, then the require does
+            // nothing.
+            continue;
         }
+        let metadata = {
+            let api = interp.borrow();
+            api.vfs.metadata(&path).unwrap_or_else(VfsMetadata::new)
+        };
+        // If a file is already required, short circuit
+        if metadata.is_already_required() {
+            return interp.bool(false).inner();
+        }
+        let context = if let Some(filename) = &path.to_str() {
+            EvalContext::new(filename)
+        } else {
+            EvalContext::new("(require)")
+        };
+        // Always require source content first.
+        let contents = {
+            let api = interp.borrow();
+            api.vfs.read_file(&path)
+        };
+        if let Ok(contents) = contents {
+            unsafe {
+                unwrap_value_or_raise!(interp, interp.eval_with_context(contents, context.clone()));
+            }
+        } else {
+            // this branch should be unreachable because the `Mrb` interpreter
+            // is not `Send` so it can only be owned and accessed by one thread.
+            return raise_load_error(&interp, &name);
+        }
+        if let Some(require) = metadata.require {
+            // dynamic, Rust-backed `MrbFile` require
+            interp.push_context(context);
+            require(Rc::clone(&interp));
+            interp.pop_context();
+        }
+        let metadata = metadata.mark_required();
+        unsafe {
+            let api = interp.borrow();
+            // TODO: fix this abuse of the `unwrap_value_or_raise` macro
+            unwrap_value_or_raise!(
+                interp,
+                api.vfs.set_metadata(&path, metadata).map(|_| interp.nil())
+            );
+        }
+        success = true;
+        trace!(
+            r#"Successful require of "{}" at {:?} on {:?}"#,
+            name,
+            path,
+            interp.borrow()
+        );
+    }
+    if success {
+        interp.bool(success).inner()
+    } else {
+        raise_load_error(&interp, &name)
     }
 }
 
@@ -450,5 +443,53 @@ mod tests {
 (eval):1
         "#;
         assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
+    }
+
+    #[test]
+    fn require_path_defined_as_source_then_mrbfile() {
+        struct Foo;
+        impl MrbFile for Foo {
+            fn require(interp: Mrb) {
+                interp.eval("module Foo; RUST = 7; end").expect("eval");
+            }
+        }
+        let interp = Interpreter::create().expect("mrb init");
+        interp
+            .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
+            .expect("def");
+        interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
+        let result = interp.eval("require 'foo'").expect("eval");
+        let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        assert!(result, "successfully required foo.rb");
+        let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
+        let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+        assert_eq!(
+            result, 10,
+            "defined Ruby and Rust sources from single require"
+        );
+    }
+
+    #[test]
+    fn require_path_defined_as_mrbfile_then_source() {
+        struct Foo;
+        impl MrbFile for Foo {
+            fn require(interp: Mrb) {
+                interp.eval("module Foo; RUST = 7; end").expect("eval");
+            }
+        }
+        let interp = Interpreter::create().expect("mrb init");
+        interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
+        interp
+            .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
+            .expect("def");
+        let result = interp.eval("require 'foo'").expect("eval");
+        let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        assert!(result, "successfully required foo.rb");
+        let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
+        let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+        assert_eq!(
+            result, 10,
+            "defined Ruby and Rust sources from single require"
+        );
     }
 }

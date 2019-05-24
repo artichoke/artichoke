@@ -21,11 +21,8 @@ pub struct VfsMetadata {
 }
 
 impl VfsMetadata {
-    pub fn new(require: Option<fn(Mrb)>) -> Self {
-        Self {
-            require,
-            already_required: false,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn mark_required(&self) -> Self {
@@ -37,6 +34,15 @@ impl VfsMetadata {
 
     pub fn is_already_required(&self) -> bool {
         self.already_required
+    }
+}
+
+impl Default for VfsMetadata {
+    fn default() -> Self {
+        Self {
+            require: None,
+            already_required: false,
+        }
     }
 }
 
