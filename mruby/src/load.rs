@@ -71,9 +71,12 @@ impl MrbLoadSources for Mrb {
         if let Some(parent) = path.parent() {
             api.vfs.create_dir_all(parent).map_err(MrbError::Vfs)?;
         }
-        let contents = format!("# virtual source file -- {:?}", &path);
-        api.vfs.write_file(&path, contents).map_err(MrbError::Vfs)?;
-        let metadata = VfsMetadata::new(Some(require));
+        if !api.vfs.is_file(&path) {
+            let contents = format!("# virtual source file -- {:?}", &path);
+            api.vfs.write_file(&path, contents).map_err(MrbError::Vfs)?;
+        }
+        let mut metadata = api.vfs.metadata(&path).unwrap_or_else(VfsMetadata::new);
+        metadata.require = Some(require);
         api.vfs
             .set_metadata(&path, metadata)
             .map_err(MrbError::Vfs)?;
@@ -105,7 +108,7 @@ impl MrbLoadSources for Mrb {
         api.vfs
             .write_file(&path, contents.as_ref())
             .map_err(MrbError::Vfs)?;
-        let metadata = VfsMetadata::new(None);
+        let metadata = api.vfs.metadata(&path).unwrap_or_else(VfsMetadata::new);
         api.vfs
             .set_metadata(&path, metadata)
             .map_err(MrbError::Vfs)?;
