@@ -12,13 +12,16 @@
 //! This test fails before commit
 //! `34ee3ddc1c5f4eb1d20f19dd772b0ca348391b2f` with a fairly massive leak.
 
+#[macro_use]
+extern crate mruby;
+
 use mruby::def::{ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::load::MrbLoadSources;
 use mruby::sys;
-use mruby::{class_spec_or_raise, interpreter_or_raise};
+use mruby::MrbError;
 use std::cell::RefCell;
 use std::ffi::{c_void, CStr, CString};
 use std::mem;
@@ -37,7 +40,7 @@ struct Container {
 }
 
 impl MrbFile for Container {
-    fn require(interp: Mrb) {
+    fn require(interp: Mrb) -> Result<(), MrbError> {
         extern "C" fn free(_mrb: *mut sys::mrb_state, data: *mut c_void) {
             unsafe {
                 // Implictly dropped by going out of scope
@@ -76,7 +79,8 @@ impl MrbFile for Container {
             spec.borrow_mut().mrb_value_is_rust_backed(true);
             spec
         };
-        spec.borrow().define(&interp).expect("class install");
+        spec.borrow().define(&interp)?;
+        Ok(())
     }
 }
 

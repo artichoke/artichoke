@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate mruby;
 
 use mruby::convert::TryFromMrb;
 use mruby::def::{ClassLike, Define};
@@ -9,7 +11,7 @@ use mruby::interpreter::{Interpreter, Mrb};
 use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
-use mruby::{class_spec_or_raise, interpreter_or_raise, unwrap_value_or_raise};
+use mruby::MrbError;
 use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::mem;
@@ -21,7 +23,7 @@ struct Container {
 }
 
 impl MrbFile for Container {
-    fn require(interp: Mrb) {
+    fn require(interp: Mrb) -> Result<(), MrbError> {
         extern "C" fn free(_mrb: *mut sys::mrb_state, data: *mut c_void) {
             unsafe {
                 debug!("preparing to free Container instance");
@@ -89,7 +91,8 @@ impl MrbFile for Container {
             spec.borrow_mut().mrb_value_is_rust_backed(true);
             spec
         };
-        spec.borrow().define(&interp).expect("class install");
+        spec.borrow().define(&interp)?;
+        Ok(())
     }
 }
 
