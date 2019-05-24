@@ -83,7 +83,7 @@
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
     "fmt-c": "find . \\( -name '*.h' -or -name '*.c' \\) -and -not -path '*vendor*' -and -not -path '*target*' | xargs clang-format -i",
     "fmt-text": "prettier --write --prose-wrap always './*.{css,html,js,json,md}' '{mruby*,foolsgold}/**/*.{css,html,js,json,md}'",
-    "lint": "cargo clippy --all-targets && cd foolsgold/ruby && bundle exec rubocop",
+    "lint": "cargo clippy --all-targets && pushd foolsgold/ruby && bundle exec rubocop && popd && pushd nemesis/ruby && bundle exec rubocop",
     "loc": "sloc --format cli-table --keys total,source,comment,todo --exclude '.*(node_modules|vendor|target).*|ffi\\.rs' mruby* foolsgold nemesis"
   }
 }
