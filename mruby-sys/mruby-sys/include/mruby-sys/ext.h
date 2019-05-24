@@ -127,8 +127,3 @@ void mrb_sys_gc_enable(mrb_state *mrb);
 _Bool mrb_sys_value_is_dead(mrb_state *_mrb, mrb_value value);
 
 int mrb_sys_gc_live_objects(mrb_state *mrb);
-
-// Inspect class hierarchy
-
-_Bool mrb_sys_class_defined_under(struct mrb_state *mrb, struct RClass *outer,
-                                  const char *name);

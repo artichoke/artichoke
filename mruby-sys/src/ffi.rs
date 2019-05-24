@@ -3788,14 +3788,6 @@ extern "C" {
     #[link_name = "\u{1}_mrb_sys_gc_live_objects"]
     pub fn mrb_sys_gc_live_objects(mrb: *mut mrb_state) -> ::std::os::raw::c_int;
 }
-extern "C" {
-    #[link_name = "\u{1}_mrb_sys_class_defined_under"]
-    pub fn mrb_sys_class_defined_under(
-        mrb: *mut mrb_state,
-        outer: *mut RClass,
-        name: *const ::std::os::raw::c_char,
-    ) -> bool;
-}
 pub type __builtin_va_list = [__va_list_tag; 1usize];
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
