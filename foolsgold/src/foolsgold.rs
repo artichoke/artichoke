@@ -103,8 +103,6 @@ impl MrbFile for Counter {
 
         let spec = {
             let mut api = interp.borrow_mut();
-            // TODO: return Err instead of expects when require is fallible. See
-            // GH-25.
             let spec = api.module_spec::<FoolsGold>().expect("Metrics not defined");
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
@@ -125,8 +123,6 @@ struct Metrics;
 
 impl MrbFile for Metrics {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        // TODO: return Err instead of expects when require is fallible. See
-        // GH-25.
         let parent = interp
             .borrow()
             .module_spec::<FoolsGold>()
@@ -205,8 +201,6 @@ impl MrbFile for RequestContext {
 
         let spec = {
             let mut api = interp.borrow_mut();
-            // TODO: return Err instead of expects when require is fallible. See
-            // GH-25.
             let spec = api
                 .module_spec::<FoolsGold>()
                 .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
