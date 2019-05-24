@@ -68,7 +68,7 @@ To see an integration test that stitches all pieces of the [mruby crate](/mruby)
 together, see [manual.rs](/mruby/tests/manual.rs). For a good overview of how to
 use the C API, take a look at [the FFI test suite](/mruby-sys/src/ffi_tests.rs)
 in `mruby-sys`. To see how to intereact with the interpreter with eval, take a
-look at th [REPL implementation](/mruby-bin/src/repl.rs).
+look at the [REPL implementation](/mruby-bin/src/repl.rs).
 
 ### Known Missing Features
 
@@ -79,9 +79,9 @@ mruby does not implement all
 
 Required classes include (at least):
 
-- `Regexp`
 - `File`
 - `IO`
+- `Regexp`
 
 #### Standard Library
 
