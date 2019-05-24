@@ -19,7 +19,7 @@ where
     /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_file<T>(&self, filename: T, require: fn(Self)) -> Result<(), MrbError>
+    fn def_file<T>(&self, filename: T, require: fn(Self) -> Result<(), MrbError>) -> Result<(), MrbError>
     where
         T: AsRef<str>;
 
@@ -62,7 +62,7 @@ where
 }
 
 impl MrbLoadSources for Mrb {
-    fn def_file<T>(&self, filename: T, require: fn(Self)) -> Result<(), MrbError>
+    fn def_file<T>(&self, filename: T, require: fn(Self) -> Result<(), MrbError>) -> Result<(), MrbError>
     where
         T: AsRef<str>,
     {

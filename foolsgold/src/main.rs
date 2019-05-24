@@ -6,6 +6,8 @@
 #[macro_use]
 extern crate log;
 #[macro_use]
+extern crate mruby;
+#[macro_use]
 extern crate ref_thread_local;
 #[macro_use]
 extern crate rust_embed;

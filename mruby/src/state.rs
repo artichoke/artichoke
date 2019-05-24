@@ -13,10 +13,11 @@ use crate::eval::EvalContext;
 use crate::interpreter::Mrb;
 use crate::module;
 use crate::sys::{self, DescribeState};
+use crate::MrbError;
 
 #[derive(Clone, Debug)]
 pub struct VfsMetadata {
-    pub require: Option<fn(Mrb)>,
+    pub require: Option<fn(Mrb) -> Result<(), MrbError>>,
     already_required: bool,
 }
 

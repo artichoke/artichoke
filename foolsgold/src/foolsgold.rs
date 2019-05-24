@@ -7,9 +7,6 @@ use mruby::load::MrbLoadSources;
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
 use mruby::MrbError;
-use mruby::{
-    class_spec_or_raise, interpreter_or_raise, module_spec_or_raise, unwrap_value_or_raise,
-};
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::convert::AsRef;

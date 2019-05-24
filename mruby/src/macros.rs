@@ -32,14 +32,13 @@ macro_rules! interpreter_or_raise {
     };
 }
 
-/// Unwrap a `Result<Value>` and return the inner [`sys::mrb_value`] or raise a
-/// `RuntimeError` and return `nil`.
+/// Unwrap a `Result` or raise a `RuntimeError` and return `default`.
 ///
 /// This macro is `unsafe` and assumes it is being called from an `extern "C" fn`
 /// that is embedded in an mruby class, module, or function definition.
 #[macro_export]
-macro_rules! unwrap_value_or_raise {
-    ($interp:expr, $result:expr) => {
+macro_rules! unwrap_or_raise {
+    ($interp:expr, $result:expr, $onerr:expr) => {
         match $result {
             std::result::Result::Err(err) => {
                 // There was a TypeError converting to the desired Rust type.
@@ -54,10 +53,22 @@ macro_rules! unwrap_value_or_raise {
                         message.as_ptr(),
                     );
                 }
-                return $crate::interpreter::MrbApi::nil(&$interp).inner();
+                return $onerr;
             }
-            std::result::Result::Ok(value) => value.inner(),
+            std::result::Result::Ok(value) => value,
         }
+    };
+}
+
+/// Unwrap a `Result<Value>` and return the inner [`sys::mrb_value`] or raise a
+/// `RuntimeError` and return `nil`.
+///
+/// This macro is `unsafe` and assumes it is being called from an `extern "C" fn`
+/// that is embedded in an mruby class, module, or function definition.
+#[macro_export]
+macro_rules! unwrap_value_or_raise {
+    ($interp:expr, $result:expr) => {
+        unwrap_or_raise!($interp, $result, $crate::interpreter::MrbApi::nil(&$interp).inner()).inner()
     };
 }
 

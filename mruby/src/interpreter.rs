@@ -98,16 +98,16 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
         if let Some(require) = metadata.require {
             // dynamic, Rust-backed `MrbFile` require
             interp.push_context(context);
-            require(Rc::clone(&interp));
+            unwrap_or_raise!(require(Rc::clone(&interp)));
             interp.pop_context();
         }
         let metadata = metadata.mark_required();
         unsafe {
             let api = interp.borrow();
-            // TODO: fix this abuse of the `unwrap_value_or_raise` macro
-            unwrap_value_or_raise!(
+            unwrap_or_raise!(
                 interp,
-                api.vfs.set_metadata(&path, metadata).map(|_| interp.nil())
+                api.vfs.set_metadata(&path, metadata),
+                interp.nil().inner()
             );
         }
         success = true;
