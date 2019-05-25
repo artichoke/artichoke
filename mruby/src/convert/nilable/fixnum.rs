@@ -17,6 +17,8 @@ impl FromMrb<Option<Int>> for Value {
     }
 }
 
+#[allow(clippy::use_self)]
+// https://github.com/rust-lang/rust-clippy/issues/4143
 impl TryFromMrb<Value> for Option<Int> {
     type From = Ruby;
     type To = Rust;
@@ -58,7 +60,7 @@ mod tests {
     #[quickcheck]
     fn convert_to_value(v: Option<Int>) -> bool {
         let interp = Interpreter::create().expect("mrb init");
-        let value = Value::from_mrb(&interp, v.clone());
+        let value = Value::from_mrb(&interp, v);
         if let Some(v) = v {
             let value = unsafe { Int::try_from_mrb(&interp, value) }.expect("convert");
             value == v
@@ -70,7 +72,7 @@ mod tests {
     #[quickcheck]
     fn roundtrip(v: Option<Int>) -> bool {
         let interp = Interpreter::create().expect("mrb init");
-        let value = Value::from_mrb(&interp, v.clone());
+        let value = Value::from_mrb(&interp, v);
         let value = unsafe { <Option<Int>>::try_from_mrb(&interp, value) }.expect("convert");
         value == v
     }

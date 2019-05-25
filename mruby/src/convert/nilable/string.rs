@@ -25,6 +25,8 @@ impl FromMrb<Option<&str>> for Value {
     }
 }
 
+#[allow(clippy::use_self)]
+// https://github.com/rust-lang/rust-clippy/issues/4143
 impl TryFromMrb<Value> for Option<String> {
     type From = Ruby;
     type To = Rust;
@@ -64,6 +66,7 @@ mod tests {
         assert_eq!(result.map_err(|e| e.from), Err(Ruby::Object));
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_value(v: Option<String>) -> bool {
         let interp = Interpreter::create().expect("mrb init");
@@ -76,6 +79,7 @@ mod tests {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(v: Option<String>) -> bool {
         let interp = Interpreter::create().expect("mrb init");

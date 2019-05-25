@@ -16,6 +16,21 @@ impl FromMrb<Option<Vec<u8>>> for Value {
     }
 }
 
+impl FromMrb<Option<&[u8]>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: Option<&[u8]>) -> Self {
+        if let Some(value) = value {
+            Self::from_mrb(interp, value)
+        } else {
+            Self::from_mrb(interp, None::<Self>)
+        }
+    }
+}
+
+#[allow(clippy::use_self)]
+// https://github.com/rust-lang/rust-clippy/issues/4143
 impl TryFromMrb<Value> for Option<Vec<u8>> {
     type From = Ruby;
     type To = Rust;
@@ -34,6 +49,8 @@ impl TryFromMrb<Value> for Option<Vec<u8>> {
 }
 
 #[cfg(test)]
+// FromMrb<Option<Vec<u8>>> is implemented in terms of FromMrb<Option<&[u8]>> so
+// only implement the tests for Vec<u8> to exercise both code paths.
 mod tests {
     use quickcheck_macros::quickcheck;
 
@@ -53,6 +70,7 @@ mod tests {
         assert_eq!(result.map_err(|e| e.from), Err(Ruby::Object));
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_value(v: Option<Vec<u8>>) -> bool {
         let interp = Interpreter::create().expect("mrb init");
@@ -65,6 +83,7 @@ mod tests {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(v: Option<Vec<u8>>) -> bool {
         let interp = Interpreter::create().expect("mrb init");
