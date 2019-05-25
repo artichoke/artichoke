@@ -43,6 +43,9 @@ where
 
 /// Provide a falible converter for types that implement an infallible
 /// conversion.
+// Lint disabled because the suggestion does not compile.
+// See: https://github.com/rust-lang/rust-clippy/issues/4140
+#[allow(clippy::use_self)]
 impl<From, To> TryFromMrb<From> for To
 where
     To: FromMrb<From>,

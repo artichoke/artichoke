@@ -46,7 +46,12 @@ impl FromMrb<Vec<Value>> for Value {
         // constructor.
         let array = unsafe { sys::mrb_ary_new(interp.borrow().mrb) };
         let mut idx = 0;
-        for item in value.into_iter() {
+
+        // Lint disabled because I should be casting or converting but do not
+        // want to to preserve this converter implementation being infallible.
+        // See: https://github.com/rust-lang/rust-clippy/issues/4139
+        #[allow(clippy::explicit_counter_loop)]
+        for item in value {
             unsafe { sys::mrb_ary_set(interp.borrow().mrb, array, idx, item.inner()) };
             idx += 1;
         }

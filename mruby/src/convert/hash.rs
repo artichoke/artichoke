@@ -24,14 +24,13 @@ impl FromMrb<Vec<(Value, Value)>> for Value {
         // `Vec<(Value, Value)>` easier to work with, use an infallible `Hash`
         // constructor.
         let hash = unsafe { sys::mrb_hash_new(interp.borrow().mrb) };
-        for (key, value) in value {
-            unsafe { sys::mrb_hash_set(interp.borrow().mrb, hash, key.inner(), value.inner()) };
+        for (key, val) in value {
+            unsafe { sys::mrb_hash_set(interp.borrow().mrb, hash, key.inner(), val.inner()) };
         }
         Self::new(interp, hash)
     }
 }
 
-#[allow(clippy::use_self)]
 impl TryFromMrb<Value> for Vec<(Value, Value)> {
     type From = Ruby;
     type To = Rust;

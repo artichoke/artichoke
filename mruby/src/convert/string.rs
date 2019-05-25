@@ -40,7 +40,7 @@ impl TryFromMrb<Value> for String {
         })?;
         // This converter requires that the bytes be valid UTF-8 data. If the
         // `mrb_value` is binary data, use the `Vec<u8>` converter.
-        String::from_utf8(bytes).map_err(|_| Error {
+        Self::from_utf8(bytes).map_err(|_| Error {
             from: Ruby::String,
             to: Rust::String,
         })
@@ -111,7 +111,7 @@ mod tests {
         fn convert_to_str(s: String) -> bool {
             let s = s.as_str();
             let interp = Interpreter::create().expect("mrb init");
-            let value = Value::from_mrb(&interp, s.clone());
+            let value = Value::from_mrb(&interp, s);
             let ptr = unsafe { sys::mrb_string_value_ptr(interp.borrow().mrb, value.inner()) };
             let len = unsafe { sys::mrb_string_value_len(interp.borrow().mrb, value.inner()) };
             let string =
@@ -124,7 +124,7 @@ mod tests {
         fn str_with_value(s: String) -> bool {
             let s = s.as_str();
             let interp = Interpreter::create().expect("mrb init");
-            let value = Value::from_mrb(&interp, s.clone());
+            let value = Value::from_mrb(&interp, s);
             value.to_s() == s
         }
     }
