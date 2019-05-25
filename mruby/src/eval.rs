@@ -1,6 +1,5 @@
 use log::{debug, warn};
 use std::ffi::CString;
-use std::rc::Rc;
 
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys::{self, DescribeState};
@@ -125,7 +124,7 @@ impl MrbEval for Mrb {
             return Err(MrbError::Exec(backtrace));
         }
 
-        let value = Value::new(Rc::clone(self), result);
+        let value = Value::new(self, result);
         // Unreachable values are internal to the mruby interpreter and
         // interacting with them via the C API is unspecified and may result in
         // a segfault.

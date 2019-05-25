@@ -1,52 +1,27 @@
-use std::ffi::{CStr, CString};
-use std::rc::Rc;
-
-use crate::convert::{Error, TryFromMrb};
+use crate::convert::{Error, FromMrb, TryFromMrb};
 use crate::interpreter::Mrb;
-use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
-// TODO: Add a define for `MRB_UTF8_STRING` to mruby-sys build config to add
-// UTF-8 encoding support to character-oriented String instance methods.
-// Without this define, only ASCII is supported.
-//
-// https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
-
-impl TryFromMrb<String> for Value {
+impl FromMrb<String> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(mrb: &Mrb, value: String) -> Result<Self, Error<Self::From, Self::To>> {
-        Self::try_from_mrb(mrb, value.as_str())
+    fn from_mrb(interp: &Mrb, value: String) -> Self {
+        // mruby `String` is just bytes, so get a pointer to the underlying
+        // `&[u8]` infallibly and convert that to a `Value`.
+        Self::from_mrb(interp, value.as_bytes())
     }
 }
 
-impl TryFromMrb<&str> for Value {
+impl FromMrb<&str> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(mrb: &Mrb, value: &str) -> Result<Self, Error<Self::From, Self::To>> {
-        // mruby has the API `mrb_str_new` which takes a char* and size_t but
-        // Rust `CString` does not support &str that contain NUL interior bytes.
-        // To create a Ruby String that has NULs, use `TryFromMrb<&[u8]>` or
-        // `TryFromMrb<Vec<u8>>`.
-        match CString::new(value) {
-            Ok(cstr) => {
-                let ptr = cstr.as_ptr();
-                Ok(Self::new(
-                    Rc::clone(mrb),
-                    // internally, `mrb_str_new_cstr` calls `memcpy` to create
-                    // an owned copy of the C string that is stored on the mruby
-                    // heap.
-                    sys::mrb_str_new_cstr(mrb.borrow().mrb, ptr),
-                ))
-            }
-            Err(_) => Err(Error {
-                from: Rust::String,
-                to: Ruby::String,
-            }),
-        }
+    fn from_mrb(interp: &Mrb, value: &str) -> Self {
+        // mruby `String` is just bytes, so get a pointer to the underlying
+        // `&[u8]` infallibly and convert that to a `Value`.
+        Self::from_mrb(interp, value.as_bytes())
     }
 }
 
@@ -54,164 +29,89 @@ impl TryFromMrb<Value> for String {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(mrb: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
-        match value.ruby_type() {
-            Ruby::String => {
-                let mut value = value.inner();
-                let cstr = sys::mrb_string_value_cstr(mrb.borrow().mrb, &mut value);
-                // This converter requires that the bytes in `cstr` be valid
-                // UTF-8 data. If the `mrb_value` is binary data, use the
-                // `Vec<u8>` converter.
-                match CStr::from_ptr(cstr).to_str() {
-                    Ok(string) => Ok(string.to_owned()),
-                    Err(_) => Err(Error {
-                        from: Ruby::String,
-                        to: Rust::String,
-                    }),
-                }
-            }
-            type_tag => Err(Error {
-                from: type_tag,
-                to: Rust::String,
-            }),
-        }
+    unsafe fn try_from_mrb(
+        interp: &Mrb,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
+        // `Vec<u8>` converter operates on `Ruby::String`
+        let bytes = <Vec<u8>>::try_from_mrb(interp, value).map_err(|err| Error {
+            from: err.from,
+            to: Rust::String,
+        })?;
+        // This converter requires that the bytes be valid UTF-8 data. If the
+        // `mrb_value` is binary data, use the `Vec<u8>` converter.
+        Self::from_utf8(bytes).map_err(|_| Error {
+            from: Ruby::String,
+            to: Rust::String,
+        })
     }
 }
 
 #[cfg(test)]
+// FromMrb<String> is implemented in terms of FromMrb<&str> so only implement
+// the tests for String to exercise both code paths.
 mod tests {
     use quickcheck_macros::quickcheck;
+    use std::convert::TryInto;
 
-    use crate::convert::*;
-    use crate::interpreter::*;
-    use crate::value::types::*;
-    use crate::value::*;
+    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::eval::MrbEval;
+    use crate::interpreter::Interpreter;
+    use crate::sys;
+    use crate::value::types::{Ruby, Rust};
+    use crate::value::Value;
 
-    mod string {
-        use super::*;
-
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn convert_to_string(s: String) -> bool {
-            unsafe {
-                let interp = Interpreter::create().expect("mrb init");
-                let value = Value::try_from_mrb(&interp, s.clone());
-                match value {
-                    Ok(value) => value.ruby_type() == Ruby::String,
-                    Err(err) => {
-                        let expected = Error {
-                            from: Rust::String,
-                            to: Ruby::String,
-                        };
-                        s.contains('\u{0}') && err == expected
-                    }
-                }
-            }
-        }
-
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn string_with_value(s: String) -> bool {
-            unsafe {
-                let interp = Interpreter::create().expect("mrb init");
-                let value = Value::try_from_mrb(&interp, s.clone());
-                match value {
-                    Ok(value) => {
-                        let to_s = value.to_s();
-                        to_s == s
-                    }
-                    Err(err) => {
-                        let expected = Error {
-                            from: Rust::String,
-                            to: Ruby::String,
-                        };
-                        s.contains('\u{0}') && err == expected
-                    }
-                }
-            }
-        }
-
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn roundtrip(s: String) -> bool {
-            unsafe {
-                let interp = Interpreter::create().expect("mrb init");
-                let value = Value::try_from_mrb(&interp, s.clone());
-                match value {
-                    Ok(value) => {
-                        let value = String::try_from_mrb(&interp, value).expect("convert");
-                        value == s
-                    }
-                    Err(err) => {
-                        let expected = Error {
-                            from: Rust::String,
-                            to: Ruby::String,
-                        };
-                        s.contains('\u{0}') && err == expected
-                    }
-                }
-            }
-        }
-
-        #[quickcheck]
-        fn roundtrip_err(b: bool) -> bool {
-            unsafe {
-                let interp = Interpreter::create().expect("mrb init");
-                let value = Value::try_from_mrb(&interp, b).expect("convert");
-                let value = String::try_from_mrb(&interp, value);
-                let expected = Err(Error {
-                    from: Ruby::Bool,
-                    to: Rust::String,
-                });
-                value == expected
-            }
-        }
+    #[test]
+    fn fail_convert() {
+        let interp = Interpreter::create().expect("mrb init");
+        // get a mrb_value that can't be converted to a primitive type.
+        let value = interp.eval("Object.new").expect("eval");
+        let expected = Error {
+            from: Ruby::Object,
+            to: Rust::String,
+        };
+        let result = unsafe { String::try_from_mrb(&interp, value) }.map(|_| ());
+        assert_eq!(result, Err(expected));
     }
 
-    mod str {
-        use super::*;
+    #[allow(clippy::needless_pass_by_value)]
+    #[quickcheck]
+    fn convert_to_string(s: String) -> bool {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, s.clone());
+        let ptr = unsafe { sys::mrb_string_value_ptr(interp.borrow().mrb, value.inner()) };
+        let len = unsafe { sys::mrb_string_value_len(interp.borrow().mrb, value.inner()) };
+        let string =
+            unsafe { std::slice::from_raw_parts(ptr as *const u8, len.try_into().unwrap()) };
+        s.as_bytes() == string
+    }
 
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn convert_to_str(s: String) -> bool {
-            unsafe {
-                let s = s.as_str();
-                let interp = Interpreter::create().expect("mrb init");
-                let value = Value::try_from_mrb(&interp, s);
-                match value {
-                    Ok(value) => value.ruby_type() == Ruby::String,
-                    Err(err) => {
-                        let expected = Error {
-                            from: Rust::String,
-                            to: Ruby::String,
-                        };
-                        s.contains('\u{0}') && err == expected
-                    }
-                }
-            }
-        }
+    #[allow(clippy::needless_pass_by_value)]
+    #[quickcheck]
+    fn string_with_value(s: String) -> bool {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, s.clone());
+        value.to_s() == s
+    }
 
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn str_with_value(s: String) -> bool {
-            unsafe {
-                let s = s.as_str();
-                let interp = Interpreter::create().expect("mrb init");
-                let value = Value::try_from_mrb(&interp, s);
-                match value {
-                    Ok(value) => {
-                        let to_s = value.to_s();
-                        to_s == s
-                    }
-                    Err(err) => {
-                        let expected = Error {
-                            from: Rust::String,
-                            to: Ruby::String,
-                        };
-                        s.contains('\u{0}') && err == expected
-                    }
-                }
-            }
-        }
+    #[allow(clippy::needless_pass_by_value)]
+    #[quickcheck]
+    fn roundtrip(s: String) -> bool {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, s.clone());
+        let value = unsafe { String::try_from_mrb(&interp, value) }.expect("convert");
+        value == s
+    }
+
+    #[quickcheck]
+    fn roundtrip_err(b: bool) -> bool {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, b);
+        let value = unsafe { String::try_from_mrb(&interp, value) };
+        let expected = Err(Error {
+            from: Ruby::Bool,
+            to: Rust::String,
+        });
+        value == expected
     }
 }

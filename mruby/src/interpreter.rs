@@ -271,7 +271,7 @@ impl MrbApi for Mrb {
             let backtrace = sys::mrb_exc_backtrace(mrb, sys::mrb_sys_obj_value(exc));
             sys::mrb_funcall(mrb, backtrace, unshift.as_ptr(), 1, exception);
 
-            let error = <Vec<String>>::try_from_mrb(self, Value::new(Rc::clone(self), backtrace));
+            let error = <Vec<String>>::try_from_mrb(self, Value::new(self, backtrace));
             // Mark all C created objects as garbage now that we've extracted a
             // Rust value.
             arena.restore();

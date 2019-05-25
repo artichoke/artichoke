@@ -1,62 +1,46 @@
 use std::convert::TryFrom;
-use std::rc::Rc;
 
-use crate::convert::fixnum::Int;
-use crate::convert::float::Float;
-use crate::convert::{Error, TryFromMrb};
+use crate::convert::{Error, FromMrb, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
-mrb_array_impl!(bool as bool);
-mrb_array_impl!(Option<bool> as nilable_bool);
-mrb_array_impl!(Vec<bool> as bool_array);
-mrb_array_impl!(Vec<Option<bool>> as nilable_bool_array);
+mod boolean;
+mod bytes;
+mod fixnum;
+mod float;
+mod string;
 
-mrb_array_impl!(Vec<u8> as bytes);
-mrb_array_impl!(Option<Vec<u8>> as nilable_bytes);
-mrb_array_impl!(Vec<Vec<u8>> as bytes_array);
-mrb_array_impl!(Vec<Option<Vec<u8>>> as nilable_bytes_array);
-
-mrb_array_impl!(Float as float);
-mrb_array_impl!(Option<Float> as nilable_float);
-mrb_array_impl!(Vec<Float> as float_array);
-mrb_array_impl!(Vec<Option<Float>> as nilable_float_array);
-
-mrb_array_impl!(Int as fixnum);
-mrb_array_impl!(Option<Int> as nilable_fixnum);
-mrb_array_impl!(Vec<Int> as fixnum_array);
-mrb_array_impl!(Vec<Option<Int>> as nilable_fixnum_array);
-
-mrb_array_impl!(String as string);
-mrb_array_impl!(Option<String> as nilable_string);
-mrb_array_impl!(Vec<String> as string_array);
-mrb_array_impl!(Vec<Option<String>> as nilable_string_array);
+pub use self::boolean::*;
+pub use self::bytes::*;
+pub use self::fixnum::*;
+pub use self::float::*;
+pub use self::string::*;
 
 // bail out implementation for mixed-type collections
-impl TryFromMrb<Vec<Value>> for Value {
+impl FromMrb<Vec<Value>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(
-        mrb: &Mrb,
-        value: Vec<Self>,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        let size = Int::try_from(value.len()).map_err(|_| Error {
-            from: Rust::Vec,
-            to: Ruby::Array,
-        })?;
-        let array = sys::mrb_ary_new_capa(mrb.borrow().mrb, size);
-        for (i, item) in value.into_iter().enumerate() {
-            let idx = Int::try_from(i).map_err(|_| Error {
-                from: Rust::Vec,
-                to: Ruby::Array,
-            })?;
-            let inner = item.inner();
-            sys::mrb_ary_set(mrb.borrow().mrb, array, idx, inner);
+    fn from_mrb(interp: &Mrb, value: Vec<Self>) -> Self {
+        // We can initalize an `Array` with a known capacity using
+        // `sys::mrb_ary_new_capa`, but doing so requires converting from
+        // `usize` to `i64` which is fallible. To simplify the code and make
+        // `Vec<Value>` easier to work with, use an infallible `Array`
+        // constructor.
+        let array = unsafe { sys::mrb_ary_new(interp.borrow().mrb) };
+        let mut idx = 0;
+
+        // Lint disabled because I should be casting or converting but do not
+        // want to to preserve this converter implementation being infallible.
+        // See: https://github.com/rust-lang/rust-clippy/issues/4139
+        #[allow(clippy::explicit_counter_loop)]
+        for item in value {
+            unsafe { sys::mrb_ary_set(interp.borrow().mrb, array, idx, item.inner()) };
+            idx += 1;
         }
-        Ok(Self::new(Rc::clone(mrb), array))
+        Self::new(interp, array)
     }
 }
 
@@ -64,28 +48,25 @@ impl TryFromMrb<Value> for Vec<Value> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(mrb: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_from_mrb(
+        interp: &Mrb,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
             Ruby::Array => {
-                let inner = value.inner();
-                let len = sys::mrb_sys_ary_len(inner);
-                let cap = usize::try_from(len).map_err(|_| Error {
+                let array = value.inner();
+                let size = sys::mrb_sys_ary_len(array);
+                let cap = usize::try_from(size).map_err(|_| Error {
                     from: Ruby::Array,
                     to: Rust::Vec,
                 })?;
-                let mut vec = Self::with_capacity(cap);
-                for i in 0..cap {
-                    let idx = Int::try_from(i).map_err(|_| Error {
-                        from: Ruby::Array,
-                        to: Rust::Vec,
-                    })?;
-                    let item = Value::new(
-                        Rc::clone(mrb),
-                        sys::mrb_ary_ref(mrb.borrow().mrb, inner, idx),
-                    );
-                    vec.push(item);
+                let mut items = Self::with_capacity(cap);
+                for idx in 0..size {
+                    let item =
+                        Value::new(interp, sys::mrb_ary_ref(interp.borrow().mrb, array, idx));
+                    items.push(item);
                 }
-                Ok(vec)
+                Ok(items)
             }
             type_tag => Err(Error {
                 from: type_tag,

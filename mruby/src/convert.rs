@@ -3,9 +3,6 @@ use std::fmt;
 
 use crate::interpreter::Mrb;
 
-#[macro_use]
-pub mod macros;
-
 mod array;
 mod boolean;
 mod bytes;
@@ -24,6 +21,13 @@ pub use self::hash::*;
 pub use self::nilable::*;
 pub use self::string::*;
 
+pub trait FromMrb<T> {
+    type From;
+    type To;
+
+    fn from_mrb(interp: &Mrb, value: T) -> Self;
+}
+
 pub trait TryFromMrb<T>
 where
     Self: Sized,
@@ -31,7 +35,24 @@ where
     type From;
     type To;
 
-    unsafe fn try_from_mrb(mrb: &Mrb, value: T) -> Result<Self, Error<Self::From, Self::To>>;
+    unsafe fn try_from_mrb(interp: &Mrb, value: T) -> Result<Self, Error<Self::From, Self::To>>;
+}
+
+/// Provide a falible converter for types that implement an infallible
+/// conversion.
+// Lint disabled because the suggestion does not compile.
+// See: https://github.com/rust-lang/rust-clippy/issues/4140
+#[allow(clippy::use_self)]
+impl<From, To> TryFromMrb<From> for To
+where
+    To: FromMrb<From>,
+{
+    type From = To::From;
+    type To = To::To;
+
+    unsafe fn try_from_mrb(interp: &Mrb, value: From) -> Result<Self, Error<Self::From, Self::To>> {
+        Ok(FromMrb::from_mrb(interp, value))
+    }
 }
 
 #[derive(Clone, Eq, PartialEq)]

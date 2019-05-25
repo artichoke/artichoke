@@ -1,6 +1,4 @@
-use std::rc::Rc;
-
-use crate::convert::{Error, TryFromMrb};
+use crate::convert::{Error, FromMrb, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
@@ -8,12 +6,12 @@ use crate::value::Value;
 
 pub type Int = i64;
 
-impl TryFromMrb<Int> for Value {
+impl FromMrb<Int> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(mrb: &Mrb, value: Int) -> Result<Self, Error<Self::From, Self::To>> {
-        Ok(Self::new(Rc::clone(mrb), sys::mrb_sys_fixnum_value(value)))
+    fn from_mrb(interp: &Mrb, value: Int) -> Self {
+        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
@@ -21,7 +19,10 @@ impl TryFromMrb<Value> for Int {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(_mrb: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_from_mrb(
+        _interp: &Mrb,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
             Ruby::Fixnum => Ok(sys::mrb_sys_fixnum_to_cint(value.inner())),
             type_tag => Err(Error {
@@ -36,53 +37,60 @@ impl TryFromMrb<Value> for Int {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::*;
-    use crate::interpreter::*;
+    use crate::convert::fixnum::Int;
+    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::eval::MrbEval;
+    use crate::interpreter::Interpreter;
     use crate::sys;
-    use crate::value::types::*;
-    use crate::value::*;
+    use crate::value::types::{Ruby, Rust};
+    use crate::value::Value;
+
+    #[test]
+    fn fail_convert() {
+        let interp = Interpreter::create().expect("mrb init");
+        // get a mrb_value that can't be converted to a primitive type.
+        let value = interp.eval("Object.new").expect("eval");
+        let expected = Error {
+            from: Ruby::Object,
+            to: Rust::SignedInt,
+        };
+        let result = unsafe { Int::try_from_mrb(&interp, value) }.map(|_| ());
+        assert_eq!(result, Err(expected));
+    }
 
     #[quickcheck]
     fn convert_to_fixnum(i: Int) -> bool {
-        unsafe {
-            let interp = Interpreter::create().expect("mrb init");
-            let value = Value::try_from_mrb(&interp, i).expect("convert");
-            value.ruby_type() == Ruby::Fixnum
-        }
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, i);
+        value.ruby_type() == Ruby::Fixnum
     }
 
     #[quickcheck]
     fn fixnum_with_value(i: Int) -> bool {
-        unsafe {
-            let interp = Interpreter::create().expect("mrb init");
-            let value = Value::try_from_mrb(&interp, i).expect("convert");
-            let inner = value.inner();
-            let cint = sys::mrb_sys_fixnum_to_cint(inner);
-            cint == i
-        }
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, i);
+        let inner = value.inner();
+        let cint = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
+        cint == i
     }
 
     #[quickcheck]
     fn roundtrip(i: Int) -> bool {
-        unsafe {
-            let interp = Interpreter::create().expect("mrb init");
-            let value = Value::try_from_mrb(&interp, i).expect("convert");
-            let value = Int::try_from_mrb(&interp, value).expect("convert");
-            value == i
-        }
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, i);
+        let value = unsafe { Int::try_from_mrb(&interp, value) }.expect("convert");
+        value == i
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        unsafe {
-            let interp = Interpreter::create().expect("mrb init");
-            let value = Value::try_from_mrb(&interp, b).expect("convert");
-            let value = Int::try_from_mrb(&interp, value);
-            let expected = Err(Error {
-                from: Ruby::Bool,
-                to: Rust::SignedInt,
-            });
-            value == expected
-        }
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, b);
+        let value = unsafe { Int::try_from_mrb(&interp, value) };
+        let expected = Err(Error {
+            from: Ruby::Bool,
+            to: Rust::SignedInt,
+        });
+        value == expected
     }
 }

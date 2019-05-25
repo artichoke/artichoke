@@ -142,7 +142,7 @@ impl RackResponse {
             let args = &[];
             // response.status
             let value = sys::mrb_funcall_argv(interp.borrow().mrb, response, sym, 0, args.as_ptr());
-            Value::new(Rc::clone(interp), value)
+            Value::new(interp, value)
         };
         let status = unsafe { i64::try_from_mrb(interp, status) }
             .map_err(MrbError::ConvertToRust)
@@ -159,7 +159,7 @@ impl RackResponse {
             let args = &[];
             // response.headers
             let value = sys::mrb_funcall_argv(interp.borrow().mrb, response, sym, 0, args.as_ptr());
-            Value::new(Rc::clone(interp), value)
+            Value::new(interp, value)
         };
         let header_pairs = unsafe { <Vec<(Value, Value)>>::try_from_mrb(interp, headers) }
             .map_err(MrbError::ConvertToRust)
@@ -184,7 +184,7 @@ impl RackResponse {
             let args = &[];
             // response.body_bytes
             let value = sys::mrb_funcall_argv(interp.borrow().mrb, response, sym, 0, args.as_ptr());
-            Value::new(Rc::clone(interp), value)
+            Value::new(interp, value)
         };
         let body = unsafe { <Vec<u8>>::try_from_mrb(interp, body) }
             .map_err(MrbError::ConvertToRust)
@@ -228,7 +228,7 @@ pub fn run<'a>(
         // app.call(env)
         sys::mrb_funcall_argv(interp.borrow().mrb, app.inner(), call_sym, 1, args.as_ptr())
     };
-    let response = RackResponse::from(interp, Value::new(Rc::clone(interp), response))?;
+    let response = RackResponse::from(interp, Value::new(interp, response))?;
     let mut build = Response::build();
     build.status(response.status);
     build.sized_body(Cursor::new(response.body));

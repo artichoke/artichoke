@@ -1,62 +1,62 @@
 use std::convert::TryFrom;
-use std::rc::Rc;
 
-use crate::convert::fixnum::Int;
-use crate::convert::{Error, TryFromMrb};
+use crate::convert::{Error, FromMrb, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
-// bail out implementation for mixed-type collections
-
+// TODO: The following comment is no longer valid since `Value`s own a pointer
+// to the interpreter.
 // We can't implement `PartialEq` or `Hash` on Value because accessing these
 // methods on self requires an `mrb_state`. Instead, convert a Hash `Value` to
 // a sequence of key-value pairs.
-impl TryFromMrb<Vec<(Value, Value)>> for Value {
+
+// bail out implementation for mixed-type collections
+impl FromMrb<Vec<(Value, Value)>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(
-        mrb: &Mrb,
-        value: Vec<(Self, Self)>,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        let size = Int::try_from(value.len()).map_err(|_| Error {
-            from: Rust::Map,
-            to: Ruby::Hash,
-        })?;
-        let hash = sys::mrb_hash_new_capa(mrb.borrow().mrb, size);
-        for (key, value) in value {
-            sys::mrb_hash_set(mrb.borrow().mrb, hash, key.inner(), value.inner());
+    fn from_mrb(interp: &Mrb, value: Vec<(Self, Self)>) -> Self {
+        // We can initalize a `Hash` with a known capacity using
+        // `sys::mrb_hash_new_capa`, but doing so requires converting from
+        // `usize` to `i64` which is fallible. To simplify the code and make
+        // `Vec<(Value, Value)>` easier to work with, use an infallible `Hash`
+        // constructor.
+        let hash = unsafe { sys::mrb_hash_new(interp.borrow().mrb) };
+        for (key, val) in value {
+            unsafe { sys::mrb_hash_set(interp.borrow().mrb, hash, key.inner(), val.inner()) };
         }
-        Ok(Self::new(Rc::clone(mrb), hash))
+        Self::new(interp, hash)
     }
 }
 
-#[allow(clippy::use_self)]
 impl TryFromMrb<Value> for Vec<(Value, Value)> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(mrb: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_from_mrb(
+        interp: &Mrb,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {
             Ruby::Hash => {
-                let inner = value.inner();
-                let keys = <Vec<Value>>::try_from_mrb(
-                    mrb,
-                    Value::new(Rc::clone(mrb), sys::mrb_hash_keys(mrb.borrow().mrb, inner)),
-                );
-                let keys = keys.map_err(|_| Error {
+                let hash = value.inner();
+                let size = sys::mrb_hash_size(interp.borrow().mrb, hash);
+                let keys = sys::mrb_hash_keys(interp.borrow().mrb, hash);
+                let cap = usize::try_from(size).map_err(|_| Error {
                     from: Ruby::Hash,
                     to: Rust::Map,
                 })?;
-                let mut kv_pairs = Self::with_capacity(keys.len());
-                for key in keys {
-                    let value = sys::mrb_hash_get(mrb.borrow().mrb, inner, key.inner());
-                    let value = Value::new(Rc::clone(mrb), value);
-                    kv_pairs.push((key, value));
+                let mut pairs = Self::with_capacity(cap);
+                for idx in 0..size {
+                    // Doing a `hash[key]` access is guaranteed to succeed since
+                    // we're iterating over the keys in the hash.
+                    let key = sys::mrb_ary_ref(interp.borrow().mrb, keys, idx);
+                    let value = sys::mrb_hash_get(interp.borrow().mrb, hash, key);
+                    pairs.push((Value::new(interp, key), Value::new(interp, value)));
                 }
-                Ok(kv_pairs)
+                Ok(pairs)
             }
             type_tag => Err(Error {
                 from: type_tag,
@@ -69,44 +69,39 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
 #[cfg(test)]
 mod value {
     mod tests {
-        use crate::convert::*;
-        use crate::interpreter::*;
-        use crate::value::*;
+        use std::collections::HashMap;
+
+        use crate::convert::{FromMrb, TryFromMrb};
+        use crate::interpreter::Interpreter;
+        use crate::value::Value;
 
         #[test]
         fn roundtrip_kv() {
-            unsafe {
-                let interp = Interpreter::create().expect("mrb init");
+            let interp = Interpreter::create().expect("mrb init");
 
-                let mut map = vec![];
-                let key = Value::try_from_mrb(&interp, 1).expect("convert");
-                let value = Value::try_from_mrb(&interp, 2).expect("convert");
-                map.push((key, value));
-                let key = Value::try_from_mrb(&interp, 100).expect("convert");
-                let value = Value::try_from_mrb(&interp, 1000).expect("convert");
-                map.push((key, value));
+            let map = vec![
+                (Value::from_mrb(&interp, 1), Value::from_mrb(&interp, 2)),
+                (Value::from_mrb(&interp, 7), Value::from_mrb(&interp, 8)),
+            ];
 
-                let value = Value::try_from_mrb(&interp, map).expect("convert");
+            let value = Value::from_mrb(&interp, map);
+            assert_eq!("{1=>2, 7=>8}", value.to_s());
 
-                assert_eq!("{1=>2, 100=>1000}", value.to_s());
+            let pairs =
+                unsafe { <Vec<(Value, Value)>>::try_from_mrb(&interp, value) }.expect("convert");
+            let map = pairs
+                .into_iter()
+                .map(|(key, value)| {
+                    let key = unsafe { i64::try_from_mrb(&interp, key) }.expect("convert");
+                    let value = unsafe { i64::try_from_mrb(&interp, value) }.expect("convert");
+                    (key, value)
+                })
+                .collect::<HashMap<_, _>>();
+            let mut expected = HashMap::new();
+            expected.insert(1, 2);
+            expected.insert(7, 8);
 
-                let mut kv_pairs =
-                    <Vec<(Value, Value)>>::try_from_mrb(&interp, value).expect("convert");
-                let mut rt = vec![];
-
-                let (key, value) = kv_pairs.pop().expect("index");
-                let key = Int::try_from_mrb(&interp, key).expect("convert");
-                let value = Int::try_from_mrb(&interp, value).expect("convert");
-                rt.push((key, value));
-
-                let (key, value) = kv_pairs.pop().expect("index");
-                let key = Int::try_from_mrb(&interp, key).expect("convert");
-                let value = Int::try_from_mrb(&interp, value).expect("convert");
-                rt.push((key, value));
-
-                rt.sort();
-                assert_eq!(rt, vec![(1, 2), (100, 1000)]);
-            }
+            assert_eq!(map, expected);
         }
     }
 }

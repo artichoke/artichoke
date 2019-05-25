@@ -21,8 +21,8 @@ end
 # - Disable <stdio.h> dependent code in mruby.
 # - Do not build mruby binaries.
 # - Enable mruby debug hooks.
-# - Compile a custom set gems. This gembox removes these gems from the default
-#   gembox: mruby-io, mruby-print, mruby-objectspace, mruby-fiber.
+# - Compile a custom set  of gems. This gembox removes these gems from the
+#   default gembox: mruby-io, mruby-print, mruby-objectspace.
 MRuby::CrossBuild.new('sys') do |conf|
   # Gets set by the VS command prompts.
   if ENV['VisualStudioVersion'] || ENV['VSINSTALLDIR']
@@ -35,7 +35,8 @@ MRuby::CrossBuild.new('sys') do |conf|
   enable_debug
 
   # C compiler settings
-  conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_ENABLE_DEBUG_HOOK]
+  # https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
+  conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_ENABLE_DEBUG_HOOK MRB_UTF8_STRING]
 
   conf.bins = []
 
