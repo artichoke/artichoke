@@ -7,6 +7,7 @@ use mruby::MrbError;
 use mruby_gems::rubygems::rack;
 
 pub mod handler;
+pub mod request;
 mod rubygems;
 
 use rubygems::nemesis;
