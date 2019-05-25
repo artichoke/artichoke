@@ -1,8 +1,6 @@
-use std::rc::Rc;
-
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
-use crate::convert::{Error, TryFromMrb};
+use crate::convert::FromMrb;
 use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
@@ -17,32 +15,26 @@ mrb_nilable_impl!(Float as float with eq = |a: Float, b: Float| {
 mrb_nilable_impl!(String as string);
 
 // bail out implementation for mixed-type collections
-impl TryFromMrb<Option<Value>> for Value {
+impl FromMrb<Option<Value>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    unsafe fn try_from_mrb(
-        mrb: &Mrb,
-        value: Option<Self>,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+    fn from_mrb(interp: &Mrb, value: Option<Self>) -> Self {
         match value {
-            Some(value) => Ok(value),
-            None => Ok(Self::new(Rc::clone(mrb), sys::mrb_sys_nil_value())),
+            Some(value) => value,
+            None => Self::new(interp, unsafe { sys::mrb_sys_nil_value() }),
         }
     }
 }
 
-impl TryFromMrb<Value> for Option<Value> {
+impl FromMrb<Value> for Option<Value> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        _mrb: &Mrb,
-        value: Value,
-    ) -> std::result::Result<Self, Error<Self::From, Self::To>> {
+    fn from_mrb(_interp: &Mrb, value: Value) -> Self {
         match value.ruby_type() {
-            Ruby::Nil => Ok(None),
-            _ => Ok(Some(value)),
+            Ruby::Nil => None,
+            _ => Some(value),
         }
     }
 }

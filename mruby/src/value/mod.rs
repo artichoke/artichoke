@@ -1,5 +1,6 @@
-use std::ffi::CStr;
+use std::rc::Rc;
 
+use crate::convert::TryFromMrb;
 use crate::gc::GarbageCollection;
 use crate::interpreter::Mrb;
 use crate::sys;
@@ -15,8 +16,11 @@ pub struct Value {
 }
 
 impl Value {
-    pub fn new(interp: Mrb, value: sys::mrb_value) -> Self {
-        Self { interp, value }
+    pub fn new(interp: &Mrb, value: sys::mrb_value) -> Self {
+        Self {
+            interp: Rc::clone(interp),
+            value,
+        }
     }
 
     pub fn inner(&self) -> sys::mrb_value {
@@ -52,12 +56,10 @@ impl Value {
         // Module. For all other type tags, it calls `to_s` in the
         // mrb interpreter.
         let to_s = unsafe { sys::mrb_str_to_str(mrb, self.value) };
-        let cstr = unsafe { sys::mrb_str_to_cstr(mrb, to_s) };
+        let to_s = unsafe { String::try_from_mrb(&self.interp, Value::new(&self.interp, to_s)) }
+            .unwrap_or_else(|_| "<unknown>".to_owned());
         arena.restore();
-        unsafe { CStr::from_ptr(cstr) }
-            .to_str()
-            .unwrap_or_else(|_| "<unknown>")
-            .to_owned()
+        to_s
     }
 
     pub fn to_s_debug(&self) -> String {
@@ -68,10 +70,10 @@ impl Value {
         let arena = self.interp.create_arena_savepoint();
         let mrb = { self.interp.borrow().mrb };
         let debug = unsafe { sys::mrb_sys_value_debug_str(mrb, self.value) };
-        let cstr = unsafe { sys::mrb_str_to_cstr(mrb, debug) };
-        let string = unsafe { CStr::from_ptr(cstr) }.to_string_lossy();
+        let debug = unsafe { String::try_from_mrb(&self.interp, Value::new(&self.interp, debug)) }
+            .unwrap_or_else(|_| "<unknown>".to_owned());
         arena.restore();
-        string.into_owned()
+        debug
     }
 }
 
