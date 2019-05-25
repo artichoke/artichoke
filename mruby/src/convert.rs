@@ -3,9 +3,6 @@ use std::fmt;
 
 use crate::interpreter::Mrb;
 
-#[macro_use]
-pub mod macros;
-
 mod array;
 mod boolean;
 mod bytes;
