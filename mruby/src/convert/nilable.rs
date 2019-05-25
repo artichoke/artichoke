@@ -1,18 +1,23 @@
-use crate::convert::fixnum::Int;
-use crate::convert::float::Float;
+//! Converters for nilable primitive Ruby types. Excludes collection types
+//! Array and Hash.
+
 use crate::convert::FromMrb;
 use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
-mrb_nilable_impl!(bool as bool);
-mrb_nilable_impl!(Vec<u8> as bytes);
-mrb_nilable_impl!(Int as fixnum);
-mrb_nilable_impl!(Float as float with eq = |a: Float, b: Float| {
-    (a - b).abs() < std::f64::EPSILON
-});
-mrb_nilable_impl!(String as string);
+mod boolean;
+mod bytes;
+mod fixnum;
+mod float;
+mod string;
+
+pub use self::boolean::*;
+pub use self::bytes::*;
+pub use self::fixnum::*;
+pub use self::float::*;
+pub use self::string::*;
 
 // bail out implementation for mixed-type collections
 impl FromMrb<Option<Value>> for Value {
