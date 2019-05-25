@@ -13,10 +13,8 @@ use mruby::module;
 use mruby::sys;
 use mruby::value::Value;
 use mruby::MrbError;
-use rocket::http::uri::Origin;
-use rocket::http::{Method, Status};
-use rocket::request::{self, FromRequest, Request};
-use rocket::{Outcome, Response};
+use rocket::http::Status;
+use rocket::Response;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::{AsRef, TryFrom};
@@ -25,50 +23,33 @@ use std::fmt;
 use std::io::Cursor;
 use std::rc::Rc;
 
-pub struct RackRequest<'a> {
-    method: Method,
-    origin: Origin<'a>,
+use crate::request::{self, Request};
+
+#[derive(Debug)]
+pub enum Error {
+    Request(request::Error),
+    Response(ResponseError),
 }
 
-impl<'a> RackRequest<'a> {
-    pub fn to_env(&self, interp: &Mrb) -> Result<Value, ResponseError> {
-        // https://www.rubydoc.info/github/rack/rack/file/SPEC
-        interp
-            .eval(format!(
-                r#"
-                {{
-                    Rack::REQUEST_METHOD => '{method}',
-                    Rack::SCRIPT_NAME => '', # mount path
-                    Rack::PATH_INFO => '{path}',
-                    Rack::QUERY_STRING => '{query}',
-                    Rack::SERVER_NAME => 'localhost', # TODO: set this correctly
-                    Rack::SERVER_PORT => 8000, # TODO: set this correctly
-                    Rack::HTTP_VERSION => '1.1', # TODO: set this correctly
-                    Rack::RACK_VERSION => Rack::VERSION,
-                    Rack::RACK_URL_SCHEME => 'http', # TODO: set this correctly
-                    Rack::RACK_INPUT => nil, # TODO: implement IO
-                    Rack::RACK_ERRORS => nil, # TODO: implement IO
-                    Rack::RACK_MULTITHREAD => false,
-                    Rack::RACK_MULTIPROCESS => false,
-                    Rack::RACK_RUNONCE => false,
-                }}
-                "#,
-                method = self.method,
-                path = self.origin.path(),
-                query = self.origin.query().unwrap_or_else(|| "")
-            ))
-            .map_err(ResponseError::Mrb)
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::Request(inner) => write!(f, "{}", inner),
+            Error::Response(inner) => write!(f, "{}", inner),
+        }
     }
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for RackRequest<'a> {
-    type Error = ();
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        "nemesis rack error"
+    }
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
-        Outcome::Success(RackRequest {
-            method: request.method(),
-            origin: request.uri().clone(),
-        })
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            Error::Request(inner) => Some(inner),
+            Error::Response(inner) => Some(inner),
+        }
     }
 }
 
@@ -211,13 +192,9 @@ where
     ))
 }
 
-pub fn run<'a>(
-    interp: &Mrb,
-    app: &Value,
-    request: &RackRequest,
-) -> Result<Response<'a>, ResponseError> {
+pub fn run<'a>(interp: &Mrb, app: &Value, request: &Request) -> Result<Response<'a>, Error> {
     // build env hash that is passed to app.call
-    let args = &[request.to_env(interp)?.inner()];
+    let args = &[request.to_env(interp).map_err(Error::Request)?.inner()];
     let response = unsafe {
         let call_str = "call";
         let call_sym = sys::mrb_intern(
@@ -228,7 +205,8 @@ pub fn run<'a>(
         // app.call(env)
         sys::mrb_funcall_argv(interp.borrow().mrb, app.inner(), call_sym, 1, args.as_ptr())
     };
-    let response = RackResponse::from(interp, Value::new(interp, response))?;
+    let response =
+        RackResponse::from(interp, Value::new(interp, response)).map_err(Error::Response)?;
     let mut build = Response::build();
     build.status(response.status);
     build.sized_body(Cursor::new(response.body));

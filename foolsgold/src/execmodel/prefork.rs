@@ -1,7 +1,7 @@
 use mruby::gc::GarbageCollection;
 use mruby::interpreter::Mrb;
 use mruby::MrbError;
-use nemesis::handler::RackRequest;
+use nemesis::request::Request;
 use nemesis::{self, handler};
 use ref_thread_local::RefThreadLocal;
 use rocket::{get, Response};
@@ -15,7 +15,7 @@ ref_thread_local! {
 
 #[get("/fools-gold/prefork")]
 #[allow(clippy::needless_pass_by_value)]
-pub fn rack_app<'a>(req: RackRequest) -> Result<Response<'a>, Error> {
+pub fn rack_app<'a>(req: Request) -> Result<Response<'a>, Error> {
     info!("Using prefork thread local mruby interpreter");
     match *INTERPRETER.borrow() {
         Ok(ref interp) => {

@@ -1,7 +1,7 @@
 use mruby::eval::MrbEval;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::MrbError;
-use nemesis::handler::ResponseError;
+use nemesis::handler;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
@@ -22,25 +22,34 @@ fn interpreter() -> Result<Mrb, MrbError> {
 }
 
 #[derive(Debug)]
-pub struct Error(ResponseError);
+pub enum Error {
+    Handler(handler::Error),
+    Mrb(MrbError),
+}
 
 impl From<MrbError> for Error {
     fn from(error: MrbError) -> Self {
-        Self(ResponseError::Mrb(error))
+        Error::Mrb(error)
     }
 }
 
-impl From<ResponseError> for Error {
-    fn from(error: ResponseError) -> Self {
-        Self(error)
+impl From<handler::Error> for Error {
+    fn from(error: handler::Error) -> Self {
+        Error::Handler(error)
     }
 }
 
 impl<'r> Responder<'r> for Error {
     fn respond_to(self, _: &Request) -> response::Result<'r> {
-        Response::build()
-            .status(Status::InternalServerError)
-            .sized_body(Cursor::new(format!("{}", self.0)))
-            .ok()
+        match self {
+            Error::Handler(inner) => Response::build()
+                .status(Status::InternalServerError)
+                .sized_body(Cursor::new(format!("{}", inner)))
+                .ok(),
+            Error::Mrb(inner) => Response::build()
+                .status(Status::InternalServerError)
+                .sized_body(Cursor::new(format!("{}", inner)))
+                .ok(),
+        }
     }
 }
