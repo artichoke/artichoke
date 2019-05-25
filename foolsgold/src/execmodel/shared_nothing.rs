@@ -1,4 +1,4 @@
-use nemesis::handler::RackRequest;
+use nemesis::request::Request;
 use nemesis::{self, handler};
 use rocket::{get, Response};
 
@@ -7,7 +7,7 @@ use crate::foolsgold::RACKUP;
 
 #[get("/fools-gold")]
 #[allow(clippy::needless_pass_by_value)]
-pub fn rack_app<'a>(req: RackRequest) -> Result<Response<'a>, Error> {
+pub fn rack_app<'a>(req: Request) -> Result<Response<'a>, Error> {
     info!("Initializing fresh shared nothing mruby interpreter");
     let interp = super::interpreter()?;
     let adapter = handler::adapter_from_rackup(&interp, RACKUP)?;
