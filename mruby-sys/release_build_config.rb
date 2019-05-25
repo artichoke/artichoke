@@ -34,7 +34,7 @@ MRuby::CrossBuild.new('sys') do |conf|
   end
 
   # C compiler settings
-  conf.cc.defines += %w[MRB_DISABLE_STDIO]
+  conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_UTF8_STRING]
 
   conf.bins = []
 

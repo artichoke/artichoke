@@ -35,7 +35,7 @@ MRuby::CrossBuild.new('sys') do |conf|
   enable_debug
 
   # C compiler settings
-  conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_ENABLE_DEBUG_HOOK]
+  conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_ENABLE_DEBUG_HOOK MRB_UTF8_STRING]
 
   conf.bins = []
 

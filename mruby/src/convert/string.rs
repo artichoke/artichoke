@@ -7,12 +7,6 @@ use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
-// TODO: Add a define for `MRB_UTF8_STRING` to mruby-sys build config to add
-// UTF-8 encoding support to character-oriented String instance methods.
-// Without this define, only ASCII is supported.
-//
-// https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
-
 impl TryFromMrb<String> for Value {
     type From = Rust;
     type To = Ruby;
