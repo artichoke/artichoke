@@ -52,11 +52,25 @@ impl TryFromMrb<Value> for bool {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::*;
-    use crate::interpreter::*;
+    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::eval::MrbEval;
+    use crate::interpreter::Interpreter;
     use crate::sys;
-    use crate::value::types::*;
-    use crate::value::*;
+    use crate::value::types::{Ruby, Rust};
+    use crate::value::Value;
+
+    #[test]
+    fn fail_convert() {
+        let interp = Interpreter::create().expect("mrb init");
+        // get a mrb_value that can't be converted to a primitive type.
+        let value = interp.eval("Object.new").expect("eval");
+        let expected = Error {
+            from: Ruby::Object,
+            to: Rust::Bool,
+        };
+        let result = unsafe { <bool>::try_from_mrb(&interp, value) }.map(|_| ());
+        assert_eq!(result, Err(expected));
+    }
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {

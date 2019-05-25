@@ -59,85 +59,69 @@ impl TryFromMrb<Value> for Vec<u8> {
 }
 
 #[cfg(test)]
+// FromMrb<Vec<u8>> is implemented in terms of FromMrb<&[u8]> so only implement
+// the tests for Vec<u8> to exercise both code paths.
 mod tests {
     use quickcheck_macros::quickcheck;
+    use std::convert::TryFrom;
 
-    use crate::convert::*;
-    use crate::interpreter::*;
+    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::eval::MrbEval;
+    use crate::interpreter::Interpreter;
     use crate::sys;
-    use crate::value::types::*;
-    use crate::value::*;
+    use crate::value::types::{Ruby, Rust};
+    use crate::value::Value;
 
-    mod vec {
-        use std::convert::TryFrom;
-
-        use super::*;
-
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn convert_to_vec(v: Vec<u8>) -> bool {
-            let interp = Interpreter::create().expect("mrb init");
-            let value = Value::from_mrb(&interp, v.clone());
-            value.ruby_type() == Ruby::String
-        }
-
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn vec_with_value(v: Vec<u8>) -> bool {
-            let interp = Interpreter::create().expect("mrb init");
-            let value = Value::from_mrb(&interp, v.clone());
-            let inner = value.inner();
-            let len = unsafe { sys::mrb_string_value_len(interp.borrow().mrb, inner) };
-            let len = usize::try_from(len).expect("usize");
-            v.len() == len
-        }
-
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn roundtrip(v: Vec<u8>) -> bool {
-            let interp = Interpreter::create().expect("mrb init");
-            let value = Value::from_mrb(&interp, v.clone());
-            let value = unsafe { <Vec<u8>>::try_from_mrb(&interp, value) }.expect("convert");
-            value == v
-        }
-
-        #[quickcheck]
-        fn roundtrip_err(b: bool) -> bool {
-            let interp = Interpreter::create().expect("mrb init");
-            let value = Value::from_mrb(&interp, b);
-            let value = unsafe { <Vec<u8>>::try_from_mrb(&interp, value) };
-            let expected = Err(Error {
-                from: Ruby::Bool,
-                to: Rust::Bytes,
-            });
-            value == expected
-        }
+    #[test]
+    fn fail_convert() {
+        let interp = Interpreter::create().expect("mrb init");
+        // get a mrb_value that can't be converted to a primitive type.
+        let value = interp.eval("Object.new").expect("eval");
+        let expected = Error {
+            from: Ruby::Object,
+            to: Rust::Bytes,
+        };
+        let result = unsafe { <Vec<u8>>::try_from_mrb(&interp, value) }.map(|_| ());
+        assert_eq!(result, Err(expected));
     }
 
-    mod slice {
-        use std::convert::TryFrom;
+    #[allow(clippy::needless_pass_by_value)]
+    #[quickcheck]
+    fn convert_to_vec(v: Vec<u8>) -> bool {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, v.clone());
+        value.ruby_type() == Ruby::String
+    }
 
-        use super::*;
+    #[allow(clippy::needless_pass_by_value)]
+    #[quickcheck]
+    fn vec_with_value(v: Vec<u8>) -> bool {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, v.clone());
+        let inner = value.inner();
+        let len = unsafe { sys::mrb_string_value_len(interp.borrow().mrb, inner) };
+        let len = usize::try_from(len).expect("usize");
+        v.len() == len
+    }
 
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn convert_to_slice(v: Vec<u8>) -> bool {
-            let interp = Interpreter::create().expect("mrb init");
-            let v = v.as_slice();
-            let value = Value::from_mrb(&interp, v);
-            value.ruby_type() == Ruby::String
-        }
+    #[allow(clippy::needless_pass_by_value)]
+    #[quickcheck]
+    fn roundtrip(v: Vec<u8>) -> bool {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, v.clone());
+        let value = unsafe { <Vec<u8>>::try_from_mrb(&interp, value) }.expect("convert");
+        value == v
+    }
 
-        #[allow(clippy::needless_pass_by_value)]
-        #[quickcheck]
-        fn slice_with_value(v: Vec<u8>) -> bool {
-            let interp = Interpreter::create().expect("mrb init");
-            let v = v.as_slice();
-            let value = Value::from_mrb(&interp, v);
-            let inner = value.inner();
-            let len = unsafe { sys::mrb_string_value_len(interp.borrow().mrb, inner) };
-            let len = usize::try_from(len).expect("usize");
-            v.len() == len
-        }
+    #[quickcheck]
+    fn roundtrip_err(b: bool) -> bool {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, b);
+        let value = unsafe { <Vec<u8>>::try_from_mrb(&interp, value) };
+        let expected = Err(Error {
+            from: Ruby::Bool,
+            to: Rust::Bytes,
+        });
+        value == expected
     }
 }
