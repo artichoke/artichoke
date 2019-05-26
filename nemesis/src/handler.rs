@@ -1,7 +1,4 @@
-//! A Rack handler that glues together a [`rocket::Request`] and a Rack app.
-//!
-//! Based on `Rack::Handler::Webrick`:
-//! <https://github.com/rack/rack/blob/2.0.7/lib/rack/handler/webrick.rb>
+//! Run a Rack app with an environment derived from the request.
 
 use mruby::eval::MrbEval;
 use mruby::interpreter::Mrb;
