@@ -31,6 +31,7 @@ pub enum MrbError {
     New,
     NotDefined(String),
     SourceNotFound(String),
+    TooManyArgs { given: usize, max: usize },
     Uninitialized,
     UnreachableValue(sys::mrb_vtype),
     Vfs(io::Error),
@@ -54,6 +55,11 @@ impl fmt::Display for MrbError {
             MrbError::New => write!(f, "failed to create mrb interpreter"),
             MrbError::NotDefined(fqname) => write!(f, "{} not defined", fqname),
             MrbError::SourceNotFound(source) => write!(f, "Could not load Ruby source {}", source),
+            MrbError::TooManyArgs { given, max } => write!(
+                f,
+                "Too many args for funcall. Gave {}, but max is {}",
+                given, max
+            ),
             MrbError::Uninitialized => write!(f, "mrb interpreter not initialized"),
             MrbError::UnreachableValue(tt) => {
                 write!(f, "extracted unreachable type {:?} from interpreter", tt)

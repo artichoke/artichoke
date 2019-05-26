@@ -1,11 +1,57 @@
+use std::convert::TryFrom;
 use std::rc::Rc;
 
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::gc::GarbageCollection;
 use crate::interpreter::Mrb;
 use crate::sys;
+use crate::MrbError;
 
 pub mod types;
+
+#[allow(clippy::module_name_repetitions)]
+pub trait ValueLike
+where
+    Self: Sized,
+{
+    // defined in vm.c
+    const MRB_FUNCALL_ARGC_MAX: usize = 16;
+
+    fn inner(&self) -> sys::mrb_value;
+
+    fn interp(&self) -> &Mrb;
+
+    fn funcall<T, M, A>(&self, method: M, args: A) -> Result<T, MrbError>
+    where
+        T: TryFromMrb<Value, From = types::Ruby, To = types::Rust>,
+        M: AsRef<str>,
+        A: AsRef<[Self]>,
+    {
+        let arena = self.interp().create_arena_savepoint();
+        let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
+        if args.len() > Self::MRB_FUNCALL_ARGC_MAX {
+            return Err(MrbError::TooManyArgs {
+                given: args.len(),
+                max: Self::MRB_FUNCALL_ARGC_MAX,
+            });
+        }
+        let method = method.as_ref();
+        // Scope the borrow so because we might require a borrow_mut in Rust
+        // code we call into via the Ruby VM.
+        let mrb = { self.interp().borrow().mrb };
+        // This conversion will never fail because MRB_FUNCALL_ARGC_MAX is less
+        // than `std::i64::MAX`.
+        let size = i64::try_from(args.len()).expect("Unreachable");
+        let value = unsafe {
+            let sym = sys::mrb_intern(mrb, method.as_ptr() as *const i8, method.len());
+            let value = sys::mrb_funcall_argv(mrb, self.inner(), sym, size, args.as_ptr());
+            let value = Value::new(self.interp(), value);
+            T::try_from_mrb(self.interp(), value).map_err(MrbError::ConvertToRust)
+        };
+        arena.restore();
+        value
+    }
+}
 
 // We can't impl `fmt::Debug` because `mrb_sys_value_debug_str` requires a
 // `mrb_state` interpreter, which we can't store on the `Value` because we
@@ -74,6 +120,16 @@ impl Value {
             .unwrap_or_else(|_| "<unknown>".to_owned());
         arena.restore();
         debug
+    }
+}
+
+impl ValueLike for Value {
+    fn inner(&self) -> sys::mrb_value {
+        self.value
+    }
+
+    fn interp(&self) -> &Mrb {
+        &self.interp
     }
 }
 
@@ -328,5 +384,19 @@ mod tests {
         // interpreter.
         let fixnum = interp.fixnum(99);
         assert!(!fixnum.is_dead());
+    }
+
+    #[test]
+    fn funcall() {
+        let interp = Interpreter::create().expect("mrb init");
+        let nil = interp.nil();
+        assert!(nil.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
+        let s = interp.string("foo");
+        assert!(!s.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
+        let delim = interp.string("");
+        let split = s
+            .funcall::<Vec<String>, _, _>("split", &[delim])
+            .expect("split");
+        assert_eq!(split, vec!["f".to_owned(), "o".to_owned(), "o".to_owned()])
     }
 }
