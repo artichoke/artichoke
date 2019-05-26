@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::gc::GarbageCollection;
-use crate::interpreter::Mrb;
+use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::MrbError;
 
@@ -55,6 +55,12 @@ where
             let value = Value::new(self.interp(), value);
             T::try_from_mrb(self.interp(), value).map_err(MrbError::ConvertToRust)
         };
+
+        if let Some(backtrace) = self.interp().current_exception() {
+            warn!("runtime error with exception backtrace: {}", backtrace);
+            return Err(MrbError::Exec(backtrace));
+        }
+
         arena.restore();
         value
     }
@@ -413,5 +419,31 @@ mod tests {
         let s = interp.string("foo");
         let eql = nil.funcall::<bool, _, _>("==", &[s]);
         assert_eq!(eql, Ok(false));
+    }
+
+    #[test]
+    fn funcall_type_error() {
+        let interp = Interpreter::create().expect("mrb init");
+        let nil = interp.nil();
+        let s = interp.string("foo");
+        let result = s.funcall::<String, _, _>("+", &[nil]);
+        assert_eq!(
+            result,
+            Err(MrbError::Exec("TypeError: expected String".to_owned()))
+        );
+    }
+
+    #[test]
+    fn funcall_method_not_exists() {
+        let interp = Interpreter::create().expect("mrb init");
+        let nil = interp.nil();
+        let s = interp.string("foo");
+        let result = nil.funcall::<bool, _, _>("garbage_method_name", &[s]);
+        assert_eq!(
+            result,
+            Err(MrbError::Exec(
+                "NoMethodError: undefined method 'garbage_method_name'".to_owned()
+            ))
+        );
     }
 }
