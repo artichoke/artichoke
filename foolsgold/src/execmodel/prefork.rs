@@ -2,7 +2,7 @@ use mruby::gc::GarbageCollection;
 use mruby::interpreter::Mrb;
 use mruby::MrbError;
 use nemesis::request::Request;
-use nemesis::{self, handler};
+use nemesis::{self, adapter, handler};
 use ref_thread_local::RefThreadLocal;
 use rocket::{get, Response};
 
@@ -19,7 +19,7 @@ pub fn rack_app<'a>(req: Request) -> Result<Response<'a>, Error> {
     info!("Using prefork thread local mruby interpreter");
     match *INTERPRETER.borrow() {
         Ok(ref interp) => {
-            let adapter = handler::adapter_from_rackup(interp, RACKUP)?;
+            let adapter = adapter::from_rackup(&interp, RACKUP)?;
             let arena = interp.create_arena_savepoint();
             let response = handler::run(interp, &adapter, &req)?;
             arena.restore();

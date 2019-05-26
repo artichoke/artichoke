@@ -1,11 +1,8 @@
 //! Run a Rack app with an environment derived from the request.
 
-use mruby::eval::MrbEval;
 use mruby::interpreter::Mrb;
 use mruby::sys;
 use mruby::value::Value;
-use mruby::MrbError;
-use std::convert::AsRef;
 use std::error;
 use std::fmt;
 
@@ -38,20 +35,6 @@ impl error::Error for Error {
             Error::Response(inner) => Some(inner),
         }
     }
-}
-
-pub fn adapter_from_rackup<T>(interp: &Mrb, source: T) -> Result<Value, MrbError>
-where
-    T: AsRef<str>,
-{
-    interp.eval(format!(
-        r#"
-        Rack::Builder.new do
-          {rackup}
-        end
-        "#,
-        rackup = source.as_ref()
-    ))
 }
 
 pub fn run<'a>(
