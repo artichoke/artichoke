@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::convert::TryFromMrb;
+use crate::convert::{FromMrb, TryFromMrb};
 use crate::gc::GarbageCollection;
 use crate::interpreter::Mrb;
 use crate::sys;
@@ -76,6 +76,16 @@ impl Value {
         debug
     }
 }
+
+impl FromMrb<Value> for Value {
+    type From = types::Ruby;
+    type To = types::Rust;
+
+    fn from_mrb(_interp: &Mrb, value: Self) -> Self {
+        value
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
