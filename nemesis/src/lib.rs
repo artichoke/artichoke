@@ -41,6 +41,9 @@ pub mod adapter {
     use mruby::MrbError;
     use std::convert::AsRef;
 
+    /// Create a Rack app by wrapping the supplied rackup source in a
+    /// `Rack::Builder`. The returned [`Value`] has a call method and is
+    /// suitable for passing to [`handler::run`](crate::handler::run).
     pub fn from_rackup<T: AsRef<str>>(interp: &Mrb, rackup: T) -> Result<Value, MrbError> {
         interp.eval(format!(
             r#"
