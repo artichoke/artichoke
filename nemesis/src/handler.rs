@@ -57,20 +57,19 @@ where
     ))
 }
 
-pub fn run<'a>(interp: &Mrb, app: &Value, request: &Request) -> Result<rocket::Response<'a>, Error> {
+pub fn run<'a>(
+    interp: &Mrb,
+    app: &Value,
+    request: &Request,
+) -> Result<rocket::Response<'a>, Error> {
     let fun = "call";
     // build env hash that is passed to app.call
     let args = &[request.to_env(interp).map_err(Error::Request)?.inner()];
     let response = unsafe {
-        let sym = sys::mrb_intern(
-            interp.borrow().mrb,
-            fun.as_ptr() as *const i8,
-            fun.len(),
-        );
+        let sym = sys::mrb_intern(interp.borrow().mrb, fun.as_ptr() as *const i8, fun.len());
         // app.call(env)
         sys::mrb_funcall_argv(interp.borrow().mrb, app.inner(), sym, 1, args.as_ptr())
     };
-    let response =
-        Response::from(interp, Value::new(interp, response)).map_err(Error::Response)?;
+    let response = Response::from(interp, Value::new(interp, response)).map_err(Error::Response)?;
     Ok(response.into_rocket())
 }
