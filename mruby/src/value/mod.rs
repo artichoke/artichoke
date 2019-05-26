@@ -1,3 +1,4 @@
+use log::{trace, warn};
 use std::convert::TryFrom;
 use std::rc::Rc;
 
@@ -30,12 +31,18 @@ where
         let arena = self.interp().create_arena_savepoint();
         let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
         if args.len() > Self::MRB_FUNCALL_ARGC_MAX {
+            warn!(
+                "Too many args supplied to funcall: given {}, max {}.",
+                args.len(),
+                Self::MRB_FUNCALL_ARGC_MAX
+            );
             return Err(MrbError::TooManyArgs {
                 given: args.len(),
                 max: Self::MRB_FUNCALL_ARGC_MAX,
             });
         }
         let method = method.as_ref();
+        trace!("Calling {}#{}", types::Ruby::from(self.inner()), method);
         // Scope the borrow so because we might require a borrow_mut in Rust
         // code we call into via the Ruby VM.
         let mrb = { self.interp().borrow().mrb };
