@@ -20,6 +20,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::error;
 use std::fmt;
+use std::io::Cursor;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -53,7 +54,7 @@ impl error::Error for Error {
 }
 
 #[derive(Debug)]
-struct Response {
+pub struct Response {
     status: Status,
     headers: HashMap<String, String>,
     body: Vec<u8>,
@@ -61,6 +62,16 @@ struct Response {
 
 impl Response {
     const RACK_RESPONSE_TUPLE_LEN: usize = 3;
+
+    pub fn into_rocket<'a>(self) -> rocket::Response<'a> {
+        let mut response = rocket::Response::build();
+        response.status(self.status);
+        response.sized_body(Cursor::new(self.body));
+        for (key, value) in self.headers {
+            response.raw_header(key, value);
+        }
+        response.finalize()
+    }
 
     /// Convert from a Rack `[status, headers, body]` response tuple to a Rust
     /// representation. This code converts a response tuple using the Ruby class
@@ -81,21 +92,21 @@ impl Response {
             spec: Rc::new(RefCell::new(nemesis)),
         };
         let class = class::Spec::new("Response", Some(parent), None);
-        let rclass = class
+        let classptr = class
             .rclass(Rc::clone(interp))
             .ok_or_else(|| Error::Mrb(MrbError::NotDefined(class.fqname())))?;
         let args = response.iter().map(Value::inner).collect::<Vec<_>>();
         // Nemesis::Response.new(status, headers, body)
-        let response = unsafe { sys::mrb_obj_new(interp.borrow().mrb, rclass, 3, args.as_ptr()) };
+        let response = unsafe { sys::mrb_obj_new(interp.borrow().mrb, classptr, 3, args.as_ptr()) };
         let response = Value::new(interp, response);
         Ok(Self {
-            status: Self::status(interp, response)?,
-            headers: Self::headers(interp, response)?,
-            body: Self::body(interp, response)?,
+            status: Self::status(interp, &response)?,
+            headers: Self::headers(interp, &response)?,
+            body: Self::body(interp, &response)?,
         })
     }
 
-    fn status(interp: &Mrb, response: Value) -> Result<Status, Error> {
+    fn status(interp: &Mrb, response: &Value) -> Result<Status, Error> {
         let accessor = "status";
         let args = &[];
         let status = unsafe {
@@ -116,7 +127,7 @@ impl Response {
         Status::from_code(status).ok_or(Error::Status)
     }
 
-    fn headers(interp: &Mrb, response: Value) -> Result<HashMap<String, String>, Error> {
+    fn headers(interp: &Mrb, response: &Value) -> Result<HashMap<String, String>, Error> {
         let accessor = "headers";
         let args = &[];
         let headers = unsafe {
@@ -146,7 +157,7 @@ impl Response {
         Ok(headers)
     }
 
-    fn body(interp: &Mrb, response: Value) -> Result<Vec<u8>, Error> {
+    fn body(interp: &Mrb, response: &Value) -> Result<Vec<u8>, Error> {
         let accessor = "body_bytes";
         let args = &[];
         let body = unsafe {

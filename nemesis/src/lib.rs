@@ -1,3 +1,6 @@
+#![deny(warnings, intra_doc_link_resolution_failure)]
+#![deny(clippy::all, clippy::pedantic)]
+
 #[macro_use]
 extern crate rust_embed;
 
@@ -8,6 +11,7 @@ use mruby_gems::rubygems::rack;
 
 pub mod handler;
 pub mod request;
+pub mod response;
 mod rubygems;
 
 use rubygems::nemesis;
