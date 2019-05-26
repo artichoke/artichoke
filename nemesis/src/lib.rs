@@ -11,6 +11,7 @@ use mruby_gems::rubygems::rack;
 
 pub mod handler;
 pub mod request;
+pub mod response;
 mod rubygems;
 
 use rubygems::nemesis;
