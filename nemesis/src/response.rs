@@ -92,12 +92,12 @@ impl Response {
             spec: Rc::new(RefCell::new(nemesis)),
         };
         let class = class::Spec::new("Response", Some(parent), None);
-        let rclass = class
+        let classptr = class
             .rclass(Rc::clone(interp))
             .ok_or_else(|| Error::Mrb(MrbError::NotDefined(class.fqname())))?;
         let args = response.iter().map(Value::inner).collect::<Vec<_>>();
         // Nemesis::Response.new(status, headers, body)
-        let response = unsafe { sys::mrb_obj_new(interp.borrow().mrb, rclass, 3, args.as_ptr()) };
+        let response = unsafe { sys::mrb_obj_new(interp.borrow().mrb, classptr, 3, args.as_ptr()) };
         let response = Value::new(interp, response);
         Ok(Self {
             status: Self::status(interp, &response)?,
