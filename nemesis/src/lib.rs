@@ -33,3 +33,22 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.eval("require 'nemesis/response'")?;
     Ok(())
 }
+
+pub mod adapter {
+    use mruby::eval::MrbEval;
+    use mruby::interpreter::Mrb;
+    use mruby::value::Value;
+    use mruby::MrbError;
+    use std::convert::AsRef;
+
+    pub fn from_rackup<T: AsRef<str>>(interp: &Mrb, rackup: T) -> Result<Value, MrbError> {
+        interp.eval(format!(
+            r#"
+            Rack::Builder.new do
+              {rackup}
+            end
+            "#,
+            rackup = rackup.as_ref()
+        ))
+    }
+}
