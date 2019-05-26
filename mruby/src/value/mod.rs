@@ -25,10 +25,10 @@ where
     where
         T: TryFromMrb<Value, From = types::Ruby, To = types::Rust>,
         M: AsRef<str>,
-        A: AsRef<[Self]>,
+        A: AsRef<[Value]>,
     {
         let arena = self.interp().create_arena_savepoint();
-        let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
+        let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
         if args.len() > Self::MRB_FUNCALL_ARGC_MAX {
             return Err(MrbError::TooManyArgs {
                 given: args.len(),
@@ -141,7 +141,6 @@ impl FromMrb<Value> for Value {
         value
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -398,5 +397,14 @@ mod tests {
             .funcall::<Vec<String>, _, _>("split", &[delim])
             .expect("split");
         assert_eq!(split, vec!["f".to_owned(), "o".to_owned(), "o".to_owned()])
+    }
+
+    #[test]
+    fn funcall_different_types() {
+        let interp = Interpreter::create().expect("mrb init");
+        let nil = interp.nil();
+        let s = interp.string("foo");
+        let eql = nil.funcall::<bool, _, _>("==", &[s]);
+        assert_eq!(eql, Ok(false));
     }
 }
