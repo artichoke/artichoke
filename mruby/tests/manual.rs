@@ -22,60 +22,58 @@ struct Container {
     inner: i64,
 }
 
+impl Container {
+    extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
+        unsafe {
+            let interp = interpreter_or_raise!(mrb);
+
+            let int = mem::uninitialized::<sys::mrb_int>();
+            let argspec = CString::new(sys::specifiers::INTEGER).expect("argspec");
+            sys::mrb_get_args(mrb, argspec.as_ptr(), &int);
+            let cont = Container { inner: int };
+            let data = Rc::new(RefCell::new(cont));
+            debug!("Storing `Container` refcell in self instance: {:?}", data);
+            let ptr = mem::transmute::<Rc<RefCell<Container>>, *mut c_void>(data);
+
+            debug!(
+                "interpreter strong ref count = {}",
+                Rc::strong_count(&interp)
+            );
+            let spec = class_spec_or_raise!(interp, Container);
+            sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
+
+            slf
+        }
+    }
+
+    extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        unsafe {
+            let interp = interpreter_or_raise!(mrb);
+            let spec = class_spec_or_raise!(interp, Container);
+
+            debug!("pulled mrb_data_type from user data with class: {:?}", spec);
+            let borrow = spec.borrow();
+            let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
+            let data = mem::transmute::<*mut c_void, Rc<RefCell<Container>>>(ptr);
+            let clone = Rc::clone(&data);
+            let cont = clone.borrow();
+
+            let value = unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, cont.inner));
+            mem::forget(data);
+            value
+        }
+    }
+}
+
 impl MrbFile for Container {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        extern "C" fn initialize(
-            mrb: *mut sys::mrb_state,
-            mut slf: sys::mrb_value,
-        ) -> sys::mrb_value {
-            unsafe {
-                let interp = interpreter_or_raise!(mrb);
-
-                let int = mem::uninitialized::<sys::mrb_int>();
-                let argspec = CString::new(sys::specifiers::INTEGER).expect("argspec");
-                sys::mrb_get_args(mrb, argspec.as_ptr(), &int);
-                let cont = Container { inner: int };
-                let data = Rc::new(RefCell::new(cont));
-                debug!("Storing `Container` refcell in self instance: {:?}", data);
-                let ptr = mem::transmute::<Rc<RefCell<Container>>, *mut c_void>(data);
-
-                debug!(
-                    "interpreter strong ref count = {}",
-                    Rc::strong_count(&interp)
-                );
-                let spec = class_spec_or_raise!(interp, Container);
-                sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
-
-                slf
-            }
-        }
-
-        extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-            unsafe {
-                let interp = interpreter_or_raise!(mrb);
-                let spec = class_spec_or_raise!(interp, Container);
-
-                debug!("pulled mrb_data_type from user data with class: {:?}", spec);
-                let borrow = spec.borrow();
-                let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
-                let data = mem::transmute::<*mut c_void, Rc<RefCell<Container>>>(ptr);
-                let clone = Rc::clone(&data);
-                let cont = clone.borrow();
-
-                let value =
-                    unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, cont.inner));
-                mem::forget(data);
-                value
-            }
-        }
-
         let spec = {
             let mut api = interp.borrow_mut();
             let spec = api.def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
             spec.borrow_mut()
-                .add_method("initialize", initialize, sys::mrb_args_req(1));
+                .add_method("initialize", Self::initialize, sys::mrb_args_req(1));
             spec.borrow_mut()
-                .add_method("value", value, sys::mrb_args_none());
+                .add_method("value", Self::value, sys::mrb_args_none());
             spec.borrow_mut().mrb_value_is_rust_backed(true);
             spec
         };
