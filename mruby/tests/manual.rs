@@ -7,13 +7,14 @@ use mruby::convert::TryFromMrb;
 use mruby::def::{rust_data_free, ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
-use mruby::interpreter::{Interpreter, Mrb};
+use mruby::interpreter::{Interpreter, Mrb, MrbApi};
 use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
 use mruby::MrbError;
 use std::cell::RefCell;
-use std::ffi::{c_void, CString};
+use std::ffi::c_void;
+use std::io::Write;
 use std::mem;
 use std::rc::Rc;
 
@@ -24,13 +25,32 @@ struct Container {
 
 impl Container {
     extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
+        struct Args {
+            inner: i64,
+        }
+        impl Args {
+            fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+                let inner = unsafe { mem::uninitialized::<sys::mrb_value>() };
+                let mut argspec = vec![];
+                argspec
+                    .write_all(sys::specifiers::OBJECT.as_bytes())
+                    .map_err(|_| MrbError::ArgSpec)?;
+                argspec.write_all(b"\0").map_err(|_| MrbError::ArgSpec)?;
+                unsafe {
+                    sys::mrb_get_args(interp.borrow().mrb, argspec.as_ptr() as *const i8, &inner)
+                };
+                let inner = Value::new(interp, inner);
+                let inner =
+                    unsafe { i64::try_from_mrb(&interp, inner).map_err(MrbError::ConvertToRust)? };
+                Ok(Self { inner })
+            }
+        }
+
         unsafe {
             let interp = interpreter_or_raise!(mrb);
 
-            let int = mem::uninitialized::<sys::mrb_int>();
-            let argspec = CString::new(sys::specifiers::INTEGER).expect("argspec");
-            sys::mrb_get_args(mrb, argspec.as_ptr(), &int);
-            let cont = Container { inner: int };
+            let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+            let cont = Container { inner: args.inner };
             let data = Rc::new(RefCell::new(cont));
             debug!("Storing `Container` refcell in self instance: {:?}", data);
             let ptr = mem::transmute::<Rc<RefCell<Container>>, *mut c_void>(data);
