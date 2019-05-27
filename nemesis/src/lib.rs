@@ -1,5 +1,6 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
+#![forbid(unsafe_code)]
 
 #[macro_use]
 extern crate rust_embed;

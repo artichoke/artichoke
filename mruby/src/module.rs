@@ -3,12 +3,12 @@ use std::convert::AsRef;
 use std::ffi::{c_void, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 
 use crate::def::{ClassLike, Define, Method, Parent};
 use crate::interpreter::Mrb;
 use crate::method;
 use crate::sys;
+use crate::value::Value;
 use crate::MrbError;
 
 pub struct Spec {
@@ -30,6 +30,12 @@ impl Spec {
             methods: HashSet::new(),
             parent,
         }
+    }
+
+    pub fn value(&self, interp: &Mrb) -> Option<Value> {
+        let rclass = self.rclass(interp)?;
+        let module = unsafe { sys::mrb_sys_module_value(rclass) };
+        Some(Value::new(interp, module))
     }
 }
 
@@ -56,7 +62,7 @@ impl ClassLike for Spec {
         self.parent.clone()
     }
 
-    fn rclass(&self, interp: Mrb) -> Option<*mut sys::RClass> {
+    fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass> {
         let mrb = interp.borrow().mrb;
         if let Some(ref parent) = self.parent {
             if let Some(parent) = parent.rclass(interp) {
@@ -129,7 +135,7 @@ impl Define for Spec {
         let mrb = interp.borrow().mrb;
         let rclass = if let Some(ref parent) = self.parent {
             let parent = parent
-                .rclass(Rc::clone(&interp))
+                .rclass(interp)
                 .ok_or_else(|| MrbError::NotDefined(parent.fqname()))?;
             unsafe { sys::mrb_define_module_under(mrb, parent, self.cstring().as_ptr()) }
         } else {
@@ -159,7 +165,7 @@ mod tests {
     fn rclass_for_undef_root_module() {
         let interp = Interpreter::create().expect("mrb init");
         let spec = Spec::new("Foo", None);
-        assert!(spec.rclass(Rc::clone(&interp)).is_none());
+        assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
@@ -170,14 +176,14 @@ mod tests {
             spec: Rc::new(RefCell::new(parent)),
         };
         let spec = Spec::new("Foo", Some(parent));
-        assert!(spec.rclass(Rc::clone(&interp)).is_none());
+        assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_root_module() {
         let interp = Interpreter::create().expect("mrb init");
         let spec = Spec::new("Kernel", None);
-        assert!(spec.rclass(Rc::clone(&interp)).is_some());
+        assert!(spec.rclass(&interp).is_some());
     }
 
     #[test]
@@ -191,7 +197,7 @@ mod tests {
             spec: Rc::new(RefCell::new(parent)),
         };
         let spec = Spec::new("Bar", Some(parent));
-        assert!(spec.rclass(Rc::clone(&interp)).is_some());
+        assert!(spec.rclass(&interp).is_some());
     }
 
     #[test]
@@ -205,6 +211,6 @@ mod tests {
             spec: Rc::new(RefCell::new(parent)),
         };
         let spec = Spec::new("Bar", Some(parent));
-        assert!(spec.rclass(Rc::clone(&interp)).is_some());
+        assert!(spec.rclass(&interp).is_some());
     }
 }
