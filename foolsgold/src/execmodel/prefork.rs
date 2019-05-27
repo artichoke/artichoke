@@ -19,8 +19,8 @@ pub fn rack_app<'a>(req: Request) -> Result<Response<'a>, Error> {
     info!("Using prefork thread local mruby interpreter");
     match *INTERPRETER.borrow() {
         Ok(ref interp) => {
-            let adapter = adapter::from_rackup(&interp, RACKUP)?;
             let arena = interp.create_arena_savepoint();
+            let adapter = adapter::from_rackup(&interp, RACKUP)?;
             let response = handler::run(interp, &adapter, &req)?;
             arena.restore();
             interp.incremental_gc();

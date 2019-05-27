@@ -1,5 +1,6 @@
 //! Run a Rack app with an environment derived from the request.
 
+use mruby::gc::GarbageCollection;
 use mruby::interpreter::Mrb;
 use mruby::value::{Value, ValueLike};
 use std::error;
@@ -53,6 +54,7 @@ pub fn run<'a>(
     app: &Value,
     request: &Request,
 ) -> Result<rocket::Response<'a>, Error> {
+    let _arena = interp.create_arena_savepoint();
     let args = &[request.to_env(interp)?];
     let response = app
         .funcall::<Value, _, _>("call", args)
