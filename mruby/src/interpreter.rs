@@ -81,25 +81,29 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
         } else {
             EvalContext::new("(require)")
         };
-        // Always require source content first.
+        // Require Rust MrbFile first because an MrbFile may define classes and
+        // module with `MrbLoadSources` and Ruby files can require arbitrary
+        // other files, including some child sources that may depend on these
+        // module definitions. This behavior is enforced with a test in crate
+        // mruby-gems. See mruby-gems/src/lib.rs.
+        if let Some(require) = metadata.require {
+            // dynamic, Rust-backed `MrbFile` require
+            interp.push_context(context.clone());
+            unsafe { unwrap_or_raise!(interp, require(Rc::clone(&interp)), interp.nil().inner()) };
+            interp.pop_context();
+        }
         let contents = {
             let api = interp.borrow();
             api.vfs.read_file(&path)
         };
         if let Ok(contents) = contents {
             unsafe {
-                unwrap_value_or_raise!(interp, interp.eval_with_context(contents, context.clone()));
+                unwrap_value_or_raise!(interp, interp.eval_with_context(contents, context));
             }
         } else {
             // this branch should be unreachable because the `Mrb` interpreter
             // is not `Send` so it can only be owned and accessed by one thread.
             return raise_load_error(&interp, &name);
-        }
-        if let Some(require) = metadata.require {
-            // dynamic, Rust-backed `MrbFile` require
-            interp.push_context(context);
-            unsafe { unwrap_or_raise!(interp, require(Rc::clone(&interp)), interp.nil().inner()) };
-            interp.pop_context();
         }
         let metadata = metadata.mark_required();
         unsafe {

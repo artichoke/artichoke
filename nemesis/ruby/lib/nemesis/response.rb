@@ -1,5 +1,10 @@
 # frozen_string_literal: true
 
+# Based on `Rack::Response`
+# https://github.com/rack/rack/blob/2.0.7/lib/rack/response.rb
+# Copyright (c) 2007-2016 Christian Neukirchen <purl.org/net/chneukirchen>
+# MIT License
+
 module Nemesis
   class Response
     attr_accessor :length, :status, :body
@@ -18,7 +23,7 @@ module Nemesis
 
       @body = []
 
-      if body.respond_to? :to_str
+      if body.respond_to?(:to_str)
         write body.to_str
       elsif body.respond_to?(:each)
         body.each do |part|
@@ -39,7 +44,7 @@ module Nemesis
       @length += s.size
       @writer.call s
 
-      set_header(Rack::CONTENT_LENGTH, @length.to_s)
+      set_header(Rack::CONTENT_LENGTH, @length)
       str
     end
 
@@ -48,11 +53,7 @@ module Nemesis
     end
 
     def set_header(key, value)
-      headers[key] = value
-    end
-
-    def body_bytes
-      @body.join
+      headers[key.to_s] = value.to_s
     end
   end
 end
