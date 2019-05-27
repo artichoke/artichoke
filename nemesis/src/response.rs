@@ -6,7 +6,6 @@
 //! [`Rack::Response`](https://github.com/rack/rack/blob/2.0.7/lib/rack/response.rb).
 
 use log::warn;
-use mruby::convert::TryFromMrb;
 use mruby::def::ClassLike;
 use mruby::interpreter::Mrb;
 use mruby::sys;
@@ -81,10 +80,7 @@ impl Response {
     /// Convert from a Rack `[status, headers, body]` response tuple to a Rust
     /// representation. This code converts a response tuple using the Ruby class
     /// `Nemesis::Response`.
-    pub fn from(interp: &Mrb, value: Value) -> Result<Self, Error> {
-        let response = unsafe { <Vec<Value>>::try_from_mrb(interp, value) }
-            .map_err(MrbError::ConvertToRust)
-            .map_err(Error::Mrb)?;
+    pub fn from(interp: &Mrb, response: Vec<Value>) -> Result<Self, Error> {
         if response.len() != Self::RACK_RESPONSE_TUPLE_LEN {
             warn!(
                 "malformed rack response: {:?}",

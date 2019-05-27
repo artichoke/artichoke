@@ -57,7 +57,7 @@ pub fn run<'a>(
     let _arena = interp.create_arena_savepoint();
     let args = &[request.to_env(interp)?];
     let response = app
-        .funcall::<Value, _, _>("call", args)
+        .funcall::<Vec<Value>, _, _>("call", args)
         .map_err(response::Error::Mrb)?;
     let response = Response::from(interp, response)?;
     Ok(response.into_rocket())
