@@ -40,4 +40,3 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
 }
 
 pub struct Module;
-
