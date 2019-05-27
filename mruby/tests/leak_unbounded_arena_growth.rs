@@ -27,7 +27,7 @@ mod leak;
 use leak::LeakDetector;
 
 const ITERATIONS: usize = 100;
-const LEAK_TOLERANCE: i64 = 1024 * 1024 * 10;
+const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
 #[test]
 fn unbounded_arena_growth() {
