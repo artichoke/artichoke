@@ -164,14 +164,18 @@ void mrb_sys_gc_arena_restore(mrb_state *mrb, int arena_index) {
   mrb_gc_arena_restore(mrb, arena_index);
 }
 
-void mrb_sys_gc_disable(mrb_state *mrb) {
+_Bool mrb_sys_gc_disable(mrb_state *mrb) {
   mrb_gc *gc = &mrb->gc;
+  _Bool was_enabled = !gc->disabled;
   gc->disabled = 1;
+  return was_enabled;
 }
 
-void mrb_sys_gc_enable(mrb_state *mrb) {
+_Bool mrb_sys_gc_enable(mrb_state *mrb) {
   mrb_gc *gc = &mrb->gc;
+  _Bool was_enabled = !gc->disabled;
   gc->disabled = 0;
+  return was_enabled;
 }
 
 _Bool mrb_sys_value_is_dead(mrb_state *mrb, mrb_value value) {

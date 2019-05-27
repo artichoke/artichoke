@@ -39,9 +39,13 @@ pub trait GarbageCollection {
 
     fn full_gc(&self);
 
-    fn enable_gc(&self);
+    /// Enable garbage collection. Returns true if GC was enabled, false
+    /// otherwise.
+    fn enable_gc(&self) -> bool;
 
-    fn disable_gc(&self);
+    /// Disable garbage collection. Returns true if GC was enabled, false
+    /// otherwise.
+    fn disable_gc(&self) -> bool;
 }
 
 impl GarbageCollection for Mrb {
@@ -68,12 +72,12 @@ impl GarbageCollection for Mrb {
         unsafe { sys::mrb_full_gc(self.borrow().mrb) };
     }
 
-    fn enable_gc(&self) {
-        unsafe { sys::mrb_sys_gc_enable(self.borrow().mrb) };
+    fn enable_gc(&self) -> bool {
+        unsafe { sys::mrb_sys_gc_enable(self.borrow().mrb) }
     }
 
-    fn disable_gc(&self) {
-        unsafe { sys::mrb_sys_gc_disable(self.borrow().mrb) };
+    fn disable_gc(&self) -> bool {
+        unsafe { sys::mrb_sys_gc_disable(self.borrow().mrb) }
     }
 }
 

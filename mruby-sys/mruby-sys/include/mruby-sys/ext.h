@@ -120,9 +120,15 @@ int mrb_sys_gc_arena_save(mrb_state *mrb);
  */
 void mrb_sys_gc_arena_restore(mrb_state *mrb, int arena_index);
 
-void mrb_sys_gc_disable(mrb_state *mrb);
+/**
+ * Disable GC. Returns previous enabled state.
+ */
+_Bool mrb_sys_gc_disable(mrb_state *mrb);
 
-void mrb_sys_gc_enable(mrb_state *mrb);
+/**
+ * Enable GC. Returns previous enabled state.
+ */
+_Bool mrb_sys_gc_enable(mrb_state *mrb);
 
 _Bool mrb_sys_value_is_dead(mrb_state *_mrb, mrb_value value);
 
