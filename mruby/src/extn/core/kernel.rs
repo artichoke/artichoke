@@ -131,3 +131,128 @@ impl Kernel {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::convert::TryFromMrb;
+    use crate::eval::MrbEval;
+    use crate::file::MrbFile;
+    use crate::interpreter::{Interpreter, Mrb};
+    use crate::load::MrbLoadSources;
+    use crate::MrbError;
+
+    // Integration test for `Kernel::require`:
+    //
+    // - require side effects (e.g. ivar set or class def) effect the interpreter
+    // - Successful first require returns `true`.
+    // - Second require returns `false`.
+    // - Second require does not cause require side effects.
+    // - Require non-existing file raises and returns `nil`.
+    #[test]
+    fn require() {
+        struct File;
+
+        impl MrbFile for File {
+            fn require(interp: Mrb) -> Result<(), MrbError> {
+                interp.eval("@i = 255")?;
+                Ok(())
+            }
+        }
+
+        let interp = Interpreter::create().expect("mrb init");
+        interp
+            .def_file_for_type::<_, File>("file.rb")
+            .expect("def file");
+        let result = interp.eval("require 'file'").expect("eval");
+        let require_result = unsafe { bool::try_from_mrb(&interp, result) };
+        assert_eq!(require_result, Ok(true));
+        let result = interp.eval("@i").expect("eval");
+        let i_result = unsafe { i64::try_from_mrb(&interp, result) };
+        assert_eq!(i_result, Ok(255));
+        let result = interp.eval("@i = 1000; require 'file'").expect("eval");
+        let second_require_result = unsafe { bool::try_from_mrb(&interp, result) };
+        assert_eq!(second_require_result, Ok(false));
+        let result = interp.eval("@i").expect("eval");
+        let second_i_result = unsafe { i64::try_from_mrb(&interp, result) };
+        assert_eq!(second_i_result, Ok(1000));
+        let result = interp.eval("require 'non-existent-source'").map(|_| ());
+        let expected = r#"
+(eval):1: cannot load such file -- non-existent-source (LoadError)
+(eval):1
+            "#;
+        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
+    }
+
+    #[test]
+    fn require_absolute_path() {
+        let interp = Interpreter::create().expect("mrb init");
+        interp
+            .def_rb_source_file("/foo/bar/source.rb", "# a source file")
+            .expect("def file");
+        let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
+        assert!(unsafe { bool::try_from_mrb(&interp, result).expect("convert") });
+        let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
+        assert!(!unsafe { bool::try_from_mrb(&interp, result).expect("convert") });
+    }
+
+    #[test]
+    fn require_directory() {
+        let interp = Interpreter::create().expect("mrb init");
+        let result = interp.eval("require '/src'").map(|_| ());
+        let expected = r#"
+(eval):1: cannot load such file -- /src (LoadError)
+(eval):1
+        "#;
+        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
+    }
+
+    #[test]
+    fn require_path_defined_as_source_then_mrbfile() {
+        struct Foo;
+        impl MrbFile for Foo {
+            fn require(interp: Mrb) -> Result<(), MrbError> {
+                interp.eval("module Foo; RUST = 7; end")?;
+                Ok(())
+            }
+        }
+        let interp = Interpreter::create().expect("mrb init");
+        interp
+            .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
+            .expect("def");
+        interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
+        let result = interp.eval("require 'foo'").expect("eval");
+        let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        assert!(result, "successfully required foo.rb");
+        let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
+        let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+        assert_eq!(
+            result, 10,
+            "defined Ruby and Rust sources from single require"
+        );
+    }
+
+    #[test]
+    fn require_path_defined_as_mrbfile_then_source() {
+        struct Foo;
+        impl MrbFile for Foo {
+            fn require(interp: Mrb) -> Result<(), MrbError> {
+                interp.eval("module Foo; RUST = 7; end")?;
+                Ok(())
+            }
+        }
+        let interp = Interpreter::create().expect("mrb init");
+        interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
+        interp
+            .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
+            .expect("def");
+        let result = interp.eval("require 'foo'").expect("eval");
+        let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        assert!(result, "successfully required foo.rb");
+        let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
+        let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+        assert_eq!(
+            result, 10,
+            "defined Ruby and Rust sources from single require"
+        );
+    }
+}
