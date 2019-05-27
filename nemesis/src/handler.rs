@@ -1,8 +1,7 @@
 //! Run a Rack app with an environment derived from the request.
 
 use mruby::interpreter::Mrb;
-use mruby::sys;
-use mruby::value::Value;
+use mruby::value::{Value, ValueLike};
 use std::error;
 use std::fmt;
 
@@ -37,19 +36,27 @@ impl error::Error for Error {
     }
 }
 
+impl From<request::Error> for Error {
+    fn from(error: request::Error) -> Self {
+        Error::Request(error)
+    }
+}
+
+impl From<response::Error> for Error {
+    fn from(error: response::Error) -> Self {
+        Error::Response(error)
+    }
+}
+
 pub fn run<'a>(
     interp: &Mrb,
     app: &Value,
     request: &Request,
 ) -> Result<rocket::Response<'a>, Error> {
-    let fun = "call";
-    // build env hash that is passed to app.call
-    let args = &[request.to_env(interp).map_err(Error::Request)?.inner()];
-    let response = unsafe {
-        let sym = sys::mrb_intern(interp.borrow().mrb, fun.as_ptr() as *const i8, fun.len());
-        // app.call(env)
-        sys::mrb_funcall_argv(interp.borrow().mrb, app.inner(), sym, 1, args.as_ptr())
-    };
-    let response = Response::from(interp, Value::new(interp, response)).map_err(Error::Response)?;
+    let args = &[request.to_env(interp)?];
+    let response = app
+        .funcall::<Value, _, _>("call", args)
+        .map_err(response::Error::Mrb)?;
+    let response = Response::from(interp, response)?;
     Ok(response.into_rocket())
 }
