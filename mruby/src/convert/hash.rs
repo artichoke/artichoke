@@ -147,6 +147,33 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
 
 macro_rules! hash_converter {
     ($key:ty => $value:ty) => {
+        impl FromMrb<Vec<($key, $value)>> for Value {
+            type From = Rust;
+            type To = Ruby;
+
+            fn from_mrb(interp: &Mrb, value: Vec<($key, $value)>) -> Self {
+                let pairs = value
+                    .into_iter()
+                    .map(|(key, value)| {
+                        let key = Value::from_mrb(&interp, key);
+                        let value = Value::from_mrb(&interp, value);
+                        (key, value)
+                    })
+                    .collect::<Vec<(Value, Value)>>();
+                Self::from_mrb(interp, pairs)
+            }
+        }
+
+        impl FromMrb<HashMap<$key, $value>> for Value {
+            type From = Rust;
+            type To = Ruby;
+
+            fn from_mrb(interp: &Mrb, value: HashMap<$key, $value>) -> Self {
+                let pairs = value.into_iter().collect::<Vec<($key, $value)>>();
+                Self::from_mrb(interp, pairs)
+            }
+        }
+
         impl<S: BuildHasher + Default> TryFromMrb<Value> for HashMap<$key, $value, S> {
             type From = Ruby;
             type To = Rust;
