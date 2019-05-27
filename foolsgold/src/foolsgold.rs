@@ -1,5 +1,5 @@
 use mruby::convert::TryFromMrb;
-use mruby::def::{ClassLike, Define, Parent};
+use mruby::def::{rust_data_free, ClassLike, Define, Parent};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
 use mruby::interpreter::{Mrb, MrbApi};
@@ -73,9 +73,6 @@ struct Counter;
 
 impl MrbFile for Counter {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        // We do not need to define a free method since we are not storing any
-        // data in the `mrb_value`.
-
         // We do not need to define an initialize method since there is no need
         // to store any state on the `mrb_value`. The counter state is in a
         // static `AtomicI64`.
@@ -110,6 +107,8 @@ impl MrbFile for Counter {
             let parent = Parent::Module {
                 spec: Rc::clone(&parent),
             };
+            // We do not need to define a free method since we are not storing
+            // any data in the `mrb_value`.
             let spec = api.def_class::<Self>("Counter", Some(parent), None);
             spec.borrow_mut()
                 .add_method("get", get, sys::mrb_args_none());
@@ -147,13 +146,6 @@ struct RequestContext {
 
 impl MrbFile for RequestContext {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        extern "C" fn free(_mrb: *mut sys::mrb_state, data: *mut c_void) {
-            unsafe {
-                // Implictly dropped by going out of scope
-                let _ = mem::transmute::<*mut c_void, Rc<RefCell<RequestContext>>>(data);
-            }
-        }
-
         extern "C" fn initialize(
             mrb: *mut sys::mrb_state,
             mut slf: sys::mrb_value,
@@ -213,7 +205,8 @@ impl MrbFile for RequestContext {
             let parent = Parent::Module {
                 spec: Rc::clone(&spec),
             };
-            let spec = api.def_class::<Self>("RequestContext", Some(parent), Some(free));
+            let spec =
+                api.def_class::<Self>("RequestContext", Some(parent), Some(rust_data_free::<Self>));
             spec.borrow_mut().mrb_value_is_rust_backed(true);
             spec.borrow_mut()
                 .add_method("initialize", initialize, sys::mrb_args_none());

@@ -15,7 +15,7 @@
 #[macro_use]
 extern crate mruby;
 
-use mruby::def::{ClassLike, Define};
+use mruby::def::{rust_data_free, ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
 use mruby::interpreter::{Interpreter, Mrb};
@@ -41,13 +41,6 @@ struct Container {
 
 impl MrbFile for Container {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        extern "C" fn free(_mrb: *mut sys::mrb_state, data: *mut c_void) {
-            unsafe {
-                // Implictly dropped by going out of scope
-                let _ = mem::transmute::<*mut c_void, Rc<RefCell<Container>>>(data);
-            }
-        }
-
         extern "C" fn initialize(
             mrb: *mut sys::mrb_state,
             mut slf: sys::mrb_value,
@@ -73,7 +66,7 @@ impl MrbFile for Container {
 
         let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.def_class::<Self>("Container", None, Some(free));
+            let spec = api.def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
             spec.borrow_mut()
                 .add_method("initialize", initialize, sys::mrb_args_req(1));
             spec.borrow_mut().mrb_value_is_rust_backed(true);
