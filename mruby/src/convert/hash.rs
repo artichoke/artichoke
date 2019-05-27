@@ -51,7 +51,7 @@ impl FromMrb<Vec<(Option<Value>, Value)>> for Value {
                 sys::mrb_hash_set(
                     interp.borrow().mrb,
                     hash,
-                    Value::from_mrb(interp, key).inner(),
+                    Self::from_mrb(interp, key).inner(),
                     val.inner(),
                 )
             };
@@ -77,7 +77,7 @@ impl FromMrb<Vec<(Value, Option<Value>)>> for Value {
                     interp.borrow().mrb,
                     hash,
                     key.inner(),
-                    Value::from_mrb(interp, val).inner(),
+                    Self::from_mrb(interp, val).inner(),
                 )
             };
         }
@@ -101,8 +101,8 @@ impl FromMrb<Vec<(Option<Value>, Option<Value>)>> for Value {
                 sys::mrb_hash_set(
                     interp.borrow().mrb,
                     hash,
-                    Value::from_mrb(interp, key).inner(),
-                    Value::from_mrb(interp, val).inner(),
+                    Self::from_mrb(interp, key).inner(),
+                    Self::from_mrb(interp, val).inner(),
                 )
             };
         }
@@ -147,6 +147,7 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
 
 macro_rules! hash_converter {
     ($key:ty => $value:ty) => {
+        #[allow(clippy::use_self)]
         impl FromMrb<Vec<($key, $value)>> for Value {
             type From = Rust;
             type To = Ruby;
@@ -155,15 +156,16 @@ macro_rules! hash_converter {
                 let pairs = value
                     .into_iter()
                     .map(|(key, value)| {
-                        let key = Value::from_mrb(&interp, key);
-                        let value = Value::from_mrb(&interp, value);
+                        let key = Self::from_mrb(&interp, key);
+                        let value = Self::from_mrb(&interp, value);
                         (key, value)
                     })
-                    .collect::<Vec<(Value, Value)>>();
+                    .collect::<Vec<(Self, Self)>>();
                 Self::from_mrb(interp, pairs)
             }
         }
 
+        #[allow(clippy::use_self)]
         impl FromMrb<HashMap<$key, $value>> for Value {
             type From = Rust;
             type To = Ruby;
