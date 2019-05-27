@@ -1,3 +1,6 @@
+#![deny(clippy::all, clippy::pedantic)]
+#![deny(warnings, intra_doc_link_resolution_failure)]
+
 #[macro_use]
 extern crate mruby;
 
@@ -49,7 +52,7 @@ impl Container {
 
         let args =
             unsafe { unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner()) };
-        let cont = Container { inner: args.inner };
+        let cont = Self { inner: args.inner };
         let data = Rc::new(RefCell::new(cont));
         unsafe {
             let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
