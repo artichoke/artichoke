@@ -31,6 +31,9 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
         .borrow()
         .define(interp)
         .map_err(|_| MrbError::New)?;
+    interp
+        .borrow_mut()
+        .def_class::<ArgumentError>("ArgumentError", None, None);
     Ok(())
 }
 
@@ -60,5 +63,28 @@ impl LoadError {
         };
         warn!("Failed require '{}' on {:?}", file, interp.borrow());
         interp.bool(false).inner()
+    }
+}
+
+#[allow(clippy::module_name_repetitions)]
+pub struct ArgumentError;
+
+impl ArgumentError {
+    pub fn raise(interp: &Mrb, message: &str) -> sys::mrb_value {
+        let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
+            spec
+        } else {
+            return interp.nil().inner();
+        };
+        let msg = CString::new(message).expect("error message");
+        unsafe {
+            sys::mrb_sys_raise(
+                interp.borrow().mrb,
+                spec.borrow().cstring().as_ptr() as *const i8,
+                msg.as_ptr(),
+            )
+        };
+        warn!("ArgumentError '{}' on {:?}", message, interp.borrow());
+        interp.nil().inner()
     }
 }
