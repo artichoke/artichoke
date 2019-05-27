@@ -35,6 +35,81 @@ impl FromMrb<Vec<(Value, Value)>> for Value {
     }
 }
 
+impl FromMrb<Vec<(Option<Value>, Value)>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: Vec<(Option<Self>, Self)>) -> Self {
+        // We can initalize a `Hash` with a known capacity using
+        // `sys::mrb_hash_new_capa`, but doing so requires converting from
+        // `usize` to `i64` which is fallible. To simplify the code and make
+        // `Vec<(Value, Value)>` easier to work with, use an infallible `Hash`
+        // constructor.
+        let hash = unsafe { sys::mrb_hash_new(interp.borrow().mrb) };
+        for (key, val) in value {
+            unsafe {
+                sys::mrb_hash_set(
+                    interp.borrow().mrb,
+                    hash,
+                    Value::from_mrb(interp, key).inner(),
+                    val.inner(),
+                )
+            };
+        }
+        Self::new(interp, hash)
+    }
+}
+
+impl FromMrb<Vec<(Value, Option<Value>)>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: Vec<(Self, Option<Self>)>) -> Self {
+        // We can initalize a `Hash` with a known capacity using
+        // `sys::mrb_hash_new_capa`, but doing so requires converting from
+        // `usize` to `i64` which is fallible. To simplify the code and make
+        // `Vec<(Value, Value)>` easier to work with, use an infallible `Hash`
+        // constructor.
+        let hash = unsafe { sys::mrb_hash_new(interp.borrow().mrb) };
+        for (key, val) in value {
+            unsafe {
+                sys::mrb_hash_set(
+                    interp.borrow().mrb,
+                    hash,
+                    key.inner(),
+                    Value::from_mrb(interp, val).inner(),
+                )
+            };
+        }
+        Self::new(interp, hash)
+    }
+}
+
+impl FromMrb<Vec<(Option<Value>, Option<Value>)>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: Vec<(Option<Self>, Option<Self>)>) -> Self {
+        // We can initalize a `Hash` with a known capacity using
+        // `sys::mrb_hash_new_capa`, but doing so requires converting from
+        // `usize` to `i64` which is fallible. To simplify the code and make
+        // `Vec<(Value, Value)>` easier to work with, use an infallible `Hash`
+        // constructor.
+        let hash = unsafe { sys::mrb_hash_new(interp.borrow().mrb) };
+        for (key, val) in value {
+            unsafe {
+                sys::mrb_hash_set(
+                    interp.borrow().mrb,
+                    hash,
+                    Value::from_mrb(interp, key).inner(),
+                    Value::from_mrb(interp, val).inner(),
+                )
+            };
+        }
+        Self::new(interp, hash)
+    }
+}
+
 impl TryFromMrb<Value> for Vec<(Value, Value)> {
     type From = Ruby;
     type To = Rust;
