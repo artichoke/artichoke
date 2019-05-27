@@ -3774,11 +3774,11 @@ extern "C" {
 }
 extern "C" {
     #[link_name = "\u{1}_mrb_sys_gc_disable"]
-    pub fn mrb_sys_gc_disable(mrb: *mut mrb_state);
+    pub fn mrb_sys_gc_disable(mrb: *mut mrb_state) -> bool;
 }
 extern "C" {
     #[link_name = "\u{1}_mrb_sys_gc_enable"]
-    pub fn mrb_sys_gc_enable(mrb: *mut mrb_state);
+    pub fn mrb_sys_gc_enable(mrb: *mut mrb_state) -> bool;
 }
 extern "C" {
     #[link_name = "\u{1}_mrb_sys_value_is_dead"]
