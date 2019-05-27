@@ -2,6 +2,7 @@ use std::error;
 use std::fmt;
 
 use crate::interpreter::Mrb;
+use crate::value::{types, Value};
 
 mod array;
 mod boolean;
@@ -92,6 +93,16 @@ where
 
     fn cause(&self) -> Option<&error::Error> {
         None
+    }
+}
+
+// This converter implementation is for Ruby functions that return void.
+impl FromMrb<Value> for () {
+    type From = types::Ruby;
+    type To = types::Rust;
+
+    fn from_mrb(_interp: &Mrb, _value: Value) -> Self {
+        ()
     }
 }
 
