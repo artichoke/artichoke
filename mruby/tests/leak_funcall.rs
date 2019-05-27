@@ -26,7 +26,7 @@ fn funcall_arena() {
     let interp = Interpreter::create().expect("mrb init");
     let s = interp.string("a".repeat(1024 * 1024));
 
-    LeakDetector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
+    LeakDetector::new("ValueLike::funcall", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
         // we have to call a function that calls into the Ruby VM, so we can't
         // just use `to_s`.
