@@ -1,6 +1,4 @@
 #[macro_use]
-extern crate log;
-#[macro_use]
 extern crate mruby;
 
 use mruby::convert::TryFromMrb;
@@ -62,22 +60,17 @@ impl Container {
         slf
     }
 
-    extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        unsafe {
-            let interp = interpreter_or_raise!(mrb);
-            let spec = class_spec_or_raise!(interp, Container);
+    unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let spec = class_spec_or_raise!(interp, Self);
 
-            debug!("pulled mrb_data_type from user data with class: {:?}", spec);
-            let borrow = spec.borrow();
-            let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
-            let data = mem::transmute::<*mut c_void, Rc<RefCell<Container>>>(ptr);
-            let clone = Rc::clone(&data);
-            let cont = clone.borrow();
-
-            let value = unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, cont.inner));
-            mem::forget(data);
-            value
-        }
+        let borrow = spec.borrow();
+        let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
+        let data = mem::transmute::<*mut c_void, Rc<RefCell<Self>>>(ptr);
+        let container = Rc::clone(&data);
+        mem::forget(data);
+        let borrow = container.borrow();
+        unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, borrow.inner))
     }
 }
 
