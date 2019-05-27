@@ -28,6 +28,7 @@ impl Container {
         struct Args {
             inner: i64,
         }
+
         impl Args {
             fn extract(interp: &Mrb) -> Result<Self, MrbError> {
                 let inner = unsafe { mem::uninitialized::<sys::mrb_value>() };
@@ -46,24 +47,19 @@ impl Container {
             }
         }
 
+        let interp = unsafe { interpreter_or_raise!(mrb) };
+
+        let args =
+            unsafe { unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner()) };
+        let cont = Container { inner: args.inner };
+        let data = Rc::new(RefCell::new(cont));
         unsafe {
-            let interp = interpreter_or_raise!(mrb);
-
-            let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
-            let cont = Container { inner: args.inner };
-            let data = Rc::new(RefCell::new(cont));
-            debug!("Storing `Container` refcell in self instance: {:?}", data);
-            let ptr = mem::transmute::<Rc<RefCell<Container>>, *mut c_void>(data);
-
-            debug!(
-                "interpreter strong ref count = {}",
-                Rc::strong_count(&interp)
-            );
-            let spec = class_spec_or_raise!(interp, Container);
+            let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
+            let spec = class_spec_or_raise!(interp, Self);
             sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
-
-            slf
         }
+
+        slf
     }
 
     extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
