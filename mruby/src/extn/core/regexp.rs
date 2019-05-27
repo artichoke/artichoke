@@ -16,12 +16,14 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         interp
             .borrow_mut()
             .def_class::<Regexp>("Regexp", None, Some(rust_data_free::<Regexp>));
+    regexp.borrow_mut().add_method(
+        "initialize",
+        Regexp::initialize,
+        sys::mrb_args_req_and_opt(1, 2),
+    );
     regexp
         .borrow_mut()
-        .add_method("initialize", initialize, sys::mrb_args_req_and_opt(1, 2));
-    regexp
-        .borrow_mut()
-        .add_self_method("compile", compile, sys::mrb_args_rest());
+        .add_self_method("compile", Regexp::compile, sys::mrb_args_rest());
     regexp.borrow().define(&interp)?;
     Ok(())
 }
@@ -162,23 +164,22 @@ impl Regexp {
     pub const FIXEDENCODING: i64 = 16;
     pub const NOENCODING: i64 = 32;
     pub const ALL_ENCODING_OPTS: i64 = Self::FIXEDENCODING | Self::NOENCODING;
-}
 
-extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
-    let interp = unsafe { interpreter_or_raise!(mrb) };
-    let mrb = { interp.borrow().mrb };
-    let spec = unsafe { class_spec_or_raise!(interp, Regexp) };
-    let regexp_class = unsafe {
-        unwrap_or_raise!(
+    unsafe extern "C" fn initialize(
+        mrb: *mut sys::mrb_state,
+        mut slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let mrb = { interp.borrow().mrb };
+        let spec = class_spec_or_raise!(interp, Self);
+        let regexp_class = unwrap_or_raise!(
             interp,
             spec.borrow()
                 .rclass(&interp)
                 .ok_or(MrbError::NotDefined("Regexp".to_owned())),
             interp.nil().inner()
-        )
-    };
+        );
 
-    let (source, options, encoding) = unsafe {
         let source = mem::uninitialized::<sys::mrb_value>();
         let options = mem::uninitialized::<sys::mrb_value>();
         let has_options = mem::uninitialized::<sys::mrb_bool>();
@@ -236,38 +237,34 @@ extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> s
             Value::new(&interp, source).funcall::<String, _, _>("__regexp_source", &[])
         };
         let source = unwrap_or_raise!(interp, source, interp.nil().inner());
-        (source, opts, encoding)
-    };
-    let data = Regexp {
-        source,
-        options,
-        encoding,
-    };
-    let data = Rc::new(RefCell::new(data));
+        let data = Self {
+            source,
+            options: opts,
+            encoding,
+        };
+        let data = Rc::new(RefCell::new(data));
 
-    unsafe {
-        let ptr = mem::transmute::<Rc<RefCell<Regexp>>, *mut c_void>(data);
-        let spec = class_spec_or_raise!(interp, Regexp);
+        let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
+        let spec = class_spec_or_raise!(interp, Self);
         sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
-    };
-    slf
-}
+        slf
+    }
 
-extern "C" fn compile(mrb: *mut sys::mrb_state, mut _slf: sys::mrb_value) -> sys::mrb_value {
-    let interp = unsafe { interpreter_or_raise!(mrb) };
-    let mrb = { interp.borrow().mrb };
-    let spec = unsafe { class_spec_or_raise!(interp, Regexp) };
-    let regexp_class = unsafe {
-        unwrap_or_raise!(
+    unsafe extern "C" fn compile(
+        mrb: *mut sys::mrb_state,
+        mut _slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let mrb = { interp.borrow().mrb };
+        let spec = class_spec_or_raise!(interp, Self);
+        let regexp_class = unwrap_or_raise!(
             interp,
             spec.borrow()
                 .value(&interp)
                 .ok_or(MrbError::NotDefined("Regexp".to_owned())),
             interp.nil().inner()
-        )
-    };
+        );
 
-    let args = unsafe {
         let args = mem::uninitialized::<*const sys::mrb_value>();
         let count = mem::uninitialized::<usize>();
         let argspec = unwrap_or_raise!(
@@ -276,13 +273,13 @@ extern "C" fn compile(mrb: *mut sys::mrb_state, mut _slf: sys::mrb_value) -> sys
             interp.nil().inner()
         );
         sys::mrb_get_args(mrb, argspec.as_ptr(), &args, &count);
-        std::slice::from_raw_parts(args, count)
-    };
-    let args = args
-        .iter()
-        .map(|value| Value::new(&interp, *value))
-        .collect::<Vec<_>>();
-    unsafe { unwrap_value_or_raise!(interp, regexp_class.funcall::<Value, _, _>("new", args)) }
+        let args = std::slice::from_raw_parts(args, count);
+        let args = args
+            .iter()
+            .map(|value| Value::new(&interp, *value))
+            .collect::<Vec<_>>();
+        unwrap_value_or_raise!(interp, regexp_class.funcall::<Value, _, _>("new", args))
+    }
 }
 
 pub struct MatchData;
