@@ -34,11 +34,7 @@ where
         let mrb = { interp.borrow().mrb };
         let arena = interp.create_arena_savepoint();
 
-        let args = args
-            .as_ref()
-            .into_iter()
-            .map(Value::inner)
-            .collect::<Vec<_>>();
+        let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
         if args.len() > Self::MRB_FUNCALL_ARGC_MAX {
             warn!(
                 "Too many args supplied to funcall: given {}, max {}.",

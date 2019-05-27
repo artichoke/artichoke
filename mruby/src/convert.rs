@@ -101,9 +101,7 @@ impl FromMrb<Value> for () {
     type From = types::Ruby;
     type To = types::Rust;
 
-    fn from_mrb(_interp: &Mrb, _value: Value) -> Self {
-        ()
-    }
+    fn from_mrb(_interp: &Mrb, _value: Value) -> Self {}
 }
 
 #[cfg(test)]
