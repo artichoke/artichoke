@@ -198,9 +198,11 @@ impl MrbFile for RequestContext {
         extern "C" fn metrics(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = unsafe { interpreter_or_raise!(mrb) };
             let spec = unsafe { module_spec_or_raise!(interp, Metrics) };
-            let rclass = spec.borrow().rclass(&interp);
-            unsafe { rclass.map(|cls| sys::mrb_sys_class_value(cls)) }
-                .unwrap_or_else(|| interp.nil().inner())
+            let borrow = spec.borrow();
+            borrow
+                .value(&interp)
+                .unwrap_or_else(|| interp.nil())
+                .inner()
         }
 
         let spec = {
