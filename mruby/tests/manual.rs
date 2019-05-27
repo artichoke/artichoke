@@ -25,40 +25,37 @@ struct Container {
 }
 
 impl Container {
-    extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C" fn initialize(
+        mrb: *mut sys::mrb_state,
+        mut slf: sys::mrb_value,
+    ) -> sys::mrb_value {
         struct Args {
             inner: i64,
         }
 
         impl Args {
-            fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let inner = unsafe { mem::uninitialized::<sys::mrb_value>() };
+            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+                let inner = mem::uninitialized::<sys::mrb_value>();
                 let mut argspec = vec![];
                 argspec
                     .write_all(sys::specifiers::OBJECT.as_bytes())
                     .map_err(|_| MrbError::ArgSpec)?;
                 argspec.write_all(b"\0").map_err(|_| MrbError::ArgSpec)?;
-                unsafe {
-                    sys::mrb_get_args(interp.borrow().mrb, argspec.as_ptr() as *const i8, &inner)
-                };
+                sys::mrb_get_args(interp.borrow().mrb, argspec.as_ptr() as *const i8, &inner);
                 let inner = Value::new(interp, inner);
-                let inner =
-                    unsafe { i64::try_from_mrb(&interp, inner).map_err(MrbError::ConvertToRust)? };
+                let inner = i64::try_from_mrb(&interp, inner).map_err(MrbError::ConvertToRust)?;
                 Ok(Self { inner })
             }
         }
 
-        let interp = unsafe { interpreter_or_raise!(mrb) };
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
 
-        let args =
-            unsafe { unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner()) };
-        let cont = Self { inner: args.inner };
-        let data = Rc::new(RefCell::new(cont));
-        unsafe {
-            let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
-            let spec = class_spec_or_raise!(interp, Self);
-            sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
-        }
+        let container = Self { inner: args.inner };
+        let data = Rc::new(RefCell::new(container));
+        let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
+        let spec = class_spec_or_raise!(interp, Self);
+        sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
 
         slf
     }
