@@ -12,6 +12,7 @@ pub mod class;
 pub mod convert;
 pub mod def;
 pub mod eval;
+pub mod extn;
 pub mod file;
 pub mod gc;
 pub mod interpreter;
