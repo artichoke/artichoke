@@ -28,7 +28,12 @@ where
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
-        let arena = self.interp().create_arena_savepoint();
+        // Scope the borrow because we might require a borrow_mut in Rust code
+        // we call into via the Ruby VM.
+        let interp = self.interp();
+        let mrb = { interp.borrow().mrb };
+        let arena = interp.create_arena_savepoint();
+
         let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
         if args.len() > Self::MRB_FUNCALL_ARGC_MAX {
             warn!(
@@ -43,20 +48,17 @@ where
         }
         let method = method.as_ref();
         trace!("Calling {}#{}", types::Ruby::from(self.inner()), method);
-        // Scope the borrow so because we might require a borrow_mut in Rust
-        // code we call into via the Ruby VM.
-        let mrb = { self.interp().borrow().mrb };
         // This conversion will never fail because MRB_FUNCALL_ARGC_MAX is less
         // than `std::i64::MAX`.
         let size = i64::try_from(args.len()).expect("Unreachable");
         let value = unsafe {
             let sym = sys::mrb_intern(mrb, method.as_ptr() as *const i8, method.len());
             let value = sys::mrb_funcall_argv(mrb, self.inner(), sym, size, args.as_ptr());
-            let value = Value::new(self.interp(), value);
-            T::try_from_mrb(self.interp(), value).map_err(MrbError::ConvertToRust)
+            let value = Value::new(interp, value);
+            T::try_from_mrb(interp, value).map_err(MrbError::ConvertToRust)
         };
 
-        if let Some(backtrace) = self.interp().current_exception() {
+        if let Some(backtrace) = interp.current_exception() {
             warn!("runtime error with exception backtrace: {}", backtrace);
             return Err(MrbError::Exec(backtrace));
         }
@@ -66,6 +68,9 @@ where
     }
 }
 
+// TODO: The below comment is no longer true since inspect is implemented on
+// `Value`.
+//
 // We can't impl `fmt::Debug` because `mrb_sys_value_debug_str` requires a
 // `mrb_state` interpreter, which we can't store on the `Value` because we
 // construct it from Rust native types.

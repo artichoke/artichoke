@@ -8,14 +8,14 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::class;
-use crate::convert::{Float, Int, TryFromMrb};
+use crate::convert::{Float, FromMrb, Int, TryFromMrb};
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::gc::GarbageCollection;
 use crate::module;
 use crate::state::{State, VfsMetadata};
 use crate::sys::{self, DescribeState};
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::MrbError;
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
@@ -243,46 +243,45 @@ impl MrbApi for Mrb {
     /// interpreter if there is one. The string will contain the exception
     /// class, message, and backtrace.
     fn current_exception(&self) -> Option<String> {
+        let _arena = self.create_arena_savepoint();
         let mrb = { self.borrow().mrb };
-        let exc = unsafe { (*mrb).exc };
+        let exc = unsafe {
+            let exc = (*mrb).exc;
+            // Clear the current exception from the mruby interpreter so
+            // subsequent calls to the mruby VM are not tainted by an error they
+            // did not generate.
+            //
+            // We must do this at the beginning of `current_exception` so we can
+            // use the mruby VM to inspect the exception once we turn it into an
+            // `mrb_value`. `ValueLike::funcall` handles errors by calling this
+            // function, so not clearing the exception results in a stack
+            // overflow.
+            (*mrb).exc = std::ptr::null_mut();
+            exc
+        };
         if exc.is_null() {
             trace!("Last eval had no runtime errors: mrb_state has no current exception");
             return None;
         }
-        let error = unsafe {
-            // Do operations that can early return before accesing the GC arena
-            let inspect = CString::new("inspect").ok()?;
-            let unshift = CString::new("unshift").ok()?;
+        // Generate an exception backtrace in a `String` by executing the
+        // following Ruby code with the C API:
+        //
+        // ```ruby
+        // exception = exc.inspect
+        // backtrace = exc.backtrace
+        // backtrace.unshift(exception)
+        // backtrace.join("\n")
+        // ```
+        let value = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
+        let exception = value.funcall::<Value, _, _>("inspect", &[]).ok()?;
+        let backtrace = value.funcall::<Value, _, _>("backtrace", &[]).ok()?;
+        backtrace
+            .funcall::<(), _, _>("unshift", &[exception])
+            .ok()?;
 
-            // We are about to create some temporary objects with the C API.
-            // Create a savepoint so we can clean them up when we are done.
-            let arena = self.create_arena_savepoint();
-            // Generate an exception backtrace in a `String` by executing the
-            // following Ruby code with the C API:
-            //
-            // ```ruby
-            // exception = exc.inspect
-            // backtrace = exc.backtrace
-            // backtrace.unshift(exception)
-            // backtrace.join("\n")
-            // ```
-            let exc = exc as *mut c_void;
-            let exception = sys::mrb_funcall(mrb, sys::mrb_sys_obj_value(exc), inspect.as_ptr(), 0);
-            let backtrace = sys::mrb_exc_backtrace(mrb, sys::mrb_sys_obj_value(exc));
-            sys::mrb_funcall(mrb, backtrace, unshift.as_ptr(), 1, exception);
-
-            let error = <Vec<String>>::try_from_mrb(self, Value::new(self, backtrace));
-            // Mark all C created objects as garbage now that we've extracted a
-            // Rust value.
-            arena.restore();
-
-            // Clear the current exception from the mruby interpreter so
-            // subsequent calls to eval are not tainted by an error they did not
-            // generate.
-            (*mrb).exc = std::ptr::null_mut();
-            error
-        };
-        error.ok().map(|exception| exception.join("\n"))
+        backtrace
+            .funcall::<String, _, _>("join", &[Value::from_mrb(self, "\n")])
+            .ok()
     }
 
     fn nil(&self) -> Value {
