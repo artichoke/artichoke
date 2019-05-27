@@ -1,16 +1,18 @@
 use log::trace;
 use mruby_vfs::FileSystem;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::mem;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use crate::convert::TryFromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::LoadError;
 use crate::interpreter::{Mrb, MrbApi, RUBY_LOAD_PATH};
 use crate::state::VfsMetadata;
 use crate::sys;
+use crate::value::Value;
 use crate::MrbError;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
@@ -29,20 +31,17 @@ extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mr
     let interp = unsafe { interpreter_or_raise!(mrb) };
     // Extract required filename from arguments
     let name = unsafe {
-        let name = mem::uninitialized::<*const std::os::raw::c_char>();
-        let argspec = CString::new(sys::specifiers::CSTRING).expect("argspec");
+        let name = mem::uninitialized::<sys::mrb_value>();
+        let argspec = CString::new(sys::specifiers::OBJECT).expect("argspec");
         sys::mrb_get_args(mrb, argspec.as_ptr(), &name);
-        match CStr::from_ptr(name).to_str() {
-            Ok(name) => name.to_owned(),
-            Err(err) => {
-                let eclass = CString::new("ArgumentError");
-                let message = CString::new(format!("{}", err));
-                if let (Ok(eclass), Ok(message)) = (eclass, message) {
-                    sys::mrb_sys_raise(interp.borrow().mrb, eclass.as_ptr(), message.as_ptr());
-                }
-                return interp.nil().inner();
-            }
-        }
+        Value::new(&interp, name)
+    };
+    let name = unsafe {
+        unwrap_or_raise!(
+            interp,
+            String::try_from_mrb(&interp, name),
+            interp.nil().inner()
+        )
     };
 
     // track whether any iterations of the loop successfully required a file
