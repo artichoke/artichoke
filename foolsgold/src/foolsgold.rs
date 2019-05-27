@@ -103,9 +103,11 @@ impl MrbFile for Counter {
 
         let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.module_spec::<FoolsGold>().expect("Metrics not defined");
+            let parent = api
+                .module_spec::<FoolsGold>()
+                .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
             let parent = Parent::Module {
-                spec: Rc::clone(&spec),
+                spec: Rc::clone(&parent),
             };
             let spec = api.def_class::<Self>("Counter", Some(parent), None);
             spec.borrow_mut()
