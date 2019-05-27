@@ -102,7 +102,24 @@ jobs:
           command: sudo gem install bundler
       - restore_cache:
           keys:
-            - ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/ruby/Gemfile.lock" }}
+            - ruby-bundler-v1-mruby-extn-{{ checksum "./mruby/src/extn/Gemfile.lock" }}
+      - run:
+          name: mruby extn Bundle Install
+          working_directory: ./mruby/src/extn
+          command: bundle install --path ~/vendor/mruby-extn-bundle
+      - save_cache:
+          key: ruby-bundler-v1-mruby-extn-{{ checksum "./mruby/src/extn/Gemfile.lock" }}
+          paths:
+            - ~/vendor/mruby-extn-bundle
+      - run:
+          name: mruby extn Lint Ruby With RuboCop
+          working_directory: ./mruby/src/extn
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+      - restore_cache:
+          keys:
+            - ruby-bundler-v1-foolsgold-{{ checksum "./mruby/src/extn/Gemfile.lock" }}
       - run:
           name: FoolsGold Bundle Install
           working_directory: ./foolsgold/ruby
