@@ -43,7 +43,8 @@ impl FoolsGold {
 
 impl MrbFile for FoolsGold {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        interp.borrow_mut().def_module::<Self>("FoolsGold", None);
+        let module = interp.borrow_mut().def_module::<Self>("FoolsGold", None);
+        module.borrow().define(&interp)?;
         interp.eval("require 'foolsgold/ext/stats'")?;
         interp.eval("require 'foolsgold/metrics'")?;
         interp.eval("require 'foolsgold/ext/counter'")?;
@@ -132,9 +133,10 @@ impl MrbFile for Metrics {
         let parent = Parent::Module {
             spec: Rc::clone(&parent),
         };
-        interp
+        let spec = interp
             .borrow_mut()
             .def_module::<Self>("Metrics", Some(parent));
+        spec.borrow().define(&interp)?;
         Ok(())
     }
 }
