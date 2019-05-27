@@ -100,10 +100,8 @@ fn define_rust_backed_ruby_class() {
 
     interp.eval("require 'container'").expect("require");
     let result = interp.eval("Container.new(15).value").expect("eval");
-    let cint = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
-    assert_eq!(cint, 15);
+    assert_eq!(unsafe { i64::try_from_mrb(&interp, result) }, Ok(15));
     // Ensure Rc is cloned correctly and still points to valid memory.
     let result = interp.eval("Container.new(15).value").expect("eval");
-    let cint = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
-    assert_eq!(cint, 15);
+    assert_eq!(unsafe { i64::try_from_mrb(&interp, result) }, Ok(15));
 }
