@@ -17,7 +17,7 @@ pub type Method =
     unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
 
 pub unsafe extern "C" fn rust_data_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void) {
-    // Implictly dropped by going out of scope
+    // Implicitly dropped by going out of scope
     mem::transmute::<*mut c_void, Rc<RefCell<T>>>(data);
 }
 
