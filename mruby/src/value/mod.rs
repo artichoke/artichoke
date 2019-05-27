@@ -108,17 +108,8 @@ impl Value {
     }
 
     pub fn to_s(&self) -> String {
-        let arena = self.interp.create_arena_savepoint();
-        let mrb = { self.interp.borrow().mrb };
-        // `mrb_str_to_str` is defined in object.h. This function has
-        // specialized to_s implementations for String, Fixnum, Class, and
-        // Module. For all other type tags, it calls `to_s` in the
-        // mrb interpreter.
-        let to_s = unsafe { sys::mrb_str_to_str(mrb, self.value) };
-        let to_s = unsafe { String::try_from_mrb(&self.interp, Self::new(&self.interp, to_s)) }
-            .unwrap_or_else(|_| "<unknown>".to_owned());
-        arena.restore();
-        to_s
+        self.funcall::<String, _, _>("to_s", &[])
+            .unwrap_or_else(|_| "<unknown>".to_owned())
     }
 
     pub fn to_s_debug(&self) -> String {
