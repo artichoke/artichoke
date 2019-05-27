@@ -117,13 +117,8 @@ impl Value {
     }
 
     pub fn inspect(&self) -> String {
-        let arena = self.interp.create_arena_savepoint();
-        let mrb = { self.interp.borrow().mrb };
-        let debug = unsafe { sys::mrb_sys_value_debug_str(mrb, self.value) };
-        let debug = unsafe { String::try_from_mrb(&self.interp, Self::new(&self.interp, debug)) }
-            .unwrap_or_else(|_| "<unknown>".to_owned());
-        arena.restore();
-        debug
+        self.funcall::<String, _, _>("inspect", &[])
+            .unwrap_or_else(|_| "<unknown>".to_owned())
     }
 }
 
