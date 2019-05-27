@@ -26,6 +26,7 @@ pub use mruby_sys as sys;
 
 #[derive(Debug)]
 pub enum MrbError {
+    ArgSpec,
     ConvertToRuby(convert::Error<value::types::Rust, value::types::Ruby>),
     ConvertToRust(convert::Error<value::types::Ruby, value::types::Rust>),
     Exec(String),
@@ -50,6 +51,7 @@ impl PartialEq for MrbError {
 impl fmt::Display for MrbError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            MrbError::ArgSpec => write!(f, "could not generate argspec"),
             MrbError::ConvertToRuby(inner) => write!(f, "conversion error: {}", inner),
             MrbError::ConvertToRust(inner) => write!(f, "conversion error: {}", inner),
             MrbError::Exec(backtrace) => write!(f, "mruby exception: {}", backtrace),
