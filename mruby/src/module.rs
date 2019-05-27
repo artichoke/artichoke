@@ -8,6 +8,7 @@ use crate::def::{ClassLike, Define, Method, Parent};
 use crate::interpreter::Mrb;
 use crate::method;
 use crate::sys;
+use crate::value::Value;
 use crate::MrbError;
 
 pub struct Spec {
@@ -29,6 +30,12 @@ impl Spec {
             methods: HashSet::new(),
             parent,
         }
+    }
+
+    pub fn value(&self, interp: &Mrb) -> Option<Value> {
+        let rclass = self.rclass(interp)?;
+        let module = unsafe { sys::mrb_sys_module_value(rclass) };
+        Some(Value::new(interp, module))
     }
 }
 

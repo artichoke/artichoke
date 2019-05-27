@@ -10,6 +10,7 @@ use crate::def::{ClassLike, Define, Free, Method, Parent};
 use crate::interpreter::Mrb;
 use crate::method;
 use crate::sys;
+use crate::value::Value;
 use crate::MrbError;
 
 pub struct Spec {
@@ -41,6 +42,12 @@ impl Spec {
             super_class: None,
             is_mrb_tt_data: false,
         }
+    }
+
+    pub fn value(&self, interp: &Mrb) -> Option<Value> {
+        let rclass = self.rclass(interp)?;
+        let module = unsafe { sys::mrb_sys_class_value(rclass) };
+        Some(Value::new(interp, module))
     }
 
     pub fn data_type(&self) -> &sys::mrb_data_type {
