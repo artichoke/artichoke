@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::class;
-use crate::convert::{Float, FromMrb, Int, TryFromMrb};
+use crate::convert::{Float, FromMrb, Int};
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::gc::GarbageCollection;
@@ -214,9 +214,6 @@ impl Interpreter {
     }
 }
 
-/// `MrbApi` is the mutable API around the [`State`]. `MrbApi` should provide
-/// safe wrappers around unsafe functions from [`mruby_sys`] and the
-/// [`TryFromMrb`] converters.
 pub trait MrbApi {
     fn current_exception(&self) -> Option<String>;
 
@@ -233,15 +230,6 @@ pub trait MrbApi {
     fn string<T: AsRef<str>>(&self, s: T) -> Value;
 }
 
-/// We need to implement the [`MrbApi`] on the [`Rc`] smart pointer [`Mrb`]
-/// type instead of the [`State`] because we store the [`Rc`] in the userdata
-/// pointer of the [`sys::mrb_state`]. If the `MrbApi` were implemented on the
-/// `MrbState`, there would be duplicate borrows on the `Mrb` smart pointer
-/// during nested access to the interpreter.
-///
-/// Implementing `MrbApi` on `Mrb` means callers do not need to manipulate
-/// borrows when evaling code. This is convenient because eval may recursively
-/// call [`MrbEval::eval`], e.g. during a nested require.
 impl MrbApi for Mrb {
     /// Extract a `String` representation of the current exception on the mruby
     /// interpreter if there is one. The string will contain the exception
@@ -289,28 +277,27 @@ impl MrbApi for Mrb {
     }
 
     fn nil(&self) -> Value {
-        let nil = None::<Value>;
-        unsafe { Value::try_from_mrb(self, nil) }.expect("None -> nil conversion is infallible")
+        Value::from_mrb(self, None::<Value>)
     }
 
     fn bool(&self, b: bool) -> Value {
-        unsafe { Value::try_from_mrb(self, b) }.expect("bool conversion is infallible")
+        Value::from_mrb(self, b)
     }
 
     fn bytes<T: AsRef<[u8]>>(&self, b: T) -> Value {
-        unsafe { Value::try_from_mrb(self, b.as_ref()) }.expect("bytes conversion is infallible")
+        Value::from_mrb(self, b.as_ref())
     }
 
     fn fixnum(&self, i: Int) -> Value {
-        unsafe { Value::try_from_mrb(self, i) }.expect("fixnum conversion is infallible")
+        Value::from_mrb(self, i)
     }
 
-    fn float(&self, i: Float) -> Value {
-        unsafe { Value::try_from_mrb(self, i) }.expect("float conversion is infallible")
+    fn float(&self, f: Float) -> Value {
+        Value::from_mrb(self, f)
     }
 
     fn string<T: AsRef<str>>(&self, s: T) -> Value {
-        self.bytes(s.as_ref())
+        Value::from_mrb(self, s.as_ref())
     }
 }
 
