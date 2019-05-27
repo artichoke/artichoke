@@ -93,17 +93,17 @@ impl MrbFile for Container {
 
 #[test]
 fn define_rust_backed_ruby_class() {
-    env_logger::Builder::from_env("MRUBY_LOG").init();
-
     let interp = Interpreter::create().expect("mrb init");
     interp
-        .def_file_for_type::<_, Container>("container")
+        .def_file_for_type::<_, Container>("container.rb")
         .expect("def file");
 
-    let code = "require 'container'; Container.new(15).value";
-    let result = interp.eval(code).expect("no exceptions");
+    interp.eval("require 'container'").expect("require");
+    let result = interp.eval("Container.new(15).value").expect("eval");
     let cint = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
     assert_eq!(cint, 15);
-
-    drop(interp);
+    // Ensure Rc is cloned correctly and still points to valid memory.
+    let result = interp.eval("Container.new(15).value").expect("eval");
+    let cint = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+    assert_eq!(cint, 15);
 }
