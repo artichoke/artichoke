@@ -17,7 +17,6 @@ use std::convert::{self, TryFrom};
 use std::error;
 use std::fmt;
 use std::io::Cursor;
-use std::rc::Rc;
 
 use crate::nemesis;
 
@@ -91,7 +90,7 @@ impl Response {
         let classptr = interp
             .borrow()
             .class_spec::<nemesis::Response>()
-            .and_then(|spec| spec.borrow().rclass(Rc::clone(interp)))
+            .and_then(|spec| spec.borrow().rclass(interp))
             .ok_or_else(|| Error::Mrb(MrbError::NotDefined("Nemesis::Response".to_owned())))?;
         let class = unsafe { sys::mrb_sys_class_value(classptr) };
         let class = Value::new(interp, class);

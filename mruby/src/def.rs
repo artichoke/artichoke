@@ -22,7 +22,7 @@ pub enum Parent {
 }
 
 impl Parent {
-    pub fn rclass(&self, interp: Mrb) -> Option<*mut sys::RClass> {
+    pub fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass> {
         match self {
             Parent::Class { spec } => spec.borrow().rclass(interp),
             Parent::Module { spec } => spec.borrow().rclass(interp),
@@ -86,7 +86,7 @@ where
 
     fn parent(&self) -> Option<Parent>;
 
-    fn rclass(&self, interp: Mrb) -> Option<*mut sys::RClass>;
+    fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass>;
 
     fn fqname(&self) -> String {
         if let Some(parent) = self.parent() {
