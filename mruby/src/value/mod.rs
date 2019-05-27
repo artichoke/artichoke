@@ -28,8 +28,8 @@ where
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
-        // Scope the borrow so because we might require a borrow_mut in Rust
-        // code we call into via the Ruby VM.
+        // Scope the borrow because we might require a borrow_mut in Rust code
+        // we call into via the Ruby VM.
         let interp = self.interp();
         let mrb = { interp.borrow().mrb };
         let arena = interp.create_arena_savepoint();
