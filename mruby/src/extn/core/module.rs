@@ -34,7 +34,9 @@ end
 "#;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
-    interp.borrow_mut().def_class::<Module>("Module", None, None);
+    interp
+        .borrow_mut()
+        .def_class::<Module>("Module", None, None);
     interp.eval(AUTOLOAD_PATCH)?;
     Ok(())
 }
