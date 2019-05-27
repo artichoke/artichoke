@@ -182,7 +182,6 @@ pub type mrb_sym = u32;
 pub type mrb_bool = u8;
 pub type mrb_int = i64;
 extern "C" {
-    #[link_name = "\u{1}_mrb_float_read"]
     pub fn mrb_float_read(
         arg1: *const ::std::os::raw::c_char,
         arg2: *mut *mut ::std::os::raw::c_char,
@@ -436,7 +435,6 @@ pub type mrb_each_object_callback = ::std::option::Option<
     ) -> ::std::os::raw::c_int,
 >;
 extern "C" {
-    #[link_name = "\u{1}_mrb_objspace_each_objects"]
     pub fn mrb_objspace_each_objects(
         mrb: *mut mrb_state,
         callback: mrb_each_object_callback,
@@ -444,7 +442,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_free_context"]
     pub fn mrb_free_context(mrb: *mut mrb_state, c: *mut mrb_context);
 }
 pub const mrb_gc_state_MRB_GC_STATE_ROOT: mrb_gc_state = 0;
@@ -597,7 +594,6 @@ impl mrb_gc {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_object_dead_p"]
     pub fn mrb_object_dead_p(mrb: *mut mrb_state, object: *mut RBasic) -> mrb_bool;
 }
 pub type mrb_code = u8;
@@ -710,7 +706,6 @@ pub struct mrb_state {
     pub ecall_nest: u16,
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_class"]
     pub fn mrb_define_class(
         mrb: *mut mrb_state,
         name: *const ::std::os::raw::c_char,
@@ -718,26 +713,21 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_module"]
     pub fn mrb_define_module(
         arg1: *mut mrb_state,
         arg2: *const ::std::os::raw::c_char,
     ) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_singleton_class"]
     pub fn mrb_singleton_class(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_include_module"]
     pub fn mrb_include_module(arg1: *mut mrb_state, arg2: *mut RClass, arg3: *mut RClass);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_prepend_module"]
     pub fn mrb_prepend_module(arg1: *mut mrb_state, arg2: *mut RClass, arg3: *mut RClass);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_method"]
     pub fn mrb_define_method(
         mrb: *mut mrb_state,
         cla: *mut RClass,
@@ -747,7 +737,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_class_method"]
     pub fn mrb_define_class_method(
         arg1: *mut mrb_state,
         arg2: *mut RClass,
@@ -757,7 +746,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_singleton_method"]
     pub fn mrb_define_singleton_method(
         arg1: *mut mrb_state,
         arg2: *mut RObject,
@@ -767,7 +755,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_module_function"]
     pub fn mrb_define_module_function(
         arg1: *mut mrb_state,
         arg2: *mut RClass,
@@ -777,7 +764,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_const"]
     pub fn mrb_define_const(
         arg1: *mut mrb_state,
         arg2: *mut RClass,
@@ -786,7 +772,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_undef_method"]
     pub fn mrb_undef_method(
         arg1: *mut mrb_state,
         arg2: *mut RClass,
@@ -794,11 +779,9 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_undef_method_id"]
     pub fn mrb_undef_method_id(arg1: *mut mrb_state, arg2: *mut RClass, arg3: mrb_sym);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_undef_class_method"]
     pub fn mrb_undef_class_method(
         arg1: *mut mrb_state,
         arg2: *mut RClass,
@@ -806,7 +789,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_new"]
     pub fn mrb_obj_new(
         mrb: *mut mrb_state,
         c: *mut RClass,
@@ -815,27 +797,21 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_new"]
     pub fn mrb_class_new(mrb: *mut mrb_state, super_: *mut RClass) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_module_new"]
     pub fn mrb_module_new(mrb: *mut mrb_state) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_defined"]
     pub fn mrb_class_defined(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_get"]
     pub fn mrb_class_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_exc_get"]
     pub fn mrb_exc_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_defined_under"]
     pub fn mrb_class_defined_under(
         mrb: *mut mrb_state,
         outer: *mut RClass,
@@ -843,7 +819,6 @@ extern "C" {
     ) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_get_under"]
     pub fn mrb_class_get_under(
         mrb: *mut mrb_state,
         outer: *mut RClass,
@@ -851,11 +826,9 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_module_get"]
     pub fn mrb_module_get(mrb: *mut mrb_state, name: *const ::std::os::raw::c_char) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_module_get_under"]
     pub fn mrb_module_get_under(
         mrb: *mut mrb_state,
         outer: *mut RClass,
@@ -863,23 +836,18 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_notimplement"]
     pub fn mrb_notimplement(arg1: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_notimplement_m"]
     pub fn mrb_notimplement_m(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_dup"]
     pub fn mrb_obj_dup(mrb: *mut mrb_state, obj: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_respond_to"]
     pub fn mrb_obj_respond_to(mrb: *mut mrb_state, c: *mut RClass, mid: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_class_under"]
     pub fn mrb_define_class_under(
         mrb: *mut mrb_state,
         outer: *mut RClass,
@@ -888,7 +856,6 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_module_under"]
     pub fn mrb_define_module_under(
         mrb: *mut mrb_state,
         outer: *mut RClass,
@@ -897,19 +864,15 @@ extern "C" {
 }
 pub type mrb_args_format = *const ::std::os::raw::c_char;
 extern "C" {
-    #[link_name = "\u{1}_mrb_get_args"]
     pub fn mrb_get_args(mrb: *mut mrb_state, format: mrb_args_format, ...) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_get_argc"]
     pub fn mrb_get_argc(mrb: *mut mrb_state) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_get_argv"]
     pub fn mrb_get_argv(mrb: *mut mrb_state) -> *mut mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_funcall"]
     pub fn mrb_funcall(
         arg1: *mut mrb_state,
         arg2: mrb_value,
@@ -919,7 +882,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_funcall_argv"]
     pub fn mrb_funcall_argv(
         arg1: *mut mrb_state,
         arg2: mrb_value,
@@ -929,7 +891,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_funcall_with_block"]
     pub fn mrb_funcall_with_block(
         arg1: *mut mrb_state,
         arg2: mrb_value,
@@ -940,11 +901,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_intern_cstr"]
     pub fn mrb_intern_cstr(arg1: *mut mrb_state, arg2: *const ::std::os::raw::c_char) -> mrb_sym;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_intern"]
     pub fn mrb_intern(
         arg1: *mut mrb_state,
         arg2: *const ::std::os::raw::c_char,
@@ -952,7 +911,6 @@ extern "C" {
     ) -> mrb_sym;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_intern_static"]
     pub fn mrb_intern_static(
         arg1: *mut mrb_state,
         arg2: *const ::std::os::raw::c_char,
@@ -960,18 +918,15 @@ extern "C" {
     ) -> mrb_sym;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_intern_str"]
     pub fn mrb_intern_str(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_sym;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_check_intern_cstr"]
     pub fn mrb_check_intern_cstr(
         arg1: *mut mrb_state,
         arg2: *const ::std::os::raw::c_char,
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_check_intern"]
     pub fn mrb_check_intern(
         arg1: *mut mrb_state,
         arg2: *const ::std::os::raw::c_char,
@@ -979,15 +934,12 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_check_intern_str"]
     pub fn mrb_check_intern_str(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sym2name"]
     pub fn mrb_sym2name(arg1: *mut mrb_state, arg2: mrb_sym) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sym2name_len"]
     pub fn mrb_sym2name_len(
         arg1: *mut mrb_state,
         arg2: mrb_sym,
@@ -995,15 +947,12 @@ extern "C" {
     ) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sym2str"]
     pub fn mrb_sym2str(arg1: *mut mrb_state, arg2: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_malloc"]
     pub fn mrb_malloc(arg1: *mut mrb_state, arg2: usize) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_calloc"]
     pub fn mrb_calloc(
         arg1: *mut mrb_state,
         arg2: usize,
@@ -1011,7 +960,6 @@ extern "C" {
     ) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_realloc"]
     pub fn mrb_realloc(
         arg1: *mut mrb_state,
         arg2: *mut ::std::os::raw::c_void,
@@ -1019,7 +967,6 @@ extern "C" {
     ) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_realloc_simple"]
     pub fn mrb_realloc_simple(
         arg1: *mut mrb_state,
         arg2: *mut ::std::os::raw::c_void,
@@ -1027,19 +974,15 @@ extern "C" {
     ) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_malloc_simple"]
     pub fn mrb_malloc_simple(arg1: *mut mrb_state, arg2: usize) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_alloc"]
     pub fn mrb_obj_alloc(arg1: *mut mrb_state, arg2: mrb_vtype, arg3: *mut RClass) -> *mut RBasic;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_free"]
     pub fn mrb_free(arg1: *mut mrb_state, arg2: *mut ::std::os::raw::c_void);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_new"]
     pub fn mrb_str_new(
         mrb: *mut mrb_state,
         p: *const ::std::os::raw::c_char,
@@ -1047,12 +990,10 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_new_cstr"]
     pub fn mrb_str_new_cstr(arg1: *mut mrb_state, arg2: *const ::std::os::raw::c_char)
         -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_new_static"]
     pub fn mrb_str_new_static(
         mrb: *mut mrb_state,
         p: *const ::std::os::raw::c_char,
@@ -1060,23 +1001,18 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_open"]
     pub fn mrb_open() -> *mut mrb_state;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_open_allocf"]
     pub fn mrb_open_allocf(f: mrb_allocf, ud: *mut ::std::os::raw::c_void) -> *mut mrb_state;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_open_core"]
     pub fn mrb_open_core(f: mrb_allocf, ud: *mut ::std::os::raw::c_void) -> *mut mrb_state;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_close"]
     pub fn mrb_close(mrb: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_default_allocf"]
     pub fn mrb_default_allocf(
         arg1: *mut mrb_state,
         arg2: *mut ::std::os::raw::c_void,
@@ -1085,15 +1021,12 @@ extern "C" {
     ) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_top_self"]
     pub fn mrb_top_self(arg1: *mut mrb_state) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_run"]
     pub fn mrb_run(arg1: *mut mrb_state, arg2: *mut RProc, arg3: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_top_run"]
     pub fn mrb_top_run(
         arg1: *mut mrb_state,
         arg2: *mut RProc,
@@ -1102,7 +1035,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_run"]
     pub fn mrb_vm_run(
         arg1: *mut mrb_state,
         arg2: *mut RProc,
@@ -1111,79 +1043,60 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_exec"]
     pub fn mrb_vm_exec(arg1: *mut mrb_state, arg2: *mut RProc, arg3: *mut mrb_code) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_p"]
     pub fn mrb_p(arg1: *mut mrb_state, arg2: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_id"]
     pub fn mrb_obj_id(obj: mrb_value) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_to_sym"]
     pub fn mrb_obj_to_sym(mrb: *mut mrb_state, name: mrb_value) -> mrb_sym;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_eq"]
     pub fn mrb_obj_eq(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_value) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_equal"]
     pub fn mrb_obj_equal(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_value) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_equal"]
     pub fn mrb_equal(mrb: *mut mrb_state, obj1: mrb_value, obj2: mrb_value) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_convert_to_integer"]
     pub fn mrb_convert_to_integer(mrb: *mut mrb_state, val: mrb_value, base: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_Integer"]
     pub fn mrb_Integer(mrb: *mut mrb_state, val: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_Float"]
     pub fn mrb_Float(mrb: *mut mrb_state, val: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_inspect"]
     pub fn mrb_inspect(mrb: *mut mrb_state, obj: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_eql"]
     pub fn mrb_eql(mrb: *mut mrb_state, obj1: mrb_value, obj2: mrb_value) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_garbage_collect"]
     pub fn mrb_garbage_collect(arg1: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_full_gc"]
     pub fn mrb_full_gc(arg1: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_incremental_gc"]
     pub fn mrb_incremental_gc(arg1: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark"]
     pub fn mrb_gc_mark(arg1: *mut mrb_state, arg2: *mut RBasic);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_field_write_barrier"]
     pub fn mrb_field_write_barrier(arg1: *mut mrb_state, arg2: *mut RBasic, arg3: *mut RBasic);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_write_barrier"]
     pub fn mrb_write_barrier(arg1: *mut mrb_state, arg2: *mut RBasic);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_check_convert_type"]
     pub fn mrb_check_convert_type(
         mrb: *mut mrb_state,
         val: mrb_value,
@@ -1193,23 +1106,18 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_any_to_s"]
     pub fn mrb_any_to_s(mrb: *mut mrb_state, obj: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_classname"]
     pub fn mrb_obj_classname(mrb: *mut mrb_state, obj: mrb_value) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_class"]
     pub fn mrb_obj_class(mrb: *mut mrb_state, obj: mrb_value) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_path"]
     pub fn mrb_class_path(mrb: *mut mrb_state, c: *mut RClass) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_convert_type"]
     pub fn mrb_convert_type(
         mrb: *mut mrb_state,
         val: mrb_value,
@@ -1219,19 +1127,15 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_is_kind_of"]
     pub fn mrb_obj_is_kind_of(mrb: *mut mrb_state, obj: mrb_value, c: *mut RClass) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_inspect"]
     pub fn mrb_obj_inspect(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_clone"]
     pub fn mrb_obj_clone(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_exc_new"]
     pub fn mrb_exc_new(
         mrb: *mut mrb_state,
         c: *mut RClass,
@@ -1240,19 +1144,15 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_exc_raise"]
     pub fn mrb_exc_raise(mrb: *mut mrb_state, exc: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_raise"]
     pub fn mrb_raise(mrb: *mut mrb_state, c: *mut RClass, msg: *const ::std::os::raw::c_char);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_raisef"]
     pub fn mrb_raisef(mrb: *mut mrb_state, c: *mut RClass, fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_name_error"]
     pub fn mrb_name_error(
         mrb: *mut mrb_state,
         id: mrb_sym,
@@ -1261,27 +1161,21 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_frozen_error"]
     pub fn mrb_frozen_error(mrb: *mut mrb_state, frozen_obj: *mut ::std::os::raw::c_void);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_warn"]
     pub fn mrb_warn(mrb: *mut mrb_state, fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_bug"]
     pub fn mrb_bug(mrb: *mut mrb_state, fmt: *const ::std::os::raw::c_char, ...);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_print_backtrace"]
     pub fn mrb_print_backtrace(mrb: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_print_error"]
     pub fn mrb_print_error(mrb: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vformat"]
     pub fn mrb_vformat(
         mrb: *mut mrb_state,
         format: *const ::std::os::raw::c_char,
@@ -1289,11 +1183,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_yield"]
     pub fn mrb_yield(mrb: *mut mrb_state, b: mrb_value, arg: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_yield_argv"]
     pub fn mrb_yield_argv(
         mrb: *mut mrb_state,
         b: mrb_value,
@@ -1302,7 +1194,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_yield_with_class"]
     pub fn mrb_yield_with_class(
         mrb: *mut mrb_state,
         b: mrb_value,
@@ -1313,7 +1204,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_yield_cont"]
     pub fn mrb_yield_cont(
         mrb: *mut mrb_state,
         b: mrb_value,
@@ -1323,31 +1213,24 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_protect"]
     pub fn mrb_gc_protect(mrb: *mut mrb_state, obj: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_register"]
     pub fn mrb_gc_register(mrb: *mut mrb_state, obj: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_unregister"]
     pub fn mrb_gc_unregister(mrb: *mut mrb_state, obj: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_to_int"]
     pub fn mrb_to_int(mrb: *mut mrb_state, val: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_to_str"]
     pub fn mrb_to_str(mrb: *mut mrb_state, val: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_check_type"]
     pub fn mrb_check_type(mrb: *mut mrb_state, x: mrb_value, t: mrb_vtype);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_alias"]
     pub fn mrb_define_alias(
         mrb: *mut mrb_state,
         c: *mut RClass,
@@ -1356,12 +1239,10 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_name"]
     pub fn mrb_class_name(mrb: *mut mrb_state, klass: *mut RClass)
         -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_global_const"]
     pub fn mrb_define_global_const(
         mrb: *mut mrb_state,
         name: *const ::std::os::raw::c_char,
@@ -1369,19 +1250,15 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_attr_get"]
     pub fn mrb_attr_get(mrb: *mut mrb_state, obj: mrb_value, id: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_respond_to"]
     pub fn mrb_respond_to(mrb: *mut mrb_state, obj: mrb_value, mid: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_is_instance_of"]
     pub fn mrb_obj_is_instance_of(mrb: *mut mrb_state, obj: mrb_value, c: *mut RClass) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_func_basic_p"]
     pub fn mrb_func_basic_p(
         mrb: *mut mrb_state,
         obj: mrb_value,
@@ -1390,7 +1267,6 @@ extern "C" {
     ) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_fiber_resume"]
     pub fn mrb_fiber_resume(
         mrb: *mut mrb_state,
         fib: mrb_value,
@@ -1399,16 +1275,13 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_fiber_yield"]
     pub fn mrb_fiber_yield(mrb: *mut mrb_state, argc: mrb_int, argv: *const mrb_value)
         -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_fiber_alive_p"]
     pub fn mrb_fiber_alive_p(mrb: *mut mrb_state, fib: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_stack_extend"]
     pub fn mrb_stack_extend(arg1: *mut mrb_state, arg2: mrb_int);
 }
 #[repr(C)]
@@ -1417,19 +1290,15 @@ pub struct mrb_pool {
     _unused: [u8; 0],
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_pool_open"]
     pub fn mrb_pool_open(arg1: *mut mrb_state) -> *mut mrb_pool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_pool_close"]
     pub fn mrb_pool_close(arg1: *mut mrb_pool);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_pool_alloc"]
     pub fn mrb_pool_alloc(arg1: *mut mrb_pool, arg2: usize) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_pool_realloc"]
     pub fn mrb_pool_realloc(
         arg1: *mut mrb_pool,
         arg2: *mut ::std::os::raw::c_void,
@@ -1438,7 +1307,6 @@ extern "C" {
     ) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_pool_can_realloc"]
     pub fn mrb_pool_can_realloc(
         arg1: *mut mrb_pool,
         arg2: *mut ::std::os::raw::c_void,
@@ -1446,23 +1314,18 @@ extern "C" {
     ) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_alloca"]
     pub fn mrb_alloca(mrb: *mut mrb_state, arg1: usize) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_state_atexit"]
     pub fn mrb_state_atexit(mrb: *mut mrb_state, func: mrb_atexit_func);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_show_version"]
     pub fn mrb_show_version(mrb: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_show_copyright"]
     pub fn mrb_show_copyright(mrb: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_format"]
     pub fn mrb_format(mrb: *mut mrb_state, format: *const ::std::os::raw::c_char, ...)
         -> mrb_value;
 }
@@ -1559,23 +1422,18 @@ impl RArray {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_decref"]
     pub fn mrb_ary_decref(arg1: *mut mrb_state, arg2: *mut mrb_shared_array);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_modify"]
     pub fn mrb_ary_modify(arg1: *mut mrb_state, arg2: *mut RArray);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_new_capa"]
     pub fn mrb_ary_new_capa(arg1: *mut mrb_state, arg2: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_new"]
     pub fn mrb_ary_new(mrb: *mut mrb_state) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_new_from_values"]
     pub fn mrb_ary_new_from_values(
         mrb: *mut mrb_state,
         size: mrb_int,
@@ -1583,55 +1441,42 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_assoc_new"]
     pub fn mrb_assoc_new(mrb: *mut mrb_state, car: mrb_value, cdr: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_concat"]
     pub fn mrb_ary_concat(mrb: *mut mrb_state, self_: mrb_value, other: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_splat"]
     pub fn mrb_ary_splat(mrb: *mut mrb_state, value: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_push"]
     pub fn mrb_ary_push(mrb: *mut mrb_state, array: mrb_value, value: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_pop"]
     pub fn mrb_ary_pop(mrb: *mut mrb_state, ary: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_ref"]
     pub fn mrb_ary_ref(mrb: *mut mrb_state, ary: mrb_value, n: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_set"]
     pub fn mrb_ary_set(mrb: *mut mrb_state, ary: mrb_value, n: mrb_int, val: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_replace"]
     pub fn mrb_ary_replace(mrb: *mut mrb_state, self_: mrb_value, other: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ensure_array_type"]
     pub fn mrb_ensure_array_type(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_check_array_type"]
     pub fn mrb_check_array_type(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_unshift"]
     pub fn mrb_ary_unshift(mrb: *mut mrb_state, self_: mrb_value, item: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_entry"]
     pub fn mrb_ary_entry(ary: mrb_value, offset: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_splice"]
     pub fn mrb_ary_splice(
         mrb: *mut mrb_state,
         self_: mrb_value,
@@ -1641,19 +1486,15 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_shift"]
     pub fn mrb_ary_shift(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_clear"]
     pub fn mrb_ary_clear(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_join"]
     pub fn mrb_ary_join(mrb: *mut mrb_state, ary: mrb_value, sep: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ary_resize"]
     pub fn mrb_ary_resize(mrb: *mut mrb_state, ary: mrb_value, new_len: mrb_int) -> mrb_value;
 }
 #[repr(C)]
@@ -1724,7 +1565,6 @@ impl RClass {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_class_id"]
     pub fn mrb_define_class_id(
         arg1: *mut mrb_state,
         arg2: mrb_sym,
@@ -1732,11 +1572,9 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_module_id"]
     pub fn mrb_define_module_id(arg1: *mut mrb_state, arg2: mrb_sym) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_define_class"]
     pub fn mrb_vm_define_class(
         arg1: *mut mrb_state,
         arg2: mrb_value,
@@ -1745,7 +1583,6 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_define_module"]
     pub fn mrb_vm_define_module(
         arg1: *mut mrb_state,
         arg2: mrb_value,
@@ -1753,7 +1590,6 @@ extern "C" {
     ) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_method_raw"]
     pub fn mrb_define_method_raw(
         arg1: *mut mrb_state,
         arg2: *mut RClass,
@@ -1762,7 +1598,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_define_method_id"]
     pub fn mrb_define_method_id(
         mrb: *mut mrb_state,
         c: *mut RClass,
@@ -1772,11 +1607,9 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_alias_method"]
     pub fn mrb_alias_method(arg1: *mut mrb_state, c: *mut RClass, a: mrb_sym, b: mrb_sym);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_method_search_vm"]
     pub fn mrb_method_search_vm(
         arg1: *mut mrb_state,
         arg2: *mut *mut RClass,
@@ -1784,7 +1617,6 @@ extern "C" {
     ) -> mrb_method_t;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_method_search"]
     pub fn mrb_method_search(
         arg1: *mut mrb_state,
         arg2: *mut RClass,
@@ -1792,15 +1624,12 @@ extern "C" {
     ) -> mrb_method_t;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_real"]
     pub fn mrb_class_real(cl: *mut RClass) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_instance_new"]
     pub fn mrb_instance_new(mrb: *mut mrb_state, cv: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_name_class"]
     pub fn mrb_class_name_class(
         arg1: *mut mrb_state,
         arg2: *mut RClass,
@@ -1809,19 +1638,15 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_class_find_path"]
     pub fn mrb_class_find_path(arg1: *mut mrb_state, arg2: *mut RClass) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark_mt"]
     pub fn mrb_gc_mark_mt(arg1: *mut mrb_state, arg2: *mut RClass);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark_mt_size"]
     pub fn mrb_gc_mark_mt_size(arg1: *mut mrb_state, arg2: *mut RClass) -> usize;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_free_mt"]
     pub fn mrb_gc_free_mt(arg1: *mut mrb_state, arg2: *mut RClass);
 }
 #[repr(C)]
@@ -1945,15 +1770,12 @@ impl mrbc_context {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrbc_context_new"]
     pub fn mrbc_context_new(mrb: *mut mrb_state) -> *mut mrbc_context;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrbc_context_free"]
     pub fn mrbc_context_free(mrb: *mut mrb_state, cxt: *mut mrbc_context);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrbc_filename"]
     pub fn mrbc_filename(
         mrb: *mut mrb_state,
         c: *mut mrbc_context,
@@ -1961,7 +1783,6 @@ extern "C" {
     ) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrbc_partial_hook"]
     pub fn mrbc_partial_hook(
         mrb: *mut mrb_state,
         c: *mut mrbc_context,
@@ -2186,30 +2007,24 @@ impl mrb_parser_state {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_parser_new"]
     pub fn mrb_parser_new(arg1: *mut mrb_state) -> *mut mrb_parser_state;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_parser_free"]
     pub fn mrb_parser_free(arg1: *mut mrb_parser_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_parser_parse"]
     pub fn mrb_parser_parse(arg1: *mut mrb_parser_state, arg2: *mut mrbc_context);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_parser_set_filename"]
     pub fn mrb_parser_set_filename(
         arg1: *mut mrb_parser_state,
         arg2: *const ::std::os::raw::c_char,
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_parser_get_filename"]
     pub fn mrb_parser_get_filename(arg1: *mut mrb_parser_state, idx: u16) -> mrb_sym;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_parse_string"]
     pub fn mrb_parse_string(
         arg1: *mut mrb_state,
         arg2: *const ::std::os::raw::c_char,
@@ -2217,7 +2032,6 @@ extern "C" {
     ) -> *mut mrb_parser_state;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_parse_nstring"]
     pub fn mrb_parse_nstring(
         arg1: *mut mrb_state,
         arg2: *const ::std::os::raw::c_char,
@@ -2226,11 +2040,9 @@ extern "C" {
     ) -> *mut mrb_parser_state;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_generate_code"]
     pub fn mrb_generate_code(arg1: *mut mrb_state, arg2: *mut mrb_parser_state) -> *mut RProc;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_load_exec"]
     pub fn mrb_load_exec(
         mrb: *mut mrb_state,
         p: *mut mrb_parser_state,
@@ -2238,11 +2050,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_load_string"]
     pub fn mrb_load_string(mrb: *mut mrb_state, s: *const ::std::os::raw::c_char) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_load_nstring"]
     pub fn mrb_load_nstring(
         mrb: *mut mrb_state,
         s: *const ::std::os::raw::c_char,
@@ -2250,7 +2060,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_load_string_cxt"]
     pub fn mrb_load_string_cxt(
         mrb: *mut mrb_state,
         s: *const ::std::os::raw::c_char,
@@ -2258,7 +2067,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_load_nstring_cxt"]
     pub fn mrb_load_nstring_cxt(
         mrb: *mut mrb_state,
         s: *const ::std::os::raw::c_char,
@@ -2342,7 +2150,6 @@ impl RData {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_data_object_alloc"]
     pub fn mrb_data_object_alloc(
         mrb: *mut mrb_state,
         klass: *mut RClass,
@@ -2351,11 +2158,9 @@ extern "C" {
     ) -> *mut RData;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_data_check_type"]
     pub fn mrb_data_check_type(mrb: *mut mrb_state, arg1: mrb_value, arg2: *const mrb_data_type);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_data_get_ptr"]
     pub fn mrb_data_get_ptr(
         mrb: *mut mrb_state,
         arg1: mrb_value,
@@ -2363,7 +2168,6 @@ extern "C" {
     ) -> *mut ::std::os::raw::c_void;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_data_check_get_ptr"]
     pub fn mrb_data_check_get_ptr(
         mrb: *mut mrb_state,
         arg1: mrb_value,
@@ -2395,15 +2199,12 @@ pub struct mrb_irep {
     pub refcnt: u32,
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_add_irep"]
     pub fn mrb_add_irep(mrb: *mut mrb_state) -> *mut mrb_irep;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_load_irep"]
     pub fn mrb_load_irep(arg1: *mut mrb_state, arg2: *const u8) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_load_irep_cxt"]
     pub fn mrb_load_irep_cxt(
         arg1: *mut mrb_state,
         arg2: *const u8,
@@ -2411,23 +2212,18 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_irep_free"]
     pub fn mrb_irep_free(arg1: *mut mrb_state, arg2: *mut mrb_irep);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_irep_incref"]
     pub fn mrb_irep_incref(arg1: *mut mrb_state, arg2: *mut mrb_irep);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_irep_decref"]
     pub fn mrb_irep_decref(arg1: *mut mrb_state, arg2: *mut mrb_irep);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_irep_cutref"]
     pub fn mrb_irep_cutref(arg1: *mut mrb_state, arg2: *mut mrb_irep);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_irep_remove_lv"]
     pub fn mrb_irep_remove_lv(mrb: *mut mrb_state, irep: *mut mrb_irep);
 }
 #[repr(C)]
@@ -2439,11 +2235,9 @@ pub struct mrb_insn_data {
     pub c: u8,
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_decode_insn"]
     pub fn mrb_decode_insn(pc: *mut mrb_code) -> mrb_insn_data;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_dump_irep"]
     pub fn mrb_dump_irep(
         mrb: *mut mrb_state,
         irep: *mut mrb_irep,
@@ -2453,19 +2247,15 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_read_irep"]
     pub fn mrb_read_irep(arg1: *mut mrb_state, arg2: *const u8) -> *mut mrb_irep;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_fail"]
     pub fn mrb_sys_fail(mrb: *mut mrb_state, mesg: *const ::std::os::raw::c_char);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_exc_new_str"]
     pub fn mrb_exc_new_str(mrb: *mut mrb_state, c: *mut RClass, str: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_make_exception"]
     pub fn mrb_make_exception(
         mrb: *mut mrb_state,
         argc: mrb_int,
@@ -2473,15 +2263,12 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_exc_backtrace"]
     pub fn mrb_exc_backtrace(mrb: *mut mrb_state, exc: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_get_backtrace"]
     pub fn mrb_get_backtrace(mrb: *mut mrb_state) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_no_method_error"]
     pub fn mrb_no_method_error(
         mrb: *mut mrb_state,
         id: mrb_sym,
@@ -2491,11 +2278,9 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_f_raise"]
     pub fn mrb_f_raise(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_protect"]
     pub fn mrb_protect(
         mrb: *mut mrb_state,
         body: mrb_func_t,
@@ -2504,7 +2289,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ensure"]
     pub fn mrb_ensure(
         mrb: *mut mrb_state,
         body: mrb_func_t,
@@ -2514,7 +2298,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_rescue"]
     pub fn mrb_rescue(
         mrb: *mut mrb_state,
         body: mrb_func_t,
@@ -2524,7 +2307,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_rescue_exceptions"]
     pub fn mrb_rescue_exceptions(
         mrb: *mut mrb_state,
         body: mrb_func_t,
@@ -2602,31 +2384,24 @@ impl RHash {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_new_capa"]
     pub fn mrb_hash_new_capa(arg1: *mut mrb_state, arg2: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ensure_hash_type"]
     pub fn mrb_ensure_hash_type(mrb: *mut mrb_state, hash: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_check_hash_type"]
     pub fn mrb_check_hash_type(mrb: *mut mrb_state, hash: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_new"]
     pub fn mrb_hash_new(mrb: *mut mrb_state) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_set"]
     pub fn mrb_hash_set(mrb: *mut mrb_state, hash: mrb_value, key: mrb_value, val: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_get"]
     pub fn mrb_hash_get(mrb: *mut mrb_state, hash: mrb_value, key: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_fetch"]
     pub fn mrb_hash_fetch(
         mrb: *mut mrb_state,
         hash: mrb_value,
@@ -2635,39 +2410,30 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_delete_key"]
     pub fn mrb_hash_delete_key(mrb: *mut mrb_state, hash: mrb_value, key: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_keys"]
     pub fn mrb_hash_keys(mrb: *mut mrb_state, hash: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_key_p"]
     pub fn mrb_hash_key_p(mrb: *mut mrb_state, hash: mrb_value, key: mrb_value) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_empty_p"]
     pub fn mrb_hash_empty_p(mrb: *mut mrb_state, self_: mrb_value) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_values"]
     pub fn mrb_hash_values(mrb: *mut mrb_state, hash: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_clear"]
     pub fn mrb_hash_clear(mrb: *mut mrb_state, hash: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_size"]
     pub fn mrb_hash_size(mrb: *mut mrb_state, hash: mrb_value) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_dup"]
     pub fn mrb_hash_dup(mrb: *mut mrb_state, hash: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_merge"]
     pub fn mrb_hash_merge(mrb: *mut mrb_state, hash1: mrb_value, hash2: mrb_value);
 }
 #[repr(C)]
@@ -2677,15 +2443,12 @@ pub struct mrb_hash_value {
     pub n: mrb_int,
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark_hash"]
     pub fn mrb_gc_mark_hash(arg1: *mut mrb_state, arg2: *mut RHash);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark_hash_size"]
     pub fn mrb_gc_mark_hash_size(arg1: *mut mrb_state, arg2: *mut RHash) -> usize;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_free_hash"]
     pub fn mrb_gc_free_hash(arg1: *mut mrb_state, arg2: *mut RHash);
 }
 pub type mrb_hash_foreach_func = ::std::option::Option<
@@ -2697,7 +2460,6 @@ pub type mrb_hash_foreach_func = ::std::option::Option<
     ) -> ::std::os::raw::c_int,
 >;
 extern "C" {
-    #[link_name = "\u{1}_mrb_hash_foreach"]
     pub fn mrb_hash_foreach(
         mrb: *mut mrb_state,
         hash: *mut RHash,
@@ -2707,15 +2469,12 @@ extern "C" {
 }
 pub type khint_t = u32;
 extern "C" {
-    #[link_name = "\u{1}_mrb_flo_to_fixnum"]
     pub fn mrb_flo_to_fixnum(mrb: *mut mrb_state, val: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_fixnum_to_str"]
     pub fn mrb_fixnum_to_str(mrb: *mut mrb_state, x: mrb_value, base: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_float_to_str"]
     pub fn mrb_float_to_str(
         mrb: *mut mrb_state,
         x: mrb_value,
@@ -2723,23 +2482,18 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_to_flo"]
     pub fn mrb_to_flo(mrb: *mut mrb_state, x: mrb_value) -> mrb_float;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_fixnum_plus"]
     pub fn mrb_fixnum_plus(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_fixnum_minus"]
     pub fn mrb_fixnum_minus(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_fixnum_mul"]
     pub fn mrb_fixnum_mul(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_num_div"]
     pub fn mrb_num_div(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
 }
 pub const mrb_insn_OP_NOP: mrb_insn = 0;
@@ -2915,7 +2669,6 @@ impl REnv {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_env_unshare"]
     pub fn mrb_env_unshare(arg1: *mut mrb_state, arg2: *mut REnv);
 }
 #[repr(C)]
@@ -3000,19 +2753,15 @@ impl RProc {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_proc_new"]
     pub fn mrb_proc_new(arg1: *mut mrb_state, arg2: *mut mrb_irep) -> *mut RProc;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_closure_new"]
     pub fn mrb_closure_new(arg1: *mut mrb_state, arg2: *mut mrb_irep) -> *mut RProc;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_proc_new_cfunc"]
     pub fn mrb_proc_new_cfunc(arg1: *mut mrb_state, arg2: mrb_func_t) -> *mut RProc;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_closure_new_cfunc"]
     pub fn mrb_closure_new_cfunc(
         mrb: *mut mrb_state,
         func: mrb_func_t,
@@ -3020,19 +2769,15 @@ extern "C" {
     ) -> *mut RProc;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_proc_copy"]
     pub fn mrb_proc_copy(a: *mut RProc, b: *mut RProc);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_proc_arity"]
     pub fn mrb_proc_arity(p: *const RProc) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_f_send"]
     pub fn mrb_f_send(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_proc_new_cfunc_with_env"]
     pub fn mrb_proc_new_cfunc_with_env(
         arg1: *mut mrb_state,
         arg2: mrb_func_t,
@@ -3041,7 +2786,6 @@ extern "C" {
     ) -> *mut RProc;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_proc_cfunc_env_get"]
     pub fn mrb_proc_cfunc_env_get(arg1: *mut mrb_state, arg2: mrb_int) -> mrb_value;
 }
 #[repr(C)]
@@ -3127,11 +2871,9 @@ impl RRange {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_range_ptr"]
     pub fn mrb_range_ptr(mrb: *mut mrb_state, range: mrb_value) -> *mut RRange;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_range_new"]
     pub fn mrb_range_new(
         mrb: *mut mrb_state,
         start: mrb_value,
@@ -3140,7 +2882,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_range_beg_len"]
     pub fn mrb_range_beg_len(
         mrb: *mut mrb_state,
         range: mrb_value,
@@ -3151,7 +2892,6 @@ extern "C" {
     ) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_get_values_at"]
     pub fn mrb_get_values_at(
         mrb: *mut mrb_state,
         obj: mrb_value,
@@ -3164,11 +2904,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark_range"]
     pub fn mrb_gc_mark_range(mrb: *mut mrb_state, r: *mut RRange);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_digitmap"]
     pub static mut mrb_digitmap: [::std::os::raw::c_char; 0usize];
 }
 #[repr(C)]
@@ -3259,19 +2997,15 @@ impl RString {
     }
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_strlen"]
     pub fn mrb_str_strlen(arg1: *mut mrb_state, arg2: *mut RString) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_free_str"]
     pub fn mrb_gc_free_str(arg1: *mut mrb_state, arg2: *mut RString);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_modify"]
     pub fn mrb_str_modify(arg1: *mut mrb_state, arg2: *mut RString);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_index"]
     pub fn mrb_str_index(
         arg1: *mut mrb_state,
         arg2: mrb_value,
@@ -3281,27 +3015,21 @@ extern "C" {
     ) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_concat"]
     pub fn mrb_str_concat(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_plus"]
     pub fn mrb_str_plus(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ptr_to_str"]
     pub fn mrb_ptr_to_str(arg1: *mut mrb_state, arg2: *mut ::std::os::raw::c_void) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_as_string"]
     pub fn mrb_obj_as_string(mrb: *mut mrb_state, obj: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_resize"]
     pub fn mrb_str_resize(mrb: *mut mrb_state, str: mrb_value, len: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_substr"]
     pub fn mrb_str_substr(
         mrb: *mut mrb_state,
         str: mrb_value,
@@ -3310,53 +3038,42 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ensure_string_type"]
     pub fn mrb_ensure_string_type(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_check_string_type"]
     pub fn mrb_check_string_type(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_string_type"]
     pub fn mrb_string_type(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_new_capa"]
     pub fn mrb_str_new_capa(mrb: *mut mrb_state, capa: usize) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_buf_new"]
     pub fn mrb_str_buf_new(mrb: *mut mrb_state, capa: usize) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_string_value_cstr"]
     pub fn mrb_string_value_cstr(
         mrb: *mut mrb_state,
         ptr: *mut mrb_value,
     ) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_string_value_ptr"]
     pub fn mrb_string_value_ptr(
         mrb: *mut mrb_state,
         str: mrb_value,
     ) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_string_value_len"]
     pub fn mrb_string_value_len(mrb: *mut mrb_state, str: mrb_value) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_dup"]
     pub fn mrb_str_dup(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_intern"]
     pub fn mrb_str_intern(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_to_inum"]
     pub fn mrb_str_to_inum(
         mrb: *mut mrb_state,
         str: mrb_value,
@@ -3365,7 +3082,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_cstr_to_inum"]
     pub fn mrb_cstr_to_inum(
         mrb: *mut mrb_state,
         s: *const ::std::os::raw::c_char,
@@ -3374,11 +3090,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_to_dbl"]
     pub fn mrb_str_to_dbl(mrb: *mut mrb_state, str: mrb_value, badcheck: mrb_bool) -> f64;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_cstr_to_dbl"]
     pub fn mrb_cstr_to_dbl(
         mrb: *mut mrb_state,
         s: *const ::std::os::raw::c_char,
@@ -3386,15 +3100,12 @@ extern "C" {
     ) -> f64;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_to_str"]
     pub fn mrb_str_to_str(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_equal"]
     pub fn mrb_str_equal(mrb: *mut mrb_state, str1: mrb_value, str2: mrb_value) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_cat"]
     pub fn mrb_str_cat(
         mrb: *mut mrb_state,
         str: mrb_value,
@@ -3403,7 +3114,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_cat_cstr"]
     pub fn mrb_str_cat_cstr(
         mrb: *mut mrb_state,
         str: mrb_value,
@@ -3411,15 +3121,12 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_cat_str"]
     pub fn mrb_str_cat_str(mrb: *mut mrb_state, str: mrb_value, str2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_append"]
     pub fn mrb_str_append(mrb: *mut mrb_state, str: mrb_value, str2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_cmp"]
     pub fn mrb_str_cmp(
         mrb: *mut mrb_state,
         str1: mrb_value,
@@ -3427,23 +3134,18 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_to_cstr"]
     pub fn mrb_str_to_cstr(mrb: *mut mrb_state, str: mrb_value) -> *mut ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_pool"]
     pub fn mrb_str_pool(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_hash"]
     pub fn mrb_str_hash(mrb: *mut mrb_state, str: mrb_value) -> u32;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_dump"]
     pub fn mrb_str_dump(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_str_inspect"]
     pub fn mrb_str_inspect(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
 }
 pub type jmp_buf = [::std::os::raw::c_int; 37usize];
@@ -3453,167 +3155,126 @@ pub struct mrb_jmpbuf {
     pub impl_: jmp_buf,
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_special_get"]
     pub fn mrb_vm_special_get(arg1: *mut mrb_state, arg2: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_special_set"]
     pub fn mrb_vm_special_set(arg1: *mut mrb_state, arg2: mrb_sym, arg3: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_cv_get"]
     pub fn mrb_vm_cv_get(arg1: *mut mrb_state, arg2: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_cv_set"]
     pub fn mrb_vm_cv_set(arg1: *mut mrb_state, arg2: mrb_sym, arg3: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_const_get"]
     pub fn mrb_vm_const_get(arg1: *mut mrb_state, arg2: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_vm_const_set"]
     pub fn mrb_vm_const_set(arg1: *mut mrb_state, arg2: mrb_sym, arg3: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_const_get"]
     pub fn mrb_const_get(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_const_set"]
     pub fn mrb_const_set(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_sym, arg4: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_const_defined"]
     pub fn mrb_const_defined(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_const_remove"]
     pub fn mrb_const_remove(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_sym);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_iv_name_sym_p"]
     pub fn mrb_iv_name_sym_p(mrb: *mut mrb_state, sym: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_iv_name_sym_check"]
     pub fn mrb_iv_name_sym_check(mrb: *mut mrb_state, sym: mrb_sym);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_iv_get"]
     pub fn mrb_obj_iv_get(mrb: *mut mrb_state, obj: *mut RObject, sym: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_iv_set"]
     pub fn mrb_obj_iv_set(mrb: *mut mrb_state, obj: *mut RObject, sym: mrb_sym, v: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_iv_defined"]
     pub fn mrb_obj_iv_defined(mrb: *mut mrb_state, obj: *mut RObject, sym: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_iv_get"]
     pub fn mrb_iv_get(mrb: *mut mrb_state, obj: mrb_value, sym: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_iv_set"]
     pub fn mrb_iv_set(mrb: *mut mrb_state, obj: mrb_value, sym: mrb_sym, v: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_iv_defined"]
     pub fn mrb_iv_defined(arg1: *mut mrb_state, arg2: mrb_value, arg3: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_iv_remove"]
     pub fn mrb_iv_remove(mrb: *mut mrb_state, obj: mrb_value, sym: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_iv_copy"]
     pub fn mrb_iv_copy(mrb: *mut mrb_state, dst: mrb_value, src: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_const_defined_at"]
     pub fn mrb_const_defined_at(mrb: *mut mrb_state, mod_: mrb_value, id: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gv_get"]
     pub fn mrb_gv_get(mrb: *mut mrb_state, sym: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gv_set"]
     pub fn mrb_gv_set(mrb: *mut mrb_state, sym: mrb_sym, val: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gv_remove"]
     pub fn mrb_gv_remove(mrb: *mut mrb_state, sym: mrb_sym);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_cv_get"]
     pub fn mrb_cv_get(mrb: *mut mrb_state, mod_: mrb_value, sym: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_mod_cv_set"]
     pub fn mrb_mod_cv_set(mrb: *mut mrb_state, c: *mut RClass, sym: mrb_sym, v: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_cv_set"]
     pub fn mrb_cv_set(mrb: *mut mrb_state, mod_: mrb_value, sym: mrb_sym, v: mrb_value);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_cv_defined"]
     pub fn mrb_cv_defined(mrb: *mut mrb_state, mod_: mrb_value, sym: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_iv_inspect"]
     pub fn mrb_obj_iv_inspect(arg1: *mut mrb_state, arg2: *mut RObject) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_mod_constants"]
     pub fn mrb_mod_constants(mrb: *mut mrb_state, mod_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_f_global_variables"]
     pub fn mrb_f_global_variables(mrb: *mut mrb_state, self_: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_obj_instance_variables"]
     pub fn mrb_obj_instance_variables(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_mod_class_variables"]
     pub fn mrb_mod_class_variables(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_mod_cv_get"]
     pub fn mrb_mod_cv_get(mrb: *mut mrb_state, c: *mut RClass, sym: mrb_sym) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_mod_cv_defined"]
     pub fn mrb_mod_cv_defined(mrb: *mut mrb_state, c: *mut RClass, sym: mrb_sym) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_ident_p"]
     pub fn mrb_ident_p(s: *const ::std::os::raw::c_char, len: mrb_int) -> mrb_bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark_gv"]
     pub fn mrb_gc_mark_gv(arg1: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_free_gv"]
     pub fn mrb_gc_free_gv(arg1: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark_iv"]
     pub fn mrb_gc_mark_iv(arg1: *mut mrb_state, arg2: *mut RObject);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_mark_iv_size"]
     pub fn mrb_gc_mark_iv_size(arg1: *mut mrb_state, arg2: *mut RObject) -> usize;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_gc_free_iv"]
     pub fn mrb_gc_free_iv(arg1: *mut mrb_state, arg2: *mut RObject);
 }
 pub type mrb_iv_foreach_func = ::std::option::Option<
@@ -3625,7 +3286,6 @@ pub type mrb_iv_foreach_func = ::std::option::Option<
     ) -> ::std::os::raw::c_int,
 >;
 extern "C" {
-    #[link_name = "\u{1}_mrb_iv_foreach"]
     pub fn mrb_iv_foreach(
         mrb: *mut mrb_state,
         obj: mrb_value,
@@ -3634,98 +3294,75 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_value_is_nil"]
     pub fn mrb_sys_value_is_nil(value: mrb_value) -> bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_value_is_false"]
     pub fn mrb_sys_value_is_false(value: mrb_value) -> bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_value_is_true"]
     pub fn mrb_sys_value_is_true(value: mrb_value) -> bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_fixnum_to_cint"]
     pub fn mrb_sys_fixnum_to_cint(value: mrb_value) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_float_to_cdouble"]
     pub fn mrb_sys_float_to_cdouble(value: mrb_value) -> mrb_float;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_basic_ptr"]
     pub fn mrb_sys_basic_ptr(value: mrb_value) -> *mut RBasic;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_obj_ptr"]
     pub fn mrb_sys_obj_ptr(value: mrb_value) -> *mut RObject;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_proc_ptr"]
     pub fn mrb_sys_proc_ptr(value: mrb_value) -> *mut RProc;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_class_ptr"]
     pub fn mrb_sys_class_ptr(value: mrb_value) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_class_to_rclass"]
     pub fn mrb_sys_class_to_rclass(value: mrb_value) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_class_of_value"]
     pub fn mrb_sys_class_of_value(mrb: *mut mrb_state, value: mrb_value) -> *mut RClass;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_nil_value"]
     pub fn mrb_sys_nil_value() -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_false_value"]
     pub fn mrb_sys_false_value() -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_true_value"]
     pub fn mrb_sys_true_value() -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_fixnum_value"]
     pub fn mrb_sys_fixnum_value(value: mrb_int) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_float_value"]
     pub fn mrb_sys_float_value(mrb: *mut mrb_state, value: mrb_float) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_obj_value"]
     pub fn mrb_sys_obj_value(p: *mut ::std::os::raw::c_void) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_class_value"]
     pub fn mrb_sys_class_value(klass: *mut RClass) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_module_value"]
     pub fn mrb_sys_module_value(module: *mut RClass) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_data_value"]
     pub fn mrb_sys_data_value(data: *mut RData) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_proc_value"]
     pub fn mrb_sys_proc_value(mrb: *mut mrb_state, proc_: *mut RProc) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_symbol_name"]
     pub fn mrb_sys_symbol_name(
         mrb: *mut mrb_state,
         value: mrb_value,
     ) -> *const ::std::os::raw::c_char;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_new_symbol"]
     pub fn mrb_sys_new_symbol(
         mrb: *mut mrb_state,
         string: *const ::std::os::raw::c_char,
@@ -3733,11 +3370,9 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_set_instance_tt"]
     pub fn mrb_sys_set_instance_tt(class: *mut RClass, type_: mrb_vtype);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_data_init"]
     pub fn mrb_sys_data_init(
         value: *mut mrb_value,
         ptr: *mut ::std::os::raw::c_void,
@@ -3745,7 +3380,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_raise"]
     pub fn mrb_sys_raise(
         mrb: *mut mrb_state,
         eclass: *const ::std::os::raw::c_char,
@@ -3753,39 +3387,30 @@ extern "C" {
     );
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_raise_current_exception"]
     pub fn mrb_sys_raise_current_exception(mrb: *mut mrb_state);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_value_debug_str"]
     pub fn mrb_sys_value_debug_str(mrb: *mut mrb_state, value: mrb_value) -> mrb_value;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_ary_len"]
     pub fn mrb_sys_ary_len(value: mrb_value) -> mrb_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_gc_arena_save"]
     pub fn mrb_sys_gc_arena_save(mrb: *mut mrb_state) -> ::std::os::raw::c_int;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_gc_arena_restore"]
     pub fn mrb_sys_gc_arena_restore(mrb: *mut mrb_state, arena_index: ::std::os::raw::c_int);
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_gc_disable"]
     pub fn mrb_sys_gc_disable(mrb: *mut mrb_state) -> bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_gc_enable"]
     pub fn mrb_sys_gc_enable(mrb: *mut mrb_state) -> bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_value_is_dead"]
     pub fn mrb_sys_value_is_dead(_mrb: *mut mrb_state, value: mrb_value) -> bool;
 }
 extern "C" {
-    #[link_name = "\u{1}_mrb_sys_gc_live_objects"]
     pub fn mrb_sys_gc_live_objects(mrb: *mut mrb_state) -> ::std::os::raw::c_int;
 }
 pub type __builtin_va_list = [__va_list_tag; 1usize];

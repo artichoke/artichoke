@@ -29,7 +29,7 @@ path = "../mruby-gems"
 path = "../nemesis"
 
 [dependencies.rust-embed]
-version = "4.3.0"
+version = "4.4.0"
 features = ["debug-embed"]
 
 [dependencies.uuid]
