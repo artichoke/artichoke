@@ -1,9 +1,12 @@
+use mruby::def::Parent;
+use mruby::file::MrbFile;
 use mruby::interpreter::Mrb;
 use mruby::load::MrbLoadSources;
 use mruby::MrbError;
 use mruby_gems::Gem;
 use std::borrow::Cow;
 use std::convert::AsRef;
+use std::rc::Rc;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Nemesis::init(interp)
@@ -24,12 +27,39 @@ impl Nemesis {
     }
 }
 
+impl MrbFile for Nemesis {
+    fn require(interp: Mrb) -> Result<(), MrbError> {
+        interp.borrow_mut().def_module::<Self>("Nemesis", None);
+        Ok(())
+    }
+}
+
 impl Gem for Nemesis {
     fn init(interp: &Mrb) -> Result<(), MrbError> {
         for source in Self::iter() {
             let contents = Self::contents(&source)?;
             interp.def_rb_source_file(source, contents)?;
         }
+        interp.def_file_for_type::<_, Self>("nemesis.rb")?;
+        interp.def_file_for_type::<_, Response>("nemesis/response.rb")?;
+        Ok(())
+    }
+}
+
+pub struct Response;
+
+impl MrbFile for Response {
+    fn require(interp: Mrb) -> Result<(), MrbError> {
+        let parent = interp
+            .borrow()
+            .module_spec::<Nemesis>()
+            .ok_or(MrbError::NotDefined("Nemesis".to_owned()))?;
+        let parent = Parent::Module {
+            spec: Rc::clone(&parent),
+        };
+        interp
+            .borrow_mut()
+            .def_class::<Self>("Response", Some(parent), None);
         Ok(())
     }
 }

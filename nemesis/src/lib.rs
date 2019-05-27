@@ -30,6 +30,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     // Preload required gem sources
     interp.eval("require 'rack'")?;
     interp.eval("require 'rack/builder'")?;
+    interp.eval("require 'nemesis'")?;
     interp.eval("require 'nemesis/response'")?;
     Ok(())
 }
