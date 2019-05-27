@@ -1,5 +1,9 @@
+use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::hash::BuildHasher;
 
+use crate::convert::fixnum::Int;
+use crate::convert::float::Float;
 use crate::convert::{Error, FromMrb, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
@@ -65,6 +69,93 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
         }
     }
 }
+
+macro_rules! hash_converter {
+    ($key:ty => $value:ty) => {
+        impl<S: BuildHasher + Default> TryFromMrb<Value> for HashMap<$key, $value, S> {
+            type From = Ruby;
+            type To = Rust;
+
+            unsafe fn try_from_mrb(
+                interp: &Mrb,
+                value: Value,
+            ) -> Result<Self, Error<Self::From, Self::To>> {
+                let pairs = <Vec<(Value, Value)>>::try_from_mrb(interp, value)?;
+                let mut hash = Self::default();
+                for (key, value) in pairs.into_iter() {
+                    let key = <$key>::try_from_mrb(interp, key)?;
+                    let value = <$value>::try_from_mrb(&interp, value)?;
+                    hash.insert(key, value);
+                }
+                Ok(hash)
+            }
+        }
+    };
+}
+
+macro_rules! hash_impl {
+    ($key:ty) => {
+        // non nilable
+        hash_converter!($key => bool);
+        hash_converter!($key => Vec<u8>);
+        hash_converter!($key => Int);
+        hash_converter!($key => Float);
+        hash_converter!($key => String);
+        hash_converter!($key => Option<bool>);
+        hash_converter!($key => Option<Vec<u8>>);
+        hash_converter!($key => Option<Int>);
+        hash_converter!($key => Option<Float>);
+        hash_converter!($key => Option<String>);
+        hash_converter!($key => Vec<bool>);
+        hash_converter!($key => Vec<Vec<u8>>);
+        hash_converter!($key => Vec<Int>);
+        hash_converter!($key => Vec<Float>);
+        hash_converter!($key => Vec<String>);
+        hash_converter!($key => Vec<Option<bool>>);
+        hash_converter!($key => Vec<Option<Vec<u8>>>);
+        hash_converter!($key => Vec<Option<Int>>);
+        hash_converter!($key => Vec<Option<Float>>);
+        hash_converter!($key => Vec<Option<String>>);
+
+        // nilable
+        hash_converter!(Option<$key> => bool);
+        hash_converter!(Option<$key> => Vec<u8>);
+        hash_converter!(Option<$key> => Int);
+        hash_converter!(Option<$key> => Float);
+        hash_converter!(Option<$key> => String);
+        hash_converter!(Option<$key> => Option<bool>);
+        hash_converter!(Option<$key> => Option<Vec<u8>>);
+        hash_converter!(Option<$key> => Option<Int>);
+        hash_converter!(Option<$key> => Option<Float>);
+        hash_converter!(Option<$key> => Option<String>);
+        hash_converter!(Option<$key> => Vec<bool>);
+        hash_converter!(Option<$key> => Vec<Vec<u8>>);
+        hash_converter!(Option<$key> => Vec<Int>);
+        hash_converter!(Option<$key> => Vec<Float>);
+        hash_converter!(Option<$key> => Vec<String>);
+        hash_converter!(Option<$key> => Vec<Option<bool>>);
+        hash_converter!(Option<$key> => Vec<Option<Vec<u8>>>);
+        hash_converter!(Option<$key> => Vec<Option<Int>>);
+        hash_converter!(Option<$key> => Vec<Option<Float>>);
+        hash_converter!(Option<$key> => Vec<Option<String>>);
+
+        // nested hash
+        hash_converter!($key => Vec<(Value, Value)>);
+        hash_converter!(Option<$key> => Vec<(Value, Value)>);
+
+        // bail out
+        hash_converter!($key => Value);
+        hash_converter!($key => Option<Value>);
+        hash_converter!(Option<$key> => Value);
+        hash_converter!(Option<$key> => Option<Value>);
+    };
+}
+
+// Primitive keys except for `f64` because `f64` is not hashable.
+hash_impl!(bool);
+hash_impl!(Vec<u8>);
+hash_impl!(Int);
+hash_impl!(String);
 
 #[cfg(test)]
 mod value {
