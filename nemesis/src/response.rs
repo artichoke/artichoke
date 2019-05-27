@@ -6,9 +6,7 @@
 //! [`Rack::Response`](https://github.com/rack/rack/blob/2.0.7/lib/rack/response.rb).
 
 use log::warn;
-use mruby::def::ClassLike;
 use mruby::interpreter::Mrb;
-use mruby::sys;
 use mruby::value::{Value, ValueLike};
 use mruby::MrbError;
 use rocket::http::Status;
@@ -87,13 +85,11 @@ impl Response {
             );
             return Err(Error::RackResponse);
         }
-        let classptr = interp
+        let class = interp
             .borrow()
             .class_spec::<nemesis::Response>()
-            .and_then(|spec| spec.borrow().rclass(interp))
+            .and_then(|spec| spec.borrow().value(interp))
             .ok_or_else(|| Error::Mrb(MrbError::NotDefined("Nemesis::Response".to_owned())))?;
-        let class = unsafe { sys::mrb_sys_class_value(classptr) };
-        let class = Value::new(interp, class);
         let response = class.funcall::<Value, _, _>("new", response)?;
         Ok(Self {
             status: Self::status(&response)?,
