@@ -64,6 +64,11 @@ tagged with
 [_good first issue_](https://github.com/lopopolo/ferrocarril/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 might be a good introduction to the codebase.
 
+### Setup
+
+A ferrocarril development environment has several dependencies.
+[Setup your development environment](/guide/development-setup.md).
+
 ### Code Overview
 
 To familiarize yourself with the code in this workspace, consider reviewing
