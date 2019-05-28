@@ -1,11 +1,9 @@
 use crate::interpreter::Mrb;
 use crate::MrbError;
 
-pub mod core;
-pub mod stdlib;
+pub mod monitor;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
-    core::patch(interp)?;
-    stdlib::patch(interp)?;
+    monitor::init(interp)?;
     Ok(())
 }
