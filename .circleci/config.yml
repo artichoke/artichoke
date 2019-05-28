@@ -58,6 +58,8 @@ jobs:
           name: Check Docs
           command: |
             cargo doc --no-deps --all
+          environment:
+            RUSTDOCFLAGS: "-Z unstable-options --enable-index-page"
       - persist_to_workspace:
           root: target
           paths:
