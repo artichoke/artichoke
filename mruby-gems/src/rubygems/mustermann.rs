@@ -21,9 +21,35 @@ struct Mustermann;
 impl Mustermann {
     fn contents<T: AsRef<str>>(path: T) -> Result<Vec<u8>, MrbError> {
         let path = path.as_ref();
-        Self::get(path)
+        let contents = Self::get(path)
             .map(Cow::into_owned)
-            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))
+            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))?;
+        // patches
+        if path == "mustermann/error.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace(
+                "defined?(Mustermann::Error)",
+                "Mustermann.const_defined?(:Error)",
+            );
+            Ok(string.into_bytes())
+        } else if path == "mustermann/pattern.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("private_constant", "# private_constant");
+            Ok(string.into_bytes())
+        } else if path == "mustermann.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("defined?(Pry) or defined?(IRB)", "false");
+            string = string.replace(
+                "defined? ::Sinatra::Base",
+                "Object.const_defined?(:Sinatra)",
+            );
+            Ok(string.into_bytes())
+        } else {
+            Ok(contents)
+        }
     }
 }
 
@@ -36,4 +62,3 @@ impl Gem for Mustermann {
         Ok(())
     }
 }
-
