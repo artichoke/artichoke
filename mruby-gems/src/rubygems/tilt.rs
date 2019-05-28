@@ -6,38 +6,28 @@ use std::convert::AsRef;
 
 use crate::Gem;
 
-/// Load the [`Rack`] gem into an interpreter.
+/// Load the [`Tilt`] gem into an interpreter.
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
-    Rack::init(interp)
+    Tilt::init(interp)
 }
 
 /// Gem
 #[derive(RustEmbed)]
 // TODO: resolve path relative to CARGO_MANIFEST_DIR
 // https://github.com/pyros2097/rust-embed/pull/59
-#[folder = "mruby-gems/vendor/ruby/2.6.0/gems/rack-2.0.7/lib"]
-struct Rack;
+#[folder = "mruby-gems/vendor/ruby/2.6.0/gems/tilt-2.0.9/lib"]
+struct Tilt;
 
-impl Rack {
+impl Tilt {
     fn contents<T: AsRef<str>>(path: T) -> Result<Vec<u8>, MrbError> {
         let path = path.as_ref();
-        let contents = Self::get(path)
+        Self::get(path)
             .map(Cow::into_owned)
-            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))?;
-        // patches
-        if path == "rack/builder.rb" {
-            let bad = "TOPLEVEL_BINDING";
-            let good = "nil";
-            let string = String::from_utf8(contents)
-                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
-            Ok(string.replace(bad, good).into_bytes())
-        } else {
-            Ok(contents)
-        }
+            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))
     }
 }
 
-impl Gem for Rack {
+impl Gem for Tilt {
     fn init(interp: &Mrb) -> Result<(), MrbError> {
         for source in Self::iter() {
             let contents = Self::contents(&source)?;
