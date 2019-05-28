@@ -119,6 +119,45 @@ yarn install
 You can check to see that this worked by running `yarn lint` and observing no
 errors.
 
+### Ruby
+
+ferrocarril requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x.
+The [`.ruby-version`](/.ruby-version) file in the root of ferrocarril specifies
+Ruby 2.6.3.
+
+If you use [RVM](https://rvm.io/), you can install Ruby dependencies by running:
+
+```shell
+rvm install "$(cat .ruby-version)"
+gem install bundler
+```
+
+If you use [rbenv](https://github.com/rbenv/rbenv) and
+[ruby-build](https://github.com/rbenv/ruby-build), you can install Ruby
+dependencies by running:
+
+```shell
+rbenv install "$(cat .ruby-version)"
+gem install bundler
+rbenv rehash
+```
+
+To lint Ruby sources, ferrocarril uses
+[Rubocop](https://github.com/rubocop-hq/rubocop). `yarn lint` installs Rubocop
+and all other gems automatically.
+
+### Shell
+
+ferrocarril uses [shfmt](https://github.com/mvdan/sh) for formatting and
+[shellcheck](https://github.com/koalaman/shellcheck) for linting Shell scripts.
+
+On macOS, you can install shfmt and shellcheck with
+[Homebrew](https://docs.brew.sh/Installation):
+
+```shell
+brew install shfmt shellcheck
+```
+
 ## Updating Dependencies
 
 ### Rust Toolchain
