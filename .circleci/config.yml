@@ -94,7 +94,7 @@ jobs:
               -print0 | xargs -0 -n1 bash -c '_check_clang_format "$@"' _
   ruby:
     docker:
-      - image: circleci/ruby:2.6.0
+      - image: circleci/ruby:2.6.3
     steps:
       - checkout
       - run:
