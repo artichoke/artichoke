@@ -169,7 +169,7 @@ jobs:
           name: Format Text Sources
           command: |
             yarn run prettier --version
-            if ! yarn run prettier --check --prose-wrap always './*.{css,html,js,json,md}' '{mruby*,foolsgold}/**/*.{css,html,js,json,md}'; then
+            if ! yarn run prettier --check --prose-wrap always './*.{css,html,js,json,md}' '{!(target),!(node_modules)}**/*.{css,html,js,json,md}'; then
               echo "KO: Text files not formatted"
               echo "    Please run 'yarn lint' to resolve text formatting issues"
               exit 1
