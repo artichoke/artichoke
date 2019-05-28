@@ -373,6 +373,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ditty"
+version = "0.1.0"
+dependencies = [
+ "mruby 0.1.0",
+ "mruby-gems 0.1.0",
+ "nemesis 0.1.0",
+ "rocket 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "either"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

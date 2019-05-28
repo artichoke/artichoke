@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "ditty",
   "foolsgold",
   "mruby",
   "mruby-bin",
