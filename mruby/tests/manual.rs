@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate mruby;
 
-use mruby::convert::TryFromMrb;
+use mruby::convert::{FromMrb, TryFromMrb};
 use mruby::def::{rust_data_free, ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
@@ -70,7 +70,7 @@ impl Container {
         let container = Rc::clone(&data);
         mem::forget(data);
         let borrow = container.borrow();
-        unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, borrow.inner))
+        Value::from_mrb(&interp, borrow.inner).inner()
     }
 }
 
