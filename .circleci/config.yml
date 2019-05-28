@@ -80,7 +80,7 @@ jobs:
             _check_clang_format() {
               if yarn run clang-format -output-replacements-xml "$1" | grep -q "offset"; then
                 echo "KO: $1"
-                echo "    Please run 'yarn fmt-c' to resolve C formatting issues"
+                echo "    Please run 'yarn lint' to resolve C formatting issues"
                 return 1
               else
                 echo "OK: $1"
@@ -171,7 +171,7 @@ jobs:
             yarn run prettier --version
             if ! yarn run prettier --check --prose-wrap always './*.{css,html,js,json,md}' '{mruby*,foolsgold}/**/*.{css,html,js,json,md}'; then
               echo "KO: Text files not formatted"
-              echo "    Please run 'yarn fmt-text' to resolve text formatting issues"
+              echo "    Please run 'yarn lint' to resolve text formatting issues"
               exit 1
             fi
 workflows:
