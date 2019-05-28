@@ -5,7 +5,7 @@ interpreter in the mruby crate.
 
 ## A virtual filesystem with a fake implementation of unix file system operations.
 
-[Documentation](https://docs.rs/filesystem)
+[Documentation](https://lopopolo.github.io/ferrocarril/mruby_vfs/index.html)
 
 mruby-vfs provides a fake implementation of unix file system-related
 functionality. It abstracts away details of certain common but complex
