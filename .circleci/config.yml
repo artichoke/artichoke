@@ -58,6 +58,10 @@ jobs:
           name: Check Docs
           command: |
             cargo doc --no-deps --all
+      - persist_to_workspace:
+          root: target
+          paths:
+            - doc
   c:
     docker:
       - image: circleci/node:lts
@@ -174,6 +178,25 @@ jobs:
               echo "    Please run 'yarn lint' to resolve text formatting issues"
               exit 1
             fi
+  docs-deploy:
+    docker:
+      - image: node:8.10.0
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "23:28:57:b8:bc:d6:23:9f:bc:f3:68:56:29:90:68:c4"
+      - attach_workspace:
+          at: target
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "ci-build@hyperbo.la"
+            git config user.name "ci-build"
+      - run:
+          name: Deploy docs to gh-pages branch
+          command: gh-pages --message "[skip ci] generate docs" --dist target/doc
 workflows:
   version: 2
   build:
@@ -182,3 +205,9 @@ workflows:
       - c
       - ruby
       - text
+      - docs-deploy:
+          requires:
+            - rust
+          filters:
+            branches:
+              only: master
