@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set -x
 
 lint_ruby_sources() {
   pushd "$@" >/dev/null
