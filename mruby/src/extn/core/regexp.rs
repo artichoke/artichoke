@@ -1,5 +1,6 @@
 use std::cell::RefCell;
-use std::ffi::{c_void, CString};
+use std::ffi::c_void;
+use std::io::Write;
 use std::mem;
 use std::rc::Rc;
 
@@ -148,7 +149,7 @@ impl Default for Encoding {
 
 #[derive(Debug, Clone)]
 pub struct Regexp {
-    source: String,
+    pattern: String,
     options: Options,
     encoding: Encoding,
 }
@@ -169,8 +170,73 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         mut slf: sys::mrb_value,
     ) -> sys::mrb_value {
+        struct Args {
+            pattern: Value,
+            options: Option<Options>,
+            encoding: Option<Encoding>,
+        }
+
+        impl Args {
+            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+                let pattern = mem::uninitialized::<sys::mrb_value>();
+                let options = mem::uninitialized::<sys::mrb_value>();
+                let has_options = mem::uninitialized::<sys::mrb_bool>();
+                let encoding = mem::uninitialized::<sys::mrb_value>();
+                let has_encoding = mem::uninitialized::<sys::mrb_bool>();
+                let mut argspec = vec![];
+                argspec
+                    .write_all(
+                        format!(
+                            "{}{}{}{}{}{}\0",
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN,
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
+                        )
+                        .as_bytes(),
+                    )
+                    .map_err(|_| MrbError::ArgSpec)?;
+                sys::mrb_get_args(
+                    interp.borrow().mrb,
+                    argspec.as_ptr() as *const i8,
+                    &pattern,
+                    &options,
+                    &has_options,
+                    &encoding,
+                    &has_encoding,
+                );
+                let pattern = Value::new(&interp, pattern);
+                // the C boolean as u8 comparisons are easier if we keep the
+                // comparison inverted.
+                #[allow(clippy::if_not_else)]
+                let (options, encoding) = if has_encoding != 0 {
+                    let encoding = Some(Encoding::from_value(&interp, encoding, false)?);
+                    let options = if has_options == 0 {
+                        None
+                    } else {
+                        Some(Options::from_value(&interp, options)?)
+                    };
+                    (options, encoding)
+                } else if has_options != 0 {
+                    (
+                        Some(Options::from_value(&interp, options)?),
+                        Some(Encoding::from_value(&interp, options, true)?),
+                    )
+                } else {
+                    (None, None)
+                };
+                Ok(Self {
+                    pattern,
+                    options,
+                    encoding,
+                })
+            }
+        }
+
         let interp = interpreter_or_raise!(mrb);
-        let mrb = { interp.borrow().mrb };
+        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
         let spec = class_spec_or_raise!(interp, Self);
         let regexp_class = unwrap_or_raise!(
             interp,
@@ -179,68 +245,20 @@ impl Regexp {
                 .ok_or(MrbError::NotDefined("Regexp".to_owned())),
             interp.nil().inner()
         );
+        let pattern_is_regexp =
+            sys::mrb_obj_is_kind_of(interp.borrow().mrb, args.pattern.inner(), regexp_class) != 0;
 
-        let source = mem::uninitialized::<sys::mrb_value>();
-        let options = mem::uninitialized::<sys::mrb_value>();
-        let has_options = mem::uninitialized::<sys::mrb_bool>();
-        let encoding = mem::uninitialized::<sys::mrb_value>();
-        let has_encoding = mem::uninitialized::<sys::mrb_bool>();
-        let argspec = unwrap_or_raise!(
-            interp,
-            CString::new(format!(
-                "{}{}{}{}{}{}",
-                sys::specifiers::OBJECT,
-                sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                sys::specifiers::OBJECT,
-                sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN,
-                sys::specifiers::OBJECT,
-                sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-            )),
-            interp.nil().inner()
-        );
-        sys::mrb_get_args(
-            mrb,
-            argspec.as_ptr(),
-            &source,
-            &options,
-            &has_options,
-            &encoding,
-            &has_encoding,
-        );
-        let opts = if has_options == 0 {
-            Options::default()
-        } else {
-            unwrap_or_raise!(
-                interp,
-                Options::from_value(&interp, options),
-                interp.nil().inner()
-            )
-        };
-        // the C boolean as u8 comparisons are easier if we keep the comparison
-        // inverted.
-        #[allow(clippy::if_not_else)]
-        let encoding = if has_encoding != 0 {
-            Encoding::from_value(&interp, encoding, false)
-        } else if has_options != 0 {
-            Encoding::from_value(&interp, options, true)
-        } else {
-            Ok(Encoding::default())
-        };
-        let encoding = unwrap_or_raise!(interp, encoding, interp.nil().inner());
-
-        let source = if sys::mrb_obj_is_kind_of(mrb, source, regexp_class) == 0 {
-            String::try_from_mrb(&interp, Value::new(&interp, source))
-                .map_err(MrbError::ConvertToRust)
-        } else {
+        let pattern = if pattern_is_regexp {
             // TODO: this doesn't work because we have not implemented the
             // `__regexp_source` accessor.
-            Value::new(&interp, source).funcall::<String, _, _>("__regexp_source", &[])
+            args.pattern.funcall::<String, _, _>("__regexp_source", &[])
+        } else {
+            args.pattern.funcall::<String, _, _>("itself", &[])
         };
-        let source = unwrap_or_raise!(interp, source, interp.nil().inner());
         let data = Self {
-            source,
-            options: opts,
-            encoding,
+            pattern: unwrap_or_raise!(interp, pattern, interp.nil().inner()),
+            options: args.options.unwrap_or_default(),
+            encoding: args.encoding.unwrap_or_default(),
         };
         let data = Rc::new(RefCell::new(data));
 
@@ -254,8 +272,36 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         mut _slf: sys::mrb_value,
     ) -> sys::mrb_value {
+        struct Args {
+            rest: Vec<Value>,
+        }
+
+        impl Args {
+            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+                let args = mem::uninitialized::<*const sys::mrb_value>();
+                let count = mem::uninitialized::<usize>();
+                let mut argspec = vec![];
+                argspec
+                    .write_all(sys::specifiers::REST.as_bytes())
+                    .map_err(|_| MrbError::ArgSpec)?;
+                argspec.write_all(b"\0").map_err(|_| MrbError::ArgSpec)?;
+                sys::mrb_get_args(
+                    interp.borrow().mrb,
+                    argspec.as_ptr() as *const i8,
+                    &args,
+                    &count,
+                );
+                let args = std::slice::from_raw_parts(args, count);
+                let args = args
+                    .iter()
+                    .map(|value| Value::new(&interp, *value))
+                    .collect::<Vec<_>>();
+                Ok(Self { rest: args })
+            }
+        }
+
         let interp = interpreter_or_raise!(mrb);
-        let mrb = { interp.borrow().mrb };
+        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
         let spec = class_spec_or_raise!(interp, Self);
         let regexp_class = unwrap_or_raise!(
             interp,
@@ -265,20 +311,10 @@ impl Regexp {
             interp.nil().inner()
         );
 
-        let args = mem::uninitialized::<*const sys::mrb_value>();
-        let count = mem::uninitialized::<usize>();
-        let argspec = unwrap_or_raise!(
+        unwrap_value_or_raise!(
             interp,
-            CString::new(sys::specifiers::REST),
-            interp.nil().inner()
-        );
-        sys::mrb_get_args(mrb, argspec.as_ptr(), &args, &count);
-        let args = std::slice::from_raw_parts(args, count);
-        let args = args
-            .iter()
-            .map(|value| Value::new(&interp, *value))
-            .collect::<Vec<_>>();
-        unwrap_value_or_raise!(interp, regexp_class.funcall::<Value, _, _>("new", args))
+            regexp_class.funcall::<Value, _, _>("new", args.rest)
+        )
     }
 }
 
