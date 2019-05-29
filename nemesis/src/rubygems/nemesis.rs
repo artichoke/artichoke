@@ -6,7 +6,6 @@ use mruby::MrbError;
 use mruby_gems::Gem;
 use std::borrow::Cow;
 use std::convert::AsRef;
-use std::rc::Rc;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Nemesis::init(interp)
@@ -53,10 +52,8 @@ impl MrbFile for Response {
         let parent = interp
             .borrow()
             .module_spec::<Nemesis>()
+            .map(Parent::module)
             .ok_or(MrbError::NotDefined("Nemesis".to_owned()))?;
-        let parent = Parent::Module {
-            spec: Rc::clone(&parent),
-        };
         interp
             .borrow_mut()
             .def_class::<Self>("Response", Some(parent), None);
