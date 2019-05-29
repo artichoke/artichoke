@@ -93,6 +93,7 @@ impl Parent {
     ///     api.def_class::<Inner>("Inner", Some(parent), None);
     /// }
     /// ```
+    #[allow(clippy::needless_pass_by_value)]
     pub fn class(spec: Rc<RefCell<class::Spec>>) -> Self {
         Parent::Class {
             spec: Rc::clone(&spec),
@@ -118,6 +119,7 @@ impl Parent {
     ///     api.def_class::<Inner>("Inner", Some(parent), None);
     /// }
     /// ```
+    #[allow(clippy::needless_pass_by_value)]
     pub fn module(spec: Rc<RefCell<module::Spec>>) -> Self {
         Parent::Module {
             spec: Rc::clone(&spec),
