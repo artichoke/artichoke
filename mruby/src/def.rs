@@ -246,39 +246,18 @@ mod tests {
         {
             let mut api = interp.borrow_mut();
             let root = api.def_module::<Root>("A", None);
-            let mod_under_root = api.def_module::<ModuleUnderRoot>(
-                "B",
-                Some(Parent::Module {
-                    spec: Rc::clone(&root),
-                }),
-            );
-            let cls_under_root = api.def_class::<ClassUnderRoot>(
-                "C",
-                Some(Parent::Module {
-                    spec: Rc::clone(&root),
-                }),
-                None,
-            );
-            let _cls_under_mod = api.def_class::<ClassUnderModule>(
-                "D",
-                Some(Parent::Module {
-                    spec: Rc::clone(&mod_under_root),
-                }),
-                None,
-            );
+            let mod_under_root =
+                api.def_module::<ModuleUnderRoot>("B", Some(Parent::module(Rc::clone(&root))));
+            let cls_under_root =
+                api.def_class::<ClassUnderRoot>("C", Some(Parent::module(root)), None);
+            let _cls_under_mod =
+                api.def_class::<ClassUnderModule>("D", Some(Parent::module(mod_under_root)), None);
             let _mod_under_cls = api.def_module::<ModuleUnderClass>(
                 "E",
-                Some(Parent::Class {
-                    spec: Rc::clone(&cls_under_root),
-                }),
+                Some(Parent::class(Rc::clone(&cls_under_root))),
             );
-            let _cls_under_cls = api.def_class::<ClassUnderClass>(
-                "F",
-                Some(Parent::Class {
-                    spec: Rc::clone(&cls_under_root),
-                }),
-                None,
-            );
+            let _cls_under_cls =
+                api.def_class::<ClassUnderClass>("F", Some(Parent::class(cls_under_root)), None);
         }
 
         let api = interp.borrow();
