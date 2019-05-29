@@ -11,23 +11,75 @@ use crate::module;
 use crate::sys;
 use crate::MrbError;
 
-// Types
+/// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
+/// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
 pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void);
-pub type Method =
-    unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
 
+/// A generic implementation of a [`Free`] function for
+/// [`mrb_value`](sys::mrb_value)s that store an owned copy of an [`Rc`] smart
+/// pointer.
+///
+/// *Warning*: This free function assumes the data pointer of the `mrb_value` is
+/// a `Rc<RefCell<T>>`. If that assumption does not hold, this function has
+/// undefined behavior.
 pub unsafe extern "C" fn rust_data_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void) {
     // Implicitly dropped by going out of scope
     mem::transmute::<*mut c_void, Rc<RefCell<T>>>(data);
 }
 
+/// Typedef for a method exposed in the mruby interpreter.
+///
+/// This function signature is used for all types of mruby methods, including
+/// instance methods, class methods, singleton methods, and global methods.
+///
+/// `slf` is the method receiver, e.g. `s` in the following invocation of
+/// `String#start_with?`.
+///
+/// ```ruby
+/// s = 'mruby crate'
+/// s.start_with?('mruby')
+/// ```
+///
+/// To extract method arguments, use [`sys::mrb_get_args`] and the suppilied
+/// interpreter.
+pub type Method =
+    unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
+
+/// Typesafe wrapper for the [`RClass *`](sys::RClass) of the enclosing scope
+/// for an mruby `Module` or `Class`.
+///
+/// In Ruby, classes and modules can be defined inside of another class or
+/// module. mruby only supports resolving [`RClass`](sys::RClass) pointers
+/// relative to an enclosing scope. This can be the top level with
+/// [`mrb_class_get`](sys::mrb_class_get) and
+/// [`mrb_module_get`](sys::mrb_module_get) or it can be under another
+/// [`ClassLike`] with [`mrb_class_get_under`](sys::mrb_class_get_under) and
+/// [`mrb_module_get_under`](sys::mrb_module_get_under).
+///
+/// Because there is no C API to resolve class and module names directly, each
+/// [`ClassLike`] holds a reference to its parent so it can recursively resolve
+/// its [`RClass *`](sys::RClass).
 #[derive(Clone, Debug)]
 pub enum Parent {
-    Class { spec: Rc<RefCell<class::Spec>> },
-    Module { spec: Rc<RefCell<module::Spec>> },
+    /// Reference to a Ruby `Class` parent scope.
+    Class {
+        /// Shared copy of the underlying [class definition](class::Spec).
+        spec: Rc<RefCell<class::Spec>>,
+    },
+    /// Reference to a Ruby `Module` parent scope.
+    Module {
+        /// Shared copy of the underlying [module definition](module::Spec).
+        spec: Rc<RefCell<module::Spec>>,
+    },
 }
 
 impl Parent {
+    /// Resolve the [`RClass *`](sys::RClass) of the wrapped [`ClassLike`].
+    ///
+    /// Return [`None`] if the `ClassLike` has no [`Parent`].
+    ///
+    /// The current implemention results in recursive calls to this function
+    /// for each enclosing scope.
     pub fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass> {
         match self {
             Parent::Class { spec } => spec.borrow().rclass(interp),
@@ -35,6 +87,19 @@ impl Parent {
         }
     }
 
+    /// Get the fully qualified name of the wrapped [`ClassLike`].
+    ///
+    /// For example, in the following Ruby code, `C` has an fqname of `A::B::C`.
+    ///
+    /// ```ruby
+    /// module A
+    ///   class B
+    ///     module C
+    ///       CONST = 1
+    ///     end
+    ///   end
+    /// end
+    /// ```
     pub fn fqname(&self) -> String {
         match self {
             Parent::Class { spec } => spec.borrow().fqname(),
@@ -74,6 +139,9 @@ pub trait Define
 where
     Self: ClassLike,
 {
+    /// Define the class or module and all of its methods into the interpreter.
+    ///
+    /// Returns the [`RClass *`](sys::RClass) of the newly defined item.
     fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError>;
 }
 
