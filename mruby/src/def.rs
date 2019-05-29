@@ -74,6 +74,56 @@ pub enum Parent {
 }
 
 impl Parent {
+    /// Factory for [`Parent::Class`] that clones an `Rc` smart pointer wrapped
+    /// [`class::Spec`].
+    ///
+    /// This function is useful when extracting a parent class from the class
+    /// registry:
+    ///
+    /// ```rust
+    /// use mruby::def::Parent;
+    /// use mruby::interpreter::Interpreter;
+    ///
+    /// struct Fixnum;
+    /// struct Inner;
+    ///
+    /// let interp = Interpreter::create().expect("mrb init");
+    /// let mut api = interp.borrow_mut();
+    /// if let Some(parent) = api.class_spec::<Fixnum>().map(Parent::class) {
+    ///     api.def_class::<Inner>("Inner", Some(parent), None);
+    /// }
+    /// ```
+    pub fn class(spec: Rc<RefCell<class::Spec>>) -> Self {
+        Parent::Class {
+            spec: Rc::clone(&spec),
+        }
+    }
+
+    /// Factory for [`Parent::Module`] that clones an `Rc` smart pointer wrapped
+    /// [`module::Spec`].
+    ///
+    /// This function is useful when extracting a parent module from the module
+    /// registry:
+    ///
+    /// ```rust
+    /// use mruby::def::Parent;
+    /// use mruby::interpreter::Interpreter;
+    ///
+    /// struct Kernel;
+    /// struct Inner;
+    ///
+    /// let interp = Interpreter::create().expect("mrb init");
+    /// let mut api = interp.borrow_mut();
+    /// if let Some(parent) = api.module_spec::<Kernel>().map(Parent::module) {
+    ///     api.def_class::<Inner>("Inner", Some(parent), None);
+    /// }
+    /// ```
+    pub fn module(spec: Rc<RefCell<module::Spec>>) -> Self {
+        Parent::Module {
+            spec: Rc::clone(&spec),
+        }
+    }
+
     /// Resolve the [`RClass *`](sys::RClass) of the wrapped [`ClassLike`].
     ///
     /// Return [`None`] if the `ClassLike` has no [`Parent`].
