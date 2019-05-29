@@ -172,9 +172,7 @@ mod tests {
     fn rclass_for_undef_nested_module() {
         let interp = Interpreter::create().expect("mrb init");
         let parent = Spec::new("Kernel", None);
-        let parent = Parent::Module {
-            spec: Rc::new(RefCell::new(parent)),
-        };
+        let parent = Parent::module(Rc::new(RefCell::new(parent)));
         let spec = Spec::new("Foo", Some(parent));
         assert!(spec.rclass(&interp).is_none());
     }
@@ -193,9 +191,7 @@ mod tests {
             .eval("module Foo; module Bar; end; end")
             .expect("eval");
         let parent = Spec::new("Foo", None);
-        let parent = Parent::Module {
-            spec: Rc::new(RefCell::new(parent)),
-        };
+        let parent = Parent::module(Rc::new(RefCell::new(parent)));
         let spec = Spec::new("Bar", Some(parent));
         assert!(spec.rclass(&interp).is_some());
     }
@@ -207,9 +203,7 @@ mod tests {
             .eval("class Foo; module Bar; end; end")
             .expect("eval");
         let parent = class::Spec::new("Foo", None, None);
-        let parent = Parent::Class {
-            spec: Rc::new(RefCell::new(parent)),
-        };
+        let parent = Parent::class(Rc::new(RefCell::new(parent)));
         let spec = Spec::new("Bar", Some(parent));
         assert!(spec.rclass(&interp).is_some());
     }
