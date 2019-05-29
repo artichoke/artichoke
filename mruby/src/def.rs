@@ -19,9 +19,9 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 /// [`mrb_value`](sys::mrb_value)s that store an owned copy of an [`Rc`] smart
 /// pointer.
 ///
-/// *Warning*: This free function assumes the data pointer of the `mrb_value` is
-/// a `Rc<RefCell<T>>`. If that assumption does not hold, this function has
-/// undefined behavior.
+/// **Warning**: This free function assumes the `data` pointer is an
+/// `Rc<RefCell<T>>`. If that assumption does not hold, this function has
+/// undefined behavior and may result in a segfault.
 pub unsafe extern "C" fn rust_data_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void) {
     // Implicitly dropped by going out of scope
     mem::transmute::<*mut c_void, Rc<RefCell<T>>>(data);
