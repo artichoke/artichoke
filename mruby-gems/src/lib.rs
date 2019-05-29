@@ -22,7 +22,6 @@ mod tests {
     use mruby::interpreter::{Interpreter, Mrb};
     use mruby::load::MrbLoadSources;
     use mruby::MrbError;
-    use std::rc::Rc;
 
     use crate::Gem;
 
@@ -54,10 +53,8 @@ mod tests {
             let parent = interp
                 .borrow()
                 .module_spec::<Foo>()
+                .map(Parent::module)
                 .ok_or(MrbError::NotDefined("Foo".to_owned()))?;
-            let parent = Parent::Module {
-                spec: Rc::clone(&parent),
-            };
             interp
                 .borrow_mut()
                 .def_class::<Self>("Bar", Some(parent), None);

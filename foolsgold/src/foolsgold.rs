@@ -103,10 +103,8 @@ impl MrbFile for Counter {
             let mut api = interp.borrow_mut();
             let parent = api
                 .module_spec::<FoolsGold>()
+                .map(Parent::module)
                 .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
-            let parent = Parent::Module {
-                spec: Rc::clone(&parent),
-            };
             // We do not need to define a free method since we are not storing
             // any data in the `mrb_value`.
             let spec = api.def_class::<Self>("Counter", Some(parent), None);
@@ -128,10 +126,8 @@ impl MrbFile for Metrics {
         let parent = interp
             .borrow()
             .module_spec::<FoolsGold>()
+            .map(Parent::module)
             .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
-        let parent = Parent::Module {
-            spec: Rc::clone(&parent),
-        };
         let spec = interp
             .borrow_mut()
             .def_module::<Self>("Metrics", Some(parent));
@@ -199,12 +195,10 @@ impl MrbFile for RequestContext {
 
         let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api
+            let parent = api
                 .module_spec::<FoolsGold>()
+                .map(Parent::module)
                 .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
-            let parent = Parent::Module {
-                spec: Rc::clone(&spec),
-            };
             let spec =
                 api.def_class::<Self>("RequestContext", Some(parent), Some(rust_data_free::<Self>));
             spec.borrow_mut().mrb_value_is_rust_backed(true);
