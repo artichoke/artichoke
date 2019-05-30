@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 # = monitor.rb
 #
 # Copyright (C) 2001  Shugo Maeda <shugo@ruby-lang.org>
@@ -94,7 +95,7 @@ module MonitorMixin
   # above calls while_wait and signal, this class should be documented.
   #
   class ConditionVariable
-    class Timeout < Exception; end
+    class Timeout < Exception; end # rubocop:disable Lint/InheritException
 
     #
     # Releases the lock held in the associated monitor and waits; reacquires the lock on wakeup.
@@ -121,18 +122,14 @@ module MonitorMixin
     # Calls wait repeatedly while the given block yields a truthy value.
     #
     def wait_while
-      while yield
-        wait
-      end
+      wait while yield
     end
 
     #
     # Calls wait repeatedly until the given block yields a truthy value.
     #
     def wait_until
-      until yield
-        wait
-      end
+      wait until yield
     end
 
     #
@@ -169,14 +166,13 @@ module MonitorMixin
   #
   def mon_try_enter
     if @mon_owner != Thread.current
-      unless @mon_mutex.try_lock
-        return false
-      end
+      return false unless @mon_mutex.try_lock
+
       @mon_owner = Thread.current
       @mon_count = 0
     end
     @mon_count += 1
-    return true
+    true
   end
   # For backward compatibility
   alias try_mon_enter mon_try_enter
@@ -198,7 +194,7 @@ module MonitorMixin
   #
   def mon_exit
     mon_check_owner
-    @mon_count -=1
+    @mon_count -= 1
     if @mon_count == 0
       @mon_owner = nil
       @mon_mutex.unlock
@@ -239,7 +235,7 @@ module MonitorMixin
   # receiver.
   #
   def new_cond
-    return ConditionVariable.new(self)
+    ConditionVariable.new(self)
   end
 
   private
@@ -255,9 +251,8 @@ module MonitorMixin
   # Initializes the MonitorMixin after being included in a class or when an
   # object has been extended with the MonitorMixin
   def mon_initialize
-    if defined?(@mon_mutex) && @mon_mutex_owner_object_id == object_id
-      raise ThreadError, "already initialized"
-    end
+    raise ThreadError, 'already initialized' if defined?(@mon_mutex) && @mon_mutex_owner_object_id == object_id
+
     @mon_mutex = Thread::Mutex.new
     @mon_mutex_owner_object_id = object_id
     @mon_owner = nil
@@ -265,9 +260,7 @@ module MonitorMixin
   end
 
   def mon_check_owner
-    if @mon_owner != Thread.current
-      raise ThreadError, "current thread not owner"
-    end
+    raise ThreadError, 'current thread not owner' if @mon_owner != Thread.current
   end
 
   def mon_enter_for_cond(count)
@@ -279,7 +272,7 @@ module MonitorMixin
     count = @mon_count
     @mon_owner = nil
     @mon_count = 0
-    return count
+    count
   end
 end
 
