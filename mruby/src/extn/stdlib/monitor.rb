@@ -1,5 +1,4 @@
 # frozen_string_literal: false
-
 # = monitor.rb
 #
 # Copyright (C) 2001  Shugo Maeda <shugo@ruby-lang.org>
@@ -95,7 +94,7 @@ module MonitorMixin
   # above calls while_wait and signal, this class should be documented.
   #
   class ConditionVariable
-    class Timeout < Exception; end # rubocop:disable Lint/InheritException
+    class Timeout < Exception; end
 
     #
     # Releases the lock held in the associated monitor and waits; reacquires the lock on wakeup.
@@ -103,13 +102,18 @@ module MonitorMixin
     # If +timeout+ is given, this method returns after +timeout+ seconds passed,
     # even if no other thread doesn't signal.
     #
-    def wait(_timeout = nil)
-      @monitor.__send__(:mon_check_owner)
-      count = @monitor.__send__(:mon_exit_for_cond)
-      begin
-        true
-      ensure
-        @monitor.__send__(:mon_enter_for_cond, count)
+    def wait(timeout = nil)
+      Thread.handle_interrupt(Exception => :never) do
+        @monitor.__send__(:mon_check_owner)
+        count = @monitor.__send__(:mon_exit_for_cond)
+        begin
+          Thread.handle_interrupt(Exception => :immediate) do
+            @cond.wait(@monitor.instance_variable_get(:@mon_mutex), timeout)
+          end
+          return true
+        ensure
+          @monitor.__send__(:mon_enter_for_cond, count)
+        end
       end
     end
 
@@ -117,14 +121,18 @@ module MonitorMixin
     # Calls wait repeatedly while the given block yields a truthy value.
     #
     def wait_while
-      wait while yield
+      while yield
+        wait
+      end
     end
 
     #
     # Calls wait repeatedly until the given block yields a truthy value.
     #
     def wait_until
-      wait until yield
+      until yield
+        wait
+      end
     end
 
     #
@@ -147,6 +155,7 @@ module MonitorMixin
 
     def initialize(monitor)
       @monitor = monitor
+      @cond = Thread::ConditionVariable.new
     end
   end
 
@@ -159,8 +168,15 @@ module MonitorMixin
   # Attempts to enter exclusive section.  Returns +false+ if lock fails.
   #
   def mon_try_enter
+    if @mon_owner != Thread.current
+      unless @mon_mutex.try_lock
+        return false
+      end
+      @mon_owner = Thread.current
+      @mon_count = 0
+    end
     @mon_count += 1
-    true
+    return true
   end
   # For backward compatibility
   alias try_mon_enter mon_try_enter
@@ -169,6 +185,11 @@ module MonitorMixin
   # Enters exclusive section.
   #
   def mon_enter
+    if @mon_owner != Thread.current
+      @mon_mutex.lock
+      @mon_owner = Thread.current
+      @mon_count = 0
+    end
     @mon_count += 1
   end
 
@@ -177,22 +198,25 @@ module MonitorMixin
   #
   def mon_exit
     mon_check_owner
-    @mon_mutex = false
-    @mon_count -= 1
+    @mon_count -=1
+    if @mon_count == 0
+      @mon_owner = nil
+      @mon_mutex.unlock
+    end
   end
 
   #
   # Returns true if this monitor is locked by any thread
   #
   def mon_locked?
-    @mon_mutex
+    @mon_mutex.locked?
   end
 
   #
   # Returns true if this monitor is locked by current thread.
   #
   def mon_owned?
-    mon_locked?
+    @mon_mutex.locked? && @mon_owner == Thread.current
   end
 
   #
@@ -215,8 +239,7 @@ module MonitorMixin
   # receiver.
   #
   def new_cond
-    # ConditionVariable.new(self)
-    raise 'ConditionVariable not implemented'
+    return ConditionVariable.new(self)
   end
 
   private
@@ -232,24 +255,31 @@ module MonitorMixin
   # Initializes the MonitorMixin after being included in a class or when an
   # object has been extended with the MonitorMixin
   def mon_initialize
-    @mon_mutex = false
+    if defined?(@mon_mutex) && @mon_mutex_owner_object_id == object_id
+      raise ThreadError, "already initialized"
+    end
+    @mon_mutex = Thread::Mutex.new
     @mon_mutex_owner_object_id = object_id
+    @mon_owner = nil
     @mon_count = 0
   end
 
   def mon_check_owner
-    nil
+    if @mon_owner != Thread.current
+      raise ThreadError, "current thread not owner"
+    end
   end
 
   def mon_enter_for_cond(count)
-    @mon_mutex = true
+    @mon_owner = Thread.current
     @mon_count = count
   end
 
   def mon_exit_for_cond
     count = @mon_count
+    @mon_owner = nil
     @mon_count = 0
-    count
+    return count
   end
 end
 
