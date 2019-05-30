@@ -293,7 +293,6 @@ class Monitor
   alias exit mon_exit
 end
 
-
 # Documentation comments:
 #  - All documentation comes from Nutshell.
 #  - MonitorMixin.new_cond appears in the example, but is not documented in
