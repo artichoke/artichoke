@@ -6,7 +6,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-use crate::def::{ClassLike, Define, Free, Method, Parent};
+use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
 use crate::interpreter::Mrb;
 use crate::method;
 use crate::sys;
@@ -18,13 +18,13 @@ pub struct Spec {
     cstring: CString,
     data_type: sys::mrb_data_type,
     methods: HashSet<method::Spec>,
-    parent: Option<Parent>,
+    enclosing_scope: Option<EnclosingRubyScope>,
     super_class: Option<Rc<RefCell<Spec>>>,
     is_mrb_tt_data: bool,
 }
 
 impl Spec {
-    pub fn new<T>(name: T, parent: Option<Parent>, free: Option<Free>) -> Self
+    pub fn new<T>(name: T, enclosing_scope: Option<EnclosingRubyScope>, free: Option<Free>) -> Self
     where
         T: AsRef<str>,
     {
@@ -38,7 +38,7 @@ impl Spec {
             cstring: cstr,
             data_type,
             methods: HashSet::new(),
-            parent,
+            enclosing_scope,
             super_class: None,
             is_mrb_tt_data: false,
         }
@@ -82,31 +82,32 @@ impl ClassLike for Spec {
         &self.name
     }
 
-    fn parent(&self) -> Option<Parent> {
-        self.parent.clone()
+    fn enclosing_scope(&self) -> Option<EnclosingRubyScope> {
+        self.enclosing_scope.clone()
     }
 
     fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass> {
         let mrb = interp.borrow().mrb;
-        if let Some(ref parent) = self.parent {
-            if let Some(parent) = parent.rclass(interp) {
-                if unsafe { sys::mrb_class_defined_under(mrb, parent, self.cstring.as_ptr()) } == 0
-                {
-                    // parent exists and class is NOT defined under parent
+        if let Some(ref scope) = self.enclosing_scope {
+            if let Some(scope) = scope.rclass(interp) {
+                if unsafe { sys::mrb_class_defined_under(mrb, scope, self.cstring.as_ptr()) } == 0 {
+                    // Enclosing scope exists and Class is NOT defined under
+                    // the enclosing scope.
                     None
                 } else {
-                    // parent exists class is defined under parent
-                    Some(unsafe { sys::mrb_class_get_under(mrb, parent, self.cstring().as_ptr()) })
+                    // Enclosing scope exists Class IS defined under the
+                    // enclosing scope.
+                    Some(unsafe { sys::mrb_class_get_under(mrb, scope, self.cstring().as_ptr()) })
                 }
             } else {
-                // parent does not exist
+                // The enclosing scope does not exist.
                 None
             }
         } else if unsafe { sys::mrb_class_defined(mrb, self.cstring.as_ptr()) } == 0 {
-            // class does NOT exist in root namespace
+            // Class does NOT exist in root scope.
             None
         } else {
-            // class exists in root namespace
+            // Class exists in root scope.
             Some(unsafe { sys::mrb_class_get(mrb, self.cstring().as_ptr()) })
         }
     }
@@ -131,7 +132,7 @@ impl fmt::Display for Spec {
 impl Hash for Spec {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name().hash(state);
-        self.parent().hash(state);
+        self.enclosing_scope().hash(state);
     }
 }
 
@@ -153,13 +154,11 @@ impl Define for Spec {
         } else {
             unsafe { (*mrb).object_class }
         };
-        let rclass = if let Some(ref parent) = self.parent {
-            let parent = parent
+        let rclass = if let Some(ref scope) = self.enclosing_scope {
+            let scope = scope
                 .rclass(interp)
-                .ok_or_else(|| MrbError::NotDefined(parent.fqname()))?;
-            unsafe {
-                sys::mrb_define_class_under(mrb, parent, self.cstring().as_ptr(), super_class)
-            }
+                .ok_or_else(|| MrbError::NotDefined(scope.fqname()))?;
+            unsafe { sys::mrb_define_class_under(mrb, scope, self.cstring().as_ptr(), super_class) }
         } else {
             unsafe { sys::mrb_define_class(mrb, self.cstring().as_ptr(), super_class) }
         };
@@ -186,7 +185,7 @@ mod tests {
 
     use crate::class::Spec;
     use crate::convert::TryFromMrb;
-    use crate::def::{ClassLike, Define, Parent};
+    use crate::def::{ClassLike, Define, EnclosingRubyScope};
     use crate::eval::MrbEval;
     use crate::interpreter::Interpreter;
     use crate::module;
@@ -215,7 +214,7 @@ mod tests {
     }
 
     #[test]
-    fn refcell_allows_mutable_class_specs_after_attached_as_parent() {
+    fn refcell_allows_mutable_class_specs_after_attached_as_enclosing_scope() {
         struct BaseClass;
         struct SubClass;
         let interp = Interpreter::create().expect("mrb init");
@@ -246,9 +245,9 @@ mod tests {
     #[test]
     fn rclass_for_undef_nested_class() {
         let interp = Interpreter::create().expect("mrb init");
-        let parent = module::Spec::new("Kernel", None);
-        let parent = Parent::module(Rc::new(RefCell::new(parent)));
-        let spec = Spec::new("Foo", Some(parent), None);
+        let scope = module::Spec::new("Kernel", None);
+        let scope = EnclosingRubyScope::module(Rc::new(RefCell::new(scope)));
+        let spec = Spec::new("Foo", Some(scope), None);
         assert!(spec.rclass(&interp).is_none());
     }
 
@@ -265,9 +264,9 @@ mod tests {
         interp
             .eval("module Foo; class Bar; end; end")
             .expect("eval");
-        let parent = module::Spec::new("Foo", None);
-        let parent = Parent::module(Rc::new(RefCell::new(parent)));
-        let spec = Spec::new("Bar", Some(parent), None);
+        let spec = module::Spec::new("Foo", None);
+        let spec = EnclosingRubyScope::module(Rc::new(RefCell::new(spec)));
+        let spec = Spec::new("Bar", Some(spec), None);
         assert!(spec.rclass(&interp).is_some());
     }
 
@@ -275,9 +274,9 @@ mod tests {
     fn rclass_for_nested_class_under_class() {
         let interp = Interpreter::create().expect("mrb init");
         interp.eval("class Foo; class Bar; end; end").expect("eval");
-        let parent = Spec::new("Foo", None, None);
-        let parent = Parent::class(Rc::new(RefCell::new(parent)));
-        let spec = Spec::new("Bar", Some(parent), None);
+        let spec = Spec::new("Foo", None, None);
+        let spec = EnclosingRubyScope::class(Rc::new(RefCell::new(spec)));
+        let spec = Spec::new("Bar", Some(spec), None);
         assert!(spec.rclass(&interp).is_some());
     }
 }
