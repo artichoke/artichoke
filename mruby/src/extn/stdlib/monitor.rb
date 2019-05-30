@@ -195,10 +195,10 @@ module MonitorMixin
   def mon_exit
     mon_check_owner
     @mon_count -= 1
-    if @mon_count == 0
-      @mon_owner = nil
-      @mon_mutex.unlock
-    end
+    return unless @mon_count.zero?
+
+    @mon_owner = nil
+    @mon_mutex.unlock
   end
 
   #
