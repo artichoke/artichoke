@@ -187,13 +187,13 @@ impl PartialEq for EnclosingRubyScope {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (
-                EnclosingRubyScope::Class { spec: slf },
+                EnclosingRubyScope::Class { spec: this },
                 EnclosingRubyScope::Class { spec: other },
-            ) => slf == other,
+            ) => this == other,
             (
-                EnclosingRubyScope::Module { spec: slf },
+                EnclosingRubyScope::Module { spec: this },
                 EnclosingRubyScope::Module { spec: other },
-            ) => slf == other,
+            ) => this == other,
             _ => false,
         }
     }
