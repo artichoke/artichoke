@@ -251,7 +251,7 @@ module MonitorMixin
   # Initializes the MonitorMixin after being included in a class or when an
   # object has been extended with the MonitorMixin
   def mon_initialize
-    raise ThreadError, 'already initialized' if defined?(@mon_mutex) && @mon_mutex_owner_object_id == object_id
+    raise ThreadError, 'already initialized' if !@mon_mutex.nil? && @mon_mutex_owner_object_id == object_id
 
     @mon_mutex = Thread::Mutex.new
     @mon_mutex_owner_object_id = object_id
