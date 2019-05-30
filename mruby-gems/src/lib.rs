@@ -16,7 +16,7 @@ pub trait Gem {
 
 #[cfg(test)]
 mod tests {
-    use mruby::def::Parent;
+    use mruby::def::EnclosingRubyScope;
     use mruby::eval::MrbEval;
     use mruby::file::MrbFile;
     use mruby::interpreter::{Interpreter, Mrb};
@@ -50,14 +50,14 @@ mod tests {
 
     impl MrbFile for Bar {
         fn require(interp: Mrb) -> Result<(), MrbError> {
-            let parent = interp
+            let scope = interp
                 .borrow()
                 .module_spec::<Foo>()
-                .map(Parent::module)
+                .map(EnclosingRubyScope::module)
                 .ok_or(MrbError::NotDefined("Foo".to_owned()))?;
             interp
                 .borrow_mut()
-                .def_class::<Self>("Bar", Some(parent), None);
+                .def_class::<Self>("Bar", Some(scope), None);
             Ok(())
         }
     }

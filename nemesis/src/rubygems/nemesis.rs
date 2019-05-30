@@ -1,4 +1,4 @@
-use mruby::def::Parent;
+use mruby::def::EnclosingRubyScope;
 use mruby::file::MrbFile;
 use mruby::interpreter::Mrb;
 use mruby::load::MrbLoadSources;
@@ -49,14 +49,14 @@ pub struct Response;
 
 impl MrbFile for Response {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        let parent = interp
+        let scope = interp
             .borrow()
             .module_spec::<Nemesis>()
-            .map(Parent::module)
+            .map(EnclosingRubyScope::module)
             .ok_or(MrbError::NotDefined("Nemesis".to_owned()))?;
         interp
             .borrow_mut()
-            .def_class::<Self>("Response", Some(parent), None);
+            .def_class::<Self>("Response", Some(scope), None);
         Ok(())
     }
 }

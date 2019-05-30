@@ -8,7 +8,7 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::class;
-use crate::def::{Free, Parent};
+use crate::def::{EnclosingRubyScope, Free};
 use crate::eval::EvalContext;
 use crate::interpreter::Mrb;
 use crate::module;
@@ -95,8 +95,8 @@ impl State {
     ///
     /// Internally, [`class::Spec`]s are stored in an `Rc<RefCell<_>>` which
     /// allows class specs to have multiple owners, such as being a super class
-    /// or a parent for a class or a module. To mutate the class spec, call
-    /// `borrow_mut` on the return value of this method to get a mutable
+    /// or an enclosing scope for a class or a module. To mutate the class spec,
+    /// call `borrow_mut` on the return value of this method to get a mutable
     /// reference to the class spec.
     ///
     /// Class specs can also be retrieved from the state after creation with
@@ -130,10 +130,10 @@ impl State {
     pub fn def_class<T: Any>(
         &mut self,
         name: &str,
-        parent: Option<Parent>,
+        enclosing_scope: Option<EnclosingRubyScope>,
         free: Option<Free>,
     ) -> Rc<RefCell<class::Spec>> {
-        let spec = class::Spec::new(name, parent, free);
+        let spec = class::Spec::new(name, enclosing_scope, free);
         let spec = Rc::new(RefCell::new(spec));
         self.classes.insert(TypeId::of::<T>(), Rc::clone(&spec));
         spec
@@ -146,8 +146,8 @@ impl State {
     ///
     /// Internally, [`class::Spec`]s are stored in an `Rc<RefCell<_>>` which
     /// allows class specs to have multiple owners, such as being a super class
-    /// or a parent for a class or a module. To mutate the class spec, call
-    /// `borrow_mut` on the return value of this method to get a mutable
+    /// or an enclosing scope for a class or a module. To mutate the class spec,
+    /// call `borrow_mut` on the return value of this method to get a mutable
     /// reference to the class spec.
     pub fn class_spec<T: Any>(&self) -> Option<Rc<RefCell<class::Spec>>> {
         self.classes.get(&TypeId::of::<T>()).map(Rc::clone)
@@ -158,15 +158,15 @@ impl State {
     /// [`TypeId`] of `T`.
     ///
     /// Internally, [`module::Spec`]s are stored in an `Rc<RefCell<_>>` which
-    /// allows module specs to have multiple owners, such as being a parent for
-    /// a class or a module. To mutate the module spec, call `borrow_mut` on the
-    /// return value of this method to get a mutable reference to the module
-    /// spec.
+    /// allows module specs to have multiple owners, such as being an enclosing
+    /// scope for a class or a module. To mutate the module spec, call
+    /// `borrow_mut` on the return value of this method to get a mutable
+    /// reference to the module spec.
     ///
-    /// Class specs can also be retrieved from the state after creation with
-    /// [`State::class_spec`].
+    /// Module specs can also be retrieved from the state after creation with
+    /// [`State::module_spec`].
     ///
-    /// The recommended pattern for using `def_class` looks like this:
+    /// The recommended pattern for using `def_module` looks like this:
     ///
     /// ```rust
     /// use mruby::def::{ClassLike, Define};
@@ -193,9 +193,9 @@ impl State {
     pub fn def_module<T: Any>(
         &mut self,
         name: &str,
-        parent: Option<Parent>,
+        enclosing_scope: Option<EnclosingRubyScope>,
     ) -> Rc<RefCell<module::Spec>> {
-        let spec = module::Spec::new(name, parent);
+        let spec = module::Spec::new(name, enclosing_scope);
         let spec = Rc::new(RefCell::new(spec));
         self.modules.insert(TypeId::of::<T>(), Rc::clone(&spec));
         spec
@@ -207,10 +207,10 @@ impl State {
     /// registered for it using [`State::def_module`].
     ///
     /// Internally, [`module::Spec`]s are stored in an `Rc<RefCell<_>>` which
-    /// allows module specs to have multiple owners, such as being a parent for
-    /// a class or a module. To mutate the module spec, call `borrow_mut` on the
-    /// return value of this method to get a mutable reference to the module
-    /// spec.
+    /// allows module specs to have multiple owners, such as being an enclosing
+    /// scope for a class or a module. To mutate the module spec, call
+    /// `borrow_mut` on the return value of this method to get a mutable
+    /// reference to the module spec.
     pub fn module_spec<T: Any>(&self) -> Option<Rc<RefCell<module::Spec>>> {
         self.modules.get(&TypeId::of::<T>()).map(Rc::clone)
     }

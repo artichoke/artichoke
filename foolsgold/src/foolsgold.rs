@@ -1,5 +1,5 @@
 use mruby::convert::TryFromMrb;
-use mruby::def::{rust_data_free, ClassLike, Define, Parent};
+use mruby::def::{rust_data_free, ClassLike, Define, EnclosingRubyScope};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
 use mruby::interpreter::{Mrb, MrbApi};
@@ -101,13 +101,13 @@ impl MrbFile for Counter {
 
         let spec = {
             let mut api = interp.borrow_mut();
-            let parent = api
+            let scope = api
                 .module_spec::<FoolsGold>()
-                .map(Parent::module)
+                .map(EnclosingRubyScope::module)
                 .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
             // We do not need to define a free method since we are not storing
             // any data in the `mrb_value`.
-            let spec = api.def_class::<Self>("Counter", Some(parent), None);
+            let spec = api.def_class::<Self>("Counter", Some(scope), None);
             spec.borrow_mut()
                 .add_method("get", get, sys::mrb_args_none());
             spec.borrow_mut()
@@ -123,14 +123,14 @@ struct Metrics;
 
 impl MrbFile for Metrics {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        let parent = interp
+        let scope = interp
             .borrow()
             .module_spec::<FoolsGold>()
-            .map(Parent::module)
+            .map(EnclosingRubyScope::module)
             .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
         let spec = interp
             .borrow_mut()
-            .def_module::<Self>("Metrics", Some(parent));
+            .def_module::<Self>("Metrics", Some(scope));
         spec.borrow().define(&interp)?;
         Ok(())
     }
@@ -195,12 +195,12 @@ impl MrbFile for RequestContext {
 
         let spec = {
             let mut api = interp.borrow_mut();
-            let parent = api
+            let scope = api
                 .module_spec::<FoolsGold>()
-                .map(Parent::module)
+                .map(EnclosingRubyScope::module)
                 .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
             let spec =
-                api.def_class::<Self>("RequestContext", Some(parent), Some(rust_data_free::<Self>));
+                api.def_class::<Self>("RequestContext", Some(scope), Some(rust_data_free::<Self>));
             spec.borrow_mut().mrb_value_is_rust_backed(true);
             spec.borrow_mut()
                 .add_method("initialize", initialize, sys::mrb_args_none());

@@ -57,31 +57,31 @@ pub type Method =
 /// [`mrb_module_get_under`](sys::mrb_module_get_under).
 ///
 /// Because there is no C API to resolve class and module names directly, each
-/// [`ClassLike`] holds a reference to its parent so it can recursively resolve
-/// its [`RClass *`](sys::RClass).
+/// [`ClassLike`] holds a reference to its enclosing scope so it can recursively
+/// resolve its enclosing [`RClass *`](sys::RClass).
 #[derive(Clone, Debug)]
-pub enum Parent {
-    /// Reference to a Ruby `Class` parent scope.
+pub enum EnclosingRubyScope {
+    /// Reference to a Ruby `Class` enclosing scope.
     Class {
         /// Shared copy of the underlying [class definition](class::Spec).
         spec: Rc<RefCell<class::Spec>>,
     },
-    /// Reference to a Ruby `Module` parent scope.
+    /// Reference to a Ruby `Module` enclosing scope.
     Module {
         /// Shared copy of the underlying [module definition](module::Spec).
         spec: Rc<RefCell<module::Spec>>,
     },
 }
 
-impl Parent {
-    /// Factory for [`Parent::Class`] that clones an `Rc` smart pointer wrapped
-    /// [`class::Spec`].
+impl EnclosingRubyScope {
+    /// Factory for [`EnclosingRubyScope::Class`] that clones an `Rc` smart
+    /// pointer wrapped [`class::Spec`].
     ///
-    /// This function is useful when extracting a parent class from the class
-    /// registry:
+    /// This function is useful when extracting an enclosing scope from the
+    /// class registry:
     ///
     /// ```rust
-    /// use mruby::def::Parent;
+    /// use mruby::def::EnclosingRubyScope;
     /// use mruby::interpreter::Interpreter;
     ///
     /// struct Fixnum;
@@ -89,25 +89,34 @@ impl Parent {
     ///
     /// let interp = Interpreter::create().expect("mrb init");
     /// let mut api = interp.borrow_mut();
-    /// if let Some(parent) = api.class_spec::<Fixnum>().map(Parent::class) {
-    ///     api.def_class::<Inner>("Inner", Some(parent), None);
+    /// if let Some(scope) = api.class_spec::<Fixnum>().map(EnclosingRubyScope::class) {
+    ///     api.def_class::<Inner>("Inner", Some(scope), None);
     /// }
+    /// ```
+    ///
+    /// Which defines this Ruby `Class`:
+    ///
+    /// ```ruby
+    /// class Fixnum
+    ///   class Inner
+    ///   end
+    /// end
     /// ```
     #[allow(clippy::needless_pass_by_value)]
     pub fn class(spec: Rc<RefCell<class::Spec>>) -> Self {
-        Parent::Class {
+        EnclosingRubyScope::Class {
             spec: Rc::clone(&spec),
         }
     }
 
-    /// Factory for [`Parent::Module`] that clones an `Rc` smart pointer wrapped
-    /// [`module::Spec`].
+    /// Factory for [`EnclosingRubyScope::Module`] that clones an `Rc` smart
+    /// pointer wrapped [`module::Spec`].
     ///
-    /// This function is useful when extracting a parent module from the module
-    /// registry:
+    /// This function is useful when extracting an enclosing scope from the
+    /// module registry:
     ///
     /// ```rust
-    /// use mruby::def::Parent;
+    /// use mruby::def::EnclosingRubyScope;
     /// use mruby::interpreter::Interpreter;
     ///
     /// struct Kernel;
@@ -115,27 +124,36 @@ impl Parent {
     ///
     /// let interp = Interpreter::create().expect("mrb init");
     /// let mut api = interp.borrow_mut();
-    /// if let Some(parent) = api.module_spec::<Kernel>().map(Parent::module) {
-    ///     api.def_class::<Inner>("Inner", Some(parent), None);
+    /// if let Some(scope) = api.module_spec::<Kernel>().map(EnclosingRubyScope::module) {
+    ///     api.def_class::<Inner>("Inner", Some(scope), None);
     /// }
+    /// ```
+    ///
+    /// Which defines this Ruby `Class`:
+    ///
+    /// ```ruby
+    /// module Kernel
+    ///   class Inner
+    ///   end
+    /// end
     /// ```
     #[allow(clippy::needless_pass_by_value)]
     pub fn module(spec: Rc<RefCell<module::Spec>>) -> Self {
-        Parent::Module {
+        EnclosingRubyScope::Module {
             spec: Rc::clone(&spec),
         }
     }
 
     /// Resolve the [`RClass *`](sys::RClass) of the wrapped [`ClassLike`].
     ///
-    /// Return [`None`] if the `ClassLike` has no [`Parent`].
+    /// Return [`None`] if the `ClassLike` has no [`EnclosingRubyScope`].
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
     pub fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass> {
         match self {
-            Parent::Class { spec } => spec.borrow().rclass(interp),
-            Parent::Module { spec } => spec.borrow().rclass(interp),
+            EnclosingRubyScope::Class { spec } => spec.borrow().rclass(interp),
+            EnclosingRubyScope::Module { spec } => spec.borrow().rclass(interp),
         }
     }
 
@@ -152,35 +170,40 @@ impl Parent {
     ///   end
     /// end
     /// ```
+    ///
+    /// The current implemention results in recursive calls to this function
+    /// for each enclosing scope.
     pub fn fqname(&self) -> String {
         match self {
-            Parent::Class { spec } => spec.borrow().fqname(),
-            Parent::Module { spec } => spec.borrow().fqname(),
+            EnclosingRubyScope::Class { spec } => spec.borrow().fqname(),
+            EnclosingRubyScope::Module { spec } => spec.borrow().fqname(),
         }
     }
 }
 
-impl Eq for Parent {}
+impl Eq for EnclosingRubyScope {}
 
-impl PartialEq for Parent {
+impl PartialEq for EnclosingRubyScope {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Parent::Class { spec: self_spec }, Parent::Class { spec: other_spec }) => {
-                self_spec == other_spec
-            }
-            (Parent::Module { spec: self_spec }, Parent::Module { spec: other_spec }) => {
-                self_spec == other_spec
-            }
+            (
+                EnclosingRubyScope::Class { spec: this },
+                EnclosingRubyScope::Class { spec: other },
+            ) => this == other,
+            (
+                EnclosingRubyScope::Module { spec: this },
+                EnclosingRubyScope::Module { spec: other },
+            ) => this == other,
             _ => false,
         }
     }
 }
 
-impl Hash for Parent {
+impl Hash for EnclosingRubyScope {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
-            Parent::Class { spec } => spec.borrow().hash(state),
-            Parent::Module { spec } => spec.borrow().hash(state),
+            EnclosingRubyScope::Class { spec } => spec.borrow().hash(state),
+            EnclosingRubyScope::Module { spec } => spec.borrow().hash(state),
         };
     }
 }
@@ -210,17 +233,13 @@ where
 
     fn name(&self) -> &str;
 
-    fn parent(&self) -> Option<Parent>;
+    fn enclosing_scope(&self) -> Option<EnclosingRubyScope>;
 
     fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass>;
 
     fn fqname(&self) -> String {
-        if let Some(parent) = self.parent() {
-            let parentfq = match parent {
-                Parent::Class { spec } => spec.borrow().fqname(),
-                Parent::Module { spec } => spec.borrow().fqname(),
-            };
-            format!("{}::{}", parentfq, self.name())
+        if let Some(scope) = self.enclosing_scope() {
+            format!("{}::{}", scope.fqname(), self.name())
         } else {
             self.name().to_owned()
         }
@@ -231,7 +250,7 @@ where
 mod tests {
     use std::rc::Rc;
 
-    use crate::def::{ClassLike, Define, Parent};
+    use crate::def::{ClassLike, Define, EnclosingRubyScope};
     use crate::interpreter::Interpreter;
 
     #[test]
@@ -248,18 +267,26 @@ mod tests {
         {
             let mut api = interp.borrow_mut();
             let root = api.def_module::<Root>("A", None);
-            let mod_under_root =
-                api.def_module::<ModuleUnderRoot>("B", Some(Parent::module(Rc::clone(&root))));
+            let mod_under_root = api.def_module::<ModuleUnderRoot>(
+                "B",
+                Some(EnclosingRubyScope::module(Rc::clone(&root))),
+            );
             let cls_under_root =
-                api.def_class::<ClassUnderRoot>("C", Some(Parent::module(root)), None);
-            let _cls_under_mod =
-                api.def_class::<ClassUnderModule>("D", Some(Parent::module(mod_under_root)), None);
+                api.def_class::<ClassUnderRoot>("C", Some(EnclosingRubyScope::module(root)), None);
+            let _cls_under_mod = api.def_class::<ClassUnderModule>(
+                "D",
+                Some(EnclosingRubyScope::module(mod_under_root)),
+                None,
+            );
             let _mod_under_cls = api.def_module::<ModuleUnderClass>(
                 "E",
-                Some(Parent::class(Rc::clone(&cls_under_root))),
+                Some(EnclosingRubyScope::class(Rc::clone(&cls_under_root))),
             );
-            let _cls_under_cls =
-                api.def_class::<ClassUnderClass>("F", Some(Parent::class(cls_under_root)), None);
+            let _cls_under_cls = api.def_class::<ClassUnderClass>(
+                "F",
+                Some(EnclosingRubyScope::class(cls_under_root)),
+                None,
+            );
         }
 
         let api = interp.borrow();
