@@ -137,5 +137,20 @@ end.join
 "#;
         let result = interp.eval(spec);
         assert!(result.is_err());
+        let spec = r#"
+Thread.abort_on_exception = false
+Thread.new do
+  begin
+    Thread.new do
+      Thread.current.abort_on_exception = true
+      raise 'failboat'
+    end.join
+  rescue RuntimeError
+    # swallow errors
+  end
+end.join
+"#;
+        let result = interp.eval(spec);
+        assert!(result.is_err());
     }
 }

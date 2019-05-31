@@ -116,17 +116,17 @@ class Thread
     # mruby is not multi-threaded. Threads are executed synchronously.
     @alive = true
     @value = yield if block_given?
-    raise @__unwind_with_exception unless @__unwind_with_exception.nil?
   rescue StandardError => e
     @terminated_with_exception = true
     @value = e
-    if self.class.abort_on_exception
+    if self.class.abort_on_exception || abort_on_exception
       self.class.__mark_unwind(e)
       raise
     end
   ensure
     @alive = false unless root
     self.class.__pop_stack unless root
+    raise @__unwind_with_exception unless @__unwind_with_exception.nil?
   end
 
   def [](sym)
