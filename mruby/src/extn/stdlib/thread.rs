@@ -36,6 +36,17 @@ mod tests {
     }
 
     #[test]
+    fn thread_current_is_main() {
+        let interp = Interpreter::create().expect("mrb init");
+        let spec = "Thread.current == Thread.main";
+        let result = interp.eval(spec).expect("spec");
+        assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));
+        let spec = "Thread.new { Thread.current == Thread.main }.join.value == false";
+        let result = interp.eval(spec).expect("spec");
+        assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));
+    }
+
+    #[test]
     fn thread_join_value() {
         let interp = Interpreter::create().expect("mrb init");
         let spec = "Thread.new { 2 + 3 }.join.value == 5";

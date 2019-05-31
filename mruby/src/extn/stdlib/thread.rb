@@ -32,6 +32,62 @@ class Thread
   # To simulate concurrent execution, Thread maintains a stack of Threads.
   @@current = [] # rubocop:disable Style/ClassVars
 
+  def self.exclusive
+    yield
+  end
+
+  def self.exit
+    # TODO: not implemented
+  end
+
+  singleton_class.send(:alias_method, :kill, :exit)
+
+  def self.fork(*args, &blk)
+    # TODO: handle subclassing behavior correctly.
+    new(*args, blk)
+  end
+
+  singleton_class.send(:alias_method, :start, :fork)
+
+  def self.handle_interrupt(_hash)
+    # https://ruby-doc.org/core-2.6.3/Thread.html#method-c-handle_interrupt
+    # Implemented as an immediate yield because interrupts are not a thing in
+    # the mruby interpreter. `Thread::exit` is not implemented.
+    yield
+  end
+
+  def self.list
+    # make sure to clone the list
+    @@current.map(&:itself)
+  end
+
+  def self.main
+    @@current.first
+  end
+
+  def self.pass
+    # noop since there is no scheduler
+    nil
+  end
+
+  def self.pending_interrupt?(_error = nil)
+    # See `Thread::handle_interrupt`.
+    false
+  end
+
+  def self.report_on_exception
+    @@report_on_exception ||= false # rubocop:disable Style/ClassVars
+  end
+
+  def self.report_on_exception=(report_on_exception)
+    @@report_on_exception = report_on_exception # rubocop:disable Style/ClassVars
+  end
+
+  def self.stop
+    # noop since there is no scheduler
+    nil
+  end
+
   def initialize(root = false)
     @priority = 0
     @priority = self.class.current.priority unless self.class.current.nil?
