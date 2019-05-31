@@ -15,6 +15,14 @@ class Thread
   attr_accessor :name
   attr_accessor :report_on_exception
 
+  def self.abort_on_exception
+    @@abort_on_exception ||= false # rubocop:disable Style/ClassVars
+  end
+
+  def self.abort_on_exception=(abort_on_exception)
+    @@abort_on_exception = abort_on_exception # rubocop:disable Style/ClassVars
+  end
+
   def self.current
     @@current.last
   end
@@ -39,6 +47,7 @@ class Thread
   rescue StandardError => e
     @terminated_with_exception = true
     @value = e
+    raise if self.class.abort_on_exception
   ensure
     @alive = false unless root
     @@current.pop unless root

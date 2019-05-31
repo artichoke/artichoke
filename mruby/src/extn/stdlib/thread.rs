@@ -104,4 +104,15 @@ Thread.current.thread_variable_get(:local) == 42
         let result = interp.eval(spec).expect("spec");
         assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));
     }
+
+    #[test]
+    fn thread_abort_on_exception() {
+        let interp = Interpreter::create().expect("mrb init");
+        let spec = r#"
+Thread.abort_on_exception = true
+Thread.new { raise 'failboat' }.join
+"#;
+        let result = interp.eval(spec);
+        assert!(result.is_err());
+    }
 }
