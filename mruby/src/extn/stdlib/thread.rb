@@ -15,6 +15,8 @@ class Thread
   attr_accessor :name
   attr_accessor :report_on_exception
 
+  attr_accessor :__unwind_with_exception
+
   def self.abort_on_exception
     @@abort_on_exception ||= false # rubocop:disable Style/ClassVars
   end
@@ -44,10 +46,16 @@ class Thread
     # mruby is not multi-threaded. Threads are executed synchronously.
     @alive = true
     @value = yield if block_given?
+    raise @__unwind_with_exception unless @__unwind_with_exception.nil?
   rescue StandardError => e
     @terminated_with_exception = true
     @value = e
-    raise if self.class.abort_on_exception
+    if self.class.abort_on_exception
+      @@current.each do |thread|
+        thread.__unwind_with_exception = e
+      end
+      raise
+    end
   ensure
     @alive = false unless root
     @@current.pop unless root
