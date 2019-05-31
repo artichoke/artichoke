@@ -117,16 +117,15 @@ class Thread
     @alive = true
     @value = yield if block_given?
   rescue StandardError => e
-    @terminated_with_exception = true
-    @value = e
-    if self.class.abort_on_exception || abort_on_exception
-      self.class.__mark_unwind(e)
-      raise
+    if @__unwind_with_exception.nil?
+      @terminated_with_exception = true
+      @value = e
+      self.class.__mark_unwind(e) if self.class.abort_on_exception || abort_on_exception
     end
   ensure
     @alive = false unless root
     self.class.__pop_stack unless root
-    raise @__unwind_with_exception unless @__unwind_with_exception.nil?
+    raise @__unwind_with_exception if self.class.current == self.class.main && !@__unwind_with_exception.nil?
   end
 
   def [](sym)
