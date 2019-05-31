@@ -17,20 +17,37 @@ class Thread
 
   attr_accessor :__unwind_with_exception
 
-  def self.abort_on_exception
-    @@abort_on_exception ||= false # rubocop:disable Style/ClassVars
+  def self.__mark_unwind(exc)
+    @thread_stack.each do |thread|
+      thread.__unwind_with_exception = exc
+    end
+    nil
   end
 
-  def self.abort_on_exception=(abort_on_exception)
-    @@abort_on_exception = abort_on_exception # rubocop:disable Style/ClassVars
+  def self.__gen_thread_name(id)
+    "thread-#{@thread_stack.length}-#{id}"
   end
 
-  def self.current
-    @@current.last
+  @abort_on_exception = false
+  class << self
+    attr_accessor :abort_on_exception
   end
 
   # To simulate concurrent execution, Thread maintains a stack of Threads.
-  @@current = [] # rubocop:disable Style/ClassVars
+  @thread_stack = []
+
+  def self.__push_stack(thread)
+    @thread_stack.push(thread)
+    nil
+  end
+
+  def self.__pop_stack
+    @thread_stack.pop
+  end
+
+  def self.current
+    @thread_stack.last
+  end
 
   def self.exclusive
     yield
@@ -58,11 +75,11 @@ class Thread
 
   def self.list
     # make sure to clone the list
-    @@current.map(&:itself)
+    @thread_stack.map(&:itself)
   end
 
   def self.main
-    @@current.first
+    @thread_stack.first
   end
 
   def self.pass
@@ -75,12 +92,9 @@ class Thread
     false
   end
 
-  def self.report_on_exception
-    @@report_on_exception ||= false # rubocop:disable Style/ClassVars
-  end
-
-  def self.report_on_exception=(report_on_exception)
-    @@report_on_exception = report_on_exception # rubocop:disable Style/ClassVars
+  @report_on_exception = false
+  class << self
+    attr_accessor :report_on_exception
   end
 
   def self.stop
@@ -92,29 +106,27 @@ class Thread
     @priority = 0
     @priority = self.class.current.priority unless self.class.current.nil?
 
-    @@current.push(self)
+    self.class.__push_stack(self)
     @fiber_locals = {}
     @thread_locals = {}
     @abort_on_exception = false
-    @name = "thread-#{@@current.length}"
+    @name = self.class.__gen_thread_name(object_id)
     @report_on_exception = false
     @terminated_with_exception = nil
     # mruby is not multi-threaded. Threads are executed synchronously.
     @alive = true
     @value = yield if block_given?
-    raise @__unwind_with_exception unless @__unwind_with_exception.nil?
   rescue StandardError => e
     @terminated_with_exception = true
     @value = e
-    if self.class.abort_on_exception
-      @@current.each do |thread|
-        thread.__unwind_with_exception = e
-      end
+    if self.class.abort_on_exception || abort_on_exception
+      self.class.__mark_unwind(e)
       raise
     end
   ensure
     @alive = false unless root
-    @@current.pop unless root
+    self.class.__pop_stack unless root
+    raise @__unwind_with_exception unless @__unwind_with_exception.nil?
   end
 
   def [](sym)
