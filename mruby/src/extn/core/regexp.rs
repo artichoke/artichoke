@@ -433,7 +433,7 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         regexp::init(&interp).expect("regexp init");
         let regexp = interp.eval("Regexp.new('foo.*bar')").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let class = regexp
             .funcall::<Value, _, _>("class", &[])
             .expect("funcall");
@@ -446,14 +446,14 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         regexp::init(&interp).expect("regexp init");
         let regexp = interp.eval("/foo.*bar/").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let class = regexp
             .funcall::<Value, _, _>("class", &[])
             .expect("funcall");
         let name = class.funcall::<String, _, _>("name", &[]).expect("funcall");
         assert_eq!(&name, "Regexp");
         let regexp = interp.eval("/foo.*bar/i").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
     }
 
     #[test]
@@ -461,17 +461,17 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         regexp::init(&interp).expect("regexp init");
         let regexp = interp.eval("Regexp.new('foo.*bar', true)").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let regexp = interp.eval("Regexp.new('foo.*bar', false)").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let regexp = interp.eval("Regexp.new('foo.*bar', nil)").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let regexp = interp
             .eval("Regexp.new('foo.*bar', 1 | 2 | 4)")
             .expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let regexp = interp.eval("Regexp.new('foo.*bar', 'ixm')").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
     }
 
     #[test]
@@ -479,7 +479,7 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         regexp::init(&interp).expect("regexp init");
         let regexp = interp.eval("Regexp.new('foo.*bar', 'u')").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
     }
 
     #[test]
