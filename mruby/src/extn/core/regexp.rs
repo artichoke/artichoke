@@ -1,3 +1,4 @@
+use onig::{Regex, RegexOptions, Syntax};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::io::Write;
@@ -37,6 +38,20 @@ struct Options {
 }
 
 impl Options {
+    fn flags(&self) -> RegexOptions {
+        let mut bits = RegexOptions::REGEX_OPTION_NONE;
+        if self.ignore_case {
+            bits |= RegexOptions::REGEX_OPTION_IGNORECASE;
+        }
+        if self.extended {
+            bits |= RegexOptions::REGEX_OPTION_EXTEND;
+        }
+        if self.multiline {
+            bits |= RegexOptions::REGEX_OPTION_MULTILINE;
+        }
+        bits
+    }
+
     fn from_value(interp: &Mrb, value: sys::mrb_value) -> Result<Self, MrbError> {
         // If options is an Integer, it should be one or more of the constants
         // Regexp::EXTENDED, Regexp::IGNORECASE, and Regexp::MULTILINE, or-ed
@@ -147,11 +162,12 @@ impl Default for Encoding {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Regexp {
     pattern: String,
     options: Options,
     encoding: Encoding,
+    regex: Regex,
 }
 
 impl Regexp {
@@ -255,10 +271,18 @@ impl Regexp {
         } else {
             args.pattern.funcall::<String, _, _>("itself", &[])
         };
+        let options = args.options.unwrap_or_default();
+        let pattern = unwrap_or_raise!(interp, pattern, interp.nil().inner());
+        let regex = unwrap_or_raise!(
+            interp,
+            Regex::with_options(&pattern, options.flags(), Syntax::default()),
+            interp.nil().inner()
+        );
         let data = Self {
-            pattern: unwrap_or_raise!(interp, pattern, interp.nil().inner()),
-            options: args.options.unwrap_or_default(),
+            pattern,
+            options,
             encoding: args.encoding.unwrap_or_default(),
+            regex,
         };
         let data = Rc::new(RefCell::new(data));
 
