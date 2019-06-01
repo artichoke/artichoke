@@ -1,11 +1,11 @@
-use onig::{Regex, RegexOptions, Syntax};
+use onig::{Regex, RegexOptions, SearchOptions, Syntax};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::io::Write;
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::TryFromMrb;
+use crate::convert::{FromMrb, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::extn::core::error::ArgumentError;
 use crate::interpreter::{Mrb, MrbApi};
@@ -18,6 +18,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         interp
             .borrow_mut()
             .def_class::<Regexp>("Regexp", None, Some(rust_data_free::<Regexp>));
+    regexp.borrow_mut().mrb_value_is_rust_backed(true);
     regexp.borrow_mut().add_method(
         "initialize",
         Regexp::initialize,
@@ -26,6 +27,9 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_self_method("compile", Regexp::compile, sys::mrb_args_rest());
+    regexp
+        .borrow_mut()
+        .add_method("match?", Regexp::is_match, sys::mrb_args_req_and_opt(1, 1));
     regexp.borrow().define(&interp)?;
     Ok(())
 }
@@ -339,6 +343,71 @@ impl Regexp {
             interp,
             regexp_class.funcall::<Value, _, _>("new", args.rest)
         )
+    }
+
+    unsafe extern "C" fn is_match(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        struct Args {
+            string: String,
+            pos: Option<usize>,
+        }
+
+        impl Args {
+            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+                let string = mem::uninitialized::<sys::mrb_value>();
+                let pos = mem::uninitialized::<sys::mrb_value>();
+                let has_pos = mem::uninitialized::<sys::mrb_bool>();
+                let mut argspec = vec![];
+                argspec
+                    .write_all(
+                        format!(
+                            "{}{}{}{}\0",
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
+                        )
+                        .as_bytes(),
+                    )
+                    .map_err(|_| MrbError::ArgSpec)?;
+                sys::mrb_get_args(
+                    interp.borrow().mrb,
+                    argspec.as_ptr() as *const i8,
+                    &string,
+                    &pos,
+                    &has_pos,
+                );
+                let string = String::try_from_mrb(&interp, Value::new(&interp, string))
+                    .map_err(MrbError::ConvertToRust)?;
+                let pos = if has_pos == 0 {
+                    None
+                } else {
+                    let pos = usize::try_from_mrb(&interp, Value::new(&interp, pos))
+                        .map_err(MrbError::ConvertToRust)?;
+                    Some(pos)
+                };
+                Ok(Self { string, pos })
+            }
+        }
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+
+        let ptr = {
+            let spec = class_spec_or_raise!(interp, Self);
+            let borrow = spec.borrow();
+            sys::mrb_data_get_ptr(mrb, slf, borrow.data_type())
+        };
+        let data = mem::transmute::<*mut c_void, Rc<RefCell<Self>>>(ptr);
+        let regex = Rc::clone(&data);
+        mem::forget(data);
+
+        let is_match = regex.borrow().regex.search_with_options(
+            &args.string,
+            args.pos.unwrap_or_default(),
+            args.string.len(),
+            SearchOptions::SEARCH_OPTION_NONE,
+            None,
+        );
+        Value::from_mrb(&interp, is_match.is_some()).inner()
     }
 }
 
