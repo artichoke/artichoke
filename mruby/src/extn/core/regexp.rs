@@ -1,10 +1,11 @@
+use onig::{Regex, RegexOptions, SearchOptions, Syntax};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::io::Write;
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::TryFromMrb;
+use crate::convert::{FromMrb, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::extn::core::error::ArgumentError;
 use crate::interpreter::{Mrb, MrbApi};
@@ -17,6 +18,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         interp
             .borrow_mut()
             .def_class::<Regexp>("Regexp", None, Some(rust_data_free::<Regexp>));
+    regexp.borrow_mut().mrb_value_is_rust_backed(true);
     regexp.borrow_mut().add_method(
         "initialize",
         Regexp::initialize,
@@ -25,6 +27,9 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_self_method("compile", Regexp::compile, sys::mrb_args_rest());
+    regexp
+        .borrow_mut()
+        .add_method("match?", Regexp::is_match, sys::mrb_args_req_and_opt(1, 1));
     regexp.borrow().define(&interp)?;
     Ok(())
 }
@@ -37,6 +42,20 @@ struct Options {
 }
 
 impl Options {
+    fn flags(self) -> RegexOptions {
+        let mut bits = RegexOptions::REGEX_OPTION_NONE;
+        if self.ignore_case {
+            bits |= RegexOptions::REGEX_OPTION_IGNORECASE;
+        }
+        if self.extended {
+            bits |= RegexOptions::REGEX_OPTION_EXTEND;
+        }
+        if self.multiline {
+            bits |= RegexOptions::REGEX_OPTION_MULTILINE;
+        }
+        bits
+    }
+
     fn from_value(interp: &Mrb, value: sys::mrb_value) -> Result<Self, MrbError> {
         // If options is an Integer, it should be one or more of the constants
         // Regexp::EXTENDED, Regexp::IGNORECASE, and Regexp::MULTILINE, or-ed
@@ -147,11 +166,12 @@ impl Default for Encoding {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Regexp {
     pattern: String,
     options: Options,
     encoding: Encoding,
+    regex: Regex,
 }
 
 impl Regexp {
@@ -255,10 +275,18 @@ impl Regexp {
         } else {
             args.pattern.funcall::<String, _, _>("itself", &[])
         };
+        let options = args.options.unwrap_or_default();
+        let pattern = unwrap_or_raise!(interp, pattern, interp.nil().inner());
+        let regex = unwrap_or_raise!(
+            interp,
+            Regex::with_options(&pattern, options.flags(), Syntax::default()),
+            interp.nil().inner()
+        );
         let data = Self {
-            pattern: unwrap_or_raise!(interp, pattern, interp.nil().inner()),
-            options: args.options.unwrap_or_default(),
+            pattern,
+            options,
             encoding: args.encoding.unwrap_or_default(),
+            regex,
         };
         let data = Rc::new(RefCell::new(data));
 
@@ -316,12 +344,82 @@ impl Regexp {
             regexp_class.funcall::<Value, _, _>("new", args.rest)
         )
     }
+
+    unsafe extern "C" fn is_match(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        struct Args {
+            string: String,
+            pos: Option<usize>,
+        }
+
+        impl Args {
+            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+                let string = mem::uninitialized::<sys::mrb_value>();
+                let pos = mem::uninitialized::<sys::mrb_value>();
+                let has_pos = mem::uninitialized::<sys::mrb_bool>();
+                let mut argspec = vec![];
+                argspec
+                    .write_all(
+                        format!(
+                            "{}{}{}{}\0",
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
+                        )
+                        .as_bytes(),
+                    )
+                    .map_err(|_| MrbError::ArgSpec)?;
+                sys::mrb_get_args(
+                    interp.borrow().mrb,
+                    argspec.as_ptr() as *const i8,
+                    &string,
+                    &pos,
+                    &has_pos,
+                );
+                let string = String::try_from_mrb(&interp, Value::new(&interp, string))
+                    .map_err(MrbError::ConvertToRust)?;
+                let pos = if has_pos == 0 {
+                    None
+                } else {
+                    let pos = usize::try_from_mrb(&interp, Value::new(&interp, pos))
+                        .map_err(MrbError::ConvertToRust)?;
+                    Some(pos)
+                };
+                Ok(Self { string, pos })
+            }
+        }
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+
+        let ptr = {
+            let spec = class_spec_or_raise!(interp, Self);
+            let borrow = spec.borrow();
+            sys::mrb_data_get_ptr(mrb, slf, borrow.data_type())
+        };
+        let data = mem::transmute::<*mut c_void, Rc<RefCell<Self>>>(ptr);
+        let regex = Rc::clone(&data);
+        mem::forget(data);
+
+        // onig will panic if pos is beyond the end of string
+        if args.pos.unwrap_or_default() > args.string.len() {
+            return Value::from_mrb(&interp, false).inner();
+        }
+        let is_match = regex.borrow().regex.search_with_options(
+            &args.string,
+            args.pos.unwrap_or_default(),
+            args.string.len(),
+            SearchOptions::SEARCH_OPTION_NONE,
+            None,
+        );
+        Value::from_mrb(&interp, is_match.is_some()).inner()
+    }
 }
 
 pub struct MatchData;
 
 #[cfg(test)]
 mod tests {
+    use crate::convert::FromMrb;
     use crate::eval::MrbEval;
     use crate::extn::core::regexp;
     use crate::interpreter::Interpreter;
@@ -335,7 +433,7 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         regexp::init(&interp).expect("regexp init");
         let regexp = interp.eval("Regexp.new('foo.*bar')").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let class = regexp
             .funcall::<Value, _, _>("class", &[])
             .expect("funcall");
@@ -348,14 +446,14 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         regexp::init(&interp).expect("regexp init");
         let regexp = interp.eval("/foo.*bar/").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let class = regexp
             .funcall::<Value, _, _>("class", &[])
             .expect("funcall");
         let name = class.funcall::<String, _, _>("name", &[]).expect("funcall");
         assert_eq!(&name, "Regexp");
         let regexp = interp.eval("/foo.*bar/i").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
     }
 
     #[test]
@@ -363,17 +461,17 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         regexp::init(&interp).expect("regexp init");
         let regexp = interp.eval("Regexp.new('foo.*bar', true)").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let regexp = interp.eval("Regexp.new('foo.*bar', false)").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let regexp = interp.eval("Regexp.new('foo.*bar', nil)").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let regexp = interp
             .eval("Regexp.new('foo.*bar', 1 | 2 | 4)")
             .expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
         let regexp = interp.eval("Regexp.new('foo.*bar', 'ixm')").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
     }
 
     #[test]
@@ -381,7 +479,7 @@ mod tests {
         let interp = Interpreter::create().expect("mrb init");
         regexp::init(&interp).expect("regexp init");
         let regexp = interp.eval("Regexp.new('foo.*bar', 'u')").expect("eval");
-        assert_eq!(regexp.ruby_type(), Ruby::Object);
+        assert_eq!(regexp.ruby_type(), Ruby::Data);
     }
 
     #[test]
@@ -454,5 +552,45 @@ mod tests {
             regexp,
             Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
         );
+    }
+
+    #[test]
+    fn regexp_is_match() {
+        let interp = Interpreter::create().expect("mrb init");
+        regexp::init(&interp).expect("regexp init");
+        // Reuse regexp to ensure that Rc reference count is maintained
+        // correctly so no segfaults.
+        let regexp = interp.eval("/R.../").expect("eval");
+        let result = regexp.funcall::<bool, _, _>("match?", &[Value::from_mrb(&interp, "Ruby")]);
+        assert_eq!(result, Ok(true));
+        let result = regexp.funcall::<bool, _, _>(
+            "match?",
+            &[
+                Value::from_mrb(&interp, "Ruby"),
+                Value::from_mrb(&interp, 1),
+            ],
+        );
+        assert_eq!(result, Ok(false));
+        let result = regexp.funcall::<bool, _, _>(
+            "match?",
+            &[
+                Value::from_mrb(&interp, "Ruby"),
+                // Pos beyond end of string
+                Value::from_mrb(&interp, 5),
+            ],
+        );
+        assert_eq!(result, Ok(false));
+        let result = regexp.funcall::<bool, _, _>(
+            "match?",
+            &[
+                Value::from_mrb(&interp, "Ruby"),
+                // Pos = len of string
+                Value::from_mrb(&interp, 4),
+            ],
+        );
+        assert_eq!(result, Ok(false));
+        let regexp = interp.eval("/P.../").expect("eval");
+        let result = regexp.funcall::<bool, _, _>("match?", &[Value::from_mrb(&interp, "Ruby")]);
+        assert_eq!(result, Ok(false));
     }
 }

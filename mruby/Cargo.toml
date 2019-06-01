@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 log = "0.4.6"
+onig = "4.3.2"
 
 [dependencies.mruby-sys]
 path = "../mruby-sys"

@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::convert::{Error, FromMrb, TryFromMrb};
 use crate::interpreter::Mrb;
 use crate::sys;
@@ -30,6 +32,26 @@ impl TryFromMrb<Value> for Int {
                 to: Rust::SignedInt,
             }),
         }
+    }
+}
+
+impl TryFromMrb<Value> for usize {
+    type From = Ruby;
+    type To = Rust;
+
+    unsafe fn try_from_mrb(
+        interp: &Mrb,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
+        if let Ok(result) = Int::try_from_mrb(interp, value) {
+            if let Ok(result) = Self::try_from(result) {
+                return Ok(result);
+            }
+        }
+        Err(Error {
+            from: Ruby::Fixnum,
+            to: Rust::UnsignedInt,
+        })
     }
 }
 
@@ -92,5 +114,21 @@ mod tests {
             to: Rust::SignedInt,
         });
         value == expected
+    }
+
+    #[test]
+    fn fixnum_to_usize() {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = Value::from_mrb(&interp, 100);
+        let value = unsafe { usize::try_from_mrb(&interp, value) };
+        let expected = Ok(100);
+        assert_eq!(value, expected);
+        let value = Value::from_mrb(&interp, -100);
+        let value = unsafe { usize::try_from_mrb(&interp, value) };
+        let expected = Err(Error {
+            from: Ruby::Fixnum,
+            to: Rust::UnsignedInt,
+        });
+        assert_eq!(value, expected);
     }
 }
