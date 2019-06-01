@@ -419,6 +419,7 @@ pub struct MatchData;
 
 #[cfg(test)]
 mod tests {
+    use crate::convert::FromMrb;
     use crate::eval::MrbEval;
     use crate::extn::core::regexp;
     use crate::interpreter::Interpreter;
@@ -551,5 +552,45 @@ mod tests {
             regexp,
             Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
         );
+    }
+
+    #[test]
+    fn regexp_is_match() {
+        let interp = Interpreter::create().expect("mrb init");
+        regexp::init(&interp).expect("regexp init");
+        // Reuse regexp to ensure that Rc reference count is maintained
+        // correctly so no segfaults.
+        let regexp = interp.eval("/R.../").expect("eval");
+        let result = regexp.funcall::<bool, _, _>("match?", &[Value::from_mrb(&interp, "Ruby")]);
+        assert_eq!(result, Ok(true));
+        let result = regexp.funcall::<bool, _, _>(
+            "match?",
+            &[
+                Value::from_mrb(&interp, "Ruby"),
+                Value::from_mrb(&interp, 1),
+            ],
+        );
+        assert_eq!(result, Ok(false));
+        let result = regexp.funcall::<bool, _, _>(
+            "match?",
+            &[
+                Value::from_mrb(&interp, "Ruby"),
+                // Pos beyond end of string
+                Value::from_mrb(&interp, 5),
+            ],
+        );
+        assert_eq!(result, Ok(false));
+        let result = regexp.funcall::<bool, _, _>(
+            "match?",
+            &[
+                Value::from_mrb(&interp, "Ruby"),
+                // Pos = len of string
+                Value::from_mrb(&interp, 4),
+            ],
+        );
+        assert_eq!(result, Ok(false));
+        let regexp = interp.eval("/P.../").expect("eval");
+        let result = regexp.funcall::<bool, _, _>("match?", &[Value::from_mrb(&interp, "Ruby")]);
+        assert_eq!(result, Ok(false));
     }
 }
