@@ -400,6 +400,10 @@ impl Regexp {
         let regex = Rc::clone(&data);
         mem::forget(data);
 
+        // onig will panic if pos is beyond the end of string
+        if args.pos.unwrap_or_default() > args.string.len() {
+            return Value::from_mrb(&interp, false).inner();
+        }
         let is_match = regex.borrow().regex.search_with_options(
             &args.string,
             args.pos.unwrap_or_default(),
