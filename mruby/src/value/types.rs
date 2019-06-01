@@ -10,6 +10,7 @@ pub enum Rust {
     Map,
     SignedInt,
     String,
+    UnsignedInt,
     Vec,
 }
 
@@ -24,6 +25,7 @@ impl fmt::Display for Rust {
             Rust::SignedInt => write!(f, "i64"),
             Rust::String => write!(f, "String"),
             Rust::Vec => write!(f, "Vec"),
+            Rust::UnsignedInt => write!(f, "usize"),
         }
     }
 }
