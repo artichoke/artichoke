@@ -44,7 +44,7 @@ impl TryFromMrb<Value> for usize {
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         if let Ok(result) = Int::try_from_mrb(interp, value) {
-            if let Ok(result) = usize::try_from(result) {
+            if let Ok(result) = Self::try_from(result) {
                 return Ok(result);
             }
         }

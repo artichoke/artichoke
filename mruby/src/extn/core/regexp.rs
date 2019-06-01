@@ -42,7 +42,7 @@ struct Options {
 }
 
 impl Options {
-    fn flags(&self) -> RegexOptions {
+    fn flags(self) -> RegexOptions {
         let mut bits = RegexOptions::REGEX_OPTION_NONE;
         if self.ignore_case {
             bits |= RegexOptions::REGEX_OPTION_IGNORECASE;
