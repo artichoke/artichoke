@@ -14,6 +14,7 @@ pub mod handler;
 pub mod request;
 pub mod response;
 mod rubygems;
+pub mod server;
 
 use rubygems::nemesis;
 

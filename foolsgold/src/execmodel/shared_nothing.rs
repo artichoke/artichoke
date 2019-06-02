@@ -1,4 +1,4 @@
-use nemesis::request::Request;
+use nemesis::server::rocket::request::Request;
 use nemesis::{self, adapter, handler};
 use rocket::{get, Response};
 

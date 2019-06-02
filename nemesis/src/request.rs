@@ -4,26 +4,25 @@
 //! Based on
 //! [`Rack::Handler::Webrick`](https://github.com/rack/rack/blob/2.0.7/lib/rack/handler/webrick.rb).
 
+use mruby::convert::FromMrb;
 use mruby::eval::MrbEval;
 use mruby::interpreter::Mrb;
-use mruby::value::Value;
+use mruby::value::{Value, ValueLike};
 use mruby::MrbError;
-use rocket::http::uri::Origin;
-use rocket::http::Method;
-use rocket::request::{self, FromRequest};
-use rocket::Outcome;
 use std::error;
 use std::fmt;
 
 #[derive(Debug)]
 pub enum Error {
     Mrb(MrbError),
+    NoRoute,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::Mrb(inner) => write!(f, "{}", inner),
+            Error::NoRoute => write!(f, "no matching route"),
         }
     }
 }
@@ -36,63 +35,87 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match self {
             Error::Mrb(inner) => Some(inner),
+            _ => None,
         }
     }
 }
 
-pub struct Request<'a> {
-    method: Method,
-    origin: Origin<'a>,
-}
-
-impl<'a> Request<'a> {
-    pub fn to_env(&self, interp: &Mrb) -> Result<Value, Error> {
-        // The keys in the environment hash are required by the Rack spec:
-        // https://www.rubydoc.info/github/rack/rack/file/SPEC#label-The+Environment
-        //
-        // This implementation is incomplete (GH-61):
-        // TODO: Set SCRIPT_NAME from Rocket mount path.
-        // TODO: Set SERVER_NAME instead of hardcoding 'localhost'.
-        // TODO: Set SERVER_PORT instead of hardcoding it to 8000.
-        // TODO: Set HTTP_VERSION instead of hardcoding it to '1.1'.
-        // TODO: Set RACK_URL_SCHEME instead of hardcoding it to 'http'.
-        // TODO: Set RACK_INPUT and RACK_ERRORS once IO is implemented. See GH-9.
-        // TODO: RUN_ONCE should be true if in shared nothing execution mode
-        interp
-            .eval(format!(
-                r#"
-                {{
-                    Rack::REQUEST_METHOD => '{method}',
-                    Rack::SCRIPT_NAME => '',
-                    Rack::PATH_INFO => '{path}',
-                    Rack::QUERY_STRING => '{query}',
-                    Rack::SERVER_NAME => 'localhost',
-                    Rack::SERVER_PORT => 8000,
-                    Rack::HTTP_VERSION => '1.1',
-                    Rack::RACK_VERSION => Rack::VERSION,
-                    Rack::RACK_URL_SCHEME => 'http',
-                    Rack::RACK_INPUT => nil,
-                    Rack::RACK_ERRORS => nil,
-                    Rack::RACK_MULTITHREAD => false,
-                    Rack::RACK_MULTIPROCESS => false,
-                    Rack::RACK_RUNONCE => false,
-                }}
-                "#,
-                method = self.method,
-                path = self.origin.path(),
-                query = self.origin.query().unwrap_or_else(|| "")
-            ))
-            .map_err(Error::Mrb)
+impl From<MrbError> for Error {
+    fn from(error: MrbError) -> Self {
+        Error::Mrb(error)
     }
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for Request<'a> {
-    type Error = ();
+pub trait Request {
+    fn http_version(&self) -> Option<String>;
 
-    fn from_request(request: &'a request::Request<'r>) -> request::Outcome<Self, Self::Error> {
-        Outcome::Success(Request {
-            method: request.method(),
-            origin: request.uri().clone(),
-        })
+    fn request_method(&self) -> String;
+
+    fn script_name(&self) -> String;
+
+    fn path_info(&self) -> String;
+
+    fn query_string(&self) -> String;
+
+    fn server_name(&self) -> String;
+
+    fn server_port(&self) -> u16;
+
+    fn url_scheme(&self) -> String;
+
+    /// Convert a `Request` into a Rack Environment.
+    ///
+    /// The
+    /// [Rack specification](https://www.rubydoc.info/github/rack/rack/file/SPEC#label-The+Environment)
+    /// enumerates the required keys. This implementation is based on
+    /// [`Rack::Handler::Webrick`](https://github.com/rack/rack/blob/2.0.7/lib/rack/handler/webrick.rb).
+    fn to_env(&self, interp: &Mrb) -> Result<Value, Error> {
+        let env = interp.eval("{ Rack::RACK_VERSION => Rack::VERSION }")?;
+
+        if let Some(version) = self.http_version() {
+            let key = interp.eval("Rack::HTTP_VERSION")?;
+            env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, version)])?;
+        }
+
+        let key = interp.eval("Rack::REQUEST_METHOD")?;
+        env.funcall::<(), _, _>(
+            "[]=",
+            &[key, Value::from_mrb(interp, self.request_method())],
+        )?;
+
+        let key = interp.eval("Rack::SCRIPT_NAME")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.script_name())])?;
+
+        let key = interp.eval("Rack::PATH_INFO")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.path_info())])?;
+
+        let key = interp.eval("Rack::QUERY_STRING")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.query_string())])?;
+
+        let key = interp.eval("Rack::SERVER_NAME")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.server_name())])?;
+
+        let key = interp.eval("Rack::SERVER_PORT")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.server_port())])?;
+
+        let key = interp.eval("Rack::RACK_URL_SCHEME")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.url_scheme())])?;
+
+        // TODO: implement Rack IO, see GH-9.
+        let key = interp.eval("Rack::RACK_INPUT")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, None::<Value>)])?;
+        let key = interp.eval("Rack::RACK_ERRORS")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, None::<Value>)])?;
+
+        let key = interp.eval("Rack::RACK_MULTITHREAD")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, false)])?;
+        let key = interp.eval("Rack::RACK_MULTIPROCESS")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, false)])?;
+        // TODO: Set RUNONCE based on whether nemesis is in shared nothing or
+        // prefork mode.
+        let key = interp.eval("Rack::RACK_RUNONCE")?;
+        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, false)])?;
+
+        Ok(env)
     }
 }

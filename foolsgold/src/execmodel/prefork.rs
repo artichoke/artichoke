@@ -1,7 +1,7 @@
 use mruby::gc::GarbageCollection;
 use mruby::interpreter::Mrb;
 use mruby::MrbError;
-use nemesis::request::Request;
+use nemesis::server::rocket::request::Request;
 use nemesis::{self, adapter, handler};
 use ref_thread_local::RefThreadLocal;
 use rocket::{get, Response};
