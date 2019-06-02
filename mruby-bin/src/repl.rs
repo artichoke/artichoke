@@ -84,6 +84,10 @@ pub fn run(
     writeln!(output, "{}", preamble()?).map_err(Error::Io)?;
     let config = config.unwrap_or_else(Default::default);
     let interp = Interpreter::create().map_err(Error::Ruby)?;
+
+    // load gems
+    mruby_gems::rubygems::rack::init(&interp).map_err(Error::Ruby)?;
+
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
     interp.push_context(EvalContext::new(REPL_FILENAME));
     unsafe {
