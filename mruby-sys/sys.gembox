@@ -4,6 +4,9 @@ MRuby::GemBox.new do |conf|
   # Compiler, parser, and context
   conf.gem core: 'mruby-compiler'
 
+  # eval and instance eval
+  conf.gem core: 'mruby-eval'
+
   # mrb_protect
   conf.gem core: 'mruby-error'
 
