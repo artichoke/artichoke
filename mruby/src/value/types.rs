@@ -45,6 +45,7 @@ pub enum Ruby {
     Module,
     Nil,
     Object,
+    Proc,
     SingletonClass,
     String,
     Symbol,
@@ -67,6 +68,7 @@ impl Ruby {
             Ruby::Module => "Module",
             Ruby::Nil => "NilClass",
             Ruby::Object => "Object",
+            Ruby::Proc => "Proc",
             Ruby::SingletonClass => "Singleton (anonymous) class",
             Ruby::String => "String",
             Ruby::Symbol => "Symbol",
@@ -134,7 +136,7 @@ impl From<sys::mrb_value> for Ruby {
             // def obj.bar; 'bar'; end
             // ```
             sys::mrb_vtype::MRB_TT_SCLASS => Ruby::SingletonClass,
-            sys::mrb_vtype::MRB_TT_PROC => unimplemented!("mruby type proc"),
+            sys::mrb_vtype::MRB_TT_PROC => Ruby::Proc,
             sys::mrb_vtype::MRB_TT_ARRAY => Ruby::Array,
             sys::mrb_vtype::MRB_TT_HASH => Ruby::Hash,
             sys::mrb_vtype::MRB_TT_STRING => Ruby::String,
