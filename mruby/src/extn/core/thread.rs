@@ -1,5 +1,6 @@
-use crate::eval::{EvalContext, MrbEval};
+use crate::eval::MrbEval;
 use crate::interpreter::Mrb;
+use crate::load::MrbLoadSources;
 use crate::MrbError;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
@@ -7,12 +8,10 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         .borrow_mut()
         .def_class::<Thread>("Thread", None, None);
     interp.borrow_mut().def_class::<Mutex>("Mutex", None, None);
+    interp.def_rb_source_file("thread.rb", include_str!("thread.rb"))?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement
-    interp.eval_with_context(
-        include_str!("thread.rb"),
-        EvalContext::new("/src/lib/thread.rb"),
-    )?;
+    interp.eval("require 'thread'")?;
     Ok(())
 }
 
