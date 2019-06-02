@@ -2,7 +2,6 @@
 
 use mruby::gc::GarbageCollection;
 use mruby::interpreter::Mrb;
-use mruby::value::{Value, ValueLike};
 use std::error;
 use std::fmt;
 
@@ -50,16 +49,11 @@ impl From<response::Error> for Error {
     }
 }
 
-pub fn run<'a>(
+pub fn run<'a, T: Request>(
     interp: &Mrb,
     app: &RackApp,
-    request: &Request,
+    request: &T,
 ) -> Result<rocket::Response<'a>, Error> {
     let _arena = interp.create_arena_savepoint();
-    let args = &[request.to_env(interp)?];
-    let response = app
-        .funcall::<Vec<Value>, _, _>("call", args)
-        .map_err(response::Error::Mrb)?;
-    let response = Response::from(interp, response)?;
-    Ok(response.into_rocket())
+    app.call(request).map(Response::into_rocket)
 }

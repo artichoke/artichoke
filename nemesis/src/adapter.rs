@@ -7,6 +7,10 @@ use mruby::MrbError;
 use std::convert::AsRef;
 use std::rc::Rc;
 
+use crate::handler;
+use crate::request::Request;
+use crate::response::{self, Response};
+
 pub struct RackApp {
     interp: Mrb,
     app: Value,
@@ -29,6 +33,15 @@ impl RackApp {
             interp: Rc::clone(interp),
             app,
         })
+    }
+
+    pub fn call<T: Request>(&self, req: &T) -> Result<Response, handler::Error> {
+        let env = req.to_env(&self.interp)?;
+        let response = self
+            .funcall::<Vec<Value>, _, _>("call", &[env])
+            .map_err(response::Error::Mrb)?;
+        let response = Response::from(&self.interp, response)?;
+        Ok(response)
     }
 }
 
