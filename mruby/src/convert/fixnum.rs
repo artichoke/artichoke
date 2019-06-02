@@ -17,6 +17,60 @@ impl FromMrb<Int> for Value {
     }
 }
 
+impl FromMrb<u8> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: u8) -> Self {
+        Self::from_mrb(interp, Int::from(value))
+    }
+}
+
+impl FromMrb<u16> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: u16) -> Self {
+        Self::from_mrb(interp, Int::from(value))
+    }
+}
+
+impl FromMrb<u32> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: u32) -> Self {
+        Self::from_mrb(interp, Int::from(value))
+    }
+}
+
+impl FromMrb<i8> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: i8) -> Self {
+        Self::from_mrb(interp, Int::from(value))
+    }
+}
+
+impl FromMrb<i16> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: i16) -> Self {
+        Self::from_mrb(interp, Int::from(value))
+    }
+}
+
+impl FromMrb<i32> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: i32) -> Self {
+        Self::from_mrb(interp, Int::from(value))
+    }
+}
+
 impl TryFromMrb<Value> for Int {
     type From = Ruby;
     type To = Rust;
