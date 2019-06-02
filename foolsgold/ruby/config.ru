@@ -3,7 +3,7 @@
 require 'foolsgold'
 
 # Monkeypatch String to add String#strip_heredoc_indent
-class String
+String.class_eval do
   # mruby doesn't support Regexp natively, so use a fixed width
   # strip technique.
   def strip_indent(indent)
