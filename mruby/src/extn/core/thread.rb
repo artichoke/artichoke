@@ -103,6 +103,8 @@ class Thread
   end
 
   def initialize(root = false)
+    raise ThreadError, 'must be called with a block' unless block_given?
+
     @priority = 0
     @priority = self.class.current.priority unless self.class.current.nil?
 
@@ -115,7 +117,7 @@ class Thread
     @terminated_with_exception = nil
     # mruby is not multi-threaded. Threads are executed synchronously.
     @alive = true
-    @value = yield if block_given?
+    @value = yield
   rescue StandardError => e
     if @__unwind_with_exception.nil?
       @terminated_with_exception = true
@@ -340,4 +342,4 @@ class Mutex
 end
 
 # Spawn the special "root" thread that never terminates.
-Thread.new(true)
+Thread.new(true) {}
