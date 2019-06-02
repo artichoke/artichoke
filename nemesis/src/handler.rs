@@ -6,6 +6,7 @@ use mruby::value::{Value, ValueLike};
 use std::error;
 use std::fmt;
 
+use crate::adapter::RackApp;
 use crate::request::{self, Request};
 use crate::response::{self, Response};
 
@@ -51,7 +52,7 @@ impl From<response::Error> for Error {
 
 pub fn run<'a>(
     interp: &Mrb,
-    app: &Value,
+    app: &RackApp,
     request: &Request,
 ) -> Result<rocket::Response<'a>, Error> {
     let _arena = interp.create_arena_savepoint();

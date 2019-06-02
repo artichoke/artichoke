@@ -1,8 +1,9 @@
 use mruby::gc::GarbageCollection;
 use mruby::interpreter::Mrb;
 use mruby::MrbError;
+use nemesis::adapter::RackApp;
 use nemesis::server::rocket::request::Request;
-use nemesis::{self, adapter, handler};
+use nemesis::{self, handler};
 use ref_thread_local::RefThreadLocal;
 use rocket::{get, Response};
 
@@ -20,7 +21,7 @@ pub fn rack_app<'a>(req: Request) -> Result<Response<'a>, Error> {
     match *INTERPRETER.borrow() {
         Ok(ref interp) => {
             let arena = interp.create_arena_savepoint();
-            let adapter = adapter::from_rackup(&interp, RACKUP)?;
+            let adapter = RackApp::from_rackup(&interp, RACKUP)?;
             let response = handler::run(interp, &adapter, &req)?;
             arena.restore();
             interp.incremental_gc();
