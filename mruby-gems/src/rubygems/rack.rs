@@ -20,9 +20,19 @@ struct Rack;
 impl Rack {
     fn contents<T: AsRef<str>>(path: T) -> Result<Vec<u8>, MrbError> {
         let path = path.as_ref();
-        Self::get(path)
+        let contents = Self::get(path)
             .map(Cow::into_owned)
-            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))
+            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))?;
+        // patches
+        if path == "rack/builder.rb" {
+            let bad = "TOPLEVEL_BINDING";
+            let good = "nil";
+            let string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            Ok(string.replace(bad, good).into_bytes())
+        } else {
+            Ok(contents)
+        }
     }
 }
 
