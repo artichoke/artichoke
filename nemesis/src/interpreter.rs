@@ -26,7 +26,10 @@ pub enum ExecMode {
 }
 
 impl ExecMode {
-    pub fn interpreter(&self, init: &Mutex<Option<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>) -> Result<Mrb, Error> {
+    pub fn interpreter(
+        &self,
+        init: &Option<Mutex<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>,
+    ) -> Result<Mrb, Error> {
         if let ExecMode::SingleUse = self {
             let interp = Interpreter::create()?;
             rack::init(&interp)?;
@@ -35,8 +38,8 @@ impl ExecMode {
             interp.eval("require 'rack'")?;
             interp.eval("require 'nemesis'")?;
             interp.eval("require 'nemesis/response'")?;
-            let init = init.lock().map_err(|_| MrbError::New)?;
-            if let Some(ref init) = *init {
+            if let Some(init) = init {
+                let init = init.lock().map_err(|_| MrbError::New)?;
                 init(&interp)?;
             }
             Ok(interp)

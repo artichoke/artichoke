@@ -19,9 +19,15 @@ pub enum Backend {
 }
 
 pub struct Builder {
+    assets: AssetRegistry,
+    html: HtmlAssetRegistry,
     mounts: MountRegistry,
     backend: Backend,
 }
+
+pub struct AssetRegistry(HashMap<String, Vec<u8>>);
+
+pub struct HtmlAssetRegistry(HashMap<String, Vec<u8>>);
 
 pub struct MountRegistry(HashMap<String, Mount>);
 
@@ -35,6 +41,21 @@ impl Builder {
         self
     }
 
+    pub fn add_html_asset<S: AsRef<str>, T: AsRef<[u8]>>(mut self, path: S, asset: T) -> Self {
+        self.html
+            .0
+            .insert(path.as_ref().to_owned(), asset.as_ref().to_owned());
+        self
+    }
+
+
+    pub fn add_static_asset<S: AsRef<str>, T: AsRef<[u8]>>(mut self, path: S, asset: T) -> Self {
+        self.assets
+            .0
+            .insert(path.as_ref().to_owned(), asset.as_ref().to_owned());
+        self
+    }
+
     pub fn set_backend(mut self, backend: Backend) -> Self {
         self.backend = backend;
         self
@@ -42,31 +63,24 @@ impl Builder {
 
     pub fn serve(self) -> Result<(), Error> {
         let Backend::Rocket = self.backend;
-        let mut launcher = ::rocket::ignite();
-        for (_path, mount) in &self.mounts.0 {
-            launcher = launcher.mount(mount.path.as_str(), routes![rocket::routes::route_get]);
-        }
-        launcher = launcher.manage(self.mounts.0);
-        let err = launcher.launch();
-        // This log is only reachable if Rocket has an error during startup,
-        // otherwise `rocket::ignite().launch()` blocks forever.
-        warn!("Failed to launch rocket: {}", err);
-        Err(Error::FailedLaunch(err.to_string()))
+        rocket::launcher(self)
     }
 }
 
 impl Default for Builder {
     fn default() -> Self {
         Self {
-            mounts: MountRegistry(HashMap::default()),
+            assets: AssetRegistry(Default::default()),
+            html: HtmlAssetRegistry(Default::default()),
+            mounts: MountRegistry(Default::default()),
             backend: Backend::Rocket,
         }
     }
 }
 
 pub struct Mount {
-    path: String,
-    app: Mutex<Box<dyn Fn(&Mrb) -> Result<RackApp, MrbError> + Send>>,
-    interp_init: Mutex<Option<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>,
-    exec_mode: ExecMode,
+    pub path: String,
+    pub app: Mutex<Box<dyn Fn(&Mrb) -> Result<RackApp, MrbError> + Send>>,
+    pub interp_init: Option<Mutex<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>,
+    pub exec_mode: ExecMode,
 }

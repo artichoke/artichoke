@@ -16,6 +16,10 @@ pub struct Request<'a> {
 }
 
 impl<'a> nemesisreq::Request for Request<'a> {
+    fn origin(&self) -> String {
+        self.origin.path().to_owned()
+    }
+
     fn http_version(&self) -> Option<String> {
         // Rocket does not expose HTTP version
         // https://github.com/SergioBenitez/Rocket/issues/1019

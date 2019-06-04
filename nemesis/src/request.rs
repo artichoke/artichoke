@@ -12,6 +12,8 @@ use mruby::value::{Value, ValueLike};
 use crate::Error;
 
 pub trait Request {
+    fn origin(&self) -> String;
+
     fn http_version(&self) -> Option<String>;
 
     fn request_method(&self) -> String;

@@ -8,19 +8,25 @@ extern crate log;
 #[macro_use]
 extern crate mruby;
 #[macro_use]
-extern crate ref_thread_local;
-#[macro_use]
 extern crate rust_embed;
 
-use rocket::routes;
+use mruby::eval::MrbEval;
+use mruby::interpreter::Mrb;
+use nemesis::adapter::RackApp;
+use nemesis::interpreter::ExecMode;
+use nemesis::server::{Builder, Mount};
+use nemesis::Error;
+use std::sync::Mutex;
 
 mod assets;
-mod execmodel;
 mod foolsgold;
+
+use assets::Assets;
 
 pub fn main() -> Result<(), i32> {
     env_logger::Builder::from_env("FOOLSGOLD_LOG").init();
     if let Err(err) = spawn() {
+        error!("Failed to launch nemesis: {}", err);
         eprintln!("ERR: {}", err);
         Err(1)
     } else {
@@ -28,20 +34,32 @@ pub fn main() -> Result<(), i32> {
     }
 }
 
-pub fn spawn() -> Result<(), String> {
-    let err = rocket::ignite()
-        .mount(
+pub fn spawn() -> Result<(), Error> {
+    Builder::default()
+        .add_mount(Mount {
+            path: "/fools-gold".to_owned(),
+            app: Mutex::new(Box::new(|interp: &Mrb| {
+                RackApp::from_rackup(interp, foolsgold::RACKUP)
+            })),
+            interp_init: Some(Mutex::new(Box::new(|interp: &Mrb| {
+                foolsgold::init(&interp)?;
+                // preload foolsgold sources
+                interp.eval("require 'foolsgold'")?;
+                Ok(())
+            }))),
+            exec_mode: ExecMode::SingleUse,
+        })
+        .add_html_asset(
             "/",
-            routes![
-                assets::index,
-                execmodel::shared_nothing::rack_app,
-                execmodel::prefork::rack_app
-            ],
+            Assets::get("index.html").expect("missing static asset"),
         )
-        .mount("/img", routes![assets::pyrite, assets::resf])
-        .launch();
-    // This log is only reachable if Rocket has an error during startup,
-    // otherwise `rocket::ignite().launch()` blocks forever.
-    warn!("Failed to launch rocket: {}", err);
-    Err(err.to_string())
+        .add_static_asset(
+            "/img/pyrite.jpg",
+            Assets::get("pyrite.jpg").expect("missing static asset"),
+        )
+        .add_static_asset(
+            "/img/resf.png",
+            Assets::get("resf.png").expect("missing static asset"),
+        )
+        .serve()
 }
