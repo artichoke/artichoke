@@ -91,7 +91,7 @@ where
         "Failed to convert types between ruby and rust"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
 }

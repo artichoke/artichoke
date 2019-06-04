@@ -2,52 +2,11 @@
 
 use mruby::gc::GarbageCollection;
 use mruby::interpreter::Mrb;
-use std::error;
-use std::fmt;
 
 use crate::adapter::RackApp;
-use crate::request::{self, Request};
-use crate::response::{self, Response};
-
-#[derive(Debug)]
-pub enum Error {
-    Request(request::Error),
-    Response(response::Error),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Error::Request(inner) => write!(f, "{}", inner),
-            Error::Response(inner) => write!(f, "{}", inner),
-        }
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        "nemesis rack error"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            Error::Request(inner) => Some(inner),
-            Error::Response(inner) => Some(inner),
-        }
-    }
-}
-
-impl From<request::Error> for Error {
-    fn from(error: request::Error) -> Self {
-        Error::Request(error)
-    }
-}
-
-impl From<response::Error> for Error {
-    fn from(error: response::Error) -> Self {
-        Error::Response(error)
-    }
-}
+use crate::request::Request;
+use crate::response::Response;
+use crate::Error;
 
 pub fn run<'a, T: Request>(
     interp: &Mrb,

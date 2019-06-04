@@ -8,43 +8,8 @@ use mruby::convert::FromMrb;
 use mruby::eval::MrbEval;
 use mruby::interpreter::Mrb;
 use mruby::value::{Value, ValueLike};
-use mruby::MrbError;
-use std::error;
-use std::fmt;
 
-#[derive(Debug)]
-pub enum Error {
-    Mrb(MrbError),
-    NoRoute,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Error::Mrb(inner) => write!(f, "{}", inner),
-            Error::NoRoute => write!(f, "no matching route"),
-        }
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        "nemesis rack environment error"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            Error::Mrb(inner) => Some(inner),
-            _ => None,
-        }
-    }
-}
-
-impl From<MrbError> for Error {
-    fn from(error: MrbError) -> Self {
-        Error::Mrb(error)
-    }
-}
+use crate::Error;
 
 pub trait Request {
     fn http_version(&self) -> Option<String>;

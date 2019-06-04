@@ -1,7 +1,6 @@
 use mruby::eval::MrbEval;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::MrbError;
-use nemesis::handler;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
@@ -23,8 +22,8 @@ fn interpreter() -> Result<Mrb, MrbError> {
 
 #[derive(Debug)]
 pub enum Error {
-    Handler(handler::Error),
     Mrb(MrbError),
+    Nemesis(nemesis::Error),
 }
 
 impl From<MrbError> for Error {
@@ -33,16 +32,16 @@ impl From<MrbError> for Error {
     }
 }
 
-impl From<handler::Error> for Error {
-    fn from(error: handler::Error) -> Self {
-        Error::Handler(error)
+impl From<nemesis::Error> for Error {
+    fn from(error: nemesis::Error) -> Self {
+        Error::Nemesis(error)
     }
 }
 
 impl<'r> Responder<'r> for Error {
     fn respond_to(self, _: &Request) -> response::Result<'r> {
         match self {
-            Error::Handler(inner) => Response::build()
+            Error::Nemesis(inner) => Response::build()
                 .status(Status::InternalServerError)
                 .sized_body(Cursor::new(format!("{}", inner)))
                 .ok(),

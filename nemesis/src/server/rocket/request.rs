@@ -7,6 +7,7 @@ use rocket::request::{self as rocketreq, FromRequest};
 use rocket::Outcome;
 
 use crate::request as nemesisreq;
+use crate::Error;
 
 pub struct Request<'a> {
     method: Method,
@@ -30,7 +31,10 @@ impl<'a> nemesisreq::Request for Request<'a> {
     }
 
     fn path_info(&self) -> String {
-        self.origin.path().to_owned()
+        let uri = self.origin.path();
+        // This &str slice is safe because URIs are guaranteed to be ASCII
+        // (single byte characters).
+        uri[self.base.len()..].to_owned()
     }
 
     fn query_string(&self) -> String {
@@ -54,7 +58,7 @@ impl<'a> nemesisreq::Request for Request<'a> {
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for Request<'a> {
-    type Error = nemesisreq::Error;
+    type Error = Error;
 
     fn from_request(request: &'a rocket::Request<'r>) -> rocketreq::Outcome<Self, Self::Error> {
         if let Some(route) = request.route() {
@@ -64,7 +68,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Request<'a> {
                 base: route.base().to_owned(),
             })
         } else {
-            Outcome::Failure((Status::NotFound, nemesisreq::Error::NoRoute))
+            Outcome::Failure((Status::NotFound, Error::NoRoute))
         }
     }
 }

@@ -77,7 +77,7 @@ impl error::Error for MrbError {
         "mruby interpreter error"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match self {
             MrbError::ConvertToRuby(inner) => Some(inner),
             MrbError::ConvertToRust(inner) => Some(inner),

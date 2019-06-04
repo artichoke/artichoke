@@ -12,47 +12,10 @@ use mruby::MrbError;
 use rocket::http::Status;
 use std::collections::HashMap;
 use std::convert::{self, TryFrom};
-use std::error;
-use std::fmt;
 use std::io::Cursor;
 
 use crate::nemesis;
-
-#[derive(Debug)]
-pub enum Error {
-    Mrb(MrbError),
-    RackResponse,
-    Status,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Error::Mrb(inner) => write!(f, "{}", inner),
-            Error::RackResponse => write!(f, "malformed Rack response tuple"),
-            Error::Status => write!(f, "status is not a valid HTTP status code"),
-        }
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        "nemesis rack response error"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            Error::Mrb(inner) => Some(inner),
-            _ => None,
-        }
-    }
-}
-
-impl From<MrbError> for Error {
-    fn from(error: MrbError) -> Self {
-        Error::Mrb(error)
-    }
-}
+use crate::Error;
 
 #[derive(Debug)]
 pub struct Response {
@@ -77,7 +40,7 @@ impl Response {
     /// Convert from a Rack `[status, headers, body]` response tuple to a Rust
     /// representation. This code converts a response tuple using the Ruby class
     /// `Nemesis::Response`.
-    pub fn from(interp: &Mrb, response: Vec<Value>) -> Result<Self, Error> {
+    pub fn from_rack_tuple(interp: &Mrb, response: Vec<Value>) -> Result<Self, Error> {
         if response.len() != Self::RACK_RESPONSE_TUPLE_LEN {
             warn!(
                 "malformed rack response: {:?}",
