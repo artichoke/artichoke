@@ -67,5 +67,6 @@ impl Default for Builder {
 pub struct Mount {
     path: String,
     app: Mutex<Box<dyn Fn(&Mrb) -> Result<RackApp, MrbError> + Send>>,
+    interp_init: Mutex<Option<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>,
     exec_mode: ExecMode,
 }

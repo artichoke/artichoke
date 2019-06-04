@@ -1,9 +1,8 @@
 use nemesis::adapter::RackApp;
 use nemesis::server::rocket::request::Request;
-use nemesis::{self, handler};
+use nemesis::{self, handler, Error};
 use rocket::{get, Response};
 
-use crate::execmodel::Error;
 use crate::foolsgold::RACKUP;
 
 #[get("/fools-gold")]

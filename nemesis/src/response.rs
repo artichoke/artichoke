@@ -10,6 +10,8 @@ use mruby::interpreter::Mrb;
 use mruby::value::{Value, ValueLike};
 use mruby::MrbError;
 use rocket::http::Status;
+use rocket::request::Request;
+use rocket::response::{self, Responder};
 use std::collections::HashMap;
 use std::convert::{self, TryFrom};
 use std::io::Cursor;
@@ -79,5 +81,14 @@ impl Response {
             .flat_map(convert::identity)
             .collect::<Vec<_>>();
         Ok(bytes)
+    }
+}
+
+impl<'r> Responder<'r> for Error {
+    fn respond_to(self, _: &Request) -> response::Result<'r> {
+        response::Response::build()
+            .status(Status::InternalServerError)
+            .sized_body(Cursor::new(format!("{}", self)))
+            .ok()
     }
 }

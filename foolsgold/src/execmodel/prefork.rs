@@ -3,11 +3,10 @@ use mruby::interpreter::Mrb;
 use mruby::MrbError;
 use nemesis::adapter::RackApp;
 use nemesis::server::rocket::request::Request;
-use nemesis::{self, handler};
+use nemesis::{self, handler, Error};
 use ref_thread_local::RefThreadLocal;
 use rocket::{get, Response};
 
-use crate::execmodel::Error;
 use crate::foolsgold::RACKUP;
 
 ref_thread_local! {

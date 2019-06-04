@@ -23,7 +23,7 @@ pub fn route_get<'a>(
         .0
         .get(req.script_name().as_str())
         .ok_or(Error::NoRoute)?;
-    let interp = mount.exec_mode.interpreter()?;
+    let interp = mount.exec_mode.interpreter(&mount.interp_init)?;
     let _arena = interp.create_arena_savepoint();
     let lock = mount.app.lock().map_err(|_| Error::CannotCreateApp)?;
     let app = lock(&interp)?;
