@@ -52,14 +52,23 @@ impl RackHandler {
     pub fn routes(mount: &Mount) -> Vec<Route> {
         vec![
             Route::new(Method::Get, "/", Self::new(mount)),
+            Route::new(Method::Get, "/<path..>", Self::new(mount)),
             Route::new(Method::Put, "/", Self::new(mount)),
+            Route::new(Method::Put, "/<path..>", Self::new(mount)),
             Route::new(Method::Post, "/", Self::new(mount)),
+            Route::new(Method::Post, "/<path..>", Self::new(mount)),
             Route::new(Method::Delete, "/", Self::new(mount)),
+            Route::new(Method::Delete, "/<path..>", Self::new(mount)),
             Route::new(Method::Options, "/", Self::new(mount)),
+            Route::new(Method::Options, "/<path..>", Self::new(mount)),
             Route::new(Method::Head, "/", Self::new(mount)),
+            Route::new(Method::Head, "/<path..>", Self::new(mount)),
             Route::new(Method::Trace, "/", Self::new(mount)),
+            Route::new(Method::Trace, "/<path..>", Self::new(mount)),
             Route::new(Method::Connect, "/", Self::new(mount)),
+            Route::new(Method::Connect, "/<path..>", Self::new(mount)),
             Route::new(Method::Patch, "/", Self::new(mount)),
+            Route::new(Method::Patch, "/<path..>", Self::new(mount)),
         ]
     }
 }
