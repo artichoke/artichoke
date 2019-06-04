@@ -11,6 +11,8 @@ use crate::request::Request;
 use crate::response::Response;
 use crate::Error;
 
+pub type AppFactory = Box<dyn Fn(&Mrb) -> Result<RackApp, MrbError> + Send>;
+
 pub struct RackApp {
     interp: Mrb,
     app: Value,
@@ -21,10 +23,7 @@ impl RackApp {
     /// Create a Rack app by wrapping the supplied rackup source in a
     /// `Rack::Builder`. The returned [`Value`] has a call method and is
     /// suitable for passing to [`handler::run`](crate::handler::run).
-    pub fn from_rackup<T: AsRef<str>>(
-        interp: &Mrb,
-        builder_script: T,
-    ) -> Result<RackApp, MrbError> {
+    pub fn from_rackup<T: AsRef<str>>(interp: &Mrb, builder_script: T) -> Result<Self, MrbError> {
         let builder = interp.eval("Rack::Builder")?;
         let app = builder.funcall::<Value, _, _>(
             "new_from_string",

@@ -9,6 +9,8 @@ use std::sync::{Arc, Mutex};
 use crate::rubygems::nemesis;
 use crate::Error;
 
+pub type InitFunc = Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>;
+
 /// Execution mode of an interpreter for a given mount.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExecMode {
@@ -26,10 +28,7 @@ pub enum ExecMode {
 }
 
 impl ExecMode {
-    pub fn interpreter(
-        &self,
-        init: &Option<Arc<Mutex<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>>,
-    ) -> Result<Mrb, Error> {
+    pub fn interpreter(&self, init: &Option<Arc<Mutex<InitFunc>>>) -> Result<Mrb, Error> {
         if let ExecMode::SingleUse = self {
             let interp = Interpreter::create()?;
             rack::init(&interp)?;

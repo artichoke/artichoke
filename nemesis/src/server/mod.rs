@@ -1,12 +1,10 @@
 //! Nemesis server implementations.
 
-use mruby::interpreter::Mrb;
-use mruby::MrbError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::adapter::RackApp;
-use crate::interpreter::ExecMode;
+use crate::adapter::AppFactory;
+use crate::interpreter::{ExecMode, InitFunc};
 use crate::Error;
 
 pub mod rocket;
@@ -69,9 +67,9 @@ impl Builder {
 impl Default for Builder {
     fn default() -> Self {
         Self {
-            assets: AssetRegistry(Default::default()),
-            html: HtmlAssetRegistry(Default::default()),
-            mounts: MountRegistry(Default::default()),
+            assets: AssetRegistry(HashMap::default()),
+            html: HtmlAssetRegistry(HashMap::default()),
+            mounts: MountRegistry(HashMap::default()),
             backend: Backend::Rocket,
         }
     }
@@ -80,7 +78,7 @@ impl Default for Builder {
 #[derive(Clone)]
 pub struct Mount {
     pub path: String,
-    pub app: Arc<Mutex<Box<dyn Fn(&Mrb) -> Result<RackApp, MrbError> + Send>>>,
-    pub interp_init: Option<Arc<Mutex<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>>,
+    pub app: Arc<Mutex<AppFactory>>,
+    pub interp_init: Option<Arc<Mutex<InitFunc>>>,
     pub exec_mode: ExecMode,
 }
