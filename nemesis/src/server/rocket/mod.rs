@@ -8,13 +8,9 @@ pub mod routes;
 
 pub fn launcher(builder: Builder) -> Result<(), Error> {
     let mut launcher = rocket::ignite();
-    for (_path, mount) in &builder.mounts.0 {
-        launcher = launcher.mount(
-            mount.path.as_str(),
-            routes![routes::app_get, routes::app_get_root],
-        );
+    for (path, mount) in builder.mounts.0 {
+        launcher = launcher.mount(path.as_str(), routes::RackHandler::routes(mount));
     }
-    launcher = launcher.manage(builder.mounts);
     for (path, _asset) in &builder.assets.0 {
         launcher = launcher.mount(path.as_str(), routes![routes::static_asset]);
     }

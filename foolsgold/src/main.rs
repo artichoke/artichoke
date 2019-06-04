@@ -16,7 +16,7 @@ use nemesis::adapter::RackApp;
 use nemesis::interpreter::ExecMode;
 use nemesis::server::{Builder, Mount};
 use nemesis::Error;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 mod assets;
 mod foolsgold;
@@ -38,15 +38,17 @@ pub fn spawn() -> Result<(), Error> {
     Builder::default()
         .add_mount(Mount {
             path: "/fools-gold".to_owned(),
-            app: Mutex::new(Box::new(|interp: &Mrb| {
+            // TODO: make this API nicer, it should probably just take a func
+            app: Arc::new(Mutex::new(Box::new(|interp: &Mrb| {
                 RackApp::from_rackup(interp, foolsgold::RACKUP)
-            })),
-            interp_init: Some(Mutex::new(Box::new(|interp: &Mrb| {
+            }))),
+            // TODO: make this API nicer, it should probably just take a func
+            interp_init: Some(Arc::new(Mutex::new(Box::new(|interp: &Mrb| {
                 foolsgold::init(&interp)?;
                 // preload foolsgold sources
                 interp.eval("require 'foolsgold'")?;
                 Ok(())
-            }))),
+            })))),
             exec_mode: ExecMode::SingleUse,
         })
         .add_html_asset(

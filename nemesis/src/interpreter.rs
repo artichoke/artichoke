@@ -4,7 +4,7 @@ use mruby::eval::MrbEval;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::MrbError;
 use mruby_gems::rubygems::rack;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use crate::rubygems::nemesis;
 use crate::Error;
@@ -28,7 +28,7 @@ pub enum ExecMode {
 impl ExecMode {
     pub fn interpreter(
         &self,
-        init: &Option<Mutex<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>,
+        init: &Option<Arc<Mutex<Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>>>>,
     ) -> Result<Mrb, Error> {
         if let ExecMode::SingleUse = self {
             let interp = Interpreter::create()?;
