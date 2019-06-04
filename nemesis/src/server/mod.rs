@@ -18,14 +18,11 @@ pub enum Backend {
 
 pub struct Builder {
     assets: AssetRegistry,
-    html: HtmlAssetRegistry,
     mounts: MountRegistry,
     backend: Backend,
 }
 
 pub struct AssetRegistry(HashMap<String, Vec<u8>>);
-
-pub struct HtmlAssetRegistry(HashMap<String, Vec<u8>>);
 
 pub struct MountRegistry(HashMap<String, Mount>);
 
@@ -36,13 +33,6 @@ impl Builder {
 
     pub fn add_mount(mut self, mount: Mount) -> Self {
         self.mounts.0.insert(mount.path.clone(), mount);
-        self
-    }
-
-    pub fn add_html_asset<S: AsRef<str>, T: AsRef<[u8]>>(mut self, path: S, asset: T) -> Self {
-        self.html
-            .0
-            .insert(path.as_ref().to_owned(), asset.as_ref().to_owned());
         self
     }
 
@@ -68,7 +58,6 @@ impl Default for Builder {
     fn default() -> Self {
         Self {
             assets: AssetRegistry(HashMap::default()),
-            html: HtmlAssetRegistry(HashMap::default()),
             mounts: MountRegistry(HashMap::default()),
             backend: Backend::Rocket,
         }

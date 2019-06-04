@@ -5,36 +5,41 @@ use rocket::handler;
 use rocket::http::{ContentType, Method, Status};
 use rocket::request::FromRequest;
 use rocket::{self, Data, Handler, Outcome, Route, State};
+use std::ffi::OsStr;
 use std::io::Cursor;
+use std::path::Path;
 
 use crate::request::Request;
 use crate::response::Response;
 use crate::server::rocket::request;
-use crate::server::{AssetRegistry, HtmlAssetRegistry, Mount};
+use crate::server::{AssetRegistry, Mount};
 use crate::Error;
 
 #[get("/")]
 #[allow(clippy::needless_pass_by_value)]
-pub fn static_asset(req: request::Request, assets: State<AssetRegistry>) -> Option<Vec<u8>> {
-    assets.0.get(&req.origin()).map(Clone::clone)
-}
-
-#[get("/")]
-#[allow(clippy::needless_pass_by_value)]
-pub fn html_asset<'a>(
+pub fn static_asset<'a>(
     req: request::Request,
-    assets: State<HtmlAssetRegistry>,
+    assets: State<AssetRegistry>,
 ) -> Result<rocket::Response<'a>, Status> {
-    let html = assets
+    let content_type = Path::new(&req.origin())
+        .extension()
+        .and_then(OsStr::to_str)
+        .and_then(ContentType::from_extension);
+    let content = assets
         .0
         .get(&req.origin())
         .map(Clone::clone)
         .ok_or(Status::NotFound)?;
-    let response = rocket::Response::build()
-        .sized_body(Cursor::new(html))
-        .header(ContentType::HTML)
-        .finalize();
-    Ok(response)
+    if let Some(content_type) = content_type {
+        rocket::Response::build()
+            .sized_body(Cursor::new(content))
+            .header(content_type)
+            .ok()
+    } else {
+        rocket::Response::build()
+            .sized_body(Cursor::new(content))
+            .ok()
+    }
 }
 
 #[derive(Clone)]

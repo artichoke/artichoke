@@ -51,7 +51,7 @@ pub fn spawn() -> Result<(), Error> {
             })))),
             exec_mode: ExecMode::SingleUse,
         })
-        .add_html_asset(
+        .add_static_asset(
             "/",
             Assets::get("index.html").expect("missing static asset"),
         )
