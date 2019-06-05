@@ -72,10 +72,10 @@ impl Default for Builder {
 
 #[derive(Clone)]
 pub struct Mount {
-    pub path: String,
-    pub app: Arc<Mutex<AppFactory>>,
-    pub interp_init: Option<Arc<Mutex<InitFunc>>>,
-    pub exec_mode: ExecMode,
+    path: String,
+    app: Arc<Mutex<AppFactory>>,
+    interp_init: Option<Arc<Mutex<InitFunc>>>,
+    exec_mode: ExecMode,
 }
 
 impl Mount {
