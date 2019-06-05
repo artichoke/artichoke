@@ -15,6 +15,8 @@ pub type InitFunc = Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExecMode {
     /// A single interpreter will be used for a worker executing the mount.
+    #[allow(dead_code)]
+    // TODO: undeaden this code.
     PerMountPerWorker {
         /// After `max_requests`, close the interpreter and lazily initialize a
         /// new one.

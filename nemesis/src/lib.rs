@@ -14,16 +14,15 @@ use mruby::MrbError;
 use std::error;
 use std::fmt;
 
-pub mod adapter;
-pub mod interpreter;
-pub mod request;
-pub mod response;
+mod adapter;
+mod interpreter;
+mod request;
+mod response;
 mod rubygems;
-pub mod server;
-
-pub use self::server::{Builder, Mount};
+mod server;
 
 use rubygems::nemesis;
+pub use server::{Builder, Mount};
 
 #[derive(Debug)]
 pub enum Error {
