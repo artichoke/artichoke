@@ -10,15 +10,11 @@ extern crate rocket;
 #[macro_use]
 extern crate rust_embed;
 
-use mruby::eval::MrbEval;
-use mruby::interpreter::Mrb;
 use mruby::MrbError;
-use mruby_gems::rubygems::rack;
 use std::error;
 use std::fmt;
 
 pub mod adapter;
-pub mod handler;
 pub mod interpreter;
 pub mod request;
 pub mod response;
@@ -67,14 +63,4 @@ impl From<MrbError> for Error {
     fn from(error: MrbError) -> Self {
         Error::Mrb(error)
     }
-}
-
-pub fn init(interp: &Mrb) -> Result<(), MrbError> {
-    rack::init(interp)?;
-    nemesis::init(interp)?;
-    // Preload required gem sources
-    interp.eval("require 'rack'")?;
-    interp.eval("require 'nemesis'")?;
-    interp.eval("require 'nemesis/response'")?;
-    Ok(())
 }
