@@ -4,7 +4,6 @@ use mruby::interpreter::Mrb;
 use mruby::sys;
 use mruby::value::{Value, ValueLike};
 use mruby::MrbError;
-use std::convert::AsRef;
 use std::rc::Rc;
 
 use crate::request::Request;
@@ -23,17 +22,16 @@ impl RackApp {
     /// Create a Rack app by wrapping the supplied rackup source in a
     /// `Rack::Builder`. The returned [`Value`] has a call method and is
     /// suitable for passing to [`handler::run`](crate::handler::run).
-    pub fn from_rackup<T: AsRef<str>>(interp: &Mrb, builder_script: T) -> Result<Self, MrbError> {
+    pub fn from_rackup(interp: &Mrb, builder_script: &str, name: &str) -> Result<Self, MrbError> {
         let builder = interp.eval("Rack::Builder")?;
         let app = builder.funcall::<Value, _, _>(
             "new_from_string",
-            &[Value::from_mrb(interp, builder_script.as_ref())],
+            &[Value::from_mrb(interp, builder_script)],
         )?;
         Ok(Self {
             interp: Rc::clone(interp),
             app,
-            // TODO: parameterize app name
-            name: "rack app".to_owned(),
+            name: name.to_owned(),
         })
     }
 
