@@ -11,24 +11,17 @@ pub struct Assets;
 impl Assets {
     pub fn all() -> Result<HashMap<String, Vec<u8>>, Error> {
         let mut assets = HashMap::default();
-        assets.insert(
-            "/".to_owned(),
-            Self::get("index.html")
+        for source in Self::iter() {
+            let content = Self::get(&source)
                 .map(Cow::into_owned)
-                .ok_or(Error::FailedLaunch("missing index.html".to_owned()))?,
-        );
-        assets.insert(
-            "/img/pyrite.jpg".to_owned(),
-            Self::get("pyrite.jpg")
-                .map(Cow::into_owned)
-                .ok_or(Error::FailedLaunch("missing pyrite.jpg".to_owned()))?,
-        );
-        assets.insert(
-            "/img/resf.png".to_owned(),
-            Self::get("resf.png")
-                .map(Cow::into_owned)
-                .ok_or(Error::FailedLaunch("missing resf.png".to_owned()))?,
-        );
+                .ok_or(Error::FailedLaunch(format!("missing static asset {}", source)))?;
+            if source == "index.html" {
+                let route = "/".to_owned();
+                assets.insert(route, content.clone());
+            }
+            let route = format!("/{}", source);
+            assets.insert(route, content);
+        }
         Ok(assets)
     }
 }
