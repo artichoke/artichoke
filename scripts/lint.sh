@@ -16,6 +16,8 @@ lint_ruby_sources() {
 cargo fmt
 ## Lint with Clippy
 cargo clippy --all-targets --all-features
+## Lint docs
+cargo doc --no-deps --all
 
 # Lint Ruby sources
 

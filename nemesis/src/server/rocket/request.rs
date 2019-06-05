@@ -1,4 +1,4 @@
-//! Nemesis [`Request`](crate::server::Request) implementation using
+//! Nemesis [`Request`](crate::request::Request) implementation using
 //! [Rocket](rocket).
 
 use rocket::http::uri::Origin;
