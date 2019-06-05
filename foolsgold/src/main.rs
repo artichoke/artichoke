@@ -11,12 +11,8 @@ extern crate mruby;
 extern crate rust_embed;
 
 use mruby::eval::MrbEval;
-use mruby::interpreter::Mrb;
-use nemesis::adapter::RackApp;
-use nemesis::interpreter::ExecMode;
 use nemesis::server::{Builder, Mount};
 use nemesis::Error;
-use std::sync::{Arc, Mutex};
 
 mod assets;
 mod foolsgold;
@@ -36,21 +32,12 @@ pub fn main() -> Result<(), i32> {
 
 pub fn spawn() -> Result<(), Error> {
     Builder::default()
-        .add_mount(Mount {
-            path: "/fools-gold".to_owned(),
-            // TODO: make this API nicer, it should probably just take a func
-            app: Arc::new(Mutex::new(Box::new(|interp: &Mrb| {
-                RackApp::from_rackup(interp, foolsgold::RACKUP)
-            }))),
-            // TODO: make this API nicer, it should probably just take a func
-            interp_init: Some(Arc::new(Mutex::new(Box::new(|interp: &Mrb| {
+        .add_mount(
+            Mount::from_rackup("foolsgold", foolsgold::RACKUP, "/fools-gold").with_init(Box::new(|interp| {
                 foolsgold::init(&interp)?;
                 // preload foolsgold sources
                 interp.eval("require 'foolsgold'")?;
                 Ok(())
-            })))),
-            exec_mode: ExecMode::SingleUse,
-        })
             })),
         )
         .add_static_assets(Assets::all()?)
