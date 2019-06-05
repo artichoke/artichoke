@@ -1,9 +1,10 @@
 //! Nemesis server implementations.
 
+use mruby::interpreter::Mrb;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::adapter::AppFactory;
+use crate::adapter::{AppFactory, RackApp};
 use crate::interpreter::{ExecMode, InitFunc};
 use crate::Error;
 
@@ -75,4 +76,28 @@ pub struct Mount {
     pub app: Arc<Mutex<AppFactory>>,
     pub interp_init: Option<Arc<Mutex<InitFunc>>>,
     pub exec_mode: ExecMode,
+}
+
+impl Mount {
+    pub fn from_rackup(name: &str, rackup: &str, mount_path: &str) -> Self {
+        let name = name.to_owned();
+        let rackup = rackup.to_owned();
+        let app = move |interp: &Mrb| RackApp::from_rackup(interp, &rackup.clone(), &name.clone());
+        Self {
+            path: mount_path.to_owned(),
+            app: Arc::new(Mutex::new(Box::new(app))),
+            interp_init: None,
+            // TODO: expose a setter for exec mode.
+            exec_mode: ExecMode::default(),
+        }
+    }
+
+    pub fn with_init(self, init: InitFunc) -> Self {
+        Self {
+            path: self.path,
+            app: self.app,
+            interp_init: Some(Arc::new(Mutex::new(init))),
+            exec_mode: self.exec_mode,
+        }
+    }
 }
