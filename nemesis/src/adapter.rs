@@ -21,7 +21,7 @@ pub struct RackApp {
 impl RackApp {
     /// Create a Rack app by wrapping the supplied rackup source in a
     /// `Rack::Builder`. The returned [`Value`] has a call method and is
-    /// suitable for passing to [`handler::run`](crate::handler::run).
+    /// suitable for serving a [`Mount`](crate::server::Mount).
     pub fn from_rackup(interp: &Mrb, builder_script: &str, name: &str) -> Result<Self, MrbError> {
         let builder = interp.eval("Rack::Builder")?;
         let app = builder.funcall::<Value, _, _>(
