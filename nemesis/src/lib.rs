@@ -21,6 +21,8 @@ pub mod response;
 mod rubygems;
 pub mod server;
 
+pub use self::server::{Builder, Mount};
+
 use rubygems::nemesis;
 
 #[derive(Debug)]

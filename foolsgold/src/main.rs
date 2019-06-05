@@ -11,8 +11,7 @@ extern crate mruby;
 extern crate rust_embed;
 
 use mruby::eval::MrbEval;
-use nemesis::server::{Builder, Mount};
-use nemesis::Error;
+use nemesis::{Builder, Error, Mount};
 
 mod assets;
 mod foolsgold;
