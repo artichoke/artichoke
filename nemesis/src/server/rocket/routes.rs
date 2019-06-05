@@ -10,7 +10,6 @@ use std::io::Cursor;
 use std::path::Path;
 
 use crate::request::Request;
-use crate::response::Response;
 use crate::server::rocket::request;
 use crate::server::{AssetRegistry, Mount};
 use crate::Error;
@@ -98,7 +97,19 @@ pub fn app<'a>(req: &request::Request, mount: &Mount) -> Result<rocket::Response
         req.script_name(),
         req.path_info()
     );
-    let response = app.call(req).map(Response::into_rocket)?;
+    let response = match app.call(req) {
+        Ok(rack_response) => {
+            let mut response = rocket::Response::build();
+            let status = Status::from_code(rack_response.status).ok_or(Error::Status)?;
+            response.status(status);
+            response.sized_body(Cursor::new(rack_response.body));
+            for (key, value) in rack_response.headers {
+                response.raw_header(key, value);
+            }
+            response.finalize()
+        }
+        Err(error) => return Err(error),
+    };
     mount.exec_mode.gc(&interp);
     Ok(response)
 }

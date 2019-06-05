@@ -1,5 +1,10 @@
 //! Nemesis server based on [Rocket](rocket).
 
+use rocket::http::Status;
+use rocket::request::Request;
+use rocket::response::{self, Responder};
+use std::io::Cursor;
+
 use crate::server::Builder;
 use crate::Error;
 
@@ -20,4 +25,13 @@ pub fn launcher(builder: Builder) -> Result<(), Error> {
     // otherwise `rocket::ignite().launch()` blocks forever.
     error!("Failed to launch rocket: {}", err);
     Err(Error::FailedLaunch(err.to_string()))
+}
+
+impl<'r> Responder<'r> for Error {
+    fn respond_to(self, _: &Request) -> response::Result<'r> {
+        response::Response::build()
+            .status(Status::InternalServerError)
+            .sized_body(Cursor::new(format!("{}", self)))
+            .ok()
+    }
 }
