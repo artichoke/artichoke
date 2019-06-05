@@ -43,6 +43,11 @@ impl Builder {
         self
     }
 
+    pub fn add_static_assets(mut self, assets: HashMap<String, Vec<u8>>) -> Self {
+        self.assets.0.extend(assets);
+        self
+    }
+
     pub fn set_backend(mut self, backend: Backend) -> Self {
         self.backend = backend;
         self

@@ -51,17 +51,8 @@ pub fn spawn() -> Result<(), Error> {
             })))),
             exec_mode: ExecMode::SingleUse,
         })
-        .add_static_asset(
-            "/",
-            Assets::get("index.html").expect("missing static asset"),
+            })),
         )
-        .add_static_asset(
-            "/img/pyrite.jpg",
-            Assets::get("pyrite.jpg").expect("missing static asset"),
-        )
-        .add_static_asset(
-            "/img/resf.png",
-            Assets::get("resf.png").expect("missing static asset"),
-        )
+        .add_static_assets(Assets::all()?)
         .serve()
 }
