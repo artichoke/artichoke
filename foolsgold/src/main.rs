@@ -38,6 +38,17 @@ pub fn spawn() -> Result<(), Error> {
                     // preload foolsgold sources
                     interp.eval("require 'foolsgold'")?;
                     Ok(())
+                })),
+        )
+        .add_mount(
+            Mount::from_rackup("foolsgold", foolsgold::RACKUP, "/fools-gold/prefork")
+                .with_init(Box::new(|interp| {
+                    foolsgold::init(interp)?;
+                    // preload foolsgold sources
+                    interp.eval("require 'foolsgold'")?;
+                    Ok(())
+                }))
+                .with_shared_interpreter(Some(150)),
         )
         .add_static_assets(Assets::all()?)
         .serve()
