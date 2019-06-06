@@ -16,13 +16,19 @@ pub struct RackApp {
     interp: Mrb,
     app: Value,
     name: String,
+    mount_path: String,
 }
 
 impl RackApp {
     /// Create a Rack app by wrapping the supplied rackup source in a
     /// `Rack::Builder`. The returned [`Value`] has a call method and is
     /// suitable for serving a [`Mount`](crate::server::Mount).
-    pub fn from_rackup(interp: &Mrb, builder_script: &str, name: &str) -> Result<Self, MrbError> {
+    pub fn from_rackup(
+        interp: &Mrb,
+        builder_script: &str,
+        name: &str,
+        mount_path: &str,
+    ) -> Result<Self, MrbError> {
         let builder = interp.eval("Rack::Builder")?;
         let app = builder.funcall::<Value, _, _>(
             "new_from_string",
@@ -32,6 +38,7 @@ impl RackApp {
             interp: Rc::clone(interp),
             app,
             name: name.to_owned(),
+            mount_path: mount_path.to_owned(),
         })
     }
 
@@ -44,6 +51,10 @@ impl RackApp {
 
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn mount_path(&self) -> &str {
+        &self.mount_path
     }
 }
 
