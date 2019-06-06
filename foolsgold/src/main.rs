@@ -34,7 +34,7 @@ pub fn spawn() -> Result<(), Error> {
         .add_mount(
             Mount::from_rackup("foolsgold", foolsgold::RACKUP, "/fools-gold").with_init(Box::new(
                 |interp| {
-                    foolsgold::init(&interp)?;
+                    foolsgold::init(interp)?;
                     // preload foolsgold sources
                     interp.eval("require 'foolsgold'")?;
                     Ok(())
