@@ -14,6 +14,7 @@ doctest = false
 
 [dependencies]
 log = "0.4.6"
+ref_thread_local = "0.0.0"
 rocket = "0.4.1"
 
 [dependencies.mruby]
