@@ -4,12 +4,12 @@ use mruby::eval::MrbEval;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::MrbError;
 use mruby_gems::rubygems::rack;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::rubygems::nemesis;
 use crate::Error;
 
-pub type InitFunc = Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send>;
+pub type InitFunc = Box<dyn Fn(&Mrb) -> Result<(), MrbError> + Send + Sync>;
 
 /// Execution mode of an interpreter for a given mount.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,7 +30,7 @@ pub enum ExecMode {
 }
 
 impl ExecMode {
-    pub fn interpreter(&self, init: &Option<Arc<Mutex<InitFunc>>>) -> Result<Mrb, Error> {
+    pub fn interpreter(&self, init: &Option<Arc<InitFunc>>) -> Result<Mrb, Error> {
         if let ExecMode::SingleUse = self {
             let interp = Interpreter::create()?;
             rack::init(&interp)?;
@@ -40,7 +40,6 @@ impl ExecMode {
             interp.eval("require 'nemesis'")?;
             interp.eval("require 'nemesis/response'")?;
             if let Some(init) = init {
-                let init = init.lock().map_err(|_| MrbError::New)?;
                 init(&interp)?;
             }
             Ok(interp)

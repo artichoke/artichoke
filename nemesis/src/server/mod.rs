@@ -74,7 +74,7 @@ impl Default for Builder {
 pub struct Mount {
     path: String,
     app: Arc<Mutex<AppFactory>>,
-    interp_init: Option<Arc<Mutex<InitFunc>>>,
+    interp_init: Option<Arc<InitFunc>>,
     exec_mode: ExecMode,
 }
 
@@ -96,7 +96,7 @@ impl Mount {
         Self {
             path: self.path,
             app: self.app,
-            interp_init: Some(Arc::new(Mutex::new(init))),
+            interp_init: Some(Arc::new(init)),
             exec_mode: self.exec_mode,
         }
     }
