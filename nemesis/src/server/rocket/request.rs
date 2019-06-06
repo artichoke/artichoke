@@ -11,8 +11,8 @@ use crate::Error;
 
 pub struct Request<'a> {
     method: Method,
-    origin: Origin<'a>,
-    base: String,
+    origin: &'a Origin<'a>,
+    base: &'a str,
 }
 
 impl<'a> nemesisreq::Request for Request<'a> {
@@ -68,8 +68,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for Request<'a> {
         if let Some(route) = request.route() {
             Outcome::Success(Request {
                 method: request.method(),
-                origin: request.uri().clone(),
-                base: route.base().to_owned(),
+                origin: request.uri(),
+                base: route.base(),
             })
         } else {
             Outcome::Failure((Status::NotFound, Error::NoRoute))
