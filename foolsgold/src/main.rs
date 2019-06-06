@@ -8,19 +8,20 @@ extern crate log;
 #[macro_use]
 extern crate mruby;
 #[macro_use]
-extern crate ref_thread_local;
-#[macro_use]
 extern crate rust_embed;
 
-use rocket::routes;
+use mruby::eval::MrbEval;
+use nemesis::{Builder, Error, Mount};
 
 mod assets;
-mod execmodel;
 mod foolsgold;
+
+use assets::Assets;
 
 pub fn main() -> Result<(), i32> {
     env_logger::Builder::from_env("FOOLSGOLD_LOG").init();
     if let Err(err) = spawn() {
+        error!("Failed to launch nemesis: {}", err);
         eprintln!("ERR: {}", err);
         Err(1)
     } else {
@@ -28,20 +29,18 @@ pub fn main() -> Result<(), i32> {
     }
 }
 
-pub fn spawn() -> Result<(), String> {
-    let err = rocket::ignite()
-        .mount(
-            "/",
-            routes![
-                assets::index,
-                execmodel::shared_nothing::rack_app,
-                execmodel::prefork::rack_app
-            ],
+pub fn spawn() -> Result<(), Error> {
+    Builder::default()
+        .add_mount(
+            Mount::from_rackup("foolsgold", foolsgold::RACKUP, "/fools-gold").with_init(Box::new(
+                |interp| {
+                    foolsgold::init(interp)?;
+                    // preload foolsgold sources
+                    interp.eval("require 'foolsgold'")?;
+                    Ok(())
+                },
+            )),
         )
-        .mount("/img", routes![assets::pyrite, assets::resf])
-        .launch();
-    // This log is only reachable if Rocket has an error during startup,
-    // otherwise `rocket::ignite().launch()` blocks forever.
-    warn!("Failed to launch rocket: {}", err);
-    Err(err.to_string())
+        .add_static_assets(Assets::all()?)
+        .serve()
 }
