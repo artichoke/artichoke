@@ -16,7 +16,7 @@ use crate::Error;
 
 #[get("/")]
 #[allow(clippy::needless_pass_by_value)]
-pub fn static_asset<'a>(
+pub(super) fn static_asset<'a>(
     req: request::Request,
     assets: State<AssetRegistry>,
 ) -> Result<rocket::Response<'a>, Status> {
@@ -86,7 +86,7 @@ impl Handler for RackHandler {
     }
 }
 
-pub fn app<'a>(req: &request::Request, mount: &Mount) -> Result<rocket::Response<'a>, Error> {
+fn app<'a>(req: &request::Request, mount: &Mount) -> Result<rocket::Response<'a>, Error> {
     let interp = mount.exec_mode.interpreter(&mount.interp_init)?;
     let _arena = interp.create_arena_savepoint();
     let app = (mount.app)(&interp)?;

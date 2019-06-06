@@ -8,7 +8,7 @@ use crate::adapter::{AppFactory, RackApp};
 use crate::interpreter::{ExecMode, InitFunc};
 use crate::Error;
 
-pub mod rocket;
+mod rocket;
 
 /// Server implementation backend.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,15 +17,15 @@ pub enum Backend {
     Rocket,
 }
 
+struct AssetRegistry(HashMap<String, Vec<u8>>);
+
+struct MountRegistry(HashMap<String, Mount>);
+
 pub struct Builder {
     assets: AssetRegistry,
     mounts: MountRegistry,
     backend: Backend,
 }
-
-pub struct AssetRegistry(HashMap<String, Vec<u8>>);
-
-pub struct MountRegistry(HashMap<String, Mount>);
 
 impl Builder {
     pub fn new() -> Self {

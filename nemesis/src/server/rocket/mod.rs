@@ -8,8 +8,8 @@ use std::io::Cursor;
 use crate::server::Builder;
 use crate::Error;
 
-pub mod request;
-pub mod routes;
+mod request;
+mod routes;
 
 pub fn launcher(builder: Builder) -> Result<(), Error> {
     let mut launcher = rocket::ignite();
