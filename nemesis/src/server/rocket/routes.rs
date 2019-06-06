@@ -87,7 +87,9 @@ impl Handler for RackHandler {
 }
 
 fn app<'a>(req: &request::Request, mount: &Mount) -> Result<rocket::Response<'a>, Error> {
-    let interp = mount.exec_mode.interpreter(&mount.interp_init)?;
+    let interp = mount
+        .exec_mode
+        .interpreter(&mount.path, &mount.interp_init)?;
     let _arena = interp.create_arena_savepoint();
     let app = (mount.app)(&interp)?;
     debug!(
@@ -109,6 +111,6 @@ fn app<'a>(req: &request::Request, mount: &Mount) -> Result<rocket::Response<'a>
         }
         Err(error) => return Err(error),
     };
-    mount.exec_mode.gc(&interp);
+    mount.exec_mode.finalize(&interp, &app);
     Ok(response)
 }

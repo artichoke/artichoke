@@ -11,6 +11,8 @@ extern crate mruby;
 extern crate rust_embed;
 
 use mruby::eval::MrbEval;
+use mruby::interpreter::Mrb;
+use mruby::MrbError;
 use nemesis::{Builder, Error, Mount};
 
 mod assets;
@@ -32,15 +34,21 @@ pub fn main() -> Result<(), i32> {
 pub fn spawn() -> Result<(), Error> {
     Builder::default()
         .add_mount(
-            Mount::from_rackup("foolsgold", foolsgold::RACKUP, "/fools-gold").with_init(Box::new(
-                |interp| {
-                    foolsgold::init(interp)?;
-                    // preload foolsgold sources
-                    interp.eval("require 'foolsgold'")?;
-                    Ok(())
-                },
-            )),
+            Mount::from_rackup("foolsgold", foolsgold::RACKUP, "/fools-gold/shared-nothing")
+                .with_init(Box::new(interp_init)),
+        )
+        .add_mount(
+            Mount::from_rackup("foolsgold", foolsgold::RACKUP, "/fools-gold/prefork")
+                .with_init(Box::new(interp_init))
+                .with_shared_interpreter(Some(150)),
         )
         .add_static_assets(Assets::all()?)
         .serve()
+}
+
+fn interp_init(interp: &Mrb) -> Result<(), MrbError> {
+    foolsgold::init(interp)?;
+    // preload foolsgold sources
+    interp.eval("require 'foolsgold'")?;
+    Ok(())
 }

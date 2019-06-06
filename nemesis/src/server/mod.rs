@@ -81,8 +81,11 @@ pub struct Mount {
 impl Mount {
     pub fn from_rackup(name: &str, rackup: &str, mount_path: &str) -> Self {
         let name = name.to_owned();
+        let path = mount_path.to_owned();
         let rackup = rackup.to_owned();
-        let app = move |interp: &Mrb| RackApp::from_rackup(interp, &rackup.clone(), &name.clone());
+        let app = move |interp: &Mrb| {
+            RackApp::from_rackup(interp, &rackup.clone(), &name.clone(), &path.clone())
+        };
         Self {
             path: mount_path.to_owned(),
             app: Arc::new(Box::new(app)),
@@ -98,6 +101,17 @@ impl Mount {
             app: self.app,
             interp_init: Some(Arc::new(init)),
             exec_mode: self.exec_mode,
+        }
+    }
+
+    pub fn with_shared_interpreter(self, max_requests: Option<usize>) -> Self {
+        Self {
+            path: self.path,
+            app: self.app,
+            interp_init: self.interp_init,
+            exec_mode: ExecMode::PerAppPerWorker {
+                max_requests: max_requests.unwrap_or_default(),
+            },
         }
     }
 }
