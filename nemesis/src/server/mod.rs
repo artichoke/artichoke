@@ -103,4 +103,15 @@ impl Mount {
             exec_mode: self.exec_mode,
         }
     }
+
+    pub fn with_shared_interpreter(self, max_requests: Option<usize>) -> Self {
+        Self {
+            path: self.path,
+            app: self.app,
+            interp_init: self.interp_init,
+            exec_mode: ExecMode::PerAppPerWorker {
+                max_requests: max_requests.unwrap_or_default(),
+            },
+        }
+    }
 }
