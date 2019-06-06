@@ -2,7 +2,7 @@
 
 use mruby::interpreter::Mrb;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::adapter::{AppFactory, RackApp};
 use crate::interpreter::{ExecMode, InitFunc};
@@ -73,7 +73,7 @@ impl Default for Builder {
 #[derive(Clone)]
 pub struct Mount {
     path: String,
-    app: Arc<Mutex<AppFactory>>,
+    app: Arc<AppFactory>,
     interp_init: Option<Arc<InitFunc>>,
     exec_mode: ExecMode,
 }
@@ -85,7 +85,7 @@ impl Mount {
         let app = move |interp: &Mrb| RackApp::from_rackup(interp, &rackup.clone(), &name.clone());
         Self {
             path: mount_path.to_owned(),
-            app: Arc::new(Mutex::new(Box::new(app))),
+            app: Arc::new(Box::new(app)),
             interp_init: None,
             // TODO: expose a setter for exec mode.
             exec_mode: ExecMode::default(),

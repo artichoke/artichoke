@@ -10,7 +10,7 @@ use crate::request::Request;
 use crate::response::Response;
 use crate::Error;
 
-pub type AppFactory = Box<dyn Fn(&Mrb) -> Result<RackApp, MrbError> + Send>;
+pub type AppFactory = Box<dyn Fn(&Mrb) -> Result<RackApp, MrbError> + Send + Sync>;
 
 pub struct RackApp {
     interp: Mrb,

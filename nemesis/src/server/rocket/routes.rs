@@ -89,8 +89,7 @@ impl Handler for RackHandler {
 pub fn app<'a>(req: &request::Request, mount: &Mount) -> Result<rocket::Response<'a>, Error> {
     let interp = mount.exec_mode.interpreter(&mount.interp_init)?;
     let _arena = interp.create_arena_savepoint();
-    let lock = mount.app.lock().map_err(|_| Error::CannotCreateApp)?;
-    let app = lock(&interp)?;
+    let app = (mount.app)(&interp)?;
     debug!(
         "Matched Rack adapter: app={} base={} route={}",
         app.name(),
