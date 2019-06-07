@@ -33,3 +33,10 @@ features = ["debug-embed"]
 [dependencies.uuid]
 version = "0.7"
 features = ["v4"]
+
+[dev-dependencies]
+criterion = "0.2.11"
+http = "*"
+hyper = "0.12"
+futures = "0.1.27"
+tokio = "0.1.21"
