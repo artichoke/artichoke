@@ -37,7 +37,7 @@ mod load;
 
 fn nemesis_prefork(c: &mut Criterion) {
     c.bench_function("nemesis prefork with concurrency(1)", |b| {
-        b.iter(|| load::bench_nemesis_prefork(black_box(256), black_box(1)))
+        b.iter(|| load::bench_nemesis_prefork(black_box(128), black_box(1)))
     });
     c.bench_function("nemesis prefork with concurrency(16)", |b| {
         b.iter(|| load::bench_nemesis_prefork(black_box(256), black_box(16)))
@@ -49,7 +49,7 @@ fn nemesis_prefork(c: &mut Criterion) {
 
 fn thin_threaded(c: &mut Criterion) {
     c.bench_function("thin threaded with concurrency(1)", |b| {
-        b.iter(|| load::bench_thin_threaded(black_box(256), black_box(1)))
+        b.iter(|| load::bench_thin_threaded(black_box(128), black_box(1)))
     });
     c.bench_function("thin threaded with concurrency(16)", |b| {
         b.iter(|| load::bench_thin_threaded(black_box(256), black_box(16)))
