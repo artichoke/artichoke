@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 
+[[bench]]
+name = "nemesis_vs_thin"
+harness = false
+
 [[bin]]
 name = "foolsgold"
 # Disable doctests because doctests execute from the crate directory instead of
@@ -33,3 +37,10 @@ features = ["debug-embed"]
 [dependencies.uuid]
 version = "0.7"
 features = ["v4"]
+
+[dev-dependencies]
+criterion = "0.2.11"
+http = "*"
+hyper = "0.12"
+futures = "0.1.27"
+tokio = "0.1.21"
