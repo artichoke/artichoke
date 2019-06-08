@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::convert::TryInto;
 use std::ffi::c_void;
 use std::mem;
 use std::rc::Rc;
@@ -47,7 +48,9 @@ where
             to: Ruby::Object,
         })?;
         let mut slf = slf.unwrap_or_else(|| {
-            sys::mrb_obj_new(interp.borrow().mrb, rclass, 0, &[] as *const sys::mrb_value)
+            let args = self.new_obj_args(interp);
+            let len = args.len().try_into().expect("arg len");
+            sys::mrb_obj_new(interp.borrow().mrb, rclass, len, args.as_ptr() as *const sys::mrb_value)
         });
         let data = Rc::new(RefCell::new(self));
 
@@ -105,6 +108,17 @@ where
         let value = Rc::clone(&data);
         mem::forget(data);
         Ok(value)
+    }
+
+    /// Return arguments to new when creating a [`sys::mrb_value`].
+    ///
+    /// This default implementation returns an empty [`Vec`] of arguments.
+    ///
+    /// Implementations should override this method if they need to supply
+    /// arguments to initialize the Ruby class.
+    fn new_obj_args(&self, interp: &Mrb) -> Vec<sys::mrb_value> {
+        let _ = interp;
+        vec![]
     }
 }
 
