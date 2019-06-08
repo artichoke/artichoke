@@ -1,3 +1,6 @@
+#![deny(clippy::all, clippy::pedantic)]
+#![deny(warnings, intra_doc_link_resolution_failure)]
+
 //! This integration test checks for memory leaks that stem from improper
 //! handling of `mrb_state`.
 //!
@@ -24,8 +27,6 @@ use std::rc::Rc;
 
 mod leak;
 
-use leak::LeakDetector;
-
 const ITERATIONS: usize = 100;
 const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
@@ -47,7 +48,7 @@ end
         "#,
         "n".repeat(1024 * 1024)
     );
-    LeakDetector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
+    leak::Detector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let interp = Rc::clone(&interp);
         let code = "bad_code";
         let arena = interp.create_arena_savepoint();
@@ -60,13 +61,12 @@ end
 
     // Value::to_s
     let interp = Interpreter::create().expect("mrb init");
-    let code = "'a' * 1024 * 1024";
     let expected = "a".repeat(1024 * 1024);
-    LeakDetector::new("to_s", ITERATIONS, LEAK_TOLERANCE).check_leaks_with_finalizer(
+    leak::Detector::new("to_s", ITERATIONS, LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
             let interp = Rc::clone(&interp);
             let arena = interp.create_arena_savepoint();
-            let result = interp.eval(code).expect("eval");
+            let result = interp.eval("'a' * 1024 * 1024").expect("eval");
             arena.restore();
             assert_eq!(result.to_s(), expected);
             drop(result);
@@ -77,13 +77,12 @@ end
 
     // Value::to_s_debug
     let interp = Interpreter::create().expect("mrb init");
-    let code = "'a' * 1024 * 1024";
     let expected = format!(r#"String<"{}">"#, "a".repeat(1024 * 1024));
-    LeakDetector::new("to_s_debug", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
+    leak::Detector::new("to_s_debug", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
             let interp = Rc::clone(&interp);
             let arena = interp.create_arena_savepoint();
-            let result = interp.eval(code).expect("eval");
+            let result = interp.eval("'a' * 1024 * 1024").expect("eval");
             arena.restore();
             assert_eq!(result.to_s_debug(), expected);
             drop(result);

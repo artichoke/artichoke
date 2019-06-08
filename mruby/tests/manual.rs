@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate mruby;
 
-use mruby::convert::{FromMrb, TryFromMrb};
+use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use mruby::def::{rust_data_free, ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
@@ -13,21 +13,20 @@ use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
 use mruby::MrbError;
-use std::cell::RefCell;
-use std::ffi::c_void;
 use std::io::Write;
 use std::mem;
-use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
 struct Container {
     inner: i64,
 }
 
+impl RustBackedValue for Container {}
+
 impl Container {
     unsafe extern "C" fn initialize(
         mrb: *mut sys::mrb_state,
-        mut slf: sys::mrb_value,
+        slf: sys::mrb_value,
     ) -> sys::mrb_value {
         struct Args {
             inner: i64,
@@ -51,25 +50,18 @@ impl Container {
         let interp = interpreter_or_raise!(mrb);
         let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
 
-        let container = Self { inner: args.inner };
-        let data = Rc::new(RefCell::new(container));
-        let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
-        let spec = class_spec_or_raise!(interp, Self);
-        sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
-
-        slf
+        let container = Box::new(Self { inner: args.inner });
+        unwrap_value_or_raise!(interp, container.try_into_ruby(&interp, Some(slf)))
     }
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let spec = class_spec_or_raise!(interp, Self);
-
-        let borrow = spec.borrow();
-        let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
-        let data = mem::transmute::<*mut c_void, Rc<RefCell<Self>>>(ptr);
-        let container = Rc::clone(&data);
-        mem::forget(data);
-        let borrow = container.borrow();
+        let data = unwrap_or_raise!(
+            interp,
+            <Box<Self>>::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
         Value::from_mrb(&interp, borrow.inner).inner()
     }
 }
@@ -78,7 +70,8 @@ impl MrbFile for Container {
     fn require(interp: Mrb) -> Result<(), MrbError> {
         let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
+            let spec =
+                api.def_class::<Box<Self>>("Container", None, Some(rust_data_free::<Box<Self>>));
             spec.borrow_mut()
                 .add_method("initialize", Self::initialize, sys::mrb_args_req(1));
             spec.borrow_mut()

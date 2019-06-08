@@ -1,13 +1,13 @@
 use std::convert::AsRef;
 use std::mem;
 
-pub struct LeakDetector {
+pub struct Detector {
     test: String,
     iterations: usize,
     tolerance: i64, // in bytes
 }
 
-impl LeakDetector {
+impl Detector {
     pub fn new<T: AsRef<str>>(test: T, iterations: usize, tolerance: i64) -> Self {
         Self {
             test: test.as_ref().to_owned(),
