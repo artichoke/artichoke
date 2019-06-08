@@ -296,4 +296,22 @@ NestedEval.file
         let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
         assert_eq!(&result, "(eval)");
     }
+
+    #[test]
+    fn return_syntax_error() {
+        let interp = Interpreter::create().expect("mrb init");
+        interp
+            .def_rb_source_file("fail.rb", "def bad; 'as'.scan(/./o); end")
+            .expect("def file");
+        let result = interp.eval("require 'fail'").map(|_| ());
+        let expected = MrbError::Exec(
+            "
+(eval):1: mruby exception: SyntaxError: syntax error (RuntimeError)
+(eval):1
+            "
+            .trim()
+            .to_owned(),
+        );
+        assert_eq!(result, Err(expected));
+    }
 }
