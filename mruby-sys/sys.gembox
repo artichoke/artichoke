@@ -7,6 +7,9 @@ MRuby::GemBox.new do |conf|
   # eval and instance eval
   conf.gem core: 'mruby-eval'
 
+  # method metaprogramming
+  conf.gem core: 'mruby-method'
+
   # mrb_protect
   conf.gem core: 'mruby-error'
 
