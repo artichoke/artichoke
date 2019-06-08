@@ -1,4 +1,5 @@
 use onig::{Regex, RegexOptions, SearchOptions, Syntax};
+use std::convert::TryFrom;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
@@ -429,9 +430,51 @@ impl MatchData {
             args::MatchIndex::extract(&interp),
             interp.nil().inner()
         );
-        println!("MatchData#[] args: {:?}", args);
-        let _ = slf;
-        interp.nil().inner()
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        match args {
+            args::MatchIndex::Index(index) => Value::from_mrb(
+                &interp,
+                borrow
+                    .regexp
+                    .regex
+                    .captures(borrow.string.as_str())
+                    .and_then(|captures| captures.at(index)),
+            )
+            .inner(),
+            args::MatchIndex::Name(name) => {
+                let match_ = borrow
+                    .regexp
+                    .regex
+                    .capture_names()
+                    .find(|capture| capture.0 == name)
+                    .and_then(|capture| usize::try_from(capture.1[0]).ok())
+                    .and_then(|index| {
+                        borrow
+                            .regexp
+                            .regex
+                            .captures(borrow.string.as_str())
+                            .and_then(|captures| captures.at(index))
+                    });
+                Value::from_mrb(&interp, match_).inner()
+            }
+            args::MatchIndex::StartLen(start, len) => Value::from_mrb(
+                &interp,
+                borrow
+                    .regexp
+                    .regex
+                    .captures_iter(borrow.string.as_str())
+                    .skip(start)
+                    .take(len)
+                    .map(|captures| captures.at(0))
+                    .collect::<Vec<_>>(),
+            )
+            .inner(),
+        }
     }
 }
 

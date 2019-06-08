@@ -139,8 +139,8 @@ impl Match {
 #[derive(Debug, Clone)]
 pub enum MatchIndex {
     Index(usize),
-    StartLen(usize, usize),
     Name(String),
+    StartLen(usize, usize),
 }
 
 impl MatchIndex {
