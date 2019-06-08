@@ -1,8 +1,6 @@
 use onig::{Regex, RegexOptions, SearchOptions, Syntax};
-use std::cell::RefCell;
 use std::io::Write;
 use std::mem;
-use std::rc::Rc;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
@@ -38,6 +36,13 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         None,
         Some(rust_data_free::<MatchData>),
     );
+    match_data.borrow_mut().mrb_value_is_rust_backed(true);
+    match_data
+        .borrow_mut()
+        .add_method("string", MatchData::string, sys::mrb_args_none());
+    match_data
+        .borrow_mut()
+        .add_method("regexp", MatchData::regexp, sys::mrb_args_none());
     match_data.borrow().define(&interp)?;
     Ok(())
 }
@@ -119,6 +124,13 @@ enum Encoding {
 }
 
 impl Encoding {
+    fn flags(&self) -> i64 {
+        match self {
+            Encoding::Fixed => Regexp::FIXEDENCODING,
+            Encoding::None => Regexp::NOENCODING,
+        }
+    }
+
     fn from_value(
         interp: &Mrb,
         value: sys::mrb_value,
@@ -182,7 +194,29 @@ pub struct Regexp {
     regex: Regex,
 }
 
-impl RustBackedValue for Regexp {}
+impl RustBackedValue for Regexp {
+    fn new_obj_args(&self, interp: &Mrb) -> Vec<sys::mrb_value> {
+        vec![
+            Value::from_mrb(interp, self.pattern.as_str()).inner(),
+            Value::from_mrb(interp, self.options.flags().bits()).inner(),
+            Value::from_mrb(interp, self.encoding.flags()).inner(),
+        ]
+    }
+}
+
+impl Clone for Regexp {
+    fn clone(&self) -> Self {
+        // this should never fail because we previously created the Regex with
+        // the same flags.
+        let regex = Regex::with_options(&self.pattern, self.options.flags(), Syntax::default());
+        Self {
+            pattern: self.pattern.clone(),
+            options: self.options,
+            encoding: self.encoding,
+            regex: regex.expect("onig regex"),
+        }
+    }
+}
 
 impl Regexp {
     // TODO: expose these consts on the Regexp class in Ruby land.
@@ -478,7 +512,7 @@ impl Regexp {
         let data = if is_match.is_some() {
             MatchData {
                 string: args.string,
-                regexp,
+                regexp: regexp.borrow().clone(),
                 start_pos: args.pos.unwrap_or_default(),
             }
         } else {
@@ -491,11 +525,37 @@ impl Regexp {
 #[derive(Debug)]
 pub struct MatchData {
     string: String,
-    regexp: Rc<RefCell<Regexp>>,
+    regexp: Regexp,
     start_pos: usize,
 }
 
 impl RustBackedValue for MatchData {}
+
+impl MatchData {
+    unsafe extern "C" fn string(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        Value::from_mrb(&interp, borrow.string.as_str()).inner()
+    }
+
+    unsafe extern "C" fn regexp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        unwrap_value_or_raise!(interp, borrow.regexp.clone().try_into_ruby(&interp, None))
+    }
+}
 
 #[cfg(test)]
 mod tests {
