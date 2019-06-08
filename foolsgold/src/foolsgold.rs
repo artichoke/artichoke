@@ -1,4 +1,4 @@
-use mruby::convert::TryFromMrb;
+use mruby::convert::{RustBackedValue, TryFromMrb};
 use mruby::def::{rust_data_free, ClassLike, Define, EnclosingRubyScope};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
@@ -8,11 +8,7 @@ use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
 use mruby::MrbError;
 use std::borrow::Cow;
-use std::cell::RefCell;
-use std::convert::AsRef;
-use std::ffi::c_void;
 use std::mem;
-use std::rc::Rc;
 use std::sync::atomic::{AtomicI64, Ordering};
 use uuid::Uuid;
 
@@ -140,29 +136,20 @@ struct RequestContext {
     trace_id: Uuid,
 }
 
+impl RustBackedValue for RequestContext {}
+
 impl MrbFile for RequestContext {
     fn require(interp: Mrb) -> Result<(), MrbError> {
-        extern "C" fn initialize(
-            mrb: *mut sys::mrb_state,
-            mut slf: sys::mrb_value,
-        ) -> sys::mrb_value {
+        extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
+                let interp = interpreter_or_raise!(mrb);
+
                 let request_id = Uuid::new_v4();
                 let data = RequestContext {
                     trace_id: request_id,
                 };
-                let data = Rc::new(RefCell::new(data));
-                let ptr = mem::transmute::<Rc<RefCell<RequestContext>>, *mut c_void>(data);
-
-                let interp = interpreter_or_raise!(mrb);
-                {
-                    let spec = class_spec_or_raise!(interp, RequestContext);
-                    let borrow = spec.borrow();
-                    sys::mrb_sys_data_init(&mut slf, ptr, borrow.data_type());
-                };
-
                 info!("initialized RequestContext with trace id {}", request_id);
-                slf
+                unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, Some(slf)))
             }
         }
 
@@ -170,12 +157,11 @@ impl MrbFile for RequestContext {
             unsafe {
                 let interp = interpreter_or_raise!(mrb);
 
-                let ptr = {
-                    let spec = class_spec_or_raise!(interp, RequestContext);
-                    let borrow = spec.borrow();
-                    sys::mrb_data_get_ptr(mrb, slf, borrow.data_type())
-                };
-                let data = mem::transmute::<*mut c_void, Rc<RefCell<RequestContext>>>(ptr);
+                let data = unwrap_or_raise!(
+                    interp,
+                    RequestContext::try_from_ruby(&interp, &Value::new(&interp, slf)),
+                    interp.nil().inner()
+                );
                 let trace_id = data.borrow().trace_id;
                 info!("Retrieved trace id {} in {:?}", trace_id, interp);
                 mem::forget(data);
