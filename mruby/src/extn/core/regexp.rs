@@ -1,6 +1,5 @@
 use onig::{Regex, RegexOptions, SearchOptions, Syntax};
-use std::io::Write;
-use std::mem;
+use std::convert::TryFrom;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
@@ -9,6 +8,8 @@ use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::MrbError;
+
+mod args;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     let regexp =
@@ -27,11 +28,36 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_method("match?", Regexp::is_match, sys::mrb_args_req_and_opt(1, 1));
+    regexp
+        .borrow_mut()
+        .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
+    regexp
+        .borrow_mut()
+        .add_method("to_s", Regexp::to_s, sys::mrb_args_none());
+    regexp
+        .borrow_mut()
+        .add_method("inspect", Regexp::to_s, sys::mrb_args_none());
     regexp.borrow().define(&interp)?;
+    let match_data = interp.borrow_mut().def_class::<MatchData>(
+        "MatchData",
+        None,
+        Some(rust_data_free::<MatchData>),
+    );
+    match_data.borrow_mut().mrb_value_is_rust_backed(true);
+    match_data
+        .borrow_mut()
+        .add_method("string", MatchData::string, sys::mrb_args_none());
+    match_data
+        .borrow_mut()
+        .add_method("regexp", MatchData::regexp, sys::mrb_args_none());
+    match_data
+        .borrow_mut()
+        .add_method("[]", MatchData::idx, sys::mrb_args_none());
+    match_data.borrow().define(&interp)?;
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 struct Options {
     ignore_case: bool,
     extended: bool,
@@ -51,6 +77,20 @@ impl Options {
             bits |= RegexOptions::REGEX_OPTION_MULTILINE;
         }
         bits
+    }
+
+    fn as_string_opts(self) -> String {
+        let mut buf = String::new();
+        if self.ignore_case {
+            buf.push('i');
+        }
+        if self.multiline {
+            buf.push('m');
+        }
+        if self.extended {
+            buf.push('e');
+        }
+        buf
     }
 
     fn from_value(interp: &Mrb, value: sys::mrb_value) -> Result<Self, MrbError> {
@@ -101,13 +141,20 @@ impl Options {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Encoding {
     Fixed,
     None,
 }
 
 impl Encoding {
+    fn flags(self) -> i64 {
+        match self {
+            Encoding::Fixed => Regexp::FIXEDENCODING,
+            Encoding::None => Regexp::NOENCODING,
+        }
+    }
+
     fn from_value(
         interp: &Mrb,
         value: sys::mrb_value,
@@ -163,15 +210,22 @@ impl Default for Encoding {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Regexp {
     pattern: String,
     options: Options,
     encoding: Encoding,
-    regex: Regex,
 }
 
-impl RustBackedValue for Regexp {}
+impl RustBackedValue for Regexp {
+    fn new_obj_args(&self, interp: &Mrb) -> Vec<sys::mrb_value> {
+        vec![
+            Value::from_mrb(interp, self.pattern.as_str()).inner(),
+            Value::from_mrb(interp, self.options.flags().bits()).inner(),
+            Value::from_mrb(interp, self.encoding.flags()).inner(),
+        ]
+    }
+}
 
 impl Regexp {
     // TODO: expose these consts on the Regexp class in Ruby land.
@@ -185,77 +239,20 @@ impl Regexp {
     pub const NOENCODING: i64 = 32;
     pub const ALL_ENCODING_OPTS: i64 = Self::FIXEDENCODING | Self::NOENCODING;
 
+    pub fn regex(&self) -> Option<Regex> {
+        Regex::with_options(&self.pattern, self.options.flags(), Syntax::default()).ok()
+    }
+
     unsafe extern "C" fn initialize(
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        struct Args {
-            pattern: Value,
-            options: Option<Options>,
-            encoding: Option<Encoding>,
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let pattern = mem::uninitialized::<sys::mrb_value>();
-                let options = mem::uninitialized::<sys::mrb_value>();
-                let has_options = mem::uninitialized::<sys::mrb_bool>();
-                let encoding = mem::uninitialized::<sys::mrb_value>();
-                let has_encoding = mem::uninitialized::<sys::mrb_bool>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(
-                        format!(
-                            "{}{}{}{}{}{}\0",
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN,
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                        )
-                        .as_bytes(),
-                    )
-                    .map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(
-                    interp.borrow().mrb,
-                    argspec.as_ptr() as *const i8,
-                    &pattern,
-                    &options,
-                    &has_options,
-                    &encoding,
-                    &has_encoding,
-                );
-                let pattern = Value::new(&interp, pattern);
-                // the C boolean as u8 comparisons are easier if we keep the
-                // comparison inverted.
-                #[allow(clippy::if_not_else)]
-                let (options, encoding) = if has_encoding != 0 {
-                    let encoding = Some(Encoding::from_value(&interp, encoding, false)?);
-                    let options = if has_options == 0 {
-                        None
-                    } else {
-                        Some(Options::from_value(&interp, options)?)
-                    };
-                    (options, encoding)
-                } else if has_options != 0 {
-                    (
-                        Some(Options::from_value(&interp, options)?),
-                        Some(Encoding::from_value(&interp, options, true)?),
-                    )
-                } else {
-                    (None, None)
-                };
-                Ok(Self {
-                    pattern,
-                    options,
-                    encoding,
-                })
-            }
-        }
-
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::RegexpNew::extract(&interp),
+            interp.nil().inner()
+        );
         let spec = class_spec_or_raise!(interp, Self);
         let regexp_class = unwrap_or_raise!(
             interp,
@@ -276,17 +273,15 @@ impl Regexp {
         };
         let options = args.options.unwrap_or_default();
         let pattern = unwrap_or_raise!(interp, pattern, interp.nil().inner());
-        let regex = unwrap_or_raise!(
-            interp,
-            Regex::with_options(&pattern, options.flags(), Syntax::default()),
-            interp.nil().inner()
-        );
         let data = Self {
             pattern,
             options,
             encoding: args.encoding.unwrap_or_default(),
-            regex,
         };
+        // Make sure we the regexp is valid.
+        if data.regex().is_none() {
+            return ArgumentError::raise(&interp, "Cannot parse Regexp");
+        }
         unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, Some(slf)))
     }
 
@@ -294,36 +289,8 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         mut _slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        struct Args {
-            rest: Vec<Value>,
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let args = mem::uninitialized::<*const sys::mrb_value>();
-                let count = mem::uninitialized::<usize>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(sys::specifiers::REST.as_bytes())
-                    .map_err(|_| MrbError::ArgSpec)?;
-                argspec.write_all(b"\0").map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(
-                    interp.borrow().mrb,
-                    argspec.as_ptr() as *const i8,
-                    &args,
-                    &count,
-                );
-                let args = std::slice::from_raw_parts(args, count);
-                let args = args
-                    .iter()
-                    .map(|value| Value::new(&interp, *value))
-                    .collect::<Vec<_>>();
-                Ok(Self { rest: args })
-            }
-        }
-
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
         let spec = class_spec_or_raise!(interp, Self);
         let regexp_class = unwrap_or_raise!(
             interp,
@@ -340,50 +307,8 @@ impl Regexp {
     }
 
     unsafe extern "C" fn is_match(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        struct Args {
-            string: String,
-            pos: Option<usize>,
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let string = mem::uninitialized::<sys::mrb_value>();
-                let pos = mem::uninitialized::<sys::mrb_value>();
-                let has_pos = mem::uninitialized::<sys::mrb_bool>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(
-                        format!(
-                            "{}{}{}{}\0",
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                        )
-                        .as_bytes(),
-                    )
-                    .map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(
-                    interp.borrow().mrb,
-                    argspec.as_ptr() as *const i8,
-                    &string,
-                    &pos,
-                    &has_pos,
-                );
-                let string = String::try_from_mrb(&interp, Value::new(&interp, string))
-                    .map_err(MrbError::ConvertToRust)?;
-                let pos = if has_pos == 0 {
-                    None
-                } else {
-                    let pos = usize::try_from_mrb(&interp, Value::new(&interp, pos))
-                        .map_err(MrbError::ConvertToRust)?;
-                    Some(pos)
-                };
-                Ok(Self { string, pos })
-            }
-        }
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(interp, args::Match::extract(&interp), interp.nil().inner());
 
         let data = unwrap_or_raise!(
             interp,
@@ -395,18 +320,185 @@ impl Regexp {
         if args.pos.unwrap_or_default() > args.string.len() {
             return Value::from_mrb(&interp, false).inner();
         }
-        let is_match = data.borrow().regex.search_with_options(
-            &args.string,
-            args.pos.unwrap_or_default(),
-            args.string.len(),
-            SearchOptions::SEARCH_OPTION_NONE,
-            None,
-        );
+        let is_match = data.borrow().regex().and_then(|regexp| {
+            regexp.search_with_options(
+                &args.string,
+                args.pos.unwrap_or_default(),
+                args.string.len(),
+                SearchOptions::SEARCH_OPTION_NONE,
+                None,
+            )
+        });
         Value::from_mrb(&interp, is_match.is_some()).inner()
+    }
+
+    unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, args::Match::extract(&interp), interp.nil().inner());
+
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+
+        let is_match = regexp.borrow().regex().and_then(|regexp| {
+            regexp.search_with_options(
+                &args.string,
+                args.pos.unwrap_or_default(),
+                args.string.len(),
+                SearchOptions::SEARCH_OPTION_NONE,
+                None,
+            )
+        });
+        let data = if is_match.is_some() {
+            MatchData {
+                string: args.string,
+                regexp: regexp.borrow().clone(),
+                start_pos: args.pos.unwrap_or_default(),
+            }
+        } else {
+            return interp.nil().inner();
+        };
+        unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let s = format!(
+            "/{}/{}",
+            regexp.borrow().pattern,
+            regexp.borrow().options.as_string_opts()
+        );
+        Value::from_mrb(&interp, s).inner()
     }
 }
 
-pub struct MatchData;
+#[derive(Debug)]
+pub struct MatchData {
+    string: String,
+    regexp: Regexp,
+    start_pos: usize,
+}
+
+impl RustBackedValue for MatchData {}
+
+impl MatchData {
+    unsafe extern "C" fn string(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        Value::from_mrb(&interp, borrow.string.as_str()).inner()
+    }
+
+    unsafe extern "C" fn regexp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        unwrap_value_or_raise!(interp, borrow.regexp.clone().try_into_ruby(&interp, None))
+    }
+
+    unsafe extern "C" fn idx(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(
+            interp,
+            args::MatchIndex::extract(&interp),
+            interp.nil().inner()
+        );
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        match args {
+            args::MatchIndex::Index(index) => {
+                let captures = borrow
+                    .regexp
+                    .regex()
+                    .and_then(|regexp| regexp.captures(borrow.string.as_str()));
+                match captures {
+                    Some(captures) => {
+                        let index = if index < 0 {
+                            captures.len().checked_sub(
+                                usize::try_from(-index).expect("positive i64 must be usize"),
+                            )
+                        } else {
+                            Some(usize::try_from(index).expect("positive i64 must be usize"))
+                        };
+                        Value::from_mrb(&interp, index.and_then(|index| captures.at(index))).inner()
+                    }
+                    None => interp.nil().inner(),
+                }
+            }
+            args::MatchIndex::Name(name) => {
+                let match_ = borrow
+                    .regexp
+                    .regex()
+                    .and_then(|regexp| {
+                        regexp
+                            .capture_names()
+                            .find(|capture| capture.0 == name)
+                            .and_then(|capture| usize::try_from(capture.1[0]).ok())
+                    })
+                    .and_then(|index| {
+                        borrow.regexp.regex().and_then(|regexp| {
+                            regexp
+                                .captures(borrow.string.as_str())
+                                .and_then(|captures| captures.at(index))
+                        })
+                    });
+                Value::from_mrb(&interp, match_).inner()
+            }
+            args::MatchIndex::StartLen(start, len) => {
+                let captures = borrow
+                    .regexp
+                    .regex()
+                    .and_then(|regexp| regexp.captures(borrow.string.as_str()));
+                match captures {
+                    Some(captures) => {
+                        let start = if start < 0 {
+                            captures.len().checked_sub(
+                                usize::try_from(-start).expect("positive i64 must be usize"),
+                            )
+                        } else {
+                            Some(usize::try_from(start).expect("positive i64 must be usize"))
+                        };
+                        match start {
+                            Some(start) => {
+                                let mut matches = vec![];
+                                for index in start..(start + len) {
+                                    if let Some(matched) = captures.at(index) {
+                                        matches.push(matched);
+                                    }
+                                }
+                                Value::from_mrb(&interp, matches).inner()
+                            }
+                            None => interp.nil().inner(),
+                        }
+                    }
+                    None => interp.nil().inner(),
+                }
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -582,5 +674,45 @@ mod tests {
         let regexp = interp.eval("/P.../").expect("eval");
         let result = regexp.funcall::<bool, _, _>("match?", &[Value::from_mrb(&interp, "Ruby")]);
         assert_eq!(result, Ok(false));
+    }
+
+    #[test]
+    fn regexp_matchdata_match() {
+        let interp = Interpreter::create().expect("mrb init");
+        regexp::init(&interp).expect("regexp init");
+        // Reuse regexp to ensure that Rc reference count is maintained
+        // correctly so no segfaults.
+        let regexp = interp.eval(r"/(.)(.)(\d+)(\d)/").expect("eval");
+        let match_data = regexp
+            .funcall::<Value, _, _>("match", &[Value::from_mrb(&interp, "THX1138.")])
+            .expect("match");
+        let result = match_data.funcall::<String, _, _>("[]", &[Value::from_mrb(&interp, 0)]);
+        assert_eq!(result, Ok("HX1138".to_owned()));
+        let result = match_data.funcall::<Vec<String>, _, _>(
+            "[]",
+            &[Value::from_mrb(&interp, 1), Value::from_mrb(&interp, 2)],
+        );
+        assert_eq!(result, Ok(vec!["H".to_owned(), "X".to_owned()]));
+        let result =
+            match_data.funcall::<Vec<String>, _, _>("[]", &[interp.eval("1..3").expect("range")]);
+        assert_eq!(
+            result,
+            Ok(vec!["H".to_owned(), "X".to_owned(), "113".to_owned()])
+        );
+        let result = match_data.funcall::<Vec<String>, _, _>(
+            "[]",
+            &[Value::from_mrb(&interp, -3), Value::from_mrb(&interp, 2)],
+        );
+        assert_eq!(result, Ok(vec!["X".to_owned(), "113".to_owned()]));
+
+        let regexp = interp.eval(r"/(?<foo>a+)b/").expect("eval");
+        let match_data = regexp
+            .funcall::<Value, _, _>("match", &[Value::from_mrb(&interp, "ccaaab")])
+            .expect("match");
+        let result = match_data.funcall::<String, _, _>("[]", &[Value::from_mrb(&interp, "foo")]);
+        assert_eq!(result, Ok("aaa".to_owned()));
+        let result =
+            match_data.funcall::<String, _, _>("[]", &[interp.eval(":foo").expect("symbol")]);
+        assert_eq!(result, Ok("aaa".to_owned()));
     }
 }
