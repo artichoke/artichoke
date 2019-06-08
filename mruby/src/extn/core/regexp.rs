@@ -673,4 +673,44 @@ mod tests {
         let result = regexp.funcall::<bool, _, _>("match?", &[Value::from_mrb(&interp, "Ruby")]);
         assert_eq!(result, Ok(false));
     }
+
+    #[test]
+    fn regexp_matchdata_match() {
+        let interp = Interpreter::create().expect("mrb init");
+        regexp::init(&interp).expect("regexp init");
+        // Reuse regexp to ensure that Rc reference count is maintained
+        // correctly so no segfaults.
+        let regexp = interp.eval(r"/(.)(.)(\d+)(\d)/").expect("eval");
+        let match_data = regexp
+            .funcall::<Value, _, _>("match", &[Value::from_mrb(&interp, "THX1138.")])
+            .expect("match");
+        let result = match_data.funcall::<String, _, _>("[]", &[Value::from_mrb(&interp, 0)]);
+        assert_eq!(result, Ok("HX1138".to_owned()));
+        let result = match_data.funcall::<Vec<String>, _, _>(
+            "[]",
+            &[Value::from_mrb(&interp, 1), Value::from_mrb(&interp, 2)],
+        );
+        assert_eq!(result, Ok(vec!["H".to_owned(), "X".to_owned()]));
+        let result =
+            match_data.funcall::<Vec<String>, _, _>("[]", &[interp.eval("1..3").expect("range")]);
+        assert_eq!(
+            result,
+            Ok(vec!["H".to_owned(), "X".to_owned(), "113".to_owned()])
+        );
+        let result = match_data.funcall::<Vec<String>, _, _>(
+            "[]",
+            &[Value::from_mrb(&interp, -3), Value::from_mrb(&interp, 2)],
+        );
+        assert_eq!(result, Ok(vec!["X".to_owned(), "113".to_owned()]));
+
+        let regexp = interp.eval(r"/(?<foo>a+)b/").expect("eval");
+        let match_data = regexp
+            .funcall::<Value, _, _>("match", &[Value::from_mrb(&interp, "ccaaab")])
+            .expect("match");
+        let result = match_data.funcall::<String, _, _>("[]", &[Value::from_mrb(&interp, "foo")]);
+        assert_eq!(result, Ok("aaa".to_owned()));
+        let result =
+            match_data.funcall::<String, _, _>("[]", &[interp.eval(":foo").expect("symbol")]);
+        assert_eq!(result, Ok("aaa".to_owned()));
+    }
 }
