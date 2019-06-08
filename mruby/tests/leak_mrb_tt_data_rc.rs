@@ -1,3 +1,6 @@
+#![deny(clippy::all, clippy::pedantic)]
+#![deny(warnings, intra_doc_link_resolution_failure)]
+
 //! This integration test checks for memory leaks that stem from not
 //! deallocating `MrbApi` objects, embedded `mrb_value` data pointers, and
 //! linked Rust data.
@@ -15,7 +18,7 @@
 #[macro_use]
 extern crate mruby;
 
-use mruby::convert::TryFromMrb;
+use mruby::convert::{RustBackedValue, TryFromMrb};
 use mruby::def::{rust_data_free, ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
@@ -24,11 +27,8 @@ use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
 use mruby::MrbError;
-use std::cell::RefCell;
-use std::ffi::c_void;
 use std::io::Write;
 use std::mem;
-use std::rc::Rc;
 
 mod leak;
 
@@ -42,10 +42,12 @@ struct Container {
     inner: String,
 }
 
+impl RustBackedValue for Container {}
+
 impl Container {
     unsafe extern "C" fn initialize(
         mrb: *mut sys::mrb_state,
-        mut slf: sys::mrb_value,
+        slf: sys::mrb_value,
     ) -> sys::mrb_value {
         struct Args {
             inner: String,
@@ -71,12 +73,7 @@ impl Container {
         let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
 
         let container = Self { inner: args.inner };
-        let data = Rc::new(RefCell::new(container));
-        let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
-        let spec = class_spec_or_raise!(interp, Self);
-        sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
-
-        slf
+        unwrap_value_or_raise!(interp, container.try_into_ruby(&interp, Some(slf)))
     }
 }
 impl MrbFile for Container {
