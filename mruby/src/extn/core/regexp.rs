@@ -1,11 +1,8 @@
 use onig::{Regex, RegexOptions, SearchOptions, Syntax};
-use std::cell::RefCell;
-use std::ffi::c_void;
 use std::io::Write;
 use std::mem;
-use std::rc::Rc;
 
-use crate::convert::{FromMrb, TryFromMrb};
+use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::extn::core::error::ArgumentError;
 use crate::interpreter::{Mrb, MrbApi};
@@ -174,6 +171,8 @@ pub struct Regexp {
     regex: Regex,
 }
 
+impl RustBackedValue for Regexp {}
+
 impl Regexp {
     // TODO: expose these consts on the Regexp class in Ruby land.
     pub const IGNORECASE: i64 = 1;
@@ -188,7 +187,7 @@ impl Regexp {
 
     unsafe extern "C" fn initialize(
         mrb: *mut sys::mrb_state,
-        mut slf: sys::mrb_value,
+        slf: sys::mrb_value,
     ) -> sys::mrb_value {
         struct Args {
             pattern: Value,
@@ -288,12 +287,7 @@ impl Regexp {
             encoding: args.encoding.unwrap_or_default(),
             regex,
         };
-        let data = Rc::new(RefCell::new(data));
-
-        let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
-        let spec = class_spec_or_raise!(interp, Self);
-        sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
-        slf
+        unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, Some(slf)))
     }
 
     unsafe extern "C" fn compile(
@@ -391,20 +385,17 @@ impl Regexp {
         let interp = interpreter_or_raise!(mrb);
         let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
 
-        let ptr = {
-            let spec = class_spec_or_raise!(interp, Self);
-            let borrow = spec.borrow();
-            sys::mrb_data_get_ptr(mrb, slf, borrow.data_type())
-        };
-        let data = mem::transmute::<*mut c_void, Rc<RefCell<Self>>>(ptr);
-        let regex = Rc::clone(&data);
-        mem::forget(data);
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
 
         // onig will panic if pos is beyond the end of string
         if args.pos.unwrap_or_default() > args.string.len() {
             return Value::from_mrb(&interp, false).inner();
         }
-        let is_match = regex.borrow().regex.search_with_options(
+        let is_match = data.borrow().regex.search_with_options(
             &args.string,
             args.pos.unwrap_or_default(),
             args.string.len(),
