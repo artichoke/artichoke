@@ -437,15 +437,21 @@ impl MatchData {
         );
         let borrow = data.borrow();
         match args {
-            args::MatchIndex::Index(index) => Value::from_mrb(
-                &interp,
-                borrow
-                    .regexp
-                    .regex
-                    .captures(borrow.string.as_str())
-                    .and_then(|captures| captures.at(index)),
-            )
-            .inner(),
+            args::MatchIndex::Index(index) => {
+                match borrow.regexp.regex.captures(borrow.string.as_str()) {
+                    Some(captures) => {
+                        let index = if index < 0 {
+                            captures.len().checked_sub(
+                                usize::try_from(-index).expect("positive i64 must be usize"),
+                            )
+                        } else {
+                            Some(usize::try_from(index).expect("positive i64 must be usize"))
+                        };
+                        Value::from_mrb(&interp, index.and_then(|index| captures.at(index))).inner()
+                    }
+                    None => interp.nil().inner(),
+                }
+            }
             args::MatchIndex::Name(name) => {
                 let match_ = borrow
                     .regexp
@@ -462,18 +468,32 @@ impl MatchData {
                     });
                 Value::from_mrb(&interp, match_).inner()
             }
-            args::MatchIndex::StartLen(start, len) => Value::from_mrb(
-                &interp,
-                borrow
-                    .regexp
-                    .regex
-                    .captures_iter(borrow.string.as_str())
-                    .skip(start)
-                    .take(len)
-                    .map(|captures| captures.at(0))
-                    .collect::<Vec<_>>(),
-            )
-            .inner(),
+            args::MatchIndex::StartLen(start, len) => {
+                match borrow.regexp.regex.captures(borrow.string.as_str()) {
+                    Some(captures) => {
+                        let start = if start < 0 {
+                            captures.len().checked_sub(
+                                usize::try_from(-start).expect("positive i64 must be usize"),
+                            )
+                        } else {
+                            Some(usize::try_from(start).expect("positive i64 must be usize"))
+                        };
+                        match start {
+                            Some(start) => {
+                                let mut matches = vec![];
+                                for index in start..(start + len) {
+                                    if let Some(matched) = captures.at(index) {
+                                        matches.push(matched);
+                                    }
+                                }
+                                Value::from_mrb(&interp, matches).inner()
+                            }
+                            None => interp.nil().inner(),
+                        }
+                    }
+                    None => interp.nil().inner(),
+                }
+            }
         }
     }
 }

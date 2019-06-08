@@ -138,9 +138,9 @@ impl Match {
 
 #[derive(Debug, Clone)]
 pub enum MatchIndex {
-    Index(usize),
+    Index(i64),
     Name(String),
-    StartLen(usize, usize),
+    StartLen(i64, usize),
 }
 
 impl MatchIndex {
@@ -174,13 +174,11 @@ impl MatchIndex {
             if sys::mrb_range_beg_len(interp.borrow().mrb, first, &mut start, &mut len, 0, 0_u8)
                 == 1
             {
-                let start = usize::try_from_mrb(&interp, Value::from_mrb(&interp, start))
-                    .map_err(MrbError::ConvertToRust)?;
                 let len = usize::try_from_mrb(&interp, Value::from_mrb(&interp, len))
                     .map_err(MrbError::ConvertToRust)?;
                 Ok(MatchIndex::StartLen(start, len))
             } else {
-                usize::try_from_mrb(&interp, Value::new(interp, first))
+                i64::try_from_mrb(&interp, Value::new(interp, first))
                     .map(MatchIndex::Index)
                     .or_else(|_| {
                         String::try_from_mrb(&interp, Value::new(interp, first))
@@ -189,7 +187,7 @@ impl MatchIndex {
                     .map_err(MrbError::ConvertToRust)
             }
         } else {
-            let start = usize::try_from_mrb(&interp, Value::new(&interp, first))
+            let start = i64::try_from_mrb(&interp, Value::new(&interp, first))
                 .map_err(MrbError::ConvertToRust)?;
             let len = usize::try_from_mrb(&interp, Value::new(&interp, second))
                 .map_err(MrbError::ConvertToRust)?;
