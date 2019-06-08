@@ -1,25 +1,28 @@
 use log::trace;
 use mruby_vfs::FileSystem;
-use std::io::Write;
-use std::mem;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use crate::convert::TryFromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::{LoadError, RubyException};
 use crate::interpreter::{Mrb, MrbApi, RUBY_LOAD_PATH};
 use crate::state::VfsMetadata;
 use crate::sys;
-use crate::value::Value;
 use crate::MrbError;
+
+mod args;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     let kernel = interp.borrow_mut().def_module::<Kernel>("Kernel", None);
     kernel
         .borrow_mut()
         .add_self_method("require", Kernel::require, sys::mrb_args_rest());
+    kernel.borrow_mut().add_self_method(
+        "require_relative",
+        Kernel::require_relative,
+        sys::mrb_args_rest(),
+    );
     kernel.borrow().define(interp).map_err(|_| MrbError::New)?;
     interp.eval(include_str!("kernel.rb"))?;
     trace!("Patched Kernel#require onto interpreter");
@@ -29,41 +32,15 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
 pub struct Kernel;
 
 impl Kernel {
-    unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        struct Args {
-            filename: String,
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let inner = mem::uninitialized::<sys::mrb_value>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(sys::specifiers::OBJECT.as_bytes())
-                    .map_err(|_| MrbError::ArgSpec)?;
-                argspec.write_all(b"\0").map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(interp.borrow().mrb, argspec.as_ptr() as *const i8, &inner);
-                let filename = Value::new(interp, inner);
-                let filename =
-                    String::try_from_mrb(&interp, filename).map_err(MrbError::ConvertToRust)?;
-                Ok(Self { filename })
-            }
-        }
-
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
-
+    unsafe fn require_impl(interp: &Mrb, filename: &str, base: &str) -> sys::mrb_value {
         // Track whether any iterations of the loop successfully required some
         // Ruby sources.
         let mut success = false;
-        let mut path = PathBuf::from(&args.filename);
+        let mut path = PathBuf::from(filename);
         if path.is_relative() {
-            path = PathBuf::from(RUBY_LOAD_PATH);
+            path = PathBuf::from(base);
         }
-        let files = vec![
-            path.join(&args.filename),
-            path.join(format!("{}.rb", args.filename)),
-        ];
+        let files = vec![path.join(filename), path.join(format!("{}.rb", filename))];
         for path in files {
             let is_file = {
                 let api = interp.borrow();
@@ -95,7 +72,7 @@ impl Kernel {
             if let Some(require) = metadata.require {
                 // dynamic, Rust-backed `MrbFile` require
                 interp.push_context(context.clone());
-                unwrap_or_raise!(interp, require(Rc::clone(&interp)), interp.nil().inner());
+                unwrap_or_raise!(interp, require(Rc::clone(interp)), interp.nil().inner());
                 interp.pop_context();
             }
             let contents = {
@@ -103,12 +80,15 @@ impl Kernel {
                 api.vfs.read_file(&path)
             };
             if let Ok(contents) = contents {
-                unwrap_value_or_raise!(interp, interp.eval_with_context(contents, context));
+                unwrap_value_or_raise!(
+                    Rc::clone(interp),
+                    interp.eval_with_context(contents, context)
+                );
             } else {
                 // this branch should be unreachable because the `Mrb`
                 // interpreter is not `Send` so it can only be owned and
                 // accessed by one thread.
-                return LoadError::raise(&interp, &args.filename);
+                return LoadError::raise(&interp, filename);
             }
             let metadata = metadata.mark_required();
             let api = interp.borrow();
@@ -120,7 +100,7 @@ impl Kernel {
             success = true;
             trace!(
                 r#"Successful require of "{}" at {:?} on {:?}"#,
-                args.filename,
+                filename,
                 path,
                 api
             );
@@ -128,8 +108,40 @@ impl Kernel {
         if success {
             interp.bool(success).inner()
         } else {
-            LoadError::raise(&interp, &args.filename)
+            LoadError::raise(&interp, filename)
         }
+    }
+
+    unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(
+            interp,
+            args::Require::extract(&interp),
+            interp.nil().inner()
+        );
+        Self::require_impl(&interp, args.filename.as_str(), RUBY_LOAD_PATH)
+    }
+
+    unsafe extern "C" fn require_relative(
+        mrb: *mut sys::mrb_state,
+        _slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(
+            interp,
+            args::Require::extract(&interp),
+            interp.nil().inner()
+        );
+        let base = interp
+            .peek_context()
+            .and_then(|context| {
+                PathBuf::from(context.filename)
+                    .parent()
+                    .and_then(Path::to_str)
+                    .map(str::to_owned)
+            })
+            .unwrap_or_else(|| RUBY_LOAD_PATH.to_owned());
+        Self::require_impl(&interp, args.filename.as_str(), base.as_str())
     }
 }
 
