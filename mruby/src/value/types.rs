@@ -48,6 +48,7 @@ pub enum Ruby {
     Nil,
     Object,
     Proc,
+    Range,
     SingletonClass,
     String,
     Symbol,
@@ -71,6 +72,7 @@ impl Ruby {
             Ruby::Nil => "NilClass",
             Ruby::Object => "Object",
             Ruby::Proc => "Proc",
+            Ruby::Range => "Range",
             Ruby::SingletonClass => "Singleton (anonymous) class",
             Ruby::String => "String",
             Ruby::Symbol => "Symbol",
@@ -142,8 +144,7 @@ impl From<sys::mrb_value> for Ruby {
             sys::mrb_vtype::MRB_TT_ARRAY => Ruby::Array,
             sys::mrb_vtype::MRB_TT_HASH => Ruby::Hash,
             sys::mrb_vtype::MRB_TT_STRING => Ruby::String,
-            // TODO: how to surface this?
-            sys::mrb_vtype::MRB_TT_RANGE => unimplemented!("mruby type range"),
+            sys::mrb_vtype::MRB_TT_RANGE => Ruby::Range,
             sys::mrb_vtype::MRB_TT_EXCEPTION => Ruby::Exception,
             // TODO: how to surface this?
             sys::mrb_vtype::MRB_TT_FILE => unimplemented!("mruby type file"),
