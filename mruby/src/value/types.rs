@@ -23,7 +23,7 @@ impl fmt::Display for Rust {
             Rust::Bytes => write!(f, "&[u8]"),
             Rust::Float => write!(f, "f64"),
             Rust::Map => write!(f, "HashMap"),
-            Rust::Object => write!(f, "Rust struct"),
+            Rust::Object => write!(f, "struct"),
             Rust::SignedInt => write!(f, "i64"),
             Rust::String => write!(f, "String"),
             Rust::Vec => write!(f, "Vec"),
