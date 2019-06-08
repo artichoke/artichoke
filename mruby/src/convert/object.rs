@@ -1,3 +1,4 @@
+use log::warn;
 use std::cell::RefCell;
 use std::convert::TryInto;
 use std::ffi::c_void;
@@ -9,7 +10,8 @@ use crate::def::ClassLike;
 use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
-use crate::value::Value;
+use crate::value::{self, Value};
+use crate::MrbError;
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].
 ///
@@ -38,22 +40,49 @@ where
         self,
         interp: &Mrb,
         slf: Option<sys::mrb_value>,
-    ) -> Result<Value, Error<Rust, Ruby>> {
-        let spec = interp.borrow().class_spec::<Self>().ok_or(Error {
-            from: Rust::Object,
-            to: Ruby::Object,
-        })?;
-        let rclass = spec.borrow().rclass(interp).ok_or(Error {
-            from: Rust::Object,
-            to: Ruby::Object,
-        })?;
-        let mut slf = slf.unwrap_or_else(|| {
+    ) -> Result<Value, MrbError> {
+        let spec = interp
+            .borrow()
+            .class_spec::<Self>()
+            .ok_or(MrbError::ConvertToRuby(Error {
+                from: Rust::Object,
+                to: Ruby::Object,
+            }))?;
+        let rclass = spec
+            .borrow()
+            .rclass(interp)
+            .ok_or(MrbError::ConvertToRuby(Error {
+                from: Rust::Object,
+                to: Ruby::Object,
+            }))?;
+        let mut slf = if let Some(slf) = slf {
+            slf
+        } else {
             let args = self.new_obj_args(interp);
-            let len = args.len().try_into().expect("arg len");
-            sys::mrb_obj_new(interp.borrow().mrb, rclass, len, args.as_ptr() as *const sys::mrb_value)
-        });
-        let data = Rc::new(RefCell::new(self));
+            if args.len() > value::MRB_FUNCALL_ARGC_MAX {
+                warn!(
+                    "Too many args supplied to initialize: given {}, max {}.",
+                    args.len(),
+                    value::MRB_FUNCALL_ARGC_MAX
+                );
+                return Err(MrbError::TooManyArgs {
+                    given: args.len(),
+                    max: value::MRB_FUNCALL_ARGC_MAX,
+                });
+            }
+            // This will never unwrap because we've already checked that we have
+            // fewer than `MRB_FUNCALL_ARGC_MAX` args, wich is less than i64 max
+            // value.
+            let len = args.len().try_into().unwrap_or_default();
+            sys::mrb_obj_new(
+                interp.borrow().mrb,
+                rclass,
+                len,
+                args.as_ptr() as *const sys::mrb_value,
+            )
+        };
 
+        let data = Rc::new(RefCell::new(self));
         let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
         sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
         Ok(Value::new(interp, slf))
@@ -68,37 +97,31 @@ where
     /// This function sanity checks to make sure that [`Value`] is a
     /// [`Ruby::Data`] and that the `RClass *` of the spec matches the
     /// [`Value`].
-    unsafe fn try_from_ruby(
-        interp: &Mrb,
-        slf: &Value,
-    ) -> Result<Rc<RefCell<Self>>, Error<Ruby, Rust>> {
+    unsafe fn try_from_ruby(interp: &Mrb, slf: &Value) -> Result<Rc<RefCell<Self>>, MrbError> {
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
-            return Err(Error {
+            return Err(MrbError::ConvertToRust(Error {
                 from: slf.ruby_type(),
                 to: Rust::Object,
-            });
+            }));
         }
-        let spec = interp.borrow().class_spec::<Self>().ok_or(Error {
-            from: Ruby::Object,
-            to: Rust::Object,
-        })?;
+        let spec = interp
+            .borrow()
+            .class_spec::<Self>()
+            .ok_or(MrbError::NotDefined("class".to_owned()))?;
         // Sanity check that the RClass matches.
         if let Some(rclass) = spec.borrow().rclass(interp) {
             if !std::ptr::eq(
                 sys::mrb_sys_class_of_value(interp.borrow().mrb, slf.inner()),
                 rclass,
             ) {
-                return Err(Error {
+                return Err(MrbError::ConvertToRust(Error {
                     from: slf.ruby_type(),
                     to: Rust::Object,
-                });
+                }));
             }
         } else {
-            return Err(Error {
-                from: slf.ruby_type(),
-                to: Rust::Object,
-            });
+            return Err(MrbError::NotDefined("class".to_owned()));
         }
         let ptr = {
             let borrow = spec.borrow();
