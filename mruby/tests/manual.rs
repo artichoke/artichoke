@@ -70,7 +70,8 @@ impl MrbFile for Container {
     fn require(interp: Mrb) -> Result<(), MrbError> {
         let spec = {
             let mut api = interp.borrow_mut();
-            let spec = api.def_class::<Box<Self>>("Container", None, Some(rust_data_free::<Box<Self>>));
+            let spec =
+                api.def_class::<Box<Self>>("Container", None, Some(rust_data_free::<Box<Self>>));
             spec.borrow_mut()
                 .add_method("initialize", Self::initialize, sys::mrb_args_req(1));
             spec.borrow_mut()
