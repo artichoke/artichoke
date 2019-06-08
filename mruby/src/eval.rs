@@ -252,22 +252,22 @@ NestedEval.file
     }
 
     #[test]
-    fn unparseable_code_returns_err_undef() {
+    fn unparseable_code_returns_err_syntax_error() {
         let interp = Interpreter::create().expect("mrb init");
         let result = interp.eval("'a").map(|_| ());
         assert_eq!(
             result,
-            Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
+            Err(MrbError::Exec("SyntaxError: syntax error".to_owned()))
         );
     }
 
     #[test]
-    fn interpreter_is_usable_after_returning_undef() {
+    fn interpreter_is_usable_after_syntax_error() {
         let interp = Interpreter::create().expect("mrb init");
         let result = interp.eval("'a").map(|_| ());
         assert_eq!(
             result,
-            Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
+            Err(MrbError::Exec("SyntaxError: syntax error".to_owned()))
         );
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval("'a' * 10 ").expect("eval");
@@ -295,5 +295,23 @@ NestedEval.file
         let result = interp.eval("require 'source'; __FILE__").expect("eval");
         let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
         assert_eq!(&result, "(eval)");
+    }
+
+    #[test]
+    fn return_syntax_error() {
+        let interp = Interpreter::create().expect("mrb init");
+        interp
+            .def_rb_source_file("fail.rb", "def bad; 'as'.scan(/./o); end")
+            .expect("def file");
+        let result = interp.eval("require 'fail'").map(|_| ());
+        let expected = MrbError::Exec(
+            "
+(eval):1: mruby exception: SyntaxError: syntax error (RuntimeError)
+(eval):1
+            "
+            .trim()
+            .to_owned(),
+        );
+        assert_eq!(result, Err(expected));
     }
 }

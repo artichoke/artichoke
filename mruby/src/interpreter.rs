@@ -11,6 +11,7 @@ use crate::extn;
 use crate::gc::GarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
+use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::MrbError;
 
@@ -139,15 +140,18 @@ impl MrbApi for Mrb {
         // backtrace.join("\n")
         // ```
         let value = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
-        let exception = value.funcall::<Value, _, _>("inspect", &[]).ok()?;
         let backtrace = value.funcall::<Value, _, _>("backtrace", &[]).ok()?;
-        backtrace
-            .funcall::<(), _, _>("unshift", &[exception])
-            .ok()?;
-
-        backtrace
-            .funcall::<String, _, _>("join", &[Value::from_mrb(self, "\n")])
-            .ok()
+        if backtrace.ruby_type() == Ruby::Array {
+            let exception = value.funcall::<Value, _, _>("inspect", &[]).ok()?;
+            backtrace
+                .funcall::<(), _, _>("unshift", &[exception])
+                .ok()?;
+            backtrace
+                .funcall::<String, _, _>("join", &[Value::from_mrb(self, "\n")])
+                .ok()
+        } else {
+            value.funcall::<String, _, _>("inspect", &[]).ok()
+        }
     }
 
     fn nil(&self) -> Value {
