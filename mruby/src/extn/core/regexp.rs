@@ -78,7 +78,7 @@ impl Options {
         bits
     }
 
-    fn as_string_opts(&self) -> String {
+    fn as_string_opts(self) -> String {
         let mut buf = String::new();
         if self.ignore_case {
             buf.push('i');
@@ -147,7 +147,7 @@ enum Encoding {
 }
 
 impl Encoding {
-    fn flags(&self) -> i64 {
+    fn flags(self) -> i64 {
         match self {
             Encoding::Fixed => Regexp::FIXEDENCODING,
             Encoding::None => Regexp::NOENCODING,
@@ -544,6 +544,7 @@ impl Regexp {
         unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
     }
 
+    #[allow(clippy::wrong_self_convention)]
     unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let regexp = unwrap_or_raise!(
