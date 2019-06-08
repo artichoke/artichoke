@@ -1,6 +1,8 @@
 use onig::{Regex, RegexOptions, SearchOptions, Syntax};
+use std::cell::RefCell;
 use std::io::Write;
 use std::mem;
+use std::rc::Rc;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
@@ -27,11 +29,20 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_method("match?", Regexp::is_match, sys::mrb_args_req_and_opt(1, 1));
+    regexp
+        .borrow_mut()
+        .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
     regexp.borrow().define(&interp)?;
+    let match_data = interp.borrow_mut().def_class::<MatchData>(
+        "MatchData",
+        None,
+        Some(rust_data_free::<MatchData>),
+    );
+    match_data.borrow().define(&interp)?;
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 struct Options {
     ignore_case: bool,
     extended: bool,
@@ -101,7 +112,7 @@ impl Options {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Encoding {
     Fixed,
     None,
@@ -404,9 +415,87 @@ impl Regexp {
         );
         Value::from_mrb(&interp, is_match.is_some()).inner()
     }
+
+    unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        struct Args {
+            string: String,
+            pos: Option<usize>,
+        }
+
+        impl Args {
+            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+                let string = mem::uninitialized::<sys::mrb_value>();
+                let pos = mem::uninitialized::<sys::mrb_value>();
+                let has_pos = mem::uninitialized::<sys::mrb_bool>();
+                let mut argspec = vec![];
+                argspec
+                    .write_all(
+                        format!(
+                            "{}{}{}{}\0",
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
+                        )
+                        .as_bytes(),
+                    )
+                    .map_err(|_| MrbError::ArgSpec)?;
+                sys::mrb_get_args(
+                    interp.borrow().mrb,
+                    argspec.as_ptr() as *const i8,
+                    &string,
+                    &pos,
+                    &has_pos,
+                );
+                let string = String::try_from_mrb(&interp, Value::new(&interp, string))
+                    .map_err(MrbError::ConvertToRust)?;
+                let pos = if has_pos == 0 {
+                    None
+                } else {
+                    let pos = usize::try_from_mrb(&interp, Value::new(&interp, pos))
+                        .map_err(MrbError::ConvertToRust)?;
+                    Some(pos)
+                };
+                Ok(Self { string, pos })
+            }
+        }
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+
+        let is_match = regexp.borrow().regex.search_with_options(
+            &args.string,
+            args.pos.unwrap_or_default(),
+            args.string.len(),
+            SearchOptions::SEARCH_OPTION_NONE,
+            None,
+        );
+        let data = if is_match.is_some() {
+            MatchData {
+                string: args.string,
+                regexp,
+                start_pos: args.pos.unwrap_or_default(),
+            }
+        } else {
+            return interp.nil().inner();
+        };
+        unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
+    }
 }
 
-pub struct MatchData;
+#[derive(Debug)]
+pub struct MatchData {
+    string: String,
+    regexp: Rc<RefCell<Regexp>>,
+    start_pos: usize,
+}
+
+impl RustBackedValue for MatchData {}
 
 #[cfg(test)]
 mod tests {
