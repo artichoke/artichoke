@@ -30,6 +30,12 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
+    regexp
+        .borrow_mut()
+        .add_method("to_s", Regexp::to_s, sys::mrb_args_none());
+    regexp
+        .borrow_mut()
+        .add_method("inspect", Regexp::to_s, sys::mrb_args_none());
     regexp.borrow().define(&interp)?;
     let match_data = interp.borrow_mut().def_class::<MatchData>(
         "MatchData",
@@ -67,6 +73,20 @@ impl Options {
             bits |= RegexOptions::REGEX_OPTION_MULTILINE;
         }
         bits
+    }
+
+    fn as_string_opts(&self) -> String {
+        let mut buf = String::new();
+        if self.ignore_case {
+            buf.push('i');
+        }
+        if self.multiline {
+            buf.push('m');
+        }
+        if self.extended {
+            buf.push('e');
+        }
+        buf
     }
 
     fn from_value(interp: &Mrb, value: sys::mrb_value) -> Result<Self, MrbError> {
@@ -519,6 +539,21 @@ impl Regexp {
             return interp.nil().inner();
         };
         unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
+    }
+
+    unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let s = format!(
+            "/{}/{}",
+            regexp.borrow().pattern,
+            regexp.borrow().options.as_string_opts()
+        );
+        Value::from_mrb(&interp, s).inner()
     }
 }
 
