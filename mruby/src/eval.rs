@@ -252,22 +252,22 @@ NestedEval.file
     }
 
     #[test]
-    fn unparseable_code_returns_err_undef() {
+    fn unparseable_code_returns_err_syntax_error() {
         let interp = Interpreter::create().expect("mrb init");
         let result = interp.eval("'a").map(|_| ());
         assert_eq!(
             result,
-            Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
+            Err(MrbError::Exec("SyntaxError: syntax error".to_owned()))
         );
     }
 
     #[test]
-    fn interpreter_is_usable_after_returning_undef() {
+    fn interpreter_is_usable_after_syntax_error() {
         let interp = Interpreter::create().expect("mrb init");
         let result = interp.eval("'a").map(|_| ());
         assert_eq!(
             result,
-            Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
+            Err(MrbError::Exec("SyntaxError: syntax error".to_owned()))
         );
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval("'a' * 10 ").expect("eval");

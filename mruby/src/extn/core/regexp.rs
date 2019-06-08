@@ -414,7 +414,6 @@ mod tests {
     use crate::eval::MrbEval;
     use crate::extn::core::regexp;
     use crate::interpreter::Interpreter;
-    use crate::sys;
     use crate::value::types::Ruby;
     use crate::value::{Value, ValueLike};
     use crate::MrbError;
@@ -541,7 +540,7 @@ mod tests {
         let regexp = interp.eval("/foo.*bar/o").map(|_| ());
         assert_eq!(
             regexp,
-            Err(MrbError::UnreachableValue(sys::mrb_vtype::MRB_TT_UNDEF))
+            Err(MrbError::Exec("SyntaxError: syntax error".to_owned()))
         );
     }
 
