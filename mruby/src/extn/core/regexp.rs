@@ -1,6 +1,4 @@
 use onig::{Regex, RegexOptions, SearchOptions, Syntax};
-use std::io::Write;
-use std::mem;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
@@ -9,6 +7,8 @@ use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::MrbError;
+
+mod args;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     let regexp =
@@ -257,73 +257,12 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        struct Args {
-            pattern: Value,
-            options: Option<Options>,
-            encoding: Option<Encoding>,
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let pattern = mem::uninitialized::<sys::mrb_value>();
-                let options = mem::uninitialized::<sys::mrb_value>();
-                let has_options = mem::uninitialized::<sys::mrb_bool>();
-                let encoding = mem::uninitialized::<sys::mrb_value>();
-                let has_encoding = mem::uninitialized::<sys::mrb_bool>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(
-                        format!(
-                            "{}{}{}{}{}{}\0",
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN,
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                        )
-                        .as_bytes(),
-                    )
-                    .map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(
-                    interp.borrow().mrb,
-                    argspec.as_ptr() as *const i8,
-                    &pattern,
-                    &options,
-                    &has_options,
-                    &encoding,
-                    &has_encoding,
-                );
-                let pattern = Value::new(&interp, pattern);
-                // the C boolean as u8 comparisons are easier if we keep the
-                // comparison inverted.
-                #[allow(clippy::if_not_else)]
-                let (options, encoding) = if has_encoding != 0 {
-                    let encoding = Some(Encoding::from_value(&interp, encoding, false)?);
-                    let options = if has_options == 0 {
-                        None
-                    } else {
-                        Some(Options::from_value(&interp, options)?)
-                    };
-                    (options, encoding)
-                } else if has_options != 0 {
-                    (
-                        Some(Options::from_value(&interp, options)?),
-                        Some(Encoding::from_value(&interp, options, true)?),
-                    )
-                } else {
-                    (None, None)
-                };
-                Ok(Self {
-                    pattern,
-                    options,
-                    encoding,
-                })
-            }
-        }
-
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::RegexpNew::extract(&interp),
+            interp.nil().inner()
+        );
         let spec = class_spec_or_raise!(interp, Self);
         let regexp_class = unwrap_or_raise!(
             interp,
@@ -362,36 +301,8 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         mut _slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        struct Args {
-            rest: Vec<Value>,
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let args = mem::uninitialized::<*const sys::mrb_value>();
-                let count = mem::uninitialized::<usize>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(sys::specifiers::REST.as_bytes())
-                    .map_err(|_| MrbError::ArgSpec)?;
-                argspec.write_all(b"\0").map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(
-                    interp.borrow().mrb,
-                    argspec.as_ptr() as *const i8,
-                    &args,
-                    &count,
-                );
-                let args = std::slice::from_raw_parts(args, count);
-                let args = args
-                    .iter()
-                    .map(|value| Value::new(&interp, *value))
-                    .collect::<Vec<_>>();
-                Ok(Self { rest: args })
-            }
-        }
-
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
         let spec = class_spec_or_raise!(interp, Self);
         let regexp_class = unwrap_or_raise!(
             interp,
@@ -408,50 +319,8 @@ impl Regexp {
     }
 
     unsafe extern "C" fn is_match(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        struct Args {
-            string: String,
-            pos: Option<usize>,
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let string = mem::uninitialized::<sys::mrb_value>();
-                let pos = mem::uninitialized::<sys::mrb_value>();
-                let has_pos = mem::uninitialized::<sys::mrb_bool>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(
-                        format!(
-                            "{}{}{}{}\0",
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                        )
-                        .as_bytes(),
-                    )
-                    .map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(
-                    interp.borrow().mrb,
-                    argspec.as_ptr() as *const i8,
-                    &string,
-                    &pos,
-                    &has_pos,
-                );
-                let string = String::try_from_mrb(&interp, Value::new(&interp, string))
-                    .map_err(MrbError::ConvertToRust)?;
-                let pos = if has_pos == 0 {
-                    None
-                } else {
-                    let pos = usize::try_from_mrb(&interp, Value::new(&interp, pos))
-                        .map_err(MrbError::ConvertToRust)?;
-                    Some(pos)
-                };
-                Ok(Self { string, pos })
-            }
-        }
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(interp, args::Match::extract(&interp), interp.nil().inner());
 
         let data = unwrap_or_raise!(
             interp,
@@ -474,50 +343,8 @@ impl Regexp {
     }
 
     unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        struct Args {
-            string: String,
-            pos: Option<usize>,
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let string = mem::uninitialized::<sys::mrb_value>();
-                let pos = mem::uninitialized::<sys::mrb_value>();
-                let has_pos = mem::uninitialized::<sys::mrb_bool>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(
-                        format!(
-                            "{}{}{}{}\0",
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                        )
-                        .as_bytes(),
-                    )
-                    .map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(
-                    interp.borrow().mrb,
-                    argspec.as_ptr() as *const i8,
-                    &string,
-                    &pos,
-                    &has_pos,
-                );
-                let string = String::try_from_mrb(&interp, Value::new(&interp, string))
-                    .map_err(MrbError::ConvertToRust)?;
-                let pos = if has_pos == 0 {
-                    None
-                } else {
-                    let pos = usize::try_from_mrb(&interp, Value::new(&interp, pos))
-                        .map_err(MrbError::ConvertToRust)?;
-                    Some(pos)
-                };
-                Ok(Self { string, pos })
-            }
-        }
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(interp, args::Match::extract(&interp), interp.nil().inner());
 
         let regexp = unwrap_or_raise!(
             interp,
@@ -596,75 +423,12 @@ impl MatchData {
     }
 
     unsafe extern "C" fn idx(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        #[derive(Debug)]
-        enum Args {
-            Index(usize),
-            StartLen(usize, usize),
-            Name(String),
-        }
-
-        impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-                let first = mem::uninitialized::<sys::mrb_value>();
-                let second = mem::uninitialized::<sys::mrb_value>();
-                let has_second = mem::uninitialized::<sys::mrb_bool>();
-                let mut argspec = vec![];
-                argspec
-                    .write_all(
-                        format!(
-                            "{}{}{}{}\0",
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                            sys::specifiers::OBJECT,
-                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                        )
-                        .as_bytes(),
-                    )
-                    .map_err(|_| MrbError::ArgSpec)?;
-                sys::mrb_get_args(
-                    interp.borrow().mrb,
-                    argspec.as_ptr() as *const i8,
-                    &first,
-                    &second,
-                    &has_second,
-                );
-                if has_second == 0 {
-                    let mut start = mem::uninitialized::<sys::mrb_int>();
-                    let mut len = mem::uninitialized::<sys::mrb_int>();
-                    if sys::mrb_range_beg_len(
-                        interp.borrow().mrb,
-                        first,
-                        &mut start,
-                        &mut len,
-                        0,
-                        0_u8,
-                    ) == 1
-                    {
-                        let start = usize::try_from_mrb(&interp, Value::from_mrb(&interp, start))
-                            .map_err(MrbError::ConvertToRust)?;
-                        let len = usize::try_from_mrb(&interp, Value::from_mrb(&interp, len))
-                            .map_err(MrbError::ConvertToRust)?;
-                        Ok(Args::StartLen(start, len))
-                    } else {
-                        usize::try_from_mrb(&interp, Value::new(interp, first))
-                            .map(Args::Index)
-                            .or_else(|_| {
-                                String::try_from_mrb(&interp, Value::new(interp, first))
-                                    .map(Args::Name)
-                            })
-                            .map_err(MrbError::ConvertToRust)
-                    }
-                } else {
-                    let start = usize::try_from_mrb(&interp, Value::new(&interp, first))
-                        .map_err(MrbError::ConvertToRust)?;
-                    let len = usize::try_from_mrb(&interp, Value::new(&interp, second))
-                        .map_err(MrbError::ConvertToRust)?;
-                    Ok(Args::StartLen(start, len))
-                }
-            }
-        }
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::MatchIndex::extract(&interp),
+            interp.nil().inner()
+        );
         println!("MatchData#[] args: {:?}", args);
         let _ = slf;
         interp.nil().inner()
