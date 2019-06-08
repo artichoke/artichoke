@@ -49,6 +49,9 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     match_data
         .borrow_mut()
         .add_method("regexp", MatchData::regexp, sys::mrb_args_none());
+    match_data
+        .borrow_mut()
+        .add_method("[]", MatchData::idx, sys::mrb_args_none());
     match_data.borrow().define(&interp)?;
     Ok(())
 }
@@ -589,6 +592,81 @@ impl MatchData {
         );
         let borrow = data.borrow();
         unwrap_value_or_raise!(interp, borrow.regexp.clone().try_into_ruby(&interp, None))
+    }
+
+    unsafe extern "C" fn idx(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        #[derive(Debug)]
+        enum Args {
+            Index(usize),
+            StartLen(usize, usize),
+            Name(String),
+        }
+
+        impl Args {
+            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+                let first = mem::uninitialized::<sys::mrb_value>();
+                let second = mem::uninitialized::<sys::mrb_value>();
+                let has_second = mem::uninitialized::<sys::mrb_bool>();
+                let mut argspec = vec![];
+                argspec
+                    .write_all(
+                        format!(
+                            "{}{}{}{}\0",
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
+                            sys::specifiers::OBJECT,
+                            sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
+                        )
+                        .as_bytes(),
+                    )
+                    .map_err(|_| MrbError::ArgSpec)?;
+                sys::mrb_get_args(
+                    interp.borrow().mrb,
+                    argspec.as_ptr() as *const i8,
+                    &first,
+                    &second,
+                    &has_second,
+                );
+                if has_second == 0 {
+                    let mut start = mem::uninitialized::<sys::mrb_int>();
+                    let mut len = mem::uninitialized::<sys::mrb_int>();
+                    if sys::mrb_range_beg_len(
+                        interp.borrow().mrb,
+                        first,
+                        &mut start,
+                        &mut len,
+                        0,
+                        0_u8,
+                    ) == 1
+                    {
+                        let start = usize::try_from_mrb(&interp, Value::from_mrb(&interp, start))
+                            .map_err(MrbError::ConvertToRust)?;
+                        let len = usize::try_from_mrb(&interp, Value::from_mrb(&interp, len))
+                            .map_err(MrbError::ConvertToRust)?;
+                        Ok(Args::StartLen(start, len))
+                    } else {
+                        usize::try_from_mrb(&interp, Value::new(interp, first))
+                            .map(Args::Index)
+                            .or_else(|_| {
+                                String::try_from_mrb(&interp, Value::new(interp, first))
+                                    .map(Args::Name)
+                            })
+                            .map_err(MrbError::ConvertToRust)
+                    }
+                } else {
+                    let start = usize::try_from_mrb(&interp, Value::new(&interp, first))
+                        .map_err(MrbError::ConvertToRust)?;
+                    let len = usize::try_from_mrb(&interp, Value::new(&interp, second))
+                        .map_err(MrbError::ConvertToRust)?;
+                    Ok(Args::StartLen(start, len))
+                }
+            }
+        }
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        println!("MatchData#[] args: {:?}", args);
+        let _ = slf;
+        interp.nil().inner()
     }
 }
 
