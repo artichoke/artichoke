@@ -15,6 +15,18 @@ impl FromMrb<Vec<String>> for Value {
     }
 }
 
+impl FromMrb<Vec<&str>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: Vec<&str>) -> Self {
+        Self::from_mrb(
+            interp,
+            value.into_iter().map(str::as_bytes).collect::<Vec<_>>(),
+        )
+    }
+}
+
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
 impl TryFromMrb<Value> for Vec<String> {
@@ -48,6 +60,21 @@ impl FromMrb<Vec<Option<String>>> for Value {
             value
                 .into_iter()
                 .map(|item| item.map(String::into_bytes))
+                .collect::<Vec<_>>(),
+        )
+    }
+}
+
+impl FromMrb<Vec<Option<&str>>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: Vec<Option<&str>>) -> Self {
+        Self::from_mrb(
+            interp,
+            value
+                .into_iter()
+                .map(|item| item.map(str::as_bytes))
                 .collect::<Vec<_>>(),
         )
     }

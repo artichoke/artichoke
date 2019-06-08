@@ -10,14 +10,16 @@ use crate::MrbError;
 
 pub mod types;
 
+/// Max argument count for function calls including initialize.
+///
+/// Defined in `vm.c`.
+pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
+
 #[allow(clippy::module_name_repetitions)]
 pub trait ValueLike
 where
     Self: Sized,
 {
-    // defined in vm.c
-    const MRB_FUNCALL_ARGC_MAX: usize = 16;
-
     fn inner(&self) -> sys::mrb_value;
 
     fn interp(&self) -> &Mrb;
@@ -35,15 +37,15 @@ where
         let arena = interp.create_arena_savepoint();
 
         let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
-        if args.len() > Self::MRB_FUNCALL_ARGC_MAX {
+        if args.len() > MRB_FUNCALL_ARGC_MAX {
             warn!(
                 "Too many args supplied to funcall: given {}, max {}.",
                 args.len(),
-                Self::MRB_FUNCALL_ARGC_MAX
+                MRB_FUNCALL_ARGC_MAX
             );
             return Err(MrbError::TooManyArgs {
                 given: args.len(),
-                max: Self::MRB_FUNCALL_ARGC_MAX,
+                max: MRB_FUNCALL_ARGC_MAX,
             });
         }
         let method = method.as_ref();

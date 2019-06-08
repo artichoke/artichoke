@@ -33,6 +33,9 @@ impl TryFromMrb<Value> for String {
         interp: &Mrb,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
+        if value.ruby_type() == Ruby::Symbol {
+            return Ok(value.to_s());
+        }
         // `Vec<u8>` converter operates on `Ruby::String`
         let bytes = <Vec<u8>>::try_from_mrb(interp, value).map_err(|err| Error {
             from: err.from,
@@ -113,5 +116,13 @@ mod tests {
             to: Rust::String,
         });
         value == expected
+    }
+
+    #[test]
+    fn symbol_to_string() {
+        let interp = Interpreter::create().expect("mrb init");
+        let value = interp.eval(":sym").expect("eval");
+        let value = unsafe { String::try_from_mrb(&interp, value) }.expect("convert");
+        assert_eq!(&value, "sym");
     }
 }
