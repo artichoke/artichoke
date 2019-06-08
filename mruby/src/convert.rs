@@ -11,6 +11,7 @@ mod fixnum;
 mod float;
 mod hash;
 mod nilable;
+mod object;
 mod string;
 
 pub use self::array::*;
@@ -20,6 +21,7 @@ pub use self::fixnum::*;
 pub use self::float::*;
 pub use self::hash::*;
 pub use self::nilable::*;
+pub use self::object::*;
 pub use self::string::*;
 
 pub trait FromMrb<T> {
