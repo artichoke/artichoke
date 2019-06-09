@@ -34,57 +34,75 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     interp
         .borrow_mut()
         .def_class::<ArgumentError>("ArgumentError", None, None);
+    interp
+        .borrow_mut()
+        .def_class::<RuntimeError>("RuntimeError", None, None);
     Ok(())
+}
+
+/// Raise implementation for `Exception` structs.
+pub trait RubyException: 'static + Sized {
+    /// Raise the `Exception` defined with this type with a message.
+    fn raise(interp: &Mrb, message: &str) -> sys::mrb_value {
+        let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
+            spec
+        } else {
+            return interp.nil().inner();
+        };
+        let message = Self::message(message);
+        if let Ok(msg) = CString::new(message.as_str()) {
+            unsafe {
+                sys::mrb_sys_raise(
+                    interp.borrow().mrb,
+                    spec.borrow().cstring().as_ptr() as *const i8,
+                    msg.as_ptr(),
+                )
+            };
+            warn!(
+                "raised {} '{}' on {:?}",
+                spec.borrow().name(),
+                message,
+                interp.borrow()
+            );
+        } else {
+            warn!(
+                "unable to raise {} with message {}",
+                spec.borrow().name(),
+                message
+            );
+        }
+        interp.nil().inner()
+    }
+
+    fn message(message: &str) -> String {
+        message.to_owned()
+    }
 }
 
 pub struct Exception;
 
+impl RubyException for Exception {}
+
 #[allow(clippy::module_name_repetitions)]
 pub struct ScriptError;
+
+impl RubyException for ScriptError {}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct LoadError;
 
-impl LoadError {
-    pub fn raise(interp: &Mrb, file: &str) -> sys::mrb_value {
-        let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
-            spec
-        } else {
-            return interp.bool(false).inner();
-        };
-        let message = format!("cannot load such file -- {}", file);
-        let msg = CString::new(message).expect("error message");
-        unsafe {
-            sys::mrb_sys_raise(
-                interp.borrow().mrb,
-                spec.borrow().cstring().as_ptr() as *const i8,
-                msg.as_ptr(),
-            )
-        };
-        warn!("Failed require '{}' on {:?}", file, interp.borrow());
-        interp.bool(false).inner()
+impl RubyException for LoadError {
+    fn message(message: &str) -> String {
+        format!("cannot load such file -- {}", message)
     }
 }
 
 #[allow(clippy::module_name_repetitions)]
 pub struct ArgumentError;
 
-impl ArgumentError {
-    pub fn raise(interp: &Mrb, message: &str) -> sys::mrb_value {
-        let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
-            spec
-        } else {
-            return interp.nil().inner();
-        };
-        let msg = CString::new(message).expect("error message");
-        unsafe {
-            sys::mrb_sys_raise(
-                interp.borrow().mrb,
-                spec.borrow().cstring().as_ptr() as *const i8,
-                msg.as_ptr(),
-            )
-        };
-        warn!("ArgumentError '{}' on {:?}", message, interp.borrow());
-        interp.nil().inner()
-    }
-}
+impl RubyException for ArgumentError {}
+
+#[allow(clippy::module_name_repetitions)]
+pub struct RuntimeError;
+
+impl RubyException for RuntimeError {}

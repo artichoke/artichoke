@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
-use crate::extn::core::error::ArgumentError;
+use crate::extn::core::error::{ArgumentError, RubyException};
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::{Value, ValueLike};

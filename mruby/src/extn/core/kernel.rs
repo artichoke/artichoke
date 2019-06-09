@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::convert::TryFromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
-use crate::extn::core::error::LoadError;
+use crate::extn::core::error::{LoadError, RubyException};
 use crate::interpreter::{Mrb, MrbApi, RUBY_LOAD_PATH};
 use crate::state::VfsMetadata;
 use crate::sys;
