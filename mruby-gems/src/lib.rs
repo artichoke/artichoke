@@ -54,7 +54,7 @@ mod tests {
                 .borrow()
                 .module_spec::<Foo>()
                 .map(EnclosingRubyScope::module)
-                .ok_or(MrbError::NotDefined("Foo".to_owned()))?;
+                .ok_or_else(|| MrbError::NotDefined("Foo".to_owned()))?;
             interp
                 .borrow_mut()
                 .def_class::<Self>("Bar", Some(scope), None);

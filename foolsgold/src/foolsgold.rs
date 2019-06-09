@@ -98,7 +98,7 @@ impl MrbFile for Counter {
             let scope = api
                 .module_spec::<FoolsGold>()
                 .map(EnclosingRubyScope::module)
-                .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
+                .ok_or_else(|| MrbError::NotDefined("FoolsGold".to_owned()))?;
             // We do not need to define a free method since we are not storing
             // any data in the `mrb_value`.
             let spec = api.def_class::<Self>("Counter", Some(scope), None);
@@ -121,7 +121,7 @@ impl MrbFile for Metrics {
             .borrow()
             .module_spec::<FoolsGold>()
             .map(EnclosingRubyScope::module)
-            .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
+            .ok_or_else(|| MrbError::NotDefined("FoolsGold".to_owned()))?;
         let spec = interp
             .borrow_mut()
             .def_module::<Self>("Metrics", Some(scope));
@@ -183,7 +183,7 @@ impl MrbFile for RequestContext {
             let scope = api
                 .module_spec::<FoolsGold>()
                 .map(EnclosingRubyScope::module)
-                .ok_or(MrbError::NotDefined("FoolsGold".to_owned()))?;
+                .ok_or_else(|| MrbError::NotDefined("FoolsGold".to_owned()))?;
             let spec =
                 api.def_class::<Self>("RequestContext", Some(scope), Some(rust_data_free::<Self>));
             spec.borrow_mut().mrb_value_is_rust_backed(true);

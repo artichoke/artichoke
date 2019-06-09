@@ -14,10 +14,7 @@ impl Assets {
         for source in Self::iter() {
             let content = Self::get(&source)
                 .map(Cow::into_owned)
-                .ok_or(Error::FailedLaunch(format!(
-                    "missing static asset {}",
-                    source
-                )))?;
+                .ok_or_else(|| Error::FailedLaunch(format!("missing static asset {}", source)))?;
             if source == "index.html" {
                 let route = "/".to_owned();
                 assets.insert(route, content.clone());
