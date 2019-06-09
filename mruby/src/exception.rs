@@ -47,6 +47,7 @@ impl fmt::Display for Exception {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum LastError {
     Some(Exception),
     None,

@@ -41,6 +41,12 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
 }
 
 /// Raise implementation for `Exception` structs.
+///
+/// **Warning**: Calling [`raise`](RubyException::raise) on an interpreter from
+/// outside the mruby VM call stack will result in a segfault. Raise should only
+/// be called from Rust functions that are exposed on the mruby interpreter via
+/// [`class::Spec`](crate::class::Spec) and
+/// [`module::Spec`](crate::module::Spec).
 pub trait RubyException: 'static + Sized {
     /// Raise the `Exception` defined with this type with a message.
     fn raise(interp: &Mrb, message: &str) -> sys::mrb_value {
@@ -106,3 +112,50 @@ impl RubyException for ArgumentError {}
 pub struct RuntimeError;
 
 impl RubyException for RuntimeError {}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+
+    use crate::def::{ClassLike, Define};
+    use crate::eval::MrbEval;
+    use crate::exception::Exception;
+    use crate::extn::core::error::{RubyException, RuntimeError};
+    use crate::file::MrbFile;
+    use crate::interpreter::{Interpreter, Mrb};
+    use crate::sys;
+    use crate::MrbError;
+
+    struct Run;
+
+    impl Run {
+        unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+            let interp = interpreter_or_raise!(mrb);
+            RuntimeError::raise(&interp, "something went wrong")
+        }
+    }
+
+    impl MrbFile for Run {
+        fn require(interp: Mrb) -> Result<(), MrbError> {
+            let spec = interp.borrow_mut().def_class::<Self>("Run", None, None);
+            spec.borrow_mut()
+                .add_self_method("run", Self::run, sys::mrb_args_none());
+            spec.borrow().define(&interp)?;
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn raise() {
+        let interp = Interpreter::create().expect("mrb init");
+        Run::require(Rc::clone(&interp)).unwrap();
+        let value = interp.eval("Run.run").map(|_| ());
+        let expected = Exception::new(
+            "RuntimeError",
+            "something went wrong",
+            Some(vec!["(eval):1".to_owned()]),
+            "(eval):1: something went wrong (RuntimeError)",
+        );
+        assert_eq!(value, Err(MrbError::Exec(expected.to_string())));
+    }
+}
