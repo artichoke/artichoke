@@ -53,7 +53,7 @@ impl MrbFile for Response {
             .borrow()
             .module_spec::<Nemesis>()
             .map(EnclosingRubyScope::module)
-            .ok_or(MrbError::NotDefined("Nemesis".to_owned()))?;
+            .ok_or_else(|| MrbError::NotDefined("Nemesis".to_owned()))?;
         interp
             .borrow_mut()
             .def_class::<Self>("Response", Some(scope), None);

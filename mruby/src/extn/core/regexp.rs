@@ -258,7 +258,7 @@ impl Regexp {
             interp,
             spec.borrow()
                 .rclass(&interp)
-                .ok_or(MrbError::NotDefined("Regexp".to_owned())),
+                .ok_or_else(|| MrbError::NotDefined("Regexp".to_owned())),
             interp.nil().inner()
         );
         let pattern_is_regexp =
@@ -296,7 +296,7 @@ impl Regexp {
             interp,
             spec.borrow()
                 .value(&interp)
-                .ok_or(MrbError::NotDefined("Regexp".to_owned())),
+                .ok_or_else(|| MrbError::NotDefined("Regexp".to_owned())),
             interp.nil().inner()
         );
 

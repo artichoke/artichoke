@@ -108,7 +108,7 @@ where
         let spec = interp
             .borrow()
             .class_spec::<Self>()
-            .ok_or(MrbError::NotDefined("class".to_owned()))?;
+            .ok_or_else(|| MrbError::NotDefined("class".to_owned()))?;
         // Sanity check that the RClass matches.
         if let Some(rclass) = spec.borrow().rclass(interp) {
             if !std::ptr::eq(
