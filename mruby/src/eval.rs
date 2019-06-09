@@ -1,7 +1,8 @@
-use log::{debug, warn};
+use log::{debug, error, warn};
 use std::ffi::CString;
 
-use crate::interpreter::{Mrb, MrbApi};
+use crate::exception::{LastError, MrbExceptionHandler};
+use crate::interpreter::Mrb;
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
 use crate::MrbError;
@@ -118,22 +119,26 @@ impl MrbEval for Mrb {
             // considered live by the GC.
             sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx)
         };
-
-        if let Some(backtrace) = self.current_exception() {
-            warn!("runtime error with exception backtrace: {}", backtrace);
-            return Err(MrbError::Exec(backtrace));
-        }
-
         let value = Value::new(self, result);
-        // Unreachable values are internal to the mruby interpreter and
-        // interacting with them via the C API is unspecified and may result in
-        // a segfault.
-        //
-        // See: https://github.com/mruby/mruby/issues/4460
-        if value.is_unreachable() {
-            Err(MrbError::UnreachableValue(value.inner().tt))
-        } else {
-            Ok(value)
+
+        match self.last_error() {
+            LastError::Some(exception) => {
+                warn!("runtime error with exception backtrace: {}", exception);
+                Err(MrbError::Exec(exception.to_string()))
+            }
+            LastError::UnableToExtract(err) => {
+                error!("failed to extract exception after runtime error: {}", err);
+                Err(err)
+            }
+            LastError::None if value.is_unreachable() => {
+                // Unreachable values are internal to the mruby interpreter and
+                // interacting with them via the C API is unspecified and may
+                // result in a segfault.
+                //
+                // See: https://github.com/mruby/mruby/issues/4460
+                Err(MrbError::UnreachableValue(value.inner().tt))
+            }
+            LastError::None => Ok(value),
         }
     }
 
