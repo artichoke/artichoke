@@ -6,6 +6,7 @@ use std::fmt;
 use std::io;
 
 #[macro_use]
+#[doc(hidden)]
 pub mod macros;
 
 pub mod class;
