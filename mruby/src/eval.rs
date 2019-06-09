@@ -202,21 +202,28 @@ mod tests {
     #[should_panic]
     // this test is known broken
     fn eval_context_is_a_stack_for_nested_eval() {
-        extern "C" fn nested_eval(
-            mrb: *mut sys::mrb_state,
-            _slf: sys::mrb_value,
-        ) -> sys::mrb_value {
-            let interp = unsafe { interpreter_or_raise!(mrb) };
-            unsafe { unwrap_value_or_raise!(interp, interp.eval("__FILE__")) }
-        }
         struct NestedEval;
+
+        impl NestedEval {
+            unsafe extern "C" fn nested_eval(
+                mrb: *mut sys::mrb_state,
+                _slf: sys::mrb_value,
+            ) -> sys::mrb_value {
+                let interp = interpreter_or_raise!(mrb);
+                unwrap_value_or_raise!(interp, interp.eval("__FILE__"))
+            }
+        }
+
         impl MrbFile for NestedEval {
             fn require(interp: Mrb) -> Result<(), MrbError> {
                 let spec = {
                     let mut api = interp.borrow_mut();
                     let spec = api.def_module::<Self>("NestedEval", None);
-                    spec.borrow_mut()
-                        .add_self_method("file", nested_eval, sys::mrb_args_none());
+                    spec.borrow_mut().add_self_method(
+                        "file",
+                        Self::nested_eval,
+                        sys::mrb_args_none(),
+                    );
                     spec
                 };
                 spec.borrow().define(&interp)?;
