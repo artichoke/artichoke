@@ -1,10 +1,11 @@
-use log::{trace, warn};
+use log::{error, trace, warn};
 use std::convert::TryFrom;
 use std::rc::Rc;
 
 use crate::convert::{FromMrb, TryFromMrb};
+use crate::exception::{LastError, MrbExceptionHandler};
 use crate::gc::GarbageCollection;
-use crate::interpreter::{Mrb, MrbApi};
+use crate::interpreter::Mrb;
 use crate::sys;
 use crate::MrbError;
 
@@ -34,7 +35,7 @@ where
         // we call into via the Ruby VM.
         let interp = self.interp();
         let mrb = { interp.borrow().mrb };
-        let arena = interp.create_arena_savepoint();
+        let _arena = interp.create_arena_savepoint();
 
         let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
@@ -60,13 +61,17 @@ where
             T::try_from_mrb(interp, value).map_err(MrbError::ConvertToRust)
         };
 
-        if let Some(backtrace) = interp.current_exception() {
-            warn!("runtime error with exception backtrace: {}", backtrace);
-            return Err(MrbError::Exec(backtrace));
+        match interp.last_error() {
+            LastError::Some(exception) => {
+                warn!("runtime error with exception backtrace: {}", exception);
+                Err(MrbError::Exec(exception.to_string()))
+            }
+            LastError::UnableToExtract(err) => {
+                error!("failed to extract exception after runtime error: {}", err);
+                Err(err)
+            }
+            LastError::None => value,
         }
-
-        arena.restore();
-        value
     }
 }
 

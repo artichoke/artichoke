@@ -12,6 +12,7 @@ pub mod class;
 pub mod convert;
 pub mod def;
 pub mod eval;
+pub mod exception;
 pub mod extn;
 pub mod file;
 pub mod gc;
@@ -29,6 +30,7 @@ pub enum MrbError {
     ArgSpec,
     ConvertToRuby(convert::Error<value::types::Rust, value::types::Ruby>),
     ConvertToRust(convert::Error<value::types::Ruby, value::types::Rust>),
+    // TODO: this should really be an `Exception` instead of a `String`.
     Exec(String),
     New,
     NotDefined(String),

@@ -200,6 +200,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
     fn convert_to_value(v: Option<Vec<Int>>) -> bool {
         let interp = Interpreter::create().expect("mrb init");
         let value = Value::from_mrb(&interp, v.clone());
@@ -212,6 +213,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
     fn roundtrip(v: Option<Vec<Int>>) -> bool {
         let interp = Interpreter::create().expect("mrb init");
         let value = Value::from_mrb(&interp, v.clone());

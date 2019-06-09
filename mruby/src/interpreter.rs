@@ -11,8 +11,7 @@ use crate::extn;
 use crate::gc::GarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::value::types::Ruby;
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::MrbError;
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
@@ -90,8 +89,6 @@ impl Interpreter {
 }
 
 pub trait MrbApi {
-    fn current_exception(&self) -> Option<String>;
-
     fn nil(&self) -> Value;
 
     fn bool(&self, b: bool) -> Value;
@@ -106,54 +103,6 @@ pub trait MrbApi {
 }
 
 impl MrbApi for Mrb {
-    /// Extract a `String` representation of the current exception on the mruby
-    /// interpreter if there is one. The string will contain the exception
-    /// class, message, and backtrace.
-    fn current_exception(&self) -> Option<String> {
-        let _arena = self.create_arena_savepoint();
-        let mrb = { self.borrow().mrb };
-        let exc = unsafe {
-            let exc = (*mrb).exc;
-            // Clear the current exception from the mruby interpreter so
-            // subsequent calls to the mruby VM are not tainted by an error they
-            // did not generate.
-            //
-            // We must do this at the beginning of `current_exception` so we can
-            // use the mruby VM to inspect the exception once we turn it into an
-            // `mrb_value`. `ValueLike::funcall` handles errors by calling this
-            // function, so not clearing the exception results in a stack
-            // overflow.
-            (*mrb).exc = std::ptr::null_mut();
-            exc
-        };
-        if exc.is_null() {
-            trace!("Last eval had no runtime errors: mrb_state has no current exception");
-            return None;
-        }
-        // Generate an exception backtrace in a `String` by executing the
-        // following Ruby code with the C API:
-        //
-        // ```ruby
-        // exception = exc.inspect
-        // backtrace = exc.backtrace
-        // backtrace.unshift(exception)
-        // backtrace.join("\n")
-        // ```
-        let value = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
-        let backtrace = value.funcall::<Value, _, _>("backtrace", &[]).ok()?;
-        if backtrace.ruby_type() == Ruby::Array {
-            let exception = value.funcall::<Value, _, _>("inspect", &[]).ok()?;
-            backtrace
-                .funcall::<(), _, _>("unshift", &[exception])
-                .ok()?;
-            backtrace
-                .funcall::<String, _, _>("join", &[Value::from_mrb(self, "\n")])
-                .ok()
-        } else {
-            value.funcall::<String, _, _>("inspect", &[]).ok()
-        }
-    }
-
     fn nil(&self) -> Value {
         Value::from_mrb(self, None::<Value>)
     }
@@ -230,18 +179,5 @@ mod tests {
             let result = interp.eval("255").expect("eval");
             assert_eq!(sys::mrb_sys_fixnum_to_cint(result.inner()), 255);
         }
-    }
-
-    #[test]
-    fn return_raised_exception() {
-        let interp = Interpreter::create().expect("mrb init");
-        let result = interp
-            .eval("raise ArgumentError.new('waffles')")
-            .map(|_| ());
-        let expected = r#"
-(eval):1: waffles (ArgumentError)
-(eval):1
-       "#;
-        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
     }
 }
