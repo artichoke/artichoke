@@ -69,6 +69,8 @@ fn main() {
     println!("cargo:rerun-if-changed={}", Build::build_config());
     println!("cargo:rerun-if-changed={}/sys.gembox", Build::root());
     if !Command::new(Build::mruby_minirake())
+        .arg("--jobs")
+        .arg("4")
         .env("MRUBY_BUILD_DIR", Build::mruby_build_dir())
         .env("MRUBY_CONFIG", Build::build_config())
         .current_dir(Build::mruby_source_dir())
