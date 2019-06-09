@@ -13,7 +13,7 @@
 //! If resident memory increases more than 10MB during the test, we likely are
 //! leaking memory.
 
-use mruby::gc::GarbageCollection;
+use mruby::gc::MrbGarbageCollection;
 use mruby::interpreter::{Interpreter, MrbApi};
 use mruby::value::ValueLike;
 

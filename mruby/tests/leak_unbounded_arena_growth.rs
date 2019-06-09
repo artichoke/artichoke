@@ -20,7 +20,7 @@
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
 use mruby::eval::MrbEval;
-use mruby::gc::GarbageCollection;
+use mruby::gc::MrbGarbageCollection;
 use mruby::interpreter::Interpreter;
 use mruby::MrbError;
 use std::rc::Rc;

@@ -1,7 +1,7 @@
 //! Create or retrieve an interpreter for a request.
 
 use mruby::eval::MrbEval;
-use mruby::gc::GarbageCollection;
+use mruby::gc::MrbGarbageCollection;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::MrbError;
 use mruby_gems::rubygems::rack;

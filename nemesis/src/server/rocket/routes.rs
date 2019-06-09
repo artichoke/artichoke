@@ -1,6 +1,6 @@
 //! Nemesis server implementations.
 
-use mruby::gc::GarbageCollection;
+use mruby::gc::MrbGarbageCollection;
 use rocket::handler;
 use rocket::http::{ContentType, Method, Status};
 use rocket::request::FromRequest;

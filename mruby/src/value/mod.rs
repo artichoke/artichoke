@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::exception::{LastError, MrbExceptionHandler};
-use crate::gc::GarbageCollection;
+use crate::gc::MrbGarbageCollection;
 use crate::interpreter::Mrb;
 use crate::sys;
 use crate::MrbError;

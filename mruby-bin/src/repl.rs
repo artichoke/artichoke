@@ -6,7 +6,7 @@
 //! inspect return values and exception backtraces.
 
 use mruby::eval::{EvalContext, MrbEval};
-use mruby::gc::GarbageCollection;
+use mruby::gc::MrbGarbageCollection;
 use mruby::interpreter::Interpreter;
 use mruby::sys;
 use mruby::MrbError;

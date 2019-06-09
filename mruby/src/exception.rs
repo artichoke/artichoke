@@ -2,7 +2,7 @@ use log::{debug, trace};
 use std::ffi::c_void;
 use std::fmt;
 
-use crate::gc::GarbageCollection;
+use crate::gc::MrbGarbageCollection;
 use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::{Value, ValueLike};
@@ -54,7 +54,6 @@ pub enum LastError {
 }
 
 /// Extract the last exception thrown on the interpreter.
-#[allow(clippy::module_name_repetitions)]
 pub trait MrbExceptionHandler {
     /// Extract the last thrown exception on the mruby interpreter if there is
     /// one.

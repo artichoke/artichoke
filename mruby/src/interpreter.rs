@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::convert::{Float, FromMrb, Int};
 use crate::eval::MrbEval;
 use crate::extn;
-use crate::gc::GarbageCollection;
+use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
