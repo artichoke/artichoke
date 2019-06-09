@@ -7,12 +7,14 @@ use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 
+mod array;
 mod boolean;
 mod bytes;
 mod fixnum;
 mod float;
 mod string;
 
+pub use self::array::*;
 pub use self::boolean::*;
 pub use self::bytes::*;
 pub use self::fixnum::*;
