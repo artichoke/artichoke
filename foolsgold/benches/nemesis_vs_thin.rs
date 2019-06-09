@@ -35,38 +35,57 @@ use std::time::Duration;
 
 mod load;
 
-fn nemesis_prefork(c: &mut Criterion) {
+fn c1(c: &mut Criterion) {
     c.bench_function("nemesis prefork with concurrency(1)", |b| {
-        b.iter(|| load::bench_nemesis_prefork(black_box(128), black_box(1)))
+        b.iter(|| load::bench_nemesis_prefork(black_box(1)))
     });
-    c.bench_function("nemesis prefork with concurrency(16)", |b| {
-        b.iter(|| load::bench_nemesis_prefork(black_box(256), black_box(16)))
-    });
-    c.bench_function("nemesis prefork with concurrency(64)", |b| {
-        b.iter(|| load::bench_nemesis_prefork(black_box(256), black_box(64)))
+    c.bench_function("thin threaded with concurrency(1)", |b| {
+        b.iter(|| load::bench_thin_threaded(black_box(1)))
     });
 }
 
-fn thin_threaded(c: &mut Criterion) {
-    c.bench_function("thin threaded with concurrency(1)", |b| {
-        b.iter(|| load::bench_thin_threaded(black_box(128), black_box(1)))
+fn c16(c: &mut Criterion) {
+    c.bench_function("nemesis prefork with concurrency(16)", |b| {
+        b.iter(|| load::bench_nemesis_prefork(black_box(16)))
     });
     c.bench_function("thin threaded with concurrency(16)", |b| {
-        b.iter(|| load::bench_thin_threaded(black_box(256), black_box(16)))
-    });
-    c.bench_function("thin threaded with concurrency(64)", |b| {
-        b.iter(|| load::bench_thin_threaded(black_box(256), black_box(64)))
+        b.iter(|| load::bench_thin_threaded(black_box(16)))
     });
 }
 
+fn c64(c: &mut Criterion) {
+    c.bench_function("nemesis prefork with concurrency(64)", |b| {
+        b.iter(|| load::bench_nemesis_prefork(black_box(64)))
+    });
+    c.bench_function("thin threaded with concurrency(64)", |b| {
+        b.iter(|| load::bench_thin_threaded(black_box(64)))
+    });
+}
+
+// These parameters are carefully chosen to avoid issuing more than 2**16
+// requests, which is the number of available ephemeral ports.
 criterion_group!(
-    name = benches;
-    // These parameters are carefully chosen to avoid issuing more than 2**16
-    // requests, which is the number of available ephemeral ports.
+    name = bench_c1;
     config = Criterion::default()
         .warm_up_time(Duration::from_millis(100))
-        .measurement_time(Duration::from_millis(500))
-        .sample_size(10);
-    targets = nemesis_prefork, thin_threaded
+        .measurement_time(Duration::from_millis(100))
+        .sample_size(100);
+    targets = c1
 );
-criterion_main!(benches);
+criterion_group!(
+    name = bench_c16;
+    config = Criterion::default()
+        .warm_up_time(Duration::from_millis(100))
+        .measurement_time(Duration::from_millis(100))
+        .sample_size(40);
+    targets = c16
+);
+criterion_group!(
+    name = bench_c64;
+    config = Criterion::default()
+        .warm_up_time(Duration::from_millis(100))
+        .measurement_time(Duration::from_millis(100))
+        .sample_size(20);
+    targets = c64
+);
+criterion_main!(bench_c1, bench_c16, bench_c64);

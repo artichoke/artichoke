@@ -92,7 +92,8 @@ Benches compare Thin with threads vs. Nemesis with Rocket and per worker
 interpreters.
 
 Benchmarks compare the webservers with concurrency levels of 1, 16, and 64
-requests.
+requests. Each bench iteration makes exactly _concurrency level_ simultaneous
+requests and waits for them all to complete successfully.
 
 ### Run
 
@@ -125,42 +126,58 @@ clear all sockets in `TIME_WAIT` state.
 
 ```txt
 nemesis prefork with concurrency(1)
-                        time:   [118.20 ms 119.14 ms 120.07 ms]
-                        change: [-1.1571% +0.3644% +1.9143%] (p = 0.65 > 0.05)
+                        time:   [1.3336 ms 1.3717 ms 1.4199 ms]
+                        change: [+0.2427% +3.9400% +8.1666%] (p = 0.07 > 0.05)
                         No change in performance detected.
+Found 10 outliers among 100 measurements (10.00%)
+  3 (3.00%) high mild
+  7 (7.00%) high severe
 
 thin threaded with concurrency(1)
-                        time:   [63.304 ms 64.245 ms 65.359 ms]
-                        change: [-4.3226% -1.0679% +2.0184%] (p = 0.56 > 0.05)
+                        time:   [904.58 us 914.94 us 926.14 us]
+                        change: [-3.4620% -0.8968% +1.4850%] (p = 0.50 > 0.05)
                         No change in performance detected.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
 ```
 
 #### 16 Concurrent Requests
 
 ```txt
 nemesis prefork with concurrency(16)
-                        time:   [77.774 ms 81.302 ms 84.243 ms]
-                        change: [-4.8474% -0.0760% +5.5309%] (p = 0.97 > 0.05)
+                        time:   [5.7928 ms 5.9293 ms 6.0884 ms]
+                        change: [-4.3119% -0.5461% +3.2678%] (p = 0.78 > 0.05)
                         No change in performance detected.
+Found 6 outliers among 40 measurements (15.00%)
+  1 (2.50%) low mild
+  3 (7.50%) high mild
+  2 (5.00%) high severe
 
 thin threaded with concurrency(16)
-                        time:   [83.902 ms 86.927 ms 89.537 ms]
-                        change: [-2.4466% +4.1192% +10.787%] (p = 0.27 > 0.05)
+                        time:   [5.4166 ms 5.6005 ms 5.8231 ms]
+                        change: [-2.9197% +1.2616% +5.7665%] (p = 0.59 > 0.05)
                         No change in performance detected.
-Found 1 outliers among 10 measurements (10.00%)
-  1 (10.00%) high mild
+Found 3 outliers among 40 measurements (7.50%)
+  2 (5.00%) high mild
+  1 (2.50%) high severe
 ```
 
 #### 64 Concurrent Requests
 
 ```txt
 nemesis prefork with concurrency(64)
-                        time:   [78.439 ms 81.457 ms 83.652 ms]
-                        change: [-3.7211% -0.1831% +3.9425%] (p = 0.93 > 0.05)
+                        time:   [18.297 ms 19.179 ms 20.120 ms]
+                        change: [-88.892% -72.777% +1.7811%] (p = 0.36 > 0.05)
                         No change in performance detected.
+Found 3 outliers among 20 measurements (15.00%)
+  2 (10.00%) high mild
+  1 (5.00%) high severe
 
 thin threaded with concurrency(64)
-                        time:   [77.481 ms 82.224 ms 86.576 ms]
-                        change: [-11.971% -3.8320% +4.7384%] (p = 0.43 > 0.05)
+                        time:   [20.329 ms 21.134 ms 22.039 ms]
+                        change: [-6.7412% -1.2447% +4.1031%] (p = 0.68 > 0.05)
                         No change in performance detected.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high mild
 ```

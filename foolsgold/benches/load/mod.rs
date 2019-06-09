@@ -5,12 +5,12 @@ use std::iter;
 const NEMESIS_PORT: u16 = 8000;
 const THIN_PORT: u16 = 9000;
 
-pub fn bench_nemesis_prefork(amount: u16, concurrency: u16) {
-    bench_requests(amount, concurrency, NEMESIS_PORT);
+pub fn bench_nemesis_prefork(concurrency: u16) {
+    bench_requests(concurrency, concurrency, NEMESIS_PORT);
 }
 
-pub fn bench_thin_threaded(amount: u16, concurrency: u16) {
-    bench_requests(amount, concurrency, THIN_PORT);
+pub fn bench_thin_threaded(concurrency: u16) {
+    bench_requests(concurrency, concurrency, THIN_PORT);
 }
 
 fn bench_requests(amount: u16, concurrency: u16, port: u16) {
