@@ -192,7 +192,7 @@ module Forwardable
   def self._delegator_method(obj, accessor, method, ali)
     accessor = accessor.to_s unless accessor.is_a?(Symbol)
 
-    if obj.is_a?(Module) && (obj.method_defined?(accessor) || obj.private_method_defined?(accessor))
+    if obj.is_a?(Module) && obj.method_defined?(accessor)
       accessor = "#{accessor}()"
     elsif obj.respond_to?(accessor, true)
       accessor = "#{accessor}()"
