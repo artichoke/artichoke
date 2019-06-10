@@ -1,6 +1,7 @@
 //! Nemesis server implementations.
 
-use mruby::gc::MrbGarbageCollection;
+use mruby::gc::{ArenaIndex, MrbGarbageCollection};
+use mruby::interpreter::Mrb;
 use rocket::handler;
 use rocket::http::{ContentType, Method, Status};
 use rocket::request::FromRequest;
@@ -9,6 +10,7 @@ use std::ffi::OsStr;
 use std::io::Cursor;
 use std::path::Path;
 
+use crate::adapter::RackApp;
 use crate::request::Request;
 use crate::server::rocket::request;
 use crate::server::{AssetRegistry, Mount};
@@ -86,19 +88,52 @@ impl Handler for RackHandler {
     }
 }
 
+/// Finalize the [`RackApp`] once [`app`] generates a response or error.
+struct AppFinalizer<'a> {
+    interp: &'a Mrb,
+    mount: &'a Mount,
+    app: &'a RackApp,
+    savepoint: Option<ArenaIndex>,
+}
+
+impl<'a> AppFinalizer<'a> {
+    /// Create a new [`AppFinalizer`].
+    fn new(interp: &'a Mrb, mount: &'a Mount, app: &'a RackApp, savepoint: ArenaIndex) -> Self {
+        Self {
+            interp,
+            mount,
+            app,
+            savepoint: Some(savepoint),
+        }
+    }
+}
+
+impl<'a> Drop for AppFinalizer<'a> {
+    fn drop(&mut self) {
+        if let Some(savepoint) = self.savepoint.take() {
+            savepoint.restore();
+        }
+        self.mount.exec_mode.finalize(self.interp, self.app);
+    }
+}
+
 fn app<'a>(req: &request::Request, mount: &Mount) -> Result<rocket::Response<'a>, Error> {
     let interp = mount
         .exec_mode
         .interpreter(&mount.path, &mount.interp_init)?;
-    let _arena = interp.create_arena_savepoint();
+    let arena = interp.create_arena_savepoint();
     let app = (mount.app)(&interp)?;
+    let _finalizer = AppFinalizer::new(&interp, mount, &app, arena);
+
     debug!(
-        "Matched Rack adapter: app={} base={} route={}",
+        "Matched Rack adapter: app={} method={} base={} route={}",
         app.name(),
+        req.request_method(),
         req.script_name(),
         req.path_info()
     );
-    let response = match app.call(req) {
+
+    match app.call(req) {
         Ok(rack_response) => {
             let mut response = rocket::Response::build();
             let status = Status::from_code(rack_response.status).ok_or(Error::Status)?;
@@ -107,10 +142,8 @@ fn app<'a>(req: &request::Request, mount: &Mount) -> Result<rocket::Response<'a>
             for (key, value) in rack_response.headers {
                 response.raw_header(key, value);
             }
-            response.finalize()
+            response.ok()
         }
-        Err(error) => return Err(error),
-    };
-    mount.exec_mode.finalize(&interp, &app);
-    Ok(response)
+        Err(err) => Err(err),
+    }
 }
