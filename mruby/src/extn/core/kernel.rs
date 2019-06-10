@@ -21,6 +21,7 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
         .borrow_mut()
         .add_self_method("require", Kernel::require, sys::mrb_args_rest());
     kernel.borrow().define(interp).map_err(|_| MrbError::New)?;
+    interp.eval(include_str!("kernel.rb"))?;
     trace!("Patched Kernel#require onto interpreter");
     Ok(())
 }
@@ -139,6 +140,7 @@ mod tests {
     use crate::file::MrbFile;
     use crate::interpreter::{Interpreter, Mrb};
     use crate::load::MrbLoadSources;
+    use crate::value::ValueLike;
     use crate::MrbError;
 
     // Integration test for `Kernel::require`:
@@ -254,5 +256,73 @@ mod tests {
             result, 10,
             "defined Ruby and Rust sources from single require"
         );
+    }
+
+    #[test]
+    #[allow(clippy::shadow_unrelated)]
+    fn kernel_throw_catch() {
+        // https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-catch
+        let interp = Interpreter::create().expect("mrb init");
+        let result = interp
+            .eval("catch(1) { 123 }")
+            .unwrap()
+            .funcall::<i64, _, _>("itself", &[])
+            .unwrap();
+        assert_eq!(result, 123);
+        let result = interp
+            .eval("catch(1) { throw(1, 456) }")
+            .unwrap()
+            .funcall::<i64, _, _>("itself", &[])
+            .unwrap();
+        assert_eq!(result, 456);
+        let result = interp
+            .eval("catch(1) { throw(1) }")
+            .unwrap()
+            .funcall::<Option<i64>, _, _>("itself", &[])
+            .unwrap();
+        assert_eq!(result, None);
+        let result = interp
+            .eval("catch(1) {|x| x + 2 }")
+            .unwrap()
+            .funcall::<i64, _, _>("itself", &[])
+            .unwrap();
+        assert_eq!(result, 3);
+
+        let result = interp
+            .eval(
+                r#"
+catch do |obj_A|
+  catch do |obj_B|
+    throw(obj_B, 123)
+    # puts "This puts is not reached"
+  end
+
+  # puts "This puts is displayed"
+  456
+end
+            "#,
+            )
+            .unwrap()
+            .funcall::<i64, _, _>("itself", &[])
+            .unwrap();
+        assert_eq!(result, 456);
+        let result = interp
+            .eval(
+                r#"
+catch do |obj_A|
+  catch do |obj_B|
+    throw(obj_A, 123)
+    # puts "This puts is still not reached"
+  end
+
+  # puts "Now this puts is also not reached"
+  456
+end
+            "#,
+            )
+            .unwrap()
+            .funcall::<i64, _, _>("itself", &[])
+            .unwrap();
+        assert_eq!(result, 123);
     }
 }
