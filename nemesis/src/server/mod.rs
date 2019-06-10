@@ -46,11 +46,10 @@ impl Builder {
         self
     }
 
-    pub fn add_static_asset<S: AsRef<str>, T: AsRef<[u8]>>(mut self, path: S, asset: T) -> Self {
-        self.assets
-            .0
-            .insert(path.as_ref().to_owned(), asset.as_ref().to_owned());
-        self
+    pub fn add_static_asset(self, path: String, asset: Vec<u8>) -> Self {
+        let mut assets = HashMap::default();
+        assets.insert(path, asset);
+        self.add_static_assets(assets)
     }
 
     pub fn add_static_assets(mut self, assets: HashMap<String, Vec<u8>>) -> Self {
