@@ -1,4 +1,4 @@
-use log::{debug, error, warn};
+use log::{error, trace, warn};
 use std::ffi::CString;
 
 use crate::exception::{LastError, MrbExceptionHandler};
@@ -109,7 +109,7 @@ impl MrbEval for Mrb {
         }
 
         let code = code.as_ref();
-        debug!("Evaling code on {}", mrb.debug());
+        trace!("Evaling code on {}", mrb.debug());
         let result = unsafe {
             // Execute arbitrary ruby code, which may generate objects with C
             // APIs if backed by Rust functions.

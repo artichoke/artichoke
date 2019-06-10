@@ -70,9 +70,9 @@ where
                     max: value::MRB_FUNCALL_ARGC_MAX,
                 });
             }
-            // This will never unwrap because we've already checked that we have
-            // fewer than `MRB_FUNCALL_ARGC_MAX` args, wich is less than i64 max
-            // value.
+            // This will always unwrap because we've already checked that we
+            // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
+            // i64 max value.
             let len = args.len().try_into().unwrap_or_default();
             sys::mrb_obj_new(
                 interp.borrow().mrb,

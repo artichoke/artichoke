@@ -17,10 +17,19 @@ pub enum Backend {
     Rocket,
 }
 
+impl Default for Backend {
+    fn default() -> Self {
+        Backend::Rocket
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 struct AssetRegistry(HashMap<String, Vec<u8>>);
 
+#[derive(Default, Clone)]
 struct MountRegistry(HashMap<String, Mount>);
 
+#[derive(Default, Clone)]
 pub struct Builder {
     assets: AssetRegistry,
     mounts: MountRegistry,
@@ -37,11 +46,10 @@ impl Builder {
         self
     }
 
-    pub fn add_static_asset<S: AsRef<str>, T: AsRef<[u8]>>(mut self, path: S, asset: T) -> Self {
-        self.assets
-            .0
-            .insert(path.as_ref().to_owned(), asset.as_ref().to_owned());
-        self
+    pub fn add_static_asset(self, path: String, asset: Vec<u8>) -> Self {
+        let mut assets = HashMap::default();
+        assets.insert(path, asset);
+        self.add_static_assets(assets)
     }
 
     pub fn add_static_assets(mut self, assets: HashMap<String, Vec<u8>>) -> Self {
@@ -57,16 +65,6 @@ impl Builder {
     pub fn serve(self) -> Result<(), Error> {
         let Backend::Rocket = self.backend;
         rocket::launcher(self)
-    }
-}
-
-impl Default for Builder {
-    fn default() -> Self {
-        Self {
-            assets: AssetRegistry(HashMap::default()),
-            mounts: MountRegistry(HashMap::default()),
-            backend: Backend::Rocket,
-        }
     }
 }
 
@@ -90,7 +88,6 @@ impl Mount {
             path: mount_path.to_owned(),
             app: Arc::new(Box::new(app)),
             interp_init: None,
-            // TODO: expose a setter for exec mode.
             exec_mode: ExecMode::default(),
         }
     }

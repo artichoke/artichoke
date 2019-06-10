@@ -1,5 +1,6 @@
 use log::{error, trace, warn};
 use std::convert::TryFrom;
+use std::fmt;
 use std::rc::Rc;
 
 use crate::convert::{FromMrb, TryFromMrb};
@@ -50,10 +51,16 @@ where
             });
         }
         let method = method.as_ref();
-        trace!("Calling {}#{}", types::Ruby::from(self.inner()), method);
-        // This conversion will never fail because MRB_FUNCALL_ARGC_MAX is less
-        // than `std::i64::MAX`.
-        let size = i64::try_from(args.len()).expect("Unreachable");
+        trace!(
+            "Calling {}#{} with {} args",
+            types::Ruby::from(self.inner()),
+            method,
+            args.len()
+        );
+        // This will always unwrap because we've already checked that we have
+        // fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than i64 max
+        // value.
+        let size = i64::try_from(args.len()).unwrap_or_default();
         let value = unsafe {
             let sym = sys::mrb_intern(mrb, method.as_ptr() as *const i8, method.len());
             let value = sys::mrb_funcall_argv(mrb, self.inner(), sym, size, args.as_ptr());
@@ -73,14 +80,76 @@ where
             LastError::None => value,
         }
     }
+
+    fn funcall_with_block<T, M, A>(&self, method: M, args: A, block: Value) -> Result<T, MrbError>
+    where
+        T: TryFromMrb<Value, From = types::Ruby, To = types::Rust>,
+        M: AsRef<str>,
+        A: AsRef<[Value]>,
+    {
+        // Scope the borrow because we might require a borrow_mut in Rust code
+        // we call into via the Ruby VM.
+        let interp = self.interp();
+        let mrb = { interp.borrow().mrb };
+        let _arena = interp.create_arena_savepoint();
+
+        let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
+        if args.len() > MRB_FUNCALL_ARGC_MAX {
+            warn!(
+                "Too many args supplied to funcall_with_block: given {}, max {}.",
+                args.len(),
+                MRB_FUNCALL_ARGC_MAX
+            );
+            return Err(MrbError::TooManyArgs {
+                given: args.len(),
+                max: MRB_FUNCALL_ARGC_MAX,
+            });
+        }
+        let method = method.as_ref();
+        trace!(
+            "Calling {}#{} with {} args and block",
+            types::Ruby::from(self.inner()),
+            method,
+            args.len()
+        );
+        // This will always unwrap because we've already checked that we have
+        // fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than i64 max
+        // value.
+        let size = i64::try_from(args.len()).unwrap_or_default();
+        let value = unsafe {
+            let sym = sys::mrb_intern(mrb, method.as_ptr() as *const i8, method.len());
+            let value = sys::mrb_funcall_with_block(
+                mrb,
+                self.inner(),
+                sym,
+                size,
+                args.as_ptr(),
+                block.inner(),
+            );
+            let value = Value::new(interp, value);
+            T::try_from_mrb(interp, value).map_err(MrbError::ConvertToRust)
+        };
+
+        match interp.last_error() {
+            LastError::Some(exception) => {
+                warn!("runtime error with exception backtrace: {}", exception);
+                Err(MrbError::Exec(exception.to_string()))
+            }
+            LastError::UnableToExtract(err) => {
+                error!("failed to extract exception after runtime error: {}", err);
+                Err(err)
+            }
+            LastError::None => value,
+        }
+    }
+
+    fn respond_to<T: AsRef<str>>(&self, method: T) -> Result<bool, MrbError> {
+        let sym = Value::from_mrb(self.interp(), method.as_ref())
+            .funcall::<Value, _, _>("to_sym", &[])?;
+        self.funcall::<bool, _, _>("respond_to?", &[sym])
+    }
 }
 
-// TODO: The below comment is no longer true since inspect is implemented on
-// `Value`.
-//
-// We can't impl `fmt::Debug` because `mrb_sys_value_debug_str` requires a
-// `mrb_state` interpreter, which we can't store on the `Value` because we
-// construct it from Rust native types.
 pub struct Value {
     interp: Mrb,
     value: sys::mrb_value,
@@ -150,6 +219,18 @@ impl FromMrb<Value> for Value {
 
     fn from_mrb(_interp: &Mrb, value: Self) -> Self {
         value
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_s())
+    }
+}
+
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_s_debug())
     }
 }
 
