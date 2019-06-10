@@ -3,8 +3,8 @@
 # :stopdoc:
 module Forwardable
   def self._valid_method?(method)
-    catch do |tag|
-      eval("BEGIN{throw tag}; ().#{method}", binding, __FILE__, __LINE__) # rubocop:disable Security/Eval
+    catch(1) do |_tag|
+      eval("throw 1; ().#{method}", nil, __FILE__, __LINE__) # rubocop:disable Security/Eval
     end
   rescue SyntaxError
     false
