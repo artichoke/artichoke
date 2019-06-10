@@ -181,7 +181,7 @@ module Forwardable
     gen = Forwardable._delegator_method(self, accessor, method, ali)
 
     # If it's not a class or module, it's an instance
-    (Module === self ? self : singleton_class).module_eval(&gen)
+    (is_a?(Module) ? self : singleton_class).module_eval(&gen)
   end
 
   alias delegate instance_delegate
@@ -190,11 +190,11 @@ module Forwardable
 
   # :nodoc:
   def self._delegator_method(obj, accessor, method, ali)
-    accessor = accessor.to_s unless Symbol === accessor
+    accessor = accessor.to_s unless accessor.is_a?(Symbol)
 
-    if Module === obj ?
-         obj.method_defined?(accessor) || obj.private_method_defined?(accessor) :
-         obj.respond_to?(accessor, true)
+    if obj.is_a?(Module) && (obj.method_defined?(accessor) || obj.private_method_defined?(accessor))
+      accessor = "#{accessor}()"
+    elsif obj.respond_to?(accessor, true)
       accessor = "#{accessor}()"
     end
 
@@ -202,20 +202,18 @@ module Forwardable
     if _valid_method?(method)
       loc, = caller_locations(2, 1)
       pre = '_ ='
-      mesg = "#{Module === obj ? obj : obj.class}\##{ali} at #{loc.path}:#{loc.lineno} forwarding to private method "
-      method_call = "#{<<-"begin;"}\n#{<<-"end;".chomp}"
-      begin;
+      mesg = "#{obj.is_a?(Module) ? obj : obj.class}\##{ali} at #{loc.path}:#{loc.lineno} forwarding to private method "
+      method_call = "#{<<-METHOD_CALL.chomp}\n"
           unless defined? _.#{method}
             ::Kernel.warn #{mesg.dump}"\#{_.class}"'##{method}', uplevel: 1
             _#{method_call}
           else
             _.#{method}(*args, &block)
           end
-      end;
+      METHOD_CALL
     end
 
-    _compile_method("#{<<-"begin;"}\n#{<<-"end;"}", __FILE__, __LINE__ + 1)
-    begin;
+    _compile_method("#{<<-METHOD}\n", __FILE__, __LINE__ + 1)
       proc do
         def #{ali}(*args, &block)
           #{pre}
@@ -224,7 +222,7 @@ module Forwardable
           end#{method_call}
         end
       end
-    end;
+    METHOD
   end
 end
 
