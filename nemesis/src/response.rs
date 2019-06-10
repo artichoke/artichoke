@@ -30,10 +30,7 @@ impl Response {
     /// `Nemesis::Response`.
     pub fn from_rack_tuple(interp: &Mrb, response: Vec<Value>) -> Result<Self, Error> {
         if response.len() != Self::RACK_RESPONSE_TUPLE_LEN {
-            warn!(
-                "malformed rack response: {:?}",
-                response.iter().map(Value::to_s_debug).collect::<Vec<_>>()
-            );
+            warn!("malformed rack response: {:?}", response);
             return Err(Error::RackResponse);
         }
         let class = interp
