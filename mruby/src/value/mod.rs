@@ -1,5 +1,6 @@
 use log::{error, trace, warn};
 use std::convert::TryFrom;
+use std::fmt;
 use std::rc::Rc;
 
 use crate::convert::{FromMrb, TryFromMrb};
@@ -149,12 +150,6 @@ where
     }
 }
 
-// TODO: The below comment is no longer true since inspect is implemented on
-// `Value`.
-//
-// We can't impl `fmt::Debug` because `mrb_sys_value_debug_str` requires a
-// `mrb_state` interpreter, which we can't store on the `Value` because we
-// construct it from Rust native types.
 pub struct Value {
     interp: Mrb,
     value: sys::mrb_value,
@@ -224,6 +219,18 @@ impl FromMrb<Value> for Value {
 
     fn from_mrb(_interp: &Mrb, value: Self) -> Self {
         value
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_s())
+    }
+}
+
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_s_debug())
     }
 }
 
