@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 #
 #   forwardable.rb -
 #       $Release Version: 1.1$
@@ -8,8 +9,6 @@
 #       Revised by Daniel J. Berger with suggestions from Florian Gross.
 #
 #       Documentation by James Edward Gray II and Gavin Sinclair
-
-
 
 # The Forwardable module provides delegation of specified
 # methods to a designated object, using the methods #def_delegator
@@ -113,7 +112,7 @@ module Forwardable
   require 'forwardable/impl'
 
   # Version of +forwardable.rb+
-  VERSION = "1.2.0"
+  VERSION = '1.2.0'.freeze
   FORWARDABLE_VERSION = VERSION
 
   @debug = nil
@@ -132,10 +131,10 @@ module Forwardable
   #
   def instance_delegate(hash)
     hash.each do |methods, accessor|
-      unless defined?(methods.each)
-        def_instance_delegator(accessor, methods)
+      if defined?(methods.each)
+        methods.each { |method| def_instance_delegator(accessor, method) }
       else
-        methods.each {|method| def_instance_delegator(accessor, method)}
+        def_instance_delegator(accessor, methods)
       end
     end
   end
@@ -152,9 +151,9 @@ module Forwardable
   #   def_delegator :@records, :map
   #
   def def_instance_delegators(accessor, *methods)
-    methods.delete("__send__")
-    methods.delete("__id__")
-    for method in methods
+    methods.delete('__send__')
+    methods.delete('__id__')
+    methods.each do |method|
       def_instance_delegator(accessor, method)
     end
   end
@@ -201,21 +200,21 @@ module Forwardable
 
     method_call = ".__send__(:#{method}, *args, &block)"
     if _valid_method?(method)
-      loc, = caller_locations(2,1)
-      pre = "_ ="
+      loc, = caller_locations(2, 1)
+      pre = '_ ='
       mesg = "#{Module === obj ? obj : obj.class}\##{ali} at #{loc.path}:#{loc.lineno} forwarding to private method "
       method_call = "#{<<-"begin;"}\n#{<<-"end;".chomp}"
-        begin;
+      begin;
           unless defined? _.#{method}
             ::Kernel.warn #{mesg.dump}"\#{_.class}"'##{method}', uplevel: 1
             _#{method_call}
           else
             _.#{method}(*args, &block)
           end
-        end;
+      end;
     end
 
-    _compile_method("#{<<-"begin;"}\n#{<<-"end;"}", __FILE__, __LINE__+1)
+    _compile_method("#{<<-"begin;"}\n#{<<-"end;"}", __FILE__, __LINE__ + 1)
     begin;
       proc do
         def #{ali}(*args, &block)
@@ -264,10 +263,10 @@ module SingleForwardable
   #
   def single_delegate(hash)
     hash.each do |methods, accessor|
-      unless defined?(methods.each)
-        def_single_delegator(accessor, methods)
+      if defined?(methods.each)
+        methods.each { |method| def_single_delegator(accessor, method) }
       else
-        methods.each {|method| def_single_delegator(accessor, method)}
+        def_single_delegator(accessor, methods)
       end
     end
   end
@@ -284,9 +283,9 @@ module SingleForwardable
   #   def_delegator :@records, :map
   #
   def def_single_delegators(accessor, *methods)
-    methods.delete("__send__")
-    methods.delete("__id__")
-    for method in methods
+    methods.delete('__send__')
+    methods.delete('__id__')
+    methods.each do |method|
       def_single_delegator(accessor, method)
     end
   end

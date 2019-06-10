@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 # :stopdoc:
 module Forwardable
   def self._valid_method?(method)
-    catch {|tag|
+    catch do |tag|
       eval("BEGIN{throw tag}; ().#{method}", binding, __FILE__, __LINE__)
-    }
+    end
   rescue SyntaxError
     false
   else
