@@ -17,10 +17,19 @@ pub enum Backend {
     Rocket,
 }
 
+impl Default for Backend {
+    fn default() -> Self {
+        Backend::Rocket
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 struct AssetRegistry(HashMap<String, Vec<u8>>);
 
+#[derive(Default, Clone)]
 struct MountRegistry(HashMap<String, Mount>);
 
+#[derive(Default, Clone)]
 pub struct Builder {
     assets: AssetRegistry,
     mounts: MountRegistry,
@@ -60,16 +69,6 @@ impl Builder {
     }
 }
 
-impl Default for Builder {
-    fn default() -> Self {
-        Self {
-            assets: AssetRegistry(HashMap::default()),
-            mounts: MountRegistry(HashMap::default()),
-            backend: Backend::Rocket,
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct Mount {
     path: String,
@@ -90,7 +89,6 @@ impl Mount {
             path: mount_path.to_owned(),
             app: Arc::new(Box::new(app)),
             interp_init: None,
-            // TODO: expose a setter for exec mode.
             exec_mode: ExecMode::default(),
         }
     }
