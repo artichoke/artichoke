@@ -6,7 +6,8 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp
         .borrow_mut()
         .def_class::<Monitor>("Monitor", None, None);
-    interp.def_rb_source_file("monitor.rb", include_str!("monitor.rb"))
+    interp.def_rb_source_file("monitor.rb", include_str!("monitor.rb"))?;
+    Ok(())
 }
 
 pub struct Monitor;
