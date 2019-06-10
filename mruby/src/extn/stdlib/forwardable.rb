@@ -200,20 +200,17 @@ module Forwardable
 
     method_call = ".__send__(:#{method}, *args, &block)"
     if _valid_method?(method)
-      loc, = caller_locations(2, 1)
       pre = '_ ='
-      mesg = "#{obj.is_a?(Module) ? obj : obj.class}\##{ali} at #{loc.path}:#{loc.lineno} forwarding to private method "
-      method_call = "#{<<-METHOD_CALL.chomp}\n"
-          unless defined? _.#{method}
-            ::Kernel.warn #{mesg.dump}"\#{_.class}"'##{method}', uplevel: 1
-            _#{method_call}
-          else
-            _.#{method}(*args, &block)
-          end
+      method_call = "\n#{<<-METHOD_CALL.chomp}\n"
+        if _.respond_to?(:#{method})
+          _.#{method}(*args, &block)
+        else
+          _#{method_call}
+        end
       METHOD_CALL
     end
 
-    _compile_method("#{<<-METHOD}\n", __FILE__, __LINE__ + 1)
+    _compile_method("\n#{<<-METHOD}\n", __FILE__, __LINE__ + 1)
       proc do
         def #{ali}(*args, &block)
           #{pre}
@@ -261,7 +258,7 @@ module SingleForwardable
   #
   def single_delegate(hash)
     hash.each do |methods, accessor|
-      if defined?(methods.each)
+      if methods.respond_to?(:each)
         methods.each { |method| def_single_delegator(accessor, method) }
       else
         def_single_delegator(accessor, methods)
