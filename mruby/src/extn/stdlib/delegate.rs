@@ -3,12 +3,18 @@ use crate::load::MrbLoadSources;
 use crate::MrbError;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
-    interp.borrow_mut().def_module::<Delegate>("Delegate", None);
+    interp
+        .borrow_mut()
+        .def_class::<Delegator>("Delegator", None, None);
+    interp
+        .borrow_mut()
+        .def_class::<SimpleDelegator>("SimpleDelegator", None, None);
     interp.def_rb_source_file("delegate.rb", include_str!("delegate.rb"))?;
     Ok(())
 }
 
-pub struct Delegate;
+pub struct Delegator;
+pub struct SimpleDelegator;
 
 // Delegate tests from Ruby stdlib docs
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/delegate/rdoc/Delegator.html
