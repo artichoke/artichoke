@@ -25,7 +25,16 @@ impl Mustermann {
             .map(Cow::into_owned)
             .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))?;
         // patches
-        if path == "mustermann/error.rb" {
+        if path == "mustermann.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("defined?(Pry) or defined?(IRB)", "false");
+            string = string.replace(
+                "defined? ::Sinatra::Base",
+                "Object.const_defined?(:Sinatra)",
+            );
+            Ok(string.into_bytes())
+        } else if path == "mustermann/error.rb" {
             let mut string = String::from_utf8(contents)
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
             string = string.replace(
@@ -38,14 +47,34 @@ impl Mustermann {
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
             string = string.replace("private_constant", "# private_constant");
             Ok(string.into_bytes())
-        } else if path == "mustermann.rb" {
+        } else if path == "mustermann/ast/compiler.rb" {
             let mut string = String::from_utf8(contents)
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
-            string = string.replace("defined?(Pry) or defined?(IRB)", "false");
+            string = string.replace("private_constant", "# private_constant");
+            Ok(string.into_bytes())
+        } else if path == "mustermann/ast/translator.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
             string = string.replace(
-                "defined? ::Sinatra::Base",
-                "Object.const_defined?(:Sinatra)",
+                "Class.new(self, &block).new",
+                "translator = Class.new(self); translator.class_eval(&block); translator.new",
             );
+            string = string.replace("private_constant", "# private_constant");
+            Ok(string.into_bytes())
+        } else if path == "mustermann/sinatra/parser.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("private_constant", "# private_constant");
+            Ok(string.into_bytes())
+        } else if path == "mustermann/sinatra/safe_renderer.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("private_constant", "# private_constant");
+            Ok(string.into_bytes())
+        } else if path == "mustermann/sinatra/try_convert.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("private_constant", "# private_constant");
             Ok(string.into_bytes())
         } else {
             Ok(contents)
