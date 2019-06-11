@@ -206,7 +206,7 @@ class OpenStruct
 
   def method_missing(mid, *args) # :nodoc:
     len = args.length
-    if (mname = mid[/.*(?==\z)/m])
+    if (mname = mid.to_s[/.*(?==\z)/m])
       raise ArgumentError, "wrong number of arguments (#{len} for 1)", caller(1) if len != 1
 
       modifiable?[new_ostruct_member!(mname)] = args[0]
