@@ -13,8 +13,8 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
 
 pub struct Forwardable;
 
-// Monitor tests from ruby/spec
-// https://github.com/ruby/spec/tree/master/library/monitor
+// Forwardable tests from Ruby stdlib docs
+// https://ruby-doc.org/stdlib-2.6.3/libdoc/forwardable/rdoc/Forwardable.html
 #[cfg(test)]
 mod tests {
     use crate::eval::MrbEval;
