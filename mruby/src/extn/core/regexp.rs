@@ -31,6 +31,11 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
+    regexp.borrow_mut().add_method(
+        "=~",
+        Regexp::equal_squiggle,
+        sys::mrb_args_req_and_opt(1, 1),
+    );
     regexp
         .borrow_mut()
         .add_method("to_s", Regexp::to_s, sys::mrb_args_none());
@@ -361,6 +366,39 @@ impl Regexp {
             return interp.nil().inner();
         };
         unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
+    }
+
+    // Support for extracting named captures and assigning to local variables is
+    // not implemented.
+    // See: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-7E
+    unsafe extern "C" fn equal_squiggle(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, args::Match::extract(&interp), interp.nil().inner());
+
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+
+        let is_match = regexp.borrow().regex().and_then(|regexp| {
+            regexp.search_with_options(
+                &args.string,
+                args.pos.unwrap_or_default(),
+                args.string.len(),
+                SearchOptions::SEARCH_OPTION_NONE,
+                None,
+            )
+        });
+        if let Some(pos) = is_match {
+            let pos = unwrap_or_raise!(interp, i64::try_from(pos), interp.nil().inner());
+            interp.fixnum(pos).inner()
+        } else {
+            interp.nil().inner()
+        }
     }
 
     #[allow(clippy::wrong_self_convention)]
