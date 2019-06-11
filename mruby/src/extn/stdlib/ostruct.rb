@@ -156,8 +156,8 @@ class OpenStruct
   #
   # Provides marshalling support for use by the Marshal library.
   #
-  def marshal_load(x)
-    @table = x
+  def marshal_load(table)
+    @table = table
   end
 
   #
@@ -173,11 +173,9 @@ class OpenStruct
     end
     @table
   end
-  private :modifiable?
 
   # ::Kernel.warn("do not use OpenStruct#modifiable", uplevel: 1)
   alias modifiable modifiable? # :nodoc:
-  protected :modifiable
 
   #
   # Used internally to defined properties on the
@@ -192,11 +190,9 @@ class OpenStruct
     end
     name
   end
-  private :new_ostruct_member!
 
   # ::Kernel.warn("do not use OpenStruct#new_ostruct_member", uplevel: 1)
   alias new_ostruct_member new_ostruct_member! # :nodoc:
-  protected :new_ostruct_member
 
   def freeze
     @table.each_key { |key| new_ostruct_member!(key) }
@@ -210,11 +206,11 @@ class OpenStruct
 
   def method_missing(mid, *args) # :nodoc:
     len = args.length
-    if mname = mid[/.*(?==\z)/m]
+    if (mname = mid[/.*(?==\z)/m])
       raise ArgumentError, "wrong number of arguments (#{len} for 1)", caller(1) if len != 1
 
       modifiable?[new_ostruct_member!(mname)] = args[0]
-    elsif len == 0 # and /\A[a-z_]\w*\z/ =~ mid #
+    elsif len.zero? # and /\A[a-z_]\w*\z/ =~ mid #
       if @table.key?(mid)
         new_ostruct_member!(mid) unless frozen?
         @table[mid]
@@ -307,14 +303,14 @@ class OpenStruct
     sym = name.to_sym
     begin
       singleton_class.remove_method(sym, "#{sym}=")
-    rescue NameError
+    rescue NameError # rubocop:disable Lint/HandleExceptions
     end
     @table.delete(sym) do
       raise NameError.new("no field `#{sym}' in #{self}", sym)
     end
   end
 
-  InspectKey = :__inspect_key__ # :nodoc:
+  InspectKey = :__inspect_key__ # :nodoc: # rubocop:disable Naming/ConstantName
 
   #
   # Returns a string containing a detailed summary of the keys and values.
@@ -338,7 +334,6 @@ class OpenStruct
   alias to_s inspect
 
   attr_reader :table # :nodoc:
-  protected :table
   alias table! table
 
   #
