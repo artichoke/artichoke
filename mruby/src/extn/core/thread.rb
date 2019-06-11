@@ -11,6 +11,8 @@
 # contention in a single-threaded environement.
 
 class Thread
+  alias __raise__ raise
+
   attr_accessor :abort_on_exception
   attr_accessor :name
   attr_accessor :report_on_exception
@@ -103,7 +105,7 @@ class Thread
   end
 
   def initialize(root = false)
-    raise ThreadError, 'must be called with a block' unless block_given?
+    __raise__ ThreadError, 'must be called with a block' unless block_given?
 
     @priority = 0
     @priority = self.class.current.priority unless self.class.current.nil?
@@ -127,7 +129,7 @@ class Thread
   ensure
     @alive = false unless root
     self.class.__pop_stack unless root
-    raise @__unwind_with_exception if self.class.current == self.class.main && !@__unwind_with_exception.nil?
+    __raise__ @__unwind_with_exception if self.class.current == self.class.main && !@__unwind_with_exception.nil?
   end
 
   def [](sym)
@@ -170,7 +172,7 @@ class Thread
   alias terminate exit
 
   def fetch(*args)
-    Kernel.raise ArgumentError, 'Thread#fetch requires 1 or 2 arguments' unless [1, 2].include?(args.length)
+    __raise__ ArgumentError, 'Thread#fetch requires 1 or 2 arguments' unless [1, 2].include?(args.length)
 
     key = args[0]
     if @fiber_locals.key?(key)
@@ -181,7 +183,7 @@ class Thread
     elsif args.length == 2
       args[1]
     else
-      Kernel.raise "key '#{key}' not found in Thread locals"
+      __raise__ "key '#{key}' not found in Thread locals"
     end
   end
 
@@ -219,11 +221,11 @@ class Thread
   def raise(*args)
     exc, message, array = *args
     case args.length
-    when 0 then Kernel.raise
-    when 1 then Kernel.raise(exc)
-    when 2 then Kernel.raise(exc, message)
-    when 3 then Kernel.raise(exc, message, array)
-    else Kernel.raise ArgumentError
+    when 0 then __raise__
+    when 1 then __raise__(exc)
+    when 2 then __raise__(exc, message)
+    when 3 then __raise__(exc, message, array)
+    else __raise__ ArgumentError
     end
   end
 
@@ -278,7 +280,7 @@ class Thread
   end
 
   def value
-    Kernel.raise @value if @terminated_with_exception
+    __raise__ @value if @terminated_with_exception
 
     @value
   end

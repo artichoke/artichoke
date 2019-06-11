@@ -178,11 +178,11 @@ end.join
         let expected_backtrace = r#"
 (eval):8: inner (RuntimeError)
 (eval):8:in call
-/src/lib/thread.rb:120:in initialize
+/src/lib/thread.rb:122:in initialize
 (eval):6:in call
-/src/lib/thread.rb:120:in initialize
+/src/lib/thread.rb:122:in initialize
 (eval):4:in call
-/src/lib/thread.rb:120:in initialize
+/src/lib/thread.rb:122:in initialize
 (eval):2
 "#;
         assert_eq!(
