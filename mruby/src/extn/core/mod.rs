@@ -6,6 +6,7 @@ pub mod kernel;
 pub mod module;
 pub mod regexp;
 pub mod string;
+pub mod symbol;
 pub mod thread;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
@@ -14,6 +15,7 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     module::patch(interp)?;
     regexp::init(interp)?;
     string::patch(interp)?;
+    symbol::patch(interp)?;
     thread::init(interp)?;
     Ok(())
 }
