@@ -55,8 +55,8 @@ class Delegator < BasicObject
   include kernel
 
   # :stopdoc:
-  def self.const_missing(n)
-    ::Object.const_get(n)
+  def self.const_missing(const)
+    ::Object.const_get(const)
   end
   # :startdoc:
 
@@ -77,16 +77,16 @@ class Delegator < BasicObject
   #
   # Handles the magic of delegation through \_\_getobj\_\_.
   #
-  def method_missing(m, *args, &block)
+  def method_missing(method, *args, &block)
     r = true
     target = __getobj__ { r = false }
 
-    if r && target.respond_to?(m)
-      target.__send__(m, *args, &block)
-    elsif ::Kernel.respond_to?(m, true)
-      ::Kernel.instance_method(m).bind(self).call(*args, &block)
+    if r && target.respond_to?(method)
+      target.__send__(method, *args, &block)
+    elsif ::Kernel.respond_to?(method, true)
+      ::Kernel.instance_method(method).bind(self).call(*args, &block)
     else
-      super(m, *args, &block)
+      super
     end
   end
 
@@ -94,12 +94,12 @@ class Delegator < BasicObject
   # Checks for a method provided by this the delegate object by forwarding the
   # call through \_\_getobj\_\_.
   #
-  def respond_to_missing?(m, include_private)
+  def respond_to_missing?(method, include_private)
     r = true
     target = __getobj__ { r = false }
-    r &&= target.respond_to?(m, include_private)
-    if r && include_private && !target.respond_to?(m, false)
-      warn "delegator does not forward private method \##{m}", uplevel: 3
+    r &&= target.respond_to?(method, include_private)
+    if r && include_private && !target.respond_to?(method, false)
+      warn "delegator does not forward private method \##{method}", uplevel: 3
       return false
     end
     r
@@ -134,28 +134,28 @@ class Delegator < BasicObject
   #
   # Returns true if two objects are considered of equal value.
   #
-  def ==(obj)
-    return true if obj.equal?(self)
+  def ==(other)
+    return true if other.equal?(self)
 
-    __getobj__ == obj
+    __getobj__ == other
   end
 
   #
   # Returns true if two objects are not considered of equal value.
   #
-  def !=(obj)
-    return false if obj.equal?(self)
+  def !=(other)
+    return false if other.equal?(self)
 
-    __getobj__ != obj
+    __getobj__ != other
   end
 
   #
   # Returns true if two objects are considered of equal value.
   #
-  def eql?(obj)
-    return true if obj.equal?(self)
+  def eql?(other)
+    return true if other.equal?(self)
 
-    obj.eql?(__getobj__)
+    other.eql?(__getobj__)
   end
 
   #
@@ -390,7 +390,7 @@ end
 #     # ...
 #   end
 #
-def DelegateClass(superclass)
+def DelegateClass(superclass) # rubocop:disable Naming/MethodName
   klass = Class.new(Delegator)
   methods = superclass.instance_methods
   methods -= ::Delegator.public_api
