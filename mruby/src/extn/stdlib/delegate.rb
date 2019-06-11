@@ -41,14 +41,7 @@ class Delegator < BasicObject
   kernel = ::Kernel.dup
   kernel.class_eval do
     alias_method :__raise__, :raise
-    %i[to_s inspect =~ !~ === <=> hash].each do |m|
-      undef_method m
-    end
-    private_instance_methods.each do |m|
-      if /\Ablock_given\?\z|iterator\?\z|\A__.*__\z/ =~ m
-        next
-      end
-
+    %i[to_s inspect !~ === hash].each do |m|
       undef_method m
     end
   end
@@ -247,7 +240,7 @@ class Delegator < BasicObject
     end
   end
 
-  @delegator_api = public_instance_methods
+  @delegator_api = instance_methods
   def self.public_api # :nodoc:
     @delegator_api
   end
@@ -322,7 +315,7 @@ end
 class SimpleDelegator < Delegator
   # Returns the current object method calls are being delegated to.
   def __getobj__
-    unless defined?(@delegate_sd_obj)
+    if @delegate_sd_obj.nil?
       return yield if block_given?
 
       __raise__ ::ArgumentError, 'not delegated'
