@@ -406,11 +406,5 @@ def DelegateClass(superclass) # rubocop:disable Naming/MethodName
       define_method(method, Delegator.delegating_block(method))
     end
   end
-  klass.define_singleton_method :public_instance_methods do |all = true|
-    super(all) - superclass.protected_instance_methods
-  end
-  klass.define_singleton_method :protected_instance_methods do |all = true|
-    super(all) | superclass.protected_instance_methods
-  end
   klass
 end

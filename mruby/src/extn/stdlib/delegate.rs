@@ -141,4 +141,23 @@ s = Stats.new
             Ok(vec![8, 7, 6])
         );
     }
+
+    #[test]
+    fn delegate_class() {
+        let interp = Interpreter::create().expect("mrb init");
+        interp.eval("require 'delegate'").expect("require");
+        let value = interp.eval(
+            r#"
+class MyClass < DelegateClass(Array) # Step 1
+  def initialize
+    super([])                        # Step 2
+  end
+end
+
+MyClass.instance_methods
+MyClass.new
+                "#,
+        );
+        assert!(value.is_ok());
+    }
 }
