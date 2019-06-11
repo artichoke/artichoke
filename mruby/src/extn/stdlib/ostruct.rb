@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # = ostruct.rb: OpenStruct implementation
 #
@@ -73,7 +74,6 @@
 # of these properties compared to using a Hash or a Struct.
 #
 class OpenStruct
-
   #
   # Creates a new OpenStruct object.  By default, the resulting OpenStruct
   # object will have no attributes.
@@ -88,13 +88,11 @@ class OpenStruct
   #
   #   data   # => #<OpenStruct country="Australia", capital="Canberra">
   #
-  def initialize(hash=nil)
+  def initialize(hash = nil)
     @table = {}
-    if hash
-      hash.each_pair do |k, v|
-        k = k.to_sym
-        @table[k] = v
-      end
+    hash&.each_pair do |k, v|
+      k = k.to_sym
+      @table[k] = v
     end
   end
 
@@ -143,7 +141,8 @@ class OpenStruct
   #
   def each_pair
     return to_enum(__method__) { @table.size } unless block_given?
-    @table.each_pair{|p| yield p}
+
+    @table.each_pair { |p| yield p }
     self
   end
 
@@ -168,7 +167,7 @@ class OpenStruct
   def modifiable? # :nodoc:
     begin
       @modifiable = true
-    rescue
+    rescue StandardError
       exception_class = defined?(FrozenError) ? FrozenError : RuntimeError
       raise exception_class, "can't modify frozen #{self.class}", caller(3)
     end
@@ -189,7 +188,7 @@ class OpenStruct
     name = name.to_sym
     unless singleton_class.method_defined?(name)
       define_singleton_method(name) { @table[name] }
-      define_singleton_method("#{name}=") {|x| modifiable?[name] = x}
+      define_singleton_method("#{name}=") { |x| modifiable?[name] = x }
     end
     name
   end
@@ -200,21 +199,20 @@ class OpenStruct
   protected :new_ostruct_member
 
   def freeze
-    @table.each_key {|key| new_ostruct_member!(key)}
+    @table.each_key { |key| new_ostruct_member!(key) }
     super
   end
 
   def respond_to_missing?(mid, include_private = false) # :nodoc:
-    mname = mid.to_s.chomp("=").to_sym
+    mname = mid.to_s.chomp('=').to_sym
     @table&.key?(mname) || super
   end
 
   def method_missing(mid, *args) # :nodoc:
     len = args.length
     if mname = mid[/.*(?==\z)/m]
-      if len != 1
-        raise ArgumentError, "wrong number of arguments (#{len} for 1)", caller(1)
-      end
+      raise ArgumentError, "wrong number of arguments (#{len} for 1)", caller(1) if len != 1
+
       modifiable?[new_ostruct_member!(mname)] = args[0]
     elsif len == 0 # and /\A[a-z_]\w*\z/ =~ mid #
       if @table.key?(mid)
@@ -224,8 +222,8 @@ class OpenStruct
     else
       begin
         super
-      rescue NoMethodError => err
-        err.backtrace.shift
+      rescue NoMethodError => e
+        e.backtrace.shift
         raise
       end
     end
@@ -337,7 +335,7 @@ class OpenStruct
     end
     ['#<', self.class, detail, '>'].join
   end
-  alias :to_s :inspect
+  alias to_s inspect
 
   attr_reader :table # :nodoc:
   protected :table
@@ -357,7 +355,8 @@ class OpenStruct
   #   first_pet == third_pet    # => false
   #
   def ==(other)
-    return false unless other.kind_of?(OpenStruct)
+    return false unless other.is_a?(OpenStruct)
+
     @table == other.table!
   end
 
@@ -367,7 +366,8 @@ class OpenStruct
   # eql?.
   #
   def eql?(other)
-    return false unless other.kind_of?(OpenStruct)
+    return false unless other.is_a?(OpenStruct)
+
     @table.eql?(other.table!)
   end
 
