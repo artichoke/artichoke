@@ -15,8 +15,9 @@ pub struct Set;
 #[allow(clippy::module_name_repetitions)]
 pub struct SortedSet;
 
-// Delegate tests from Ruby stdlib docs
+// Set tests from Ruby stdlib docs
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/set/rdoc/Set.html
+// https://ruby-doc.org/stdlib-2.6.3/libdoc/set/rdoc/SortedSet.html
 #[cfg(test)]
 mod tests {
     use crate::convert::FromMrb;
