@@ -91,7 +91,7 @@ class Set
   #     Set.new(1..5)                         #=> #<Set: {1, 2, 3, 4, 5}>
   #     Set.new([1, 2, 3]) { |x| x * x }      #=> #<Set: {1, 4, 9}>
   def initialize(enum = nil, &block) # :yields: o
-    @hash = Hash.new(false)
+    @hash = Hash.new(false) if @hash.nil?
 
     enum.nil? && return
 
@@ -701,20 +701,20 @@ class SortedSet < Set
         begin
           require 'rbtree'
 
-          module_eval <<-IMPL, __FILE__, __LINE__ + 1
+          module_eval do
             def initialize(*args)
               @hash = RBTree.new
               super
             end
 
-            def add(o)
-              o.respond_to?(:<=>) or raise ArgumentError, "value must respond to <=>"
+            def add(obj)
+              obj.respond_to?(:<=>) || raise(ArgumentError, 'value must respond to <=>')
               super
             end
-            alias << add
-          IMPL
+            alias_method :<<, :add
+          end
         rescue LoadError
-          module_eval <<-IMPL, __FILE__, __LINE__ + 1
+          module_eval do
             def initialize(*args)
               @keys = nil
               super
@@ -730,21 +730,21 @@ class SortedSet < Set
               super
             end
 
-            def add(o)
-              o.respond_to?(:<=>) or raise ArgumentError, "value must respond to <=>"
+            def add(obj)
+              obj.respond_to?(:<=>) || raise(ArgumentError, 'value must respond to <=>')
               @keys = nil
               super
             end
-            alias << add
+            alias_method :<<, :add
 
-            def delete(o)
+            def delete(obj)
               @keys = nil
-              @hash.delete(o)
+              @hash.delete(obj)
               self
             end
 
             def delete_if
-              block_given? or return enum_for(__method__) { size }
+              block_given? || (return enum_for(__method__) { size })
               n = @hash.size
               super
               @keys = nil if @hash.size != n
@@ -752,7 +752,7 @@ class SortedSet < Set
             end
 
             def keep_if
-              block_given? or return enum_for(__method__) { size }
+              block_given? || (return enum_for(__method__) { size })
               n = @hash.size
               super
               @keys = nil if @hash.size != n
@@ -765,7 +765,7 @@ class SortedSet < Set
             end
 
             def each(&block)
-              block or return enum_for(__method__) { size }
+              block || (return enum_for(__method__) { size })
               to_a.each(&block)
               self
             end
@@ -784,7 +784,7 @@ class SortedSet < Set
               @keys = nil
               super
             end
-          IMPL
+          end
         end
         # a hack to shut up warning
         remove_method :old_init
