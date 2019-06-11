@@ -5,7 +5,6 @@ use crate::MrbError;
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.borrow_mut().def_module::<Delegate>("Delegate", None);
     interp.def_rb_source_file("delegate.rb", include_str!("delegate.rb"))?;
-    interp.def_rb_source_file("forwardable/impl.rb", include_str!("forwardable/impl.rb"))?;
     Ok(())
 }
 

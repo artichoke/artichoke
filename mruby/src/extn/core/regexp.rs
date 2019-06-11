@@ -372,8 +372,8 @@ impl Regexp {
         unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
     }
 
-    // Support for extracting named captures and assigning to local variables is
-    // not implemented.
+    // TODO: Implement support for extracting named captures and assigning to
+    // local variables.
     // See: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-7E
     unsafe extern "C" fn equal_squiggle(
         mrb: *mut sys::mrb_state,
