@@ -39,4 +39,59 @@ mod tests {
         let value = interp.eval(r#""cat o' 9 tails" =~ 9"#).unwrap();
         assert_eq!(value.funcall::<Option<i64>, _, _>("itself", &[]), Ok(None));
     }
+
+    #[test]
+    fn string_idx() {
+        let interp = Interpreter::create().expect("mrb init");
+        string::patch(&interp).expect("string init");
+
+        assert_eq!(
+            &interp
+                .eval(r"'hello there'[/[aeiou](.)\1/]")
+                .unwrap()
+                .funcall::<String, _, _>("itself", &[])
+                .unwrap(),
+            "ell"
+        );
+        assert_eq!(
+            &interp
+                .eval(r"'hello there'[/[aeiou](.)\1/, 0]")
+                .unwrap()
+                .funcall::<String, _, _>("itself", &[])
+                .unwrap(),
+            "ell"
+        );
+        assert_eq!(
+            &interp
+                .eval(r"'hello there'[/[aeiou](.)\1/, 1]")
+                .unwrap()
+                .funcall::<String, _, _>("itself", &[])
+                .unwrap(),
+            "l"
+        );
+        assert_eq!(
+            interp
+                .eval(r"'hello there'[/[aeiou](.)\1/, 2]")
+                .unwrap()
+                .funcall::<Option<String>, _, _>("itself", &[])
+                .unwrap(),
+            None
+        );
+        assert_eq!(
+            &interp
+                .eval(r"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'non_vowel']")
+                .unwrap()
+                .funcall::<String, _, _>("itself", &[])
+                .unwrap(),
+            "l"
+        );
+        assert_eq!(
+            &interp
+                .eval(r"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'vowel']")
+                .unwrap()
+                .funcall::<String, _, _>("itself", &[])
+                .unwrap(),
+            "e"
+        );
+    }
 }
