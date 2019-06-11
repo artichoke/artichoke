@@ -91,7 +91,7 @@ class Set
   #     Set.new(1..5)                         #=> #<Set: {1, 2, 3, 4, 5}>
   #     Set.new([1, 2, 3]) { |x| x * x }      #=> #<Set: {1, 4, 9}>
   def initialize(enum = nil, &block) # :yields: o
-    @hash ||= Hash.new(false)
+    @hash = Hash.new(false)
 
     enum.nil? && return
 
@@ -105,12 +105,10 @@ class Set
   # Makes the set compare its elements by their identity and returns
   # self.  This method may not be supported by all subclasses of Set.
   def compare_by_identity
-    if @hash.respond_to?(:compare_by_identity)
-      @hash.compare_by_identity
-      self
-    else
-      raise NotImplementedError, "#{self.class.name}\##{__method__} is not implemented"
-    end
+    raise NotImplementedError, "#{self.class.name}\##{__method__} is not implemented" unless @hash.respond_to?(:compare_by_identity)
+
+    @hash.compare_by_identity
+    self
   end
 
   # Returns true if the set will compare its elements by their
@@ -128,7 +126,6 @@ class Set
       raise ArgumentError, 'value must be enumerable'
     end
   end
-  private :do_with_enum
 
   # Dup internal hash.
   def initialize_dup(orig)
@@ -231,7 +228,6 @@ class Set
 
     self
   end
-  protected :flatten_merge
 
   # Returns a new set that is a copy of the set, flattening each
   # containing set recursively.
@@ -251,8 +247,8 @@ class Set
   # equality using <code>==</code> as do other Enumerables.
   #
   # See also Enumerable#include?
-  def include?(o)
-    @hash[o]
+  def include?(obj)
+    @hash[obj]
   end
   alias member? include?
 
@@ -342,8 +338,8 @@ class Set
   #     Set[1, 2].add(3)                    #=> #<Set: {1, 2, 3}>
   #     Set[1, 2].add([3, 4])               #=> #<Set: {1, 2, [3, 4]}>
   #     Set[1, 2].add(2)                    #=> #<Set: {1, 2}>
-  def add(o)
-    @hash[o] = true
+  def add(obj)
+    @hash[obj] = true
     self
   end
   alias << add
@@ -354,21 +350,21 @@ class Set
   #     Set[1, 2].add?(3)                    #=> #<Set: {1, 2, 3}>
   #     Set[1, 2].add?([3, 4])               #=> #<Set: {1, 2, [3, 4]}>
   #     Set[1, 2].add?(2)                    #=> nil
-  def add?(o)
-    add(o) unless include?(o)
+  def add?(obj)
+    add(obj) unless include?(obj)
   end
 
   # Deletes the given object from the set and returns self.  Use +subtract+ to
   # delete many items at once.
-  def delete(o)
-    @hash.delete(o)
+  def delete(obj)
+    @hash.delete(obj)
     self
   end
 
   # Deletes the given object from the set and returns self.  If the
   # object is not in the set, returns nil.
-  def delete?(o)
-    delete(o) if include?(o)
+  def delete?(obj)
+    delete(obj) if include?(obj)
   end
 
   # Deletes every element of the set for which block evaluates to
@@ -448,8 +444,8 @@ class Set
   #
   #     Set[1, 2, 3] | Set[2, 4, 5]         #=> #<Set: {1, 2, 3, 4, 5}>
   #     Set[1, 5, 'z'] | (1..6)             #=> #<Set: {1, 5, "z", 2, 3, 4, 6}>
-  def |(enum)
-    dup.merge(enum)
+  def |(other)
+    dup.merge(other)
   end
   alias + |
   alias union |
@@ -459,8 +455,8 @@ class Set
   #
   #     Set[1, 3, 5] - Set[1, 5]                #=> #<Set: {3}>
   #     Set['a', 'b', 'z'] - ['a', 'c']         #=> #<Set: {"b", "z"}>
-  def -(enum)
-    dup.subtract(enum)
+  def -(other)
+    dup.subtract(other)
   end
   alias difference -
 
@@ -469,9 +465,9 @@ class Set
   #
   #     Set[1, 3, 5] & Set[3, 2, 1]             #=> #<Set: {3, 1}>
   #     Set['a', 'b', 'z'] & ['a', 'b', 'c']    #=> #<Set: {"a", "b"}>
-  def &(enum)
+  def &(other)
     n = self.class.new
-    do_with_enum(enum) { |o| n.add(o) if include?(o) }
+    do_with_enum(other) { |o| n.add(o) if include?(o) }
     n
   end
   alias intersection &
@@ -482,8 +478,8 @@ class Set
   #
   #     Set[1, 2] ^ Set[2, 3]                   #=> #<Set: {3, 1}>
   #     Set[1, 'b', 'c'] ^ ['b', 'd']           #=> #<Set: {"d", 1, "c"}>
-  def ^(enum)
-    n = Set.new(enum)
+  def ^(other)
+    n = Set.new(other)
     each { |o| n.add(o) unless n.delete?(o) }
     n
   end
@@ -507,14 +503,14 @@ class Set
     end
   end
 
-  def hash      # :nodoc:
+  def hash # :nodoc:
     @hash.hash
   end
 
-  def eql?(o)   # :nodoc:
-    return false unless o.is_a?(Set)
+  def eql?(other) # :nodoc:
+    return false unless other.is_a?(Set)
 
-    @hash.eql?(o.instance_variable_get(:@hash))
+    @hash.eql?(other.instance_variable_get(:@hash))
   end
 
   # Resets the internal state after modification to existing elements
@@ -524,8 +520,8 @@ class Set
   def reset
     if @hash.respond_to?(:rehash)
       @hash.rehash # This should perform frozenness check.
-    else
-      raise "can't modify frozen #{self.class.name}" if frozen?
+    elsif frozen?
+      raise "can't modify frozen #{self.class.name}"
     end
     self
   end
@@ -623,18 +619,18 @@ class Set
     end
   end
 
-  InspectKey = :__inspect_key__ # :nodoc:
+  InspectKey = :__inspect_key__ # :nodoc: # rubocop:disable Naming/ConstantName
 
   # Returns a string containing a human-readable representation of the
   # set ("#<Set: {element1, element2, ...}>").
   def inspect
     ids = (Thread.current[InspectKey] ||= [])
 
-    return format('#<%s: {...}>', self.class.name) if ids.include?(object_id)
+    return format('#<%<classname>s: {...}>', classname: self.class.name) if ids.include?(object_id)
 
     ids << object_id
     begin
-      return format('#<%s: {%s}>', self.class, to_a.inspect[1..-2])
+      return format('#<%<classname>s: {%<ary>s}>', classname: self.class, ary: to_a.inspect[1..-2])
     ensure
       ids.pop
     end
@@ -642,8 +638,8 @@ class Set
 
   alias to_s inspect
 
-  def pretty_print(pp) # :nodoc:
-    pp.text format('#<%s: {', self.class.name)
+  def pretty_print(pp) # :nodoc: # rubocop:disable Naming/UncommunicativeMethodParamName
+    pp.text format('#<%<classname>s: {', classname: self.class.name)
     pp.nest(1) do
       pp.seplist(self) do |o|
         pp.pp o
@@ -652,8 +648,8 @@ class Set
     pp.text '}>'
   end
 
-  def pretty_print_cycle(pp) # :nodoc:
-    pp.text format('#<%s: {%s}>', self.class.name, empty? ? '' : '...')
+  def pretty_print_cycle(pp) # :nodoc: # rubocop:disable Naming/UncommunicativeMethodParamName
+    pp.text format('#<%<classname>s: {%<cycle>s}>', classname: self.class.name, cycle: empty? ? '' : '...')
   end
 end
 
@@ -687,8 +683,8 @@ end
 #   set2.each { |obj| } # => raises ArgumentError: comparison of Fixnum with String failed
 #
 class SortedSet < Set
-  @@setup = false
-  @@mutex = Mutex.new
+  @@setup = false # rubocop:disable Style/ClassVars
+  @@mutex = Mutex.new # rubocop:disable Style/ClassVars
 
   class << self
     def [](*ary) # :nodoc:
@@ -705,7 +701,7 @@ class SortedSet < Set
         begin
           require 'rbtree'
 
-          module_eval <<-END, __FILE__, __LINE__ + 1
+          module_eval <<-IMPL, __FILE__, __LINE__ + 1
             def initialize(*args)
               @hash = RBTree.new
               super
@@ -716,9 +712,9 @@ class SortedSet < Set
               super
             end
             alias << add
-          END
+          IMPL
         rescue LoadError
-          module_eval <<-END, __FILE__, __LINE__ + 1
+          module_eval <<-IMPL, __FILE__, __LINE__ + 1
             def initialize(*args)
               @keys = nil
               super
@@ -788,12 +784,12 @@ class SortedSet < Set
               @keys = nil
               super
             end
-          END
+          IMPL
         end
         # a hack to shut up warning
         remove_method :old_init
 
-        @@setup = true
+        @@setup = true # rubocop:disable Style/ClassVars
       end
     end
   end
