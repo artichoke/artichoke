@@ -1,5 +1,6 @@
 #--
 # frozen_string_literal: true
+
 #
 # set.rb - defines the Set class
 #++
@@ -22,7 +23,6 @@
 # The method +to_set+ is added to Enumerable for convenience.
 #
 # See the Set and SortedSet documentation for examples of usage.
-
 
 #
 # Set implements a collection of unordered values with no duplicates.
@@ -93,7 +93,7 @@ class Set
   def initialize(enum = nil, &block) # :yields: o
     @hash ||= Hash.new(false)
 
-    enum.nil? and return
+    enum.nil? && return
 
     if block
       do_with_enum(enum) { |o| add(block[o]) }
@@ -125,7 +125,7 @@ class Set
     elsif enum.respond_to?(:each)
       enum.each(&block) if block
     else
-      raise ArgumentError, "value must be enumerable"
+      raise ArgumentError, 'value must be enumerable'
     end
   end
   private :do_with_enum
@@ -189,7 +189,7 @@ class Set
       @hash.replace(enum.instance_variable_get(:@hash))
       self
     else
-      do_with_enum(enum)  # make sure enum is enumerable before calling clear
+      do_with_enum(enum) # make sure enum is enumerable before calling clear
       clear
       merge(enum)
     end
@@ -210,14 +210,15 @@ class Set
   # overridden.
   def to_set(klass = Set, *args, &block)
     return self if instance_of?(Set) && klass == Set && block.nil? && args.empty?
+
     klass.new(self, *args, &block)
   end
 
   def flatten_merge(set, seen = Set.new) # :nodoc:
-    set.each { |e|
+    set.each do |e|
       if e.is_a?(Set)
         if seen.include?(e_id = e.object_id)
-          raise ArgumentError, "tried to flatten recursive Set"
+          raise ArgumentError, 'tried to flatten recursive Set'
         end
 
         seen.add(e_id)
@@ -226,7 +227,7 @@ class Set
       else
         add(e)
       end
-    }
+    end
 
     self
   end
@@ -241,7 +242,7 @@ class Set
   # Equivalent to Set#flatten, but replaces the receiver with the
   # result in place.  Returns nil if no modifications were made.
   def flatten!
-    replace(flatten()) if any? { |e| e.is_a?(Set) }
+    replace(flatten) if any? { |e| e.is_a?(Set) }
   end
 
   # Returns true if the set contains the given object.
@@ -257,52 +258,48 @@ class Set
 
   # Returns true if the set is a superset of the given set.
   def superset?(set)
-    case
-    when set.instance_of?(self.class) && @hash.respond_to?(:>=)
+    if set.instance_of?(self.class) && @hash.respond_to?(:>=)
       @hash >= set.instance_variable_get(:@hash)
-    when set.is_a?(Set)
+    elsif set.is_a?(Set)
       size >= set.size && set.all? { |o| include?(o) }
     else
-      raise ArgumentError, "value must be a set"
+      raise ArgumentError, 'value must be a set'
     end
   end
   alias >= superset?
 
   # Returns true if the set is a proper superset of the given set.
   def proper_superset?(set)
-    case
-    when set.instance_of?(self.class) && @hash.respond_to?(:>)
+    if set.instance_of?(self.class) && @hash.respond_to?(:>)
       @hash > set.instance_variable_get(:@hash)
-    when set.is_a?(Set)
+    elsif set.is_a?(Set)
       size > set.size && set.all? { |o| include?(o) }
     else
-      raise ArgumentError, "value must be a set"
+      raise ArgumentError, 'value must be a set'
     end
   end
   alias > proper_superset?
 
   # Returns true if the set is a subset of the given set.
   def subset?(set)
-    case
-    when set.instance_of?(self.class) && @hash.respond_to?(:<=)
+    if set.instance_of?(self.class) && @hash.respond_to?(:<=)
       @hash <= set.instance_variable_get(:@hash)
-    when set.is_a?(Set)
+    elsif set.is_a?(Set)
       size <= set.size && all? { |o| set.include?(o) }
     else
-      raise ArgumentError, "value must be a set"
+      raise ArgumentError, 'value must be a set'
     end
   end
   alias <= subset?
 
   # Returns true if the set is a proper subset of the given set.
   def proper_subset?(set)
-    case
-    when set.instance_of?(self.class) && @hash.respond_to?(:<)
+    if set.instance_of?(self.class) && @hash.respond_to?(:<)
       @hash < set.instance_variable_get(:@hash)
-    when set.is_a?(Set)
+    elsif set.is_a?(Set)
       size < set.size && all? { |o| set.include?(o) }
     else
-      raise ArgumentError, "value must be a set"
+      raise ArgumentError, 'value must be a set'
     end
   end
   alias < proper_subset?
@@ -313,7 +310,7 @@ class Set
   #   Set[1, 2, 3].intersect? Set[4, 5]   #=> false
   #   Set[1, 2, 3].intersect? Set[3, 4]   #=> true
   def intersect?(set)
-    set.is_a?(Set) or raise ArgumentError, "value must be a set"
+    set.is_a?(Set) || raise(ArgumentError, 'value must be a set')
     if size < set.size
       any? { |o| set.include?(o) }
     else
@@ -334,7 +331,7 @@ class Set
   # the element as parameter.  Returns an enumerator if no block is
   # given.
   def each(&block)
-    block or return enum_for(__method__) { size }
+    block || (return enum_for(__method__) { size })
     @hash.each_key(&block)
     self
   end
@@ -378,7 +375,7 @@ class Set
   # true, and returns self. Returns an enumerator if no block is
   # given.
   def delete_if
-    block_given? or return enum_for(__method__) { size }
+    block_given? || (return enum_for(__method__) { size })
     # @hash.delete_if should be faster, but using it breaks the order
     # of enumeration in subclasses.
     select { |o| yield o }.each { |o| @hash.delete(o) }
@@ -389,7 +386,7 @@ class Set
   # false, and returns self. Returns an enumerator if no block is
   # given.
   def keep_if
-    block_given? or return enum_for(__method__) { size }
+    block_given? || (return enum_for(__method__) { size })
     # @hash.keep_if should be faster, but using it breaks the order of
     # enumeration in subclasses.
     reject { |o| yield o }.each { |o| @hash.delete(o) }
@@ -399,7 +396,7 @@ class Set
   # Replaces the elements with ones returned by collect().
   # Returns an enumerator if no block is given.
   def collect!
-    block_given? or return enum_for(__method__) { size }
+    block_given? || (return enum_for(__method__) { size })
     set = self.class.new
     each { |o| set << yield(o) }
     replace(set)
@@ -409,7 +406,7 @@ class Set
   # Equivalent to Set#delete_if, but returns nil if no changes were
   # made. Returns an enumerator if no block is given.
   def reject!(&block)
-    block or return enum_for(__method__) { size }
+    block || (return enum_for(__method__) { size })
     n = size
     delete_if(&block)
     self if size != n
@@ -418,7 +415,7 @@ class Set
   # Equivalent to Set#keep_if, but returns nil if no changes were
   # made. Returns an enumerator if no block is given.
   def select!(&block)
-    block or return enum_for(__method__) { size }
+    block || (return enum_for(__method__) { size })
     n = size
     keep_if(&block)
     self if size != n
@@ -499,11 +496,11 @@ class Set
   #     Set['a', 'b', 'c'] == Set['a', 'c', 'b']     #=> true
   #     Set['a', 'b', 'c'] == ['a', 'c', 'b']        #=> false
   def ==(other)
-    if self.equal?(other)
+    if equal?(other)
       true
     elsif other.instance_of?(self.class)
       @hash == other.instance_variable_get(:@hash)
-    elsif other.is_a?(Set) && self.size == other.size
+    elsif other.is_a?(Set) && size == other.size
       other.all? { |o| @hash.include?(o) }
     else
       false
@@ -516,6 +513,7 @@ class Set
 
   def eql?(o)   # :nodoc:
     return false unless o.is_a?(Set)
+
     @hash.eql?(o.instance_variable_get(:@hash))
   end
 
@@ -568,13 +566,13 @@ class Set
   #
   # Returns an enumerator if no block is given.
   def classify # :yields: o
-    block_given? or return enum_for(__method__) { size }
+    block_given? || (return enum_for(__method__) { size })
 
     h = {}
 
-    each { |i|
+    each do |i|
       (h[yield(i)] ||= self.class.new).add(i)
-    }
+    end
 
     h
   end
@@ -596,49 +594,47 @@ class Set
   #
   # Returns an enumerator if no block is given.
   def divide(&func)
-    func or return enum_for(__method__) { size }
+    func || (return enum_for(__method__) { size })
 
     if func.arity == 2
       require 'tsort'
 
-      class << dig = {}         # :nodoc:
+      class << dig = {} # :nodoc:
         include TSort
 
-        alias tsort_each_node each_key
+        alias_method :tsort_each_node, :each_key
         def tsort_each_child(node, &block)
           fetch(node).each(&block)
         end
       end
 
-      each { |u|
+      each do |u|
         dig[u] = a = []
-        each{ |v| func.call(u, v) and a << v }
-      }
+        each { |v| func.call(u, v) && a << v }
+      end
 
-      set = Set.new()
-      dig.each_strongly_connected_component { |css|
+      set = Set.new
+      dig.each_strongly_connected_component do |css|
         set.add(self.class.new(css))
-      }
+      end
       set
     else
       Set.new(classify(&func).values)
     end
   end
 
-  InspectKey = :__inspect_key__         # :nodoc:
+  InspectKey = :__inspect_key__ # :nodoc:
 
   # Returns a string containing a human-readable representation of the
   # set ("#<Set: {element1, element2, ...}>").
   def inspect
     ids = (Thread.current[InspectKey] ||= [])
 
-    if ids.include?(object_id)
-      return sprintf('#<%s: {...}>', self.class.name)
-    end
+    return format('#<%s: {...}>', self.class.name) if ids.include?(object_id)
 
     ids << object_id
     begin
-      return sprintf('#<%s: {%s}>', self.class, to_a.inspect[1..-2])
+      return format('#<%s: {%s}>', self.class, to_a.inspect[1..-2])
     ensure
       ids.pop
     end
@@ -646,18 +642,18 @@ class Set
 
   alias to_s inspect
 
-  def pretty_print(pp)  # :nodoc:
-    pp.text sprintf('#<%s: {', self.class.name)
-    pp.nest(1) {
-      pp.seplist(self) { |o|
+  def pretty_print(pp) # :nodoc:
+    pp.text format('#<%s: {', self.class.name)
+    pp.nest(1) do
+      pp.seplist(self) do |o|
         pp.pp o
-      }
-    }
-    pp.text "}>"
+      end
+    end
+    pp.text '}>'
   end
 
-  def pretty_print_cycle(pp)    # :nodoc:
-    pp.text sprintf('#<%s: {%s}>', self.class.name, empty? ? '' : '...')
+  def pretty_print_cycle(pp) # :nodoc:
+    pp.text format('#<%s: {%s}>', self.class.name, empty? ? '' : '...')
   end
 end
 
@@ -695,12 +691,12 @@ class SortedSet < Set
   @@mutex = Mutex.new
 
   class << self
-    def [](*ary)        # :nodoc:
+    def [](*ary) # :nodoc:
       new(ary)
     end
 
-    def setup   # :nodoc:
-      @@setup and return
+    def setup # :nodoc:
+      @@setup && return
 
       @@mutex.synchronize do
         # a hack to shut up warning
@@ -709,7 +705,7 @@ class SortedSet < Set
         begin
           require 'rbtree'
 
-          module_eval <<-END, __FILE__, __LINE__+1
+          module_eval <<-END, __FILE__, __LINE__ + 1
             def initialize(*args)
               @hash = RBTree.new
               super
@@ -722,7 +718,7 @@ class SortedSet < Set
             alias << add
           END
         rescue LoadError
-          module_eval <<-END, __FILE__, __LINE__+1
+          module_eval <<-END, __FILE__, __LINE__ + 1
             def initialize(*args)
               @keys = nil
               super
