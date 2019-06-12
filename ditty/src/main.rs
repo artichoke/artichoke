@@ -24,6 +24,9 @@ fn main() -> Result<(), MrbError> {
     rubygems::sinatra::init(&interp)?;
     rubygems::tilt::init(&interp)?;
 
-    println!("{}", interp.eval(APP)?.to_s_debug());
+    match interp.eval(APP) {
+        Ok(app) => println!("{:?}", app),
+        Err(err) => println!("{}", err),
+    };
     Ok(())
 }
