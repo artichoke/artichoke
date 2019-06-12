@@ -26,11 +26,10 @@ impl Rack {
             .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))?;
         // patches
         if path == "rack/builder.rb" {
-            let bad = "TOPLEVEL_BINDING";
-            let good = "nil";
-            let string = String::from_utf8(contents)
+            let mut string = String::from_utf8(contents)
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
-            Ok(string.replace(bad, good).into_bytes())
+            string = string.replace("TOPLEVEL_BINDING", "nil");
+            Ok(string.into_bytes())
         } else {
             Ok(contents)
         }
