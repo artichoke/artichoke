@@ -8,9 +8,11 @@ pub mod monitor;
 pub mod ostruct;
 pub mod set;
 pub mod strscan;
+mod stubs;
 pub mod uri;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+    stubs::patch(interp)?;
     delegate::init(interp)?;
     forwardable::init(interp)?;
     json::init(interp)?;
