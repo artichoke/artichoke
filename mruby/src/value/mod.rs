@@ -201,6 +201,28 @@ impl Value {
         self.funcall::<String, _, _>("inspect", &[])
             .unwrap_or_else(|_| "<unknown>".to_owned())
     }
+
+    /// Consume `self` and try to convert `self` to type `T`.
+    ///
+    /// If you do not want to consume this [`Value`], use [`Value::itself`].
+    pub fn try_into<T>(self) -> Result<T, MrbError>
+    where
+        T: TryFromMrb<Self, From = types::Ruby, To = types::Rust>,
+    {
+        let interp = Rc::clone(&self.interp);
+        unsafe { T::try_from_mrb(&interp, self) }.map_err(MrbError::ConvertToRust)
+    }
+
+    /// Call `#itself` on this [`Value`] and try to convert the result to type
+    /// `T`.
+    ///
+    /// If you want to consume this [`Value`], use [`Value::try_into`].
+    pub fn itself<T>(self) -> Result<T, MrbError>
+    where
+        T: TryFromMrb<Self, From = types::Ruby, To = types::Rust>,
+    {
+        self.funcall::<T, _, _>("itself", &[])
+    }
 }
 
 impl ValueLike for Value {

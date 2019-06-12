@@ -69,7 +69,7 @@ end
                 ",
             )
             .unwrap();
-        let result = result.funcall::<Vec<i64>, _, _>("itself", &[]);
+        let result = result.try_into::<Vec<i64>>();
         assert_eq!(result, Ok(vec![1, 2, 3, 4, 5, 6]));
     }
 }

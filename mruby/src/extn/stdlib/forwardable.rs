@@ -19,7 +19,6 @@ pub struct Forwardable;
 mod tests {
     use crate::eval::MrbEval;
     use crate::interpreter::Interpreter;
-    use crate::value::ValueLike;
 
     #[test]
     #[allow(clippy::shadow_unrelated)]
@@ -47,7 +46,7 @@ r.record_number(0)
                 "#,
             )
             .unwrap()
-            .funcall::<i64, _, _>("itself", &[])
+            .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 4);
         interp
@@ -68,25 +67,21 @@ r.record_number(0)
                 "#,
             )
             .unwrap()
-            .funcall::<i64, _, _>("itself", &[])
+            .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 1);
-        let result = interp
-            .eval("r.size")
-            .unwrap()
-            .funcall::<i64, _, _>("itself", &[])
-            .unwrap();
+        let result = interp.eval("r.size").unwrap().try_into::<i64>().unwrap();
         assert_eq!(result, 3);
         let result = interp
             .eval("r << 4")
             .unwrap()
-            .funcall::<Vec<i64>, _, _>("itself", &[])
+            .try_into::<Vec<i64>>()
             .unwrap();
         assert_eq!(result, vec![1, 2, 3, 4]);
         let result = interp
             .eval("r.map { |x| x * 2 }")
             .unwrap()
-            .funcall::<Vec<i64>, _, _>("itself", &[])
+            .try_into::<Vec<i64>>()
             .unwrap();
         assert_eq!(result, vec![2, 4, 6, 8]);
     }
@@ -132,7 +127,7 @@ out << q.first
                 "#,
             )
             .unwrap()
-            .funcall::<Vec<Option<String>>, _, _>("itself", &[])
+            .try_into::<Vec<Option<String>>>()
             .unwrap();
         assert_eq!(
             result,
@@ -180,7 +175,7 @@ end
                 "#,
             )
             .unwrap()
-            .funcall::<bool, _, _>("itself", &[])
+            .try_into::<bool>()
             .unwrap();
         assert!(result);
     }

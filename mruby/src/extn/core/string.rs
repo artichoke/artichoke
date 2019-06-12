@@ -24,7 +24,6 @@ mod tests {
     use crate::eval::MrbEval;
     use crate::extn::core::string;
     use crate::interpreter::Interpreter;
-    use crate::value::ValueLike;
 
     #[test]
     fn string_equal_squiggle() {
@@ -32,12 +31,9 @@ mod tests {
         string::patch(&interp).expect("string init");
 
         let value = interp.eval(r#""cat o' 9 tails" =~ /\d/"#).unwrap();
-        assert_eq!(
-            value.funcall::<Option<i64>, _, _>("itself", &[]),
-            Ok(Some(7))
-        );
+        assert_eq!(value.try_into::<Option<i64>>(), Ok(Some(7)));
         let value = interp.eval(r#""cat o' 9 tails" =~ 9"#).unwrap();
-        assert_eq!(value.funcall::<Option<i64>, _, _>("itself", &[]), Ok(None));
+        assert_eq!(value.try_into::<Option<i64>>(), Ok(None));
     }
 
     #[test]
@@ -49,7 +45,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/[aeiou](.)\1/]")
                 .unwrap()
-                .funcall::<String, _, _>("itself", &[])
+                .try_into::<String>()
                 .unwrap(),
             "ell"
         );
@@ -57,7 +53,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/[aeiou](.)\1/, 0]")
                 .unwrap()
-                .funcall::<String, _, _>("itself", &[])
+                .try_into::<String>()
                 .unwrap(),
             "ell"
         );
@@ -65,7 +61,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/[aeiou](.)\1/, 1]")
                 .unwrap()
-                .funcall::<String, _, _>("itself", &[])
+                .try_into::<String>()
                 .unwrap(),
             "l"
         );
@@ -73,7 +69,7 @@ mod tests {
             interp
                 .eval(r"'hello there'[/[aeiou](.)\1/, 2]")
                 .unwrap()
-                .funcall::<Option<String>, _, _>("itself", &[])
+                .try_into::<Option<String>>()
                 .unwrap(),
             None
         );
@@ -81,7 +77,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'non_vowel']")
                 .unwrap()
-                .funcall::<String, _, _>("itself", &[])
+                .try_into::<String>()
                 .unwrap(),
             "l"
         );
@@ -89,7 +85,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'vowel']")
                 .unwrap()
-                .funcall::<String, _, _>("itself", &[])
+                .try_into::<String>()
                 .unwrap(),
             "e"
         );
