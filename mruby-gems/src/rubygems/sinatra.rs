@@ -21,9 +21,36 @@ struct Sinatra;
 impl Sinatra {
     fn contents<T: AsRef<str>>(path: T) -> Result<Vec<u8>, MrbError> {
         let path = path.as_ref();
-        Self::get(path)
+        let contents = Self::get(path)
             .map(Cow::into_owned)
-            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))
+            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))?;
+        if path == "sinatra/base.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("defined?(RUBY_IGNORE_CALLERS)", "false");
+            string = string.replace("defined? Encoding", "false");
+            string = string.replace("defined?(RUBY_ENGINE)", "false");
+            string = string.replace(
+                r#"class_eval("def #{name}() #{content}; end")"#,
+                r#"class_eval { eval("def #{name}() #{content}; end") }"#,
+            );
+            string = string.replace(
+                r"map!    { |line| line.split(/:(?=\d|in )/, 3)[0,keep] }.",
+                r"map!    { |line| line.split(':', 3)[0,keep] }",
+            );
+            string = string.replace(
+                "reject { |file, *_| CALLERS_TO_IGNORE.any? { |pattern| file =~ pattern } }",
+                "# reject { |file, *_| CALLERS_TO_IGNORE.any? { |pattern| file =~ pattern } }",
+            );
+            string = string.replace("(not_set = true)", "NOT_SET");
+            string = string.replace(
+                "raise ArgumentError if block and !not_set",
+                "not_set = value.not_set?; raise ArgumentError if block and !not_set",
+            );
+            Ok(string.into_bytes())
+        } else {
+            Ok(contents)
+        }
     }
 }
 

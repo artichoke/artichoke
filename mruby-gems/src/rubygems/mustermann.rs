@@ -47,10 +47,26 @@ impl Mustermann {
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
             string = string.replace("private_constant", "# private_constant");
             Ok(string.into_bytes())
+        } else if path == "mustermann/ast/boundaries.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace(
+                "def self.set_boundaries(ast, string: nil, start: 0, stop: string.length)",
+                "def self.set_boundaries(ast, string: nil, start: 0, stop: nil); stop = string&.length if stop.nil?"
+            );
+            Ok(string.into_bytes())
         } else if path == "mustermann/ast/compiler.rb" {
             let mut string = String::from_utf8(contents)
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
             string = string.replace("private_constant", "# private_constant");
+            Ok(string.into_bytes())
+        } else if path == "mustermann/ast/node.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace(
+                "Object.const_get(const_name) if Object.const_defined?(const_name)",
+                "Object.const_get(const_name) rescue NameError nil",
+            );
             Ok(string.into_bytes())
         } else if path == "mustermann/ast/translator.rb" {
             let mut string = String::from_utf8(contents)
@@ -60,6 +76,24 @@ impl Mustermann {
                 "translator = Class.new(self); translator.class_eval(&block); translator.new",
             );
             string = string.replace("private_constant", "# private_constant");
+            Ok(string.into_bytes())
+        } else if path == "mustermann/equality_map.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("defined?(ObjectSpace::WeakMap)", "false");
+            Ok(string.into_bytes())
+        } else if path == "mustermann/regexp_based.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("super", "super(string, **options)");
+            Ok(string.into_bytes())
+        } else if path == "mustermann/regular.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace(
+                r#"string = $1 if string.to_s =~ /\A\(\?\-mix\:(.*)\)\Z/ && string.inspect == "/#$1/""#,
+                r#"match = /\A\(\?\-mix\:(.*)\)\Z/.match(string.to_s); string = match[1] if match && string.inspect == "/#{match[1]}/""#
+            );
             Ok(string.into_bytes())
         } else if path == "mustermann/sinatra/parser.rb" {
             let mut string = String::from_utf8(contents)

@@ -34,6 +34,7 @@ impl Rack {
             let mut string = String::from_utf8(contents)
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
             string = string.replace("defined?(Process::CLOCK_MONOTONIC)", "false");
+            string = string.replace("::File::SEPARATOR, ::File::ALT_SEPARATOR", "'/', nil");
             Ok(string.into_bytes())
         } else {
             Ok(contents)
