@@ -30,6 +30,11 @@ impl Rack {
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
             string = string.replace("TOPLEVEL_BINDING", "nil");
             Ok(string.into_bytes())
+        } else if path == "rack/utils.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("defined?(Process::CLOCK_MONOTONIC)", "false");
+            Ok(string.into_bytes())
         } else {
             Ok(contents)
         }
