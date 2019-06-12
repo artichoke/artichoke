@@ -1,5 +1,4 @@
 #![feature(integer_atomics)]
-#![feature(proc_macro_hygiene, decl_macro)]
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
 
