@@ -278,7 +278,7 @@ impl Regexp {
             // `__regexp_source` accessor.
             args.pattern.funcall::<String, _, _>("__regexp_source", &[])
         } else {
-            args.pattern.funcall::<String, _, _>("itself", &[])
+            args.pattern.try_into()
         };
         let options = args.options.unwrap_or_default();
         let pattern = unwrap_or_raise!(interp, pattern, interp.nil().inner());

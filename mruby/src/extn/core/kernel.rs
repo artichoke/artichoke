@@ -140,7 +140,6 @@ mod tests {
     use crate::file::MrbFile;
     use crate::interpreter::{Interpreter, Mrb};
     use crate::load::MrbLoadSources;
-    use crate::value::ValueLike;
     use crate::MrbError;
 
     // Integration test for `Kernel::require`:
@@ -266,25 +265,25 @@ mod tests {
         let result = interp
             .eval("catch(1) { 123 }")
             .unwrap()
-            .funcall::<i64, _, _>("itself", &[])
+            .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 123);
         let result = interp
             .eval("catch(1) { throw(1, 456) }")
             .unwrap()
-            .funcall::<i64, _, _>("itself", &[])
+            .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 456);
         let result = interp
             .eval("catch(1) { throw(1) }")
             .unwrap()
-            .funcall::<Option<i64>, _, _>("itself", &[])
+            .try_into::<Option<i64>>()
             .unwrap();
         assert_eq!(result, None);
         let result = interp
             .eval("catch(1) {|x| x + 2 }")
             .unwrap()
-            .funcall::<i64, _, _>("itself", &[])
+            .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 3);
 
@@ -303,7 +302,7 @@ end
             "#,
             )
             .unwrap()
-            .funcall::<i64, _, _>("itself", &[])
+            .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 456);
         let result = interp
@@ -321,7 +320,7 @@ end
             "#,
             )
             .unwrap()
-            .funcall::<i64, _, _>("itself", &[])
+            .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 123);
     }
