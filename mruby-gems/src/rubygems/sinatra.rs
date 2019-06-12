@@ -32,7 +32,7 @@ impl Sinatra {
             string = string.replace("defined?(RUBY_ENGINE)", "false");
             string = string.replace(
                 r#"class_eval("def #{name}() #{content}; end")"#,
-                r#"class_eval { eval("def #{name}() #{content}; end") }"#,
+                r#"eval("def #{name}() #{content}; end")"#,
             );
             string = string.replace(
                 r"map!    { |line| line.split(/:(?=\d|in )/, 3)[0,keep] }.",
@@ -47,6 +47,15 @@ impl Sinatra {
                 "raise ArgumentError if block and !not_set",
                 "not_set = value.not_set?; raise ArgumentError if block and !not_set",
             );
+            string = string.replace("File.fnmatch(pattern, t)", "false");
+            string = string.replace("builder.use ShowExceptions", "# builder.use ShowExceptions");
+            string = string.replace(
+                "dump_errors! boom if settings.dump_errors?",
+                "# dump_errors! boom if settings.dump_errors?",
+            );
+            string = string.replace("&& File.expand_path(File.dirname(app_file))", "");
+            string = string.replace("root && File.join(root, 'public')", "root + '/public'");
+            string = string.replace("public_folder && File.exist?(public_folder)", "false");
             Ok(string.into_bytes())
         } else {
             Ok(contents)

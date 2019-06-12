@@ -21,9 +21,22 @@ struct RackProtection;
 impl RackProtection {
     fn contents<T: AsRef<str>>(path: T) -> Result<Vec<u8>, MrbError> {
         let path = path.as_ref();
-        Self::get(path)
+        let contents = Self::get(path)
             .map(Cow::into_owned)
-            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))
+            .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))?;
+        // patches
+        if path == "rack/protection/base.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace(
+                "define_method(:default_options) { super().merge(options) }",
+                "# define_method(:default_options) { super().merge(options) }",
+            );
+            string = string.replace("defined? SecureRandom", "true");
+            Ok(string.into_bytes())
+        } else {
+            Ok(contents)
+        }
     }
 }
 
