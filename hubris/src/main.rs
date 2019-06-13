@@ -25,7 +25,7 @@ pub fn main() -> Result<(), i32> {
 pub fn spawn() -> Result<(), Error> {
     Builder::default()
         .add_mount(
-            Mount::from_rackup("ditty", APP, "/")
+            Mount::from_rackup("echo", APP, "/")
                 .with_init(Box::new(interp_init))
                 .with_shared_interpreter(Some(150)),
         )
