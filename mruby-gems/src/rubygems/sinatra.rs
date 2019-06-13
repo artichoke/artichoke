@@ -56,6 +56,10 @@ impl Sinatra {
             string = string.replace("&& File.expand_path(File.dirname(app_file))", "");
             string = string.replace("root && File.join(root, 'public')", "root + '/public'");
             string = string.replace("public_folder && File.exist?(public_folder)", "false");
+            string = string.replace(
+                "rescue\n      @env['sinatra.error.params'] = @params\n      raise",
+                "rescue => e; @env['sinatra.error.params'] = @params; raise e",
+            );
             Ok(string.into_bytes())
         } else {
             Ok(contents)
