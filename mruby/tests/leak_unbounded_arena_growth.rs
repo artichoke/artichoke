@@ -1,3 +1,4 @@
+#![cfg(not(target_os = "macos"))]
 #![deny(clippy::all, clippy::pedantic)]
 #![deny(warnings, intra_doc_link_resolution_failure)]
 
