@@ -102,8 +102,7 @@ impl MrbEval for Mrb {
             data: sys::mrb_value,
         ) -> sys::mrb_value {
             let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = mem::transmute::<*const c_void, *const ProtectArgs>(ptr);
-            let args = Rc::from_raw(args);
+            let args = Rc::from_raw(ptr as *const ProtectArgs);
 
             // Execute arbitrary ruby code, which may generate objects with C
             // APIs if backed by Rust functions.

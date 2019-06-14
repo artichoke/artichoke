@@ -30,9 +30,7 @@ mrb_int mrb_sys_fixnum_to_cint(mrb_value value) { return mrb_fixnum(value); }
 
 mrb_float mrb_sys_float_to_cdouble(mrb_value value) { return mrb_float(value); }
 
-void *mrb_sys_cptr_ptr(mrb_value value) {
-  return mrb_cptr(value);
-}
+void *mrb_sys_cptr_ptr(mrb_value value) { return mrb_cptr(value); }
 
 struct RBasic *mrb_sys_basic_ptr(mrb_value value) {
   return mrb_basic_ptr(value);
@@ -74,13 +72,13 @@ mrb_value mrb_sys_float_value(struct mrb_state *mrb, mrb_float value) {
   return mrb_float_value(mrb, value);
 }
 
-mrb_value mrb_sys_cptr_value(struct mrb_state* mrb, void* ptr) {
-    mrb_value value;
-    (void)(mrb);
+mrb_value mrb_sys_cptr_value(struct mrb_state *mrb, void *ptr) {
+  mrb_value value;
+  (void)(mrb);
 
-    SET_CPTR_VALUE(mrb, value, ptr);
+  SET_CPTR_VALUE(mrb, value, ptr);
 
-    return value;
+  return value;
 }
 
 mrb_value mrb_sys_obj_value(void *p) { return mrb_obj_value(p); }

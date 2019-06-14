@@ -1,6 +1,5 @@
 use log::warn;
 use std::ffi::{c_void, CString};
-use std::mem;
 use std::rc::Rc;
 
 use crate::def::{ClassLike, Define};
@@ -74,8 +73,7 @@ pub trait RubyException: 'static + Sized {
             data: sys::mrb_value,
         ) -> sys::mrb_value {
             let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = mem::transmute::<*const c_void, *const ProtectArgs>(ptr);
-            let args = Rc::from_raw(args);
+            let args = Rc::from_raw(ptr as *const ProtectArgs);
 
             let e_class_cstring = CString::new(args.e_class.as_str());
             let e_class = if let Ok(e_class) = e_class_cstring {

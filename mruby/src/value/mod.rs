@@ -46,7 +46,7 @@ impl ProtectArgs {
             slf: self.slf,
             func: self.func,
             args: self.args,
-            block: block,
+            block,
         }
     }
 }
@@ -71,8 +71,7 @@ where
             data: sys::mrb_value,
         ) -> sys::mrb_value {
             let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = mem::transmute::<*const c_void, *const ProtectArgs>(ptr);
-            let args = Rc::from_raw(args);
+            let args = Rc::from_raw(ptr as *const ProtectArgs);
 
             let sym = sys::mrb_intern(mrb, args.func.as_ptr() as *const i8, args.func.len());
             let value = sys::mrb_funcall_argv(
@@ -163,8 +162,7 @@ where
             data: sys::mrb_value,
         ) -> sys::mrb_value {
             let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = mem::transmute::<*const c_void, *const ProtectArgsWithBlock>(ptr);
-            let args = Rc::from_raw(args);
+            let args = Rc::from_raw(ptr as *const ProtectArgsWithBlock);
 
             let sym = sys::mrb_intern(mrb, args.func.as_ptr() as *const i8, args.func.len());
             let value = sys::mrb_funcall_with_block(

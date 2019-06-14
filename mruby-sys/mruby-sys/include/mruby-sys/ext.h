@@ -71,7 +71,7 @@ mrb_value mrb_sys_fixnum_value(mrb_int value);
 
 mrb_value mrb_sys_float_value(struct mrb_state *mrb, mrb_float value);
 
-mrb_value mrb_sys_cptr_value(struct mrb_state* mrb, void* ptr);
+mrb_value mrb_sys_cptr_value(struct mrb_state *mrb, void *ptr);
 
 mrb_value mrb_sys_obj_value(void *p);
 
