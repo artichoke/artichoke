@@ -1,5 +1,7 @@
 use log::{error, trace, warn};
-use std::ffi::CString;
+use std::ffi::{c_void, CString};
+use std::mem;
+use std::rc::Rc;
 
 use crate::exception::{LastError, MrbExceptionHandler};
 use crate::interpreter::Mrb;
@@ -8,6 +10,20 @@ use crate::value::Value;
 use crate::MrbError;
 
 const TOP_FILENAME: &str = "(eval)";
+
+struct ProtectArgs {
+    ctx: *mut sys::mrbc_context,
+    code: Vec<u8>,
+}
+
+impl ProtectArgs {
+    fn new(interp: &Mrb, code: &[u8]) -> Self {
+        Self {
+            ctx: interp.borrow().ctx,
+            code: code.to_vec(),
+        }
+    }
+}
 
 /// `EvalContext` is used to manipulate the state of a wrapped
 /// [`sys::mrb_state`]. [`Mrb`] maintains a stack of `EvalContext`s and
@@ -81,6 +97,34 @@ impl MrbEval for Mrb {
     where
         T: AsRef<[u8]>,
     {
+        unsafe extern "C" fn run_protected(
+            mrb: *mut sys::mrb_state,
+            data: sys::mrb_value,
+        ) -> sys::mrb_value {
+            let ptr = sys::mrb_sys_cptr_ptr(data);
+            let args = Rc::from_raw(ptr as *const ProtectArgs);
+
+            // Execute arbitrary ruby code, which may generate objects with C
+            // APIs if backed by Rust functions.
+            //
+            // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
+            // which means the most recent value returned by eval will always be
+            // considered live by the GC.
+            sys::mrb_load_nstring_cxt(
+                mrb,
+                args.code.as_ptr() as *const i8,
+                args.code.len(),
+                args.ctx,
+            )
+        }
+        // Ensure the borrow is out of scope by the time we eval code since
+        // Rust-backed files and types may need to mutably borrow the `Mrb` to
+        // get access to the underlying `MrbState`.
+        let (mrb, ctx) = {
+            let borrow = self.borrow();
+            (borrow.mrb, borrow.ctx)
+        };
+
         // Grab the persistent `EvalContext` from the context on the `State` or
         // the root context if the stack is empty.
         let context = {
@@ -92,14 +136,6 @@ impl MrbEval for Mrb {
             }
         };
 
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Mrb` to
-        // get access to the underlying `MrbState`.
-        let (mrb, ctx) = {
-            let borrow = self.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
-
         if let Ok(cfilename) = CString::new(context.filename.to_owned()) {
             unsafe {
                 sys::mrbc_filename(mrb, ctx, cfilename.as_ptr() as *const i8);
@@ -108,18 +144,20 @@ impl MrbEval for Mrb {
             warn!("Could not set {} as mrc context filename", context.filename);
         }
 
-        let code = code.as_ref();
+        let args = Rc::new(ProtectArgs::new(self, code.as_ref()));
         trace!("Evaling code on {}", mrb.debug());
-        let result = unsafe {
-            // Execute arbitrary ruby code, which may generate objects with C
-            // APIs if backed by Rust functions.
-            //
-            // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
-            // which means the most recent value returned by eval will always be
-            // considered live by the GC.
-            sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx)
+        let value = unsafe {
+            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
+            let mut state = mem::uninitialized::<u8>();
+
+            let value = sys::mrb_protect(mrb, Some(run_protected), data, &mut state as *mut u8);
+            if state != 0 {
+                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+                sys::mrb_sys_raise_current_exception(mrb);
+            }
+            value
         };
-        let value = Value::new(self, result);
+        let value = Value::new(self, value);
 
         match self.last_error() {
             LastError::Some(exception) => {

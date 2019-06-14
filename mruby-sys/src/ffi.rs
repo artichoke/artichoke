@@ -3309,6 +3309,9 @@ extern "C" {
     pub fn mrb_sys_float_to_cdouble(value: mrb_value) -> mrb_float;
 }
 extern "C" {
+    pub fn mrb_sys_cptr_ptr(value: mrb_value) -> *mut ::std::os::raw::c_void;
+}
+extern "C" {
     pub fn mrb_sys_basic_ptr(value: mrb_value) -> *mut RBasic;
 }
 extern "C" {
@@ -3340,6 +3343,9 @@ extern "C" {
 }
 extern "C" {
     pub fn mrb_sys_float_value(mrb: *mut mrb_state, value: mrb_float) -> mrb_value;
+}
+extern "C" {
+    pub fn mrb_sys_cptr_value(mrb: *mut mrb_state, ptr: *mut ::std::os::raw::c_void) -> mrb_value;
 }
 extern "C" {
     pub fn mrb_sys_obj_value(p: *mut ::std::os::raw::c_void) -> mrb_value;
