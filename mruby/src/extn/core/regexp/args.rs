@@ -64,6 +64,24 @@ impl RegexpNew {
     }
 }
 
+pub struct Pattern {
+    pub pattern: String,
+}
+
+impl Pattern {
+    pub unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+        let pattern = mem::uninitialized::<sys::mrb_value>();
+        let mut argspec = vec![];
+        argspec
+            .write_all(format!("{}\0", sys::specifiers::OBJECT,).as_bytes())
+            .map_err(|_| MrbError::ArgSpec)?;
+        sys::mrb_get_args(interp.borrow().mrb, argspec.as_ptr() as *const i8, &pattern);
+        let pattern = String::try_from_mrb(&interp, Value::new(&interp, pattern))
+            .map_err(MrbError::ConvertToRust)?;
+        Ok(Self { pattern })
+    }
+}
+
 pub struct Rest {
     pub rest: Vec<Value>,
 }

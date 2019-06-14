@@ -1,15 +1,19 @@
 use onig::{Regex, RegexOptions, SearchOptions, Syntax};
+use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
+use crate::eval::MrbEval;
 use crate::extn::core::error::{ArgumentError, RubyException};
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
+use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::MrbError;
 
 mod args;
+mod syntax;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     let regexp =
@@ -27,6 +31,12 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         .add_self_method("compile", Regexp::compile, sys::mrb_args_rest());
     regexp
         .borrow_mut()
+        .add_self_method("escape", Regexp::escape, sys::mrb_args_req(1));
+    regexp
+        .borrow_mut()
+        .add_self_method("union", Regexp::union, sys::mrb_args_rest());
+    regexp
+        .borrow_mut()
         .add_method("match?", Regexp::is_match, sys::mrb_args_req_and_opt(1, 1));
     regexp
         .borrow_mut()
@@ -36,11 +46,32 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         .add_method("=~", Regexp::equal_squiggle, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
+        .add_method("===", Regexp::equal_equal_equal, sys::mrb_args_req(1));
+    regexp
+        .borrow_mut()
+        .add_method("names", Regexp::names, sys::mrb_args_none());
+    regexp.borrow_mut().add_method(
+        "named_captures",
+        Regexp::named_captures,
+        sys::mrb_args_none(),
+    );
+    regexp
+        .borrow_mut()
+        .add_method("options", Regexp::options, sys::mrb_args_none());
+    regexp
+        .borrow_mut()
         .add_method("to_s", Regexp::to_s, sys::mrb_args_none());
     regexp
         .borrow_mut()
-        .add_method("inspect", Regexp::to_s, sys::mrb_args_none());
+        .add_method("inspect", Regexp::inspect, sys::mrb_args_none());
     regexp.borrow().define(&interp)?;
+    // TODO: Add proper constant defs to class::Spec and undo this hack.
+    interp.eval(format!(
+        "class Regexp; IGNORECASE = {}; EXTENDED = {}; MULTILINE = {}; end",
+        Regexp::IGNORECASE,
+        Regexp::EXTENDED,
+        Regexp::MULTILINE
+    ))?;
     let match_data = interp.borrow_mut().def_class::<MatchData>(
         "MatchData",
         None,
@@ -62,6 +93,14 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     match_data
         .borrow_mut()
         .add_method("end", MatchData::end, sys::mrb_args_req(1));
+    match_data
+        .borrow_mut()
+        .add_method("length", MatchData::length, sys::mrb_args_none());
+    match_data.borrow_mut().add_method(
+        "named_captures",
+        MatchData::named_captures,
+        sys::mrb_args_none(),
+    );
     match_data.borrow().define(&interp)?;
     Ok(())
 }
@@ -252,6 +291,19 @@ impl Regexp {
         Regex::with_options(&self.pattern, self.options.flags(), Syntax::default()).ok()
     }
 
+    pub fn new(pattern: String) -> Result<Self, MrbError> {
+        let regexp = Self {
+            pattern,
+            options: Options::default(),
+            encoding: Encoding::default(),
+        };
+        if regexp.regex().is_none() {
+            Err(MrbError::Exec("Invalid Regexp pattern".to_owned()))
+        } else {
+            Ok(regexp)
+        }
+    }
+
     unsafe extern "C" fn initialize(
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
@@ -274,14 +326,21 @@ impl Regexp {
             sys::mrb_obj_is_kind_of(interp.borrow().mrb, args.pattern.inner(), regexp_class) != 0;
 
         let pattern = if pattern_is_regexp {
-            // TODO: this doesn't work because we have not implemented the
-            // `__regexp_source` accessor.
-            args.pattern.funcall::<String, _, _>("__regexp_source", &[])
+            let regexp = unwrap_or_raise!(
+                interp,
+                Self::try_from_ruby(&interp, &Value::new(&interp, args.pattern.inner())),
+                interp.nil().inner()
+            );
+            let borrow = regexp.borrow();
+            borrow.pattern.clone()
         } else {
-            args.pattern.try_into()
+            unwrap_or_raise!(
+                interp,
+                args.pattern.try_into::<String>(),
+                interp.nil().inner()
+            )
         };
         let options = args.options.unwrap_or_default();
-        let pattern = unwrap_or_raise!(interp, pattern, interp.nil().inner());
         let data = Self {
             pattern,
             options,
@@ -299,7 +358,47 @@ impl Regexp {
         mut _slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::RegexpNew::extract(&interp),
+            interp.nil().inner()
+        );
+        let spec = class_spec_or_raise!(interp, Self);
+        let regexp_class = unwrap_or_raise!(
+            interp,
+            spec.borrow()
+                .value(&interp)
+                .ok_or_else(|| MrbError::NotDefined("Regexp".to_owned())),
+            interp.nil().inner()
+        );
+        let mut new_args = vec![];
+        let pattern = if let Ok(pattern) =
+            String::try_from_mrb(&interp, Value::new(&interp, args.pattern.inner()))
+        {
+            Value::from_mrb(&interp, pattern.as_str())
+        } else {
+            args.pattern
+        };
+        new_args.push(pattern);
+        new_args.push(Value::from_mrb(
+            &interp,
+            args.options.map(|opts| i64::from(opts.flags().bits())),
+        ));
+        new_args.push(Value::from_mrb(&interp, args.encoding.map(Encoding::flags)));
+
+        unwrap_value_or_raise!(interp, regexp_class.funcall::<Value, _, _>("new", new_args))
+    }
+
+    unsafe extern "C" fn escape(
+        mrb: *mut sys::mrb_state,
+        mut _slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(
+            interp,
+            args::Pattern::extract(&interp),
+            interp.nil().inner()
+        );
         let spec = class_spec_or_raise!(interp, Self);
         let regexp_class = unwrap_or_raise!(
             interp,
@@ -309,10 +408,59 @@ impl Regexp {
             interp.nil().inner()
         );
 
+        let pattern = syntax::escape(args.pattern.as_str());
         unwrap_value_or_raise!(
             interp,
-            regexp_class.funcall::<Value, _, _>("new", args.rest)
+            regexp_class.funcall::<Value, _, _>("new", &[Value::from_mrb(&interp, pattern)])
         )
+    }
+
+    unsafe extern "C" fn union(
+        mrb: *mut sys::mrb_state,
+        mut _slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let mut args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+        let pattern = if args.rest.is_empty() {
+            "(?!)".to_owned()
+        } else {
+            let patterns = if args.rest.len() == 1 {
+                let arg = args.rest.remove(0);
+                if arg.ruby_type() == Ruby::Array {
+                    unwrap_or_raise!(interp, arg.try_into::<Vec<Value>>(), interp.nil().inner())
+                } else {
+                    args.rest
+                }
+            } else {
+                args.rest
+            };
+            let mut raw_patterns = vec![];
+            for pattern in patterns {
+                if pattern.ruby_type() == Ruby::String {
+                    raw_patterns.push(unwrap_or_raise!(
+                        interp,
+                        pattern.try_into::<String>(),
+                        interp.nil().inner()
+                    ));
+                } else {
+                    let regexp = unwrap_or_raise!(
+                        interp,
+                        Self::try_from_ruby(&interp, &pattern),
+                        interp.nil().inner()
+                    );
+                    raw_patterns.push(regexp.borrow().pattern.clone());
+                }
+            }
+            raw_patterns.join("|")
+        };
+
+        // TODO: Preserve Regexp options per the docs if the args are Regexps.
+        if let Ok(data) = Self::new(pattern) {
+            unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
+        } else {
+            // Regexp is invalid.
+            ArgumentError::raise(&interp, "Cannot parse Regexp")
+        }
     }
 
     unsafe extern "C" fn is_match(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
@@ -405,8 +553,103 @@ impl Regexp {
         }
     }
 
+    unsafe extern "C" fn equal_equal_equal(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, args::Match::extract(&interp), interp.nil().inner());
+
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+
+        let is_match = regexp.borrow().regex().and_then(|regexp| {
+            regexp.search_with_options(
+                &args.string,
+                args.pos.unwrap_or_default(),
+                args.string.len(),
+                SearchOptions::SEARCH_OPTION_NONE,
+                None,
+            )
+        });
+        interp.bool(is_match.is_some()).inner()
+    }
+
+    unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+
+        let borrow = regexp.borrow();
+        if let Some(regexp) = borrow.regex() {
+            let names = regexp
+                .capture_names()
+                .map(|(name, _)| name.to_owned())
+                .collect::<Vec<_>>();
+            Value::from_mrb(&interp, names).inner()
+        } else {
+            interp.nil().inner()
+        }
+    }
+
+    unsafe extern "C" fn named_captures(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+
+        let borrow = regexp.borrow();
+        if let Some(regexp) = borrow.regex() {
+            let mut map = HashMap::default();
+            for (name, pos) in regexp.capture_names() {
+                map.insert(
+                    name.to_owned(),
+                    pos.iter().map(|pos| i64::from(*pos)).collect::<Vec<_>>(),
+                );
+            }
+            Value::from_mrb(&interp, map).inner()
+        } else {
+            interp.nil().inner()
+        }
+    }
+
+    unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = regexp.borrow();
+        Value::from_mrb(&interp, borrow.options.flags().bits()).inner()
+    }
+
     #[allow(clippy::wrong_self_convention)]
     unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let s = regexp.borrow().pattern.to_string();
+        Value::from_mrb(&interp, s).inner()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let regexp = unwrap_or_raise!(
             interp,
@@ -674,6 +917,58 @@ impl MatchData {
             args::MatchIndex::StartLen(_, _) => {
                 ArgumentError::raise(&interp, "must pass index or symbol")
             }
+        }
+    }
+
+    unsafe extern "C" fn length(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        let captures = borrow
+            .regexp
+            .regex()
+            .and_then(|regexp| regexp.captures(borrow.string.as_str()));
+        if let Some(captures) = captures {
+            unwrap_value_or_raise!(
+                interp,
+                i64::try_from(captures.len()).map(|len| interp.fixnum(len))
+            )
+        } else {
+            interp.fixnum(0).inner()
+        }
+    }
+
+    unsafe extern "C" fn named_captures(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        let captures = borrow
+            .regexp
+            .regex()
+            .and_then(|regexp| regexp.captures(borrow.string.as_str()));
+        if let (Some(captures), Some(regex)) = (captures, borrow.regexp.regex()) {
+            let mut map = HashMap::default();
+            for (name, index) in regex.capture_names() {
+                if let Some(group) = captures.at(usize::try_from(index[0]).unwrap_or_default()) {
+                    map.insert(name.to_owned(), group.to_owned());
+                }
+            }
+            Value::from_mrb(&interp, map).inner()
+        } else {
+            interp.nil().inner()
         }
     }
 }
