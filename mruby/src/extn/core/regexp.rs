@@ -96,6 +96,12 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     match_data
         .borrow_mut()
         .add_method("length", MatchData::length, sys::mrb_args_none());
+    match_data
+        .borrow_mut()
+        .add_method("size", MatchData::length, sys::mrb_args_none());
+    match_data
+        .borrow_mut()
+        .add_method("captures", MatchData::captures, sys::mrb_args_none());
     match_data.borrow_mut().add_method(
         "named_captures",
         MatchData::named_captures,
@@ -934,6 +940,32 @@ impl MatchData {
             )
         } else {
             interp.fixnum(0).inner()
+        }
+    }
+
+    unsafe extern "C" fn captures(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        let captures = borrow
+            .regexp
+            .regex()
+            .and_then(|regexp| regexp.captures(borrow.string.as_str()));
+        if let Some(captures) = captures {
+            let mut vec = vec![];
+            for (group, subcapture) in captures.iter().enumerate() {
+                if group > 0 {
+                    vec.push(subcapture.map(String::from));
+                }
+            }
+            Value::from_mrb(&interp, vec).inner()
+        } else {
+            interp.nil().inner()
         }
     }
 
