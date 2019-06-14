@@ -129,6 +129,7 @@ mod tests {
     use crate::eval::MrbEval;
     use crate::exception::Exception;
     use crate::interpreter::Interpreter;
+    use crate::value::ValueLike;
     use crate::MrbError;
 
     #[test]
@@ -152,5 +153,38 @@ mod tests {
         let result = interp.eval("def bad; /./o; end").map(|_| ());
         let expected = Exception::new("SyntaxError", "waffles", None, "SyntaxError: syntax error");
         assert_eq!(result, Err(MrbError::Exec(expected.to_string())));
+    }
+
+    #[test]
+    fn raise_does_not_panic_or_segfault() {
+        let interp = Interpreter::create().expect("mrb init");
+        let _ = interp.eval(r#"raise 'foo'"#);
+        let _ = interp.eval(r#"raise 'foo'"#);
+        let _ = interp.eval(r#"eval "raise 'foo'""#);
+        let _ = interp.eval(r#"eval "raise 'foo'""#);
+        let _ = interp.eval(r#"require 'foo'"#);
+        let _ = interp.eval(r#"require 'foo'"#);
+        let _ = interp.eval(r#"eval "require 'foo'""#);
+        let _ = interp.eval(r#"eval "require 'foo'""#);
+        let _ = interp.eval(r#"Regexp.compile(2)"#);
+        let _ = interp.eval(r#"Regexp.compile(2)"#);
+        let _ = interp.eval(r#"eval "Regexp.compile(2)""#);
+        let _ = interp.eval(r#"eval "Regexp.compile(2)""#);
+        let _ = interp.eval(
+            r#"
+def fail
+  begin
+    require 'foo'
+  rescue LoadError
+    require 'forwardable'
+  end
+end
+
+fail
+            "#,
+        );
+        let kernel = interp.eval(r#"Kernel"#).unwrap();
+        let _ = kernel.funcall::<(), _, _>("raise", &[]);
+        let _ = kernel.funcall::<(), _, _>("raise", &[]);
     }
 }

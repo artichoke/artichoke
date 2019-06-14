@@ -1,11 +1,26 @@
 use log::warn;
-use std::ffi::CString;
+use std::ffi::{c_void, CString};
+use std::mem;
 use std::rc::Rc;
 
 use crate::def::{ClassLike, Define};
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::MrbError;
+
+struct ProtectArgs {
+    e_class: String,
+    message: String,
+}
+
+impl ProtectArgs {
+    fn new(e_class: &str, message: &str) -> Self {
+        Self {
+            e_class: e_class.to_owned(),
+            message: message.to_owned(),
+        }
+    }
+}
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     let exception = interp
@@ -49,35 +64,76 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
 /// [`module::Spec`](crate::module::Spec).
 pub trait RubyException: 'static + Sized {
     /// Raise the `Exception` defined with this type with a message.
+    ///
+    /// **Warning**: This function calls [`sys::mrb_sys_raise`] which modifies
+    /// the stack with `longjmp`. mruby expects raise to be called at some stack
+    /// frame below an eval. If this is not the case, mruby will segfault.
     fn raise(interp: &Mrb, message: &str) -> sys::mrb_value {
+        unsafe extern "C" fn run_protected(
+            mrb: *mut sys::mrb_state,
+            data: sys::mrb_value,
+        ) -> sys::mrb_value {
+            let ptr = sys::mrb_sys_cptr_ptr(data);
+            let args = mem::transmute::<*const c_void, *const ProtectArgs>(ptr);
+            let args = Rc::from_raw(args);
+
+            let e_class_cstring = CString::new(args.e_class.as_str());
+            let e_class = if let Ok(e_class) = e_class_cstring {
+                e_class
+            } else {
+                warn!(
+                    "unable to raise {} with message {}",
+                    args.e_class, args.message
+                );
+                return sys::mrb_sys_nil_value();
+            };
+            let message_cstring = CString::new(args.message.as_str());
+            let message = if let Ok(message) = message_cstring {
+                message
+            } else {
+                warn!(
+                    "unable to raise {} with message {}",
+                    args.e_class, args.message
+                );
+                return sys::mrb_sys_nil_value();
+            };
+            sys::mrb_sys_raise(mrb, e_class.as_ptr(), message.as_ptr());
+            warn!("raised {} with message {}", args.e_class, args.message);
+            sys::mrb_sys_nil_value()
+        }
+        unsafe extern "C" fn run_ensure(
+            _mrb: *mut sys::mrb_state,
+            _data: sys::mrb_value,
+        ) -> sys::mrb_value {
+            sys::mrb_sys_nil_value()
+        }
+        // Ensure the borrow is out of scope by the time we eval code since
+        // Rust-backed files and types may need to mutably borrow the `Mrb` to
+        // get access to the underlying `MrbState`.
+        let (mrb, _ctx) = {
+            let borrow = interp.borrow();
+            (borrow.mrb, borrow.ctx)
+        };
+
         let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
             spec
         } else {
             return interp.nil().inner();
         };
         let message = Self::message(message);
-        if let Ok(msg) = CString::new(message.as_str()) {
-            unsafe {
-                sys::mrb_sys_raise(
-                    interp.borrow().mrb,
-                    spec.borrow().cstring().as_ptr() as *const i8,
-                    msg.as_ptr(),
-                )
-            };
-            warn!(
-                "raised {} '{}' on {:?}",
-                spec.borrow().name(),
-                message,
-                interp.borrow()
+        let args = Rc::new(ProtectArgs::new(spec.borrow().name(), message.as_str()));
+        unsafe {
+            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
+            let value = sys::mrb_ensure(
+                mrb,
+                Some(run_protected),
+                data,
+                Some(run_ensure),
+                sys::mrb_sys_nil_value(),
             );
-        } else {
-            warn!(
-                "unable to raise {} with message {}",
-                spec.borrow().name(),
-                message
-            );
+            sys::mrb_sys_raise_current_exception(mrb);
+            value
         }
-        interp.nil().inner()
     }
 
     fn message(message: &str) -> String {

@@ -45,6 +45,8 @@ mrb_int mrb_sys_fixnum_to_cint(mrb_value value);
 
 mrb_float mrb_sys_float_to_cdouble(mrb_value value);
 
+void *mrb_sys_cptr_ptr(mrb_value value);
+
 struct RBasic *mrb_sys_basic_ptr(mrb_value value);
 
 struct RObject *mrb_sys_obj_ptr(mrb_value value);
@@ -68,6 +70,8 @@ mrb_value mrb_sys_true_value(void);
 mrb_value mrb_sys_fixnum_value(mrb_int value);
 
 mrb_value mrb_sys_float_value(struct mrb_state *mrb, mrb_float value);
+
+mrb_value mrb_sys_cptr_value(struct mrb_state* mrb, void* ptr);
 
 mrb_value mrb_sys_obj_value(void *p);
 

@@ -1,6 +1,8 @@
 use log::{error, trace, warn};
 use std::convert::TryFrom;
+use std::ffi::c_void;
 use std::fmt;
+use std::mem;
 use std::rc::Rc;
 
 use crate::convert::{FromMrb, TryFromMrb};
@@ -17,6 +19,38 @@ pub mod types;
 /// Defined in `vm.c`.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 
+struct ProtectArgs {
+    slf: sys::mrb_value,
+    func: String,
+    args: Vec<sys::mrb_value>,
+}
+
+struct ProtectArgsWithBlock {
+    slf: sys::mrb_value,
+    func: String,
+    args: Vec<sys::mrb_value>,
+    block: sys::mrb_value,
+}
+
+impl ProtectArgs {
+    fn new(slf: sys::mrb_value, func: &str, args: Vec<sys::mrb_value>) -> Self {
+        Self {
+            slf,
+            func: func.to_owned(),
+            args,
+        }
+    }
+
+    fn with_block(self, block: sys::mrb_value) -> ProtectArgsWithBlock {
+        ProtectArgsWithBlock {
+            slf: self.slf,
+            func: self.func,
+            args: self.args,
+            block: block,
+        }
+    }
+}
+
 #[allow(clippy::module_name_repetitions)]
 pub trait ValueLike
 where
@@ -26,17 +60,43 @@ where
 
     fn interp(&self) -> &Mrb;
 
-    fn funcall<T, M, A>(&self, method: M, args: A) -> Result<T, MrbError>
+    fn funcall<T, M, A>(&self, func: M, args: A) -> Result<T, MrbError>
     where
         T: TryFromMrb<Value, From = types::Ruby, To = types::Rust>,
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
-        // Scope the borrow because we might require a borrow_mut in Rust code
-        // we call into via the Ruby VM.
-        let interp = self.interp();
-        let mrb = { interp.borrow().mrb };
-        let _arena = interp.create_arena_savepoint();
+        unsafe extern "C" fn run_protected(
+            mrb: *mut sys::mrb_state,
+            data: sys::mrb_value,
+        ) -> sys::mrb_value {
+            let ptr = sys::mrb_sys_cptr_ptr(data);
+            let args = mem::transmute::<*const c_void, *const ProtectArgs>(ptr);
+            let args = Rc::from_raw(args);
+
+            let sym = sys::mrb_intern(mrb, args.func.as_ptr() as *const i8, args.func.len());
+            let value = sys::mrb_funcall_argv(
+                mrb,
+                args.slf,
+                sym,
+                // This will always unwrap because we've already checked that we
+                // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less
+                // than i64 max value.
+                i64::try_from(args.args.len()).unwrap_or_default(),
+                args.args.as_ptr(),
+            );
+            sys::mrb_sys_raise_current_exception(mrb);
+            value
+        }
+        // Ensure the borrow is out of scope by the time we eval code since
+        // Rust-backed files and types may need to mutably borrow the `Mrb` to
+        // get access to the underlying `MrbState`.
+        let (mrb, _ctx) = {
+            let borrow = self.interp().borrow();
+            (borrow.mrb, borrow.ctx)
+        };
+
+        let _arena = self.interp().create_arena_savepoint();
 
         let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
@@ -50,25 +110,26 @@ where
                 max: MRB_FUNCALL_ARGC_MAX,
             });
         }
-        let method = method.as_ref();
         trace!(
             "Calling {}#{} with {} args",
             types::Ruby::from(self.inner()),
-            method,
+            func.as_ref(),
             args.len()
         );
-        // This will always unwrap because we've already checked that we have
-        // fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than i64 max
-        // value.
-        let size = i64::try_from(args.len()).unwrap_or_default();
+        let args = Rc::new(ProtectArgs::new(self.inner(), func.as_ref(), args));
         let value = unsafe {
-            let sym = sys::mrb_intern(mrb, method.as_ptr() as *const i8, method.len());
-            let value = sys::mrb_funcall_argv(mrb, self.inner(), sym, size, args.as_ptr());
-            let value = Value::new(interp, value);
-            T::try_from_mrb(interp, value).map_err(MrbError::ConvertToRust)
-        };
+            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
+            let mut state = mem::uninitialized::<u8>();
 
-        match interp.last_error() {
+            let value = sys::mrb_protect(mrb, Some(run_protected), data, &mut state as *mut u8);
+            if state != 0 {
+                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+            }
+            value
+        };
+        let value = Value::new(self.interp(), value);
+
+        match self.interp().last_error() {
             LastError::Some(exception) => {
                 warn!("runtime error with exception backtrace: {}", exception);
                 Err(MrbError::Exec(exception.to_string()))
@@ -77,21 +138,58 @@ where
                 error!("failed to extract exception after runtime error: {}", err);
                 Err(err)
             }
-            LastError::None => value,
+            LastError::None if value.is_unreachable() => {
+                // Unreachable values are internal to the mruby interpreter and
+                // interacting with them via the C API is unspecified and may
+                // result in a segfault.
+                //
+                // See: https://github.com/mruby/mruby/issues/4460
+                Err(MrbError::UnreachableValue(value.inner().tt))
+            }
+            LastError::None => unsafe {
+                T::try_from_mrb(self.interp(), value).map_err(MrbError::ConvertToRust)
+            },
         }
     }
 
-    fn funcall_with_block<T, M, A>(&self, method: M, args: A, block: Value) -> Result<T, MrbError>
+    fn funcall_with_block<T, M, A>(&self, func: M, args: A, block: Value) -> Result<T, MrbError>
     where
         T: TryFromMrb<Value, From = types::Ruby, To = types::Rust>,
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
-        // Scope the borrow because we might require a borrow_mut in Rust code
-        // we call into via the Ruby VM.
-        let interp = self.interp();
-        let mrb = { interp.borrow().mrb };
-        let _arena = interp.create_arena_savepoint();
+        unsafe extern "C" fn run_protected(
+            mrb: *mut sys::mrb_state,
+            data: sys::mrb_value,
+        ) -> sys::mrb_value {
+            let ptr = sys::mrb_sys_cptr_ptr(data);
+            let args = mem::transmute::<*const c_void, *const ProtectArgsWithBlock>(ptr);
+            let args = Rc::from_raw(args);
+
+            let sym = sys::mrb_intern(mrb, args.func.as_ptr() as *const i8, args.func.len());
+            let value = sys::mrb_funcall_with_block(
+                mrb,
+                args.slf,
+                sym,
+                // This will always unwrap because we've already checked that we
+                // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less
+                // than i64 max value.
+                i64::try_from(args.args.len()).unwrap_or_default(),
+                args.args.as_ptr(),
+                args.block,
+            );
+            sys::mrb_sys_raise_current_exception(mrb);
+            value
+        }
+        // Ensure the borrow is out of scope by the time we eval code since
+        // Rust-backed files and types may need to mutably borrow the `Mrb` to
+        // get access to the underlying `MrbState`.
+        let (mrb, _ctx) = {
+            let borrow = self.interp().borrow();
+            (borrow.mrb, borrow.ctx)
+        };
+
+        let _arena = self.interp().create_arena_savepoint();
 
         let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
@@ -105,32 +203,27 @@ where
                 max: MRB_FUNCALL_ARGC_MAX,
             });
         }
-        let method = method.as_ref();
         trace!(
             "Calling {}#{} with {} args and block",
             types::Ruby::from(self.inner()),
-            method,
+            func.as_ref(),
             args.len()
         );
-        // This will always unwrap because we've already checked that we have
-        // fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than i64 max
-        // value.
-        let size = i64::try_from(args.len()).unwrap_or_default();
+        let args =
+            Rc::new(ProtectArgs::new(self.inner(), func.as_ref(), args).with_block(block.inner()));
         let value = unsafe {
-            let sym = sys::mrb_intern(mrb, method.as_ptr() as *const i8, method.len());
-            let value = sys::mrb_funcall_with_block(
-                mrb,
-                self.inner(),
-                sym,
-                size,
-                args.as_ptr(),
-                block.inner(),
-            );
-            let value = Value::new(interp, value);
-            T::try_from_mrb(interp, value).map_err(MrbError::ConvertToRust)
-        };
+            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
+            let mut state = mem::uninitialized::<u8>();
 
-        match interp.last_error() {
+            let value = sys::mrb_protect(mrb, Some(run_protected), data, &mut state as *mut u8);
+            if state != 0 {
+                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+            }
+            value
+        };
+        let value = Value::new(self.interp(), value);
+
+        match self.interp().last_error() {
             LastError::Some(exception) => {
                 warn!("runtime error with exception backtrace: {}", exception);
                 Err(MrbError::Exec(exception.to_string()))
@@ -139,7 +232,17 @@ where
                 error!("failed to extract exception after runtime error: {}", err);
                 Err(err)
             }
-            LastError::None => value,
+            LastError::None if value.is_unreachable() => {
+                // Unreachable values are internal to the mruby interpreter and
+                // interacting with them via the C API is unspecified and may
+                // result in a segfault.
+                //
+                // See: https://github.com/mruby/mruby/issues/4460
+                Err(MrbError::UnreachableValue(value.inner().tt))
+            }
+            LastError::None => unsafe {
+                T::try_from_mrb(self.interp(), value).map_err(MrbError::ConvertToRust)
+            },
         }
     }
 
