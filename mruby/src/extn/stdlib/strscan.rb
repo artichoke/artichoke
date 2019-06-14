@@ -28,14 +28,14 @@ class StringScanner
   end
 
   def beginning_of_line?
-    return true if @pos.zero?
+    return true if @charpos.zero?
 
-    @string[@pos - 1] == "\n"
+    @string[@charpos - 1] == "\n"
   end
   alias bol? beginning_of_line?
 
   def captures
-    @last_match.captures
+    @last_match&.captures
   end
 
   def check(pattern)
@@ -55,11 +55,18 @@ class StringScanner
   alias empty? eos?
 
   def exist?(pattern)
-    !@string[@charpos..-1].match(pattern).nil?
+    match = @string[@charpos..-1].match(pattern)
+    return nil if match.nil?
+
+    match.end(0)
   end
 
   def get_byte # rubocop:disable Naming/AccessorMethodName
-    raise NotImplementedError, 'byte math'
+    return nil if eos?
+
+    byte, *_bytes = @string[@charpos..-1].bytes
+    @charpos += 1
+    [byte].pack('c*')
   end
   alias getbyte get_byte
 
@@ -68,23 +75,29 @@ class StringScanner
   end
 
   def inspect
+    return "#<#{self.class.name} fin>" if eos?
+
     before = @string.reverse[@string.length - @charpos, 5].reverse
-    before = "\"...#{before}\"" unless before&.empty?
+    before = " \"...#{before}\"" unless before&.empty?
     after = @string[@charpos, 5]
     after = "\"#{after}...\"" unless after&.empty?
-    "#<#{self.class.name} #{charpos}/#{@string.length} #{before} @ #{after} >"
+    "#<#{self.class.name} #{charpos}/#{@string.length}#{before} @ #{after}>"
   end
 
   def match?(pattern)
-    match = pattern.match(@string[@pos..-1])
-    return nil if match.nil?
-    return nil if match.begin(0).positive?
+    match = pattern.match(@string[@charpos..-1])
+    if match.nil? || match.begin(0).positive?
+      @last_match = nil
+      return nil
+    end
 
     @last_match = match
-    match.end(0) - match.end(0)
+    match.end(0) - match.begin(0)
   end
 
   def matched
+    return nil if @last_match.nil?
+
     @last_match[0]
   end
 
@@ -93,7 +106,7 @@ class StringScanner
   end
 
   def matched_size
-    !matched&.length
+    matched&.length
   end
 
   def peek(len)
@@ -102,12 +115,13 @@ class StringScanner
   alias peep peek
 
   def pos
-    @string[0..@charpos].bytes.length
+    @string[0...@charpos].bytes.length
   end
   alias pointer pos
 
-  def pos=(_pointer)
-    raise NotImplementedError, 'byte math'
+  def pos=(pointer)
+    @charpos = @string.bytes[0, pointer].pack('c*').length
+    pointer # rubocop:disable Lint/Void
   end
 
   def post_match
@@ -120,7 +134,7 @@ class StringScanner
     return nil if @last_match.nil?
 
     match_len = @last_match.end(0) - @last_match.begin(0)
-    @string[0..@charpos - 1 - match_len]
+    @string[0...@charpos - match_len]
   end
 
   def reset
@@ -226,8 +240,9 @@ class StringScanner
   end
 
   def terminate
-    @pos = @string.length
+    @charpos = @string.length
     @last_match = nil
+    self
   end
   alias clear terminate
 
