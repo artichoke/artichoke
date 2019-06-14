@@ -813,14 +813,11 @@ impl MatchData {
                         } else {
                             Some(usize::try_from(index).expect("positive i64 must be usize"))
                         };
-                        Value::from_mrb(
-                            &interp,
-                            index
-                                .and_then(|index| captures.pos(index))
-                                .map(|pos| pos.0)
-                                .and_then(|pos| i64::try_from(pos).ok()),
-                        )
-                        .inner()
+                        let index = index
+                            .and_then(|index| captures.pos(index))
+                            .map(|pos| borrow.string[0..pos.0].chars().count())
+                            .and_then(|pos| i64::try_from(pos).ok());
+                        Value::from_mrb(&interp, index).inner()
                     }
                     None => interp.nil().inner(),
                 }
@@ -840,7 +837,7 @@ impl MatchData {
                             regexp
                                 .captures(borrow.string.as_str())
                                 .and_then(|captures| captures.pos(index))
-                                .map(|pos| pos.0)
+                                .map(|pos| borrow.string[0..pos.0].chars().count())
                                 .and_then(|pos| i64::try_from(pos).ok())
                         })
                     });
@@ -881,14 +878,11 @@ impl MatchData {
                         } else {
                             Some(usize::try_from(index).expect("positive i64 must be usize"))
                         };
-                        Value::from_mrb(
-                            &interp,
-                            index
-                                .and_then(|index| captures.pos(index))
-                                .map(|pos| pos.1)
-                                .and_then(|pos| i64::try_from(pos).ok()),
-                        )
-                        .inner()
+                        let index = index
+                            .and_then(|index| captures.pos(index))
+                            .map(|pos| borrow.string[0..pos.1].chars().count())
+                            .and_then(|pos| i64::try_from(pos).ok());
+                        Value::from_mrb(&interp, index).inner()
                     }
                     None => interp.nil().inner(),
                 }
@@ -908,7 +902,7 @@ impl MatchData {
                             regexp
                                 .captures(borrow.string.as_str())
                                 .and_then(|captures| captures.pos(index))
-                                .map(|pos| pos.1)
+                                .map(|pos| borrow.string[0..pos.1].chars().count())
                                 .and_then(|pos| i64::try_from(pos).ok())
                         })
                     });
