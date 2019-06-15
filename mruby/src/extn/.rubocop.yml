@@ -3,6 +3,8 @@ AllCops:
   DisplayCopNames: true
   Exclude:
     - stdlib/spec/**/*.rb
+    - test/mspec.rb
+    - test/mspec/**/*.rb
 Metrics:
   Enabled: false
 Style/Documentation:

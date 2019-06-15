@@ -14,7 +14,6 @@ class MSpecErrors
   end
 end
 
-
 def run_specs(*files)
   errors = MSpecErrors.new
   files = files.flatten
