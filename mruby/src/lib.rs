@@ -46,7 +46,7 @@
 //! both.
 //!
 //! mruby crate implements
-//! [`Kernel#require` and `Kernel#relative_require`](extn::core::kernel::Kernel) which
+//! [`Kernel#require` and `Kernel#require_relative`](extn::core::kernel::Kernel) which
 //! loads sources from the VFS. For Ruby sources, the source is loaded from the VFS
 //! as a `Vec<u8>` and evaled with [`MrbEval::eval_with_context`](eval::MrbEval::eval_with_context). For
 //! Rust sources, [`MrbFile::require`](file::MrbFile::require) methods are stored as custom

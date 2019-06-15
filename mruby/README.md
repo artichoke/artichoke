@@ -42,7 +42,7 @@ that are either pure Ruby, implemented with a Rust [`MrbFile`](src/file.rs), or
 both.
 
 mruby crate implements
-[`Kernel#require` and `Kernel#relative_require`](src/extn/core/kernel.rs) which
+[`Kernel#require` and `Kernel#require_relative`](src/extn/core/kernel.rs) which
 loads sources from the VFS. For Ruby sources, the source is loaded from the VFS
 as a `Vec<u8>` and evaled with [`MrbEval::eval_with_context`](src/eval.rs). For
 Rust sources, [`MrbFile::require`](src/file.rs) methods are stored as custom

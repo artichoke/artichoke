@@ -85,6 +85,9 @@ pub trait MrbEval {
     where
         T: AsRef<[u8]>;
 
+    /// Peek at the top of the [`EvalContext`] stack.
+    fn peek_context(&self) -> Option<EvalContext>;
+
     /// Push an [`EvalContext`] onto the stack.
     fn push_context(&self, context: EvalContext);
 
@@ -188,6 +191,11 @@ impl MrbEval for Mrb {
         let result = self.eval(code.as_ref());
         self.pop_context();
         result
+    }
+
+    fn peek_context(&self) -> Option<EvalContext> {
+        let api = self.borrow();
+        api.context_stack.last().cloned()
     }
 
     fn push_context(&self, context: EvalContext) {
