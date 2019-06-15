@@ -1,5 +1,6 @@
 use log::trace;
 use mruby_vfs::FileSystem;
+use path_abs::PathAbs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -42,9 +43,14 @@ impl Kernel {
         }
         let files = vec![path.join(filename), path.join(format!("{}.rb", filename))];
         for path in files {
+            // canonicalize path (remove '.' and '..' components).
+            let path = match PathAbs::new(path) {
+                Ok(path) => path,
+                Err(_) => continue,
+            };
             let is_file = {
                 let api = interp.borrow();
-                api.vfs.is_file(&path)
+                api.vfs.is_file(path.as_path())
             };
             if !is_file {
                 // If no paths are files in the VFS, then the require does
@@ -53,13 +59,15 @@ impl Kernel {
             }
             let metadata = {
                 let api = interp.borrow();
-                api.vfs.metadata(&path).unwrap_or_else(VfsMetadata::new)
+                api.vfs
+                    .metadata(path.as_path())
+                    .unwrap_or_else(VfsMetadata::new)
             };
             // If a file is already required, short circuit.
             if metadata.is_already_required() {
                 return interp.bool(false).inner();
             }
-            let context = if let Some(filename) = &path.to_str() {
+            let context = if let Some(filename) = path.as_path().to_str() {
                 EvalContext::new(filename)
             } else {
                 EvalContext::new("(require)")
@@ -77,7 +85,7 @@ impl Kernel {
             }
             let contents = {
                 let api = interp.borrow();
-                api.vfs.read_file(&path)
+                api.vfs.read_file(path.as_path())
             };
             if let Ok(contents) = contents {
                 unwrap_value_or_raise!(
@@ -94,7 +102,7 @@ impl Kernel {
             let api = interp.borrow();
             unwrap_or_raise!(
                 interp,
-                api.vfs.set_metadata(&path, metadata),
+                api.vfs.set_metadata(path.as_path(), metadata),
                 interp.nil().inner()
             );
             success = true;
