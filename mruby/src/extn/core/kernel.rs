@@ -209,6 +209,19 @@ mod tests {
     }
 
     #[test]
+    fn require_relative_with_dotted_path() {
+        let interp = Interpreter::create().expect("mrb init");
+        interp
+            .def_rb_source_file("/foo/bar/source.rb", "require_relative '../bar.rb'")
+            .expect("def file");
+        interp
+            .def_rb_source_file("/foo/bar.rb", "# a source file")
+            .expect("def file");
+        let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
+        assert!(unsafe { bool::try_from_mrb(&interp, result).expect("convert") });
+    }
+
+    #[test]
     fn require_directory() {
         let interp = Interpreter::create().expect("mrb init");
         let result = interp.eval("require '/src'").map(|_| ());
