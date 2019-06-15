@@ -453,5 +453,6 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         include_str!("mspec/utils/warnings.rb"),
     )?;
     interp.def_rb_source_file("mspec/version.rb", include_str!("mspec/version.rb"))?;
+    interp.def_rb_source_file("/src/test/spec_runner.rb", include_str!("spec_runner.rb"))?;
     Ok(())
 }
