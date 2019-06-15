@@ -49,8 +49,8 @@ module MSpec
   end
 
   def self.process
-    STDOUT.puts RUBY_DESCRIPTION
-    STDOUT.flush
+    # STDOUT.puts RUBY_DESCRIPTION
+    # STDOUT.flush
 
     actions :start
     files
@@ -85,7 +85,7 @@ module MSpec
       setup_env
       store :file, file
       actions :load
-      protect("loading #{file}") { Kernel.load file }
+      protect("loading #{file}") { Kernel.require file }
       actions :unload
     end
   end
@@ -103,8 +103,6 @@ module MSpec
     begin
       @env.instance_eval(&block)
       return true
-    rescue SystemExit => e
-      raise e
     rescue Exception => exc
       register_exit 1
       actions :exception, ExceptionState.new(current && current.state, location, exc)
