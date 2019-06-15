@@ -288,11 +288,7 @@ module URI
     # Unless a URI::Parser is defined, DEFAULT_PARSER is used.
     #
     def parser
-      if !defined?(@parser) || !@parser
-        DEFAULT_PARSER
-      else
-        @parser || DEFAULT_PARSER
-      end
+      @parser || DEFAULT_PARSER
     end
 
     # Replaces self by other URI object.
@@ -550,7 +546,7 @@ module URI
 
     # Escapes 'user:password' +v+ based on RFC 1738 section 3.1.
     def escape_userpass(v)
-      parser.escape(v, /[@:\/]/o) # RFC 1738 section 3.1 #/
+      parser.escape(v, /[@:\/]/) # RFC 1738 section 3.1 #/
     end
     private :escape_userpass
 
