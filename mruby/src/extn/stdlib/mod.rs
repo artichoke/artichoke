@@ -6,6 +6,7 @@ pub mod forwardable;
 pub mod monitor;
 pub mod ostruct;
 pub mod set;
+pub mod strscan;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     delegate::init(interp)?;
@@ -13,5 +14,6 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     monitor::init(interp)?;
     ostruct::init(interp)?;
     set::init(interp)?;
+    strscan::init(interp)?;
     Ok(())
 }
