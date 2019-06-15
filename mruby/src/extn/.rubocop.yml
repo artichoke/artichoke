@@ -1,6 +1,8 @@
 AllCops:
   TargetRubyVersion: 2.5
   DisplayCopNames: true
+  Exclude:
+    - stdlib/spec/**/*.rb
 Metrics:
   Enabled: false
 Style/Documentation:
