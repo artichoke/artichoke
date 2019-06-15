@@ -748,6 +748,7 @@ dependencies = [
  "path_abs 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck_macros 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rust-embed 4.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
