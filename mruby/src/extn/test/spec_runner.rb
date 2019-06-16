@@ -1,6 +1,23 @@
 # frozen_string_literal: true
 
+class StubIO
+  def method_missing(method, *args, &block)
+    super
+  rescue NoMethodError
+    nil
+  end
+
+  def respond_to_missing?(method, include_private = false)
+    true || super
+  end
+end
+
+STDOUT = StubIO.new
+STDERR = StubIO.new
+RUBY_EXE = '/usr/bin/true'
+
 require 'mspec'
+require 'mspec/utils/script'
 
 class ErrorCollector
   attr_reader :errors
@@ -19,6 +36,7 @@ def run_specs(*specs)
   error_collector = ErrorCollector.new
   MSpec.register_files(specs)
   MSpec.register(:exception, error_collector)
+  MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
 
   MSpec.process
 

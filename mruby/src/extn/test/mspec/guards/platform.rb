@@ -6,7 +6,7 @@ class PlatformGuard < SpecGuard
       case name
       when :rubinius
         RUBY_ENGINE.start_with?('rbx')
-      when :ruby, :jruby, :truffleruby, :ironruby, :macruby, :maglev, :topaz, :opal
+      when :ruby, :jruby, :truffleruby, :ironruby, :macruby, :maglev, :topaz, :opal, :mruby
         RUBY_ENGINE.start_with?(name.to_s)
       else
         raise "unknown implementation #{name}"
@@ -40,7 +40,11 @@ class PlatformGuard < SpecGuard
     os?(:windows)
   end
 
-  WORD_SIZE = 1.size * 8
+  WORD_SIZE = begin
+    1.size * 8
+  rescue NoMethodError
+    4 * 8
+  end
 
   POINTER_SIZE = begin
     require 'rbconfig/sizeof'
