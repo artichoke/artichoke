@@ -2,8 +2,8 @@
 
 require 'mspec'
 
-class MSpecErrors
-  attr_accessor :errors
+class ErrorCollector
+  attr_reader :errors
 
   def initialize
     @errors = []
@@ -14,20 +14,22 @@ class MSpecErrors
   end
 end
 
-def run_specs(*files)
-  errors = MSpecErrors.new
-  files = files.flatten
-  MSpec.register_files(files)
-  MSpec.register :exception, errors
+def run_specs(*specs)
+  specs = specs.flatten
+  error_collector = ErrorCollector.new
+  MSpec.register_files(specs)
+  MSpec.register(:exception, error_collector)
+
   MSpec.process
 
-  failures = errors.errors.map do |state|
-    message = "#{state.exception.message} in #{state.it}\n\nBacktrace:\n"
-    state.exception.backtrace.each do |frame|
-      message << "\n#{frame}"
-    end
-    message
-  end
+  return true if error_collector.errors.length.zero?
 
-  raise failures.join("\n\n") if failures.length.positive?
+  message = "\n\n\e[31m#{error_collector.errors.length} spec failures:\e[0m"
+  error_collector.errors.each do |state|
+    message << "\n\n\e[31m#{state.message} in #{state.it}\e[0m\n\n"
+    message << state.backtrace
+  end
+  message << "\n\n\e[31m#{error_collector.errors.length} spec failures.\e[0m\n"
+
+  raise message
 end
