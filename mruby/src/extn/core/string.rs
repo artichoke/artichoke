@@ -1,13 +1,15 @@
+use byteorder::{NativeEndian, ReadBytesExt};
+use std::io::Cursor;
+
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::def::{ClassLike, Define};
 use crate::eval::MrbEval;
+use crate::extn::core::error::{ArgumentError, RubyException};
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::MrbError;
 use log::trace;
-
-mod args;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     let string = interp
@@ -16,10 +18,7 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     interp.eval(include_str!("string.rb"))?;
     string
         .borrow_mut()
-        .add_method("scan", RString::scan, sys::mrb_args_req(1));
-    string
-        .borrow_mut()
-        .add_method("-@", RString::unary_minus, sys::mrb_args_none());
+        .add_method("ord", RString::ord, sys::mrb_args_none());
     string.borrow().define(interp).map_err(|_| MrbError::New)?;
     trace!("Patched String onto interpreter");
     Ok(())
@@ -29,45 +28,26 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
 pub struct RString;
 
 impl RString {
-    unsafe extern "C" fn scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, args::Scan::extract(&interp), interp.nil().inner());
-
-        let search = unwrap_or_raise!(
-            interp,
-            String::try_from_mrb(&interp, Value::new(&interp, slf)),
-            interp.nil().inner()
-        );
-
-        let parts = args.regexp.regex().map(|regex| {
-            regex
-                .find_iter(search.as_str())
-                .map(|(start, end)| search[start..end].to_owned())
-                .collect::<Vec<_>>()
-        });
-        Value::from_mrb(&interp, parts).inner()
-    }
-
-    /// Returns a frozen, possibly pre-existing copy of the string.
-    ///
-    /// The string will be deduplicated as long as it is not tainted, or has any
-    /// instance variables set on it.
-    ///
-    /// <https://ruby-doc.org/core-2.6.3/String.html#method-i-2D-40>
-    unsafe extern "C" fn unary_minus(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
+    unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let s = unwrap_or_raise!(
             interp,
             String::try_from_mrb(&interp, Value::new(&interp, slf)),
             interp.nil().inner()
         );
-        unwrap_value_or_raise!(
-            interp,
-            Value::from_mrb(&interp, s).funcall::<Value, _, _>("freeze", &[])
-        )
+        if let Some(first) = s.chars().next() {
+            // One UTF-8 character, which are at most 32 bits.
+            let mut buf = [0; 4];
+            first.encode_utf8(&mut buf);
+            let mut reader = Cursor::new(buf);
+            if let Ok(ord) = reader.read_u32::<NativeEndian>() {
+                Value::from_mrb(&interp, ord).inner()
+            } else {
+                interp.nil().inner()
+            }
+        } else {
+            ArgumentError::raise(&interp, "empty string")
+        }
     }
 }
 // Tests from String core docs in Ruby 2.6.3
