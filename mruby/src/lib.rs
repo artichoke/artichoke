@@ -195,7 +195,7 @@
 //! `unsafe` Rust functions.
 
 #[cfg(test)]
-#[macro_use]
+#[cfg_attr(test, macro_use)]
 extern crate rust_embed;
 
 use std::error;

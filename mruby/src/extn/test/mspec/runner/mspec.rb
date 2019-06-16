@@ -49,8 +49,8 @@ module MSpec
   end
 
   def self.process
-    # STDOUT.puts RUBY_DESCRIPTION
-    # STDOUT.flush
+    STDOUT.puts RUBY_DESCRIPTION
+    STDOUT.flush
 
     actions :start
     files
