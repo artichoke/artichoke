@@ -85,6 +85,7 @@ class String
     capture = args.fetch(1, 0)
     regexp.match(self)&.[](capture)
   end
+  alias slice []
 
   alias __old_element_assignment []=
   def []=(*args)
