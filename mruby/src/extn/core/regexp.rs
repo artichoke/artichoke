@@ -109,6 +109,12 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     );
     match_data
         .borrow_mut()
+        .add_method("pre_match", MatchData::pre_match, sys::mrb_args_none());
+    match_data
+        .borrow_mut()
+        .add_method("post_match", MatchData::post_match, sys::mrb_args_none());
+    match_data
+        .borrow_mut()
         .add_method("to_a", MatchData::captures, sys::mrb_args_none());
     match_data.borrow().define(&interp)?;
     Ok(())
@@ -438,7 +444,7 @@ impl Regexp {
                 if arg.ruby_type() == Ruby::Array {
                     unwrap_or_raise!(interp, arg.try_into::<Vec<Value>>(), interp.nil().inner())
                 } else {
-                    args.rest
+                    vec![arg]
                 }
             } else {
                 args.rest
@@ -446,18 +452,20 @@ impl Regexp {
             let mut raw_patterns = vec![];
             for pattern in patterns {
                 if pattern.ruby_type() == Ruby::String {
-                    raw_patterns.push(unwrap_or_raise!(
+                    let pattern = unwrap_or_raise!(
                         interp,
                         pattern.try_into::<String>(),
                         interp.nil().inner()
-                    ));
+                    );
+                    raw_patterns.push(syntax::escape(pattern.as_str()));
                 } else {
                     let regexp = unwrap_or_raise!(
                         interp,
                         Self::try_from_ruby(&interp, &pattern),
                         interp.nil().inner()
                     );
-                    raw_patterns.push(regexp.borrow().pattern.clone());
+                    let pattern = syntax::escape(regexp.borrow().pattern.as_str());
+                    raw_patterns.push(pattern);
                 }
             }
             raw_patterns.join("|")
@@ -1040,6 +1048,52 @@ impl MatchData {
                 }
             }
             Value::from_mrb(&interp, map).inner()
+        } else {
+            interp.nil().inner()
+        }
+    }
+
+    unsafe extern "C" fn pre_match(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        let captures = borrow
+            .regexp
+            .regex()
+            .and_then(|regexp| regexp.captures(borrow.string.as_str()));
+        if let Some((start, _)) = captures.and_then(|captures| captures.pos(0)) {
+            Value::from_mrb(&interp, borrow.string[..start].to_owned()).inner()
+        } else {
+            interp.nil().inner()
+        }
+    }
+
+    unsafe extern "C" fn post_match(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+
+        let data = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            interp.nil().inner()
+        );
+        let borrow = data.borrow();
+        let captures = borrow
+            .regexp
+            .regex()
+            .and_then(|regexp| regexp.captures(borrow.string.as_str()));
+        if let Some((_, end)) = captures.and_then(|captures| captures.pos(0)) {
+            Value::from_mrb(&interp, borrow.string[end..].to_owned()).inner()
         } else {
             interp.nil().inner()
         }

@@ -1,5 +1,45 @@
 # frozen_string_literal: true
 
+class Encoding
+  ASCII_8BIT = new('ASCII-8BIT')
+  US_ASCII = new('US-ASCII')
+  UTF_8 = new('UTF-8')
+
+  def self.find(string)
+    new(string)
+  end
+
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def ascii_compatible?
+    true
+  end
+
+  def dummy?
+    true
+  end
+
+  def inspect
+    "#<#{self.class}:#{@name}"
+  end
+
+  def names
+    [name]
+  end
+
+  def replicate(name)
+    new(name)
+  end
+
+  def to_s
+    name
+  end
+end
+
 class String
   def self.try_convert(obj = nil)
     raise ArgumentError if obj.nil?
@@ -45,6 +85,7 @@ class String
     capture = args.fetch(1, 0)
     regexp.match(self)&.[](capture)
   end
+  alias slice []
 
   alias __old_element_assignment []=
   def []=(*args)
@@ -140,13 +181,13 @@ class String
     raise NotImplementedError
   end
 
-  def delete(*_args)
-    raise NotImplementedError
+  def delete(*args)
+    args.inject(self) { |string, pattern| string.tr(pattern, '') }
   end
 
   def delete!(*args)
     replaced = delete(*args)
-    self[0..-1] = replaced
+    self[0..-1] = replaced unless self == replaced
   end
 
   def delete_prefix(prefix)
@@ -260,6 +301,7 @@ class String
   def gsub!(pattern, replacement = nil, &blk)
     replaced = gsub(pattern, replacement, &blk)
     self[0..-1] = replaced unless self == replaced
+    self
   end
 
   def hex
@@ -498,7 +540,7 @@ class String
 
   def sub!(pattern, replacement = nil, &blk)
     replaced = sub(pattern, replacement, &blk)
-    self[0..-1] = replaced
+    self[0..-1] = replaced unless self == replaced
   end
 
   def sum
@@ -528,21 +570,16 @@ class String
   def tr(from_str, to_str)
     # TODO: Support character ranges c1-c2
     # TODO: Support backslash escapes
-    to_str = to_str.rjust(from_str.length, to_str[-1])
+    to_str = to_str.rjust(from_str.length, to_str[-1]) if to_str.length.positive?
 
     gsub(Regexp.compile("[#{from_str}]")) do |char|
-      to_str[from_str.index(char)]
+      to_str[from_str.index(char)] || ''
     end
   end
 
   def tr!(from_str, to_str)
-    # TODO: Support character ranges c1-c2
-    # TODO: Support backslash escapes
-    to_str = to_str.rjust(from_str.length, to_str[-1])
-
-    gsub!(Regexp.compile("[#{from_str}]")) do |char|
-      to_str[from_str.index(char)]
-    end
+    replaced = tr(from_str, to_str)
+    self[0..-1] = replaced unless self == replaced
   end
 
   def tr_s(_from_str, _to_str)

@@ -7,6 +7,7 @@ pub mod monitor;
 pub mod ostruct;
 pub mod set;
 pub mod strscan;
+pub mod uri;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     delegate::init(interp)?;
@@ -15,5 +16,6 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     ostruct::init(interp)?;
     set::init(interp)?;
     strscan::init(interp)?;
+    uri::init(interp)?;
     Ok(())
 }

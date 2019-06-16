@@ -1,6 +1,7 @@
 use crate::interpreter::Mrb;
 use crate::MrbError;
 
+pub mod array;
 pub mod env;
 pub mod error;
 pub mod kernel;
@@ -10,6 +11,7 @@ pub mod string;
 pub mod thread;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+    array::patch(interp)?;
     env::patch(interp)?;
     error::patch(interp)?;
     kernel::patch(interp)?;

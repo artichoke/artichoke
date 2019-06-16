@@ -39,8 +39,8 @@ pub fn escape_into(text: &str, buf: &mut String) {
 /// `false` is fixed and won't change in a semver compatible release.
 pub fn is_meta_character(c: char) -> bool {
     match c {
-        '\\' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{' | '}' | '^' | '$'
-        | '#' | '&' | '-' | '~' => true,
+        '\\' | '/' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{' | '}' | '^'
+        | '$' | '#' | '&' | '-' | '~' => true,
         _ => false,
     }
 }
