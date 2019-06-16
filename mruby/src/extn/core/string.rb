@@ -180,13 +180,13 @@ class String
     raise NotImplementedError
   end
 
-  def delete(*_args)
-    raise NotImplementedError
+  def delete(*args)
+    args.inject(self) { |string, pattern| string.tr(pattern, '') }
   end
 
   def delete!(*args)
     replaced = delete(*args)
-    self[0..-1] = replaced
+    self[0..-1] = replaced unless self == replaced
   end
 
   def delete_prefix(prefix)
@@ -300,6 +300,7 @@ class String
   def gsub!(pattern, replacement = nil, &blk)
     replaced = gsub(pattern, replacement, &blk)
     self[0..-1] = replaced unless self == replaced
+    self
   end
 
   def hex
@@ -538,7 +539,7 @@ class String
 
   def sub!(pattern, replacement = nil, &blk)
     replaced = sub(pattern, replacement, &blk)
-    self[0..-1] = replaced
+    self[0..-1] = replaced unless self == replaced
   end
 
   def sum
@@ -568,21 +569,16 @@ class String
   def tr(from_str, to_str)
     # TODO: Support character ranges c1-c2
     # TODO: Support backslash escapes
-    to_str = to_str.rjust(from_str.length, to_str[-1])
+    to_str = to_str.rjust(from_str.length, to_str[-1]) if to_str.length.positive?
 
     gsub(Regexp.compile("[#{from_str}]")) do |char|
-      to_str[from_str.index(char)]
+      to_str[from_str.index(char)] || ''
     end
   end
 
   def tr!(from_str, to_str)
-    # TODO: Support character ranges c1-c2
-    # TODO: Support backslash escapes
-    to_str = to_str.rjust(from_str.length, to_str[-1])
-
-    gsub!(Regexp.compile("[#{from_str}]")) do |char|
-      to_str[from_str.index(char)]
-    end
+    replaced = tr(from_str, to_str)
+    self[0..-1] = replaced unless self == replaced
   end
 
   def tr_s(_from_str, _to_str)
