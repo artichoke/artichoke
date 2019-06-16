@@ -12,6 +12,9 @@ use crate::MrbError;
 use log::trace;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+    if interp.borrow().class_spec::<RString>().is_some() {
+        return Ok(());
+    }
     let string = interp
         .borrow_mut()
         .def_class::<RString>("String", None, None);
