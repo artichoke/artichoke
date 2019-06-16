@@ -8,6 +8,7 @@ use std::mem;
 
 use super::*;
 
+#[derive(Debug)]
 pub(super) struct RegexpNew {
     pub pattern: Value,
     pub options: Option<Options>,
@@ -50,11 +51,16 @@ impl RegexpNew {
         let mut encoding = None;
         // the C boolean as u8 comparisons are easier if we keep the
         // comparison inverted.
-        if has_enc != 0 {
-            encoding = Some(Encoding::from_value(&interp, enc, false)?);
-        } else if has_opts != 0 {
-            options = Some(Options::from_value(&interp, opts)?);
-            encoding = Some(Encoding::from_value(&interp, opts, true)?);
+        match (has_opts, has_enc) {
+            (0, 0) => {}
+            (1, 0) => {
+                options = Some(Options::from_value(&interp, opts)?);
+                encoding = Some(Encoding::from_value(&interp, opts, true)?);
+            }
+            (_, _) => {
+                options = Some(Options::from_value(&interp, opts)?);
+                encoding = Some(Encoding::from_value(&interp, enc, false)?);
+            }
         }
         Ok(Self {
             pattern,
@@ -64,6 +70,7 @@ impl RegexpNew {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Pattern {
     pub pattern: String,
 }
@@ -82,6 +89,7 @@ impl Pattern {
     }
 }
 
+#[derive(Debug)]
 pub struct Rest {
     pub rest: Vec<Value>,
 }
@@ -112,7 +120,7 @@ impl Rest {
 
 #[derive(Debug, Clone)]
 pub struct Match {
-    pub string: String,
+    pub string: Option<String>,
     pub pos: Option<usize>,
 }
 
@@ -141,7 +149,7 @@ impl Match {
             &pos,
             &has_pos,
         );
-        let string = String::try_from_mrb(&interp, Value::new(&interp, string))
+        let string = <Option<String>>::try_from_mrb(&interp, Value::new(&interp, string))
             .map_err(MrbError::ConvertToRust)?;
         let pos = if has_pos == 0 {
             None
@@ -162,7 +170,8 @@ pub enum MatchIndex {
 }
 
 impl MatchIndex {
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+    pub unsafe fn extract(interp: &Mrb, num_captures: usize) -> Result<Self, MrbError> {
+        let num_captures = i64::try_from(num_captures).map_err(|_| MrbError::ArgSpec)?;
         let first = mem::uninitialized::<sys::mrb_value>();
         let second = mem::uninitialized::<sys::mrb_value>();
         let has_second = mem::uninitialized::<sys::mrb_bool>();
@@ -189,8 +198,14 @@ impl MatchIndex {
         if has_second == 0 {
             let mut start = mem::uninitialized::<sys::mrb_int>();
             let mut len = mem::uninitialized::<sys::mrb_int>();
-            if sys::mrb_range_beg_len(interp.borrow().mrb, first, &mut start, &mut len, 0, 0_u8)
-                == 1
+            if sys::mrb_range_beg_len(
+                interp.borrow().mrb,
+                first,
+                &mut start,
+                &mut len,
+                num_captures,
+                0_u8,
+            ) == 1
             {
                 let len = usize::try_from_mrb(&interp, Value::from_mrb(&interp, len))
                     .map_err(MrbError::ConvertToRust)?;
