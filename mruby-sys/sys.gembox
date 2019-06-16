@@ -44,9 +44,6 @@ MRuby::GemBox.new do |conf|
   # Use Enumerable module extension
   conf.gem core: 'mruby-enum-ext'
 
-  # Use String class extension
-  conf.gem core: 'mruby-string-ext'
-
   # Use Numeric class extension
   conf.gem core: 'mruby-numeric-ext'
 
