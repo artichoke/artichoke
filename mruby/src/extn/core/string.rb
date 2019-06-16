@@ -1,5 +1,45 @@
 # frozen_string_literal: true
 
+class Encoding
+  ASCII_8BIT = new('ASCII-8BIT')
+  US_ASCII = new('US-ASCII')
+  UTF_8 = new('UTF-8')
+
+  def self.find(string)
+    new(string)
+  end
+
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def ascii_compatible?
+    true
+  end
+
+  def dummy?
+    true
+  end
+
+  def inspect
+    "#<#{self.class}:#{@name}"
+  end
+
+  def names
+    [name]
+  end
+
+  def replicate(name)
+    new(name)
+  end
+
+  def to_s
+    name
+  end
+end
+
 class String
   def self.try_convert(obj = nil)
     raise ArgumentError if obj.nil?
