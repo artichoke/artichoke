@@ -13,7 +13,31 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.def_rb_source_file("uri/ldap.rb", include_str!("uri/ldap.rb"))?;
     interp.def_rb_source_file("uri/ldaps.rb", include_str!("uri/ldaps.rb"))?;
     interp.def_rb_source_file("uri/mailto.rb", include_str!("uri/mailto.rb"))?;
-    interp.def_rb_source_file("uri/rfc2396_parser.rb", include_str!("uri/rfc2396_parser.rb"))?;
-    interp.def_rb_source_file("uri/rfc3986_parser.rb", include_str!("uri/rfc3986_parser.rb"))?;
+    interp.def_rb_source_file(
+        "uri/rfc2396_parser.rb",
+        include_str!("uri/rfc2396_parser.rb"),
+    )?;
+    interp.def_rb_source_file(
+        "uri/rfc3986_parser.rb",
+        include_str!("uri/rfc3986_parser.rb"),
+    )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::extn::test::mspec::MSpec;
+    use crate::interpreter::Interpreter;
+
+    // URI tests from Ruby stdlib docs
+    // https://ruby-doc.org/stdlib-2.6.3/libdoc/uri/rdoc/URI.html
+    #[test]
+    fn uri_spec() {
+        let interp = Interpreter::create().expect("mrb init");
+        let mut runner = MSpec::runner(interp);
+        runner
+            .add_spec("uri_doc_spec.rb", include_str!("spec/uri_doc_spec.rb"))
+            .unwrap();
+        runner.run();
+    }
 }
