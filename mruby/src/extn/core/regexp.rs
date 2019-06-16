@@ -444,7 +444,7 @@ impl Regexp {
                 if arg.ruby_type() == Ruby::Array {
                     unwrap_or_raise!(interp, arg.try_into::<Vec<Value>>(), interp.nil().inner())
                 } else {
-                    args.rest
+                    vec![arg]
                 }
             } else {
                 args.rest
@@ -452,18 +452,20 @@ impl Regexp {
             let mut raw_patterns = vec![];
             for pattern in patterns {
                 if pattern.ruby_type() == Ruby::String {
-                    raw_patterns.push(unwrap_or_raise!(
+                    let pattern = unwrap_or_raise!(
                         interp,
                         pattern.try_into::<String>(),
                         interp.nil().inner()
-                    ));
+                    );
+                    raw_patterns.push(syntax::escape(pattern.as_str()));
                 } else {
                     let regexp = unwrap_or_raise!(
                         interp,
                         Self::try_from_ruby(&interp, &pattern),
                         interp.nil().inner()
                     );
-                    raw_patterns.push(regexp.borrow().pattern.clone());
+                    let pattern = syntax::escape(regexp.borrow().pattern.as_str());
+                    raw_patterns.push(pattern);
                 }
             }
             raw_patterns.join("|")
