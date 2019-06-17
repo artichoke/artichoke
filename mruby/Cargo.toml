@@ -12,6 +12,9 @@ edition = "2018"
 # merged: https://github.com/pyros2097/rust-embed/pull/59
 doctest = false
 
+[[bin]]
+name = "spec-runner"
+
 [dependencies]
 byteorder = "1.3.2"
 log = "0.4.6"
@@ -24,12 +27,12 @@ path = "../mruby-sys"
 [dependencies.mruby-vfs]
 path = "../mruby-vfs"
 
+[dependencies.rust-embed]
+version = "4.4.0"
+features = ["debug-embed"]
+
 [dev-dependencies]
 env_logger = "0.6.1"
 libc = "0.2"
 quickcheck = "0.8"
 quickcheck_macros = "0.8"
-
-[dependencies.rust-embed]
-version = "4.4.0"
-features = ["debug-embed"]
