@@ -27,6 +27,12 @@ class ErrorCollector
   end
 
   def exception(state)
+    if state.exception.is_a?(NoMethodError)
+      return if state.message =~ /'private_instance_methods'/
+      return if state.message =~ /'taint'/
+      return if state.message =~ /'tainted\?'/
+      return if state.message =~ /'warn'/
+    end
     @errors << state
   end
 end
