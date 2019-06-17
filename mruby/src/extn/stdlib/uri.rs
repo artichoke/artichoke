@@ -26,14 +26,8 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
-
     use crate::extn::test::mspec::MSpec;
     use crate::interpreter::Interpreter;
-
-    #[derive(RustEmbed)]
-    #[folder = "mruby/src/extn/stdlib/spec/uri/"]
-    pub struct Specs;
 
     #[test]
     fn uri_doc_spec() {
@@ -42,18 +36,6 @@ mod tests {
         runner
             .add_spec("uri_doc_spec.rb", include_str!("spec/uri_doc_spec.rb"))
             .unwrap();
-        runner.run();
-    }
-
-    #[test]
-    fn uri_ruby_spec() {
-        let interp = Interpreter::create().expect("mrb init");
-        let mut runner = MSpec::runner(interp);
-        for source in Specs::iter() {
-            let content = Specs::get(&source).map(Cow::into_owned).unwrap();
-            let source = format!("uri/{}", source);
-            runner.add_spec(&source, content).unwrap();
-        }
         runner.run();
     }
 }

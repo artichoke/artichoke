@@ -194,8 +194,7 @@
 //! The infallible converters are safe Rust functions. The fallibile converters are
 //! `unsafe` Rust functions.
 
-#[cfg(test)]
-#[cfg_attr(test, macro_use)]
+#[macro_use]
 extern crate rust_embed;
 
 use std::error;

@@ -4,7 +4,6 @@ use crate::MrbError;
 
 pub mod core;
 pub mod stdlib;
-#[cfg(test)]
 pub mod test;
 
 pub const RUBY_PLATFORM: &str = "x86_64-unknown-mruby";

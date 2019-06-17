@@ -7,23 +7,42 @@ class StringScanner
     self
   end
 
-  attr_accessor :string
-  attr_accessor :charpos
+  attr_reader :charpos
+  attr_reader :string
+
+  def string=(str)
+    @string = String.try_convert(str)
+  end
 
   def initialize(string)
-    @string = string
+    @string = String.try_convert(string)
     @charpos = 0
+    @previous_charpos = nil
     @last_match = nil
+    @last_match_charpos = nil
   end
 
   def <<(str)
+    raise TypeError if (str = String.try_convert(str)).nil?
+
     @string << str
+    self
   end
   alias concat <<
 
   def [](group)
     return nil if @last_match.nil?
+    raise IndexError unless @last_match.is_a?(MatchData)
+    raise TypeError if group.nil?
+    raise TypeError if group.is_a?(Range)
 
+    case group
+    when Integer, Float then
+      group = group.to_int
+      return nil unless group < @last_match.captures.length + 1
+    when String then raise IndexError unless @last_match.named_captures.key?(group)
+    when Symbol then raise IndexError unless @last_match.named_captures.key?(group.to_s)
+    end
     @last_match[group]
   end
 
@@ -36,6 +55,17 @@ class StringScanner
 
   def captures
     @last_match&.captures
+  end
+
+  def charpos=(pointer)
+    raise RangeError unless pointer.abs < @string.length
+
+    @charpos =
+      if pointer.negative?
+        @string.length + pointer
+      else
+        pointer
+      end
   end
 
   def check(pattern)
@@ -52,7 +82,12 @@ class StringScanner
   def eos?
     @charpos == @string.length
   end
-  alias empty? eos?
+
+  def empty?
+    warn 'empty? is obsolete use eos? instead' if $VERBOSE
+
+    eos?
+  end
 
   def exist?(pattern)
     match = @string[@charpos..-1].match(pattern)
@@ -66,9 +101,15 @@ class StringScanner
 
     byte, *_bytes = @string[@charpos..-1].bytes
     @charpos += 1
-    [byte].pack('c*')
+    @last_match_charpos = @charpos
+    @last_match = [byte].pack('c*')
   end
-  alias getbyte get_byte
+
+  def getbyte
+    warn 'getbyte is obsolete use get_byte instead' if $VERBOSE
+
+    get_byte
+  end
 
   def getch
     scan(/./)
@@ -78,7 +119,11 @@ class StringScanner
     return "#<#{self.class.name} fin>" if eos?
 
     before = @string.reverse[@string.length - @charpos, 5].reverse
-    before = " \"...#{before}\"" unless before&.empty?
+    if before.length.positive? && before.length < 5
+      before = " \"#{before}\""
+    elsif !before.empty?
+      before = " \"...#{before}\""
+    end
     after = @string[@charpos, 5]
     after = "\"#{after}...\"" unless after&.empty?
     "#<#{self.class.name} #{charpos}/#{@string.length}#{before} @ #{after}>"
@@ -88,10 +133,13 @@ class StringScanner
     match = pattern.match(@string[@charpos..-1])
     if match.nil? || match.begin(0).positive?
       @last_match = nil
+      @last_match_charpos = nil
       return nil
     end
 
     @last_match = match
+    @last_match_charpos ||= 0
+    @last_match_charpos += match.end(0)
     match.end(0) - match.begin(0)
   end
 
@@ -110,9 +158,16 @@ class StringScanner
   end
 
   def peek(len)
-    @string[pos, len]
+    raise RangeError unless len.is_a?(Integer)
+    raise ArgumentError if len.negative?
+
+    @string.bytes[pos, len].pack('c*')
   end
-  alias peep peek
+
+  def peep(len)
+    warn 'peep is obsolet use peek instead' if $VERBOSE
+    peek(len)
+  end
 
   def pos
     @string[0...@charpos].bytes.length
@@ -120,25 +175,41 @@ class StringScanner
   alias pointer pos
 
   def pos=(pointer)
-    @charpos = @string.bytes[0, pointer].pack('c*').length
+    raise RangeError unless pointer.abs < @string.bytesize
+
+    @charpos =
+      if pointer.negative?
+        @string.bytes[0..pointer - 1].pack('c*').length
+      else
+        @string.bytes[0, pointer].pack('c*').length
+      end
     pointer # rubocop:disable Lint/Void
   end
+  alias pointer= pos=
 
   def post_match
     return nil if @last_match.nil?
 
-    @string[@charpos..-1]
+    @string[@last_match_charpos..-1]
   end
 
   def pre_match
     return nil if @last_match.nil?
 
-    match_len = @last_match.end(0) - @last_match.begin(0)
-    @string[0...@charpos - match_len]
+    match_len =
+      if @last_match.is_a?(MatchData)
+        @last_match.end(0) - @last_match.begin(0)
+      else
+        @last_match.length
+      end
+    @string[0...@last_match_charpos - match_len]
   end
 
   def reset
     @charpos = 0
+    @previous_charpos = nil
+    @last_match = nil
+    @last_match_charpos = nil
   end
 
   def rest
@@ -152,17 +223,25 @@ class StringScanner
   def rest_size
     rest.size
   end
-  alias restsize rest_size
+
+  def restsize
+    warn 'restsize is obsolete use rest_size instead' if $VERBOSE
+
+    rest_size
+  end
 
   def scan(pattern)
     scan_full(pattern, true, true)
   end
 
   def scan_full(pattern, advance_pointer_p, return_string_p)
+    raise TypeError, "wrong argument type #{pattern.class} (expected Regexp)" unless pattern.is_a?(Regexp)
+
     previous_charpos = @charpos
     match = pattern.match(@string[@charpos..-1])
     if match.nil? || match.begin(0).positive?
       @last_match = nil
+      @last_match_charpos = nil
       @previous_charpos = nil
       return nil
     end
@@ -170,8 +249,13 @@ class StringScanner
     @charpos += match.end(0) if advance_pointer_p
     @previous_charpos = previous_charpos
     @last_match = match
+    @last_match_charpos = @charpos
 
-    @string[previous_charpos, match.end(0)] if return_string_p
+    if return_string_p
+      @string[previous_charpos, match.end(0)]
+    else
+      match.end(0)
+    end
   end
 
   def scan_until(pattern)
@@ -182,6 +266,7 @@ class StringScanner
     @charpos += match.end(0)
     @previous_charpos = previous_charpos
     @last_match = match
+    @last_match_charpos = @charpos
 
     @string[previous_charpos, match.end(0)]
   end
@@ -193,8 +278,11 @@ class StringScanner
 
     @charpos += match.end(0) if advance_pointer_p
     @previous_charpos = previous_charpos
-
-    @string[previous_charpos, match.end(0)] if return_string_p
+    if return_string_p
+      @string[previous_charpos, match.end(0)]
+    else
+      match.end(0)
+    end
   end
 
   def size
@@ -206,6 +294,7 @@ class StringScanner
     match = pattern.match(@string[@charpos..-1])
     if match.nil? || match.begin(0).positive?
       @last_match = nil
+      @last_match_charpos = nil
       @previous_charpos = nil
       return nil
     end
@@ -213,6 +302,7 @@ class StringScanner
     @charpos += match.end(0)
     @previous_charpos = previous_charpos
     @last_match = match
+    @last_match_charpos = @charpos
     match.end(0)
   end
 
@@ -221,6 +311,7 @@ class StringScanner
     match = pattern.match(@string[@charpos..-1])
     if match.nil?
       @last_match = nil
+      @last_match_charpos = nil
       @previous_charpos = nil
       return nil
     end
@@ -228,6 +319,7 @@ class StringScanner
     @charpos += match.end(0)
     @previous_charpos = previous_charpos
     @last_match = match
+    @last_match_charpos = @charpos
     match.end(0)
   end
 
@@ -236,15 +328,23 @@ class StringScanner
 
     @charpos = @previous_charpos
     @previous_charpos = nil
+    @last_match = nil
+    @last_match_charpos = nil
     nil
   end
 
   def terminate
     @charpos = @string.length
     @last_match = nil
+    @last_match_charpos = nil
     self
   end
-  alias clear terminate
+
+  def clear
+    warn 'clear is obsolete use terminate instead' if $VERBOSE
+
+    terminate
+  end
 
   def values_at(*args)
     return nil if @last_match.nil?

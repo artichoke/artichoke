@@ -94,10 +94,13 @@ jobs:
             }
             export -f _check_clang_format
 
-            find . \
-              -type f \( -name '*.h' -or -name '*.c' \) \
-              -and -not -path '*vendor*' -and -not -path '*target*' \
-              -print0 | xargs -0 -n1 bash -c '_check_clang_format "$@"' _
+            find . -type f \
+              -and \( -name '*.h' -or -name '*.c' \) \
+              -and -not -path '*vendor*' \
+              -and -not -path '*target*' \
+              -and -not -path '*node_modules*' \
+              -and -not -path '*mruby/src/extn/test/ruby-spec/*' -print0 | \
+              xargs -0 -n1 bash -c '_check_clang_format "$@"' _
   ruby:
     docker:
       - image: circleci/ruby:2.6.3
