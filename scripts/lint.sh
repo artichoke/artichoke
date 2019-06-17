@@ -31,15 +31,15 @@ lint_ruby_sources foolsgold/ruby
 # C sources
 
 ## Format with clang-format
-find . \( -name '*.h' -or -name '*.c' \) -and -not -path '*vendor*' -and -not -path '*target*' -not -path '*node_modules*' -print0 | xargs -0 yarn run clang-format -i
+find . \( -name '*.h' -or -name '*.c' \) -and -not -path '*vendor*' -and -not -path '*target*' -not -path '*node_modules*' -not -path '*mruby/src/extn/test/ruby-spec/*' -print0 | xargs -0 yarn run clang-format -i
 
 # Shell sources
 
 ## Format with shfmt
-find . \( -name '*.sh' -or -name '*.bash' \) -and -not -path '*vendor*' -and -not -path '*target*' -not -path '*node_modules*' -print0 | xargs -0 shfmt -w -i 2
+find . \( -name '*.sh' -or -name '*.bash' \) -and -not -path '*vendor*' -and -not -path '*target*' -not -path '*node_modules*' -not -path '*mruby/src/extn/test/ruby-spec/*' -print0 | xargs -0 shfmt -w -i 2
 
 ## Lint with shellcheck
-find . \( -name '*.sh' -or -name '*.bash' \) -and -not -path '*vendor*' -and -not -path '*target*' -not -path '*node_modules*' -print0 | xargs -0 shellcheck
+find . \( -name '*.sh' -or -name '*.bash' \) -and -not -path '*vendor*' -and -not -path '*target*' -not -path '*node_modules*' -not -path '*mruby/src/extn/test/ruby-spec/*' -print0 | xargs -0 shellcheck
 
 # Text sources (e.g. HTML, Markdown)
 

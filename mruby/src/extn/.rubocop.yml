@@ -2,11 +2,11 @@ AllCops:
   TargetRubyVersion: 2.5
   DisplayCopNames: true
   Exclude:
-    - stdlib/spec/**/*.rb
     - stdlib/uri.rb
     - stdlib/uri/*.rb
     - test/mspec.rb
     - test/mspec/**/*.rb
+    - test/ruby-spec/**/*.rb
 Metrics:
   Enabled: false
 Style/Documentation:
