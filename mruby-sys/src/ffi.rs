@@ -2909,10 +2909,13 @@ extern "C" {
         exclude: mrb_bool,
     ) -> mrb_value;
 }
-pub const mrb_range_beg_len_MRB_RANGE_TYPE_MISMATCH: mrb_range_beg_len = 0;
-pub const mrb_range_beg_len_MRB_RANGE_OK: mrb_range_beg_len = 1;
-pub const mrb_range_beg_len_MRB_RANGE_OUT: mrb_range_beg_len = 2;
-pub type mrb_range_beg_len = u32;
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum mrb_range_beg_len {
+    MRB_RANGE_TYPE_MISMATCH = 0,
+    MRB_RANGE_OK = 1,
+    MRB_RANGE_OUT = 2,
+}
 extern "C" {
     pub fn mrb_range_beg_len(
         mrb: *mut mrb_state,

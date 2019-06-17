@@ -115,6 +115,7 @@ fn main() {
         .layout_tests(false)
         .rustified_enum("mrb_vtype")
         .rustified_enum("mrb_lex_state_enum")
+        .rustified_enum("mrb_range_beg_len")
         .rustfmt_bindings(true)
         // work around warnings caused by cargo doc interpreting Ruby doc blocks
         // as Rust code.
