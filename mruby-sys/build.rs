@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 /// vendored mruby version
-const MRUBY_REVISION: &str = "c078758";
+const MRUBY_REVISION: &str = "1685c45";
 
 /// Path helpers
 struct Build;
@@ -115,6 +115,7 @@ fn main() {
         .layout_tests(false)
         .rustified_enum("mrb_vtype")
         .rustified_enum("mrb_lex_state_enum")
+        .rustified_enum("mrb_range_beg_len")
         .rustfmt_bindings(true)
         // work around warnings caused by cargo doc interpreting Ruby doc blocks
         // as Rust code.

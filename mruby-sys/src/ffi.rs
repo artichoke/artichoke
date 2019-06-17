@@ -147,7 +147,7 @@ pub const MRB_FL_CLASS_IS_PREPENDED: u32 = 524288;
 pub const MRB_FL_CLASS_IS_ORIGIN: u32 = 262144;
 pub const MRB_FL_CLASS_IS_INHERITED: u32 = 131072;
 pub const MRB_INSTANCE_TT_MASK: u32 = 255;
-pub const MRB_PARSER_TOKBUF_MAX: u32 = 65536;
+pub const MRB_PARSER_TOKBUF_MAX: u32 = 65534;
 pub const MRB_PARSER_TOKBUF_SIZE: u32 = 256;
 pub const MRB_ISEQ_NO_FREE: u32 = 1;
 pub const MRB_DUMP_OK: u32 = 0;
@@ -689,7 +689,6 @@ pub struct mrb_state {
     pub nil_class: *mut RClass,
     pub symbol_class: *mut RClass,
     pub kernel_module: *mut RClass,
-    pub mems: *mut alloca_header,
     pub gc: mrb_gc,
     pub symidx: mrb_sym,
     pub symtbl: *mut symbol_name,
@@ -1638,6 +1637,13 @@ extern "C" {
     );
 }
 extern "C" {
+    pub fn mrb_const_name_p(
+        arg1: *mut mrb_state,
+        arg2: *const ::std::os::raw::c_char,
+        arg3: mrb_int,
+    ) -> mrb_bool;
+}
+extern "C" {
     pub fn mrb_class_find_path(arg1: *mut mrb_state, arg2: *mut RClass) -> mrb_value;
 }
 extern "C" {
@@ -2205,10 +2211,25 @@ extern "C" {
     pub fn mrb_load_irep(arg1: *mut mrb_state, arg2: *const u8) -> mrb_value;
 }
 extern "C" {
+    pub fn mrb_load_irep_buf(
+        arg1: *mut mrb_state,
+        arg2: *const ::std::os::raw::c_void,
+        arg3: usize,
+    ) -> mrb_value;
+}
+extern "C" {
     pub fn mrb_load_irep_cxt(
         arg1: *mut mrb_state,
         arg2: *const u8,
         arg3: *mut mrbc_context,
+    ) -> mrb_value;
+}
+extern "C" {
+    pub fn mrb_load_irep_buf_cxt(
+        arg1: *mut mrb_state,
+        arg2: *const ::std::os::raw::c_void,
+        arg3: usize,
+        arg4: *mut mrbc_context,
     ) -> mrb_value;
 }
 extern "C" {
@@ -2248,6 +2269,13 @@ extern "C" {
 }
 extern "C" {
     pub fn mrb_read_irep(arg1: *mut mrb_state, arg2: *const u8) -> *mut mrb_irep;
+}
+extern "C" {
+    pub fn mrb_read_irep_buf(
+        arg1: *mut mrb_state,
+        arg2: *const ::std::os::raw::c_void,
+        arg3: usize,
+    ) -> *mut mrb_irep;
 }
 extern "C" {
     pub fn mrb_sys_fail(mrb: *mut mrb_state, mesg: *const ::std::os::raw::c_char);
@@ -2485,16 +2513,16 @@ extern "C" {
     pub fn mrb_to_flo(mrb: *mut mrb_state, x: mrb_value) -> mrb_float;
 }
 extern "C" {
-    pub fn mrb_fixnum_plus(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
+    pub fn mrb_int_value(mrb: *mut mrb_state, f: mrb_float) -> mrb_value;
 }
 extern "C" {
-    pub fn mrb_fixnum_minus(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
+    pub fn mrb_num_plus(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
 }
 extern "C" {
-    pub fn mrb_fixnum_mul(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
+    pub fn mrb_num_minus(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
 }
 extern "C" {
-    pub fn mrb_num_div(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
+    pub fn mrb_num_mul(mrb: *mut mrb_state, x: mrb_value, y: mrb_value) -> mrb_value;
 }
 pub const mrb_insn_OP_NOP: mrb_insn = 0;
 pub const mrb_insn_OP_MOVE: mrb_insn = 1;
@@ -2881,6 +2909,13 @@ extern "C" {
         exclude: mrb_bool,
     ) -> mrb_value;
 }
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum mrb_range_beg_len {
+    MRB_RANGE_TYPE_MISMATCH = 0,
+    MRB_RANGE_OK = 1,
+    MRB_RANGE_OUT = 2,
+}
 extern "C" {
     pub fn mrb_range_beg_len(
         mrb: *mut mrb_state,
@@ -2889,7 +2924,7 @@ extern "C" {
         lenp: *mut mrb_int,
         len: mrb_int,
         trunc: mrb_bool,
-    ) -> mrb_int;
+    ) -> mrb_range_beg_len;
 }
 extern "C" {
     pub fn mrb_get_values_at(
@@ -3242,6 +3277,9 @@ extern "C" {
     pub fn mrb_obj_iv_inspect(arg1: *mut mrb_state, arg2: *mut RObject) -> mrb_value;
 }
 extern "C" {
+    pub fn mrb_obj_iv_set_force(mrb: *mut mrb_state, obj: *mut RObject, sym: mrb_sym, v: mrb_value);
+}
+extern "C" {
     pub fn mrb_mod_constants(mrb: *mut mrb_state, mod_: mrb_value) -> mrb_value;
 }
 extern "C" {
@@ -3431,11 +3469,6 @@ pub struct __va_list_tag {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct iv_tbl {
-    pub _address: u8,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct alloca_header {
     pub _address: u8,
 }
 #[repr(C)]

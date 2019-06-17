@@ -205,7 +205,7 @@ impl MatchIndex {
                 &mut len,
                 num_captures,
                 0_u8,
-            ) == 1
+            ) == sys::mrb_range_beg_len::MRB_RANGE_OK
             {
                 let len = usize::try_from_mrb(&interp, Value::from_mrb(&interp, len))
                     .map_err(MrbError::ConvertToRust)?;
