@@ -31,7 +31,10 @@ impl<'a> nemesisreq::Request for Request<'a> {
     }
 
     fn script_name(&self) -> String {
-        self.base.to_owned()
+        match self.base {
+            "/" => "".to_owned(),
+            base => base.to_owned(),
+        }
     }
 
     fn path_info(&self) -> String {
