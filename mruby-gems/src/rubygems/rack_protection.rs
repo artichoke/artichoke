@@ -30,7 +30,11 @@ impl RackProtection {
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
             string = string.replace(
                 "define_method(:default_options) { super().merge(options) }",
-                "# define_method(:default_options) { super().merge(options) }",
+                "@default_options ||= DEFAULT_OPTIONS; @default_options.merge(options)",
+            );
+            string = string.replace(
+                "def default_options        DEFAULT_OPTIONS      end",
+                "def default_options; @default_options ||= DEFAULT_OPTIONS; end",
             );
             string = string.replace("defined? SecureRandom", "true");
             Ok(string.into_bytes())
