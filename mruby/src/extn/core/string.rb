@@ -3,6 +3,7 @@
 class Encoding
   ASCII_8BIT = new('ASCII-8BIT')
   US_ASCII = new('US-ASCII')
+  ASCII = US_ASCII
   UTF_8 = new('UTF-8')
 
   def self.find(string)
@@ -242,8 +243,8 @@ class String
 
   def encoding
     # mruby does not support encoding, all Strings are UTF-8. This method is a
-    # NOOP and is here for compatibility.
-    nil
+    # stub and is here for compatibility.
+    Encoding::UTF_8
   end
 
   def end_with?(*suffixes)
@@ -614,7 +615,7 @@ class String
     raise NotImplementedError
   end
 
-  def valid_encoding
+  def valid_encoding?
     # mruby does not support encoding, all Strings are UTF-8. This method is a
     # NOOP and is here for compatibility.
     true
