@@ -85,10 +85,10 @@ module JSON
                        else
                          0
                        end
-        @allow_nan = !!opts[:allow_nan]
-        @symbolize_names = !!opts[:symbolize_names]
+        @allow_nan = !!opts[:allow_nan] # rubocop:disable Style/DoubleNegation
+        @symbolize_names = !!opts[:symbolize_names] # rubocop:disable Style/DoubleNegation
         @create_additions = if opts.key?(:create_additions)
-                              !!opts[:create_additions]
+                              !!opts[:create_additions] # rubocop:disable Style/DoubleNegation
                             else
                               false
                             end
@@ -113,15 +113,12 @@ module JSON
       # complete data structure as a result.
       def parse
         reset
-        obj = nil
         while !eos? && skip(IGNORE) do end
-        if eos?
-          raise ParserError, 'source is not valid JSON!'
-        else
-          obj = parse_value
-          UNPARSED.equal?(obj) && raise(ParserError,
-                                        'source is not valid JSON!')
-        end
+        raise ParserError, 'source is not valid JSON!' if eos?
+
+        obj = parse_value
+        UNPARSED.equal?(obj) && raise(ParserError,
+                                      'source is not valid JSON!')
 
         while !eos? && skip(IGNORE) do end
         eos? || raise(ParserError, 'source is not valid JSON!')
@@ -166,7 +163,8 @@ module JSON
           return '' if self[1].empty?
 
           string = self[1].gsub(%r((?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4}))+|\\[\x20-\xff]))n) do |c|
-            if u = UNESCAPE_MAP[$&[1]]
+            match = %r((?:\\[\\bfnrt"/]|(?:\\u(?:[A-Fa-f\d]{4}))+|\\[\x20-\xff]))n.match(c)
+            if (u = UNESCAPE_MAP[match[1]])
               u
             else # \uXXXX
               bytes = EMPTY_8BIT_STRING.dup
@@ -270,19 +268,17 @@ module JSON
             raise ParserError, "expected ':' in object at '#{peek(20)}'!" unless scan(PAIR_DELIMITER)
 
             skip(IGNORE)
-            if UNPARSED.equal?(value = parse_value)
-              raise ParserError, "expected value in object at '#{peek(20)}'!"
-            else
-              result[@symbolize_names ? string.to_sym : string] = value
-              delim = false
-              skip(IGNORE)
-              if scan(COLLECTION_DELIMITER)
-                delim = true
-              elsif match?(OBJECT_CLOSE)
+            raise ParserError, "expected value in object at '#{peek(20)}'!" if UNPARSED.equal?(value = parse_value)
 
-              else
-                raise ParserError, "expected ',' or '}' in object at '#{peek(20)}'!"
-              end
+            result[@symbolize_names ? string.to_sym : string] = value
+            delim = false
+            skip(IGNORE)
+            if scan(COLLECTION_DELIMITER)
+              delim = true
+            elsif match?(OBJECT_CLOSE)
+
+            else
+              raise ParserError, "expected ',' or '}' in object at '#{peek(20)}'!"
             end
           elsif scan(OBJECT_CLOSE)
             raise ParserError, "expected next name, value pair in object at '#{peek(20)}'!" if delim

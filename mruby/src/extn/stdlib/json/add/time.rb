@@ -3,7 +3,7 @@
 class Time
   # Deserializes JSON string by converting time since epoch to Time
   def self.json_create(object)
-    if usec = object.delete('u') # used to be tv_usec -> tv_nsec
+    if (usec = object.delete('u')) # used to be tv_usec -> tv_nsec
       object['n'] = usec * 1000
     end
     if method_defined?(:tv_nsec)

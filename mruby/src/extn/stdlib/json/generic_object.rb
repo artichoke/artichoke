@@ -34,7 +34,7 @@ module JSON
       end
 
       def load(source, proc = nil, opts = {})
-        result = ::JSON.load(source, proc, opts.merge(object_class: self))
+        result = ::JSON.load(source, proc, opts.merge(object_class: self)) # rubocop:disable Security/JSONLoad
         result.nil? ? new : result
       end
 
@@ -68,8 +68,8 @@ module JSON
       { JSON.create_id => self.class.name }.merge to_hash
     end
 
-    def to_json(*a)
-      as_json.to_json(*a)
+    def to_json(*args)
+      as_json.to_json(*args)
     end
   end
 end

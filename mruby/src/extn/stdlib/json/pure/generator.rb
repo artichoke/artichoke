@@ -74,7 +74,7 @@ module JSON
 
   def valid_utf8?(string)
     encoding = string.encoding
-    (encoding == Encoding::UTF_8 || encoding == Encoding::ASCII) &&
+    [Encoding::UTF_8, Encoding::ASCII].include?(encoding) &&
       string.valid_encoding?
   end
   module_function :utf8_to_json, :utf8_to_json_ascii, :valid_utf8?
@@ -89,7 +89,7 @@ module JSON
         # an unconfigured instance. If _opts_ is a State object, it is just
         # returned.
         def self.from_state(opts)
-          if self === opts
+          if self === opts # rubocop:disable Style/CaseEquality
             opts
           elsif opts.respond_to?(:to_hash)
             new(opts.to_hash)
@@ -152,7 +152,7 @@ module JSON
         attr_reader :buffer_initial_length
 
         def buffer_initial_length=(length)
-          @buffer_initial_length = length if length > 0
+          @buffer_initial_length = length if length.positive?
         end
         # :startdoc:
 
@@ -204,7 +204,7 @@ module JSON
           @space_before          = opts[:space_before] if opts.key?(:space_before)
           @object_nl             = opts[:object_nl] if opts.key?(:object_nl)
           @array_nl              = opts[:array_nl] if opts.key?(:array_nl)
-          @allow_nan             = !!opts[:allow_nan] if opts.key?(:allow_nan)
+          @allow_nan             = !!opts[:allow_nan] if opts.key?(:allow_nan) # rubocop:disable Style/DoubleNegation
           @ascii_only            = opts[:ascii_only] if opts.key?(:ascii_only)
           @depth                 = opts[:depth] || 0
           @buffer_initial_length ||= opts[:buffer_initial_length]
@@ -371,20 +371,11 @@ module JSON
           def to_json(state = nil, *)
             state = State.from_state(state)
             if infinite?
-              if state.allow_nan?
-                to_s
-              else
-                raise GeneratorError, "#{self} not allowed in JSON"
-              end
+              raise GeneratorError, "#{self} not allowed in JSON" unless state.allow_nan?
             elsif nan?
-              if state.allow_nan?
-                to_s
-              else
-                raise GeneratorError, "#{self} not allowed in JSON"
-              end
-            else
-              to_s
+              raise GeneratorError, "#{self} not allowed in JSON" unless state.allow_nan?
             end
+            to_s
           end
         end
 
@@ -412,8 +403,8 @@ module JSON
             # Raw Strings are JSON Objects (the raw bytes are stored in an
             # array for the key "raw"). The Ruby String can be created by this
             # module method.
-            def json_create(o)
-              o['raw'].pack('C*')
+            def json_create(obj)
+              obj['raw'].pack('C*')
             end
           end
 

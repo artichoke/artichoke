@@ -168,7 +168,7 @@ module JSON
     # amount of sanity checks, and the pretty_generate method for some
     # defaults for pretty output.
     def generate(obj, opts = nil)
-      if State === opts
+      if State === opts # rubocop:disable Style/CaseEquality
         state = opts
         opts = nil
       else
@@ -199,7 +199,7 @@ module JSON
     # *WARNING*: Be careful not to pass any Ruby data structures with circles as
     # _obj_ argument because this will cause JSON to go into an infinite loop.
     def fast_generate(obj, opts = nil)
-      if State === opts
+      if State === opts # rubocop:disable Style/CaseEquality
         state = opts
         opts = nil
       else
@@ -230,7 +230,7 @@ module JSON
     # The _opts_ argument can be used to configure the generator. See the
     # generate method for a more detailed explanation.
     def pretty_generate(obj, opts = nil)
-      if State === opts
+      if State === opts # rubocop:disable Style/CaseEquality
         state = opts
         opts = nil
       else
@@ -302,13 +302,13 @@ module JSON
       case result
       when Array
         result.each { |x| recurse_proc x, &proc }
-        proc.call result
       when Hash
-        result.each { |x, y| recurse_proc x, &proc; recurse_proc y, &proc }
-        proc.call result
-      else
-        proc.call result
+        result.each do |x, y|
+          recurse_proc x, &proc
+          recurse_proc y, &proc
+        end
       end
+      proc.call result
     end
 
     alias restore load
@@ -340,7 +340,8 @@ module JSON
     #
     # This method is part of the implementation of the load/dump interface of
     # Marshal and YAML.
-    def dump(obj, anIO = nil, limit = nil)
+    # rubocop:disable Naming/VariableName
+    def dump(obj, anIO = nil, limit = nil) # rubocop:disable Naming/UncommunicativeMethodParamName
       if anIO && limit.nil?
         anIO = anIO.to_io if anIO.respond_to?(:to_io)
         unless anIO.respond_to?(:write)
@@ -360,6 +361,7 @@ module JSON
     rescue JSON::NestingError
       raise ArgumentError, 'exceed depth limit'
     end
+    # rubocop:enable Naming/VariableName
   end
 
   # Encodes string using Ruby's _String.encode_
@@ -369,9 +371,9 @@ module JSON
 
   self.create_id = 'json_class'
 
-  NaN           = 0.0 / 0
+  NaN           = 0.0 / 0 # rubocop:disable Naming/ConstantName
 
-  Infinity      = 1.0 / 0
+  Infinity      = 1.0 / 0 # rubocop:disable Naming/ConstantName
 
   MinusInfinity = -Infinity
 
@@ -405,7 +407,7 @@ module JSON
   class MissingUnicodeSupport < JSONError; end
 end
 
-module ::Kernel
+module ::Kernel # rubocop:disable Style/ClassAndModuleChildren
   private
 
   # Outputs _objs_ to STDOUT as JSON strings in the shortest form, that is in
@@ -432,7 +434,7 @@ module ::Kernel
   #
   # The _opts_ argument is passed through to generate/parse respectively. See
   # generate and parse for their documentation.
-  def JSON(object, *args)
+  def JSON(object, *args) # rubocop:disable Naming/MethodName
     if object.respond_to? :to_str
       JSON.parse(object.to_str, args.first)
     else
@@ -442,7 +444,7 @@ module ::Kernel
 end
 
 # Extends any Class to include _json_creatable?_ method.
-class ::Class
+class ::Class # rubocop:disable Style/ClassAndModuleChildren
   # Returns true if this class can be used to create an instance
   # from a serialised JSON string. The class has to implement a class
   # method _json_create_ that expects a hash as first parameter. The hash

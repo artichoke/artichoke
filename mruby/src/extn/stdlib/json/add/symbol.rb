@@ -11,12 +11,12 @@ class Symbol
   end
 
   # Stores class name (Symbol) with String representation of Symbol as a JSON string.
-  def to_json(*a)
-    as_json.to_json(*a)
+  def to_json(*args)
+    as_json.to_json(*args)
   end
 
   # Deserializes JSON string by converting the <tt>string</tt> value stored in the object to a Symbol
-  def self.json_create(o)
-    o['s'].to_sym
+  def self.json_create(obj)
+    obj['s'].to_sym
   end
 end
