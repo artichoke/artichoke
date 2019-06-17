@@ -1,8 +1,5 @@
 #frozen_string_literal: false
-unless defined?(::JSON::JSON_LOADED) and ::JSON::JSON_LOADED
-  require 'json'
-end
-defined?(::BigDecimal) or require 'bigdecimal'
+require 'bigdecimal'
 
 class BigDecimal
   # Import a JSON Marshalled object.

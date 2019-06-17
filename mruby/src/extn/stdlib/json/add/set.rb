@@ -1,7 +1,4 @@
-unless defined?(::JSON::JSON_LOADED) and ::JSON::JSON_LOADED
-  require 'json'
-end
-defined?(::Set) or require 'set'
+require 'set'
 
 class Set
   # Import a JSON Marshalled object.
