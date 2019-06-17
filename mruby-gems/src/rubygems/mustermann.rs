@@ -76,6 +76,10 @@ impl Mustermann {
                 "translator = Class.new(self); translator.class_eval(&block); translator.new",
             );
             string = string.replace("private_constant", "# private_constant");
+            string = string.replace(
+                "def escape(char, parser: URI::DEFAULT_PARSER, escape: parser.regexp[:UNSAFE], also_escape: nil)",
+                "def escape(char, parser: URI::DEFAULT_PARSER, escape: NOT_SET, also_escape: nil); escape = parser.regexp[:UNSAFE] if escape.not_set?",
+            );
             Ok(string.into_bytes())
         } else if path == "mustermann/equality_map.rb" {
             let mut string = String::from_utf8(contents)
