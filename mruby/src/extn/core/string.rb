@@ -44,6 +44,7 @@ end
 class String
   def self.try_convert(obj = nil)
     raise ArgumentError if obj.nil?
+    return obj if obj.is_a?(String)
 
     obj.to_str
   rescue StandardError
@@ -63,6 +64,8 @@ class String
   end
 
   def <<(obj)
+    raise TypeError if obj.nil?
+
     obj = obj.chr if obj.is_a?(Integer)
 
     self[0..-1] = "#{self}#{obj}"
