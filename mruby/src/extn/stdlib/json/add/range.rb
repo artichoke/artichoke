@@ -1,7 +1,6 @@
-#frozen_string_literal: false
+# frozen_string_literal: false
 
 class Range
-
   # Deserializes JSON string by constructing new Range object with arguments
   # <tt>a</tt> serialized by <tt>to_json</tt>.
   def self.json_create(object)
@@ -12,8 +11,8 @@ class Range
   # object.
   def as_json(*)
     {
-      JSON.create_id  => self.class.name,
-      'a'             => [ first, last, exclude_end? ]
+      JSON.create_id => self.class.name,
+      'a' => [first, last, exclude_end?]
     }
   end
 

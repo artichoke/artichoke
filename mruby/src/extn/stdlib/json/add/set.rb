@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'set'
 
 class Set
@@ -14,7 +16,7 @@ class Set
   def as_json(*)
     {
       JSON.create_id => self.class.name,
-      'a'            => to_a,
+      'a' => to_a
     }
   end
 
@@ -23,4 +25,3 @@ class Set
     as_json.to_json(*args)
   end
 end
-

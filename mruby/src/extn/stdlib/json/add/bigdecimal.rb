@@ -1,4 +1,5 @@
-#frozen_string_literal: false
+# frozen_string_literal: false
+
 require 'bigdecimal'
 
 class BigDecimal
@@ -15,7 +16,7 @@ class BigDecimal
   def as_json(*)
     {
       JSON.create_id => self.class.name,
-      'b'            => _dump,
+      'b' => _dump
     }
   end
 

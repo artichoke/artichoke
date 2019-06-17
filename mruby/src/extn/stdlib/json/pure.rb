@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'json/common'
 
 module JSON
@@ -6,7 +8,7 @@ module JSON
   module Pure
     require 'json/pure/parser'
     require 'json/pure/generator'
-    $DEBUG and warn "Using Pure library for JSON."
+    $DEBUG && warn('Using Pure library for JSON.')
     JSON.parser = Parser
     JSON.generator = Generator
   end

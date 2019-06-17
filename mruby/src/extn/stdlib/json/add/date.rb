@@ -1,8 +1,8 @@
-#frozen_string_literal: false
+# frozen_string_literal: false
+
 require 'date'
 
 class Date
-
   # Deserializes JSON string by converting Julian year <tt>y</tt>, month
   # <tt>m</tt>, day <tt>d</tt> and Day of Calendar Reform <tt>sg</tt> to Date.
   def self.json_create(object)
@@ -19,7 +19,7 @@ class Date
       'y' => year,
       'm' => month,
       'd' => day,
-      'sg' => start,
+      'sg' => start
     }
   end
 

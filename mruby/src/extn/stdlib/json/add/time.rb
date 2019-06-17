@@ -1,7 +1,6 @@
-#frozen_string_literal: false
+# frozen_string_literal: false
 
 class Time
-
   # Deserializes JSON string by converting time since epoch to Time
   def self.json_create(object)
     if usec = object.delete('u') # used to be tv_usec -> tv_nsec
@@ -17,13 +16,13 @@ class Time
   # Returns a hash, that will be turned into a JSON object and represent this
   # object.
   def as_json(*)
-    nanoseconds = [ tv_usec * 1000 ]
-    respond_to?(:tv_nsec) and nanoseconds << tv_nsec
+    nanoseconds = [tv_usec * 1000]
+    respond_to?(:tv_nsec) && nanoseconds << tv_nsec
     nanoseconds = nanoseconds.max
     {
       JSON.create_id => self.class.name,
-      's'            => tv_sec,
-      'n'            => nanoseconds,
+      's' => tv_sec,
+      'n' => nanoseconds
     }
   end
 

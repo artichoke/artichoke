@@ -1,4 +1,4 @@
-#frozen_string_literal: false
+# frozen_string_literal: false
 
 class Rational
   # Deserializes JSON string by converting numerator value <tt>n</tt>,
@@ -12,8 +12,8 @@ class Rational
   def as_json(*)
     {
       JSON.create_id => self.class.name,
-      'n'            => numerator,
-      'd'            => denominator,
+      'n' => numerator,
+      'd' => denominator
     }
   end
 

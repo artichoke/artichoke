@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'json/common'
 
 module JSON
@@ -6,7 +8,7 @@ module JSON
   module Ext
     require 'json/ext/parser'
     require 'json/ext/generator'
-    $DEBUG and warn "Using Ext extension for JSON."
+    $DEBUG && warn('Using Ext extension for JSON.')
     JSON.parser = Parser
     JSON.generator = Generator
   end

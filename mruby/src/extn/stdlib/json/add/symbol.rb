@@ -1,4 +1,4 @@
-#frozen_string_literal: false
+# frozen_string_literal: false
 
 class Symbol
   # Returns a hash, that will be turned into a JSON object and represent this
@@ -6,7 +6,7 @@ class Symbol
   def as_json(*)
     {
       JSON.create_id => self.class.name,
-      's'            => to_s,
+      's' => to_s
     }
   end
 
