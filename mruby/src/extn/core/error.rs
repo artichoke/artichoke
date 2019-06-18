@@ -51,6 +51,9 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     interp
         .borrow_mut()
         .def_class::<RuntimeError>("RuntimeError", None, None);
+    interp
+        .borrow_mut()
+        .def_class::<SyntaxError>("SyntaxError", None, None);
     Ok(())
 }
 
@@ -166,6 +169,11 @@ impl RubyException for ArgumentError {}
 pub struct RuntimeError;
 
 impl RubyException for RuntimeError {}
+
+#[allow(clippy::module_name_repetitions)]
+pub struct SyntaxError;
+
+impl RubyException for SyntaxError {}
 
 #[cfg(test)]
 mod tests {
