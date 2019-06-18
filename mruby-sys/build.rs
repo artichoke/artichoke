@@ -76,7 +76,7 @@ fn main() {
         &opts,
     )
     .unwrap();
-    for patch in vec![] {
+    for patch in vec!["00001-regexp-literal-o-option.patch"] {
         if !Command::new("bash")
             .arg("-c")
             .arg(format!("patch -p1 < '{}'", Build::patch(patch)))
