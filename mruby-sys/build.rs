@@ -61,16 +61,34 @@ impl Build {
     fn bindgen_source_header() -> String {
         format!("{}/mruby-sys.h", &Build::ext_include_dir())
     }
+
+    fn patch(patch: &str) -> String {
+        format!("{}/vendor/{}", Build::root(), patch)
+    }
 }
 
 fn main() {
     let opts = CopyOptions::new();
+    let _ = dir::remove(Build::mruby_source_dir());
     dir::copy(
         Build::mruby_vendored_dir(),
         env::var("OUT_DIR").unwrap(),
         &opts,
     )
     .unwrap();
+    for patch in vec![] {
+        if !Command::new("bash")
+            .arg("-c")
+            .arg(format!("patch -p1 < '{}'", Build::patch(patch)))
+            .current_dir(Build::mruby_source_dir())
+            .status()
+            .unwrap()
+            .success()
+        {
+            panic!("Failed to patch mruby sources with {}", patch);
+        }
+    }
+
     // Build the mruby static library with its built in minirake build system.
     // minirake dynamically generates some c source files so we can't build
     // directly with the `cc` crate.
