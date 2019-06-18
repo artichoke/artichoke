@@ -614,8 +614,51 @@ class String
     raise NotImplementedError
   end
 
-  def upto(_other_str, _exclusive = false)
-    raise NotImplementedError
+  def upto(max, exclusive = false, &block)
+    return to_enum(:upto, max, exclusive) unless block
+    raise TypeError, "no implicit conversion of #{max.class} into String" unless max.is_a?(String)
+
+    len = length
+    maxlen = max.length
+    # single character
+    if len == 1 && maxlen == 1
+      c = ord
+      e = max.ord
+      while c <= e
+        break if exclusive && c == e
+
+        yield c.chr
+        c += 1
+      end
+      return self
+    end
+    # both edges are all digits
+    bi = to_i(10)
+    ei = max.to_i(10)
+    if (bi.positive? || bi == '0' * len) && (ei.positive? || ei == '0' * maxlen)
+      while bi <= ei
+        break if exclusive && bi == ei
+
+        s = bi.to_s
+        s = s.rjust(len, '0') if s.length < len
+
+        yield s
+        bi += 1
+      end
+      return self
+    end
+    bs = self
+    loop do
+      n = (bs <=> max)
+      break if n.positive?
+      break if exclusive && n.zero?
+
+      yield bs
+      break if n.zero?
+
+      bs = bs.succ
+    end
+    self
   end
 
   def valid_encoding?
