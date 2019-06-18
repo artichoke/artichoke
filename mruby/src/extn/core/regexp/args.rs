@@ -9,7 +9,7 @@ use std::mem;
 use super::*;
 
 #[derive(Debug)]
-pub(super) struct RegexpNew {
+pub struct RegexpNew {
     pub pattern: Value,
     pub options: Option<Options>,
     pub encoding: Option<Encoding>,
