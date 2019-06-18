@@ -1,6 +1,6 @@
 [package]
 name = "mruby-sys"
-version = "2.0.1-8"
+version = "2.0.1-9"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 links = "mruby"
@@ -18,3 +18,4 @@ doctest = false
 [build-dependencies]
 bindgen = "0.49.0"
 cc = "1.0"
+fs_extra = "1.1.0"

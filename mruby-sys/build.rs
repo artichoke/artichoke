@@ -1,3 +1,4 @@
+use fs_extra::dir::{self, CopyOptions};
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
@@ -33,8 +34,12 @@ impl Build {
         format!("{}/src/mruby-sys/ext.c", &Build::ext_source_dir())
     }
 
-    fn mruby_source_dir() -> String {
+    fn mruby_vendored_dir() -> String {
         format!("{}/vendor/mruby-{}", &Build::root(), MRUBY_REVISION)
+    }
+
+    fn mruby_source_dir() -> String {
+        format!("{}/mruby-{}", &env::var("OUT_DIR").unwrap(), MRUBY_REVISION)
     }
 
     fn mruby_minirake() -> String {
@@ -59,6 +64,13 @@ impl Build {
 }
 
 fn main() {
+    let opts = CopyOptions::new();
+    dir::copy(
+        Build::mruby_vendored_dir(),
+        env::var("OUT_DIR").unwrap(),
+        &opts,
+    )
+    .unwrap();
     // Build the mruby static library with its built in minirake build system.
     // minirake dynamically generates some c source files so we can't build
     // directly with the `cc` crate.
