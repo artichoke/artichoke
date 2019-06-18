@@ -44,10 +44,12 @@ macro_rules! unwrap_or_raise {
     ($interp:expr, $result:expr, $onerr:expr) => {
         match $result {
             std::result::Result::Err(err) => {
-                <$crate::extn::core::error::RuntimeError as $crate::extn::core::error::RubyException>::raise(
-                    &$interp,
-                    &err.to_string()
-                );
+                if (*$interp.borrow().mrb).exc.is_null() {
+                    <$crate::extn::core::error::RuntimeError as $crate::extn::core::error::RubyException>::raise(
+                        &$interp,
+                        &err.to_string()
+                    );
+                }
                 return $onerr;
             }
             std::result::Result::Ok(value) => value,
