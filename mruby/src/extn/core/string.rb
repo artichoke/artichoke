@@ -4,6 +4,7 @@ class Encoding
   ASCII_8BIT = new('ASCII-8BIT')
   US_ASCII = new('US-ASCII')
   ASCII = US_ASCII
+  EUC_JP = new('EUC-JP')
   UTF_8 = new('UTF-8')
 
   def self.find(string)
