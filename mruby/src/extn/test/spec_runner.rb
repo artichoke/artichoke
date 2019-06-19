@@ -19,45 +19,89 @@ RUBY_EXE = '/usr/bin/true'
 require 'mspec'
 require 'mspec/utils/script'
 
-class ErrorCollector
-  attr_reader :errors
-
+class SpecCollector
   def initialize
     @errors = []
+    @total = 0
+    @successes = 0
+    @failures = 0
+    @skipped = 0
+  end
+
+  def success?
+    @errors.empty?
+  end
+
+  def start
+    MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
+  end
+
+  def enter(description)
+    collector = self
+    MSpec.current.before(:each) { collector.begin }
+    puts "\n", "In #{description}:", ''
+  end
+
+  def begin
+    @total += 1
+    print '.'
   end
 
   def exception(state)
+    skipped = false
     if state.exception.is_a?(NoMethodError)
-      return if state.message =~ /'encoding'/
-      return if state.message =~ /'private_instance_methods'/
-      return if state.message =~ /'taint'/
-      return if state.message =~ /'tainted\?'/
-      return if state.message =~ /'warn'/
+      skipped = true if state.message =~ /'allocate'/
+      skipped = true if state.message =~ /'encoding'/
+      skipped = true if state.message =~ /'private_instance_methods'/
+      skipped = true if state.message =~ /'taint'/
+      skipped = true if state.message =~ /'tainted\?'/
+      skipped = true if state.message =~ /'warn'/
     elsif state.exception.is_a?(SpecExpectationNotMetError)
-      return if state.it =~ /encoding/
-      return if state.it =~ /ASCII/
+      skipped = true if state.it =~ /encoding/
+      skipped = true if state.it =~ /ASCII/
+    elsif state.exception.is_a?(SyntaxError)
+      skipped = true if state.it =~ /encoding/
+      skipped = true if state.it =~ /ASCII/
     end
-    @errors << state
+    if skipped
+      @skipped += 1
+      print "\b\e[33mS\e[0m"
+    else
+      @errors << state
+      print "\b\e[31mX\e[0m"
+    end
+    nil
+  end
+
+  def finish
+    @failures = @errors.length
+    @successes = @total - @failures - @skipped
+
+    puts "\n"
+    if @errors.length.zero?
+      puts "\e[32mPassed #{@successes} specs. Skipped #{@skipped} spec.\e[0m"
+      return
+    end
+
+    puts "\e[31mPassed #{@successes}, skipped #{@skipped}, failed #{@errors.length} specs.\e[0m"
+    @errors.each do |state|
+      puts '', "\e[31m#{state.message} in #{state.it}\e[0m", '', state.backtrace
+    end
+    puts '', "\e[31mPassed #{@successes}, skipped #{@skipped}, failed #{@errors.length} specs.\e[0m"
   end
 end
 
 def run_specs(*specs)
   specs = specs.flatten
-  error_collector = ErrorCollector.new
+  collector = SpecCollector.new
+
+  MSpec.register(:start, collector)
+  MSpec.register(:enter, collector)
+  MSpec.register(:exception, collector)
+  MSpec.register(:finish, collector)
   MSpec.register_files(specs)
-  MSpec.register(:exception, error_collector)
-  MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
 
   MSpec.process
 
-  return true if error_collector.errors.length.zero?
-
-  message = "\n\n\e[31m#{error_collector.errors.length} spec failures:\e[0m"
-  error_collector.errors.each do |state|
-    message << "\n\n\e[31m#{state.message} in #{state.it}\e[0m\n\n"
-    message << state.backtrace
-  end
-  message << "\n\n\e[31m#{error_collector.errors.length} spec failures.\e[0m\n"
-
-  raise message
+  collector.success?
 end
