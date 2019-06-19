@@ -118,10 +118,11 @@ impl Rest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Match {
-    pub string: Option<String>,
-    pub pos: Option<usize>,
+    pub string: Result<Option<String>, MrbError>,
+    pub pos: Option<i64>,
+    pub block: Option<Value>,
 }
 
 impl Match {
@@ -129,15 +130,17 @@ impl Match {
         let string = mem::uninitialized::<sys::mrb_value>();
         let pos = mem::uninitialized::<sys::mrb_value>();
         let has_pos = mem::uninitialized::<sys::mrb_bool>();
+        let block = mem::uninitialized::<sys::mrb_value>();
         let mut argspec = vec![];
         argspec
             .write_all(
                 format!(
-                    "{}{}{}{}\0",
+                    "{}{}{}{}{}\0",
                     sys::specifiers::OBJECT,
+                    sys::specifiers::BLOCK,
                     sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
                     sys::specifiers::OBJECT,
-                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
+                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN,
                 )
                 .as_bytes(),
             )
@@ -146,19 +149,25 @@ impl Match {
             interp.borrow().mrb,
             argspec.as_ptr() as *const i8,
             &string,
+            &block,
             &pos,
             &has_pos,
         );
-        let string = <Option<String>>::try_from_mrb(&interp, Value::new(&interp, string))
-            .map_err(MrbError::ConvertToRust)?;
+        let string = <Option<String>>::try_from_mrb(&interp, Value::new(interp, string))
+            .map_err(MrbError::ConvertToRust);
         let pos = if has_pos == 0 {
             None
         } else {
-            let pos = usize::try_from_mrb(&interp, Value::new(&interp, pos))
+            let pos = i64::try_from_mrb(&interp, Value::new(&interp, pos))
                 .map_err(MrbError::ConvertToRust)?;
             Some(pos)
         };
-        Ok(Self { string, pos })
+        let block = if sys::mrb_sys_value_is_nil(block) {
+            None
+        } else {
+            Some(Value::new(interp, block))
+        };
+        Ok(Self { string, pos, block })
     }
 }
 
