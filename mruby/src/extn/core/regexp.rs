@@ -589,7 +589,9 @@ impl Regexp {
             for pattern in patterns {
                 if let Ok(regexp) = Self::try_from_ruby(&interp, &pattern) {
                     raw_patterns.push(regexp.borrow().pattern.clone());
-                } else if let Ok(Some(pattern)) = pattern.funcall::<Option<String>, _, _>("to_str", &[]) {
+                } else if let Ok(Some(pattern)) =
+                    pattern.funcall::<Option<String>, _, _>("to_str", &[])
+                {
                     raw_patterns.push(syntax::escape(pattern.as_str()));
                 } else {
                     return TypeError::raise(&interp, "no implicit conversion to String");
@@ -677,7 +679,11 @@ impl Regexp {
                     global_last_match_captures.as_ptr() as *const i8,
                     global_last_match_captures.len(),
                 );
-                sys::mrb_gv_set(interp.borrow().mrb, global_match_captures_name, interp.nil().inner());
+                sys::mrb_gv_set(
+                    interp.borrow().mrb,
+                    global_match_captures_name,
+                    interp.nil().inner(),
+                );
                 return interp.nil().inner();
             }
         };
@@ -794,15 +800,16 @@ impl Regexp {
         };
 
         let pos = args.pos.unwrap_or_default();
-        let num_captures = regexp.borrow()
+        let num_captures = regexp
+            .borrow()
             .regex()
             .and_then(|regexp| regexp.captures(string.as_str()))
             .map(|captures| captures.len())
             .unwrap_or_default();
         let pos = if pos < 0 {
-            num_captures.checked_sub(
-                usize::try_from(-pos).expect("positive i64 must be usize"),
-            ).unwrap_or_default()
+            num_captures
+                .checked_sub(usize::try_from(-pos).expect("positive i64 must be usize"))
+                .unwrap_or_default()
         } else {
             usize::try_from(pos).expect("positive i64 must be usize")
         };
@@ -854,7 +861,9 @@ impl Regexp {
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        interp.bool(!sys::mrb_sys_value_is_nil(Self::match_(mrb, slf))).inner()
+        interp
+            .bool(!sys::mrb_sys_value_is_nil(Self::match_(mrb, slf)))
+            .inner()
     }
 
     unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
@@ -1004,9 +1013,9 @@ impl MatchData {
         match args {
             args::MatchIndex::Index(index) => {
                 let index = if index < 0 {
-                    length.checked_sub(
-                        usize::try_from(-index).expect("positive i64 must be usize"),
-                    ).unwrap_or_default()
+                    length
+                        .checked_sub(usize::try_from(-index).expect("positive i64 must be usize"))
+                        .unwrap_or_default()
                 } else {
                     usize::try_from(index).expect("positive i64 must be usize")
                 };
@@ -1015,9 +1024,7 @@ impl MatchData {
                     .regex()
                     .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
                 match captures {
-                    Some(captures) => {
-                        Value::from_mrb(&interp, captures.at(index)).inner()
-                    }
+                    Some(captures) => Value::from_mrb(&interp, captures.at(index)).inner(),
                     None => interp.nil().inner(),
                 }
             }
