@@ -1,0 +1,41 @@
+From 0675210d7cd240feef3b4d727a20719e54171de8 Mon Sep 17 00:00:00 2001
+From: Ryan Lopopolo <rjl@hyperbo.la>
+Date: Wed, 19 Jun 2019 23:24:01 +0100
+Subject: [PATCH] Support parsing a Regexp literal with CRuby options
+
+CRuby supports a 's' `Regexp` option for `Regexp` literals, e.g. `/foo/s`
+that alters the encoding in the same way as the 'u' option. This commit
+adds support for parsing such literals and sets Regexp options
+appropriately.
+
+CRuby supports a 'e' `Regexp` option for `Regexp` literals, e.g. `/foo/w`
+that alters the encoding in the same way as the 'u' option. This commit
+adds support for parsing such literals and sets Regexp options
+appropriately.
+
+CRuby supports a 'o' `Regexp` option for `Regexp` literals, e.g. `/foo/o`
+that disables multiple interpolation passes. This commit adds support for
+parsing such literals. Nothing is done with the option, it is consumed
+and ignored by the parser.
+---
+ mrbgems/mruby-compiler/core/parse.y | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/mrbgems/mruby-compiler/core/parse.y b/mrbgems/mruby-compiler/core/parse.y
+index 96a9453b..b06eb4d1 100644
+--- a/mrbgems/mruby-compiler/core/parse.y
++++ b/mrbgems/mruby-compiler/core/parse.y
+@@ -4525,7 +4525,10 @@ parse_string(parser_state *p)
+       case 'x': f |= 2; break;
+       case 'm': f |= 4; break;
+       case 'u': f |= 16; break;
++      case 'e': f |= 16; break;
++      case 's': f |= 16; break;
+       case 'n': f |= 32; break;
++      case 'o': break;
+       default: tokadd(p, re_opt); break;
+       }
+     }
+-- 
+2.21.0
+
