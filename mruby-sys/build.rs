@@ -76,7 +76,7 @@ fn main() {
         &opts,
     )
     .unwrap();
-    for patch in vec!["00001-regexp-literal-o-option.patch"] {
+    for patch in vec!["0001-Support-parsing-a-Regexp-literal-with-CRuby-options.patch"] {
         if !Command::new("bash")
             .arg("-c")
             .arg(format!("patch -p1 < '{}'", Build::patch(patch)))

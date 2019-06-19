@@ -759,7 +759,7 @@ dependencies = [
  "env_logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "mruby-sys 2.0.1-10",
+ "mruby-sys 2.0.1-11",
  "mruby-vfs 0.5.0-alpha",
  "onig 4.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "path_abs 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -788,7 +788,7 @@ dependencies = [
 
 [[package]]
 name = "mruby-sys"
-version = "2.0.1-10"
+version = "2.0.1-11"
 dependencies = [
  "bindgen 0.49.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
