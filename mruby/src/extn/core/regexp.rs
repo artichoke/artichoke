@@ -135,33 +135,33 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Options {
+    multiline: bool,
     ignore_case: bool,
     extended: bool,
-    multiline: bool,
 }
 
 impl Options {
     fn flags(self) -> RegexOptions {
         let mut bits = RegexOptions::REGEX_OPTION_NONE;
+        if self.multiline {
+            bits |= RegexOptions::REGEX_OPTION_MULTILINE;
+        }
         if self.ignore_case {
             bits |= RegexOptions::REGEX_OPTION_IGNORECASE;
         }
         if self.extended {
             bits |= RegexOptions::REGEX_OPTION_EXTEND;
         }
-        if self.multiline {
-            bits |= RegexOptions::REGEX_OPTION_MULTILINE;
-        }
         bits
     }
 
     fn as_literal_string(self) -> String {
         let mut buf = String::new();
-        if self.ignore_case {
-            buf.push('i');
-        }
         if self.multiline {
             buf.push('m');
+        }
+        if self.ignore_case {
+            buf.push('i');
         }
         if self.extended {
             buf.push('x');
@@ -353,6 +353,14 @@ impl Encoding {
             Encoding::No => Regexp::NOENCODING,
             Encoding::None => 0,
         }
+    }
+
+    fn as_literal_string(self) -> String {
+        match self {
+            Encoding::Fixed => "",
+            Encoding::No => "n",
+            Encoding::None => "",
+        }.to_owned()
     }
 
     fn from_value(
@@ -1105,9 +1113,10 @@ impl Regexp {
             interp.nil().inner()
         );
         let s = format!(
-            "/{}/{}",
-            regexp.borrow().literal_pattern,
-            regexp.borrow().literal_options.as_literal_string()
+            "/{}/{}{}",
+            regexp.borrow().literal_pattern.as_str().replace("/", r"\/"),
+            regexp.borrow().literal_options.as_literal_string(),
+            regexp.borrow().encoding.as_literal_string()
         );
         Value::from_mrb(&interp, s).inner()
     }
