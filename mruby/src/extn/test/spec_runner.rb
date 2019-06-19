@@ -28,10 +28,14 @@ class ErrorCollector
 
   def exception(state)
     if state.exception.is_a?(NoMethodError)
+      return if state.message =~ /'encoding'/
       return if state.message =~ /'private_instance_methods'/
       return if state.message =~ /'taint'/
       return if state.message =~ /'tainted\?'/
       return if state.message =~ /'warn'/
+    elsif state.exception.is_a?(SpecExpectationNotMetError)
+      return if state.it =~ /encoding/
+      return if state.it =~ /ASCII/
     end
     @errors << state
   end
