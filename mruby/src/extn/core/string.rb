@@ -463,7 +463,7 @@ class String
     return parts if self == ''
 
     pattern = Regexp.compile(Regexp.escape(pattern)) if pattern.is_a?(String)
-    return length.times.map { |i| self[i].dup } if pattern.to_s == ''
+    return length.times.map { |i| self[i].dup } if pattern.source == ''
 
     remainder = dup
     match = pattern.match(remainder)
