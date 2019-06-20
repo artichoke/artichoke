@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use onig::{Regex, RegexOptions, Region, SearchOptions, Syntax};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -14,6 +13,7 @@ use crate::value::{Value, ValueLike};
 use crate::MrbError;
 
 mod args;
+mod compile;
 mod syntax;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
@@ -205,7 +205,6 @@ impl Options {
             // Only deal with Regexp opts
             let options = options & !Regexp::ALL_ENCODING_OPTS;
             if options & Regexp::ALL_REGEXP_OPTS != options {
-                ArgumentError::raise(&interp, "Invalid Regexp flags");
                 return Err(MrbError::Exec("Invalid Regexp flags".to_owned()));
             }
             Ok(Self {
@@ -238,7 +237,7 @@ impl Options {
     }
 
     fn from_pattern(pattern: &str, mut opts: Self) -> (String, Self) {
-        let orig_opts = opts.clone();
+        let orig_opts = opts;
         let mut chars = pattern.chars();
         let mut enabled = true;
         let mut pat_buf = String::new();
@@ -247,6 +246,7 @@ impl Options {
             None => {
                 pat_buf.push_str("(?");
                 pat_buf.push_str(opts.as_onig_string().as_str());
+                pat_buf.push(':');
                 pat_buf.push(')');
                 return (pat_buf, opts);
             }
@@ -357,10 +357,10 @@ impl Encoding {
 
     fn as_literal_string(self) -> String {
         match self {
-            Encoding::Fixed => "",
+            Encoding::Fixed | Encoding::None => "",
             Encoding::No => "n",
-            Encoding::None => "",
-        }.to_owned()
+        }
+        .to_owned()
     }
 
     fn from_value(
@@ -378,14 +378,12 @@ impl Encoding {
             } else if encoding == 0 {
                 Ok(Self::default())
             } else {
-                ArgumentError::raise(&interp, "Invalid Regexp encoding");
                 return Err(MrbError::Exec("Invalid Regexp encoding".to_owned()));
             }
         } else if let Ok(encoding) =
             unsafe { String::try_from_mrb(&interp, Value::new(&interp, value)) }
         {
             if encoding.contains('u') && encoding.contains('n') {
-                ArgumentError::raise(&interp, "Invalid Regexp encoding");
                 return Err(MrbError::Exec("Invalid Regexp encoding".to_owned()));
             }
             let mut enc = vec![];
@@ -398,12 +396,10 @@ impl Encoding {
                 {
                     continue;
                 } else {
-                    ArgumentError::raise(&interp, "Invalid Regexp encoding");
                     return Err(MrbError::Exec("Invalid Regexp encoding".to_owned()));
                 }
             }
             if enc.len() > 1 {
-                ArgumentError::raise(&interp, "Invalid Regexp encoding");
                 return Err(MrbError::Exec("Invalid Regexp encoding".to_owned()));
             }
             Ok(enc.pop().unwrap_or_default())
@@ -535,49 +531,13 @@ impl Regexp {
         let interp = interpreter_or_raise!(mrb);
         let args = unwrap_or_raise!(
             interp,
-            args::RegexpNew::extract(&interp),
+            compile::Args::extract(&interp),
             interp.nil().inner()
         );
-        let spec = class_spec_or_raise!(interp, Self);
-        let regexp_class = unwrap_or_raise!(
-            interp,
-            spec.borrow()
-                .rclass(&interp)
-                .ok_or_else(|| MrbError::NotDefined("Regexp".to_owned())),
-            interp.nil().inner()
-        );
-        let pattern_is_regexp =
-            sys::mrb_obj_is_kind_of(interp.borrow().mrb, args.pattern.inner(), regexp_class) != 0;
-
-        let pattern = if pattern_is_regexp {
-            let regexp = unwrap_or_raise!(
-                interp,
-                Self::try_from_ruby(&interp, &Value::new(&interp, args.pattern.inner())),
-                interp.nil().inner()
-            );
-            let borrow = regexp.borrow();
-            borrow.pattern.clone()
-        } else {
-            unwrap_or_raise!(
-                interp,
-                args.pattern.try_into::<String>(),
-                interp.nil().inner()
-            )
-        };
-        let literal_options = args.options.unwrap_or_default();
-        let literal_pattern = pattern;
-        let (pattern, options) = Options::from_pattern(literal_pattern.as_str(), literal_options);
-        if let Some(data) = Self::new(
-            literal_pattern,
-            pattern,
-            literal_options,
-            options,
-            args.encoding.unwrap_or_default(),
-        ) {
-            unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
-        } else {
-            // Regexp is invalid.
-            SyntaxError::raise(&interp, "malformed Regexp")
+        match compile::method(&interp, args) {
+            Ok(value) => value.inner(),
+            Err(compile::Error::Syntax) => SyntaxError::raise(&interp, ""),
+            _ => interp.nil().inner(),
         }
     }
 
