@@ -233,6 +233,58 @@ class String
     raise NotImplementedError
   end
 
+  def each_line(separator = $/, getline_args = nil) # rubocop:disable Style/SpecialGlobalVars
+    return to_enum(:each_line, separator, getline_args) unless block_given?
+
+    if separator.nil?
+      yield self
+      return self
+    end
+    raise TypeError if separator.is_a?(Symbol)
+    raise TypeError if (separator = String.try_convert(separator)).nil?
+
+    if separator.empty?
+      append = "\n\n" if separator.empty?
+      matched = ''
+      part = ''
+      dup.split('') do |c|
+        if c == "\n"
+          matched << c
+        elsif matched.length > 1
+          yield self.class.new("#{part}#{matched}")
+          matched = ''
+          part = c
+        else
+          part << matched unless matched.empty?
+
+          matched = ''
+          part << c
+        end
+      end
+
+      yield self.class.new("#{part}#{matched}") unless part.empty?
+      return self
+    end
+    append = separator
+    matched = ''
+    part = ''
+    dup.split('') do |c|
+      if c == separator[matched.length]
+        matched << c
+      else
+        part << c
+      end
+      next unless matched == separator
+
+      yield self.class.new("#{part}#{append}")
+      matched = ''
+      part = ''
+    end
+    yield self.class.new(part) unless part.empty?
+
+    self
+  end
+
   def encode(*_args)
     # mruby does not support encoding, all Strings are UTF-8. This method is a
     # NOOP and is here for compatibility.
@@ -463,7 +515,12 @@ class String
     return parts if self == ''
 
     pattern = Regexp.compile(Regexp.escape(pattern)) if pattern.is_a?(String)
-    return length.times.map { |i| self[i].dup } if pattern.source == ''
+    if pattern.source == ''
+      return length.times.map do |i|
+        yield self[i].dup
+        self[i].dup
+      end
+    end
 
     remainder = dup
     match = pattern.match(remainder)
