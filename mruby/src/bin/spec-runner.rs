@@ -19,7 +19,7 @@ pub fn main() {
         // ignore binary name
         args.next();
         for spec in args {
-            let contents = fs::read_to_string(&spec).unwrap();
+            let contents = fs::read(&spec).unwrap();
             mspec_runner.add_spec(spec.as_str(), contents).unwrap();
             specs.push(spec);
         }

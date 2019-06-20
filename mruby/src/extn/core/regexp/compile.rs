@@ -93,7 +93,6 @@ pub fn method(interp: &Mrb, args: Args) -> Result<Value, Error> {
                 .map_err(|_| Error::NoImplicitConversionToString)?;
             String::from_utf8(bytes).map_err(|_| Error::Unicode)?
         };
-    println!("literal: {}", literal_pattern);
     let (pattern, options) = Options::from_pattern(literal_pattern.as_str(), literal_options);
     if let Some(data) = Regexp::new(
         literal_pattern,
