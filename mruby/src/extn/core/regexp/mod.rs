@@ -5,7 +5,9 @@ use std::convert::TryFrom;
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
-use crate::extn::core::error::{ArgumentError, RubyException, SyntaxError, TypeError};
+use crate::extn::core::error::{
+    ArgumentError, RubyException, RuntimeError, SyntaxError, TypeError,
+};
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::types::Ruby;
@@ -14,6 +16,7 @@ use crate::MrbError;
 
 mod args;
 mod compile;
+mod initialize;
 mod syntax;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
@@ -415,7 +418,7 @@ impl Default for Encoding {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Regexp {
     literal_pattern: String,
     pattern: String,
@@ -478,49 +481,24 @@ impl Regexp {
         let interp = interpreter_or_raise!(mrb);
         let args = unwrap_or_raise!(
             interp,
-            args::RegexpNew::extract(&interp),
+            initialize::Args::extract(&interp),
             interp.nil().inner()
         );
-        let spec = class_spec_or_raise!(interp, Self);
-        let regexp_class = unwrap_or_raise!(
-            interp,
-            spec.borrow()
-                .rclass(&interp)
-                .ok_or_else(|| MrbError::NotDefined("Regexp".to_owned())),
-            interp.nil().inner()
-        );
-        let pattern_is_regexp =
-            sys::mrb_obj_is_kind_of(interp.borrow().mrb, args.pattern.inner(), regexp_class) != 0;
-
-        let pattern = if pattern_is_regexp {
-            let regexp = unwrap_or_raise!(
-                interp,
-                Self::try_from_ruby(&interp, &Value::new(&interp, args.pattern.inner())),
-                interp.nil().inner()
-            );
-            let borrow = regexp.borrow();
-            borrow.pattern.clone()
-        } else {
-            unwrap_or_raise!(
-                interp,
-                args.pattern.try_into::<String>(),
-                interp.nil().inner()
-            )
-        };
-        let literal_options = args.options.unwrap_or_default();
-        let literal_pattern = pattern;
-        let (pattern, options) = Options::from_pattern(literal_pattern.as_str(), literal_options);
-        if let Some(data) = Self::new(
-            literal_pattern,
-            pattern,
-            literal_options,
-            options,
-            args.encoding.unwrap_or_default(),
-        ) {
-            unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, Some(slf)))
-        } else {
-            // Regexp is invalid.
-            SyntaxError::raise(&interp, "malformed Regexp")
+        match initialize::method(&interp, slf, args) {
+            Ok(value) => value.inner(),
+            // Err(initialize::Error::Syntax) => SyntaxError::raise(&interp, ""),
+            Err(initialize::Error::NoImplicitConversionToString) => {
+                TypeError::raise(&interp, "no implicit conversion into String");
+                unwrap_value_or_raise!(interp, Self::default().try_into_ruby(&interp, Some(slf)))
+            }
+            Err(initialize::Error::Syntax) => {
+                SyntaxError::raise(&interp, "");
+                unwrap_value_or_raise!(interp, Self::default().try_into_ruby(&interp, Some(slf)))
+            }
+            _ => {
+                RuntimeError::raise(&interp, "");
+                unwrap_value_or_raise!(interp, Self::default().try_into_ruby(&interp, Some(slf)))
+            }
         }
     }
 
@@ -536,7 +514,7 @@ impl Regexp {
         );
         match compile::method(&interp, args) {
             Ok(value) => value.inner(),
-            Err(compile::Error::Syntax) => SyntaxError::raise(&interp, ""),
+            //Err(compile::Error::Syntax) => SyntaxError::raise(&interp, ""),
             _ => interp.nil().inner(),
         }
     }
