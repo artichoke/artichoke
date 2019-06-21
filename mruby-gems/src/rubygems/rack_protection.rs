@@ -33,7 +33,7 @@ impl RackProtection {
                 "@default_options ||= DEFAULT_OPTIONS; @default_options.merge(options)",
             );
             string = string.replace(
-                "def default_options        DEFAULT_OPTIONS      end",
+                "def default_options\n        DEFAULT_OPTIONS\n      end",
                 "def default_options; @default_options ||= DEFAULT_OPTIONS; end",
             );
             string = string.replace("defined? SecureRandom", "true");
