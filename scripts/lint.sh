@@ -27,6 +27,8 @@ lint_ruby_sources mruby/src/extn
 lint_ruby_sources nemesis/ruby
 ## foolsgold
 lint_ruby_sources foolsgold/ruby
+## hubris
+lint_ruby_sources hubris/src
 
 # C sources
 
