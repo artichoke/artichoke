@@ -41,7 +41,7 @@ impl Kernel {
         if path.is_relative() {
             path = PathBuf::from(base);
         }
-        let files = vec![path.join(filename), path.join(format!("{}.rb", filename))];
+        let files = vec![path.join(format!("{}.rb", filename)), path.join(filename)];
         for path in files {
             // canonicalize path (remove '.' and '..' components).
             let path = match PathAbs::new(path) {

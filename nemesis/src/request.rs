@@ -63,7 +63,10 @@ pub trait Request {
         env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.server_name())])?;
 
         let key = interp.eval("Rack::SERVER_PORT")?;
-        env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.server_port())])?;
+        env.funcall::<(), _, _>(
+            "[]=",
+            &[key, Value::from_mrb(interp, self.server_port().to_string())],
+        )?;
 
         let key = interp.eval("Rack::RACK_URL_SCHEME")?;
         env.funcall::<(), _, _>("[]=", &[key, Value::from_mrb(interp, self.url_scheme())])?;

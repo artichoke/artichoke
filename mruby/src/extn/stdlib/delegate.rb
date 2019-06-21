@@ -390,7 +390,7 @@ def DelegateClass(superclass) # rubocop:disable Naming/MethodName
   methods -= %i[to_s inspect =~ !~ ===]
   klass.module_eval do
     def __getobj__ # :nodoc:
-      unless defined?(@delegate_dc_obj)
+      if @delegate_dc_obj.nil?
         return yield if block_given?
 
         __raise__ ::ArgumentError, 'not delegated'

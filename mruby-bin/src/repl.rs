@@ -87,6 +87,7 @@ pub fn run(
 
     // load gems
     mruby_gems::rubygems::rack::init(&interp).map_err(Error::Ruby)?;
+    mruby_gems::rubygems::mustermann::init(&interp).map_err(Error::Ruby)?;
 
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
     interp.push_context(EvalContext::new(REPL_FILENAME));

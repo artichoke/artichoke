@@ -55,4 +55,10 @@ module Kernel
 
     e.value
   end
+
+  NOT_SET = Object.new
+
+  def not_set?
+    self == NOT_SET
+  end
 end

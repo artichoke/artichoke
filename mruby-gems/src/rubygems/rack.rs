@@ -6,11 +6,12 @@ use std::convert::AsRef;
 
 use crate::Gem;
 
+/// Load the [`Rack`] gem into an interpreter.
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Rack::init(interp)
 }
 
-/// Rack gem at version 2.0.7.
+/// Gem
 #[derive(RustEmbed)]
 // TODO: resolve path relative to CARGO_MANIFEST_DIR
 // https://github.com/pyros2097/rust-embed/pull/59
@@ -25,11 +26,21 @@ impl Rack {
             .ok_or_else(|| MrbError::SourceNotFound(path.to_owned()))?;
         // patches
         if path == "rack/builder.rb" {
-            let bad = "TOPLEVEL_BINDING";
-            let good = "nil";
-            let string = String::from_utf8(contents)
+            let mut string = String::from_utf8(contents)
                 .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
-            Ok(string.replace(bad, good).into_bytes())
+            string = string.replace("TOPLEVEL_BINDING", "nil");
+            Ok(string.into_bytes())
+        } else if path == "rack/request.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("EOFError", "# EOFError");
+            Ok(string.into_bytes())
+        } else if path == "rack/utils.rb" {
+            let mut string = String::from_utf8(contents)
+                .map_err(|_| MrbError::SourceNotFound(path.to_owned()))?;
+            string = string.replace("defined?(Process::CLOCK_MONOTONIC)", "false");
+            string = string.replace("::File::SEPARATOR, ::File::ALT_SEPARATOR", "'/', nil");
+            Ok(string.into_bytes())
         } else {
             Ok(contents)
         }
