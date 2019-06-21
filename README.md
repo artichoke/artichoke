@@ -128,7 +128,8 @@ Required classes include (at least):
 mruby does not implement any of the
 [Ruby 2.6 standard library](https://ruby-doc.org/stdlib-2.6.3/).
 
-See the stdlib tracking ticket (GH-8) for more details.
+See the stdlib tracking ticket
+([GH-8](https://github.com/lopopolo/ferrocarril/issues/8)) for more details.
 
 #### Gems
 
