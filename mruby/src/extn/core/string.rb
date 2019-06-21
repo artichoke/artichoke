@@ -1,21 +1,37 @@
 # frozen_string_literal: true
 
 class Encoding
+  def initialize(name)
+    @name = name
+  end
+
   ASCII_8BIT = new('ASCII-8BIT')
   US_ASCII = new('US-ASCII')
   ASCII = US_ASCII
   EUC_JP = new('EUC-JP')
   UTF_8 = new('UTF-8')
 
+  def self.default_external
+    UTF_8
+  end
+
+  def self.default_external=(_enc)
+    UTF_8
+  end
+
+  def self.default_internal
+    UTF_8
+  end
+
+  def self.default_internal=(_enc)
+    UTF_8
+  end
+
   def self.find(string)
     new(string)
   end
 
   attr_reader :name
-
-  def initialize(name)
-    @name = name
-  end
 
   def ascii_compatible?
     true
