@@ -12,7 +12,7 @@ use nemesis::{Builder, Error, Mount};
 const APP: &str = include_str!("config.ru");
 
 pub fn main() -> Result<(), i32> {
-    env_logger::Builder::from_env("DITTY_LOG").init();
+    env_logger::Builder::from_env("HUBRIS_LOG").init();
     if let Err(err) = spawn() {
         error!("Failed to launch nemesis: {}", err);
         eprintln!("ERR: {}", err);
