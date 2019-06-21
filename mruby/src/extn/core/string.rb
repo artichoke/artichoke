@@ -243,45 +243,54 @@ class String
     raise TypeError if separator.is_a?(Symbol)
     raise TypeError if (separator = String.try_convert(separator)).nil?
 
+    start = 0
+    pointer = 0
+    string = dup
+
     if separator.empty?
-      append = "\n\n" if separator.empty?
-      matched = ''
-      part = ''
-      dup.split('') do |c|
+      matched_newlines = 0
+      while pointer < string.length
+        c = string[pointer]
         if c == "\n"
-          matched << c
-        elsif matched.length > 1
-          yield self.class.new("#{part}#{matched}")
-          matched = ''
-          part = c
+          matched_newlines += 1
+        elsif matched_newlines > 1
+          if self.class == String
+            yield string[start...pointer]
+          else
+            yield self.class.new(string[start...pointer])
+          end
+          matched_newlines = 0
+          start = pointer
         else
-          part << matched unless matched.empty?
-
-          matched = ''
-          part << c
+          matched_newlines = 0
         end
+        pointer += 1
       end
+    else
+      matched_length = 0
+      separator_length = separator.length
+      while pointer < string.length
+        c = string[pointer]
+        pointer += 1
+        matched_length += 1 if c == separator[matched_length]
+        next unless matched_length == separator_length
 
-      yield self.class.new("#{part}#{matched}") unless part.empty?
-      return self
-    end
-    append = separator
-    matched = ''
-    part = ''
-    dup.split('') do |c|
-      if c == separator[matched.length]
-        matched << c
-      else
-        part << c
+        if self.class == String
+          yield string[start...pointer]
+        else
+          yield self.class.new(string[start...pointer])
+        end
+        matched_length = 0
+        start = pointer
       end
-      next unless matched == separator
-
-      yield self.class.new("#{part}#{append}")
-      matched = ''
-      part = ''
     end
-    yield self.class.new(part) unless part.empty?
+    return self if start == string.length
 
+    if self.class == String
+      yield string[start..-1]
+    else
+      yield self.class.new(string[start...pointer])
+    end
     self
   end
 
