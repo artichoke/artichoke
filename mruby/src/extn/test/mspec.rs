@@ -78,6 +78,6 @@ mod tests {
     fn mspec_framework_loads() {
         let interp = Interpreter::create().expect("mrb init");
         // should not panic
-        MSpec::runner(interp).run();
+        assert_eq!(MSpec::runner(interp).run(), Ok(true));
     }
 }
