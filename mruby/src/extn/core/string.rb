@@ -516,10 +516,11 @@ class String
 
     pattern = Regexp.compile(Regexp.escape(pattern)) if pattern.is_a?(String)
     if pattern.source == ''
-      return length.times.map do |i|
-        yield self[i].dup
-        self[i].dup
+      length.times do |i|
+        yield self[i].dup if block_given?
+        parts << self[i].dup
       end
+      return parts
     end
 
     remainder = dup
