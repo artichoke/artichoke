@@ -259,53 +259,33 @@ class String
     raise TypeError if separator.is_a?(Symbol)
     raise TypeError if (separator = String.try_convert(separator)).nil?
 
-    start = 0
-    pointer = 0
-    string = dup
-
+    paragraph_mode = false
     if separator.empty?
-      matched_newlines = 0
-      while pointer < string.length
-        c = string[pointer]
-        if c == "\n"
-          matched_newlines += 1
-        elsif matched_newlines > 1
-          if self.class == String
-            yield string[start...pointer]
-          else
-            yield self.class.new(string[start...pointer])
-          end
-          matched_newlines = 0
-          start = pointer
-        else
-          matched_newlines = 0
-        end
-        pointer += 1
-      end
-    else
-      matched_length = 0
-      separator_length = separator.length
-      while pointer < string.length
-        c = string[pointer]
-        pointer += 1
-        matched_length += 1 if c == separator[matched_length]
-        next unless matched_length == separator_length
-
-        if self.class == String
-          yield string[start...pointer]
-        else
-          yield self.class.new(string[start...pointer])
-        end
-        matched_length = 0
-        start = pointer
-      end
+      paragraph_mode = true
+      separator = "\n\n"
     end
-    return self if start == string.length
+    start = 0
+    string = dup
+    self_len = length
+    sep_len = separator.length
+    should_yield_subclass_instances = self.class != String
 
-    if self.class == String
-      yield string[start..-1]
+    while (pointer = string.index(separator, start))
+      pointer += sep_len
+      pointer += 1 while paragraph_mode && string[pointer] == "\n"
+      if should_yield_subclass_instances
+        yield self.class.new(string[start, pointer - start])
+      else
+        yield string[start, pointer - start]
+      end
+      start = pointer
+    end
+    return self if start == self_len
+
+    if should_yield_subclass_instances
+      yield self.class.new(string[start, self_len - start])
     else
-      yield self.class.new(string[start...pointer])
+      yield string[start, self_len - start]
     end
     self
   end
