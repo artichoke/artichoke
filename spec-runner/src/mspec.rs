@@ -62,13 +62,14 @@ impl Runner {
 
 #[cfg(test)]
 mod tests {
-    use mruby::extn::test::mspec::MSpec;
     use mruby::interpreter::Interpreter;
+
+    use crate::mspec::Runner;
 
     #[test]
     fn mspec_framework_loads() {
         let interp = Interpreter::create().expect("mrb init");
         // should not panic
-        assert_eq!(MSpec::runner(interp).run(), Ok(true));
+        assert_eq!(Runner::new(interp).run(), Ok(true));
     }
 }
