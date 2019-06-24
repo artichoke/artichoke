@@ -4,7 +4,6 @@ use crate::MrbError;
 
 pub mod core;
 pub mod stdlib;
-pub mod test;
 
 pub const RUBY_PLATFORM: &str = "x86_64-unknown-mruby";
 pub const INPUT_RECORD_SEPARATOR: &str = "\n";
@@ -37,7 +36,5 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     }
     core::patch(interp)?;
     stdlib::patch(interp)?;
-    #[cfg(test)]
-    test::init(interp)?;
     Ok(())
 }
