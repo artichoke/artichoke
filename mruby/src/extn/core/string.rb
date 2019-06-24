@@ -9,6 +9,8 @@ class Encoding
   US_ASCII = new('US-ASCII')
   ASCII = US_ASCII
   EUC_JP = new('EUC-JP')
+  Shift_JIS = new('Shift_JIS')
+  SHIFT_JIS = Shift_JIS
   UTF_8 = new('UTF-8')
 
   def self.default_external
