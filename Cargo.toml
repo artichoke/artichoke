@@ -8,4 +8,5 @@ members = [
   "mruby-sys",
   "mruby-vfs",
   "nemesis",
+  "spec-runner",
 ]
