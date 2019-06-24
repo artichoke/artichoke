@@ -2,6 +2,7 @@ use std::io::Write;
 use std::mem;
 
 use crate::convert::RustBackedValue;
+use crate::eval::MrbEval;
 use crate::extn::core::regexp::{Encoding, Options, Regexp};
 use crate::interpreter::Mrb;
 use crate::sys;
@@ -83,6 +84,9 @@ pub fn method(interp: &Mrb, slf: sys::mrb_value, args: Args) -> Result<Value, Er
     let mut literal_options = args.options.unwrap_or_default();
     let literal_pattern =
         if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &args.pattern) } {
+            interp
+                .eval("Kernel.warn('flags ignored when initializing from Regexp')")
+                .map_err(|_| Error::Fatal)?;
             let borrow = regexp.borrow();
             literal_options = borrow.options;
             borrow.literal_pattern.clone()
