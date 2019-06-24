@@ -100,7 +100,7 @@ jobs:
               -and -not -path '*vendor*' \
               -and -not -path '*target*' \
               -and -not -path '*node_modules*' \
-              -and -not -path '*mruby/src/extn/test/ruby-spec/*' -print0 | \
+              -and -not -path '*spec/ruby*' -print0 | \
               xargs -0 -n1 bash -c '_check_clang_format "$@"' _
   ruby:
     docker:
