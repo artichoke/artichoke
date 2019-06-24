@@ -39,7 +39,7 @@ class StringScanner
     case group
     when Integer, Float then
       group = group.to_int
-      return nil unless group < @last_match.captures.length + 1
+      return nil unless group.abs < @last_match.captures.length + 1
     when String then raise IndexError unless @last_match.named_captures.key?(group)
     when Symbol then raise IndexError unless @last_match.named_captures.key?(group.to_s)
     end
@@ -165,7 +165,7 @@ class StringScanner
   end
 
   def peep(len)
-    warn 'peep is obsolet use peek instead' if $VERBOSE
+    warn 'peep is obsolete use peek instead' if $VERBOSE
     peek(len)
   end
 

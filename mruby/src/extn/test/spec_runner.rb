@@ -62,6 +62,7 @@ class SpecCollector
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
     end
+    skipped = true if state.it == 'is multi-byte character sensitive'
     if skipped
       @skipped += 1
       print "\b\e[33mS\e[0m"
