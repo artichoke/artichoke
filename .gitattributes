@@ -1,3 +1,2 @@
 mruby-sys/src/ffi.rs linguist-generated=true
-mruby/src/extn/test/mspec/* linguist-vendored
-mruby/src/extn/test/ruby-spec/* linguist-vendored
+spec-runner/spec/* linguist-vendored
