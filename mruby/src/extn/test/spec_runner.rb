@@ -55,7 +55,6 @@ class SpecCollector
       skipped = true if state.message =~ /'private_instance_methods'/
       skipped = true if state.message =~ /'taint'/
       skipped = true if state.message =~ /'tainted\?'/
-      skipped = true if state.message =~ /'warn'/
     elsif state.exception.is_a?(SpecExpectationNotMetError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
