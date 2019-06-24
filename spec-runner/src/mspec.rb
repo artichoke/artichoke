@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'mspec/matchers'
 require 'mspec/expectations'
 require 'mspec/mocks'
