@@ -23,19 +23,3 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     )?;
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::extn::test::mspec::MSpec;
-    use crate::interpreter::Interpreter;
-
-    #[test]
-    fn uri_doc_spec() {
-        let interp = Interpreter::create().expect("mrb init");
-        let mut runner = MSpec::runner(interp);
-        runner
-            .add_spec("uri_doc_spec.rb", include_str!("spec/uri_doc_spec.rb"))
-            .unwrap();
-        assert_eq!(runner.run(), Ok(true));
-    }
-}

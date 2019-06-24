@@ -18,22 +18,3 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.def_rb_source_file("json/pure/parser.rb", include_str!("json/pure/parser.rb"))?;
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::extn::test::mspec::MSpec;
-    use crate::interpreter::Interpreter;
-
-    #[test]
-    fn json_doc_spec() {
-        let interp = Interpreter::create().expect("mrb init");
-        let mut runner = MSpec::runner(interp);
-        runner
-            .add_spec(
-                "json/json_doc_spec.rb",
-                include_str!("spec/json_doc_spec.rb"),
-            )
-            .unwrap();
-        assert_eq!(runner.run(), Ok(true));
-    }
-}
