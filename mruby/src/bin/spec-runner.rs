@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::process;
 
 use mruby::extn::test;
 use mruby::extn::test::mspec::MSpec;
@@ -15,13 +16,16 @@ pub fn main() {
     // ignore binary name
     args.next();
     for spec in args {
-        let contents = fs::read_to_string(&spec).unwrap();
+        let contents = fs::read(&spec).unwrap();
         mspec_runner.add_spec(spec.as_str(), contents).unwrap();
         specs.push(spec);
     }
-    // this will panic if a spec fails.
-    mspec_runner.run();
-    for spec in specs {
-        println!("OK {}", spec);
+    match mspec_runner.run() {
+        Ok(true) => process::exit(0),
+        Ok(false) => process::exit(1),
+        Err(err) => {
+            println!("{}", err);
+            process::exit(1);
+        }
     }
 }

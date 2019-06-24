@@ -21,8 +21,9 @@ jobs:
           # https://github.com/mruby/mruby/blob/master/doc/guides/compile.md#prerequisites
           name: Install mruby Build Dependencies
           command: |
-            sudo apt-get install -y binutils bison ruby-full
-            rustfmt --version
+            sudo apt-get install -y binutils bison gperf ruby-full
+            bison --version
+            gperf --version
             ruby --version
       - run:
           # needed for cc crate in build.rs

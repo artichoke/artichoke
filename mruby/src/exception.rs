@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn return_exception_with_no_backtrace() {
         let interp = Interpreter::create().expect("mrb init");
-        let result = interp.eval("def bad; /./o; end").map(|_| ());
+        let result = interp.eval("def bad; (; end").map(|_| ());
         let expected = Exception::new("SyntaxError", "waffles", None, "SyntaxError: syntax error");
         assert_eq!(result, Err(MrbError::Exec(expected.to_string())));
     }

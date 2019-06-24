@@ -359,16 +359,13 @@ NestedEval.file
     fn return_syntax_error() {
         let interp = Interpreter::create().expect("mrb init");
         interp
-            .def_rb_source_file("fail.rb", "def bad; 'as'.scan(/./o); end")
+            .def_rb_source_file("fail.rb", "def bad; 'as'.scan(; end")
             .expect("def file");
         let result = interp.eval("require 'fail'").map(|_| ());
+        // TODO: require should reraise instead of wrapping in a RuntimeError
         let expected = MrbError::Exec(
-            "
-(eval):1: mruby exception: SyntaxError: syntax error (RuntimeError)
-(eval):1
-            "
-            .trim()
-            .to_owned(),
+            "(eval):1: mruby exception: SyntaxError: syntax error (RuntimeError)\n(eval):1"
+                .to_owned(),
         );
         assert_eq!(result, Err(expected));
     }

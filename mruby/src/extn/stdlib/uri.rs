@@ -36,6 +36,6 @@ mod tests {
         runner
             .add_spec("uri_doc_spec.rb", include_str!("spec/uri_doc_spec.rb"))
             .unwrap();
-        runner.run();
+        assert_eq!(runner.run(), Ok(true));
     }
 }

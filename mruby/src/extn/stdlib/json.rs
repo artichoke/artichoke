@@ -34,6 +34,6 @@ mod tests {
                 include_str!("spec/json_doc_spec.rb"),
             )
             .unwrap();
-        runner.run();
+        assert_eq!(runner.run(), Ok(true));
     }
 }

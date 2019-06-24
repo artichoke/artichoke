@@ -219,6 +219,7 @@ pub mod method;
 pub mod module;
 pub mod state;
 pub mod value;
+pub mod warn;
 
 pub use mruby_sys as sys;
 

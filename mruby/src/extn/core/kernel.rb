@@ -56,9 +56,26 @@ module Kernel
     e.value
   end
 
+  def warn(*args)
+    args.each do |message|
+      message = "#{message}\n" if message[-1] != "\n"
+
+      Warning.warn(message)
+    end
+  end
+
   NOT_SET = Object.new
 
   def not_set?
     self == NOT_SET
   end
+end
+
+module Warning
+  def warn(message)
+    return unless $stderr
+
+    $stderr.write(message)
+  end
+  module_function :warn # rubocop:disable Style/AccessModifierDeclarations
 end

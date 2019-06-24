@@ -1,20 +1,39 @@
 # frozen_string_literal: true
 
 class Encoding
+  def initialize(name)
+    @name = name
+  end
+
   ASCII_8BIT = new('ASCII-8BIT')
   US_ASCII = new('US-ASCII')
   ASCII = US_ASCII
+  EUC_JP = new('EUC-JP')
+  Shift_JIS = new('Shift_JIS')
+  SHIFT_JIS = Shift_JIS
   UTF_8 = new('UTF-8')
+
+  def self.default_external
+    UTF_8
+  end
+
+  def self.default_external=(_enc)
+    UTF_8
+  end
+
+  def self.default_internal
+    UTF_8
+  end
+
+  def self.default_internal=(_enc)
+    UTF_8
+  end
 
   def self.find(string)
     new(string)
   end
 
   attr_reader :name
-
-  def initialize(name)
-    @name = name
-  end
 
   def ascii_compatible?
     true
@@ -230,6 +249,47 @@ class String
 
   def each_grapheme_cluster
     raise NotImplementedError
+  end
+
+  def each_line(separator = $/, getline_args = nil) # rubocop:disable Style/SpecialGlobalVars
+    return to_enum(:each_line, separator, getline_args) unless block_given?
+
+    if separator.nil?
+      yield self
+      return self
+    end
+    raise TypeError if separator.is_a?(Symbol)
+    raise TypeError if (separator = String.try_convert(separator)).nil?
+
+    paragraph_mode = false
+    if separator.empty?
+      paragraph_mode = true
+      separator = "\n\n"
+    end
+    start = 0
+    string = dup
+    self_len = length
+    sep_len = separator.length
+    should_yield_subclass_instances = self.class != String
+
+    while (pointer = string.index(separator, start))
+      pointer += sep_len
+      pointer += 1 while paragraph_mode && string[pointer] == "\n"
+      if should_yield_subclass_instances
+        yield self.class.new(string[start, pointer - start])
+      else
+        yield string[start, pointer - start]
+      end
+      start = pointer
+    end
+    return self if start == self_len
+
+    if should_yield_subclass_instances
+      yield self.class.new(string[start, self_len - start])
+    else
+      yield string[start, self_len - start]
+    end
+    self
   end
 
   def encode(*_args)
@@ -462,7 +522,13 @@ class String
     return parts if self == ''
 
     pattern = Regexp.compile(Regexp.escape(pattern)) if pattern.is_a?(String)
-    return length.times.map { |i| self[i].dup } if pattern.to_s == ''
+    if pattern.source == ''
+      length.times do |i|
+        yield self[i].dup if block_given?
+        parts << self[i].dup
+      end
+      return parts
+    end
 
     remainder = dup
     match = pattern.match(remainder)
@@ -614,8 +680,51 @@ class String
     raise NotImplementedError
   end
 
-  def upto(_other_str, _exclusive = false)
-    raise NotImplementedError
+  def upto(max, exclusive = false, &block)
+    return to_enum(:upto, max, exclusive) unless block
+    raise TypeError, "no implicit conversion of #{max.class} into String" unless max.is_a?(String)
+
+    len = length
+    maxlen = max.length
+    # single character
+    if len == 1 && maxlen == 1
+      c = ord
+      e = max.ord
+      while c <= e
+        break if exclusive && c == e
+
+        yield c.chr
+        c += 1
+      end
+      return self
+    end
+    # both edges are all digits
+    bi = to_i(10)
+    ei = max.to_i(10)
+    if (bi.positive? || bi == '0' * len) && (ei.positive? || ei == '0' * maxlen)
+      while bi <= ei
+        break if exclusive && bi == ei
+
+        s = bi.to_s
+        s = s.rjust(len, '0') if s.length < len
+
+        yield s
+        bi += 1
+      end
+      return self
+    end
+    bs = self
+    loop do
+      n = (bs <=> max)
+      break if n.positive?
+      break if exclusive && n.zero?
+
+      yield bs
+      break if n.zero?
+
+      bs = bs.succ
+    end
+    self
   end
 
   def valid_encoding?

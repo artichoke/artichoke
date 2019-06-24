@@ -100,6 +100,8 @@ pub trait MrbApi {
     fn float(&self, i: Float) -> Value;
 
     fn string<T: AsRef<str>>(&self, s: T) -> Value;
+
+    fn top_self(&self) -> Value;
 }
 
 impl MrbApi for Mrb {
@@ -125,6 +127,10 @@ impl MrbApi for Mrb {
 
     fn string<T: AsRef<str>>(&self, s: T) -> Value {
         Value::from_mrb(self, s.as_ref())
+    }
+
+    fn top_self(&self) -> Value {
+        Value::new(self, unsafe { sys::mrb_top_self(self.borrow().mrb) })
     }
 }
 

@@ -10,6 +10,8 @@ use crate::extn::core::error::{LoadError, RubyException};
 use crate::interpreter::{Mrb, MrbApi, RUBY_LOAD_PATH};
 use crate::state::VfsMetadata;
 use crate::sys;
+use crate::value::types::Ruby;
+use crate::value::Value;
 use crate::MrbError;
 
 mod args;
@@ -24,6 +26,12 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
         Kernel::require_relative,
         sys::mrb_args_rest(),
     );
+    kernel
+        .borrow_mut()
+        .add_self_method("print", Kernel::print, sys::mrb_args_rest());
+    kernel
+        .borrow_mut()
+        .add_self_method("puts", Kernel::puts, sys::mrb_args_rest());
     kernel.borrow().define(interp).map_err(|_| MrbError::New)?;
     interp.eval(include_str!("kernel.rb"))?;
     trace!("Patched Kernel#require onto interpreter");
@@ -150,6 +158,41 @@ impl Kernel {
             })
             .unwrap_or_else(|| RUBY_LOAD_PATH.to_owned());
         Self::require_impl(&interp, args.filename.as_str(), base.as_str())
+    }
+
+    unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+
+        for value in args.rest {
+            print!("{}", value.to_s());
+        }
+        interp.nil().inner()
+    }
+
+    unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        fn do_puts(value: Value) {
+            if value.ruby_type() == Ruby::Array {
+                if let Ok(array) = value.try_into::<Vec<Value>>() {
+                    for value in array {
+                        do_puts(value);
+                    }
+                }
+            } else {
+                println!("{}", value.to_s());
+            }
+        }
+
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+
+        if args.rest.is_empty() {
+            println!();
+        }
+        for value in args.rest {
+            do_puts(value);
+        }
+        interp.nil().inner()
     }
 }
 

@@ -1,3 +1,4 @@
+use fs_extra::dir::{self, CopyOptions};
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
@@ -33,8 +34,12 @@ impl Build {
         format!("{}/src/mruby-sys/ext.c", &Build::ext_source_dir())
     }
 
-    fn mruby_source_dir() -> String {
+    fn mruby_vendored_dir() -> String {
         format!("{}/vendor/mruby-{}", &Build::root(), MRUBY_REVISION)
+    }
+
+    fn mruby_source_dir() -> String {
+        format!("{}/mruby-{}", &env::var("OUT_DIR").unwrap(), MRUBY_REVISION)
     }
 
     fn mruby_minirake() -> String {
@@ -56,9 +61,34 @@ impl Build {
     fn bindgen_source_header() -> String {
         format!("{}/mruby-sys.h", &Build::ext_include_dir())
     }
+
+    fn patch(patch: &str) -> String {
+        format!("{}/vendor/{}", Build::root(), patch)
+    }
 }
 
 fn main() {
+    let opts = CopyOptions::new();
+    let _ = dir::remove(Build::mruby_source_dir());
+    dir::copy(
+        Build::mruby_vendored_dir(),
+        env::var("OUT_DIR").unwrap(),
+        &opts,
+    )
+    .unwrap();
+    for patch in vec!["0001-Support-parsing-a-Regexp-literal-with-CRuby-options.patch"] {
+        if !Command::new("bash")
+            .arg("-c")
+            .arg(format!("patch -p1 < '{}'", Build::patch(patch)))
+            .current_dir(Build::mruby_source_dir())
+            .status()
+            .unwrap()
+            .success()
+        {
+            panic!("Failed to patch mruby sources with {}", patch);
+        }
+    }
+
     // Build the mruby static library with its built in minirake build system.
     // minirake dynamically generates some c source files so we can't build
     // directly with the `cc` crate.

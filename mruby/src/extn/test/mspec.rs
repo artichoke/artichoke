@@ -3,9 +3,9 @@ use std::env;
 
 use crate::convert::FromMrb;
 use crate::eval::MrbEval;
-use crate::interpreter::Mrb;
+use crate::interpreter::{Mrb, MrbApi};
 use crate::load::MrbLoadSources;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::MrbError;
 
 pub const ENFORCE_RUBY_SPECS: &str = "MRUBY_ENFORCE_RUBY_SPECS";
@@ -50,7 +50,7 @@ impl MSpecRunner {
         self.enforce = env::var(ENFORCE_RUBY_SPECS).is_ok();
     }
 
-    pub fn run(self) {
+    pub fn run(self) -> Result<bool, MrbError> {
         init(&self.interp).unwrap();
         self.interp
             .def_rb_source_file("/src/spec_helper.rb", "")
@@ -62,14 +62,10 @@ impl MSpecRunner {
             println!("{}", err);
             assert!(!self.enforce);
         }
-        let specs = Value::from_mrb(&self.interp, self.specs).inspect();
-        match self.interp.eval(format!("run_specs({})", specs)) {
-            Ok(result) => assert_eq!(result.try_into::<bool>(), Ok(true)),
-            Err(err) => {
-                println!("{}", err);
-                assert!(!self.enforce);
-            }
-        }
+        let specs = Value::from_mrb(&self.interp, self.specs);
+        self.interp
+            .top_self()
+            .funcall::<bool, _, _>("run_specs", &[specs])
     }
 }
 
@@ -82,6 +78,6 @@ mod tests {
     fn mspec_framework_loads() {
         let interp = Interpreter::create().expect("mrb init");
         // should not panic
-        MSpec::runner(interp).run();
+        assert_eq!(MSpec::runner(interp).run(), Ok(true));
     }
 }

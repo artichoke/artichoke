@@ -8,68 +8,6 @@ use std::mem;
 
 use super::*;
 
-#[derive(Debug)]
-pub(super) struct RegexpNew {
-    pub pattern: Value,
-    pub options: Option<Options>,
-    pub encoding: Option<Encoding>,
-}
-
-impl RegexpNew {
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-        let pattern = mem::uninitialized::<sys::mrb_value>();
-        let opts = mem::uninitialized::<sys::mrb_value>();
-        let has_opts = mem::uninitialized::<sys::mrb_bool>();
-        let enc = mem::uninitialized::<sys::mrb_value>();
-        let has_enc = mem::uninitialized::<sys::mrb_bool>();
-        let mut argspec = vec![];
-        argspec
-            .write_all(
-                format!(
-                    "{}{}{}{}{}{}\0",
-                    sys::specifiers::OBJECT,
-                    sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                    sys::specifiers::OBJECT,
-                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN,
-                    sys::specifiers::OBJECT,
-                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                )
-                .as_bytes(),
-            )
-            .map_err(|_| MrbError::ArgSpec)?;
-        sys::mrb_get_args(
-            interp.borrow().mrb,
-            argspec.as_ptr() as *const i8,
-            &pattern,
-            &opts,
-            &has_opts,
-            &enc,
-            &has_enc,
-        );
-        let pattern = Value::new(&interp, pattern);
-        let mut options = None;
-        let mut encoding = None;
-        // the C boolean as u8 comparisons are easier if we keep the
-        // comparison inverted.
-        match (has_opts, has_enc) {
-            (0, 0) => {}
-            (1, 0) => {
-                options = Some(Options::from_value(&interp, opts)?);
-                encoding = Some(Encoding::from_value(&interp, opts, true)?);
-            }
-            (_, _) => {
-                options = Some(Options::from_value(&interp, opts)?);
-                encoding = Some(Encoding::from_value(&interp, enc, false)?);
-            }
-        }
-        Ok(Self {
-            pattern,
-            options,
-            encoding,
-        })
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Pattern {
     pub pattern: String,
@@ -118,10 +56,11 @@ impl Rest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Match {
-    pub string: Option<String>,
-    pub pos: Option<usize>,
+    pub string: Result<Option<String>, MrbError>,
+    pub pos: Option<i64>,
+    pub block: Option<Value>,
 }
 
 impl Match {
@@ -129,15 +68,17 @@ impl Match {
         let string = mem::uninitialized::<sys::mrb_value>();
         let pos = mem::uninitialized::<sys::mrb_value>();
         let has_pos = mem::uninitialized::<sys::mrb_bool>();
+        let block = mem::uninitialized::<sys::mrb_value>();
         let mut argspec = vec![];
         argspec
             .write_all(
                 format!(
-                    "{}{}{}{}\0",
+                    "{}{}{}{}{}\0",
                     sys::specifiers::OBJECT,
+                    sys::specifiers::BLOCK,
                     sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
                     sys::specifiers::OBJECT,
-                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
+                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN,
                 )
                 .as_bytes(),
             )
@@ -146,19 +87,25 @@ impl Match {
             interp.borrow().mrb,
             argspec.as_ptr() as *const i8,
             &string,
+            &block,
             &pos,
             &has_pos,
         );
-        let string = <Option<String>>::try_from_mrb(&interp, Value::new(&interp, string))
-            .map_err(MrbError::ConvertToRust)?;
+        let string = <Option<String>>::try_from_mrb(&interp, Value::new(interp, string))
+            .map_err(MrbError::ConvertToRust);
         let pos = if has_pos == 0 {
             None
         } else {
-            let pos = usize::try_from_mrb(&interp, Value::new(&interp, pos))
+            let pos = i64::try_from_mrb(&interp, Value::new(&interp, pos))
                 .map_err(MrbError::ConvertToRust)?;
             Some(pos)
         };
-        Ok(Self { string, pos })
+        let block = if sys::mrb_sys_value_is_nil(block) {
+            None
+        } else {
+            Some(Value::new(interp, block))
+        };
+        Ok(Self { string, pos, block })
     }
 }
 
