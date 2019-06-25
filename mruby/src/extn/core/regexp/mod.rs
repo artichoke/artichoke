@@ -159,45 +159,30 @@ impl Options {
         bits
     }
 
-    fn as_literal_string(self) -> String {
-        let mut buf = String::new();
-        if self.multiline {
-            buf.push('m');
+    fn as_literal_string(self) -> &'static str {
+        match (self.multiline, self.ignore_case, self.extended) {
+            (true, true, true) => "mix",
+            (true, true, false) => "mi",
+            (true, false, true) => "mx",
+            (true, false, false) => "m",
+            (false, true, true) => "ix",
+            (false, true, false) => "i",
+            (false, false, true) => "x",
+            (false, false, false) => "",
         }
-        if self.ignore_case {
-            buf.push('i');
-        }
-        if self.extended {
-            buf.push('x');
-        }
-        buf
     }
 
-    fn as_onig_string(self) -> String {
-        let mut buf = String::new();
-        let mut pos = String::new();
-        let mut neg = String::new();
-        if self.multiline {
-            pos.push('m');
-        } else {
-            neg.push('m');
+    fn as_onig_string(self) -> &'static str {
+        match (self.multiline, self.ignore_case, self.extended) {
+            (true, true, true) => "mix",
+            (true, true, false) => "mi-x",
+            (true, false, true) => "mx-i",
+            (true, false, false) => "m-ix",
+            (false, true, true) => "ix-m",
+            (false, true, false) => "i-mx",
+            (false, false, true) => "x-mi",
+            (false, false, false) => "-mix",
         }
-        if self.ignore_case {
-            pos.push('i');
-        } else {
-            neg.push('i');
-        }
-        if self.extended {
-            pos.push('x');
-        } else {
-            neg.push('x');
-        }
-        buf.push_str(pos.as_str());
-        if !neg.is_empty() {
-            buf.push('-');
-            buf.push_str(neg.as_str());
-        }
-        buf
     }
 
     fn from_value(interp: &Mrb, value: sys::mrb_value) -> Result<Self, MrbError> {
@@ -249,14 +234,14 @@ impl Options {
         match chars.next() {
             None => {
                 pat_buf.push_str("(?");
-                pat_buf.push_str(opts.as_onig_string().as_str());
+                pat_buf.push_str(opts.as_onig_string());
                 pat_buf.push(':');
                 pat_buf.push(')');
                 return (pat_buf, opts);
             }
             Some(token) if token != '(' => {
                 pat_buf.push_str("(?");
-                pat_buf.push_str(opts.as_onig_string().as_str());
+                pat_buf.push_str(opts.as_onig_string());
                 pat_buf.push(':');
                 pat_buf.push_str(pattern);
                 pat_buf.push(')');
@@ -268,7 +253,7 @@ impl Options {
         match chars.next() {
             None => {
                 pat_buf.push_str("(?");
-                pat_buf.push_str(opts.as_onig_string().as_str());
+                pat_buf.push_str(opts.as_onig_string());
                 pat_buf.push(':');
                 pat_buf.push_str(pattern);
                 pat_buf.push(')');
@@ -276,7 +261,7 @@ impl Options {
             }
             Some(token) if token != '?' => {
                 pat_buf.push_str("(?");
-                pat_buf.push_str(opts.as_onig_string().as_str());
+                pat_buf.push_str(opts.as_onig_string());
                 pat_buf.push(':');
                 pat_buf.push_str(pattern);
                 pat_buf.push(')');
@@ -301,7 +286,7 @@ impl Options {
                 ':' => break,
                 _ => {
                     pat_buf.push_str("(?");
-                    pat_buf.push_str(opts.as_onig_string().as_str());
+                    pat_buf.push_str(opts.as_onig_string());
                     pat_buf.push(':');
                     pat_buf.push_str(pattern);
                     pat_buf.push(')');
@@ -359,12 +344,11 @@ impl Encoding {
         }
     }
 
-    fn as_literal_string(self) -> String {
+    fn as_literal_string(self) -> &'static str {
         match self {
             Encoding::Fixed | Encoding::None => "",
             Encoding::No => "n",
         }
-        .to_owned()
     }
 
     fn from_value(
