@@ -4,6 +4,7 @@ use path_abs::PathAbs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
+use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::{LoadError, RubyException};
@@ -11,16 +12,24 @@ use crate::interpreter::{Mrb, MrbApi, RUBY_LOAD_PATH};
 use crate::state::VfsMetadata;
 use crate::sys;
 use crate::value::types::Ruby;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::MrbError;
 
 mod args;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+    let warning = interp.borrow_mut().def_module::<Warning>("Warning", None);
+    warning
+        .borrow_mut()
+        .add_method("warn", Warning::warn, sys::mrb_args_req(1));
+    warning
+        .borrow_mut()
+        .add_self_method("warn", Warning::warn, sys::mrb_args_req(1));
+    warning.borrow().define(interp).map_err(|_| MrbError::New)?;
     let kernel = interp.borrow_mut().def_module::<Kernel>("Kernel", None);
     kernel
         .borrow_mut()
-        .add_self_method("require", Kernel::require, sys::mrb_args_rest());
+        .add_method("require", Kernel::require, sys::mrb_args_rest());
     kernel.borrow_mut().add_self_method(
         "require_relative",
         Kernel::require_relative,
@@ -28,14 +37,33 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     );
     kernel
         .borrow_mut()
-        .add_self_method("print", Kernel::print, sys::mrb_args_rest());
+        .add_method("print", Kernel::print, sys::mrb_args_rest());
     kernel
         .borrow_mut()
-        .add_self_method("puts", Kernel::puts, sys::mrb_args_rest());
+        .add_method("puts", Kernel::puts, sys::mrb_args_rest());
+    kernel
+        .borrow_mut()
+        .add_method("warn", Kernel::warn, sys::mrb_args_rest());
     kernel.borrow().define(interp).map_err(|_| MrbError::New)?;
     interp.eval(include_str!("kernel.rb"))?;
     trace!("Patched Kernel#require onto interpreter");
     Ok(())
+}
+
+pub struct Warning;
+
+impl Warning {
+    unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let stderr = sys::mrb_intern(mrb, b"$stderr\0".as_ptr() as *const i8, 7);
+        let stderr = sys::mrb_gv_get(mrb, stderr);
+        if !sys::mrb_sys_value_is_nil(stderr) {
+            let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+            let stderr = Value::new(&interp, stderr);
+            unwrap_value_or_raise!(interp, stderr.funcall::<Value, _, _>("print", args.rest));
+        }
+        interp.nil().inner()
+    }
 }
 
 pub struct Kernel;
@@ -191,6 +219,20 @@ impl Kernel {
         }
         for value in args.rest {
             do_puts(value);
+        }
+        interp.nil().inner()
+    }
+
+    unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+
+        for value in args.rest {
+            let mut string = value.to_s();
+            if !string.ends_with('\n') {
+                string = format!("{}\n", string);
+            }
+            Warning::warn(mrb, Value::from_mrb(&interp, string).inner());
         }
         interp.nil().inner()
     }

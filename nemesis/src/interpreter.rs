@@ -1,7 +1,6 @@
 //! Create or retrieve an interpreter for a request.
 
 use mruby::eval::MrbEval;
-use mruby::gc::MrbGarbageCollection;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::MrbError;
 use mruby_gems::rubygems::rack;
@@ -101,46 +100,34 @@ impl ExecMode {
     ///
     /// Keep track of the request count for an interpreter and potentially tear
     /// it down if it has served too many requests.
-    ///
-    /// Maybe execute a garbage collection on the interpreter. Returns true if
-    /// a GC was performed, false otherwise.
-    pub fn finalize(&self, interp: &Mrb, app: &RackApp) -> bool {
-        match self {
-            ExecMode::SingleUse => false,
-            ExecMode::PerAppPerWorker { max_requests } => {
-                let key = Key::PerWorker {
-                    app: Some(app.mount_path().to_owned()),
-                };
-                {
-                    let mut borrow = STORAGE.borrow_mut();
-                    let counter = borrow
-                        .get_mut(&key)
-                        .map(|record| {
-                            let counter = record.0;
-                            record.0 += 1;
-                            counter
-                        })
-                        .unwrap_or_default();
-                    info!(
-                        "Finalizing request {} for app at {}",
-                        counter,
-                        app.mount_path()
-                    );
-                    if *max_requests > 0 && counter > 0 && counter % max_requests == 0 {
-                        // Recycle the interpreter if it has been used for
-                        // `max_requests` app invocations.
-                        borrow.remove(&key);
-                        info!(
-                            "Recycling interpreter at {} after {} requests",
-                            app.mount_path(),
-                            counter
-                        );
-                        false
-                    } else {
-                        interp.incremental_gc();
-                        true
-                    }
-                }
+    pub fn finalize(&self, _interp: &Mrb, app: &RackApp) {
+        if let ExecMode::PerAppPerWorker { max_requests } = self {
+            let key = Key::PerWorker {
+                app: Some(app.mount_path().to_owned()),
+            };
+            let mut borrow = STORAGE.borrow_mut();
+            let counter = borrow
+                .get_mut(&key)
+                .map(|record| {
+                    let counter = record.0;
+                    record.0 += 1;
+                    counter
+                })
+                .unwrap_or_default();
+            info!(
+                "Finalizing request {} for app at {}",
+                counter,
+                app.mount_path()
+            );
+            if *max_requests > 0 && counter > 0 && counter % max_requests == 0 {
+                // Recycle the interpreter if it has been used for
+                // `max_requests` app invocations.
+                borrow.remove(&key);
+                info!(
+                    "Recycling interpreter at {} after {} requests",
+                    app.mount_path(),
+                    counter
+                );
             }
         }
     }

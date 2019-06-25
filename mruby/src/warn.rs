@@ -25,8 +25,14 @@ pub trait MrbWarn {
 impl MrbWarn for Mrb {
     fn warn(&self, message: &str) -> Result<(), MrbError> {
         warn!("rb warning: {}", message);
+        let mrb = self.borrow().mrb;
         let kernel = unsafe {
-            let kernel = (*self.borrow().mrb).kernel_module;
+            let stderr = sys::mrb_intern_cstr(mrb, b"$stderr\0".as_ptr() as *const i8);
+            let stderr = sys::mrb_gv_get(mrb, stderr);
+            if sys::mrb_sys_value_is_nil(stderr) {
+                return Ok(());
+            }
+            let kernel = (*mrb).kernel_module;
             Value::new(self, sys::mrb_sys_module_value(kernel))
         };
         kernel.funcall::<(), _, _>("warn", &[Value::from_mrb(self, message)])
