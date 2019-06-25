@@ -48,7 +48,7 @@ impl Spec {
 
     pub fn new_instance(&self, interp: &Mrb, args: &[Value]) -> Option<Value> {
         let rclass = self.rclass(interp)?;
-        let args = args.iter().map(|v| v.inner()).collect::<Vec<_>>();
+        let args = args.iter().map(Value::inner).collect::<Vec<_>>();
         let value = unsafe {
             sys::mrb_obj_new(
                 interp.borrow().mrb,

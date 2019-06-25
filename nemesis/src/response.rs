@@ -28,7 +28,7 @@ impl Response {
     /// Convert from a Rack `[status, headers, body]` response tuple to a Rust
     /// representation. This code converts a response tuple using the Ruby class
     /// `Nemesis::Response`.
-    pub fn from_rack_tuple(interp: &Mrb, response: Vec<Value>) -> Result<Self, Error> {
+    pub fn from_rack_tuple(interp: &Mrb, response: &[Value]) -> Result<Self, Error> {
         if response.len() != Self::RACK_RESPONSE_TUPLE_LEN {
             warn!("malformed rack response: {:?}", response);
             return Err(Error::RackResponse);
@@ -36,7 +36,7 @@ impl Response {
         let response = interp
             .borrow()
             .class_spec::<nemesis::Response>()
-            .and_then(|spec| spec.borrow().new_instance(interp, response.as_slice()))
+            .and_then(|spec| spec.borrow().new_instance(interp, response))
             .ok_or_else(|| Error::Mrb(MrbError::NotDefined("Nemesis::Response".to_owned())))?;
         Ok(Self {
             status: Self::status(&response)?,

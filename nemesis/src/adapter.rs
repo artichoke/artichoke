@@ -45,7 +45,7 @@ impl RackApp {
     pub fn call<T: Request>(&self, req: &T) -> Result<Response, Error> {
         let env = req.to_env(&self.interp)?;
         let response = self.funcall::<Vec<Value>, _, _>("call", &[env])?;
-        let response = Response::from_rack_tuple(&self.interp, response)?;
+        let response = Response::from_rack_tuple(&self.interp, response.as_slice())?;
         Ok(response)
     }
 

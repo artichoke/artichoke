@@ -229,7 +229,7 @@ impl Kernel {
 
         for value in args.rest {
             let mut string = value.to_s();
-            if !string.ends_with("\n") {
+            if !string.ends_with('\n') {
                 string = format!("{}\n", string);
             }
             Warning::warn(mrb, Value::from_mrb(&interp, string).inner());
