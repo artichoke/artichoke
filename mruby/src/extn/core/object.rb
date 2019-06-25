@@ -23,3 +23,9 @@ class Integer
     self
   end
 end
+
+class Symbol
+  def dup
+    self
+  end
+end
