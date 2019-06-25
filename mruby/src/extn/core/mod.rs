@@ -1,3 +1,4 @@
+use crate::eval::MrbEval;
 use crate::interpreter::Mrb;
 use crate::MrbError;
 
@@ -11,6 +12,7 @@ pub mod string;
 pub mod thread;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+    interp.eval(include_str!("object.rb"))?;
     array::patch(interp)?;
     env::patch(interp)?;
     error::patch(interp)?;
