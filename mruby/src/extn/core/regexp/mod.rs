@@ -2,6 +2,7 @@ use onig::{Regex, RegexOptions, Region, SearchOptions, Syntax};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::mem;
+use std::rc::Rc;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
@@ -418,13 +419,27 @@ impl Default for Encoding {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Regexp {
     literal_pattern: String,
     pattern: String,
     literal_options: Options,
     options: Options,
     encoding: Encoding,
+    regex: Rc<Regex>,
+}
+
+impl Default for Regexp {
+    fn default() -> Self {
+        Self {
+            literal_pattern: String::default(),
+            pattern: String::default(),
+            literal_options: Options::default(),
+            options: Options::default(),
+            encoding: Encoding::default(),
+            regex: Rc::new(unsafe { mem::uninitialized::<Regex>() }),
+        }
+    }
 }
 
 impl RustBackedValue for Regexp {
@@ -449,10 +464,6 @@ impl Regexp {
     pub const NOENCODING: i64 = 32;
     pub const ALL_ENCODING_OPTS: i64 = Self::FIXEDENCODING | Self::NOENCODING;
 
-    pub fn regex(&self) -> Option<Regex> {
-        Regex::with_options(&self.pattern, self.options.flags(), Syntax::ruby()).ok()
-    }
-
     pub fn new(
         literal_pattern: String,
         pattern: String,
@@ -460,18 +471,16 @@ impl Regexp {
         options: Options,
         encoding: Encoding,
     ) -> Option<Self> {
+        let regex = Rc::new(Regex::with_options(&pattern, options.flags(), Syntax::ruby()).ok()?);
         let regexp = Self {
             literal_pattern,
             pattern,
             literal_options,
             options,
             encoding,
+            regex,
         };
-        if regexp.regex().is_none() {
-            None
-        } else {
-            Some(regexp)
-        }
+        Some(regexp)
     }
 
     unsafe extern "C" fn initialize(
@@ -502,10 +511,7 @@ impl Regexp {
         }
     }
 
-    unsafe extern "C" fn compile(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
+    unsafe extern "C" fn compile(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let args = mem::uninitialized::<*const sys::mrb_value>();
         let count = mem::uninitialized::<sys::mrb_int>();
         sys::mrb_get_args(mrb, b"*\0".as_ptr() as *const i8, &args, &count);
@@ -620,15 +626,13 @@ impl Regexp {
         if pos > string.len() {
             return Value::from_mrb(&interp, false).inner();
         }
-        let is_match = data.borrow().regex().and_then(|regexp| {
-            regexp.search_with_options(
-                string.as_str(),
-                pos,
-                string.len(),
-                SearchOptions::SEARCH_OPTION_NONE,
-                None,
-            )
-        });
+        let is_match = data.borrow().regex.search_with_options(
+            string.as_str(),
+            pos,
+            string.len(),
+            SearchOptions::SEARCH_OPTION_NONE,
+            None,
+        );
         Value::from_mrb(&interp, is_match.is_some()).inner()
     }
 
@@ -676,15 +680,13 @@ impl Regexp {
             return interp.nil().inner();
         }
         let mut region = Region::new();
-        let is_match = regexp.borrow().regex().and_then(|regexp| {
-            regexp.search_with_options(
-                string.as_str(),
-                pos,
-                string.len(),
-                SearchOptions::SEARCH_OPTION_NONE,
-                Some(&mut region),
-            )
-        });
+        let is_match = regexp.borrow().regex.search_with_options(
+            string.as_str(),
+            pos,
+            string.len(),
+            SearchOptions::SEARCH_OPTION_NONE,
+            Some(&mut region),
+        );
         let last_matched_string = if let Some((start, end)) = region.pos(0) {
             Value::from_mrb(&interp, string[start..end].to_owned()).inner()
         } else {
@@ -702,12 +704,11 @@ impl Regexp {
             last_matched_string,
         );
         let data = if is_match.is_some() {
-            if let Some(captures) = regexp
-                .borrow()
-                .regex()
-                .and_then(|regexp| regexp.captures(&string[pos..]))
-            {
-                for group in 1..=std::cmp::max(interp.borrow().num_set_regexp_capture_globals, captures.len()) {
+            if let Some(captures) = regexp.borrow().regex.captures(&string[pos..]) {
+                for group in 1..=std::cmp::max(
+                    interp.borrow().num_set_regexp_capture_globals,
+                    captures.len(),
+                ) {
                     let value = Value::from_mrb(&interp, captures.at(group));
                     let global_capture_group = format!("${}", group);
                     let global_capture_group_name = sys::mrb_intern(
@@ -775,8 +776,8 @@ impl Regexp {
         let pos = args.pos.unwrap_or_default();
         let num_captures = regexp
             .borrow()
-            .regex()
-            .and_then(|regexp| regexp.captures(string.as_str()))
+            .regex
+            .captures(string.as_str())
             .map(|captures| captures.len())
             .unwrap_or_default();
         let pos = if pos < 0 {
@@ -790,15 +791,13 @@ impl Regexp {
         if pos > string.len() {
             return interp.bool(false).inner();
         }
-        let is_match = regexp.borrow().regex().and_then(|regexp| {
-            regexp.search_with_options(
-                string.as_str(),
-                pos,
-                string.len(),
-                SearchOptions::SEARCH_OPTION_NONE,
-                None,
-            )
-        });
+        let is_match = regexp.borrow().regex.search_with_options(
+            string.as_str(),
+            pos,
+            string.len(),
+            SearchOptions::SEARCH_OPTION_NONE,
+            None,
+        );
         if let Some(pos) = is_match {
             let pos = unwrap_or_raise!(interp, i64::try_from(pos), interp.nil().inner());
             interp.fixnum(pos).inner()
@@ -880,15 +879,13 @@ impl Regexp {
             return interp.nil().inner();
         }
         let mut region = Region::new();
-        let is_match = regexp.borrow().regex().and_then(|regexp| {
-            regexp.search_with_options(
-                string.as_str(),
-                pos,
-                string.len(),
-                SearchOptions::SEARCH_OPTION_NONE,
-                Some(&mut region),
-            )
-        });
+        let is_match = regexp.borrow().regex.search_with_options(
+            string.as_str(),
+            pos,
+            string.len(),
+            SearchOptions::SEARCH_OPTION_NONE,
+            Some(&mut region),
+        );
         let last_matched_string = if let Some((start, end)) = region.pos(0) {
             Value::from_mrb(&interp, string[start..end].to_owned()).inner()
         } else {
@@ -906,11 +903,7 @@ impl Regexp {
             last_matched_string,
         );
         let data = if is_match.is_some() {
-            if let Some(captures) = regexp
-                .borrow()
-                .regex()
-                .and_then(|regexp| regexp.captures(&string[pos..]))
-            {
+            if let Some(captures) = regexp.borrow().regex.captures(&string[pos..]) {
                 for group in 1..=99 {
                     let value = Value::from_mrb(&interp, captures.at(group));
                     let global_capture_group = format!("${}", group);
@@ -961,15 +954,12 @@ impl Regexp {
         );
 
         let borrow = regexp.borrow();
-        if let Some(regexp) = borrow.regex() {
-            let names = regexp
-                .capture_names()
-                .map(|(name, _)| name.to_owned())
-                .collect::<Vec<_>>();
-            Value::from_mrb(&interp, names).inner()
-        } else {
-            interp.nil().inner()
-        }
+        let names = borrow
+            .regex
+            .capture_names()
+            .map(|(name, _)| name.to_owned())
+            .collect::<Vec<_>>();
+        Value::from_mrb(&interp, names).inner()
     }
 
     unsafe extern "C" fn named_captures(
@@ -984,18 +974,14 @@ impl Regexp {
         );
 
         let borrow = regexp.borrow();
-        if let Some(regexp) = borrow.regex() {
-            let mut map = HashMap::default();
-            for (name, pos) in regexp.capture_names() {
-                map.insert(
-                    name.to_owned(),
-                    pos.iter().map(|pos| i64::from(*pos)).collect::<Vec<_>>(),
-                );
-            }
-            Value::from_mrb(&interp, map).inner()
-        } else {
-            interp.nil().inner()
+        let mut map = HashMap::default();
+        for (name, pos) in borrow.regex.capture_names() {
+            map.insert(
+                name.to_owned(),
+                pos.iter().map(|pos| i64::from(*pos)).collect::<Vec<_>>(),
+            );
         }
+        Value::from_mrb(&interp, map).inner()
     }
 
     unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
@@ -1102,8 +1088,8 @@ impl MatchData {
         let borrow = data.borrow();
         let length = borrow
             .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()))
+            .regex
+            .captures(borrow.string_to_capture())
             .map(|captures| captures.len())
             .unwrap_or_default();
         let args = unwrap_or_raise!(
@@ -1120,10 +1106,7 @@ impl MatchData {
                 } else {
                     usize::try_from(index).expect("positive i64 must be usize")
                 };
-                let captures = borrow
-                    .regexp
-                    .regex()
-                    .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+                let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
                 match captures {
                     Some(captures) => Value::from_mrb(&interp, captures.at(index)).inner(),
                     None => interp.nil().inner(),
@@ -1132,27 +1115,21 @@ impl MatchData {
             args::MatchIndex::Name(name) => {
                 let match_ = borrow
                     .regexp
-                    .regex()
-                    .and_then(|regexp| {
-                        regexp
-                            .capture_names()
-                            .find(|capture| capture.0 == name)
-                            .and_then(|capture| usize::try_from(capture.1[0]).ok())
-                    })
+                    .regex
+                    .capture_names()
+                    .find(|capture| capture.0 == name)
+                    .and_then(|capture| usize::try_from(capture.1[0]).ok())
                     .and_then(|index| {
-                        borrow.regexp.regex().and_then(|regexp| {
-                            regexp
-                                .captures(borrow.string_to_capture())
-                                .and_then(|captures| captures.at(index))
-                        })
+                        borrow
+                            .regexp
+                            .regex
+                            .captures(borrow.string_to_capture())
+                            .and_then(|captures| captures.at(index))
                     });
                 Value::from_mrb(&interp, match_).inner()
             }
             args::MatchIndex::StartLen(start, len) => {
-                let captures = borrow
-                    .regexp
-                    .regex()
-                    .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+                let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
                 match captures {
                     Some(captures) => {
                         let start = if start < 0 {
@@ -1190,8 +1167,8 @@ impl MatchData {
         let borrow = data.borrow();
         let length = borrow
             .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()))
+            .regex
+            .captures(borrow.string_to_capture())
             .map(|captures| captures.len());
         let args = unwrap_or_raise!(
             interp,
@@ -1200,10 +1177,7 @@ impl MatchData {
         );
         match args {
             args::MatchIndex::Index(index) => {
-                let captures = borrow
-                    .regexp
-                    .regex()
-                    .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+                let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
                 match captures {
                     Some(captures) => {
                         let index = if index < 0 {
@@ -1225,21 +1199,18 @@ impl MatchData {
             args::MatchIndex::Name(name) => {
                 let pos = borrow
                     .regexp
-                    .regex()
-                    .and_then(|regexp| {
-                        regexp
-                            .capture_names()
-                            .find(|capture| capture.0 == name)
-                            .and_then(|capture| usize::try_from(capture.1[0]).ok())
-                    })
+                    .regex
+                    .capture_names()
+                    .find(|capture| capture.0 == name)
+                    .and_then(|capture| usize::try_from(capture.1[0]).ok())
                     .and_then(|index| {
-                        borrow.regexp.regex().and_then(|regexp| {
-                            regexp
-                                .captures(borrow.string_to_capture())
-                                .and_then(|captures| captures.pos(index))
-                                .map(|pos| borrow.string_to_capture()[0..pos.0].chars().count())
-                                .and_then(|pos| i64::try_from(pos).ok())
-                        })
+                        borrow
+                            .regexp
+                            .regex
+                            .captures(borrow.string_to_capture())
+                            .and_then(|captures| captures.pos(index))
+                            .map(|pos| borrow.string_to_capture()[0..pos.0].chars().count())
+                            .and_then(|pos| i64::try_from(pos).ok())
                     });
                 Value::from_mrb(&interp, pos).inner()
             }
@@ -1260,8 +1231,8 @@ impl MatchData {
         let borrow = data.borrow();
         let length = borrow
             .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()))
+            .regex
+            .captures(borrow.string_to_capture())
             .map(|captures| captures.len());
         let args = unwrap_or_raise!(
             interp,
@@ -1270,10 +1241,7 @@ impl MatchData {
         );
         match args {
             args::MatchIndex::Index(index) => {
-                let captures = borrow
-                    .regexp
-                    .regex()
-                    .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+                let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
                 match captures {
                     Some(captures) => {
                         let index = if index < 0 {
@@ -1295,21 +1263,18 @@ impl MatchData {
             args::MatchIndex::Name(name) => {
                 let pos = borrow
                     .regexp
-                    .regex()
-                    .and_then(|regexp| {
-                        regexp
-                            .capture_names()
-                            .find(|capture| capture.0 == name)
-                            .and_then(|capture| usize::try_from(capture.1[0]).ok())
-                    })
+                    .regex
+                    .capture_names()
+                    .find(|capture| capture.0 == name)
+                    .and_then(|capture| usize::try_from(capture.1[0]).ok())
                     .and_then(|index| {
-                        borrow.regexp.regex().and_then(|regexp| {
-                            regexp
-                                .captures(borrow.string_to_capture())
-                                .and_then(|captures| captures.pos(index))
-                                .map(|pos| borrow.string_to_capture()[0..pos.1].chars().count())
-                                .and_then(|pos| i64::try_from(pos).ok())
-                        })
+                        borrow
+                            .regexp
+                            .regex
+                            .captures(borrow.string_to_capture())
+                            .and_then(|captures| captures.pos(index))
+                            .map(|pos| borrow.string_to_capture()[0..pos.1].chars().count())
+                            .and_then(|pos| i64::try_from(pos).ok())
                     });
                 Value::from_mrb(&interp, pos).inner()
             }
@@ -1328,10 +1293,7 @@ impl MatchData {
             interp.nil().inner()
         );
         let borrow = data.borrow();
-        let captures = borrow
-            .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+        let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
         if let Some(captures) = captures {
             unwrap_value_or_raise!(
                 interp,
@@ -1351,10 +1313,7 @@ impl MatchData {
             interp.nil().inner()
         );
         let borrow = data.borrow();
-        let captures = borrow
-            .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+        let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
         if let Some(captures) = captures {
             let mut vec = vec![];
             for (group, subcapture) in captures.iter().enumerate() {
@@ -1380,13 +1339,10 @@ impl MatchData {
             interp.nil().inner()
         );
         let borrow = data.borrow();
-        let captures = borrow
-            .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
-        if let (Some(captures), Some(regex)) = (captures, borrow.regexp.regex()) {
+        let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
+        if let Some(captures) = captures {
             let mut map = HashMap::default();
-            for (name, index) in regex.capture_names() {
+            for (name, index) in borrow.regexp.regex.capture_names() {
                 if let Some(group) = captures.at(usize::try_from(index[0]).unwrap_or_default()) {
                     map.insert(name.to_owned(), group.to_owned());
                 }
@@ -1409,10 +1365,7 @@ impl MatchData {
             interp.nil().inner()
         );
         let borrow = data.borrow();
-        let captures = borrow
-            .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+        let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
         if let Some((start, _)) = captures.and_then(|captures| captures.pos(0)) {
             Value::from_mrb(&interp, borrow.string_to_capture()[..start].to_owned()).inner()
         } else {
@@ -1432,10 +1385,7 @@ impl MatchData {
             interp.nil().inner()
         );
         let borrow = data.borrow();
-        let captures = borrow
-            .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+        let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
         if let Some((_, end)) = captures.and_then(|captures| captures.pos(0)) {
             Value::from_mrb(&interp, borrow.string_to_capture()[end..].to_owned()).inner()
         } else {
@@ -1453,10 +1403,7 @@ impl MatchData {
             interp.nil().inner()
         );
         let borrow = data.borrow();
-        let captures = borrow
-            .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+        let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
         if let Some(captures) = captures {
             let mut vec = vec![];
             for subcapture in captures.iter() {
@@ -1478,10 +1425,7 @@ impl MatchData {
             interp.nil().inner()
         );
         let borrow = data.borrow();
-        let captures = borrow
-            .regexp
-            .regex()
-            .and_then(|regexp| regexp.captures(borrow.string_to_capture()));
+        let captures = borrow.regexp.regex.captures(borrow.string_to_capture());
         if let Some(captures) = captures {
             Value::from_mrb(&interp, captures.at(0)).inner()
         } else {
