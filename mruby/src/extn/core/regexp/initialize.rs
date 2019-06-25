@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::mem;
 
 use crate::convert::RustBackedValue;
@@ -17,31 +16,18 @@ pub struct Args {
 }
 
 impl Args {
+    const ARGSPEC: &'static [u8] = b"o|o?o?\0";
+
     pub fn extract(interp: &Mrb) -> Result<Self, MrbError> {
         let pattern = unsafe { mem::uninitialized::<sys::mrb_value>() };
         let opts = unsafe { mem::uninitialized::<sys::mrb_value>() };
         let has_opts = unsafe { mem::uninitialized::<sys::mrb_bool>() };
         let enc = unsafe { mem::uninitialized::<sys::mrb_value>() };
         let has_enc = unsafe { mem::uninitialized::<sys::mrb_bool>() };
-        let mut argspec = vec![];
-        argspec
-            .write_all(
-                format!(
-                    "{}{}{}{}{}{}\0",
-                    sys::specifiers::OBJECT,
-                    sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                    sys::specifiers::OBJECT,
-                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN,
-                    sys::specifiers::OBJECT,
-                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                )
-                .as_bytes(),
-            )
-            .map_err(|_| MrbError::ArgSpec)?;
         unsafe {
             sys::mrb_get_args(
                 interp.borrow().mrb,
-                argspec.as_ptr() as *const i8,
+                Self::ARGSPEC.as_ptr() as *const i8,
                 &pattern,
                 &opts,
                 &has_opts,
