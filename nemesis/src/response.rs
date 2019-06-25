@@ -6,7 +6,6 @@
 //! [`Rack::Response`](https://github.com/rack/rack/blob/2.0.7/lib/rack/response.rb).
 
 use log::warn;
-use mruby::convert::FromMrb;
 use mruby::interpreter::Mrb;
 use mruby::value::{Value, ValueLike};
 use mruby::MrbError;
@@ -34,16 +33,15 @@ impl Response {
             warn!("malformed rack response: {:?}", response);
             return Err(Error::RackResponse);
         }
-        let class = interp
+        let response = interp
             .borrow()
             .class_spec::<nemesis::Response>()
-            .and_then(|spec| spec.borrow().value(interp))
+            .and_then(|spec| spec.borrow().new_instance(interp, response.as_slice()))
             .ok_or_else(|| Error::Mrb(MrbError::NotDefined("Nemesis::Response".to_owned())))?;
-        let response = class.funcall::<Value, _, _>("new", response)?;
         Ok(Self {
             status: Self::status(&response)?,
-            headers: Self::headers(&response, interp)?,
-            body: Self::body(&response, interp)?,
+            headers: Self::headers(&response)?,
+            body: Self::body(&response)?,
         })
     }
 
@@ -52,15 +50,12 @@ impl Response {
         u16::try_from(status).map_err(|_| Error::Status)
     }
 
-    fn headers(response: &Value, interp: &Mrb) -> Result<HashMap<String, String>, Error> {
-        let itself = Value::from_mrb(interp, "itself")
-            .funcall::<Value, _, _>("to_sym", &[])?
-            .funcall::<Value, _, _>("to_proc", &[])?;
+    fn headers(response: &Value) -> Result<HashMap<String, String>, Error> {
         // The header must respond to `each`, and yield values of key and value.
         let headers = response
-            .funcall::<Value, _, _>("headers", &[])?
+            .funcall::<Value, _, _>("header", &[])?
             .funcall::<Value, _, _>("each", &[])?
-            .funcall_with_block::<Value, _, _>("map", &[], itself)?
+            .funcall::<Value, _, _>("to_a", &[])?
             .funcall::<HashMap<String, String>, _, _>("to_h", &[])?;
 
         let headers = headers
@@ -72,17 +67,14 @@ impl Response {
         Ok(headers)
     }
 
-    fn body(response: &Value, interp: &Mrb) -> Result<Vec<u8>, Error> {
-        let itself = Value::from_mrb(interp, "itself")
-            .funcall::<Value, _, _>("to_sym", &[])?
-            .funcall::<Value, _, _>("to_proc", &[])?;
+    fn body(response: &Value) -> Result<Vec<u8>, Error> {
         // The Body must respond to each and must only yield String values. The
         // Body itself should not be an instance of String, as this will break
         // in Ruby 1.9.
         let body = response.funcall::<Value, _, _>("body", &[])?;
         let parts = body
             .funcall::<Value, _, _>("each", &[])?
-            .funcall_with_block::<Vec<Vec<u8>>, _, _>("map", &[], itself)?;
+            .funcall::<Vec<Vec<u8>>, _, _>("to_a", &[])?;
         let bytes = parts
             .into_iter()
             .flat_map(convert::identity)
