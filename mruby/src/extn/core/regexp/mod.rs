@@ -518,30 +518,16 @@ impl Regexp {
         sys::mrb_obj_new(mrb, sys::mrb_sys_class_ptr(slf), count, args)
     }
 
-    unsafe extern "C" fn escape(
-        mrb: *mut sys::mrb_state,
-        mut _slf: sys::mrb_value,
-    ) -> sys::mrb_value {
+    unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let args = unwrap_or_raise!(
             interp,
             args::Pattern::extract(&interp),
             interp.nil().inner()
         );
-        let spec = class_spec_or_raise!(interp, Self);
-        let regexp_class = unwrap_or_raise!(
-            interp,
-            spec.borrow()
-                .value(&interp)
-                .ok_or_else(|| MrbError::NotDefined("Regexp".to_owned())),
-            interp.nil().inner()
-        );
-
         let pattern = syntax::escape(args.pattern.as_str());
-        unwrap_value_or_raise!(
-            interp,
-            regexp_class.funcall::<Value, _, _>("new", &[Value::from_mrb(&interp, pattern)])
-        )
+        let args = &[Value::from_mrb(&interp, pattern).inner()];
+        sys::mrb_obj_new(mrb, sys::mrb_sys_class_ptr(slf), 1, args.as_ptr())
     }
 
     unsafe extern "C" fn union(
