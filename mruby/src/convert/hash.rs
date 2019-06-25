@@ -237,6 +237,24 @@ hash_impl!(Vec<u8>);
 hash_impl!(Int);
 hash_impl!(String);
 
+#[allow(clippy::use_self)]
+impl FromMrb<Vec<(&str, Value)>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: Vec<(&str, Value)>) -> Self {
+        let pairs = value
+            .into_iter()
+            .map(|(key, value)| {
+                let key = Self::from_mrb(&interp, key);
+                let value = Self::from_mrb(&interp, value);
+                (key, value)
+            })
+            .collect::<Vec<(Self, Self)>>();
+        Self::from_mrb(interp, pairs)
+    }
+}
+
 #[cfg(test)]
 mod value {
     mod tests {
