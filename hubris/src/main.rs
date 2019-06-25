@@ -4,6 +4,7 @@
 #[macro_use]
 extern crate log;
 
+use mruby::eval::{EvalContext, MrbEval};
 use mruby::interpreter::Mrb;
 use mruby::MrbError;
 use mruby_gems::rubygems;
@@ -38,5 +39,9 @@ fn interp_init(interp: &Mrb) -> Result<(), MrbError> {
     rubygems::rack_protection::init(&interp)?;
     rubygems::sinatra::init(&interp)?;
     rubygems::tilt::init(&interp)?;
+    interp.eval_with_context(
+        include_str!("echo_server.rb"),
+        EvalContext::new("/src/lib/echo_server.rb"),
+    )?;
     Ok(())
 }
