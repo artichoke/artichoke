@@ -251,12 +251,14 @@ where
     }
 }
 
+/// Wrapper around a [`sys::mrb_value`].
 pub struct Value {
     interp: Mrb,
     value: sys::mrb_value,
 }
 
 impl Value {
+    /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
     pub fn new(interp: &Mrb, value: sys::mrb_value) -> Self {
         Self {
             interp: Rc::clone(interp),
@@ -264,10 +266,12 @@ impl Value {
         }
     }
 
+    /// The [`sys::mrb_value`] that this [`Value`] wraps.
     pub fn inner(&self) -> sys::mrb_value {
         self.value
     }
 
+    /// Return this values [Rust-mapped type tag](types::Ruby).
     pub fn ruby_type(&self) -> types::Ruby {
         types::Ruby::from(self.value)
     }
@@ -300,15 +304,30 @@ impl Value {
         unsafe { sys::mrb_sys_value_is_dead(self.interp.borrow().mrb, self.value) }
     }
 
+    /// Call `#to_s` on this [`Value`].
+    ///
+    /// This function can never fail.
     pub fn to_s(&self) -> String {
         self.funcall::<String, _, _>("to_s", &[])
             .unwrap_or_else(|_| "<unknown>".to_owned())
     }
 
+    /// Generate a debug representation of self.
+    ///
+    /// Format:
+    ///
+    /// ```ruby
+    /// "#{self.class.name}<#{self.inspect}>"
+    /// ```
+    ///
+    /// This function can never fail.
     pub fn to_s_debug(&self) -> String {
         format!("{}<{}>", self.ruby_type().class_name(), self.inspect())
     }
 
+    /// Call `#inspect` on this [`Value`].
+    ///
+    /// This function can never fail.
     pub fn inspect(&self) -> String {
         self.funcall::<String, _, _>("inspect", &[])
             .unwrap_or_else(|_| "<unknown>".to_owned())
