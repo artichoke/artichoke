@@ -244,10 +244,9 @@ where
         }
     }
 
-    fn respond_to<T: AsRef<str>>(&self, method: T) -> Result<bool, MrbError> {
-        let sym = Value::from_mrb(self.interp(), method.as_ref())
-            .funcall::<Value, _, _>("to_sym", &[])?;
-        self.funcall::<bool, _, _>("respond_to?", &[sym])
+    fn respond_to(&self, method: &str) -> Result<bool, MrbError> {
+        let method = Value::from_mrb(self.interp(), method);
+        self.funcall::<bool, _, _>("respond_to?", &[method])
     }
 }
 
