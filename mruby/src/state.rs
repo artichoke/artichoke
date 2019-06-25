@@ -60,6 +60,7 @@ pub struct State {
     pub(crate) vfs: FakeFileSystem<VfsMetadata>,
     // TODO: make this private
     pub(crate) context_stack: Vec<EvalContext>,
+    pub num_set_regexp_capture_globals: usize,
 }
 
 impl State {
@@ -80,6 +81,7 @@ impl State {
             modules: HashMap::new(),
             vfs,
             context_stack: vec![],
+            num_set_regexp_capture_globals: 0,
         }
     }
 

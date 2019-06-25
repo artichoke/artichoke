@@ -714,7 +714,7 @@ impl Regexp {
                 .regex()
                 .and_then(|regexp| regexp.captures(&string[pos..]))
             {
-                for group in 1..=99 {
+                for group in 1..=std::cmp::max(interp.borrow().num_set_regexp_capture_globals, captures.len()) {
                     let value = Value::from_mrb(&interp, captures.at(group));
                     let global_capture_group = format!("${}", group);
                     let global_capture_group_name = sys::mrb_intern(
@@ -728,6 +728,7 @@ impl Regexp {
                         value.inner(),
                     );
                 }
+                interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
             }
 
             let data = MatchData {
