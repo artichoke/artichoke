@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashSet;
-use std::convert::AsRef;
+use std::convert::TryFrom;
 use std::ffi::CString;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -42,6 +42,20 @@ impl Spec {
             super_class: None,
             is_mrb_tt_data: false,
         }
+    }
+
+    pub fn new_instance(&self, interp: &Mrb, args: &[Value]) -> Option<Value> {
+        let rclass = self.rclass(interp)?;
+        let args = args.iter().map(|v| v.inner()).collect::<Vec<_>>();
+        let value = unsafe {
+            sys::mrb_obj_new(
+                interp.borrow().mrb,
+                rclass,
+                i64::try_from(args.len()).unwrap_or_default(),
+                args.as_ptr() as *const sys::mrb_value,
+            )
+        };
+        Some(Value::new(interp, value))
     }
 
     pub fn value(&self, interp: &Mrb) -> Option<Value> {
