@@ -1,6 +1,7 @@
 use onig::{Regex, RegexOptions, Region, SearchOptions, Syntax};
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::mem;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
@@ -15,7 +16,6 @@ use crate::value::{Value, ValueLike};
 use crate::MrbError;
 
 mod args;
-mod compile;
 mod initialize;
 mod syntax;
 
@@ -504,19 +504,12 @@ impl Regexp {
 
     unsafe extern "C" fn compile(
         mrb: *mut sys::mrb_state,
-        mut _slf: sys::mrb_value,
+        slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            compile::Args::extract(&interp),
-            interp.nil().inner()
-        );
-        match compile::method(&interp, args) {
-            Ok(value) => value.inner(),
-            //Err(compile::Error::Syntax) => SyntaxError::raise(&interp, ""),
-            _ => interp.nil().inner(),
-        }
+        let args = mem::uninitialized::<*const sys::mrb_value>();
+        let count = mem::uninitialized::<sys::mrb_int>();
+        sys::mrb_get_args(mrb, b"*\0".as_ptr() as *const i8, &args, &count);
+        sys::mrb_obj_new(mrb, sys::mrb_sys_class_ptr(slf), count, args)
     }
 
     unsafe extern "C" fn escape(
