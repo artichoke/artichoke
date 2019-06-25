@@ -10,3 +10,7 @@ members = [
   "nemesis",
   "spec-runner",
 ]
+
+[profile.release]
+debug = true
+lto = true
