@@ -285,6 +285,17 @@ impl Value {
         self.ruby_type() == types::Ruby::Unreachable
     }
 
+    /// Prevent this value from being garbage collected.
+    ///
+    /// Calls [`sys::mrb_gc_protect`] on this value which adds it to the GC
+    /// arena. This object will remain in the arena until
+    /// [`ArenaIndex::restore`](crate::gc::ArenaIndex::restore) restores the
+    /// arena to an index before this call to protect.
+    pub fn protect(&self) {
+        unsafe { sys::mrb_gc_protect(self.interp.borrow().mrb, self.value) }
+    }
+
+    /// Return whether this object is unreachable by any GC roots.
     pub fn is_dead(&self) -> bool {
         unsafe { sys::mrb_sys_value_is_dead(self.interp.borrow().mrb, self.value) }
     }
