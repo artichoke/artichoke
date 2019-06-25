@@ -28,7 +28,7 @@ pub fn spawn() -> Result<(), Error> {
         .add_mount(
             Mount::from_rackup("echo", APP, "/")
                 .with_init(Box::new(interp_init))
-                .with_shared_interpreter(Some(150)),
+                .with_shared_interpreter(Some(500)),
         )
         .serve()
 }
