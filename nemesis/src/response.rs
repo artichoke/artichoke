@@ -54,7 +54,6 @@ impl Response {
         let headers = response
             .funcall::<Value, _, _>("header", &[])?
             .funcall::<Value, _, _>("each", &[])?
-            .funcall::<Value, _, _>("to_a", &[])?
             .funcall::<HashMap<String, String>, _, _>("to_h", &[])?;
 
         let headers = headers
