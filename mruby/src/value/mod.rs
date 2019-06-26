@@ -21,22 +21,22 @@ pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 
 struct ProtectArgs {
     slf: sys::mrb_value,
-    func: String,
+    func_sym: u32,
     args: Vec<sys::mrb_value>,
 }
 
 struct ProtectArgsWithBlock {
     slf: sys::mrb_value,
-    func: String,
+    func_sym: u32,
     args: Vec<sys::mrb_value>,
     block: sys::mrb_value,
 }
 
 impl ProtectArgs {
-    fn new(slf: sys::mrb_value, func: &str, args: Vec<sys::mrb_value>) -> Self {
+    fn new(slf: sys::mrb_value, func_sym: u32, args: Vec<sys::mrb_value>) -> Self {
         Self {
             slf,
-            func: func.to_owned(),
+            func_sym,
             args,
         }
     }
@@ -44,7 +44,7 @@ impl ProtectArgs {
     fn with_block(self, block: sys::mrb_value) -> ProtectArgsWithBlock {
         ProtectArgsWithBlock {
             slf: self.slf,
-            func: self.func,
+            func_sym: self.func_sym,
             args: self.args,
             block,
         }
@@ -73,11 +73,10 @@ where
             let ptr = sys::mrb_sys_cptr_ptr(data);
             let args = Rc::from_raw(ptr as *const ProtectArgs);
 
-            let sym = sys::mrb_intern(mrb, args.func.as_ptr() as *const i8, args.func.len());
             let value = sys::mrb_funcall_argv(
                 mrb,
                 args.slf,
-                sym,
+                args.func_sym,
                 // This will always unwrap because we've already checked that we
                 // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less
                 // than i64 max value.
@@ -115,7 +114,11 @@ where
             func.as_ref(),
             args.len()
         );
-        let args = Rc::new(ProtectArgs::new(self.inner(), func.as_ref(), args));
+        let args = Rc::new(ProtectArgs::new(
+            self.inner(),
+            self.interp().borrow_mut().sym_intern(func.as_ref()),
+            args,
+        ));
         let value = unsafe {
             let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
             let mut state = mem::uninitialized::<u8>();
@@ -164,11 +167,10 @@ where
             let ptr = sys::mrb_sys_cptr_ptr(data);
             let args = Rc::from_raw(ptr as *const ProtectArgsWithBlock);
 
-            let sym = sys::mrb_intern(mrb, args.func.as_ptr() as *const i8, args.func.len());
             let value = sys::mrb_funcall_with_block(
                 mrb,
                 args.slf,
-                sym,
+                args.func_sym,
                 // This will always unwrap because we've already checked that we
                 // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less
                 // than i64 max value.
@@ -207,8 +209,14 @@ where
             func.as_ref(),
             args.len()
         );
-        let args =
-            Rc::new(ProtectArgs::new(self.inner(), func.as_ref(), args).with_block(block.inner()));
+        let args = Rc::new(
+            ProtectArgs::new(
+                self.inner(),
+                self.interp().borrow_mut().sym_intern(func.as_ref()),
+                args,
+            )
+            .with_block(block.inner()),
+        );
         let value = unsafe {
             let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
             let mut state = mem::uninitialized::<u8>();
