@@ -70,7 +70,7 @@ impl ClassLike for Spec {
                     sys::mrb_const_defined_at(
                         mrb,
                         sys::mrb_sys_obj_value(scope as *mut c_void),
-                        sys::mrb_intern_cstr(mrb, self.cstring.as_ptr()),
+                        interp.borrow_mut().sym_intern(self.name.as_str()),
                     )
                 };
                 if defined == 0 {
@@ -91,7 +91,7 @@ impl ClassLike for Spec {
                 sys::mrb_const_defined_at(
                     mrb,
                     sys::mrb_sys_obj_value((*mrb).object_class as *mut c_void),
-                    sys::mrb_intern_cstr(mrb, self.cstring.as_ptr()),
+                    interp.borrow_mut().sym_intern(self.name.as_str()),
                 )
             };
             if defined == 0 {
