@@ -55,8 +55,7 @@ pub struct Warning;
 impl Warning {
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let stderr = sys::mrb_intern(mrb, b"$stderr\0".as_ptr() as *const i8, 7);
-        let stderr = sys::mrb_gv_get(mrb, stderr);
+        let stderr = sys::mrb_gv_get(mrb, interp.borrow_mut().sym_intern("$stderr"));
         if !sys::mrb_sys_value_is_nil(stderr) {
             let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
             let stderr = Value::new(&interp, stderr);
