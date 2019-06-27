@@ -61,7 +61,7 @@ pub struct State {
     // TODO: make this private
     pub(crate) context_stack: Vec<EvalContext>,
     pub num_set_regexp_capture_globals: usize,
-    symbol_cache: HashMap<String, u32>,
+    symbol_cache: HashMap<String, sys::mrb_sym>,
 }
 
 impl State {
@@ -219,7 +219,7 @@ impl State {
         self.modules.get(&TypeId::of::<T>()).map(Rc::clone)
     }
 
-    pub fn sym_intern(&mut self, sym: &str) -> u32 {
+    pub fn sym_intern(&mut self, sym: &str) -> sys::mrb_sym {
         let mrb = self.mrb;
         let interned = self.symbol_cache.entry(sym.to_owned()).or_insert_with(|| unsafe {
             sys::mrb_intern(
