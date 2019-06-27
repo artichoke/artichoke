@@ -840,7 +840,11 @@ impl Regexp {
         );
         let data = if is_match.is_some() {
             if let Some(captures) = regexp.borrow().regex.captures(&string[pos..]) {
-                for group in 1..=99 {
+                let num_regexp_globals_to_set = {
+                    let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
+                    cmp::max(num_previously_set_globals, captures.len())
+                };
+                for group in 1..=num_regexp_globals_to_set {
                     let value = Value::from_mrb(&interp, captures.at(group));
                     sys::mrb_gv_set(
                         mrb,
@@ -848,6 +852,7 @@ impl Regexp {
                         value.inner(),
                     );
                 }
+                interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
             }
 
             let data = MatchData {
