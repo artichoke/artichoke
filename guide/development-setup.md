@@ -212,3 +212,14 @@ running:
 ```shell
 cargo install loc
 ```
+
+## Flamegraphs
+
+To generate flamegraphs with
+[`scripts/hubris-flamegraph.sh`](/scripts/hubris-flamegraph.sh), you need the
+[inferno flamegraph implementation](https://github.com/jonhoo/inferno). You can
+install inferno by running:
+
+```shell
+cargo install inferno
+```

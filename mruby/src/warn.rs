@@ -27,8 +27,7 @@ impl MrbWarn for Mrb {
         warn!("rb warning: {}", message);
         let mrb = self.borrow().mrb;
         let kernel = unsafe {
-            let stderr = sys::mrb_intern_cstr(mrb, b"$stderr\0".as_ptr() as *const i8);
-            let stderr = sys::mrb_gv_get(mrb, stderr);
+            let stderr = sys::mrb_gv_get(mrb, self.borrow_mut().sym_intern("$stderr"));
             if sys::mrb_sys_value_is_nil(stderr) {
                 return Ok(());
             }

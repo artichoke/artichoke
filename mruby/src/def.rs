@@ -217,6 +217,10 @@ where
     /// Define the class or module and all of its methods into the interpreter.
     ///
     /// Returns the [`RClass *`](sys::RClass) of the newly defined item.
+    ///
+    /// This function takes a mutable borrow on the [`Mrb`] interpreter. Ensure
+    /// that there are no outstanding borrows on the interpreter or else Rust
+    /// will panic.
     fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError>;
 }
 
@@ -237,6 +241,8 @@ where
 
     fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass>;
 
+    /// Compute the fully qualified name of a Class or module. See
+    /// [`EnclosingRubyScope::fqname`].
     fn fqname(&self) -> String {
         if let Some(scope) = self.enclosing_scope() {
             format!("{}::{}", scope.fqname(), self.name())
@@ -289,57 +295,45 @@ mod tests {
             );
         }
 
-        let api = interp.borrow();
-        api.module_spec::<Root>()
-            .unwrap()
-            .borrow()
-            .define(&interp)
-            .expect("def module");
-        api.module_spec::<ModuleUnderRoot>()
-            .unwrap()
-            .borrow()
-            .define(&interp)
-            .expect("def module");
-        api.class_spec::<ClassUnderRoot>()
-            .unwrap()
-            .borrow()
-            .define(&interp)
-            .expect("def class");
-        api.class_spec::<ClassUnderModule>()
-            .unwrap()
-            .borrow()
-            .define(&interp)
-            .expect("def class");
-        api.module_spec::<ModuleUnderClass>()
-            .unwrap()
-            .borrow()
-            .define(&interp)
-            .expect("def module");
-        api.class_spec::<ClassUnderClass>()
-            .unwrap()
-            .borrow()
-            .define(&interp)
-            .expect("def class");
+        let spec = interp.borrow().module_spec::<Root>().unwrap();
+        spec.borrow().define(&interp).expect("def module");
+        let spec = interp.borrow().module_spec::<ModuleUnderRoot>().unwrap();
+        spec.borrow().define(&interp).expect("def module");
+        let spec = interp.borrow().class_spec::<ClassUnderRoot>().unwrap();
+        spec.borrow().define(&interp).expect("def class");
+        let spec = interp.borrow().class_spec::<ClassUnderModule>().unwrap();
+        spec.borrow().define(&interp).expect("def class");
+        let spec = interp.borrow().module_spec::<ModuleUnderClass>().unwrap();
+        spec.borrow().define(&interp).expect("def module");
+        let spec = interp.borrow().class_spec::<ClassUnderClass>().unwrap();
+        spec.borrow().define(&interp).expect("def class");
 
-        let spec = api.module_spec::<Root>().expect("Root not defined");
+        let spec = interp
+            .borrow()
+            .module_spec::<Root>()
+            .expect("Root not defined");
         assert_eq!(&spec.borrow().fqname(), "A");
         assert_eq!(&format!("{}", spec.borrow()), "mruby module spec -- A");
-        let spec = api
+        let spec = interp
+            .borrow()
             .module_spec::<ModuleUnderRoot>()
             .expect("ModuleUnderRoot not defined");
         assert_eq!(&spec.borrow().fqname(), "A::B");
         assert_eq!(&format!("{}", spec.borrow()), "mruby module spec -- A::B");
-        let spec = api
+        let spec = interp
+            .borrow()
             .class_spec::<ClassUnderRoot>()
             .expect("ClassUnderRoot not defined");
         assert_eq!(&spec.borrow().fqname(), "A::C");
         assert_eq!(&format!("{}", spec.borrow()), "mruby class spec -- A::C");
-        let spec = api
+        let spec = interp
+            .borrow()
             .class_spec::<ClassUnderModule>()
             .expect("ClassUnderModule not defined");
         assert_eq!(&spec.borrow().fqname(), "A::B::D");
         assert_eq!(&format!("{}", spec.borrow()), "mruby class spec -- A::B::D");
-        let spec = api
+        let spec = interp
+            .borrow()
             .module_spec::<ModuleUnderClass>()
             .expect("ModuleUnderClass not defined");
         assert_eq!(&spec.borrow().fqname(), "A::C::E");
@@ -347,7 +341,8 @@ mod tests {
             &format!("{}", spec.borrow()),
             "mruby module spec -- A::C::E"
         );
-        let spec = api
+        let spec = interp
+            .borrow()
             .class_spec::<ClassUnderClass>()
             .expect("ClassUnderClass not defined");
         assert_eq!(&spec.borrow().fqname(), "A::C::F");

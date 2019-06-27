@@ -1,4 +1,5 @@
 use onig::{Regex, RegexOptions, Region, SearchOptions, Syntax};
+use std::cmp;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::mem;
@@ -619,15 +620,9 @@ impl Regexp {
             Ok(Some(ref string)) => string.to_owned(),
             Err(_) => return TypeError::raise(&interp, "No implicit conversion into String"),
             _ => {
-                let global_last_match_captures = "$~";
-                let global_match_captures_name = sys::mrb_intern(
-                    interp.borrow().mrb,
-                    global_last_match_captures.as_ptr() as *const i8,
-                    global_last_match_captures.len(),
-                );
                 sys::mrb_gv_set(
-                    interp.borrow().mrb,
-                    global_match_captures_name,
+                    mrb,
+                    interp.borrow_mut().sym_intern("$~"),
                     interp.nil().inner(),
                 );
                 return interp.nil().inner();
@@ -662,33 +657,22 @@ impl Regexp {
         } else {
             interp.nil().inner()
         };
-        let global_last_match_string = "$&";
-        let global_match_string_name = sys::mrb_intern(
-            interp.borrow().mrb,
-            global_last_match_string.as_ptr() as *const i8,
-            global_last_match_string.len(),
-        );
         sys::mrb_gv_set(
-            interp.borrow().mrb,
-            global_match_string_name,
+            mrb,
+            interp.borrow_mut().sym_intern("$&"),
             last_matched_string,
         );
         let data = if is_match.is_some() {
             if let Some(captures) = regexp.borrow().regex.captures(&string[pos..]) {
-                for group in 1..=std::cmp::max(
-                    interp.borrow().num_set_regexp_capture_globals,
-                    captures.len(),
-                ) {
+                let num_regexp_globals_to_set = {
+                    let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
+                    cmp::max(num_previously_set_globals, captures.len())
+                };
+                for group in 1..=num_regexp_globals_to_set {
                     let value = Value::from_mrb(&interp, captures.at(group));
-                    let global_capture_group = format!("${}", group);
-                    let global_capture_group_name = sys::mrb_intern(
-                        interp.borrow().mrb,
-                        global_capture_group.as_ptr() as *const i8,
-                        global_capture_group.len(),
-                    );
                     sys::mrb_gv_set(
-                        interp.borrow().mrb,
-                        global_capture_group_name,
+                        mrb,
+                        interp.borrow_mut().sym_intern(&format!("${}", group)),
                         value.inner(),
                     );
                 }
@@ -704,18 +688,12 @@ impl Regexp {
         } else {
             interp.nil().inner()
         };
-        let global_last_match_captures = "$~";
-        let global_match_captures_name = sys::mrb_intern(
-            interp.borrow().mrb,
-            global_last_match_captures.as_ptr() as *const i8,
-            global_last_match_captures.len(),
-        );
-        sys::mrb_gv_set(interp.borrow().mrb, global_match_captures_name, data);
+        sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data);
         if let Some(block) = args.block {
             if sys::mrb_sys_value_is_nil(data) {
                 interp.nil().inner()
             } else {
-                sys::mrb_yield(interp.borrow().mrb, block.inner(), data)
+                sys::mrb_yield(mrb, block.inner(), data)
             }
         } else {
             data
@@ -818,15 +796,9 @@ impl Regexp {
             Ok(Some(ref string)) => string.to_owned(),
             Err(_) => return interp.bool(false).inner(),
             _ => {
-                let global_last_match_captures = "$~";
-                let global_match_captures_name = sys::mrb_intern(
-                    interp.borrow().mrb,
-                    global_last_match_captures.as_ptr() as *const i8,
-                    global_last_match_captures.len(),
-                );
                 sys::mrb_gv_set(
-                    interp.borrow().mrb,
-                    global_match_captures_name,
+                    mrb,
+                    interp.borrow_mut().sym_intern("$~"),
                     interp.nil().inner(),
                 );
                 return interp.bool(false).inner();
@@ -861,33 +833,26 @@ impl Regexp {
         } else {
             interp.nil().inner()
         };
-        let global_last_match_string = "$&";
-        let global_match_string_name = sys::mrb_intern(
-            interp.borrow().mrb,
-            global_last_match_string.as_ptr() as *const i8,
-            global_last_match_string.len(),
-        );
         sys::mrb_gv_set(
-            interp.borrow().mrb,
-            global_match_string_name,
+            mrb,
+            interp.borrow_mut().sym_intern("$&"),
             last_matched_string,
         );
         let data = if is_match.is_some() {
             if let Some(captures) = regexp.borrow().regex.captures(&string[pos..]) {
-                for group in 1..=99 {
+                let num_regexp_globals_to_set = {
+                    let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
+                    cmp::max(num_previously_set_globals, captures.len())
+                };
+                for group in 1..=num_regexp_globals_to_set {
                     let value = Value::from_mrb(&interp, captures.at(group));
-                    let global_capture_group = format!("${}", group);
-                    let global_capture_group_name = sys::mrb_intern(
-                        interp.borrow().mrb,
-                        global_capture_group.as_ptr() as *const i8,
-                        global_capture_group.len(),
-                    );
                     sys::mrb_gv_set(
-                        interp.borrow().mrb,
-                        global_capture_group_name,
+                        mrb,
+                        interp.borrow_mut().sym_intern(&format!("${}", group)),
                         value.inner(),
                     );
                 }
+                interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
             }
 
             let data = MatchData {
@@ -904,13 +869,7 @@ impl Regexp {
         } else {
             interp.nil().inner()
         };
-        let global_last_match_captures = "$~";
-        let global_match_captures_name = sys::mrb_intern(
-            interp.borrow().mrb,
-            global_last_match_captures.as_ptr() as *const i8,
-            global_last_match_captures.len(),
-        );
-        sys::mrb_gv_set(interp.borrow().mrb, global_match_captures_name, data);
+        sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data);
         interp.bool(!sys::mrb_sys_value_is_nil(data)).inner()
     }
 

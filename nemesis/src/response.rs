@@ -33,9 +33,8 @@ impl Response {
             warn!("malformed rack response: {:?}", response);
             return Err(Error::RackResponse);
         }
-        let response = interp
-            .borrow()
-            .class_spec::<nemesis::Response>()
+        let spec = interp.borrow().class_spec::<nemesis::Response>();
+        let response = spec
             .and_then(|spec| spec.borrow().new_instance(interp, response))
             .ok_or_else(|| Error::Mrb(MrbError::NotDefined("Nemesis::Response".to_owned())))?;
         Ok(Self {
@@ -55,7 +54,6 @@ impl Response {
         let headers = response
             .funcall::<Value, _, _>("header", &[])?
             .funcall::<Value, _, _>("each", &[])?
-            .funcall::<Value, _, _>("to_a", &[])?
             .funcall::<HashMap<String, String>, _, _>("to_h", &[])?;
 
         let headers = headers

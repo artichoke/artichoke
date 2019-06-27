@@ -61,6 +61,7 @@ pub struct State {
     // TODO: make this private
     pub(crate) context_stack: Vec<EvalContext>,
     pub num_set_regexp_capture_globals: usize,
+    symbol_cache: HashMap<String, sys::mrb_sym>,
 }
 
 impl State {
@@ -77,11 +78,12 @@ impl State {
         Self {
             mrb,
             ctx,
-            classes: HashMap::new(),
-            modules: HashMap::new(),
+            classes: HashMap::default(),
+            modules: HashMap::default(),
             vfs,
             context_stack: vec![],
             num_set_regexp_capture_globals: 0,
+            symbol_cache: HashMap::default(),
         }
     }
 
@@ -215,6 +217,17 @@ impl State {
     /// reference to the module spec.
     pub fn module_spec<T: Any>(&self) -> Option<Rc<RefCell<module::Spec>>> {
         self.modules.get(&TypeId::of::<T>()).map(Rc::clone)
+    }
+
+    pub fn sym_intern(&mut self, sym: &str) -> sys::mrb_sym {
+        let mrb = self.mrb;
+        let interned = self
+            .symbol_cache
+            .entry(sym.to_owned())
+            .or_insert_with(|| unsafe {
+                sys::mrb_intern(mrb, sym.as_ptr() as *const i8, sym.len())
+            });
+        *interned
     }
 }
 
