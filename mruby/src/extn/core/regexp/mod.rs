@@ -1,4 +1,5 @@
 use onig::{Regex, RegexOptions, Region, SearchOptions, Syntax};
+use std::cmp;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::mem;
@@ -663,11 +664,11 @@ impl Regexp {
         );
         let data = if is_match.is_some() {
             if let Some(captures) = regexp.borrow().regex.captures(&string[pos..]) {
-                let regexp_global_set_count = {
-                    let previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
-                    std::cmp::max(previously_set_globals, captures.len())
+                let num_regexp_globals_to_set = {
+                    let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
+                    cmp::max(num_previously_set_globals, captures.len())
                 };
-                for group in 1..=regexp_global_set_count {
+                for group in 1..=num_regexp_globals_to_set {
                     let value = Value::from_mrb(&interp, captures.at(group));
                     sys::mrb_gv_set(
                         mrb,
