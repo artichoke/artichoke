@@ -221,13 +221,12 @@ impl State {
 
     pub fn sym_intern(&mut self, sym: &str) -> sys::mrb_sym {
         let mrb = self.mrb;
-        let interned = self.symbol_cache.entry(sym.to_owned()).or_insert_with(|| unsafe {
-            sys::mrb_intern(
-                mrb,
-                sym.as_ptr() as *const i8,
-                sym.len(),
-            )
-        });
+        let interned = self
+            .symbol_cache
+            .entry(sym.to_owned())
+            .or_insert_with(|| unsafe {
+                sys::mrb_intern(mrb, sym.as_ptr() as *const i8, sym.len())
+            });
         *interned
     }
 }

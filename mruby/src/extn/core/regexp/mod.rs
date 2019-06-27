@@ -688,11 +688,7 @@ impl Regexp {
         } else {
             interp.nil().inner()
         };
-        sys::mrb_gv_set(
-            mrb,
-            interp.borrow_mut().sym_intern("$~"),
-            data,
-        );
+        sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data);
         if let Some(block) = args.block {
             if sys::mrb_sys_value_is_nil(data) {
                 interp.nil().inner()
@@ -868,11 +864,7 @@ impl Regexp {
         } else {
             interp.nil().inner()
         };
-        sys::mrb_gv_set(
-            mrb,
-            interp.borrow_mut().sym_intern("$~"),
-            data,
-        );
+        sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data);
         interp.bool(!sys::mrb_sys_value_is_nil(data)).inner()
     }
 
