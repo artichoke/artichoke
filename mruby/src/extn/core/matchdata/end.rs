@@ -72,7 +72,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         }
     };
     let end = captures.pos(index).ok_or(Error::NoMatch)?.1;
-    let end = match_against[0..end].chars().count();
+    let end = match_against[0..end].chars().count() + 1;
     let end = i64::try_from(end).map_err(|_| Error::Fatal)?;
     Ok(Value::from_mrb(&interp, end))
 }
