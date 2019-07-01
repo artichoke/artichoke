@@ -18,7 +18,7 @@ use crate::MrbError;
 
 mod args;
 pub mod initialize;
-mod syntax;
+pub mod syntax;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.eval(include_str!("regexp.rb"))?;
@@ -630,12 +630,7 @@ impl Regexp {
                 interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
             }
 
-            let data = MatchData::new(
-                string.as_str(),
-                regexp.borrow().clone(),
-                0,
-                string.len(),
-            );
+            let data = MatchData::new(string.as_str(), regexp.borrow().clone(), 0, string.len());
             unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
         } else {
             interp.nil().inner()
@@ -807,12 +802,7 @@ impl Regexp {
                 interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
             }
 
-            let data = MatchData::new(
-                string.as_str(),
-                regexp.borrow().clone(),
-                0,
-                string.len(),
-            );
+            let data = MatchData::new(string.as_str(), regexp.borrow().clone(), 0, string.len());
             unwrap_or_raise!(
                 interp,
                 data.try_into_ruby(&interp, None),

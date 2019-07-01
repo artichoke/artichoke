@@ -4,12 +4,14 @@ use std::io::Cursor;
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::def::{ClassLike, Define};
 use crate::eval::MrbEval;
-use crate::extn::core::error::{ArgumentError, RubyException};
+use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::Value;
 use crate::MrbError;
 use log::trace;
+
+mod scan;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     if interp.borrow().class_spec::<RString>().is_some() {
@@ -22,6 +24,9 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     string
         .borrow_mut()
         .add_method("ord", RString::ord, sys::mrb_args_none());
+    string
+        .borrow_mut()
+        .add_method("scan", RString::scan, sys::mrb_args_req(1));
     string.borrow().define(interp).map_err(|_| MrbError::New)?;
     trace!("Patched String onto interpreter");
     Ok(())
@@ -52,7 +57,23 @@ impl RString {
             ArgumentError::raise(&interp, "empty string")
         }
     }
+
+    unsafe extern "C" fn scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let value = Value::new(&interp, slf);
+        let result =
+            scan::Args::extract(&interp).and_then(|args| scan::method(&interp, args, value));
+
+        match result {
+            Ok(result) => result.inner(),
+            Err(scan::Error::WrongType) => {
+                TypeError::raise(&interp, "wrong argument type (expected Regexp)")
+            }
+            Err(scan::Error::Fatal) => RuntimeError::raise(&interp, "fatal String#scan error"),
+        }
+    }
 }
+
 // Tests from String core docs in Ruby 2.6.3
 // https://ruby-doc.org/core-2.6.3/String.html
 #[cfg(test)]

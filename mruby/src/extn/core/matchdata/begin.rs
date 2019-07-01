@@ -73,6 +73,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     };
     let begin = captures.pos(index).ok_or(Error::NoMatch)?.0;
     let begin = match_against[0..begin].chars().count();
+    let begin = begin + borrow.region.start;
     let begin = i64::try_from(begin).map_err(|_| Error::Fatal)?;
     Ok(Value::from_mrb(&interp, begin))
 }
