@@ -10,7 +10,10 @@ pub enum Error {
 
 pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     if let Ok(data) = unsafe { MatchData::try_from_ruby(interp, value) } {
-        Ok(interp.string(data.borrow().string.as_str()))
+        interp
+            .string(data.borrow().string.as_str())
+            .freeze()
+            .map_err(|_| Error::Fatal)
     } else {
         Err(Error::Fatal)
     }
