@@ -361,6 +361,13 @@ impl Value {
     {
         self.funcall::<T, _, _>("itself", &[])
     }
+
+    /// Call `#freeze` on this [`Value`] and consume `self`.
+    pub fn freeze(self) -> Result<Self, MrbError> {
+        let frozen = self.funcall::<Value, _, _>("freeze", &[])?;
+        frozen.protect();
+        Ok(frozen)
+    }
 }
 
 impl ValueLike for Value {
