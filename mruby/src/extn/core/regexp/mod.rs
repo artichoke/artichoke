@@ -630,12 +630,11 @@ impl Regexp {
                 interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
             }
 
-            // TODO: this is gross
             let data = MatchData::new(
                 string.as_str(),
                 regexp.borrow().clone(),
-                region.pos(0).map(|r| r.0).unwrap_or_default(),
-                region.pos(0).map(|r| r.1).unwrap_or_default(),
+                0,
+                string.len(),
             );
             unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
         } else {
@@ -811,8 +810,8 @@ impl Regexp {
             let data = MatchData::new(
                 string.as_str(),
                 regexp.borrow().clone(),
-                region.pos(0).map(|r| r.0).unwrap_or_default(),
-                region.pos(0).map(|r| r.1).unwrap_or_default(),
+                0,
+                string.len(),
             );
             unwrap_or_raise!(
                 interp,
