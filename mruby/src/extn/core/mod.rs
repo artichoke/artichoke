@@ -6,6 +6,7 @@ pub mod array;
 pub mod env;
 pub mod error;
 pub mod kernel;
+pub mod matchdata;
 pub mod module;
 pub mod regexp;
 pub mod string;
@@ -17,6 +18,7 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     env::patch(interp)?;
     error::patch(interp)?;
     kernel::patch(interp)?;
+    matchdata::init(interp)?;
     module::patch(interp)?;
     regexp::init(interp)?;
     string::patch(interp)?;
