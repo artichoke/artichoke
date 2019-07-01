@@ -1,6 +1,6 @@
 use crate::convert::RustBackedValue;
 use crate::def::{rust_data_free, ClassLike, Define};
-use crate::extn::core::error::{RubyException, RuntimeError, TypeError};
+use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
 use crate::extn::core::regexp::Regexp;
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
@@ -136,9 +136,11 @@ impl MatchData {
             .and_then(|args| element_reference::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(element_reference::Error::NoMatch) | Err(element_reference::Error::NoGroup) => {
-                interp.nil().inner()
-            }
+            Err(element_reference::Error::NoMatch) => interp.nil().inner(),
+            Err(element_reference::Error::NoGroup(name)) => IndexError::raise(
+                &interp,
+                &format!("undefined group name reference: {}", name),
+            ),
             Err(element_reference::Error::IndexType)
             | Err(element_reference::Error::LengthType) => {
                 TypeError::raise(&interp, "Unexpected element reference")

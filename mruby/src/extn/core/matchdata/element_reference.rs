@@ -7,12 +7,12 @@ use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::Value;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Error {
     Fatal,
     IndexType,
     LengthType,
-    NoGroup,
+    NoGroup(String),
     NoMatch,
 }
 
@@ -92,15 +92,18 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         .ok_or(Error::NoMatch)?;
     match args {
         Args::Index(index) => {
-            let index = if index < 0 {
+            if index < 0 {
                 // Positive i64 must be usize
                 let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
-                captures.len().checked_sub(index).ok_or(Error::Fatal)?
+                match captures.len().checked_sub(index) {
+                    Some(index) => Ok(Value::from_mrb(&interp, captures.at(index))),
+                    None => Ok(interp.nil()),
+                }
             } else {
                 // Positive i64 must be usize
-                usize::try_from(index).map_err(|_| Error::Fatal)?
-            };
-            Ok(Value::from_mrb(&interp, captures.at(index)))
+                let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
+                Ok(Value::from_mrb(&interp, captures.at(index)))
+            }
         }
         Args::Name(name) => {
             let index = borrow
@@ -108,9 +111,17 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                 .regex
                 .capture_names()
                 .find(|capture| capture.0 == name)
-                .ok_or(Error::NoGroup)?;
-            let index = usize::try_from(index.1[0]).map_err(|_| Error::Fatal)?;
-            Ok(Value::from_mrb(&interp, captures.at(index)))
+                .map(|index| index.1)
+                .ok_or_else(|| Error::NoGroup(name))?;
+            let group = index
+                .into_iter()
+                .filter_map(|index| {
+                    usize::try_from(*index)
+                        .ok()
+                        .and_then(|index| captures.at(index))
+                })
+                .last();
+            Ok(Value::from_mrb(&interp, group))
         }
         Args::StartLen(start, len) => {
             let start = if start < 0 {
