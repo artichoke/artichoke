@@ -355,7 +355,7 @@ impl Value {
     /// `T`.
     ///
     /// If you want to consume this [`Value`], use [`Value::try_into`].
-    pub fn itself<T>(self) -> Result<T, MrbError>
+    pub fn itself<T>(&self) -> Result<T, MrbError>
     where
         T: TryFromMrb<Self, From = types::Ruby, To = types::Rust>,
     {
