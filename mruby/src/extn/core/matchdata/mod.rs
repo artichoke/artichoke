@@ -97,6 +97,10 @@ impl MatchData {
         }
     }
 
+    pub fn set_region(&mut self, start: usize, end: usize) {
+        self.region = Region { start, end };
+    }
+
     unsafe extern "C" fn begin(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let value = Value::new(&interp, slf);
