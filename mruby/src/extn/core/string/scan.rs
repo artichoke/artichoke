@@ -1,9 +1,11 @@
+#![allow(warnings)]
 use std::cmp;
 use std::mem;
 
-use crate::convert::{FromMrb, RustBackedValue};
+use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{syntax, Encoding, Options, Regexp};
+use crate::gc::MrbGarbageCollection;
 use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::{Value, ValueLike};
@@ -61,62 +63,67 @@ impl Args {
 pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
     let mrb = interp.borrow().mrb;
     let regexp = args.regexp.ok_or(Error::WrongType)?;
-    let s = value.to_s();
-    let mut collected = vec![];
-    for pos in regexp.regex.find_iter(s.as_str()) {
-        let scanned = &s[pos.0..pos.1];
-        if let Some(captures) = regexp.regex.captures(scanned) {
-            let num_regexp_globals_to_set = {
-                let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
-                cmp::max(num_previously_set_globals, captures.len())
-            };
-            for group in 1..=num_regexp_globals_to_set {
-                let value = Value::from_mrb(&interp, captures.at(group));
-                unsafe {
-                    sys::mrb_gv_set(
-                        mrb,
-                        interp.borrow_mut().sym_intern(&format!("${}", group)),
-                        value.inner(),
-                    );
-                }
-            }
-            interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
+    let s = value.itself().map_err(|_| Error::Fatal)?;
+    let s = unsafe { String::try_from_mrb(&interp, s) }.map_err(|_| Error::WrongType)?;
 
-            let matched = if captures.len() > 1 {
-                let mut collected_groups = vec![];
-                for index in 1..captures.len() {
-                    collected_groups.push(Value::from_mrb(&interp, captures.at(index)));
+    let gc_was_enabled = interp.disable_gc();
+
+    let last_match_sym = interp.borrow_mut().sym_intern("$~");
+    let data = MatchData::new(s.as_str(), regexp.clone(), 0, s.len());
+    let data = unsafe { data.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)?;
+    unsafe { sys::mrb_gv_set(mrb, last_match_sym, data.inner()) };
+    let matchdata = unsafe { MatchData::try_from_ruby(interp, &data) }.map_err(|_| Error::Fatal)?;
+
+    let len = regexp.regex.captures_len();
+    let mut collected = vec![];
+
+    if len > 0 {
+        for pos in regexp.regex.find_iter(s.as_str()) {
+            let scanned = &s[pos.0..pos.1];
+            if let Some(captures) = regexp.regex.captures(scanned) {
+                let mut groups = vec![];
+                for index in 1..=len {
+                    groups.push(captures.at(index));
                 }
-                Value::from_mrb(&interp, collected_groups)
-            } else {
-                Value::from_mrb(&interp, captures.at(0))
-            };
-            let data = MatchData::new(s.as_str(), regexp.clone(), pos.0, pos.1);
-            let data = unsafe { data.try_into_ruby(&interp, None) }.map_err(|_| Error::Fatal)?;
-            unsafe {
-                sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data.inner());
-            }
-            if let Some(ref block) = args.block {
-                unsafe {
-                    sys::mrb_yield(mrb, block.inner(), matched.inner());
-                    sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data.inner());
+                let matched = Value::from_mrb(interp, groups);
+                matchdata.borrow_mut().set_region(pos.0, pos.1);
+                if let Some(ref block) = args.block {
+                    unsafe {
+                        sys::mrb_yield(mrb, block.inner(), matched.inner());
+                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+                    }
                 }
+                collected.push(matched);
             }
-            collected.push(matched);
+        }
+    } else {
+        for pos in regexp.regex.find_iter(s.as_str()) {
+            let scanned = &s[pos.0..pos.1];
+            if let Some(captures) = regexp.regex.captures(scanned) {
+                let matched = Value::from_mrb(interp, scanned);
+                matchdata.borrow_mut().set_region(pos.0, pos.1);
+                if let Some(ref block) = args.block {
+                    unsafe {
+                        sys::mrb_yield(mrb, block.inner(), matched.inner());
+                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+                    }
+                }
+                collected.push(matched);
+            }
         }
     }
     if collected.is_empty() {
         unsafe {
-            sys::mrb_gv_set(
-                mrb,
-                interp.borrow_mut().sym_intern("$~"),
-                interp.nil().inner(),
-            );
+            sys::mrb_gv_set(mrb, last_match_sym, interp.nil().inner());
         }
     }
-    if args.block.is_some() {
-        Ok(value)
+    let result = if args.block.is_some() {
+        value
     } else {
-        Ok(Value::from_mrb(&interp, collected))
+        Value::from_mrb(interp, collected)
+    };
+    if gc_was_enabled {
+        interp.enable_gc();
     }
+    Ok(result)
 }
