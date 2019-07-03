@@ -18,8 +18,18 @@ class FalseClass
   end
 end
 
+class Float
+  def  to_int
+    floor
+  end
+end
+
 class Integer
   def dup
+    self
+  end
+
+  def to_int
     self
   end
 end
