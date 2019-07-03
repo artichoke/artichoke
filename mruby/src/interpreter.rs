@@ -12,11 +12,9 @@ use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
-
-pub type Mrb = crate::Mrb;
 
 pub struct Interpreter;
 
