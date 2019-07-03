@@ -74,45 +74,47 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
     unsafe { sys::mrb_gv_set(mrb, last_match_sym, data.inner()) };
     let matchdata = unsafe { MatchData::try_from_ruby(interp, &data) }.map_err(|_| Error::Fatal)?;
 
-    let len = regexp.regex.captures_len();
+    let mut was_match = false;
     let mut collected = vec![];
+    let len = regexp.regex.captures_len();
 
     if len > 0 {
-        for pos in regexp.regex.find_iter(s.as_str()) {
-            let scanned = &s[pos.0..pos.1];
-            if let Some(captures) = regexp.regex.captures(scanned) {
-                let mut groups = vec![];
-                for index in 1..=len {
-                    groups.push(captures.at(index));
-                }
-                let matched = Value::from_mrb(interp, groups);
+        for captures in regexp.regex.captures_iter(s.as_str()) {
+            was_match = true;
+            let mut groups = vec![];
+            for index in 1..=len {
+                groups.push(captures.at(index));
+            }
+            let matched = Value::from_mrb(interp, groups);
+            if let Some(pos) = captures.pos(0) {
                 matchdata.borrow_mut().set_region(pos.0, pos.1);
-                if let Some(ref block) = args.block {
-                    unsafe {
-                        sys::mrb_yield(mrb, block.inner(), matched.inner());
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    }
+            }
+            if let Some(ref block) = args.block {
+                unsafe {
+                    sys::mrb_yield(mrb, block.inner(), matched.inner());
+                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
+            } else {
                 collected.push(matched);
             }
         }
     } else {
         for pos in regexp.regex.find_iter(s.as_str()) {
+            was_match = true;
             let scanned = &s[pos.0..pos.1];
-            if let Some(captures) = regexp.regex.captures(scanned) {
-                let matched = Value::from_mrb(interp, scanned);
-                matchdata.borrow_mut().set_region(pos.0, pos.1);
-                if let Some(ref block) = args.block {
-                    unsafe {
-                        sys::mrb_yield(mrb, block.inner(), matched.inner());
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    }
+            let matched = Value::from_mrb(interp, scanned);
+            matchdata.borrow_mut().set_region(pos.0, pos.1);
+            if let Some(ref block) = args.block {
+                unsafe {
+                    sys::mrb_yield(mrb, block.inner(), matched.inner());
+                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
+            } else {
                 collected.push(matched);
             }
         }
     }
-    if collected.is_empty() {
+    if !was_match {
         unsafe {
             sys::mrb_gv_set(mrb, last_match_sym, interp.nil().inner());
         }
