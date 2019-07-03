@@ -3,9 +3,9 @@ use mruby_vfs::FileSystem;
 use std::path::PathBuf;
 
 use crate::file::MrbFile;
-use crate::interpreter::{Mrb, MrbApi, RUBY_LOAD_PATH};
+use crate::interpreter::{MrbApi, RUBY_LOAD_PATH};
 use crate::state::VfsMetadata;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 pub trait MrbLoadSources
 where

@@ -9,12 +9,12 @@ use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::{LoadError, RubyException};
-use crate::interpreter::{Mrb, MrbApi, RUBY_LOAD_PATH};
+use crate::interpreter::{MrbApi, RUBY_LOAD_PATH};
 use crate::state::VfsMetadata;
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 mod args;
 

@@ -1,8 +1,8 @@
 //! Create or retrieve an interpreter for a request.
 
 use mruby::eval::MrbEval;
-use mruby::interpreter::{Interpreter, Mrb};
-use mruby::MrbError;
+use mruby::interpreter::Interpreter;
+use mruby::{Mrb, MrbError};
 use mruby_gems::rubygems::rack;
 use ref_thread_local::RefThreadLocal;
 use std::collections::HashMap;
