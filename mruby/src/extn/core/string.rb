@@ -117,7 +117,7 @@ class String
         capture =
           begin
             capture.to_int
-          rescue StandardError
+          rescue NoMethodError
             capture
           end
         regexp.match(self)&.[](capture)
@@ -126,7 +126,7 @@ class String
         index =
           begin
             index.to_int
-          rescue StandardError
+          rescue NoMethodError
             index
           end
         __old_element_reference(index)
@@ -135,13 +135,13 @@ class String
         index =
           begin
             index.to_int
-          rescue StandardError
+          rescue NoMethodError
             index
           end
         length =
           begin
             length.to_int
-          rescue StandardError
+          rescue NoMethodError
             length
           end
         __old_element_reference(index, length)

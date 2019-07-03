@@ -96,9 +96,8 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                 // Positive i64 must be usize
                 let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
                 match captures.len().checked_sub(index) {
-                    Some(0) => Ok(interp.nil()),
+                    Some(0) | None => Ok(interp.nil()),
                     Some(index) => Ok(Value::from_mrb(&interp, captures.at(index))),
-                    None => Ok(interp.nil()),
                 }
             } else {
                 // Positive i64 must be usize

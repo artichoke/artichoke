@@ -19,7 +19,7 @@ class FalseClass
 end
 
 class Float
-  def  to_int
+  def to_int
     floor
   end
 end
