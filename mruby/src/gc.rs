@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use crate::interpreter::Mrb;
 use crate::sys;
+use crate::Mrb;
 
 /// Arena savepoint that can be restored to ensure mruby objects are reaped.
 ///

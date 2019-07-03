@@ -1,6 +1,6 @@
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::Value;
+use crate::Mrb;
 
 /// Return a [`Value`]-wrapped reference to "top self".
 ///

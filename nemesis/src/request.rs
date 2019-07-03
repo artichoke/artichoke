@@ -5,8 +5,8 @@
 //! [`Rack::Handler::Webrick`](https://github.com/rack/rack/blob/2.0.7/lib/rack/handler/webrick.rb).
 
 use mruby::convert::FromMrb;
-use mruby::interpreter::Mrb;
 use mruby::value::Value;
+use mruby::Mrb;
 
 use crate::Error;
 

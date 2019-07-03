@@ -4,9 +4,9 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::exception::{LastError, MrbExceptionHandler};
-use crate::interpreter::Mrb;
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
+use crate::Mrb;
 use crate::MrbError;
 
 const TOP_FILENAME: &str = "(eval)";

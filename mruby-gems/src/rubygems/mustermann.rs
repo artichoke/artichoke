@@ -1,5 +1,5 @@
-use mruby::interpreter::Mrb;
 use mruby::load::MrbLoadSources;
+use mruby::Mrb;
 use mruby::MrbError;
 use std::borrow::Cow;
 use std::convert::AsRef;

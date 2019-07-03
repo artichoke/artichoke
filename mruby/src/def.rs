@@ -5,9 +5,9 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use crate::class;
-use crate::interpreter::Mrb;
 use crate::module;
 use crate::sys;
+use crate::Mrb;
 use crate::MrbError;
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with

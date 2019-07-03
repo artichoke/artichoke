@@ -1,7 +1,7 @@
 use crate::convert::RustBackedValue;
 use crate::extn::core::matchdata::MatchData;
-use crate::interpreter::Mrb;
 use crate::value::Value;
+use crate::Mrb;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {

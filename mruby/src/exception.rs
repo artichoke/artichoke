@@ -3,9 +3,9 @@ use std::ffi::c_void;
 use std::fmt;
 
 use crate::gc::MrbGarbageCollection;
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::{Value, ValueLike};
+use crate::Mrb;
 use crate::MrbError;
 
 /// Metadata about a Ruby exception.

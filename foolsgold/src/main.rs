@@ -10,7 +10,7 @@ extern crate mruby;
 extern crate rust_embed;
 
 use mruby::eval::MrbEval;
-use mruby::interpreter::Mrb;
+use mruby::Mrb;
 use mruby::MrbError;
 use nemesis::{Builder, Error, Mount};
 

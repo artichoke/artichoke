@@ -7,10 +7,10 @@ use std::rc::Rc;
 
 use crate::convert::Error;
 use crate::def::ClassLike;
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::{self, Value};
+use crate::Mrb;
 use crate::MrbError;
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].

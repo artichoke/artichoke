@@ -9,9 +9,9 @@ use std::rc::Rc;
 use crate::class;
 use crate::def::{EnclosingRubyScope, Free};
 use crate::eval::EvalContext;
-use crate::interpreter::Mrb;
 use crate::module;
 use crate::sys::{self, DescribeState};
+use crate::Mrb;
 use crate::MrbError;
 
 #[derive(Clone, Debug)]

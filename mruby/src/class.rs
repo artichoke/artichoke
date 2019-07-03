@@ -7,10 +7,10 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
-use crate::interpreter::Mrb;
 use crate::method;
 use crate::sys;
 use crate::value::Value;
+use crate::Mrb;
 use crate::MrbError;
 
 pub struct Spec {

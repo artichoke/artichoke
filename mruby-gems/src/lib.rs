@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate rust_embed;
 
-use mruby::interpreter::Mrb;
+use mruby::Mrb;
 use mruby::MrbError;
 
 pub mod rubygems;

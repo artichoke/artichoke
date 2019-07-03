@@ -1,8 +1,8 @@
 use mruby::convert::FromMrb;
 use mruby::eval::MrbEval;
-use mruby::interpreter::Mrb;
 use mruby::sys;
 use mruby::value::{Value, ValueLike};
+use mruby::Mrb;
 use mruby::MrbError;
 use std::rc::Rc;
 

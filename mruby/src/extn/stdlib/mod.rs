@@ -1,4 +1,4 @@
-use crate::interpreter::Mrb;
+use crate::Mrb;
 use crate::MrbError;
 
 pub mod delegate;

@@ -1,7 +1,7 @@
 use crate::convert::TryFromMrb;
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::Value;
+use crate::Mrb;
 use crate::MrbError;
 use std::io::Write;
 use std::mem;

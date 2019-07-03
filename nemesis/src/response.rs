@@ -6,8 +6,8 @@
 //! [`Rack::Response`](https://github.com/rack/rack/blob/2.0.7/lib/rack/response.rb).
 
 use log::warn;
-use mruby::interpreter::Mrb;
 use mruby::value::{Value, ValueLike};
+use mruby::Mrb;
 use mruby::MrbError;
 use std::collections::HashMap;
 use std::convert::{self, TryFrom};

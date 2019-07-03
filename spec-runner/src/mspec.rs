@@ -2,10 +2,10 @@ use std::borrow::Cow;
 
 use mruby::convert::FromMrb;
 use mruby::eval::MrbEval;
-use mruby::interpreter::Mrb;
 use mruby::load::MrbLoadSources;
 use mruby::top_self::MrbTopSelf;
 use mruby::value::{Value, ValueLike};
+use mruby::Mrb;
 use mruby::MrbError;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {

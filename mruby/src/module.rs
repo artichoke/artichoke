@@ -5,10 +5,10 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 
 use crate::def::{ClassLike, Define, EnclosingRubyScope, Method};
-use crate::interpreter::Mrb;
 use crate::method;
 use crate::sys;
 use crate::value::Value;
+use crate::Mrb;
 use crate::MrbError;
 
 pub struct Spec {

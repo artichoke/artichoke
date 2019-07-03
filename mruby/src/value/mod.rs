@@ -8,8 +8,8 @@ use std::rc::Rc;
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::exception::{LastError, MrbExceptionHandler};
 use crate::gc::MrbGarbageCollection;
-use crate::interpreter::Mrb;
 use crate::sys;
+use crate::Mrb;
 use crate::MrbError;
 
 pub mod types;

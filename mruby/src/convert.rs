@@ -1,8 +1,8 @@
 use std::error;
 use std::fmt;
 
-use crate::interpreter::Mrb;
 use crate::value::{types, Value};
+use crate::Mrb;
 
 mod array;
 mod boolean;

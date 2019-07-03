@@ -5,7 +5,7 @@
 extern crate log;
 
 use mruby::eval::{EvalContext, MrbEval};
-use mruby::interpreter::Mrb;
+use mruby::Mrb;
 use mruby::MrbError;
 use mruby_gems::rubygems;
 use nemesis::{Builder, Error, Mount};

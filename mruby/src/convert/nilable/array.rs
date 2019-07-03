@@ -1,9 +1,9 @@
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
 use crate::convert::{Error, FromMrb, TryFromMrb};
-use crate::interpreter::Mrb;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::Mrb;
 
 impl FromMrb<Option<Vec<bool>>> for Value {
     type From = Rust;

@@ -5,10 +5,10 @@ use std::hash::BuildHasher;
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
 use crate::convert::{Error, FromMrb, TryFromMrb};
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::Mrb;
 
 // TODO: The following comment is no longer valid since `Value`s own a pointer
 // to the interpreter.
