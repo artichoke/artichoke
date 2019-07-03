@@ -24,21 +24,22 @@ impl FromMrb<Vec<Value>> for Value {
     type To = Ruby;
 
     fn from_mrb(interp: &Mrb, value: Vec<Self>) -> Self {
-        // We can initalize an `Array` with a known capacity using
-        // `sys::mrb_ary_new_capa`, but doing so requires converting from
-        // `usize` to `i64` which is fallible. To simplify the code and make
-        // `Vec<Value>` easier to work with, use an infallible `Array`
-        // constructor.
-        let array = unsafe { sys::mrb_ary_new(interp.borrow().mrb) };
-        let mut idx = 0;
+        let array = unsafe {
+            sys::mrb_ary_new_capa(
+                interp.borrow().mrb,
+                i64::try_from(value.len()).unwrap_or_default(),
+            )
+        };
 
-        // Lint disabled because I should be casting or converting but do not
-        // want to to preserve this converter implementation being infallible.
-        // See: https://github.com/rust-lang/rust-clippy/issues/4139
-        #[allow(clippy::explicit_counter_loop)]
-        for item in value {
-            unsafe { sys::mrb_ary_set(interp.borrow().mrb, array, idx, item.inner()) };
-            idx += 1;
+        for (idx, item) in value.iter().enumerate() {
+            unsafe {
+                sys::mrb_ary_set(
+                    interp.borrow().mrb,
+                    array,
+                    i64::try_from(idx).unwrap_or_default(),
+                    item.inner(),
+                )
+            };
         }
         Self::new(interp, array)
     }
