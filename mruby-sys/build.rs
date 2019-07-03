@@ -146,8 +146,6 @@ fn main() {
         .whitelist_var("^MRB.*")
         .whitelist_var("^MRUBY.*")
         .whitelist_var("REGEXP_CLASS")
-        // As of bindgen 0.49.0, `mrb_heap_page` type fails a layout test.
-        .layout_tests(false)
         .rustified_enum("mrb_vtype")
         .rustified_enum("mrb_lex_state_enum")
         .rustified_enum("mrb_range_beg_len")
