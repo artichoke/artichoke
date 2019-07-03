@@ -13,6 +13,7 @@ mod element_reference;
 mod end;
 mod length;
 mod named_captures;
+mod names;
 mod offset;
 mod post_match;
 mod pre_match;
@@ -45,6 +46,9 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         MatchData::named_captures,
         sys::mrb_args_none(),
     );
+    match_data
+        .borrow_mut()
+        .add_method("names", MatchData::names, sys::mrb_args_none());
     match_data
         .borrow_mut()
         .add_method("offset", MatchData::offset, sys::mrb_args_req(1));
@@ -194,6 +198,17 @@ impl MatchData {
             Err(named_captures::Error::NoMatch) => interp.nil().inner(),
             Err(named_captures::Error::Fatal) => {
                 RuntimeError::raise(&interp, "fatal MatchData#named_captures error")
+            }
+        }
+    }
+
+    unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let value = Value::new(&interp, slf);
+        match names::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(names::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal MatchData#names error")
             }
         }
     }
