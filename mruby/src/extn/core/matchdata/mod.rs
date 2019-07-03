@@ -1,5 +1,6 @@
 use crate::convert::{FromMrb, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
+use crate::eval::MrbEval;
 use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
 use crate::extn::core::regexp::Regexp;
 use crate::interpreter::{Mrb, MrbApi};
@@ -29,6 +30,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         Some(rust_data_free::<MatchData>),
     );
     match_data.borrow_mut().mrb_value_is_rust_backed(true);
+    interp.eval(include_str!("matchdata.rb"))?;
     match_data
         .borrow_mut()
         .add_method("begin", MatchData::begin, sys::mrb_args_req(1));
