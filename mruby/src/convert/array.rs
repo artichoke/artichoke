@@ -45,6 +45,43 @@ impl FromMrb<Vec<Value>> for Value {
     }
 }
 
+impl FromMrb<Vec<Option<Value>>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: Vec<Option<Self>>) -> Self {
+        let array = unsafe {
+            sys::mrb_ary_new_capa(
+                interp.borrow().mrb,
+                i64::try_from(value.len()).unwrap_or_default(),
+            )
+        };
+
+        for (idx, item) in value.iter().enumerate() {
+            if let Some(item) = item {
+                unsafe {
+                    sys::mrb_ary_set(
+                        interp.borrow().mrb,
+                        array,
+                        i64::try_from(idx).unwrap_or_default(),
+                        item.inner(),
+                    )
+                };
+            } else {
+                unsafe {
+                    sys::mrb_ary_set(
+                        interp.borrow().mrb,
+                        array,
+                        i64::try_from(idx).unwrap_or_default(),
+                        sys::mrb_sys_nil_value(),
+                    )
+                };
+            }
+        }
+        Self::new(interp, array)
+    }
+}
+
 impl TryFromMrb<Value> for Vec<Value> {
     type From = Ruby;
     type To = Rust;
@@ -66,6 +103,41 @@ impl TryFromMrb<Value> for Vec<Value> {
                     let item =
                         Value::new(interp, sys::mrb_ary_ref(interp.borrow().mrb, array, idx));
                     items.push(item);
+                }
+                Ok(items)
+            }
+            type_tag => Err(Error {
+                from: type_tag,
+                to: Rust::Vec,
+            }),
+        }
+    }
+}
+
+impl TryFromMrb<Value> for Vec<Option<Value>> {
+    type From = Ruby;
+    type To = Rust;
+
+    unsafe fn try_from_mrb(
+        interp: &Mrb,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
+        match value.ruby_type() {
+            Ruby::Array => {
+                let array = value.inner();
+                let size = sys::mrb_sys_ary_len(array);
+                let cap = usize::try_from(size).map_err(|_| Error {
+                    from: Ruby::Array,
+                    to: Rust::Vec,
+                })?;
+                let mut items = Self::with_capacity(cap);
+                for idx in 0..size {
+                    let element = sys::mrb_ary_ref(interp.borrow().mrb, array, idx);
+                    if sys::mrb_sys_value_is_nil(element) {
+                        items.push(None);
+                    } else {
+                        items.push(Some(Value::new(interp, element)));
+                    }
                 }
                 Ok(items)
             }
