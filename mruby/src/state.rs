@@ -2,7 +2,6 @@ use mruby_vfs::{FakeFileSystem, FileSystem};
 use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ffi::c_void;
 use std::fmt;
 use std::mem;
 use std::rc::Rc;
@@ -242,7 +241,7 @@ impl Drop for State {
             // deallocated.
             let ptr = (*self.mrb).ud;
             if !ptr.is_null() {
-                let ud = mem::transmute::<*mut c_void, Mrb>(ptr);
+                let ud = Rc::from_raw(ptr as *const RefCell<Self>);
                 // cleanup pointers
                 (*self.mrb).ud = std::ptr::null_mut();
                 mem::drop(ud);

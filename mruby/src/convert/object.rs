@@ -83,8 +83,8 @@ where
         };
 
         let data = Rc::new(RefCell::new(self));
-        let ptr = mem::transmute::<Rc<RefCell<Self>>, *mut c_void>(data);
-        sys::mrb_sys_data_init(&mut slf, ptr, spec.borrow().data_type());
+        let ptr = Rc::into_raw(data);
+        sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.borrow().data_type());
         Ok(Value::new(interp, slf))
     }
 
@@ -127,7 +127,7 @@ where
             let borrow = spec.borrow();
             sys::mrb_data_get_ptr(interp.borrow().mrb, slf.inner(), borrow.data_type())
         };
-        let data = mem::transmute::<*mut c_void, Rc<RefCell<Self>>>(ptr);
+        let data = Rc::from_raw(ptr as *const RefCell<Self>);
         let value = Rc::clone(&data);
         mem::forget(data);
         Ok(value)
@@ -150,7 +150,6 @@ impl<T> RustBackedValue for Box<T> where T: RustBackedValue {}
 #[cfg(test)]
 mod tests {
     use std::cell::RefCell;
-    use std::ffi::c_void;
     use std::mem;
     use std::rc::Rc;
 
@@ -175,7 +174,7 @@ mod tests {
 
             let borrow = spec.borrow();
             let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
-            let data = mem::transmute::<*mut c_void, Rc<RefCell<Self>>>(ptr);
+            let data = Rc::from_raw(ptr as *const RefCell<Self>);
             let container = Rc::clone(&data);
             mem::forget(data);
             let borrow = container.borrow();
