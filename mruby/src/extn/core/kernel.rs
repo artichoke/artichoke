@@ -1,6 +1,7 @@
 use log::trace;
 use mruby_vfs::FileSystem;
 use path_abs::PathAbs;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -194,6 +195,7 @@ impl Kernel {
         for value in args.rest {
             print!("{}", value.to_s());
         }
+        let _ = io::stdout().flush();
         interp.nil().inner()
     }
 
