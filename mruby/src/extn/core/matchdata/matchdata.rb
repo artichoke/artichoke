@@ -16,13 +16,13 @@ class MatchData
 
   def inspect
     s = %(#<MatchData "#{self[0]}")
-    if named_captures.empty?
+    if names.empty?
       captures.each_with_index do |capture, index|
         s << %( #{index + 1}:"#{capture || nil.inspect}")
       end
     else
-      named_captures.each do |(group, capture)|
-        s << %( #{group}:"#{capture || nil.inspect}")
+      names.each do |name|
+        s << %( #{name}:"#{self[name] || nil.inspect}")
       end
     end
     s << '>'

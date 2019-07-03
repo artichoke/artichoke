@@ -26,6 +26,7 @@ class SpecCollector
     @successes = 0
     @failures = 0
     @skipped = 0
+    @not_implemented = 0
   end
 
   def success?
@@ -59,9 +60,13 @@ class SpecCollector
     elsif state.exception.is_a?(SpecExpectationNotMetError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
+      skipped = true if state.it =~ /is too big/ # mruby does not have Bignum
     elsif state.exception.is_a?(SyntaxError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
+    elsif state.exception.is_a?(NotImplementedError)
+      @not_implemented += 1
+      return
     end
     skipped = true if state.it == 'is multi-byte character sensitive'
     if skipped
@@ -80,15 +85,15 @@ class SpecCollector
 
     puts "\n"
     if @errors.length.zero?
-      puts "\e[32mPassed #{@successes} specs. Skipped #{@skipped} spec.\e[0m"
+      puts "\e[32mPassed #{@successes} specs. Skipped #{@skipped} spec. Not implemented #{@not_implemented}.\e[0m"
       return
     end
 
-    puts "\e[31mPassed #{@successes}, skipped #{@skipped}, failed #{@errors.length} specs.\e[0m"
+    puts "\e[31mPassed #{@successes}, skipped #{@skipped}, not implemented #{@not_implemented}, failed #{@errors.length} specs.\e[0m"
     @errors.each do |state|
       puts '', "\e[31m#{state.message} in #{state.it}\e[0m", '', state.backtrace
     end
-    puts '', "\e[31mPassed #{@successes}, skipped #{@skipped}, failed #{@errors.length} specs.\e[0m"
+    puts "\e[31mPassed #{@successes}, skipped #{@skipped}, not implemented #{@not_implemented}, failed #{@errors.length} specs.\e[0m"
   end
 end
 
