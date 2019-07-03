@@ -6,6 +6,7 @@ class Encoding
   end
 
   ASCII_8BIT = new('ASCII-8BIT')
+  BINARY = ASCII_8BIT
   US_ASCII = new('US-ASCII')
   ASCII = US_ASCII
   EUC_JP = new('EUC-JP')
@@ -44,7 +45,7 @@ class Encoding
   end
 
   def inspect
-    "#<#{self.class}:#{@name}"
+    "#<#{self.class}:#{@name}>"
   end
 
   def names
@@ -102,11 +103,50 @@ class String
 
   alias __old_element_reference []
   def [](*args)
-    return __old_element_reference(*args) unless args[0].is_a?(Regexp)
+    raise ArgumentError, 'wrong number of arguments (given 0, expected 1..2)' if args.empty? || args.length > 2
 
-    regexp = args[0]
-    capture = args.fetch(1, 0)
-    regexp.match(self)&.[](capture)
+    element =
+      if (regexp = args[0]).is_a?(Regexp)
+        capture = args.fetch(1, 0)
+        capture =
+          begin
+            capture.to_int
+          rescue StandardError
+            capture
+          end
+        regexp.match(self)&.[](capture)
+      elsif args.length == 1
+        index, = *args
+        index =
+          begin
+            index.to_int
+          rescue StandardError
+            index
+          end
+        __old_element_reference(index)
+      else
+        index, length = *args
+        index =
+          begin
+            index.to_int
+          rescue StandardError
+            index
+          end
+        length =
+          begin
+            length.to_int
+          rescue StandardError
+            length
+          end
+        __old_element_reference(index, length)
+      end
+    return nil if element.nil?
+
+    if self.class == String
+      element
+    else
+      self.class.new(element)
+    end
   end
   alias slice []
 

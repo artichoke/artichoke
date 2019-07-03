@@ -59,6 +59,7 @@ class SpecCollector
     elsif state.exception.is_a?(SpecExpectationNotMetError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
+      skipped = true if state.it =~ /is too big/ # mruby does not have Bignum
     elsif state.exception.is_a?(SyntaxError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
