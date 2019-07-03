@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Encoding
+  class CompatibilityError < StandardError; end
+
   def initialize(name)
     @name = name
   end
@@ -66,8 +68,12 @@ class String
     raise ArgumentError if obj.nil?
     return obj if obj.is_a?(String)
 
-    obj.to_str
-  rescue StandardError
+    str = obj.to_str
+    return nil if str.nil?
+    raise TypeError unless str.is_a?(String)
+
+    str
+  rescue NoMethodError
     nil
   end
 
@@ -665,6 +671,8 @@ class String
   end
 
   def tr!(from_str, to_str)
+    raise 'frozen string' if frozen?
+
     replaced = tr(from_str, to_str)
     self[0..-1] = replaced unless self == replaced
   end
@@ -676,6 +684,8 @@ class String
   end
 
   def tr_s!(_from_str, _to_str)
+    raise 'frozen string' if frozen?
+
     # TODO: Support character ranges c1-c2
     # TODO: Support backslash escapes
     raise NotImplementedError
