@@ -255,6 +255,16 @@ impl FromMrb<Vec<(&str, Value)>> for Value {
     }
 }
 
+impl FromMrb<HashMap<&str, Self>> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn from_mrb(interp: &Mrb, value: HashMap<&str, Self>) -> Self {
+        let pairs = value.into_iter().collect::<Vec<(&str, Self)>>();
+        Self::from_mrb(interp, pairs)
+    }
+}
+
 #[cfg(test)]
 mod value {
     mod tests {

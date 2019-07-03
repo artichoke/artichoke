@@ -129,18 +129,35 @@ jobs:
             bundle exec rubocop
       - restore_cache:
           keys:
-            - ruby-bundler-v1-foolsgold-{{ checksum "./mruby/src/extn/Gemfile.lock" }}
+            - ruby-bundler-v1-spec-runner-{{ checksum "./spec-runner/src/Gemfile.lock" }}
       - run:
-          name: FoolsGold Bundle Install
-          working_directory: ./foolsgold/ruby
-          command: bundle install --path ~/vendor/foolsgold-bundle
+          name: spec-runner Bundle Install
+          working_directory: ./spec-runner/src
+          command: bundle install --path ~/vendor/mruby-spec-runner-bundle
       - save_cache:
-          key: ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/ruby/Gemfile.lock" }}
+          key: ruby-bundler-v1-spec-runner-{{ checksum "./spec-runner/src/Gemfile.lock" }}
           paths:
-            - ~/vendor/foolsgold-bundle
+            - ~/vendor/mruby-spec-runner-bundle
       - run:
-          name: FoolsGold Lint Ruby With RuboCop
-          working_directory: ./foolsgold/ruby
+          name: spec-runner Lint Ruby With RuboCop
+          working_directory: ./spec-runner/src
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+      - restore_cache:
+          keys:
+            - ruby-bundler-v1-mruby-bin-{{ checksum "./mruby-bin/ruby/Gemfile.lock" }}
+      - run:
+          name: mruby-bin Bundle Install
+          working_directory: ./mruby-bin/ruby
+          command: bundle install --path ~/vendor/mruby-bin-bundle
+      - save_cache:
+          key: ruby-bundler-v1-mruby-bin-{{ checksum "./mruby-bin/ruby/Gemfile.lock" }}
+          paths:
+            - ~/vendor/mruby-bin-bundle
+      - run:
+          name: mruby-bin Lint Ruby With RuboCop
+          working_directory: ./mruby-bin/ruby
           command: |
             bundle exec rubocop --version
             bundle exec rubocop
@@ -158,6 +175,40 @@ jobs:
       - run:
           name: Nemesis Lint Ruby With RuboCop
           working_directory: ./nemesis/ruby
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+      - restore_cache:
+          keys:
+            - ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/Gemfile.lock" }}
+      - run:
+          name: FoolsGold Bundle Install
+          working_directory: ./foolsgold/ruby
+          command: bundle install --path ~/vendor/foolsgold-bundle
+      - save_cache:
+          key: ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/ruby/Gemfile.lock" }}
+          paths:
+            - ~/vendor/foolsgold-bundle
+      - run:
+          name: FoolsGold Lint Ruby With RuboCop
+          working_directory: ./foolsgold/ruby
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+      - restore_cache:
+          keys:
+            - ruby-bundler-v1-hubris-{{ checksum "./hubris/src/Gemfile.lock" }}
+      - run:
+          name: Hubris Bundle Install
+          working_directory: ./hubris/src
+          command: bundle install --path ~/vendor/hubris-bundle
+      - save_cache:
+          key: ruby-bundler-v1-hubris-{{ checksum "./hubris/src/Gemfile.lock" }}
+          paths:
+            - ~/vendor/hubris-bundle
+      - run:
+          name: Hubris Lint Ruby With RuboCop
+          working_directory: ./hubris/src
           command: |
             bundle exec rubocop --version
             bundle exec rubocop

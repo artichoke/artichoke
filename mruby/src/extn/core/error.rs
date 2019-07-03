@@ -50,6 +50,9 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
         .def_class::<ArgumentError>("ArgumentError", None, None);
     interp
         .borrow_mut()
+        .def_class::<IndexError>("IndexError", None, None);
+    interp
+        .borrow_mut()
         .def_class::<RuntimeError>("RuntimeError", None, None);
     interp
         .borrow_mut()
@@ -167,6 +170,11 @@ impl RubyException for LoadError {
 pub struct ArgumentError;
 
 impl RubyException for ArgumentError {}
+
+#[allow(clippy::module_name_repetitions)]
+pub struct IndexError;
+
+impl RubyException for IndexError {}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct RuntimeError;

@@ -478,29 +478,6 @@ class String
     self[0..-1] = replaced unless self == replaced
   end
 
-  def scan(pattern)
-    pattern = Regexp.compile(Regexp.escape(pattern)) if pattern.is_a?(String)
-    raise TypeError, "wrong argument type #{pattern.inspect} (expected Regexp)" if pattern.nil?
-    raise TypeError, "wrong argument type #{pattern.class.name} (expected Regexp)" unless pattern.is_a?(Regexp)
-
-    remainder = dup
-    match = pattern.match(remainder)
-    collect = []
-    until remainder.empty? || match.nil?
-      collect <<
-        if block_given?
-          yield match[0]
-        else
-          match[0]
-        end
-      remainder = remainder[match.end(0)..-1]
-      remainder = remainder[1..-1] if match.begin(0) == match.end(0)
-      match = nil
-      match = pattern.match(remainder) unless remainder.nil?
-    end
-    collect
-  end
-
   def scrub
     # TODO: This is a stub. Implement scrub correctly.
     self

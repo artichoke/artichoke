@@ -6,8 +6,6 @@ use crate::MrbError;
 use std::io::Write;
 use std::mem;
 
-use super::*;
-
 #[derive(Debug, Clone)]
 pub struct Pattern {
     pub pattern: String,
@@ -106,72 +104,5 @@ impl Match {
             Some(Value::new(interp, block))
         };
         Ok(Self { string, pos, block })
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum MatchIndex {
-    Index(i64),
-    Name(String),
-    StartLen(i64, usize),
-}
-
-impl MatchIndex {
-    pub unsafe fn extract(interp: &Mrb, num_captures: usize) -> Result<Self, MrbError> {
-        let num_captures = i64::try_from(num_captures).map_err(|_| MrbError::ArgSpec)?;
-        let first = mem::uninitialized::<sys::mrb_value>();
-        let second = mem::uninitialized::<sys::mrb_value>();
-        let has_second = mem::uninitialized::<sys::mrb_bool>();
-        let mut argspec = vec![];
-        argspec
-            .write_all(
-                format!(
-                    "{}{}{}{}\0",
-                    sys::specifiers::OBJECT,
-                    sys::specifiers::FOLLOWING_ARGS_OPTIONAL,
-                    sys::specifiers::OBJECT,
-                    sys::specifiers::PREVIOUS_OPTIONAL_ARG_GIVEN
-                )
-                .as_bytes(),
-            )
-            .map_err(|_| MrbError::ArgSpec)?;
-        sys::mrb_get_args(
-            interp.borrow().mrb,
-            argspec.as_ptr() as *const i8,
-            &first,
-            &second,
-            &has_second,
-        );
-        if has_second == 0 {
-            let mut start = mem::uninitialized::<sys::mrb_int>();
-            let mut len = mem::uninitialized::<sys::mrb_int>();
-            if sys::mrb_range_beg_len(
-                interp.borrow().mrb,
-                first,
-                &mut start,
-                &mut len,
-                num_captures,
-                0_u8,
-            ) == sys::mrb_range_beg_len::MRB_RANGE_OK
-            {
-                let len = usize::try_from_mrb(&interp, Value::from_mrb(&interp, len))
-                    .map_err(MrbError::ConvertToRust)?;
-                Ok(MatchIndex::StartLen(start, len))
-            } else {
-                i64::try_from_mrb(&interp, Value::new(interp, first))
-                    .map(MatchIndex::Index)
-                    .or_else(|_| {
-                        String::try_from_mrb(&interp, Value::new(interp, first))
-                            .map(MatchIndex::Name)
-                    })
-                    .map_err(MrbError::ConvertToRust)
-            }
-        } else {
-            let start = i64::try_from_mrb(&interp, Value::new(&interp, first))
-                .map_err(MrbError::ConvertToRust)?;
-            let len = usize::try_from_mrb(&interp, Value::new(&interp, second))
-                .map_err(MrbError::ConvertToRust)?;
-            Ok(MatchIndex::StartLen(start, len))
-        }
     }
 }

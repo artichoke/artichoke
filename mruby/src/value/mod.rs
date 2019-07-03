@@ -355,11 +355,18 @@ impl Value {
     /// `T`.
     ///
     /// If you want to consume this [`Value`], use [`Value::try_into`].
-    pub fn itself<T>(self) -> Result<T, MrbError>
+    pub fn itself<T>(&self) -> Result<T, MrbError>
     where
         T: TryFromMrb<Self, From = types::Ruby, To = types::Rust>,
     {
         self.funcall::<T, _, _>("itself", &[])
+    }
+
+    /// Call `#freeze` on this [`Value`] and consume `self`.
+    pub fn freeze(self) -> Result<Self, MrbError> {
+        let frozen = self.funcall::<Self, _, _>("freeze", &[])?;
+        frozen.protect();
+        Ok(frozen)
     }
 }
 
