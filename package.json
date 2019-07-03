@@ -82,6 +82,6 @@
   "scripts": {
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
     "lint": "./scripts/lint.sh",
-    "loc": "loc --exclude vendor --exclude ffi\\.rs --exclude mruby/src/extn/test/mspec --exclude mruby/src/extn/test/ruby-spec"
+    "loc": "loc --exclude vendor --exclude ffi\\.rs --exclude mruby-bin/ruby/fixtures --exclude spec-runner/spec"
   }
 }
