@@ -52,7 +52,7 @@ impl Args {
         } else if let Some(args) = Self::is_range(interp, first, num_captures)? {
             Ok(args)
         } else {
-            Err(Error::Fatal)
+            Err(Error::IndexType)
         }
     }
 
