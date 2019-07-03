@@ -1,4 +1,4 @@
-use crate::convert::RustBackedValue;
+use crate::convert::{FromMrb, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
 use crate::extn::core::regexp::Regexp;
@@ -13,6 +13,7 @@ mod element_reference;
 mod end;
 mod length;
 mod named_captures;
+mod offset;
 mod post_match;
 mod pre_match;
 mod regexp;
@@ -44,6 +45,9 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         MatchData::named_captures,
         sys::mrb_args_none(),
     );
+    match_data
+        .borrow_mut()
+        .add_method("offset", MatchData::offset, sys::mrb_args_req(1));
     match_data
         .borrow_mut()
         .add_method("post_match", MatchData::post_match, sys::mrb_args_none());
@@ -190,6 +194,23 @@ impl MatchData {
             Err(named_captures::Error::NoMatch) => interp.nil().inner(),
             Err(named_captures::Error::Fatal) => {
                 RuntimeError::raise(&interp, "fatal MatchData#named_captures error")
+            }
+        }
+    }
+
+    unsafe extern "C" fn offset(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let value = Value::new(&interp, slf);
+        let result =
+            offset::Args::extract(&interp).and_then(|args| offset::method(&interp, args, &value));
+        match result {
+            Ok(result) => result.inner(),
+            Err(offset::Error::NoMatch) | Err(offset::Error::NoGroup) => {
+                Value::from_mrb(&interp, vec![None::<Value>, None::<Value>]).inner()
+            }
+            Err(offset::Error::IndexType) => TypeError::raise(&interp, "Unexpected capture group"),
+            Err(offset::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal MatchData#offset error")
             }
         }
     }
