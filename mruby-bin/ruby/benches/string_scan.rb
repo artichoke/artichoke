@@ -33,7 +33,7 @@ class Stopwatch
 
   def report
     ms = (@elapsed * 1e5).to_i / 1e2
-    avg = (@elapsed / @laps *1e5).to_i / 1e2
+    avg = (@elapsed / @laps * 1e5).to_i / 1e2
     "#{@name}: #{ms}ms elapsed in #{@laps} iterations (avg. #{avg}ms / iteration)"
   end
 end

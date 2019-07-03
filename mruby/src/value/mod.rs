@@ -364,7 +364,7 @@ impl Value {
 
     /// Call `#freeze` on this [`Value`] and consume `self`.
     pub fn freeze(self) -> Result<Self, MrbError> {
-        let frozen = self.funcall::<Value, _, _>("freeze", &[])?;
+        let frozen = self.funcall::<Self, _, _>("freeze", &[])?;
         frozen.protect();
         Ok(frozen)
     }

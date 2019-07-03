@@ -110,11 +110,16 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                 .regexp
                 .regex
                 .capture_names()
-                .find(|capture| capture.0 == name)
-                .map(|index| index.1)
+                .find_map(|capture| {
+                    if capture.0 == name {
+                        Some(capture.1)
+                    } else {
+                        None
+                    }
+                })
                 .ok_or_else(|| Error::NoGroup(name))?;
             let group = index
-                .into_iter()
+                .iter()
                 .filter_map(|index| {
                     usize::try_from(*index)
                         .ok()

@@ -822,9 +822,7 @@ impl Regexp {
         let value = Value::new(&interp, slf);
         match names::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(names::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#names error")
-            }
+            Err(names::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#names error"),
         }
     }
 

@@ -141,7 +141,7 @@ impl MatchData {
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let num_captures = match MatchData::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+        let num_captures = match Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
             Ok(data) => data.borrow().regexp.regex.captures_len(),
             Err(_) => return interp.nil().inner(),
         };
@@ -209,9 +209,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         match names::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(names::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#names error")
-            }
+            Err(names::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#names error"),
         }
     }
 
