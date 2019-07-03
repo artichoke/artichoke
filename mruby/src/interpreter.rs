@@ -35,14 +35,14 @@ impl Interpreter {
             // Transmute the smart pointer that wraps the API and store it in
             // the user data of the mrb interpreter. After this operation,
             // `Rc::strong_count` will still be 1.
-            let ptr = mem::transmute::<Mrb, *mut c_void>(api);
-            (*mrb).ud = ptr;
+            let ptr = Rc::into_raw(api);
+            (*mrb).ud = ptr as *mut c_void;
 
             // Transmute the void * pointer to the Rc back into the Mrb type.
             // After this operation `Rc::strong_count` will still be 1. This
             // dance is required to avoid leaking Mrb objects, which will let
             // the `Drop` impl close the mrb context and interpreter.
-            let interp = mem::transmute::<*mut c_void, Mrb>(ptr);
+            let interp = Rc::from_raw(ptr);
 
             // Patch mruby builtins with Rust extensions
             extn::patch(&interp)?;
@@ -74,7 +74,7 @@ impl Interpreter {
         // Extract the smart pointer that wraps the API from the user data on
         // the mrb interpreter. The `mrb_state` should retain ownership of its
         // copy of the smart pointer.
-        let ud = mem::transmute::<*mut c_void, Mrb>(ptr);
+        let ud = Rc::from_raw(ptr as *const RefCell<State>);
         // Clone the API smart pointer and increase its ref count to return a
         // reference to the caller.
         let api = Rc::clone(&ud);
