@@ -18,6 +18,7 @@ use crate::MrbError;
 
 mod args;
 pub mod initialize;
+pub mod names;
 pub mod syntax;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
@@ -818,20 +819,13 @@ impl Regexp {
 
     unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            interp.nil().inner()
-        );
-
-        let borrow = regexp.borrow();
-        let names = borrow
-            .regex
-            .capture_names()
-            .map(|(name, _)| name.to_owned())
-            .collect::<Vec<_>>();
-        Value::from_mrb(&interp, names).inner()
+        let value = Value::new(&interp, slf);
+        match names::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(names::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal MatchData#names error")
+            }
+        }
     }
 
     unsafe extern "C" fn named_captures(
