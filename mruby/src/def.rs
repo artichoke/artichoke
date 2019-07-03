@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::mem;
 use std::rc::Rc;
 
 use crate::class;
@@ -23,8 +22,8 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 /// `Rc<RefCell<T>>`. If that assumption does not hold, this function has
 /// undefined behavior and may result in a segfault.
 pub unsafe extern "C" fn rust_data_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void) {
-    // Implicitly dropped by going out of scope
-    mem::transmute::<*mut c_void, Rc<RefCell<T>>>(data);
+    let data = Rc::from_raw(data as *const RefCell<T>);
+    drop(data);
 }
 
 /// Typedef for a method exposed in the mruby interpreter.
