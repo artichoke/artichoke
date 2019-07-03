@@ -1,3 +1,19 @@
+#![deny(clippy::all, clippy::pedantic)]
+#![deny(warnings, intra_doc_link_resolution_failure)]
+
+//! This integration test checks for segfaults that stem from the improper
+//! handling of `Rc` when storing the `Mrb` interpreter in the `sys::mrb_state`
+//! userdata pointer as a `*mut c_void`.
+//!
+//! Checks for memory leaks stemming from improperly grabage collecting Ruby
+//! objects created in C functions, like the call to `sys::mrb_funcall_argv`.
+//!
+//! This test takes out `u8::MAX + 1` clones on the `Mrb` and attempts a full
+//! gc.
+//!
+//! If this test segfaults, we are improperly transmuting the `Rc` smart
+//! pointer.
+
 use mruby::gc::MrbGarbageCollection;
 use mruby::interpreter::{Interpreter, Mrb};
 use mruby::state::State;
