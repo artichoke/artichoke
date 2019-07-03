@@ -16,7 +16,7 @@ use crate::MrbError;
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
-pub type Mrb = Rc<RefCell<State>>;
+pub type Mrb = crate::Mrb;
 
 pub struct Interpreter;
 

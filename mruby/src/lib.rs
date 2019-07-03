@@ -194,9 +194,11 @@
 //! The infallible converters are safe Rust functions. The fallibile converters are
 //! `unsafe` Rust functions.
 
+use std::cell::RefCell;
 use std::error;
 use std::fmt;
 use std::io;
+use std::rc::Rc;
 
 #[macro_use]
 #[doc(hidden)]
@@ -220,6 +222,8 @@ pub mod value;
 pub mod warn;
 
 pub use mruby_sys as sys;
+
+pub type Mrb = Rc<RefCell<state::State>>;
 
 #[derive(Debug)]
 pub enum MrbError {
