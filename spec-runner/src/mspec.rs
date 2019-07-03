@@ -2,8 +2,9 @@ use std::borrow::Cow;
 
 use mruby::convert::FromMrb;
 use mruby::eval::MrbEval;
-use mruby::interpreter::{Mrb, MrbApi};
+use mruby::interpreter::Mrb;
 use mruby::load::MrbLoadSources;
+use mruby::top_self::MrbTopSelf;
 use mruby::value::{Value, ValueLike};
 use mruby::MrbError;
 

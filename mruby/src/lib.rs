@@ -215,6 +215,7 @@ pub mod load;
 pub mod method;
 pub mod module;
 pub mod state;
+pub mod top_self;
 pub mod value;
 pub mod warn;
 
