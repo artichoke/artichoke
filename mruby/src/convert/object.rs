@@ -10,8 +10,7 @@ use crate::def::ClassLike;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::{self, Value};
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].
 ///

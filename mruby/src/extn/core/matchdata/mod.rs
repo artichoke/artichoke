@@ -6,8 +6,7 @@ use crate::extn::core::regexp::Regexp;
 use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 mod begin;
 mod captures;

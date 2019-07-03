@@ -8,8 +8,7 @@ use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeE
 use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 use log::trace;
 
 mod scan;

@@ -1,7 +1,6 @@
 use crate::eval::MrbEval;
 use crate::load::MrbLoadSources;
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp

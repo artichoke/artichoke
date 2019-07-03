@@ -14,8 +14,7 @@ use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 mod args;
 pub mod initialize;

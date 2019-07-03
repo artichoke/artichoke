@@ -4,8 +4,7 @@ use std::mem;
 use crate::convert::TryFromMrb;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 pub struct Require {
     pub filename: String,

@@ -1,7 +1,6 @@
 use crate::interpreter::MrbApi;
 use crate::sys;
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 pub mod core;
 pub mod stdlib;

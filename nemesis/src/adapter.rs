@@ -2,8 +2,7 @@ use mruby::convert::FromMrb;
 use mruby::eval::MrbEval;
 use mruby::sys;
 use mruby::value::{Value, ValueLike};
-use mruby::Mrb;
-use mruby::MrbError;
+use mruby::{Mrb, MrbError};
 use std::rc::Rc;
 
 use crate::request::Request;

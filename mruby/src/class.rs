@@ -10,8 +10,7 @@ use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
 use crate::method;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 pub struct Spec {
     name: String,

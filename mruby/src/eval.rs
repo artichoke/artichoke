@@ -6,8 +6,7 @@ use std::rc::Rc;
 use crate::exception::{LastError, MrbExceptionHandler};
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 const TOP_FILENAME: &str = "(eval)";
 
