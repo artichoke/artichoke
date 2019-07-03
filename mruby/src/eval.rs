@@ -214,10 +214,10 @@ mod tests {
     use crate::def::{ClassLike, Define};
     use crate::eval::{EvalContext, MrbEval};
     use crate::file::MrbFile;
-    use crate::interpreter::{Interpreter, Mrb};
+    use crate::interpreter::Interpreter;
     use crate::load::MrbLoadSources;
     use crate::sys;
-    use crate::{interpreter_or_raise, unwrap_value_or_raise, MrbError};
+    use crate::{Mrb, MrbError};
 
     #[test]
     fn root_eval_context() {

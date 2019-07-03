@@ -244,9 +244,9 @@ mod tests {
     use crate::convert::TryFromMrb;
     use crate::eval::MrbEval;
     use crate::file::MrbFile;
-    use crate::interpreter::{Interpreter, Mrb};
+    use crate::interpreter::Interpreter;
     use crate::load::MrbLoadSources;
-    use crate::MrbError;
+    use crate::{Mrb, MrbError};
 
     // Integration test for `Kernel::require`:
     //

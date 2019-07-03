@@ -15,9 +15,10 @@
 //! pointer.
 
 use mruby::gc::MrbGarbageCollection;
-use mruby::interpreter::{Interpreter, Mrb};
+use mruby::interpreter::Interpreter;
 use mruby::state::State;
 use mruby::sys;
+use mruby::Mrb;
 use std::cell::RefCell;
 use std::rc::Rc;
 

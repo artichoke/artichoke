@@ -22,11 +22,11 @@ use mruby::convert::{RustBackedValue, TryFromMrb};
 use mruby::def::{rust_data_free, ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
-use mruby::interpreter::{Interpreter, Mrb, MrbApi};
+use mruby::interpreter::{Interpreter, MrbApi};
 use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
-use mruby::MrbError;
+use mruby::{Mrb, MrbError};
 use std::io::Write;
 use std::mem;
 

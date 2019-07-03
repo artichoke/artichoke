@@ -201,9 +201,9 @@ mod tests {
     use crate::exception::Exception;
     use crate::extn::core::error::{RubyException, RuntimeError};
     use crate::file::MrbFile;
-    use crate::interpreter::{Interpreter, Mrb};
+    use crate::interpreter::Interpreter;
     use crate::sys;
-    use crate::MrbError;
+    use crate::{Mrb, MrbError};
 
     struct Run;
 

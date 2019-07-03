@@ -19,9 +19,9 @@ mod tests {
     use mruby::def::EnclosingRubyScope;
     use mruby::eval::MrbEval;
     use mruby::file::MrbFile;
-    use mruby::interpreter::{Interpreter, Mrb};
+    use mruby::interpreter::Interpreter;
     use mruby::load::MrbLoadSources;
-    use mruby::MrbError;
+    use mruby::{Mrb, MrbError};
 
     use crate::Gem;
 
