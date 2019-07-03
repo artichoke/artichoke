@@ -3,8 +3,9 @@ use std::ffi::{c_void, CString};
 use std::rc::Rc;
 
 use crate::def::{ClassLike, Define};
-use crate::interpreter::{Mrb, MrbApi};
+use crate::interpreter::MrbApi;
 use crate::sys;
+use crate::Mrb;
 use crate::MrbError;
 
 struct ProtectArgs {

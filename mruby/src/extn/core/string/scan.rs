@@ -6,9 +6,10 @@ use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{syntax, Encoding, Options, Regexp};
 use crate::gc::MrbGarbageCollection;
-use crate::interpreter::{Mrb, MrbApi};
+use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::{Value, ValueLike};
+use crate::Mrb;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Error {

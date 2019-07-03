@@ -3,9 +3,10 @@ use std::mem;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::extn::core::matchdata::MatchData;
-use crate::interpreter::{Mrb, MrbApi};
+use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::Value;
+use crate::Mrb;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Error {

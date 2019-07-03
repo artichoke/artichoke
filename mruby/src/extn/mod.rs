@@ -1,5 +1,6 @@
-use crate::interpreter::{Mrb, MrbApi};
+use crate::interpreter::MrbApi;
 use crate::sys;
+use crate::Mrb;
 use crate::MrbError;
 
 pub mod core;

@@ -5,9 +5,10 @@ use crate::convert::{FromMrb, TryFromMrb};
 use crate::def::{ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
-use crate::interpreter::{Mrb, MrbApi};
+use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::Value;
+use crate::Mrb;
 use crate::MrbError;
 use log::trace;
 

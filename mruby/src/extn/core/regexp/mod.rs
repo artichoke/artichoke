@@ -10,10 +10,11 @@ use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::extn::core::matchdata::MatchData;
-use crate::interpreter::{Mrb, MrbApi};
+use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
+use crate::Mrb;
 use crate::MrbError;
 
 mod args;

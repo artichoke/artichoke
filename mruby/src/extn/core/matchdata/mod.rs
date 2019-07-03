@@ -3,9 +3,10 @@ use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
 use crate::extn::core::regexp::Regexp;
-use crate::interpreter::{Mrb, MrbApi};
+use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::Value;
+use crate::Mrb;
 use crate::MrbError;
 
 mod begin;
