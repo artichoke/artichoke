@@ -9,7 +9,7 @@ use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::{LoadError, RubyException};
-use crate::interpreter::{MrbApi, RUBY_LOAD_PATH};
+use crate::interpreter::RUBY_LOAD_PATH;
 use crate::state::VfsMetadata;
 use crate::sys;
 use crate::value::types::Ruby;
@@ -58,11 +58,15 @@ impl Warning {
         let interp = interpreter_or_raise!(mrb);
         let stderr = sys::mrb_gv_get(mrb, interp.borrow_mut().sym_intern("$stderr"));
         if !sys::mrb_sys_value_is_nil(stderr) {
-            let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+            let args = unwrap_or_raise!(
+                interp,
+                args::Rest::extract(&interp),
+                sys::mrb_sys_nil_value()
+            );
             let stderr = Value::new(&interp, stderr);
             unwrap_value_or_raise!(interp, stderr.funcall::<Value, _, _>("print", args.rest));
         }
-        interp.nil().inner()
+        sys::mrb_sys_nil_value()
     }
 }
 
@@ -101,7 +105,7 @@ impl Kernel {
             };
             // If a file is already required, short circuit.
             if metadata.is_already_required() {
-                return interp.bool(false).inner();
+                return Value::from_mrb(interp, false).inner();
             }
             let context = if let Some(filename) = path.as_path().to_str() {
                 EvalContext::new(filename)
@@ -116,7 +120,7 @@ impl Kernel {
             if let Some(require) = metadata.require {
                 // dynamic, Rust-backed `MrbFile` require
                 interp.push_context(context.clone());
-                unwrap_or_raise!(interp, require(Rc::clone(interp)), interp.nil().inner());
+                unwrap_or_raise!(interp, require(Rc::clone(interp)), sys::mrb_sys_nil_value());
                 interp.pop_context();
             }
             let contents = {
@@ -139,7 +143,7 @@ impl Kernel {
             unwrap_or_raise!(
                 interp,
                 api.vfs.set_metadata(path.as_path(), metadata),
-                interp.nil().inner()
+                sys::mrb_sys_nil_value()
             );
             success = true;
             trace!(
@@ -150,7 +154,7 @@ impl Kernel {
             );
         }
         if success {
-            interp.bool(success).inner()
+            Value::from_mrb(interp, success).inner()
         } else {
             LoadError::raise(&interp, filename)
         }
@@ -161,7 +165,7 @@ impl Kernel {
         let args = unwrap_or_raise!(
             interp,
             args::Require::extract(&interp),
-            interp.nil().inner()
+            sys::mrb_sys_nil_value()
         );
         Self::require_impl(&interp, args.filename.as_str(), RUBY_LOAD_PATH)
     }
@@ -174,7 +178,7 @@ impl Kernel {
         let args = unwrap_or_raise!(
             interp,
             args::Require::extract(&interp),
-            interp.nil().inner()
+            sys::mrb_sys_nil_value()
         );
         let base = interp
             .peek_context()
@@ -190,13 +194,17 @@ impl Kernel {
 
     unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::Rest::extract(&interp),
+            sys::mrb_sys_nil_value()
+        );
 
         for value in args.rest {
             print!("{}", value.to_s());
         }
         let _ = io::stdout().flush();
-        interp.nil().inner()
+        sys::mrb_sys_nil_value()
     }
 
     unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
@@ -213,7 +221,11 @@ impl Kernel {
         }
 
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::Rest::extract(&interp),
+            sys::mrb_sys_nil_value()
+        );
 
         if args.rest.is_empty() {
             println!();
@@ -221,12 +233,16 @@ impl Kernel {
         for value in args.rest {
             do_puts(value);
         }
-        interp.nil().inner()
+        sys::mrb_sys_nil_value()
     }
 
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::Rest::extract(&interp),
+            sys::mrb_sys_nil_value()
+        );
 
         for value in args.rest {
             let mut string = value.to_s();
@@ -235,7 +251,7 @@ impl Kernel {
             }
             Warning::warn(mrb, Value::from_mrb(&interp, string).inner());
         }
-        interp.nil().inner()
+        sys::mrb_sys_nil_value()
     }
 }
 

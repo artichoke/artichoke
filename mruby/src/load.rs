@@ -3,14 +3,11 @@ use mruby_vfs::FileSystem;
 use std::path::PathBuf;
 
 use crate::file::MrbFile;
-use crate::interpreter::{MrbApi, RUBY_LOAD_PATH};
+use crate::interpreter::RUBY_LOAD_PATH;
 use crate::state::VfsMetadata;
 use crate::{Mrb, MrbError};
 
-pub trait MrbLoadSources
-where
-    Self: MrbApi,
-{
+pub trait MrbLoadSources {
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
     /// Ruby file is added to the filesystem and `require` will dynamically
     /// define Ruby items when invoked via `Kernel#require`.

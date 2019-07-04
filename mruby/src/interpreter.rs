@@ -1,17 +1,14 @@
 use log::{debug, error, trace};
 use std::cell::RefCell;
-use std::convert::AsRef;
 use std::ffi::c_void;
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{Float, FromMrb, Int};
 use crate::eval::MrbEval;
 use crate::extn;
 use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::value::Value;
 use crate::{Mrb, MrbError};
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
@@ -83,46 +80,6 @@ impl Interpreter {
         // At this point, `Rc::strong_count` will be increased by 1.
         trace!("Extracted Mrb from user data pointer on {}", mrb.debug());
         Ok(api)
-    }
-}
-
-pub trait MrbApi {
-    fn nil(&self) -> Value;
-
-    fn bool(&self, b: bool) -> Value;
-
-    fn bytes<T: AsRef<[u8]>>(&self, b: T) -> Value;
-
-    fn fixnum(&self, i: Int) -> Value;
-
-    fn float(&self, i: Float) -> Value;
-
-    fn string<T: AsRef<str>>(&self, s: T) -> Value;
-}
-
-impl MrbApi for Mrb {
-    fn nil(&self) -> Value {
-        Value::from_mrb(self, None::<Value>)
-    }
-
-    fn bool(&self, b: bool) -> Value {
-        Value::from_mrb(self, b)
-    }
-
-    fn bytes<T: AsRef<[u8]>>(&self, b: T) -> Value {
-        Value::from_mrb(self, b.as_ref())
-    }
-
-    fn fixnum(&self, i: Int) -> Value {
-        Value::from_mrb(self, i)
-    }
-
-    fn float(&self, f: Float) -> Value {
-        Value::from_mrb(self, f)
-    }
-
-    fn string<T: AsRef<str>>(&self, s: T) -> Value {
-        Value::from_mrb(self, s.as_ref())
     }
 }
 

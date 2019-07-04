@@ -1,6 +1,5 @@
-use crate::convert::RustBackedValue;
+use crate::convert::{FromMrb, RustBackedValue};
 use crate::extn::core::matchdata::MatchData;
-use crate::interpreter::MrbApi;
 use crate::value::Value;
 use crate::Mrb;
 
@@ -11,8 +10,7 @@ pub enum Error {
 
 pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     if let Ok(data) = unsafe { MatchData::try_from_ruby(interp, value) } {
-        interp
-            .string(data.borrow().string.as_str())
+        Value::from_mrb(interp, data.borrow().string.as_str())
             .freeze()
             .map_err(|_| Error::Fatal)
     } else {

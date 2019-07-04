@@ -3,7 +3,6 @@ use std::mem;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::extn::core::matchdata::MatchData;
-use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::Value;
 use crate::Mrb;
@@ -73,8 +72,7 @@ impl Args {
             0_u8,
         );
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
-            let len =
-                usize::try_from_mrb(&interp, interp.fixnum(len)).map_err(|_| Error::LengthType)?;
+            let len = usize::try_from(len).map_err(|_| Error::LengthType)?;
             Ok(Some(Args::StartLen(start, len)))
         } else {
             Ok(None)
@@ -97,13 +95,13 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                 // Positive i64 must be usize
                 let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
                 match captures.len().checked_sub(index) {
-                    Some(0) | None => Ok(interp.nil()),
-                    Some(index) => Ok(Value::from_mrb(&interp, captures.at(index))),
+                    Some(0) | None => Ok(Value::from_mrb(interp, None::<Value>)),
+                    Some(index) => Ok(Value::from_mrb(interp, captures.at(index))),
                 }
             } else {
                 // Positive i64 must be usize
                 let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
-                Ok(Value::from_mrb(&interp, captures.at(index)))
+                Ok(Value::from_mrb(interp, captures.at(index)))
             }
         }
         Args::Name(name) => {
@@ -127,7 +125,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                         .and_then(|index| captures.at(index))
                 })
                 .last();
-            Ok(Value::from_mrb(&interp, group))
+            Ok(Value::from_mrb(interp, group))
         }
         Args::StartLen(start, len) => {
             let start = if start < 0 {
@@ -142,7 +140,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
             for index in start..(start + len) {
                 matches.push(captures.at(index));
             }
-            Ok(Value::from_mrb(&interp, matches))
+            Ok(Value::from_mrb(interp, matches))
         }
     }
 }

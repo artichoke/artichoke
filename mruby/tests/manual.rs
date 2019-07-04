@@ -8,7 +8,7 @@ use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use mruby::def::{rust_data_free, ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
-use mruby::interpreter::{Interpreter, MrbApi};
+use mruby::interpreter::Interpreter;
 use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
@@ -48,7 +48,11 @@ impl Container {
         }
 
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, Args::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            Args::extract(&interp),
+            Value::from_mrb(&interp, None::<Value>).inner()
+        );
 
         let container = Box::new(Self { inner: args.inner });
         unwrap_value_or_raise!(interp, container.try_into_ruby(&interp, Some(slf)))
@@ -59,7 +63,7 @@ impl Container {
         let data = unwrap_or_raise!(
             interp,
             <Box<Self>>::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            interp.nil().inner()
+            Value::from_mrb(&interp, None::<Value>).inner()
         );
         let borrow = data.borrow();
         Value::from_mrb(&interp, borrow.inner).inner()

@@ -1,15 +1,14 @@
 use byteorder::{NativeEndian, ReadBytesExt};
+use log::trace;
 use std::io::Cursor;
 
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::def::{ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
-use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::value::Value;
 use crate::{Mrb, MrbError};
-use log::trace;
 
 mod scan;
 
@@ -41,7 +40,7 @@ impl RString {
         let s = unwrap_or_raise!(
             interp,
             String::try_from_mrb(&interp, Value::new(&interp, slf)),
-            interp.nil().inner()
+            sys::mrb_sys_nil_value()
         );
         if let Some(first) = s.chars().next() {
             // One UTF-8 character, which are at most 32 bits.
@@ -51,7 +50,7 @@ impl RString {
             if let Ok(ord) = reader.read_u32::<NativeEndian>() {
                 Value::from_mrb(&interp, ord).inner()
             } else {
-                interp.nil().inner()
+                sys::mrb_sys_nil_value()
             }
         } else {
             ArgumentError::raise(&interp, "empty string")

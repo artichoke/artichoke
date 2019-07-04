@@ -3,7 +3,6 @@ use std::ffi::{c_void, CString};
 use std::rc::Rc;
 
 use crate::def::{ClassLike, Define};
-use crate::interpreter::MrbApi;
 use crate::sys;
 use crate::Mrb;
 use crate::MrbError;
@@ -126,7 +125,7 @@ pub trait RubyException: 'static + Sized {
         let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
             spec
         } else {
-            return interp.nil().inner();
+            return unsafe { sys::mrb_sys_nil_value() };
         };
         let message = Self::message(message);
         let args = Rc::new(ProtectArgs::new(spec.borrow().name(), message.as_str()));
