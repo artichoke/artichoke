@@ -13,7 +13,7 @@
 #[macro_export]
 macro_rules! interpreter_or_raise {
     ($mrb:expr) => {
-        match $crate::interpreter::Interpreter::from_user_data($mrb) {
+        match $crate::ffi::from_user_data($mrb) {
             std::result::Result::Err(err) => {
                 // Unable to retrieve interpreter from user data pointer in
                 // `mrb_state`.

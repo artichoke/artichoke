@@ -210,6 +210,7 @@ pub mod def;
 pub mod eval;
 pub mod exception;
 pub mod extn;
+pub mod ffi;
 pub mod file;
 pub mod gc;
 pub mod interpreter;
@@ -232,8 +233,8 @@ pub use mruby_sys as sys;
 ///
 /// The [`Rc`] enables the State to be cloned so it can be stored in the
 /// [`sys::mrb_state`],
-/// [extracted in `extern "C"` functions](interpreter::Interpreter::from_user_data),
-/// and used in [`Value`](value::Value) instances.
+/// [extracted in `extern "C"` functions](ffi::from_user_data), and used in
+/// [`Value`](value::Value) instances.
 ///
 /// The [`RefCell`] enables mutable access to the underlying
 /// [`State`](state::State), even across an FFI boundary.
