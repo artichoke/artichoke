@@ -28,6 +28,7 @@ pub mod match_;
 pub mod match_operator;
 pub mod named_captures;
 pub mod names;
+pub mod source;
 pub mod to_s;
 pub mod union;
 
@@ -447,13 +448,11 @@ impl Regexp {
 
     unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        let s = regexp.borrow().literal_pattern.to_string();
-        Value::from_mrb(&interp, s).inner()
+        let value = Value::new(&interp, slf);
+        match source::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(source::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#source error"),
+        }
     }
 
     #[allow(clippy::wrong_self_convention)]
