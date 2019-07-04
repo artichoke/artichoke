@@ -212,6 +212,7 @@ pub mod exception;
 pub mod extn;
 pub mod ffi;
 pub mod file;
+pub mod fs;
 pub mod gc;
 pub mod interpreter;
 pub mod load;

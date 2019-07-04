@@ -5,17 +5,17 @@ use std::rc::Rc;
 
 use crate::eval::MrbEval;
 use crate::extn;
+use crate::fs::MrbFilesystem;
 use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
 use crate::{Mrb, MrbError};
 
-pub const RUBY_LOAD_PATH: &str = "/src/lib";
-
 pub struct Interpreter;
 
 impl Interpreter {
     pub fn create() -> Result<Mrb, MrbError> {
+        let vfs = MrbFilesystem::new()?;
         let mrb = unsafe { sys::mrb_open() };
         if mrb.is_null() {
             error!("Failed to allocate mrb interprter");
@@ -23,7 +23,7 @@ impl Interpreter {
         }
 
         let context = unsafe { sys::mrbc_context_new(mrb) };
-        let api = Rc::new(RefCell::new(State::new(mrb, context, RUBY_LOAD_PATH)));
+        let api = Rc::new(RefCell::new(State::new(mrb, context, vfs)));
 
         // Transmute the smart pointer that wraps the API and store it in the
         // user data of the mrb interpreter. After this operation,

@@ -1,10 +1,8 @@
 use log::trace;
-use mruby_vfs::FileSystem;
 use std::path::PathBuf;
 
 use crate::file::MrbFile;
-use crate::interpreter::RUBY_LOAD_PATH;
-use crate::state::VfsMetadata;
+use crate::fs::RUBY_LOAD_PATH;
 use crate::{Mrb, MrbError};
 
 pub trait MrbLoadSources {
@@ -74,17 +72,15 @@ impl MrbLoadSources for Mrb {
         let api = self.borrow();
         let path = self.normalize_source_path(filename.as_ref());
         if let Some(parent) = path.parent() {
-            api.vfs.create_dir_all(parent).map_err(MrbError::Vfs)?;
+            api.vfs.create_dir_all(parent)?;
         }
         if !api.vfs.is_file(&path) {
             let contents = format!("# virtual source file -- {:?}", &path);
-            api.vfs.write_file(&path, contents).map_err(MrbError::Vfs)?;
+            api.vfs.write_file(&path, contents)?;
         }
-        let mut metadata = api.vfs.metadata(&path).unwrap_or_else(VfsMetadata::new);
+        let mut metadata = api.vfs.metadata(&path).unwrap_or_default();
         metadata.require = Some(require);
-        api.vfs
-            .set_metadata(&path, metadata)
-            .map_err(MrbError::Vfs)?;
+        api.vfs.set_metadata(&path, metadata)?;
         trace!(
             "Added rust-backed ruby source file with require func -- {:?}",
             &path
@@ -108,15 +104,11 @@ impl MrbLoadSources for Mrb {
         let api = self.borrow();
         let path = self.normalize_source_path(filename.as_ref());
         if let Some(parent) = path.parent() {
-            api.vfs.create_dir_all(parent).map_err(MrbError::Vfs)?;
+            api.vfs.create_dir_all(parent)?;
         }
-        api.vfs
-            .write_file(&path, contents.as_ref())
-            .map_err(MrbError::Vfs)?;
-        let metadata = api.vfs.metadata(&path).unwrap_or_else(VfsMetadata::new);
-        api.vfs
-            .set_metadata(&path, metadata)
-            .map_err(MrbError::Vfs)?;
+        api.vfs.write_file(&path, contents.as_ref())?;
+        let metadata = api.vfs.metadata(&path).unwrap_or_default();
+        api.vfs.set_metadata(&path, metadata)?;
         trace!("Added pure ruby source file -- {:?}", &path);
         Ok(())
     }

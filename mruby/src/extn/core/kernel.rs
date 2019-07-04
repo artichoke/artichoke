@@ -1,5 +1,4 @@
 use log::trace;
-use mruby_vfs::FileSystem;
 use path_abs::PathAbs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -9,8 +8,7 @@ use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::{LoadError, RubyException};
-use crate::interpreter::RUBY_LOAD_PATH;
-use crate::state::VfsMetadata;
+use crate::fs::RUBY_LOAD_PATH;
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
@@ -99,9 +97,7 @@ impl Kernel {
             }
             let metadata = {
                 let api = interp.borrow();
-                api.vfs
-                    .metadata(path.as_path())
-                    .unwrap_or_else(VfsMetadata::new)
+                api.vfs.metadata(path.as_path()).unwrap_or_default()
             };
             // If a file is already required, short circuit.
             if metadata.is_already_required() {
