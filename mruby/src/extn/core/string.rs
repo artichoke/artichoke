@@ -1,6 +1,4 @@
-use byteorder::{NativeEndian, ReadBytesExt};
 use log::trace;
-use std::io::Cursor;
 
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::def::{ClassLike, Define};
@@ -44,14 +42,7 @@ impl RString {
         );
         if let Some(first) = s.chars().next() {
             // One UTF-8 character, which are at most 32 bits.
-            let mut buf = [0; 4];
-            first.encode_utf8(&mut buf);
-            let mut reader = Cursor::new(buf);
-            if let Ok(ord) = reader.read_u32::<NativeEndian>() {
-                Value::from_mrb(&interp, ord).inner()
-            } else {
-                sys::mrb_sys_nil_value()
-            }
+            Value::from_mrb(&interp, first as u32).inner()
         } else {
             ArgumentError::raise(&interp, "empty string")
         }
