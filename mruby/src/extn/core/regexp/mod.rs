@@ -24,8 +24,8 @@ pub mod hash;
 pub mod initialize;
 pub mod inspect;
 pub mod match_;
-pub mod match_q;
 pub mod match_operator;
+pub mod match_q;
 pub mod named_captures;
 pub mod names;
 pub mod options;
@@ -371,7 +371,9 @@ impl Regexp {
         let value = Value::new(&interp, slf);
         match inspect::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(inspect::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#inspect error"),
+            Err(inspect::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal Regexp#inspect error")
+            }
         }
     }
 
