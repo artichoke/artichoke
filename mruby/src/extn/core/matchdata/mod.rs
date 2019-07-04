@@ -7,20 +7,20 @@ use crate::sys;
 use crate::value::Value;
 use crate::{Mrb, MrbError};
 
-mod begin;
-mod captures;
-mod element_reference;
-mod end;
-mod length;
-mod named_captures;
-mod names;
-mod offset;
-mod post_match;
-mod pre_match;
-mod regexp;
-mod string;
-mod to_a;
-mod to_s;
+pub mod begin;
+pub mod captures;
+pub mod element_reference;
+pub mod end;
+pub mod length;
+pub mod named_captures;
+pub mod names;
+pub mod offset;
+pub mod post_match;
+pub mod pre_match;
+pub mod regexp;
+pub mod string;
+pub mod to_a;
+pub mod to_s;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     let match_data = interp.borrow_mut().def_class::<MatchData>(
