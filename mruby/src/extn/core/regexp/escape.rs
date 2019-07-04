@@ -1,3 +1,7 @@
+//! [`Regexp::escape`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-escape)
+//! and
+//! [`Regexp::quote`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-quote)
+
 use std::mem;
 
 use crate::convert::{FromMrb, TryFromMrb};

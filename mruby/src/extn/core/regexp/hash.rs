@@ -1,3 +1,5 @@
+//! [`Regexp#hash`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-hash)
+
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 

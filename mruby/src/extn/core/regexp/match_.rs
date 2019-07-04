@@ -1,3 +1,5 @@
+//! [`Regexp#match`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-match)
+
 use std::cmp;
 use std::convert::TryFrom;
 use std::mem;

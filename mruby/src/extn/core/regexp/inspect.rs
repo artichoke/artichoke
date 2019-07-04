@@ -1,3 +1,5 @@
+//! [`Regexp#inspect`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-inspect)
+
 use crate::convert::{FromMrb, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
 use crate::value::Value;

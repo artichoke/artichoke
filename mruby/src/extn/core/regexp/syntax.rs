@@ -5,6 +5,8 @@
 // MIT Licence
 // Copyright (c) 2014 The Rust Project Developers
 
+//! Helpers for parsing Regexp patterns.
+
 /// Escapes all regular expression meta characters in `text`.
 ///
 /// The string returned may be safely used as a literal in a regular

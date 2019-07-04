@@ -1,3 +1,5 @@
+//! [`Regexp#fixed_encoding?`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-fixed_encoding-3F)
+
 use crate::convert::{FromMrb, RustBackedValue};
 use crate::extn::core::regexp::enc::Encoding;
 use crate::extn::core::regexp::Regexp;

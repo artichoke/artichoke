@@ -1,3 +1,5 @@
+//! [`Regexp::union`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-union)
+
 use std::mem;
 
 use crate::convert::{FromMrb, RustBackedValue};

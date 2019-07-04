@@ -1,3 +1,9 @@
+//! [ruby/spec](https://github.com/ruby/spec) compliant implementation of
+//! [`Regexp`](https://ruby-doc.org/core-2.6.3/Regexp.html).
+//!
+//! Each function on `Regexp` is implemented as its own module which contains
+//! the `Args` struct for invoking the function.
+
 use onig::{Regex, Syntax};
 use std::hash::{Hash, Hasher};
 use std::mem;

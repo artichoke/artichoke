@@ -1,3 +1,5 @@
+//! Parse options parameter to `Regexp#initialize` and `Regexp::compile`.
+
 use onig::RegexOptions;
 
 use crate::extn::core::regexp::Regexp;

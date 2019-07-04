@@ -1,3 +1,5 @@
+//! Parse encoding parameter to `Regexp#initialize` and `Regexp::compile`.
+
 use std::hash::{Hash, Hasher};
 
 use crate::extn::core::regexp::Regexp;

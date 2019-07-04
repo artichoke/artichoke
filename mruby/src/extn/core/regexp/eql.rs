@@ -1,3 +1,7 @@
+//! [`Regexp#eql?`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-eql-3F)
+//! and
+//! [`Regexp#==`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-3D)
+
 use std::cell::RefCell;
 use std::mem;
 use std::rc::Rc;

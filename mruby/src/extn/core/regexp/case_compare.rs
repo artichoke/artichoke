@@ -1,3 +1,5 @@
+//! [`Regexp#===`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-3D-3D)
+
 use std::cmp;
 use std::mem;
 

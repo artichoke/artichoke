@@ -1,3 +1,5 @@
+//! [`Regexp#=~`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-7E)
+
 use std::cmp;
 use std::convert::TryFrom;
 use std::mem;

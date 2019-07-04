@@ -1,3 +1,5 @@
+//! [`Regexp#names`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-names)
+
 use std::cmp::Ordering;
 
 use crate::convert::{FromMrb, RustBackedValue};

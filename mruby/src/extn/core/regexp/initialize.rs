@@ -1,3 +1,7 @@
+//! [`Regexp::new`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-new)
+//! and
+//! [`Regexp::compile`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-compile)
+
 use std::mem;
 
 use crate::convert::RustBackedValue;
