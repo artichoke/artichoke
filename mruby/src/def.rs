@@ -81,12 +81,11 @@ impl EnclosingRubyScope {
     ///
     /// ```rust
     /// use mruby::def::EnclosingRubyScope;
-    /// use mruby::interpreter::Interpreter;
     ///
     /// struct Fixnum;
     /// struct Inner;
     ///
-    /// let interp = crate::interpreter().expect("mrb init");
+    /// let interp = mruby::interpreter().expect("mrb init");
     /// let mut api = interp.borrow_mut();
     /// if let Some(scope) = api.class_spec::<Fixnum>().map(EnclosingRubyScope::class) {
     ///     api.def_class::<Inner>("Inner", Some(scope), None);
@@ -116,12 +115,11 @@ impl EnclosingRubyScope {
     ///
     /// ```rust
     /// use mruby::def::EnclosingRubyScope;
-    /// use mruby::interpreter::Interpreter;
     ///
     /// struct Kernel;
     /// struct Inner;
     ///
-    /// let interp = crate::interpreter().expect("mrb init");
+    /// let interp = mruby::interpreter().expect("mrb init");
     /// let mut api = interp.borrow_mut();
     /// if let Some(scope) = api.module_spec::<Kernel>().map(EnclosingRubyScope::module) {
     ///     api.def_class::<Inner>("Inner", Some(scope), None);

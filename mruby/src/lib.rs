@@ -20,9 +20,8 @@
 //!
 //! ```rust
 //! use mruby::eval::MrbEval;
-//! use mruby::interpreter::Interpreter;
 //!
-//! let interp = crate::interpreter().unwrap();
+//! let interp = mruby::interpreter().unwrap();
 //! let result = interp.eval("10 * 10").unwrap();
 //! let result = result.try_into::<i64>();
 //! assert_eq!(result, Ok(100));
@@ -54,10 +53,9 @@
 //!
 //! ```rust
 //! use mruby::eval::MrbEval;
-//! use mruby::interpreter::Interpreter;
 //! use mruby::load::MrbLoadSources;
 //!
-//! let mut interp = crate::interpreter().unwrap();
+//! let mut interp = mruby::interpreter().unwrap();
 //! let code = "
 //! def source_location
 //!   __FILE__
@@ -95,16 +93,17 @@
 //! provided by the [`onig`] crate.
 //!
 //! ```rust
-//! use mruby::convert::{RustBackedValue, TryFromMrb};
+//! #[macro_use]
+//! extern crate mruby;
+//!
+//! use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
 //! use mruby::def::{rust_data_free, ClassLike, Define};
 //! use mruby::eval::MrbEval;
 //! use mruby::file::MrbFile;
-//! use mruby::interpreter::{Interpreter, Mrb, MrbApi};
 //! use mruby::load::MrbLoadSources;
 //! use mruby::sys;
 //! use mruby::value::Value;
-//! use mruby::{interpreter_or_raise, unwrap_or_raise, unwrap_value_or_raise};
-//! use mruby::MrbError;
+//! use mruby::{Mrb, MrbError};
 //! use std::io::Write;
 //! use std::mem;
 //!
@@ -127,10 +126,10 @@
 //!         let cont = unwrap_or_raise!(
 //!             interp,
 //!             Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-//!             interp.nil().inner()
+//!             Value::from_mrb(&interp, None::<Value>).inner()
 //!         );
 //!         let borrow = cont.borrow();
-//!         interp.fixnum(borrow.inner).inner()
+//!         Value::from_mrb(&interp, borrow.inner).inner()
 //!     }
 //! }
 //!
@@ -147,11 +146,13 @@
 //!     }
 //! }
 //!
-//! let mut interp = crate::interpreter().unwrap();
-//! interp.def_file_for_type::<_, Container>("container.rb").unwrap();
-//! interp.eval("require 'container'").unwrap();
-//! let result = interp.eval("Container.new(15).value * 24").unwrap();
-//! assert_eq!(result.try_into::<i64>(), Ok(360));
+//! fn main() {
+//!     let interp = mruby::interpreter().unwrap();
+//!     interp.def_file_for_type::<_, Container>("container.rb").unwrap();
+//!     interp.eval("require 'container'").unwrap();
+//!     let result = interp.eval("Container.new(15).value * 24").unwrap();
+//!     assert_eq!(result.try_into::<i64>(), Ok(360));
+//! }
 //! ```
 //!
 //! ## Converters Between Ruby and Rust Types
