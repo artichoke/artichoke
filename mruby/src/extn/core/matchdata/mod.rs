@@ -1,3 +1,17 @@
+//! [ruby/spec](https://github.com/ruby/spec) compliant implementation of
+//! [`MatchData`](https://ruby-doc.org/core-2.6.3/MatchData.html).
+//!
+//! Each function on `MatchData` is implemented as its own module which contains
+//! the `Args` struct for invoking the function.
+//!
+//! [`MatchData#==`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-3D-3D),
+//! [`MatchData#eql?`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-eql-3F),
+//! [`MatchData#inspect`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-inspect),
+//! and
+//! [`MatchData#values_at`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-values_at)
+//! are
+//! [implemented in Ruby](https://github.com/lopopolo/ferrocarril/blob/master/mruby/src/extn/core/matchdata/matchdata.rb).
+
 use crate::convert::{FromMrb, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
@@ -7,20 +21,20 @@ use crate::sys;
 use crate::value::Value;
 use crate::{Mrb, MrbError};
 
-mod begin;
-mod captures;
-mod element_reference;
-mod end;
-mod length;
-mod named_captures;
-mod names;
-mod offset;
-mod post_match;
-mod pre_match;
-mod regexp;
-mod string;
-mod to_a;
-mod to_s;
+pub mod begin;
+pub mod captures;
+pub mod element_reference;
+pub mod end;
+pub mod length;
+pub mod named_captures;
+pub mod names;
+pub mod offset;
+pub mod post_match;
+pub mod pre_match;
+pub mod regexp;
+pub mod string;
+pub mod to_a;
+pub mod to_s;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     let match_data = interp.borrow_mut().def_class::<MatchData>(

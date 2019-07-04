@@ -1,3 +1,5 @@
+//! [`MatchData#length`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-length)
+
 use std::convert::TryFrom;
 
 use crate::convert::{FromMrb, RustBackedValue};

@@ -1,3 +1,5 @@
+//! [`MatchData#named_captures`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-named_captures)
+
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
@@ -26,5 +28,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
         let index = usize::try_from(index[0]).map_err(|_| Error::Fatal)?;
         map.insert(name, Value::from_mrb(interp, captures.at(index)));
     }
-    Ok(Value::from_mrb(&interp, map))
+    Ok(Value::from_mrb(interp, map))
 }

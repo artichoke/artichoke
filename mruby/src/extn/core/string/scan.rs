@@ -4,7 +4,9 @@ use std::mem;
 
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::{syntax, Encoding, Options, Regexp};
+use crate::extn::core::regexp::enc::Encoding;
+use crate::extn::core::regexp::opts::Options;
+use crate::extn::core::regexp::{syntax, Regexp};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};

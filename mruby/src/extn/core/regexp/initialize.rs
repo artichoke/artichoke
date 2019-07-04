@@ -1,12 +1,25 @@
+//! [`Regexp::new`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-new)
+//! and
+//! [`Regexp::compile`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-compile)
+
 use std::mem;
 
 use crate::convert::RustBackedValue;
-use crate::extn::core::regexp::{Encoding, Options, Regexp};
+use crate::extn::core::regexp::enc::{self, Encoding};
+use crate::extn::core::regexp::opts::{self, Options};
+use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
 use crate::warn::MrbWarn;
 use crate::Mrb;
-use crate::MrbError;
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum Error {
+    Fatal,
+    NoImplicitConversionToString,
+    Syntax,
+    Unicode,
+}
 
 #[derive(Debug)]
 pub struct Args {
@@ -18,7 +31,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o|o?o?\0";
 
-    pub fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+    pub fn extract(interp: &Mrb) -> Result<Self, Error> {
         let pattern = unsafe { mem::uninitialized::<sys::mrb_value>() };
         let opts = unsafe { mem::uninitialized::<sys::mrb_value>() };
         let has_opts = unsafe { mem::uninitialized::<sys::mrb_bool>() };
@@ -39,14 +52,30 @@ impl Args {
         let has_enc = has_enc != 0;
         let pattern = Value::new(&interp, pattern);
         let options = if has_opts {
-            Some(Options::from_value(&interp, opts)?)
+            Some(opts::parse(&Value::new(interp, opts)))
         } else {
             None
         };
         let encoding = if has_enc {
-            Some(Encoding::from_value(&interp, enc, false)?)
+            let encoding = Value::new(interp, enc);
+            match enc::parse(&encoding) {
+                Ok(encoding) => Some(encoding),
+                Err(enc::Error::InvalidEncoding) => {
+                    let warning = format!("encoding option is ignored -- {}", encoding.to_s());
+                    interp.warn(warning.as_str()).map_err(|_| Error::Fatal)?;
+                    None
+                }
+            }
         } else if has_opts {
-            Some(Encoding::from_value(&interp, opts, true)?)
+            let encoding = Value::new(interp, opts);
+            match enc::parse(&encoding) {
+                Ok(encoding) => Some(encoding),
+                Err(enc::Error::InvalidEncoding) => {
+                    let warning = format!("encoding option is ignored -- {}", encoding.to_s());
+                    interp.warn(warning.as_str()).map_err(|_| Error::Fatal)?;
+                    None
+                }
+            }
         } else {
             None
         };
@@ -59,14 +88,7 @@ impl Args {
     }
 }
 
-pub enum Error {
-    Fatal,
-    NoImplicitConversionToString,
-    Syntax,
-    Unicode,
-}
-
-pub fn method(interp: &Mrb, slf: sys::mrb_value, args: Args) -> Result<Value, Error> {
+pub fn method(interp: &Mrb, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
     let mut literal_options = args.options.unwrap_or_default();
     let literal_pattern =
         if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &args.pattern) } {
@@ -83,7 +105,7 @@ pub fn method(interp: &Mrb, slf: sys::mrb_value, args: Args) -> Result<Value, Er
                 .map_err(|_| Error::NoImplicitConversionToString)?;
             String::from_utf8(bytes).map_err(|_| Error::Unicode)?
         };
-    let (pattern, options) = Options::from_pattern(literal_pattern.as_str(), literal_options);
+    let (pattern, options) = opts::parse_pattern(literal_pattern.as_str(), literal_options);
     if let Some(data) = Regexp::new(
         literal_pattern,
         pattern,

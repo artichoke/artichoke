@@ -359,7 +359,7 @@ impl Value {
     where
         T: TryFromMrb<Self, From = types::Ruby, To = types::Rust>,
     {
-        self.funcall::<T, _, _>("itself", &[])
+        self.clone().try_into::<T>()
     }
 
     /// Call `#freeze` on this [`Value`] and consume `self`.
@@ -398,6 +398,18 @@ impl fmt::Display for Value {
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_s_debug())
+    }
+}
+
+impl Clone for Value {
+    fn clone(&self) -> Self {
+        if self.ruby_type() == types::Ruby::Data {
+            panic!("Cannot safely clone a Value with type tag Ruby::Data.");
+        }
+        Self {
+            interp: Rc::clone(&self.interp),
+            value: self.value,
+        }
     }
 }
 

@@ -1,3 +1,5 @@
+//! [`MatchData#names`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-names)
+
 use std::cmp::Ordering;
 
 use crate::convert::{FromMrb, RustBackedValue};
@@ -26,5 +28,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
             names.push(name);
         }
     }
-    Ok(Value::from_mrb(&interp, names))
+    Ok(Value::from_mrb(interp, names))
 }

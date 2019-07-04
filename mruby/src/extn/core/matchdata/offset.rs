@@ -1,3 +1,5 @@
+//! [`MatchData#offset`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-offset)
+
 use std::convert::TryFrom;
 use std::mem;
 
