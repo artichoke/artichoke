@@ -156,15 +156,15 @@ impl RustBackedValue for Regexp {
 }
 
 impl Regexp {
-    // TODO: expose these consts on the Regexp class in Ruby land.
     pub const IGNORECASE: i64 = 1;
     pub const EXTENDED: i64 = 2;
     pub const MULTILINE: i64 = 4;
-    // mruby does not support the `o` flag: Perform #{} interpolation only once
+
     pub const ALL_REGEXP_OPTS: i64 = Self::IGNORECASE | Self::EXTENDED | Self::MULTILINE;
 
     pub const FIXEDENCODING: i64 = 16;
     pub const NOENCODING: i64 = 32;
+
     pub const ALL_ENCODING_OPTS: i64 = Self::FIXEDENCODING | Self::NOENCODING;
 
     pub fn new(
