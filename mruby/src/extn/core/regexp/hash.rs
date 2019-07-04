@@ -17,5 +17,6 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let mut s = DefaultHasher::new();
     borrow.hash(&mut s);
     let hash = s.finish();
+    #[allow(clippy::cast_possible_wrap)]
     Ok(Value::from_mrb(interp, hash as i64))
 }

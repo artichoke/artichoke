@@ -407,8 +407,8 @@ impl Clone for Value {
             panic!("Cannot safely clone a Value with type tag Ruby::Data.");
         }
         Self {
-            interp: self.interp.clone(),
-            value: self.value.clone(),
+            interp: Rc::clone(&self.interp),
+            value: self.value,
         }
     }
 }

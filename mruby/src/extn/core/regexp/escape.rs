@@ -35,7 +35,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, args: Args) -> Result<Value, Error> {
+pub fn method(interp: &Mrb, args: &Args) -> Result<Value, Error> {
     Ok(Value::from_mrb(
         interp,
         syntax::escape(args.pattern.as_str()),

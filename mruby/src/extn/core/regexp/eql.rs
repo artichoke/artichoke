@@ -3,7 +3,6 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::convert::{FromMrb, RustBackedValue};
-use crate::extn::core::regexp::enc::Encoding;
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
@@ -37,21 +36,16 @@ impl Args {
     }
 }
 
+#[allow(clippy::if_same_then_else)]
 pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let slf = data.borrow();
     if let Some(other) = args.other {
         let borrow = other.borrow();
-        if slf.pattern != borrow.pattern {
-            Ok(Value::from_mrb(interp, false))
-        } else if slf.encoding == Encoding::No && borrow.encoding == Encoding::None {
-            Ok(Value::from_mrb(interp, true))
-        } else if slf.encoding == Encoding::None && borrow.encoding == Encoding::No {
-            Ok(Value::from_mrb(interp, true))
-        } else if slf.encoding != borrow.encoding {
-            Ok(Value::from_mrb(interp, false))
+        if slf.pattern == borrow.pattern {
+            Ok(Value::from_mrb(interp, slf.encoding == borrow.encoding))
         } else {
-            Ok(Value::from_mrb(interp, true))
+            Ok(Value::from_mrb(interp, false))
         }
     } else {
         Ok(Value::from_mrb(interp, false))

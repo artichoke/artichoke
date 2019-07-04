@@ -8,7 +8,7 @@ pub enum Error {
     InvalidEncoding,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub enum Encoding {
     Fixed,
     No,
@@ -43,6 +43,21 @@ impl Hash for Encoding {
         self.string().hash(state);
     }
 }
+
+impl PartialEq for Encoding {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Encoding::No, Encoding::None)
+            | (Encoding::None, Encoding::No)
+            | (Encoding::No, Encoding::No)
+            | (Encoding::None, Encoding::None)
+            | (Encoding::Fixed, Encoding::Fixed) => true,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for Encoding {}
 
 pub fn parse(value: &Value) -> Result<Encoding, Error> {
     if let Ok(encoding) = value.itself::<i64>() {

@@ -227,7 +227,7 @@ impl Regexp {
 
     unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let result = escape::Args::extract(&interp).and_then(|args| escape::method(&interp, args));
+        let result = escape::Args::extract(&interp).and_then(|args| escape::method(&interp, &args));
         match result {
             Ok(result) => result.inner(),
             Err(escape::Error::NoImplicitConversionToString) => {
