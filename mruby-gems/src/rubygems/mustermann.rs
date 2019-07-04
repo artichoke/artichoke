@@ -13,9 +13,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
 
 /// Gem
 #[derive(RustEmbed)]
-// TODO: resolve path relative to CARGO_MANIFEST_DIR
-// https://github.com/pyros2097/rust-embed/pull/59
-#[folder = "mruby-gems/vendor/ruby/2.6.0/gems/mustermann-1.0.3/lib"]
+#[folder = "$CARGO_MANIFEST_DIR/vendor/ruby/2.6.0/gems/mustermann-1.0.3/lib"]
 struct Mustermann;
 
 impl Mustermann {

@@ -18,7 +18,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
 }
 
 #[derive(RustEmbed)]
-#[folder = "spec-runner/spec/mspec/"]
+#[folder = "$CARGO_MANIFEST_DIR/spec/mspec"]
 struct Sources;
 
 #[derive(Debug)]

@@ -13,9 +13,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
 
 /// Gem
 #[derive(RustEmbed)]
-// TODO: resolve path relative to CARGO_MANIFEST_DIR
-// https://github.com/pyros2097/rust-embed/pull/59
-#[folder = "mruby-gems/vendor/ruby/2.6.0/gems/rack-protection-2.0.5/lib"]
+#[folder = "$CARGO_MANIFEST_DIR/vendor/ruby/2.6.0/gems/rack-protection-2.0.5/lib"]
 struct RackProtection;
 
 impl RackProtection {
