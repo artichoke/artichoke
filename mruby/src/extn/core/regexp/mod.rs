@@ -25,6 +25,7 @@ pub mod fixed_encoding;
 pub mod hash;
 pub mod initialize;
 pub mod match_;
+pub mod match_operator;
 pub mod named_captures;
 pub mod names;
 pub mod union;
@@ -336,61 +337,22 @@ impl Regexp {
         }
     }
 
-    // TODO: Implement support for extracting named captures and assigning to
-    // local variables.
-    // See: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-7E
     unsafe extern "C" fn match_operator(
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Match::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        let string = match args.string {
-            Ok(Some(ref string)) => string.to_owned(),
-            Err(_) => return TypeError::raise(&interp, "No implicit conversion into String"),
-            _ => return sys::mrb_sys_nil_value(),
-        };
-
-        let pos = args.pos.unwrap_or_default();
-        let num_captures = regexp
-            .borrow()
-            .regex
-            .captures(string.as_str())
-            .map(|captures| captures.len())
-            .unwrap_or_default();
-        let pos = if pos < 0 {
-            num_captures
-                .checked_sub(usize::try_from(-pos).expect("positive i64 must be usize"))
-                .unwrap_or_default()
-        } else {
-            usize::try_from(pos).expect("positive i64 must be usize")
-        };
-        // onig will panic if pos is beyond the end of string
-        if pos > string.len() {
-            return Value::from_mrb(&interp, false).inner();
-        }
-        let is_match = regexp.borrow().regex.search_with_options(
-            string.as_str(),
-            pos,
-            string.len(),
-            SearchOptions::SEARCH_OPTION_NONE,
-            None,
-        );
-        if let Some(pos) = is_match {
-            let pos = unwrap_or_raise!(interp, i64::try_from(pos), sys::mrb_sys_nil_value());
-            Value::from_mrb(&interp, pos).inner()
-        } else {
-            sys::mrb_sys_nil_value()
+        let value = Value::new(&interp, slf);
+        let result = match_operator::Args::extract(&interp)
+            .and_then(|args| match_operator::method(&interp, args, &value));
+        match result {
+            Ok(result) => result.inner(),
+            Err(match_operator::Error::NoImplicitConversionToString) => {
+                Value::from_mrb(&interp, false).inner()
+            }
+            Err(match_operator::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal Regexp#=== error")
+            }
         }
     }
 
