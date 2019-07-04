@@ -20,22 +20,19 @@ pub enum Error {
 pub struct Args {
     pub string: Option<String>,
     pub pos: Option<i64>,
-    pub block: Option<Value>,
 }
 
 impl Args {
-    const ARGSPEC: &'static [u8] = b"o&|o?\0";
+    const ARGSPEC: &'static [u8] = b"o|o?\0";
 
     pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
         let string = mem::uninitialized::<sys::mrb_value>();
         let pos = mem::uninitialized::<sys::mrb_value>();
         let has_pos = mem::uninitialized::<sys::mrb_bool>();
-        let block = mem::uninitialized::<sys::mrb_value>();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             &string,
-            &block,
             &pos,
             &has_pos,
         );
@@ -53,12 +50,7 @@ impl Args {
                 i64::try_from_mrb(&interp, Value::new(&interp, pos)).map_err(|_| Error::PosType)?;
             Some(pos)
         };
-        let block = if sys::mrb_sys_value_is_nil(block) {
-            None
-        } else {
-            Some(Value::new(interp, block))
-        };
-        Ok(Self { string, pos, block })
+        Ok(Self { string, pos })
     }
 }
 
@@ -71,7 +63,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         unsafe {
             let matchdata = Value::from_mrb(interp, None::<Value>);
             sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), matchdata.inner());
-            return Ok(matchdata);
+            return Ok(Value::from_mrb(interp, false));
         }
     };
     let pos = args.pos.unwrap_or_default();
@@ -79,7 +71,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         let strlen = i64::try_from(string.len()).unwrap_or_default();
         let pos = strlen + pos;
         if pos < 0 {
-            return Ok(Value::from_mrb(interp, None::<Value>));
+            return Ok(Value::from_mrb(interp, false));
         }
         usize::try_from(pos).map_err(|_| Error::Fatal)?
     } else {
@@ -87,7 +79,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     };
     // onig will panic if pos is beyond the end of string
     if pos > string.len() {
-        return Ok(Value::from_mrb(interp, None::<Value>));
+        return Ok(Value::from_mrb(interp, false));
     }
 
     let borrow = data.borrow();
@@ -135,13 +127,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         unsafe {
             sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data.inner());
         }
-        if let Some(block) = args.block {
-            Ok(Value::new(interp, unsafe {
-                sys::mrb_yield(mrb, block.inner(), data.inner())
-            }))
-        } else {
-            Ok(data)
-        }
+        Ok(Value::from_mrb(interp, true))
     } else {
         unsafe {
             let last_match_sym = interp.borrow_mut().sym_intern("$~");
@@ -163,6 +149,6 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                 Value::from_mrb(interp, None::<Value>).inner(),
             );
         }
-        Ok(Value::from_mrb(interp, None::<Value>))
+        Ok(Value::from_mrb(interp, false))
     }
 }

@@ -1,5 +1,4 @@
-use onig::{Regex, SearchOptions, Syntax};
-use std::convert::TryFrom;
+use onig::{Regex, Syntax};
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::rc::Rc;
@@ -16,7 +15,6 @@ pub mod enc;
 pub mod opts;
 pub mod syntax;
 
-mod args;
 pub mod case_compare;
 pub mod casefold;
 pub mod eql;
@@ -26,6 +24,7 @@ pub mod hash;
 pub mod initialize;
 pub mod inspect;
 pub mod match_;
+pub mod match_q;
 pub mod match_operator;
 pub mod named_captures;
 pub mod names;
@@ -86,7 +85,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         .add_method("inspect", Regexp::inspect, sys::mrb_args_none());
     regexp
         .borrow_mut()
-        .add_method("match?", Regexp::is_match, sys::mrb_args_req_and_opt(1, 1));
+        .add_method("match?", Regexp::match_q, sys::mrb_args_req_and_opt(1, 1));
     regexp
         .borrow_mut()
         .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
@@ -251,48 +250,21 @@ impl Regexp {
         }
     }
 
-    unsafe extern "C" fn is_match(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Match::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-
-        let data = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        let string = match args.string {
-            Ok(Some(ref string)) => string.to_owned(),
-            Err(_) => return TypeError::raise(&interp, "No implicit conversion into String"),
-            _ => return sys::mrb_sys_nil_value(),
-        };
-
-        let pos = args.pos.unwrap_or_default();
-        let pos = if pos < 0 {
-            let strlen = i64::try_from(string.len()).unwrap_or_default();
-            let pos = strlen + pos;
-            if pos < 0 {
-                return sys::mrb_sys_nil_value();
+        let value = Value::new(&interp, slf);
+        let result =
+            match_q::Args::extract(&interp).and_then(|args| match_q::method(&interp, args, &value));
+        match result {
+            Ok(result) => result.inner(),
+            Err(match_q::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#match? error"),
+            Err(match_q::Error::PosType) => {
+                TypeError::raise(&interp, "No implicit conversion into Integer")
             }
-            usize::try_from(pos).expect("positive i64 must be usize")
-        } else {
-            usize::try_from(pos).expect("positive i64 must be usize")
-        };
-        // onig will panic if pos is beyond the end of string
-        if pos > string.len() {
-            return Value::from_mrb(&interp, false).inner();
+            Err(match_q::Error::StringType) => {
+                TypeError::raise(&interp, "No implicit conversion into String")
+            }
         }
-        let is_match = data.borrow().regex.search_with_options(
-            string.as_str(),
-            pos,
-            string.len(),
-            SearchOptions::SEARCH_OPTION_NONE,
-            None,
-        );
-        Value::from_mrb(&interp, is_match.is_some()).inner()
     }
 
     unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
