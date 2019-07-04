@@ -1,5 +1,4 @@
 use onig::{Regex, SearchOptions, Syntax};
-use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::mem;
@@ -26,6 +25,7 @@ pub mod fixed_encoding;
 pub mod hash;
 pub mod initialize;
 pub mod match_;
+pub mod named_captures;
 pub mod names;
 pub mod union;
 
@@ -85,14 +85,14 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
-    regexp
-        .borrow_mut()
-        .add_method("names", Regexp::names, sys::mrb_args_none());
     regexp.borrow_mut().add_method(
         "named_captures",
         Regexp::named_captures,
         sys::mrb_args_none(),
     );
+    regexp
+        .borrow_mut()
+        .add_method("names", Regexp::names, sys::mrb_args_none());
     regexp
         .borrow_mut()
         .add_method("options", Regexp::options, sys::mrb_args_none());
@@ -429,6 +429,18 @@ impl Regexp {
         }
     }
 
+    unsafe extern "C" fn named_captures(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let value = Value::new(&interp, slf);
+        match named_captures::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(named_captures::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#named_captures error"),
+        }
+    }
+
     unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let value = Value::new(&interp, slf);
@@ -436,28 +448,6 @@ impl Regexp {
             Ok(result) => result.inner(),
             Err(names::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#names error"),
         }
-    }
-
-    unsafe extern "C" fn named_captures(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-
-        let borrow = regexp.borrow();
-        let mut map = HashMap::default();
-        for (name, pos) in borrow.regex.capture_names() {
-            map.insert(
-                name.to_owned(),
-                pos.iter().map(|pos| i64::from(*pos)).collect::<Vec<_>>(),
-            );
-        }
-        Value::from_mrb(&interp, map).inner()
     }
 
     unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
