@@ -2,10 +2,10 @@
 //! Array and Hash.
 
 use crate::convert::FromMrb;
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::Mrb;
 
 mod array;
 mod boolean;

@@ -1,8 +1,8 @@
 use std::error;
 use std::fmt;
 
-use crate::interpreter::Mrb;
 use crate::value::{types, Value};
+use crate::Mrb;
 
 mod array;
 mod boolean;
@@ -43,15 +43,12 @@ where
 
 /// Provide a falible converter for types that implement an infallible
 /// conversion.
-// Lint disabled because the suggestion does not compile.
-// See: https://github.com/rust-lang/rust-clippy/issues/4140
-#[allow(clippy::use_self)]
 impl<From, To> TryFromMrb<From> for To
 where
     To: FromMrb<From>,
 {
-    type From = To::From;
-    type To = To::To;
+    type From = <Self as FromMrb<From>>::From;
+    type To = <Self as FromMrb<From>>::To;
 
     unsafe fn try_from_mrb(interp: &Mrb, value: From) -> Result<Self, Error<Self::From, Self::To>> {
         Ok(FromMrb::from_mrb(interp, value))

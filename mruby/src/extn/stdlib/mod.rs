@@ -1,5 +1,4 @@
-use crate::interpreter::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 pub mod delegate;
 pub mod forwardable;

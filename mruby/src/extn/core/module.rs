@@ -1,5 +1,5 @@
 use crate::eval::MrbEval;
-use crate::interpreter::Mrb;
+use crate::Mrb;
 use crate::MrbError;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {

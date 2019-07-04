@@ -1,10 +1,9 @@
 use log::warn;
 
 use crate::convert::FromMrb;
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::{Value, ValueLike};
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 /// Interpreters that implement [`MrbWarn`] expose methods for emitting warnings
 /// during execution.

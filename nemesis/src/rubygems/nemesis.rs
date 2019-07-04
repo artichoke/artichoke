@@ -1,7 +1,7 @@
 use mruby::def::EnclosingRubyScope;
 use mruby::file::MrbFile;
-use mruby::interpreter::Mrb;
 use mruby::load::MrbLoadSources;
+use mruby::Mrb;
 use mruby::MrbError;
 use mruby_gems::Gem;
 use std::borrow::Cow;

@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate rust_embed;
 
-use mruby::interpreter::Mrb;
+use mruby::Mrb;
 use mruby::MrbError;
 
 pub mod rubygems;
@@ -19,9 +19,8 @@ mod tests {
     use mruby::def::EnclosingRubyScope;
     use mruby::eval::MrbEval;
     use mruby::file::MrbFile;
-    use mruby::interpreter::{Interpreter, Mrb};
     use mruby::load::MrbLoadSources;
-    use mruby::MrbError;
+    use mruby::{Mrb, MrbError};
 
     use crate::Gem;
 
@@ -64,7 +63,7 @@ mod tests {
 
     #[test]
     fn require_mrbfile_before_sources() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = mruby::interpreter().expect("mrb init");
         Foo::init(&interp).expect("gem init");
         assert_eq!(interp.eval("require 'foo'").map(|_| ()), Ok(()));
     }

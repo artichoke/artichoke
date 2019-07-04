@@ -1,12 +1,11 @@
-use mruby::convert::{RustBackedValue, TryFromMrb};
+use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use mruby::def::{rust_data_free, ClassLike, Define, EnclosingRubyScope};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
-use mruby::interpreter::{Mrb, MrbApi};
 use mruby::load::MrbLoadSources;
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
-use mruby::MrbError;
+use mruby::{Mrb, MrbError};
 use std::borrow::Cow;
 use std::mem;
 use std::sync::atomic::{AtomicI64, Ordering};
@@ -84,7 +83,7 @@ impl Counter {
             total_requests,
             mrb.debug()
         );
-        interp.nil().inner()
+        Value::from_mrb(&interp, None::<Value>).inner()
     }
 }
 
@@ -155,7 +154,7 @@ impl RequestContext {
         let data = unwrap_or_raise!(
             interp,
             Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            interp.nil().inner()
+            Value::from_mrb(&interp, None::<Value>).inner()
         );
         let trace_id = data.borrow().trace_id;
         info!("Retrieved trace id {} in {:?}", trace_id, interp);
@@ -169,7 +168,7 @@ impl RequestContext {
         let borrow = spec.borrow();
         borrow
             .value(&interp)
-            .unwrap_or_else(|| interp.nil())
+            .unwrap_or_else(|| Value::from_mrb(&interp, None::<Value>))
             .inner()
     }
 }

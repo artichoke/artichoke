@@ -3,10 +3,9 @@ use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
 use crate::extn::core::regexp::Regexp;
-use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::Value;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 mod begin;
 mod captures;
@@ -118,7 +117,7 @@ impl MatchData {
             begin::Args::extract(&interp).and_then(|args| begin::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(begin::Error::NoMatch) | Err(begin::Error::NoGroup) => interp.nil().inner(),
+            Err(begin::Error::NoMatch) | Err(begin::Error::NoGroup) => sys::mrb_sys_nil_value(),
             Err(begin::Error::IndexType) => TypeError::raise(&interp, "Unexpected capture group"),
             Err(begin::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#begin error"),
         }
@@ -129,7 +128,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         match captures::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(captures::Error::NoMatch) => interp.nil().inner(),
+            Err(captures::Error::NoMatch) => sys::mrb_sys_nil_value(),
             Err(captures::Error::Fatal) => {
                 RuntimeError::raise(&interp, "fatal MatchData#captures error")
             }
@@ -143,14 +142,14 @@ impl MatchData {
         let interp = interpreter_or_raise!(mrb);
         let num_captures = match Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
             Ok(data) => data.borrow().regexp.regex.captures_len(),
-            Err(_) => return interp.nil().inner(),
+            Err(_) => return sys::mrb_sys_nil_value(),
         };
         let value = Value::new(&interp, slf);
         let result = element_reference::Args::extract(&interp, num_captures)
             .and_then(|args| element_reference::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(element_reference::Error::NoMatch) => interp.nil().inner(),
+            Err(element_reference::Error::NoMatch) => sys::mrb_sys_nil_value(),
             Err(element_reference::Error::NoGroup(name)) => IndexError::raise(
                 &interp,
                 &format!("undefined group name reference: {}", name),
@@ -172,7 +171,7 @@ impl MatchData {
             end::Args::extract(&interp).and_then(|args| end::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(end::Error::NoMatch) | Err(end::Error::NoGroup) => interp.nil().inner(),
+            Err(end::Error::NoMatch) | Err(end::Error::NoGroup) => sys::mrb_sys_nil_value(),
             Err(end::Error::IndexType) => TypeError::raise(&interp, "Unexpected capture group"),
             Err(end::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#begin error"),
         }
@@ -197,7 +196,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         match named_captures::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(named_captures::Error::NoMatch) => interp.nil().inner(),
+            Err(named_captures::Error::NoMatch) => sys::mrb_sys_nil_value(),
             Err(named_captures::Error::Fatal) => {
                 RuntimeError::raise(&interp, "fatal MatchData#named_captures error")
             }
@@ -286,7 +285,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         match to_a::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(to_a::Error::NoMatch) => interp.nil().inner(),
+            Err(to_a::Error::NoMatch) => sys::mrb_sys_nil_value(),
             Err(to_a::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#to_a error"),
         }
     }
@@ -297,7 +296,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         match to_s::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(to_s::Error::NoMatch) => interp.string("").inner(),
+            Err(to_s::Error::NoMatch) => Value::from_mrb(&interp, [0_u8; 0].as_ref()).inner(),
             Err(to_s::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#to_s error"),
         }
     }

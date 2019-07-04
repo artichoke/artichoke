@@ -1,4 +1,3 @@
-use mruby_vfs::{FakeFileSystem, FileSystem};
 use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -9,45 +8,12 @@ use std::rc::Rc;
 use crate::class;
 use crate::def::{EnclosingRubyScope, Free};
 use crate::eval::EvalContext;
-use crate::interpreter::Mrb;
+use crate::fs::MrbFilesystem;
 use crate::module;
 use crate::sys::{self, DescribeState};
-use crate::MrbError;
-
-#[derive(Clone, Debug)]
-pub struct VfsMetadata {
-    pub require: Option<fn(Mrb) -> Result<(), MrbError>>,
-    already_required: bool,
-}
-
-impl VfsMetadata {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn mark_required(&self) -> Self {
-        Self {
-            require: self.require,
-            already_required: true,
-        }
-    }
-
-    pub fn is_already_required(&self) -> bool {
-        self.already_required
-    }
-}
-
-impl Default for VfsMetadata {
-    fn default() -> Self {
-        Self {
-            require: None,
-            already_required: false,
-        }
-    }
-}
 
 // NOTE: MrbState assumes that it it is stored in `mrb_state->ud` wrapped in a
-// [`Rc`] with type [`Mrb`] as created by [`Interpreter::create`].
+// [`Rc`] with type [`Mrb`] as created by [`crate::interpreter`].
 pub struct State {
     // TODO: Make this private
     pub mrb: *mut sys::mrb_state,
@@ -55,8 +21,7 @@ pub struct State {
     pub ctx: *mut sys::mrbc_context,
     classes: HashMap<TypeId, Rc<RefCell<class::Spec>>>,
     modules: HashMap<TypeId, Rc<RefCell<module::Spec>>>,
-    // TODO: Make this private
-    pub(crate) vfs: FakeFileSystem<VfsMetadata>,
+    pub vfs: MrbFilesystem,
     // TODO: make this private
     pub(crate) context_stack: Vec<EvalContext>,
     pub num_set_regexp_capture_globals: usize,
@@ -65,15 +30,9 @@ pub struct State {
 
 impl State {
     /// Create a new [`State`] from a [`sys::mrb_state`] and
-    /// [`sys::mrbc_context`] with a fake in memory virtual filesystem
-    /// ([`FakeFileSystem`]).
-    ///
-    /// This constructor creates the directory `source_dir` in the VFS to act as
-    /// the source path for new Ruby files. See
-    /// [`MrbLoadSources::def_rb_source_file`](crate::load::MrbLoadSources::def_rb_source_file).
-    pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context, source_dir: &str) -> Self {
-        let vfs = FakeFileSystem::new();
-        vfs.create_dir_all(source_dir).expect("vfs init");
+    /// [`sys::mrbc_context`] with an
+    /// [in memory virtual filesystem](MrbFilesystem).
+    pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context, vfs: MrbFilesystem) -> Self {
         Self {
             mrb,
             ctx,
@@ -119,7 +78,7 @@ impl State {
     ///     interp.fixnum(29).inner()
     /// }
     ///
-    /// let interp = Interpreter::create().expect("mrb init");
+    /// let interp = crate::interpreter().expect("mrb init");
     /// let spec = {
     ///     let mut api = interp.borrow_mut();
     ///     let spec = api.def_class::<()>("Container", None, None);
@@ -183,7 +142,7 @@ impl State {
     ///     interp.fixnum(29).inner()
     /// }
     ///
-    /// let interp = Interpreter::create().expect("mrb init");
+    /// let interp = crate::interpreter().expect("mrb init");
     /// let spec = {
     ///     let mut api = interp.borrow_mut();
     ///     let spec = api.def_module::<()>("Container", None);
@@ -237,7 +196,7 @@ impl Drop for State {
             // state is stored in the `mrb_state->ud` pointer. Rematerialize the
             // `Rc`, set the userdata pointer to null, and drop the `Rc` to
             // ensure no memory leaks. After this operation, `Rc::strong_count`
-            // will be 0 and the `Rc`, `RefCell`, and `MrbState` will be
+            // will be 0 and the `Rc`, `RefCell`, and `State` will be
             // deallocated.
             let ptr = (*self.mrb).ud;
             if !ptr.is_null() {
@@ -250,7 +209,7 @@ impl Drop for State {
             // Free mrb data structures
             sys::mrbc_context_free(self.mrb, self.ctx);
             sys::mrb_close(self.mrb);
-            // Cleanup dangling pointers in `MrbApi`
+            // Cleanup dangling pointers
             self.ctx = std::ptr::null_mut();
             self.mrb = std::ptr::null_mut();
         };

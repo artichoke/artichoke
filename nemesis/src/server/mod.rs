@@ -1,6 +1,6 @@
 //! Nemesis server implementations.
 
-use mruby::interpreter::Mrb;
+use mruby::Mrb;
 use std::collections::HashMap;
 use std::sync::Arc;
 

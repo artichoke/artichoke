@@ -2,10 +2,10 @@ use std::mem;
 
 use crate::convert::RustBackedValue;
 use crate::extn::core::regexp::{Encoding, Options, Regexp};
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::Value;
 use crate::warn::MrbWarn;
+use crate::Mrb;
 use crate::MrbError;
 
 #[derive(Debug)]

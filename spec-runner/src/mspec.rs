@@ -2,9 +2,10 @@ use std::borrow::Cow;
 
 use mruby::convert::FromMrb;
 use mruby::eval::MrbEval;
-use mruby::interpreter::{Mrb, MrbApi};
 use mruby::load::MrbLoadSources;
+use mruby::top_self::MrbTopSelf;
 use mruby::value::{Value, ValueLike};
+use mruby::Mrb;
 use mruby::MrbError;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
@@ -62,13 +63,11 @@ impl Runner {
 
 #[cfg(test)]
 mod tests {
-    use mruby::interpreter::Interpreter;
-
     use crate::mspec::Runner;
 
     #[test]
     fn mspec_framework_loads() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = mruby::interpreter().expect("mrb init");
         // should not panic
         assert_eq!(Runner::new(interp).run(), Ok(true));
     }

@@ -13,7 +13,7 @@
 #[macro_export]
 macro_rules! interpreter_or_raise {
     ($mrb:expr) => {
-        match $crate::interpreter::Interpreter::from_user_data($mrb) {
+        match $crate::ffi::from_user_data($mrb) {
             std::result::Result::Err(err) => {
                 // Unable to retrieve interpreter from user data pointer in
                 // `mrb_state`.
@@ -64,12 +64,7 @@ macro_rules! unwrap_or_raise {
 #[macro_export]
 macro_rules! unwrap_value_or_raise {
     ($interp:expr, $result:expr) => {
-        unwrap_or_raise!(
-            $interp,
-            $result,
-            $crate::interpreter::MrbApi::nil(&$interp).inner()
-        )
-        .inner()
+        unwrap_or_raise!($interp, $result, $crate::sys::mrb_sys_nil_value()).inner()
     };
 }
 
@@ -88,7 +83,7 @@ macro_rules! class_spec_or_raise {
                 &$interp,
                 "Uninitialized Class"
             );
-            return $crate::interpreter::MrbApi::nil(&$interp).inner();
+            return $crate::sys::mrb_sys_nil_value();
         }
     };
 }
@@ -108,7 +103,7 @@ macro_rules! module_spec_or_raise {
                 &$interp,
                 "Uninitialized Module"
             );
-            return $crate::interpreter::MrbApi::nil(&$interp).inner();
+            return $crate::sys::mrb_sys_nil_value();
         }
     };
 }

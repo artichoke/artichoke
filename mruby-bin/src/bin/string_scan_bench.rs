@@ -1,16 +1,17 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
 
+use mruby::convert::FromMrb;
 use mruby::eval::{EvalContext, MrbEval};
-use mruby::interpreter::{Interpreter, MrbApi};
 use mruby::sys;
+use mruby::value::Value;
 use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 use std::process;
 
 fn main() {
-    let interp = match Interpreter::create() {
+    let interp = match mruby::interpreter() {
         Ok(interp) => interp,
         Err(err) => {
             eprintln!("{}", err);
@@ -40,7 +41,10 @@ fn main() {
         process::exit(1);
     }
 
-    let data = interp.bytes(include_bytes!("../../ruby/fixtures/learnxinyminutes.txt").as_ref());
+    let data = Value::from_mrb(
+        &interp,
+        include_bytes!("../../ruby/fixtures/learnxinyminutes.txt").as_ref(),
+    );
     data.protect();
     unsafe { sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$data"), data.inner()) }
     let ctx = EvalContext::new("(main)");

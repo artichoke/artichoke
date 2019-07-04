@@ -1,5 +1,5 @@
-use crate::interpreter::Mrb;
 use crate::load::MrbLoadSources;
+use crate::Mrb;
 use crate::MrbError;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
@@ -18,7 +18,6 @@ pub struct Monitor;
 mod tests {
     use crate::convert::TryFromMrb;
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
 
     #[test]
     fn mon_initialize() {
@@ -51,7 +50,7 @@ copy != instance
 # The below requires mspec
 # copy.should_not equal(instance)
 "#;
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp.eval("require 'monitor'").expect("require");
         let result = interp.eval(spec).expect("spec");
         assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));

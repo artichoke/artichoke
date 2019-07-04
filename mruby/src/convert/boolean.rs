@@ -1,8 +1,8 @@
 use crate::convert::{Error, FromMrb, TryFromMrb};
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::Mrb;
 
 impl FromMrb<bool> for Value {
     type From = Rust;
@@ -54,14 +54,13 @@ mod tests {
 
     use crate::convert::{Error, FromMrb, TryFromMrb};
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
     use crate::sys;
     use crate::value::types::{Ruby, Rust};
     use crate::value::Value;
 
     #[test]
     fn fail_convert() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let expected = Error {
@@ -74,14 +73,14 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, b);
         value.ruby_type() == Ruby::Bool
     }
 
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, b);
         let inner = value.inner();
         let is_false = unsafe { sys::mrb_sys_value_is_false(inner) };
@@ -96,7 +95,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, b);
         let value = unsafe { bool::try_from_mrb(&interp, value) }.expect("convert");
         value == b
@@ -104,7 +103,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, i);
         let value = unsafe { bool::try_from_mrb(&interp, value) };
         let expected = Err(Error {

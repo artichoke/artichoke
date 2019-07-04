@@ -4,8 +4,8 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 
 use crate::def::Method;
-use crate::interpreter::Mrb;
 use crate::sys;
+use crate::Mrb;
 use crate::MrbError;
 
 #[derive(Debug, Eq, PartialEq, Hash)]

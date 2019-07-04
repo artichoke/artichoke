@@ -1,15 +1,14 @@
 use byteorder::{NativeEndian, ReadBytesExt};
+use log::trace;
 use std::io::Cursor;
 
 use crate::convert::{FromMrb, TryFromMrb};
 use crate::def::{ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
-use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::Value;
-use crate::MrbError;
-use log::trace;
+use crate::{Mrb, MrbError};
 
 mod scan;
 
@@ -41,7 +40,7 @@ impl RString {
         let s = unwrap_or_raise!(
             interp,
             String::try_from_mrb(&interp, Value::new(&interp, slf)),
-            interp.nil().inner()
+            sys::mrb_sys_nil_value()
         );
         if let Some(first) = s.chars().next() {
             // One UTF-8 character, which are at most 32 bits.
@@ -51,7 +50,7 @@ impl RString {
             if let Ok(ord) = reader.read_u32::<NativeEndian>() {
                 Value::from_mrb(&interp, ord).inner()
             } else {
-                interp.nil().inner()
+                sys::mrb_sys_nil_value()
             }
         } else {
             ArgumentError::raise(&interp, "empty string")
@@ -81,12 +80,11 @@ mod tests {
     use crate::convert::FromMrb;
     use crate::eval::MrbEval;
     use crate::extn::core::string;
-    use crate::interpreter::Interpreter;
     use crate::value::{Value, ValueLike};
 
     #[test]
     fn string_equal_squiggle() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
         let value = interp.eval(r#""cat o' 9 tails" =~ /\d/"#).unwrap();
@@ -97,7 +95,7 @@ mod tests {
 
     #[test]
     fn string_idx() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
         assert_eq!(
@@ -152,7 +150,7 @@ mod tests {
 
     #[test]
     fn string_scan() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
         let s = Value::from_mrb(&interp, "abababa");
@@ -194,7 +192,7 @@ mod tests {
 
     #[test]
     fn string_unary_minus() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
         let s = interp.eval("-'abababa'").expect("eval");

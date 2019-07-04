@@ -3,8 +3,8 @@ use std::ffi::{c_void, CString};
 use std::rc::Rc;
 
 use crate::def::{ClassLike, Define};
-use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
+use crate::Mrb;
 use crate::MrbError;
 
 struct ProtectArgs {
@@ -125,7 +125,7 @@ pub trait RubyException: 'static + Sized {
         let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
             spec
         } else {
-            return interp.nil().inner();
+            return unsafe { sys::mrb_sys_nil_value() };
         };
         let message = Self::message(message);
         let args = Rc::new(ProtectArgs::new(spec.borrow().name(), message.as_str()));
@@ -200,9 +200,8 @@ mod tests {
     use crate::exception::Exception;
     use crate::extn::core::error::{RubyException, RuntimeError};
     use crate::file::MrbFile;
-    use crate::interpreter::{Interpreter, Mrb};
     use crate::sys;
-    use crate::MrbError;
+    use crate::{Mrb, MrbError};
 
     struct Run;
 
@@ -225,7 +224,7 @@ mod tests {
 
     #[test]
     fn raise() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         Run::require(Rc::clone(&interp)).unwrap();
         let value = interp.eval("Run.run").map(|_| ());
         let expected = Exception::new(

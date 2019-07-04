@@ -1,7 +1,7 @@
 use crate::convert::{Error, FromMrb, TryFromMrb};
-use crate::interpreter::Mrb;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::Mrb;
 
 impl FromMrb<Option<Vec<u8>>> for Value {
     type From = Rust;
@@ -56,14 +56,13 @@ mod tests {
 
     use crate::convert::{FromMrb, TryFromMrb};
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
     use crate::sys;
     use crate::value::types::Ruby;
     use crate::value::Value;
 
     #[test]
     fn fail_convert() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let result = unsafe { <Option<Vec<u8>>>::try_from_mrb(&interp, value) }.map(|_| ());
@@ -73,7 +72,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_value(v: Option<Vec<u8>>) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, v.clone());
         if let Some(v) = v {
             let value = unsafe { <Vec<u8>>::try_from_mrb(&interp, value) }.expect("convert");
@@ -86,7 +85,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(v: Option<Vec<u8>>) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, v.clone());
         let value = unsafe { <Option<Vec<u8>>>::try_from_mrb(&interp, value) }.expect("convert");
         value == v

@@ -7,7 +7,6 @@
 
 use mruby::eval::{EvalContext, MrbEval};
 use mruby::gc::MrbGarbageCollection;
-use mruby::interpreter::Interpreter;
 use mruby::sys;
 use mruby::MrbError;
 use rustyline::error::ReadlineError;
@@ -83,7 +82,7 @@ pub fn run(
 ) -> Result<(), Error> {
     writeln!(output, "{}", preamble()?).map_err(Error::Io)?;
     let config = config.unwrap_or_else(Default::default);
-    let interp = Interpreter::create().map_err(Error::Ruby)?;
+    let interp = mruby::interpreter().map_err(Error::Ruby)?;
 
     // load gems
     mruby_gems::rubygems::rack::init(&interp).map_err(Error::Ruby)?;

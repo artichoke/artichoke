@@ -6,9 +6,9 @@ use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{syntax, Encoding, Options, Regexp};
 use crate::gc::MrbGarbageCollection;
-use crate::interpreter::{Mrb, MrbApi};
 use crate::sys;
 use crate::value::{Value, ValueLike};
+use crate::Mrb;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -116,7 +116,7 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
     }
     if !was_match {
         unsafe {
-            sys::mrb_gv_set(mrb, last_match_sym, interp.nil().inner());
+            sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
         }
     }
     let result = if args.block.is_some() {

@@ -1,5 +1,4 @@
-use crate::interpreter::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 #[allow(clippy::module_name_repetitions)]
 pub trait MrbFile {

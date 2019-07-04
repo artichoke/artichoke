@@ -15,9 +15,9 @@
 //! pointer.
 
 use mruby::gc::MrbGarbageCollection;
-use mruby::interpreter::{Interpreter, Mrb};
 use mruby::state::State;
 use mruby::sys;
+use mruby::Mrb;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -34,7 +34,7 @@ fn segfault_rc_transmute() {
         std::mem::size_of::<sys::mrb_value>()
     );
 
-    let interp = Interpreter::create().expect("mrb init");
+    let interp = mruby::interpreter().expect("mrb init");
     // Increase the strong count on the Rc to 255.
     let mut interps = vec![];
     for _ in 0..254 {

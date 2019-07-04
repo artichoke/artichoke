@@ -1,7 +1,7 @@
 use crate::convert::{Error, FromMrb, TryFromMrb};
-use crate::interpreter::Mrb;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::Mrb;
 
 impl FromMrb<String> for Value {
     type From = Rust;
@@ -59,14 +59,13 @@ mod tests {
 
     use crate::convert::{Error, FromMrb, TryFromMrb};
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
     use crate::sys;
     use crate::value::types::{Ruby, Rust};
     use crate::value::Value;
 
     #[test]
     fn fail_convert() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let expected = Error {
@@ -80,7 +79,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_string(s: String) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, s.clone());
         let ptr = unsafe { sys::mrb_string_value_ptr(interp.borrow().mrb, value.inner()) };
         let len = unsafe { sys::mrb_string_value_len(interp.borrow().mrb, value.inner()) };
@@ -92,7 +91,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn string_with_value(s: String) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, s.clone());
         value.to_s() == s
     }
@@ -100,7 +99,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(s: String) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, s.clone());
         let value = unsafe { String::try_from_mrb(&interp, value) }.expect("convert");
         value == s
@@ -108,7 +107,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, b);
         let value = unsafe { String::try_from_mrb(&interp, value) };
         let expected = Err(Error {
@@ -120,7 +119,7 @@ mod tests {
 
     #[test]
     fn symbol_to_string() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = interp.eval(":sym").expect("eval");
         let value = unsafe { String::try_from_mrb(&interp, value) }.expect("convert");
         assert_eq!(&value, "sym");

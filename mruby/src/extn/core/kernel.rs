@@ -1,5 +1,4 @@
 use log::trace;
-use mruby_vfs::FileSystem;
 use path_abs::PathAbs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -9,12 +8,11 @@ use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::{LoadError, RubyException};
-use crate::interpreter::{Mrb, MrbApi, RUBY_LOAD_PATH};
-use crate::state::VfsMetadata;
+use crate::fs::RUBY_LOAD_PATH;
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 mod args;
 
@@ -58,11 +56,15 @@ impl Warning {
         let interp = interpreter_or_raise!(mrb);
         let stderr = sys::mrb_gv_get(mrb, interp.borrow_mut().sym_intern("$stderr"));
         if !sys::mrb_sys_value_is_nil(stderr) {
-            let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+            let args = unwrap_or_raise!(
+                interp,
+                args::Rest::extract(&interp),
+                sys::mrb_sys_nil_value()
+            );
             let stderr = Value::new(&interp, stderr);
             unwrap_value_or_raise!(interp, stderr.funcall::<Value, _, _>("print", args.rest));
         }
-        interp.nil().inner()
+        sys::mrb_sys_nil_value()
     }
 }
 
@@ -95,13 +97,11 @@ impl Kernel {
             }
             let metadata = {
                 let api = interp.borrow();
-                api.vfs
-                    .metadata(path.as_path())
-                    .unwrap_or_else(VfsMetadata::new)
+                api.vfs.metadata(path.as_path()).unwrap_or_default()
             };
             // If a file is already required, short circuit.
             if metadata.is_already_required() {
-                return interp.bool(false).inner();
+                return Value::from_mrb(interp, false).inner();
             }
             let context = if let Some(filename) = path.as_path().to_str() {
                 EvalContext::new(filename)
@@ -116,7 +116,7 @@ impl Kernel {
             if let Some(require) = metadata.require {
                 // dynamic, Rust-backed `MrbFile` require
                 interp.push_context(context.clone());
-                unwrap_or_raise!(interp, require(Rc::clone(interp)), interp.nil().inner());
+                unwrap_or_raise!(interp, require(Rc::clone(interp)), sys::mrb_sys_nil_value());
                 interp.pop_context();
             }
             let contents = {
@@ -139,7 +139,7 @@ impl Kernel {
             unwrap_or_raise!(
                 interp,
                 api.vfs.set_metadata(path.as_path(), metadata),
-                interp.nil().inner()
+                sys::mrb_sys_nil_value()
             );
             success = true;
             trace!(
@@ -150,7 +150,7 @@ impl Kernel {
             );
         }
         if success {
-            interp.bool(success).inner()
+            Value::from_mrb(interp, success).inner()
         } else {
             LoadError::raise(&interp, filename)
         }
@@ -161,7 +161,7 @@ impl Kernel {
         let args = unwrap_or_raise!(
             interp,
             args::Require::extract(&interp),
-            interp.nil().inner()
+            sys::mrb_sys_nil_value()
         );
         Self::require_impl(&interp, args.filename.as_str(), RUBY_LOAD_PATH)
     }
@@ -174,7 +174,7 @@ impl Kernel {
         let args = unwrap_or_raise!(
             interp,
             args::Require::extract(&interp),
-            interp.nil().inner()
+            sys::mrb_sys_nil_value()
         );
         let base = interp
             .peek_context()
@@ -190,13 +190,17 @@ impl Kernel {
 
     unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::Rest::extract(&interp),
+            sys::mrb_sys_nil_value()
+        );
 
         for value in args.rest {
             print!("{}", value.to_s());
         }
         let _ = io::stdout().flush();
-        interp.nil().inner()
+        sys::mrb_sys_nil_value()
     }
 
     unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
@@ -213,7 +217,11 @@ impl Kernel {
         }
 
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::Rest::extract(&interp),
+            sys::mrb_sys_nil_value()
+        );
 
         if args.rest.is_empty() {
             println!();
@@ -221,12 +229,16 @@ impl Kernel {
         for value in args.rest {
             do_puts(value);
         }
-        interp.nil().inner()
+        sys::mrb_sys_nil_value()
     }
 
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(interp, args::Rest::extract(&interp), interp.nil().inner());
+        let args = unwrap_or_raise!(
+            interp,
+            args::Rest::extract(&interp),
+            sys::mrb_sys_nil_value()
+        );
 
         for value in args.rest {
             let mut string = value.to_s();
@@ -235,7 +247,7 @@ impl Kernel {
             }
             Warning::warn(mrb, Value::from_mrb(&interp, string).inner());
         }
-        interp.nil().inner()
+        sys::mrb_sys_nil_value()
     }
 }
 
@@ -244,9 +256,8 @@ mod tests {
     use crate::convert::TryFromMrb;
     use crate::eval::MrbEval;
     use crate::file::MrbFile;
-    use crate::interpreter::{Interpreter, Mrb};
     use crate::load::MrbLoadSources;
-    use crate::MrbError;
+    use crate::{Mrb, MrbError};
 
     // Integration test for `Kernel::require`:
     //
@@ -266,7 +277,7 @@ mod tests {
             }
         }
 
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_file_for_type::<_, File>("file.rb")
             .expect("def file");
@@ -292,7 +303,7 @@ mod tests {
 
     #[test]
     fn require_absolute_path() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("/foo/bar/source.rb", "# a source file")
             .expect("def file");
@@ -304,7 +315,7 @@ mod tests {
 
     #[test]
     fn require_relative_with_dotted_path() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("/foo/bar/source.rb", "require_relative '../bar.rb'")
             .expect("def file");
@@ -317,7 +328,7 @@ mod tests {
 
     #[test]
     fn require_directory() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp.eval("require '/src'").map(|_| ());
         let expected = r#"
 (eval):1: cannot load such file -- /src (LoadError)
@@ -335,7 +346,7 @@ mod tests {
                 Ok(())
             }
         }
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
             .expect("def");
@@ -360,7 +371,7 @@ mod tests {
                 Ok(())
             }
         }
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
         interp
             .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
@@ -380,7 +391,7 @@ mod tests {
     #[allow(clippy::shadow_unrelated)]
     fn kernel_throw_catch() {
         // https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-catch
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp
             .eval("catch(1) { 123 }")
             .unwrap()

@@ -2,8 +2,8 @@ use std::cmp::Ordering;
 
 use crate::convert::{FromMrb, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
-use crate::interpreter::Mrb;
 use crate::value::Value;
+use crate::Mrb;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {

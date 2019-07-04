@@ -1,5 +1,5 @@
-use crate::interpreter::Mrb;
 use crate::load::MrbLoadSources;
+use crate::Mrb;
 use crate::MrbError;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
@@ -17,12 +17,11 @@ pub struct StringScanner;
 #[cfg(test)]
 mod tests {
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
     use crate::load::MrbLoadSources;
 
     #[test]
     fn strscan_spec() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("/src/test/strscan_test.rb", include_str!("strscan_test.rb"))
             .unwrap();

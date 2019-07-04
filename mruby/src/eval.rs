@@ -4,10 +4,9 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::exception::{LastError, MrbExceptionHandler};
-use crate::interpreter::Mrb;
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 const TOP_FILENAME: &str = "(eval)";
 
@@ -215,14 +214,13 @@ mod tests {
     use crate::def::{ClassLike, Define};
     use crate::eval::{EvalContext, MrbEval};
     use crate::file::MrbFile;
-    use crate::interpreter::{Interpreter, Mrb};
     use crate::load::MrbLoadSources;
     use crate::sys;
-    use crate::{interpreter_or_raise, unwrap_value_or_raise, MrbError};
+    use crate::{Mrb, MrbError};
 
     #[test]
     fn root_eval_context() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp.eval("__FILE__").expect("eval");
         let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
         assert_eq!(&result, "(eval)");
@@ -230,7 +228,7 @@ mod tests {
 
     #[test]
     fn context_is_restored_after_eval() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let context = EvalContext::new("context.rb");
         interp.push_context(context);
         interp.eval("15").expect("eval");
@@ -239,7 +237,7 @@ mod tests {
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp.eval("15").expect("eval");
         assert_eq!(interp.borrow().context_stack.len(), 0);
     }
@@ -276,7 +274,7 @@ mod tests {
                 Ok(())
             }
         }
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_file_for_type::<_, NestedEval>("nested_eval.rb")
             .expect("def file");
@@ -291,7 +289,7 @@ NestedEval.file
 
     #[test]
     fn eval_with_context() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp
             .eval_with_context("__FILE__", EvalContext::new("source.rb"))
             .expect("eval");
@@ -311,7 +309,7 @@ NestedEval.file
 
     #[test]
     fn unparseable_code_returns_err_syntax_error() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp.eval("'a").map(|_| ());
         assert_eq!(
             result,
@@ -321,7 +319,7 @@ NestedEval.file
 
     #[test]
     fn interpreter_is_usable_after_syntax_error() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp.eval("'a").map(|_| ());
         assert_eq!(
             result,
@@ -335,7 +333,7 @@ NestedEval.file
 
     #[test]
     fn file_magic_constant() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
@@ -346,7 +344,7 @@ NestedEval.file
 
     #[test]
     fn file_not_persistent() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
@@ -357,7 +355,7 @@ NestedEval.file
 
     #[test]
     fn return_syntax_error() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("fail.rb", "def bad; 'as'.scan(; end")
             .expect("def file");

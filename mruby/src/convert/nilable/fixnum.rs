@@ -1,8 +1,8 @@
 use crate::convert::fixnum::Int;
 use crate::convert::{Error, FromMrb, TryFromMrb};
-use crate::interpreter::Mrb;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::Mrb;
 
 impl FromMrb<Option<Int>> for Value {
     type From = Rust;
@@ -43,14 +43,13 @@ mod tests {
     use crate::convert::fixnum::Int;
     use crate::convert::{FromMrb, TryFromMrb};
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
     use crate::sys;
     use crate::value::types::Ruby;
     use crate::value::Value;
 
     #[test]
     fn fail_convert() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let result = unsafe { <Option<Int>>::try_from_mrb(&interp, value) }.map(|_| ());
@@ -59,7 +58,7 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_value(v: Option<Int>) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, v);
         if let Some(v) = v {
             let value = unsafe { Int::try_from_mrb(&interp, value) }.expect("convert");
@@ -71,7 +70,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(v: Option<Int>) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, v);
         let value = unsafe { <Option<Int>>::try_from_mrb(&interp, value) }.expect("convert");
         value == v

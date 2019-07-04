@@ -1,10 +1,10 @@
 use std::convert::TryFrom;
 
 use crate::convert::{Error, FromMrb, TryFromMrb};
-use crate::interpreter::Mrb;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
+use crate::Mrb;
 
 pub type Int = i64;
 
@@ -116,14 +116,13 @@ mod tests {
     use crate::convert::fixnum::Int;
     use crate::convert::{Error, FromMrb, TryFromMrb};
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
     use crate::sys;
     use crate::value::types::{Ruby, Rust};
     use crate::value::Value;
 
     #[test]
     fn fail_convert() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let expected = Error {
@@ -136,14 +135,14 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_fixnum(i: Int) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, i);
         value.ruby_type() == Ruby::Fixnum
     }
 
     #[quickcheck]
     fn fixnum_with_value(i: Int) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, i);
         let inner = value.inner();
         let cint = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
@@ -152,7 +151,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(i: Int) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, i);
         let value = unsafe { Int::try_from_mrb(&interp, value) }.expect("convert");
         value == i
@@ -160,7 +159,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, b);
         let value = unsafe { Int::try_from_mrb(&interp, value) };
         let expected = Err(Error {
@@ -172,7 +171,7 @@ mod tests {
 
     #[test]
     fn fixnum_to_usize() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let value = Value::from_mrb(&interp, 100);
         let value = unsafe { usize::try_from_mrb(&interp, value) };
         let expected = Ok(100);

@@ -5,8 +5,8 @@
 //! [`Rack::Handler::Webrick`](https://github.com/rack/rack/blob/2.0.7/lib/rack/handler/webrick.rb).
 
 use mruby::convert::FromMrb;
-use mruby::interpreter::Mrb;
 use mruby::value::Value;
+use mruby::Mrb;
 
 use crate::Error;
 
@@ -72,9 +72,9 @@ pub trait Request {
 
 #[cfg(test)]
 mod tests {
+    use mruby::convert::FromMrb;
     use mruby::eval::MrbEval;
-    use mruby::interpreter::{Interpreter, MrbApi};
-    use mruby::value::ValueLike;
+    use mruby::value::{Value, ValueLike};
     use mruby_gems::rubygems::rack;
 
     // This module hard codes Rack constant names to avoid retrieving them via
@@ -82,67 +82,79 @@ mod tests {
     // real ones in Ruby source.
     #[test]
     fn rack_constants_match() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = mruby::interpreter().expect("mrb init");
         rack::init(&interp).unwrap();
         let rack = interp.eval("require 'rack'; Rack").unwrap();
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("RACK_VERSION")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "RACK_VERSION")]),
             Ok("rack.version".to_owned())
         );
         assert_eq!(
-            rack.funcall::<Vec<i64>, _, _>("const_get", &[interp.string("VERSION")]),
+            rack.funcall::<Vec<i64>, _, _>("const_get", &[Value::from_mrb(&interp, "VERSION")]),
             Ok(vec![1, 3])
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("HTTP_VERSION")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "HTTP_VERSION")]),
             Ok("HTTP_VERSION".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("REQUEST_METHOD")]),
+            rack.funcall::<String, _, _>(
+                "const_get",
+                &[Value::from_mrb(&interp, "REQUEST_METHOD")]
+            ),
             Ok("REQUEST_METHOD".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("SCRIPT_NAME")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "SCRIPT_NAME")]),
             Ok("SCRIPT_NAME".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("PATH_INFO")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "PATH_INFO")]),
             Ok("PATH_INFO".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("QUERY_STRING")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "QUERY_STRING")]),
             Ok("QUERY_STRING".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("SERVER_NAME")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "SERVER_NAME")]),
             Ok("SERVER_NAME".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("SERVER_PORT")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "SERVER_PORT")]),
             Ok("SERVER_PORT".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("RACK_URL_SCHEME")]),
+            rack.funcall::<String, _, _>(
+                "const_get",
+                &[Value::from_mrb(&interp, "RACK_URL_SCHEME")]
+            ),
             Ok("rack.url_scheme".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("RACK_INPUT")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "RACK_INPUT")]),
             Ok("rack.input".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("RACK_ERRORS")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "RACK_ERRORS")]),
             Ok("rack.errors".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("RACK_MULTITHREAD")]),
+            rack.funcall::<String, _, _>(
+                "const_get",
+                &[Value::from_mrb(&interp, "RACK_MULTITHREAD")]
+            ),
             Ok("rack.multithread".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("RACK_MULTIPROCESS")]),
+            rack.funcall::<String, _, _>(
+                "const_get",
+                &[Value::from_mrb(&interp, "RACK_MULTIPROCESS")]
+            ),
             Ok("rack.multiprocess".to_owned())
         );
         assert_eq!(
-            rack.funcall::<String, _, _>("const_get", &[interp.string("RACK_RUNONCE")]),
+            rack.funcall::<String, _, _>("const_get", &[Value::from_mrb(&interp, "RACK_RUNONCE")]),
             Ok("rack.run_once".to_owned())
         );
     }
