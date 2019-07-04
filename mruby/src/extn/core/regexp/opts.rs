@@ -65,7 +65,7 @@ pub fn parse(value: &Value) -> Options {
     // will be case insensitive.
     if let Ok(options) = value.itself::<i64>() {
         // Only deal with Regexp opts
-        let options = options & !Regexp::ALL_REGEXP_OPTS;
+        let options = options & Regexp::ALL_REGEXP_OPTS;
         Options {
             multiline: options & Regexp::MULTILINE > 0,
             ignore_case: options & Regexp::IGNORECASE > 0,
