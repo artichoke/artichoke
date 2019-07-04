@@ -17,6 +17,7 @@ use crate::{Mrb, MrbError};
 
 mod args;
 pub mod case_compare;
+pub mod casefold;
 pub mod initialize;
 pub mod names;
 pub mod syntax;
@@ -44,19 +45,25 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         .add_self_method("union", Regexp::union, sys::mrb_args_rest());
     regexp
         .borrow_mut()
-        .add_method("match?", Regexp::is_match, sys::mrb_args_req_and_opt(1, 1));
+        .add_method("==", Regexp::equal_equal, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
-        .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
+        .add_method("===", Regexp::case_compare, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
         .add_method("=~", Regexp::equal_squiggle, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
-        .add_method("==", Regexp::equal_equal, sys::mrb_args_req(1));
+        .add_method("casefold?", Regexp::casefold, sys::mrb_args_none());
     regexp
         .borrow_mut()
-        .add_method("===", Regexp::case_compare, sys::mrb_args_req(1));
+        .add_method("inspect", Regexp::inspect, sys::mrb_args_none());
+    regexp
+        .borrow_mut()
+        .add_method("match?", Regexp::is_match, sys::mrb_args_req_and_opt(1, 1));
+    regexp
+        .borrow_mut()
+        .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
     regexp
         .borrow_mut()
         .add_method("names", Regexp::names, sys::mrb_args_none());
@@ -74,9 +81,6 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_method("to_s", Regexp::to_s, sys::mrb_args_none());
-    regexp
-        .borrow_mut()
-        .add_method("inspect", Regexp::inspect, sys::mrb_args_none());
     regexp.borrow().define(&interp)?;
     // TODO: Add proper constant defs to class::Spec and undo this hack.
     interp.eval(format!(
@@ -759,6 +763,15 @@ impl Regexp {
             Ok(result) => result.inner(),
             Err(case_compare::Error::BadType) => Value::from_mrb(&interp, false).inner(),
             Err(case_compare::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#=== error"),
+        }
+    }
+
+    unsafe extern "C" fn casefold(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let value = Value::new(&interp, slf);
+        match casefold::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(casefold::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#casefold? error"),
         }
     }
 
