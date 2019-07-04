@@ -24,6 +24,7 @@ pub mod escape;
 pub mod fixed_encoding;
 pub mod hash;
 pub mod initialize;
+pub mod inspect;
 pub mod match_;
 pub mod match_operator;
 pub mod named_captures;
@@ -395,18 +396,11 @@ impl Regexp {
 
     unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        let s = format!(
-            "/{}/{}{}",
-            regexp.borrow().literal_pattern.as_str().replace("/", r"\/"),
-            regexp.borrow().literal_options.modifier_string(),
-            regexp.borrow().encoding.string()
-        );
-        Value::from_mrb(&interp, s).inner()
+        let value = Value::new(&interp, slf);
+        match inspect::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(inspect::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#inspect error"),
+        }
     }
 
     unsafe extern "C" fn named_captures(
