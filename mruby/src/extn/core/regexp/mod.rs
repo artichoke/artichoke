@@ -28,6 +28,7 @@ pub mod match_;
 pub mod match_operator;
 pub mod named_captures;
 pub mod names;
+pub mod to_s;
 pub mod union;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
@@ -458,12 +459,10 @@ impl Regexp {
     #[allow(clippy::wrong_self_convention)]
     unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        let s = regexp.borrow().pattern.to_string();
-        Value::from_mrb(&interp, s).inner()
+        let value = Value::new(&interp, slf);
+        match to_s::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(to_s::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#to_s error"),
+        }
     }
 }
