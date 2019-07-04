@@ -16,6 +16,7 @@ use crate::value::{Value, ValueLike};
 use crate::{Mrb, MrbError};
 
 mod args;
+pub mod case_compare;
 pub mod initialize;
 pub mod names;
 pub mod syntax;
@@ -55,7 +56,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         .add_method("==", Regexp::equal_equal, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
-        .add_method("===", Regexp::equal_equal_equal, sys::mrb_args_req(1));
+        .add_method("===", Regexp::case_compare, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
         .add_method("names", Regexp::names, sys::mrb_args_none());
@@ -747,90 +748,18 @@ impl Regexp {
         Value::from_mrb(&interp, regborrow.pattern == othborrow.pattern).inner()
     }
 
-    unsafe extern "C" fn equal_equal_equal(
+    unsafe extern "C" fn case_compare(
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let no = Value::from_mrb(&interp, false).inner();
-        let args = unwrap_or_raise!(interp, args::Match::extract(&interp), no);
-
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            no
-        );
-        let string = match args.string {
-            Ok(Some(ref string)) => string.to_owned(),
-            Err(_) => return no,
-            _ => {
-                sys::mrb_gv_set(
-                    mrb,
-                    interp.borrow_mut().sym_intern("$~"),
-                    sys::mrb_sys_nil_value(),
-                );
-                return no;
-            }
-        };
-
-        let pos = args.pos.unwrap_or_default();
-        let pos = if pos < 0 {
-            let strlen = i64::try_from(string.len()).unwrap_or_default();
-            let pos = strlen + pos;
-            if pos < 0 {
-                return sys::mrb_sys_nil_value();
-            }
-            usize::try_from(pos).expect("positive i64 must be usize")
-        } else {
-            usize::try_from(pos).expect("positive i64 must be usize")
-        };
-        // onig will panic if pos is beyond the end of string
-        if pos > string.len() {
-            return sys::mrb_sys_nil_value();
+        let value = Value::new(&interp, slf);
+        let result = case_compare::Args::extract(&interp).and_then(|args| case_compare::method(&interp, args, &value));
+        match result {
+            Ok(result) => result.inner(),
+            Err(case_compare::Error::BadType) => Value::from_mrb(&interp, false).inner(),
+            Err(case_compare::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#=== error"),
         }
-        // TODO: this is really inefficent. We do the Regex match twice.
-        let mut region = Region::new();
-        let is_match = regexp.borrow().regex.search_with_options(
-            string.as_str(),
-            pos,
-            string.len(),
-            SearchOptions::SEARCH_OPTION_NONE,
-            Some(&mut region),
-        );
-        let last_matched_string = if let Some((start, end)) = region.pos(0) {
-            Value::from_mrb(&interp, string[start..end].to_owned()).inner()
-        } else {
-            sys::mrb_sys_nil_value()
-        };
-        sys::mrb_gv_set(
-            mrb,
-            interp.borrow_mut().sym_intern("$&"),
-            last_matched_string,
-        );
-        let data = if is_match.is_some() {
-            if let Some(captures) = regexp.borrow().regex.captures(&string[pos..]) {
-                let num_regexp_globals_to_set = {
-                    let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
-                    cmp::max(num_previously_set_globals, captures.len())
-                };
-                for group in 1..=num_regexp_globals_to_set {
-                    let value = Value::from_mrb(&interp, captures.at(group));
-                    sys::mrb_gv_set(
-                        mrb,
-                        interp.borrow_mut().sym_intern(&format!("${}", group)),
-                        value.inner(),
-                    );
-                }
-                interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
-            }
-
-            let data = MatchData::new(string.as_str(), regexp.borrow().clone(), 0, string.len());
-            unwrap_or_raise!(interp, data.try_into_ruby(&interp, None), no).inner()
-        } else {
-            sys::mrb_sys_nil_value()
-        };
-        sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data);
-        Value::from_mrb(&interp, !sys::mrb_sys_value_is_nil(data)).inner()
     }
 
     unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
