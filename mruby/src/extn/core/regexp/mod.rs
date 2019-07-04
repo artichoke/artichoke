@@ -19,6 +19,7 @@ mod args;
 pub mod case_compare;
 pub mod casefold;
 pub mod eql;
+pub mod escape;
 pub mod initialize;
 pub mod names;
 pub mod syntax;
@@ -41,6 +42,9 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_self_method("escape", Regexp::escape, sys::mrb_args_req(1));
+    regexp
+        .borrow_mut()
+        .add_self_method("quote", Regexp::escape, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
         .add_self_method("union", Regexp::union, sys::mrb_args_rest());
@@ -463,16 +467,16 @@ impl Regexp {
         sys::mrb_obj_new(mrb, sys::mrb_sys_class_ptr(slf), count, args)
     }
 
-    unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Pattern::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-        let pattern = syntax::escape(args.pattern.as_str());
-        let args = &[Value::from_mrb(&interp, pattern).inner()];
-        sys::mrb_obj_new(mrb, sys::mrb_sys_class_ptr(slf), 1, args.as_ptr())
+        let result = escape::Args::extract(&interp).and_then(|args| escape::method(&interp, args));
+        match result {
+            Ok(result) => result.inner(),
+            Err(escape::Error::BadType) => {
+                TypeError::raise(&interp, "no implicit conversion into String")
+            }
+            Err(escape::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#escape error"),
+        }
     }
 
     unsafe extern "C" fn union(

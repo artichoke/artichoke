@@ -14,7 +14,7 @@ pub enum Error {
     Fatal,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Args {
     pub string: Option<String>,
 }
