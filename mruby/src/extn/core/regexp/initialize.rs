@@ -84,7 +84,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, slf: sys::mrb_value, args: Args) -> Result<Value, Error> {
+pub fn method(interp: &Mrb, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
     let mut literal_options = args.options.unwrap_or_default();
     let literal_pattern =
         if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &args.pattern) } {

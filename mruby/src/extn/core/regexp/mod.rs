@@ -10,12 +10,12 @@ use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::sys;
-use crate::value::types::Ruby;
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::{Mrb, MrbError};
 
 pub mod enc;
 pub mod opts;
+pub mod syntax;
 
 mod args;
 pub mod case_compare;
@@ -27,7 +27,7 @@ pub mod hash;
 pub mod initialize;
 pub mod match_;
 pub mod names;
-pub mod syntax;
+pub mod union;
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.eval(include_str!("regexp.rb"))?;
@@ -192,7 +192,7 @@ impl Regexp {
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let result = initialize::Args::extract(&interp)
-            .and_then(|args| initialize::method(&interp, slf, args));
+            .and_then(|args| initialize::method(&interp, args, slf));
         match result {
             Ok(value) => value.inner(),
             Err(initialize::Error::NoImplicitConversionToString) => {
@@ -229,67 +229,23 @@ impl Regexp {
             Err(escape::Error::BadType) => {
                 TypeError::raise(&interp, "no implicit conversion into String")
             }
-            Err(escape::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#escape error"),
+            Err(escape::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp::escape error"),
         }
     }
 
     unsafe extern "C" fn union(
         mrb: *mut sys::mrb_state,
-        mut _slf: sys::mrb_value,
+        slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let mut args = unwrap_or_raise!(
-            interp,
-            args::Rest::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-        let pattern = if args.rest.is_empty() {
-            "(?!)".to_owned()
-        } else {
-            let patterns = if args.rest.len() == 1 {
-                let arg = args.rest.remove(0);
-                if arg.ruby_type() == Ruby::Array {
-                    unwrap_or_raise!(
-                        interp,
-                        arg.try_into::<Vec<Value>>(),
-                        sys::mrb_sys_nil_value()
-                    )
-                } else {
-                    vec![arg]
-                }
-            } else {
-                args.rest
-            };
-            let mut raw_patterns = vec![];
-            for pattern in patterns {
-                if let Ok(regexp) = Self::try_from_ruby(&interp, &pattern) {
-                    raw_patterns.push(regexp.borrow().pattern.clone());
-                } else if let Ok(Some(pattern)) =
-                    pattern.funcall::<Option<String>, _, _>("to_str", &[])
-                {
-                    raw_patterns.push(syntax::escape(pattern.as_str()));
-                } else {
-                    return TypeError::raise(&interp, "no implicit conversion to String");
-                }
+        let args = union::Args::extract(&interp);
+        let result = union::method(&interp, args, slf);
+        match result {
+            Ok(result) => result.inner(),
+            Err(union::Error::NoImplicitConversionToString) => {
+                TypeError::raise(&interp, "no implicit conversion into String")
             }
-            raw_patterns.join("|")
-        };
-
-        // TODO: Preserve Regexp options per the docs if the args are Regexps.
-        let literal_options = opts::Options::default();
-        let literal_pattern = pattern;
-        let (pattern, options) = opts::parse_pattern(literal_pattern.as_str(), literal_options);
-        if let Some(data) = Self::new(
-            literal_pattern,
-            pattern,
-            literal_options,
-            options,
-            enc::Encoding::default(),
-        ) {
-            unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
-        } else {
-            // Regexp is invalid.
-            SyntaxError::raise(&interp, "malformed Regexp")
+            Err(union::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp::union error"),
         }
     }
 
