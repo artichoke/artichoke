@@ -233,10 +233,7 @@ impl Regexp {
         }
     }
 
-    unsafe extern "C" fn union(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
+    unsafe extern "C" fn union(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let args = union::Args::extract(&interp);
         let result = union::method(&interp, args, slf);
@@ -330,7 +327,9 @@ impl Regexp {
             .and_then(|args| case_compare::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(case_compare::Error::NoImplicitConversionToString) => Value::from_mrb(&interp, false).inner(),
+            Err(case_compare::Error::NoImplicitConversionToString) => {
+                Value::from_mrb(&interp, false).inner()
+            }
             Err(case_compare::Error::Fatal) => {
                 RuntimeError::raise(&interp, "fatal Regexp#=== error")
             }
@@ -453,7 +452,9 @@ impl Regexp {
         let value = Value::new(&interp, slf);
         match named_captures::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(named_captures::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#named_captures error"),
+            Err(named_captures::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal Regexp#named_captures error")
+            }
         }
     }
 
