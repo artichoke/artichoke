@@ -20,6 +20,7 @@ pub mod case_compare;
 pub mod casefold;
 pub mod eql;
 pub mod escape;
+pub mod fixed_encoding;
 pub mod initialize;
 pub mod names;
 pub mod syntax;
@@ -63,6 +64,11 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     regexp
         .borrow_mut()
         .add_method("eql?", Regexp::eql, sys::mrb_args_req(1));
+    regexp.borrow_mut().add_method(
+        "fixed_encoding?",
+        Regexp::fixed_encoding,
+        sys::mrb_args_none(),
+    );
     regexp
         .borrow_mut()
         .add_method("inspect", Regexp::inspect, sys::mrb_args_none());
@@ -768,6 +774,20 @@ impl Regexp {
             Ok(result) => result.inner(),
             Err(casefold::Error::Fatal) => {
                 RuntimeError::raise(&interp, "fatal Regexp#casefold? error")
+            }
+        }
+    }
+
+    unsafe extern "C" fn fixed_encoding(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let value = Value::new(&interp, slf);
+        match fixed_encoding::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(fixed_encoding::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal Regexp#fixed_encoding? error")
             }
         }
     }
