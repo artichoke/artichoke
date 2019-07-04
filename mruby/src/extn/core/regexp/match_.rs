@@ -89,7 +89,8 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     }
 
     let borrow = data.borrow();
-    if let Some(captures) = borrow.regex.captures(&string[pos..]) {
+    let match_target = &string[pos..];
+    if let Some(captures) = borrow.regex.captures(match_target) {
         let num_regexp_globals_to_set = {
             let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
             cmp::max(num_previously_set_globals, captures.len())
@@ -108,12 +109,18 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         }
         interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
 
-        let matchdata = MatchData::new(
-            &string[pos..],
-            data.borrow().clone(),
-            0,
-            string[pos..].len(),
-        );
+        let mut matchdata = MatchData::new(string.as_str(), data.borrow().clone(), 0, string.len());
+        if let Some(match_pos) = captures.pos(0) {
+            let pre_match = &match_target[..match_pos.0];
+            let post_match = &match_target[match_pos.1..];
+            unsafe {
+                let sym = interp.borrow_mut().sym_intern("$`");
+                sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, pre_match).inner());
+                let sym = interp.borrow_mut().sym_intern("$'");
+                sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, post_match).inner());
+            }
+            matchdata.set_region(pos + match_pos.0, pos + match_pos.1);
+        }
         let data = unsafe { matchdata.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)?;
         unsafe {
             sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data.inner());
@@ -127,11 +134,12 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         }
     } else {
         unsafe {
-            sys::mrb_gv_set(
-                mrb,
-                interp.borrow_mut().sym_intern("$~"),
-                Value::from_mrb(interp, None::<Value>).inner(),
-            );
+            let sym = interp.borrow_mut().sym_intern("$~");
+            sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, None::<Value>).inner());
+            let sym = interp.borrow_mut().sym_intern("$`");
+            sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, None::<Value>).inner());
+            let sym = interp.borrow_mut().sym_intern("$'");
+            sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, None::<Value>).inner());
         }
         Ok(Value::from_mrb(interp, None::<Value>))
     }

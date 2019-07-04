@@ -15,7 +15,13 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     // compliance.
     let mut map = vec![];
     for (name, index) in borrow.regex.capture_names() {
-        map.push((name, Value::from_mrb(interp, index.iter().map(|idx| i64::from(*idx)).collect::<Vec<_>>())));
+        map.push((
+            name,
+            Value::from_mrb(
+                interp,
+                index.iter().map(|idx| i64::from(*idx)).collect::<Vec<_>>(),
+            ),
+        ));
     }
     Ok(Value::from_mrb(interp, map))
 }

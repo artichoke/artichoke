@@ -70,9 +70,9 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         }
         interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
 
-        if let Some(pos) = captures.pos(0) {
-            let pre_match = &string[..pos.0];
-            let post_match = &string[pos.1..];
+        if let Some(match_pos) = captures.pos(0) {
+            let pre_match = &string[..match_pos.0];
+            let post_match = &string[match_pos.1..];
             unsafe {
                 let sym = interp.borrow_mut().sym_intern("$`");
                 sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, pre_match).inner());
@@ -83,6 +83,12 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         let matchdata = MatchData::new(string.as_str(), data.borrow().clone(), 0, string.len());
         unsafe { matchdata.try_into_ruby(&interp, None) }.map_err(|_| Error::Fatal)?
     } else {
+        unsafe {
+            let sym = interp.borrow_mut().sym_intern("$`");
+            sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, None::<Value>).inner());
+            let sym = interp.borrow_mut().sym_intern("$'");
+            sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, None::<Value>).inner());
+        }
         Value::from_mrb(interp, None::<Value>)
     };
     unsafe {

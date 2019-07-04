@@ -437,7 +437,9 @@ impl Regexp {
         let value = Value::new(&interp, slf);
         match options::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(options::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#options error"),
+            Err(options::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal Regexp#options error")
+            }
         }
     }
 
