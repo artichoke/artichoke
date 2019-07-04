@@ -1,3 +1,17 @@
+//! [ruby/spec](https://github.com/ruby/spec) compliant implementation of
+//! [`MatchData`](https://ruby-doc.org/core-2.6.3/MatchData.html).
+//!
+//! Each function on `MatchData` is implemented as its own module which contains
+//! the `Args` struct for invoking the function.
+//!
+//! [`MatchData#==`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-3D-3D),
+//! [`MatchData#eql?`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-eql-3F),
+//! [`MatchData#inspect`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-inspect),
+//! and
+//! [`MatchData#values_at`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-values_at)
+//! are
+//! [implemented in Ruby](https://github.com/lopopolo/ferrocarril/blob/master/mruby/src/extn/core/matchdata/matchdata.rb).
+
 use crate::convert::{FromMrb, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;

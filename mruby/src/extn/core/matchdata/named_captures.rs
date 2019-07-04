@@ -1,3 +1,5 @@
+//! [`MatchData#named_captures`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-named_captures)
+
 use std::collections::HashMap;
 use std::convert::TryFrom;
 

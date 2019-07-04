@@ -1,3 +1,5 @@
+//! [`MatchData#end`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-end)
+
 use std::convert::TryFrom;
 use std::mem;
 

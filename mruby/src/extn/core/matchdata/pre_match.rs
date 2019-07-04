@@ -1,3 +1,5 @@
+//! [`MatchData#pre_match`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-pre_match)
+
 use crate::convert::{FromMrb, RustBackedValue};
 use crate::extn::core::matchdata::MatchData;
 use crate::value::Value;
