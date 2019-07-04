@@ -98,7 +98,7 @@ class SpecCollector
 
     puts "\n"
     if @errors.length.zero?
-      puts "\e[32mPassed #{@successes} specs. Skipped #{@skipped} spec. Not implemented #{@not_implemented}.\e[0m"
+      puts "\e[32mPassed #{@successes}, skipped #{@skipped}, not implemented #{@not_implemented}, failed #{@errors.length} specs.\e[0m"
       return
     end
 
