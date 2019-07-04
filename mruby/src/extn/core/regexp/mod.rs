@@ -61,7 +61,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         .add_method("===", Regexp::case_compare, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
-        .add_method("=~", Regexp::equal_squiggle, sys::mrb_args_req(1));
+        .add_method("=~", Regexp::match_operator, sys::mrb_args_req(1));
     regexp
         .borrow_mut()
         .add_method("casefold?", Regexp::casefold, sys::mrb_args_none());
@@ -310,10 +310,37 @@ impl Regexp {
         }
     }
 
+    unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let args = eql::Args::extract(&interp);
+        let value = Value::new(&interp, slf);
+        match eql::method(&interp, args, &value) {
+            Ok(result) => result.inner(),
+            Err(eql::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#== error"),
+        }
+    }
+
+    unsafe extern "C" fn case_compare(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let value = Value::new(&interp, slf);
+        let result = case_compare::Args::extract(&interp)
+            .and_then(|args| case_compare::method(&interp, args, &value));
+        match result {
+            Ok(result) => result.inner(),
+            Err(case_compare::Error::NoImplicitConversionToString) => Value::from_mrb(&interp, false).inner(),
+            Err(case_compare::Error::Fatal) => {
+                RuntimeError::raise(&interp, "fatal Regexp#=== error")
+            }
+        }
+    }
+
     // TODO: Implement support for extracting named captures and assigning to
     // local variables.
     // See: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-7E
-    unsafe extern "C" fn equal_squiggle(
+    unsafe extern "C" fn match_operator(
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
@@ -368,33 +395,6 @@ impl Regexp {
         }
     }
 
-    unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let args = eql::Args::extract(&interp);
-        let value = Value::new(&interp, slf);
-        match eql::method(&interp, args, &value) {
-            Ok(result) => result.inner(),
-            Err(eql::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#== error"),
-        }
-    }
-
-    unsafe extern "C" fn case_compare(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = case_compare::Args::extract(&interp)
-            .and_then(|args| case_compare::method(&interp, args, &value));
-        match result {
-            Ok(result) => result.inner(),
-            Err(case_compare::Error::NoImplicitConversionToString) => Value::from_mrb(&interp, false).inner(),
-            Err(case_compare::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal Regexp#=== error")
-            }
-        }
-    }
-
     unsafe extern "C" fn casefold(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let value = Value::new(&interp, slf);
@@ -427,6 +427,22 @@ impl Regexp {
             Ok(result) => result.inner(),
             Err(hash::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#hash error"),
         }
+    }
+
+    unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let regexp = unwrap_or_raise!(
+            interp,
+            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+            sys::mrb_sys_nil_value()
+        );
+        let s = format!(
+            "/{}/{}{}",
+            regexp.borrow().literal_pattern.as_str().replace("/", r"\/"),
+            regexp.borrow().literal_options.modifier_string(),
+            regexp.borrow().encoding.string()
+        );
+        Value::from_mrb(&interp, s).inner()
     }
 
     unsafe extern "C" fn named_captures(
@@ -485,23 +501,6 @@ impl Regexp {
             sys::mrb_sys_nil_value()
         );
         let s = regexp.borrow().pattern.to_string();
-        Value::from_mrb(&interp, s).inner()
-    }
-
-    #[allow(clippy::wrong_self_convention)]
-    unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        let s = format!(
-            "/{}/{}{}",
-            regexp.borrow().literal_pattern.as_str().replace("/", r"\/"),
-            regexp.borrow().literal_options.modifier_string(),
-            regexp.borrow().encoding.string()
-        );
         Value::from_mrb(&interp, s).inner()
     }
 }
