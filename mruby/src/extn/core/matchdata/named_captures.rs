@@ -26,5 +26,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
         let index = usize::try_from(index[0]).map_err(|_| Error::Fatal)?;
         map.insert(name, Value::from_mrb(interp, captures.at(index)));
     }
-    Ok(Value::from_mrb(&interp, map))
+    Ok(Value::from_mrb(interp, map))
 }
