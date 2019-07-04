@@ -10,5 +10,5 @@ edition = "2018"
 path = "../mruby"
 
 [dependencies.rust-embed]
-version = "4.4.0"
-features = ["debug-embed"]
+version = "4.5.0"
+features = ["interpolate-folder-path"]

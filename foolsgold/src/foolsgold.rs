@@ -22,9 +22,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
 }
 
 #[derive(RustEmbed)]
-// TODO: resolve path relative to CARGO_MANIFEST_DIR
-// https://github.com/pyros2097/rust-embed/pull/59
-#[folder = "foolsgold/ruby/lib"]
+#[folder = "$CARGO_MANIFEST_DIR/ruby/lib"]
 struct FoolsGold;
 
 impl FoolsGold {

@@ -8,15 +8,6 @@ edition = "2018"
 name = "nemesis_vs_thin"
 harness = false
 
-[[bin]]
-name = "foolsgold"
-# Disable doctests because doctests execute from the crate directory instead of
-# the workspace root. This causes the paths specified in RustEmbed derives to
-# not resolve, which panics.
-# TODO: Remove this workaround once this PR to interpolate env vars in paths is
-# merged: https://github.com/pyros2097/rust-embed/pull/59
-doctest = false
-
 [dependencies]
 env_logger = "0.6.1"
 log = "0.4.6"
@@ -31,8 +22,8 @@ path = "../mruby-gems"
 path = "../nemesis"
 
 [dependencies.rust-embed]
-version = "4.4.0"
-features = ["debug-embed"]
+version = "4.5.0"
+features = ["interpolate-folder-path"]
 
 [dependencies.uuid]
 version = "0.7"

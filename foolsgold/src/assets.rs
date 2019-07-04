@@ -2,10 +2,8 @@ use nemesis::Error;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-// TODO: resolve path relative to CARGO_MANIFEST_DIR
-// https://github.com/pyros2097/rust-embed/pull/59
 #[derive(RustEmbed)]
-#[folder = "foolsgold/static/"]
+#[folder = "$CARGO_MANIFEST_DIR/static"]
 pub struct Assets;
 
 impl Assets {
