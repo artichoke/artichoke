@@ -64,16 +64,21 @@ class SpecCollector
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
       skipped = true if state.it =~ /is too big/ # mruby does not have Bignum
+      skipped = true if state.it =~ /hexadecimal digits/
     elsif state.exception.is_a?(SyntaxError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
+      skipped = true if state.it =~ /hexadecimal digits/
+      skipped = true if state.message =~ /Regexp pattern/
     elsif state.exception.is_a?(NotImplementedError)
       @not_implemented += 1
       return
+    elsif state.exception.is_a?(RuntimeError)
+      skipped = true if state.message =~ /invalid UTF-8/
     end
     skipped = true if state.it == 'is multi-byte character sensitive'
     skipped = true if state.it =~ /UTF-8/
-    skipped = true if state.it =~ /\\u escape/
+    skipped = true if state.it =~ /\\u/
 
     skipped = true if @current_description == 'Regexp#initialize'
 

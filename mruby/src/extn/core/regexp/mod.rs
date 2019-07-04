@@ -1,11 +1,11 @@
-use onig::{Regex, RegexOptions, SearchOptions, Syntax};
+use onig::{Regex, SearchOptions, Syntax};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
+use crate::convert::{FromMrb, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
@@ -13,6 +13,9 @@ use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::{Mrb, MrbError};
+
+pub mod enc;
+pub mod opts;
 
 mod args;
 pub mod case_compare;
@@ -112,285 +115,13 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-pub struct Options {
-    multiline: bool,
-    ignore_case: bool,
-    extended: bool,
-}
-
-impl Options {
-    fn flags(self) -> RegexOptions {
-        let mut bits = RegexOptions::REGEX_OPTION_NONE;
-        if self.multiline {
-            bits |= RegexOptions::REGEX_OPTION_MULTILINE;
-        }
-        if self.ignore_case {
-            bits |= RegexOptions::REGEX_OPTION_IGNORECASE;
-        }
-        if self.extended {
-            bits |= RegexOptions::REGEX_OPTION_EXTEND;
-        }
-        bits
-    }
-
-    fn as_literal_string(self) -> &'static str {
-        match (self.multiline, self.ignore_case, self.extended) {
-            (true, true, true) => "mix",
-            (true, true, false) => "mi",
-            (true, false, true) => "mx",
-            (true, false, false) => "m",
-            (false, true, true) => "ix",
-            (false, true, false) => "i",
-            (false, false, true) => "x",
-            (false, false, false) => "",
-        }
-    }
-
-    fn as_onig_string(self) -> &'static str {
-        match (self.multiline, self.ignore_case, self.extended) {
-            (true, true, true) => "mix",
-            (true, true, false) => "mi-x",
-            (true, false, true) => "mx-i",
-            (true, false, false) => "m-ix",
-            (false, true, true) => "ix-m",
-            (false, true, false) => "i-mx",
-            (false, false, true) => "x-mi",
-            (false, false, false) => "-mix",
-        }
-    }
-
-    fn from_value(interp: &Mrb, value: sys::mrb_value) -> Result<Self, MrbError> {
-        // If options is an Integer, it should be one or more of the constants
-        // Regexp::EXTENDED, Regexp::IGNORECASE, and Regexp::MULTILINE, or-ed
-        // together. Otherwise, if options is not nil or false, the regexp will
-        // be case insensitive.
-        if let Ok(options) = unsafe { i64::try_from_mrb(&interp, Value::new(&interp, value)) } {
-            // Only deal with Regexp opts
-            let options = options & !Regexp::ALL_ENCODING_OPTS;
-            if options & Regexp::ALL_REGEXP_OPTS != options {
-                return Err(MrbError::Exec("Invalid Regexp flags".to_owned()));
-            }
-            Ok(Self {
-                ignore_case: options & Regexp::IGNORECASE > 0,
-                extended: options & Regexp::EXTENDED > 0,
-                multiline: options & Regexp::MULTILINE > 0,
-            })
-        } else if let Ok(options) =
-            unsafe { <Option<bool>>::try_from_mrb(&interp, Value::new(&interp, value)) }
-        {
-            match options {
-                Some(false) | None => Ok(Self::default()),
-                _ => Ok(Self::ignore_case()),
-            }
-        } else if let Ok(options) =
-            unsafe { <Option<String>>::try_from_mrb(&interp, Value::new(&interp, value)) }
-        {
-            if let Some(options) = options {
-                let mut opts = Self::default();
-                opts.ignore_case = options.contains('i');
-                opts.multiline = options.contains('m');
-                opts.extended = options.contains('x');
-                Ok(opts)
-            } else {
-                Ok(Self::default())
-            }
-        } else {
-            Ok(Self::ignore_case())
-        }
-    }
-
-    fn from_pattern(pattern: &str, mut opts: Self) -> (String, Self) {
-        let orig_opts = opts;
-        let mut chars = pattern.chars();
-        let mut enabled = true;
-        let mut pat_buf = String::new();
-        let mut pointer = 0;
-        match chars.next() {
-            None => {
-                pat_buf.push_str("(?");
-                pat_buf.push_str(opts.as_onig_string());
-                pat_buf.push(':');
-                pat_buf.push(')');
-                return (pat_buf, opts);
-            }
-            Some(token) if token != '(' => {
-                pat_buf.push_str("(?");
-                pat_buf.push_str(opts.as_onig_string());
-                pat_buf.push(':');
-                pat_buf.push_str(pattern);
-                pat_buf.push(')');
-                return (pat_buf, opts);
-            }
-            _ => (),
-        };
-        pointer += 1;
-        match chars.next() {
-            None => {
-                pat_buf.push_str("(?");
-                pat_buf.push_str(opts.as_onig_string());
-                pat_buf.push(':');
-                pat_buf.push_str(pattern);
-                pat_buf.push(')');
-                return (pat_buf, opts);
-            }
-            Some(token) if token != '?' => {
-                pat_buf.push_str("(?");
-                pat_buf.push_str(opts.as_onig_string());
-                pat_buf.push(':');
-                pat_buf.push_str(pattern);
-                pat_buf.push(')');
-                return (pat_buf, opts);
-            }
-            _ => (),
-        };
-        pointer += 1;
-        for token in chars {
-            pointer += 1;
-            match token {
-                '-' => enabled = false,
-                'i' => {
-                    opts.ignore_case = enabled;
-                }
-                'm' => {
-                    opts.multiline = enabled;
-                }
-                'x' => {
-                    opts.extended = enabled;
-                }
-                ':' => break,
-                _ => {
-                    pat_buf.push_str("(?");
-                    pat_buf.push_str(opts.as_onig_string());
-                    pat_buf.push(':');
-                    pat_buf.push_str(pattern);
-                    pat_buf.push(')');
-                    return (pat_buf, opts);
-                }
-            }
-        }
-        let mut chars = pattern[pointer..].chars();
-        let mut token = chars.next();
-        let mut nest = 1;
-        while token.is_some() {
-            match token {
-                Some(token) if token == '(' => nest += 1,
-                Some(token) if token == ')' => {
-                    nest -= 1;
-                    if nest == 0 && chars.next().is_some() {
-                        return (
-                            format!("(?{}:{})", orig_opts.as_onig_string(), pattern),
-                            orig_opts,
-                        );
-                    }
-                    break;
-                }
-                _ => (),
-            }
-            token = chars.next();
-        }
-
-        (
-            format!("(?{}:{}", opts.as_onig_string(), &pattern[pointer..]),
-            opts,
-        )
-    }
-
-    fn ignore_case() -> Self {
-        let mut opts = Self::default();
-        opts.ignore_case = true;
-        opts
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Encoding {
-    Fixed,
-    No,
-    None,
-}
-
-impl Encoding {
-    fn flags(self) -> i64 {
-        match self {
-            Encoding::Fixed => Regexp::FIXEDENCODING,
-            Encoding::No => Regexp::NOENCODING,
-            Encoding::None => 0,
-        }
-    }
-
-    fn as_literal_string(self) -> &'static str {
-        match self {
-            Encoding::Fixed | Encoding::None => "",
-            Encoding::No => "n",
-        }
-    }
-
-    fn from_value(
-        interp: &Mrb,
-        value: sys::mrb_value,
-        from_options: bool,
-    ) -> Result<Self, MrbError> {
-        if let Ok(encoding) = unsafe { i64::try_from_mrb(&interp, Value::new(&interp, value)) } {
-            // Only deal with Encoding opts
-            let encoding = encoding & !Regexp::ALL_REGEXP_OPTS;
-            if encoding == Regexp::FIXEDENCODING {
-                Ok(Encoding::Fixed)
-            } else if encoding == Regexp::NOENCODING {
-                Ok(Encoding::No)
-            } else if encoding == 0 {
-                Ok(Self::default())
-            } else {
-                return Err(MrbError::Exec("Invalid Regexp encoding".to_owned()));
-            }
-        } else if let Ok(encoding) =
-            unsafe { String::try_from_mrb(&interp, Value::new(&interp, value)) }
-        {
-            if encoding.contains('u') && encoding.contains('n') {
-                return Err(MrbError::Exec("Invalid Regexp encoding".to_owned()));
-            }
-            let mut enc = vec![];
-            for flag in encoding.chars() {
-                if flag == 'u' || flag == 's' || flag == 'e' {
-                    enc.push(Encoding::Fixed);
-                } else if flag == 'n' {
-                    enc.push(Encoding::No);
-                } else if from_options && (flag == 'i' || flag == 'm' || flag == 'x' || flag == 'o')
-                {
-                    continue;
-                } else {
-                    return Err(MrbError::Exec("Invalid Regexp encoding".to_owned()));
-                }
-            }
-            if enc.len() > 1 {
-                return Err(MrbError::Exec("Invalid Regexp encoding".to_owned()));
-            }
-            Ok(enc.pop().unwrap_or_default())
-        } else {
-            Ok(Self::default())
-        }
-    }
-}
-
-impl Default for Encoding {
-    fn default() -> Self {
-        Encoding::None
-    }
-}
-
-impl Hash for Encoding {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.as_literal_string().hash(state);
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Regexp {
     literal_pattern: String,
     pattern: String,
-    literal_options: Options,
-    options: Options,
-    encoding: Encoding,
+    literal_options: opts::Options,
+    options: opts::Options,
+    encoding: enc::Encoding,
     pub regex: Rc<Regex>,
 }
 
@@ -399,9 +130,9 @@ impl Default for Regexp {
         Self {
             literal_pattern: String::default(),
             pattern: String::default(),
-            literal_options: Options::default(),
-            options: Options::default(),
-            encoding: Encoding::default(),
+            literal_options: opts::Options::default(),
+            options: opts::Options::default(),
+            encoding: enc::Encoding::default(),
             regex: Rc::new(unsafe { mem::uninitialized::<Regex>() }),
         }
     }
@@ -439,9 +170,9 @@ impl Regexp {
     pub fn new(
         literal_pattern: String,
         pattern: String,
-        literal_options: Options,
-        options: Options,
-        encoding: Encoding,
+        literal_options: opts::Options,
+        options: opts::Options,
+        encoding: enc::Encoding,
     ) -> Option<Self> {
         let regex = Rc::new(Regex::with_options(&pattern, options.flags(), Syntax::ruby()).ok()?);
         let regexp = Self {
@@ -460,24 +191,24 @@ impl Regexp {
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            initialize::Args::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-        match initialize::method(&interp, slf, args) {
+        let result = initialize::Args::extract(&interp)
+            .and_then(|args| initialize::method(&interp, slf, args));
+        match result {
             Ok(value) => value.inner(),
-            // Err(initialize::Error::Syntax) => SyntaxError::raise(&interp, ""),
             Err(initialize::Error::NoImplicitConversionToString) => {
                 TypeError::raise(&interp, "no implicit conversion into String");
                 unwrap_value_or_raise!(interp, Self::default().try_into_ruby(&interp, Some(slf)))
             }
             Err(initialize::Error::Syntax) => {
-                SyntaxError::raise(&interp, "");
+                SyntaxError::raise(&interp, "Failed to parse Regexp pattern");
                 unwrap_value_or_raise!(interp, Self::default().try_into_ruby(&interp, Some(slf)))
             }
-            _ => {
-                RuntimeError::raise(&interp, "");
+            Err(initialize::Error::Unicode) => {
+                RuntimeError::raise(&interp, "Pattern is invalid UTF-8");
+                unwrap_value_or_raise!(interp, Self::default().try_into_ruby(&interp, Some(slf)))
+            }
+            Err(initialize::Error::Fatal) => {
+                RuntimeError::raise(&interp, "Fatal Regexp#initialize error");
                 unwrap_value_or_raise!(interp, Self::default().try_into_ruby(&interp, Some(slf)))
             }
         }
@@ -545,15 +276,15 @@ impl Regexp {
         };
 
         // TODO: Preserve Regexp options per the docs if the args are Regexps.
-        let literal_options = Options::default();
+        let literal_options = opts::Options::default();
         let literal_pattern = pattern;
-        let (pattern, options) = Options::from_pattern(literal_pattern.as_str(), literal_options);
+        let (pattern, options) = opts::parse_pattern(literal_pattern.as_str(), literal_options);
         if let Some(data) = Self::new(
             literal_pattern,
             pattern,
             literal_options,
             options,
-            Encoding::default(),
+            enc::Encoding::default(),
         ) {
             unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
         } else {
@@ -609,12 +340,17 @@ impl Regexp {
     unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
         let value = Value::new(&interp, slf);
-        let result = match_::Args::extract(&interp).and_then(|args| match_::method(&interp, args, &value));
+        let result =
+            match_::Args::extract(&interp).and_then(|args| match_::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
             Err(match_::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#match error"),
-            Err(match_::Error::PosType) => TypeError::raise(&interp, "No implicit conversion into Integer"),
-            Err(match_::Error::StringType) => TypeError::raise(&interp, "No implicit conversion into String"),
+            Err(match_::Error::PosType) => {
+                TypeError::raise(&interp, "No implicit conversion into Integer")
+            }
+            Err(match_::Error::StringType) => {
+                TypeError::raise(&interp, "No implicit conversion into String")
+            }
         }
     }
 
@@ -817,8 +553,8 @@ impl Regexp {
         let s = format!(
             "/{}/{}{}",
             regexp.borrow().literal_pattern.as_str().replace("/", r"\/"),
-            regexp.borrow().literal_options.as_literal_string(),
-            regexp.borrow().encoding.as_literal_string()
+            regexp.borrow().literal_options.modifier_string(),
+            regexp.borrow().encoding.string()
         );
         Value::from_mrb(&interp, s).inner()
     }

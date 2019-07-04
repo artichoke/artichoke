@@ -3,7 +3,8 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::convert::{FromMrb, RustBackedValue};
-use crate::extn::core::regexp::{Encoding, Regexp};
+use crate::extn::core::regexp::enc::Encoding;
+use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
 use crate::Mrb;

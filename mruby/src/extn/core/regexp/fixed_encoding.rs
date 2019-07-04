@@ -1,5 +1,6 @@
 use crate::convert::{FromMrb, RustBackedValue};
-use crate::extn::core::regexp::{Encoding, Regexp};
+use crate::extn::core::regexp::enc::Encoding;
+use crate::extn::core::regexp::Regexp;
 use crate::value::Value;
 use crate::Mrb;
 
