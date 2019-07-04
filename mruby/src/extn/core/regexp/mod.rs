@@ -28,6 +28,7 @@ pub mod match_;
 pub mod match_operator;
 pub mod named_captures;
 pub mod names;
+pub mod options;
 pub mod source;
 pub mod to_s;
 pub mod union;
@@ -433,17 +434,11 @@ impl Regexp {
 
     unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        let borrow = regexp.borrow();
-        Value::from_mrb(
-            &interp,
-            i64::from(borrow.literal_options.flags().bits()) | borrow.encoding.flags(),
-        )
-        .inner()
+        let value = Value::new(&interp, slf);
+        match options::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(options::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#options error"),
+        }
     }
 
     unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
