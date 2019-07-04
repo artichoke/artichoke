@@ -1,5 +1,4 @@
-use onig::{Regex, RegexOptions, Region, SearchOptions, Syntax};
-use std::cmp;
+use onig::{Regex, RegexOptions, SearchOptions, Syntax};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
@@ -10,7 +9,6 @@ use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
-use crate::extn::core::matchdata::MatchData;
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
@@ -24,6 +22,7 @@ pub mod escape;
 pub mod fixed_encoding;
 pub mod hash;
 pub mod initialize;
+pub mod match_;
 pub mod names;
 pub mod syntax;
 
@@ -609,94 +608,13 @@ impl Regexp {
 
     unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Match::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-
-        let regexp = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        let string = match args.string {
-            Ok(Some(ref string)) => string.to_owned(),
-            Err(_) => return TypeError::raise(&interp, "No implicit conversion into String"),
-            _ => {
-                sys::mrb_gv_set(
-                    mrb,
-                    interp.borrow_mut().sym_intern("$~"),
-                    sys::mrb_sys_nil_value(),
-                );
-                return sys::mrb_sys_nil_value();
-            }
-        };
-
-        let pos = args.pos.unwrap_or_default();
-        let pos = if pos < 0 {
-            let strlen = i64::try_from(string.len()).unwrap_or_default();
-            let pos = strlen + pos;
-            if pos < 0 {
-                return sys::mrb_sys_nil_value();
-            }
-            usize::try_from(pos).expect("positive i64 must be usize")
-        } else {
-            usize::try_from(pos).expect("positive i64 must be usize")
-        };
-        // onig will panic if pos is beyond the end of string
-        if pos > string.len() {
-            return sys::mrb_sys_nil_value();
-        }
-        let mut region = Region::new();
-        let is_match = regexp.borrow().regex.search_with_options(
-            string.as_str(),
-            pos,
-            string.len(),
-            SearchOptions::SEARCH_OPTION_NONE,
-            Some(&mut region),
-        );
-        let last_matched_string = if let Some((start, end)) = region.pos(0) {
-            Value::from_mrb(&interp, string[start..end].to_owned()).inner()
-        } else {
-            sys::mrb_sys_nil_value()
-        };
-        sys::mrb_gv_set(
-            mrb,
-            interp.borrow_mut().sym_intern("$&"),
-            last_matched_string,
-        );
-        let data = if is_match.is_some() {
-            if let Some(captures) = regexp.borrow().regex.captures(&string[pos..]) {
-                let num_regexp_globals_to_set = {
-                    let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
-                    cmp::max(num_previously_set_globals, captures.len())
-                };
-                for group in 1..=num_regexp_globals_to_set {
-                    let value = Value::from_mrb(&interp, captures.at(group));
-                    sys::mrb_gv_set(
-                        mrb,
-                        interp.borrow_mut().sym_intern(&format!("${}", group)),
-                        value.inner(),
-                    );
-                }
-                interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
-            }
-
-            let data = MatchData::new(string.as_str(), regexp.borrow().clone(), 0, string.len());
-            unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, None))
-        } else {
-            sys::mrb_sys_nil_value()
-        };
-        sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), data);
-        if let Some(block) = args.block {
-            if sys::mrb_sys_value_is_nil(data) {
-                sys::mrb_sys_nil_value()
-            } else {
-                sys::mrb_yield(mrb, block.inner(), data)
-            }
-        } else {
-            data
+        let value = Value::new(&interp, slf);
+        let result = match_::Args::extract(&interp).and_then(|args| match_::method(&interp, args, &value));
+        match result {
+            Ok(result) => result.inner(),
+            Err(match_::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#match error"),
+            Err(match_::Error::PosType) => TypeError::raise(&interp, "No implicit conversion into Integer"),
+            Err(match_::Error::StringType) => TypeError::raise(&interp, "No implicit conversion into String"),
         }
     }
 
