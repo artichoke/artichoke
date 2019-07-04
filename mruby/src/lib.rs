@@ -221,23 +221,68 @@ pub mod top_self;
 pub mod value;
 pub mod warn;
 
+/// Re-exported bindings from [`mruby_sys`].
+///
+/// Useful for referring to [`mruby_sys`] from macros defined in mruby crate.
 pub use mruby_sys as sys;
 
+/// Interpreter instance.
+///
+/// The interpreter [`State`](state::State) is wrapped in an `Rc<RefCell<_>>`.
+///
+/// The [`Rc`] enables the State to be cloned so it can be stored in the
+/// [`sys::mrb_state`],
+/// [extracted in `extern "C"` functions](interpreter::Interpreter::from_user_data),
+/// and used in [`Value`](value::Value) instances.
+///
+/// The [`RefCell`] enables mutable access to the underlying
+/// [`State`](state::State), even across an FFI boundary.
+///
+/// Functionality is added to the interpreter via traits, for example,
+/// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::MrbEval).
 pub type Mrb = Rc<RefCell<state::State>>;
 
+/// Errors returned by mruby crate.
 #[derive(Debug)]
 pub enum MrbError {
+    /// Failed to create an [argspec](sys::args) `CString`.
     ArgSpec,
+    /// Failed to convert from a Rust type to a [`sys::mrb_value`].
     ConvertToRuby(convert::Error<value::types::Rust, value::types::Ruby>),
+    /// Failed to convert from a [`sys::mrb_value`] to a Rust type.
     ConvertToRust(convert::Error<value::types::Ruby, value::types::Rust>),
+    /// Exception raised during eval.
+    ///
+    /// See [`MrbEval`](eval::MrbEval).
     // TODO: this should really be an `Exception` instead of a `String`.
     Exec(String),
+    /// Unable to initalize interpeter.
+    ///
+    /// See [`sys::mrb_open`],
+    /// [`Interpreter::create`](interpreter::Interpreter::create).
     New,
+    /// Class or module with this name is not defined in the mruby VM.
     NotDefined(String),
+    /// Unable to load Ruby source file with this path from the embedded
+    /// sources.
+    ///
+    /// See [`rust_embed`](https://docs.rs/rust-embed/).
     SourceNotFound(String),
+    /// Arg count exceeds maximum allowed my mruby.
+    ///
+    /// Affects [`sys::mrb_funcall`], [`sys::mrb_funcall_argv`],
+    /// [`sys::mrb_funcall_with_block`], [`sys::mrb_yield`], and
+    /// [`sys::mrb_yield_argv`].
     TooManyArgs { given: usize, max: usize },
+    /// Attempted to extract an [`Mrb`] from a [`sys::mrb_state`] but could not.
     Uninitialized,
+    /// Eval or funcall returned an interpreter-internal value.
+    ///
+    /// See [`Value::is_unreachable`](value::Value::is_unreachable).
     UnreachableValue(sys::mrb_vtype),
+    /// [`io::Error`] when interacting with virtual filesystem.
+    ///
+    /// See [`mruby_vfs`].
     Vfs(io::Error),
 }
 
