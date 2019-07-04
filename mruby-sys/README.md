@@ -21,7 +21,7 @@ things with C unions that are more convenient to do in C.
 
 ## License
 
-mruby-sys is licensed under the [MIT License](../LICENCE).
+mruby-sys is licensed under the [MIT License](../LICENSE).
 
 Some portions of mruby-sys are derived from
 [mrusty @ 1.0.0](https://github.com/anima-engine/mrusty/tree/v1.0.0) which is
