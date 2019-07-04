@@ -27,6 +27,7 @@ class SpecCollector
     @failures = 0
     @skipped = 0
     @not_implemented = 0
+    @current_description = nil
   end
 
   def success?
@@ -41,6 +42,8 @@ class SpecCollector
     collector = self
     MSpec.current.before(:each) { collector.begin }
     puts "\n", "In #{description}:", ''
+    @current_description = description
+    nil
   end
 
   def begin
@@ -71,6 +74,9 @@ class SpecCollector
     skipped = true if state.it == 'is multi-byte character sensitive'
     skipped = true if state.it =~ /UTF-8/
     skipped = true if state.it =~ /\\u escape/
+
+    skipped = true if @current_description == 'Regexp#initialize'
+
     if skipped
       @skipped += 1
       print "\b\e[33mS\e[0m"
