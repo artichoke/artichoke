@@ -8,8 +8,8 @@ use crate::Mrb;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
-    BadType,
     Fatal,
+    NoImplicitConversionToString,
 }
 
 #[derive(Debug, Clone)]
@@ -30,7 +30,7 @@ impl Args {
         if let Ok(pattern) = String::try_from_mrb(interp, Value::new(interp, string)) {
             Ok(Self { pattern })
         } else {
-            Err(Error::BadType)
+            Err(Error::NoImplicitConversionToString)
         }
     }
 }

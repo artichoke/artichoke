@@ -226,7 +226,7 @@ impl Regexp {
         let result = escape::Args::extract(&interp).and_then(|args| escape::method(&interp, args));
         match result {
             Ok(result) => result.inner(),
-            Err(escape::Error::BadType) => {
+            Err(escape::Error::NoImplicitConversionToString) => {
                 TypeError::raise(&interp, "no implicit conversion into String")
             }
             Err(escape::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp::escape error"),
@@ -388,7 +388,7 @@ impl Regexp {
             .and_then(|args| case_compare::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(case_compare::Error::BadType) => Value::from_mrb(&interp, false).inner(),
+            Err(case_compare::Error::NoImplicitConversionToString) => Value::from_mrb(&interp, false).inner(),
             Err(case_compare::Error::Fatal) => {
                 RuntimeError::raise(&interp, "fatal Regexp#=== error")
             }
