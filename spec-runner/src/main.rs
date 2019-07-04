@@ -9,12 +9,10 @@ use std::env;
 use std::fs;
 use std::process;
 
-use mruby::interpreter::Interpreter;
-
 mod mspec;
 
 pub fn main() {
-    let interp = match Interpreter::create() {
+    let interp = match mruby::interpreter() {
         Ok(interp) => interp,
         Err(err) => {
             eprintln!("{}", err);

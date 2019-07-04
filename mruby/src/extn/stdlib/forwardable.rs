@@ -18,12 +18,11 @@ pub struct Forwardable;
 #[cfg(test)]
 mod tests {
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
 
     #[test]
     #[allow(clippy::shadow_unrelated)]
     fn forwardable() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .eval(
                 r#"
@@ -88,7 +87,7 @@ r.record_number(0)
 
     #[test]
     fn forwardable_another_example() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp
             .eval(
                 r#"
@@ -145,7 +144,7 @@ out << q.first
 
     #[test]
     fn forwardable_def_instance_delegator() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp
             .eval(
                 r#"

@@ -3,7 +3,6 @@
 
 use mruby::convert::FromMrb;
 use mruby::eval::{EvalContext, MrbEval};
-use mruby::interpreter::Interpreter;
 use mruby::sys;
 use mruby::value::Value;
 use std::env;
@@ -12,7 +11,7 @@ use std::io::{self, Read};
 use std::process;
 
 fn main() {
-    let interp = match Interpreter::create() {
+    let interp = match mruby::interpreter() {
         Ok(interp) => interp,
         Err(err) => {
             eprintln!("{}", err);

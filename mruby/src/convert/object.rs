@@ -155,7 +155,6 @@ mod tests {
     use crate::convert::object::RustBackedValue;
     use crate::convert::FromMrb;
     use crate::def::{rust_data_free, ClassLike, Define};
-    use crate::interpreter::Interpreter;
     use crate::sys;
     use crate::value::{Value, ValueLike};
 
@@ -193,7 +192,7 @@ mod tests {
 
     #[test]
     fn convert_obj_roundtrip() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = interp.borrow_mut().def_class::<Container>(
             "Container",
             None,
@@ -222,7 +221,7 @@ mod tests {
 
     #[test]
     fn convert_obj_not_data() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = interp.borrow_mut().def_class::<Container>(
             "Container",
             None,

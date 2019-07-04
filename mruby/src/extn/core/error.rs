@@ -200,7 +200,6 @@ mod tests {
     use crate::exception::Exception;
     use crate::extn::core::error::{RubyException, RuntimeError};
     use crate::file::MrbFile;
-    use crate::interpreter::Interpreter;
     use crate::sys;
     use crate::{Mrb, MrbError};
 
@@ -225,7 +224,7 @@ mod tests {
 
     #[test]
     fn raise() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         Run::require(Rc::clone(&interp)).unwrap();
         let value = interp.eval("Run.run").map(|_| ());
         let expected = Exception::new(

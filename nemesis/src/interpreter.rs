@@ -1,7 +1,6 @@
 //! Create or retrieve an interpreter for a request.
 
 use mruby::eval::MrbEval;
-use mruby::interpreter::Interpreter;
 use mruby::{Mrb, MrbError};
 use mruby_gems::rubygems::rack;
 use ref_thread_local::RefThreadLocal;
@@ -52,7 +51,7 @@ impl ExecMode {
                     "Initializing single use interpreter for app at {}",
                     mount_path
                 );
-                let interp = Interpreter::create()?;
+                let interp = mruby::interpreter()?;
                 rack::init(&interp)?;
                 nemesis::init(&interp)?;
                 // Preload required gem sources
@@ -79,7 +78,7 @@ impl ExecMode {
                         "Initializing thread local interpreter for app at {}",
                         mount_path
                     );
-                    let interp = Interpreter::create()?;
+                    let interp = mruby::interpreter()?;
                     rack::init(&interp)?;
                     nemesis::init(&interp)?;
                     // Preload required gem sources

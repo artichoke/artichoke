@@ -19,7 +19,6 @@ mod tests {
     use mruby::def::EnclosingRubyScope;
     use mruby::eval::MrbEval;
     use mruby::file::MrbFile;
-    use mruby::interpreter::Interpreter;
     use mruby::load::MrbLoadSources;
     use mruby::{Mrb, MrbError};
 
@@ -64,7 +63,7 @@ mod tests {
 
     #[test]
     fn require_mrbfile_before_sources() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = mruby::interpreter().expect("mrb init");
         Foo::init(&interp).expect("gem init");
         assert_eq!(interp.eval("require 'foo'").map(|_| ()), Ok(()));
     }

@@ -17,7 +17,6 @@ use crate::{Mrb, MrbError};
 /// This function is unsafe! It manipulates a raw pointer stored as a
 /// [`c_void`](std::ffi::c_void) on `mrb->ud`. `from_user_data` assumes that
 /// this [`c_void`](std::ffi::c_void) was created with [`Rc::into_raw`], see
-/// [`Interpreter::create`](crate::interpreter::Interpreter::create). After
 /// calling this function, [`Rc::strong_count`] on the [`Mrb`] instance will
 /// increase by one.
 pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Mrb, MrbError> {
@@ -50,7 +49,6 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Mrb, MrbError> 
 mod tests {
     use std::rc::Rc;
 
-    use crate::interpreter::Interpreter;
     use crate::MrbError;
 
     #[test]
@@ -61,7 +59,7 @@ mod tests {
 
     #[test]
     fn from_user_data_null_user_data() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let mrb = interp.borrow().mrb;
         unsafe {
             // fake null user data
@@ -73,7 +71,7 @@ mod tests {
 
     #[test]
     fn from_user_data() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let mrb = interp.borrow().mrb;
         let res = unsafe { super::from_user_data(mrb) };
         assert!(res.is_ok());
@@ -81,7 +79,7 @@ mod tests {
 
     #[test]
     fn from_user_data_rc_refcount() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         assert_eq!(Rc::strong_count(&interp), 1);
         let mrb = interp.borrow().mrb;
         let res = unsafe { super::from_user_data(mrb) };

@@ -23,12 +23,11 @@ mod tests {
 
     use crate::convert::TryFromMrb;
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
     // use crate::MrbError;
 
     #[test]
     fn thread_required_by_default() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp
             .eval("Object.const_defined?(:Thread)")
             .expect("thread");
@@ -37,7 +36,7 @@ mod tests {
 
     #[test]
     fn thread_current_is_main() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = "Thread.current == Thread.main";
         let result = interp.eval(spec).expect("spec");
         assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));
@@ -48,7 +47,7 @@ mod tests {
 
     #[test]
     fn thread_join_value() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = "Thread.new { 2 + 3 }.join.value == 5";
         let result = interp.eval(spec).expect("spec");
         assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));
@@ -59,7 +58,7 @@ mod tests {
 
     #[test]
     fn thread_main_is_running() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = "Thread.current.status == 'run'";
         let result = interp.eval(spec).expect("spec");
         assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));
@@ -70,7 +69,7 @@ mod tests {
 
     #[test]
     fn thread_spawn() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = "Thread.new { Thread.current }.join.value != Thread.current";
         let result = interp.eval(spec).expect("spec");
         assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));
@@ -87,7 +86,7 @@ mod tests {
 
     #[test]
     fn thread_locals() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = r#"
 Thread.current[:local] = 42
 Thread.new { Thread.current.keys.empty? }.join.value
@@ -118,7 +117,7 @@ Thread.current.thread_variable_get(:local) == 42
 
     #[test]
     fn thread_abort_on_exception() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = r#"
 Thread.abort_on_exception = true
 Thread.new { raise 'failboat' }.join

@@ -406,13 +406,12 @@ mod tests {
     use crate::convert::FromMrb;
     use crate::eval::MrbEval;
     use crate::gc::MrbGarbageCollection;
-    use crate::interpreter::Interpreter;
     use crate::value::{Value, ValueLike};
     use crate::MrbError;
 
     #[test]
     fn to_s_true() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, true);
         let string = value.to_s();
@@ -421,7 +420,7 @@ mod tests {
 
     #[test]
     fn debug_true() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, true);
         let debug = value.to_s_debug();
@@ -430,7 +429,7 @@ mod tests {
 
     #[test]
     fn inspect_true() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, true);
         let debug = value.inspect();
@@ -439,7 +438,7 @@ mod tests {
 
     #[test]
     fn to_s_false() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, false);
         let string = value.to_s();
@@ -448,7 +447,7 @@ mod tests {
 
     #[test]
     fn debug_false() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, false);
         let debug = value.to_s_debug();
@@ -457,7 +456,7 @@ mod tests {
 
     #[test]
     fn inspect_false() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, false);
         let debug = value.inspect();
@@ -466,7 +465,7 @@ mod tests {
 
     #[test]
     fn to_s_nil() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, None::<Value>);
         let string = value.to_s();
@@ -475,7 +474,7 @@ mod tests {
 
     #[test]
     fn debug_nil() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, None::<Value>);
         let debug = value.to_s_debug();
@@ -484,7 +483,7 @@ mod tests {
 
     #[test]
     fn inspect_nil() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, None::<Value>);
         let debug = value.inspect();
@@ -493,7 +492,7 @@ mod tests {
 
     #[test]
     fn to_s_fixnum() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, 255);
         let string = value.to_s();
@@ -502,7 +501,7 @@ mod tests {
 
     #[test]
     fn debug_fixnum() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, 255);
         let debug = value.to_s_debug();
@@ -511,7 +510,7 @@ mod tests {
 
     #[test]
     fn inspect_fixnum() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, 255);
         let debug = value.inspect();
@@ -520,7 +519,7 @@ mod tests {
 
     #[test]
     fn to_s_string() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, "interstate");
         let string = value.to_s();
@@ -529,7 +528,7 @@ mod tests {
 
     #[test]
     fn debug_string() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, "interstate");
         let debug = value.to_s_debug();
@@ -538,7 +537,7 @@ mod tests {
 
     #[test]
     fn inspect_string() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, "interstate");
         let debug = value.inspect();
@@ -547,7 +546,7 @@ mod tests {
 
     #[test]
     fn to_s_empty_string() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, "");
         let string = value.to_s();
@@ -556,7 +555,7 @@ mod tests {
 
     #[test]
     fn debug_empty_string() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, "");
         let debug = value.to_s_debug();
@@ -565,7 +564,7 @@ mod tests {
 
     #[test]
     fn inspect_empty_string() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
 
         let value = Value::from_mrb(&interp, "");
         let debug = value.inspect();
@@ -574,7 +573,7 @@ mod tests {
 
     #[test]
     fn is_dead() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let arena = interp.create_arena_savepoint();
         let live = interp.eval("'dead'").expect("value");
         assert!(!live.is_dead());
@@ -591,7 +590,7 @@ mod tests {
 
     #[test]
     fn immediate_is_dead() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let arena = interp.create_arena_savepoint();
         let live = interp.eval("27").expect("value");
         assert!(!live.is_dead());
@@ -612,7 +611,7 @@ mod tests {
 
     #[test]
     fn funcall() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let nil = Value::from_mrb(&interp, None::<Value>);
         assert!(nil.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
         let s = Value::from_mrb(&interp, "foo");
@@ -626,7 +625,7 @@ mod tests {
 
     #[test]
     fn funcall_different_types() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let nil = Value::from_mrb(&interp, None::<Value>);
         let s = Value::from_mrb(&interp, "foo");
         let eql = nil.funcall::<bool, _, _>("==", &[s]);
@@ -635,7 +634,7 @@ mod tests {
 
     #[test]
     fn funcall_type_error() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let nil = Value::from_mrb(&interp, None::<Value>);
         let s = Value::from_mrb(&interp, "foo");
         let result = s.funcall::<String, _, _>("+", &[nil]);
@@ -647,7 +646,7 @@ mod tests {
 
     #[test]
     fn funcall_method_not_exists() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let nil = Value::from_mrb(&interp, None::<Value>);
         let s = Value::from_mrb(&interp, "foo");
         let result = nil.funcall::<bool, _, _>("garbage_method_name", &[s]);

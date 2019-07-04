@@ -128,13 +128,12 @@ impl MrbExceptionHandler for Mrb {
 mod tests {
     use crate::eval::MrbEval;
     use crate::exception::Exception;
-    use crate::interpreter::Interpreter;
     use crate::value::ValueLike;
     use crate::MrbError;
 
     #[test]
     fn return_exception() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp
             .eval("raise ArgumentError.new('waffles')")
             .map(|_| ());
@@ -149,7 +148,7 @@ mod tests {
 
     #[test]
     fn return_exception_with_no_backtrace() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp.eval("def bad; (; end").map(|_| ());
         let expected = Exception::new("SyntaxError", "waffles", None, "SyntaxError: syntax error");
         assert_eq!(result, Err(MrbError::Exec(expected.to_string())));
@@ -157,7 +156,7 @@ mod tests {
 
     #[test]
     fn raise_does_not_panic_or_segfault() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let _ = interp.eval(r#"raise 'foo'"#);
         let _ = interp.eval(r#"raise 'foo'"#);
         let _ = interp.eval(r#"eval "raise 'foo'""#);

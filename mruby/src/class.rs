@@ -205,12 +205,11 @@ mod tests {
     use crate::convert::TryFromMrb;
     use crate::def::{ClassLike, Define, EnclosingRubyScope};
     use crate::eval::MrbEval;
-    use crate::interpreter::Interpreter;
     use crate::module;
 
     #[test]
     fn super_class() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let standard_error = Rc::new(RefCell::new(Spec::new("StandardError", None, None)));
         let spec = {
             let mut api = interp.borrow_mut();
@@ -235,7 +234,7 @@ mod tests {
     fn refcell_allows_mutable_class_specs_after_attached_as_enclosing_scope() {
         struct BaseClass;
         struct SubClass;
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let (base, sub) = {
             let mut api = interp.borrow_mut();
             let base = api.def_class::<BaseClass>("BaseClass", None, None);
@@ -255,14 +254,14 @@ mod tests {
 
     #[test]
     fn rclass_for_undef_root_class() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = Spec::new("Foo", None, None);
         assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_undef_nested_class() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let scope = module::Spec::new("Kernel", None);
         let scope = EnclosingRubyScope::module(Rc::new(RefCell::new(scope)));
         let spec = Spec::new("Foo", Some(scope), None);
@@ -271,14 +270,14 @@ mod tests {
 
     #[test]
     fn rclass_for_root_class() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let spec = Spec::new("StandardError", None, None);
         assert!(spec.rclass(&interp).is_some());
     }
 
     #[test]
     fn rclass_for_nested_class() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .eval("module Foo; class Bar; end; end")
             .expect("eval");
@@ -290,7 +289,7 @@ mod tests {
 
     #[test]
     fn rclass_for_nested_class_under_class() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp.eval("class Foo; class Bar; end; end").expect("eval");
         let spec = Spec::new("Foo", None, None);
         let spec = EnclosingRubyScope::class(Rc::new(RefCell::new(spec)));

@@ -86,7 +86,7 @@ impl EnclosingRubyScope {
     /// struct Fixnum;
     /// struct Inner;
     ///
-    /// let interp = Interpreter::create().expect("mrb init");
+    /// let interp = crate::interpreter().expect("mrb init");
     /// let mut api = interp.borrow_mut();
     /// if let Some(scope) = api.class_spec::<Fixnum>().map(EnclosingRubyScope::class) {
     ///     api.def_class::<Inner>("Inner", Some(scope), None);
@@ -121,7 +121,7 @@ impl EnclosingRubyScope {
     /// struct Kernel;
     /// struct Inner;
     ///
-    /// let interp = Interpreter::create().expect("mrb init");
+    /// let interp = crate::interpreter().expect("mrb init");
     /// let mut api = interp.borrow_mut();
     /// if let Some(scope) = api.module_spec::<Kernel>().map(EnclosingRubyScope::module) {
     ///     api.def_class::<Inner>("Inner", Some(scope), None);
@@ -256,7 +256,6 @@ mod tests {
     use std::rc::Rc;
 
     use crate::def::{ClassLike, Define, EnclosingRubyScope};
-    use crate::interpreter::Interpreter;
 
     #[test]
     fn fqname() {
@@ -268,7 +267,7 @@ mod tests {
         struct ClassUnderClass; // A::C::F
 
         // Setup: define module and class hierarchy
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         {
             let mut api = interp.borrow_mut();
             let root = api.def_module::<Root>("A", None);
@@ -352,7 +351,6 @@ mod tests {
         use crate::convert::TryFromMrb;
         use crate::def::{ClassLike, Define};
         use crate::eval::MrbEval;
-        use crate::interpreter::Interpreter;
         use crate::sys;
 
         #[test]
@@ -370,7 +368,7 @@ mod tests {
                     }
                 }
             }
-            let interp = Interpreter::create().expect("mrb init");
+            let interp = crate::interpreter().expect("mrb init");
             let (cls, module) = {
                 let mut api = interp.borrow_mut();
                 let cls = api.def_class::<Class>("DefineMethodTestClass", None, None);

@@ -256,7 +256,6 @@ mod tests {
     use crate::convert::TryFromMrb;
     use crate::eval::MrbEval;
     use crate::file::MrbFile;
-    use crate::interpreter::Interpreter;
     use crate::load::MrbLoadSources;
     use crate::{Mrb, MrbError};
 
@@ -278,7 +277,7 @@ mod tests {
             }
         }
 
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_file_for_type::<_, File>("file.rb")
             .expect("def file");
@@ -304,7 +303,7 @@ mod tests {
 
     #[test]
     fn require_absolute_path() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("/foo/bar/source.rb", "# a source file")
             .expect("def file");
@@ -316,7 +315,7 @@ mod tests {
 
     #[test]
     fn require_relative_with_dotted_path() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("/foo/bar/source.rb", "require_relative '../bar.rb'")
             .expect("def file");
@@ -329,7 +328,7 @@ mod tests {
 
     #[test]
     fn require_directory() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp.eval("require '/src'").map(|_| ());
         let expected = r#"
 (eval):1: cannot load such file -- /src (LoadError)
@@ -347,7 +346,7 @@ mod tests {
                 Ok(())
             }
         }
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp
             .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
             .expect("def");
@@ -372,7 +371,7 @@ mod tests {
                 Ok(())
             }
         }
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
         interp
             .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
@@ -392,7 +391,7 @@ mod tests {
     #[allow(clippy::shadow_unrelated)]
     fn kernel_throw_catch() {
         // https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-catch
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         let result = interp
             .eval("catch(1) { 123 }")
             .unwrap()

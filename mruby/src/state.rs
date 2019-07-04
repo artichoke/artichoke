@@ -13,7 +13,7 @@ use crate::module;
 use crate::sys::{self, DescribeState};
 
 // NOTE: MrbState assumes that it it is stored in `mrb_state->ud` wrapped in a
-// [`Rc`] with type [`Mrb`] as created by [`Interpreter::create`].
+// [`Rc`] with type [`Mrb`] as created by [`crate::interpreter`].
 pub struct State {
     // TODO: Make this private
     pub mrb: *mut sys::mrb_state,
@@ -78,7 +78,7 @@ impl State {
     ///     interp.fixnum(29).inner()
     /// }
     ///
-    /// let interp = Interpreter::create().expect("mrb init");
+    /// let interp = crate::interpreter().expect("mrb init");
     /// let spec = {
     ///     let mut api = interp.borrow_mut();
     ///     let spec = api.def_class::<()>("Container", None, None);
@@ -142,7 +142,7 @@ impl State {
     ///     interp.fixnum(29).inner()
     /// }
     ///
-    /// let interp = Interpreter::create().expect("mrb init");
+    /// let interp = crate::interpreter().expect("mrb init");
     /// let spec = {
     ///     let mut api = interp.borrow_mut();
     ///     let spec = api.def_module::<()>("Container", None);

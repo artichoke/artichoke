@@ -22,7 +22,7 @@
 //! use mruby::eval::MrbEval;
 //! use mruby::interpreter::Interpreter;
 //!
-//! let interp = Interpreter::create().unwrap();
+//! let interp = crate::interpreter().unwrap();
 //! let result = interp.eval("10 * 10").unwrap();
 //! let result = result.try_into::<i64>();
 //! assert_eq!(result, Ok(100));
@@ -57,7 +57,7 @@
 //! use mruby::interpreter::Interpreter;
 //! use mruby::load::MrbLoadSources;
 //!
-//! let mut interp = Interpreter::create().unwrap();
+//! let mut interp = crate::interpreter().unwrap();
 //! let code = "
 //! def source_location
 //!   __FILE__
@@ -147,7 +147,7 @@
 //!     }
 //! }
 //!
-//! let mut interp = Interpreter::create().unwrap();
+//! let mut interp = crate::interpreter().unwrap();
 //! interp.def_file_for_type::<_, Container>("container.rb").unwrap();
 //! interp.eval("require 'container'").unwrap();
 //! let result = interp.eval("Container.new(15).value * 24").unwrap();
@@ -214,7 +214,7 @@ pub mod ffi;
 pub mod file;
 pub mod fs;
 pub mod gc;
-pub mod interpreter;
+mod interpreter;
 pub mod load;
 pub mod method;
 pub mod module;
@@ -223,6 +223,7 @@ pub mod top_self;
 pub mod value;
 pub mod warn;
 
+pub use interpreter::interpreter;
 /// Re-exported bindings from [`mruby_sys`].
 ///
 /// Useful for referring to [`mruby_sys`] from macros defined in mruby crate.
@@ -258,10 +259,9 @@ pub enum MrbError {
     /// See [`MrbEval`](eval::MrbEval).
     // TODO: this should really be an `Exception` instead of a `String`.
     Exec(String),
-    /// Unable to initalize interpeter.
+    /// Unable to initalize interpreter.
     ///
-    /// See [`sys::mrb_open`],
-    /// [`Interpreter::create`](interpreter::Interpreter::create).
+    /// See [`sys::mrb_open`], [`interpreter`](interpreter::interpreter).
     New,
     /// Class or module with this name is not defined in the mruby VM.
     NotDefined(String),

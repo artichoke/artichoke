@@ -15,7 +15,6 @@
 
 use mruby::convert::FromMrb;
 use mruby::gc::MrbGarbageCollection;
-use mruby::interpreter::Interpreter;
 use mruby::value::{Value, ValueLike};
 
 mod leak;
@@ -25,7 +24,7 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 30;
 
 #[test]
 fn funcall_arena() {
-    let interp = Interpreter::create().expect("mrb init");
+    let interp = mruby::interpreter().expect("mrb init");
     let s = Value::from_mrb(&interp, "a".repeat(1024 * 1024));
 
     leak::Detector::new("ValueLike::funcall", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {

@@ -80,12 +80,11 @@ mod tests {
     use crate::convert::FromMrb;
     use crate::eval::MrbEval;
     use crate::extn::core::string;
-    use crate::interpreter::Interpreter;
     use crate::value::{Value, ValueLike};
 
     #[test]
     fn string_equal_squiggle() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
         let value = interp.eval(r#""cat o' 9 tails" =~ /\d/"#).unwrap();
@@ -96,7 +95,7 @@ mod tests {
 
     #[test]
     fn string_idx() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
         assert_eq!(
@@ -151,7 +150,7 @@ mod tests {
 
     #[test]
     fn string_scan() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
         let s = Value::from_mrb(&interp, "abababa");
@@ -193,7 +192,7 @@ mod tests {
 
     #[test]
     fn string_unary_minus() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
         let s = interp.eval("-'abababa'").expect("eval");

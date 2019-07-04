@@ -22,7 +22,6 @@ use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use mruby::def::{rust_data_free, ClassLike, Define};
 use mruby::eval::MrbEval;
 use mruby::file::MrbFile;
-use mruby::interpreter::Interpreter;
 use mruby::load::MrbLoadSources;
 use mruby::sys;
 use mruby::value::Value;
@@ -96,7 +95,7 @@ impl MrbFile for Container {
 #[test]
 fn rust_backed_mrb_value_smart_pointer_leak() {
     leak::Detector::new("smart pointer", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = mruby::interpreter().expect("mrb init");
         interp
             .def_file_for_type::<_, Container>("container")
             .expect("def file");

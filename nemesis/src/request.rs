@@ -74,7 +74,6 @@ pub trait Request {
 mod tests {
     use mruby::convert::FromMrb;
     use mruby::eval::MrbEval;
-    use mruby::interpreter::Interpreter;
     use mruby::value::{Value, ValueLike};
     use mruby_gems::rubygems::rack;
 
@@ -83,7 +82,7 @@ mod tests {
     // real ones in Ruby source.
     #[test]
     fn rack_constants_match() {
-        let interp = Interpreter::create().expect("mrb init");
+        let interp = mruby::interpreter().expect("mrb init");
         rack::init(&interp).unwrap();
         let rack = interp.eval("require 'rack'; Rack").unwrap();
         assert_eq!(
