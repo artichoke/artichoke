@@ -2,6 +2,7 @@ use onig::{Regex, RegexOptions, Region, SearchOptions, Syntax};
 use std::cmp;
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
 use std::mem;
 use std::rc::Rc;
 
@@ -21,6 +22,7 @@ pub mod casefold;
 pub mod eql;
 pub mod escape;
 pub mod fixed_encoding;
+pub mod hash;
 pub mod initialize;
 pub mod names;
 pub mod syntax;
@@ -71,6 +73,9 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     );
     regexp
         .borrow_mut()
+        .add_method("hash", Regexp::hash, sys::mrb_args_none());
+    regexp
+        .borrow_mut()
         .add_method("inspect", Regexp::inspect, sys::mrb_args_none());
     regexp
         .borrow_mut()
@@ -108,7 +113,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct Options {
     multiline: bool,
     ignore_case: bool,
@@ -374,6 +379,12 @@ impl Default for Encoding {
     }
 }
 
+impl Hash for Encoding {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_literal_string().hash(state);
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Regexp {
     literal_pattern: String,
@@ -394,6 +405,13 @@ impl Default for Regexp {
             encoding: Encoding::default(),
             regex: Rc::new(unsafe { mem::uninitialized::<Regex>() }),
         }
+    }
+}
+
+impl Hash for Regexp {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.literal_pattern.hash(state);
+        self.literal_options.hash(state);
     }
 }
 
@@ -789,6 +807,15 @@ impl Regexp {
             Err(fixed_encoding::Error::Fatal) => {
                 RuntimeError::raise(&interp, "fatal Regexp#fixed_encoding? error")
             }
+        }
+    }
+
+    unsafe extern "C" fn hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = interpreter_or_raise!(mrb);
+        let value = Value::new(&interp, slf);
+        match hash::method(&interp, &value) {
+            Ok(result) => result.inner(),
+            Err(hash::Error::Fatal) => RuntimeError::raise(&interp, "fatal Regexp#hash error"),
         }
     }
 
