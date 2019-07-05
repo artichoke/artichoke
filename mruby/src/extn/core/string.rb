@@ -12,6 +12,7 @@ class Encoding
   US_ASCII = new('US-ASCII')
   ASCII = US_ASCII
   EUC_JP = new('EUC-JP')
+  ISO_8859_1 = new('ISO-8859-1')
   Shift_JIS = new('Shift_JIS')
   SHIFT_JIS = Shift_JIS
   UTF_8 = new('UTF-8')
