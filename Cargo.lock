@@ -1393,6 +1393,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "spec-runner"
 version = "0.1.0"
 dependencies = [
+ "fs_extra 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "mruby 0.1.0",
  "rust-embed 4.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

@@ -12,13 +12,13 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;
     for source in Sources::iter() {
         let content = Sources::get(&source).map(Cow::into_owned).unwrap();
-        interp.def_rb_source_file(format!("mspec/{}", source), content)?;
+        interp.def_rb_source_file(source, content)?;
     }
     Ok(())
 }
 
 #[derive(RustEmbed)]
-#[folder = "$CARGO_MANIFEST_DIR/spec/mspec"]
+#[folder = "$OUT_DIR/mspec/lib"]
 struct Sources;
 
 #[derive(Debug)]
@@ -38,18 +38,17 @@ impl Runner {
     }
 
     pub fn add_spec<T: AsRef<[u8]>>(&mut self, source: &str, contents: T) -> Result<(), MrbError> {
-        self.specs.push(source.to_owned());
+        if !source.contains("/fixtures/") && !source.contains("/shared/") {
+            self.specs.push(source.to_owned());
+        }
         self.interp.def_rb_source_file(source, contents.as_ref())
     }
 
     pub fn run(self) -> Result<bool, MrbError> {
         init(&self.interp).unwrap();
+        self.interp.def_rb_source_file("/src/spec_helper.rb", "")?;
         self.interp
-            .def_rb_source_file("/src/spec_helper.rb", "")
-            .unwrap();
-        self.interp
-            .def_rb_source_file("/src/test/spec_runner", include_str!("spec_runner.rb"))
-            .unwrap();
+            .def_rb_source_file("/src/test/spec_runner", include_str!("spec_runner.rb"))?;
         if let Err(err) = self.interp.eval("require '/src/test/spec_runner'") {
             println!("{}", err);
             assert!(!self.enforce);

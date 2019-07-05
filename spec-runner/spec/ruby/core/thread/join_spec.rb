@@ -24,23 +24,23 @@ describe "Thread#join" do
   end
 
   it "returns nil if it is not finished when given a timeout" do
-    c = Channel.new
-    t = Thread.new { c.receive }
+    q = Queue.new
+    t = Thread.new { q.pop }
     begin
       t.join(0).should == nil
     ensure
-      c << true
+      q << true
     end
     t.join.should == t
   end
 
   it "accepts a floating point timeout length" do
-    c = Channel.new
-    t = Thread.new { c.receive }
+    q = Queue.new
+    t = Thread.new { q.pop }
     begin
       t.join(0.01).should == nil
     ensure
-      c << true
+      q << true
     end
     t.join.should == t
   end

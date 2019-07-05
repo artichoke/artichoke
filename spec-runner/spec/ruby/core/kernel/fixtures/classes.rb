@@ -454,12 +454,3 @@ class EvalSpecs
     return f
   end
 end
-
-# for Kernel#sleep to have Channel in it's specs
-# TODO: switch directly to queue for both Kernel#sleep and Thread specs?
-unless defined? Channel
-  require 'thread'
-  class Channel < Queue
-    alias receive shift
-  end
-end

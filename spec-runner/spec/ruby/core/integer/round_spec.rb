@@ -63,18 +63,19 @@ describe "Integer#round" do
     lambda { 42.round(obj) }.should raise_error(TypeError)
   end
 
-  ruby_version_is "2.4" do
-    it "returns different rounded values depending on the half option" do
-      25.round(-1, half: :up).should      eql(30)
-      25.round(-1, half: :down).should    eql(20)
-      25.round(-1, half: :even).should    eql(20)
-      35.round(-1, half: :up).should      eql(40)
-      35.round(-1, half: :down).should    eql(30)
-      35.round(-1, half: :even).should    eql(40)
-      (-25).round(-1, half: :up).should   eql(-30)
-      (-25).round(-1, half: :down).should eql(-20)
-      (-25).round(-1, half: :even).should eql(-20)
-    end
+  it "returns different rounded values depending on the half option" do
+    25.round(-1, half: :up).should      eql(30)
+    25.round(-1, half: :down).should    eql(20)
+    25.round(-1, half: :even).should    eql(20)
+    25.round(-1, half: nil).should      eql(30)
+    35.round(-1, half: :up).should      eql(40)
+    35.round(-1, half: :down).should    eql(30)
+    35.round(-1, half: :even).should    eql(40)
+    35.round(-1, half: nil).should      eql(40)
+    (-25).round(-1, half: :up).should   eql(-30)
+    (-25).round(-1, half: :down).should eql(-20)
+    (-25).round(-1, half: :even).should eql(-20)
+    (-25).round(-1, half: nil).should   eql(-30)
   end
 
   ruby_version_is "2.4"..."2.5" do
@@ -91,5 +92,10 @@ describe "Integer#round" do
       35.round(1, half: :down).should    eql(35)
       35.round(1, half: :even).should    eql(35)
     end
+  end
+
+  it "raises ArgumentError for an unknown rounding mode" do
+    lambda { 42.round(-1, half: :foo) }.should raise_error(ArgumentError, /invalid rounding mode: foo/)
+    lambda { 42.round(1, half: :foo) }.should raise_error(ArgumentError, /invalid rounding mode: foo/)
   end
 end
