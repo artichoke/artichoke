@@ -70,6 +70,8 @@ class SpecCollector
       skipped = true if state.it =~ /ASCII/
       skipped = true if state.it =~ /hexadecimal digits/
       skipped = true if state.message =~ /Regexp pattern/
+    elsif state.exception.is_a?(TypeError)
+      skipped = true if state.it =~ /encoding/
     elsif state.exception.is_a?(NotImplementedError)
       @not_implemented += 1
       return
