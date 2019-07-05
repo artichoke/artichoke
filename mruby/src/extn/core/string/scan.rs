@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use std::cmp;
 use std::mem;
 
@@ -84,9 +83,27 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
         for captures in regexp.regex.captures_iter(s.as_str()) {
             was_match = true;
             let mut groups = vec![];
-            for index in 1..=len {
-                groups.push(captures.at(index));
+            let num_regexp_globals_to_set = {
+                let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
+                cmp::max(num_previously_set_globals, captures.len())
+            };
+            for group in 0..num_regexp_globals_to_set {
+                let sym = if group == 0 {
+                    interp.borrow_mut().sym_intern("$&")
+                } else {
+                    interp.borrow_mut().sym_intern(&format!("${}", group))
+                };
+
+                let capture = captures.at(group);
+                if group > 0 {
+                    groups.push(captures.at(group));
+                }
+                unsafe {
+                    sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, capture).inner());
+                }
             }
+            interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
+
             let matched = Value::from_mrb(interp, groups);
             if let Some(pos) = captures.pos(0) {
                 matchdata.borrow_mut().set_region(pos.0, pos.1);
