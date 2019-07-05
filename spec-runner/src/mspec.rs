@@ -12,13 +12,13 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;
     for source in Sources::iter() {
         let content = Sources::get(&source).map(Cow::into_owned).unwrap();
-        interp.def_rb_source_file(format!("mspec/{}", source), content)?;
+        interp.def_rb_source_file(source, content)?;
     }
     Ok(())
 }
 
 #[derive(RustEmbed)]
-#[folder = "$CARGO_MANIFEST_DIR/spec/mspec"]
+#[folder = "$OUT_DIR/mspec/lib"]
 struct Sources;
 
 #[derive(Debug)]
