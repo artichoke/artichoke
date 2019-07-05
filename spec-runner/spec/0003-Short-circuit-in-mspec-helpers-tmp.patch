@@ -1,0 +1,28 @@
+From 3f00157f7d7e7ea9800686b3186f753f5150ebff Mon Sep 17 00:00:00 2001
+From: Ryan Lopopolo <rjl@hyperbo.la>
+Date: Thu, 4 Jul 2019 19:41:33 -0700
+Subject: [PATCH 3/6] Short-circuit in mspec helpers/tmp
+
+---
+ lib/mspec/helpers/tmp.rb | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/lib/mspec/helpers/tmp.rb b/lib/mspec/helpers/tmp.rb
+index 4e1273d..90538b2 100644
+--- a/lib/mspec/helpers/tmp.rb
++++ b/lib/mspec/helpers/tmp.rb
+@@ -3,6 +3,11 @@
+ # should clean up any temporary files created so that the temp
+ # directory is empty when the process exits.
+ 
++# mruby does not support `at_exit` and there is no need to clean up so only set
++# the `SPEC_TEMP_DIR` constant and return.
++SPEC_TEMP_DIR = "rubyspec_temp"
++return
++
+ SPEC_TEMP_DIR = File.expand_path(ENV["SPEC_TEMP_DIR"] || "rubyspec_temp")
+ 
+ SPEC_TEMP_UNIQUIFIER = "0"
+-- 
+2.22.0
+

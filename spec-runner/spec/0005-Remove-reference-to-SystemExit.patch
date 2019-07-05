@@ -1,0 +1,25 @@
+From 1371b01c66a09d43fa8eae340c6544edc1167deb Mon Sep 17 00:00:00 2001
+From: Ryan Lopopolo <rjl@hyperbo.la>
+Date: Thu, 4 Jul 2019 19:43:04 -0700
+Subject: [PATCH 5/6] Remove reference to SystemExit
+
+---
+ lib/mspec/runner/mspec.rb | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/lib/mspec/runner/mspec.rb b/lib/mspec/runner/mspec.rb
+index 1d1dbc3..e63ab16 100644
+--- a/lib/mspec/runner/mspec.rb
++++ b/lib/mspec/runner/mspec.rb
+@@ -103,8 +103,6 @@ module MSpec
+     begin
+       @env.instance_eval(&block)
+       return true
+-    rescue SystemExit => e
+-      raise e
+     rescue Exception => exc
+       register_exit 1
+       actions :exception, ExceptionState.new(current && current.state, location, exc)
+-- 
+2.22.0
+
