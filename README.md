@@ -103,12 +103,13 @@ A ferrocarril development environment has several dependencies.
 To familiarize yourself with the code in this workspace, consider reviewing
 these source files:
 
-| File                                          | Purpose                                | Learning Objective                            |
-| --------------------------------------------- | -------------------------------------- | --------------------------------------------- |
-| [manual.rs](/mruby/tests/manual.rs)           | [mruby crate](/mruby) integration test | Define Rust-backed Ruby sources               |
-| [nemesis.rs](nemesis/src/rubygems/nemesis.rs) | [nemesis crate](/nemesis) Ruby runtime | Define a [Gem](mruby-gems/src/lib.rs)         |
-| [ffi_tests.rs](/mruby-sys/src/ffi_tests.rs)   | C API test suite                       | Manipulate an interpreter with the C API      |
-| [repl.rs](/mruby-bin/src/repl.rs)             | REPL loop for `rirb`                   | Eval code on an interpreter and handle errors |
+| File                                          | Purpose                                                                | Learning Objective                                      |
+| --------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------- |
+| [manual.rs](/mruby/tests/manual.rs)           | [mruby crate](/mruby) integration test                                 | Define Rust-backed Ruby sources                         |
+| [extn::regexp](/mruby/src/extn/core/regexp)   | [`Regexp`](https://ruby-doc.org/core-2.6.3/Regexp.html) implementation | Implement a Ruby Core class with a mix of Rust and Ruby |
+| [nemesis.rs](nemesis/src/rubygems/nemesis.rs) | [nemesis crate](/nemesis) Ruby runtime                                 | Define a [Gem](mruby-gems/src/lib.rs)                   |
+| [ffi_tests.rs](/mruby-sys/src/ffi_tests.rs)   | C API test suite                                                       | Manipulate an interpreter with the C API                |
+| [repl.rs](/mruby-bin/src/repl.rs)             | REPL loop for `rirb`                                                   | Eval code on an interpreter and handle errors           |
 
 ### Known Missing Features
 
