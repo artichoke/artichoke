@@ -61,6 +61,10 @@ jobs:
             cargo doc --no-deps --all
           environment:
             RUSTDOCFLAGS: "-Z unstable-options --enable-index-page"
+      - run:
+          name: ruby/spec Compliance Regression Test
+          command: |
+            ./scripts/spec-compliance.sh
       - persist_to_workspace:
           root: target
           paths:

@@ -70,7 +70,7 @@ impl Args {
             first,
             &mut start,
             &mut len,
-            num_captures,
+            num_captures + 1,
             0_u8,
         );
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {

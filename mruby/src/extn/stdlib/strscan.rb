@@ -146,7 +146,9 @@ class StringScanner
   def matched
     return nil if @last_match.nil?
 
-    @last_match[0]
+    ret = @last_match[0]
+    ret = String.new(ret) unless ret.class == String
+    ret
   end
 
   def matched?
@@ -190,7 +192,9 @@ class StringScanner
   def post_match
     return nil if @last_match.nil?
 
-    @string[@last_match_charpos..-1]
+    ret = @string[@last_match_charpos..-1]
+    ret = String.new(ret) unless ret.class == String
+    ret
   end
 
   def pre_match
@@ -202,7 +206,9 @@ class StringScanner
       else
         @last_match.length
       end
-    @string[0...@last_match_charpos - match_len]
+    ret = @string[0...@last_match_charpos - match_len]
+    ret = String.new(ret) unless ret.class == String
+    ret
   end
 
   def reset
@@ -213,7 +219,9 @@ class StringScanner
   end
 
   def rest
-    @string[@charpos..-1]
+    ret = @string[@charpos..-1]
+    ret = String.new(ret) unless ret.class == String
+    ret
   end
 
   def rest?
@@ -252,7 +260,9 @@ class StringScanner
     @last_match_charpos = @charpos
 
     if return_string_p
-      @string[previous_charpos, match.end(0)]
+      ret = @string[previous_charpos, match.end(0)]
+      ret = String.new(ret) unless ret.class == String
+      ret
     else
       match.end(0)
     end
