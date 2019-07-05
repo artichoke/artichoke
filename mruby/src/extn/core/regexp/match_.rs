@@ -78,7 +78,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     };
     let pos = args.pos.unwrap_or_default();
     let pos = if pos < 0 {
-        let strlen = i64::try_from(string.len()).unwrap_or_default();
+        let strlen = i64::try_from(string.chars().count()).unwrap_or_default();
         let pos = strlen + pos;
         if pos < 0 {
             return Ok(Value::from_mrb(interp, None::<Value>));
@@ -88,12 +88,13 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         usize::try_from(pos).map_err(|_| Error::Fatal)?
     };
     // onig will panic if pos is beyond the end of string
-    if pos > string.len() {
+    if pos > string.chars().count() {
         return Ok(Value::from_mrb(interp, None::<Value>));
     }
+    let byte_offset = string.chars().take(pos).collect::<String>().len();
 
     let borrow = data.borrow();
-    let match_target = &string[pos..];
+    let match_target = &string[byte_offset..];
     if let Some(captures) = borrow.regex.captures(match_target) {
         let num_regexp_globals_to_set = {
             let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
@@ -131,7 +132,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                     Value::from_mrb(interp, post_match).inner(),
                 );
             }
-            matchdata.set_region(pos + match_pos.0, pos + match_pos.1);
+            matchdata.set_region(byte_offset + match_pos.0, byte_offset + match_pos.1);
         }
         let data = unsafe { matchdata.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)?;
         unsafe {
