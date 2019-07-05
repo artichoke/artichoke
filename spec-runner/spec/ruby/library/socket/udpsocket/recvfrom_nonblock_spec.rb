@@ -34,22 +34,26 @@ describe 'UDPSocket#recvfrom_nonblock' do
         it 'raises IO::WaitReadable' do
           lambda { @server.recvfrom_nonblock(1) }.should raise_error(IO::WaitReadable)
         end
+
+        it 'returns :wait_readable with exception: false' do
+          @server.recvfrom_nonblock(1, exception: false).should == :wait_readable
+        end
       end
 
       platform_is_not :windows do
         describe 'with data available' do
           before do
             @client.write('hello')
-
-            platform_is(:darwin, :freebsd) { IO.select([@server]) }
           end
 
           it 'returns an Array containing the data and an Array' do
+            IO.select([@server])
             @server.recvfrom_nonblock(1).should be_an_instance_of(Array)
           end
 
           describe 'the returned Array' do
             before do
+              IO.select([@server])
               @array = @server.recvfrom_nonblock(1)
             end
 
@@ -64,6 +68,7 @@ describe 'UDPSocket#recvfrom_nonblock' do
 
           describe 'the returned address Array' do
             before do
+              IO.select([@server])
               @addr = @server.recvfrom_nonblock(1)[1]
             end
 
