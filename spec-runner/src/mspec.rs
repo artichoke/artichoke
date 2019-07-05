@@ -38,18 +38,17 @@ impl Runner {
     }
 
     pub fn add_spec<T: AsRef<[u8]>>(&mut self, source: &str, contents: T) -> Result<(), MrbError> {
-        self.specs.push(source.to_owned());
+        if !source.contains("/fixtures/") && !source.contains("/shared/") {
+            self.specs.push(source.to_owned());
+        }
         self.interp.def_rb_source_file(source, contents.as_ref())
     }
 
     pub fn run(self) -> Result<bool, MrbError> {
         init(&self.interp).unwrap();
+        self.interp.def_rb_source_file("/src/spec_helper.rb", "")?;
         self.interp
-            .def_rb_source_file("/src/spec_helper.rb", "")
-            .unwrap();
-        self.interp
-            .def_rb_source_file("/src/test/spec_runner", include_str!("spec_runner.rb"))
-            .unwrap();
+            .def_rb_source_file("/src/test/spec_runner", include_str!("spec_runner.rb"))?;
         if let Err(err) = self.interp.eval("require '/src/test/spec_runner'") {
             println!("{}", err);
             assert!(!self.enforce);
