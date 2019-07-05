@@ -24,9 +24,15 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
         .captures(match_against)
         .ok_or(Error::NoMatch)?;
     let mut map = HashMap::default();
-    for (name, index) in borrow.regexp.regex.capture_names() {
-        let index = usize::try_from(index[0]).map_err(|_| Error::Fatal)?;
-        map.insert(name, Value::from_mrb(interp, captures.at(index)));
+    for (name, indexes) in borrow.regexp.regex.capture_names() {
+        'name: for index in indexes.iter().rev() {
+            let index = usize::try_from(*index).map_err(|_| Error::Fatal)?;
+            if let Some(capture) = captures.at(index) {
+                map.insert(name.to_owned(), Some(capture.to_owned()));
+                break 'name;
+            }
+            map.insert(name.to_owned(), None);
+        }
     }
     Ok(Value::from_mrb(interp, map))
 }

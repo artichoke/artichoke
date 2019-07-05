@@ -6,7 +6,7 @@ use std::mem;
 use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
 use crate::extn::core::matchdata::MatchData;
 use crate::sys;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::Mrb;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -37,6 +37,8 @@ impl Args {
             Ok(Args::Index(index))
         } else if let Ok(name) = String::try_from_mrb(interp, Value::new(interp, first)) {
             Ok(Args::Name(name))
+        } else if let Ok(index) = Value::new(interp, first).funcall::<i64, _, _>("to_int", &[]) {
+            Ok(Args::Index(index))
         } else {
             Err(Error::IndexType)
         }
@@ -69,8 +71,11 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                 .regex
                 .capture_names()
                 .find(|capture| capture.0 == name)
-                .ok_or(Error::NoGroup)?;
-            usize::try_from(index.1[0]).map_err(|_| Error::Fatal)?
+                .ok_or(Error::NoGroup)?
+                .1
+                .last()
+                .ok_or(Error::NoMatch)?;
+            usize::try_from(*index).map_err(|_| Error::Fatal)?
         }
     };
     let begin = captures.pos(index).ok_or(Error::NoMatch)?.0;
