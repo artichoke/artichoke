@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 # URI is a module providing classes to handle Uniform Resource Identifiers
 # (RFC2396[http://tools.ietf.org/html/rfc2396]).
 #
@@ -92,9 +93,8 @@
 module URI
   # :stopdoc:
   VERSION_CODE = '001000'.freeze
-  VERSION = VERSION_CODE.scan(/../).collect{|n| n.to_i}.join('.').freeze
+  VERSION = VERSION_CODE.scan(/../).collect(&:to_i).join('.').freeze
   # :startdoc:
-
 end
 
 require 'uri/common'

@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 # = uri/ldap.rb
 #
 # Author::
@@ -15,26 +16,24 @@
 require_relative 'generic'
 
 module URI
-
   #
   # LDAP URI SCHEMA (described in RFC2255).
   #--
   # ldap://<host>/<dn>[?<attrs>[?<scope>[?<filter>[?<extensions>]]]]
   #++
   class LDAP < Generic
-
     # A Default port of 389 for URI::LDAP.
     DEFAULT_PORT = 389
 
     # An Array of the available components for URI::LDAP.
-    COMPONENT = [
-      :scheme,
-      :host, :port,
-      :dn,
-      :attributes,
-      :scope,
-      :filter,
-      :extensions,
+    COMPONENT = %i[
+      scheme
+      host port
+      dn
+      attributes
+      scope
+      filter
+      extensions
     ].freeze
 
     # Scopes available for the starting point.
@@ -45,9 +44,9 @@ module URI
     # * SCOPE_SUB  - subtrees, all entries at all levels
     #
     SCOPE = [
-      SCOPE_ONE = 'one',
-      SCOPE_SUB = 'sub',
-      SCOPE_BASE = 'base',
+      SCOPE_ONE = 'one'.freeze,
+      SCOPE_SUB = 'sub'.freeze,
+      SCOPE_BASE = 'base'.freeze
     ].freeze
 
     #
@@ -73,21 +72,20 @@ module URI
     #       "/dc=example;dc=com", "query", nil, nil, nil])
     #
     def self.build(args)
-      tmp = Util::make_components_hash(self, args)
+      tmp = Util.make_components_hash(self, args)
 
-      if tmp[:dn]
-        tmp[:path] = tmp[:dn]
-      end
+      tmp[:path] = tmp[:dn] if tmp[:dn]
 
       query = []
-      [:extensions, :filter, :scope, :attributes].collect do |x|
-        next if !tmp[x] && query.size == 0
+      %i[extensions filter scope attributes].collect do |x|
+        next if !tmp[x] && query.empty?
+
         query.unshift(tmp[x])
       end
 
       tmp[:query] = query.join('?')
 
-      return super(tmp)
+      super(tmp)
     end
 
     #
@@ -109,9 +107,7 @@ module URI
     def initialize(*arg)
       super(*arg)
 
-      if @fragment
-        raise InvalidURIError, 'bad LDAP URL'
-      end
+      raise InvalidURIError, 'bad LDAP URL' if @fragment
 
       parse_dn
       parse_query
@@ -134,10 +130,10 @@ module URI
       if @query
         attrs, scope, filter, extensions = @query.split('?')
 
-        @attributes = attrs if attrs && attrs.size > 0
-        @scope      = scope if scope && scope.size > 0
-        @filter     = filter if filter && filter.size > 0
-        @extensions = extensions if extensions && extensions.size > 0
+        @attributes = attrs if attrs && !attrs.empty?
+        @scope      = scope if scope && !scope.empty?
+        @filter     = filter if filter && !filter.empty?
+        @extensions = extensions if extensions && !extensions.empty?
       end
     end
     private :parse_query
@@ -148,7 +144,8 @@ module URI
 
       query = []
       [@extensions, @filter, @scope, @attributes].each do |x|
-        next if !x && query.size == 0
+        next if !x && query.empty?
+
         query.unshift(x)
       end
       @query = query.join('?')
@@ -156,9 +153,7 @@ module URI
     private :build_path_query
 
     # Returns dn.
-    def dn
-      @dn
-    end
+    attr_reader :dn
 
     # Private setter for dn +val+.
     def set_dn(val)
@@ -175,9 +170,7 @@ module URI
     end
 
     # Returns attributes.
-    def attributes
-      @attributes
-    end
+    attr_reader :attributes
 
     # Private setter for attributes +val+.
     def set_attributes(val)
@@ -194,9 +187,7 @@ module URI
     end
 
     # Returns scope.
-    def scope
-      @scope
-    end
+    attr_reader :scope
 
     # Private setter for scope +val+.
     def set_scope(val)
@@ -213,9 +204,7 @@ module URI
     end
 
     # Returns filter.
-    def filter
-      @filter
-    end
+    attr_reader :filter
 
     # Private setter for filter +val+.
     def set_filter(val)
@@ -232,9 +221,7 @@ module URI
     end
 
     # Returns extensions.
-    def extensions
-      @extensions
-    end
+    attr_reader :extensions
 
     # Private setter for extensions +val+.
     def set_extensions(val)

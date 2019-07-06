@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 # = uri/http.rb
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
@@ -11,7 +12,6 @@
 require_relative 'generic'
 
 module URI
-
   #
   # The syntax of HTTP URIs is defined in RFC1738 section 3.3.
   #
@@ -79,10 +79,9 @@ module URI
       return unless @path
 
       url = @query ? "#{@path}?#{@query}" : @path.dup
-      url.start_with?(?/.freeze) ? url : ?/ + url
+      url.start_with?('/'.freeze) ? url : '/' + url
     end
   end
 
   @@schemes['HTTP'] = HTTP
-
 end

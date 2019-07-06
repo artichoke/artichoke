@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #--
 # = uri/common.rb
 #
@@ -10,8 +11,8 @@
 # See URI for general documentation
 #
 
-require_relative "rfc2396_parser"
-require_relative "rfc3986_parser"
+require_relative 'rfc2396_parser'
+require_relative 'rfc3986_parser'
 
 module URI
   REGEXP = RFC2396_REGEXP
@@ -21,9 +22,7 @@ module URI
   # URI::Parser.new
   DEFAULT_PARSER = Parser.new
   DEFAULT_PARSER.pattern.each_pair do |sym, str|
-    unless REGEXP::PATTERN.const_defined?(sym)
-      REGEXP::PATTERN.const_set(sym, str)
-    end
+    REGEXP::PATTERN.const_set(sym, str) unless REGEXP::PATTERN.const_defined?(sym)
   end
   DEFAULT_PARSER.regexp.each_pair do |sym, str|
     const_set(sym, str)
@@ -32,31 +31,27 @@ module URI
   module Util # :nodoc:
     def make_components_hash(klass, array_hash)
       tmp = {}
-      if array_hash.kind_of?(Array) &&
-          array_hash.size == klass.component.size - 1
+      if array_hash.is_a?(Array) &&
+         array_hash.size == klass.component.size - 1
         klass.component[1..-1].each_index do |i|
-          begin
-            tmp[klass.component[i + 1]] = array_hash[i].clone
-          rescue TypeError
-            tmp[klass.component[i + 1]] = array_hash[i]
-          end
+          tmp[klass.component[i + 1]] = array_hash[i].clone
+        rescue TypeError
+          tmp[klass.component[i + 1]] = array_hash[i]
         end
 
-      elsif array_hash.kind_of?(Hash)
+      elsif array_hash.is_a?(Hash)
         array_hash.each do |key, value|
-          begin
-            tmp[key] = value.clone
-          rescue TypeError
-            tmp[key] = value
-          end
+          tmp[key] = value.clone
+        rescue TypeError
+          tmp[key] = value
         end
       else
         raise ArgumentError,
-          "expected Array of or Hash of components of #{klass} (#{klass.component[1..-1].join(', ')})"
+              "expected Array of or Hash of components of #{klass} (#{klass.component[1..-1].join(', ')})"
       end
       tmp[:scheme] = klass.to_s.sub(/\A.*::/, '').downcase
 
-      return tmp
+      tmp
     end
     module_function :make_components_hash
   end
@@ -99,7 +94,7 @@ module URI
     #   # => "@%3F@%21"
     #
     def escape(*arg)
-      warn "URI.escape is obsolete", uplevel: 1 if $VERBOSE
+      warn 'URI.escape is obsolete', uplevel: 1 if $VERBOSE
       DEFAULT_PARSER.escape(*arg)
     end
     alias encode escape
@@ -130,7 +125,7 @@ module URI
     #   # => "http://example.com/?a=\t\r"
     #
     def unescape(*arg)
-      warn "URI.unescape is obsolete", uplevel: 1 if $VERBOSE
+      warn 'URI.unescape is obsolete', uplevel: 1 if $VERBOSE
       DEFAULT_PARSER.unescape(*arg)
     end
     alias decode unescape
@@ -296,7 +291,7 @@ module URI
   #   # => ["http://foo.example.com/bla", "mailto:test@example.com"]
   #
   def self.extract(str, schemes = nil, &block)
-    warn "URI.extract is obsolete", uplevel: 1 if $VERBOSE
+    warn 'URI.extract is obsolete', uplevel: 1 if $VERBOSE
     DEFAULT_PARSER.extract(str, schemes, &block)
   end
 
@@ -333,23 +328,24 @@ module URI
   #   end
   #
   def self.regexp(schemes = nil)
-    warn "URI.regexp is obsolete", uplevel: 1 if $VERBOSE
+    warn 'URI.regexp is obsolete', uplevel: 1 if $VERBOSE
     DEFAULT_PARSER.make_regexp(schemes)
   end
 
-  TBLENCWWWCOMP_ = {} # :nodoc:
+  TBLENCWWWCOMP_ = {}.freeze # :nodoc:
   256.times do |i|
-    TBLENCWWWCOMP_[-i.chr] = -('%%%02X' % i)
+    TBLENCWWWCOMP_[-i.chr] = -format('%%%02X', i)
   end
   TBLENCWWWCOMP_[' '] = '+'
   TBLENCWWWCOMP_.freeze
-  TBLDECWWWCOMP_ = {} # :nodoc:
+  TBLDECWWWCOMP_ = {}.freeze # :nodoc:
   256.times do |i|
-    h, l = i>>4, i&15
-    TBLDECWWWCOMP_[-('%%%X%X' % [h, l])] = -i.chr
-    TBLDECWWWCOMP_[-('%%%x%X' % [h, l])] = -i.chr
-    TBLDECWWWCOMP_[-('%%%X%x' % [h, l])] = -i.chr
-    TBLDECWWWCOMP_[-('%%%x%x' % [h, l])] = -i.chr
+    h = i >> 4
+    l = i & 15
+    TBLDECWWWCOMP_[-format('%%%X%X', h, l)] = -i.chr
+    TBLDECWWWCOMP_[-format('%%%x%X', h, l)] = -i.chr
+    TBLDECWWWCOMP_[-format('%%%X%x', h, l)] = -i.chr
+    TBLDECWWWCOMP_[-format('%%%x%x', h, l)] = -i.chr
   end
   TBLDECWWWCOMP_['+'] = ' '
   TBLDECWWWCOMP_.freeze
@@ -365,12 +361,12 @@ module URI
   # http://www.w3.org/TR/2013/CR-html5-20130806/forms.html#url-encoded-form-data.
   #
   # See URI.decode_www_form_component, URI.encode_www_form.
-  def self.encode_www_form_component(str, enc=nil)
+  def self.encode_www_form_component(str, enc = nil)
     str = str.to_s.dup
     if str.encoding != Encoding::ASCII_8BIT
       if enc && enc != Encoding::ASCII_8BIT
         str.encode!(Encoding::UTF_8, invalid: :replace, undef: :replace)
-        str.encode!(enc, fallback: ->(x){"&#{x.ord};"})
+        str.encode!(enc, fallback: ->(x) { "&#{x.ord};" })
       end
       str.force_encoding(Encoding::ASCII_8BIT)
     end
@@ -383,8 +379,9 @@ module URI
   # This decodes + to SP.
   #
   # See URI.encode_www_form_component, URI.decode_www_form.
-  def self.decode_www_form_component(str, enc=Encoding::UTF_8)
+  def self.decode_www_form_component(str, enc = Encoding::UTF_8)
     raise ArgumentError, "invalid %-encoding (#{str})" if /%(?!\h\h)/ =~ str
+
     str.b.gsub(/\+|%\h\h/, TBLDECWWWCOMP_).force_encoding(enc)
   end
 
@@ -415,8 +412,8 @@ module URI
   #    #=> "q=ruby&q=perl&lang=en"
   #
   # See URI.encode_www_form_component, URI.decode_www_form.
-  def self.encode_www_form(enum, enc=nil)
-    enum.map do |k,v|
+  def self.encode_www_form(enum, enc = nil)
+    enum.map do |k, v|
       if v.nil?
         encode_www_form_component(k, enc)
       elsif v.respond_to?(:to_ary)
@@ -451,10 +448,12 @@ module URI
   #    Hash[ary]             #=> {"a"=>"2", "b"=>"3"}
   #
   # See URI.decode_www_form_component, URI.encode_www_form.
-  def self.decode_www_form(str, enc=Encoding::UTF_8, separator: '&', use__charset_: false, isindex: false)
-    raise ArgumentError, "the input of #{self.name}.#{__method__} must be ASCII only string" unless str.ascii_only?
+  def self.decode_www_form(str, enc = Encoding::UTF_8, separator: '&', use__charset_: false, isindex: false)
+    raise ArgumentError, "the input of #{name}.#{__method__} must be ASCII only string" unless str.ascii_only?
+
     ary = []
     return ary if str.empty?
+
     enc = Encoding.find(enc)
     str.b.each_line(separator) do |string|
       string.chomp!(separator)
@@ -467,7 +466,7 @@ module URI
         isindex = false
       end
 
-      if use__charset_ and key == '_charset_' and e = get_encoding(val)
+      if use__charset_ && (key == '_charset_') && (e = get_encoding(val))
         enc = e
         use__charset_ = false
       end
@@ -491,242 +490,243 @@ module URI
   end
 
   private
-=begin command for WEB_ENCODINGS_
-  curl https://encoding.spec.whatwg.org/encodings.json|
-  ruby -rjson -e 'H={}
-  h={
-    "shift_jis"=>"Windows-31J",
-    "euc-jp"=>"cp51932",
-    "iso-2022-jp"=>"cp50221",
-    "x-mac-cyrillic"=>"macCyrillic",
-  }
-  JSON($<.read).map{|x|x["encodings"]}.flatten.each{|x|
-    Encoding.find(n=h.fetch(n=x["name"].downcase,n))rescue next
-    x["labels"].each{|y|H[y]=n}
-  }
-  puts "{"
-  H.each{|k,v|puts %[  #{k.dump}=>#{v.dump},]}
-  puts "}"
-'
-=end
+
+  # command for WEB_ENCODINGS_
+  #   curl https://encoding.spec.whatwg.org/encodings.json|
+  #   ruby -rjson -e 'H={}
+  #   h={
+  #     "shift_jis"=>"Windows-31J",
+  #     "euc-jp"=>"cp51932",
+  #     "iso-2022-jp"=>"cp50221",
+  #     "x-mac-cyrillic"=>"macCyrillic",
+  #   }
+  #   JSON($<.read).map{|x|x["encodings"]}.flatten.each{|x|
+  #     Encoding.find(n=h.fetch(n=x["name"].downcase,n))rescue next
+  #     x["labels"].each{|y|H[y]=n}
+  #   }
+  #   puts "{"
+  #   H.each{|k,v|puts %[  #{k.dump}=>#{v.dump},]}
+  #   puts "}"
+  # '
   WEB_ENCODINGS_ = {
-    "unicode-1-1-utf-8"=>"utf-8",
-    "utf-8"=>"utf-8",
-    "utf8"=>"utf-8",
-    "866"=>"ibm866",
-    "cp866"=>"ibm866",
-    "csibm866"=>"ibm866",
-    "ibm866"=>"ibm866",
-    "csisolatin2"=>"iso-8859-2",
-    "iso-8859-2"=>"iso-8859-2",
-    "iso-ir-101"=>"iso-8859-2",
-    "iso8859-2"=>"iso-8859-2",
-    "iso88592"=>"iso-8859-2",
-    "iso_8859-2"=>"iso-8859-2",
-    "iso_8859-2:1987"=>"iso-8859-2",
-    "l2"=>"iso-8859-2",
-    "latin2"=>"iso-8859-2",
-    "csisolatin3"=>"iso-8859-3",
-    "iso-8859-3"=>"iso-8859-3",
-    "iso-ir-109"=>"iso-8859-3",
-    "iso8859-3"=>"iso-8859-3",
-    "iso88593"=>"iso-8859-3",
-    "iso_8859-3"=>"iso-8859-3",
-    "iso_8859-3:1988"=>"iso-8859-3",
-    "l3"=>"iso-8859-3",
-    "latin3"=>"iso-8859-3",
-    "csisolatin4"=>"iso-8859-4",
-    "iso-8859-4"=>"iso-8859-4",
-    "iso-ir-110"=>"iso-8859-4",
-    "iso8859-4"=>"iso-8859-4",
-    "iso88594"=>"iso-8859-4",
-    "iso_8859-4"=>"iso-8859-4",
-    "iso_8859-4:1988"=>"iso-8859-4",
-    "l4"=>"iso-8859-4",
-    "latin4"=>"iso-8859-4",
-    "csisolatincyrillic"=>"iso-8859-5",
-    "cyrillic"=>"iso-8859-5",
-    "iso-8859-5"=>"iso-8859-5",
-    "iso-ir-144"=>"iso-8859-5",
-    "iso8859-5"=>"iso-8859-5",
-    "iso88595"=>"iso-8859-5",
-    "iso_8859-5"=>"iso-8859-5",
-    "iso_8859-5:1988"=>"iso-8859-5",
-    "arabic"=>"iso-8859-6",
-    "asmo-708"=>"iso-8859-6",
-    "csiso88596e"=>"iso-8859-6",
-    "csiso88596i"=>"iso-8859-6",
-    "csisolatinarabic"=>"iso-8859-6",
-    "ecma-114"=>"iso-8859-6",
-    "iso-8859-6"=>"iso-8859-6",
-    "iso-8859-6-e"=>"iso-8859-6",
-    "iso-8859-6-i"=>"iso-8859-6",
-    "iso-ir-127"=>"iso-8859-6",
-    "iso8859-6"=>"iso-8859-6",
-    "iso88596"=>"iso-8859-6",
-    "iso_8859-6"=>"iso-8859-6",
-    "iso_8859-6:1987"=>"iso-8859-6",
-    "csisolatingreek"=>"iso-8859-7",
-    "ecma-118"=>"iso-8859-7",
-    "elot_928"=>"iso-8859-7",
-    "greek"=>"iso-8859-7",
-    "greek8"=>"iso-8859-7",
-    "iso-8859-7"=>"iso-8859-7",
-    "iso-ir-126"=>"iso-8859-7",
-    "iso8859-7"=>"iso-8859-7",
-    "iso88597"=>"iso-8859-7",
-    "iso_8859-7"=>"iso-8859-7",
-    "iso_8859-7:1987"=>"iso-8859-7",
-    "sun_eu_greek"=>"iso-8859-7",
-    "csiso88598e"=>"iso-8859-8",
-    "csisolatinhebrew"=>"iso-8859-8",
-    "hebrew"=>"iso-8859-8",
-    "iso-8859-8"=>"iso-8859-8",
-    "iso-8859-8-e"=>"iso-8859-8",
-    "iso-ir-138"=>"iso-8859-8",
-    "iso8859-8"=>"iso-8859-8",
-    "iso88598"=>"iso-8859-8",
-    "iso_8859-8"=>"iso-8859-8",
-    "iso_8859-8:1988"=>"iso-8859-8",
-    "visual"=>"iso-8859-8",
-    "csisolatin6"=>"iso-8859-10",
-    "iso-8859-10"=>"iso-8859-10",
-    "iso-ir-157"=>"iso-8859-10",
-    "iso8859-10"=>"iso-8859-10",
-    "iso885910"=>"iso-8859-10",
-    "l6"=>"iso-8859-10",
-    "latin6"=>"iso-8859-10",
-    "iso-8859-13"=>"iso-8859-13",
-    "iso8859-13"=>"iso-8859-13",
-    "iso885913"=>"iso-8859-13",
-    "iso-8859-14"=>"iso-8859-14",
-    "iso8859-14"=>"iso-8859-14",
-    "iso885914"=>"iso-8859-14",
-    "csisolatin9"=>"iso-8859-15",
-    "iso-8859-15"=>"iso-8859-15",
-    "iso8859-15"=>"iso-8859-15",
-    "iso885915"=>"iso-8859-15",
-    "iso_8859-15"=>"iso-8859-15",
-    "l9"=>"iso-8859-15",
-    "iso-8859-16"=>"iso-8859-16",
-    "cskoi8r"=>"koi8-r",
-    "koi"=>"koi8-r",
-    "koi8"=>"koi8-r",
-    "koi8-r"=>"koi8-r",
-    "koi8_r"=>"koi8-r",
-    "koi8-ru"=>"koi8-u",
-    "koi8-u"=>"koi8-u",
-    "dos-874"=>"windows-874",
-    "iso-8859-11"=>"windows-874",
-    "iso8859-11"=>"windows-874",
-    "iso885911"=>"windows-874",
-    "tis-620"=>"windows-874",
-    "windows-874"=>"windows-874",
-    "cp1250"=>"windows-1250",
-    "windows-1250"=>"windows-1250",
-    "x-cp1250"=>"windows-1250",
-    "cp1251"=>"windows-1251",
-    "windows-1251"=>"windows-1251",
-    "x-cp1251"=>"windows-1251",
-    "ansi_x3.4-1968"=>"windows-1252",
-    "ascii"=>"windows-1252",
-    "cp1252"=>"windows-1252",
-    "cp819"=>"windows-1252",
-    "csisolatin1"=>"windows-1252",
-    "ibm819"=>"windows-1252",
-    "iso-8859-1"=>"windows-1252",
-    "iso-ir-100"=>"windows-1252",
-    "iso8859-1"=>"windows-1252",
-    "iso88591"=>"windows-1252",
-    "iso_8859-1"=>"windows-1252",
-    "iso_8859-1:1987"=>"windows-1252",
-    "l1"=>"windows-1252",
-    "latin1"=>"windows-1252",
-    "us-ascii"=>"windows-1252",
-    "windows-1252"=>"windows-1252",
-    "x-cp1252"=>"windows-1252",
-    "cp1253"=>"windows-1253",
-    "windows-1253"=>"windows-1253",
-    "x-cp1253"=>"windows-1253",
-    "cp1254"=>"windows-1254",
-    "csisolatin5"=>"windows-1254",
-    "iso-8859-9"=>"windows-1254",
-    "iso-ir-148"=>"windows-1254",
-    "iso8859-9"=>"windows-1254",
-    "iso88599"=>"windows-1254",
-    "iso_8859-9"=>"windows-1254",
-    "iso_8859-9:1989"=>"windows-1254",
-    "l5"=>"windows-1254",
-    "latin5"=>"windows-1254",
-    "windows-1254"=>"windows-1254",
-    "x-cp1254"=>"windows-1254",
-    "cp1255"=>"windows-1255",
-    "windows-1255"=>"windows-1255",
-    "x-cp1255"=>"windows-1255",
-    "cp1256"=>"windows-1256",
-    "windows-1256"=>"windows-1256",
-    "x-cp1256"=>"windows-1256",
-    "cp1257"=>"windows-1257",
-    "windows-1257"=>"windows-1257",
-    "x-cp1257"=>"windows-1257",
-    "cp1258"=>"windows-1258",
-    "windows-1258"=>"windows-1258",
-    "x-cp1258"=>"windows-1258",
-    "x-mac-cyrillic"=>"macCyrillic",
-    "x-mac-ukrainian"=>"macCyrillic",
-    "chinese"=>"gbk",
-    "csgb2312"=>"gbk",
-    "csiso58gb231280"=>"gbk",
-    "gb2312"=>"gbk",
-    "gb_2312"=>"gbk",
-    "gb_2312-80"=>"gbk",
-    "gbk"=>"gbk",
-    "iso-ir-58"=>"gbk",
-    "x-gbk"=>"gbk",
-    "gb18030"=>"gb18030",
-    "big5"=>"big5",
-    "big5-hkscs"=>"big5",
-    "cn-big5"=>"big5",
-    "csbig5"=>"big5",
-    "x-x-big5"=>"big5",
-    "cseucpkdfmtjapanese"=>"cp51932",
-    "euc-jp"=>"cp51932",
-    "x-euc-jp"=>"cp51932",
-    "csiso2022jp"=>"cp50221",
-    "iso-2022-jp"=>"cp50221",
-    "csshiftjis"=>"Windows-31J",
-    "ms932"=>"Windows-31J",
-    "ms_kanji"=>"Windows-31J",
-    "shift-jis"=>"Windows-31J",
-    "shift_jis"=>"Windows-31J",
-    "sjis"=>"Windows-31J",
-    "windows-31j"=>"Windows-31J",
-    "x-sjis"=>"Windows-31J",
-    "cseuckr"=>"euc-kr",
-    "csksc56011987"=>"euc-kr",
-    "euc-kr"=>"euc-kr",
-    "iso-ir-149"=>"euc-kr",
-    "korean"=>"euc-kr",
-    "ks_c_5601-1987"=>"euc-kr",
-    "ks_c_5601-1989"=>"euc-kr",
-    "ksc5601"=>"euc-kr",
-    "ksc_5601"=>"euc-kr",
-    "windows-949"=>"euc-kr",
-    "utf-16be"=>"utf-16be",
-    "utf-16"=>"utf-16le",
-    "utf-16le"=>"utf-16le",
-  } # :nodoc:
+    'unicode-1-1-utf-8' => 'utf-8',
+    'utf-8' => 'utf-8',
+    'utf8' => 'utf-8',
+    '866' => 'ibm866',
+    'cp866' => 'ibm866',
+    'csibm866' => 'ibm866',
+    'ibm866' => 'ibm866',
+    'csisolatin2' => 'iso-8859-2',
+    'iso-8859-2' => 'iso-8859-2',
+    'iso-ir-101' => 'iso-8859-2',
+    'iso8859-2' => 'iso-8859-2',
+    'iso88592' => 'iso-8859-2',
+    'iso_8859-2' => 'iso-8859-2',
+    'iso_8859-2:1987' => 'iso-8859-2',
+    'l2' => 'iso-8859-2',
+    'latin2' => 'iso-8859-2',
+    'csisolatin3' => 'iso-8859-3',
+    'iso-8859-3' => 'iso-8859-3',
+    'iso-ir-109' => 'iso-8859-3',
+    'iso8859-3' => 'iso-8859-3',
+    'iso88593' => 'iso-8859-3',
+    'iso_8859-3' => 'iso-8859-3',
+    'iso_8859-3:1988' => 'iso-8859-3',
+    'l3' => 'iso-8859-3',
+    'latin3' => 'iso-8859-3',
+    'csisolatin4' => 'iso-8859-4',
+    'iso-8859-4' => 'iso-8859-4',
+    'iso-ir-110' => 'iso-8859-4',
+    'iso8859-4' => 'iso-8859-4',
+    'iso88594' => 'iso-8859-4',
+    'iso_8859-4' => 'iso-8859-4',
+    'iso_8859-4:1988' => 'iso-8859-4',
+    'l4' => 'iso-8859-4',
+    'latin4' => 'iso-8859-4',
+    'csisolatincyrillic' => 'iso-8859-5',
+    'cyrillic' => 'iso-8859-5',
+    'iso-8859-5' => 'iso-8859-5',
+    'iso-ir-144' => 'iso-8859-5',
+    'iso8859-5' => 'iso-8859-5',
+    'iso88595' => 'iso-8859-5',
+    'iso_8859-5' => 'iso-8859-5',
+    'iso_8859-5:1988' => 'iso-8859-5',
+    'arabic' => 'iso-8859-6',
+    'asmo-708' => 'iso-8859-6',
+    'csiso88596e' => 'iso-8859-6',
+    'csiso88596i' => 'iso-8859-6',
+    'csisolatinarabic' => 'iso-8859-6',
+    'ecma-114' => 'iso-8859-6',
+    'iso-8859-6' => 'iso-8859-6',
+    'iso-8859-6-e' => 'iso-8859-6',
+    'iso-8859-6-i' => 'iso-8859-6',
+    'iso-ir-127' => 'iso-8859-6',
+    'iso8859-6' => 'iso-8859-6',
+    'iso88596' => 'iso-8859-6',
+    'iso_8859-6' => 'iso-8859-6',
+    'iso_8859-6:1987' => 'iso-8859-6',
+    'csisolatingreek' => 'iso-8859-7',
+    'ecma-118' => 'iso-8859-7',
+    'elot_928' => 'iso-8859-7',
+    'greek' => 'iso-8859-7',
+    'greek8' => 'iso-8859-7',
+    'iso-8859-7' => 'iso-8859-7',
+    'iso-ir-126' => 'iso-8859-7',
+    'iso8859-7' => 'iso-8859-7',
+    'iso88597' => 'iso-8859-7',
+    'iso_8859-7' => 'iso-8859-7',
+    'iso_8859-7:1987' => 'iso-8859-7',
+    'sun_eu_greek' => 'iso-8859-7',
+    'csiso88598e' => 'iso-8859-8',
+    'csisolatinhebrew' => 'iso-8859-8',
+    'hebrew' => 'iso-8859-8',
+    'iso-8859-8' => 'iso-8859-8',
+    'iso-8859-8-e' => 'iso-8859-8',
+    'iso-ir-138' => 'iso-8859-8',
+    'iso8859-8' => 'iso-8859-8',
+    'iso88598' => 'iso-8859-8',
+    'iso_8859-8' => 'iso-8859-8',
+    'iso_8859-8:1988' => 'iso-8859-8',
+    'visual' => 'iso-8859-8',
+    'csisolatin6' => 'iso-8859-10',
+    'iso-8859-10' => 'iso-8859-10',
+    'iso-ir-157' => 'iso-8859-10',
+    'iso8859-10' => 'iso-8859-10',
+    'iso885910' => 'iso-8859-10',
+    'l6' => 'iso-8859-10',
+    'latin6' => 'iso-8859-10',
+    'iso-8859-13' => 'iso-8859-13',
+    'iso8859-13' => 'iso-8859-13',
+    'iso885913' => 'iso-8859-13',
+    'iso-8859-14' => 'iso-8859-14',
+    'iso8859-14' => 'iso-8859-14',
+    'iso885914' => 'iso-8859-14',
+    'csisolatin9' => 'iso-8859-15',
+    'iso-8859-15' => 'iso-8859-15',
+    'iso8859-15' => 'iso-8859-15',
+    'iso885915' => 'iso-8859-15',
+    'iso_8859-15' => 'iso-8859-15',
+    'l9' => 'iso-8859-15',
+    'iso-8859-16' => 'iso-8859-16',
+    'cskoi8r' => 'koi8-r',
+    'koi' => 'koi8-r',
+    'koi8' => 'koi8-r',
+    'koi8-r' => 'koi8-r',
+    'koi8_r' => 'koi8-r',
+    'koi8-ru' => 'koi8-u',
+    'koi8-u' => 'koi8-u',
+    'dos-874' => 'windows-874',
+    'iso-8859-11' => 'windows-874',
+    'iso8859-11' => 'windows-874',
+    'iso885911' => 'windows-874',
+    'tis-620' => 'windows-874',
+    'windows-874' => 'windows-874',
+    'cp1250' => 'windows-1250',
+    'windows-1250' => 'windows-1250',
+    'x-cp1250' => 'windows-1250',
+    'cp1251' => 'windows-1251',
+    'windows-1251' => 'windows-1251',
+    'x-cp1251' => 'windows-1251',
+    'ansi_x3.4-1968' => 'windows-1252',
+    'ascii' => 'windows-1252',
+    'cp1252' => 'windows-1252',
+    'cp819' => 'windows-1252',
+    'csisolatin1' => 'windows-1252',
+    'ibm819' => 'windows-1252',
+    'iso-8859-1' => 'windows-1252',
+    'iso-ir-100' => 'windows-1252',
+    'iso8859-1' => 'windows-1252',
+    'iso88591' => 'windows-1252',
+    'iso_8859-1' => 'windows-1252',
+    'iso_8859-1:1987' => 'windows-1252',
+    'l1' => 'windows-1252',
+    'latin1' => 'windows-1252',
+    'us-ascii' => 'windows-1252',
+    'windows-1252' => 'windows-1252',
+    'x-cp1252' => 'windows-1252',
+    'cp1253' => 'windows-1253',
+    'windows-1253' => 'windows-1253',
+    'x-cp1253' => 'windows-1253',
+    'cp1254' => 'windows-1254',
+    'csisolatin5' => 'windows-1254',
+    'iso-8859-9' => 'windows-1254',
+    'iso-ir-148' => 'windows-1254',
+    'iso8859-9' => 'windows-1254',
+    'iso88599' => 'windows-1254',
+    'iso_8859-9' => 'windows-1254',
+    'iso_8859-9:1989' => 'windows-1254',
+    'l5' => 'windows-1254',
+    'latin5' => 'windows-1254',
+    'windows-1254' => 'windows-1254',
+    'x-cp1254' => 'windows-1254',
+    'cp1255' => 'windows-1255',
+    'windows-1255' => 'windows-1255',
+    'x-cp1255' => 'windows-1255',
+    'cp1256' => 'windows-1256',
+    'windows-1256' => 'windows-1256',
+    'x-cp1256' => 'windows-1256',
+    'cp1257' => 'windows-1257',
+    'windows-1257' => 'windows-1257',
+    'x-cp1257' => 'windows-1257',
+    'cp1258' => 'windows-1258',
+    'windows-1258' => 'windows-1258',
+    'x-cp1258' => 'windows-1258',
+    'x-mac-cyrillic' => 'macCyrillic',
+    'x-mac-ukrainian' => 'macCyrillic',
+    'chinese' => 'gbk',
+    'csgb2312' => 'gbk',
+    'csiso58gb231280' => 'gbk',
+    'gb2312' => 'gbk',
+    'gb_2312' => 'gbk',
+    'gb_2312-80' => 'gbk',
+    'gbk' => 'gbk',
+    'iso-ir-58' => 'gbk',
+    'x-gbk' => 'gbk',
+    'gb18030' => 'gb18030',
+    'big5' => 'big5',
+    'big5-hkscs' => 'big5',
+    'cn-big5' => 'big5',
+    'csbig5' => 'big5',
+    'x-x-big5' => 'big5',
+    'cseucpkdfmtjapanese' => 'cp51932',
+    'euc-jp' => 'cp51932',
+    'x-euc-jp' => 'cp51932',
+    'csiso2022jp' => 'cp50221',
+    'iso-2022-jp' => 'cp50221',
+    'csshiftjis' => 'Windows-31J',
+    'ms932' => 'Windows-31J',
+    'ms_kanji' => 'Windows-31J',
+    'shift-jis' => 'Windows-31J',
+    'shift_jis' => 'Windows-31J',
+    'sjis' => 'Windows-31J',
+    'windows-31j' => 'Windows-31J',
+    'x-sjis' => 'Windows-31J',
+    'cseuckr' => 'euc-kr',
+    'csksc56011987' => 'euc-kr',
+    'euc-kr' => 'euc-kr',
+    'iso-ir-149' => 'euc-kr',
+    'korean' => 'euc-kr',
+    'ks_c_5601-1987' => 'euc-kr',
+    'ks_c_5601-1989' => 'euc-kr',
+    'ksc5601' => 'euc-kr',
+    'ksc_5601' => 'euc-kr',
+    'windows-949' => 'euc-kr',
+    'utf-16be' => 'utf-16be',
+    'utf-16' => 'utf-16le',
+    'utf-16le' => 'utf-16le'
+  }.freeze # :nodoc:
 
   # :nodoc:
   # return encoding or nil
   # http://encoding.spec.whatwg.org/#concept-encoding-get
   def self.get_encoding(label)
-    Encoding.find(WEB_ENCODINGS_[label.to_str.strip.downcase]) rescue nil
+    Encoding.find(WEB_ENCODINGS_[label.to_str.strip.downcase])
+  rescue StandardError
+    nil
   end
 end # module URI
 
 module Kernel
-
   #
   # Returns +uri+ converted to an URI object.
   #
@@ -737,7 +737,7 @@ module Kernel
       URI.parse(uri)
     else
       raise ArgumentError,
-        "bad argument (expected URI object or URI string)"
+            'bad argument (expected URI object or URI string)'
     end
   end
   module_function :URI
