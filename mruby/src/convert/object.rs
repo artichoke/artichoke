@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::convert::TryInto;
 use std::ffi::c_void;
 use std::mem;
+use std::ptr;
 use std::rc::Rc;
 
 use crate::convert::Error;
@@ -40,6 +41,7 @@ where
         interp: &Mrb,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, MrbError> {
+        let mrb = interp.borrow().mrb;
         let spec = interp
             .borrow()
             .class_spec::<Self>()
@@ -73,12 +75,7 @@ where
             // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
             // i64 max value.
             let len = args.len().try_into().unwrap_or_default();
-            sys::mrb_obj_new(
-                interp.borrow().mrb,
-                rclass,
-                len,
-                args.as_ptr() as *const sys::mrb_value,
-            )
+            sys::mrb_obj_new(mrb, rclass, len, args.as_ptr() as *const sys::mrb_value)
         };
 
         let data = Rc::new(RefCell::new(self));
@@ -97,6 +94,7 @@ where
     /// [`Ruby::Data`] and that the `RClass *` of the spec matches the
     /// [`Value`].
     unsafe fn try_from_ruby(interp: &Mrb, slf: &Value) -> Result<Rc<RefCell<Self>>, MrbError> {
+        let mrb = interp.borrow().mrb;
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
             return Err(MrbError::ConvertToRust(Error {
@@ -110,10 +108,7 @@ where
             .ok_or_else(|| MrbError::NotDefined("class".to_owned()))?;
         // Sanity check that the RClass matches.
         if let Some(rclass) = spec.borrow().rclass(interp) {
-            if !std::ptr::eq(
-                sys::mrb_sys_class_of_value(interp.borrow().mrb, slf.inner()),
-                rclass,
-            ) {
+            if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
                 return Err(MrbError::ConvertToRust(Error {
                     from: slf.ruby_type(),
                     to: Rust::Object,
@@ -124,7 +119,7 @@ where
         }
         let ptr = {
             let borrow = spec.borrow();
-            sys::mrb_data_get_ptr(interp.borrow().mrb, slf.inner(), borrow.data_type())
+            sys::mrb_data_get_ptr(mrb, slf.inner(), borrow.data_type())
         };
         let data = Rc::from_raw(ptr as *const RefCell<Self>);
         let value = Rc::clone(&data);

@@ -11,9 +11,8 @@ impl FromMrb<Float> for Value {
     type To = Ruby;
 
     fn from_mrb(interp: &Mrb, value: Float) -> Self {
-        Self::new(interp, unsafe {
-            sys::mrb_sys_float_value(interp.borrow().mrb, value)
-        })
+        let mrb = interp.borrow().mrb;
+        Self::new(interp, unsafe { sys::mrb_sys_float_value(mrb, value) })
     }
 }
 
