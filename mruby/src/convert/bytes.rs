@@ -20,13 +20,12 @@ impl FromMrb<&[u8]> for Value {
     type To = Ruby;
 
     fn from_mrb(interp: &Mrb, value: &[u8]) -> Self {
+        let mrb = interp.borrow().mrb;
         // mruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
         let raw = value.as_ptr() as *const i8;
         let len = value.len();
-        Self::new(interp, unsafe {
-            sys::mrb_str_new(interp.borrow().mrb, raw, len)
-        })
+        Self::new(interp, unsafe { sys::mrb_str_new(mrb, raw, len) })
     }
 }
 
@@ -38,11 +37,12 @@ impl TryFromMrb<Value> for Vec<u8> {
         interp: &Mrb,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
+        let mrb = interp.borrow().mrb;
         match value.ruby_type() {
             Ruby::String => {
                 let bytes = value.inner();
-                let raw = sys::mrb_string_value_ptr(interp.borrow().mrb, bytes) as *const u8;
-                let len = sys::mrb_string_value_len(interp.borrow().mrb, bytes);
+                let raw = sys::mrb_string_value_ptr(mrb, bytes) as *const u8;
+                let len = sys::mrb_string_value_len(mrb, bytes);
                 let len = usize::try_from(len).map_err(|_| Error {
                     from: Ruby::String,
                     to: Rust::Bytes,

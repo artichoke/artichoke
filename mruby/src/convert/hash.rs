@@ -22,14 +22,15 @@ impl FromMrb<Vec<(Value, Value)>> for Value {
     type To = Ruby;
 
     fn from_mrb(interp: &Mrb, value: Vec<(Self, Self)>) -> Self {
+        let mrb = interp.borrow().mrb;
         // We can initalize a `Hash` with a known capacity using
         // `sys::mrb_hash_new_capa`, but doing so requires converting from
         // `usize` to `i64` which is fallible. To simplify the code and make
         // `Vec<(Value, Value)>` easier to work with, use an infallible `Hash`
         // constructor.
-        let hash = unsafe { sys::mrb_hash_new(interp.borrow().mrb) };
+        let hash = unsafe { sys::mrb_hash_new(mrb) };
         for (key, val) in value {
-            unsafe { sys::mrb_hash_set(interp.borrow().mrb, hash, key.inner(), val.inner()) };
+            unsafe { sys::mrb_hash_set(mrb, hash, key.inner(), val.inner()) };
         }
         Self::new(interp, hash)
     }
@@ -94,11 +95,12 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
         interp: &Mrb,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
+        let mrb = interp.borrow().mrb;
         match value.ruby_type() {
             Ruby::Hash => {
                 let hash = value.inner();
-                let size = sys::mrb_hash_size(interp.borrow().mrb, hash);
-                let keys = sys::mrb_hash_keys(interp.borrow().mrb, hash);
+                let size = sys::mrb_hash_size(mrb, hash);
+                let keys = sys::mrb_hash_keys(mrb, hash);
                 let cap = usize::try_from(size).map_err(|_| Error {
                     from: Ruby::Hash,
                     to: Rust::Map,
@@ -107,8 +109,8 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
                 for idx in 0..size {
                     // Doing a `hash[key]` access is guaranteed to succeed since
                     // we're iterating over the keys in the hash.
-                    let key = sys::mrb_ary_ref(interp.borrow().mrb, keys, idx);
-                    let value = sys::mrb_hash_get(interp.borrow().mrb, hash, key);
+                    let key = sys::mrb_ary_ref(mrb, keys, idx);
+                    let value = sys::mrb_hash_get(mrb, hash, key);
                     pairs.push((Value::new(interp, key), Value::new(interp, value)));
                 }
                 Ok(pairs)
