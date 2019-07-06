@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 # = uri/mailto.rb
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
@@ -11,7 +12,6 @@
 require_relative 'generic'
 
 module URI
-
   #
   # RFC6068, the mailto URL scheme.
   #
@@ -22,7 +22,7 @@ module URI
     DEFAULT_PORT = nil
 
     # An Array of the available components for URI::MailTo.
-    COMPONENT = [ :scheme, :to, :headers ].freeze
+    COMPONENT = %i[scheme to headers].freeze
 
     # :stopdoc:
     #  "hname" and "hvalue" are encodings of an RFC 822 header name and
@@ -50,10 +50,10 @@ module URI
     # ; RFC3986
     # unreserved   = ALPHA / DIGIT / "-" / "." / "_" / "~"
     # pct-encoded  = "%" HEXDIG HEXDIG
-    HEADER_REGEXP  = /\A(?<hfield>(?:%\h\h|[!$'-.0-;@-Z_a-z~])*=(?:%\h\h|[!$'-.0-;@-Z_a-z~])*)(?:&\g<hfield>)*\z/
+    HEADER_REGEXP = /\A(?<hfield>(?:%\h\h|[!$'-.0-;@-Z_a-z~])*=(?:%\h\h|[!$'-.0-;@-Z_a-z~])*)(?:&\g<hfield>)*\z/.freeze
     # practical regexp for email address
     # https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
-    EMAIL_REGEXP = /\A[a-zA-Z0-9.!\#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\z/
+    EMAIL_REGEXP = %r{\A[a-zA-Z0-9.!\#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\z}.freeze
     # :startdoc:
 
     #
@@ -86,36 +86,34 @@ module URI
     def self.build(args)
       tmp = Util.make_components_hash(self, args)
 
-      case tmp[:to]
-      when Array
-        tmp[:opaque] = tmp[:to].join(',')
-      when String
-        tmp[:opaque] = tmp[:to].dup
-      else
-        tmp[:opaque] = ''
-      end
+      tmp[:opaque] = case tmp[:to]
+                     when Array
+                       tmp[:to].join(',')
+                     when String
+                       tmp[:to].dup
+                     else
+                       ''
+                     end
 
       if tmp[:headers]
         query =
           case tmp[:headers]
           when Array
-            tmp[:headers].collect { |x|
-              if x.kind_of?(Array)
+            tmp[:headers].collect do |x|
+              if x.is_a?(Array)
                 x[0] + '=' + x[1..-1].join
               else
                 x.to_s
               end
-            }.join('&')
+            end.join('&')
           when Hash
-            tmp[:headers].collect { |h,v|
+            tmp[:headers].collect do |h, v|
               h + '=' + v
-            }.join('&')
+            end.join('&')
           else
             tmp[:headers].to_s
           end
-        unless query.empty?
-          tmp[:opaque] << '?' << query
-        end
+        tmp[:opaque] << '?' << query unless query.empty?
       end
 
       super(tmp)
@@ -141,14 +139,14 @@ module URI
 
       unless @opaque
         raise InvalidComponentError,
-          "missing opaque part for mailto URL"
+              'missing opaque part for mailto URL'
       end
       to, header = @opaque.split('?', 2)
       # allow semicolon as a addr-spec separator
       # http://support.microsoft.com/kb/820868
       unless /\A(?:[^@,;]+@[^@,;]+(?:\z|[,;]))*\z/ =~ to
         raise InvalidComponentError,
-          "unrecognised opaque part for mailtoURL: #{@opaque}"
+              "unrecognised opaque part for mailtoURL: #{@opaque}"
       end
 
       if arg[10] # arg_check
@@ -167,15 +165,15 @@ module URI
     attr_reader :headers
 
     # Checks the to +v+ component.
-    def check_to(v)
-      return true unless v
-      return true if v.size == 0
+    def check_to(value)
+      return true unless value
+      return true if value.empty?
 
-      v.split(/[,;]/).each do |addr|
+      value.split(/[,;]/).each do |addr|
         # check url safety as path-rootless
         if /\A(?:%\h\h|[!$&-.0-;=@-Z_a-z~])*\z/ !~ addr
           raise InvalidComponentError,
-            "an address in 'to' is invalid as URI #{addr.dump}"
+                "an address in 'to' is invalid as URI #{addr.dump}"
         end
 
         # check addr-spec
@@ -183,69 +181,64 @@ module URI
         addr.gsub!(/%\h\h/, URI::TBLDECWWWCOMP_)
         if EMAIL_REGEXP !~ addr
           raise InvalidComponentError,
-            "an address in 'to' is invalid as uri-escaped addr-spec #{addr.dump}"
+                "an address in 'to' is invalid as uri-escaped addr-spec #{addr.dump}"
         end
       end
 
       true
     end
-    private :check_to
+    private :check_to # rubocop:disable Style/AccessModifierDeclarations
 
     # Private setter for to +v+.
-    def set_to(v)
-      @to = v
+    def set_to(value) # rubocop:disable Naming/AccessorMethodName
+      @to = value
     end
-    protected :set_to
+    protected :set_to # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for to +v+.
-    def to=(v)
-      check_to(v)
-      set_to(v)
-      v
+    def to=(value)
+      check_to(value)
+      set_to(value)
+      value # rubocop:disable Lint/Void
     end
 
     # Checks the headers +v+ component against either
     # * HEADER_REGEXP
-    def check_headers(v)
-      return true unless v
-      return true if v.size == 0
-      if HEADER_REGEXP !~ v
+    def check_headers(headers)
+      return true unless headers
+      return true if headers.empty?
+
+      if HEADER_REGEXP !~ headers
         raise InvalidComponentError,
-          "bad component(expected opaque component): #{v}"
+              "bad component(expected opaque component): #{headers}"
       end
 
       true
     end
-    private :check_headers
+    private :check_headers # rubocop:disable Style/AccessModifierDeclarations
 
     # Private setter for headers +v+.
-    def set_headers(v)
+    def set_headers(headers) # rubocop:disable Naming/AccessorMethodName
       @headers = []
-      if v
-        v.split('&').each do |x|
-          @headers << x.split(/=/, 2)
-        end
+      headers&.split('&')&.each do |x|
+        @headers << x.split(/=/, 2)
       end
     end
-    protected :set_headers
+    protected :set_headers # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for headers +v+.
-    def headers=(v)
-      check_headers(v)
-      set_headers(v)
-      v
+    def headers=(headers)
+      check_headers(headers)
+      set_headers(headers)
+      headers # rubocop:disable Lint/Void
     end
 
     # Constructs String from URI.
     def to_s
       @scheme + ':' +
-        if @to
-          @to
-        else
-          ''
-        end +
-        if @headers.size > 0
-          '?' + @headers.collect{|x| x.join('=')}.join('&')
+        (@to || '') +
+        if !@headers.empty?
+          '?' + @headers.collect { |x| x.join('=') }.join('&')
         else
           ''
         end +
@@ -278,7 +271,7 @@ module URI
           to << ', ' + URI.decode_www_form_component(x[1])
         else
           head << URI.decode_www_form_component(x[0]).capitalize + ': ' +
-            URI.decode_www_form_component(x[1])  + "\n"
+                  URI.decode_www_form_component(x[1]) + "\n"
         end
       end
 

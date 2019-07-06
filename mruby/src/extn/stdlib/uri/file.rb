@@ -3,7 +3,6 @@
 require_relative 'generic'
 
 module URI
-
   #
   # The "file" URI is defined by RFC8089.
   #
@@ -14,10 +13,10 @@ module URI
     #
     # An Array of the available components for URI::File.
     #
-    COMPONENT = [
-      :scheme,
-      :host,
-      :path
+    COMPONENT = %i[
+      scheme
+      host
+      path
     ].freeze
 
     #
@@ -45,7 +44,7 @@ module URI
     #     uri2.to_s  # => "file://host.example.com/ruby/src"
     #
     def self.build(args)
-      tmp = Util::make_components_hash(self, args)
+      tmp = Util.make_components_hash(self, args)
       super(tmp)
     end
 
@@ -53,41 +52,37 @@ module URI
     #
     # See also URI::Generic.host=.
     #
-    def set_host(v)
-      v = "" if v.nil? || v == "localhost"
-      @host = v
+    def set_host(host) # rubocop:disable Naming/AccessorMethodName
+      host = '' if host.nil? || host == 'localhost'
+      @host = host
     end
 
     # do nothing
-    def set_port(v)
+    def set_port(port); end # rubocop:disable Naming/AccessorMethodName
+
+    # raise InvalidURIError
+    def check_userinfo(_user)
+      raise URI::InvalidURIError, 'can not set userinfo for file URI'
     end
 
     # raise InvalidURIError
-    def check_userinfo(user)
-      raise URI::InvalidURIError, "can not set userinfo for file URI"
+    def check_user(_user)
+      raise URI::InvalidURIError, 'can not set user for file URI'
     end
 
     # raise InvalidURIError
-    def check_user(user)
-      raise URI::InvalidURIError, "can not set user for file URI"
-    end
-
-    # raise InvalidURIError
-    def check_password(user)
-      raise URI::InvalidURIError, "can not set password for file URI"
+    def check_password(_user)
+      raise URI::InvalidURIError, 'can not set password for file URI'
     end
 
     # do nothing
-    def set_userinfo(v)
-    end
+    def set_userinfo(userinfo); end # rubocop:disable Naming/AccessorMethodName
 
     # do nothing
-    def set_user(v)
-    end
+    def set_user(user); end # rubocop:disable Naming/AccessorMethodName
 
     # do nothing
-    def set_password(v)
-    end
+    def set_password(password); end # rubocop:disable Naming/AccessorMethodName
   end
 
   @@schemes['FILE'] = File

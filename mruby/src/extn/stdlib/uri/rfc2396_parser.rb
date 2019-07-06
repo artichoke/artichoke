@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 #--
 # = uri/common.rb
 #
@@ -14,7 +15,7 @@ module URI
   #
   # Includes URI::REGEXP::PATTERN
   #
-  module RFC2396_REGEXP
+  module RFC2396_REGEXP # rubocop:disable Naming/ClassAndModuleCamelCase
     #
     # Patterns used to parse URI's
     #
@@ -26,43 +27,43 @@ module URI
       # RFC 2373 (IPv6 Addressing Architecture)
 
       # alpha         = lowalpha | upalpha
-      ALPHA = "a-zA-Z"
+      ALPHA = 'a-zA-Z'.freeze
       # alphanum      = alpha | digit
-      ALNUM = "#{ALPHA}\\d"
+      ALNUM = "#{ALPHA}\\d".freeze
 
       # hex           = digit | "A" | "B" | "C" | "D" | "E" | "F" |
       #                         "a" | "b" | "c" | "d" | "e" | "f"
-      HEX     = "a-fA-F\\d"
+      HEX     = 'a-fA-F\\d'.freeze
       # escaped       = "%" hex hex
-      ESCAPED = "%[#{HEX}]{2}"
+      ESCAPED = "%[#{HEX}]{2}".freeze
       # mark          = "-" | "_" | "." | "!" | "~" | "*" | "'" |
       #                 "(" | ")"
       # unreserved    = alphanum | mark
-      UNRESERVED = "\\-_.!~*'()#{ALNUM}"
+      UNRESERVED = "\\-_.!~*'()#{ALNUM}".freeze
       # reserved      = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
       #                 "$" | ","
       # reserved      = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
       #                 "$" | "," | "[" | "]" (RFC 2732)
-      RESERVED = ";/?:@&=+$,\\[\\]"
+      RESERVED = ';/?:@&=+$,\\[\\]'.freeze
 
       # domainlabel   = alphanum | alphanum *( alphanum | "-" ) alphanum
-      DOMLABEL = "(?:[#{ALNUM}](?:[-#{ALNUM}]*[#{ALNUM}])?)"
+      DOMLABEL = "(?:[#{ALNUM}](?:[-#{ALNUM}]*[#{ALNUM}])?)".freeze
       # toplabel      = alpha | alpha *( alphanum | "-" ) alphanum
-      TOPLABEL = "(?:[#{ALPHA}](?:[-#{ALNUM}]*[#{ALNUM}])?)"
+      TOPLABEL = "(?:[#{ALPHA}](?:[-#{ALNUM}]*[#{ALNUM}])?)".freeze
       # hostname      = *( domainlabel "." ) toplabel [ "." ]
-      HOSTNAME = "(?:#{DOMLABEL}\\.)*#{TOPLABEL}\\.?"
+      HOSTNAME = "(?:#{DOMLABEL}\\.)*#{TOPLABEL}\\.?".freeze
 
       # :startdoc:
-    end # PATTERN
+    end
 
     # :startdoc:
-  end # REGEXP
+  end
 
   # Class that parses String's into URI's.
   #
   # It contains a Hash set of patterns and Regexp's that match and validate.
   #
-  class RFC2396_Parser
+  class RFC2396_Parser # rubocop:disable Naming/ClassAndModuleCamelCase
     include RFC2396_REGEXP
 
     #
@@ -122,10 +123,11 @@ module URI
       case uri
       when ''
         # null uri
+        nil
 
       when @regexp[:ABS_URI]
         scheme, opaque, userinfo, host, port,
-          registry, path, query, fragment = $~[1..-1]
+          registry, path, query, fragment = $~[1..-1] # rubocop:disable Style/SpecialGlobalVars
 
         # URI-reference = [ absoluteURI | relativeURI ] [ "#" fragment ]
 
@@ -139,13 +141,13 @@ module URI
         # authority     = server | reg_name
         # server        = [ [ userinfo "@" ] hostport ]
 
-        if !scheme
+        unless scheme
           raise InvalidURIError,
-            "bad URI(absolute but no scheme): #{uri}"
+                "bad URI(absolute but no scheme): #{uri}"
         end
         if !opaque && (!path && (!host && !registry))
           raise InvalidURIError,
-            "bad URI(absolute but no path): #{uri}"
+                "bad URI(absolute but no path): #{uri}"
         end
 
       when @regexp[:REL_URI]
@@ -153,7 +155,7 @@ module URI
         opaque = nil
 
         userinfo, host, port, registry,
-          rel_segment, abs_path, query, fragment = $~[1..-1]
+          rel_segment, abs_path, query, fragment = $~[1..-1] # rubocop:disable Style/SpecialGlobalVars
         if rel_segment && abs_path
           path = rel_segment + abs_path
         elsif rel_segment
@@ -187,7 +189,7 @@ module URI
         query,
         fragment
       ]
-      return ret
+      ret
     end
 
     #
@@ -209,7 +211,7 @@ module URI
     #
     def parse(uri)
       scheme, userinfo, host, port,
-        registry, path, opaque, query, fragment = self.split(uri)
+        registry, path, opaque, query, fragment = split(uri)
 
       if scheme && URI.scheme_list.include?(scheme.upcase)
         URI.scheme_list[scheme.upcase].new(scheme, userinfo, host, port,
@@ -221,7 +223,6 @@ module URI
                     fragment, self)
       end
     end
-
 
     #
     # == Args
@@ -273,10 +274,10 @@ module URI
     # Returns Regexp that is default self.regexp[:ABS_URI_REF],
     # unless +schemes+ is provided. Then it is a Regexp.union with self.pattern[:X_ABS_URI].
     def make_regexp(schemes = nil)
-      unless schemes
-        @regexp[:ABS_URI_REF]
-      else
+      if schemes
         /(?=#{Regexp.union(*schemes)}:)#{@pattern[:X_ABS_URI]}/x
+      else
+        @regexp[:ABS_URI_REF]
       end
     end
 
@@ -298,7 +299,7 @@ module URI
     # replacing them with codes.
     #
     def escape(str, unsafe = @regexp[:UNSAFE])
-      unless unsafe.kind_of?(Regexp)
+      unless unsafe.is_a?(Regexp)
         # perhaps unsafe is String object
         unsafe = Regexp.new("[#{Regexp.quote(unsafe)}]", false)
       end
@@ -306,7 +307,7 @@ module URI
         us = $&
         tmp = ''
         us.each_byte do |uc|
-          tmp << sprintf('%%%02X', uc)
+          tmp << format('%%%02X', uc)
         end
         tmp
       end.force_encoding(Encoding::US_ASCII)
@@ -334,7 +335,7 @@ module URI
       str.gsub(escaped) { [$&[1, 2]].pack('H2').force_encoding(enc) }
     end
 
-    @@to_s = Kernel.instance_method(:to_s)
+    @@to_s = Kernel.instance_method(:to_s) # rubocop:disable Style/ClassVars
     def inspect
       @@to_s.bind(self).call
     end
@@ -367,9 +368,7 @@ module URI
 
       # hostname      = *( domainlabel "." ) toplabel [ "." ]
       # reg-name      = *( unreserved / pct-encoded / sub-delims ) # RFC3986
-      unless hostname
-        ret[:HOSTNAME] = hostname = "(?:[a-zA-Z0-9\\-.]|%\\h\\h)+"
-      end
+      ret[:HOSTNAME] = hostname = '(?:[a-zA-Z0-9\\-.]|%\\h\\h)+' unless hostname
 
       # RFC 2373, APPENDIX B:
       # IPv6address = hexpart [ ":" IPv4address ]
@@ -382,7 +381,7 @@ module URI
       # allowed too.  Here is a replacement.
       #
       # IPv4address = 1*3DIGIT "." 1*3DIGIT "." 1*3DIGIT "." 1*3DIGIT
-      ret[:IPV4ADDR] = ipv4addr = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"
+      ret[:IPV4ADDR] = ipv4addr = '\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}'
       # hex4     = 1*4HEXDIG
       hex4 = "[#{PATTERN::HEX}]{1,4}"
       # lastpart = hex4 | IPv4address
@@ -534,13 +533,12 @@ module URI
     def convert_to_uri(uri)
       if uri.is_a?(URI::Generic)
         uri
-      elsif uri = String.try_convert(uri)
+      elsif (uri = String.try_convert(uri))
         parse(uri)
       else
         raise ArgumentError,
-          "bad argument (expected URI object or URI string)"
+              'bad argument (expected URI object or URI string)'
       end
     end
-
-  end # class Parser
-end # module URI
+  end
+end

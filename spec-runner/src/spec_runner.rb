@@ -19,7 +19,30 @@ RUBY_EXE = '/usr/bin/true'
 require 'mspec'
 require 'mspec/utils/script'
 
+module MSpec
+  @register_state = []
+
+  class << self
+    alias __old_register_current register_current
+
+    # Allow spec runner to listen for changes to the active ContextState.
+    # This is needed to add before listeners to each test execution environment
+    # for tracking spec counts.
+    def register_current(state)
+      actions :register_state, state
+      __old_register_current(state)
+    end
+  end
+end
+
 class SpecCollector
+  RED = "\e[31m"
+  GREEN = "\e[32m"
+  YELLOW = "\e[33m"
+  PLAIN = "\e[0m"
+
+  attr_accessor :total
+
   def initialize
     @errors = []
     @total = 0
@@ -38,17 +61,16 @@ class SpecCollector
     MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
   end
 
-  def enter(description)
+  def register_state(state)
     collector = self
-    MSpec.current.before(:each) { collector.begin }
-    puts "\n", "In #{description}:", ''
-    @current_description = description
-    nil
+    state.before(:each) do
+      collector.total += 1
+      print '.'
+    end
   end
 
-  def begin
-    @total += 1
-    print '.'
+  def enter(description)
+    @description = description
   end
 
   def exception(state)
@@ -83,33 +105,41 @@ class SpecCollector
     skipped = true if state.it =~ /UTF-8/
     skipped = true if state.it =~ /\\u/
 
-    skipped = true if @current_description == 'Regexp#initialize'
+    skipped = true if state.describe == 'Regexp#initialize'
 
     if skipped
       @skipped += 1
-      print "\b\e[33mS\e[0m"
+      print "\b", YELLOW, 'S', PLAIN
     else
       @errors << state
-      print "\b\e[31mX\e[0m"
+      print "\b", RED, 'X', PLAIN
     end
     nil
   end
 
   def finish
-    @failures = @errors.length
-    @successes = @total - @failures - @skipped
-
+    failures = @errors.length
+    successes = @total - @skipped - @not_implemented - failures
+    successes = 0 if successes.negative?
     puts "\n"
-    if @errors.length.zero?
-      puts "\e[32mPassed #{@successes}, skipped #{@skipped}, not implemented #{@not_implemented}, failed #{@errors.length} specs.\e[0m"
+
+    if failures.zero?
+      report(color: GREEN, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
       return
     end
 
-    puts "\e[31mPassed #{@successes}, skipped #{@skipped}, not implemented #{@not_implemented}, failed #{@errors.length} specs.\e[0m"
+    report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
     @errors.each do |state|
-      puts '', "\e[31m#{state.message} in #{state.it}\e[0m", '', state.backtrace
+      puts '', "#{RED}#{state.description}#{PLAIN}", '', state.backtrace
     end
-    puts "\e[31mPassed #{@successes}, skipped #{@skipped}, not implemented #{@not_implemented}, failed #{@errors.length} specs.\e[0m"
+    puts ''
+    report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
+  end
+
+  def report(color:, successes:, skipped:, not_implemented:, failed:)
+    print color
+    print "Passed #{successes}, skipped #{skipped}, not implemented #{not_implemented}, failed #{failed} specs."
+    print PLAIN, "\n"
   end
 end
 
@@ -118,6 +148,7 @@ def run_specs(*specs)
   collector = SpecCollector.new
 
   MSpec.register(:start, collector)
+  MSpec.register(:register_state, collector)
   MSpec.register(:enter, collector)
   MSpec.register(:exception, collector)
   MSpec.register(:finish, collector)

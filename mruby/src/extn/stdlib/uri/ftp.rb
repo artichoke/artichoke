@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 # = uri/ftp.rb
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
@@ -11,7 +12,6 @@
 require_relative 'generic'
 
 module URI
-
   #
   # FTP URI syntax is defined by RFC1738 section 3.2.
   #
@@ -27,10 +27,10 @@ module URI
     #
     # An Array of the available components for URI::FTP.
     #
-    COMPONENT = [
-      :scheme,
-      :userinfo, :host, :port,
-      :path, :typecode
+    COMPONENT = %i[
+      scheme
+      userinfo host port
+      path typecode
     ].freeze
 
     #
@@ -40,7 +40,7 @@ module URI
     # * "i" indicates a binary file (FTP command IMAGE)
     # * "d" indicates the contents of a directory should be displayed
     #
-    TYPECODE = ['a', 'i', 'd'].freeze
+    TYPECODE = %w[a i d].freeze
 
     # Typecode prefix ";type=".
     TYPECODE_PREFIX = ';type='.freeze
@@ -50,19 +50,19 @@ module URI
       # Do not use this method!  Not tested.  [Bug #7301]
       # This methods remains just for compatibility,
       # Keep it undocumented until the active maintainer is assigned.
-      typecode = nil if typecode.size == 0
+      typecode = nil if typecode.empty?
       if typecode && !TYPECODE.include?(typecode)
         raise ArgumentError,
-          "bad typecode is specified: #{typecode}"
+              "bad typecode is specified: #{typecode}"
       end
 
       # do escape
 
-      self.new('ftp',
-               [user, password],
-               host, port, nil,
-               typecode ? path + TYPECODE_PREFIX + typecode : path,
-               nil, nil, nil, arg_check)
+      new('ftp',
+          [user, password],
+          host, port, nil,
+          typecode ? path + TYPECODE_PREFIX + typecode : path,
+          nil, nil, nil, arg_check)
     end
 
     #
@@ -95,28 +95,25 @@ module URI
     #     uri2.to_s  # => "ftp://ftp.example.com/ruby/src"
     #
     def self.build(args)
-
       # Fix the incoming path to be generic URL syntax
       # FTP path  ->  URL path
       # foo/bar       /foo/bar
       # /foo/bar      /%2Ffoo/bar
       #
-      if args.kind_of?(Array)
-        args[3] = '/' + args[3].sub(/^\//, '%2F')
+      if args.is_a?(Array)
+        args[3] = '/' + args[3].sub(%r{^/}, '%2F')
       else
-        args[:path] = '/' + args[:path].sub(/^\//, '%2F')
+        args[:path] = '/' + args[:path].sub(%r{^/}, '%2F')
       end
 
-      tmp = Util::make_components_hash(self, args)
+      tmp = Util.make_components_hash(self, args)
 
       if tmp[:typecode]
-        if tmp[:typecode].size == 1
-          tmp[:typecode] = TYPECODE_PREFIX + tmp[:typecode]
-        end
+        tmp[:typecode] = TYPECODE_PREFIX + tmp[:typecode] if tmp[:typecode].size == 1
         tmp[:path] << tmp[:typecode]
       end
 
-      return super(tmp)
+      super(tmp)
     end
 
     #
@@ -139,20 +136,21 @@ module URI
                    parser = nil,
                    arg_check = false)
       raise InvalidURIError unless path
-      path = path.sub(/^\//,'')
-      path.sub!(/^%2F/,'/')
+
+      path = path.sub(%r{^/}, '')
+      path.sub!(/^%2F/, '/')
       super(scheme, userinfo, host, port, registry, path, opaque,
             query, fragment, parser, arg_check)
       @typecode = nil
-      if tmp = @path.index(TYPECODE_PREFIX)
-        typecode = @path[tmp + TYPECODE_PREFIX.size..-1]
-        @path = @path[0..tmp - 1]
+      return unless (tmp = @path.index(TYPECODE_PREFIX))
 
-        if arg_check
-          self.typecode = typecode
-        else
-          self.set_typecode(typecode)
-        end
+      typecode = @path[tmp + TYPECODE_PREFIX.size..-1]
+      @path = @path[0..tmp - 1]
+
+      if arg_check
+        self.typecode = typecode
+      else
+        set_typecode(typecode)
       end
     end
 
@@ -164,24 +162,24 @@ module URI
     # Validates typecode +v+,
     # returns +true+ or +false+.
     #
-    def check_typecode(v)
-      if TYPECODE.include?(v)
-        return true
+    def check_typecode(typecode)
+      if TYPECODE.include?(typecode)
+        true
       else
         raise InvalidComponentError,
-          "bad typecode(expected #{TYPECODE.join(', ')}): #{v}"
+              "bad typecode(expected #{TYPECODE.join(', ')}): #{v}"
       end
     end
-    private :check_typecode
+    private :check_typecode # rubocop:disable Style/AccessModifierDeclarations
 
     # Private setter for the typecode +v+.
     #
     # See also URI::FTP.typecode=.
     #
-    def set_typecode(v)
-      @typecode = v
+    def set_typecode(typecode) # rubocop:disable Naming/AccessorMethodName
+      @typecode = typecode
     end
-    protected :set_typecode
+    protected :set_typecode # rubocop:disable Style/AccessModifierDeclarations
 
     #
     # == Args
@@ -209,16 +207,14 @@ module URI
     def typecode=(typecode)
       check_typecode(typecode)
       set_typecode(typecode)
-      typecode
+      typecode # rubocop:disable Lint/Void
     end
 
     def merge(oth) # :nodoc:
       tmp = super(oth)
-      if self != tmp
-        tmp.set_typecode(oth.typecode)
-      end
+      tmp.set_typecode(oth.typecode) if self != tmp
 
-      return tmp
+      tmp
     end
 
     # Returns the path from an FTP URI.
@@ -239,14 +235,14 @@ module URI
     # This method will then return "/pub/ruby".
     #
     def path
-      return @path.sub(/^\//,'').sub(/^%2F/,'/')
+      @path.sub(%r{^/}, '').sub(/^%2F/, '/')
     end
 
     # Private setter for the path of the URI::FTP.
-    def set_path(v)
-      super("/" + v.sub(/^\//, "%2F"))
+    def set_path(path) # rubocop:disable Naming/AccessorMethodName
+      super('/' + path.sub(%r{^/}, '%2F'))
     end
-    protected :set_path
+    protected :set_path # rubocop:disable Style/AccessModifierDeclarations
 
     # Returns a String representation of the URI::FTP.
     def to_s
@@ -256,11 +252,9 @@ module URI
         @path = @path + TYPECODE_PREFIX + @typecode
       end
       str = super
-      if @typecode
-        @path = save_path
-      end
+      @path = save_path if @typecode
 
-      return str
+      str
     end
   end
   @@schemes['FTP'] = FTP

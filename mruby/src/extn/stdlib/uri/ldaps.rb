@@ -1,4 +1,5 @@
 # frozen_string_literal: false
+
 # = uri/ldap.rb
 #
 # License:: You can redistribute it and/or modify it under the same term as Ruby.
@@ -9,7 +10,6 @@
 require_relative 'ldap'
 
 module URI
-
   # The default port for LDAPS URIs is 636, and the scheme is 'ldaps:' rather
   # than 'ldap:'. Other than that, LDAPS URIs are identical to LDAP URIs;
   # see URI::LDAP.
