@@ -53,7 +53,7 @@ module URI
 
       tmp
     end
-    module_function :make_components_hash
+    module_function :make_components_hash # rubocop:disable Style/AccessModifierDeclarations
   end
 
   # Module for escaping unsafe characters with codes.
@@ -129,12 +129,12 @@ module URI
       DEFAULT_PARSER.unescape(*arg)
     end
     alias decode unescape
-  end # module Escape
+  end
 
   extend Escape
   include REGEXP
 
-  @@schemes = {}
+  @@schemes = {} # rubocop:disable Style/ClassVars
   # Returns a Hash of the defined schemes.
   def self.scheme_list
     @@schemes
@@ -342,10 +342,10 @@ module URI
   256.times do |i|
     h = i >> 4
     l = i & 15
-    TBLDECWWWCOMP_[-format('%%%X%X', h, l)] = -i.chr
-    TBLDECWWWCOMP_[-format('%%%x%X', h, l)] = -i.chr
-    TBLDECWWWCOMP_[-format('%%%X%x', h, l)] = -i.chr
-    TBLDECWWWCOMP_[-format('%%%x%x', h, l)] = -i.chr
+    TBLDECWWWCOMP_[-format('%%%<high>X%<low>X', high: h, low: l)] = -i.chr
+    TBLDECWWWCOMP_[-format('%%%<high>x%<low>X', high: h, low: l)] = -i.chr
+    TBLDECWWWCOMP_[-format('%%%<high>X%<low>x', high: h, low: l)] = -i.chr
+    TBLDECWWWCOMP_[-format('%%%<high>x%<low>x', high: h, low: l)] = -i.chr
   end
   TBLDECWWWCOMP_['+'] = ' '
   TBLDECWWWCOMP_.freeze
@@ -488,8 +488,6 @@ module URI
     end
     ary
   end
-
-  private
 
   # command for WEB_ENCODINGS_
   #   curl https://encoding.spec.whatwg.org/encodings.json|
@@ -724,21 +722,21 @@ module URI
   rescue StandardError
     nil
   end
-end # module URI
+end
 
 module Kernel
   #
   # Returns +uri+ converted to an URI object.
   #
-  def URI(uri)
+  def URI(uri) # rubocop:disable Naming/MethodName
     if uri.is_a?(URI::Generic)
       uri
-    elsif uri = String.try_convert(uri)
+    elsif (uri = String.try_convert(uri))
       URI.parse(uri)
     else
       raise ArgumentError,
             'bad argument (expected URI object or URI string)'
     end
   end
-  module_function :URI
+  module_function :URI # rubocop:disable Style/AccessModifierDeclarations
 end

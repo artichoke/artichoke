@@ -142,15 +142,15 @@ module URI
       super(scheme, userinfo, host, port, registry, path, opaque,
             query, fragment, parser, arg_check)
       @typecode = nil
-      if tmp = @path.index(TYPECODE_PREFIX)
-        typecode = @path[tmp + TYPECODE_PREFIX.size..-1]
-        @path = @path[0..tmp - 1]
+      return unless (tmp = @path.index(TYPECODE_PREFIX))
 
-        if arg_check
-          self.typecode = typecode
-        else
-          set_typecode(typecode)
-        end
+      typecode = @path[tmp + TYPECODE_PREFIX.size..-1]
+      @path = @path[0..tmp - 1]
+
+      if arg_check
+        self.typecode = typecode
+      else
+        set_typecode(typecode)
       end
     end
 
@@ -162,24 +162,24 @@ module URI
     # Validates typecode +v+,
     # returns +true+ or +false+.
     #
-    def check_typecode(v)
-      if TYPECODE.include?(v)
+    def check_typecode(typecode)
+      if TYPECODE.include?(typecode)
         true
       else
         raise InvalidComponentError,
               "bad typecode(expected #{TYPECODE.join(', ')}): #{v}"
       end
     end
-    private :check_typecode
+    private :check_typecode # rubocop:disable Style/AccessModifierDeclarations
 
     # Private setter for the typecode +v+.
     #
     # See also URI::FTP.typecode=.
     #
-    def set_typecode(v)
-      @typecode = v
+    def set_typecode(typecode) # rubocop:disable Naming/AccessorMethodName
+      @typecode = typecode
     end
-    protected :set_typecode
+    protected :set_typecode # rubocop:disable Style/AccessModifierDeclarations
 
     #
     # == Args
@@ -207,7 +207,7 @@ module URI
     def typecode=(typecode)
       check_typecode(typecode)
       set_typecode(typecode)
-      typecode
+      typecode # rubocop:disable Lint/Void
     end
 
     def merge(oth) # :nodoc:
@@ -239,10 +239,10 @@ module URI
     end
 
     # Private setter for the path of the URI::FTP.
-    def set_path(v)
-      super('/' + v.sub(%r{^/}, '%2F'))
+    def set_path(path) # rubocop:disable Naming/AccessorMethodName
+      super('/' + path.sub(%r{^/}, '%2F'))
     end
-    protected :set_path
+    protected :set_path # rubocop:disable Style/AccessModifierDeclarations
 
     # Returns a String representation of the URI::FTP.
     def to_s

@@ -165,11 +165,11 @@ module URI
     attr_reader :headers
 
     # Checks the to +v+ component.
-    def check_to(v)
-      return true unless v
-      return true if v.empty?
+    def check_to(value)
+      return true unless value
+      return true if value.empty?
 
-      v.split(/[,;]/).each do |addr|
+      value.split(/[,;]/).each do |addr|
         # check url safety as path-rootless
         if /\A(?:%\h\h|[!$&-.0-;=@-Z_a-z~])*\z/ !~ addr
           raise InvalidComponentError,
@@ -187,50 +187,50 @@ module URI
 
       true
     end
-    private :check_to
+    private :check_to # rubocop:disable Style/AccessModifierDeclarations
 
     # Private setter for to +v+.
-    def set_to(v)
-      @to = v
+    def set_to(value) # rubocop:disable Naming/AccessorMethodName
+      @to = value
     end
-    protected :set_to
+    protected :set_to # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for to +v+.
-    def to=(v)
-      check_to(v)
-      set_to(v)
-      v
+    def to=(value)
+      check_to(value)
+      set_to(value)
+      value # rubocop:disable Lint/Void
     end
 
     # Checks the headers +v+ component against either
     # * HEADER_REGEXP
-    def check_headers(v)
-      return true unless v
-      return true if v.empty?
+    def check_headers(headers)
+      return true unless headers
+      return true if headers.empty?
 
-      if HEADER_REGEXP !~ v
+      if HEADER_REGEXP !~ headers
         raise InvalidComponentError,
-              "bad component(expected opaque component): #{v}"
+              "bad component(expected opaque component): #{headers}"
       end
 
       true
     end
-    private :check_headers
+    private :check_headers # rubocop:disable Style/AccessModifierDeclarations
 
     # Private setter for headers +v+.
-    def set_headers(v)
+    def set_headers(headers) # rubocop:disable Naming/AccessorMethodName
       @headers = []
-      v&.split('&')&.each do |x|
+      headers&.split('&')&.each do |x|
         @headers << x.split(/=/, 2)
       end
     end
-    protected :set_headers
+    protected :set_headers # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for headers +v+.
-    def headers=(v)
-      check_headers(v)
-      set_headers(v)
-      v
+    def headers=(headers)
+      check_headers(headers)
+      set_headers(headers)
+      headers # rubocop:disable Lint/Void
     end
 
     # Constructs String from URI.

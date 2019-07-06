@@ -52,13 +52,13 @@ module URI
     #
     # See also URI::Generic.host=.
     #
-    def set_host(v)
-      v = '' if v.nil? || v == 'localhost'
-      @host = v
+    def set_host(host) # rubocop:disable Naming/AccessorMethodName
+      host = '' if host.nil? || host == 'localhost'
+      @host = host
     end
 
     # do nothing
-    def set_port(v); end
+    def set_port(port); end # rubocop:disable Naming/AccessorMethodName
 
     # raise InvalidURIError
     def check_userinfo(_user)
@@ -76,13 +76,13 @@ module URI
     end
 
     # do nothing
-    def set_userinfo(v); end
+    def set_userinfo(userinfo); end # rubocop:disable Naming/AccessorMethodName
 
     # do nothing
-    def set_user(v); end
+    def set_user(user); end # rubocop:disable Naming/AccessorMethodName
 
     # do nothing
-    def set_password(v); end
+    def set_password(password); end # rubocop:disable Naming/AccessorMethodName
   end
 
   @@schemes['FILE'] = File

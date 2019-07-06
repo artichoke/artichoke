@@ -117,7 +117,7 @@ module URI
     def parse_dn
       @dn = @path[1..-1]
     end
-    private :parse_dn
+    private :parse_dn # rubocop:disable Style/AccessModifierDeclarations
 
     # Private method to cleanup +attributes+, +scope+, +filter+, and +extensions+
     # from using the +query+ component attribute.
@@ -127,16 +127,16 @@ module URI
       @filter     = nil
       @extensions = nil
 
-      if @query
-        attrs, scope, filter, extensions = @query.split('?')
+      return unless @query
 
-        @attributes = attrs if attrs && !attrs.empty?
-        @scope      = scope if scope && !scope.empty?
-        @filter     = filter if filter && !filter.empty?
-        @extensions = extensions if extensions && !extensions.empty?
-      end
+      attrs, scope, filter, extensions = @query.split('?')
+
+      @attributes = attrs if attrs && !attrs.empty?
+      @scope      = scope if scope && !scope.empty?
+      @filter     = filter if filter && !filter.empty?
+      @extensions = extensions if extensions && !extensions.empty?
     end
-    private :parse_query
+    private :parse_query # rubocop:disable Style/AccessModifierDeclarations
 
     # Private method to assemble +query+ from +attributes+, +scope+, +filter+, and +extensions+.
     def build_path_query
@@ -150,91 +150,91 @@ module URI
       end
       @query = query.join('?')
     end
-    private :build_path_query
+    private :build_path_query # rubocop:disable Style/AccessModifierDeclarations
 
     # Returns dn.
     attr_reader :dn
 
     # Private setter for dn +val+.
-    def set_dn(val)
+    def set_dn(val) # rubocop:disable Naming/AccessorMethodName
       @dn = val
       build_path_query
       @dn
     end
-    protected :set_dn
+    protected :set_dn # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for dn +val+.
     def dn=(val)
       set_dn(val)
-      val
+      val # rubocop:disable Lint/Void
     end
 
     # Returns attributes.
     attr_reader :attributes
 
     # Private setter for attributes +val+.
-    def set_attributes(val)
+    def set_attributes(val) # rubocop:disable Naming/AccessorMethodName
       @attributes = val
       build_path_query
       @attributes
     end
-    protected :set_attributes
+    protected :set_attributes # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for attributes +val+.
     def attributes=(val)
       set_attributes(val)
-      val
+      val # rubocop:disable Lint/Void
     end
 
     # Returns scope.
     attr_reader :scope
 
     # Private setter for scope +val+.
-    def set_scope(val)
+    def set_scope(val) # rubocop:disable Naming/AccessorMethodName
       @scope = val
       build_path_query
       @scope
     end
-    protected :set_scope
+    protected :set_scope # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for scope +val+.
     def scope=(val)
       set_scope(val)
-      val
+      val # rubocop:disable Lint/Void
     end
 
     # Returns filter.
     attr_reader :filter
 
     # Private setter for filter +val+.
-    def set_filter(val)
+    def set_filter(val) # rubocop:disable Naming/AccessorMethodName
       @filter = val
       build_path_query
       @filter
     end
-    protected :set_filter
+    protected :set_filter # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for filter +val+.
     def filter=(val)
       set_filter(val)
-      val
+      val # rubocop:disable Lint/Void
     end
 
     # Returns extensions.
     attr_reader :extensions
 
     # Private setter for extensions +val+.
-    def set_extensions(val)
+    def set_extensions(val) # rubocop:disable Naming/AccessorMethodName
       @extensions = val
       build_path_query
       @extensions
     end
-    protected :set_extensions
+    protected :set_extensions # rubocop:disable Style/AccessModifierDeclarations
 
     # Setter for extensions +val+.
     def extensions=(val)
       set_extensions(val)
-      val
+      val # rubocop:disable Lint/Void
     end
 
     # Checks if URI has a path.

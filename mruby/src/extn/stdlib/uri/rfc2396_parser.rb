@@ -15,7 +15,7 @@ module URI
   #
   # Includes URI::REGEXP::PATTERN
   #
-  module RFC2396_REGEXP
+  module RFC2396_REGEXP # rubocop:disable Naming/ClassAndModuleCamelCase
     #
     # Patterns used to parse URI's
     #
@@ -54,16 +54,16 @@ module URI
       HOSTNAME = "(?:#{DOMLABEL}\\.)*#{TOPLABEL}\\.?".freeze
 
       # :startdoc:
-    end # PATTERN
+    end
 
     # :startdoc:
-  end # REGEXP
+  end
 
   # Class that parses String's into URI's.
   #
   # It contains a Hash set of patterns and Regexp's that match and validate.
   #
-  class RFC2396_Parser
+  class RFC2396_Parser # rubocop:disable Naming/ClassAndModuleCamelCase
     include RFC2396_REGEXP
 
     #
@@ -123,6 +123,7 @@ module URI
       case uri
       when ''
         # null uri
+        nil
 
       when @regexp[:ABS_URI]
         scheme, opaque, userinfo, host, port,
@@ -334,7 +335,7 @@ module URI
       str.gsub(escaped) { [$&[1, 2]].pack('H2').force_encoding(enc) }
     end
 
-    @@to_s = Kernel.instance_method(:to_s)
+    @@to_s = Kernel.instance_method(:to_s) # rubocop:disable Style/ClassVars
     def inspect
       @@to_s.bind(self).call
     end
@@ -532,12 +533,12 @@ module URI
     def convert_to_uri(uri)
       if uri.is_a?(URI::Generic)
         uri
-      elsif uri = String.try_convert(uri)
+      elsif (uri = String.try_convert(uri))
         parse(uri)
       else
         raise ArgumentError,
               'bad argument (expected URI object or URI string)'
       end
     end
-  end # class Parser
-end # module URI
+  end
+end
