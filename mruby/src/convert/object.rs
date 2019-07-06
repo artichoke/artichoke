@@ -40,6 +40,7 @@ where
         interp: &Mrb,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, MrbError> {
+        let mrb = interp.borrow().mrb;
         let spec = interp
             .borrow()
             .class_spec::<Self>()
@@ -73,12 +74,7 @@ where
             // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
             // i64 max value.
             let len = args.len().try_into().unwrap_or_default();
-            sys::mrb_obj_new(
-                interp.borrow().mrb,
-                rclass,
-                len,
-                args.as_ptr() as *const sys::mrb_value,
-            )
+            sys::mrb_obj_new(mrb, rclass, len, args.as_ptr() as *const sys::mrb_value)
         };
 
         let data = Rc::new(RefCell::new(self));
