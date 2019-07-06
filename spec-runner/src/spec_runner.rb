@@ -105,7 +105,7 @@ class SpecCollector
     skipped = true if state.it =~ /UTF-8/
     skipped = true if state.it =~ /\\u/
 
-    skipped = true if @current_description == 'Regexp#initialize'
+    skipped = true if state.describe == 'Regexp#initialize'
 
     if skipped
       @skipped += 1
