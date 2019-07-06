@@ -23,12 +23,8 @@ impl FromMrb<Vec<(Value, Value)>> for Value {
 
     fn from_mrb(interp: &Mrb, value: Vec<(Self, Self)>) -> Self {
         let mrb = interp.borrow().mrb;
-        // We can initalize a `Hash` with a known capacity using
-        // `sys::mrb_hash_new_capa`, but doing so requires converting from
-        // `usize` to `i64` which is fallible. To simplify the code and make
-        // `Vec<(Value, Value)>` easier to work with, use an infallible `Hash`
-        // constructor.
-        let hash = unsafe { sys::mrb_hash_new(mrb) };
+        let hash =
+            unsafe { sys::mrb_hash_new_capa(mrb, i64::try_from(value.len()).unwrap_or_default()) };
         for (key, val) in value {
             unsafe { sys::mrb_hash_set(mrb, hash, key.inner(), val.inner()) };
         }
