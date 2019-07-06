@@ -126,7 +126,7 @@ module URI
 
       when @regexp[:ABS_URI]
         scheme, opaque, userinfo, host, port,
-          registry, path, query, fragment = $LAST_MATCH_INFO[1..-1]
+          registry, path, query, fragment = $~[1..-1] # rubocop:disable Style/SpecialGlobalVars
 
         # URI-reference = [ absoluteURI | relativeURI ] [ "#" fragment ]
 
@@ -154,7 +154,7 @@ module URI
         opaque = nil
 
         userinfo, host, port, registry,
-          rel_segment, abs_path, query, fragment = $LAST_MATCH_INFO[1..-1]
+          rel_segment, abs_path, query, fragment = $~[1..-1] # rubocop:disable Style/SpecialGlobalVars
         if rel_segment && abs_path
           path = rel_segment + abs_path
         elsif rel_segment

@@ -332,13 +332,13 @@ module URI
     DEFAULT_PARSER.make_regexp(schemes)
   end
 
-  TBLENCWWWCOMP_ = {}.freeze # :nodoc:
+  TBLENCWWWCOMP_ = {} # rubocop:disable Style/MutableConstant
   256.times do |i|
     TBLENCWWWCOMP_[-i.chr] = -format('%%%02X', i)
   end
   TBLENCWWWCOMP_[' '] = '+'
   TBLENCWWWCOMP_.freeze
-  TBLDECWWWCOMP_ = {}.freeze # :nodoc:
+  TBLDECWWWCOMP_ = {} # rubocop:disable Style/MutableConstant
   256.times do |i|
     h = i >> 4
     l = i & 15
