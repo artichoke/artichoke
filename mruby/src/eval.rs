@@ -29,6 +29,15 @@ impl Protect {
     ) -> sys::mrb_value {
         let ptr = sys::mrb_sys_cptr_ptr(data);
         let args = Rc::from_raw(ptr as *const Self);
+        let ctx = args.ctx;
+        let code = args.code.as_ptr();
+        let len = args.code.len();
+        // Drop the `Rc` before calling `mrb_load_nstring_ctx` which can
+        // potentially unwind the stack with `longjmp`. To make sure eval and
+        // unchecked_eval can free the code buffer, the `Rc::strong_count` must
+        // be decreased. This is safe to do and `code` pointer will not be
+        // dangling because strong count is always 2 right now.
+        drop(args);
 
         // Execute arbitrary ruby code, which may generate objects with C APIs
         // if backed by Rust functions.
@@ -38,9 +47,9 @@ impl Protect {
         // considered live by the GC.
         sys::mrb_load_nstring_cxt(
             mrb,
-            args.code.as_ptr() as *const i8,
-            args.code.len(),
-            args.ctx,
+            code as *const i8,
+            len,
+            ctx,
         )
     }
 }
