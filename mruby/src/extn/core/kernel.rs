@@ -57,13 +57,11 @@ impl Warning {
         let interp = interpreter_or_raise!(mrb);
         let stderr = sys::mrb_gv_get(mrb, interp.borrow_mut().sym_intern("$stderr"));
         if !sys::mrb_sys_value_is_nil(stderr) {
-            let args = unwrap_or_raise!(
-                interp,
-                args::Rest::extract(&interp),
-                sys::mrb_sys_nil_value()
-            );
+            let args = args::Rest::extract(&interp);
             let stderr = Value::new(&interp, stderr);
-            unwrap_value_or_raise!(interp, stderr.funcall::<Value, _, _>("print", args.rest));
+            // TODO: introduce a `unchecked_funcall` to propagate errors.
+            let _ = stderr
+                .funcall::<Value, _, _>("print", args.map(|args| args.rest).unwrap_or_default());
         }
         sys::mrb_sys_nil_value()
     }
@@ -190,13 +188,9 @@ impl Kernel {
 
     unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Rest::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
+        let args = args::Rest::extract(&interp);
 
-        for value in args.rest {
+        for value in args.map(|args| args.rest).unwrap_or_default() {
             print!("{}", value.to_s());
         }
         let _ = io::stdout().flush();
@@ -217,16 +211,14 @@ impl Kernel {
         }
 
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Rest::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
+        let rest = args::Rest::extract(&interp)
+            .map(|args| args.rest)
+            .unwrap_or_default();
 
-        if args.rest.is_empty() {
+        if rest.is_empty() {
             println!();
         }
-        for value in args.rest {
+        for value in rest {
             do_puts(value);
         }
         sys::mrb_sys_nil_value()
@@ -234,13 +226,9 @@ impl Kernel {
 
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Rest::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
+        let args = args::Rest::extract(&interp);
 
-        for value in args.rest {
+        for value in args.map(|args| args.rest).unwrap_or_default() {
             let mut string = value.to_s();
             if !string.ends_with('\n') {
                 string = format!("{}\n", string);
