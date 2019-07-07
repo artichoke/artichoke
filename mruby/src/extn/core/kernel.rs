@@ -1,14 +1,11 @@
 use log::trace;
-use path_abs::PathAbs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
-use crate::extn::core::error::{LoadError, RubyException};
-use crate::fs::RUBY_LOAD_PATH;
+use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeError};
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
@@ -70,98 +67,35 @@ impl Warning {
 pub struct Kernel;
 
 impl Kernel {
-    unsafe fn require_impl(interp: &Mrb, filename: &str, base: &str) -> sys::mrb_value {
-        let interp = Rc::clone(interp);
-        // Track whether any iterations of the loop successfully required some
-        // Ruby sources.
-        let mut success = false;
-        let mut path = PathBuf::from(filename);
-        if path.is_relative() {
-            path = PathBuf::from(base);
-        }
-        let files = vec![path.join(format!("{}.rb", filename)), path.join(filename)];
-        for path in files {
-            // canonicalize path (remove '.' and '..' components).
-            let path = match PathAbs::new(path) {
-                Ok(path) => path,
-                Err(_) => continue,
-            };
-            let is_file = {
-                let api = interp.borrow();
-                api.vfs.is_file(path.as_path())
-            };
-            if !is_file {
-                // If no paths are files in the VFS, then the require does
-                // nothing.
-                continue;
-            }
-            let metadata = {
-                let api = interp.borrow();
-                api.vfs.metadata(path.as_path()).unwrap_or_default()
-            };
-            // If a file is already required, short circuit.
-            if metadata.is_already_required() {
-                return Value::from_mrb(&interp, false).inner();
-            }
-            let context = if let Some(filename) = path.as_path().to_str() {
-                EvalContext::new(filename)
-            } else {
-                EvalContext::new("(require)")
-            };
-            // Require Rust MrbFile first because an MrbFile may define classes
-            // and module with `MrbLoadSources` and Ruby files can require
-            // arbitrary other files, including some child sources that may
-            // depend on these module definitions. This behavior is enforced
-            // with a test in crate mruby-gems. See mruby-gems/src/lib.rs.
-            if let Some(_require) = metadata.require {
-                // dynamic, Rust-backed `MrbFile` require
-                interp.push_context(context.clone());
-                // TODO: FIXME
-                // unwrap_or_raise!(interp, require(interp), sys::mrb_sys_nil_value());
-                interp.pop_context();
-            }
-            let contents = {
-                let api = interp.borrow();
-                api.vfs.read_file(path.as_path())
-            };
-            if let Ok(contents) = contents {
-                // We need to be sure we don't leak anything by unwinding past
-                // this point. This likely requires a significant refactor to
-                // require_impl.
-                interp.unchecked_eval_with_context(contents, context);
-            } else {
-                // this branch should be unreachable because the `Mrb`
-                // interpreter is not `Send` so it can only be owned and
-                // accessed by one thread.
-                return LoadError::raise(interp, filename);
-            }
-            let metadata = metadata.mark_required();
-            let api = interp.borrow();
-            let _ = api.vfs.set_metadata(path.as_path(), metadata);
-            success = true;
-            trace!(
-                r#"Successful require of "{}" at {:?} on {:?}"#,
-                filename,
-                path,
-                api
-            );
-            drop(api);
-        }
-        if success {
-            Value::from_mrb(&interp, success).inner()
-        } else {
-            LoadError::raise(interp, filename)
-        }
-    }
-
     unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Require::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-        Self::require_impl(&interp, args.filename.as_str(), RUBY_LOAD_PATH)
+        let args = require::Args::extract(&interp);
+        let result = args.and_then(|args| require::method::require(&interp, args));
+        match result {
+            Ok(req) => {
+                let result = if let Some(req) = req.rust {
+                    req(Rc::clone(&interp))
+                } else {
+                    Ok(())
+                };
+                if result.is_ok() {
+                    if let Some(contents) = req.ruby {
+                        interp.unchecked_eval_with_context(contents, EvalContext::new(req.file));
+                    }
+                    Value::from_mrb(&interp, true).inner()
+                } else {
+                    LoadError::raisef(interp, "cannot load such file -- %s", vec![req.file])
+                }
+            }
+            Err(require::Error::AlreadyRequired) => Value::from_mrb(&interp, false).inner(),
+            Err(require::Error::CannotLoad(file)) => {
+                LoadError::raisef(interp, "cannot load such file -- %s", vec![file])
+            }
+            Err(require::Error::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
+            Err(require::Error::NoImplicitConversionToString) => {
+                ArgumentError::raise(interp, "No implicit conversion to String")
+            }
+        }
     }
 
     unsafe extern "C" fn require_relative(
@@ -169,21 +103,33 @@ impl Kernel {
         _slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Require::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-        let base = interp
-            .peek_context()
-            .and_then(|context| {
-                PathBuf::from(context.filename)
-                    .parent()
-                    .and_then(Path::to_str)
-                    .map(str::to_owned)
-            })
-            .unwrap_or_else(|| RUBY_LOAD_PATH.to_owned());
-        Self::require_impl(&interp, args.filename.as_str(), base.as_str())
+        let args = require::Args::extract(&interp);
+        let result = args.and_then(|args| require::method::require_relative(&interp, args));
+        match result {
+            Ok(req) => {
+                let result = if let Some(req) = req.rust {
+                    req(Rc::clone(&interp))
+                } else {
+                    Ok(())
+                };
+                if result.is_ok() {
+                    if let Some(contents) = req.ruby {
+                        interp.unchecked_eval_with_context(contents, EvalContext::new(req.file));
+                    }
+                    Value::from_mrb(&interp, true).inner()
+                } else {
+                    LoadError::raisef(interp, "cannot load such file -- %s", vec![req.file])
+                }
+            }
+            Err(require::Error::AlreadyRequired) => Value::from_mrb(&interp, false).inner(),
+            Err(require::Error::CannotLoad(file)) => {
+                LoadError::raisef(interp, "cannot load such file -- %s", vec![file])
+            }
+            Err(require::Error::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
+            Err(require::Error::NoImplicitConversionToString) => {
+                ArgumentError::raise(interp, "No implicit conversion to String")
+            }
+        }
     }
 
     unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
