@@ -76,11 +76,31 @@ pub trait MrbEval {
     where
         T: AsRef<[u8]>;
 
+    /// Eval code on the mruby interpreter using the current [`EvalContext`] or
+    /// [`EvalContext::root`] if none is present on the stack.
+    ///
+    /// This function does not wrap calls to the mruby VM in `mrb_protect` which
+    /// means exceptions will unwind past this call.
+    fn unchecked_eval<T>(&self, code: T) -> Value
+    where
+        T: AsRef<[u8]>;
+
     /// Eval code on the mruby interpreter using a custom [`EvalContext`].
     ///
     /// `EvalContext` allows manipulating interpreter state before eval, for
     /// example, setting the `__FILE__` magic constant.
     fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, MrbError>
+    where
+        T: AsRef<[u8]>;
+
+    /// Eval code on the mruby interpreter using a custom [`EvalContext`].
+    ///
+    /// `EvalContext` allows manipulating interpreter state before eval, for
+    /// example, setting the `__FILE__` magic constant.
+    ///
+    /// This function does not wrap calls to the mruby VM in `mrb_protect` which
+    /// means exceptions will unwind past this call.
+    fn unchecked_eval_with_context<T>(&self, code: T, context: EvalContext) -> Value
     where
         T: AsRef<[u8]>;
 
@@ -182,12 +202,66 @@ impl MrbEval for Mrb {
         }
     }
 
+    fn unchecked_eval<T>(&self, code: T) -> Value
+    where
+        T: AsRef<[u8]>,
+    {
+        // Ensure the borrow is out of scope by the time we eval code since
+        // Rust-backed files and types may need to mutably borrow the `Mrb` to
+        // get access to the underlying `MrbState`.
+        let (mrb, ctx) = {
+            let borrow = self.borrow();
+            (borrow.mrb, borrow.ctx)
+        };
+
+        // Grab the persistent `EvalContext` from the context on the `State` or
+        // the root context if the stack is empty.
+        let context = {
+            let api = self.borrow();
+            if let Some(context) = api.context_stack.last() {
+                context.clone()
+            } else {
+                EvalContext::root()
+            }
+        };
+
+        if let Ok(cfilename) = CString::new(context.filename.to_owned()) {
+            unsafe {
+                sys::mrbc_filename(mrb, ctx, cfilename.as_ptr() as *const i8);
+            }
+        } else {
+            warn!("Could not set {} as mrc context filename", context.filename);
+        }
+
+        let code = code.as_ref();
+        trace!("Evaling code on {}", mrb.debug());
+        // Execute arbitrary ruby code, which may generate objects with C
+        // APIs if backed by Rust functions.
+        //
+        // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
+        // which means the most recent value returned by eval will always be
+        // considered live by the GC.
+        let value =
+            unsafe { sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx) };
+        Value::new(self, value)
+    }
+
     fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, MrbError>
     where
         T: AsRef<[u8]>,
     {
         self.push_context(context);
         let result = self.eval(code.as_ref());
+        self.pop_context();
+        result
+    }
+
+    fn unchecked_eval_with_context<T>(&self, code: T, context: EvalContext) -> Value
+    where
+        T: AsRef<[u8]>,
+    {
+        self.push_context(context);
+        let result = self.unchecked_eval(code.as_ref());
         self.pop_context();
         result
     }
@@ -360,11 +434,7 @@ NestedEval.file
             .def_rb_source_file("fail.rb", "def bad; 'as'.scan(; end")
             .expect("def file");
         let result = interp.eval("require 'fail'").map(|_| ());
-        // TODO: require should not wrap exceptions in RuntimeError, see GH-154.
-        let expected = MrbError::Exec(
-            "(eval):1: mruby exception: SyntaxError: syntax error (RuntimeError)\n(eval):1"
-                .to_owned(),
-        );
+        let expected = MrbError::Exec("SyntaxError: syntax error".to_owned());
         assert_eq!(result, Err(expected));
     }
 }
