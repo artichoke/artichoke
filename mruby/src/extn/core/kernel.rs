@@ -15,6 +15,7 @@ use crate::value::{Value, ValueLike};
 use crate::{Mrb, MrbError};
 
 mod args;
+pub mod require;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     let warning = interp.borrow_mut().def_module::<Warning>("Warning", None);
