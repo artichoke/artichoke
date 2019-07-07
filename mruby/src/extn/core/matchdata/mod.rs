@@ -132,8 +132,8 @@ impl MatchData {
         match result {
             Ok(result) => result.inner(),
             Err(begin::Error::NoMatch) | Err(begin::Error::NoGroup) => sys::mrb_sys_nil_value(),
-            Err(begin::Error::IndexType) => TypeError::raise(&interp, "Unexpected capture group"),
-            Err(begin::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#begin error"),
+            Err(begin::Error::IndexType) => TypeError::raise(interp, "Unexpected capture group"),
+            Err(begin::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#begin error"),
         }
     }
 
@@ -144,7 +144,7 @@ impl MatchData {
             Ok(result) => result.inner(),
             Err(captures::Error::NoMatch) => sys::mrb_sys_nil_value(),
             Err(captures::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#captures error")
+                RuntimeError::raise(interp, "fatal MatchData#captures error")
             }
         }
     }
@@ -164,16 +164,15 @@ impl MatchData {
         match result {
             Ok(result) => result.inner(),
             Err(element_reference::Error::NoMatch) => sys::mrb_sys_nil_value(),
-            Err(element_reference::Error::NoGroup(name)) => IndexError::raise(
-                &interp,
-                &format!("undefined group name reference: {}", name),
-            ),
+            Err(element_reference::Error::NoGroup(name)) => {
+                IndexError::raise(interp, &format!("undefined group name reference: {}", name))
+            }
             Err(element_reference::Error::IndexType)
             | Err(element_reference::Error::LengthType) => {
-                TypeError::raise(&interp, "Unexpected element reference")
+                TypeError::raise(interp, "Unexpected element reference")
             }
             Err(element_reference::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#[] error")
+                RuntimeError::raise(interp, "fatal MatchData#[] error")
             }
         }
     }
@@ -186,8 +185,8 @@ impl MatchData {
         match result {
             Ok(result) => result.inner(),
             Err(end::Error::NoMatch) | Err(end::Error::NoGroup) => sys::mrb_sys_nil_value(),
-            Err(end::Error::IndexType) => TypeError::raise(&interp, "Unexpected capture group"),
-            Err(end::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#begin error"),
+            Err(end::Error::IndexType) => TypeError::raise(interp, "Unexpected capture group"),
+            Err(end::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#begin error"),
         }
     }
 
@@ -197,7 +196,7 @@ impl MatchData {
         match length::method(&interp, &value) {
             Ok(result) => result.inner(),
             Err(length::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#length error")
+                RuntimeError::raise(interp, "fatal MatchData#length error")
             }
         }
     }
@@ -212,7 +211,7 @@ impl MatchData {
             Ok(result) => result.inner(),
             Err(named_captures::Error::NoMatch) => sys::mrb_sys_nil_value(),
             Err(named_captures::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#named_captures error")
+                RuntimeError::raise(interp, "fatal MatchData#named_captures error")
             }
         }
     }
@@ -222,7 +221,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         match names::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(names::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#names error"),
+            Err(names::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#names error"),
         }
     }
 
@@ -236,9 +235,9 @@ impl MatchData {
             Err(offset::Error::NoMatch) | Err(offset::Error::NoGroup) => {
                 Value::from_mrb(&interp, vec![None::<Value>, None::<Value>]).inner()
             }
-            Err(offset::Error::IndexType) => TypeError::raise(&interp, "Unexpected capture group"),
+            Err(offset::Error::IndexType) => TypeError::raise(interp, "Unexpected capture group"),
             Err(offset::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#offset error")
+                RuntimeError::raise(interp, "fatal MatchData#offset error")
             }
         }
     }
@@ -252,7 +251,7 @@ impl MatchData {
         match post_match::method(&interp, &value) {
             Ok(result) => result.inner(),
             Err(post_match::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#post_match error")
+                RuntimeError::raise(interp, "fatal MatchData#post_match error")
             }
         }
     }
@@ -266,7 +265,7 @@ impl MatchData {
         match pre_match::method(&interp, &value) {
             Ok(result) => result.inner(),
             Err(pre_match::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#pre_match error")
+                RuntimeError::raise(interp, "fatal MatchData#pre_match error")
             }
         }
     }
@@ -277,7 +276,7 @@ impl MatchData {
         match regexp::method(&interp, &value) {
             Ok(result) => result.inner(),
             Err(regexp::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#regexp error")
+                RuntimeError::raise(interp, "fatal MatchData#regexp error")
             }
         }
     }
@@ -288,7 +287,7 @@ impl MatchData {
         match string::method(&interp, &value) {
             Ok(result) => result.inner(),
             Err(string::Error::Fatal) => {
-                RuntimeError::raise(&interp, "fatal MatchData#string error")
+                RuntimeError::raise(interp, "fatal MatchData#string error")
             }
         }
     }
@@ -300,7 +299,7 @@ impl MatchData {
         match to_a::method(&interp, &value) {
             Ok(result) => result.inner(),
             Err(to_a::Error::NoMatch) => sys::mrb_sys_nil_value(),
-            Err(to_a::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#to_a error"),
+            Err(to_a::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#to_a error"),
         }
     }
 
@@ -311,7 +310,7 @@ impl MatchData {
         match to_s::method(&interp, &value) {
             Ok(result) => result.inner(),
             Err(to_s::Error::NoMatch) => Value::from_mrb(&interp, [0_u8; 0].as_ref()).inner(),
-            Err(to_s::Error::Fatal) => RuntimeError::raise(&interp, "fatal MatchData#to_s error"),
+            Err(to_s::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#to_s error"),
         }
     }
 }
