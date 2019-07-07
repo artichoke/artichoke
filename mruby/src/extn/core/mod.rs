@@ -5,6 +5,7 @@ use crate::MrbError;
 pub mod array;
 pub mod env;
 pub mod error;
+pub mod hash;
 pub mod kernel;
 pub mod matchdata;
 pub mod module;
@@ -17,6 +18,7 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     array::patch(interp)?;
     env::patch(interp)?;
     error::patch(interp)?;
+    hash::patch(interp)?;
     kernel::patch(interp)?;
     matchdata::init(interp)?;
     module::patch(interp)?;
