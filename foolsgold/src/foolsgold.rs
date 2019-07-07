@@ -1,13 +1,13 @@
-use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
+use mruby::convert::{FromMrb, RustBackedValue};
 use mruby::def::{rust_data_free, ClassLike, Define, EnclosingRubyScope};
 use mruby::eval::MrbEval;
+use mruby::extn::core::error::{RubyException, RuntimeError};
 use mruby::file::MrbFile;
 use mruby::load::MrbLoadSources;
 use mruby::sys::{self, DescribeState};
 use mruby::value::Value;
 use mruby::{Mrb, MrbError};
 use std::borrow::Cow;
-use std::mem;
 use std::sync::atomic::{AtomicI64, Ordering};
 use uuid::Uuid;
 
@@ -67,10 +67,9 @@ struct Counter;
 impl Counter {
     unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-
         // We can probably relax the ordering constraint.
         let value = SEEN_REQUESTS_COUNTER.load(Ordering::SeqCst);
-        unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, value))
+        Value::from_mrb(&interp, value).inner()
     }
 
     unsafe extern "C" fn inc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
@@ -143,29 +142,33 @@ impl RequestContext {
             trace_id: request_id,
         };
         info!("initialized RequestContext with trace id {}", request_id);
-        unwrap_value_or_raise!(interp, data.try_into_ruby(&interp, Some(slf)))
+        if let Ok(data) = data.try_into_ruby(&interp, Some(slf)) {
+            data.inner()
+        } else {
+            drop(request_id);
+            RuntimeError::raise(interp, "fatal RequestContext#new error")
+        }
     }
 
     unsafe extern "C" fn trace_id(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
 
-        let data = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            Value::from_mrb(&interp, None::<Value>).inner()
-        );
-        let trace_id = data.borrow().trace_id;
-        info!("Retrieved trace id {} in {:?}", trace_id, interp);
-        mem::forget(data);
-        unwrap_value_or_raise!(interp, Value::try_from_mrb(&interp, trace_id.to_string()))
+        if let Ok(data) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+            let trace_id = data.borrow().trace_id;
+            info!("Retrieved trace id {} in {:?}", trace_id, interp);
+            Value::from_mrb(&interp, trace_id.to_string()).inner()
+        } else {
+            RuntimeError::raise(interp, "fatal RequestContext#trace_id error")
+        }
     }
 
     unsafe extern "C" fn metrics(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let spec = module_spec_or_raise!(interp, Metrics);
-        let borrow = spec.borrow();
-        borrow
-            .value(&interp)
+        let metrics = interp
+            .borrow()
+            .module_spec::<Metrics>()
+            .and_then(|spec| spec.borrow().value(&interp));
+        metrics
             .unwrap_or_else(|| Value::from_mrb(&interp, None::<Value>))
             .inner()
     }
