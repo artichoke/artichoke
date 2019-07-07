@@ -2,10 +2,11 @@ use log::warn;
 use std::ffi::CString;
 use std::rc::Rc;
 
+use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::sys;
-use crate::Mrb;
-use crate::MrbError;
+use crate::value::Value;
+use crate::{Mrb, MrbError};
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     let exception = interp
@@ -62,7 +63,14 @@ pub trait RubyException: 'static + Sized {
     /// **Warning**: This function calls [`sys::mrb_sys_raise`] which modifies
     /// the stack with `longjmp`. mruby expects raise to be called at some stack
     /// frame below an eval. If this is not the case, mruby will segfault.
-    fn raise(interp: Mrb, message: &str) -> sys::mrb_value {
+    unsafe fn raise(interp: Mrb, message: &'static str) -> sys::mrb_value {
+        Self::raisef::<Value>(interp, message, vec![])
+    }
+
+    unsafe fn raisef<V>(interp: Mrb, message: &'static str, format: Vec<V>) -> sys::mrb_value
+    where
+        Value: FromMrb<V>,
+    {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Mrb` to
         // get access to the underlying `MrbState`.
@@ -71,47 +79,48 @@ pub trait RubyException: 'static + Sized {
         let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
             spec
         } else {
-            return unsafe { sys::mrb_sys_nil_value() };
+            return sys::mrb_sys_nil_value();
         };
         let borrow = spec.borrow();
-        let message = Self::message(message);
-        let eclass = borrow.name();
-        let eclass_cstring = CString::new(eclass);
-        let eclass_cstring = if let Ok(eclass_cstring) = eclass_cstring {
-            eclass_cstring
+        let eclass = if let Some(rclass) = borrow.rclass(&interp) {
+            rclass
         } else {
-            warn!("unable to raise {} with message {}", eclass, message);
-            return unsafe { sys::mrb_sys_nil_value() };
+            warn!("unable to raise {}", borrow.name());
+            return sys::mrb_sys_nil_value();
         };
-        let eclass_ptr = eclass_cstring.as_ptr();
-        let message_cstring = CString::new(message.as_str());
-        let message_cstring = if let Ok(message_cstring) = message_cstring {
-            message_cstring
+        // message is a &'static str so it should never leak
+        let message = CString::new(message);
+        let message_cstring = if let Ok(message) = message {
+            message
         } else {
-            warn!("unable to raise {} with message {}", eclass, message);
-            return unsafe { sys::mrb_sys_nil_value() };
+            warn!("unable to raise {}", borrow.name());
+            return sys::mrb_sys_nil_value();
         };
         let message_ptr = message_cstring.as_ptr();
-        warn!("about to raise {} with message {}", eclass, message);
 
+        let mut formatargs = format
+            .into_iter()
+            .map(|item| Value::from_mrb(&interp, item).inner())
+            .collect::<Vec<_>>();
         // `mrb_sys_raise` will call longjmp which will unwind the stack.
         // Anything we haven't cleaned up at this point will leak, so drop
         // everything.
-        drop(eclass);
-        drop(eclass_cstring);
-        drop(message);
-        drop(message_cstring);
         drop(borrow);
         drop(spec);
         drop(interp);
-        unsafe {
-            sys::mrb_sys_raise(mrb, eclass_ptr, message_ptr);
+        match formatargs.len() {
+            0 => {
+                drop(formatargs);
+                sys::mrb_raise(mrb, eclass, message_ptr)
+            }
+            1 => {
+                let arg1 = formatargs.remove(0);
+                drop(formatargs);
+                sys::mrb_raisef(mrb, eclass, message_ptr, arg1)
+            }
+            _ => panic!("unsupported raisef format arg count. See mruby/src/extn/core/error.rs."),
         }
-        unreachable!("mrb_sys_raise will unwind the stack with longjmp");
-    }
-
-    fn message(message: &str) -> String {
-        message.to_owned()
+        unreachable!("mrb_raise will unwind the stack with longjmp");
     }
 }
 
@@ -127,11 +136,7 @@ impl RubyException for ScriptError {}
 #[allow(clippy::module_name_repetitions)]
 pub struct LoadError;
 
-impl RubyException for LoadError {
-    fn message(message: &str) -> String {
-        format!("cannot load such file -- {}", message)
-    }
-}
+impl RubyException for LoadError {}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct ArgumentError;
