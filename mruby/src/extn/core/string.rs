@@ -44,7 +44,7 @@ impl RString {
             // One UTF-8 character, which are at most 32 bits.
             Value::from_mrb(&interp, first as u32).inner()
         } else {
-            ArgumentError::raise(&interp, "empty string")
+            ArgumentError::raise(interp, "empty string")
         }
     }
 
@@ -57,9 +57,9 @@ impl RString {
         match result {
             Ok(result) => result.inner(),
             Err(scan::Error::WrongType) => {
-                TypeError::raise(&interp, "wrong argument type (expected Regexp)")
+                TypeError::raise(interp, "wrong argument type (expected Regexp)")
             }
-            Err(scan::Error::Fatal) => RuntimeError::raise(&interp, "fatal String#scan error"),
+            Err(scan::Error::Fatal) => RuntimeError::raise(interp, "fatal String#scan error"),
         }
     }
 }
