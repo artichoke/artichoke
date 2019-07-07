@@ -72,6 +72,7 @@ pub struct Kernel;
 
 impl Kernel {
     unsafe fn require_impl(interp: &Mrb, filename: &str, base: &str) -> sys::mrb_value {
+        let interp = Rc::clone(interp);
         // Track whether any iterations of the loop successfully required some
         // Ruby sources.
         let mut success = false;
@@ -101,7 +102,7 @@ impl Kernel {
             };
             // If a file is already required, short circuit.
             if metadata.is_already_required() {
-                return Value::from_mrb(interp, false).inner();
+                return Value::from_mrb(&interp, false).inner();
             }
             let context = if let Some(filename) = path.as_path().to_str() {
                 EvalContext::new(filename)
@@ -113,10 +114,11 @@ impl Kernel {
             // arbitrary other files, including some child sources that may
             // depend on these module definitions. This behavior is enforced
             // with a test in crate mruby-gems. See mruby-gems/src/lib.rs.
-            if let Some(require) = metadata.require {
+            if let Some(_require) = metadata.require {
                 // dynamic, Rust-backed `MrbFile` require
                 interp.push_context(context.clone());
-                unwrap_or_raise!(interp, require(Rc::clone(interp)), sys::mrb_sys_nil_value());
+                // TODO: FIXME
+                // unwrap_or_raise!(interp, require(interp), sys::mrb_sys_nil_value());
                 interp.pop_context();
             }
             let contents = {
@@ -124,20 +126,19 @@ impl Kernel {
                 api.vfs.read_file(path.as_path())
             };
             if let Ok(contents) = contents {
+                // We need to be sure we don't leak anything by unwinding past
+                // this point. This likely requires a significant refactor to
+                // require_impl.
                 interp.unchecked_eval_with_context(contents, context);
             } else {
                 // this branch should be unreachable because the `Mrb`
                 // interpreter is not `Send` so it can only be owned and
                 // accessed by one thread.
-                return LoadError::raise(&interp, filename);
+                return LoadError::raise(interp, filename);
             }
             let metadata = metadata.mark_required();
             let api = interp.borrow();
-            unwrap_or_raise!(
-                interp,
-                api.vfs.set_metadata(path.as_path(), metadata),
-                sys::mrb_sys_nil_value()
-            );
+            let _ = api.vfs.set_metadata(path.as_path(), metadata);
             success = true;
             trace!(
                 r#"Successful require of "{}" at {:?} on {:?}"#,
@@ -145,11 +146,12 @@ impl Kernel {
                 path,
                 api
             );
+            drop(api);
         }
         if success {
-            Value::from_mrb(interp, success).inner()
+            Value::from_mrb(&interp, success).inner()
         } else {
-            LoadError::raise(&interp, filename)
+            LoadError::raise(interp, filename)
         }
     }
 
