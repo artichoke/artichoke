@@ -84,12 +84,12 @@ impl Kernel {
                     }
                     Value::from_mrb(&interp, true).inner()
                 } else {
-                    LoadError::raisef(interp, "cannot load such file -- %s", vec![req.file])
+                    LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
                 }
             }
             Err(require::Error::AlreadyRequired) => Value::from_mrb(&interp, false).inner(),
             Err(require::Error::CannotLoad(file)) => {
-                LoadError::raisef(interp, "cannot load such file -- %s", vec![file])
+                LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
             }
             Err(require::Error::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
             Err(require::Error::NoImplicitConversionToString) => {
@@ -118,12 +118,12 @@ impl Kernel {
                     }
                     Value::from_mrb(&interp, true).inner()
                 } else {
-                    LoadError::raisef(interp, "cannot load such file -- %s", vec![req.file])
+                    LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
                 }
             }
             Err(require::Error::AlreadyRequired) => Value::from_mrb(&interp, false).inner(),
             Err(require::Error::CannotLoad(file)) => {
-                LoadError::raisef(interp, "cannot load such file -- %s", vec![file])
+                LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
             }
             Err(require::Error::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
             Err(require::Error::NoImplicitConversionToString) => {
