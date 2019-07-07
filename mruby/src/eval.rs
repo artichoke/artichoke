@@ -45,12 +45,7 @@ impl Protect {
         // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
         // which means the most recent value returned by eval will always be
         // considered live by the GC.
-        sys::mrb_load_nstring_cxt(
-            mrb,
-            code as *const i8,
-            len,
-            ctx,
-        )
+        sys::mrb_load_nstring_cxt(mrb, code as *const i8, len, ctx)
     }
 }
 
@@ -313,12 +308,13 @@ impl MrbEval for Mrb {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::TryFromMrb;
+    use crate::convert::{FromMrb, TryFromMrb};
     use crate::def::{ClassLike, Define};
     use crate::eval::{EvalContext, MrbEval};
     use crate::file::MrbFile;
     use crate::load::MrbLoadSources;
     use crate::sys;
+    use crate::value::Value;
     use crate::{Mrb, MrbError};
 
     #[test]
@@ -357,7 +353,11 @@ mod tests {
                 _slf: sys::mrb_value,
             ) -> sys::mrb_value {
                 let interp = unwrap_interpreter!(mrb);
-                unwrap_value_or_raise!(interp, interp.eval("__FILE__"))
+                if let Ok(value) = interp.eval("__FILE__") {
+                    value.inner()
+                } else {
+                    Value::from_mrb(&interp, None::<Value>).inner()
+                }
             }
         }
 

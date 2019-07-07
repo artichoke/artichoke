@@ -143,8 +143,6 @@ impl<T> RustBackedValue for Box<T> where T: RustBackedValue {}
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
-    use std::mem;
     use std::rc::Rc;
 
     use crate::convert::object::RustBackedValue;
@@ -163,15 +161,14 @@ mod tests {
             slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let interp = unwrap_interpreter!(mrb);
-            let spec = class_spec_or_raise!(interp, Self);
 
-            let borrow = spec.borrow();
-            let ptr = sys::mrb_data_get_ptr(mrb, slf, borrow.data_type());
-            let data = Rc::from_raw(ptr as *const RefCell<Self>);
-            let container = Rc::clone(&data);
-            mem::forget(data);
-            let borrow = container.borrow();
-            Value::from_mrb(&interp, borrow.inner.as_str()).inner()
+            let value = Value::new(&interp, slf);
+            if let Ok(container) = Container::try_from_ruby(&interp, &value) {
+                let borrow = container.borrow();
+                Value::from_mrb(&interp, borrow.inner.as_str()).inner()
+            } else {
+                Value::from_mrb(&interp, None::<Value>).inner()
+            }
         }
     }
 
