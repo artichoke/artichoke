@@ -89,21 +89,20 @@ impl MrbFile for Counter {
         // We do not need to define an initialize method since there is no need
         // to store any state on the `mrb_value`. The counter state is in a
         // static `AtomicI64`.
-        let spec = {
-            let mut api = interp.borrow_mut();
-            let scope = api
-                .module_spec::<FoolsGold>()
-                .map(EnclosingRubyScope::module)
-                .ok_or_else(|| MrbError::NotDefined("FoolsGold".to_owned()))?;
-            // We do not need to define a free method since we are not storing
-            // any data in the `mrb_value`.
-            let spec = api.def_class::<Self>("Counter", Some(scope), None);
-            spec.borrow_mut()
-                .add_method("get", Self::get, sys::mrb_args_none());
-            spec.borrow_mut()
-                .add_method("inc", Self::inc, sys::mrb_args_none());
-            spec
-        };
+        let scope = interp
+            .borrow()
+            .module_spec::<FoolsGold>()
+            .map(EnclosingRubyScope::module)
+            .ok_or_else(|| MrbError::NotDefined("FoolsGold".to_owned()))?;
+        // We do not need to define a free method since we are not storing any
+        // data in the `mrb_value`.
+        let spec = interp
+            .borrow_mut()
+            .def_class::<Self>("Counter", Some(scope), None);
+        spec.borrow_mut()
+            .add_method("get", Self::get, sys::mrb_args_none());
+        spec.borrow_mut()
+            .add_method("inc", Self::inc, sys::mrb_args_none());
         spec.borrow().define(&interp)?;
         Ok(())
     }
@@ -153,7 +152,8 @@ impl RequestContext {
     unsafe extern "C" fn trace_id(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
 
-        if let Ok(data) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+        let value = Value::new(&interp, slf);
+        if let Ok(data) = Self::try_from_ruby(&interp, &value) {
             let trace_id = data.borrow().trace_id;
             info!("Retrieved trace id {} in {:?}", trace_id, interp);
             Value::from_mrb(&interp, trace_id.to_string()).inner()
@@ -164,10 +164,8 @@ impl RequestContext {
 
     unsafe extern "C" fn metrics(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let metrics = interp
-            .borrow()
-            .module_spec::<Metrics>()
-            .and_then(|spec| spec.borrow().value(&interp));
+        let spec = interp.borrow().module_spec::<Metrics>();
+        let metrics = spec.and_then(|spec| spec.borrow().value(&interp));
         metrics
             .unwrap_or_else(|| Value::from_mrb(&interp, None::<Value>))
             .inner()
