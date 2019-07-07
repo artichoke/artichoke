@@ -360,7 +360,7 @@ NestedEval.file
             .def_rb_source_file("fail.rb", "def bad; 'as'.scan(; end")
             .expect("def file");
         let result = interp.eval("require 'fail'").map(|_| ());
-        // TODO: require should reraise instead of wrapping in a RuntimeError
+        // TODO: require should not wrap exceptions in RuntimeError, see GH-154.
         let expected = MrbError::Exec(
             "(eval):1: mruby exception: SyntaxError: syntax error (RuntimeError)\n(eval):1"
                 .to_owned(),

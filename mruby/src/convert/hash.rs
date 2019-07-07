@@ -10,11 +10,8 @@ use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Mrb;
 
-// TODO: The following comment is no longer valid since `Value`s own a pointer
-// to the interpreter.
-// We can't implement `PartialEq` or `Hash` on Value because accessing these
-// methods on self requires an `mrb_state`. Instead, convert a Hash `Value` to
-// a sequence of key-value pairs.
+// TODO: implement `PartialEq`, `Eq`, and `Hash` on `Value`, see GH-159.
+// TODO: implement `FromMrb<HashMap<Value, Value>>`, see GH-160.
 
 // bail out implementation for mixed-type collections
 impl FromMrb<Vec<(Value, Value)>> for Value {

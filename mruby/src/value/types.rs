@@ -40,6 +40,7 @@ pub enum Ruby {
     CPointer,
     Data,
     Exception,
+    Fiber,
     Fixnum,
     Float,
     Hash,
@@ -64,6 +65,7 @@ impl Ruby {
             Ruby::CPointer => "C Pointer",
             Ruby::Data => "Rust-backed Ruby instance",
             Ruby::Exception => "Exception",
+            Ruby::Fiber => "Fiber",
             Ruby::Fixnum => "Fixnum",
             Ruby::Float => "Float",
             Ruby::Hash => "Hash",
@@ -113,7 +115,7 @@ impl From<sys::mrb_value> for Ruby {
             // internal use: #undef; should not happen
             sys::mrb_vtype::MRB_TT_UNDEF => Ruby::Unreachable,
             sys::mrb_vtype::MRB_TT_FLOAT => Ruby::Float,
-            // `MRB_TT_CPTR` wraps a `void *` pointer.
+            // `MRB_TT_CPTR` wraps a borrowed `void *` pointer.
             sys::mrb_vtype::MRB_TT_CPTR => Ruby::CPointer,
             sys::mrb_vtype::MRB_TT_OBJECT => Ruby::Object,
             sys::mrb_vtype::MRB_TT_CLASS => Ruby::Class,
@@ -146,16 +148,15 @@ impl From<sys::mrb_value> for Ruby {
             sys::mrb_vtype::MRB_TT_STRING => Ruby::String,
             sys::mrb_vtype::MRB_TT_RANGE => Ruby::Range,
             sys::mrb_vtype::MRB_TT_EXCEPTION => Ruby::Exception,
-            // TODO: how to surface this?
+            // TODO: Implement File, see GH-4.
             sys::mrb_vtype::MRB_TT_FILE => unimplemented!("mruby type file"),
-            // TODO: how to surface this?
+            // ENV is currently implemented as a singleton object in Ruby.
             sys::mrb_vtype::MRB_TT_ENV => unimplemented!("mruby type env"),
             // `MRB_TT_DATA` is a type tag for wrapped C pointers. It is used
-            // to indicate that an `mrb_value` has a pointer to an external data
-            // structure stored in its `value.p` field.
-            // TODO: how to handle this?
+            // to indicate that an `mrb_value` has an owned pointer to an
+            // external data structure stored in its `value.p` field.
             sys::mrb_vtype::MRB_TT_DATA => Ruby::Data,
-            sys::mrb_vtype::MRB_TT_FIBER => unimplemented!("mruby type fiber"),
+            sys::mrb_vtype::MRB_TT_FIBER => Ruby::Fiber,
             // MRB_TT_ISTRUCT is an "inline structure", or a mrb_value that
             // stores data in a char* buffer inside an mrb_value. These
             // mrb_values cannot have a finalizer and cannot have instance

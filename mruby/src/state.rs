@@ -15,14 +15,11 @@ use crate::sys::{self, DescribeState};
 // NOTE: MrbState assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Mrb`] as created by [`crate::interpreter`].
 pub struct State {
-    // TODO: Make this private
     pub mrb: *mut sys::mrb_state,
-    // TODO: Make this private
     pub ctx: *mut sys::mrbc_context,
     classes: HashMap<TypeId, Rc<RefCell<class::Spec>>>,
     modules: HashMap<TypeId, Rc<RefCell<module::Spec>>>,
     pub vfs: MrbFilesystem,
-    // TODO: make this private
     pub(crate) context_stack: Vec<EvalContext>,
     pub num_set_regexp_capture_globals: usize,
     symbol_cache: HashMap<String, sys::mrb_sym>,

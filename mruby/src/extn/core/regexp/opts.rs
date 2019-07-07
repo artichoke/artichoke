@@ -93,7 +93,7 @@ pub fn parse(value: &Value) -> Options {
     }
 }
 
-// TODO: Add tests for this function.
+// TODO: Add tests for this parse_pattern, see GH-157.
 pub fn parse_pattern(pattern: &str, mut opts: Options) -> (String, Options) {
     let orig_opts = opts;
     let mut chars = pattern.chars();

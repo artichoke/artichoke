@@ -40,7 +40,7 @@ impl Args {
     }
 }
 
-// TODO: extract named captures and assign to local variables.
+// TODO: extract named captures and assign to local variables, see GH-156.
 //
 // See: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-7E
 pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {

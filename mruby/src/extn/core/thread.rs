@@ -152,8 +152,8 @@ end.join
         let result = interp.eval(spec);
         assert!(result.is_err());
 
-        // TODO: re-enable the following test once upstream mruby bug is fixed:
-        // https://github.com/mruby/mruby/issues/4513
+        // TODO: re-enable the once upstream bug is fixed, see GH-155.
+        // Upstream bug: https://github.com/mruby/mruby/issues/4513
         /*
                 let spec = r#"
         #Thread.abort_on_exception = false

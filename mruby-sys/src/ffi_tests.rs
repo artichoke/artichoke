@@ -414,7 +414,7 @@ fn define_and_include_module() {
                 // This function requires self to be a Fixnum to safely access
                 // the `i` field of the value union in the unsafe block.
                 //
-                // TODO: Write a standalone test for this behavior
+                // TODO: Write a standalone test for this behavior, see GH-153.
                 if slf.tt == mrb_vtype::MRB_TT_FIXNUM {
                     // `unsafe` block required because we're accessing a union
                     // field which might access uninitialized memory. We know we
@@ -426,6 +426,7 @@ fn define_and_include_module() {
                     let emsg = "expected Fixnum";
                     mrb_sys_raise(
                         mrb,
+                        // TODO: scream! needs null terminator, see GH-153.
                         eclass.as_ptr() as *const i8,
                         emsg.as_ptr() as *const i8,
                     );

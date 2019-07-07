@@ -113,7 +113,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
         .borrow_mut()
         .add_method("to_s", Regexp::to_s, sys::mrb_args_none());
     regexp.borrow().define(&interp)?;
-    // TODO: Add proper constant defs to class::Spec and undo this hack.
+    // TODO: Add proper constant defs to class::Spec, see GH-158.
     interp.eval(format!(
         "class Regexp; IGNORECASE = {}; EXTENDED = {}; MULTILINE = {}; FIXEDENCODING = {}; NOENCODING = {}; end",
         Regexp::IGNORECASE,

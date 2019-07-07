@@ -258,7 +258,7 @@ pub enum MrbError {
     /// Exception raised during eval.
     ///
     /// See [`MrbEval`](eval::MrbEval).
-    // TODO: this should really be an `Exception` instead of a `String`.
+    // TODO: wrap an `Exception` instead of a `String`, see GH-152.
     Exec(String),
     /// Unable to initalize interpreter.
     ///
