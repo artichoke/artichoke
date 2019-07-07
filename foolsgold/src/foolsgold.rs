@@ -66,14 +66,14 @@ struct Counter;
 
 impl Counter {
     unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         // We can probably relax the ordering constraint.
         let value = SEEN_REQUESTS_COUNTER.load(Ordering::SeqCst);
         Value::from_mrb(&interp, value).inner()
     }
 
     unsafe extern "C" fn inc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let total_requests = SEEN_REQUESTS_COUNTER.fetch_add(1, Ordering::SeqCst);
         debug!(
             "Logged request number {} in {}",
@@ -134,7 +134,7 @@ impl RequestContext {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
 
         let request_id = Uuid::new_v4();
         let data = Self {
@@ -150,7 +150,7 @@ impl RequestContext {
     }
 
     unsafe extern "C" fn trace_id(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
 
         let value = Value::new(&interp, slf);
         if let Ok(data) = Self::try_from_ruby(&interp, &value) {
@@ -163,7 +163,7 @@ impl RequestContext {
     }
 
     unsafe extern "C" fn metrics(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let spec = interp.borrow().module_spec::<Metrics>();
         let metrics = spec.and_then(|spec| spec.borrow().value(&interp));
         metrics

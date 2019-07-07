@@ -66,7 +66,7 @@ impl Container {
             }
         }
 
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let args = unwrap_or_raise!(
             interp,
             Args::extract(&interp),

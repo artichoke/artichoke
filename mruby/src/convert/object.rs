@@ -162,7 +162,7 @@ mod tests {
             mrb: *mut sys::mrb_state,
             slf: sys::mrb_value,
         ) -> sys::mrb_value {
-            let interp = interpreter_or_raise!(mrb);
+            let interp = unwrap_interpreter!(mrb);
             let spec = class_spec_or_raise!(interp, Self);
 
             let borrow = spec.borrow();

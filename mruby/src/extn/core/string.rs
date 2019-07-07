@@ -34,7 +34,7 @@ pub struct RString;
 
 impl RString {
     unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         if let Ok(s) = String::try_from_mrb(&interp, Value::new(&interp, slf)) {
             if let Some(first) = s.chars().next() {
                 // One UTF-8 character, which are at most 32 bits.
@@ -49,7 +49,7 @@ impl RString {
     }
 
     unsafe extern "C" fn scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
         let result =
             scan::Args::extract(&interp).and_then(|args| scan::method(&interp, args, value));

@@ -111,7 +111,7 @@
 //!
 //! impl Container {
 //!     unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
-//!         let interp = interpreter_or_raise!(mrb);
+//!         let interp = unwrap_interpreter!(mrb);
 //!         let api = interp.borrow();
 //!         let int = mem::uninitialized::<sys::mrb_int>();
 //!         let mut argspec = vec![];
@@ -122,7 +122,7 @@
 //!     }
 //!
 //!     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-//!         let interp = interpreter_or_raise!(mrb);
+//!         let interp = unwrap_interpreter!(mrb);
 //!         let cont = unwrap_or_raise!(
 //!             interp,
 //!             Self::try_from_ruby(&interp, &Value::new(&interp, slf)),

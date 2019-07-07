@@ -51,7 +51,7 @@ pub struct Warning;
 
 impl Warning {
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let stderr = sys::mrb_gv_get(mrb, interp.borrow_mut().sym_intern("$stderr"));
         if !sys::mrb_sys_value_is_nil(stderr) {
             let args = args::Rest::extract(&interp);
@@ -68,7 +68,7 @@ pub struct Kernel;
 
 impl Kernel {
     unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let args = require::Args::extract(&interp);
         let result = args.and_then(|args| require::method::require(&interp, args));
         match result {
@@ -102,7 +102,7 @@ impl Kernel {
         mrb: *mut sys::mrb_state,
         _slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let args = require::Args::extract(&interp);
         let result = args.and_then(|args| require::method::require_relative(&interp, args));
         match result {
@@ -133,7 +133,7 @@ impl Kernel {
     }
 
     unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let args = args::Rest::extract(&interp);
 
         for value in args.map(|args| args.rest).unwrap_or_default() {
@@ -156,7 +156,7 @@ impl Kernel {
             }
         }
 
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let rest = args::Rest::extract(&interp)
             .map(|args| args.rest)
             .unwrap_or_default();
@@ -171,7 +171,7 @@ impl Kernel {
     }
 
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let args = args::Rest::extract(&interp);
 
         for value in args.map(|args| args.rest).unwrap_or_default() {

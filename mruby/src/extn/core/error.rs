@@ -179,7 +179,7 @@ mod tests {
 
     impl Run {
         unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-            let interp = interpreter_or_raise!(mrb);
+            let interp = unwrap_interpreter!(mrb);
             RuntimeError::raise(interp, "something went wrong")
         }
     }

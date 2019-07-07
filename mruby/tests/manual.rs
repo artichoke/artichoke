@@ -46,7 +46,7 @@ impl Container {
             }
         }
 
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let args = unwrap_or_raise!(
             interp,
             Args::extract(&interp),
@@ -58,7 +58,7 @@ impl Container {
     }
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let data = unwrap_or_raise!(
             interp,
             <Box<Self>>::try_from_ruby(&interp, &Value::new(&interp, slf)),
