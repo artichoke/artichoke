@@ -249,17 +249,29 @@ impl MrbEval for Mrb {
         } else {
             warn!("Could not set {} as mrc context filename", context.filename);
         }
+        drop(context);
 
-        let code = code.as_ref();
+        let args = Rc::new(Protect::new(self, code.as_ref()));
+        drop(code);
         trace!("Evaling code on {}", mrb.debug());
-        // Execute arbitrary ruby code, which may generate objects with C
-        // APIs if backed by Rust functions.
-        //
-        // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
-        // which means the most recent value returned by eval will always be
-        // considered live by the GC.
-        let value =
-            unsafe { sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx) };
+        let value = unsafe {
+            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
+            let mut state = mem::uninitialized::<u8>();
+
+            let value = sys::mrb_protect(
+                mrb,
+                Some(Protect::run_protected),
+                data,
+                &mut state as *mut u8,
+            );
+            drop(args);
+            if state != 0 {
+                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+                sys::mrb_sys_raise_current_exception(mrb);
+                unreachable!("mrb_raise will unwind the stack with longjmp");
+            }
+            value
+        };
         Value::new(self, value)
     }
 
