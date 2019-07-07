@@ -1,25 +1,11 @@
 use log::warn;
-use std::ffi::{c_void, CString};
+use std::ffi::CString;
 use std::rc::Rc;
 
 use crate::def::{ClassLike, Define};
 use crate::sys;
 use crate::Mrb;
 use crate::MrbError;
-
-struct ProtectArgs {
-    e_class: String,
-    message: String,
-}
-
-impl ProtectArgs {
-    fn new(e_class: &str, message: &str) -> Self {
-        Self {
-            e_class: e_class.to_owned(),
-            message: message.to_owned(),
-        }
-    }
-}
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     let exception = interp
@@ -76,71 +62,52 @@ pub trait RubyException: 'static + Sized {
     /// **Warning**: This function calls [`sys::mrb_sys_raise`] which modifies
     /// the stack with `longjmp`. mruby expects raise to be called at some stack
     /// frame below an eval. If this is not the case, mruby will segfault.
-    fn raise(interp: &Mrb, message: &str) -> sys::mrb_value {
-        unsafe extern "C" fn run_protected(
-            mrb: *mut sys::mrb_state,
-            data: sys::mrb_value,
-        ) -> sys::mrb_value {
-            let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = Rc::from_raw(ptr as *const ProtectArgs);
-
-            let e_class_cstring = CString::new(args.e_class.as_str());
-            let e_class = if let Ok(e_class) = e_class_cstring {
-                e_class
-            } else {
-                warn!(
-                    "unable to raise {} with message {}",
-                    args.e_class, args.message
-                );
-                return sys::mrb_sys_nil_value();
-            };
-            let message_cstring = CString::new(args.message.as_str());
-            let message = if let Ok(message) = message_cstring {
-                message
-            } else {
-                warn!(
-                    "unable to raise {} with message {}",
-                    args.e_class, args.message
-                );
-                return sys::mrb_sys_nil_value();
-            };
-            sys::mrb_sys_raise(mrb, e_class.as_ptr(), message.as_ptr());
-            warn!("raised {} with message {}", args.e_class, args.message);
-            sys::mrb_sys_nil_value()
-        }
-        unsafe extern "C" fn run_ensure(
-            _mrb: *mut sys::mrb_state,
-            _data: sys::mrb_value,
-        ) -> sys::mrb_value {
-            sys::mrb_sys_nil_value()
-        }
+    fn raise(interp: Mrb, message: &str) -> sys::mrb_value {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Mrb` to
         // get access to the underlying `MrbState`.
-        let (mrb, _ctx) = {
-            let borrow = interp.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
+        let mrb = interp.borrow().mrb;
 
         let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
             spec
         } else {
             return unsafe { sys::mrb_sys_nil_value() };
         };
+        let borrow = spec.borrow();
         let message = Self::message(message);
-        let args = Rc::new(ProtectArgs::new(spec.borrow().name(), message.as_str()));
+        let eclass = borrow.name();
+        let eclass_cstring = CString::new(eclass);
+        let eclass_cstring = if let Ok(eclass_cstring) = eclass_cstring {
+            eclass_cstring
+        } else {
+            warn!("unable to raise {} with message {}", eclass, message);
+            return unsafe { sys::mrb_sys_nil_value() };
+        };
+        let eclass_ptr = eclass_cstring.as_ptr();
+        let message_cstring = CString::new(message.as_str());
+        let message_cstring = if let Ok(message_cstring) = message_cstring {
+            message_cstring
+        } else {
+            warn!("unable to raise {} with message {}", eclass, message);
+            return unsafe { sys::mrb_sys_nil_value() };
+        };
+        let message_ptr = message_cstring.as_ptr();
+        warn!("about to raise {} with message {}", eclass, message);
+
+        // `mrb_sys_raise` will call longjmp which will unwind the stack.
+        // Anything we haven't cleaned up at this point will leak, so drop
+        // everything.
+        drop(eclass);
+        drop(eclass_cstring);
+        drop(message);
+        drop(message_cstring);
+        drop(borrow);
+        drop(spec);
+        drop(interp);
         unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
-            let value = sys::mrb_ensure(
-                mrb,
-                Some(run_protected),
-                data,
-                Some(run_ensure),
-                sys::mrb_sys_nil_value(),
-            );
-            sys::mrb_sys_raise_current_exception(mrb);
-            value
+            sys::mrb_sys_raise(mrb, eclass_ptr, message_ptr);
         }
+        unreachable!("mrb_sys_raise will unwind the stack with longjmp");
     }
 
     fn message(message: &str) -> String {
@@ -208,7 +175,7 @@ mod tests {
     impl Run {
         unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = interpreter_or_raise!(mrb);
-            RuntimeError::raise(&interp, "something went wrong")
+            RuntimeError::raise(interp, "something went wrong")
         }
     }
 
