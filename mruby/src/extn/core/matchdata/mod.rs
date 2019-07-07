@@ -165,7 +165,7 @@ impl MatchData {
             Ok(result) => result.inner(),
             Err(element_reference::Error::NoMatch) => sys::mrb_sys_nil_value(),
             Err(element_reference::Error::NoGroup(name)) => {
-                IndexError::raise(interp, &format!("undefined group name reference: {}", name))
+                IndexError::raisef(interp, "undefined group name reference: %s", vec![name])
             }
             Err(element_reference::Error::IndexType)
             | Err(element_reference::Error::LengthType) => {
