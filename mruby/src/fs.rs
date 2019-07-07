@@ -7,6 +7,8 @@ use crate::{Mrb, MrbError};
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
+pub type RequireFunc = fn(Mrb) -> Result<(), MrbError>;
+
 /// Virtual filesystem that wraps a [`mruby_vfs`] [`FakeFileSystem`].
 pub struct MrbFilesystem {
     fs: FakeFileSystem<Metadata>,
@@ -64,7 +66,7 @@ impl MrbFilesystem {
 
 #[derive(Clone, Debug)]
 pub struct Metadata {
-    pub require: Option<fn(Mrb) -> Result<(), MrbError>>,
+    pub require: Option<RequireFunc>,
     already_required: bool,
 }
 
