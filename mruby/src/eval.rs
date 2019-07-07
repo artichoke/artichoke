@@ -10,17 +10,38 @@ use crate::{Mrb, MrbError};
 
 const TOP_FILENAME: &str = "(eval)";
 
-struct ProtectArgs {
+struct Protect {
     ctx: *mut sys::mrbc_context,
     code: Vec<u8>,
 }
 
-impl ProtectArgs {
+impl Protect {
     fn new(interp: &Mrb, code: &[u8]) -> Self {
         Self {
             ctx: interp.borrow().ctx,
             code: code.to_vec(),
         }
+    }
+
+    unsafe extern "C" fn run_protected(
+        mrb: *mut sys::mrb_state,
+        data: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let ptr = sys::mrb_sys_cptr_ptr(data);
+        let args = Rc::from_raw(ptr as *const Self);
+
+        // Execute arbitrary ruby code, which may generate objects with C APIs
+        // if backed by Rust functions.
+        //
+        // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
+        // which means the most recent value returned by eval will always be
+        // considered live by the GC.
+        sys::mrb_load_nstring_cxt(
+            mrb,
+            args.code.as_ptr() as *const i8,
+            args.code.len(),
+            args.ctx,
+        )
     }
 }
 
@@ -119,26 +140,6 @@ impl MrbEval for Mrb {
     where
         T: AsRef<[u8]>,
     {
-        unsafe extern "C" fn run_protected(
-            mrb: *mut sys::mrb_state,
-            data: sys::mrb_value,
-        ) -> sys::mrb_value {
-            let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = Rc::from_raw(ptr as *const ProtectArgs);
-
-            // Execute arbitrary ruby code, which may generate objects with C
-            // APIs if backed by Rust functions.
-            //
-            // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
-            // which means the most recent value returned by eval will always be
-            // considered live by the GC.
-            sys::mrb_load_nstring_cxt(
-                mrb,
-                args.code.as_ptr() as *const i8,
-                args.code.len(),
-                args.ctx,
-            )
-        }
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Mrb` to
         // get access to the underlying `MrbState`.
@@ -165,17 +166,24 @@ impl MrbEval for Mrb {
         } else {
             warn!("Could not set {} as mrc context filename", context.filename);
         }
+        drop(context);
 
-        let args = Rc::new(ProtectArgs::new(self, code.as_ref()));
+        let args = Rc::new(Protect::new(self, code.as_ref()));
+        drop(code);
         trace!("Evaling code on {}", mrb.debug());
         let value = unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
+            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
             let mut state = mem::uninitialized::<u8>();
 
-            let value = sys::mrb_protect(mrb, Some(run_protected), data, &mut state as *mut u8);
+            let value = sys::mrb_protect(
+                mrb,
+                Some(Protect::run_protected),
+                data,
+                &mut state as *mut u8,
+            );
+            drop(args);
             if state != 0 {
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-                sys::mrb_sys_raise_current_exception(mrb);
             }
             value
         };
