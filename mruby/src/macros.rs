@@ -46,7 +46,7 @@ macro_rules! unwrap_or_raise {
             std::result::Result::Err(err) => {
                 if (*$interp.borrow().mrb).exc.is_null() {
                     <$crate::extn::core::error::RuntimeError as $crate::extn::core::error::RubyException>::raise(
-                        &$interp,
+                        $interp,
                         &err.to_string()
                     );
                 }
@@ -80,7 +80,7 @@ macro_rules! class_spec_or_raise {
             // The class spec does not exist or has not been deifned with
             // `State::def_class` yet.
             <$crate::extn::core::error::RuntimeError as $crate::extn::core::error::RubyException>::raise(
-                &$interp,
+                $interp,
                 "Uninitialized Class"
             );
             return $crate::sys::mrb_sys_nil_value();
@@ -100,7 +100,7 @@ macro_rules! module_spec_or_raise {
             // The module spec does not exist or has not been deifned with
             // `State::def_module` yet.
             <$crate::extn::core::error::RuntimeError as $crate::extn::core::error::RubyException>::raise(
-                &$interp,
+                $interp,
                 "Uninitialized Module"
             );
             return $crate::sys::mrb_sys_nil_value();
