@@ -124,10 +124,7 @@ impl Kernel {
                 api.vfs.read_file(path.as_path())
             };
             if let Ok(contents) = contents {
-                unwrap_value_or_raise!(
-                    Rc::clone(interp),
-                    interp.eval_with_context(contents, context)
-                );
+                interp.unchecked_eval_with_context(contents, context);
             } else {
                 // this branch should be unreachable because the `Mrb`
                 // interpreter is not `Send` so it can only be owned and
