@@ -118,18 +118,20 @@
 //!         argspec.write_all(format!("{}\0", sys::specifiers::INTEGER).as_bytes()).unwrap();
 //!         sys::mrb_get_args(mrb, argspec.as_ptr() as *const i8, &int);
 //!         let cont = Self { inner: int };
-//!         unwrap_value_or_raise!(interp, cont.try_into_ruby(&interp, Some(slf)))
+//!         cont
+//!             .try_into_ruby(&interp, Some(slf))
+//!             .unwrap_or_else(|_| Value::from_mrb(&interp, None::<Value>))
+//!             .inner()
 //!     }
 //!
 //!     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
 //!         let interp = unwrap_interpreter!(mrb);
-//!         let cont = unwrap_or_raise!(
-//!             interp,
-//!             Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
+//!         if let Ok(cont) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+//!             let borrow = cont.borrow();
+//!             Value::from_mrb(&interp, borrow.inner).inner()
+//!         } else {
 //!             Value::from_mrb(&interp, None::<Value>).inner()
-//!         );
-//!         let borrow = cont.borrow();
-//!         Value::from_mrb(&interp, borrow.inner).inner()
+//!         }
 //!     }
 //! }
 //!
