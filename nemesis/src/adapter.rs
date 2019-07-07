@@ -33,6 +33,7 @@ impl RackApp {
             "new_from_string",
             &[Value::from_mrb(interp, builder_script)],
         )?;
+        app.protect();
         Ok(Self {
             interp: Rc::clone(interp),
             app,
