@@ -19,29 +19,11 @@ RUBY_EXE = '/usr/bin/true'
 require 'mspec'
 require 'mspec/utils/script'
 
-module MSpec
-  @register_state = []
-
-  class << self
-    alias __old_register_current register_current
-
-    # Allow spec runner to listen for changes to the active ContextState.
-    # This is needed to add before listeners to each test execution environment
-    # for tracking spec counts.
-    def register_current(state)
-      actions :register_state, state
-      __old_register_current(state)
-    end
-  end
-end
-
 class SpecCollector
   RED = "\e[31m"
   GREEN = "\e[32m"
   YELLOW = "\e[33m"
   PLAIN = "\e[0m"
-
-  attr_accessor :total
 
   def initialize
     @errors = []
@@ -51,6 +33,7 @@ class SpecCollector
     @skipped = 0
     @not_implemented = 0
     @current_description = nil
+    @spec_state = nil
   end
 
   def success?
@@ -61,16 +44,18 @@ class SpecCollector
     MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
   end
 
-  def register_state(state)
-    collector = self
-    state.before(:each) do
-      collector.total += 1
-      print '.'
-    end
-  end
-
   def enter(description)
     @description = description
+  end
+
+  def before(_state)
+    @total += 1
+    @spec_state = nil
+    print '.'
+  end
+
+  def after(_state)
+    print @spec_state if @spec_state
   end
 
   def exception(state)
@@ -96,6 +81,7 @@ class SpecCollector
       skipped = true if state.it =~ /encoding/
     elsif state.exception.is_a?(NotImplementedError)
       @not_implemented += 1
+      @spec_state = "\b#{YELLOW}N#{PLAIN}"
       return
     elsif state.exception.is_a?(RuntimeError)
       skipped = true if state.message =~ /invalid UTF-8/
@@ -109,10 +95,10 @@ class SpecCollector
 
     if skipped
       @skipped += 1
-      print "\b", YELLOW, 'S', PLAIN
+      @spec_state = "\b#{YELLOW}S#{PLAIN}"
     else
       @errors << state
-      print "\b", RED, 'X', PLAIN
+      @spec_state = "\b#{RED}X#{PLAIN}"
     end
     nil
   end
@@ -145,14 +131,16 @@ end
 
 def run_specs(*specs)
   specs = specs.flatten
+  MSpec.register_files(specs)
+
   collector = SpecCollector.new
 
   MSpec.register(:start, collector)
-  MSpec.register(:register_state, collector)
   MSpec.register(:enter, collector)
+  MSpec.register(:before, collector)
+  MSpec.register(:after, collector)
   MSpec.register(:exception, collector)
   MSpec.register(:finish, collector)
-  MSpec.register_files(specs)
 
   MSpec.process
 
