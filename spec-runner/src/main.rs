@@ -30,6 +30,9 @@ pub fn main() {
     // ignore binary name
     args.next();
     for spec in args {
+        if spec == "mutex/owned_spec.rb" {
+            continue;
+        }
         let contents = fs::read(&spec).unwrap();
         mspec_runner.add_spec(spec.as_str(), contents).unwrap();
         specs.push(spec);
