@@ -35,16 +35,16 @@ pub struct RString;
 impl RString {
     unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = interpreter_or_raise!(mrb);
-        let s = unwrap_or_raise!(
-            interp,
-            String::try_from_mrb(&interp, Value::new(&interp, slf)),
-            sys::mrb_sys_nil_value()
-        );
-        if let Some(first) = s.chars().next() {
-            // One UTF-8 character, which are at most 32 bits.
-            Value::from_mrb(&interp, first as u32).inner()
+        if let Ok(s) = String::try_from_mrb(&interp, Value::new(&interp, slf)) {
+            if let Some(first) = s.chars().next() {
+                // One UTF-8 character, which are at most 32 bits.
+                Value::from_mrb(&interp, first as u32).inner()
+            } else {
+                drop(s);
+                ArgumentError::raise(interp, "empty string")
+            }
         } else {
-            ArgumentError::raise(interp, "empty string")
+            sys::mrb_sys_nil_value()
         }
     }
 
