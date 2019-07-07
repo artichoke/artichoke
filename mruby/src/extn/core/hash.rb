@@ -22,7 +22,7 @@ class Hash
         end
       "#{key}=>#{val}"
     end
-    "[#{items.join(', ')}]"
+    "{#{items.join(', ')}}"
   end
 
   alias to_s inspect
