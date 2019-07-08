@@ -10,9 +10,6 @@ MRuby::GemBox.new do |conf|
   # method metaprogramming
   conf.gem core: 'mruby-method'
 
-  # mrb_protect
-  conf.gem core: 'mruby-error'
-
   # Meta-programming features
   conf.gem core: 'mruby-metaprog'
 
