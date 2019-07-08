@@ -15,8 +15,9 @@ pub enum Error {
 pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let captures = borrow.regexp.regex.captures(match_against);
+    let captures = regex.captures(match_against);
     if let Some(captures) = captures {
         let len = i64::try_from(captures.len()).map_err(|_| Error::Fatal)?;
         Ok(Value::from_mrb(interp, len))

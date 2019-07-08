@@ -25,12 +25,13 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
     pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
-        let string = mem::uninitialized::<sys::mrb_value>();
+        let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
-            &string,
+            string.as_mut_ptr(),
         );
+        let string = string.assume_init();
         if let Ok(pattern) = String::try_from_mrb(interp, Value::new(interp, string)) {
             Ok(Self { pattern })
         } else {

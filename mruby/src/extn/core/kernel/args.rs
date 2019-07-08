@@ -12,8 +12,9 @@ pub struct Rest {
 
 impl Rest {
     pub unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
-        let args = mem::uninitialized::<*const sys::mrb_value>();
-        let count = mem::uninitialized::<usize>();
+        let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
+        let mut count = <mem::MaybeUninit<usize>>::uninit();
+        // TODO: use a constant argspec, see GH-174.
         let mut argspec = vec![];
         argspec
             .write_all(sys::specifiers::REST.as_bytes())
@@ -22,10 +23,10 @@ impl Rest {
         sys::mrb_get_args(
             interp.borrow().mrb,
             argspec.as_ptr() as *const i8,
-            &args,
-            &count,
+            args.as_mut_ptr(),
+            count.as_mut_ptr(),
         );
-        let args = std::slice::from_raw_parts(args, count);
+        let args = std::slice::from_raw_parts(args.assume_init(), count.assume_init());
         let args = args
             .iter()
             .map(|value| Value::new(&interp, *value))

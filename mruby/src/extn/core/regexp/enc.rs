@@ -72,7 +72,7 @@ pub fn parse(value: &Value) -> Result<Encoding, Error> {
         } else if encoding == 0 {
             Ok(Encoding::default())
         } else {
-            return Err(Error::InvalidEncoding);
+            Err(Error::InvalidEncoding)
         }
     } else if let Ok(encoding) = value.itself::<String>() {
         if encoding.contains('u') && encoding.contains('n') {

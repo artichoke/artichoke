@@ -12,6 +12,8 @@
 //! are
 //! [implemented in Ruby](https://github.com/lopopolo/ferrocarril/blob/master/mruby/src/extn/core/matchdata/matchdata.rb).
 
+use onig::Regex;
+
 use crate::convert::{FromMrb, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::MrbEval;
@@ -155,7 +157,9 @@ impl MatchData {
     ) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
         let num_captures = match Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
-            Ok(data) => data.borrow().regexp.regex.captures_len(),
+            Ok(data) => (*data.borrow().regexp.regex)
+                .as_ref()
+                .map_or(0, Regex::captures_len),
             Err(_) => return sys::mrb_sys_nil_value(),
         };
         let value = Value::new(&interp, slf);

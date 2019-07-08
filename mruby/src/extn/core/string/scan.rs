@@ -27,14 +27,16 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o&\0";
 
     pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
-        let pattern = mem::uninitialized::<sys::mrb_value>();
-        let block = mem::uninitialized::<sys::mrb_value>();
+        let mut pattern = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut block = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
-            &pattern,
-            &block,
+            pattern.as_mut_ptr(),
+            block.as_mut_ptr(),
         );
+        let pattern = pattern.assume_init();
+        let block = block.assume_init();
         let regexp = if let Ok(regexp) = Regexp::try_from_ruby(interp, &Value::new(interp, pattern))
         {
             Some(regexp.borrow().clone())
@@ -77,10 +79,11 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
 
     let mut was_match = false;
     let mut collected = vec![];
-    let len = regexp.regex.captures_len();
+    let regex = (*regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    let len = regex.captures_len();
 
     if len > 0 {
-        for captures in regexp.regex.captures_iter(s.as_str()) {
+        for captures in regex.captures_iter(s.as_str()) {
             was_match = true;
             let mut groups = vec![];
             let num_regexp_globals_to_set = {
@@ -118,7 +121,7 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
             }
         }
     } else {
-        for pos in regexp.regex.find_iter(s.as_str()) {
+        for pos in regex.find_iter(s.as_str()) {
             was_match = true;
             let scanned = &s[pos.0..pos.1];
             let matched = Value::from_mrb(interp, scanned);

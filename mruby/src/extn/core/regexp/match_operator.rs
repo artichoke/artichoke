@@ -26,12 +26,13 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
     pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
-        let string = mem::uninitialized::<sys::mrb_value>();
+        let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
-            &string,
+            string.as_mut_ptr(),
         );
+        let string = string.assume_init();
         if let Ok(string) = <Option<String>>::try_from_mrb(interp, Value::new(interp, string)) {
             Ok(Self { string })
         } else {
@@ -46,6 +47,8 @@ impl Args {
 pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     let mrb = interp.borrow().mrb;
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
+    let borrow = data.borrow();
+    let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
     let string = if let Some(string) = args.string {
         string
     } else {
@@ -55,7 +58,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
             return Ok(nil);
         }
     };
-    let (matchdata, pos) = if let Some(captures) = data.borrow().regex.captures(string.as_str()) {
+    let (matchdata, pos) = if let Some(captures) = regex.captures(string.as_str()) {
         let num_regexp_globals_to_set = {
             let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
             cmp::max(num_previously_set_globals, captures.len())
@@ -74,7 +77,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
         }
         interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
 
-        let matchdata = MatchData::new(string.as_str(), data.borrow().clone(), 0, string.len());
+        let matchdata = MatchData::new(string.as_str(), borrow.clone(), 0, string.len());
         let matchdata =
             unsafe { matchdata.try_into_ruby(&interp, None) }.map_err(|_| Error::Fatal)?;
         if let Some(match_pos) = captures.pos(0) {

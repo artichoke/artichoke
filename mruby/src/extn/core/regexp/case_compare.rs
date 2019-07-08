@@ -25,12 +25,13 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
     pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
-        let string = mem::uninitialized::<sys::mrb_value>();
+        let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
-            &string,
+            string.as_mut_ptr(),
         );
+        let string = string.assume_init();
         if let Ok(string) = <Option<String>>::try_from_mrb(interp, Value::new(interp, string)) {
             Ok(Self { string })
         } else {
@@ -54,7 +55,9 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
             return Ok(Value::from_mrb(interp, false));
         }
     };
-    let matchdata = if let Some(captures) = data.borrow().regex.captures(string.as_str()) {
+    let borrow = data.borrow();
+    let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
+    let matchdata = if let Some(captures) = regex.captures(string.as_str()) {
         let num_regexp_globals_to_set = {
             let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
             cmp::max(num_previously_set_globals, captures.len())
@@ -91,7 +94,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                 );
             }
         }
-        let matchdata = MatchData::new(string.as_str(), data.borrow().clone(), 0, string.len());
+        let matchdata = MatchData::new(string.as_str(), borrow.clone(), 0, string.len());
         unsafe { matchdata.try_into_ruby(&interp, None) }.map_err(|_| Error::Fatal)?
     } else {
         unsafe {

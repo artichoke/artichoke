@@ -24,15 +24,15 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"*\0";
 
     pub unsafe fn extract(interp: &Mrb) -> Self {
-        let args = mem::uninitialized::<*const sys::mrb_value>();
-        let count = mem::uninitialized::<usize>();
+        let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
+        let mut count = <mem::MaybeUninit<usize>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
-            &args,
-            &count,
+            args.as_mut_ptr(),
+            count.as_mut_ptr(),
         );
-        let args = std::slice::from_raw_parts(args, count);
+        let args = std::slice::from_raw_parts(args.assume_init(), count.assume_init());
         let args = args
             .iter()
             .map(|value| Value::new(&interp, *value))

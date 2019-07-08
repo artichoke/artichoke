@@ -27,12 +27,13 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
     pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
-        let first = mem::uninitialized::<sys::mrb_value>();
+        let mut first = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
-            &first,
+            first.as_mut_ptr(),
         );
+        let first = first.assume_init();
         if let Ok(index) = i64::try_from_mrb(interp, Value::new(interp, first)) {
             Ok(Args::Index(index))
         } else if let Ok(name) = String::try_from_mrb(interp, Value::new(interp, first)) {
@@ -48,12 +49,9 @@ impl Args {
 pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let captures = borrow
-        .regexp
-        .regex
-        .captures(match_against)
-        .ok_or(Error::NoMatch)?;
+    let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
     let index = match args {
         Args::Index(index) => {
             if index < 0 {
@@ -66,9 +64,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
             }
         }
         Args::Name(name) => {
-            let index = borrow
-                .regexp
-                .regex
+            let index = regex
                 .capture_names()
                 .find(|capture| capture.0 == name)
                 .ok_or(Error::NoGroup)?

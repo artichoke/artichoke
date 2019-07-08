@@ -26,16 +26,18 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o|o?\0";
 
     pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
-        let string = mem::uninitialized::<sys::mrb_value>();
-        let pos = mem::uninitialized::<sys::mrb_value>();
-        let has_pos = mem::uninitialized::<sys::mrb_bool>();
+        let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut pos = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut has_pos = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
-            &string,
-            &pos,
-            &has_pos,
+            string.as_mut_ptr(),
+            pos.as_mut_ptr(),
+            has_pos.as_mut_ptr(),
         );
+        let string = string.assume_init();
+        let has_pos = has_pos.assume_init() != 0;
         let string = if let Ok(string) =
             <Option<String>>::try_from_mrb(&interp, Value::new(interp, string))
         {
@@ -43,12 +45,12 @@ impl Args {
         } else {
             return Err(Error::StringType);
         };
-        let pos = if has_pos == 0 {
-            None
-        } else {
-            let pos =
-                i64::try_from_mrb(&interp, Value::new(&interp, pos)).map_err(|_| Error::PosType)?;
+        let pos = if has_pos {
+            let pos = i64::try_from_mrb(&interp, Value::new(&interp, pos.assume_init()))
+                .map_err(|_| Error::PosType)?;
             Some(pos)
+        } else {
+            None
         };
         Ok(Self { string, pos })
     }
@@ -79,9 +81,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     let byte_offset = string.chars().take(pos).collect::<String>().len();
 
     let borrow = data.borrow();
+    let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
     let match_target = &string[byte_offset..];
-    Ok(Value::from_mrb(
-        interp,
-        borrow.regex.find(match_target).is_some(),
-    ))
+    Ok(Value::from_mrb(interp, regex.find(match_target).is_some()))
 }

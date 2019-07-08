@@ -15,8 +15,9 @@ pub enum Error {
 pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
     let mut names = vec![];
-    let mut capture_names = borrow.regexp.regex.capture_names().collect::<Vec<_>>();
+    let mut capture_names = regex.capture_names().collect::<Vec<_>>();
     capture_names.sort_by(|a, b| {
         a.1.iter()
             .fold(u32::max_value(), |a, &b| a.min(b))

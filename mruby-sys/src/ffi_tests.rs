@@ -603,7 +603,7 @@ fn define_constant() {
 
 #[test]
 fn protect() {
-    use std::mem::uninitialized;
+    use std::mem;
 
     unsafe {
         // This rust function raises a runtime error in mruby
@@ -621,7 +621,7 @@ fn protect() {
 
         let mrb = mrb_open();
 
-        let mut state = uninitialized::<u8>();
+        let mut state = <mem::MaybeUninit<mrb_bool>>::uninit();
         let nil = mrb_sys_nil_value();
 
         // `mrb_protect` calls the passed function with `data` as an argument.
@@ -637,11 +637,11 @@ fn protect() {
             mrb as *mut mrb_state,
             Some(rust__mruby__test_class__method__value),
             nil,
-            &mut state,
+            state.as_mut_ptr(),
         );
 
         // state == true means an exception was thrown by the protected function
-        assert_eq!(state, 1_u8);
+        assert_ne!(state.assume_init(), 0_u8);
         assert_eq!(exc.tt, mrb_vtype::MRB_TT_EXCEPTION);
 
         let args = &[];
@@ -673,20 +673,17 @@ pub fn args() {
     unsafe {
         extern "C" fn add(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
             unsafe {
-                let a = mem::uninitialized::<mrb_value>();
-                let b = mem::uninitialized::<mrb_value>();
+                let mut a = <mem::MaybeUninit<mrb_value>>::uninit();
+                let mut b = <mem::MaybeUninit<mrb_value>>::uninit();
 
-                let sig_str = CString::new("oo").unwrap();
+                let argspec = CString::new("oo").unwrap();
+                mrb_get_args(mrb, argspec.as_ptr(), a.as_mut_ptr(), b.as_mut_ptr());
+                let args = &[b.assume_init()];
 
-                mrb_get_args(mrb, sig_str.as_ptr(), &a, &b);
+                let plus = "+";
+                let sym = mrb_intern(mrb, plus.as_ptr() as *const i8, plus.len());
 
-                let args = &[b];
-
-                let plus_str = CString::new("+").unwrap();
-
-                let sym = mrb_intern(mrb, plus_str.as_ptr(), 1);
-
-                mrb_funcall_argv(mrb, a, sym, 1, args.as_ptr())
+                mrb_funcall_argv(mrb, a.assume_init(), sym, 1, args.as_ptr())
             }
         }
 
@@ -734,21 +731,20 @@ pub fn str_args() {
     unsafe {
         extern "C" fn add(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
             unsafe {
-                let a = mem::uninitialized::<*const c_char>();
-                let b = mem::uninitialized::<*const c_char>();
+                let mut a = <mem::MaybeUninit<*const c_char>>::uninit();
+                let mut b = <mem::MaybeUninit<*const c_char>>::uninit();
 
-                let sig_str = CString::new("zz").unwrap();
+                let argspec = CString::new("zz").unwrap();
+                mrb_get_args(mrb, argspec.as_ptr(), a.as_mut_ptr(), b.as_mut_ptr());
 
-                mrb_get_args(mrb, sig_str.as_ptr(), &a, &b);
-
-                let a = CStr::from_ptr(a).to_str().unwrap();
-                let b = CStr::from_ptr(b).to_str().unwrap();
+                let a = CStr::from_ptr(a.assume_init()).to_str().unwrap();
+                let b = CStr::from_ptr(b.assume_init()).to_str().unwrap();
 
                 let value = mrb_str_new_cstr(mrb, a.as_ptr() as *const i8);
                 let args = [mrb_str_new_cstr(mrb, b.as_ptr() as *const i8)];
 
-                let plus_str = CString::new("+").unwrap();
-                let sym = mrb_intern(mrb, plus_str.as_ptr(), 1);
+                let plus = "+";
+                let sym = mrb_intern(mrb, plus.as_ptr() as *const i8, plus.len());
 
                 mrb_funcall_argv(mrb, value, sym, 1, args.as_ptr())
             }
