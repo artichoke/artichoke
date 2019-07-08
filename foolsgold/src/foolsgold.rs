@@ -144,7 +144,6 @@ impl RequestContext {
         if let Ok(data) = data.try_into_ruby(&interp, Some(slf)) {
             data.inner()
         } else {
-            drop(request_id);
             RuntimeError::raise(interp, "fatal RequestContext#new error")
         }
     }

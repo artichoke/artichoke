@@ -52,8 +52,8 @@ impl Container {
                 let container = Box::new(Self { inner: args.inner });
                 container.try_into_ruby(&interp, Some(slf))
             })
-            .map(|value| value.inner())
-            .unwrap_or_else(|_| Value::from_mrb(&interp, None::<Value>).inner())
+            .unwrap_or_else(|_| Value::from_mrb(&interp, None::<Value>))
+            .inner()
     }
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {

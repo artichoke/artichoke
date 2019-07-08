@@ -163,7 +163,7 @@ mod tests {
             let interp = unwrap_interpreter!(mrb);
 
             let value = Value::new(&interp, slf);
-            if let Ok(container) = Container::try_from_ruby(&interp, &value) {
+            if let Ok(container) = Self::try_from_ruby(&interp, &value) {
                 let borrow = container.borrow();
                 Value::from_mrb(&interp, borrow.inner.as_str()).inner()
             } else {

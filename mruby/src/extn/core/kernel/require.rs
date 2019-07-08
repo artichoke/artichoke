@@ -180,6 +180,6 @@ pub mod method {
             );
             return Ok(require);
         }
-        Err(Error::CannotLoad(args.file.clone()))
+        Err(Error::CannotLoad(args.file))
     }
 }
