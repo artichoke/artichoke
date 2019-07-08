@@ -73,7 +73,7 @@ where
             let ptr = sys::mrb_sys_cptr_ptr(data);
             let args = Rc::from_raw(ptr as *const ProtectArgs);
 
-            let value = sys::mrb_funcall_argv(
+            sys::mrb_funcall_argv(
                 mrb,
                 args.slf,
                 args.func_sym,
@@ -82,9 +82,7 @@ where
                 // than i64 max value.
                 i64::try_from(args.args.len()).unwrap_or_default(),
                 args.args.as_ptr(),
-            );
-            sys::mrb_sys_raise_current_exception(mrb);
-            value
+            )
         }
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Mrb` to
@@ -167,7 +165,7 @@ where
             let ptr = sys::mrb_sys_cptr_ptr(data);
             let args = Rc::from_raw(ptr as *const ProtectArgsWithBlock);
 
-            let value = sys::mrb_funcall_with_block(
+            sys::mrb_funcall_with_block(
                 mrb,
                 args.slf,
                 args.func_sym,
@@ -177,9 +175,7 @@ where
                 i64::try_from(args.args.len()).unwrap_or_default(),
                 args.args.as_ptr(),
                 args.block,
-            );
-            sys::mrb_sys_raise_current_exception(mrb);
-            value
+            )
         }
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Mrb` to

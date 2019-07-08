@@ -246,18 +246,12 @@ impl MrbEval for Mrb {
         drop(code);
         trace!("Evaling code on {}", mrb.debug());
         let value = unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
-            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
-
-            let value =
-                sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
-            drop(args);
-            if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-                sys::mrb_sys_raise_current_exception(mrb);
-                unreachable!("mrb_raise will unwind the stack with longjmp");
-            }
-            value
+            sys::mrb_load_nstring_cxt(
+                mrb,
+                args.code.as_ptr() as *const i8,
+                args.code.len(),
+                args.ctx,
+            )
         };
         Value::new(self, value)
     }
