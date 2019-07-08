@@ -1,10 +1,10 @@
+#![deny(clippy::all, clippy::pedantic)]
+#![deny(warnings, intra_doc_link_resolution_failure)]
+#![doc(deny(warnings))]
+
 use fs_extra::dir::{self, CopyOptions};
 use std::env;
-use std::path::PathBuf;
 use std::process::Command;
-
-/// vendored mruby version
-const MRUBY_REVISION: &str = "1685c45";
 
 /// Path helpers
 struct Build;
