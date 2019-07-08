@@ -30,17 +30,19 @@ impl Args {
 
     pub unsafe fn extract(interp: &Mrb, num_captures: usize) -> Result<Self, Error> {
         let num_captures = i64::try_from(num_captures).map_err(|_| Error::Fatal)?;
-        let first = mem::uninitialized::<sys::mrb_value>();
-        let second = mem::uninitialized::<sys::mrb_value>();
-        let has_second = mem::uninitialized::<sys::mrb_bool>();
+        let mut first = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut second = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut has_second = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
-            &first,
-            &second,
-            &has_second,
+            first.as_mut_ptr(),
+            second.as_mut_ptr(),
+            has_second.as_mut_ptr(),
         );
-        let has_length = has_second != 0;
+        let first = first.assume_init();
+        let second = second.assume_init();
+        let has_length = has_second.assume_init() != 0;
         if has_length {
             let start = i64::try_from_mrb(&interp, Value::new(interp, first))
                 .map_err(|_| Error::IndexType)?;
@@ -63,16 +65,18 @@ impl Args {
         first: sys::mrb_value,
         num_captures: i64,
     ) -> Result<Option<Self>, Error> {
-        let mut start = mem::uninitialized::<sys::mrb_int>();
-        let mut len = mem::uninitialized::<sys::mrb_int>();
+        let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
         let check_range = sys::mrb_range_beg_len(
             interp.borrow().mrb,
             first,
-            &mut start,
-            &mut len,
+            start.as_mut_ptr(),
+            len.as_mut_ptr(),
             num_captures + 1,
             0_u8,
         );
+        let start = start.assume_init();
+        let len = len.assume_init();
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
             let len = usize::try_from(len).map_err(|_| Error::LengthType)?;
             Ok(Some(Args::StartLen(start, len)))
@@ -85,12 +89,9 @@ impl Args {
 pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let captures = borrow
-        .regexp
-        .regex
-        .captures(match_against)
-        .ok_or(Error::NoMatch)?;
+    let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
     match args {
         Args::Index(index) => {
             if index < 0 {
@@ -107,9 +108,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
             }
         }
         Args::Name(name) => {
-            let index = borrow
-                .regexp
-                .regex
+            let index = regex
                 .capture_names()
                 .find_map(|capture| {
                     if capture.0 == name {

@@ -13,10 +13,11 @@ pub enum Error {
 pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
+    let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
     // Use a Vec of key-value pairs because insertion order matters for spec
     // compliance.
     let mut map = vec![];
-    for (name, index) in borrow.regex.capture_names() {
+    for (name, index) in regex.capture_names() {
         map.push((
             name,
             Value::from_mrb(

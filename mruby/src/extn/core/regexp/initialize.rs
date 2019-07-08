@@ -31,33 +31,32 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o|o?o?\0";
 
-    pub fn extract(interp: &Mrb) -> Result<Self, Error> {
-        let pattern = unsafe { mem::uninitialized::<sys::mrb_value>() };
-        let opts = unsafe { mem::uninitialized::<sys::mrb_value>() };
-        let has_opts = unsafe { mem::uninitialized::<sys::mrb_bool>() };
-        let enc = unsafe { mem::uninitialized::<sys::mrb_value>() };
-        let has_enc = unsafe { mem::uninitialized::<sys::mrb_bool>() };
-        unsafe {
-            sys::mrb_get_args(
-                interp.borrow().mrb,
-                Self::ARGSPEC.as_ptr() as *const i8,
-                &pattern,
-                &opts,
-                &has_opts,
-                &enc,
-                &has_enc,
-            );
-        }
-        let has_opts = has_opts != 0;
-        let has_enc = has_enc != 0;
+    pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
+        let mut pattern = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut opts = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut has_opts = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+        let mut enc = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut has_enc = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+        sys::mrb_get_args(
+            interp.borrow().mrb,
+            Self::ARGSPEC.as_ptr() as *const i8,
+            pattern.as_mut_ptr(),
+            opts.as_mut_ptr(),
+            has_opts.as_mut_ptr(),
+            enc.as_mut_ptr(),
+            has_enc.as_mut_ptr(),
+        );
+        let pattern = pattern.assume_init();
+        let has_opts = has_opts.assume_init() != 0;
+        let has_enc = has_enc.assume_init() != 0;
         let pattern = Value::new(&interp, pattern);
         let options = if has_opts {
-            Some(opts::parse(&Value::new(interp, opts)))
+            Some(opts::parse(&Value::new(interp, opts.assume_init())))
         } else {
             None
         };
         let encoding = if has_enc {
-            let encoding = Value::new(interp, enc);
+            let encoding = Value::new(interp, enc.assume_init());
             match enc::parse(&encoding) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
@@ -67,7 +66,7 @@ impl Args {
                 }
             }
         } else if has_opts {
-            let encoding = Value::new(interp, opts);
+            let encoding = Value::new(interp, opts.assume_init());
             match enc::parse(&encoding) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {

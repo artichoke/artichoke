@@ -121,10 +121,10 @@ where
         ));
         let value = unsafe {
             let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
-            let mut state = mem::uninitialized::<u8>();
+            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value = sys::mrb_protect(mrb, Some(run_protected), data, &mut state as *mut u8);
-            if state != 0 {
+            let value = sys::mrb_protect(mrb, Some(run_protected), data, state.as_mut_ptr());
+            if state.assume_init() != 0 {
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
             }
             value
@@ -219,10 +219,10 @@ where
         );
         let value = unsafe {
             let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
-            let mut state = mem::uninitialized::<u8>();
+            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value = sys::mrb_protect(mrb, Some(run_protected), data, &mut state as *mut u8);
-            if state != 0 {
+            let value = sys::mrb_protect(mrb, Some(run_protected), data, state.as_mut_ptr());
+            if state.assume_init() != 0 {
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
             }
             value

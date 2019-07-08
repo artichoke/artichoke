@@ -125,27 +125,14 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Ok(())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Regexp {
     literal_pattern: String,
     pattern: String,
     literal_options: opts::Options,
     options: opts::Options,
     encoding: enc::Encoding,
-    pub regex: Rc<Regex>,
-}
-
-impl Default for Regexp {
-    fn default() -> Self {
-        Self {
-            literal_pattern: String::default(),
-            pattern: String::default(),
-            literal_options: opts::Options::default(),
-            options: opts::Options::default(),
-            encoding: enc::Encoding::default(),
-            regex: Rc::new(unsafe { mem::uninitialized::<Regex>() }),
-        }
-    }
+    pub regex: Rc<Option<Regex>>,
 }
 
 impl Hash for Regexp {
@@ -184,7 +171,8 @@ impl Regexp {
         options: opts::Options,
         encoding: enc::Encoding,
     ) -> Option<Self> {
-        let regex = Rc::new(Regex::with_options(&pattern, options.flags(), Syntax::ruby()).ok()?);
+        let regex = Regex::with_options(&pattern, options.flags(), Syntax::ruby()).ok()?;
+        let regex = Rc::new(Some(regex));
         let regexp = Self {
             literal_pattern,
             pattern,
@@ -225,10 +213,20 @@ impl Regexp {
     }
 
     unsafe extern "C" fn compile(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let args = mem::uninitialized::<*const sys::mrb_value>();
-        let count = mem::uninitialized::<sys::mrb_int>();
-        sys::mrb_get_args(mrb, b"*\0".as_ptr() as *const i8, &args, &count);
-        sys::mrb_obj_new(mrb, sys::mrb_sys_class_ptr(slf), count, args)
+        let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
+        let mut count = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        sys::mrb_get_args(
+            mrb,
+            b"*\0".as_ptr() as *const i8,
+            args.as_mut_ptr(),
+            count.as_mut_ptr(),
+        );
+        sys::mrb_obj_new(
+            mrb,
+            sys::mrb_sys_class_ptr(slf),
+            count.assume_init(),
+            args.assume_init(),
+        )
     }
 
     unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {

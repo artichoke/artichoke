@@ -177,16 +177,12 @@ impl MrbEval for Mrb {
         trace!("Evaling code on {}", mrb.debug());
         let value = unsafe {
             let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
-            let mut state = mem::uninitialized::<u8>();
+            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value = sys::mrb_protect(
-                mrb,
-                Some(Protect::run_protected),
-                data,
-                &mut state as *mut u8,
-            );
+            let value =
+                sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
             drop(args);
-            if state != 0 {
+            if state.assume_init() != 0 {
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
             }
             value
@@ -251,16 +247,12 @@ impl MrbEval for Mrb {
         trace!("Evaling code on {}", mrb.debug());
         let value = unsafe {
             let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
-            let mut state = mem::uninitialized::<u8>();
+            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value = sys::mrb_protect(
-                mrb,
-                Some(Protect::run_protected),
-                data,
-                &mut state as *mut u8,
-            );
+            let value =
+                sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
             drop(args);
-            if state != 0 {
+            if state.assume_init() != 0 {
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
                 sys::mrb_sys_raise_current_exception(mrb);
                 unreachable!("mrb_raise will unwind the stack with longjmp");
