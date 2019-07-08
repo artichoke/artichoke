@@ -19,17 +19,13 @@ pub unsafe extern "C" fn mrb_protect(
     data: mrb_value,
     state: *mut mrb_bool,
 ) -> mrb_value {
-    let mut result = mrb_sys_nil_value();
     if !state.is_null() {
         state.write(0_u8);
     }
-    let body = if let Some(body) = body {
-        body
-    } else {
-        return result;
-    };
-    println!("protected");
-    result = if let Ok(result) = panic::catch_unwind(AssertUnwindSafe(|| body(mrb, data))) {
+    let unwind = panic::catch_unwind(AssertUnwindSafe(|| {
+        body.map_or_else(|| mrb_sys_nil_value(), |body| body(mrb, data))
+    }));
+    let result = if let Ok(result) = unwind {
         result
     } else {
         let result = mrb_sys_obj_value((*mrb).exc as *mut c_void);
@@ -47,7 +43,8 @@ pub unsafe extern "C" fn mrb_protect(
 #[no_mangle]
 #[unwind(allowed)]
 pub unsafe extern "C" fn mrb_sys_exc_raise(mrb: *mut mrb_state, exc: mrb_value) -> ! {
-    if mrb_obj_is_kind_of(mrb, exc, mrb_class_get(mrb, b"Exception\0".as_ptr() as *const i8)) == 0_u8 {
+    let exc_class = mrb_class_get(mrb, b"Exception\0".as_ptr() as *const i8);
+    if mrb_obj_is_kind_of(mrb, exc, exc_class) == 0_u8 {
         mrb_raise(
             mrb,
             mrb_exc_get(mrb, b"TypeError\0".as_ptr() as *const i8),
