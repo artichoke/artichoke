@@ -5,7 +5,7 @@
 
 use std::convert::TryFrom;
 use std::ffi::c_void;
-use std::panic::{self, AssertUnwindSafe};
+use std::panic;
 use std::ptr;
 
 use crate::ffi::*;
@@ -22,9 +22,8 @@ pub unsafe extern "C" fn mrb_protect(
     if !state.is_null() {
         state.write(0_u8);
     }
-    let unwind = panic::catch_unwind(AssertUnwindSafe(|| {
-        body.map_or_else(|| mrb_sys_nil_value(), |body| body(mrb, data))
-    }));
+    let unwind =
+        panic::catch_unwind(|| body.map_or_else(|| mrb_sys_nil_value(), |body| body(mrb, data)));
     let result = if let Ok(result) = unwind {
         result
     } else {
