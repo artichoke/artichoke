@@ -125,7 +125,7 @@ pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     Ok(())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Regexp {
     literal_pattern: String,
     pattern: String,
@@ -133,19 +133,6 @@ pub struct Regexp {
     options: opts::Options,
     encoding: enc::Encoding,
     pub regex: Rc<Option<Regex>>,
-}
-
-impl Default for Regexp {
-    fn default() -> Self {
-        Self {
-            literal_pattern: String::default(),
-            pattern: String::default(),
-            literal_options: opts::Options::default(),
-            options: opts::Options::default(),
-            encoding: enc::Encoding::default(),
-            regex: Rc::new(None),
-        }
-    }
 }
 
 impl Hash for Regexp {
