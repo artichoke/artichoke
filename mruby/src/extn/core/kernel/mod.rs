@@ -1,20 +1,18 @@
 use log::trace;
-use path_abs::PathAbs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
-use crate::extn::core::error::{LoadError, RubyException};
-use crate::fs::RUBY_LOAD_PATH;
+use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeError};
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::{Mrb, MrbError};
 
 mod args;
+pub mod require;
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     let warning = interp.borrow_mut().def_module::<Warning>("Warning", None);
@@ -53,16 +51,14 @@ pub struct Warning;
 
 impl Warning {
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let stderr = sys::mrb_gv_get(mrb, interp.borrow_mut().sym_intern("$stderr"));
         if !sys::mrb_sys_value_is_nil(stderr) {
-            let args = unwrap_or_raise!(
-                interp,
-                args::Rest::extract(&interp),
-                sys::mrb_sys_nil_value()
-            );
+            let args = args::Rest::extract(&interp);
             let stderr = Value::new(&interp, stderr);
-            unwrap_value_or_raise!(interp, stderr.funcall::<Value, _, _>("print", args.rest));
+            // TODO: introduce a `unchecked_funcall` to propagate errors.
+            let _ = stderr
+                .funcall::<Value, _, _>("print", args.map(|args| args.rest).unwrap_or_default());
         }
         sys::mrb_sys_nil_value()
     }
@@ -71,129 +67,76 @@ impl Warning {
 pub struct Kernel;
 
 impl Kernel {
-    unsafe fn require_impl(interp: &Mrb, filename: &str, base: &str) -> sys::mrb_value {
-        // Track whether any iterations of the loop successfully required some
-        // Ruby sources.
-        let mut success = false;
-        let mut path = PathBuf::from(filename);
-        if path.is_relative() {
-            path = PathBuf::from(base);
-        }
-        let files = vec![path.join(format!("{}.rb", filename)), path.join(filename)];
-        for path in files {
-            // canonicalize path (remove '.' and '..' components).
-            let path = match PathAbs::new(path) {
-                Ok(path) => path,
-                Err(_) => continue,
-            };
-            let is_file = {
-                let api = interp.borrow();
-                api.vfs.is_file(path.as_path())
-            };
-            if !is_file {
-                // If no paths are files in the VFS, then the require does
-                // nothing.
-                continue;
-            }
-            let metadata = {
-                let api = interp.borrow();
-                api.vfs.metadata(path.as_path()).unwrap_or_default()
-            };
-            // If a file is already required, short circuit.
-            if metadata.is_already_required() {
-                return Value::from_mrb(interp, false).inner();
-            }
-            let context = if let Some(filename) = path.as_path().to_str() {
-                EvalContext::new(filename)
-            } else {
-                EvalContext::new("(require)")
-            };
-            // Require Rust MrbFile first because an MrbFile may define classes
-            // and module with `MrbLoadSources` and Ruby files can require
-            // arbitrary other files, including some child sources that may
-            // depend on these module definitions. This behavior is enforced
-            // with a test in crate mruby-gems. See mruby-gems/src/lib.rs.
-            if let Some(require) = metadata.require {
-                // dynamic, Rust-backed `MrbFile` require
-                interp.push_context(context.clone());
-                unwrap_or_raise!(interp, require(Rc::clone(interp)), sys::mrb_sys_nil_value());
-                interp.pop_context();
-            }
-            let contents = {
-                let api = interp.borrow();
-                api.vfs.read_file(path.as_path())
-            };
-            if let Ok(contents) = contents {
-                interp.unchecked_eval_with_context(contents, context);
-            } else {
-                // this branch should be unreachable because the `Mrb`
-                // interpreter is not `Send` so it can only be owned and
-                // accessed by one thread.
-                return LoadError::raise(&interp, filename);
-            }
-            let metadata = metadata.mark_required();
-            let api = interp.borrow();
-            unwrap_or_raise!(
-                interp,
-                api.vfs.set_metadata(path.as_path(), metadata),
-                sys::mrb_sys_nil_value()
-            );
-            success = true;
-            trace!(
-                r#"Successful require of "{}" at {:?} on {:?}"#,
-                filename,
-                path,
-                api
-            );
-        }
-        if success {
-            Value::from_mrb(interp, success).inner()
-        } else {
-            LoadError::raise(&interp, filename)
-        }
-    }
-
     unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Require::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-        Self::require_impl(&interp, args.filename.as_str(), RUBY_LOAD_PATH)
+        let interp = unwrap_interpreter!(mrb);
+        let args = require::Args::extract(&interp);
+        let result = args.and_then(|args| require::method::require(&interp, args));
+        match result {
+            Ok(req) => {
+                let result = if let Some(req) = req.rust {
+                    req(Rc::clone(&interp))
+                } else {
+                    Ok(())
+                };
+                if result.is_ok() {
+                    if let Some(contents) = req.ruby {
+                        interp.unchecked_eval_with_context(contents, EvalContext::new(req.file));
+                    }
+                    Value::from_mrb(&interp, true).inner()
+                } else {
+                    LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
+                }
+            }
+            Err(require::Error::AlreadyRequired) => Value::from_mrb(&interp, false).inner(),
+            Err(require::Error::CannotLoad(file)) => {
+                LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
+            }
+            Err(require::Error::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
+            Err(require::Error::NoImplicitConversionToString) => {
+                ArgumentError::raise(interp, "No implicit conversion to String")
+            }
+        }
     }
 
     unsafe extern "C" fn require_relative(
         mrb: *mut sys::mrb_state,
         _slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Require::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
-        let base = interp
-            .peek_context()
-            .and_then(|context| {
-                PathBuf::from(context.filename)
-                    .parent()
-                    .and_then(Path::to_str)
-                    .map(str::to_owned)
-            })
-            .unwrap_or_else(|| RUBY_LOAD_PATH.to_owned());
-        Self::require_impl(&interp, args.filename.as_str(), base.as_str())
+        let interp = unwrap_interpreter!(mrb);
+        let args = require::Args::extract(&interp);
+        let result = args.and_then(|args| require::method::require_relative(&interp, args));
+        match result {
+            Ok(req) => {
+                let result = if let Some(req) = req.rust {
+                    req(Rc::clone(&interp))
+                } else {
+                    Ok(())
+                };
+                if result.is_ok() {
+                    if let Some(contents) = req.ruby {
+                        interp.unchecked_eval_with_context(contents, EvalContext::new(req.file));
+                    }
+                    Value::from_mrb(&interp, true).inner()
+                } else {
+                    LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
+                }
+            }
+            Err(require::Error::AlreadyRequired) => Value::from_mrb(&interp, false).inner(),
+            Err(require::Error::CannotLoad(file)) => {
+                LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
+            }
+            Err(require::Error::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
+            Err(require::Error::NoImplicitConversionToString) => {
+                ArgumentError::raise(interp, "No implicit conversion to String")
+            }
+        }
     }
 
     unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Rest::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
+        let interp = unwrap_interpreter!(mrb);
+        let args = args::Rest::extract(&interp);
 
-        for value in args.rest {
+        for value in args.map(|args| args.rest).unwrap_or_default() {
             print!("{}", value.to_s());
         }
         let _ = io::stdout().flush();
@@ -213,31 +156,25 @@ impl Kernel {
             }
         }
 
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Rest::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
+        let interp = unwrap_interpreter!(mrb);
+        let rest = args::Rest::extract(&interp)
+            .map(|args| args.rest)
+            .unwrap_or_default();
 
-        if args.rest.is_empty() {
+        if rest.is_empty() {
             println!();
         }
-        for value in args.rest {
+        for value in rest {
             do_puts(value);
         }
         sys::mrb_sys_nil_value()
     }
 
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            args::Rest::extract(&interp),
-            sys::mrb_sys_nil_value()
-        );
+        let interp = unwrap_interpreter!(mrb);
+        let args = args::Rest::extract(&interp);
 
-        for value in args.rest {
+        for value in args.map(|args| args.rest).unwrap_or_default() {
             let mut string = value.to_s();
             if !string.ends_with('\n') {
                 string = format!("{}\n", string);

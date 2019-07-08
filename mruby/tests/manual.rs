@@ -46,26 +46,24 @@ impl Container {
             }
         }
 
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            Args::extract(&interp),
-            Value::from_mrb(&interp, None::<Value>).inner()
-        );
-
-        let container = Box::new(Self { inner: args.inner });
-        unwrap_value_or_raise!(interp, container.try_into_ruby(&interp, Some(slf)))
+        let interp = unwrap_interpreter!(mrb);
+        Args::extract(&interp)
+            .and_then(|args| {
+                let container = Box::new(Self { inner: args.inner });
+                container.try_into_ruby(&interp, Some(slf))
+            })
+            .unwrap_or_else(|_| Value::from_mrb(&interp, None::<Value>))
+            .inner()
     }
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let data = unwrap_or_raise!(
-            interp,
-            <Box<Self>>::try_from_ruby(&interp, &Value::new(&interp, slf)),
+        let interp = unwrap_interpreter!(mrb);
+        if let Ok(data) = <Box<Self>>::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+            let borrow = data.borrow();
+            Value::from_mrb(&interp, borrow.inner).inner()
+        } else {
             Value::from_mrb(&interp, None::<Value>).inner()
-        );
-        let borrow = data.borrow();
-        Value::from_mrb(&interp, borrow.inner).inner()
+        }
     }
 }
 

@@ -1,25 +1,12 @@
 use log::warn;
-use std::ffi::{c_void, CString};
+use std::ffi::CString;
 use std::rc::Rc;
 
+use crate::convert::FromMrb;
 use crate::def::{ClassLike, Define};
 use crate::sys;
-use crate::Mrb;
-use crate::MrbError;
-
-struct ProtectArgs {
-    e_class: String,
-    message: String,
-}
-
-impl ProtectArgs {
-    fn new(e_class: &str, message: &str) -> Self {
-        Self {
-            e_class: e_class.to_owned(),
-            message: message.to_owned(),
-        }
-    }
-}
+use crate::value::Value;
+use crate::{Mrb, MrbError};
 
 pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     let exception = interp
@@ -76,75 +63,64 @@ pub trait RubyException: 'static + Sized {
     /// **Warning**: This function calls [`sys::mrb_sys_raise`] which modifies
     /// the stack with `longjmp`. mruby expects raise to be called at some stack
     /// frame below an eval. If this is not the case, mruby will segfault.
-    fn raise(interp: &Mrb, message: &str) -> sys::mrb_value {
-        unsafe extern "C" fn run_protected(
-            mrb: *mut sys::mrb_state,
-            data: sys::mrb_value,
-        ) -> sys::mrb_value {
-            let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = Rc::from_raw(ptr as *const ProtectArgs);
+    unsafe fn raise(interp: Mrb, message: &'static str) -> sys::mrb_value {
+        Self::raisef::<Value>(interp, message, vec![])
+    }
 
-            let e_class_cstring = CString::new(args.e_class.as_str());
-            let e_class = if let Ok(e_class) = e_class_cstring {
-                e_class
-            } else {
-                warn!(
-                    "unable to raise {} with message {}",
-                    args.e_class, args.message
-                );
-                return sys::mrb_sys_nil_value();
-            };
-            let message_cstring = CString::new(args.message.as_str());
-            let message = if let Ok(message) = message_cstring {
-                message
-            } else {
-                warn!(
-                    "unable to raise {} with message {}",
-                    args.e_class, args.message
-                );
-                return sys::mrb_sys_nil_value();
-            };
-            sys::mrb_sys_raise(mrb, e_class.as_ptr(), message.as_ptr());
-            warn!("raised {} with message {}", args.e_class, args.message);
-            sys::mrb_sys_nil_value()
-        }
-        unsafe extern "C" fn run_ensure(
-            _mrb: *mut sys::mrb_state,
-            _data: sys::mrb_value,
-        ) -> sys::mrb_value {
-            sys::mrb_sys_nil_value()
-        }
+    unsafe fn raisef<V>(interp: Mrb, message: &'static str, format: Vec<V>) -> sys::mrb_value
+    where
+        Value: FromMrb<V>,
+    {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Mrb` to
         // get access to the underlying `MrbState`.
-        let (mrb, _ctx) = {
-            let borrow = interp.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
+        let mrb = interp.borrow().mrb;
 
         let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
             spec
         } else {
-            return unsafe { sys::mrb_sys_nil_value() };
+            return sys::mrb_sys_nil_value();
         };
-        let message = Self::message(message);
-        let args = Rc::new(ProtectArgs::new(spec.borrow().name(), message.as_str()));
-        unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
-            let value = sys::mrb_ensure(
-                mrb,
-                Some(run_protected),
-                data,
-                Some(run_ensure),
-                sys::mrb_sys_nil_value(),
-            );
-            sys::mrb_sys_raise_current_exception(mrb);
-            value
-        }
-    }
+        let borrow = spec.borrow();
+        let eclass = if let Some(rclass) = borrow.rclass(&interp) {
+            rclass
+        } else {
+            warn!("unable to raise {}", borrow.name());
+            return sys::mrb_sys_nil_value();
+        };
+        // message is a &'static str so it should never leak
+        let message = CString::new(message);
+        let message_cstring = if let Ok(message) = message {
+            message
+        } else {
+            warn!("unable to raise {}", borrow.name());
+            return sys::mrb_sys_nil_value();
+        };
+        let message_ptr = message_cstring.as_ptr();
 
-    fn message(message: &str) -> String {
-        message.to_owned()
+        let mut formatargs = format
+            .into_iter()
+            .map(|item| Value::from_mrb(&interp, item).inner())
+            .collect::<Vec<_>>();
+        // `mrb_sys_raise` will call longjmp which will unwind the stack.
+        // Anything we haven't cleaned up at this point will leak, so drop
+        // everything.
+        drop(borrow);
+        drop(spec);
+        drop(interp);
+        match formatargs.len() {
+            0 => {
+                drop(formatargs);
+                sys::mrb_raise(mrb, eclass, message_ptr)
+            }
+            1 => {
+                let arg1 = formatargs.remove(0);
+                drop(formatargs);
+                sys::mrb_raisef(mrb, eclass, message_ptr, arg1)
+            }
+            _ => panic!("unsupported raisef format arg count. See mruby/src/extn/core/error.rs."),
+        }
+        unreachable!("mrb_raise will unwind the stack with longjmp");
     }
 }
 
@@ -160,11 +136,7 @@ impl RubyException for ScriptError {}
 #[allow(clippy::module_name_repetitions)]
 pub struct LoadError;
 
-impl RubyException for LoadError {
-    fn message(message: &str) -> String {
-        format!("cannot load such file -- {}", message)
-    }
-}
+impl RubyException for LoadError {}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct ArgumentError;
@@ -207,8 +179,8 @@ mod tests {
 
     impl Run {
         unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-            let interp = interpreter_or_raise!(mrb);
-            RuntimeError::raise(&interp, "something went wrong")
+            let interp = unwrap_interpreter!(mrb);
+            RuntimeError::raise(interp, "something went wrong")
         }
     }
 

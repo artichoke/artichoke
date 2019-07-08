@@ -63,8 +63,14 @@ pub fn method(interp: &Mrb, args: Args, slf: sys::mrb_value) -> Result<Value, Er
             }
             patterns.join("|")
         } else {
-            arg.try_into::<String>()
-                .map_err(|_| Error::NoImplicitConversionToString)?
+            let pattern = arg;
+            if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
+                regexp.borrow().pattern.clone()
+            } else if let Ok(pattern) = pattern.funcall::<String, _, _>("to_str", &[]) {
+                syntax::escape(pattern.as_str())
+            } else {
+                return Err(Error::NoImplicitConversionToString);
+            }
         }
     } else {
         let mut patterns = vec![];

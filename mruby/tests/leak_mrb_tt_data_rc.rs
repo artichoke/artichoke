@@ -66,15 +66,14 @@ impl Container {
             }
         }
 
-        let interp = interpreter_or_raise!(mrb);
-        let args = unwrap_or_raise!(
-            interp,
-            Args::extract(&interp),
-            Value::from_mrb(&interp, None::<Value>).inner()
-        );
-
-        let container = Self { inner: args.inner };
-        unwrap_value_or_raise!(interp, container.try_into_ruby(&interp, Some(slf)))
+        let interp = unwrap_interpreter!(mrb);
+        Args::extract(&interp)
+            .and_then(|args| {
+                let container = Self { inner: args.inner };
+                container.try_into_ruby(&interp, Some(slf))
+            })
+            .unwrap_or_else(|_| Value::from_mrb(&interp, None::<Value>))
+            .inner()
     }
 }
 impl MrbFile for Container {
