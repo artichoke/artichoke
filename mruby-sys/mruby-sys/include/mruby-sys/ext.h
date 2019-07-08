@@ -24,6 +24,7 @@
 
 #include <mruby.h>
 #include <mruby/array.h>
+#include <mruby/common.h>
 #include <mruby/class.h>
 #include <mruby/data.h>
 #include <mruby/error.h>
@@ -98,10 +99,7 @@ void mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type);
 
 // Raise exceptions and debug info
 
-mrb_noreturn void mrb_sys_raise(struct mrb_state *mrb, const char *eclass,
-                                const char *msg);
-
-void mrb_sys_raise_current_exception(struct mrb_state *mrb);
+mrb_noreturn void mrb_exc_raise(struct mrb_state *mrb, mrb_value exc);
 
 mrb_value mrb_sys_value_debug_str(struct mrb_state *mrb, mrb_value value);
 

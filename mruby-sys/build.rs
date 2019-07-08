@@ -140,6 +140,8 @@ fn main() {
         .clang_arg(format!("-I{}", Build::ext_include_dir()))
         .clang_arg("-DMRB_DISABLE_STDIO")
         .whitelist_function("^mrb.*")
+        .blacklist_function("mrb_protect")
+        .blacklist_function("mrb_exc_raise")
         .whitelist_type("^mrb.*")
         .whitelist_var("^mrb.*")
         .whitelist_var("^MRB.*")

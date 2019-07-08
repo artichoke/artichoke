@@ -1,3 +1,4 @@
+#![feature(unwind_attributes)]
 #![deny(missing_docs, warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
 
@@ -8,6 +9,7 @@ use std::ffi::CStr;
 use std::fmt;
 
 mod args;
+mod error;
 #[allow(missing_docs)]
 #[allow(non_camel_case_types)]
 #[allow(non_upper_case_globals)]
@@ -20,6 +22,7 @@ mod ffi;
 mod ffi_tests;
 
 pub use self::args::*;
+pub use self::error::*;
 pub use self::ffi::*;
 
 /// Version metadata `String` for mruby-sys and embedded mruby.

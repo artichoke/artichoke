@@ -1143,9 +1143,6 @@ extern "C" {
     ) -> mrb_value;
 }
 extern "C" {
-    pub fn mrb_exc_raise(mrb: *mut mrb_state, exc: mrb_value);
-}
-extern "C" {
     pub fn mrb_raise(mrb: *mut mrb_state, c: *mut RClass, msg: *const ::std::os::raw::c_char);
 }
 extern "C" {
@@ -2309,14 +2306,6 @@ extern "C" {
     pub fn mrb_f_raise(arg1: *mut mrb_state, arg2: mrb_value) -> mrb_value;
 }
 extern "C" {
-    pub fn mrb_protect(
-        mrb: *mut mrb_state,
-        body: mrb_func_t,
-        data: mrb_value,
-        state: *mut mrb_bool,
-    ) -> mrb_value;
-}
-extern "C" {
     pub fn mrb_ensure(
         mrb: *mut mrb_state,
         body: mrb_func_t,
@@ -3422,16 +3411,6 @@ extern "C" {
         ptr: *mut ::std::os::raw::c_void,
         type_: *const mrb_data_type,
     );
-}
-extern "C" {
-    pub fn mrb_sys_raise(
-        mrb: *mut mrb_state,
-        eclass: *const ::std::os::raw::c_char,
-        msg: *const ::std::os::raw::c_char,
-    );
-}
-extern "C" {
-    pub fn mrb_sys_raise_current_exception(mrb: *mut mrb_state);
 }
 extern "C" {
     pub fn mrb_sys_value_debug_str(mrb: *mut mrb_state, value: mrb_value) -> mrb_value;

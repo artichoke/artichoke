@@ -147,15 +147,10 @@ void mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type) {
 
 // Raise exceptions and debug info
 
-mrb_noreturn void mrb_sys_raise(struct mrb_state *mrb, const char *eclass,
-                                const char *msg) {
-  mrb_raise(mrb, mrb_class_get(mrb, eclass), msg);
-}
+mrb_noreturn void mrb_sys_exc_raise(struct mrb_state *mrb, mrb_value exc);
 
-void mrb_sys_raise_current_exception(struct mrb_state *mrb) {
-  if (mrb->exc) {
-    mrb_exc_raise(mrb, mrb_obj_value(mrb->exc));
-  }
+mrb_noreturn void mrb_exc_raise(struct mrb_state *mrb, mrb_value exc) {
+  mrb_sys_exc_raise(mrb, exc);
 }
 
 // TODO: implement this debug function in Rust
