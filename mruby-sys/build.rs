@@ -81,6 +81,7 @@ fn main() {
     )
     .unwrap();
     for patch in vec!["0001-Support-parsing-a-Regexp-literal-with-CRuby-options.patch"] {
+        println!("cargo:rerun-if-changed={}", Build::patch(patch));
         if !Command::new("bash")
             .arg("-c")
             .arg(format!("patch -p1 < '{}'", Build::patch(patch)))
