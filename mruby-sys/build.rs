@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 /// vendored mruby version
-const MRUBY_REVISION: &str = "1685c45";
+const MRUBY_REVISION: &str = "bc7c5d3";
 
 /// Path helpers
 struct Build;

@@ -1,4 +1,4 @@
-From 0675210d7cd240feef3b4d727a20719e54171de8 Mon Sep 17 00:00:00 2001
+From eb02dcd12b808af7d1cb3b144e6d99df3efaa82a Mon Sep 17 00:00:00 2001
 From: Ryan Lopopolo <rjl@hyperbo.la>
 Date: Wed, 19 Jun 2019 23:24:01 +0100
 Subject: [PATCH] Support parsing a Regexp literal with CRuby options
@@ -37,5 +37,5 @@ index 96a9453b..b06eb4d1 100644
        }
      }
 -- 
-2.21.0
+2.22.0
 
