@@ -30,7 +30,13 @@ pub fn main() {
     // ignore binary name
     args.next();
     for spec in args {
-        if spec == "mutex/owned_spec.rb" {
+        // multi-threading is not supported
+        if spec.contains("thread/") || spec.contains("mutex/owned_spec.rb") {
+            continue;
+        }
+        // access modifiers are a mess which means the fixtures in
+        // `core/module/fixtures/classes.rb` are unloadable
+        if spec.contains("module/") {
             continue;
         }
         let contents = fs::read(&spec).unwrap();

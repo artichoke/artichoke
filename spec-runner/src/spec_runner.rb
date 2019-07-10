@@ -45,6 +45,7 @@ class SpecCollector
   end
 
   def enter(description)
+    print "\n", description, ': '
     @description = description
   end
 
