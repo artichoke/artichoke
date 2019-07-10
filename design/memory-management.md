@@ -103,7 +103,7 @@ Ignoring cycles, when a `Value` takes a reference to another value, we can call
 [`Rc::clone`](https://doc.rust-lang.org/std/rc/struct.Rc.html#impl-Clone). This
 takes a strong reference to a `Value` and increases the ref count on the smart
 pointer. When the `Value` is deallocated, Rust will drop the references on the
-smart pointers it ownes.
+smart pointers it owns.
 
 For example, an Array is backed by a `Vec<Rc<RefCell<Value>>>` and the symbol
 table of instance variables on an object is a
@@ -178,7 +178,7 @@ temporarily.
 ```rust
 pub enum ValueReference {
     Strong(Rc<RefCell<Value>>),
-    CycleWeak(Rc<RefCell<Cycle<Value>>>),
+    CycleWeak(Rc<Cycle<Value>>),
 }
 
 pub struct Cycle<T> {
@@ -224,8 +224,7 @@ If the reference is bound to a name (whether a local in a function, class
 context, module context, proc, or top self, captured variable in a proc, or a
 constant binding), the name will hold a `Strong` reference.
 
-If the reference is captured by a proc, the proc will hold a `CycleStrong`
-reference.
+If the reference is captured by a proc, the proc will hold a `Strong` reference.
 
 ### Breaking Cycles
 
