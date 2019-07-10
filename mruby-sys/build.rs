@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 /// vendored mruby version
-const MRUBY_REVISION: &str = "1685c45";
+const MRUBY_REVISION: &str = "bc7c5d3";
 
 /// Path helpers
 struct Build;
@@ -81,6 +81,7 @@ fn main() {
     )
     .unwrap();
     for patch in vec!["0001-Support-parsing-a-Regexp-literal-with-CRuby-options.patch"] {
+        println!("cargo:rerun-if-changed={}", Build::patch(patch));
         if !Command::new("bash")
             .arg("-c")
             .arg(format!("patch -p1 < '{}'", Build::patch(patch)))

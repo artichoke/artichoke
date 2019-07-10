@@ -173,7 +173,7 @@ pub const MRB_STR_SHARED: u32 = 1;
 pub const MRB_STR_FSHARED: u32 = 2;
 pub const MRB_STR_NOFREE: u32 = 4;
 pub const MRB_STR_POOL: u32 = 8;
-pub const MRB_STR_NO_UTF: u32 = 16;
+pub const MRB_STR_ASCII: u32 = 16;
 pub const MRB_STR_EMBED: u32 = 32;
 pub const MRB_STR_EMBED_LEN_MASK: u32 = 1984;
 pub const MRB_STR_EMBED_LEN_SHIFT: u32 = 6;
@@ -3182,6 +3182,17 @@ extern "C" {
 }
 extern "C" {
     pub fn mrb_str_inspect(mrb: *mut mrb_state, str: mrb_value) -> mrb_value;
+}
+extern "C" {
+    pub fn mrb_str_beg_len(str_len: mrb_int, begp: *mut mrb_int, lenp: *mut mrb_int) -> mrb_bool;
+}
+extern "C" {
+    pub fn mrb_str_byte_subseq(
+        mrb: *mut mrb_state,
+        str: mrb_value,
+        beg: mrb_int,
+        len: mrb_int,
+    ) -> mrb_value;
 }
 pub type jmp_buf = [::std::os::raw::c_int; 37usize];
 #[repr(C)]
