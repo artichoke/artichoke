@@ -187,7 +187,7 @@ unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
                 // Iterate over the items in the clique and for each pair of nodes,
                 // find nodes that can reach each other. These nodes form a cycle.
                 let mut cycle_participants = vec![];
-                for left in dbg!(cycle_owned_refs.clone()) {
+                for left in cycle_owned_refs.clone() {
                     for right in cycle_owned_refs.clone() {
                         if left.as_ref().value.object_id() == right.as_ref().value.object_id() {
                             continue;
