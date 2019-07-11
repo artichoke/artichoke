@@ -30,7 +30,7 @@ unsafe impl Reachable for RStringWrapper {
 #[test]
 #[should_panic]
 fn cactusref_adopt_no_reachability_leak() {
-    let s = "a".repeat(1024 * 1024);
+    let s = "a".repeat(1024 * 1024 * 25);
 
     // 500MB of `String`s will be allocated by the leak detector
     leak::Detector::new(
