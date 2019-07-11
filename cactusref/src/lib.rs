@@ -216,15 +216,11 @@ unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
                                 right.as_ref().value.object_id()
                             );
                             cycle_participants.push(right);
-                            let count = strong_counts_in_cycle
+                            let count = *strong_counts_in_cycle
                                 .get(&right.as_ref().value.object_id())
-                                .cloned();
-                            if let Some(count) = count {
-                                strong_counts_in_cycle
-                                    .insert(right.as_ref().value.object_id(), count + 1);
-                            } else {
-                                strong_counts_in_cycle.insert(right.as_ref().value.object_id(), 1);
-                            }
+                                .unwrap_or(&0);
+                            strong_counts_in_cycle
+                                .insert(right.as_ref().value.object_id(), count + 1);
                         }
                     }
                 }
