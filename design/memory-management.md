@@ -2,8 +2,9 @@
 
 Artichoke has no garbage collector and relies on
 [Rust's built-in memory management](https://pcwalton.github.io/2013/03/18/an-overview-of-memory-management-in-rust.html)
-to reclaim memory when Ruby [`Value`](value.md)s are no longer reachable from
-the VM.
+and a [cycle-aware reference-counted smart pointer](/cactusref) of its own
+invention to reclaim memory when Ruby [`Value`](value.md)s are no longer
+reachable from the VM.
 
 This document refers to data structures with backticks if it is refering to a
 specific implementation, for example, [`Value`](value.md). If the data structure
@@ -28,7 +29,13 @@ pub struct ObjectId {
     // reference to the VM
     interp: Artichoke,
     // opaque and immutable identifier
-    id: u64,
+    id: usize,
+}
+
+impl ObjectId {
+    pub fn id(&self) -> usize {
+        self.id
+    }
 }
 
 impl Hash for ObjectId {
@@ -97,19 +104,26 @@ x.instance_variable_set :@a, x
 ```
 
 Because instance variables are publically settable, every `Value` can hold a
-reference other `Value`s, including cyclical ones.
+reference other `Value`s, including cyclical ones. This means we cannot ignore
+cycles.
 
-Ignoring cycles, when a `Value` takes a reference to another value, we can call
-[`Rc::clone`](https://doc.rust-lang.org/std/rc/struct.Rc.html#impl-Clone). This
-takes a strong reference to a `Value` and increases the ref count on the smart
-pointer. When the `Value` is deallocated, Rust will drop the references on the
-smart pointers it owns.
+`CactusRef` is a smart pointer that behaves similarly to `Rc`, with the addition
+that `CactusRef` can detect cycles and deallocate `Value`s if they form an
+orphaned cycle.
 
-For example, an Array is backed by a `Vec<Rc<RefCell<Value>>>` and the symbol
-table of instance variables on an object is a
-`HashMap<Identifier, Rc<RefCell<Value>>>`.
+When a special `Value` takes ownership of another, the `ObjectId` of the other
+value resolves a strong `CactusRef` via the heap and stores it in its internal
+data structures (e.g. an instance variable table or a `Vec` backing an Array).
 
-Things are trickier if we need to handle cycles. Consider the following code:
+For example, an Array is backed by a `Vec<CactusRef<RefCell<Value>>>` and the
+symbol table of instance variables on an object is a
+`HashMap<Identifier, CactusRef<RefCell<Value>>>`.
+
+When a `CactusRef` is dropped, the reference count of the `Value` decreases and
+`CactusRef` does a reachability check using breadth-first search and the
+`Reachable` implementation on `Value`.
+
+Consider the following code:
 
 ```ruby
 class Container
@@ -134,13 +148,13 @@ ring = make_cycle
 
 Here's what happens from the perspective of the VM:
 
-1. The `a` binding holds a strong reference to `ObjectId(100)`
-2. `ObjectId(200)` holds a strong reference to `ObjectId(100)`
-3. The `b` binding holds a strong reference to `ObjectId(200)`
-4. `ObjectId(300)` holds a strong reference to `ObjectId(200)`
-5. The `c` binding holds a strong reference to `ObjectId(300)`
-6. `ObjectId(400)` holds a strong reference to `ObjectId(300)`
-7. The `d` binding holds a strong reference to `ObjectId(400)`
+1. The `a` binding holds a strong reference to the Value `ObjectId(100)`
+2. `ObjectId(200)` holds a strong reference to the Value `ObjectId(100)`
+3. The `b` binding holds a strong reference to the Value `ObjectId(200)`
+4. `ObjectId(300)` holds a strong reference to the Value `ObjectId(200)`
+5. The `c` binding holds a strong reference to the Value `ObjectId(300)`
+6. `ObjectId(400)` holds a strong reference to the Value `ObjectId(300)`
+7. The `d` binding holds a strong reference to the Value `ObjectId(400)`
 
 At this point the strong counts look like this:
 
@@ -159,38 +173,29 @@ makes these four `Value`s form a cycle.
 Each `Value` can answer the question: Can I reach an `ObjectId`?
 
 ```rust
-impl ObjectId {
-    pub fn can_reach_object(&self, other: Self, &mut checked: HashSet<Self>) -> HashSet<Self> {
+unsafe impl Reachable for Value {
+    pub fn object_id(&self) -> usize {
+      self.object_id.id()
+    }
+
+    pub fn can_reach(&self, object_id: usize) -> bool {
+        for value in self.instance_variables {
+            if value.object_id.id() == object_id {
+                return true;
+            }
+        }
+        // and for other data structures like Class, Array, Hash
         unimplemented!();
     }
 }
 ```
 
-`Value` asks this question of all its strong references when attempting to take
-a strong reference to another `Value`. If the returned `HashSet` is empty, the
-`Value` takes a strong reference. If the returned `HashSet` is non-empty, these
-`ObjectId`s are added to a VM-tracked `Cycle`. The cycle group holds a weak
-reference to the shared `Value` wrapper and and rather than hold a
-`Rc<RefCell<Value>>`, the `Value`s in the cycle hold a reference to the cycle
-group which can resolve an `ObjectId` into a strong value wrapper reference
-temporarily.
-
-```rust
-pub enum ValueReference {
-    Strong(Rc<RefCell<Value>>),
-    CycleWeak(Rc<Cycle<Value>>),
-}
-
-pub struct Cycle<T> {
-    value: Weak<RefCell<Value>>,
-    group: HashSet<ObjectId>,
-}
-```
+`Value` does not need to do a full graph traversal because `CactusRef` does it.
 
 Back to our example: when `ObjectId(400)` is assigned to `@inner` on
 `ObjectId(100)`, the VM detects a cycle because `ObjectId(100)` is reachable by
 the chain of `ObjectId(400) -> ObjectId(300) -> ObjectId(200) -> ObjectId(100)`.
-The `ObjectId`s are reachable in these ways:
+The Valuse associated with the `ObjectId`s are reachable in these ways:
 
 | `ObjectId` | Binding              |
 | ---------- | -------------------- |
@@ -208,26 +213,5 @@ Once we return from the function, the variable bindings get dropped:
 | 300        | `ObjectId(400)`         |
 | 400        | `ObjectId(100)`         |
 
-But even if `ring` is dropped or reassigned, memory will not be reclaimed.
-
-### Escape Analysis
-
-All `ObjectId`s in the cycle will hold `CycleWeak` references. This is safe
-because the Weak references are only invalid if the cycle is unreachable by any
-other `Value`s in the VM.
-
-If the `ObjectId` owning the reference is not in the cycle, it will hold a
-`Strong` reference. The cycle is unreachable unless it is referenced by an
-`ObjectId` outside of the cycle.
-
-If the reference is bound to a name (whether a local in a function, class
-context, module context, proc, or top self, captured variable in a proc, or a
-constant binding), the name will hold a `Strong` reference.
-
-If the reference is captured by a proc, the proc will hold a `Strong` reference.
-
-### Breaking Cycles
-
-If the VM changes the value of a binding that points to a `CycleWeak`, the cycle
-is broken. The VM will replace the reachable `CycleWeak`s with strong
-references.
+When `ring` is dropped or reassigned, `CactusRef` detects an orphaned cycle and
+will deallocate all of the `Value`s.
