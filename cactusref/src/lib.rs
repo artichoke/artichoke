@@ -14,7 +14,6 @@ use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::fmt;
 use std::intrinsics::abort;
-use std::rc::Rc;
 
 pub type ObjectId = usize;
 
@@ -91,7 +90,7 @@ struct CactusBox<T> {
     strong: Cell<usize>,
     weak: Cell<usize>,
     value: T,
-    links: Rc<RefCell<HashMap<ObjectId, NonNull<Self>>>>,
+    links: RefCell<HashMap<ObjectId, NonNull<Self>>>,
 }
 
 pub struct CactusRef<T>
@@ -116,7 +115,7 @@ where
                 strong: Cell::new(1),
                 weak: Cell::new(1),
                 value,
-                links: Rc::new(RefCell::new(HashMap::default())),
+                links: RefCell::new(HashMap::default()),
             })),
             phantom: PhantomData,
         }
@@ -238,8 +237,7 @@ unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
                     debug!("CactusRef cycle detected with object ids: {:?}", cycle_ids);
                     // break the cycle and remove all links
                     for item in &cycle_participants {
-                        let item = item.as_ref();
-                        let mut links = item.links.borrow_mut();
+                        let mut links = item.as_ref().links.borrow_mut();
                         for other in &cycle_participants {
                             let other_id = other.as_ref().value.object_id();
                             let _ = links.remove(&other_id);
