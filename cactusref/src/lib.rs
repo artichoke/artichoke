@@ -124,7 +124,7 @@ where
     pub fn adopt(this: &Self, other: &Self) {
         let other_id = other.inner().value.object_id();
         let mut links = this.inner().links.borrow_mut();
-        if !links.contains_key(&other_id) {
+        if this.inner().value.object_id() != other_id && !links.contains_key(&other_id) {
             other.inc_strong();
             let ptr = unsafe {
                 NonNull::new_unchecked(other.inner() as *const CactusBox<T> as *mut CactusBox<T>)
