@@ -46,7 +46,7 @@ impl Hash for ObjectId {
 
 impl PartialEq for ObjectId {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+        self.interp == other.interp && self.id == other.id
     }
 }
 
