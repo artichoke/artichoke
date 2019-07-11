@@ -1,0 +1,14 @@
+[package]
+name = "cactusref"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4.6"
+
+[dev-dependencies]
+env_logger = "0.6.1"
+libc = "0.2"
