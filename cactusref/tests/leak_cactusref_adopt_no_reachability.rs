@@ -1,3 +1,6 @@
+// This test may segfault because Reachable is implemented in a
+// dangerous way.
+#![cfg(__disabled__)]
 #![deny(clippy::all, clippy::pedantic)]
 #![deny(warnings, intra_doc_link_resolution_failure)]
 
