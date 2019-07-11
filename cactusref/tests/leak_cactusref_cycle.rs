@@ -11,7 +11,7 @@ const ITERATIONS: usize = 50;
 const LEAK_TOLERANCE: i64 = 1024 * 1024 * 25;
 
 struct RString {
-    _inner: String,
+    inner: String,
     link: Option<Rc<RStringWrapper>>,
     object_id: usize,
 }
@@ -37,18 +37,19 @@ fn cactusref_cycle_leak() {
     leak::Detector::new("CactusRef cycle leaks", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         // each iteration creates 10MB of `String`s
         let first = Rc::new(RStringWrapper(RefCell::new(RString {
-            _inner: s.clone(),
+            inner: s.clone(),
             link: None,
             object_id: 0,
         })));
         let mut last = Rc::clone(&first);
         for object_id in 1..10 {
             let obj = Rc::new(RStringWrapper(RefCell::new(RString {
-                _inner: s.clone(),
+                inner: s.clone(),
                 link: Some(Rc::clone(&last)),
                 object_id,
             })));
             last = obj;
+            println!("{} ...", &last.0.borrow().inner[..10]);
         }
         first.0.borrow_mut().link = Some(Rc::clone(&last));
         drop(first);
