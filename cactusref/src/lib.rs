@@ -28,6 +28,8 @@ use std::mem;
 
 mod link;
 mod reachable;
+#[cfg(test)]
+mod tests;
 
 use link::CactusLinkRef;
 pub use reachable::Reachable;
