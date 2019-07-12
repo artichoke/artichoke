@@ -3,7 +3,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 use std::intrinsics::abort;
 
-use crate::link::CactusLinkRef;
+use crate::link::Link;
 use crate::{Rc, Reachable};
 
 pub trait RcBoxPtr<T: ?Sized + Reachable> {
@@ -72,7 +72,7 @@ impl<T: ?Sized + Reachable> RcBoxPtr<T> for RcBox<T> {
 pub struct RcBox<T: ?Sized + Reachable> {
     pub(crate) strong: Cell<usize>,
     pub(crate) weak: Cell<usize>,
-    pub(crate) links: RefCell<HashSet<CactusLinkRef<T>>>,
+    pub(crate) links: RefCell<HashSet<Link<T>>>,
     pub(crate) value: Box<T>,
 }
 

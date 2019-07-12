@@ -12,7 +12,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::mem;
 
-use crate::link::CactusLinkRef;
+use crate::link::Link;
 use crate::ptr::{is_dangling, RcBox, RcBoxPtr};
 use crate::{Reachable, Weak};
 
@@ -69,10 +69,10 @@ impl<T: ?Sized + Reachable> Rc<T> {
     pub fn adopt(this: &Self, other: &Self) {
         let other_id = other.inner().value.object_id();
         let mut links = this.inner().links.borrow_mut();
-        if this.inner().value.object_id() != other_id && !links.contains(&CactusLinkRef(other.ptr))
+        if this.inner().value.object_id() != other_id && !links.contains(&Link(other.ptr))
         {
             other.inc_strong();
-            links.insert(CactusLinkRef(other.ptr));
+            links.insert(Link(other.ptr));
         }
     }
 
@@ -208,7 +208,7 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
             // Perform a breadth first search over all of the links to determine
             // the clique of refs that self can reach.
             let mut clique = HashSet::new();
-            clique.insert(CactusLinkRef(self.ptr));
+            clique.insert(Link(self.ptr));
             let mut strong_counts_in_cycle = HashMap::new();
             loop {
                 let size = clique.len();
@@ -233,7 +233,7 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
             {
                 let left_reaches_right = left.value().can_reach(right.value().object_id());
                 let right_reaches_left = right.value().can_reach(left.value().object_id());
-                let is_new = !cycle.iter().any(|item: &CactusLinkRef<T>| *item == *right);
+                let is_new = !cycle.iter().any(|item: &Link<T>| *item == *right);
                 if left_reaches_right && right_reaches_left && is_new {
                     cycle.insert(*right);
                     let count = *strong_counts_in_cycle.get(&right).unwrap_or(&0);
