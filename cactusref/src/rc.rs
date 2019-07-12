@@ -69,7 +69,7 @@ impl<T: Reachable> Rc<T> {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
                 links: RefCell::new(HashSet::default()),
-                value: value,
+                value,
             })),
             phantom: PhantomData,
         }
@@ -169,6 +169,7 @@ impl<T: ?Sized + Reachable> Rc<T> {
     /// let x_ptr = Rc::into_raw(x);
     /// assert_eq!(unsafe { &(*x_ptr).0 }, "hello");
     /// ```
+    #[allow(clippy::wrong_self_convention)]
     pub fn into_raw(this: Self) -> *const T {
         let ptr: *const T = &*this;
         mem::forget(this);
@@ -221,7 +222,7 @@ impl<T: ?Sized + Reachable> Rc<T> {
         let fake_ptr = ptr as *mut RcBox<T>;
         let rc_ptr = set_data_ptr(fake_ptr, (ptr as *mut u8).offset(-offset));
 
-        Rc {
+        Self {
             ptr: NonNull::new_unchecked(rc_ptr),
             phantom: PhantomData,
         }
@@ -254,9 +255,10 @@ impl<T: ?Sized + Reachable> Rc<T> {
     /// assert_eq!(&deref.0, "hello");
     /// ```
     #[inline]
+    #[allow(clippy::wrong_self_convention)]
     pub fn into_raw_non_null(this: Self) -> NonNull<T> {
         // safe because Rc guarantees its pointer is non-null
-        unsafe { NonNull::new_unchecked(Rc::into_raw(this) as *mut _) }
+        unsafe { NonNull::new_unchecked(Self::into_raw(this) as *mut _) }
     }
 
     /// Creates a new [`Weak`] pointer to this value.
@@ -351,7 +353,7 @@ impl<T: ?Sized + Reachable> Rc<T> {
     /// inner value.
     #[inline]
     pub(crate) fn is_unique(this: &Self) -> bool {
-        Rc::weak_count(this) == 0 && Rc::strong_count(this) == 1
+        Self::weak_count(this) == 0 && Self::strong_count(this) == 1
     }
 
     /// Returns a mutable reference to the inner value, if there are no other
@@ -389,7 +391,7 @@ impl<T: ?Sized + Reachable> Rc<T> {
     /// ```
     #[inline]
     pub fn get_mut(this: &mut Self) -> Option<&mut T> {
-        if Rc::is_unique(this) {
+        if Self::is_unique(this) {
             unsafe { Some(&mut this.ptr.as_mut().value) }
         } else {
             None
@@ -457,17 +459,17 @@ impl<T: ?Sized + Reachable> Rc<T> {
         inner
     }
 
-    fn from_box(v: Box<T>) -> Rc<T> {
+    fn from_box(v: Box<T>) -> Self {
         unsafe {
             let box_unique = Box::into_unique(v);
-            let bptr = box_unique.as_ptr();
+            let box_ptr = box_unique.as_ptr();
 
-            let value_size = mem::size_of_val(&*bptr);
-            let ptr = Self::allocate_for_ptr(bptr);
+            let value_size = mem::size_of_val(&*box_ptr);
+            let ptr = Self::allocate_for_ptr(box_ptr);
 
             // Copy value as bytes
             ptr::copy_nonoverlapping(
-                bptr as *const T as *const u8,
+                box_ptr as *const T as *const u8,
                 &mut (*ptr).value as *mut _ as *mut u8,
                 value_size,
             );
@@ -475,7 +477,7 @@ impl<T: ?Sized + Reachable> Rc<T> {
             // Free the allocation without dropping its contents
             box_free(box_unique);
 
-            Rc {
+            Self {
                 ptr: NonNull::new_unchecked(ptr),
                 phantom: PhantomData,
             }
@@ -809,9 +811,9 @@ impl<T: ?Sized + Reachable> Clone for Rc<T> {
     /// let _ = Rc::clone(&five);
     /// ```
     #[inline]
-    fn clone(&self) -> Rc<T> {
+    fn clone(&self) -> Self {
         self.inc_strong();
-        Rc {
+        Self {
             ptr: self.ptr,
             phantom: PhantomData,
         }
@@ -1084,8 +1086,8 @@ impl<T: Reachable> From<T> for Rc<T> {
 
 impl<T: ?Sized + Reachable> From<Box<T>> for Rc<T> {
     #[inline]
-    fn from(v: Box<T>) -> Rc<T> {
-        Rc::from_box(v)
+    fn from(v: Box<T>) -> Self {
+        Self::from_box(v)
     }
 }
 

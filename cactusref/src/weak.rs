@@ -221,7 +221,7 @@ impl<T: Reachable> Weak<T> {
             let offset = data_offset(ptr);
             let fake_ptr = ptr as *mut RcBox<T>;
             let ptr = set_data_ptr(fake_ptr, (ptr as *mut u8).offset(-offset));
-            Weak {
+            Self {
                 ptr: NonNull::new(ptr).expect("Invalid pointer passed to from_raw"),
             }
         }

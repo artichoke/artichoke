@@ -9,7 +9,7 @@ use std::result::Result::{Err, Ok};
 
 unsafe impl Reachable for usize {
     fn object_id(&self) -> usize {
-        *self
+        1
     }
 
     fn can_reach(&self, _object_id: usize) -> bool {
@@ -19,7 +19,7 @@ unsafe impl Reachable for usize {
 
 unsafe impl Reachable for u64 {
     fn object_id(&self) -> usize {
-        *self as usize
+        1
     }
 
     fn can_reach(&self, _object_id: usize) -> bool {
@@ -29,7 +29,7 @@ unsafe impl Reachable for u64 {
 
 unsafe impl Reachable for i32 {
     fn object_id(&self) -> usize {
-        *self as usize
+        1
     }
 
     fn can_reach(&self, _object_id: usize) -> bool {
@@ -39,7 +39,7 @@ unsafe impl Reachable for i32 {
 
 unsafe impl Reachable for RefCell<i32> {
     fn object_id(&self) -> usize {
-        *self.borrow() as usize
+        1
     }
 
     fn can_reach(&self, _object_id: usize) -> bool {
@@ -349,8 +349,8 @@ fn test_cowrc_clone_weak() {
 
 #[test]
 fn test_show() {
-    let foo = Rc::new(75);
-    assert_eq!(format!("{:?}", foo), "75");
+    let item = Rc::new(75);
+    assert_eq!(format!("{:?}", item), "75");
 }
 
 // #[test]
@@ -361,15 +361,15 @@ fn test_show() {
 
 #[test]
 fn test_from_owned() {
-    let foo = 123;
-    let foo_rc = Rc::from(foo);
-    assert!(123 == *foo_rc);
+    let item = 123;
+    let item_rc = Rc::from(item);
+    assert!(123 == *item_rc);
 }
 
 #[test]
 fn test_new_weak() {
-    let foo: Weak<usize> = Weak::new();
-    assert!(foo.upgrade().is_none());
+    let item: Weak<usize> = Weak::new();
+    assert!(item.upgrade().is_none());
 }
 
 #[test]

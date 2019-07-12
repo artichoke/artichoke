@@ -8,6 +8,7 @@ use std::intrinsics::abort;
 use crate::link::Link;
 use crate::{Rc, Reachable};
 
+#[allow(clippy::module_name_repetitions)]
 pub trait RcBoxPtr<T: ?Sized + Reachable> {
     fn inner(&self) -> &RcBox<T>;
 
@@ -101,11 +102,13 @@ pub unsafe fn box_free<T: ?Sized>(ptr: Unique<T>) {
 //
 // For a slice/trait object, this sets the `data` field and leaves the rest
 // unchanged. For a sized raw pointer, this simply sets the pointer.
+#[allow(clippy::module_name_repetitions)]
 pub unsafe fn set_data_ptr<T: ?Sized, U>(mut ptr: *mut T, data: *mut U) -> *mut T {
     ptr::write(&mut ptr as *mut _ as *mut *mut u8, data as *mut u8);
     ptr
 }
 
+#[allow(clippy::cast_possible_wrap)]
 pub unsafe fn data_offset<T: ?Sized>(ptr: *const T) -> isize {
     // Align the unsized value to the end of the RcBox.
     // Because it is ?Sized, it will always be the last field in memory.
@@ -114,9 +117,10 @@ pub unsafe fn data_offset<T: ?Sized>(ptr: *const T) -> isize {
     (layout.size() + layout.padding_needed_for(align)) as isize
 }
 
-/// Computes the offset of the data field within ArcInner.
+/// Computes the offset of the data field within `RcBox`.
 ///
 /// Unlike [`data_offset`], this doesn't need the pointer, but it works only on `T: Sized`.
+#[allow(clippy::cast_possible_wrap)]
 pub fn data_offset_sized<T>() -> isize {
     let align = mem::align_of::<T>();
     let layout = Layout::new::<RcBox<()>>();
