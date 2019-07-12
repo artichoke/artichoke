@@ -134,15 +134,6 @@ impl<T: Reachable> Rc<T> {
 }
 
 impl<T: ?Sized + Reachable> Rc<T> {
-    pub fn adopt(this: &Self, other: &Self) {
-        let other_id = other.inner().value.object_id();
-        let mut links = this.inner().links.borrow_mut();
-        if this.inner().value.object_id() != other_id && !links.contains(&Link(other.ptr)) {
-            other.inc_strong();
-            links.insert(Link(other.ptr));
-        }
-    }
-
     /// Consumes the `Rc`, returning the wrapped pointer.
     ///
     /// To avoid a memory leak the pointer must be converted back to an `Rc` using
@@ -507,7 +498,8 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
     /// held by `Rc`s outside of the cycle.
     ///
     /// Cycle detection is a zero-cost abstraction. `Rc`s do not pay the cost of
-    /// the reachability check unless they use [`Rc::adopt`].
+    /// the reachability check unless they use
+    /// [`Adoptable::adopt`](crate::Adoptable).
     ///
     /// # Examples
     ///
@@ -540,7 +532,7 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
     /// ```
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::{Adoptable, Rc, Reachable};
     ///
     /// struct Foo(u8);
     ///
