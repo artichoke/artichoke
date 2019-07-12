@@ -24,6 +24,12 @@ mod reachable;
 mod tests;
 mod weak;
 
-pub use rc::{Rc, Rc as CactusRef};
+pub use rc::Rc;
 pub use reachable::Reachable;
-pub use weak::{Weak, Weak as CactusWeakRef};
+pub use weak::Weak;
+
+/// Cactus alias for [`Rc`].
+pub type CactusRef<T> = Rc<T>;
+
+/// Cactus alias for [`Weak`].
+pub type CactusWeakRef<T> = Weak<T>;
