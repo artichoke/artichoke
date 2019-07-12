@@ -8,12 +8,17 @@ extern crate log;
 use core::marker::PhantomData;
 use core::ops::Deref;
 use core::ptr::{self, NonNull};
+use itertools::Itertools;
 use std::alloc::{Alloc, Global, Layout};
 use std::borrow;
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::intrinsics::abort;
+
+mod link;
+
+use link::CactusLinkRef;
 
 pub type ObjectId = usize;
 
@@ -23,7 +28,7 @@ pub unsafe trait Reachable {
     fn can_reach(&self, object_id: ObjectId) -> bool;
 }
 
-trait CactusBoxPtr<T> {
+trait CactusBoxPtr<T: Reachable> {
     fn inner(&self) -> &CactusBox<T>;
 
     #[inline]
@@ -80,31 +85,25 @@ impl<T: Reachable> CactusBoxPtr<T> for CactusRef<T> {
     }
 }
 
-impl<T> CactusBoxPtr<T> for CactusBox<T> {
+impl<T: Reachable> CactusBoxPtr<T> for CactusBox<T> {
     fn inner(&self) -> &Self {
         self
     }
 }
 
-struct CactusBox<T> {
+struct CactusBox<T: Reachable> {
     strong: Cell<usize>,
     weak: Cell<usize>,
     value: T,
-    links: RefCell<HashMap<ObjectId, NonNull<Self>>>,
+    links: RefCell<HashSet<CactusLinkRef<T>>>,
 }
 
-pub struct CactusRef<T>
-where
-    T: Reachable,
-{
+pub struct CactusRef<T: Reachable> {
     ptr: NonNull<CactusBox<T>>,
     phantom: PhantomData<T>,
 }
 
-impl<T> CactusRef<T>
-where
-    T: Reachable,
-{
+impl<T: Reachable> CactusRef<T> {
     pub fn new(value: T) -> Self {
         Self {
             // there is an implicit weak pointer owned by all the strong
@@ -115,7 +114,7 @@ where
                 strong: Cell::new(1),
                 weak: Cell::new(1),
                 value,
-                links: RefCell::new(HashMap::default()),
+                links: RefCell::new(HashSet::default()),
             })),
             phantom: PhantomData,
         }
@@ -124,12 +123,10 @@ where
     pub fn adopt(this: &Self, other: &Self) {
         let other_id = other.inner().value.object_id();
         let mut links = this.inner().links.borrow_mut();
-        if this.inner().value.object_id() != other_id && !links.contains_key(&other_id) {
+        if this.inner().value.object_id() != other_id && !links.contains(&CactusLinkRef(other.ptr))
+        {
             other.inc_strong();
-            let ptr = unsafe {
-                NonNull::new_unchecked(other.inner() as *const CactusBox<T> as *mut CactusBox<T>)
-            };
-            links.insert(other_id, ptr);
+            links.insert(CactusLinkRef(other.ptr));
         }
     }
 
@@ -146,9 +143,9 @@ unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
         unsafe {
             self.dec_strong();
 
-            trace!("drop on {}", self.inner().value.object_id());
-            let no_links = self.inner().links.borrow().is_empty();
-            if no_links {
+            // If links is empty, the object is either not in a cycle or part of
+            // a cycle that has been link busted for deallocation.
+            if self.inner().links.borrow().is_empty() {
                 if self.strong() == 0 {
                     // destroy the contained object
                     ptr::drop_in_place(self.ptr.as_mut());
@@ -161,104 +158,76 @@ unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
                         Global.dealloc(self.ptr.cast(), Layout::for_value(self.ptr.as_ref()));
                     }
                 }
-            } else {
-                // Trace the links to determine a clique that includes self.
-                let mut cycle_owned_refs = vec![self.ptr];
-                let mut strong_counts_in_cycle = HashMap::new();
-                loop {
-                    let mut new_refs = vec![];
-                    for item in &cycle_owned_refs {
-                        let links = item.as_ref().links.borrow();
-                        for (id, obj) in links.iter() {
-                            if !cycle_owned_refs
-                                .iter()
-                                .any(|item| item.as_ref().value.object_id() == *id)
-                            {
-                                new_refs.push(*obj);
-                            }
-                        }
-                    }
-                    if new_refs.is_empty() {
-                        break;
-                    }
-                    cycle_owned_refs.extend(new_refs);
-                }
-                // Iterate over the items in the clique and for each pair of nodes,
-                // find nodes that can reach each other. These nodes form a cycle.
-                let mut cycle_participants = vec![];
-                for left in cycle_owned_refs.clone() {
-                    for right in cycle_owned_refs.clone() {
-                        if left.as_ref().value.object_id() == right.as_ref().value.object_id() {
-                            continue;
-                        }
-                        let left_reaches_right = left
-                            .as_ref()
-                            .value
-                            .can_reach(right.as_ref().value.object_id());
-                        let right_reaches_left = right
-                            .as_ref()
-                            .value
-                            .can_reach(left.as_ref().value.object_id());
-                        let right_is_new_cycle_participant = cycle_participants
-                            .iter()
-                            .find(|item: &&NonNull<CactusBox<T>>| {
-                                item.as_ref().value.object_id() == right.as_ref().value.object_id()
-                            })
-                            .is_none();
-                        if left_reaches_right
-                            && right_reaches_left
-                            && right_is_new_cycle_participant
-                        {
-                            trace!(
-                                "ObjectId<{}> and ObjectId<{}> are in a cycle",
-                                left.as_ref().value.object_id(),
-                                right.as_ref().value.object_id()
-                            );
-                            cycle_participants.push(right);
-                            let count = *strong_counts_in_cycle
-                                .get(&right.as_ref().value.object_id())
-                                .unwrap_or(&0);
-                            strong_counts_in_cycle
-                                .insert(right.as_ref().value.object_id(), count + 1);
-                        }
+                return;
+            }
+            // Perform a breadth first search over all of the links to determine
+            // the clique of refs that self can reach.
+            let mut clique = HashSet::new();
+            clique.insert(CactusLinkRef(self.ptr));
+            let mut strong_counts_in_cycle = HashMap::new();
+            loop {
+                let size = clique.len();
+                for item in clique.clone() {
+                    let links = item.0.as_ref().links.borrow();
+                    for link in links.iter() {
+                        clique.insert(*link);
                     }
                 }
-                let mut cycle_ids = cycle_participants
+                // BFS has found no new refs in the clique.
+                if size == clique.len() {
+                    break;
+                }
+            }
+            // Iterate over the items in the clique. For each pair of nodes,
+            // determine if the nodes can mutually reach each other. If two
+            // nodes can mutually reach each other, they participate in a cycle.
+            let mut cycle = HashSet::new();
+            for (left, right) in clique
+                .iter()
+                .cartesian_product(clique.iter())
+                .filter(|(left, right)| left != right)
+            {
+                let left_reaches_right = left.value().can_reach(right.value().object_id());
+                let right_reaches_left = right.value().can_reach(left.value().object_id());
+                let is_new = !cycle.iter().any(|item: &CactusLinkRef<T>| *item == *right);
+                if left_reaches_right && right_reaches_left && is_new {
+                    cycle.insert(*right);
+                    let count = *strong_counts_in_cycle.get(&right).unwrap_or(&0);
+                    strong_counts_in_cycle.insert(right, count + 1);
+                }
+            }
+            let cycle_has_external_owners = cycle.iter().any(|item| {
+                let cycle_strong_count = strong_counts_in_cycle[item];
+                item.0.as_ref().strong() > cycle_strong_count
+            });
+            if !cycle.is_empty() && !cycle_has_external_owners {
+                let ids = cycle
                     .iter()
-                    .map(|item| item.as_ref().value.object_id())
-                    .collect::<Vec<_>>();
-                cycle_ids.sort();
-                let cycle_has_external_owners = cycle_participants.iter().any(|item| {
-                    let object_id = item.as_ref().value.object_id();
-                    let cycle_strong_count = strong_counts_in_cycle[&object_id];
-                    item.as_ref().strong() > cycle_strong_count
-                });
-                if !cycle_participants.is_empty() && !cycle_has_external_owners {
-                    debug!("CactusRef cycle detected with object ids: {:?}", cycle_ids);
-                    // break the cycle and remove all links
-                    for item in &cycle_participants {
-                        let mut links = item.as_ref().links.borrow_mut();
-                        for other in &cycle_participants {
-                            let other_id = other.as_ref().value.object_id();
-                            let _ = links.remove(&other_id);
-                        }
-                    }
-                    for mut obj in cycle_participants {
-                        debug!(
-                            "CactusRef dropping cycle participant ObjectId<{}>",
-                            obj.as_ref().value.object_id()
-                        );
-                        // destroy the contained object
-                        ptr::drop_in_place(obj.as_mut());
-                    }
+                    .map(|item| item.value().object_id())
+                    .collect::<HashSet<_>>();
+                debug!("orphaned cycle detected with object ids: {:?}", ids);
+                // Break the cycle and remove all links to prevent loops when
+                // dropping cycle refs.
+                for (left, right) in cycle
+                    .iter()
+                    .cartesian_product(cycle.iter())
+                    .filter(|(left, right)| left != right)
+                {
+                    let mut links = left.0.as_ref().links.borrow_mut();
+                    links.remove(right);
+                }
+                for mut obj in cycle {
+                    debug!("dropping cycle participant {{{}}}", obj.value().object_id());
+                    // destroy the contained object
+                    ptr::drop_in_place(obj.0.as_mut());
+                }
 
-                    // remove the implicit "strong weak" pointer now that we've
-                    // destroyed the contents.
-                    self.dec_weak();
+                // remove the implicit "strong weak" pointer now that we've
+                // destroyed the contents.
+                self.dec_weak();
 
-                    if self.weak() == 0 {
-                        Global.dealloc(self.ptr.cast(), Layout::for_value(self.ptr.as_ref()));
-                    }
+                if self.weak() == 0 {
+                    Global.dealloc(self.ptr.cast(), Layout::for_value(self.ptr.as_ref()));
                 }
             }
         }
