@@ -67,6 +67,19 @@ unsafe impl Reachable for [i32; 3] {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Object<T>(T);
+
+unsafe impl<T> Reachable for Object<T> {
+    fn object_id(&self) -> usize {
+        1
+    }
+
+    fn can_reach(&self, _object_id: usize) -> bool {
+        false
+    }
+}
+
 #[test]
 fn test_clone() {
     let x = Rc::new(RefCell::new(5));
@@ -223,18 +236,18 @@ fn try_unwrap() {
 
 #[test]
 fn into_from_raw() {
-    let x = Rc::new(Box::new("hello"));
+    let x = Rc::new(Box::new(Object("hello")));
     let y = x.clone();
 
     let x_ptr = Rc::into_raw(x);
     drop(y);
     unsafe {
-        assert_eq!(**x_ptr, "hello");
+        assert_eq!((*x_ptr).0, "hello");
 
         let x = Rc::from_raw(x_ptr);
-        assert_eq!(**x, "hello");
+        assert_eq!(&*x.0, "hello");
 
-        assert_eq!(Rc::try_unwrap(x).map(|x| *x), Ok("hello"));
+        assert_eq!(Rc::try_unwrap(x).map(|x| (*x).0).unwrap(), "hello");
     }
 }
 
