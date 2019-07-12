@@ -1,7 +1,7 @@
 #![deny(clippy::all, clippy::pedantic)]
 #![deny(warnings, intra_doc_link_resolution_failure)]
 
-use cactusref::{CactusRef, Reachable};
+use cactusref::{Adoptable, CactusRef, Reachable};
 
 mod leak;
 

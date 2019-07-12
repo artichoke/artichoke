@@ -3,6 +3,7 @@
     alloc_layout_extra,
     box_into_raw_non_null,
     core_intrinsics,
+    doc_spotlight,
     dropck_eyepatch,
     optin_builtin_traits,
     ptr_internals
@@ -16,6 +17,7 @@
 #[macro_use]
 extern crate log;
 
+mod adoptable;
 mod link;
 mod ptr;
 mod rc;
@@ -24,6 +26,7 @@ mod reachable;
 mod tests;
 mod weak;
 
+pub use adoptable::Adoptable;
 pub use rc::Rc;
 pub use reachable::Reachable;
 pub use weak::Weak;
