@@ -26,7 +26,7 @@ mod reachable;
 use link::CactusLinkRef;
 pub use reachable::Reachable;
 
-trait CactusBoxPtr<T: Reachable> {
+trait CactusBoxPtr<T: ?Sized + Reachable> {
     fn inner(&self) -> &CactusBox<T>;
 
     #[inline]
@@ -77,26 +77,26 @@ trait CactusBoxPtr<T: Reachable> {
     }
 }
 
-impl<T: Reachable> CactusBoxPtr<T> for CactusRef<T> {
+impl<T: ?Sized + Reachable> CactusBoxPtr<T> for CactusRef<T> {
     fn inner(&self) -> &CactusBox<T> {
         unsafe { self.ptr.as_ref() }
     }
 }
 
-impl<T: Reachable> CactusBoxPtr<T> for CactusBox<T> {
+impl<T: ?Sized + Reachable> CactusBoxPtr<T> for CactusBox<T> {
     fn inner(&self) -> &Self {
         self
     }
 }
 
-struct CactusBox<T: Reachable> {
+struct CactusBox<T: ?Sized + Reachable> {
     strong: Cell<usize>,
     weak: Cell<usize>,
     links: RefCell<HashSet<CactusLinkRef<T>>>,
-    value: T,
+    value: Box<T>,
 }
 
-pub struct CactusRef<T: Reachable> {
+pub struct CactusRef<T: ?Sized + Reachable> {
     ptr: NonNull<CactusBox<T>>,
     phantom: PhantomData<T>,
 }
@@ -112,7 +112,7 @@ impl<T: Reachable> CactusRef<T> {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
                 links: RefCell::new(HashSet::default()),
-                value,
+                value: Box::new(value),
             })),
             phantom: PhantomData,
         }
@@ -140,7 +140,9 @@ impl<T: Reachable> CactusRef<T> {
             Err(this)
         }
     }
+}
 
+impl<T: ?Sized + Reachable> CactusRef<T> {
     pub fn adopt(this: &Self, other: &Self) {
         let other_id = other.inner().value.object_id();
         let mut links = this.inner().links.borrow_mut();
@@ -183,7 +185,7 @@ impl<T: Reachable> CactusRef<T> {
     }
 }
 
-impl<T: Clone + Reachable> CactusRef<T> {
+impl<T: ?Sized + Clone + Reachable> CactusRef<T> {
     #[inline]
     pub fn make_mut(this: &mut Self) -> &mut T {
         if Self::strong_count(this) != 1 {
@@ -192,7 +194,7 @@ impl<T: Clone + Reachable> CactusRef<T> {
         } else if Self::weak_count(this) != 0 {
             // Can just steal the data, all that's left is Weaks
             unsafe {
-                let mut swap = Self::new(ptr::read(&this.ptr.as_ref().value));
+                let mut swap = Self::new(ptr::read(&*this.ptr.as_ref().value));
                 mem::swap(this, &mut swap);
                 swap.dec_strong();
                 // Remove implicit strong-weak ref (no need to craft a fake
@@ -210,16 +212,16 @@ impl<T: Clone + Reachable> CactusRef<T> {
     }
 }
 
-impl<T: PartialEq + Reachable> PartialEq for CactusRef<T> {
+impl<T: ?Sized + PartialEq + Reachable> PartialEq for CactusRef<T> {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         **self == **other
     }
 }
 
-impl<T: Eq + Reachable> Eq for CactusRef<T> {}
+impl<T: ?Sized + Eq + Reachable> Eq for CactusRef<T> {}
 
-impl<T: PartialOrd + Reachable> PartialOrd for CactusRef<T> {
+impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for CactusRef<T> {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         (**self).partial_cmp(&**other)
@@ -246,19 +248,19 @@ impl<T: PartialOrd + Reachable> PartialOrd for CactusRef<T> {
     }
 }
 
-impl<T: Ord + Reachable> Ord for CactusRef<T> {
+impl<T: ?Sized + Ord + Reachable> Ord for CactusRef<T> {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         (**self).cmp(&**other)
     }
 }
 
-impl<T: Hash + Reachable> Hash for CactusRef<T> {
+impl<T: ?Sized + Hash + Reachable> Hash for CactusRef<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         (**self).hash(state);
     }
 }
-unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
+unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for CactusRef<T> {
     fn drop(&mut self) {
         unsafe {
             self.dec_strong();
@@ -353,7 +355,7 @@ unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
     }
 }
 
-impl<T: Reachable> Deref for CactusRef<T> {
+impl<T: ?Sized + Reachable> Deref for CactusRef<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -361,7 +363,7 @@ impl<T: Reachable> Deref for CactusRef<T> {
     }
 }
 
-impl<T: Reachable> Clone for CactusRef<T> {
+impl<T: ?Sized + Reachable> Clone for CactusRef<T> {
     fn clone(&self) -> Self {
         self.inc_strong();
         Self {
@@ -371,20 +373,20 @@ impl<T: Reachable> Clone for CactusRef<T> {
     }
 }
 
-impl<T: Reachable + Default> Default for CactusRef<T> {
+impl<T: ?Sized + Reachable + Default> Default for CactusRef<T> {
     #[inline]
     fn default() -> Self {
         Self::new(Default::default())
     }
 }
 
-impl<T: Reachable + fmt::Display> fmt::Display for CactusRef<T> {
+impl<T: ?Sized + Reachable + fmt::Display> fmt::Display for CactusRef<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.inner().value, f)
     }
 }
 
-impl<T: Reachable + fmt::Debug> fmt::Debug for CactusRef<T> {
+impl<T: ?Sized + Reachable + fmt::Debug> fmt::Debug for CactusRef<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.inner().value, f)
     }
@@ -401,10 +403,7 @@ pub(crate) fn is_dangling<T: ?Sized>(ptr: NonNull<T>) -> bool {
     address == usize::max_value()
 }
 
-pub struct CactusWeakRef<T>
-where
-    T: Reachable,
-{
+pub struct CactusWeakRef<T: ?Sized + Reachable> {
     // This is a `NonNull` to allow optimizing the size of this type in enums,
     // but it is not necessarily a valid pointer.
     // `Weak::new` sets this to `usize::MAX` so that it doesn’t need
@@ -413,7 +412,7 @@ where
     ptr: NonNull<CactusBox<T>>,
 }
 
-impl<T: Reachable> CactusWeakRef<T> {
+impl<T: ?Sized + Reachable> CactusWeakRef<T> {
     pub fn new() -> Self {
         Self {
             ptr: NonNull::new(usize::max_value() as *mut CactusBox<T>).expect("MAX is not 0"),
@@ -466,7 +465,7 @@ impl<T: Reachable> CactusWeakRef<T> {
     }
 }
 
-impl<T: Reachable> Drop for CactusWeakRef<T> {
+impl<T: ?Sized + Reachable> Drop for CactusWeakRef<T> {
     fn drop(&mut self) {
         if let Some(inner) = self.inner() {
             inner.dec_weak();
@@ -481,7 +480,7 @@ impl<T: Reachable> Drop for CactusWeakRef<T> {
     }
 }
 
-impl<T: Reachable> Clone for CactusWeakRef<T> {
+impl<T: ?Sized + Reachable> Clone for CactusWeakRef<T> {
     #[inline]
     fn clone(&self) -> Self {
         if let Some(inner) = self.inner() {
@@ -491,25 +490,25 @@ impl<T: Reachable> Clone for CactusWeakRef<T> {
     }
 }
 
-impl<T: Reachable + fmt::Debug> fmt::Debug for CactusWeakRef<T> {
+impl<T: ?Sized + Reachable + fmt::Debug> fmt::Debug for CactusWeakRef<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "(Weak)")
     }
 }
 
-impl<T: Reachable> Default for CactusWeakRef<T> {
+impl<T: ?Sized + Reachable> Default for CactusWeakRef<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: Reachable> borrow::Borrow<T> for CactusRef<T> {
+impl<T: ?Sized + Reachable> borrow::Borrow<T> for CactusRef<T> {
     fn borrow(&self) -> &T {
         &**self
     }
 }
 
-impl<T: Reachable> AsRef<T> for CactusRef<T> {
+impl<T: ?Sized + Reachable> AsRef<T> for CactusRef<T> {
     fn as_ref(&self) -> &T {
         &**self
     }
