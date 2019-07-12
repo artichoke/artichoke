@@ -75,7 +75,7 @@ pub struct RcBox<T: ?Sized + Reachable> {
     pub(crate) strong: Cell<usize>,
     pub(crate) weak: Cell<usize>,
     pub(crate) links: RefCell<HashSet<Link<T>>>,
-    pub(crate) value: Box<T>,
+    pub(crate) value: T,
 }
 
 pub fn is_dangling<T: ?Sized>(ptr: NonNull<T>) -> bool {

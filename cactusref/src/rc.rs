@@ -69,7 +69,7 @@ impl<T: Reachable> Rc<T> {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
                 links: RefCell::new(HashSet::default()),
-                value: Box::new(value),
+                value: value,
             })),
             phantom: PhantomData,
         }
@@ -763,7 +763,7 @@ impl<T: ?Sized + Clone + Reachable> Rc<T> {
         } else if Self::weak_count(this) != 0 {
             // Can just steal the data, all that's left is Weaks
             unsafe {
-                let mut swap = Self::new(ptr::read(&*this.ptr.as_ref().value));
+                let mut swap = Self::new(ptr::read(&this.ptr.as_ref().value));
                 mem::swap(this, &mut swap);
                 swap.dec_strong();
                 // Remove implicit strong-weak ref (no need to craft a fake
