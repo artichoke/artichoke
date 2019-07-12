@@ -30,9 +30,11 @@ mod link;
 mod reachable;
 #[cfg(test)]
 mod tests;
+mod weak;
 
 use link::CactusLinkRef;
 pub use reachable::Reachable;
+pub use weak::Weak;
 
 trait CactusBoxPtr<T: ?Sized + Reachable> {
     fn inner(&self) -> &CactusBox<T>;
@@ -143,7 +145,7 @@ impl<T: Reachable> CactusRef<T> {
                 // pointer while also handling drop logic by just crafting a
                 // fake Weak.
                 this.dec_strong();
-                let _weak = CactusWeakRef { ptr: this.ptr };
+                let _weak = Weak { ptr: this.ptr };
                 mem::forget(this);
                 Ok(val)
             }
@@ -164,11 +166,11 @@ impl<T: ?Sized + Reachable> CactusRef<T> {
         }
     }
 
-    pub fn downgrade(this: &Self) -> CactusWeakRef<T> {
+    pub fn downgrade(this: &Self) -> Weak<T> {
         this.inc_weak();
         // Make sure we do not create a dangling Weak
         debug_assert!(!is_dangling(this.ptr));
-        CactusWeakRef { ptr: this.ptr }
+        Weak { ptr: this.ptr }
     }
 
     pub fn weak_count(this: &Self) -> usize {
@@ -412,105 +414,6 @@ impl<T: Reachable> From<T> for CactusRef<T> {
 pub(crate) fn is_dangling<T: ?Sized>(ptr: NonNull<T>) -> bool {
     let address = ptr.as_ptr() as *mut () as usize;
     address == usize::max_value()
-}
-
-pub struct CactusWeakRef<T: ?Sized + Reachable> {
-    // This is a `NonNull` to allow optimizing the size of this type in enums,
-    // but it is not necessarily a valid pointer.
-    // `Weak::new` sets this to `usize::MAX` so that it doesn’t need
-    // to allocate space on the heap.  That's not a value a real pointer
-    // will ever have because CactusBox has alignment at least 2.
-    ptr: NonNull<CactusBox<T>>,
-}
-
-impl<T: ?Sized + Reachable> CactusWeakRef<T> {
-    pub fn new() -> Self {
-        Self {
-            ptr: NonNull::new(usize::max_value() as *mut CactusBox<T>).expect("MAX is not 0"),
-        }
-    }
-
-    pub fn upgrade(&self) -> Option<CactusRef<T>> {
-        let inner = self.inner()?;
-        if inner.strong() == 0 {
-            None
-        } else {
-            inner.inc_strong();
-            Some(CactusRef {
-                ptr: self.ptr,
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    pub fn strong_count(&self) -> usize {
-        if let Some(inner) = self.inner() {
-            inner.strong()
-        } else {
-            0
-        }
-    }
-
-    pub fn weak_count(&self) -> Option<usize> {
-        self.inner().map(|inner| {
-            if inner.strong() > 0 {
-                inner.weak() - 1 // subtract the implicit weak ptr
-            } else {
-                inner.weak()
-            }
-        })
-    }
-
-    #[inline]
-    fn inner(&self) -> Option<&CactusBox<T>> {
-        if is_dangling(self.ptr) {
-            None
-        } else {
-            Some(unsafe { self.ptr.as_ref() })
-        }
-    }
-
-    #[inline]
-    pub fn ptr_eq(this: &Self, other: &Self) -> bool {
-        this.ptr.as_ptr() == other.ptr.as_ptr()
-    }
-}
-
-impl<T: ?Sized + Reachable> Drop for CactusWeakRef<T> {
-    fn drop(&mut self) {
-        if let Some(inner) = self.inner() {
-            inner.dec_weak();
-            // the weak count starts at 1, and will only go to zero if all
-            // the strong pointers have disappeared.
-            if inner.weak() == 0 {
-                unsafe {
-                    Global.dealloc(self.ptr.cast(), Layout::for_value(self.ptr.as_ref()));
-                }
-            }
-        }
-    }
-}
-
-impl<T: ?Sized + Reachable> Clone for CactusWeakRef<T> {
-    #[inline]
-    fn clone(&self) -> Self {
-        if let Some(inner) = self.inner() {
-            inner.inc_weak()
-        }
-        Self { ptr: self.ptr }
-    }
-}
-
-impl<T: ?Sized + Reachable + fmt::Debug> fmt::Debug for CactusWeakRef<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "(Weak)")
-    }
-}
-
-impl<T: ?Sized + Reachable> Default for CactusWeakRef<T> {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl<T: ?Sized + Reachable> borrow::Borrow<T> for CactusRef<T> {
