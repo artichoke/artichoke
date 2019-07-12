@@ -17,16 +17,10 @@ use std::fmt;
 use std::intrinsics::abort;
 
 mod link;
+mod reachable;
 
 use link::CactusLinkRef;
-
-pub type ObjectId = usize;
-
-pub unsafe trait Reachable {
-    fn object_id(&self) -> ObjectId;
-
-    fn can_reach(&self, object_id: ObjectId) -> bool;
-}
+pub use reachable::Reachable;
 
 trait CactusBoxPtr<T: Reachable> {
     fn inner(&self) -> &CactusBox<T>;
