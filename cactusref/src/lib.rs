@@ -173,8 +173,7 @@ unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
                 }
             }
             // Iterate over the items in the clique. For each pair of nodes,
-            // determine if the nodes can mutually reach each other. If two
-            // nodes can mutually reach each other, they participate in a cycle.
+            // find nodes that can reach each other. These nodes form a cycle.
             let mut cycle = HashSet::new();
             for (left, right) in clique
                 .iter()
