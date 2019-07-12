@@ -1,4 +1,10 @@
-#![feature(allocator_api, box_into_raw_non_null, core_intrinsics, dropck_eyepatch)]
+#![feature(
+    allocator_api,
+    box_into_raw_non_null,
+    core_intrinsics,
+    dropck_eyepatch,
+    optin_builtin_traits
+)]
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
 
@@ -100,6 +106,9 @@ pub struct CactusRef<T: ?Sized + Reachable> {
     ptr: NonNull<CactusBox<T>>,
     phantom: PhantomData<T>,
 }
+
+impl<T: ?Sized> !Send for CactusRef<T> {}
+impl<T: ?Sized> !Sync for CactusRef<T> {}
 
 impl<T: Reachable> CactusRef<T> {
     pub fn new(value: T) -> Self {
