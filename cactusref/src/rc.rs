@@ -498,7 +498,8 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
     /// held by `Rc`s outside of the cycle.
     ///
     /// Cycle detection is a zero-cost abstraction. `Rc`s do not pay the cost of
-    /// the reachability check unless they use [`Rc::adopt`].
+    /// the reachability check unless they use
+    /// [`Adoptable::adopt`](crate::Adoptable).
     ///
     /// # Examples
     ///
