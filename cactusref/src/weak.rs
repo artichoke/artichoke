@@ -8,13 +8,13 @@ use crate::ptr::{data_offset, data_offset_sized, is_dangling, set_data_ptr, RcBo
 use crate::{Rc, Reachable};
 
 /// `Weak` is a version of [`Rc`] that holds a non-owning reference to the
-/// managed value. The value is accessed by calling [`upgrade`] on the `Weak`
-/// pointer, which returns an [`Option`]`<`[`Rc`]`<T>>`.
+/// managed value. The value is accessed by calling [`upgrade`](Weak::upgrade)
+/// on the `Weak` pointer, which returns an [`Option`]`<`[`Rc`]`<T>>`.
 ///
 /// Since a `Weak` reference does not count towards ownership, it will not
 /// prevent the inner value from being dropped, and `Weak` itself makes no
 /// guarantees about the value still being present and may return [`None`]
-/// when [`upgrade`]d.
+/// when [`upgrade`](Weak::upgrade)d.
 ///
 /// A `Weak` pointer is useful for keeping a temporary reference to the value
 /// within [`Rc`] without extending its lifetime. It is also used to prevent
@@ -163,8 +163,8 @@ impl<T: Reachable> Weak<T> {
         result
     }
 
-    /// Converts a raw pointer previously created by [`into_raw`] back into
-    /// `Weak<T>`.
+    /// Converts a raw pointer previously created by
+    /// [`into_raw`](Weak::into_raw) back into `Weak<T>`.
     ///
     /// This can be used to safely get a strong reference (by calling
     /// [`upgrade`](Weak::upgrade) later) or to deallocate the weak count by
