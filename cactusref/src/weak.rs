@@ -3,21 +3,22 @@ use core::ptr::NonNull;
 use std::alloc::{Alloc, Global, Layout};
 use std::fmt;
 
-use crate::{is_dangling, CactusBox, CactusBoxPtr, CactusRef, Reachable};
+use crate::ptr::{RcBox, RcBoxPtr};
+use crate::{is_dangling, CactusRef, Reachable};
 
 pub struct Weak<T: ?Sized + Reachable> {
     // This is a `NonNull` to allow optimizing the size of this type in enums,
     // but it is not necessarily a valid pointer.
     // `Weak::new` sets this to `usize::MAX` so that it doesn’t need
     // to allocate space on the heap.  That's not a value a real pointer
-    // will ever have because CactusBox has alignment at least 2.
-    pub(crate) ptr: NonNull<CactusBox<T>>,
+    // will ever have because RcBox has alignment at least 2.
+    pub(crate) ptr: NonNull<RcBox<T>>,
 }
 
 impl<T: ?Sized + Reachable> Weak<T> {
     pub fn new() -> Self {
         Self {
-            ptr: NonNull::new(usize::max_value() as *mut CactusBox<T>).expect("MAX is not 0"),
+            ptr: NonNull::new(usize::max_value() as *mut RcBox<T>).expect("MAX is not 0"),
         }
     }
 
@@ -53,7 +54,7 @@ impl<T: ?Sized + Reachable> Weak<T> {
     }
 
     #[inline]
-    fn inner(&self) -> Option<&CactusBox<T>> {
+    fn inner(&self) -> Option<&RcBox<T>> {
         if is_dangling(self.ptr) {
             None
         } else {

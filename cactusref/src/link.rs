@@ -1,9 +1,10 @@
 use core::ptr::NonNull;
 use std::hash::{Hash, Hasher};
 
-use crate::{CactusBox, Reachable};
+use crate::ptr::RcBox;
+use crate::Reachable;
 
-pub(crate) struct CactusLinkRef<T: ?Sized + Reachable>(pub NonNull<CactusBox<T>>);
+pub(crate) struct CactusLinkRef<T: ?Sized + Reachable>(pub NonNull<RcBox<T>>);
 
 impl<T: ?Sized + Reachable> CactusLinkRef<T> {
     #[inline]

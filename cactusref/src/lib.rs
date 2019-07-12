@@ -15,7 +15,7 @@ use core::cmp::Ordering;
 use core::marker::PhantomData;
 use core::ops::Deref;
 use core::pin::Pin;
-use core::ptr::{self, NonNull};
+use core::ptr::NonNull;
 use itertools::Itertools;
 use std::alloc::{Alloc, Global, Layout};
 use std::borrow;
@@ -23,91 +23,22 @@ use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::intrinsics::abort;
 use std::mem;
 
 mod link;
+mod ptr;
 mod reachable;
 #[cfg(test)]
 mod tests;
 mod weak;
 
 use link::CactusLinkRef;
+use ptr::{RcBox, RcBoxPtr};
 pub use reachable::Reachable;
 pub use weak::Weak;
 
-trait CactusBoxPtr<T: ?Sized + Reachable> {
-    fn inner(&self) -> &CactusBox<T>;
-
-    #[inline]
-    fn strong(&self) -> usize {
-        self.inner().strong.get()
-    }
-
-    #[inline]
-    fn inc_strong(&self) {
-        // We want to abort on overflow instead of dropping the value.
-        // nevertheless, we insert an abort here to hint LLVM at
-        // an otherwise missed optimization.
-        if self.strong() == 0 || self.strong() == usize::max_value() {
-            unsafe {
-                abort();
-            }
-        }
-        self.inner().strong.set(self.strong() + 1);
-    }
-
-    #[inline]
-    fn dec_strong(&self) {
-        self.inner().strong.set(self.strong() - 1);
-    }
-
-    #[inline]
-    fn weak(&self) -> usize {
-        self.inner().weak.get()
-    }
-
-    #[inline]
-    fn inc_weak(&self) {
-        // We want to abort on overflow instead of dropping the value.
-        // The reference count will never be zero when this is called;
-        // nevertheless, we insert an abort here to hint LLVM at
-        // an otherwise missed optimization.
-        if self.weak() == 0 || self.weak() == usize::max_value() {
-            unsafe {
-                abort();
-            }
-        }
-        self.inner().weak.set(self.weak() + 1);
-    }
-
-    #[inline]
-    fn dec_weak(&self) {
-        self.inner().weak.set(self.weak() - 1);
-    }
-}
-
-impl<T: ?Sized + Reachable> CactusBoxPtr<T> for CactusRef<T> {
-    fn inner(&self) -> &CactusBox<T> {
-        unsafe { self.ptr.as_ref() }
-    }
-}
-
-impl<T: ?Sized + Reachable> CactusBoxPtr<T> for CactusBox<T> {
-    fn inner(&self) -> &Self {
-        self
-    }
-}
-
-struct CactusBox<T: ?Sized + Reachable> {
-    strong: Cell<usize>,
-    weak: Cell<usize>,
-    links: RefCell<HashSet<CactusLinkRef<T>>>,
-    value: Box<T>,
-}
-
 pub struct CactusRef<T: ?Sized + Reachable> {
-    ptr: NonNull<CactusBox<T>>,
+    ptr: NonNull<RcBox<T>>,
     phantom: PhantomData<T>,
 }
 
@@ -121,7 +52,7 @@ impl<T: Reachable> CactusRef<T> {
             // pointers, which ensures that the weak destructor never frees
             // the allocation while the strong destructor is running, even
             // if the weak pointer is stored inside the strong one.
-            ptr: Box::into_raw_non_null(Box::new(CactusBox {
+            ptr: Box::into_raw_non_null(Box::new(RcBox {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
                 links: RefCell::new(HashSet::default()),
@@ -138,7 +69,7 @@ impl<T: Reachable> CactusRef<T> {
     pub fn try_unwrap(this: Self) -> Result<T, Self> {
         if Self::strong_count(&this) == 1 {
             unsafe {
-                let val = ptr::read(&*this); // copy the contained object
+                let val = core::ptr::read(&*this); // copy the contained object
 
                 // Indicate to Weaks that they can't be promoted by decrementing
                 // the strong count, and then remove the implicit "strong weak"
@@ -207,7 +138,7 @@ impl<T: ?Sized + Clone + Reachable> CactusRef<T> {
         } else if Self::weak_count(this) != 0 {
             // Can just steal the data, all that's left is Weaks
             unsafe {
-                let mut swap = Self::new(ptr::read(&*this.ptr.as_ref().value));
+                let mut swap = Self::new(core::ptr::read(&*this.ptr.as_ref().value));
                 mem::swap(this, &mut swap);
                 swap.dec_strong();
                 // Remove implicit strong-weak ref (no need to craft a fake
@@ -283,7 +214,7 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for CactusRef<T> {
             if self.inner().links.borrow().is_empty() {
                 if self.strong() == 0 {
                     // destroy the contained object
-                    ptr::drop_in_place(self.ptr.as_mut());
+                    core::ptr::drop_in_place(self.ptr.as_mut());
 
                     // remove the implicit "strong weak" pointer now that we've
                     // destroyed the contents.
@@ -353,7 +284,7 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for CactusRef<T> {
                 for mut obj in cycle {
                     debug!("dropping cycle participant {{{}}}", obj.value().object_id());
                     // destroy the contained object
-                    ptr::drop_in_place(obj.0.as_mut());
+                    core::ptr::drop_in_place(obj.0.as_mut());
                 }
 
                 // remove the implicit "strong weak" pointer now that we've
