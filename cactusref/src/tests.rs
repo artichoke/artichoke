@@ -1,4 +1,4 @@
-use super::{CactusRef as Rc, CactusWeakRef as Weak, Reachable};
+use super::{Rc, Reachable, Weak};
 use std::boxed::Box;
 use std::cell::RefCell;
 use std::clone::Clone;

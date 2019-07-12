@@ -20,5 +20,5 @@ mod tests;
 mod weak;
 
 pub use reachable::Reachable;
-pub use rc::Rc;
-pub use weak::Weak;
+pub use rc::{Rc, Rc as CactusRef};
+pub use weak::{Weak, Weak as CactusWeakRef};
