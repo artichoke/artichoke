@@ -1,4 +1,6 @@
-use core::ptr::NonNull;
+use core::mem;
+use core::ptr::{self, NonNull, Unique};
+use std::alloc::{dealloc, Layout};
 use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 use std::intrinsics::abort;
@@ -76,7 +78,47 @@ pub struct RcBox<T: ?Sized + Reachable> {
     pub(crate) value: Box<T>,
 }
 
-pub(crate) fn is_dangling<T: ?Sized>(ptr: NonNull<T>) -> bool {
+pub fn is_dangling<T: ?Sized>(ptr: NonNull<T>) -> bool {
     let address = ptr.as_ptr() as *mut () as usize;
     address == usize::max_value()
+}
+
+// duplicated from a crate-private function in std
+// <https://github.com/rust-lang/rust/blob/baab1914/src/liballoc/alloc.rs#L212-L223>
+#[inline]
+pub unsafe fn box_free<T: ?Sized>(ptr: Unique<T>) {
+    let ptr = ptr.as_ptr();
+    let size = mem::size_of_val(&*ptr);
+    let align = mem::align_of_val(&*ptr);
+    // We do not allocate for Box<T> when T is ZST, so deallocation is also not necessary.
+    if size != 0 {
+        let layout = Layout::from_size_align_unchecked(size, align);
+        dealloc(ptr as *mut u8, layout);
+    }
+}
+
+// Sets the data pointer of a `?Sized` raw pointer.
+//
+// For a slice/trait object, this sets the `data` field and leaves the rest
+// unchanged. For a sized raw pointer, this simply sets the pointer.
+pub unsafe fn set_data_ptr<T: ?Sized, U>(mut ptr: *mut T, data: *mut U) -> *mut T {
+    ptr::write(&mut ptr as *mut _ as *mut *mut u8, data as *mut u8);
+    ptr
+}
+
+pub unsafe fn data_offset<T: ?Sized>(ptr: *const T) -> isize {
+    // Align the unsized value to the end of the RcBox.
+    // Because it is ?Sized, it will always be the last field in memory.
+    let align = mem::align_of_val(&*ptr);
+    let layout = Layout::new::<RcBox<()>>();
+    (layout.size() + layout.padding_needed_for(align)) as isize
+}
+
+/// Computes the offset of the data field within ArcInner.
+///
+/// Unlike [`data_offset`], this doesn't need the pointer, but it works only on `T: Sized`.
+pub fn data_offset_sized<T>() -> isize {
+    let align = mem::align_of::<T>();
+    let layout = Layout::new::<RcBox<()>>();
+    (layout.size() + layout.padding_needed_for(align)) as isize
 }

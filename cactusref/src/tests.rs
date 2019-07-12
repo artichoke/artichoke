@@ -221,23 +221,23 @@ fn try_unwrap() {
     assert_eq!(Rc::try_unwrap(x), Ok(5));
 }
 
-// #[test]
-// fn into_from_raw() {
-//     let x = Rc::new(Box::new("hello"));
-//     let y = x.clone();
-//
-//     let x_ptr = Rc::into_raw(x);
-//     drop(y);
-//     unsafe {
-//         assert_eq!(**x_ptr, "hello");
-//
-//         let x = Rc::from_raw(x_ptr);
-//         assert_eq!(**x, "hello");
-//
-//         assert_eq!(Rc::try_unwrap(x).map(|x| *x), Ok("hello"));
-//     }
-// }
-//
+#[test]
+fn into_from_raw() {
+    let x = Rc::new(Box::new("hello"));
+    let y = x.clone();
+
+    let x_ptr = Rc::into_raw(x);
+    drop(y);
+    unsafe {
+        assert_eq!(**x_ptr, "hello");
+
+        let x = Rc::from_raw(x_ptr);
+        assert_eq!(**x, "hello");
+
+        assert_eq!(Rc::try_unwrap(x).map(|x| *x), Ok("hello"));
+    }
+}
+
 // #[test]
 // fn test_into_from_raw_unsized() {
 //     use std::fmt::Display;

@@ -26,6 +26,16 @@ pub unsafe trait Reachable {
     fn can_reach(&self, object_id: usize) -> bool;
 }
 
+unsafe impl Reachable for () {
+    fn object_id(&self) -> usize {
+        0
+    }
+
+    fn can_reach(&self, _object_id: usize) -> bool {
+        false
+    }
+}
+
 unsafe impl<T: Reachable> Reachable for &T {
     fn object_id(&self) -> usize {
         Reachable::object_id(*self)
