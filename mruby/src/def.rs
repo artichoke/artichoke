@@ -5,10 +5,10 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use crate::class;
+use crate::convert::RustBackedValue;
 use crate::module;
 use crate::sys;
-use crate::Mrb;
-use crate::MrbError;
+use crate::{Mrb, MrbError};
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
@@ -21,7 +21,10 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 /// **Warning**: This free function assumes the `data` pointer is an
 /// `Rc<RefCell<T>>`. If that assumption does not hold, this function has
 /// undefined behavior and may result in a segfault.
-pub unsafe extern "C" fn rust_data_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void) {
+pub unsafe extern "C" fn rust_data_free<T: RustBackedValue>(
+    _mrb: *mut sys::mrb_state,
+    data: *mut c_void,
+) {
     let data = Rc::from_raw(data as *const RefCell<T>);
     drop(data);
 }
