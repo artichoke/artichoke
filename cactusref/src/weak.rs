@@ -3,8 +3,8 @@ use core::ptr::NonNull;
 use std::alloc::{Alloc, Global, Layout};
 use std::fmt;
 
-use crate::ptr::{RcBox, RcBoxPtr};
-use crate::{is_dangling, CactusRef, Reachable};
+use crate::ptr::{is_dangling, RcBox, RcBoxPtr};
+use crate::{Rc, Reachable};
 
 pub struct Weak<T: ?Sized + Reachable> {
     // This is a `NonNull` to allow optimizing the size of this type in enums,
@@ -22,13 +22,13 @@ impl<T: ?Sized + Reachable> Weak<T> {
         }
     }
 
-    pub fn upgrade(&self) -> Option<CactusRef<T>> {
+    pub fn upgrade(&self) -> Option<Rc<T>> {
         let inner = self.inner()?;
         if inner.strong() == 0 {
             None
         } else {
             inner.inc_strong();
-            Some(CactusRef {
+            Some(Rc {
                 ptr: self.ptr,
                 phantom: PhantomData,
             })

@@ -1,9 +1,10 @@
+use core::ptr::NonNull;
 use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 use std::intrinsics::abort;
 
 use crate::link::CactusLinkRef;
-use crate::{CactusRef, Reachable};
+use crate::{Rc, Reachable};
 
 pub trait RcBoxPtr<T: ?Sized + Reachable> {
     fn inner(&self) -> &RcBox<T>;
@@ -56,7 +57,7 @@ pub trait RcBoxPtr<T: ?Sized + Reachable> {
     }
 }
 
-impl<T: ?Sized + Reachable> RcBoxPtr<T> for CactusRef<T> {
+impl<T: ?Sized + Reachable> RcBoxPtr<T> for Rc<T> {
     fn inner(&self) -> &RcBox<T> {
         unsafe { self.ptr.as_ref() }
     }
@@ -73,4 +74,9 @@ pub struct RcBox<T: ?Sized + Reachable> {
     pub(crate) weak: Cell<usize>,
     pub(crate) links: RefCell<HashSet<CactusLinkRef<T>>>,
     pub(crate) value: Box<T>,
+}
+
+pub(crate) fn is_dangling<T: ?Sized>(ptr: NonNull<T>) -> bool {
+    let address = ptr.as_ptr() as *mut () as usize;
+    address == usize::max_value()
 }
