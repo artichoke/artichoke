@@ -5,8 +5,10 @@
 #[macro_use]
 extern crate log;
 
+use core::cmp::Ordering;
 use core::marker::PhantomData;
 use core::ops::Deref;
+use core::pin::Pin;
 use core::ptr::{self, NonNull};
 use itertools::Itertools;
 use std::alloc::{Alloc, Global, Layout};
@@ -14,7 +16,9 @@ use std::borrow;
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::intrinsics::abort;
+use std::mem;
 
 mod link;
 mod reachable;
@@ -88,8 +92,8 @@ impl<T: Reachable> CactusBoxPtr<T> for CactusBox<T> {
 struct CactusBox<T: Reachable> {
     strong: Cell<usize>,
     weak: Cell<usize>,
-    value: T,
     links: RefCell<HashSet<CactusLinkRef<T>>>,
+    value: T,
 }
 
 pub struct CactusRef<T: Reachable> {
@@ -107,10 +111,33 @@ impl<T: Reachable> CactusRef<T> {
             ptr: Box::into_raw_non_null(Box::new(CactusBox {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
-                value,
                 links: RefCell::new(HashSet::default()),
+                value,
             })),
             phantom: PhantomData,
+        }
+    }
+
+    pub fn pin(value: T) -> Pin<Self> {
+        unsafe { Pin::new_unchecked(Self::new(value)) }
+    }
+
+    pub fn try_unwrap(this: Self) -> Result<T, Self> {
+        if Self::strong_count(&this) == 1 {
+            unsafe {
+                let val = ptr::read(&*this); // copy the contained object
+
+                // Indicate to Weaks that they can't be promoted by decrementing
+                // the strong count, and then remove the implicit "strong weak"
+                // pointer while also handling drop logic by just crafting a
+                // fake Weak.
+                this.dec_strong();
+                let _weak = CactusWeakRef { ptr: this.ptr };
+                mem::forget(this);
+                Ok(val)
+            }
+        } else {
+            Err(this)
         }
     }
 
@@ -130,8 +157,107 @@ impl<T: Reachable> CactusRef<T> {
         debug_assert!(!is_dangling(this.ptr));
         CactusWeakRef { ptr: this.ptr }
     }
+
+    pub fn weak_count(this: &Self) -> usize {
+        this.weak() - 1
+    }
+
+    pub fn strong_count(this: &Self) -> usize {
+        this.strong()
+    }
+
+    fn is_unique(this: &Self) -> bool {
+        Self::weak_count(this) == 0 && Self::strong_count(this) == 1
+    }
+
+    pub fn get_mut(this: &mut Self) -> Option<&mut T> {
+        if Self::is_unique(this) {
+            unsafe { Some(&mut this.ptr.as_mut().value) }
+        } else {
+            None
+        }
+    }
+
+    pub fn ptr_eq(this: &Self, other: &Self) -> bool {
+        this.ptr.as_ptr() == other.ptr.as_ptr()
+    }
 }
 
+impl<T: Clone + Reachable> CactusRef<T> {
+    #[inline]
+    pub fn make_mut(this: &mut Self) -> &mut T {
+        if Self::strong_count(this) != 1 {
+            // Gotta clone the data, there are other CactusRefs
+            *this = Self::new((**this).clone())
+        } else if Self::weak_count(this) != 0 {
+            // Can just steal the data, all that's left is Weaks
+            unsafe {
+                let mut swap = Self::new(ptr::read(&this.ptr.as_ref().value));
+                mem::swap(this, &mut swap);
+                swap.dec_strong();
+                // Remove implicit strong-weak ref (no need to craft a fake
+                // Weak here -- we know other Weaks can clean up for us)
+                swap.dec_weak();
+                mem::forget(swap);
+            }
+        }
+        // This unsafety is ok because we're guaranteed that the pointer
+        // returned is the *only* pointer that will ever be returned to T. Our
+        // reference count is guaranteed to be 1 at this point, and we required
+        // the `CactusRef<T>` itself to be `mut`, so we're returning the only
+        // possible reference to the inner value.
+        unsafe { &mut this.ptr.as_mut().value }
+    }
+}
+
+impl<T: PartialEq + Reachable> PartialEq for CactusRef<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        **self == **other
+    }
+}
+
+impl<T: Eq + Reachable> Eq for CactusRef<T> {}
+
+impl<T: PartialOrd + Reachable> PartialOrd for CactusRef<T> {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        (**self).partial_cmp(&**other)
+    }
+
+    #[inline]
+    fn lt(&self, other: &Self) -> bool {
+        **self < **other
+    }
+
+    #[inline]
+    fn le(&self, other: &Self) -> bool {
+        **self <= **other
+    }
+
+    #[inline]
+    fn gt(&self, other: &Self) -> bool {
+        **self > **other
+    }
+
+    #[inline]
+    fn ge(&self, other: &Self) -> bool {
+        **self >= **other
+    }
+}
+
+impl<T: Ord + Reachable> Ord for CactusRef<T> {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        (**self).cmp(&**other)
+    }
+}
+
+impl<T: Hash + Reachable> Hash for CactusRef<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (**self).hash(state);
+    }
+}
 unsafe impl<#[may_dangle] T: Reachable> Drop for CactusRef<T> {
     fn drop(&mut self) {
         unsafe {
@@ -283,7 +409,7 @@ where
     // but it is not necessarily a valid pointer.
     // `Weak::new` sets this to `usize::MAX` so that it doesn’t need
     // to allocate space on the heap.  That's not a value a real pointer
-    // will ever have because RcBox has alignment at least 2.
+    // will ever have because CactusBox has alignment at least 2.
     ptr: NonNull<CactusBox<T>>,
 }
 
@@ -313,6 +439,16 @@ impl<T: Reachable> CactusWeakRef<T> {
         } else {
             0
         }
+    }
+
+    pub fn weak_count(&self) -> Option<usize> {
+        self.inner().map(|inner| {
+            if inner.strong() > 0 {
+                inner.weak() - 1 // subtract the implicit weak ptr
+            } else {
+                inner.weak()
+            }
+        })
     }
 
     #[inline]
