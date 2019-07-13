@@ -14,7 +14,7 @@ fn cactusref_mutually_adopted_no_leak() {
 
     let s = "a".repeat(1024 * 1024);
 
-    // 500MB of `String`s will be allocated by the leak detector
+    // 100MB of `String`s will be allocated by the leak detector
     leak::Detector::new(
         "CactusRef mutually adopted pointers",
         ITERATIONS,
