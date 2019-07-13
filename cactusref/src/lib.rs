@@ -22,14 +22,12 @@ mod cycle;
 mod link;
 mod ptr;
 mod rc;
-mod reachable;
 #[cfg(test)]
 mod tests;
 mod weak;
 
 pub use adoptable::Adoptable;
 pub use rc::Rc;
-pub use reachable::Reachable;
 pub use weak::Weak;
 
 /// Cactus alias for [`Rc`].
