@@ -18,7 +18,6 @@ pub unsafe trait Adoptable {
 /// Implementation of [`Adoptable`] for [`Rc`] which enables `Rc`s to form a
 /// cycle of strong references that are reaped by `Rc`'s [`Drop`]
 /// implementation.
-#[doc(spotlight)]
 unsafe impl<T: ?Sized> Adoptable for Rc<T> {
     /// Perform bookkeeping to record that `this` has an owned reference to
     /// `other`.

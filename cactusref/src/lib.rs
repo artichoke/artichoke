@@ -3,7 +3,6 @@
     alloc_layout_extra,
     box_into_raw_non_null,
     core_intrinsics,
-    doc_spotlight,
     dropck_eyepatch,
     optin_builtin_traits,
     ptr_internals,
