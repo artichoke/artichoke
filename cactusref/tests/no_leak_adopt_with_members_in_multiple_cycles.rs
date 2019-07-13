@@ -8,10 +8,6 @@ mod leak;
 const ITERATIONS: usize = 1;
 const LEAK_TOLERANCE: i64 = 1024 * 1024 * 25;
 
-struct RString {
-    inner: String,
-}
-
 #[test]
 fn cactusref_adopt_with_members_in_multiple_cycles_no_leak() {
     env_logger::Builder::from_env("CACTUS_LOG").init();
@@ -26,29 +22,19 @@ fn cactusref_adopt_with_members_in_multiple_cycles_no_leak() {
     )
     .check_leaks(|_| {
         // each iteration creates 10MB of `String`s
-        let first = CactusRef::new(RString {
-            inner: s.clone(),
-        });
+        let first = CactusRef::new(s.clone());
         let mut last = CactusRef::clone(&first);
         for _ in 1..10 {
-            assert_eq!(first.inner, s);
-            let obj = CactusRef::new(RString {
-                inner: s.clone(),
-            });
+            let obj = CactusRef::new(s.clone());
             CactusRef::adopt(&obj, &last);
             last = obj;
         }
         CactusRef::adopt(&first, &last);
         let group1 = first;
-        let first = CactusRef::new(RString {
-            inner: s.clone(),
-        });
+        let first = CactusRef::new(s.clone());
         let mut last = CactusRef::clone(&first);
         for _ in 101..110 {
-            assert_eq!(first.inner, s);
-            let obj = CactusRef::new(RString {
-                inner: s.clone(),
-            });
+            let obj = CactusRef::new(s.clone());
             CactusRef::adopt(&obj, &last);
             last = obj;
         }
