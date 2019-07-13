@@ -56,13 +56,17 @@ pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
     // that can reach each other. These nodes form a cycle.
     let mut cycle_owned_refs = HashMap::default();
     let clique = reachable_links(this);
+    let reachable = clique
+        .iter()
+        .map(|link| (*link, reachable_links(*link)))
+        .collect::<HashMap<_, _>>();
     for (left, right) in clique
         .iter()
         .cartesian_product(clique.iter())
         .filter(|(left, right)| left != right)
     {
-        let left_reaches_right = reachable_links(*left).contains(right);
-        let right_reaches_left = reachable_links(*right).contains(left);
+        let left_reaches_right = reachable[left].contains(right);
+        let right_reaches_left = reachable[right].contains(left);
         if left_reaches_right && right_reaches_left {
             let count = *cycle_owned_refs.entry(*right).or_insert(0);
             cycle_owned_refs.insert(*right, count + 1);
