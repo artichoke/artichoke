@@ -1,4 +1,4 @@
-use super::{Rc, Reachable, Weak};
+use super::{Rc, Weak};
 use std::boxed::Box;
 use std::cell::RefCell;
 use std::clone::Clone;
@@ -6,79 +6,6 @@ use std::convert::From;
 use std::mem::drop;
 use std::option::Option::{self, None, Some};
 use std::result::Result::{Err, Ok};
-
-unsafe impl Reachable for usize {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for u64 {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for i32 {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for RefCell<i32> {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for [i32] {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for [i32; 3] {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct Object<T>(T);
-
-unsafe impl<T> Reachable for Object<T> {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
 
 #[test]
 fn test_clone() {
@@ -127,15 +54,6 @@ fn test_dead() {
 fn weak_self_cyclic() {
     struct Cycle {
         x: RefCell<Option<Weak<Cycle>>>,
-    }
-    unsafe impl Reachable for Cycle {
-        fn object_id(&self) -> usize {
-            1
-        }
-
-        fn can_reach(&self, _object_id: usize) -> bool {
-            false
-        }
     }
 
     let a = Rc::new(Cycle {
@@ -236,26 +154,23 @@ fn try_unwrap() {
 
 #[test]
 fn into_from_raw() {
-    let x = Rc::new(Box::new(Object("hello")));
+    let x = Rc::new(Box::new("hello"));
     let y = x.clone();
 
     let x_ptr = Rc::into_raw(x);
     drop(y);
     unsafe {
-        assert_eq!((*x_ptr).0, "hello");
+        assert_eq!(**x_ptr, "hello");
 
         let x = Rc::from_raw(x_ptr);
-        assert_eq!(&*x.0, "hello");
+        assert_eq!(**x, "hello");
 
-        assert_eq!(Rc::try_unwrap(x).map(|x| (*x).0).unwrap(), "hello");
+        assert_eq!(Rc::try_unwrap(x).map(|x| *x), Ok("hello"));
     }
 }
 
 // #[test]
 // fn test_into_from_raw_unsized() {
-//     use std::fmt::Display;
-//     use std::string::ToString;
-//
 //     let rc: Rc<str> = Rc::from("foo");
 //
 //     let ptr = Rc::into_raw(rc.clone());
@@ -263,14 +178,6 @@ fn into_from_raw() {
 //
 //     assert_eq!(unsafe { &*ptr }, "foo");
 //     assert_eq!(rc, rc2);
-//
-//     let rc: Rc<dyn Display> = Rc::new(123);
-//
-//     let ptr = Rc::into_raw(rc.clone());
-//     let rc2 = unsafe { Rc::from_raw(ptr) };
-//
-//     assert_eq!(unsafe { &*ptr }.to_string(), "123");
-//     assert_eq!(rc2.to_string(), "123");
 // }
 
 #[test]
@@ -353,12 +260,6 @@ fn test_show() {
     assert_eq!(format!("{:?}", item), "75");
 }
 
-// #[test]
-// fn test_unsized() {
-//     let foo: Rc<[i32]> = Rc::new([1, 2, 3]);
-//     assert_eq!(foo, foo.clone());
-// }
-
 #[test]
 fn test_from_owned() {
     let item = 123;
@@ -382,129 +283,109 @@ fn test_ptr_eq() {
     assert!(!Rc::ptr_eq(&five, &other_five));
 }
 
-// #[test]
-// fn test_from_str() {
-//     let r: Rc<str> = Rc::from("foo");
-//
-//     assert_eq!(&r[..], "foo");
-// }
-//
-// #[test]
-// fn test_copy_from_slice() {
-//     let s: &[u32] = &[1, 2, 3];
-//     let r: Rc<[u32]> = Rc::from(s);
-//
-//     assert_eq!(&r[..], [1, 2, 3]);
-// }
-//
-// #[test]
-// fn test_clone_from_slice() {
-//     #[derive(Clone, Debug, Eq, PartialEq)]
-//     struct X(u32);
-//
-//     let s: &[X] = &[X(1), X(2), X(3)];
-//     let r: Rc<[X]> = Rc::from(s);
-//
-//     assert_eq!(&r[..], s);
-// }
-//
-// #[test]
-// #[should_panic]
-// fn test_clone_from_slice_panic() {
-//     use std::string::{String, ToString};
-//
-//     struct Fail(u32, String);
-//
-//     impl Clone for Fail {
-//         fn clone(&self) -> Fail {
-//             if self.0 == 2 {
-//                 panic!();
-//             }
-//             Fail(self.0, self.1.clone())
-//         }
-//     }
-//
-//     let s: &[Fail] = &[
-//         Fail(0, "foo".to_string()),
-//         Fail(1, "bar".to_string()),
-//         Fail(2, "baz".to_string()),
-//     ];
-//
-//     // Should panic, but not cause memory corruption
-//     let _r: Rc<[Fail]> = Rc::from(s);
-// }
-//
-// #[test]
-// fn test_from_box() {
-//     let b: Box<u32> = box 123;
-//     let r: Rc<u32> = Rc::from(b);
-//
-//     assert_eq!(*r, 123);
-// }
-//
-// #[test]
-// fn test_from_box_str() {
-//     use std::string::String;
-//
-//     let s = String::from("foo").into_boxed_str();
-//     let r: Rc<str> = Rc::from(s);
-//
-//     assert_eq!(&r[..], "foo");
-// }
-//
-// #[test]
-// fn test_from_box_slice() {
-//     let s = vec![1, 2, 3].into_boxed_slice();
-//     let r: Rc<[u32]> = Rc::from(s);
-//
-//     assert_eq!(&r[..], [1, 2, 3]);
-// }
-//
-// #[test]
-// fn test_from_box_trait() {
-//     use std::fmt::Display;
-//     use std::string::ToString;
-//
-//     let b: Box<dyn Display> = Box::new(123);
-//     let r: Rc<dyn Display> = Rc::from(b);
-//
-//     assert_eq!(r.to_string(), "123");
-// }
-//
-// #[test]
-// fn test_from_box_trait_zero_sized() {
-//     use std::fmt::Debug;
-//
-//     let b: Box<dyn Debug> = Box::new(());
-//     let r: Rc<dyn Debug> = Rc::from(b);
-//
-//     assert_eq!(format!("{:?}", r), "()");
-// }
-//
-// #[test]
-// fn test_from_vec() {
-//     let v = vec![1, 2, 3];
-//     let r: Rc<[u32]> = Rc::from(v);
-//
-//     assert_eq!(&r[..], [1, 2, 3]);
-// }
-//
-// #[test]
-// fn test_downcast() {
-//     use std::any::Any;
-//
-//     let r1: Rc<dyn Any> = Rc::new(i32::max_value());
-//     let r2: Rc<dyn Any> = Rc::new("abc");
-//
-//     assert!(r1.clone().downcast::<u32>().is_err());
-//
-//     let r1i32 = r1.downcast::<i32>();
-//     assert!(r1i32.is_ok());
-//     assert_eq!(r1i32.unwrap(), Rc::new(i32::max_value()));
-//
-//     assert!(r2.clone().downcast::<i32>().is_err());
-//
-//     let r2str = r2.downcast::<&'static str>();
-//     assert!(r2str.is_ok());
-//     assert_eq!(r2str.unwrap(), Rc::new("abc"));
-// }
+#[test]
+fn test_from_str() {
+    let r: Rc<str> = Rc::from("foo");
+
+    assert_eq!(&r[..], "foo");
+}
+
+#[test]
+fn test_copy_from_slice() {
+    let s: &[u32] = &[1, 2, 3];
+    let r: Rc<[u32]> = Rc::from(s);
+
+    assert_eq!(&r[..], [1, 2, 3]);
+}
+
+#[test]
+fn test_clone_from_slice() {
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    struct X(u32);
+
+    let s: &[X] = &[X(1), X(2), X(3)];
+    let r: Rc<[X]> = Rc::from(s);
+
+    assert_eq!(&r[..], s);
+}
+
+#[test]
+#[should_panic]
+fn test_clone_from_slice_panic() {
+    use std::string::{String, ToString};
+
+    struct Fail(u32, String);
+
+    impl Clone for Fail {
+        fn clone(&self) -> Self {
+            if self.0 == 2 {
+                panic!();
+            }
+            Self(self.0, self.1.clone())
+        }
+    }
+
+    let s: &[Fail] = &[
+        Fail(0, "foo".to_string()),
+        Fail(1, "bar".to_string()),
+        Fail(2, "baz".to_string()),
+    ];
+
+    // Should panic, but not cause memory corruption
+    let _r: Rc<[Fail]> = Rc::from(s);
+}
+
+#[test]
+fn test_from_box() {
+    let b: Box<u32> = Box::new(123);
+    let r: Rc<u32> = Rc::from(b);
+
+    assert_eq!(*r, 123);
+}
+
+#[test]
+fn test_from_box_str() {
+    use std::string::String;
+
+    let s = String::from("foo").into_boxed_str();
+    let r: Rc<str> = Rc::from(s);
+
+    assert_eq!(&r[..], "foo");
+}
+
+#[test]
+fn test_from_box_slice() {
+    let s = vec![1, 2, 3].into_boxed_slice();
+    let r: Rc<[u32]> = Rc::from(s);
+
+    assert_eq!(&r[..], [1, 2, 3]);
+}
+
+#[test]
+fn test_from_box_trait() {
+    use std::fmt::Display;
+    use std::string::ToString;
+
+    let b: Box<dyn Display> = Box::new(123);
+    let r: Rc<dyn Display> = Rc::from(b);
+
+    assert_eq!(r.to_string(), "123");
+}
+
+#[test]
+fn test_from_box_trait_zero_sized() {
+    use std::fmt::Debug;
+
+    let b: Box<dyn Debug> = Box::new(());
+    let r: Rc<dyn Debug> = Rc::from(b);
+
+    assert_eq!(format!("{:?}", r), "()");
+}
+
+#[test]
+fn test_from_vec() {
+    let v = vec![1, 2, 3];
+    let r: Rc<[u32]> = Rc::from(v);
+
+    assert_eq!(&r[..], [1, 2, 3]);
+}

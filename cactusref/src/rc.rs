@@ -1,18 +1,20 @@
+use core::borrow;
+use core::cell::{Cell, RefCell};
 use core::cmp::Ordering;
-use core::marker::PhantomData;
+use core::fmt;
+use core::hash::{Hash, Hasher};
+use core::marker::{PhantomData, Unpin};
 use core::mem;
 use core::ops::Deref;
 use core::pin::Pin;
 use core::ptr::{self, NonNull};
-use std::alloc::{handle_alloc_error, Alloc, Global, Layout};
-use std::borrow;
-use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
-use std::fmt;
-use std::hash::{Hash, Hasher};
+use core::slice;
 
+use std::alloc::{handle_alloc_error, Alloc, Global, Layout};
+
+use crate::link::Links;
 use crate::ptr::{box_free, data_offset, is_dangling, set_data_ptr, RcBox, RcBoxPtr};
-use crate::{Reachable, Weak};
+use crate::Weak;
 
 /// A single-threaded reference-counting pointer. 'Rc' stands for 'Reference
 /// Counted'.
@@ -24,10 +26,10 @@ use crate::{Reachable, Weak};
 /// See the [module-level documentation](crate) for more details.
 ///
 /// The inherent methods of `Rc` are all associated functions, which means
-/// that you have to call them as e.g., [`Rc::get_mut(&mut value)`](Rc::get_mut)
+/// that you have to call them as e.g., [`Self::get_mut(&mut value)`](Self::get_mut)
 /// instead of `value.get_mut()`. This avoids conflicts with methods of the
 /// inner type `T`.
-pub struct Rc<T: ?Sized + Reachable> {
+pub struct Rc<T: ?Sized> {
     pub(crate) ptr: NonNull<RcBox<T>>,
     pub(crate) phantom: PhantomData<T>,
 }
@@ -35,27 +37,15 @@ pub struct Rc<T: ?Sized + Reachable> {
 impl<T: ?Sized> !Send for Rc<T> {}
 impl<T: ?Sized> !Sync for Rc<T> {}
 
-impl<T: Reachable> Rc<T> {
+impl<T> Rc<T> {
     /// Constructs a new `Rc<T>`.
     ///
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
+    /// let five = Rc::new(5);
     /// ```
     pub fn new(value: T) -> Self {
         Self {
@@ -66,51 +56,39 @@ impl<T: Reachable> Rc<T> {
             ptr: Box::into_raw_non_null(Box::new(RcBox {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
-                links: RefCell::new(HashSet::default()),
+                links: RefCell::new(Links::default()),
                 value,
             })),
             phantom: PhantomData,
         }
     }
 
-    /// Constructs a new `Pin<Rc<T>>`. If `T` does not implement `Unpin`, then
-    /// `value` will be pinned in memory and unable to be moved.
+    /// Constructs a new [`Pin`]`<`[`Rc`]`<T>>`. If `T` does not implement
+    /// [`Unpin`], then `value` will be pinned in memory and unable to be moved.
     pub fn pin(value: T) -> Pin<Self> {
         unsafe { Pin::new_unchecked(Self::new(value)) }
     }
 
-    /// Returns the contained value, if the `Rc` has exactly one strong reference.
+    /// Returns the contained value, if the `Rc` has exactly one strong
+    /// reference.
     ///
-    /// Otherwise, an [`Err`] is returned with the same `Rc` that was
-    /// passed in.
+    /// Otherwise, an [`Err`] is returned with the same `Rc` that was passed in.
     ///
     /// This will succeed even if there are outstanding weak references.
     ///
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// #[derive(Debug, PartialEq, Eq)]
-    /// struct Object(i32);
+    /// let x = Rc::new(3);
+    /// assert_eq!(Rc::try_unwrap(x), Ok(3));
     ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let x = Rc::new(Object(3));
-    /// assert_eq!(Rc::try_unwrap(x), Ok(Object(3)));
-    ///
-    /// let x = Rc::new(Object(4));
+    /// let x = Rc::new(4);
     /// let _y = Rc::clone(&x);
-    /// assert_eq!(*Rc::try_unwrap(x).unwrap_err(), Object(4));
+    /// assert_eq!(*Rc::try_unwrap(x).unwrap_err(), 4);
     /// ```
+    #[inline]
     pub fn try_unwrap(this: Self) -> Result<T, Self> {
         if Self::strong_count(&this) == 1 {
             unsafe {
@@ -131,32 +109,20 @@ impl<T: Reachable> Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Rc<T> {
+impl<T: ?Sized> Rc<T> {
     /// Consumes the `Rc`, returning the wrapped pointer.
     ///
-    /// To avoid a memory leak the pointer must be converted back to an `Rc` using
-    /// [`Rc::from_raw`].
+    /// To avoid a memory leak the pointer must be converted back to an `Rc`
+    /// using [`Rc::from_raw`].
     ///
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(String);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let x = Rc::new(Object("hello".to_owned()));
+    /// let x = Rc::new("hello".to_owned());
     /// let x_ptr = Rc::into_raw(x);
-    /// assert_eq!(unsafe { &(*x_ptr).0 }, "hello");
+    /// assert_eq!(unsafe { &*x_ptr }, "hello");
     /// ```
     #[allow(clippy::wrong_self_convention)]
     pub fn into_raw(this: Self) -> *const T {
@@ -177,29 +143,17 @@ impl<T: ?Sized + Reachable> Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(String);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let x = Rc::new(Object("hello".to_owned()));
+    /// let x = Rc::new("hello".to_owned());
     /// let x_ptr = Rc::into_raw(x);
     ///
     /// unsafe {
     ///     // Convert back to an `Rc` to prevent leak.
     ///     let x = Rc::from_raw(x_ptr);
-    ///     assert_eq!(&*x.0, "hello");
+    ///     assert_eq!(&*x, "hello");
     ///
-    ///     // Further calls to `Rc::from_raw(x_ptr)` would be memory unsafe.
+    ///     // Further calls to `Self::from_raw(x_ptr)` would be memory unsafe.
     /// }
     ///
     /// // The memory was freed when `x` went out of scope above, so `x_ptr` is now dangling!
@@ -217,31 +171,17 @@ impl<T: ?Sized + Reachable> Rc<T> {
         }
     }
 
-    /// Consumes the `Rc`, returning the wrapped pointer as `NonNull<T>`.
+    /// Consumes the `Rc`, returning the wrapped pointer as [`NonNull`]`<T>`.
     ///
     /// # Examples
     ///
     /// ```
-    /// #![feature(rc_into_raw_non_null)]
+    /// use cactusref::Rc;
     ///
-    /// use cactusref::{Rc, Reachable};
-    ///
-    /// struct Object(String);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let x = Rc::new(Object("hello".to_owned()));
+    /// let x = Rc::new("hello".to_owned());
     /// let ptr = Rc::into_raw_non_null(x);
     /// let deref = unsafe { ptr.as_ref() };
-    /// assert_eq!(&deref.0, "hello");
+    /// assert_eq!(deref, "hello");
     /// ```
     #[inline]
     #[allow(clippy::wrong_self_convention)]
@@ -250,26 +190,16 @@ impl<T: ?Sized + Reachable> Rc<T> {
         unsafe { NonNull::new_unchecked(Self::into_raw(this) as *mut _) }
     }
 
-    /// Creates a new [`Weak`] pointer to this value.
+    /// Creates a new [`Weak`][weak] pointer to this value.
+    ///
+    /// [weak]: struct.Weak.html
     ///
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
+    /// let five = Rc::new(5);
     ///
     /// let weak_five = Rc::downgrade(&five);
     /// ```
@@ -285,21 +215,9 @@ impl<T: ?Sized + Reachable> Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
+    /// let five = Rc::new(5);
     /// let _weak_five = Rc::downgrade(&five);
     ///
     /// assert_eq!(1, Rc::weak_count(&five));
@@ -314,21 +232,9 @@ impl<T: ?Sized + Reachable> Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
+    /// let five = Rc::new(5);
     /// let _also_five = Rc::clone(&five);
     ///
     /// assert_eq!(2, Rc::strong_count(&five));
@@ -340,40 +246,30 @@ impl<T: ?Sized + Reachable> Rc<T> {
 
     /// Returns `true` if there are no other `Rc` or [`Weak`] pointers to this
     /// inner value.
+    ///
+    /// [weak]: struct.Weak.html
     #[inline]
     pub(crate) fn is_unique(this: &Self) -> bool {
         Self::weak_count(this) == 0 && Self::strong_count(this) == 1
     }
 
-    /// Returns a mutable reference to the inner value, if there are no other
-    /// `Rc` or [`Weak`] pointers to the same value.
+    /// Returns a mutable reference to the inner value, if there are
+    /// no other `Rc` or [`Weak`] pointers to the same value.
     ///
-    /// Returns [`None`] otherwise, because it is not safe to mutate a shared
-    /// value.
+    /// Returns [`None`] otherwise, because it is not safe to
+    /// mutate a shared value.
     ///
-    /// See also [`make_mut`](Rc::make_mut), which will [`clone`](Clone) the
-    /// inner value when it's shared.
+    /// See also [`make_mut`](Rc::make_mut), which will [`clone`](Clone::clone)
+    /// the inner value when it's shared.
     ///
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let mut x = Rc::new(Object(3));
-    /// Rc::get_mut(&mut x).unwrap().0 = 4;
-    /// assert_eq!(x.0, 4);
+    /// let mut x = Rc::new(3);
+    /// *Rc::get_mut(&mut x).unwrap() = 4;
+    /// assert_eq!(*x, 4);
     ///
     /// let _y = Rc::clone(&x);
     /// assert!(Rc::get_mut(&mut x).is_none());
@@ -387,29 +283,17 @@ impl<T: ?Sized + Reachable> Rc<T> {
         }
     }
 
-    /// Returns `true` if the two `Rc`s point to the same value (not just values
-    /// that compare as equal).
+    /// Returns `true` if the two `Rc`s point to the same value (not
+    /// just values that compare as equal).
     ///
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
+    /// let five = Rc::new(5);
     /// let same_five = Rc::clone(&five);
-    /// let other_five = Rc::new(Object(5));
+    /// let other_five = Rc::new(5);
     ///
     /// assert!(Rc::ptr_eq(&five, &same_five));
     /// assert!(!Rc::ptr_eq(&five, &other_five));
@@ -420,7 +304,79 @@ impl<T: ?Sized + Reachable> Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Rc<T> {
+impl<T: Clone> Rc<T> {
+    /// Makes a mutable reference into the given `Rc`.
+    ///
+    /// If there are other `Rc` pointers to the same value, then `make_mut` will
+    /// [`clone`](Clone::clone) the inner value to ensure unique ownership. This
+    /// is also referred to as clone-on-write.
+    ///
+    /// If there are no other `Rc` pointers to this value, then [`Weak`]
+    /// pointers to this value will be dissassociated.
+    ///
+    /// See also [`get_mut`](Rc::get_mut), which will fail rather than cloning.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cactusref::Rc;
+    ///
+    /// let mut data = Rc::new(5);
+    ///
+    /// *Rc::make_mut(&mut data) += 1;        // Won't clone anything
+    /// let mut other_data = Rc::clone(&data);    // Won't clone inner data
+    /// *Rc::make_mut(&mut data) += 1;        // Clones inner data
+    /// *Rc::make_mut(&mut data) += 1;        // Won't clone anything
+    /// *Rc::make_mut(&mut other_data) *= 2;  // Won't clone anything
+    ///
+    /// // Now `data` and `other_data` point to different values.
+    /// assert_eq!(*data, 8);
+    /// assert_eq!(*other_data, 12);
+    /// ```
+    ///
+    /// [`Weak`] pointers will be dissassociated:
+    ///
+    /// ```
+    /// use cactusref::Rc;
+    ///
+    /// let mut data = Rc::new(75);
+    /// let weak = Rc::downgrade(&data);
+    ///
+    /// assert!(75 == *data);
+    /// assert!(75 == *weak.upgrade().unwrap());
+    ///
+    /// *Rc::make_mut(&mut data) += 1;
+    ///
+    /// assert!(76 == *data);
+    /// assert!(weak.upgrade().is_none());
+    /// ```
+    #[inline]
+    pub fn make_mut(this: &mut Self) -> &mut T {
+        if Self::strong_count(this) != 1 {
+            // Gotta clone the data, there are other Rcs
+            *this = Self::new((**this).clone())
+        } else if Self::weak_count(this) != 0 {
+            // Can just steal the data, all that's left is Weaks
+            unsafe {
+                let mut swap = Self::new(ptr::read(&this.ptr.as_ref().value));
+                mem::swap(this, &mut swap);
+                swap.dec_strong();
+                // Remove implicit strong-weak ref (no need to craft a fake
+                // Weak here -- we know other Weaks can clean up for us)
+                swap.dec_weak();
+                mem::forget(swap);
+            }
+        }
+        // This unsafety is ok because we're guaranteed that the pointer
+        // returned is the *only* pointer that will ever be returned to T. Our
+        // reference count is guaranteed to be 1 at this point, and we required
+        // the `Rc<T>` itself to be `mut`, so we're returning the only possible
+        // reference to the inner value.
+        unsafe { &mut this.ptr.as_mut().value }
+    }
+}
+
+impl<T: ?Sized> Rc<T> {
     // Allocates an `RcBox<T>` with sufficient space for an unsized value
     unsafe fn allocate_for_ptr(ptr: *const T) -> *mut RcBox<T> {
         // Calculate layout using the given value.
@@ -444,6 +400,7 @@ impl<T: ?Sized + Reachable> Rc<T> {
 
         ptr::write(&mut (*inner).strong, Cell::new(1));
         ptr::write(&mut (*inner).weak, Cell::new(1));
+        ptr::write(&mut (*inner).links, RefCell::new(Links::default()));
 
         inner
     }
@@ -474,7 +431,92 @@ impl<T: ?Sized + Reachable> Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Deref for Rc<T> {
+impl<T> Rc<[T]> {
+    // Copy elements from slice into newly allocated Rc<[T]>
+    //
+    // Unsafe because the caller must either take ownership or bind `T: Copy`
+    unsafe fn copy_from_slice(v: &[T]) -> Self {
+        let v_ptr = v as *const [T];
+        let ptr = Self::allocate_for_ptr(v_ptr);
+
+        ptr::copy_nonoverlapping(v.as_ptr(), &mut (*ptr).value as *mut [T] as *mut T, v.len());
+
+        Self {
+            ptr: NonNull::new_unchecked(ptr),
+            phantom: PhantomData,
+        }
+    }
+}
+
+trait RcFromSlice<T> {
+    fn from_slice(slice: &[T]) -> Self;
+}
+
+impl<T: Clone> RcFromSlice<T> for Rc<[T]> {
+    #[inline]
+    default fn from_slice(v: &[T]) -> Self {
+        // Panic guard while cloning T elements.
+        // In the event of a panic, elements that have been written
+        // into the new RcBox will be dropped, then the memory freed.
+        struct Guard<T> {
+            mem: NonNull<u8>,
+            elems: *mut T,
+            layout: Layout,
+            n_elems: usize,
+        }
+
+        impl<T> Drop for Guard<T> {
+            fn drop(&mut self) {
+                unsafe {
+                    let slice = slice::from_raw_parts_mut(self.elems, self.n_elems);
+                    ptr::drop_in_place(slice);
+
+                    Global.dealloc(self.mem, self.layout);
+                }
+            }
+        }
+
+        unsafe {
+            let v_ptr = v as *const [T];
+            let ptr = Self::allocate_for_ptr(v_ptr);
+
+            let mem = ptr as *mut _ as *mut u8;
+            let layout = Layout::for_value(&*ptr);
+
+            // Pointer to first element
+            let elems = &mut (*ptr).value as *mut [T] as *mut T;
+
+            let mut guard = Guard {
+                mem: NonNull::new_unchecked(mem),
+                elems,
+                layout,
+                n_elems: 0,
+            };
+
+            for (i, item) in v.iter().enumerate() {
+                ptr::write(elems.add(i), item.clone());
+                guard.n_elems += 1;
+            }
+
+            // All clear. Forget the guard so it doesn't free the new RcBox.
+            mem::forget(guard);
+
+            Self {
+                ptr: NonNull::new_unchecked(ptr),
+                phantom: PhantomData,
+            }
+        }
+    }
+}
+
+impl<T: Copy> RcFromSlice<T> for Rc<[T]> {
+    #[inline]
+    fn from_slice(v: &[T]) -> Self {
+        unsafe { Self::copy_from_slice(v) }
+    }
+}
+
+impl<T: ?Sized> Deref for Rc<T> {
     type Target = T;
 
     #[inline]
@@ -483,105 +525,7 @@ impl<T: ?Sized + Reachable> Deref for Rc<T> {
     }
 }
 
-impl<T: ?Sized + Clone + Reachable> Rc<T> {
-    /// Makes a mutable reference into the given `Rc`.
-    ///
-    /// If there are other `Rc` pointers to the same value, then `make_mut` will
-    /// [`clone`](Clone) the inner value to ensure unique ownership.  This is
-    /// also referred to as clone-on-write.
-    ///
-    /// If there are no other `Rc` pointers to this value, then [`Weak`]
-    /// pointers to this value will be dissassociated.
-    ///
-    /// See also [`get_mut`](Rc::get_mut), which will fail rather than cloning.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use cactusref::{Rc, Reachable};
-    ///
-    /// #[derive(Debug, Clone)]
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let mut data = Rc::new(Object(5));
-    ///
-    /// Rc::make_mut(&mut data).0 += 1;         // Won't clone anything
-    /// let mut other_data = Rc::clone(&data); // Won't clone inner data
-    /// Rc::make_mut(&mut data).0 += 1;         // Clones inner data
-    /// Rc::make_mut(&mut data).0 += 1;         // Won't clone anything
-    /// Rc::make_mut(&mut other_data).0 *= 2;   // Won't clone anything
-    ///
-    /// // Now `data` and `other_data` point to different values.
-    /// assert_eq!(data.0, 8);
-    /// assert_eq!(other_data.0, 12);
-    /// ```
-    ///
-    /// [`Weak`] pointers will be dissassociated:
-    ///
-    /// ```
-    /// use cactusref::{Rc, Reachable};
-    ///
-    /// #[derive(Debug, Clone)]
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let mut data = Rc::new(Object(75));
-    /// let weak = Rc::downgrade(&data);
-    ///
-    /// assert!(75 == data.0);
-    /// assert!(75 == weak.upgrade().unwrap().0);
-    ///
-    /// Rc::make_mut(&mut data).0 += 1;
-    ///
-    /// assert!(76 == data.0);
-    /// assert!(weak.upgrade().is_none());
-    /// ```
-    #[inline]
-    pub fn make_mut(this: &mut Self) -> &mut T {
-        if Self::strong_count(this) != 1 {
-            // Gotta clone the data, there are other Rcs
-            *this = Self::new((**this).clone())
-        } else if Self::weak_count(this) != 0 {
-            // Can just steal the data, all that's left is Weaks
-            unsafe {
-                let mut swap = Self::new(ptr::read(&this.ptr.as_ref().value));
-                mem::swap(this, &mut swap);
-                swap.dec_strong();
-                // Remove implicit strong-weak ref (no need to craft a fake
-                // Weak here -- we know other Weaks can clean up for us)
-                swap.dec_weak();
-                mem::forget(swap);
-            }
-        }
-        // This unsafety is ok because we're guaranteed that the pointer
-        // returned is the *only* pointer that will ever be returned to T. Our
-        // reference count is guaranteed to be 1 at this point, and we required
-        // the `Rc<T>` itself to be `mut`, so we're returning the only
-        // possible reference to the inner value.
-        unsafe { &mut this.ptr.as_mut().value }
-    }
-}
-
-impl<T: ?Sized + Reachable> Clone for Rc<T> {
+impl<T: ?Sized> Clone for Rc<T> {
     /// Makes a clone of the `Rc` pointer.
     ///
     /// This creates another pointer to the same inner value, increasing the
@@ -590,21 +534,9 @@ impl<T: ?Sized + Reachable> Clone for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
+    /// let five = Rc::new(5);
     ///
     /// let _ = Rc::clone(&five);
     /// ```
@@ -618,14 +550,59 @@ impl<T: ?Sized + Reachable> Clone for Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable + Default> Default for Rc<T> {
+impl<T: Default> Default for Rc<T> {
+    /// Creates a new `Rc<T>`, with the `Default` value for `T`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cactusref::Rc;
+    ///
+    /// let x: Rc<i32> = Default::default();
+    /// assert_eq!(*x, 0);
+    /// ```
     #[inline]
     fn default() -> Self {
         Self::new(Default::default())
     }
 }
 
-impl<T: ?Sized + PartialEq + Reachable> PartialEq for Rc<T> {
+trait RcEqIdent<T: ?Sized + PartialEq> {
+    fn eq(&self, other: &Self) -> bool;
+    fn ne(&self, other: &Self) -> bool;
+}
+
+impl<T: ?Sized + PartialEq> RcEqIdent<T> for Rc<T> {
+    #[inline]
+    default fn eq(&self, other: &Self) -> bool {
+        **self == **other
+    }
+
+    #[inline]
+    default fn ne(&self, other: &Self) -> bool {
+        **self != **other
+    }
+}
+
+/// We're doing this specialization here, and not as a more general optimization
+/// on `&T`, because it would otherwise add a cost to all equality checks on
+/// refs. We assume that `Rc`s are used to store large values, that are slow to
+/// clone, but also heavy to check for equality, causing this cost to pay off
+/// more easily. It's also more likely to have two `Rc` clones, that point to
+/// the same value, than two `&T`s.
+impl<T: ?Sized + Eq> RcEqIdent<T> for Rc<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        Self::ptr_eq(self, other) || **self == **other
+    }
+
+    #[inline]
+    fn ne(&self, other: &Self) -> bool {
+        !Self::ptr_eq(self, other) && **self != **other
+    }
+}
+
+impl<T: ?Sized + PartialEq> PartialEq for Rc<T> {
     /// Equality for two `Rc`s.
     ///
     /// Two `Rc`s are equal if their inner values are equal.
@@ -636,34 +613,43 @@ impl<T: ?Sized + PartialEq + Reachable> PartialEq for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// #[derive(PartialEq, Eq)]
-    /// struct Object(i32);
+    /// let five = Rc::new(5);
     ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
-    ///
-    /// assert!(five == Rc::new(Object(5)));
+    /// assert!(five == Rc::new(5));
     /// ```
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        **self == **other
+        RcEqIdent::eq(self, other)
+    }
+
+    /// Inequality for two `Rc`s.
+    ///
+    /// Two `Rc`s are unequal if their inner values are unequal.
+    ///
+    /// If `T` also implements `Eq`, two `Rc`s that point to the same value are
+    /// never unequal.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cactusref::Rc;
+    ///
+    /// let five = Rc::new(5);
+    ///
+    /// assert!(five != Rc::new(6));
+    /// ```
+    #[inline]
+    #[allow(clippy::partialeq_ne_impl)]
+    fn ne(&self, other: &Self) -> bool {
+        RcEqIdent::ne(self, other)
     }
 }
 
-impl<T: ?Sized + Eq + Reachable> Eq for Rc<T> {}
+impl<T: ?Sized + Eq> Eq for Rc<T> {}
 
-impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for Rc<T> {
+impl<T: ?Sized + PartialOrd> PartialOrd for Rc<T> {
     /// Partial comparison for two `Rc`s.
     ///
     /// The two are compared by calling `partial_cmp()` on their inner values.
@@ -671,27 +657,14 @@ impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     /// use std::cmp::Ordering;
     ///
-    /// #[derive(PartialEq, Eq, PartialOrd, Ord)]
-    /// struct Object(i32);
+    /// let five = Rc::new(5);
     ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
-    ///
-    /// assert_eq!(Some(Ordering::Less), five.partial_cmp(&Rc::new(Object(6))));
+    /// assert_eq!(Some(Ordering::Less), five.partial_cmp(&Rc::new(6)));
     /// ```
-    #[inline]
+    #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         (**self).partial_cmp(&**other)
     }
@@ -703,27 +676,13 @@ impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
+    /// let five = Rc::new(5);
     ///
-    /// #[derive(PartialEq, Eq, PartialOrd, Ord)]
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
-    ///
-    /// assert!(five < Rc::new(Object(6)));
+    /// assert!(five < Rc::new(6));
     /// ```
-    #[inline]
+    #[inline(always)]
     fn lt(&self, other: &Self) -> bool {
         **self < **other
     }
@@ -735,27 +694,13 @@ impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
+    /// let five = Rc::new(5);
     ///
-    /// #[derive(PartialEq, Eq, PartialOrd, Ord)]
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
-    ///
-    /// assert!(five <= Rc::new(Object(5)));
+    /// assert!(five <= Rc::new(5));
     /// ```
-    #[inline]
+    #[inline(always)]
     fn le(&self, other: &Self) -> bool {
         **self <= **other
     }
@@ -767,27 +712,13 @@ impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
+    /// let five = Rc::new(5);
     ///
-    /// #[derive(PartialEq, Eq, PartialOrd, Ord)]
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
-    ///
-    /// assert!(five > Rc::new(Object(4)));
+    /// assert!(five > Rc::new(4));
     /// ```
-    #[inline]
+    #[inline(always)]
     fn gt(&self, other: &Self) -> bool {
         **self > **other
     }
@@ -799,32 +730,19 @@ impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// #[derive(PartialEq, Eq, PartialOrd, Ord)]
-    /// struct Object(i32);
+    /// let five = Rc::new(5);
     ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
-    ///
-    /// assert!(five >= Rc::new(Object(5)));
+    /// assert!(five >= Rc::new(5));
     /// ```
-    #[inline]
+    #[inline(always)]
     fn ge(&self, other: &Self) -> bool {
         **self >= **other
     }
 }
 
-impl<T: ?Sized + Ord + Reachable> Ord for Rc<T> {
+impl<T: ?Sized + Ord> Ord for Rc<T> {
     /// Comparison for two `Rc`s.
     ///
     /// The two are compared by calling `cmp()` on their inner values.
@@ -832,25 +750,12 @@ impl<T: ?Sized + Ord + Reachable> Ord for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     /// use std::cmp::Ordering;
     ///
-    /// #[derive(PartialEq, Eq, PartialOrd, Ord)]
-    /// struct Object(i32);
+    /// let five = Rc::new(5);
     ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
-    ///
-    /// assert_eq!(Ordering::Less, five.cmp(&Rc::new(Object(6))));
+    /// assert_eq!(Ordering::Less, five.cmp(&Rc::new(6)));
     /// ```
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
@@ -858,45 +763,90 @@ impl<T: ?Sized + Ord + Reachable> Ord for Rc<T> {
     }
 }
 
-impl<T: ?Sized + Hash + Reachable> Hash for Rc<T> {
+impl<T: ?Sized + Hash> Hash for Rc<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         (**self).hash(state);
     }
 }
 
-impl<T: ?Sized + Reachable + fmt::Display> fmt::Display for Rc<T> {
+impl<T: ?Sized + fmt::Display> fmt::Display for Rc<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.inner().value, f)
+        fmt::Display::fmt(&**self, f)
     }
 }
 
-impl<T: ?Sized + Reachable + fmt::Debug> fmt::Debug for Rc<T> {
+impl<T: ?Sized + fmt::Debug> fmt::Debug for Rc<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.inner().value, f)
+        fmt::Debug::fmt(&**self, f)
     }
 }
 
-impl<T: Reachable> From<T> for Rc<T> {
+impl<T: ?Sized> fmt::Pointer for Rc<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Pointer::fmt(&(&**self as *const T), f)
+    }
+}
+
+impl<T> From<T> for Rc<T> {
     fn from(t: T) -> Self {
         Self::new(t)
     }
 }
 
-impl<T: ?Sized + Reachable> From<Box<T>> for Rc<T> {
+impl<T: Clone> From<&[T]> for Rc<[T]> {
+    #[inline]
+    fn from(v: &[T]) -> Self {
+        <Self as RcFromSlice<T>>::from_slice(v)
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<&str> for Rc<str> {
+    #[inline]
+    fn from(v: &str) -> Self {
+        let rc = Rc::<[u8]>::from(v.as_bytes());
+        unsafe { Self::from_raw(Rc::into_raw(rc) as *const str) }
+    }
+}
+
+impl From<String> for Rc<str> {
+    #[inline]
+    fn from(v: String) -> Self {
+        Self::from(&v[..])
+    }
+}
+
+impl<T: ?Sized> From<Box<T>> for Rc<T> {
     #[inline]
     fn from(v: Box<T>) -> Self {
         Self::from_box(v)
     }
 }
 
-impl<T: ?Sized + Reachable> borrow::Borrow<T> for Rc<T> {
+impl<T> From<Vec<T>> for Rc<[T]> {
+    #[inline]
+    fn from(mut v: Vec<T>) -> Self {
+        unsafe {
+            let rc = Self::copy_from_slice(&v);
+
+            // Allow the Vec to free its memory, but not destroy its contents
+            v.set_len(0);
+
+            rc
+        }
+    }
+}
+
+impl<T: ?Sized> borrow::Borrow<T> for Rc<T> {
     fn borrow(&self) -> &T {
         &**self
     }
 }
 
-impl<T: ?Sized + Reachable> AsRef<T> for Rc<T> {
+impl<T: ?Sized> AsRef<T> for Rc<T> {
     fn as_ref(&self) -> &T {
         &**self
     }
 }
+
+impl<T: ?Sized> Unpin for Rc<T> {}
