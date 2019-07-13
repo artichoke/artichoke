@@ -1,4 +1,4 @@
-use super::{Rc, Reachable, Weak};
+use super::{Rc, Weak};
 use std::boxed::Box;
 use std::cell::RefCell;
 use std::clone::Clone;
@@ -6,79 +6,6 @@ use std::convert::From;
 use std::mem::drop;
 use std::option::Option::{self, None, Some};
 use std::result::Result::{Err, Ok};
-
-unsafe impl Reachable for usize {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for u64 {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for i32 {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for RefCell<i32> {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for [i32] {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-unsafe impl Reachable for [i32; 3] {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct Object<T>(T);
-
-unsafe impl<T> Reachable for Object<T> {
-    fn object_id(&self) -> usize {
-        1
-    }
-
-    fn can_reach(&self, _object_id: usize) -> bool {
-        false
-    }
-}
 
 #[test]
 fn test_clone() {
@@ -127,15 +54,6 @@ fn test_dead() {
 fn weak_self_cyclic() {
     struct Cycle {
         x: RefCell<Option<Weak<Cycle>>>,
-    }
-    unsafe impl Reachable for Cycle {
-        fn object_id(&self) -> usize {
-            1
-        }
-
-        fn can_reach(&self, _object_id: usize) -> bool {
-            false
-        }
     }
 
     let a = Rc::new(Cycle {
@@ -236,18 +154,18 @@ fn try_unwrap() {
 
 #[test]
 fn into_from_raw() {
-    let x = Rc::new(Box::new(Object("hello")));
+    let x = Rc::new(Box::new("hello"));
     let y = x.clone();
 
     let x_ptr = Rc::into_raw(x);
     drop(y);
     unsafe {
-        assert_eq!((*x_ptr).0, "hello");
+        assert_eq!(**x_ptr, "hello");
 
         let x = Rc::from_raw(x_ptr);
-        assert_eq!(&*x.0, "hello");
+        assert_eq!(**x, "hello");
 
-        assert_eq!(Rc::try_unwrap(x).map(|x| (*x).0).unwrap(), "hello");
+        assert_eq!(Rc::try_unwrap(x).map(|x| *x), Ok("hello"));
     }
 }
 
@@ -355,8 +273,8 @@ fn test_show() {
 
 // #[test]
 // fn test_unsized() {
-//     let foo: Rc<[i32]> = Rc::new([1, 2, 3]);
-//     assert_eq!(foo, foo.clone());
+//     let item: Rc<[i32]> = Rc::new([1, 2, 3]);
+//     assert_eq!(item, item.clone());
 // }
 
 #[test]
@@ -436,7 +354,7 @@ fn test_ptr_eq() {
 //
 // #[test]
 // fn test_from_box() {
-//     let b: Box<u32> = box 123;
+//     let b: Box<u32> = Box::new(123);
 //     let r: Rc<u32> = Rc::from(b);
 //
 //     assert_eq!(*r, 123);
