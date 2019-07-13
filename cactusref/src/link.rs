@@ -1,6 +1,6 @@
 use core::ptr::{self, NonNull};
-use std::collections::HashSet;
 use std::collections::hash_set;
+use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
 use crate::ptr::RcBox;

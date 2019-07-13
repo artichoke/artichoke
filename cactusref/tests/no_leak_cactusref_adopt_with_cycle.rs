@@ -15,12 +15,7 @@ fn cactusref_adopt_with_reachability_no_leak() {
     let s = "a".repeat(1024 * 1024);
 
     // 500MB of `String`s will be allocated by the leak detector
-    leak::Detector::new(
-        "CactusRef adopt cycle",
-        ITERATIONS,
-        LEAK_TOLERANCE,
-    )
-    .check_leaks(|_| {
+    leak::Detector::new("CactusRef adopt cycle", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         // each iteration creates 10MB of `String`s
         let first = CactusRef::new(s.clone());
         let mut last = CactusRef::clone(&first);
