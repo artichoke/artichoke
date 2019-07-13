@@ -25,23 +25,13 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
     /// struct Foo;
     ///
     /// impl Drop for Foo {
     ///     fn drop(&mut self) {
     ///         println!("dropped!");
-    ///     }
-    /// }
-    ///
-    /// unsafe impl Reachable for Foo {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
     ///     }
     /// }
     ///
@@ -53,23 +43,13 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
     /// ```
     ///
     /// ```
-    /// use cactusref::{Adoptable, Rc, Reachable};
+    /// use cactusref::{Adoptable, Rc};
     ///
     /// struct Foo(u8);
     ///
     /// impl Drop for Foo {
     ///     fn drop(&mut self) {
     ///         println!("dropped {}!", self.0);
-    ///     }
-    /// }
-    ///
-    /// unsafe impl Reachable for Foo {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
     ///     }
     /// }
     ///
