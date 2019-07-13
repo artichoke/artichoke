@@ -317,11 +317,11 @@ fn test_clone_from_slice_panic() {
     struct Fail(u32, String);
 
     impl Clone for Fail {
-        fn clone(&self) -> Fail {
+        fn clone(&self) -> Self {
             if self.0 == 2 {
                 panic!();
             }
-            Fail(self.0, self.1.clone())
+            Self(self.0, self.1.clone())
         }
     }
 
