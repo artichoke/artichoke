@@ -5,10 +5,10 @@ use std::cell::{Cell, RefCell};
 use std::intrinsics::abort;
 
 use crate::link::Links;
-use crate::{Rc, Reachable};
+use crate::Rc;
 
 #[allow(clippy::module_name_repetitions)]
-pub trait RcBoxPtr<T: ?Sized + Reachable> {
+pub trait RcBoxPtr<T: ?Sized> {
     fn inner(&self) -> &RcBox<T>;
 
     #[inline]
@@ -59,19 +59,19 @@ pub trait RcBoxPtr<T: ?Sized + Reachable> {
     }
 }
 
-impl<T: ?Sized + Reachable> RcBoxPtr<T> for Rc<T> {
+impl<T: ?Sized> RcBoxPtr<T> for Rc<T> {
     fn inner(&self) -> &RcBox<T> {
         unsafe { self.ptr.as_ref() }
     }
 }
 
-impl<T: ?Sized + Reachable> RcBoxPtr<T> for RcBox<T> {
+impl<T: ?Sized> RcBoxPtr<T> for RcBox<T> {
     fn inner(&self) -> &Self {
         self
     }
 }
 
-pub struct RcBox<T: ?Sized + Reachable> {
+pub struct RcBox<T: ?Sized> {
     pub(crate) strong: Cell<usize>,
     pub(crate) weak: Cell<usize>,
     pub(crate) links: RefCell<Links<T>>,

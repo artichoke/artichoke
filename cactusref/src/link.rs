@@ -1,16 +1,13 @@
-use core::ptr::NonNull;
+use core::ptr::{self, NonNull};
 use core::slice;
-use std::hash::{Hash, Hasher};
 
 use crate::ptr::RcBox;
-use crate::Reachable;
 
-#[derive(Clone)]
-pub(crate) struct Links<T: ?Sized + Reachable> {
+pub(crate) struct Links<T: ?Sized> {
     pub registry: Vec<Link<T>>,
 }
 
-impl<T: ?Sized + Reachable> Links<T> {
+impl<T: ?Sized> Links<T> {
     pub fn contains(&self, other: &Link<T>) -> bool {
         self.registry.iter().any(|link| link.0 == other.0)
     }
@@ -29,12 +26,28 @@ impl<T: ?Sized + Reachable> Links<T> {
         self.registry.is_empty()
     }
 
+    pub fn len(&self) -> usize {
+        self.registry.len()
+    }
+
     pub fn iter(&self) -> slice::Iter<Link<T>> {
         self.registry.iter()
     }
+
+    pub fn iter_mut(&mut self) -> slice::IterMut<Link<T>> {
+        self.registry.iter_mut()
+    }
 }
 
-impl<T: ?Sized + Reachable> Default for Links<T> {
+impl<T: ?Sized> Clone for Links<T> {
+    fn clone(&self) -> Self {
+        Self {
+            registry: self.registry.clone(),
+        }
+    }
+}
+
+impl<T: ?Sized> Default for Links<T> {
     fn default() -> Self {
         Self {
             registry: Vec::default(),
@@ -42,34 +55,20 @@ impl<T: ?Sized + Reachable> Default for Links<T> {
     }
 }
 
-pub(crate) struct Link<T: ?Sized + Reachable>(pub NonNull<RcBox<T>>);
+pub(crate) struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
 
-impl<T: ?Sized + Reachable> Link<T> {
-    #[inline]
-    pub fn value(&self) -> &T {
-        unsafe { &self.0.as_ref().value }
-    }
-}
+impl<T: ?Sized> Copy for Link<T> {}
 
-impl<T: ?Sized + Reachable> Copy for Link<T> {}
-
-impl<T: ?Sized + Reachable> Clone for Link<T> {
+impl<T: ?Sized> Clone for Link<T> {
     fn clone(&self) -> Self {
         Self(self.0)
     }
 }
 
-impl<T: ?Sized + Reachable> Hash for Link<T> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let object_id = self.value().object_id();
-        object_id.hash(state);
-    }
-}
-
-impl<T: ?Sized + Reachable> PartialEq for Link<T> {
+impl<T: ?Sized> PartialEq for Link<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.value().object_id() == other.value().object_id()
+        ptr::eq(self.0.as_ptr(), other.0.as_ptr())
     }
 }
 
-impl<T: ?Sized + Reachable> Eq for Link<T> {}
+impl<T: ?Sized> Eq for Link<T> {}

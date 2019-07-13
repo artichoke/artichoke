@@ -2,10 +2,11 @@ use core::ptr;
 use std::alloc::{Alloc, Global, Layout};
 
 use crate::cycle::{cycle_refs, DetectCycles};
+use crate::link::Link;
 use crate::ptr::RcBoxPtr;
-use crate::{Rc, Reachable};
+use crate::Rc;
 
-unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
+unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
     /// Drops the [`Rc`].
     ///
     /// This will decrement the strong reference count. If the strong reference
@@ -123,19 +124,19 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
                     }
                 }
             } else if Self::is_orphaned_cycle(self) {
-                debug!(
-                    "orphaned cycle detected with object ids: {:?}",
-                    Self::cycle_objects(self)
-                );
                 // Break the cycle and remove all links to prevent loops when
                 // dropping cycle refs.
-                let cycle = cycle_refs(self);
-                for item in cycle.keys() {
+                let mut cycle = cycle_refs(Link(self.ptr));
+                debug!(
+                    "cactusref detected orphaned cycle with {} objects",
+                    cycle.len()
+                );
+                for item in cycle.iter() {
                     let mut links = item.0.as_ref().links.borrow_mut();
                     links.clear();
                 }
-                for (mut obj, _) in cycle {
-                    debug!("dropping cycle participant {{{}}}", obj.value().object_id());
+                for obj in cycle.iter_mut() {
+                    trace!("cactusref dropping member of orphaned cycle");
                     // destroy the contained object
                     ptr::drop_in_place(obj.0.as_mut());
                 }

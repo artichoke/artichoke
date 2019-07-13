@@ -12,7 +12,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::link::Links;
 use crate::ptr::{box_free, data_offset, is_dangling, set_data_ptr, RcBox, RcBoxPtr};
-use crate::{Reachable, Weak};
+use crate::Weak;
 
 /// A single-threaded reference-counting pointer. 'Rc' stands for 'Reference
 /// Counted'.
@@ -27,7 +27,7 @@ use crate::{Reachable, Weak};
 /// that you have to call them as e.g., [`Rc::get_mut(&mut value)`](Rc::get_mut)
 /// instead of `value.get_mut()`. This avoids conflicts with methods of the
 /// inner type `T`.
-pub struct Rc<T: ?Sized + Reachable> {
+pub struct Rc<T: ?Sized> {
     pub(crate) ptr: NonNull<RcBox<T>>,
     pub(crate) phantom: PhantomData<T>,
 }
@@ -35,7 +35,7 @@ pub struct Rc<T: ?Sized + Reachable> {
 impl<T: ?Sized> !Send for Rc<T> {}
 impl<T: ?Sized> !Sync for Rc<T> {}
 
-impl<T: Reachable> Rc<T> {
+impl<T> Rc<T> {
     /// Constructs a new `Rc<T>`.
     ///
     /// # Examples
@@ -131,7 +131,7 @@ impl<T: Reachable> Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Rc<T> {
+impl<T: ?Sized> Rc<T> {
     /// Consumes the `Rc`, returning the wrapped pointer.
     ///
     /// To avoid a memory leak the pointer must be converted back to an `Rc` using
@@ -420,7 +420,7 @@ impl<T: ?Sized + Reachable> Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Rc<T> {
+impl<T: ?Sized> Rc<T> {
     // Allocates an `RcBox<T>` with sufficient space for an unsized value
     unsafe fn allocate_for_ptr(ptr: *const T) -> *mut RcBox<T> {
         // Calculate layout using the given value.
@@ -474,7 +474,7 @@ impl<T: ?Sized + Reachable> Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Deref for Rc<T> {
+impl<T: ?Sized> Deref for Rc<T> {
     type Target = T;
 
     #[inline]
@@ -483,7 +483,7 @@ impl<T: ?Sized + Reachable> Deref for Rc<T> {
     }
 }
 
-impl<T: ?Sized + Clone + Reachable> Rc<T> {
+impl<T: ?Sized + Clone> Rc<T> {
     /// Makes a mutable reference into the given `Rc`.
     ///
     /// If there are other `Rc` pointers to the same value, then `make_mut` will
@@ -581,7 +581,7 @@ impl<T: ?Sized + Clone + Reachable> Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Clone for Rc<T> {
+impl<T: ?Sized> Clone for Rc<T> {
     /// Makes a clone of the `Rc` pointer.
     ///
     /// This creates another pointer to the same inner value, increasing the
@@ -618,14 +618,14 @@ impl<T: ?Sized + Reachable> Clone for Rc<T> {
     }
 }
 
-impl<T: ?Sized + Reachable + Default> Default for Rc<T> {
+impl<T: ?Sized + Default> Default for Rc<T> {
     #[inline]
     fn default() -> Self {
         Self::new(Default::default())
     }
 }
 
-impl<T: ?Sized + PartialEq + Reachable> PartialEq for Rc<T> {
+impl<T: ?Sized + PartialEq> PartialEq for Rc<T> {
     /// Equality for two `Rc`s.
     ///
     /// Two `Rc`s are equal if their inner values are equal.
@@ -661,9 +661,9 @@ impl<T: ?Sized + PartialEq + Reachable> PartialEq for Rc<T> {
     }
 }
 
-impl<T: ?Sized + Eq + Reachable> Eq for Rc<T> {}
+impl<T: ?Sized + Eq> Eq for Rc<T> {}
 
-impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for Rc<T> {
+impl<T: ?Sized + PartialOrd> PartialOrd for Rc<T> {
     /// Partial comparison for two `Rc`s.
     ///
     /// The two are compared by calling `partial_cmp()` on their inner values.
@@ -824,7 +824,7 @@ impl<T: ?Sized + PartialOrd + Reachable> PartialOrd for Rc<T> {
     }
 }
 
-impl<T: ?Sized + Ord + Reachable> Ord for Rc<T> {
+impl<T: ?Sized + Ord> Ord for Rc<T> {
     /// Comparison for two `Rc`s.
     ///
     /// The two are compared by calling `cmp()` on their inner values.
@@ -858,44 +858,44 @@ impl<T: ?Sized + Ord + Reachable> Ord for Rc<T> {
     }
 }
 
-impl<T: ?Sized + Hash + Reachable> Hash for Rc<T> {
+impl<T: ?Sized + Hash> Hash for Rc<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         (**self).hash(state);
     }
 }
 
-impl<T: ?Sized + Reachable + fmt::Display> fmt::Display for Rc<T> {
+impl<T: ?Sized + fmt::Display> fmt::Display for Rc<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.inner().value, f)
     }
 }
 
-impl<T: ?Sized + Reachable + fmt::Debug> fmt::Debug for Rc<T> {
+impl<T: ?Sized + fmt::Debug> fmt::Debug for Rc<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.inner().value, f)
     }
 }
 
-impl<T: Reachable> From<T> for Rc<T> {
+impl<T> From<T> for Rc<T> {
     fn from(t: T) -> Self {
         Self::new(t)
     }
 }
 
-impl<T: ?Sized + Reachable> From<Box<T>> for Rc<T> {
+impl<T: ?Sized> From<Box<T>> for Rc<T> {
     #[inline]
     fn from(v: Box<T>) -> Self {
         Self::from_box(v)
     }
 }
 
-impl<T: ?Sized + Reachable> borrow::Borrow<T> for Rc<T> {
+impl<T: ?Sized> borrow::Borrow<T> for Rc<T> {
     fn borrow(&self) -> &T {
         &**self
     }
 }
 
-impl<T: ?Sized + Reachable> AsRef<T> for Rc<T> {
+impl<T: ?Sized> AsRef<T> for Rc<T> {
     fn as_ref(&self) -> &T {
         &**self
     }

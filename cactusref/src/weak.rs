@@ -5,7 +5,7 @@ use std::alloc::{Alloc, Global, Layout};
 use std::fmt;
 
 use crate::ptr::{data_offset, data_offset_sized, is_dangling, set_data_ptr, RcBox, RcBoxPtr};
-use crate::{Rc, Reachable};
+use crate::Rc;
 
 /// `Weak` is a version of [`Rc`] that holds a non-owning reference to the
 /// managed value. The value is accessed by calling [`upgrade`](Weak::upgrade)
@@ -24,7 +24,7 @@ use crate::{Rc, Reachable};
 /// pointers from children back to their parents.
 ///
 /// The typical way to obtain a `Weak` pointer is to call [`Rc::downgrade`].
-pub struct Weak<T: ?Sized + Reachable> {
+pub struct Weak<T: ?Sized> {
     // This is a `NonNull` to allow optimizing the size of this type in enums,
     // but it is not necessarily a valid pointer.
     // `Weak::new` sets this to `usize::MAX` so that it doesn’t need
@@ -36,7 +36,7 @@ pub struct Weak<T: ?Sized + Reachable> {
 impl<T: ?Sized> !Send for Weak<T> {}
 impl<T: ?Sized> !Sync for Weak<T> {}
 
-impl<T: Reachable> Weak<T> {
+impl<T> Weak<T> {
     /// Constructs a new `Weak<T>`, without allocating any memory.
     /// Calling [`upgrade`](Weak::upgrade) on the return value always gives
     /// [`None`].
@@ -228,7 +228,7 @@ impl<T: Reachable> Weak<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Weak<T> {
+impl<T: ?Sized> Weak<T> {
     /// Attempts to upgrade the `Weak` pointer to an [`Rc`], extending
     /// the lifetime of the value if successful.
     ///
@@ -370,7 +370,7 @@ impl<T: ?Sized + Reachable> Weak<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Drop for Weak<T> {
+impl<T: ?Sized> Drop for Weak<T> {
     /// Drops the `Weak` pointer.
     ///
     /// # Examples
@@ -419,7 +419,7 @@ impl<T: ?Sized + Reachable> Drop for Weak<T> {
     }
 }
 
-impl<T: ?Sized + Reachable> Clone for Weak<T> {
+impl<T: ?Sized> Clone for Weak<T> {
     /// Makes a clone of the `Weak` pointer that points to the same value.
     ///
     /// # Examples
@@ -452,13 +452,13 @@ impl<T: ?Sized + Reachable> Clone for Weak<T> {
     }
 }
 
-impl<T: ?Sized + Reachable + fmt::Debug> fmt::Debug for Weak<T> {
+impl<T: ?Sized + fmt::Debug> fmt::Debug for Weak<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "(Weak)")
     }
 }
 
-impl<T: Reachable> Default for Weak<T> {
+impl<T> Default for Weak<T> {
     /// Constructs a new `Weak<T>`, allocating memory for `T` without
     /// initializing it. Calling [`upgrade`](Weak::upgrade) on the return value
     /// always gives [`None`].
