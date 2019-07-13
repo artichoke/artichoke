@@ -26,7 +26,7 @@ use crate::Weak;
 /// See the [module-level documentation](crate) for more details.
 ///
 /// The inherent methods of `Rc` are all associated functions, which means
-/// that you have to call them as e.g., [`Self::get_mut(&mut value)`](Self::get_mut)
+/// that you have to call them as e.g., [`Rc::get_mut(&mut value)`](Rc::get_mut)
 /// instead of `value.get_mut()`. This avoids conflicts with methods of the
 /// inner type `T`.
 pub struct Rc<T: ?Sized> {

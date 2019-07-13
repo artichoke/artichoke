@@ -1,28 +1,30 @@
-//! Trait for implementing cycles with strong references.
-//!
-//! This module provides an implementation of [`Adoptable`] for [`Rc`] which
-//! enables `Rc`s to form a cycle of strong references that `Rc`'s [`Drop`]
-//! implementation can reap.
-
 use crate::link::Link;
 use crate::ptr::RcBoxPtr;
 use crate::Rc;
 
-/// Take strong ownership of an object without forming a reference cycle.
+/// Perform bookkeeping to link two objects with an owned reference.
 ///
-/// To correctly use this trait, do not store strong references to form a cycle.
-#[doc(spotlight)]
-pub trait Adoptable {
-    /// `this` takes ownership of `other` without having a strong reference.
+/// Calling [`Adoptable::adopt`] builds an object graph which can be used by
+/// implementors to detect cycles.
+///
+/// **Warning**: this trait is unsafe because if it is implemented incorrectly,
+/// memory may leak or be double freed.
+pub unsafe trait Adoptable {
+    /// Perform bookkeeping to record that `this` has an owned reference to
+    /// `other`. Adoption is a one-way link.
     fn adopt(this: &Self, other: &Self);
 }
 
-impl<T: ?Sized> Adoptable for Rc<T> {
-    /// `this` takes ownership of `other` without having an `Rc`.
+/// Implementation of [`Adoptable`] for [`Rc`] which enables `Rc`s to form a
+/// cycle of strong references that are reaped by `Rc`'s [`Drop`]
+/// implementation.
+#[doc(spotlight)]
+unsafe impl<T: ?Sized> Adoptable for Rc<T> {
+    /// Perform bookkeeping to record that `this` has an owned reference to
+    /// `other`.
     ///
-    /// `this` stores a reference to `other`'s `RcBox` that is a manual
-    /// bookkeeping entry used by the reachability tests in `Rc`'s [`Drop`]
-    /// implementation.
+    /// `this` stores a reference to `other`'s `RcBox` so [`Rc`] can detect
+    /// cycles with reachability tests in [`Drop`].
     ///
     /// `other` has it's strong count increased by one without having a
     /// droppable `Rc` created. During cycle detection, this increased strong
