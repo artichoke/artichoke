@@ -75,6 +75,7 @@ pub struct RcBox<T: ?Sized> {
     pub(crate) strong: Cell<usize>,
     pub(crate) weak: Cell<usize>,
     pub(crate) links: RefCell<Links<T>>,
+    pub(crate) back_links: RefCell<Links<T>>,
     pub(crate) value: T,
 }
 
