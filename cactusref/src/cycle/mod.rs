@@ -55,18 +55,9 @@ pub(crate) fn reachable_links<T: ?Sized>(this: Link<T>) -> Links<T> {
 pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
     // Map of Link to number of strong references held by the cycle.
     let mut cycle_owned_refs = HashMap::default();
-    // `this` does not have a strong reference to itself.
-    let self_references = unsafe {
-        this.0
-            .as_ref()
-            .links
-            .borrow()
-            .registry
-            .get(&this)
-            .copied()
-            .unwrap_or_default()
-    };
-    cycle_owned_refs.insert(this, self_references);
+    // `this` may have strong references to itself.
+    let selfref = this.selfref();
+    cycle_owned_refs.insert(this, selfref);
     loop {
         let size = cycle_owned_refs.len();
         for item in cycle_owned_refs.clone().keys() {
