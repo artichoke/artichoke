@@ -6,7 +6,7 @@
 
 use crate::link::Link;
 use crate::ptr::RcBoxPtr;
-use crate::{Rc, Reachable};
+use crate::Rc;
 
 /// Take strong ownership of an object without forming a reference cycle.
 ///
@@ -17,7 +17,7 @@ pub trait Adoptable {
     fn adopt(this: &Self, other: &Self);
 }
 
-impl<T: ?Sized + Reachable> Adoptable for Rc<T> {
+impl<T: ?Sized> Adoptable for Rc<T> {
     /// `this` takes ownership of `other` without having an `Rc`.
     ///
     /// `this` stores a reference to `other`'s `RcBox` that is a manual
@@ -29,9 +29,9 @@ impl<T: ?Sized + Reachable> Adoptable for Rc<T> {
     /// count is used to determine whether the cycle is reachable by any objects
     /// outside of the cycle.
     fn adopt(this: &Self, other: &Self) {
-        let other_id = other.inner().value.object_id();
         let mut links = this.inner().links.borrow_mut();
-        if this.inner().value.object_id() != other_id && !links.contains(&Link(other.ptr)) {
+        // Do not adopt self, do not adopt other multiple times
+        if !Self::ptr_eq(this, other) && !links.contains(&Link(other.ptr)) {
             other.inc_strong();
             links.insert(Link(other.ptr));
         }
