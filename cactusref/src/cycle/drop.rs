@@ -1,9 +1,8 @@
 use core::ptr;
 use itertools::Itertools;
 use std::alloc::{Alloc, Global, Layout};
-use std::collections::{HashMap, HashSet};
 
-use crate::link::Link;
+use crate::cycle::{cycle_refs, DetectCycles};
 use crate::ptr::RcBoxPtr;
 use crate::{Rc, Reachable};
 
@@ -109,9 +108,9 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
         unsafe {
             self.dec_strong();
 
-            // If links is empty, the object is either not in a cycle or part of
-            // a cycle that has been link busted for deallocation.
             if self.inner().links.borrow().is_empty() {
+                // If links is empty, the object is either not in a cycle or
+                // part of a cycle that has been link busted for deallocation.
                 if self.strong() == 0 {
                     // destroy the contained object
                     ptr::drop_in_place(self.ptr.as_mut());
@@ -124,64 +123,23 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
                         Global.dealloc(self.ptr.cast(), Layout::for_value(self.ptr.as_ref()));
                     }
                 }
-                return;
-            }
-            // Perform a breadth first search over all of the links to determine
-            // the clique of refs that self can reach.
-            let mut clique = HashSet::new();
-            clique.insert(Link(self.ptr));
-            let mut strong_counts_in_cycle = HashMap::new();
-            loop {
-                let size = clique.len();
-                for item in clique.clone() {
-                    let links = item.0.as_ref().links.borrow();
-                    for link in links.iter() {
-                        clique.insert(*link);
-                    }
-                }
-                // BFS has found no new refs in the clique.
-                if size == clique.len() {
-                    break;
-                }
-            }
-            // Iterate over the items in the clique. For each pair of nodes,
-            // find nodes that can reach each other. These nodes form a cycle.
-            let mut cycle = HashSet::new();
-            for (left, right) in clique
-                .iter()
-                .cartesian_product(clique.iter())
-                .filter(|(left, right)| left != right)
-            {
-                let left_reaches_right = left.value().can_reach(right.value().object_id());
-                let right_reaches_left = right.value().can_reach(left.value().object_id());
-                let is_new = !cycle.iter().any(|item: &Link<T>| *item == *right);
-                if left_reaches_right && right_reaches_left && is_new {
-                    cycle.insert(*right);
-                    let count = *strong_counts_in_cycle.get(&right).unwrap_or(&0);
-                    strong_counts_in_cycle.insert(right, count + 1);
-                }
-            }
-            let cycle_has_external_owners = cycle.iter().any(|item| {
-                let cycle_strong_count = strong_counts_in_cycle[item];
-                item.0.as_ref().strong() > cycle_strong_count
-            });
-            if !cycle.is_empty() && !cycle_has_external_owners {
-                let ids = cycle
-                    .iter()
-                    .map(|item| item.value().object_id())
-                    .collect::<HashSet<_>>();
-                debug!("orphaned cycle detected with object ids: {:?}", ids);
+            } else if Self::is_orphaned_cycle(self) {
+                debug!(
+                    "orphaned cycle detected with object ids: {:?}",
+                    Self::cycle_objects(self)
+                );
                 // Break the cycle and remove all links to prevent loops when
                 // dropping cycle refs.
+                let cycle = cycle_refs(self);
                 for (left, right) in cycle
-                    .iter()
-                    .cartesian_product(cycle.iter())
+                    .keys()
+                    .cartesian_product(cycle.keys())
                     .filter(|(left, right)| left != right)
                 {
                     let mut links = left.0.as_ref().links.borrow_mut();
                     links.remove(right);
                 }
-                for mut obj in cycle {
+                for (mut obj, _) in cycle {
                     debug!("dropping cycle participant {{{}}}", obj.value().object_id());
                     // destroy the contained object
                     ptr::drop_in_place(obj.0.as_mut());
