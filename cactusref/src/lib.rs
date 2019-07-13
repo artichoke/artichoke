@@ -18,6 +18,7 @@
 extern crate log;
 
 mod adoptable;
+mod cycle;
 mod link;
 mod ptr;
 mod rc;
