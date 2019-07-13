@@ -7,10 +7,10 @@ use core::ptr::{self, NonNull};
 use std::alloc::{handle_alloc_error, Alloc, Global, Layout};
 use std::borrow;
 use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
+use crate::link::Links;
 use crate::ptr::{box_free, data_offset, is_dangling, set_data_ptr, RcBox, RcBoxPtr};
 use crate::{Reachable, Weak};
 
@@ -66,7 +66,7 @@ impl<T: Reachable> Rc<T> {
             ptr: Box::into_raw_non_null(Box::new(RcBox {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
-                links: RefCell::new(HashSet::default()),
+                links: RefCell::new(Links::default()),
                 value,
             })),
             phantom: PhantomData,

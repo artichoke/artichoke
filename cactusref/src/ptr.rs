@@ -2,10 +2,9 @@ use core::mem;
 use core::ptr::{self, NonNull, Unique};
 use std::alloc::{dealloc, Layout};
 use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
 use std::intrinsics::abort;
 
-use crate::link::Link;
+use crate::link::Links;
 use crate::{Rc, Reachable};
 
 #[allow(clippy::module_name_repetitions)]
@@ -75,7 +74,7 @@ impl<T: ?Sized + Reachable> RcBoxPtr<T> for RcBox<T> {
 pub struct RcBox<T: ?Sized + Reachable> {
     pub(crate) strong: Cell<usize>,
     pub(crate) weak: Cell<usize>,
-    pub(crate) links: RefCell<HashSet<Link<T>>>,
+    pub(crate) links: RefCell<Links<T>>,
     pub(crate) value: T,
 }
 
