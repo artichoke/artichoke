@@ -19,7 +19,7 @@ use crate::Weak;
 /// A single-threaded reference-counting pointer. 'Rc' stands for 'Reference
 /// Counted'.
 ///
-/// This `Rc` differs from the [`Rc`](cactusref) in `std` by adding support for
+/// This `Rc` differs from the [`Rc`](std::rc) in `std` by adding support for
 /// detecting and deallocating orphaned cycles of references. An orphaned cycle
 /// is one in which all objects are only owned by other members of the cycle.
 ///
@@ -257,8 +257,8 @@ impl<T: ?Sized> Rc<T> {
     /// Returns [`None`] otherwise, because it is not safe to
     /// mutate a shared value.
     ///
-    /// See also [`make_mut`](Rc::make_mut), which will [`clone`](Rc::clone) the
-    /// inner value when it's shared.
+    /// See also [`make_mut`](Rc::make_mut), which will [`clone`](Clone::clone)
+    /// the inner value when it's shared.
     ///
     /// # Examples
     ///
@@ -306,7 +306,7 @@ impl<T: Clone> Rc<T> {
     /// Makes a mutable reference into the given `Rc`.
     ///
     /// If there are other `Rc` pointers to the same value, then `make_mut` will
-    /// [`clone`](Rc::clone) the inner value to ensure unique ownership.  This
+    /// [`clone`](Clone::clone) the inner value to ensure unique ownership. This
     /// is also referred to as clone-on-write.
     ///
     /// If there are no other `Rc` pointers to this value, then [`Weak`]
