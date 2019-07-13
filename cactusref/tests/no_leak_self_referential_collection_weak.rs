@@ -29,7 +29,10 @@ fn cactusref_self_referential_collection_no_leak() {
     )
     .check_leaks(|_| {
         // each iteration creates 2MB of empty buffers
-        let vec = CactusRef::new(RefCell::new(RArray { inner: vec![], _alloc: s.clone() }));
+        let vec = CactusRef::new(RefCell::new(RArray {
+            inner: vec![],
+            _alloc: s.clone(),
+        }));
         for _ in 1..10 {
             vec.borrow_mut().inner.push(CactusRef::downgrade(&vec));
             CactusRef::adopt(&vec, &vec);
