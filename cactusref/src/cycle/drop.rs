@@ -1,5 +1,4 @@
 use core::ptr;
-use itertools::Itertools;
 use std::alloc::{Alloc, Global, Layout};
 
 use crate::cycle::{cycle_refs, DetectCycles};
@@ -131,13 +130,9 @@ unsafe impl<#[may_dangle] T: ?Sized + Reachable> Drop for Rc<T> {
                 // Break the cycle and remove all links to prevent loops when
                 // dropping cycle refs.
                 let cycle = cycle_refs(self);
-                for (left, right) in cycle
-                    .keys()
-                    .cartesian_product(cycle.keys())
-                    .filter(|(left, right)| left != right)
-                {
-                    let mut links = left.0.as_ref().links.borrow_mut();
-                    links.remove(right);
+                for item in cycle.keys() {
+                    let mut links = item.0.as_ref().links.borrow_mut();
+                    links.clear();
                 }
                 for (mut obj, _) in cycle {
                     debug!("dropping cycle participant {{{}}}", obj.value().object_id());
