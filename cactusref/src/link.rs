@@ -1,10 +1,12 @@
 use core::ptr::{self, NonNull};
-use core::slice;
+use std::collections::HashSet;
+use std::collections::hash_set;
+use std::hash::{Hash, Hasher};
 
 use crate::ptr::RcBox;
 
 pub(crate) struct Links<T: ?Sized> {
-    pub registry: Vec<Link<T>>,
+    pub registry: HashSet<Link<T>>,
 }
 
 impl<T: ?Sized> Links<T> {
@@ -14,7 +16,7 @@ impl<T: ?Sized> Links<T> {
 
     pub fn insert(&mut self, other: Link<T>) {
         if !(&*self).contains(&other) {
-            self.registry.push(other);
+            self.registry.insert(other);
         }
     }
 
@@ -30,12 +32,8 @@ impl<T: ?Sized> Links<T> {
         self.registry.len()
     }
 
-    pub fn iter(&self) -> slice::Iter<Link<T>> {
+    pub fn iter(&self) -> hash_set::Iter<Link<T>> {
         self.registry.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> slice::IterMut<Link<T>> {
-        self.registry.iter_mut()
     }
 }
 
@@ -50,7 +48,7 @@ impl<T: ?Sized> Clone for Links<T> {
 impl<T: ?Sized> Default for Links<T> {
     fn default() -> Self {
         Self {
-            registry: Vec::default(),
+            registry: HashSet::default(),
         }
     }
 }
@@ -72,3 +70,9 @@ impl<T: ?Sized> PartialEq for Link<T> {
 }
 
 impl<T: ?Sized> Eq for Link<T> {}
+
+impl<T: ?Sized> Hash for Link<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}

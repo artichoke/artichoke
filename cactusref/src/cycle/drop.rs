@@ -126,16 +126,16 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
             } else if Self::is_orphaned_cycle(self) {
                 // Break the cycle and remove all links to prevent loops when
                 // dropping cycle refs.
-                let mut cycle = cycle_refs(Link(self.ptr));
+                let cycle = cycle_refs(Link(self.ptr));
                 debug!(
                     "cactusref detected orphaned cycle with {} objects",
                     cycle.len()
                 );
-                for item in cycle.iter() {
+                for item in cycle.keys() {
                     let mut links = item.0.as_ref().links.borrow_mut();
                     links.clear();
                 }
-                for obj in cycle.iter_mut() {
+                for (mut obj, _) in cycle {
                     trace!("cactusref dropping member of orphaned cycle");
                     // destroy the contained object
                     ptr::drop_in_place(obj.0.as_mut());
