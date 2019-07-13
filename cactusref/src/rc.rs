@@ -1,16 +1,16 @@
-use core::any::Any;
+use core::borrow;
+use core::cell::{Cell, RefCell};
 use core::cmp::Ordering;
-use core::marker::PhantomData;
+use core::fmt;
+use core::hash::{Hash, Hasher};
+use core::marker::{Unpin, PhantomData};
 use core::mem;
 use core::ops::Deref;
 use core::pin::Pin;
 use core::ptr::{self, NonNull};
 use core::slice;
+
 use std::alloc::{handle_alloc_error, Alloc, Global, Layout};
-use std::borrow;
-use std::cell::{Cell, RefCell};
-use std::fmt;
-use std::hash::{Hash, Hasher};
 
 use crate::link::Links;
 use crate::ptr::{box_free, data_offset, is_dangling, set_data_ptr, RcBox, RcBoxPtr};
@@ -371,42 +371,6 @@ impl<T: Clone> Rc<T> {
         // the `Rc<T>` itself to be `mut`, so we're returning the only possible
         // reference to the inner value.
         unsafe { &mut this.ptr.as_mut().value }
-    }
-}
-
-impl Rc<dyn Any> {
-    /// Attempt to downcast the `Rc<dyn Any>` to a concrete type.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::any::Any;
-    /// use cactusref::Rc;
-    ///
-    /// fn print_if_string(value: Rc<dyn Any>) {
-    ///     if let Ok(string) = value.downcast::<String>() {
-    ///         println!("String ({}): {}", string.len(), string);
-    ///     }
-    /// }
-    ///
-    /// fn main() {
-    ///     let my_string = "Hello World".to_string();
-    ///     print_if_string(Rc::new(my_string));
-    ///     print_if_string(Rc::new(0i8));
-    /// }
-    /// ```
-    #[inline]
-    pub fn downcast<T: Any>(self) -> Result<Rc<T>, Rc<dyn Any>> {
-        if (*self).is::<T>() {
-            let ptr = self.ptr.cast::<RcBox<T>>();
-            mem::forget(self);
-            Ok(Rc {
-                ptr,
-                phantom: PhantomData,
-            })
-        } else {
-            Err(self)
-        }
     }
 }
 

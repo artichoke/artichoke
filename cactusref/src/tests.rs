@@ -171,9 +171,6 @@ fn into_from_raw() {
 
 // #[test]
 // fn test_into_from_raw_unsized() {
-//     use std::fmt::Display;
-//     use std::string::ToString;
-//
 //     let rc: Rc<str> = Rc::from("foo");
 //
 //     let ptr = Rc::into_raw(rc.clone());
@@ -181,14 +178,6 @@ fn into_from_raw() {
 //
 //     assert_eq!(unsafe { &*ptr }, "foo");
 //     assert_eq!(rc, rc2);
-//
-//     let rc: Rc<dyn Display> = Rc::new(123);
-//
-//     let ptr = Rc::into_raw(rc.clone());
-//     let rc2 = unsafe { Rc::from_raw(ptr) };
-//
-//     assert_eq!(unsafe { &*ptr }.to_string(), "123");
-//     assert_eq!(rc2.to_string(), "123");
 // }
 
 #[test]
@@ -270,12 +259,6 @@ fn test_show() {
     let item = Rc::new(75);
     assert_eq!(format!("{:?}", item), "75");
 }
-
-// #[test]
-// fn test_unsized() {
-//     let item: Rc<[i32]> = Rc::new([1, 2, 3]);
-//     assert_eq!(item, item.clone());
-// }
 
 #[test]
 fn test_from_owned() {
@@ -405,24 +388,4 @@ fn test_ptr_eq() {
 //     let r: Rc<[u32]> = Rc::from(v);
 //
 //     assert_eq!(&r[..], [1, 2, 3]);
-// }
-//
-// #[test]
-// fn test_downcast() {
-//     use std::any::Any;
-//
-//     let r1: Rc<dyn Any> = Rc::new(i32::max_value());
-//     let r2: Rc<dyn Any> = Rc::new("abc");
-//
-//     assert!(r1.clone().downcast::<u32>().is_err());
-//
-//     let r1i32 = r1.downcast::<i32>();
-//     assert!(r1i32.is_ok());
-//     assert_eq!(r1i32.unwrap(), Rc::new(i32::max_value()));
-//
-//     assert!(r2.clone().downcast::<i32>().is_err());
-//
-//     let r2str = r2.downcast::<&'static str>();
-//     assert!(r2str.is_ok());
-//     assert_eq!(r2str.unwrap(), Rc::new("abc"));
 // }
