@@ -1,7 +1,7 @@
 #![deny(clippy::all, clippy::pedantic)]
 #![deny(warnings, intra_doc_link_resolution_failure)]
 
-use cactusref::{Adoptable, CactusRef, Reachable};
+use cactusref::{Adoptable, CactusRef};
 
 mod leak;
 
@@ -12,23 +12,6 @@ static mut CLOSED_CYCLE: bool = true;
 
 struct RString {
     inner: String,
-    object_id: usize,
-}
-
-unsafe impl Reachable for RString {
-    fn object_id(&self) -> usize {
-        self.object_id
-    }
-
-    fn can_reach(&self, object_id: usize) -> bool {
-        if unsafe { CLOSED_CYCLE } {
-            return true;
-        }
-        match self.object_id() {
-            9 => object_id == 0,
-            self_id => self_id + 1 == object_id,
-        }
-    }
 }
 
 #[test]
@@ -50,14 +33,12 @@ fn cactusref_adopt_with_reachability_no_leak() {
         // each iteration creates 10MB of `String`s
         let first = CactusRef::new(RString {
             inner: s.clone(),
-            object_id: 0,
         });
         let mut last = CactusRef::clone(&first);
-        for object_id in 1..10 {
+        for _ in 1..10 {
             assert_eq!(first.inner, s);
             let obj = CactusRef::new(RString {
                 inner: s.clone(),
-                object_id,
             });
             CactusRef::adopt(&obj, &last);
             last = obj;
