@@ -63,10 +63,7 @@ pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
     {
         let left_reaches_right = reachable_links(*left).contains(right);
         let right_reaches_left = reachable_links(*right).contains(left);
-        let is_new = !cycle_owned_refs
-            .keys()
-            .any(|item: &Link<T>| *item == *right);
-        if left_reaches_right && right_reaches_left && is_new {
+        if left_reaches_right && right_reaches_left {
             let count = *cycle_owned_refs.entry(*right).or_insert(0);
             cycle_owned_refs.insert(*right, count + 1);
         }
