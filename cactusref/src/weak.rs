@@ -38,26 +38,16 @@ impl<T: ?Sized> !Sync for Weak<T> {}
 
 impl<T> Weak<T> {
     /// Constructs a new `Weak<T>`, without allocating any memory.
+    ///
     /// Calling [`upgrade`](Weak::upgrade) on the return value always gives
     /// [`None`].
     ///
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Reachable, Weak};
+    /// use cactusref::Weak;
     ///
-    /// struct Object(i64);
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let empty: Weak<Object> = Weak::new();
+    /// let empty: Weak<i64> = Weak::new();
     /// assert!(empty.upgrade().is_none());
     /// ```
     pub fn new() -> Self {
@@ -77,27 +67,15 @@ impl<T> Weak<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     /// use std::ptr;
     ///
-    /// struct Object(String);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let strong = Rc::new(Object("hello".to_owned()));
+    /// let strong = Rc::new("hello".to_owned());
     /// let weak = Rc::downgrade(&strong);
     /// // Both point to the same object
     /// assert!(ptr::eq(&*strong, weak.as_raw()));
     /// // The strong here keeps it alive, so we can still access the object.
-    /// assert_eq!("hello", unsafe { &(*weak.as_raw()).0 });
+    /// assert_eq!("hello", unsafe { &*weak.as_raw() });
     ///
     /// drop(strong);
     /// // But not any more. We can do weak.as_raw(), but accessing the pointer
@@ -112,8 +90,8 @@ impl<T> Weak<T> {
                 let ptr = inner as *const RcBox<T>;
                 // Note: while the pointer we create may already point to
                 // dropped value, the allocation still lives (it must hold the
-                // weak point as long as we are alive). Therefore, the offset is
-                // OK to do, it won't get out of the allocation.
+                // weak point as long as we are alive).  Therefore, the offset
+                // is OK to do, it won't get out of the allocation.
                 let ptr = unsafe { (ptr as *const u8).offset(offset) };
                 ptr as *const T
             }
@@ -132,27 +110,14 @@ impl<T> Weak<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable, Weak};
+    /// use cactusref::{Rc, Weak};
     ///
-    /// #[derive(Debug, PartialEq, Eq)]
-    /// struct Object(String);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let strong = Rc::new(Object("hello".to_owned()));
+    /// let strong = Rc::new("hello".to_owned());
     /// let weak = Rc::downgrade(&strong);
     /// let raw = weak.into_raw();
     ///
     /// assert_eq!(1, Rc::weak_count(&strong));
-    /// assert_eq!("hello", unsafe { &(*raw).0 });
+    /// assert_eq!("hello", unsafe { &*raw });
     ///
     /// drop(unsafe { Weak::from_raw(raw) });
     /// assert_eq!(0, Rc::weak_count(&strong));
@@ -183,29 +148,16 @@ impl<T> Weak<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable, Weak};
+    /// use cactusref::{Rc, Weak};
     ///
-    /// #[derive(Debug)]
-    /// struct Object(String);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let strong = Rc::new(Object("hello".to_owned()));
+    /// let strong = Rc::new("hello".to_owned());
     ///
     /// let raw_1 = Rc::downgrade(&strong).into_raw();
     /// let raw_2 = Rc::downgrade(&strong).into_raw();
     ///
     /// assert_eq!(2, Rc::weak_count(&strong));
     ///
-    /// assert_eq!("hello", &*unsafe { Weak::from_raw(raw_1) }.upgrade().unwrap().0);
+    /// assert_eq!("hello", &*unsafe { Weak::from_raw(raw_1) }.upgrade().unwrap());
     /// assert_eq!(1, Rc::weak_count(&strong));
     ///
     /// drop(strong);
@@ -237,21 +189,9 @@ impl<T: ?Sized> Weak<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let five = Rc::new(Object(5));
+    /// let five = Rc::new(5);
     ///
     /// let weak_five = Rc::downgrade(&five);
     ///
@@ -304,7 +244,7 @@ impl<T: ?Sized> Weak<T> {
     }
 
     /// Returns `None` when the pointer is dangling and there is no allocated
-    /// `RcBox` (i.e., when this `Weak` was created by `Weak::new`).
+    /// `RcBox` (i.e., when this `Weak` was created by [`Weak::new`]).
     #[inline]
     fn inner(&self) -> Option<&RcBox<T>> {
         if is_dangling(self.ptr) {
@@ -325,27 +265,15 @@ impl<T: ?Sized> Weak<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable};
+    /// use cactusref::Rc;
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let first_rc = Rc::new(Object(5));
+    /// let first_rc = Rc::new(5);
     /// let first = Rc::downgrade(&first_rc);
     /// let second = Rc::downgrade(&first_rc);
     ///
     /// assert!(first.ptr_eq(&second));
     ///
-    /// let third_rc = Rc::new(Object(5));
+    /// let third_rc = Rc::new(5);
     /// let third = Rc::downgrade(&third_rc);
     ///
     /// assert!(!first.ptr_eq(&third));
@@ -376,17 +304,7 @@ impl<T: ?Sized> Drop for Weak<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable, Weak};
-    ///
-    /// unsafe impl Reachable for Foo {
-    ///     fn object_id(&self) -> usize {
-    ///         0
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
+    /// use cactusref::{Rc, Weak};
     ///
     /// struct Foo;
     ///
@@ -425,21 +343,9 @@ impl<T: ?Sized> Clone for Weak<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Rc, Reachable, Weak};
+    /// use cactusref::{Rc, Weak};
     ///
-    /// struct Object(i32);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let weak_five = Rc::downgrade(&Rc::new(Object(5)));
+    /// let weak_five = Rc::downgrade(&Rc::new(5));
     ///
     /// let _ = Weak::clone(&weak_five);
     /// ```
@@ -466,21 +372,9 @@ impl<T> Default for Weak<T> {
     /// # Examples
     ///
     /// ```
-    /// use cactusref::{Reachable, Weak};
+    /// use cactusref::Weak;
     ///
-    /// struct Object(i64);
-    ///
-    /// unsafe impl Reachable for Object {
-    ///     fn object_id(&self) -> usize {
-    ///         self.0 as usize
-    ///     }
-    ///
-    ///     fn can_reach(&self, _object_id: usize) -> bool {
-    ///         false
-    ///     }
-    /// }
-    ///
-    /// let empty: Weak<Object> = Default::default();
+    /// let empty: Weak<i64> = Default::default();
     /// assert!(empty.upgrade().is_none());
     /// ```
     fn default() -> Self {
