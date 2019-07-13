@@ -31,11 +31,10 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
     /// outside of the cycle.
     fn adopt(this: &Self, other: &Self) {
         let mut links = this.inner().links.borrow_mut();
-        // Do not adopt self, do not adopt other multiple times
-        if !Self::ptr_eq(this, other) && !links.contains(&Link(other.ptr)) {
-            other.inc_strong();
-            links.insert(Link(other.ptr));
-        }
+        // Allow `this` to be self-referential and allow `this` to adopt `other`
+        // multiple times, for example if building a `Vec` wrapper.
+        other.inc_strong();
+        links.insert(Link(other.ptr));
         let mut links = other.inner().back_links.borrow_mut();
         links.insert(Link(this.ptr));
     }
