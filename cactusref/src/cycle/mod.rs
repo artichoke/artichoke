@@ -8,6 +8,8 @@ use crate::{Rc, Reachable};
 mod drop;
 
 trait DetectCycles {
+    fn can_reach(this: &Self, other: &Self) -> bool;
+
     fn reachable_objects(this: &Self) -> HashSet<usize>;
 
     fn cycle_objects(this: &Self) -> HashSet<usize>;
@@ -18,6 +20,12 @@ trait DetectCycles {
 }
 
 impl<T: ?Sized + Reachable> DetectCycles for Rc<T> {
+    fn can_reach(this: &Self, other: &Self) -> bool {
+        this.inner()
+            .value
+            .can_reach(other.inner().value.object_id())
+    }
+
     fn reachable_objects(this: &Self) -> HashSet<usize> {
         reachable_links(this)
             .iter()
