@@ -29,9 +29,9 @@ impl<T: ?Sized> DetectCycles for Rc<T> {
     }
 }
 
+// Perform a breadth first search over all of the links to determine the clique
+// of refs that self can reach.
 pub(crate) fn reachable_links<T: ?Sized>(this: Link<T>) -> Links<T> {
-    // Perform a breadth first search over all of the links to determine the
-    // clique of refs that self can reach.
     let mut clique = Links::default();
     clique.insert(this);
     loop {
@@ -50,20 +50,26 @@ pub(crate) fn reachable_links<T: ?Sized>(this: Link<T>) -> Links<T> {
     clique
 }
 
+// Perform a breadth first search over all of the forward and backward links to
+// determine the clique of nodes in a cycle and their strong counts.
 pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
-    // Perform a breadth first search over all of the forward and backward links
-    // to determine the clique of nodes in a cycle and their strong counts.
+    // Map of Link to number of strong references held by the cycle.
     let mut cycle_owned_refs = HashMap::default();
+    // `this` does not have a strong reference to itself.
     cycle_owned_refs.insert(this, 0);
     loop {
         let size = cycle_owned_refs.len();
         for item in cycle_owned_refs.clone().keys() {
             let links = unsafe { item.0.as_ref() }.links.borrow();
             for link in links.iter() {
+                // Forward references contribute to strong ownership counts.
                 *cycle_owned_refs.entry(*link).or_insert(0) += 1;
             }
             let links = unsafe { item.0.as_ref() }.back_links.borrow();
             for link in links.iter() {
+                // Back references do not contribute to strong ownership counts,
+                // but they are added to the set of cycle owned refs so BFS can
+                // include them in the reachability analysis.
                 cycle_owned_refs.entry(*link).or_insert(0);
             }
         }
