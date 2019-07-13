@@ -6,7 +6,8 @@
     doc_spotlight,
     dropck_eyepatch,
     optin_builtin_traits,
-    ptr_internals
+    ptr_internals,
+    specialization
 )]
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
