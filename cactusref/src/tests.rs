@@ -283,109 +283,109 @@ fn test_ptr_eq() {
     assert!(!Rc::ptr_eq(&five, &other_five));
 }
 
-// #[test]
-// fn test_from_str() {
-//     let r: Rc<str> = Rc::from("foo");
-//
-//     assert_eq!(&r[..], "foo");
-// }
-//
-// #[test]
-// fn test_copy_from_slice() {
-//     let s: &[u32] = &[1, 2, 3];
-//     let r: Rc<[u32]> = Rc::from(s);
-//
-//     assert_eq!(&r[..], [1, 2, 3]);
-// }
-//
-// #[test]
-// fn test_clone_from_slice() {
-//     #[derive(Clone, Debug, Eq, PartialEq)]
-//     struct X(u32);
-//
-//     let s: &[X] = &[X(1), X(2), X(3)];
-//     let r: Rc<[X]> = Rc::from(s);
-//
-//     assert_eq!(&r[..], s);
-// }
-//
-// #[test]
-// #[should_panic]
-// fn test_clone_from_slice_panic() {
-//     use std::string::{String, ToString};
-//
-//     struct Fail(u32, String);
-//
-//     impl Clone for Fail {
-//         fn clone(&self) -> Fail {
-//             if self.0 == 2 {
-//                 panic!();
-//             }
-//             Fail(self.0, self.1.clone())
-//         }
-//     }
-//
-//     let s: &[Fail] = &[
-//         Fail(0, "foo".to_string()),
-//         Fail(1, "bar".to_string()),
-//         Fail(2, "baz".to_string()),
-//     ];
-//
-//     // Should panic, but not cause memory corruption
-//     let _r: Rc<[Fail]> = Rc::from(s);
-// }
-//
-// #[test]
-// fn test_from_box() {
-//     let b: Box<u32> = Box::new(123);
-//     let r: Rc<u32> = Rc::from(b);
-//
-//     assert_eq!(*r, 123);
-// }
-//
-// #[test]
-// fn test_from_box_str() {
-//     use std::string::String;
-//
-//     let s = String::from("foo").into_boxed_str();
-//     let r: Rc<str> = Rc::from(s);
-//
-//     assert_eq!(&r[..], "foo");
-// }
-//
-// #[test]
-// fn test_from_box_slice() {
-//     let s = vec![1, 2, 3].into_boxed_slice();
-//     let r: Rc<[u32]> = Rc::from(s);
-//
-//     assert_eq!(&r[..], [1, 2, 3]);
-// }
-//
-// #[test]
-// fn test_from_box_trait() {
-//     use std::fmt::Display;
-//     use std::string::ToString;
-//
-//     let b: Box<dyn Display> = Box::new(123);
-//     let r: Rc<dyn Display> = Rc::from(b);
-//
-//     assert_eq!(r.to_string(), "123");
-// }
-//
-// #[test]
-// fn test_from_box_trait_zero_sized() {
-//     use std::fmt::Debug;
-//
-//     let b: Box<dyn Debug> = Box::new(());
-//     let r: Rc<dyn Debug> = Rc::from(b);
-//
-//     assert_eq!(format!("{:?}", r), "()");
-// }
-//
-// #[test]
-// fn test_from_vec() {
-//     let v = vec![1, 2, 3];
-//     let r: Rc<[u32]> = Rc::from(v);
-//
-//     assert_eq!(&r[..], [1, 2, 3]);
-// }
+#[test]
+fn test_from_str() {
+    let r: Rc<str> = Rc::from("foo");
+
+    assert_eq!(&r[..], "foo");
+}
+
+#[test]
+fn test_copy_from_slice() {
+    let s: &[u32] = &[1, 2, 3];
+    let r: Rc<[u32]> = Rc::from(s);
+
+    assert_eq!(&r[..], [1, 2, 3]);
+}
+
+#[test]
+fn test_clone_from_slice() {
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    struct X(u32);
+
+    let s: &[X] = &[X(1), X(2), X(3)];
+    let r: Rc<[X]> = Rc::from(s);
+
+    assert_eq!(&r[..], s);
+}
+
+#[test]
+#[should_panic]
+fn test_clone_from_slice_panic() {
+    use std::string::{String, ToString};
+
+    struct Fail(u32, String);
+
+    impl Clone for Fail {
+        fn clone(&self) -> Fail {
+            if self.0 == 2 {
+                panic!();
+            }
+            Fail(self.0, self.1.clone())
+        }
+    }
+
+    let s: &[Fail] = &[
+        Fail(0, "foo".to_string()),
+        Fail(1, "bar".to_string()),
+        Fail(2, "baz".to_string()),
+    ];
+
+    // Should panic, but not cause memory corruption
+    let _r: Rc<[Fail]> = Rc::from(s);
+}
+
+#[test]
+fn test_from_box() {
+    let b: Box<u32> = Box::new(123);
+    let r: Rc<u32> = Rc::from(b);
+
+    assert_eq!(*r, 123);
+}
+
+#[test]
+fn test_from_box_str() {
+    use std::string::String;
+
+    let s = String::from("foo").into_boxed_str();
+    let r: Rc<str> = Rc::from(s);
+
+    assert_eq!(&r[..], "foo");
+}
+
+#[test]
+fn test_from_box_slice() {
+    let s = vec![1, 2, 3].into_boxed_slice();
+    let r: Rc<[u32]> = Rc::from(s);
+
+    assert_eq!(&r[..], [1, 2, 3]);
+}
+
+#[test]
+fn test_from_box_trait() {
+    use std::fmt::Display;
+    use std::string::ToString;
+
+    let b: Box<dyn Display> = Box::new(123);
+    let r: Rc<dyn Display> = Rc::from(b);
+
+    assert_eq!(r.to_string(), "123");
+}
+
+#[test]
+fn test_from_box_trait_zero_sized() {
+    use std::fmt::Debug;
+
+    let b: Box<dyn Debug> = Box::new(());
+    let r: Rc<dyn Debug> = Rc::from(b);
+
+    assert_eq!(format!("{:?}", r), "()");
+}
+
+#[test]
+fn test_from_vec() {
+    let v = vec![1, 2, 3];
+    let r: Rc<[u32]> = Rc::from(v);
+
+    assert_eq!(&r[..], [1, 2, 3]);
+}
