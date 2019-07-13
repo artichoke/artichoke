@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::collections::HashMap;
 
 use crate::link::{Link, Links};
@@ -30,9 +29,9 @@ impl<T: ?Sized> DetectCycles for Rc<T> {
     }
 }
 
+// Perform a breadth first search over all of the links to determine the clique
+// of refs that self can reach.
 pub(crate) fn reachable_links<T: ?Sized>(this: Link<T>) -> Links<T> {
-    // Perform a breadth first search over all of the links to determine the
-    // clique of refs that self can reach.
     let mut clique = Links::default();
     clique.insert(this);
     loop {
@@ -51,21 +50,32 @@ pub(crate) fn reachable_links<T: ?Sized>(this: Link<T>) -> Links<T> {
     clique
 }
 
+// Perform a breadth first search over all of the forward and backward links to
+// determine the clique of nodes in a cycle and their strong counts.
 pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
-    // Iterate over the items in the clique. For each pair of nodes, find nodes
-    // that can reach each other. These nodes form a cycle.
+    // Map of Link to number of strong references held by the cycle.
     let mut cycle_owned_refs = HashMap::default();
-    let clique = reachable_links(this);
-    for (left, right) in clique
-        .iter()
-        .cartesian_product(clique.iter())
-        .filter(|(left, right)| left != right)
-    {
-        let left_reaches_right = reachable_links(*left).contains(right);
-        let right_reaches_left = reachable_links(*right).contains(left);
-        if left_reaches_right && right_reaches_left {
-            let count = *cycle_owned_refs.entry(*right).or_insert(0);
-            cycle_owned_refs.insert(*right, count + 1);
+    // `this` does not have a strong reference to itself.
+    cycle_owned_refs.insert(this, 0);
+    loop {
+        let size = cycle_owned_refs.len();
+        for item in cycle_owned_refs.clone().keys() {
+            let links = unsafe { item.0.as_ref() }.links.borrow();
+            for link in links.iter() {
+                // Forward references contribute to strong ownership counts.
+                *cycle_owned_refs.entry(*link).or_insert(0) += 1;
+            }
+            let links = unsafe { item.0.as_ref() }.back_links.borrow();
+            for link in links.iter() {
+                // Back references do not contribute to strong ownership counts,
+                // but they are added to the set of cycle owned refs so BFS can
+                // include them in the reachability analysis.
+                cycle_owned_refs.entry(*link).or_insert(0);
+            }
+        }
+        // BFS has found no new refs in the clique.
+        if size == cycle_owned_refs.len() {
+            break;
         }
     }
     cycle_owned_refs

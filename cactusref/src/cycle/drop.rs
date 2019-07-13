@@ -114,6 +114,8 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
                 for item in cycle.keys() {
                     let mut links = item.0.as_ref().links.borrow_mut();
                     links.clear();
+                    let mut links = item.0.as_ref().back_links.borrow_mut();
+                    links.clear();
                 }
                 for (mut obj, _) in cycle {
                     trace!("cactusref dropping member of orphaned cycle");

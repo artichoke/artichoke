@@ -36,5 +36,7 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
             other.inc_strong();
             links.insert(Link(other.ptr));
         }
+        let mut links = other.inner().back_links.borrow_mut();
+        links.insert(Link(this.ptr));
     }
 }
