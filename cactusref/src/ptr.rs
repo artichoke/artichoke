@@ -57,6 +57,27 @@ pub trait RcBoxPtr<T: ?Sized> {
     fn dec_weak(&self) {
         self.inner().weak.set(self.weak() - 1);
     }
+
+    #[inline]
+    fn link(&self) -> usize {
+        self.inner().link.get()
+    }
+
+    #[inline]
+    fn inc_link(&self) {
+        // We want to abort on overflow instead of dropping the value.
+        if self.link() == usize::max_value() {
+            unsafe {
+                abort();
+            }
+        }
+        self.inner().link.set(self.link() + 1);
+    }
+
+    #[inline]
+    fn dec_link(&self) {
+        self.inner().link.set(self.link() - 1);
+    }
 }
 
 impl<T: ?Sized> RcBoxPtr<T> for Rc<T> {
@@ -74,6 +95,7 @@ impl<T: ?Sized> RcBoxPtr<T> for RcBox<T> {
 pub struct RcBox<T: ?Sized> {
     pub(crate) strong: Cell<usize>,
     pub(crate) weak: Cell<usize>,
+    pub(crate) link: Cell<usize>,
     pub(crate) links: RefCell<Links<T>>,
     pub(crate) back_links: RefCell<Links<T>>,
     pub(crate) value: T,

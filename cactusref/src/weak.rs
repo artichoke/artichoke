@@ -206,7 +206,7 @@ impl<T: ?Sized> Weak<T> {
     /// ```
     pub fn upgrade(&self) -> Option<Rc<T>> {
         let inner = self.inner()?;
-        if inner.strong() == 0 {
+        if inner.strong() <= inner.link() {
             None
         } else {
             inner.inc_strong();

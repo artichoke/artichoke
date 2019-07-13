@@ -54,7 +54,7 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
     /// assert_eq!(weak.upgrade().unwrap().borrow().buffer.len(), 10);
     /// // 1 for the array binding, 10 for the `Rc`s in buffer, and 10
     /// // for the self adoptions.
-    /// assert_eq!(Rc::strong_count(&array), 21);
+    /// assert_eq!(Rc::strong_count(&array), 11);
     /// drop(array);
     /// assert!(weak.upgrade().is_none());
     /// ```
@@ -65,6 +65,9 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
         // `other`. These behaviors allow implementing self-referential
         // collection types.
         other.inc_strong();
+        if Self::ptr_eq(this, other) {
+            this.inc_link();
+        }
         // Store a forward reference to `other` in `this`. This bookkeeping logs
         // a strong reference and is used for discovering cycles.
         let mut links = this.inner().links.borrow_mut();

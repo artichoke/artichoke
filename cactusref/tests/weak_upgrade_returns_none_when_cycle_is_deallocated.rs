@@ -40,6 +40,7 @@ fn weak_upgrade_returns_none_when_cycle_is_deallocated() {
         assert_eq!(CactusRef::strong_count(&vec), 11);
         let weak = CactusRef::downgrade(&vec);
         assert!(weak.upgrade().is_some());
+        assert_eq!(weak.weak_count(), Some(1));
         drop(vec);
         assert!(weak.upgrade().is_none());
     });

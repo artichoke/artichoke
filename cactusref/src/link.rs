@@ -55,7 +55,7 @@ pub(crate) struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
 
 impl<T: ?Sized> Link<T> {
     #[inline]
-    pub fn selfref(&self) -> usize {
+    pub fn self_link(&self) -> usize {
         let item = unsafe { self.0.as_ref() };
         item.links
             .borrow()

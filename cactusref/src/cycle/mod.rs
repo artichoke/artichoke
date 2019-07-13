@@ -56,8 +56,7 @@ pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
     // Map of Link to number of strong references held by the cycle.
     let mut cycle_owned_refs = HashMap::default();
     // `this` may have strong references to itself.
-    let selfref = this.selfref();
-    cycle_owned_refs.insert(this, selfref);
+    cycle_owned_refs.insert(this, this.self_link());
     loop {
         let size = cycle_owned_refs.len();
         for item in cycle_owned_refs.clone().keys() {
