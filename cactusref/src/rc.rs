@@ -398,6 +398,7 @@ impl<T: ?Sized> Rc<T> {
 
         ptr::write(&mut (*inner).strong, Cell::new(1));
         ptr::write(&mut (*inner).weak, Cell::new(1));
+        ptr::write(&mut (*inner).links, RefCell::new(Links::default()));
 
         inner
     }
