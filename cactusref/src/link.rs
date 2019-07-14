@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::ptr::RcBox;
 
-pub(crate) struct Links<T: ?Sized> {
+pub struct Links<T: ?Sized> {
     pub registry: HashMap<Link<T>, usize>,
 }
 
@@ -58,7 +58,7 @@ impl<T: ?Sized> Default for Links<T> {
     }
 }
 
-pub(crate) struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
+pub struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
 
 impl<T: ?Sized> Link<T> {
     #[inline]

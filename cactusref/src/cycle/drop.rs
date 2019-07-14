@@ -1,7 +1,7 @@
 use core::ptr;
 use std::alloc::{Alloc, Global, Layout};
 
-use crate::cycle::{cycle_refs, DetectCycles};
+use crate::cycle::DetectCycles;
 use crate::link::Link;
 use crate::ptr::RcBoxPtr;
 use crate::Rc;
@@ -85,9 +85,19 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
     /// If the cycle is orphaned, `Rc` busts all the link `HashSet`s and
     /// deallocates each object.
     fn drop(&mut self) {
-        unsafe {
-            self.dec_strong();
+        // If a drop is occuring its because there was an existing `Rc` which
+        // is maintaining a strong count. Decrement the strong count on drop,
+        // even if this `Rc` is dead.
+        self.dec_strong();
 
+        // If `self` is held in a cycle, as we deallocate members of the cycle,
+        // they will drop their refs to `self`. To prevent a double free, mark
+        // nodes as dead if they have already been deallocated and short
+        // circuit.
+        if self.is_dead() {
+            return;
+        }
+        unsafe {
             if self.inner().links.borrow().is_empty() {
                 // If links is empty, the object is either not in a cycle or
                 // part of a cycle that has been link busted for deallocation.
@@ -100,7 +110,13 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
                         while links.contains(&Link(self.ptr)) {
                             links.remove(Link(self.ptr));
                         }
+                        let mut links = item.0.as_ref().back_links.borrow_mut();
+                        while links.contains(&Link(self.ptr)) {
+                            links.remove(Link(self.ptr));
+                        }
                     }
+                    // Kill self because it may have been self-adopted.
+                    self.kill();
                     // destroy the contained object
                     ptr::drop_in_place(self.ptr.as_mut());
 
@@ -112,29 +128,92 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
                         Global.dealloc(self.ptr.cast(), Layout::for_value(self.ptr.as_ref()));
                     }
                 }
-            } else if Self::is_orphaned_cycle(self) {
-                // Break the cycle and remove all links to prevent loops when
-                // dropping cycle refs.
-                let cycle = cycle_refs(Link(self.ptr));
+            } else if let Some(cycle) = Self::orphaned_cycle(self) {
                 debug!(
                     "cactusref detected orphaned cycle with {} objects",
                     cycle.len()
                 );
-                for item in cycle.keys() {
-                    let item = item.0.as_ref();
+                // Remove reverse links so `Drop` does not try to reference the
+                // link we are about to deallocate when doing cycle detection.
+                for ptr in cycle.keys() {
+                    let item = ptr.0.as_ref();
                     let mut links = item.links.borrow_mut();
                     links.clear();
                     let mut links = item.back_links.borrow_mut();
                     links.clear();
                 }
-                for (mut obj, refcount) in cycle {
+                for (mut ptr, refcount) in cycle.clone() {
                     trace!(
                         "cactusref dropping member of orphaned cycle with refcount {}",
                         refcount
                     );
-                    // destroy the contained object
-                    ptr::drop_in_place(obj.0.as_mut());
+                    let item = ptr.0.as_mut();
+                    // To be in a cycle, at least one `value` field in an
+                    // `RcBox` in the cycle holds a strong reference to `self`.
+                    // Mark all nodes in the cycle as dead so when we deallocate
+                    // them via the `value` pointer we don't get a double free.
+                    item.kill();
                 }
+                for (mut ptr, _) in cycle {
+                    if ptr == Link(self.ptr) {
+                        continue;
+                    }
+                    trace!("cactusref deallocating RcBox.value field of cycle participant");
+                    let item = ptr.0.as_mut();
+                    // Bust the cycle by deallocating the value that this `Rc`
+                    // wraps.  This is safe to do and leave the value field
+                    // uninitialized because we are deallocating the entire
+                    // linked structure.
+                    ptr::drop_in_place(&mut item.value as *mut T);
+                }
+                // destroy the contained object
+                trace!("cactusref deallocating self after dropping all cycle participants");
+                ptr::drop_in_place(self.ptr.as_mut());
+
+                // remove the implicit "strong weak" pointer now that we've
+                // destroyed the contents.
+                self.dec_weak();
+
+                if self.weak() == 0 {
+                    Global.dealloc(self.ptr.cast(), Layout::for_value(self.ptr.as_ref()));
+                }
+            } else if self.strong() == 0 {
+                let this = Link(self.ptr);
+                // We are unreachable but may have been adopted and dropped.
+                // Remove reverse links so `Drop` does not try to reference the
+                // link we are about to deallocate when doing cycle detection.
+                // This removes `self` from the cycle detection loop.
+                for (item, _) in self.inner().back_links.borrow().iter() {
+                    let mut links = item.0.as_ref().links.borrow_mut();
+                    while links.contains(&this) {
+                        links.remove(this);
+                    }
+                    let mut links = item.0.as_ref().back_links.borrow_mut();
+                    while links.contains(&this) {
+                        links.remove(this);
+                    }
+                }
+                self.inner().back_links.borrow_mut().clear();
+                for (item, _) in self.inner().links.borrow().iter() {
+                    let mut links = item.0.as_ref().links.borrow_mut();
+                    while links.contains(&this) {
+                        links.remove(this);
+                    }
+                    let mut links = item.0.as_ref().back_links.borrow_mut();
+                    while links.contains(&this) {
+                        links.remove(this);
+                    }
+                }
+                self.inner().links.borrow_mut().clear();
+
+                // To be in a cycle, at least one `value` field in an `RcBox`
+                // in the cycle holds a strong reference to `self`. Mark all
+                // nodes in the cycle as dead so when we deallocate them via
+                // the `value` pointer we don't get a double free.
+                self.kill();
+                trace!("cactusref deallocating adopted and unreachable member of object graph");
+                // destroy the contained object
+                ptr::drop_in_place(self.ptr.as_mut());
 
                 // remove the implicit "strong weak" pointer now that we've
                 // destroyed the contents.
