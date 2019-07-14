@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::ptr::RcBox;
 
-pub(crate) struct Links<T: ?Sized> {
+pub struct Links<T: ?Sized> {
     pub registry: HashMap<Link<T>, usize>,
 }
 
@@ -16,6 +16,13 @@ impl<T: ?Sized> Links<T> {
 
     pub fn insert(&mut self, other: Link<T>) {
         *self.registry.entry(other).or_insert(0) += 1;
+    }
+
+    pub fn remove(&mut self, other: Link<T>) {
+        match self.registry.get(&other).copied().unwrap_or_default() {
+            0 | 1 => self.registry.remove(&other),
+            count => self.registry.insert(other, count - 1),
+        };
     }
 
     pub fn clear(&mut self) {
@@ -51,7 +58,7 @@ impl<T: ?Sized> Default for Links<T> {
     }
 }
 
-pub(crate) struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
+pub struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
 
 impl<T: ?Sized> Link<T> {
     #[inline]

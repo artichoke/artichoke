@@ -78,6 +78,16 @@ pub trait RcBoxPtr<T: ?Sized> {
     fn dec_link(&self) {
         self.inner().link.set(self.link() - 1);
     }
+
+    #[inline]
+    fn kill(&self) {
+        self.inner().tombstone.set(usize::max_value());
+    }
+
+    #[inline]
+    fn is_dead(&self) -> bool {
+        self.inner().tombstone.get() > 0
+    }
 }
 
 impl<T: ?Sized> RcBoxPtr<T> for Rc<T> {
@@ -93,12 +103,13 @@ impl<T: ?Sized> RcBoxPtr<T> for RcBox<T> {
 }
 
 pub struct RcBox<T: ?Sized> {
-    pub(crate) strong: Cell<usize>,
-    pub(crate) weak: Cell<usize>,
-    pub(crate) link: Cell<usize>,
-    pub(crate) links: RefCell<Links<T>>,
-    pub(crate) back_links: RefCell<Links<T>>,
-    pub(crate) value: T,
+    pub strong: Cell<usize>,
+    pub weak: Cell<usize>,
+    pub tombstone: Cell<usize>,
+    pub link: Cell<usize>,
+    pub links: RefCell<Links<T>>,
+    pub back_links: RefCell<Links<T>>,
+    pub value: T,
 }
 
 pub fn is_dangling<T: ?Sized>(ptr: NonNull<T>) -> bool {

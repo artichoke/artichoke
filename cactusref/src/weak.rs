@@ -206,7 +206,7 @@ impl<T: ?Sized> Weak<T> {
     /// ```
     pub fn upgrade(&self) -> Option<Rc<T>> {
         let inner = self.inner()?;
-        if inner.strong() <= inner.link() {
+        if inner.strong() == 0 {
             None
         } else {
             inner.inc_strong();
@@ -222,7 +222,7 @@ impl<T: ?Sized> Weak<T> {
     /// If `self` was created using [`Weak::new`], this will return 0.
     pub fn strong_count(&self) -> usize {
         if let Some(inner) = self.inner() {
-            inner.strong() - inner.link()
+            inner.strong()
         } else {
             0
         }
@@ -235,7 +235,7 @@ impl<T: ?Sized> Weak<T> {
     /// value.
     pub fn weak_count(&self) -> Option<usize> {
         self.inner().map(|inner| {
-            if inner.strong() - inner.link() > 0 {
+            if inner.strong() > 0 {
                 inner.weak() - 1 // subtract the implicit weak ptr
             } else {
                 inner.weak()

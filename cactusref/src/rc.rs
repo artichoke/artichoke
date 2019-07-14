@@ -56,6 +56,7 @@ impl<T> Rc<T> {
             ptr: Box::into_raw_non_null(Box::new(RcBox {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
+                tombstone: Cell::new(0),
                 link: Cell::new(0),
                 links: RefCell::new(Links::default()),
                 back_links: RefCell::new(Links::default()),
@@ -243,7 +244,7 @@ impl<T: ?Sized> Rc<T> {
     /// ```
     #[inline]
     pub fn strong_count(this: &Self) -> usize {
-        this.strong() - this.link()
+        this.strong()
     }
 
     /// Returns `true` if there are no other `Rc` or [`Weak`] pointers to this
@@ -402,6 +403,7 @@ impl<T: ?Sized> Rc<T> {
 
         ptr::write(&mut (*inner).strong, Cell::new(1));
         ptr::write(&mut (*inner).weak, Cell::new(1));
+        ptr::write(&mut (*inner).tombstone, Cell::new(0));
         ptr::write(&mut (*inner).link, Cell::new(0));
         ptr::write(&mut (*inner).links, RefCell::new(Links::default()));
         ptr::write(&mut (*inner).back_links, RefCell::new(Links::default()));
