@@ -16,7 +16,7 @@
 //! Single-threaded, cycle-aware, reference-counting pointers. 'Rc' stands
 //! for 'Reference Counted'.
 //!
-//! The type [`Rc<T>`][`Rc`] provides shared ownership of a value of type `T`,
+//! The type [`Rc<T>`](`Rc`) provides shared ownership of a value of type `T`,
 //! allocated in the heap. Invoking [`clone`](Clone::clone) on [`Rc`] produces a
 //! new pointer to the same value in the heap. When the last externally
 //! reachable [`Rc`] pointer to a given value is destroyed, the pointed-to value
@@ -58,9 +58,9 @@
 //! `use cactusref::Adoptable;`, `Drop` uses the same implementation as
 //! `std::rc::Rc` (and leaks in the same way as `std::rc::Rc` if you form a
 //! cycle of strong references). The only costs you pay are the memory costs of
-//! an empty
-//! [`RefCell`](std::cell::RefCell)`<`[`HashSet`](std::collections::HashSet)`<T>>`
-//! for tracking adoptions and an if statement to check if this structure is
+//! two empty
+//! [`RefCell`](std::cell::RefCell)`<`[`HashMap`](std::collections::HashMap)`<T>>`
+//! for tracking adoptions and an if statement to check if these structures are
 //! empty on `drop`.
 //!
 //! Cycle detection uses breadth-first search for traversing the object graph.
@@ -106,7 +106,7 @@
 //!         let curr = &nodes[0];
 //!         Rc::adopt(curr, prev);
 //!         curr.borrow_mut().prev = Some(Rc::clone(prev));
-//!         for i in (1..=(nodes.len() - 1)).rev() {
+//!         for i in (1..nodes.len()).rev() {
 //!             let prev = &nodes[i];
 //!             let curr = &nodes[i - 1];
 //!             curr.borrow_mut().next = Some(Rc::clone(prev));
@@ -125,8 +125,8 @@
 //!     .map(|_| "a".repeat(1024 * 1024))
 //!     .take(10)
 //!     .collect::<Vec<_>>();
-//!     let list = DoublyLinkedList::from(list);
-//!     drop(list);
+//! let list = DoublyLinkedList::from(list);
+//! drop(list);
 //! // all memory consumed by the list nodes is reclaimed.
 //! ```
 
