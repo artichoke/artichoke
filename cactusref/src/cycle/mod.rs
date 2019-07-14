@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::link::{Link, Links};
 use crate::ptr::RcBoxPtr;
@@ -57,13 +57,17 @@ pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
     let mut cycle_owned_refs = HashMap::default();
     // `this` may have strong references to itself.
     cycle_owned_refs.insert(this, this.self_link());
+    let mut seen = HashSet::new();
     loop {
-        let size = cycle_owned_refs.len();
+        let size = seen.len();
         for item in cycle_owned_refs.clone().keys() {
             let links = unsafe { item.0.as_ref() }.links.borrow();
             for (link, strong) in links.iter() {
                 // Forward references contribute to strong ownership counts.
-                *cycle_owned_refs.entry(*link).or_insert(0) += strong;
+                if !seen.contains(&(*item, *link)) {
+                    *cycle_owned_refs.entry(*link).or_insert(0) += strong;
+                    seen.insert((*item, *link));
+                }
             }
             let links = unsafe { item.0.as_ref() }.back_links.borrow();
             for (link, _) in links.iter() {
@@ -74,9 +78,10 @@ pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
             }
         }
         // BFS has found no new refs in the clique.
-        if size == cycle_owned_refs.len() {
+        if size == seen.len() {
             break;
         }
     }
+    dbg!(cycle_owned_refs.values().collect::<Vec<_>>());
     cycle_owned_refs
 }
