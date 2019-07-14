@@ -29,13 +29,49 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
     /// droppable `Rc` created. During cycle detection, this increased strong
     /// count is used to determine whether the cycle is reachable by any objects
     /// outside of the cycle.
+    ///
+    /// # Examples
+    ///
+    /// The following implements a self-referential array.
+    ///
+    /// ```rust
+    /// use cactusref::{Adoptable, Rc};
+    /// use std::cell::RefCell;
+    ///
+    /// #[derive(Default)]
+    /// struct Array {
+    ///     buffer: Vec<Rc<RefCell<Self>>>,
+    /// }
+    ///
+    /// let array = Rc::new(RefCell::new(Array::default()));
+    /// for _ in 0..10 {
+    ///     let item = Rc::clone(&array);
+    ///     Rc::adopt(&array, &item);
+    ///     array.borrow_mut().buffer.push(item);
+    /// }
+    /// let weak = Rc::downgrade(&array);
+    /// // 1 for the array binding, 10 for the `Rc`s in buffer
+    /// assert_eq!(Rc::strong_count(&array), 11);
+    /// drop(array);
+    /// assert!(weak.upgrade().is_none());
+    /// assert_eq!(weak.weak_count(), Some(1));
+    /// ```
     fn adopt(this: &Self, other: &Self) {
-        let mut links = this.inner().links.borrow_mut();
-        // Do not adopt self, do not adopt other multiple times
-        if !Self::ptr_eq(this, other) && !links.contains(&Link(other.ptr)) {
-            other.inc_strong();
-            links.insert(Link(other.ptr));
+        // Adoption signals the intent to take an owned reference to `other`, so
+        // always increment the strong count of other. This allows `this` to be
+        // self-referential and allows `this` to own multiple references to
+        // `other`. These behaviors allow implementing self-referential
+        // collection types.
+        other.inc_strong();
+        if Self::ptr_eq(this, other) {
+            this.inc_link();
         }
+        // Store a forward reference to `other` in `this`. This bookkeeping logs
+        // a strong reference and is used for discovering cycles.
+        let mut links = this.inner().links.borrow_mut();
+        links.insert(Link(other.ptr));
+        // Store a backward reference to `this` in `other`. This bookkeeping is
+        // used for discovering cycles.
         let mut links = other.inner().back_links.borrow_mut();
         links.insert(Link(this.ptr));
     }

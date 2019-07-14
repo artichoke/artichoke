@@ -1,23 +1,21 @@
 use core::ptr::{self, NonNull};
-use std::collections::hash_set;
-use std::collections::HashSet;
+use std::collections::hash_map;
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 use crate::ptr::RcBox;
 
 pub(crate) struct Links<T: ?Sized> {
-    pub registry: HashSet<Link<T>>,
+    pub registry: HashMap<Link<T>, usize>,
 }
 
 impl<T: ?Sized> Links<T> {
     pub fn contains(&self, other: &Link<T>) -> bool {
-        self.registry.iter().any(|link| link.0 == other.0)
+        self.registry.contains_key(other)
     }
 
     pub fn insert(&mut self, other: Link<T>) {
-        if !(&*self).contains(&other) {
-            self.registry.insert(other);
-        }
+        *self.registry.entry(other).or_insert(0) += 1;
     }
 
     pub fn clear(&mut self) {
@@ -32,7 +30,7 @@ impl<T: ?Sized> Links<T> {
         self.registry.len()
     }
 
-    pub fn iter(&self) -> hash_set::Iter<Link<T>> {
+    pub fn iter(&self) -> hash_map::Iter<Link<T>, usize> {
         self.registry.iter()
     }
 }
@@ -48,12 +46,25 @@ impl<T: ?Sized> Clone for Links<T> {
 impl<T: ?Sized> Default for Links<T> {
     fn default() -> Self {
         Self {
-            registry: HashSet::default(),
+            registry: HashMap::default(),
         }
     }
 }
 
 pub(crate) struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
+
+impl<T: ?Sized> Link<T> {
+    #[inline]
+    pub fn self_link(&self) -> usize {
+        let item = unsafe { self.0.as_ref() };
+        item.links
+            .borrow()
+            .registry
+            .get(&self)
+            .copied()
+            .unwrap_or_default()
+    }
+}
 
 impl<T: ?Sized> Copy for Link<T> {}
 
