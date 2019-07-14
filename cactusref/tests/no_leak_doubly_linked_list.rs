@@ -11,18 +11,38 @@ mod leak;
 const ITERATIONS: usize = 50;
 const LEAK_TOLERANCE: i64 = 1024 * 1024 * 25;
 
-struct DoublyLinkedList<T> {
+struct Node<T> {
     pub prev: Option<Rc<RefCell<Self>>>,
     pub next: Option<Rc<RefCell<Self>>>,
     pub data: T,
 }
 
-impl<T> DoublyLinkedList<T> {
-    fn from(item: Vec<T>) -> Rc<RefCell<Self>> {
-        let mut nodes = item
+struct List<T> {
+    pub head: Option<Rc<RefCell<Node<T>>>>,
+}
+
+impl<T> List<T> {
+    fn pop(&mut self) -> Option<Rc<RefCell<Node<T>>>> {
+        let head = self.head.take()?;
+        let tail = head.borrow_mut().prev.take();
+        let next = head.borrow_mut().next.take();
+        if let Some(ref tail) = tail {
+            tail.borrow_mut().next = next.as_ref().map(Rc::clone);
+        }
+        if let Some(ref next) = next {
+            next.borrow_mut().prev = tail;
+        }
+        self.head = next;
+        Some(head)
+    }
+}
+
+impl<T> From<Vec<T>> for List<T> {
+    fn from(list: Vec<T>) -> Self {
+        let nodes = list
             .into_iter()
             .map(|data| {
-                Rc::new(RefCell::new(Self {
+                Rc::new(RefCell::new(Node {
                     prev: None,
                     next: None,
                     data,
@@ -30,27 +50,21 @@ impl<T> DoublyLinkedList<T> {
             })
             .collect::<Vec<_>>();
         for i in 0..nodes.len() - 1 {
-            let prev = &nodes[i];
-            let curr = &nodes[i + 1];
-            curr.borrow_mut().prev = Some(Rc::clone(prev));
-            Rc::adopt(curr, prev);
+            let curr = &nodes[i];
+            let next = &nodes[i + 1];
+            curr.borrow_mut().next = Some(Rc::clone(next));
+            next.borrow_mut().prev = Some(Rc::clone(curr));
+            Rc::adopt(curr, next);
+            Rc::adopt(next, curr);
         }
-        let prev = &nodes[nodes.len() - 1];
-        let curr = &nodes[0];
-        Rc::adopt(curr, prev);
-        curr.borrow_mut().prev = Some(Rc::clone(prev));
-        for i in (1..nodes.len()).rev() {
-            let prev = &nodes[i];
-            let curr = &nodes[i - 1];
-            curr.borrow_mut().next = Some(Rc::clone(prev));
-            Rc::adopt(curr, prev);
-        }
-        let prev = &nodes[0];
-        let curr = &nodes[nodes.len() - 1];
-        Rc::adopt(curr, prev);
-        curr.borrow_mut().next = Some(Rc::clone(prev));
+        let tail = &nodes[nodes.len() - 1];
+        let head = &nodes[0];
+        tail.borrow_mut().next = Some(Rc::clone(head));
+        head.borrow_mut().prev = Some(Rc::clone(tail));
+        Rc::adopt(tail, head);
+        Rc::adopt(head, tail);
 
-        nodes.remove(0)
+        Self { head: Some(Rc::clone(head)) }
     }
 }
 
@@ -64,7 +78,12 @@ fn cactusref_doubly_linked_list_no_leak() {
             .map(|_| "a".repeat(1024 * 1024))
             .take(10)
             .collect::<Vec<_>>();
-        let list = DoublyLinkedList::from(list);
+        let mut list = List::from(list);
+        let head = list.pop().unwrap();
+        assert_eq!(Rc::strong_count(&head), 1);
+        let weak = Rc::downgrade(&head);
+        drop(head);
+        assert!(weak.upgrade().is_none());
         drop(list);
     });
 }
