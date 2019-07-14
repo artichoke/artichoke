@@ -27,10 +27,24 @@ impl<T> List<T> {
         let tail = head.borrow_mut().prev.take();
         let next = head.borrow_mut().next.take();
         if let Some(ref tail) = tail {
+            unsafe {
+                Rc::unadopt(&head, &tail);
+                Rc::unadopt(&tail, &head);
+            }
             tail.borrow_mut().next = next.as_ref().map(Rc::clone);
+            if let Some(ref next) = next {
+                Rc::adopt(tail, next);
+            }
         }
         if let Some(ref next) = next {
-            next.borrow_mut().prev = tail;
+            unsafe {
+                Rc::unadopt(&head, &next);
+                Rc::unadopt(&next, &head);
+            }
+            next.borrow_mut().prev = tail.as_ref().map(Rc::clone);
+            if let Some(ref tail) = tail {
+                Rc::adopt(next, tail);
+            }
         }
         self.head = next;
         Some(head)
@@ -64,7 +78,8 @@ impl<T> From<Vec<T>> for List<T> {
         Rc::adopt(tail, head);
         Rc::adopt(head, tail);
 
-        Self { head: Some(Rc::clone(head)) }
+        let head = Rc::clone(head);
+        Self { head: Some(head) }
     }
 }
 
@@ -81,6 +96,7 @@ fn cactusref_doubly_linked_list_no_leak() {
         let mut list = List::from(list);
         let head = list.pop().unwrap();
         assert_eq!(Rc::strong_count(&head), 1);
+        assert_eq!(list.head.as_ref().map(Rc::strong_count), Some(3));
         let weak = Rc::downgrade(&head);
         drop(head);
         assert!(weak.upgrade().is_none());
