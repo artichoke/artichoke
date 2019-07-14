@@ -66,6 +66,69 @@
 //! Cycle detection uses breadth-first search for traversing the object graph.
 //! The algorithm supports arbitrarily large object graphs and will not overflow
 //! the stack during the reachability trace.
+//!
+//! ## Self-Referential Structures
+//!
+//! `CactusRef` can be used to implement collections that own strong references
+//! to themselves. The following implements a doubly-linked list that is fully
+//! deallocated once the `list` binding is dropped.
+//!
+//! ```rust
+//! use cactusref::{Adoptable, Rc};
+//! use std::cell::RefCell;
+//! use std::iter;
+//!
+//! struct DoublyLinkedList<T> {
+//!     pub prev: Option<Rc<RefCell<Self>>>,
+//!     pub next: Option<Rc<RefCell<Self>>>,
+//!     pub data: T,
+//! }
+//!
+//! impl<T> DoublyLinkedList<T> {
+//!     fn from(item: Vec<T>) -> Rc<RefCell<Self>> {
+//!         let mut nodes = item
+//!             .into_iter()
+//!             .map(|data| {
+//!                 Rc::new(RefCell::new(Self {
+//!                     prev: None,
+//!                     next: None,
+//!                     data,
+//!                 }))
+//!             })
+//!             .collect::<Vec<_>>();
+//!         for i in 0..nodes.len() - 1 {
+//!             let prev = &nodes[i];
+//!             let curr = &nodes[i + 1];
+//!             curr.borrow_mut().prev = Some(Rc::clone(prev));
+//!             Rc::adopt(curr, prev);
+//!         }
+//!         let prev = &nodes[nodes.len() - 1];
+//!         let curr = &nodes[0];
+//!         Rc::adopt(curr, prev);
+//!         curr.borrow_mut().prev = Some(Rc::clone(prev));
+//!         for i in (1..=(nodes.len() - 1)).rev() {
+//!             let prev = &nodes[i];
+//!             let curr = &nodes[i - 1];
+//!             curr.borrow_mut().next = Some(Rc::clone(prev));
+//!             Rc::adopt(curr, prev);
+//!         }
+//!         let prev = &nodes[0];
+//!         let curr = &nodes[nodes.len() - 1];
+//!         Rc::adopt(curr, prev);
+//!         curr.borrow_mut().next = Some(Rc::clone(prev));
+//!
+//!         nodes.remove(0)
+//!     }
+//! }
+//!
+//! let list = iter::repeat(())
+//!     .map(|_| "a".repeat(1024 * 1024))
+//!     .take(10)
+//!     .collect::<Vec<_>>();
+//!     let list = DoublyLinkedList::from(list);
+//!     drop(list);
+//! // all memory consumed by the list nodes is reclaimed.
+//! ```
 
 #[macro_use]
 extern crate log;
