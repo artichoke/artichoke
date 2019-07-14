@@ -6,26 +6,30 @@ use crate::Rc;
 
 mod drop;
 
-trait DetectCycles {
+trait DetectCycles<T: ?Sized> {
     fn can_reach(this: &Self, other: &Self) -> bool;
 
-    fn is_orphaned_cycle(this: &Self) -> bool;
+    fn orphaned_cycle(this: &Self) -> Option<HashMap<Link<T>, usize>>;
 }
 
-impl<T: ?Sized> DetectCycles for Rc<T> {
+impl<T: ?Sized> DetectCycles<T> for Rc<T> {
     fn can_reach(this: &Self, other: &Self) -> bool {
         reachable_links(Link(this.ptr)).contains(&Link(other.ptr))
     }
 
-    fn is_orphaned_cycle(this: &Self) -> bool {
+    fn orphaned_cycle(this: &Self) -> Option<HashMap<Link<T>, usize>> {
         let cycle = cycle_refs(Link(this.ptr));
         if cycle.is_empty() {
-            return false;
+            return None;
         }
         let has_external_owners = cycle.iter().any(|(item, cycle_owned_refs)| {
             unsafe { item.0.as_ref() }.strong() > *cycle_owned_refs
         });
-        !has_external_owners
+        if has_external_owners {
+            None
+        } else {
+            Some(cycle)
+        }
     }
 }
 
@@ -82,6 +86,15 @@ pub(crate) fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
             break;
         }
     }
-    dbg!(cycle_owned_refs.values().collect::<Vec<_>>());
+    trace!(
+        "cactusref reachability test found (strong, cycle) counts: {:?}",
+        cycle_owned_refs
+            .iter()
+            .map(|(item, cycle_count)| {
+                let strong = unsafe { item.0.as_ref() }.strong();
+                (strong, cycle_count)
+            })
+            .collect::<Vec<_>>()
+    );
     cycle_owned_refs
 }
