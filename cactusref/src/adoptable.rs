@@ -12,18 +12,11 @@ use crate::Rc;
 pub unsafe trait Adoptable {
     /// Perform bookkeeping to record that `this` has an owned reference to
     /// `other`. Adoption is a one-way link.
-    ///
-    /// **Warning**: This function is unsafe because if link bookkeeping is done
-    /// incorrectly, memory may leak or be double freed.
-    // TODO: mark adopt as unsafe
     fn adopt(this: &Self, other: &Self);
 
     /// Perform bookkeeping to record that `this` no longer has an owned
     /// reference to `other`. Adoption is a one-way link.
-    ///
-    /// **Warning**: This function is unsafe because if link bookkeeping is done
-    /// incorrectly, memory may leak or be double freed.
-    unsafe fn unadopt(this: &Self, other: &Self);
+    fn unadopt(this: &Self, other: &Self);
 }
 
 /// Implementation of [`Adoptable`] for [`Rc`] which enables `Rc`s to form a
@@ -127,7 +120,7 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
     /// assert!(weak.upgrade().is_none());
     /// assert_eq!(weak.weak_count(), Some(1));
     /// ```
-    unsafe fn unadopt(this: &Self, other: &Self) {
+    fn unadopt(this: &Self, other: &Self) {
         if Self::ptr_eq(this, other) {
             this.dec_link();
         }
