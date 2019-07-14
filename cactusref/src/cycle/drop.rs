@@ -87,6 +87,19 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
     ///
     /// If the cycle is orphaned, `Rc` busts all the link structures and
     /// deallocates each object.
+    ///
+    /// ## Performance
+    ///
+    /// Cycle detection uses breadth first search to trace the object graph.
+    /// The runtime complexity of detecting a cycle is `O(link)` where links is
+    /// the number of adoptions that are alive.
+    ///
+    /// Determining whether the cycle is orphaned builds on cycle detection and
+    /// iterates over all nodes in the graph to see if their strong count is
+    /// greater than the number of references in the cycle. The runtime
+    /// complexity of finding an orphaned cycle is `O(links + nodes)` where
+    /// links is the number of adoptions that are alive and nodes is the number
+    /// objects in the cycle.
     fn drop(&mut self) {
         // If a drop is occuring it is because there was an existing `Rc` which
         // is maintaining a strong count. Decrement the strong count on drop,
