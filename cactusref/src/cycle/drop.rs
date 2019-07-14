@@ -92,6 +92,15 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
                 // If links is empty, the object is either not in a cycle or
                 // part of a cycle that has been link busted for deallocation.
                 if self.strong() == 0 {
+                    // Remove reverse links so `Drop` does not try to reference
+                    // the link we are about to deallocate when doing cycle
+                    // detection.
+                    for (item, _) in self.inner().back_links.borrow().iter() {
+                        let mut links = item.0.as_ref().links.borrow_mut();
+                        while links.contains(&Link(self.ptr)) {
+                            links.remove(Link(self.ptr));
+                        }
+                    }
                     // destroy the contained object
                     ptr::drop_in_place(self.ptr.as_mut());
 
@@ -118,8 +127,11 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
                     let mut links = item.back_links.borrow_mut();
                     links.clear();
                 }
-                for (mut obj, _) in cycle {
-                    trace!("cactusref dropping member of orphaned cycle");
+                for (mut obj, refcount) in cycle {
+                    trace!(
+                        "cactusref dropping member of orphaned cycle with refcount {}",
+                        refcount
+                    );
                     // destroy the contained object
                     ptr::drop_in_place(obj.0.as_mut());
                 }

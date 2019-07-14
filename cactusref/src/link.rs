@@ -18,6 +18,13 @@ impl<T: ?Sized> Links<T> {
         *self.registry.entry(other).or_insert(0) += 1;
     }
 
+    pub fn remove(&mut self, other: Link<T>) {
+        match self.registry.get(&other).copied().unwrap_or_default() {
+            0 | 1 => self.registry.remove(&other),
+            count => self.registry.insert(other, count - 1),
+        };
+    }
+
     pub fn clear(&mut self) {
         self.registry.clear()
     }
