@@ -50,13 +50,11 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
     ///     array.borrow_mut().buffer.push(item);
     /// }
     /// let weak = Rc::downgrade(&array);
-    /// assert!(weak.upgrade().is_some());
-    /// assert_eq!(weak.upgrade().unwrap().borrow().buffer.len(), 10);
-    /// // 1 for the array binding, 10 for the `Rc`s in buffer, and 10
-    /// // for the self adoptions.
+    /// // 1 for the array binding, 10 for the `Rc`s in buffer
     /// assert_eq!(Rc::strong_count(&array), 11);
     /// drop(array);
     /// assert!(weak.upgrade().is_none());
+    /// assert_eq!(weak.weak_count(), Some(1));
     /// ```
     fn adopt(this: &Self, other: &Self) {
         // Adoption signals the intent to take an owned reference to `other`, so
