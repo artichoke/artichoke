@@ -91,7 +91,7 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
     /// ## Performance
     ///
     /// Cycle detection uses breadth first search to trace the object graph.
-    /// The runtime complexity of detecting a cycle is `O(link)` where links is
+    /// The runtime complexity of detecting a cycle is `O(links)` where links is
     /// the number of adoptions that are alive.
     ///
     /// Determining whether the cycle is orphaned builds on cycle detection and
