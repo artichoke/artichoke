@@ -56,7 +56,7 @@ Cycle detection is a zero-cost abstraction. If you never
 strong references). The only costs you pay are the memory costs of one
 [`Cell<usize>`](https://doc.rust-lang.org/nightly/core/cell/struct.Cell.html)
 for preventing double frees, two empty
-[`RefCell`](https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html)`<`[`HashMap`](https://doc.rust-lang.org/nightly/std/collections/struct.HashMap.html)`<T>>`
+[`RefCell`](https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html)`<`[`HashMap`](https://doc.rust-lang.org/nightly/std/collections/struct.HashMap.html)`<NonNull<T>, usize>>`
 for tracking adoptions, and an if statement to check if these structures are
 empty on `drop`.
 
