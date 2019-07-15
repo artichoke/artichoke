@@ -101,12 +101,6 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
     /// links is the number of adoptions that are alive and nodes is the number
     /// objects in the cycle.
     fn drop(&mut self) {
-        // If a drop is occuring it is because there was an existing `Rc` which
-        // is maintaining a strong count. Decrement the strong count on drop,
-        // even if this `Rc` is dead. This ensures `Weak::upgrade` behaves
-        // correctly for deallocated cycles and does not cause a use-after-free.
-        self.dec_strong();
-
         // If `self` is held in a cycle, as we deallocate members of the cycle,
         // they will drop their refs to `self`. To prevent a double free, mark
         // nodes as dead if they have already been deallocated and short
@@ -114,6 +108,13 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
         if self.is_dead() {
             return;
         }
+
+        // If a drop is occuring it is because there was an existing `Rc` which
+        // is maintaining a strong count. Decrement the strong count on drop,
+        // even if this `Rc` is dead. This ensures `Weak::upgrade` behaves
+        // correctly for deallocated cycles and does not cause a use-after-free.
+        self.dec_strong();
+
         unsafe {
             if self.inner().links.borrow().is_empty() {
                 // If links is empty, the object is either not in a cycle or
