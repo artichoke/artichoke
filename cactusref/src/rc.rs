@@ -56,7 +56,6 @@ impl<T> Rc<T> {
             ptr: Box::into_raw_non_null(Box::new(RcBox {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
-                tombstone: Cell::new(0),
                 links: RefCell::new(Links::default()),
                 back_links: RefCell::new(Links::default()),
                 value,
@@ -402,7 +401,6 @@ impl<T: ?Sized> Rc<T> {
 
         ptr::write(&mut (*inner).strong, Cell::new(1));
         ptr::write(&mut (*inner).weak, Cell::new(1));
-        ptr::write(&mut (*inner).tombstone, Cell::new(0));
         ptr::write(&mut (*inner).links, RefCell::new(Links::default()));
         ptr::write(&mut (*inner).back_links, RefCell::new(Links::default()));
 

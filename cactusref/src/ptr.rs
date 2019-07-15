@@ -60,12 +60,12 @@ pub trait RcBoxPtr<T: ?Sized> {
 
     #[inline]
     fn kill(&self) {
-        self.inner().tombstone.set(usize::max_value());
+        self.inner().strong.set(0);
     }
 
     #[inline]
     fn is_dead(&self) -> bool {
-        self.inner().tombstone.get() > 0
+        self.strong() == 0
     }
 }
 
@@ -84,7 +84,6 @@ impl<T: ?Sized> RcBoxPtr<T> for RcBox<T> {
 pub struct RcBox<T: ?Sized> {
     pub strong: Cell<usize>,
     pub weak: Cell<usize>,
-    pub tombstone: Cell<usize>,
     pub links: RefCell<Links<T>>,
     pub back_links: RefCell<Links<T>>,
     pub value: T,
