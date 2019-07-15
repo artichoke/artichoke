@@ -59,27 +59,6 @@ pub trait RcBoxPtr<T: ?Sized> {
     }
 
     #[inline]
-    fn link(&self) -> usize {
-        self.inner().link.get()
-    }
-
-    #[inline]
-    fn inc_link(&self) {
-        // We want to abort on overflow instead of dropping the value.
-        if self.link() == usize::max_value() {
-            unsafe {
-                abort();
-            }
-        }
-        self.inner().link.set(self.link() + 1);
-    }
-
-    #[inline]
-    fn dec_link(&self) {
-        self.inner().link.set(self.link() - 1);
-    }
-
-    #[inline]
     fn kill(&self) {
         self.inner().tombstone.set(usize::max_value());
     }
@@ -106,7 +85,6 @@ pub struct RcBox<T: ?Sized> {
     pub strong: Cell<usize>,
     pub weak: Cell<usize>,
     pub tombstone: Cell<usize>,
-    pub link: Cell<usize>,
     pub links: RefCell<Links<T>>,
     pub back_links: RefCell<Links<T>>,
     pub value: T,

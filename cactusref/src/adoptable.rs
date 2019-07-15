@@ -66,9 +66,7 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
         // self-referential and allows `this` to own multiple references to
         // `other`. These behaviors allow implementing self-referential
         // collection types.
-        if Self::ptr_eq(this, other) {
-            this.inc_link();
-        }
+
         // Store a forward reference to `other` in `this`. This bookkeeping logs
         // a strong reference and is used for discovering cycles.
         let mut links = this.inner().links.borrow_mut();
@@ -121,9 +119,6 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
     /// assert_eq!(weak.weak_count(), Some(1));
     /// ```
     fn unadopt(this: &Self, other: &Self) {
-        if Self::ptr_eq(this, other) {
-            this.dec_link();
-        }
         // Remove a forward reference to `other` in `this`. This bookkeeping
         // logs a strong reference and is used for discovering cycles.
         let mut links = this.inner().links.borrow_mut();
