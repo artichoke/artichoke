@@ -1,6 +1,6 @@
 use core::ptr;
+use hashbrown::HashMap;
 use std::alloc::{Alloc, Global, Layout};
-use std::collections::HashMap;
 
 use crate::cycle::DetectCycles;
 use crate::link::Link;

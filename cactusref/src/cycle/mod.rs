@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
 
 use crate::link::{Link, Links};
 use crate::ptr::RcBoxPtr;

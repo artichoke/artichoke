@@ -11,6 +11,7 @@ name = "drop"
 harness = false
 
 [dependencies]
+hashbrown = "0.5"
 log = "0.4.6"
 
 [dev-dependencies]

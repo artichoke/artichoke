@@ -1,6 +1,5 @@
 use core::ptr::{self, NonNull};
-use std::collections::hash_map;
-use std::collections::HashMap;
+use hashbrown::{hash_map, HashMap};
 use std::hash::{Hash, Hasher};
 
 use crate::ptr::RcBox;

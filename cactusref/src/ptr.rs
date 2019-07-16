@@ -143,6 +143,6 @@ mod tests {
 
     #[test]
     fn sizeof_rcbox() {
-        assert_eq!(mem::size_of::<RcBox<()>>(), 144);
+        assert_eq!(mem::size_of::<RcBox<()>>(), 112);
     }
 }
