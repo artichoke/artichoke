@@ -59,19 +59,6 @@ impl<T: ?Sized> Default for Links<T> {
 
 pub struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
 
-impl<T: ?Sized> Link<T> {
-    #[inline]
-    pub fn self_link(&self) -> usize {
-        let item = unsafe { self.0.as_ref() };
-        item.links
-            .borrow()
-            .registry
-            .get(&self)
-            .copied()
-            .unwrap_or_default()
-    }
-}
-
 impl<T: ?Sized> Copy for Link<T> {}
 
 impl<T: ?Sized> Clone for Link<T> {
