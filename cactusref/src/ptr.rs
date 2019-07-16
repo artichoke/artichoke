@@ -136,3 +136,13 @@ pub fn data_offset_sized<T>() -> isize {
     let layout = Layout::new::<RcBox<()>>();
     (layout.size() + layout.padding_needed_for(align)) as isize
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sizeof_rcbox() {
+        assert_eq!(mem::size_of::<RcBox<()>>(), 144);
+    }
+}
