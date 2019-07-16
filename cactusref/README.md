@@ -54,7 +54,7 @@ Cycle detection is a zero-cost abstraction. If you never
 `use cactusref::Adoptable;`, `Drop` uses the same implementation as
 `std::rc::Rc` (and leaks in the same way as `std::rc::Rc` if you form a cycle of
 strong references). The only costs you pay are the memory costs of two empty
-[`RefCell`](https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html)`<`[`HashMap`](https://doc.rust-lang.org/nightly/std/collections/struct.HashMap.html)`<NonNull<T>, usize>>`
+[`RefCell`](https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html)`<`[`HashMap`](https://docs.rs/hashbrown/0.5.0/hashbrown/struct.HashMap.html)`<NonNull<T>, usize>>`
 for tracking adoptions and an if statement to check if these structures are
 empty on `drop`.
 
