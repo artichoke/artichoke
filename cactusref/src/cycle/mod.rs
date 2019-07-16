@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
 
 use crate::link::{Link, Links};
 use crate::ptr::RcBoxPtr;
@@ -57,34 +57,30 @@ fn reachable_links<T: ?Sized>(this: Link<T>) -> Links<T> {
 // Perform a breadth first search over all of the forward and backward links to
 // determine the clique of nodes in a cycle and their strong counts.
 fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
-    // Map of Link to number of strong references held by the cycle.
+    // These collections track compute the layout of the object graph in linear
+    // time in the size of the graph.
     let mut cycle_owned_refs = HashMap::default();
-    // `this` may have strong references to itself.
-    cycle_owned_refs.insert(this, this.self_link());
-    let mut seen = HashSet::new();
-    seen.insert((this, this));
-    loop {
-        let size = seen.len();
-        for item in cycle_owned_refs.clone().keys() {
-            let links = unsafe { item.0.as_ref() }.links.borrow();
-            for (link, strong) in links.iter() {
-                // Forward references contribute to strong ownership counts.
-                if !seen.contains(&(*item, *link)) {
-                    *cycle_owned_refs.entry(*link).or_insert(0) += strong;
-                    seen.insert((*item, *link));
-                }
-            }
-            let links = unsafe { item.0.as_ref() }.back_links.borrow();
-            for (link, _) in links.iter() {
-                // Back references do not contribute to strong ownership counts,
-                // but they are added to the set of cycle owned refs so BFS can
-                // include them in the reachability analysis.
-                cycle_owned_refs.entry(*link).or_insert(0);
-            }
+    let mut discovered = vec![this];
+    let mut visited = HashSet::new();
+
+    // crawl the graph
+    while let Some(node) = discovered.pop() {
+        if visited.contains(&node) {
+            continue;
         }
-        // BFS has found no new refs in the clique.
-        if size == seen.len() {
-            break;
+        visited.insert(node);
+        let links = unsafe { node.0.as_ref() }.links.borrow();
+        for (link, strong) in links.iter() {
+            // Forward references contribute to strong ownership counts.
+            *cycle_owned_refs.entry(*link).or_insert(0) += strong;
+            discovered.push(*link);
+        }
+        let links = unsafe { node.0.as_ref() }.back_links.borrow();
+        for (link, _) in links.iter() {
+            // Back references do not contribute to strong ownership counts,
+            // but they are added to the set of cycle owned refs so BFS can
+            // include them in the reachability analysis.
+            cycle_owned_refs.entry(*link).or_insert(0);
         }
     }
     trace!(

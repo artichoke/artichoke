@@ -1,6 +1,5 @@
 use core::ptr::{self, NonNull};
-use std::collections::hash_map;
-use std::collections::HashMap;
+use hashbrown::{hash_map, HashMap};
 use std::hash::{Hash, Hasher};
 
 use crate::ptr::RcBox;
@@ -59,19 +58,6 @@ impl<T: ?Sized> Default for Links<T> {
 }
 
 pub struct Link<T: ?Sized>(pub NonNull<RcBox<T>>);
-
-impl<T: ?Sized> Link<T> {
-    #[inline]
-    pub fn self_link(&self) -> usize {
-        let item = unsafe { self.0.as_ref() };
-        item.links
-            .borrow()
-            .registry
-            .get(&self)
-            .copied()
-            .unwrap_or_default()
-    }
-}
 
 impl<T: ?Sized> Copy for Link<T> {}
 

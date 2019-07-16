@@ -1,6 +1,6 @@
 use core::ptr;
+use hashbrown::HashMap;
 use std::alloc::{Alloc, Global, Layout};
-use std::collections::HashMap;
 
 use crate::cycle::DetectCycles;
 use crate::link::Link;
@@ -91,8 +91,9 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
     /// ## Performance
     ///
     /// Cycle detection uses breadth first search to trace the object graph.
-    /// The runtime complexity of detecting a cycle is `O(links)` where links is
-    /// the number of adoptions that are alive.
+    /// The runtime complexity of detecting a cycle is `O(links + nodes)` where
+    /// links is the number of adoptions that are alive and nodes is the number
+    /// of objects in the cycle.
     ///
     /// Determining whether the cycle is orphaned builds on cycle detection and
     /// iterates over all nodes in the graph to see if their strong count is
