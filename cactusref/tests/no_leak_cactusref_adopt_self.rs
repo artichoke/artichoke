@@ -30,6 +30,13 @@ fn cactusref_adopt_self_no_leak() {
         }));
         first.borrow_mut().link = Some(CactusRef::clone(&first));
         CactusRef::adopt(&first, &first);
+        CactusRef::adopt(&first, &first);
+        CactusRef::adopt(&first, &first);
+        CactusRef::adopt(&first, &first);
+        CactusRef::adopt(&first, &first);
+        CactusRef::adopt(&first, &first);
+        CactusRef::adopt(&first, &first);
+        CactusRef::adopt(&first, &first);
         assert_eq!(first.borrow().inner, s);
         drop(first);
     });
