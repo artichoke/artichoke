@@ -1,3 +1,6 @@
+#![deny(warnings, intra_doc_link_resolution_failure)]
+#![deny(clippy::all, clippy::pedantic)]
+
 #[macro_use]
 extern crate criterion;
 
@@ -51,23 +54,13 @@ fn fully_connected_graph(count: usize) -> Vec<Rc<RefCell<Node<usize>>>> {
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "drop a circular graph",
-        |b, &&size| {
-            b.iter(|| {
-                let graph = circular_graph(black_box(size));
-                drop(graph);
-            })
-        },
-        &[10, 50, 100],
+        |b, &&size| b.iter_with_large_setup(|| circular_graph(black_box(size)), drop),
+        &[10, 20, 30, 40, 50, 100],
     );
     c.bench_function_over_inputs(
         "drop a fully connected graph",
-        |b, &&size| {
-            b.iter(|| {
-                let graph = fully_connected_graph(black_box(size));
-                drop(graph);
-            })
-        },
-        &[10, 50, 100],
+        |b, &&size| b.iter_with_large_setup(|| fully_connected_graph(black_box(size)), drop),
+        &[10, 20, 30, 40, 50, 100],
     );
 }
 
