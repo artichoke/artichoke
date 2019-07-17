@@ -85,7 +85,6 @@ pub struct RcBox<T: ?Sized> {
     pub strong: Cell<usize>,
     pub weak: Cell<usize>,
     pub links: RefCell<Links<T>>,
-    pub back_links: RefCell<Links<T>>,
     pub value: T,
 }
 
@@ -143,6 +142,6 @@ mod tests {
 
     #[test]
     fn sizeof_rcbox() {
-        assert_eq!(mem::size_of::<RcBox<()>>(), 112);
+        assert_eq!(mem::size_of::<RcBox<()>>(), 64);
     }
 }

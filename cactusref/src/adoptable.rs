@@ -70,11 +70,15 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
         // Store a forward reference to `other` in `this`. This bookkeeping logs
         // a strong reference and is used for discovering cycles.
         let mut links = this.inner().links.borrow_mut();
-        links.insert(Link(other.ptr));
+        links.insert(Link::forward(other.ptr));
+        // `this` and `other` may be the same `Rc`. Drop the borrow on `links`
+        // before accessing `other` to avoid a already borrowed error from the
+        // `RefCell`.
+        drop(links);
         // Store a backward reference to `this` in `other`. This bookkeeping is
         // used for discovering cycles.
-        let mut links = other.inner().back_links.borrow_mut();
-        links.insert(Link(this.ptr));
+        let mut links = other.inner().links.borrow_mut();
+        links.insert(Link::backward(this.ptr));
     }
 
     /// Perform bookkeeping to record that `this` no longer has an owned
@@ -122,10 +126,14 @@ unsafe impl<T: ?Sized> Adoptable for Rc<T> {
         // Remove a forward reference to `other` in `this`. This bookkeeping
         // logs a strong reference and is used for discovering cycles.
         let mut links = this.inner().links.borrow_mut();
-        links.remove(Link(other.ptr));
+        links.remove(Link::forward(other.ptr));
+        // `this` and `other` may be the same `Rc`. Drop the borrow on `links`
+        // before accessing `other` to avoid a already borrowed error from the
+        // `RefCell`.
+        drop(links);
         // Remove a backward reference to `this` in `other`. This bookkeeping is
         // used for discovering cycles.
-        let mut links = other.inner().back_links.borrow_mut();
-        links.remove(Link(this.ptr));
+        let mut links = other.inner().links.borrow_mut();
+        links.remove(Link::backward(this.ptr));
     }
 }

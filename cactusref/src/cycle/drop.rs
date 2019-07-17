@@ -3,7 +3,7 @@ use hashbrown::HashMap;
 use std::alloc::{Alloc, Global, Layout};
 
 use crate::cycle::DetectCycles;
-use crate::link::Link;
+use crate::link::{Kind, Link};
 use crate::ptr::RcBoxPtr;
 use crate::Rc;
 
@@ -133,18 +133,20 @@ unsafe impl<#[may_dangle] T: ?Sized> Drop for Rc<T> {
 }
 
 unsafe fn drop_unreachable<T: ?Sized>(this: &mut Rc<T>) {
+    let forward = Link::forward(this.ptr);
+    let backward = Link::backward(this.ptr);
     // Remove reverse links so `this` is not included in cycle detection for
     // objects that had adopted `this`. This prevents a use-after-free in
     // `DetectCycles::orphaned_cycle`.
-    for (item, _) in this.inner().back_links.borrow().iter() {
-        let link = Link(this.ptr);
-        let mut links = item.0.as_ref().links.borrow_mut();
-        while links.contains(&link) {
-            links.remove(link);
-        }
-        let mut links = item.0.as_ref().back_links.borrow_mut();
-        while links.contains(&link) {
-            links.remove(link);
+    for (item, _) in this.inner().links.borrow().iter() {
+        if let Kind::Backward = item.link_kind() {
+            let mut links = item.inner().links.borrow_mut();
+            while links.contains(&forward) {
+                links.remove(forward);
+            }
+            while links.contains(&backward) {
+                links.remove(backward);
+            }
         }
     }
     // Mark `this` as pending deallocation. This is not strictly necessary since
@@ -175,31 +177,31 @@ unsafe fn drop_cycle<T: ?Sized>(this: &mut Rc<T>, cycle: HashMap<Link<T>, usize>
     // links are to objects in the cycle that we are about to deallocate. This
     // allows us to bust the cycle detection by clearing all links.
     for ptr in cycle.keys() {
-        let item = ptr.0.as_ref();
+        let item = ptr.inner();
         let mut links = item.links.borrow_mut();
         links.clear();
-        let mut links = item.back_links.borrow_mut();
-        links.clear();
     }
-    for (mut ptr, refcount) in cycle.clone() {
+    for (ptr, refcount) in cycle.clone() {
         trace!(
             "cactusref dropping member of orphaned cycle with refcount {}",
             refcount
         );
-        let item = ptr.0.as_mut();
+        let mut ptr = ptr.into_raw_non_null();
+        let item = ptr.as_mut();
         // To be in a cycle, at least one `value` field in an `RcBox` in the
         // cycle holds a strong reference to `this`. Mark all nodes in the cycle
         // as dead so when we deallocate them via the `value` pointer we don't
         // get a double-free.
         item.kill();
     }
-    for (mut ptr, _) in cycle {
-        if ptr.0 == this.ptr {
+    for (ptr, _) in cycle {
+        if ptr.as_ptr() == this.ptr.as_ptr() {
             // Do not drop `this` until the rest of the cycle is deallocated.
             continue;
         }
         trace!("cactusref deallocating wrapped value of cycle member");
-        let item = ptr.0.as_mut();
+        let mut ptr = ptr.into_raw_non_null();
+        let item = ptr.as_mut();
         // Bust the cycle by deallocating the value that this `Rc` wraps. This
         // is safe to do and leave the value field uninitialized because we are
         // deallocating the entire linked structure.
@@ -219,33 +221,20 @@ unsafe fn drop_cycle<T: ?Sized>(this: &mut Rc<T>, cycle: HashMap<Link<T>, usize>
 }
 
 unsafe fn drop_unreachable_with_adoptions<T: ?Sized>(this: &mut Rc<T>) {
-    let link = Link(this.ptr);
+    let forward = Link::forward(this.ptr);
+    let backward = Link::backward(this.ptr);
     // `this` is unreachable but may have been adopted and dropped. Remove
     // reverse links so `Drop` does not try to reference the link we are about
     // to deallocate when doing cycle detection. This removes `self` from the
     // cycle detection loop. This prevents a use-after-free in
     // `DetectCycles::orphaned_cycle`.
-    for (item, _) in this.inner().back_links.borrow().iter() {
-        let mut links = item.0.as_ref().links.borrow_mut();
-        while links.contains(&link) {
-            links.remove(link);
-        }
-        let mut links = item.0.as_ref().back_links.borrow_mut();
-        while links.contains(&link) {
-            links.remove(link);
-        }
-    }
-    // Clear links in `this`. This is not strictly necessary since `this` is
-    // unreachable, but `clear`ing `this ensures we don't double-free.
-    this.inner().back_links.borrow_mut().clear();
     for (item, _) in this.inner().links.borrow().iter() {
-        let mut links = item.0.as_ref().links.borrow_mut();
-        while links.contains(&link) {
-            links.remove(link);
+        let mut links = item.inner().links.borrow_mut();
+        while links.contains(&forward) {
+            links.remove(forward);
         }
-        let mut links = item.0.as_ref().back_links.borrow_mut();
-        while links.contains(&link) {
-            links.remove(link);
+        while links.contains(&backward) {
+            links.remove(backward);
         }
     }
     this.inner().links.borrow_mut().clear();
