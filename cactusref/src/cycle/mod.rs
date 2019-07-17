@@ -83,15 +83,23 @@ fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
             cycle_owned_refs.entry(*link).or_insert(0);
         }
     }
+    #[cfg(debug_assertions)]
+    debug_cycle(&cycle_owned_refs);
+    cycle_owned_refs
+}
+
+#[inline]
+#[cfg(debug_assertions)]
+fn debug_cycle<T: ?Sized>(cycle: &HashMap<Link<T>, usize>) {
+    let counts = cycle
+        .iter()
+        .map(|(item, cycle_count)| {
+            let strong = unsafe { item.0.as_ref() }.strong();
+            (strong, cycle_count)
+        })
+        .collect::<Vec<_>>();
     trace!(
         "cactusref reachability test found (strong, cycle) counts: {:?}",
-        cycle_owned_refs
-            .iter()
-            .map(|(item, cycle_count)| {
-                let strong = unsafe { item.0.as_ref() }.strong();
-                (strong, cycle_count)
-            })
-            .collect::<Vec<_>>()
+        counts
     );
-    cycle_owned_refs
 }
