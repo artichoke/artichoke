@@ -45,6 +45,8 @@ fn cactusref_fully_connected_graph_no_leak() {
     )
     .check_leaks(|_| {
         let list = fully_connected_graph(10);
+        drop(Rc::clone(&list[0]));
+        assert_eq!(Rc::strong_count(&list[0]), 11);
         drop(list);
     });
 }
