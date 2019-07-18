@@ -44,10 +44,14 @@ fn cycle_refs<T: ?Sized>(this: Link<T>) -> HashMap<Link<T>, usize> {
         visited.insert(node);
         let links = node.inner().links.borrow();
         for (link, strong) in links.iter() {
-            let entry = cycle_owned_refs.entry(link.as_forward()).or_insert(0);
             if let Kind::Forward = link.link_kind() {
-                *entry += strong;
+                cycle_owned_refs
+                    .entry(*link)
+                    .and_modify(|count| *count += strong)
+                    .or_insert(*strong);
                 discovered.push(*link);
+            } else {
+                cycle_owned_refs.entry(link.as_forward()).or_default();
             }
         }
     }
