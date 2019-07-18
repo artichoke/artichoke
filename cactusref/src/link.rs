@@ -11,7 +11,7 @@ pub enum Kind {
 }
 
 pub struct Links<T: ?Sized> {
-    pub registry: HashMap<Link<T>, usize>,
+    registry: HashMap<Link<T>, usize>,
 }
 
 impl<T: ?Sized> Links<T> {
