@@ -15,10 +15,12 @@ pub struct Links<T: ?Sized> {
 }
 
 impl<T: ?Sized> Links<T> {
+    #[inline]
     pub fn insert(&mut self, other: Link<T>) {
         *self.registry.entry(other).or_insert(0) += 1;
     }
 
+    #[inline]
     pub fn remove(&mut self, other: Link<T>, strong: usize) {
         match self.registry.get(&other).copied().unwrap_or_default() {
             count if count <= strong => self.registry.remove(&other),
@@ -26,14 +28,17 @@ impl<T: ?Sized> Links<T> {
         };
     }
 
+    #[inline]
     pub fn clear(&mut self) {
         self.registry.clear()
     }
 
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.registry.is_empty()
     }
 
+    #[inline]
     pub fn iter(&self) -> hash_map::Iter<Link<T>, usize> {
         self.registry.iter()
     }
@@ -91,7 +96,6 @@ impl<T: ?Sized> Link<T> {
 }
 
 impl<T: ?Sized> RcBoxPtr<T> for Link<T> {
-    #[inline]
     fn inner(&self) -> &RcBox<T> {
         unsafe { self.0.as_ref() }
     }
