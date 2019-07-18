@@ -57,7 +57,6 @@ impl<T> Rc<T> {
                 strong: Cell::new(1),
                 weak: Cell::new(1),
                 links: RefCell::new(Links::default()),
-                back_links: RefCell::new(Links::default()),
                 value,
             })),
             phantom: PhantomData,
@@ -402,7 +401,6 @@ impl<T: ?Sized> Rc<T> {
         ptr::write(&mut (*inner).strong, Cell::new(1));
         ptr::write(&mut (*inner).weak, Cell::new(1));
         ptr::write(&mut (*inner).links, RefCell::new(Links::default()));
-        ptr::write(&mut (*inner).back_links, RefCell::new(Links::default()));
 
         inner
     }
