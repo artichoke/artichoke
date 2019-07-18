@@ -15,18 +15,14 @@ pub struct Links<T: ?Sized> {
 }
 
 impl<T: ?Sized> Links<T> {
-    pub fn contains(&self, other: &Link<T>) -> bool {
-        self.registry.contains_key(other)
-    }
-
     pub fn insert(&mut self, other: Link<T>) {
         *self.registry.entry(other).or_insert(0) += 1;
     }
 
-    pub fn remove(&mut self, other: Link<T>) {
+    pub fn remove(&mut self, other: Link<T>, strong: usize) {
         match self.registry.get(&other).copied().unwrap_or_default() {
-            count if count <= 1 => self.registry.remove(&other),
-            count => self.registry.insert(other, count - 1),
+            count if count <= strong => self.registry.remove(&other),
+            count => self.registry.insert(other, count - strong),
         };
     }
 

@@ -138,15 +138,11 @@ unsafe fn drop_unreachable<T: ?Sized>(this: &mut Rc<T>) {
     // Remove reverse links so `this` is not included in cycle detection for
     // objects that had adopted `this`. This prevents a use-after-free in
     // `DetectCycles::orphaned_cycle`.
-    for (item, _) in this.inner().links.borrow().iter() {
+    for (item, &strong) in this.inner().links.borrow().iter() {
         if let Kind::Backward = item.link_kind() {
             let mut links = item.inner().links.borrow_mut();
-            while links.contains(&forward) {
-                links.remove(forward);
-            }
-            while links.contains(&backward) {
-                links.remove(backward);
-            }
+            links.remove(forward, strong);
+            links.remove(backward, strong);
         }
     }
     // Mark `this` as pending deallocation. This is not strictly necessary since
@@ -228,14 +224,10 @@ unsafe fn drop_unreachable_with_adoptions<T: ?Sized>(this: &mut Rc<T>) {
     // to deallocate when doing cycle detection. This removes `self` from the
     // cycle detection loop. This prevents a use-after-free in
     // `DetectCycles::orphaned_cycle`.
-    for (item, _) in this.inner().links.borrow().iter() {
+    for (item, &strong) in this.inner().links.borrow().iter() {
         let mut links = item.inner().links.borrow_mut();
-        while links.contains(&forward) {
-            links.remove(forward);
-        }
-        while links.contains(&backward) {
-            links.remove(backward);
-        }
+        links.remove(forward, strong);
+        links.remove(backward, strong);
     }
     this.inner().links.borrow_mut().clear();
 
