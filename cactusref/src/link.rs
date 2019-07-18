@@ -1,4 +1,4 @@
-use core::ptr::{self, NonNull};
+use core::ptr::NonNull;
 use hashbrown::{hash_map, HashMap};
 use std::hash::{Hash, Hasher};
 
@@ -107,7 +107,7 @@ impl<T: ?Sized> Clone for Link<T> {
 
 impl<T: ?Sized> PartialEq for Link<T> {
     fn eq(&self, other: &Self) -> bool {
-        ptr::eq(self.0.as_ptr(), other.0.as_ptr()) && self.1 == other.1
+        self.0.as_ptr() == other.0.as_ptr() && self.1 == other.1
     }
 }
 
