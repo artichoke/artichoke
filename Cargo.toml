@@ -1,14 +1,10 @@
 [workspace]
 members = [
-  "cactusref",
-  "foolsgold",
-  "hubris",
   "mruby",
   "mruby-bin",
   "mruby-gems",
   "mruby-sys",
   "mruby-vfs",
-  "nemesis",
   "spec-runner",
 ]
 
