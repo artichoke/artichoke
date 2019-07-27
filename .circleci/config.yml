@@ -165,57 +165,6 @@ jobs:
           command: |
             bundle exec rubocop --version
             bundle exec rubocop
-      - restore_cache:
-          keys:
-            - ruby-bundler-v1-nemesis-{{ checksum "./nemesis/ruby/Gemfile.lock" }}
-      - run:
-          name: Nemesis Bundle Install
-          working_directory: ./nemesis/ruby
-          command: bundle install --path ~/vendor/nemesis-bundle
-      - save_cache:
-          key: ruby-bundler-v1-nemesis-{{ checksum "./nemesis/ruby/Gemfile.lock" }}
-          paths:
-            - ~/vendor/nemesis-bundle
-      - run:
-          name: Nemesis Lint Ruby With RuboCop
-          working_directory: ./nemesis/ruby
-          command: |
-            bundle exec rubocop --version
-            bundle exec rubocop
-      - restore_cache:
-          keys:
-            - ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/Gemfile.lock" }}
-      - run:
-          name: FoolsGold Bundle Install
-          working_directory: ./foolsgold/ruby
-          command: bundle install --path ~/vendor/foolsgold-bundle
-      - save_cache:
-          key: ruby-bundler-v1-foolsgold-{{ checksum "./foolsgold/ruby/Gemfile.lock" }}
-          paths:
-            - ~/vendor/foolsgold-bundle
-      - run:
-          name: FoolsGold Lint Ruby With RuboCop
-          working_directory: ./foolsgold/ruby
-          command: |
-            bundle exec rubocop --version
-            bundle exec rubocop
-      - restore_cache:
-          keys:
-            - ruby-bundler-v1-hubris-{{ checksum "./hubris/src/Gemfile.lock" }}
-      - run:
-          name: Hubris Bundle Install
-          working_directory: ./hubris/src
-          command: bundle install --path ~/vendor/hubris-bundle
-      - save_cache:
-          key: ruby-bundler-v1-hubris-{{ checksum "./hubris/src/Gemfile.lock" }}
-          paths:
-            - ~/vendor/hubris-bundle
-      - run:
-          name: Hubris Lint Ruby With RuboCop
-          working_directory: ./hubris/src
-          command: |
-            bundle exec rubocop --version
-            bundle exec rubocop
   text:
     docker:
       - image: circleci/node:lts
