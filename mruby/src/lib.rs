@@ -40,7 +40,7 @@
 //! ## Virtual Filesystem and `Kernel#require`
 //!
 //! The mruby [`State`](state::State) embeds an
-//! [in-memory virtual Unix filesystem](mruby_vfs). The VFS stores Ruby sources
+//! [in-memory virtual Unix filesystem](artichoke_vfs). The VFS stores Ruby sources
 //! that are either pure Ruby, implemented with a Rust [`MrbFile`](file::MrbFile), or
 //! both.
 //!
@@ -49,7 +49,7 @@
 //! loads sources from the VFS. For Ruby sources, the source is loaded from the VFS
 //! as a `Vec<u8>` and evaled with [`MrbEval::eval_with_context`](eval::MrbEval::eval_with_context). For
 //! Rust sources, [`MrbFile::require`](file::MrbFile::require) methods are stored as custom
-//! metadata on [`File`](mruby_vfs::FakeFileSystem) nodes in the VFS.
+//! metadata on [`File`](artichoke_vfs::FakeFileSystem) nodes in the VFS.
 //!
 //! ```rust
 //! use mruby::eval::MrbEval;
@@ -287,7 +287,7 @@ pub enum MrbError {
     UnreachableValue(sys::mrb_vtype),
     /// [`io::Error`] when interacting with virtual filesystem.
     ///
-    /// See [`mruby_vfs`].
+    /// See [`artichoke_vfs`].
     Vfs(io::Error),
 }
 

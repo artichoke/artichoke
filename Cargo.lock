@@ -34,6 +34,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "artichoke-vfs"
+version = "0.5.0-alpha"
+dependencies = [
+ "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "atty"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -274,11 +281,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "mruby"
 version = "0.1.0"
 dependencies = [
+ "artichoke-vfs 0.5.0-alpha",
  "env_logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "mruby-sys 2.0.1-12",
- "mruby-vfs 0.5.0-alpha",
  "onig 4.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "path_abs 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -310,13 +317,6 @@ dependencies = [
  "bindgen 0.49.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "fs_extra 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "mruby-vfs"
-version = "0.5.0-alpha"
-dependencies = [
- "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
