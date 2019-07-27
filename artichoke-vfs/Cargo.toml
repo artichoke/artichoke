@@ -1,11 +1,11 @@
 [package]
-name = "mruby-vfs"
+name = "artichoke-vfs"
 version = "0.5.0-alpha"
-description = "Fake implementation of a unix file system for an mruby sandbox"
+description = "Fake implementation of a unix file system for artichoke"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 license = "MIT"
-repository = "https://github.com/lopopolo/ferrocarril"
+repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 categories = [
   "development-tools::testing",

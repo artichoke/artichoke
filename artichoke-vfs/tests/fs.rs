@@ -1,9 +1,9 @@
-extern crate mruby_vfs;
-
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-use mruby_vfs::{DirEntry, FakeFileSystem, FileSystem, TempDir, TempFileSystem, UnixFileSystem};
+use artichoke_vfs::{
+    DirEntry, FakeFileSystem, FileSystem, TempDir, TempFileSystem, UnixFileSystem,
+};
 
 macro_rules! make_test {
     ($test:ident, $fs:expr) => {

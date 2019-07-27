@@ -1,6 +1,6 @@
 //! [`Mrb`] virtual filesystem used for storing Ruby sources.
 
-use mruby_vfs::{FakeFileSystem, FileSystem};
+use artichoke_vfs::{FakeFileSystem, FileSystem};
 use std::path::Path;
 
 use crate::{Mrb, MrbError};
@@ -9,7 +9,7 @@ pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
 pub type RequireFunc = fn(Mrb) -> Result<(), MrbError>;
 
-/// Virtual filesystem that wraps a [`mruby_vfs`] [`FakeFileSystem`].
+/// Virtual filesystem that wraps a [`artichoke_vfs`] [`FakeFileSystem`].
 pub struct MrbFilesystem {
     fs: FakeFileSystem<Metadata>,
 }

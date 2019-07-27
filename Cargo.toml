@@ -1,10 +1,10 @@
 [workspace]
 members = [
+  "artichoke-vfs",
   "mruby",
   "mruby-bin",
   "mruby-gems",
   "mruby-sys",
-  "mruby-vfs",
   "spec-runner",
 ]
 
