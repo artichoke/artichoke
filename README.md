@@ -9,10 +9,12 @@
 
 Artichoke is a Ruby implementation written in Rust. Artichoke aspires to be
 source-compatible with [Ruby 2.6.3](https://github.com/ruby/ruby/tree/v2_6_3)
-and pass 100% of [ruby/spec](/spec-runner/spec/ruby).
+and pass 100% of [ruby/spec](/spec-runner/spec/ruby). To view current progress
+on ruby/spec compliance, see
+[`scripts/spec-compliance.sh`](/scripts/spec-compliance.sh).
 
-Artichoke is a work-in-progress. When complete, Artichoke will improve upon MRI
-in the following ways:
+Artichoke is a work-in-progress. When functional, Artichoke will improve upon
+MRI in the following ways:
 
 - True parallelism with no GIL.
 - Optional multi-threading.
