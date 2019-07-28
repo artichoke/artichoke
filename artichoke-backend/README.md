@@ -1,23 +1,22 @@
-# mruby
+# artichoke-backend
 
-mruby crate provides a safe interface over the raw mruby bindings in
-[`mruby-sys`](/mruby-sys). mruby crate aims to expose as much of the mruby API
-as possible.
+artichoke-backend crate provides a Ruby interpreter. It currently is implemented
+with [`mruby-sys`](/mruby-sys).
 
 ## Execute Ruby Code
 
-mruby crate exposes several mechanisms for executing Ruby code on the
-interpreter.
+artichoke-backend crate exposes several mechanisms for executing Ruby code on
+the interpreter.
 
 ### Evaling Source Code
 
-mruby crate exposes eval on the `mrb_state` with the [`MrbEval`](src/eval.rs)
-trait. Side effects from eval are persisted across invocations.
+artichoke-backend crate exposes eval on the `State` with the `Eval` trait. Side
+effects from eval are persisted across invocations.
 
 ```rust
-use mruby::eval::MrbEval;
+use artichoke_backend::eval::Eval;
 
-let interp = mruby::interpreter().unwrap();
+let interp = artichoke_backend::interpreter().unwrap();
 let result = interp.eval("10 * 10").unwrap();
 let result = result.try_into::<i64>();
 assert_eq!(result, Ok(100));
@@ -25,33 +24,32 @@ assert_eq!(result, Ok(100));
 
 ### Calling Ruby Functions from Rust
 
-The [`ValueLike`](src/value/mod.rs) trait exposes a _funcall interface_ which
-can call Ruby functions on a [`Value`](src/value/mod.rs) using a `String`
-function name and a `Vec<Value>` or arguments. funcall takes a type parameter
-bound by `TryFromMrb` and converts the result of the function call to a Rust
-type (which may be `Value` or another "native" type).
+The `ValueLike` trait exposes a _funcall interface_ which can call Ruby
+functions on a `Value` using a `String` function name and a `Vec<Value>` or
+arguments. funcall takes a type parameter bound by `TryConvert` and converts the
+result of the function call to a Rust type (which may be `Value` or another
+"native" type).
 
-mruby limits functions to a maximum of 16 arguments.
+artichoke-backend limits functions to a maximum of 16 arguments.
 
 ## Virtual Filesystem and `Kernel#require`
 
-The mruby [`State`](src/state.rs) embeds an
-[in-memory virtual Unix filesystem](/mruby-vfs). The VFS stores Ruby sources
-that are either pure Ruby, implemented with a Rust [`MrbFile`](src/file.rs), or
+The artichoke-backend `State` embeds an
+[in-memory virtual Unix filesystem](/artichoke-vfs). The VFS stores Ruby sources
+that are either pure Ruby, implemented with a Rust [`File`](file::File), or
 both.
 
-mruby crate implements
-[`Kernel#require` and `Kernel#require_relative`](src/extn/core/kernel.rs) which
-loads sources from the VFS. For Ruby sources, the source is loaded from the VFS
-as a `Vec<u8>` and evaled with [`MrbEval::eval_with_context`](src/eval.rs). For
-Rust sources, [`MrbFile::require`](src/file.rs) methods are stored as custom
-metadata on `File` nodes in the VFS.
+artichoke-backend crate implements `Kernel#require` and
+`Kernel#require_relative` which loads sources from the VFS. For Ruby sources,
+the source is loaded from the VFS as a `Vec<u8>` and evaled with
+`Eval::eval_with_context`. For Rust sources, `File::require` methods are stored
+as custom metadata on [`File`](/artichoke-vfs) nodes in the VFS.
 
 ```rust
-use mruby::eval::MrbEval;
-use mruby::load::MrbLoadSources;
+use artichoke_backend::eval::Eval;
+use artichoke_backend::load::LoadSources;
 
-let mut interp = mruby::interpreter().unwrap();
+let mut interp = artichoke_backend::interpreter().unwrap();
 let code = "
 def source_location
   __FILE__
@@ -71,11 +69,10 @@ concrete type of an `mrb_value` is specified by its type tag, an `mrb_vtype`
 enum value.
 
 One `mrb_vtype` is `MRB_TT_DATA`, which allows an `mrb_value` to store an owned
-`c_void` pointer. mruby crate leverages this to store an owned copy of an
-`Rc<RefCell<T>>` for any `T` that implements `RustBackedValue`.
+`c_void` pointer. artichoke-backend crate leverages this to store an owned copy
+of an `Rc<RefCell<T>>` for any `T` that implements `RustBackedValue`.
 
-[`RustBackedValue`](src/convert/object.rs) provides two methods for working with
-`MRB_TT_DATA`:
+`RustBackedValue` provides two methods for working with `MRB_TT_DATA`:
 
 - `RustBackedValue::try_into_ruby` consumes `self` and returns a live
   `mrb_value` that wraps `T`.
@@ -85,21 +82,21 @@ One `mrb_vtype` is `MRB_TT_DATA`, which allows an `mrb_value` to store an owned
 
 These `mrb_value`s with type tag `MRB_TT_DATA` can be used to implement Ruby
 `Class`es and `Module`s with Rust structs. An example of this is the
-[`Regexp`](src/extn/core/regexp.rs) class which wraps an Oniguruma regex
-provided by the [`onig`](https://docs.rs/onig/) crate.
+[`Regexp`](src/extn/core/regexp) class which wraps an Oniguruma regex provided
+by the [`onig`] crate.
 
 ```rust
 #[macro_use]
-extern crate mruby;
+extern crate artichoke_backend;
 
-use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
-use mruby::def::{rust_data_free, ClassLike, Define};
-use mruby::eval::MrbEval;
-use mruby::file::MrbFile;
-use mruby::load::MrbLoadSources;
-use mruby::sys;
-use mruby::value::Value;
-use mruby::{Mrb, MrbError};
+use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
+use artichoke_backend::def::{rust_data_free, ClassLike, Define};
+use artichoke_backend::eval::Eval;
+use artichoke_backend::file::File;
+use artichoke_backend::load::LoadSources;
+use artichoke_backend::sys;
+use artichoke_backend::value::Value;
+use artichoke_backend::{Artichoke, ArtichokeError};
 use std::io::Write;
 use std::mem;
 
@@ -107,32 +104,34 @@ struct Container { inner: i64 }
 
 impl Container {
     unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let api = interp.borrow();
         let int = mem::uninitialized::<sys::mrb_int>();
         let mut argspec = vec![];
         argspec.write_all(format!("{}\0", sys::specifiers::INTEGER).as_bytes()).unwrap();
         sys::mrb_get_args(mrb, argspec.as_ptr() as *const i8, &int);
         let cont = Self { inner: int };
-        unwrap_value_or_raise!(interp, cont.try_into_ruby(&interp, Some(slf)))
+        cont
+            .try_into_ruby(&interp, Some(slf))
+            .unwrap_or_else(|_| Value::convert(&interp, None::<Value>))
+            .inner()
     }
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = interpreter_or_raise!(mrb);
-        let cont = unwrap_or_raise!(
-            interp,
-            Self::try_from_ruby(&interp, &Value::new(&interp, slf)),
-            Value::from_mrb(&interp, None::<Value>).inner()
-        );
-        let borrow = cont.borrow();
-        Value::from_mrb(&interp, borrow.inner).inner()
+        let interp = unwrap_interpreter!(mrb);
+        if let Ok(cont) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+            let borrow = cont.borrow();
+            Value::convert(&interp, borrow.inner).inner()
+        } else {
+            Value::convert(&interp, None::<Value>).inner()
+        }
     }
 }
 
 impl RustBackedValue for Container {}
 
-impl MrbFile for Container {
-  fn require(interp: Mrb) -> Result<(), MrbError> {
+impl File for Container {
+  fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
         let spec = interp.borrow_mut().def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
         spec.borrow_mut().add_method("initialize", Self::initialize, sys::mrb_args_req(1));
         spec.borrow_mut().add_method("value", Self::value, sys::mrb_args_none());
@@ -143,7 +142,7 @@ impl MrbFile for Container {
 }
 
 fn main() {
-    let interp = mruby::interpreter().unwrap();
+    let interp = artichoke_backend::interpreter().unwrap();
     interp.def_file_for_type::<_, Container>("container.rb").unwrap();
     interp.eval("require 'container'").unwrap();
     let result = interp.eval("Container.new(15).value * 24").unwrap();
@@ -155,17 +154,16 @@ fn main() {
 
 The [`convert` module](src/convert) provides implementations for conversions
 between `mrb_value` Ruby types and native Rust types like `i64` and
-`HashMap<String, Option<Vec<u8>>>` using an `Mrb` interpreter.
+`HashMap<String, Option<Vec<u8>>>` using an [`Artichoke`](src/lib.rs)
+interpreter.
 
 There are two converter traits:
 
-- [`FromMrb`](src/convert.rs) provides infallible conversions that return
-  `Self`. Converting from a Rust native type to a Ruby `mrb_value` is usually an
-  infallible conversion.
-- [`TryFromMrb`](src/convert.rs) provides fallible conversions that return
-  `Result<Self, Error>`. Converting from a Ruby `mrb_value` to a Rust native
-  type is always an fallible conversion because an `mrb_value` may be any type
-  tag.
+- `Convert` provides infallible conversions that return `Self`. Converting from
+  a Rust native type to a Ruby `mrb_value` is usually an infallible conversion.
+- `TryConvert` provides fallible conversions that return `Result<Self, Error>`.
+  Converting from a Ruby `mrb_value` to a Rust native type is always an fallible
+  conversion because an `mrb_value` may be any type tag.
 
 Supported conversions:
 
@@ -190,3 +188,13 @@ Supported conversions:
 
 The infallible converters are safe Rust functions. The fallibile converters are
 `unsafe` Rust functions.
+
+## License
+
+artichoke-backend is licensed with the [MIT License](/LICENSE) (c) Ryan
+Lopopolo.
+
+CactusRef contains Ruby sources derived from Ruby @
+[2.6.3](https://github.com/ruby/ruby/tree/v2_6_3) which is copyright Yukihiro
+Matsumoto \<matz@netlab.jp\> under the
+[2-clause BSDL License](https://github.com/ruby/ruby/blob/v2_6_3/COPYING).

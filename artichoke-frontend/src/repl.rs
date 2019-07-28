@@ -15,7 +15,7 @@ use std::io::{self, Write};
 
 use crate::parser::{self, Parser, State};
 
-const REPL_FILENAME: &str = "(rirb)";
+const REPL_FILENAME: &str = "(airb)";
 
 /// REPL errors.
 #[derive(Debug)]

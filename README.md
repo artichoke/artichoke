@@ -36,3 +36,12 @@ Artichoke will deviate from MRI in the following ways:
   [maybe UTF-8](https://github.com/BurntSushi/bstr), and binary.
 - Ruby source files are always interpreted as UTF-8.
 - No equivalent C API, which means C extensions are unsupported.
+
+## Try Artichoke
+
+Once you [set up a Rust toolchain](/doc/development-setup.md), you can launch an
+interactive Artichoke shell with:
+
+```shell
+cargo run -p artichoke-frontend --bin airb
+```
