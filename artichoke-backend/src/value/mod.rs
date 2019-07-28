@@ -9,8 +9,8 @@ use crate::convert::{Convert, TryConvert};
 use crate::exception::{LastError, MrbExceptionHandler};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
+use crate::ArtichokeError;
 use crate::Mrb;
-use crate::MrbError;
 
 pub mod types;
 
@@ -60,7 +60,7 @@ where
 
     fn interp(&self) -> &Mrb;
 
-    fn funcall<T, M, A>(&self, func: M, args: A) -> Result<T, MrbError>
+    fn funcall<T, M, A>(&self, func: M, args: A) -> Result<T, ArtichokeError>
     where
         T: TryConvert<Value, From = types::Ruby, To = types::Rust>,
         M: AsRef<str>,
@@ -103,7 +103,7 @@ where
                 args.len(),
                 MRB_FUNCALL_ARGC_MAX
             );
-            return Err(MrbError::TooManyArgs {
+            return Err(ArtichokeError::TooManyArgs {
                 given: args.len(),
                 max: MRB_FUNCALL_ARGC_MAX,
             });
@@ -134,7 +134,7 @@ where
         match self.interp().last_error() {
             LastError::Some(exception) => {
                 warn!("runtime error with exception backtrace: {}", exception);
-                Err(MrbError::Exec(exception.to_string()))
+                Err(ArtichokeError::Exec(exception.to_string()))
             }
             LastError::UnableToExtract(err) => {
                 error!("failed to extract exception after runtime error: {}", err);
@@ -146,15 +146,20 @@ where
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(MrbError::UnreachableValue(value.inner().tt))
+                Err(ArtichokeError::UnreachableValue(value.inner().tt))
             }
             LastError::None => unsafe {
-                T::try_convert(self.interp(), value).map_err(MrbError::ConvertToRust)
+                T::try_convert(self.interp(), value).map_err(ArtichokeError::ConvertToRust)
             },
         }
     }
 
-    fn funcall_with_block<T, M, A>(&self, func: M, args: A, block: Value) -> Result<T, MrbError>
+    fn funcall_with_block<T, M, A>(
+        &self,
+        func: M,
+        args: A,
+        block: Value,
+    ) -> Result<T, ArtichokeError>
     where
         T: TryConvert<Value, From = types::Ruby, To = types::Rust>,
         M: AsRef<str>,
@@ -198,7 +203,7 @@ where
                 args.len(),
                 MRB_FUNCALL_ARGC_MAX
             );
-            return Err(MrbError::TooManyArgs {
+            return Err(ArtichokeError::TooManyArgs {
                 given: args.len(),
                 max: MRB_FUNCALL_ARGC_MAX,
             });
@@ -232,7 +237,7 @@ where
         match self.interp().last_error() {
             LastError::Some(exception) => {
                 warn!("runtime error with exception backtrace: {}", exception);
-                Err(MrbError::Exec(exception.to_string()))
+                Err(ArtichokeError::Exec(exception.to_string()))
             }
             LastError::UnableToExtract(err) => {
                 error!("failed to extract exception after runtime error: {}", err);
@@ -244,15 +249,15 @@ where
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(MrbError::UnreachableValue(value.inner().tt))
+                Err(ArtichokeError::UnreachableValue(value.inner().tt))
             }
             LastError::None => unsafe {
-                T::try_convert(self.interp(), value).map_err(MrbError::ConvertToRust)
+                T::try_convert(self.interp(), value).map_err(ArtichokeError::ConvertToRust)
             },
         }
     }
 
-    fn respond_to(&self, method: &str) -> Result<bool, MrbError> {
+    fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError> {
         let method = Value::convert(self.interp(), method);
         self.funcall::<bool, _, _>("respond_to?", &[method])
     }
@@ -289,7 +294,7 @@ impl Value {
     ///
     /// After extracting a [`sys::mrb_value`] from the interpreter, check to see
     /// if the value is [unreachable](types::Ruby::Unreachable) and propagate an
-    /// [`MrbError::UnreachableValue`](crate::MrbError::UnreachableValue) error.
+    /// [`ArtichokeError::UnreachableValue`](crate::ArtichokeError::UnreachableValue) error.
     ///
     /// See: <https://github.com/mruby/mruby/issues/4460>
     pub fn is_unreachable(&self) -> bool {
@@ -343,19 +348,19 @@ impl Value {
     /// Consume `self` and try to convert `self` to type `T`.
     ///
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
-    pub fn try_into<T>(self) -> Result<T, MrbError>
+    pub fn try_into<T>(self) -> Result<T, ArtichokeError>
     where
         T: TryConvert<Self, From = types::Ruby, To = types::Rust>,
     {
         let interp = Rc::clone(&self.interp);
-        unsafe { T::try_convert(&interp, self) }.map_err(MrbError::ConvertToRust)
+        unsafe { T::try_convert(&interp, self) }.map_err(ArtichokeError::ConvertToRust)
     }
 
     /// Call `#itself` on this [`Value`] and try to convert the result to type
     /// `T`.
     ///
     /// If you want to consume this [`Value`], use [`Value::try_into`].
-    pub fn itself<T>(&self) -> Result<T, MrbError>
+    pub fn itself<T>(&self) -> Result<T, ArtichokeError>
     where
         T: TryConvert<Self, From = types::Ruby, To = types::Rust>,
     {
@@ -363,7 +368,7 @@ impl Value {
     }
 
     /// Call `#freeze` on this [`Value`] and consume `self`.
-    pub fn freeze(self) -> Result<Self, MrbError> {
+    pub fn freeze(self) -> Result<Self, ArtichokeError> {
         let frozen = self.funcall::<Self, _, _>("freeze", &[])?;
         frozen.protect();
         Ok(frozen)
@@ -419,7 +424,7 @@ mod tests {
     use crate::eval::MrbEval;
     use crate::gc::MrbGarbageCollection;
     use crate::value::{Value, ValueLike};
-    use crate::MrbError;
+    use crate::ArtichokeError;
 
     #[test]
     fn to_s_true() {
@@ -652,7 +657,9 @@ mod tests {
         let result = s.funcall::<String, _, _>("+", &[nil]);
         assert_eq!(
             result,
-            Err(MrbError::Exec("TypeError: expected String".to_owned()))
+            Err(ArtichokeError::Exec(
+                "TypeError: expected String".to_owned()
+            ))
         );
     }
 
@@ -664,7 +671,7 @@ mod tests {
         let result = nil.funcall::<bool, _, _>("garbage_method_name", &[s]);
         assert_eq!(
             result,
-            Err(MrbError::Exec(
+            Err(ArtichokeError::Exec(
                 "NoMethodError: undefined method 'garbage_method_name'".to_owned()
             ))
         );

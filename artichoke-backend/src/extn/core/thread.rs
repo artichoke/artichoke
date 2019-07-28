@@ -1,8 +1,8 @@
 use crate::eval::MrbEval;
 use crate::load::MrbLoadSources;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
-pub fn init(interp: &Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
     interp
         .borrow_mut()
         .def_class::<Thread>("Thread", None, None);
@@ -23,7 +23,7 @@ mod tests {
 
     use crate::convert::TryConvert;
     use crate::eval::MrbEval;
-    // use crate::MrbError;
+    // use crate::ArtichokeError;
 
     #[test]
     fn thread_required_by_default() {
@@ -189,7 +189,7 @@ end.join
         "#;
                 assert_eq!(
                     result,
-                    Err(MrbError::Exec(expected_backtrace.trim().to_owned()))
+                    Err(ArtichokeError::Exec(expected_backtrace.trim().to_owned()))
                 );
                 */
     }

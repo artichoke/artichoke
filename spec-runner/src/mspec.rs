@@ -5,9 +5,9 @@ use artichoke_backend::eval::MrbEval;
 use artichoke_backend::load::MrbLoadSources;
 use artichoke_backend::top_self::MrbTopSelf;
 use artichoke_backend::value::{Value, ValueLike};
-use artichoke_backend::{Mrb, MrbError};
+use artichoke_backend::{ArtichokeError, Mrb};
 
-pub fn init(interp: &Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;
     for source in Sources::iter() {
         let content = Sources::get(&source).map(Cow::into_owned).unwrap();
@@ -36,14 +36,18 @@ impl Runner {
         }
     }
 
-    pub fn add_spec<T: AsRef<[u8]>>(&mut self, source: &str, contents: T) -> Result<(), MrbError> {
+    pub fn add_spec<T: AsRef<[u8]>>(
+        &mut self,
+        source: &str,
+        contents: T,
+    ) -> Result<(), ArtichokeError> {
         if !source.contains("/fixtures/") && !source.contains("/shared/") {
             self.specs.push(source.to_owned());
         }
         self.interp.def_rb_source_file(source, contents.as_ref())
     }
 
-    pub fn run(self) -> Result<bool, MrbError> {
+    pub fn run(self) -> Result<bool, ArtichokeError> {
         init(&self.interp).unwrap();
         self.interp.def_rb_source_file("/src/spec_helper.rb", "")?;
         self.interp

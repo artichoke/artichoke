@@ -6,4 +6,4 @@ use crate::extn::core::regexp::Regexp;
 use crate::Mrb;
 use crate::sys;
 use crate::value::Value;
-use crate::MrbError;
+use crate::ArtichokeError;

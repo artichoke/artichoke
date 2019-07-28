@@ -8,7 +8,7 @@ use crate::class;
 use crate::convert::RustBackedValue;
 use crate::module;
 use crate::sys;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
@@ -221,7 +221,7 @@ where
     /// This function takes a mutable borrow on the [`Mrb`] interpreter. Ensure
     /// that there are no outstanding borrows on the interpreter or else Rust
     /// will panic.
-    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError>;
+    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, ArtichokeError>;
 }
 
 /// `ClassLike` trait unifies `class::Spec` and `module::Spec`.

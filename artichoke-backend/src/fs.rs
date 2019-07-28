@@ -3,11 +3,11 @@
 use artichoke_vfs::{FakeFileSystem, FileSystem};
 use std::path::Path;
 
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
-pub type RequireFunc = fn(Mrb) -> Result<(), MrbError>;
+pub type RequireFunc = fn(Mrb) -> Result<(), ArtichokeError>;
 
 /// Virtual filesystem that wraps a [`artichoke_vfs`] [`FakeFileSystem`].
 pub struct MrbFilesystem {
@@ -21,42 +21,47 @@ impl MrbFilesystem {
     /// This path is searched by
     /// [`Kernel::require`](crate::extn::core::kernel::Kernel::require) and
     /// [`Kernel::require_relative`](crate::extn::core::kernel::Kernel::require_relative).
-    pub fn new() -> Result<Self, MrbError> {
+    pub fn new() -> Result<Self, ArtichokeError> {
         let fs = FakeFileSystem::new();
-        fs.create_dir_all(RUBY_LOAD_PATH).map_err(MrbError::Vfs)?;
+        fs.create_dir_all(RUBY_LOAD_PATH)
+            .map_err(ArtichokeError::Vfs)?;
         Ok(Self { fs })
     }
 
-    pub fn create_dir_all<P: AsRef<Path>>(&self, path: P) -> Result<(), MrbError> {
-        self.fs.create_dir_all(path.as_ref()).map_err(MrbError::Vfs)
+    pub fn create_dir_all<P: AsRef<Path>>(&self, path: P) -> Result<(), ArtichokeError> {
+        self.fs
+            .create_dir_all(path.as_ref())
+            .map_err(ArtichokeError::Vfs)
     }
 
     pub fn is_file<P: AsRef<Path>>(&self, path: P) -> bool {
         self.fs.is_file(path.as_ref())
     }
 
-    pub fn read_file<P: AsRef<Path>>(&self, path: P) -> Result<Vec<u8>, MrbError> {
-        self.fs.read_file(path.as_ref()).map_err(MrbError::Vfs)
+    pub fn read_file<P: AsRef<Path>>(&self, path: P) -> Result<Vec<u8>, ArtichokeError> {
+        self.fs
+            .read_file(path.as_ref())
+            .map_err(ArtichokeError::Vfs)
     }
 
-    pub fn write_file<P, B>(&self, path: P, buf: B) -> Result<(), MrbError>
+    pub fn write_file<P, B>(&self, path: P, buf: B) -> Result<(), ArtichokeError>
     where
         P: AsRef<Path>,
         B: AsRef<[u8]>,
     {
         self.fs
             .write_file(path.as_ref(), buf.as_ref())
-            .map_err(MrbError::Vfs)
+            .map_err(ArtichokeError::Vfs)
     }
 
     pub fn set_metadata<P: AsRef<Path>>(
         &self,
         path: P,
         metadata: Metadata,
-    ) -> Result<(), MrbError> {
+    ) -> Result<(), ArtichokeError> {
         self.fs
             .set_metadata(path.as_ref(), metadata)
-            .map_err(MrbError::Vfs)
+            .map_err(ArtichokeError::Vfs)
     }
 
     pub fn metadata<P: AsRef<Path>>(&self, path: P) -> Option<Metadata> {

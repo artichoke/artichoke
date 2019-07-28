@@ -11,7 +11,7 @@ use crate::def::ClassLike;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::{self, Value};
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].
 ///
@@ -40,19 +40,19 @@ where
         self,
         interp: &Mrb,
         slf: Option<sys::mrb_value>,
-    ) -> Result<Value, MrbError> {
+    ) -> Result<Value, ArtichokeError> {
         let mrb = interp.borrow().mrb;
         let spec = interp
             .borrow()
             .class_spec::<Self>()
-            .ok_or(MrbError::ConvertToRuby(Error {
+            .ok_or(ArtichokeError::ConvertToRuby(Error {
                 from: Rust::Object,
                 to: Ruby::Object,
             }))?;
         let rclass = spec
             .borrow()
             .rclass(interp)
-            .ok_or(MrbError::ConvertToRuby(Error {
+            .ok_or(ArtichokeError::ConvertToRuby(Error {
                 from: Rust::Object,
                 to: Ruby::Object,
             }))?;
@@ -66,7 +66,7 @@ where
                     args.len(),
                     value::MRB_FUNCALL_ARGC_MAX
                 );
-                return Err(MrbError::TooManyArgs {
+                return Err(ArtichokeError::TooManyArgs {
                     given: args.len(),
                     max: value::MRB_FUNCALL_ARGC_MAX,
                 });
@@ -93,11 +93,14 @@ where
     /// This function sanity checks to make sure that [`Value`] is a
     /// [`Ruby::Data`] and that the `RClass *` of the spec matches the
     /// [`Value`].
-    unsafe fn try_from_ruby(interp: &Mrb, slf: &Value) -> Result<Rc<RefCell<Self>>, MrbError> {
+    unsafe fn try_from_ruby(
+        interp: &Mrb,
+        slf: &Value,
+    ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
         let mrb = interp.borrow().mrb;
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
-            return Err(MrbError::ConvertToRust(Error {
+            return Err(ArtichokeError::ConvertToRust(Error {
                 from: slf.ruby_type(),
                 to: Rust::Object,
             }));
@@ -105,17 +108,17 @@ where
         let spec = interp
             .borrow()
             .class_spec::<Self>()
-            .ok_or_else(|| MrbError::NotDefined("class".to_owned()))?;
+            .ok_or_else(|| ArtichokeError::NotDefined("class".to_owned()))?;
         // Sanity check that the RClass matches.
         if let Some(rclass) = spec.borrow().rclass(interp) {
             if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
-                return Err(MrbError::ConvertToRust(Error {
+                return Err(ArtichokeError::ConvertToRust(Error {
                     from: slf.ruby_type(),
                     to: Rust::Object,
                 }));
             }
         } else {
-            return Err(MrbError::NotDefined("class".to_owned()));
+            return Err(ArtichokeError::NotDefined("class".to_owned()));
         }
         let ptr = {
             let borrow = spec.borrow();

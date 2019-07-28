@@ -6,11 +6,11 @@ use crate::eval::MrbEval;
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
 use crate::sys;
 use crate::value::Value;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 mod scan;
 
-pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
     if interp.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }
@@ -24,7 +24,10 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     string
         .borrow_mut()
         .add_method("scan", RString::scan, sys::mrb_args_req(1));
-    string.borrow().define(interp).map_err(|_| MrbError::New)?;
+    string
+        .borrow()
+        .define(interp)
+        .map_err(|_| ArtichokeError::New)?;
     trace!("Patched String onto interpreter");
     Ok(())
 }

@@ -1,8 +1,8 @@
 use crate::load::MrbLoadSources;
+use crate::ArtichokeError;
 use crate::Mrb;
-use crate::MrbError;
 
-pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("erb.rb", "class ERB; def initialize(*args); end; end")?;
     interp.def_rb_source_file("time.rb", "")?;
     interp.def_rb_source_file("fileutils.rb", "")?;

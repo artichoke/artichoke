@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 /// Extract an [`Mrb`] interpreter from the userdata pointer on a
 /// [`sys::mrb_state`].
@@ -19,15 +19,15 @@ use crate::{Mrb, MrbError};
 /// this [`c_void`](std::ffi::c_void) was created with [`Rc::into_raw`], see
 /// calling this function, [`Rc::strong_count`] on the [`Mrb`] instance will
 /// increase by one.
-pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Mrb, MrbError> {
+pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Mrb, ArtichokeError> {
     if mrb.is_null() {
         error!("Attempted to extract Mrb from null mrb_state");
-        return Err(MrbError::Uninitialized);
+        return Err(ArtichokeError::Uninitialized);
     }
     let ptr = (*mrb).ud;
     if ptr.is_null() {
         error!("Attempted to extract Mrb from null mrb_state->ud pointer");
-        return Err(MrbError::Uninitialized);
+        return Err(ArtichokeError::Uninitialized);
     }
     // Extract the smart pointer that wraps the API from the user data on
     // the mrb interpreter. The `mrb_state` should retain ownership of its
@@ -49,12 +49,12 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Mrb, MrbError> 
 mod tests {
     use std::rc::Rc;
 
-    use crate::MrbError;
+    use crate::ArtichokeError;
 
     #[test]
     fn from_user_data_null_pointer() {
         let err = unsafe { super::from_user_data(std::ptr::null_mut()) };
-        assert_eq!(err.err(), Some(MrbError::Uninitialized));
+        assert_eq!(err.err(), Some(ArtichokeError::Uninitialized));
     }
 
     #[test]
@@ -66,7 +66,7 @@ mod tests {
             (*mrb).ud = std::ptr::null_mut();
         }
         let err = unsafe { super::from_user_data(mrb) };
-        assert_eq!(err.err(), Some(MrbError::Uninitialized));
+        assert_eq!(err.err(), Some(ArtichokeError::Uninitialized));
     }
 
     #[test]

@@ -3,7 +3,7 @@ use log::warn;
 use crate::convert::Convert;
 use crate::sys;
 use crate::value::{Value, ValueLike};
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 /// Interpreters that implement [`MrbWarn`] expose methods for emitting warnings
 /// during execution.
@@ -18,11 +18,11 @@ pub trait MrbWarn {
     /// Emit a warning message using `Kernel#warn`.
     ///
     /// This method appends newlines to message if necessary.
-    fn warn(&self, message: &str) -> Result<(), MrbError>;
+    fn warn(&self, message: &str) -> Result<(), ArtichokeError>;
 }
 
 impl MrbWarn for Mrb {
-    fn warn(&self, message: &str) -> Result<(), MrbError> {
+    fn warn(&self, message: &str) -> Result<(), ArtichokeError> {
         warn!("rb warning: {}", message);
         let mrb = self.borrow().mrb;
         let kernel = unsafe {

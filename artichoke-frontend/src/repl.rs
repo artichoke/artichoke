@@ -8,7 +8,7 @@
 use artichoke_backend::eval::{EvalContext, MrbEval};
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::sys;
-use artichoke_backend::MrbError;
+use artichoke_backend::ArtichokeError;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::io::{self, Write};
@@ -26,9 +26,9 @@ pub enum Error {
     ReplInit,
     /// Unrecoverable [`Parser`] error.
     ReplParse(parser::Error),
-    /// Unrecoverable [`MrbError`]. [`MrbError::Exec`] are handled gracefully
-    /// by the REPL. All other `MrbError`s are fatal.
-    Ruby(MrbError),
+    /// Unrecoverable [`ArtichokeError`]. [`ArtichokeError::Exec`] are handled gracefully
+    /// by the REPL. All other `ArtichokeError`s are fatal.
+    Ruby(ArtichokeError),
     /// IO error when writing to output or error streams.
     Io(io::Error),
 }
@@ -116,7 +116,7 @@ pub fn run(
                 match interp.eval(buf.as_str()) {
                     Ok(value) => writeln!(output, "{}{}", config.result_prefix, value.inspect())
                         .map_err(Error::Io)?,
-                    Err(MrbError::Exec(backtrace)) => {
+                    Err(ArtichokeError::Exec(backtrace)) => {
                         writeln!(error, "Backtrace:").map_err(Error::Io)?;
                         for frame in backtrace.lines() {
                             writeln!(error, "    {}", frame).map_err(Error::Io)?;

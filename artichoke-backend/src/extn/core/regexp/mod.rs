@@ -15,7 +15,7 @@ use crate::eval::MrbEval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::sys;
 use crate::value::Value;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 pub mod enc;
 pub mod opts;
@@ -39,7 +39,7 @@ pub mod source;
 pub mod to_s;
 pub mod union;
 
-pub fn init(interp: &Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("regexp.rb"))?;
     let regexp =
         interp

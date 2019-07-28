@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::exception::{LastError, MrbExceptionHandler};
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 const TOP_FILENAME: &str = "(eval)";
 
@@ -97,7 +97,7 @@ impl Default for EvalContext {
 pub trait MrbEval {
     /// Eval code on the mruby interpreter using the current [`EvalContext`] or
     /// [`EvalContext::root`] if none is present on the stack.
-    fn eval<T>(&self, code: T) -> Result<Value, MrbError>
+    fn eval<T>(&self, code: T) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>;
 
@@ -114,7 +114,7 @@ pub trait MrbEval {
     ///
     /// `EvalContext` allows manipulating interpreter state before eval, for
     /// example, setting the `__FILE__` magic constant.
-    fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, MrbError>
+    fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>;
 
@@ -140,7 +140,7 @@ pub trait MrbEval {
 }
 
 impl MrbEval for Mrb {
-    fn eval<T>(&self, code: T) -> Result<Value, MrbError>
+    fn eval<T>(&self, code: T) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>,
     {
@@ -192,7 +192,7 @@ impl MrbEval for Mrb {
         match self.last_error() {
             LastError::Some(exception) => {
                 warn!("runtime error with exception backtrace: {}", exception);
-                Err(MrbError::Exec(exception.to_string()))
+                Err(ArtichokeError::Exec(exception.to_string()))
             }
             LastError::UnableToExtract(err) => {
                 error!("failed to extract exception after runtime error: {}", err);
@@ -204,7 +204,7 @@ impl MrbEval for Mrb {
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(MrbError::UnreachableValue(value.inner().tt))
+                Err(ArtichokeError::UnreachableValue(value.inner().tt))
             }
             LastError::None => Ok(value),
         }
@@ -262,7 +262,7 @@ impl MrbEval for Mrb {
         Value::new(self, value)
     }
 
-    fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, MrbError>
+    fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>,
     {
@@ -307,7 +307,7 @@ mod tests {
     use crate::load::MrbLoadSources;
     use crate::sys;
     use crate::value::Value;
-    use crate::{Mrb, MrbError};
+    use crate::{ArtichokeError, Mrb};
 
     #[test]
     fn root_eval_context() {
@@ -354,7 +354,7 @@ mod tests {
         }
 
         impl MrbFile for NestedEval {
-            fn require(interp: Mrb) -> Result<(), MrbError> {
+            fn require(interp: Mrb) -> Result<(), ArtichokeError> {
                 let spec = {
                     let mut api = interp.borrow_mut();
                     let spec = api.def_module::<Self>("NestedEval", None);
@@ -408,7 +408,7 @@ NestedEval.file
         let result = interp.eval("'a").map(|_| ());
         assert_eq!(
             result,
-            Err(MrbError::Exec("SyntaxError: syntax error".to_owned()))
+            Err(ArtichokeError::Exec("SyntaxError: syntax error".to_owned()))
         );
     }
 
@@ -418,7 +418,7 @@ NestedEval.file
         let result = interp.eval("'a").map(|_| ());
         assert_eq!(
             result,
-            Err(MrbError::Exec("SyntaxError: syntax error".to_owned()))
+            Err(ArtichokeError::Exec("SyntaxError: syntax error".to_owned()))
         );
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval("'a' * 10 ").expect("eval");
@@ -455,7 +455,7 @@ NestedEval.file
             .def_rb_source_file("fail.rb", "def bad; 'as'.scan(; end")
             .expect("def file");
         let result = interp.eval("require 'fail'").map(|_| ());
-        let expected = MrbError::Exec("SyntaxError: syntax error".to_owned());
+        let expected = ArtichokeError::Exec("SyntaxError: syntax error".to_owned());
         assert_eq!(result, Err(expected));
     }
 }

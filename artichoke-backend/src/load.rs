@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::file::MrbFile;
 use crate::fs::RUBY_LOAD_PATH;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 pub trait MrbLoadSources {
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
@@ -17,8 +17,8 @@ pub trait MrbLoadSources {
     fn def_file<T>(
         &self,
         filename: T,
-        require: fn(Self) -> Result<(), MrbError>,
-    ) -> Result<(), MrbError>
+        require: fn(Self) -> Result<(), ArtichokeError>,
+    ) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>;
 
@@ -30,7 +30,7 @@ pub trait MrbLoadSources {
     /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), MrbError>
+    fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
         F: MrbFile;
@@ -41,7 +41,7 @@ pub trait MrbLoadSources {
     /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_rb_source_file<T, F>(&self, filename: T, contents: F) -> Result<(), MrbError>
+    fn def_rb_source_file<T, F>(&self, filename: T, contents: F) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
         F: AsRef<[u8]>;
@@ -64,8 +64,8 @@ impl MrbLoadSources for Mrb {
     fn def_file<T>(
         &self,
         filename: T,
-        require: fn(Self) -> Result<(), MrbError>,
-    ) -> Result<(), MrbError>
+        require: fn(Self) -> Result<(), ArtichokeError>,
+    ) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
     {
@@ -88,7 +88,7 @@ impl MrbLoadSources for Mrb {
         Ok(())
     }
 
-    fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), MrbError>
+    fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
         F: MrbFile,
@@ -96,7 +96,7 @@ impl MrbLoadSources for Mrb {
         self.def_file(filename.as_ref(), F::require)
     }
 
-    fn def_rb_source_file<T, F>(&self, filename: T, contents: F) -> Result<(), MrbError>
+    fn def_rb_source_file<T, F>(&self, filename: T, contents: F) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
         F: AsRef<[u8]>,

@@ -5,8 +5,8 @@ use std::fmt;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};
+use crate::ArtichokeError;
 use crate::Mrb;
-use crate::MrbError;
 
 /// Metadata about a Ruby exception.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -51,7 +51,7 @@ impl fmt::Display for Exception {
 pub enum LastError {
     Some(Exception),
     None,
-    UnableToExtract(MrbError),
+    UnableToExtract(ArtichokeError),
 }
 
 /// Extract the last exception thrown on the interpreter.
@@ -129,7 +129,7 @@ mod tests {
     use crate::eval::MrbEval;
     use crate::exception::Exception;
     use crate::value::ValueLike;
-    use crate::MrbError;
+    use crate::ArtichokeError;
 
     #[test]
     fn return_exception() {
@@ -143,7 +143,7 @@ mod tests {
             Some(vec!["(eval):1".to_owned()]),
             "(eval):1: waffles (ArgumentError)",
         );
-        assert_eq!(result, Err(MrbError::Exec(expected.to_string())));
+        assert_eq!(result, Err(ArtichokeError::Exec(expected.to_string())));
     }
 
     #[test]
@@ -151,7 +151,7 @@ mod tests {
         let interp = crate::interpreter().expect("mrb init");
         let result = interp.eval("def bad; (; end").map(|_| ());
         let expected = Exception::new("SyntaxError", "waffles", None, "SyntaxError: syntax error");
-        assert_eq!(result, Err(MrbError::Exec(expected.to_string())));
+        assert_eq!(result, Err(ArtichokeError::Exec(expected.to_string())));
     }
 
     #[test]

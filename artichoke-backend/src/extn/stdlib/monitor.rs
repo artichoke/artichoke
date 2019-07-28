@@ -1,8 +1,8 @@
 use crate::load::MrbLoadSources;
+use crate::ArtichokeError;
 use crate::Mrb;
-use crate::MrbError;
 
-pub fn init(interp: &Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
     interp
         .borrow_mut()
         .def_class::<Monitor>("Monitor", None, None);

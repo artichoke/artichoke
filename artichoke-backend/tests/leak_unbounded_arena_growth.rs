@@ -22,7 +22,7 @@
 
 use mruby::eval::MrbEval;
 use mruby::gc::MrbGarbageCollection;
-use mruby::MrbError;
+use mruby::ArtichokeError;
 use std::rc::Rc;
 
 mod leak;
@@ -54,7 +54,10 @@ end
         let arena = interp.create_arena_savepoint();
         let result = interp.eval(code).map(|_| ());
         arena.restore();
-        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
+        assert_eq!(
+            result,
+            Err(ArtichokeError::Exec(expected.trim().to_owned()))
+        );
         drop(result);
         interp.incremental_gc();
     });

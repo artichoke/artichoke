@@ -8,7 +8,7 @@ use crate::def::{ClassLike, Define, EnclosingRubyScope, Method};
 use crate::method;
 use crate::sys;
 use crate::value::Value;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 pub struct Spec {
     name: String,
@@ -132,12 +132,12 @@ impl PartialEq for Spec {
 }
 
 impl Define for Spec {
-    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError> {
+    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, ArtichokeError> {
         let mrb = interp.borrow().mrb;
         let rclass = if let Some(ref scope) = self.enclosing_scope {
             let scope = scope
                 .rclass(interp)
-                .ok_or_else(|| MrbError::NotDefined(scope.fqname()))?;
+                .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname()))?;
             unsafe { sys::mrb_define_module_under(mrb, scope, self.cstring().as_ptr()) }
         } else {
             unsafe { sys::mrb_define_module(mrb, self.cstring().as_ptr()) }

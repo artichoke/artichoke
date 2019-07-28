@@ -9,12 +9,12 @@ use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeE
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 mod args;
 pub mod require;
 
-pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
     let warning = interp.borrow_mut().def_module::<Warning>("Warning", None);
     warning
         .borrow_mut()
@@ -22,7 +22,10 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     warning
         .borrow_mut()
         .add_self_method("warn", Warning::warn, sys::mrb_args_req(1));
-    warning.borrow().define(interp).map_err(|_| MrbError::New)?;
+    warning
+        .borrow()
+        .define(interp)
+        .map_err(|_| ArtichokeError::New)?;
     let kernel = interp.borrow_mut().def_module::<Kernel>("Kernel", None);
     kernel
         .borrow_mut()
@@ -41,7 +44,10 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     kernel
         .borrow_mut()
         .add_method("warn", Kernel::warn, sys::mrb_args_rest());
-    kernel.borrow().define(interp).map_err(|_| MrbError::New)?;
+    kernel
+        .borrow()
+        .define(interp)
+        .map_err(|_| ArtichokeError::New)?;
     interp.eval(include_str!("kernel.rb"))?;
     trace!("Patched Kernel#require onto interpreter");
     Ok(())
@@ -191,7 +197,7 @@ mod tests {
     use crate::eval::MrbEval;
     use crate::file::MrbFile;
     use crate::load::MrbLoadSources;
-    use crate::{Mrb, MrbError};
+    use crate::{ArtichokeError, Mrb};
 
     // Integration test for `Kernel::require`:
     //
@@ -205,7 +211,7 @@ mod tests {
         struct File;
 
         impl MrbFile for File {
-            fn require(interp: Mrb) -> Result<(), MrbError> {
+            fn require(interp: Mrb) -> Result<(), ArtichokeError> {
                 interp.eval("@i = 255")?;
                 Ok(())
             }
@@ -232,7 +238,10 @@ mod tests {
 (eval):1: cannot load such file -- non-existent-source (LoadError)
 (eval):1
             "#;
-        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
+        assert_eq!(
+            result,
+            Err(ArtichokeError::Exec(expected.trim().to_owned()))
+        );
     }
 
     #[test]
@@ -268,14 +277,17 @@ mod tests {
 (eval):1: cannot load such file -- /src (LoadError)
 (eval):1
         "#;
-        assert_eq!(result, Err(MrbError::Exec(expected.trim().to_owned())));
+        assert_eq!(
+            result,
+            Err(ArtichokeError::Exec(expected.trim().to_owned()))
+        );
     }
 
     #[test]
     fn require_path_defined_as_source_then_mrbfile() {
         struct Foo;
         impl MrbFile for Foo {
-            fn require(interp: Mrb) -> Result<(), MrbError> {
+            fn require(interp: Mrb) -> Result<(), ArtichokeError> {
                 interp.eval("module Foo; RUST = 7; end")?;
                 Ok(())
             }
@@ -300,7 +312,7 @@ mod tests {
     fn require_path_defined_as_mrbfile_then_source() {
         struct Foo;
         impl MrbFile for Foo {
-            fn require(interp: Mrb) -> Result<(), MrbError> {
+            fn require(interp: Mrb) -> Result<(), ArtichokeError> {
                 interp.eval("module Foo; RUST = 7; end")?;
                 Ok(())
             }

@@ -6,9 +6,9 @@ use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::sys;
 use crate::value::Value;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
-pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
+pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
     let exception = interp
         .borrow_mut()
         .def_class::<Exception>("Exception", None, None);
@@ -21,7 +21,7 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     scripterror
         .borrow()
         .define(interp)
-        .map_err(|_| MrbError::New)?;
+        .map_err(|_| ArtichokeError::New)?;
     let loaderror = interp
         .borrow_mut()
         .def_class::<LoadError>("LoadError", None, None);
@@ -31,7 +31,7 @@ pub fn patch(interp: &Mrb) -> Result<(), MrbError> {
     loaderror
         .borrow()
         .define(interp)
-        .map_err(|_| MrbError::New)?;
+        .map_err(|_| ArtichokeError::New)?;
     interp
         .borrow_mut()
         .def_class::<ArgumentError>("ArgumentError", None, None);
@@ -173,7 +173,7 @@ mod tests {
     use crate::extn::core::error::{RubyException, RuntimeError};
     use crate::file::MrbFile;
     use crate::sys;
-    use crate::{Mrb, MrbError};
+    use crate::{ArtichokeError, Mrb};
 
     struct Run;
 
@@ -185,7 +185,7 @@ mod tests {
     }
 
     impl MrbFile for Run {
-        fn require(interp: Mrb) -> Result<(), MrbError> {
+        fn require(interp: Mrb) -> Result<(), ArtichokeError> {
             let spec = interp.borrow_mut().def_class::<Self>("Run", None, None);
             spec.borrow_mut()
                 .add_self_method("run", Self::run, sys::mrb_args_none());
@@ -205,6 +205,6 @@ mod tests {
             Some(vec!["(eval):1".to_owned()]),
             "(eval):1: something went wrong (RuntimeError)",
         );
-        assert_eq!(value, Err(MrbError::Exec(expected.to_string())));
+        assert_eq!(value, Err(ArtichokeError::Exec(expected.to_string())));
     }
 }

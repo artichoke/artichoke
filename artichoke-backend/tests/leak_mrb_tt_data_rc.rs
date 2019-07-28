@@ -25,7 +25,7 @@ use artichoke_backend::file::MrbFile;
 use artichoke_backend::load::MrbLoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
-use artichoke_backend::{Mrb, MrbError};
+use artichoke_backend::{ArtichokeError, Mrb};
 use std::io::Write;
 use std::mem;
 
@@ -51,17 +51,20 @@ impl Container {
         }
 
         impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, MrbError> {
+            unsafe fn extract(interp: &Mrb) -> Result<Self, ArtichokeError> {
                 let inner = <mem::MaybeUninit<sys::mrb_value>>::uninit();
                 let mut argspec = vec![];
                 // TODO: use a constant argspec, see GH-174.
                 argspec
                     .write_all(sys::specifiers::OBJECT.as_bytes())
-                    .map_err(|_| MrbError::ArgSpec)?;
-                argspec.write_all(b"\0").map_err(|_| MrbError::ArgSpec)?;
+                    .map_err(|_| ArtichokeError::ArgSpec)?;
+                argspec
+                    .write_all(b"\0")
+                    .map_err(|_| ArtichokeError::ArgSpec)?;
                 sys::mrb_get_args(interp.borrow().mrb, argspec.as_ptr() as *const i8, &inner);
                 let inner = Value::new(interp, inner.assume_init());
-                let inner = String::try_convert(&interp, inner).map_err(MrbError::ConvertToRust)?;
+                let inner =
+                    String::try_convert(&interp, inner).map_err(ArtichokeError::ConvertToRust)?;
                 Ok(Self { inner })
             }
         }
@@ -77,7 +80,7 @@ impl Container {
     }
 }
 impl MrbFile for Container {
-    fn require(interp: Mrb) -> Result<(), MrbError> {
+    fn require(interp: Mrb) -> Result<(), ArtichokeError> {
         let spec = {
             let mut api = interp.borrow_mut();
             let spec = api.def_class::<Self>("Container", None, Some(rust_data_free::<Self>));

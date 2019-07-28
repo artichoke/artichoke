@@ -10,7 +10,7 @@ use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
 use crate::method;
 use crate::sys;
 use crate::value::Value;
-use crate::{Mrb, MrbError};
+use crate::{ArtichokeError, Mrb};
 
 pub struct Spec {
     name: String,
@@ -162,19 +162,19 @@ impl PartialEq for Spec {
 }
 
 impl Define for Spec {
-    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, MrbError> {
+    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, ArtichokeError> {
         let mrb = interp.borrow().mrb;
         let super_class = if let Some(ref spec) = self.super_class {
             spec.borrow()
                 .rclass(interp)
-                .ok_or_else(|| MrbError::NotDefined(spec.borrow().fqname()))?
+                .ok_or_else(|| ArtichokeError::NotDefined(spec.borrow().fqname()))?
         } else {
             unsafe { (*mrb).object_class }
         };
         let rclass = if let Some(ref scope) = self.enclosing_scope {
             let scope = scope
                 .rclass(interp)
-                .ok_or_else(|| MrbError::NotDefined(scope.fqname()))?;
+                .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname()))?;
             unsafe { sys::mrb_define_class_under(mrb, scope, self.cstring().as_ptr(), super_class) }
         } else {
             unsafe { sys::mrb_define_class(mrb, self.cstring().as_ptr(), super_class) }

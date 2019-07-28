@@ -1,8 +1,8 @@
 use crate::load::MrbLoadSources;
+use crate::ArtichokeError;
 use crate::Mrb;
-use crate::MrbError;
 
-pub fn init(interp: &Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("json.rb", include_str!("json.rb"))?;
     interp.def_rb_source_file("json/common.rb", include_str!("json/common.rb"))?;
     interp.def_rb_source_file(
