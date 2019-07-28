@@ -5,7 +5,7 @@ use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{ArtichokeError, Mrb};
 
-/// Interpreters that implement [`MrbWarn`] expose methods for emitting warnings
+/// Interpreters that implement [`Warn`] expose methods for emitting warnings
 /// during execution.
 ///
 /// Some functionality required to be compliant with ruby-spec is deprecated or
@@ -13,15 +13,14 @@ use crate::{ArtichokeError, Mrb};
 /// using the
 /// [`Warning`](https://ruby-doc.org/core-2.6.3/Warning.html#method-i-warn)
 /// module from the standard library.
-#[allow(clippy::module_name_repetitions)]
-pub trait MrbWarn {
+pub trait Warn {
     /// Emit a warning message using `Kernel#warn`.
     ///
     /// This method appends newlines to message if necessary.
     fn warn(&self, message: &str) -> Result<(), ArtichokeError>;
 }
 
-impl MrbWarn for Mrb {
+impl Warn for Mrb {
     fn warn(&self, message: &str) -> Result<(), ArtichokeError> {
         warn!("rb warning: {}", message);
         let mrb = self.borrow().mrb;
