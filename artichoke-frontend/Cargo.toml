@@ -10,6 +10,3 @@ rustyline = "4.1.0"
 
 [dependencies.artichoke-backend]
 path = "../artichoke-backend"
-
-[dependencies.mruby-gems]
-path = "../mruby-gems"

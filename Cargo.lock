@@ -53,7 +53,6 @@ name = "artichoke-frontend"
 version = "0.1.0"
 dependencies = [
  "artichoke-backend 0.1.0",
- "mruby-gems 0.1.0",
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustyline 4.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -301,14 +300,6 @@ dependencies = [
 name = "memchr"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "mruby-gems"
-version = "0.1.0"
-dependencies = [
- "artichoke-backend 0.1.0",
- "rust-embed 4.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "mruby-sys"
