@@ -6,7 +6,7 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::convert::{Convert, TryConvert};
-use crate::exception::{LastError, MrbExceptionHandler};
+use crate::exception::{ExceptionHandler, LastError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::ArtichokeError;

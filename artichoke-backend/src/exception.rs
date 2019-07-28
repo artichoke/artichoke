@@ -5,8 +5,7 @@ use std::fmt;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};
-use crate::ArtichokeError;
-use crate::Mrb;
+use crate::{ArtichokeError, Mrb};
 
 /// Metadata about a Ruby exception.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -18,7 +17,7 @@ pub struct Exception {
     /// The result of calling `exception.backtrace`.
     ///
     /// Some exceptions, like `SyntaxError` which is thrown directly by the
-    /// mruby VM, do not have backtraces, so this field is optional.
+    /// artichoke VM, do not have backtraces, so this field is optional.
     pub backtrace: Option<Vec<String>>,
     /// The result of calling `exception.inspect`.
     pub inspect: String,
@@ -55,16 +54,17 @@ pub enum LastError {
 }
 
 /// Extract the last exception thrown on the interpreter.
-pub trait MrbExceptionHandler {
-    /// Extract the last thrown exception on the mruby interpreter if there is
-    /// one.
+#[allow(clippy::module_name_repetitions)]
+pub trait ExceptionHandler {
+    /// Extract the last thrown exception on the artichoke interpreter if there
+    /// is one.
     ///
     /// If there is an error, return [`LastError::Some`], which contains the
     /// exception class name, message, and optional backtrace.
     fn last_error(&self) -> LastError;
 }
 
-impl MrbExceptionHandler for Mrb {
+impl ExceptionHandler for Mrb {
     fn last_error(&self) -> LastError {
         let _arena = self.create_arena_savepoint();
         let mrb = { self.borrow().mrb };
