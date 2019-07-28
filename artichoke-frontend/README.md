@@ -5,11 +5,10 @@ interpreter implemented in the [artichoke-backend](/artichoke-backend).
 
 ## airb
 
-`airb` is the Artichoke implementation of `irb` and is an interactive Ruby
-shell and
-[REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop).
-`airb` includes all extensions that are implemented as part of the `artichoke-backend`
-crate.
+`airb` is the Artichoke implementation of `irb` and is an interactive Ruby shell
+and [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop).
+`airb` includes all extensions that are implemented as part of the
+`artichoke-backend` crate.
 
 `airb` is a readline enabled shell, although it does not persist history.
 
