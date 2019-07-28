@@ -25,7 +25,7 @@ assert_eq!(result, Ok(100));
 ### Calling Ruby Functions from Rust
 
 The `ValueLike` trait exposes a _funcall interface_ which can call Ruby
-functions on a `Value` using a `String` function name and a `Vec<Value>` or
+functions on a `Value` using a `String` function name and a `Vec<Value>` of
 arguments. funcall takes a type parameter bound by `TryConvert` and converts the
 result of the function call to a Rust type (which may be `Value` or another
 "native" type).

@@ -31,7 +31,7 @@
 //!
 //! The [`ValueLike`](value::ValueLike) trait exposes a _funcall interface_
 //! which can call Ruby functions on a [`Value`](value::Value) using a `String`
-//! function name and a `Vec<Value>` or arguments. funcall takes a type
+//! function name and a `Vec<Value>` of arguments. funcall takes a type
 //! parameter bound by [`TryConvert`](convert::TryConvert) and converts the
 //! result of the function call to a Rust type (which may be `Value` or another
 //! "native" type).
