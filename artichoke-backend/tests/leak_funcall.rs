@@ -13,9 +13,9 @@
 //! If resident memory increases more than 10MB during the test, we likely are
 //! leaking memory.
 
-use mruby::convert::FromMrb;
-use mruby::gc::MrbGarbageCollection;
-use mruby::value::{Value, ValueLike};
+use artichoke_backend::convert::FromMrb;
+use artichoke_backend::gc::MrbGarbageCollection;
+use artichoke_backend::value::{Value, ValueLike};
 
 mod leak;
 
@@ -24,7 +24,7 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 30;
 
 #[test]
 fn funcall_arena() {
-    let interp = mruby::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("mrb init");
     let s = Value::from_mrb(&interp, "a".repeat(1024 * 1024));
 
     leak::Detector::new("ValueLike::funcall", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {

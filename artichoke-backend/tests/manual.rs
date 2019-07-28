@@ -2,16 +2,16 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 
 #[macro_use]
-extern crate mruby;
+extern crate artichoke_backend;
 
-use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
-use mruby::def::{rust_data_free, ClassLike, Define};
-use mruby::eval::MrbEval;
-use mruby::file::MrbFile;
-use mruby::load::MrbLoadSources;
-use mruby::sys;
-use mruby::value::Value;
-use mruby::{Mrb, MrbError};
+use artichoke_backend::convert::{FromMrb, RustBackedValue, TryFromMrb};
+use artichoke_backend::def::{rust_data_free, ClassLike, Define};
+use artichoke_backend::eval::MrbEval;
+use artichoke_backend::file::MrbFile;
+use artichoke_backend::load::MrbLoadSources;
+use artichoke_backend::sys;
+use artichoke_backend::value::Value;
+use artichoke_backend::{Mrb, MrbError};
 use std::io::Write;
 use std::mem;
 
@@ -88,7 +88,7 @@ impl MrbFile for Container {
 
 #[test]
 fn define_rust_backed_ruby_class() {
-    let interp = mruby::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("mrb init");
     interp
         .def_file_for_type::<_, Container>("container.rb")
         .expect("def file");

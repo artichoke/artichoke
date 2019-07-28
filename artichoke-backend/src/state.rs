@@ -65,12 +65,12 @@ impl State {
     ///
     /// ```rust
     /// #[macro_use]
-    /// extern crate mruby;
+    /// extern crate artichoke_backend;
     ///
-    /// use mruby::convert::FromMrb;
-    /// use mruby::def::{ClassLike, Define};
-    /// use mruby::sys;
-    /// use mruby::value::Value;
+    /// use artichoke_backend::convert::FromMrb;
+    /// use artichoke_backend::def::{ClassLike, Define};
+    /// use artichoke_backend::sys;
+    /// use artichoke_backend::value::Value;
     ///
     /// extern "C" fn value(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value
     /// {
@@ -79,7 +79,7 @@ impl State {
     /// }
     ///
     /// fn main() {
-    ///     let interp = mruby::interpreter().expect("mrb init");
+    ///     let interp = artichoke_backend::interpreter().expect("mrb init");
     ///     let spec = {
     ///         let mut api = interp.borrow_mut();
     ///         let spec = api.def_class::<()>("Container", None, None);
@@ -134,12 +134,12 @@ impl State {
     ///
     /// ```rust
     /// #[macro_use]
-    /// extern crate mruby;
+    /// extern crate artichoke_backend;
     ///
-    /// use mruby::convert::FromMrb;
-    /// use mruby::def::{ClassLike, Define};
-    /// use mruby::sys;
-    /// use mruby::value::Value;
+    /// use artichoke_backend::convert::FromMrb;
+    /// use artichoke_backend::def::{ClassLike, Define};
+    /// use artichoke_backend::sys;
+    /// use artichoke_backend::value::Value;
     ///
     /// extern "C" fn value(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value
     /// {
@@ -148,7 +148,7 @@ impl State {
     /// }
     ///
     /// fn main() {
-    ///     let interp = mruby::interpreter().expect("mrb init");
+    ///     let interp = artichoke_backend::interpreter().expect("mrb init");
     ///     let spec = {
     ///         let mut api = interp.borrow_mut();
     ///         let spec = api.def_module::<()>("Container", None);

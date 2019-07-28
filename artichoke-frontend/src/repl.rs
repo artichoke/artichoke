@@ -1,5 +1,5 @@
-//! A REPL (read–eval–print–loop) for an mruby interpreter exposed by the
-//! [`mruby`] crate.
+//! A REPL (read–eval–print–loop) for an artichoke interpreter exposed by
+//! the [`artichoke-backend`](artichoke_backend) crate.
 //!
 //! The REPL is readline enabled, but does not save history. The REPL supports
 //! multi-line Ruby expressions, CTRL-C to break out of an expression, and can

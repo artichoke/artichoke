@@ -14,10 +14,10 @@
 //! If this test segfaults, we are improperly transmuting the `Rc` smart
 //! pointer.
 
-use mruby::gc::MrbGarbageCollection;
-use mruby::state::State;
-use mruby::sys;
-use mruby::Mrb;
+use artichoke_backend::gc::MrbGarbageCollection;
+use artichoke_backend::state::State;
+use artichoke_backend::sys;
+use artichoke_backend::Mrb;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -34,7 +34,7 @@ fn segfault_rc_transmute() {
         std::mem::size_of::<sys::mrb_value>()
     );
 
-    let interp = mruby::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("mrb init");
     // Increase the strong count on the Rc to 255.
     let mut interps = vec![];
     for _ in 0..254 {

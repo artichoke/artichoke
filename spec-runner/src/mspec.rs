@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn mspec_framework_loads() {
-        let interp = mruby::interpreter().expect("mrb init");
+        let interp = artichoke_backend::interpreter().expect("mrb init");
         // should not panic
         assert_eq!(Runner::new(interp).run(), Ok(true));
     }

@@ -16,16 +16,16 @@
 //! `34ee3ddc1c5f4eb1d20f19dd772b0ca348391b2f` with a fairly massive leak.
 
 #[macro_use]
-extern crate mruby;
+extern crate artichoke_backend;
 
-use mruby::convert::{FromMrb, RustBackedValue, TryFromMrb};
-use mruby::def::{rust_data_free, ClassLike, Define};
-use mruby::eval::MrbEval;
-use mruby::file::MrbFile;
-use mruby::load::MrbLoadSources;
-use mruby::sys;
-use mruby::value::Value;
-use mruby::{Mrb, MrbError};
+use artichoke_backend::convert::{FromMrb, RustBackedValue, TryFromMrb};
+use artichoke_backend::def::{rust_data_free, ClassLike, Define};
+use artichoke_backend::eval::MrbEval;
+use artichoke_backend::file::MrbFile;
+use artichoke_backend::load::MrbLoadSources;
+use artichoke_backend::sys;
+use artichoke_backend::value::Value;
+use artichoke_backend::{Mrb, MrbError};
 use std::io::Write;
 use std::mem;
 
@@ -95,7 +95,7 @@ impl MrbFile for Container {
 #[test]
 fn rust_backed_mrb_value_smart_pointer_leak() {
     leak::Detector::new("smart pointer", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
-        let interp = mruby::interpreter().expect("mrb init");
+        let interp = artichoke_backend::interpreter().expect("mrb init");
         interp
             .def_file_for_type::<_, Container>("container")
             .expect("def file");
