@@ -32,12 +32,12 @@ lint_ruby_sources() {
   popd >/dev/null
 }
 
-## mruby::extn
-lint_ruby_sources mruby/src/extn
+## Backend Core and StdLib
+lint_ruby_sources artichoke-backend/src/extn
+## Frontend bins
+lint_ruby_sources artichoke-frontend/ruby
 ## spec-runner
 lint_ruby_sources spec-runner/src
-## mruby bins
-lint_ruby_sources mruby-bin/ruby
 
 # C sources
 
