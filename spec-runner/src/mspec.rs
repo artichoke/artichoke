@@ -1,12 +1,11 @@
 use std::borrow::Cow;
 
-use mruby::convert::FromMrb;
-use mruby::eval::MrbEval;
-use mruby::load::MrbLoadSources;
-use mruby::top_self::MrbTopSelf;
-use mruby::value::{Value, ValueLike};
-use mruby::Mrb;
-use mruby::MrbError;
+use artichoke_backend::convert::FromMrb;
+use artichoke_backend::eval::MrbEval;
+use artichoke_backend::load::MrbLoadSources;
+use artichoke_backend::top_self::MrbTopSelf;
+use artichoke_backend::value::{Value, ValueLike};
+use artichoke_backend::{Mrb, MrbError};
 
 pub fn init(interp: &Mrb) -> Result<(), MrbError> {
     interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;

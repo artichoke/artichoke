@@ -3,8 +3,8 @@
 #[macro_use]
 extern crate rust_embed;
 
-use mruby::Mrb;
-use mruby::MrbError;
+use artichoke_backend::Mrb;
+use artichoke_backend::MrbError;
 
 pub mod rubygems;
 

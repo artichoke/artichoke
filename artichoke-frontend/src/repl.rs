@@ -5,10 +5,10 @@
 //! multi-line Ruby expressions, CTRL-C to break out of an expression, and can
 //! inspect return values and exception backtraces.
 
-use mruby::eval::{EvalContext, MrbEval};
-use mruby::gc::MrbGarbageCollection;
-use mruby::sys;
-use mruby::MrbError;
+use artichoke_backend::eval::{EvalContext, MrbEval};
+use artichoke_backend::gc::MrbGarbageCollection;
+use artichoke_backend::sys;
+use artichoke_backend::MrbError;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::io::{self, Write};
@@ -82,7 +82,7 @@ pub fn run(
 ) -> Result<(), Error> {
     writeln!(output, "{}", preamble()?).map_err(Error::Io)?;
     let config = config.unwrap_or_else(Default::default);
-    let interp = mruby::interpreter().map_err(Error::Ruby)?;
+    let interp = artichoke_backend::interpreter().map_err(Error::Ruby)?;
 
     // load gems
     mruby_gems::rubygems::rack::init(&interp).map_err(Error::Ruby)?;

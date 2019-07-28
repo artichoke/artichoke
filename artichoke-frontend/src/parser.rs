@@ -1,7 +1,7 @@
 //! Parser for Ruby code that determines if it is fit to eval on an interpreter.
 
-use mruby::sys;
-use mruby::Mrb;
+use artichoke_backend::sys;
+use artichoke_backend::Mrb;
 use std::convert::TryFrom;
 use std::ffi::CStr;
 

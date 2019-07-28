@@ -10,7 +10,7 @@
 //! and
 //! [`MatchData#values_at`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-values_at)
 //! are
-//! [implemented in Ruby](https://github.com/artichoke/artichoke/blob/master/mruby/src/extn/core/matchdata/matchdata.rb).
+//! [implemented in Ruby](https://github.com/artichoke/artichoke/blob/master/artichoke-backend/src/extn/core/matchdata/matchdata.rb).
 
 use onig::Regex;
 

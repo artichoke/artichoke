@@ -1,6 +1,6 @@
-use mruby::load::MrbLoadSources;
-use mruby::Mrb;
-use mruby::MrbError;
+use artichoke_backend::load::MrbLoadSources;
+use artichoke_backend::Mrb;
+use artichoke_backend::MrbError;
 use std::borrow::Cow;
 use std::convert::AsRef;
 

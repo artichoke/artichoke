@@ -34,6 +34,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "artichoke-backend"
+version = "0.1.0"
+dependencies = [
+ "artichoke-vfs 0.5.0-alpha",
+ "env_logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mruby-sys 2.0.1-12",
+ "onig 4.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "path_abs 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quickcheck 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quickcheck_macros 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "artichoke-frontend"
+version = "0.1.0"
+dependencies = [
+ "artichoke-backend 0.1.0",
+ "mruby-gems 0.1.0",
+ "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustyline 4.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "artichoke-vfs"
 version = "0.5.0-alpha"
 dependencies = [
@@ -278,35 +303,10 @@ version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "mruby"
-version = "0.1.0"
-dependencies = [
- "artichoke-vfs 0.5.0-alpha",
- "env_logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "mruby-sys 2.0.1-12",
- "onig 4.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "path_abs 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "quickcheck 0.8.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "quickcheck_macros 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "mruby-bin"
-version = "0.1.0"
-dependencies = [
- "mruby 0.1.0",
- "mruby-gems 0.1.0",
- "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustyline 4.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "mruby-gems"
 version = "0.1.0"
 dependencies = [
- "mruby 0.1.0",
+ "artichoke-backend 0.1.0",
  "rust-embed 4.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -690,8 +690,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "spec-runner"
 version = "0.1.0"
 dependencies = [
+ "artichoke-backend 0.1.0",
  "fs_extra 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mruby 0.1.0",
  "rust-embed 4.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

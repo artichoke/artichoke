@@ -1,17 +1,17 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
 
-use mruby::convert::FromMrb;
-use mruby::eval::{EvalContext, MrbEval};
-use mruby::sys;
-use mruby::value::Value;
+use artichoke_backend::convert::FromMrb;
+use artichoke_backend::eval::{EvalContext, MrbEval};
+use artichoke_backend::sys;
+use artichoke_backend::value::Value;
 use std::env;
 use std::fs::File;
 use std::io::{self, Read};
 use std::process;
 
 fn main() {
-    let interp = match mruby::interpreter() {
+    let interp = match artichoke_backend::interpreter() {
         Ok(interp) => interp,
         Err(err) => {
             eprintln!("{}", err);
