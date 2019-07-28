@@ -1,4 +1,4 @@
-use crate::load::MrbLoadSources;
+use crate::load::LoadSources;
 use crate::ArtichokeError;
 use crate::Mrb;
 
@@ -17,7 +17,7 @@ pub struct StringScanner;
 #[cfg(test)]
 mod tests {
     use crate::eval::Eval;
-    use crate::load::MrbLoadSources;
+    use crate::load::LoadSources;
 
     #[test]
     fn strscan_spec() {

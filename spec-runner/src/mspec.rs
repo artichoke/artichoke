@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::Eval;
-use artichoke_backend::load::MrbLoadSources;
+use artichoke_backend::load::LoadSources;
 use artichoke_backend::top_self::MrbTopSelf;
 use artichoke_backend::value::{Value, ValueLike};
 use artichoke_backend::{ArtichokeError, Mrb};

@@ -300,7 +300,7 @@ mod tests {
     use crate::def::{ClassLike, Define};
     use crate::eval::{Context, Eval};
     use crate::file::File;
-    use crate::load::MrbLoadSources;
+    use crate::load::LoadSources;
     use crate::sys;
     use crate::value::Value;
     use crate::{ArtichokeError, Mrb};

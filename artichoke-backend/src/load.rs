@@ -5,7 +5,8 @@ use crate::file::File;
 use crate::fs::RUBY_LOAD_PATH;
 use crate::{ArtichokeError, Mrb};
 
-pub trait MrbLoadSources {
+#[allow(clippy::module_name_repetitions)]
+pub trait LoadSources {
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
     /// Ruby file is added to the filesystem and `require` will dynamically
     /// define Ruby items when invoked via `Kernel#require`.
@@ -60,7 +61,7 @@ pub trait MrbLoadSources {
     }
 }
 
-impl MrbLoadSources for Mrb {
+impl LoadSources for Mrb {
     fn def_file<T>(
         &self,
         filename: T,

@@ -1,5 +1,5 @@
 use crate::eval::Eval;
-use crate::load::MrbLoadSources;
+use crate::load::LoadSources;
 use crate::{ArtichokeError, Mrb};
 
 pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {

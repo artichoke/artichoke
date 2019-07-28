@@ -29,7 +29,7 @@ impl Require {
     pub unsafe fn require(self, interp: Mrb) -> sys::mrb_value {
         let context = Context::new(self.file.as_str());
         // Require Rust File first because an File may define classes and
-        // module with `MrbLoadSources` and Ruby files can require arbitrary
+        // module with `LoadSources` and Ruby files can require arbitrary
         // other files, including some child sources that may depend on these
         // module definitions.
         if let Some(require) = self.rust {
@@ -153,7 +153,7 @@ pub mod method {
                 "(require)"
             };
             // Require Rust File first because an File may define classes
-            // and module with `MrbLoadSources` and Ruby files can require
+            // and module with `LoadSources` and Ruby files can require
             // arbitrary other files, including some child sources that may
             // depend on these module definitions.
             let contents = {

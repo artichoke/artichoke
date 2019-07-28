@@ -196,7 +196,7 @@ mod tests {
     use crate::convert::TryConvert;
     use crate::eval::Eval;
     use crate::file::File;
-    use crate::load::MrbLoadSources;
+    use crate::load::LoadSources;
     use crate::{ArtichokeError, Mrb};
 
     // Integration test for `Kernel::require`:

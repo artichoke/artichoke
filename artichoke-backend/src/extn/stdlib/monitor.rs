@@ -1,4 +1,4 @@
-use crate::load::MrbLoadSources;
+use crate::load::LoadSources;
 use crate::ArtichokeError;
 use crate::Mrb;
 
