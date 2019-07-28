@@ -28,12 +28,12 @@ pub struct Require {
 impl Require {
     pub unsafe fn require(self, interp: Mrb) -> sys::mrb_value {
         let context = Context::new(self.file.as_str());
-        // Require Rust MrbFile first because an MrbFile may define classes and
+        // Require Rust File first because an File may define classes and
         // module with `MrbLoadSources` and Ruby files can require arbitrary
         // other files, including some child sources that may depend on these
         // module definitions.
         if let Some(require) = self.rust {
-            // dynamic, Rust-backed `MrbFile` require
+            // dynamic, Rust-backed `File` require
             interp.push_context(context.clone());
             let response = require(Rc::clone(&interp));
             interp.pop_context();
@@ -152,7 +152,7 @@ pub mod method {
             } else {
                 "(require)"
             };
-            // Require Rust MrbFile first because an MrbFile may define classes
+            // Require Rust File first because an File may define classes
             // and module with `MrbLoadSources` and Ruby files can require
             // arbitrary other files, including some child sources that may
             // depend on these module definitions.

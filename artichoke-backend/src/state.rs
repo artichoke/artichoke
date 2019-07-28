@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::class;
 use crate::def::{EnclosingRubyScope, Free};
 use crate::eval::Context;
-use crate::fs::MrbFilesystem;
+use crate::fs::Filesystem;
 use crate::module;
 use crate::sys::{self, DescribeState};
 
@@ -19,7 +19,7 @@ pub struct State {
     pub ctx: *mut sys::mrbc_context,
     classes: HashMap<TypeId, Rc<RefCell<class::Spec>>>,
     modules: HashMap<TypeId, Rc<RefCell<module::Spec>>>,
-    pub vfs: MrbFilesystem,
+    pub vfs: Filesystem,
     pub(crate) context_stack: Vec<Context>,
     pub num_set_regexp_capture_globals: usize,
     symbol_cache: HashMap<String, sys::mrb_sym>,
@@ -28,8 +28,8 @@ pub struct State {
 impl State {
     /// Create a new [`State`] from a [`sys::mrb_state`] and
     /// [`sys::mrbc_context`] with an
-    /// [in memory virtual filesystem](MrbFilesystem).
-    pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context, vfs: MrbFilesystem) -> Self {
+    /// [in memory virtual filesystem](Filesystem).
+    pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context, vfs: Filesystem) -> Self {
         Self {
             mrb,
             ctx,

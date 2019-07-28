@@ -1,7 +1,7 @@
 use log::trace;
 use std::path::PathBuf;
 
-use crate::file::MrbFile;
+use crate::file::File;
 use crate::fs::RUBY_LOAD_PATH;
 use crate::{ArtichokeError, Mrb};
 
@@ -23,7 +23,7 @@ pub trait MrbLoadSources {
         T: AsRef<str>;
 
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
-    /// Ruby file is added to the filesystem and [`MrbFile::require`] will
+    /// Ruby file is added to the filesystem and [`File::require`] will
     /// dynamically define Ruby items when invoked via `Kernel#require`.
     ///
     /// If filename is a relative path, the Ruby source is added to the
@@ -33,7 +33,7 @@ pub trait MrbLoadSources {
     fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
-        F: MrbFile;
+        F: File;
 
     /// Add a pure Ruby source file to the virtual filesystem.
     ///
@@ -91,7 +91,7 @@ impl MrbLoadSources for Mrb {
     fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
-        F: MrbFile,
+        F: File,
     {
         self.def_file(filename.as_ref(), F::require)
     }

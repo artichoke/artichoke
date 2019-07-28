@@ -7,7 +7,7 @@ extern crate artichoke_backend;
 use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
 use artichoke_backend::def::{rust_data_free, ClassLike, Define};
 use artichoke_backend::eval::Eval;
-use artichoke_backend::file::MrbFile;
+use artichoke_backend::file::File;
 use artichoke_backend::load::MrbLoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
@@ -71,7 +71,7 @@ impl Container {
     }
 }
 
-impl MrbFile for Container {
+impl File for Container {
     fn require(interp: Mrb) -> Result<(), ArtichokeError> {
         let spec = {
             let mut api = interp.borrow_mut();

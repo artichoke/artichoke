@@ -5,7 +5,8 @@ use std::rc::Rc;
 
 use crate::exception::{ExceptionHandler, LastError};
 use crate::sys::{self, DescribeState};
-use crate::value::Value; use crate::{ArtichokeError, Mrb};
+use crate::value::Value;
+use crate::{ArtichokeError, Mrb};
 
 const TOP_FILENAME: &str = "(eval)";
 
@@ -298,7 +299,7 @@ mod tests {
     use crate::convert::{Convert, TryConvert};
     use crate::def::{ClassLike, Define};
     use crate::eval::{Context, Eval};
-    use crate::file::MrbFile;
+    use crate::file::File;
     use crate::load::MrbLoadSources;
     use crate::sys;
     use crate::value::Value;
@@ -348,7 +349,7 @@ mod tests {
             }
         }
 
-        impl MrbFile for NestedEval {
+        impl File for NestedEval {
             fn require(interp: Mrb) -> Result<(), ArtichokeError> {
                 let spec = {
                     let mut api = interp.borrow_mut();

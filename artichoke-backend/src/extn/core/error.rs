@@ -171,7 +171,7 @@ mod tests {
     use crate::eval::Eval;
     use crate::exception::Exception;
     use crate::extn::core::error::{RubyException, RuntimeError};
-    use crate::file::MrbFile;
+    use crate::file::File;
     use crate::sys;
     use crate::{ArtichokeError, Mrb};
 
@@ -184,7 +184,7 @@ mod tests {
         }
     }
 
-    impl MrbFile for Run {
+    impl File for Run {
         fn require(interp: Mrb) -> Result<(), ArtichokeError> {
             let spec = interp.borrow_mut().def_class::<Self>("Run", None, None);
             spec.borrow_mut()

@@ -1,6 +1,5 @@
 use crate::{ArtichokeError, Mrb};
 
-#[allow(clippy::module_name_repetitions)]
-pub trait MrbFile {
+pub trait File {
     fn require(interp: Mrb) -> Result<(), ArtichokeError>;
 }

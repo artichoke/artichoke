@@ -10,11 +10,11 @@ pub const RUBY_LOAD_PATH: &str = "/src/lib";
 pub type RequireFunc = fn(Mrb) -> Result<(), ArtichokeError>;
 
 /// Virtual filesystem that wraps a [`artichoke_vfs`] [`FakeFileSystem`].
-pub struct MrbFilesystem {
+pub struct Filesystem {
     fs: FakeFileSystem<Metadata>,
 }
 
-impl MrbFilesystem {
+impl Filesystem {
     /// Create a new in memory virtual filesystem.
     ///
     /// Creates a directory at [`RUBY_LOAD_PATH`] for storing Ruby source files.

@@ -43,14 +43,14 @@
 //! The artichoke-backend [`State`](state::State) embeds an
 //! [in-memory virtual Unix filesystem](artichoke_vfs). The VFS stores Ruby
 //! sources that are either pure Ruby, implemented with a Rust
-//! [`MrbFile`](file::MrbFile), or both.
+//! [`File`](file::File), or both.
 //!
 //! artichoke-backend crate implements
 //! [`Kernel#require` and `Kernel#require_relative`](extn::core::kernel::Kernel)
 //! which loads sources from the VFS. For Ruby sources, the source is loaded
 //! from the VFS as a `Vec<u8>` and evaled with
 //! [`Eval::eval_with_context`](eval::Eval::eval_with_context). For Rust
-//! sources, [`MrbFile::require`](file::MrbFile::require) methods are stored as
+//! sources, [`File::require`](file::File::require) methods are stored as
 //! custom metadata on [`File`](artichoke_vfs::FakeFileSystem) nodes in the VFS.
 //!
 //! ```rust
@@ -104,7 +104,7 @@
 //! use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
 //! use artichoke_backend::def::{rust_data_free, ClassLike, Define};
 //! use artichoke_backend::eval::Eval;
-//! use artichoke_backend::file::MrbFile;
+//! use artichoke_backend::file::File;
 //! use artichoke_backend::load::MrbLoadSources;
 //! use artichoke_backend::sys;
 //! use artichoke_backend::value::Value;
@@ -142,7 +142,7 @@
 //!
 //! impl RustBackedValue for Container {}
 //!
-//! impl MrbFile for Container {
+//! impl File for Container {
 //!   fn require(interp: Mrb) -> Result<(), ArtichokeError> {
 //!         let spec = interp.borrow_mut().def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
 //!         spec.borrow_mut().add_method("initialize", Self::initialize, sys::mrb_args_req(1));

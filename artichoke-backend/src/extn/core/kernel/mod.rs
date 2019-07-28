@@ -195,7 +195,7 @@ impl Kernel {
 mod tests {
     use crate::convert::TryConvert;
     use crate::eval::Eval;
-    use crate::file::MrbFile;
+    use crate::file::File;
     use crate::load::MrbLoadSources;
     use crate::{ArtichokeError, Mrb};
 
@@ -208,9 +208,9 @@ mod tests {
     // - Require non-existing file raises and returns `nil`.
     #[test]
     fn require() {
-        struct File;
+        struct TestFile;
 
-        impl MrbFile for File {
+        impl File for TestFile {
             fn require(interp: Mrb) -> Result<(), ArtichokeError> {
                 interp.eval("@i = 255")?;
                 Ok(())
@@ -219,7 +219,7 @@ mod tests {
 
         let interp = crate::interpreter().expect("mrb init");
         interp
-            .def_file_for_type::<_, File>("file.rb")
+            .def_file_for_type::<_, TestFile>("file.rb")
             .expect("def file");
         let result = interp.eval("require 'file'").expect("eval");
         let require_result = unsafe { bool::try_convert(&interp, result) };
@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn require_path_defined_as_source_then_mrbfile() {
         struct Foo;
-        impl MrbFile for Foo {
+        impl File for Foo {
             fn require(interp: Mrb) -> Result<(), ArtichokeError> {
                 interp.eval("module Foo; RUST = 7; end")?;
                 Ok(())
@@ -311,7 +311,7 @@ mod tests {
     #[test]
     fn require_path_defined_as_mrbfile_then_source() {
         struct Foo;
-        impl MrbFile for Foo {
+        impl File for Foo {
             fn require(interp: Mrb) -> Result<(), ArtichokeError> {
                 interp.eval("module Foo; RUST = 7; end")?;
                 Ok(())
