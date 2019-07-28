@@ -1,21 +1,22 @@
-# mruby-bin
+# artichoke-frontend
 
-Crate mruby-bin provides binaries for interacting with the mruby interpreter in
-the [mruby crate](/mruby).
+Crate artichoke-frontend provides binaries for interacting with the Ruby
+interpreter implemented in the [artichoke-backend](/artichoke-backend).
 
-## rirb
+## airb
 
-`rirb` is a Rust implementation of `irb` and is an interactive mruby shell and
+`airb` is the Artichoke implementation of `irb` and is an interactive Ruby
+shell and
 [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop).
-`rirb` includes all extensions that are implemented as part of the `mruby`
+`airb` includes all extensions that are implemented as part of the `artichoke-backend`
 crate.
 
-`rirb` is a readline enabled shell, although it does not persist history.
+`airb` is a readline enabled shell, although it does not persist history.
 
-To invoke `rirb`, run:
+To invoke `airb`, run:
 
 ```shell
-cargo run -p mruby-bin rirb
+cargo run -p artichoke-frontend --bin airb
 ```
 
 The REPL looks like this:
