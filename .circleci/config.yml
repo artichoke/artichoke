@@ -1,4 +1,32 @@
-version: 2
+version: 2.1
+orbs:
+  shellcheck: circleci/shellcheck@1
+commands:
+  rubocop:
+    description: Lint Ruby sources with RuboCop
+    parameters:
+      target:
+        type: string
+    steps:
+      - restore_cache:
+          keys:
+            - ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+      - run:
+          name: mruby extn Bundle Install
+          working_directory: << parameters.target >>
+          command: bundle install --path "$HOME/vendor/$LOCKFILE_CHECKSUM"
+          environment:
+            LOCKFILE_CHECKSUM: "{{ checksum '<< parameters.target >>/Gemfile.lock' }}"
+      - run:
+          name: mruby extn Lint Ruby With RuboCop
+          working_directory: << parameters.target >>
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+      - save_cache:
+          key: ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+          paths:
+            - ~/vendor/{{ checksum "<< parameters.target >>/Gemfile.lock" }}
 jobs:
   rust:
     docker:
@@ -6,7 +34,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: rust-cargo-v1-{{ checksum "Cargo.lock" }}
+          key: rust-cargo-v2-{{ checksum "Cargo.lock" }}
       - run:
           name: Install Rust Toolchain
           command: |
@@ -35,11 +63,6 @@ jobs:
           name: Build Workspace
           command: |
             cargo build
-      - save_cache:
-          key: rust-cargo-v1-{{ checksum "Cargo.lock" }}
-          paths:
-            - "~/.cargo"
-            - "./target"
       - run:
           name: Test Workspace
           command: cargo test --all-features
@@ -65,6 +88,11 @@ jobs:
           name: ruby/spec Compliance Regression Test
           command: |
             ./scripts/spec-compliance.sh
+      - save_cache:
+          key: rust-cargo-v2-{{ checksum "Cargo.lock" }}
+          paths:
+            - "~/.cargo"
+            - "./target"
       - persist_to_workspace:
           root: target
           paths:
@@ -75,37 +103,18 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: c-yarn-v1-{{ checksum "yarn.lock" }}
+          key: c-yarn-v2-{{ checksum "yarn.lock" }}
       - run:
           name: Yarn Install
           command: yarn install
       - save_cache:
-          key: c-yarn-v1-{{ checksum "yarn.lock" }}
+          key: c-yarn-v2-{{ checksum "yarn.lock" }}
           paths:
             - ~/.cache/yarn
+            - node_modules
       - run:
           name: Format C Sources
-          command: |
-            yarn run clang-format --version
-
-            _check_clang_format() {
-              if yarn run clang-format -output-replacements-xml "$1" | grep -q "offset"; then
-                echo "KO: $1"
-                echo "    Please run 'yarn lint' to resolve C formatting issues"
-                return 1
-              else
-                echo "OK: $1"
-              fi
-            }
-            export -f _check_clang_format
-
-            find . -type f \
-              -and \( -name '*.h' -or -name '*.c' \) \
-              -and -not -path '*vendor*' \
-              -and -not -path '*target*' \
-              -and -not -path '*node_modules*' \
-              -and -not -path '*spec/ruby*' -print0 | \
-              xargs -0 -n1 bash -c '_check_clang_format "$@"' _
+          command: ./scripts/format-c.sh --check
   ruby:
     docker:
       - image: circleci/ruby:2.6.3
@@ -114,71 +123,35 @@ jobs:
       - run:
           name: Install bundler 2
           command: sudo gem install bundler
-      - restore_cache:
-          keys:
-            - ruby-bundler-v1-mruby-extn-{{ checksum "./mruby/src/extn/Gemfile.lock" }}
+      - rubocop:
+          target: ./mruby/src/extn
+      - rubocop:
+          target: ./spec-runner/src
+      - rubocop:
+          target: ./mruby-bin/ruby
+  shell-format:
+    docker:
+      - image: peterdavehello/shfmt:latest
+    steps:
+      - checkout
       - run:
-          name: mruby extn Bundle Install
-          working_directory: ./mruby/src/extn
-          command: bundle install --path ~/vendor/mruby-extn-bundle
-      - save_cache:
-          key: ruby-bundler-v1-mruby-extn-{{ checksum "./mruby/src/extn/Gemfile.lock" }}
-          paths:
-            - ~/vendor/mruby-extn-bundle
-      - run:
-          name: mruby extn Lint Ruby With RuboCop
-          working_directory: ./mruby/src/extn
+          name: Format Shell Sources
           command: |
-            bundle exec rubocop --version
-            bundle exec rubocop
-      - restore_cache:
-          keys:
-            - ruby-bundler-v1-spec-runner-{{ checksum "./spec-runner/src/Gemfile.lock" }}
-      - run:
-          name: spec-runner Bundle Install
-          working_directory: ./spec-runner/src
-          command: bundle install --path ~/vendor/mruby-spec-runner-bundle
-      - save_cache:
-          key: ruby-bundler-v1-spec-runner-{{ checksum "./spec-runner/src/Gemfile.lock" }}
-          paths:
-            - ~/vendor/mruby-spec-runner-bundle
-      - run:
-          name: spec-runner Lint Ruby With RuboCop
-          working_directory: ./spec-runner/src
-          command: |
-            bundle exec rubocop --version
-            bundle exec rubocop
-      - restore_cache:
-          keys:
-            - ruby-bundler-v1-mruby-bin-{{ checksum "./mruby-bin/ruby/Gemfile.lock" }}
-      - run:
-          name: mruby-bin Bundle Install
-          working_directory: ./mruby-bin/ruby
-          command: bundle install --path ~/vendor/mruby-bin-bundle
-      - save_cache:
-          key: ruby-bundler-v1-mruby-bin-{{ checksum "./mruby-bin/ruby/Gemfile.lock" }}
-          paths:
-            - ~/vendor/mruby-bin-bundle
-      - run:
-          name: mruby-bin Lint Ruby With RuboCop
-          working_directory: ./mruby-bin/ruby
-          command: |
-            bundle exec rubocop --version
-            bundle exec rubocop
+            shfmt -version
+            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -w
   text:
     docker:
       - image: circleci/node:lts
     steps:
       - checkout
       - restore_cache:
-          key: text-yarn-v1-{{ checksum "yarn.lock" }}
-      - run:
-          name: Yarn Install
-          command: yarn install
+          key: text-yarn-v2-{{ checksum "yarn.lock" }}
+      - run: yarn install
       - save_cache:
-          key: text-yarn-v1-{{ checksum "yarn.lock" }}
+          key: text-yarn-v2-{{ checksum "yarn.lock" }}
           paths:
             - ~/.cache/yarn
+            - node_modules
       - run:
           name: Format Text Sources
           command: |
@@ -195,18 +168,25 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - "23:28:57:b8:bc:d6:23:9f:bc:f3:68:56:29:90:68:c4"
+            - "ac:59:ea:b4:7f:14:dd:de:a7:50:3e:d0:35:c9:a5:a9"
       - attach_workspace:
           at: target
+      - restore_cache:
+          key: docs-yarn-v1-{{ checksum "yarn.lock" }}
+      - run: yarn install
+      - save_cache:
+          key: docs-yarn-v1-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
+            - node_modules
       - run:
-          name: Install and configure dependencies
+          name: Configure git
           command: |
-            npm install -g --silent gh-pages@2.0.1
             git config user.email "ci-build@hyperbo.la"
             git config user.name "ci-build"
       - run:
           name: Deploy docs to gh-pages branch
-          command: gh-pages --message "[skip ci] generate docs" --dist target/doc
+          command: yarn run gh-pages --message "[skip ci] generate docs" --dist target/doc
 workflows:
   version: 2
   build:
@@ -214,6 +194,11 @@ workflows:
       - rust
       - c
       - ruby
+      - shell-format
+      - shellcheck/check:
+          # we should also exclude "vendor" here but shellcheck/check exclude
+          # only support a single exclude path.
+          exclude: ./spec-runner/spec/*
       - text
       - docs-deploy:
           requires:

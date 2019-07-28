@@ -1,7 +1,7 @@
 # Development Setup
 
-ferrocarril includes Rust, Ruby, C, Shell, and Text sources. Developing on
-ferrocarril requires several dependencies, which are orchestrated by
+Artichoke includes Rust, Ruby, C, Shell, and Text sources. Developing on
+Artichoke requires configuring several dependencies, which are orchestrated by
 [Yarn](https://yarnpkg.com/).
 
 ## Linting
@@ -18,8 +18,8 @@ Merges will be blocked by CI if there are lint errors.
 
 A PR must have tests for it to be merged. The
 [Rust book chapter on testing](https://doc.rust-lang.org/book/ch11-00-testing.html)
-is a good place to start. If you'd like to see some examples in ferrocarril,
-take a look at the `Value` tests in
+is a good place to start. If you'd like to see some examples in Artichoke, take
+a look at the `Value` tests in
 [`mruby/src/value/mod.rs`](/mruby/src/value/mod.rs).
 
 To run tests:
@@ -49,9 +49,9 @@ Tests are run for every PR. All builds must pass before merging a PR.
 
 ### Rust Toolchain
 
-ferrocarril depends on nightly Rust as specified in the
-[toolchain file](/rust-toolchain) and several compiler plugins for linting and
-formatting.
+Artichoke depends on nightly Rust and several compiler plugins for linting and
+formatting. The specific version of Rust Artichoke requires is specified in the
+[toolchain file](/rust-toolchain)
 
 #### Installation
 
@@ -65,7 +65,7 @@ rustup-init
 ```
 
 Once you have rustup, you can install the Rust toolchain needed to compile
-ferrocarril.
+Artichoke.
 
 ```shell
 rustup toolchain install "$(cat rust-toolchain)"
@@ -75,7 +75,7 @@ rustup component add clippy
 
 ### Rust Crates
 
-ferrocarril depends on several Rust libraries, or crates. Once you have the Rust
+Artichoke depends on several Rust libraries, or crates. Once you have the Rust
 toolchain installed, you can install the crates specified in
 [`Cargo.lock`](/Cargo.lock) by running:
 
@@ -94,7 +94,7 @@ cargo clippy --all-targets --all-features
 
 ### Node.js
 
-ferrocarril uses Yarn and Node.js for linting and orchestration.
+Artichoke uses Yarn and Node.js for linting and orchestration.
 
 You will need to install
 [Node.js](https://nodejs.org/en/download/package-manager/) and
@@ -121,9 +121,9 @@ errors.
 
 ### Ruby
 
-ferrocarril requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x.
-The [`.ruby-version`](/.ruby-version) file in the root of ferrocarril specifies
-Ruby 2.6.3.
+Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
+[`.ruby-version`](/.ruby-version) file in the root of Artichoke specifies Ruby
+2.6.3.
 
 If you use [RVM](https://rvm.io/), you can install Ruby dependencies by running:
 
@@ -142,13 +142,13 @@ gem install bundler
 rbenv rehash
 ```
 
-To lint Ruby sources, ferrocarril uses
-[Rubocop](https://github.com/rubocop-hq/rubocop). `yarn lint` installs Rubocop
+To lint Ruby sources, Artichoke uses
+[RuboCop](https://github.com/rubocop-hq/rubocop). `yarn lint` installs RuboCop
 and all other gems automatically.
 
 ### Shell
 
-ferrocarril uses [shfmt](https://github.com/mvdan/sh) for formatting and
+Artichoke uses [shfmt](https://github.com/mvdan/sh) for formatting and
 [shellcheck](https://github.com/koalaman/shellcheck) for linting Shell scripts.
 
 On macOS, you can install shfmt and shellcheck with
@@ -163,7 +163,7 @@ brew install shfmt shellcheck
 ### Rust Toolchain
 
 Because rustfmt, clippy, and the language server sometimes break on nightly,
-ferrocarril pegs a specific date archive of nightly. If you want to update the
+Artichoke pegs a specific date archive of nightly. If you want to update the
 pegged nightly version, choose one that has
 [passing builds for rustfmt, clippy, and rls](https://rust-lang-nursery.github.io/rust-toolstate/);
 otherwise, the build will fail on [CI](/.circleci/config.yml).
@@ -201,11 +201,11 @@ If after running `yarn upgrade` there are still outdated packages reported by
 `yarn outdated`, there has likely been a major release of a dependency. If you
 would like to update the dependency and deal with any breakage, please do;
 otherwise, please
-[file an issue](https://github.com/lopopolo/ferrocarril/issues/new).
+[file an issue](https://github.com/artichoke/artichoke/issues/new).
 
 ## Source Code Statistics
 
-To view statistics about the source code in ferrocarril, you can run `yarn loc`,
+To view statistics about the source code in Artichoke, you can run `yarn loc`,
 which depends on [loc](https://github.com/cgag/loc). You can install loc by
 running:
 
@@ -215,8 +215,7 @@ cargo install loc
 
 ## Flamegraphs
 
-To generate flamegraphs with
-[`scripts/hubris-flamegraph.sh`](/scripts/hubris-flamegraph.sh), you need the
+To generate flamegraphs with, you need the
 [inferno flamegraph implementation](https://github.com/jonhoo/inferno). You can
 install inferno by running:
 

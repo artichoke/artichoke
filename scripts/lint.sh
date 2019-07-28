@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+
+yarn install
+PATH="$(yarn bin):$PATH"
+export PATH
+cd "$(pkg-dir)"
+
 set -x
 
-lint_ruby_sources() {
-  pushd "$@" >/dev/null
-  bundle install >/dev/null
-  bundle exec rubocop -a
-  popd >/dev/null
-}
+# Yarn orchestration
+
+## Lint package.json
+pjv
 
 # Rust sources
 
@@ -21,6 +25,13 @@ cargo doc --no-deps --all
 
 # Lint Ruby sources
 
+lint_ruby_sources() {
+  pushd "$@" >/dev/null
+  bundle install >/dev/null
+  bundle exec rubocop -a
+  popd >/dev/null
+}
+
 ## mruby::extn
 lint_ruby_sources mruby/src/extn
 ## spec-runner
@@ -31,33 +42,14 @@ lint_ruby_sources mruby-bin/ruby
 # C sources
 
 ## Format with clang-format
-find . -type f \
-  -and \( -name '*.h' -or -name '*.c' \) \
-  -and -not -path '*vendor*' \
-  -and -not -path '*target*' \
-  -and -not -path '*node_modules*' \
-  -and -not -path '*spec/ruby*' -print0 |
-  xargs -0 yarn run clang-format -i
+./scripts/format-c.sh --format
 
 # Shell sources
 
 ## Format with shfmt
-find . -type f \
-  -and \( -name '*.sh' -or -name '*.bash' \) \
-  -and -not -path '*vendor*' \
-  -and -not -path '*target*' \
-  -and -not -path '*node_modules*' \
-  -and -not -path '*spec/ruby*' -print0 |
-  xargs -0 shfmt -w -i 2
-
+shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -w
 ## Lint with shellcheck
-find . -type f \
-  -and \( -name '*.sh' -or -name '*.bash' \) \
-  -and -not -path '*vendor*' \
-  -and -not -path '*target*' \
-  -and -not -path '*node_modules*' \
-  -and -not -path '*spec/ruby*' -print0 |
-  xargs -0 shellcheck
+shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/ | grep -v vendor/ | xargs shellcheck
 
 # Text sources (e.g. HTML, Markdown)
 
