@@ -1,0 +1,22 @@
+[package]
+name = "artichoke-backend"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4.6"
+onig = "4.3.2"
+path_abs = "0.4.1"
+
+[dependencies.mruby-sys]
+path = "../mruby-sys"
+
+[dependencies.artichoke-vfs]
+path = "../artichoke-vfs"
+
+[dev-dependencies]
+env_logger = "0.6.1"
+libc = "0.2"
+quickcheck = "0.8"
+quickcheck_macros = "0.8"

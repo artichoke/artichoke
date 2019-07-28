@@ -12,7 +12,7 @@ use std::process;
 mod mspec;
 
 pub fn main() {
-    let interp = match mruby::interpreter() {
+    let interp = match artichoke_backend::interpreter() {
         Ok(interp) => interp,
         Err(err) => {
             eprintln!("{}", err);

@@ -1,0 +1,12 @@
+[package]
+name = "artichoke-frontend"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+
+[dependencies]
+rustc_version = "0.2.3"
+rustyline = "4.1.0"
+
+[dependencies.artichoke-backend]
+path = "../artichoke-backend"

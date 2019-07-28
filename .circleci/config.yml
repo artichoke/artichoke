@@ -12,13 +12,13 @@ commands:
           keys:
             - ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
       - run:
-          name: mruby extn Bundle Install
+          name: Bundle Install
           working_directory: << parameters.target >>
           command: bundle install --path "$HOME/vendor/$LOCKFILE_CHECKSUM"
           environment:
             LOCKFILE_CHECKSUM: "{{ checksum '<< parameters.target >>/Gemfile.lock' }}"
       - run:
-          name: mruby extn Lint Ruby With RuboCop
+          name: Lint Ruby With RuboCop
           working_directory: << parameters.target >>
           command: |
             bundle exec rubocop --version
@@ -124,11 +124,11 @@ jobs:
           name: Install bundler 2
           command: sudo gem install bundler
       - rubocop:
-          target: ./mruby/src/extn
+          target: ./artichoke-backend/src/extn
+      - rubocop:
+          target: ./artichoke-frontend/ruby
       - rubocop:
           target: ./spec-runner/src
-      - rubocop:
-          target: ./mruby-bin/ruby
   shell-format:
     docker:
       - image: peterdavehello/shfmt:latest

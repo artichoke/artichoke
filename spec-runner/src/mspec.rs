@@ -1,14 +1,13 @@
 use std::borrow::Cow;
 
-use mruby::convert::FromMrb;
-use mruby::eval::MrbEval;
-use mruby::load::MrbLoadSources;
-use mruby::top_self::MrbTopSelf;
-use mruby::value::{Value, ValueLike};
-use mruby::Mrb;
-use mruby::MrbError;
+use artichoke_backend::convert::Convert;
+use artichoke_backend::eval::Eval;
+use artichoke_backend::load::LoadSources;
+use artichoke_backend::top_self::TopSelf;
+use artichoke_backend::value::{Value, ValueLike};
+use artichoke_backend::{Artichoke, ArtichokeError};
 
-pub fn init(interp: &Mrb) -> Result<(), MrbError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;
     for source in Sources::iter() {
         let content = Sources::get(&source).map(Cow::into_owned).unwrap();
@@ -24,12 +23,12 @@ struct Sources;
 #[derive(Debug)]
 pub struct Runner {
     specs: Vec<String>,
-    interp: Mrb,
+    interp: Artichoke,
     enforce: bool,
 }
 
 impl Runner {
-    pub fn new(interp: Mrb) -> Self {
+    pub fn new(interp: Artichoke) -> Self {
         Self {
             specs: vec![],
             interp,
@@ -37,14 +36,18 @@ impl Runner {
         }
     }
 
-    pub fn add_spec<T: AsRef<[u8]>>(&mut self, source: &str, contents: T) -> Result<(), MrbError> {
+    pub fn add_spec<T: AsRef<[u8]>>(
+        &mut self,
+        source: &str,
+        contents: T,
+    ) -> Result<(), ArtichokeError> {
         if !source.contains("/fixtures/") && !source.contains("/shared/") {
             self.specs.push(source.to_owned());
         }
         self.interp.def_rb_source_file(source, contents.as_ref())
     }
 
-    pub fn run(self) -> Result<bool, MrbError> {
+    pub fn run(self) -> Result<bool, ArtichokeError> {
         init(&self.interp).unwrap();
         self.interp.def_rb_source_file("/src/spec_helper.rb", "")?;
         self.interp
@@ -53,7 +56,7 @@ impl Runner {
             println!("{}", err);
             assert!(!self.enforce);
         }
-        let specs = Value::from_mrb(&self.interp, self.specs);
+        let specs = Value::convert(&self.interp, self.specs);
         self.interp
             .top_self()
             .funcall::<bool, _, _>("run_specs", &[specs])
@@ -66,7 +69,7 @@ mod tests {
 
     #[test]
     fn mspec_framework_loads() {
-        let interp = mruby::interpreter().expect("mrb init");
+        let interp = artichoke_backend::interpreter().expect("init");
         // should not panic
         assert_eq!(Runner::new(interp).run(), Ok(true));
     }
