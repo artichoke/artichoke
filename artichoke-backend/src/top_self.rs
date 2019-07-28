@@ -7,7 +7,7 @@ use crate::Mrb;
 /// Top self is the root object that evaled code is executed within. Global
 /// methods, classes, and modules are defined in top self.
 #[allow(clippy::module_name_repetitions)]
-pub trait MrbTopSelf {
+pub trait TopSelf {
     /// Return a [`Value`]-wrapped reference to "top self".
     ///
     /// Top self is the root object that evaled code is executed within. Global
@@ -15,7 +15,7 @@ pub trait MrbTopSelf {
     fn top_self(&self) -> Value;
 }
 
-impl MrbTopSelf for Mrb {
+impl TopSelf for Mrb {
     fn top_self(&self) -> Value {
         Value::new(self, unsafe { sys::mrb_top_self(self.borrow().mrb) })
     }
