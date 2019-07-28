@@ -10,7 +10,7 @@
 //! [`ArtichokeApi::current_exception`].
 //!
 //! The test exposes a function that raises an exception with a 1MB `String`
-//! message. The test reuses one mruby interpreter for all `ITERATIONS`.
+//! message. The test reuses one artichoke interpreter for all `ITERATIONS`.
 //!
 //! This test calls [`Value::to_s`] and [`Value::to_s_debug'] on a 1MB `String`.
 //!
@@ -20,9 +20,9 @@
 //! This test fails before commit
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
-use mruby::eval::Eval;
-use mruby::gc::MrbGarbageCollection;
-use mruby::ArtichokeError;
+use artichoke_backend::eval::Eval;
+use artichoke_backend::gc::MrbGarbageCollection;
+use artichoke_backend::ArtichokeError;
 use std::rc::Rc;
 
 mod leak;
@@ -33,7 +33,7 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 #[test]
 fn unbounded_arena_growth() {
     // ArtichokeApi::current_exception
-    let interp = mruby::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("mrb init");
     let code = r#"
 def bad_code
   raise ArgumentError.new("n" * 1024 * 1024)
@@ -63,7 +63,7 @@ end
     });
 
     // Value::to_s
-    let interp = mruby::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("mrb init");
     let expected = "a".repeat(1024 * 1024);
     leak::Detector::new("to_s", ITERATIONS, LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
@@ -79,7 +79,7 @@ end
     );
 
     // Value::to_s_debug
-    let interp = mruby::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("mrb init");
     let expected = format!(r#"String<"{}">"#, "a".repeat(1024 * 1024));
     leak::Detector::new("to_s_debug", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
