@@ -14,7 +14,9 @@ commands:
       - run:
           name: mruby extn Bundle Install
           working_directory: << parameters.target >>
-          command: bundle install --path ~/vendor/{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+          command: bundle install --path "$HOME/vendor/$LOCKFILE_CHECKSUM"
+          environment:
+            LOCKFILE_CHECKSUM: "{{ checksum '<< parameters.target >>/Gemfile.lock' }}"
       - run:
           name: mruby extn Lint Ruby With RuboCop
           working_directory: << parameters.target >>
