@@ -1,10 +1,10 @@
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Mrb;
 
-impl FromMrb<bool> for Value {
+impl Convert<bool> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -17,7 +17,7 @@ impl FromMrb<bool> for Value {
     }
 }
 
-impl TryFromMrb<Value> for bool {
+impl TryConvert<Value> for bool {
     type From = Ruby;
     type To = Rust;
 
@@ -52,7 +52,7 @@ impl TryFromMrb<Value> for bool {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::convert::{Convert, Error, TryConvert};
     use crate::eval::MrbEval;
     use crate::sys;
     use crate::value::types::{Ruby, Rust};

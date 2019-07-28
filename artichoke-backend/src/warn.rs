@@ -1,6 +1,6 @@
 use log::warn;
 
-use crate::convert::FromMrb;
+use crate::convert::Convert;
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Mrb, MrbError};

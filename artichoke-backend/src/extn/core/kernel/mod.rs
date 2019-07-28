@@ -2,7 +2,7 @@ use log::trace;
 use std::io::{self, Write};
 use std::rc::Rc;
 
-use crate::convert::FromMrb;
+use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeError};
@@ -187,7 +187,7 @@ impl Kernel {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::TryFromMrb;
+    use crate::convert::TryConvert;
     use crate::eval::MrbEval;
     use crate::file::MrbFile;
     use crate::load::MrbLoadSources;

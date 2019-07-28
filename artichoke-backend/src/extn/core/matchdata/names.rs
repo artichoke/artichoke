@@ -2,7 +2,7 @@
 
 use std::cmp::Ordering;
 
-use crate::convert::{FromMrb, RustBackedValue};
+use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::matchdata::MatchData;
 use crate::value::Value;
 use crate::Mrb;

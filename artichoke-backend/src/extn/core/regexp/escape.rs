@@ -4,7 +4,7 @@
 
 use std::mem;
 
-use crate::convert::{FromMrb, TryFromMrb};
+use crate::convert::{Convert, TryConvert};
 use crate::extn::core::regexp::syntax;
 use crate::sys;
 use crate::value::Value;

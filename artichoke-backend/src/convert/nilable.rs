@@ -1,7 +1,7 @@
 //! Converters for nilable primitive Ruby types. Excludes collection types
 //! Array and Hash.
 
-use crate::convert::FromMrb;
+use crate::convert::Convert;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
@@ -22,7 +22,7 @@ pub use self::float::*;
 pub use self::string::*;
 
 // bail out implementation for mixed-type collections
-impl FromMrb<Option<Value>> for Value {
+impl Convert<Option<Value>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -34,7 +34,7 @@ impl FromMrb<Option<Value>> for Value {
     }
 }
 
-impl FromMrb<Value> for Option<Value> {
+impl Convert<Value> for Option<Value> {
     type From = Ruby;
     type To = Rust;
 

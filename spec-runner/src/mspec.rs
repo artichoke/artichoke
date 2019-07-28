@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use artichoke_backend::convert::FromMrb;
+use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::MrbEval;
 use artichoke_backend::load::MrbLoadSources;
 use artichoke_backend::top_self::MrbTopSelf;

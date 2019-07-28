@@ -1,9 +1,9 @@
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Mrb;
 
-impl FromMrb<Option<Vec<u8>>> for Value {
+impl Convert<Option<Vec<u8>>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -16,7 +16,7 @@ impl FromMrb<Option<Vec<u8>>> for Value {
     }
 }
 
-impl FromMrb<Option<&[u8]>> for Value {
+impl Convert<Option<&[u8]>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -31,7 +31,7 @@ impl FromMrb<Option<&[u8]>> for Value {
 
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
-impl TryFromMrb<Value> for Option<Vec<u8>> {
+impl TryConvert<Value> for Option<Vec<u8>> {
     type From = Ruby;
     type To = Rust;
 
@@ -49,12 +49,12 @@ impl TryFromMrb<Value> for Option<Vec<u8>> {
 }
 
 #[cfg(test)]
-// FromMrb<Option<Vec<u8>>> is implemented in terms of FromMrb<Option<&[u8]>> so
+// Convert<Option<Vec<u8>>> is implemented in terms of Convert<Option<&[u8]>> so
 // only implement the tests for Vec<u8> to exercise both code paths.
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::{FromMrb, TryFromMrb};
+    use crate::convert::{Convert, TryConvert};
     use crate::eval::MrbEval;
     use crate::sys;
     use crate::value::types::Ruby;

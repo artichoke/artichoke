@@ -3,7 +3,7 @@
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::TryFromMrb;
+use crate::convert::TryConvert;
 use crate::eval::{EvalContext, MrbEval};
 use crate::extn::core::error::{LoadError, RubyException};
 use crate::fs::RequireFunc;

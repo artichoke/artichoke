@@ -67,7 +67,7 @@ impl State {
     /// #[macro_use]
     /// extern crate artichoke_backend;
     ///
-    /// use artichoke_backend::convert::FromMrb;
+    /// use artichoke_backend::convert::Convert;
     /// use artichoke_backend::def::{ClassLike, Define};
     /// use artichoke_backend::sys;
     /// use artichoke_backend::value::Value;
@@ -136,7 +136,7 @@ impl State {
     /// #[macro_use]
     /// extern crate artichoke_backend;
     ///
-    /// use artichoke_backend::convert::FromMrb;
+    /// use artichoke_backend::convert::Convert;
     /// use artichoke_backend::def::{ClassLike, Define};
     /// use artichoke_backend::sys;
     /// use artichoke_backend::value::Value;

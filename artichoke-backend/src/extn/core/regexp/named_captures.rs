@@ -1,6 +1,6 @@
 //! [`Regexp#named_captures`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-named_captures)
 
-use crate::convert::{FromMrb, RustBackedValue};
+use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
 use crate::value::Value;
 use crate::Mrb;

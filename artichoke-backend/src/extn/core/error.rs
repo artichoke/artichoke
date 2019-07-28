@@ -2,7 +2,7 @@ use log::warn;
 use std::ffi::CString;
 use std::rc::Rc;
 
-use crate::convert::FromMrb;
+use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::sys;
 use crate::value::Value;
@@ -69,7 +69,7 @@ pub trait RubyException: 'static + Sized {
 
     unsafe fn raisef<V>(interp: Mrb, message: &'static str, format: Vec<V>) -> sys::mrb_value
     where
-        Value: FromMrb<V>,
+        Value: Convert<V>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Mrb` to

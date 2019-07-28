@@ -24,14 +24,15 @@ pub use self::nilable::*;
 pub use self::object::*;
 pub use self::string::*;
 
-pub trait FromMrb<T> {
+pub trait Convert<T> {
     type From;
     type To;
 
     fn from_mrb(interp: &Mrb, value: T) -> Self;
 }
 
-pub trait TryFromMrb<T>
+#[allow(clippy::module_name_repetitions)]
+pub trait TryConvert<T>
 where
     Self: Sized,
 {
@@ -43,15 +44,15 @@ where
 
 /// Provide a falible converter for types that implement an infallible
 /// conversion.
-impl<From, To> TryFromMrb<From> for To
+impl<From, To> TryConvert<From> for To
 where
-    To: FromMrb<From>,
+    To: Convert<From>,
 {
-    type From = <Self as FromMrb<From>>::From;
-    type To = <Self as FromMrb<From>>::To;
+    type From = <Self as Convert<From>>::From;
+    type To = <Self as Convert<From>>::To;
 
     unsafe fn try_from_mrb(interp: &Mrb, value: From) -> Result<Self, Error<Self::From, Self::To>> {
-        Ok(FromMrb::from_mrb(interp, value))
+        Ok(Convert::from_mrb(interp, value))
     }
 }
 
@@ -96,7 +97,7 @@ where
 }
 
 // This converter implementation is for Ruby functions that return void.
-impl FromMrb<Value> for () {
+impl Convert<Value> for () {
     type From = types::Ruby;
     type To = types::Rust;
 

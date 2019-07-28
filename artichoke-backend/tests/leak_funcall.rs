@@ -13,7 +13,7 @@
 //! If resident memory increases more than 10MB during the test, we likely are
 //! leaking memory.
 
-use artichoke_backend::convert::FromMrb;
+use artichoke_backend::convert::Convert;
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::value::{Value, ValueLike};
 

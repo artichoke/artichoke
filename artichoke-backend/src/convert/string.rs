@@ -1,9 +1,9 @@
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Mrb;
 
-impl FromMrb<String> for Value {
+impl Convert<String> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -14,7 +14,7 @@ impl FromMrb<String> for Value {
     }
 }
 
-impl FromMrb<&str> for Value {
+impl Convert<&str> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -25,7 +25,7 @@ impl FromMrb<&str> for Value {
     }
 }
 
-impl TryFromMrb<Value> for String {
+impl TryConvert<Value> for String {
     type From = Ruby;
     type To = Rust;
 
@@ -51,13 +51,13 @@ impl TryFromMrb<Value> for String {
 }
 
 #[cfg(test)]
-// FromMrb<String> is implemented in terms of FromMrb<&str> so only implement
+// Convert<String> is implemented in terms of Convert<&str> so only implement
 // the tests for String to exercise both code paths.
 mod tests {
     use quickcheck_macros::quickcheck;
     use std::convert::TryInto;
 
-    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::convert::{Convert, Error, TryConvert};
     use crate::eval::MrbEval;
     use crate::sys;
     use crate::value::types::{Ruby, Rust};

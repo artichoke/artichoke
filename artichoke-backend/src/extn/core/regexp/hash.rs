@@ -3,7 +3,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use crate::convert::{FromMrb, RustBackedValue};
+use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
 use crate::value::Value;
 use crate::Mrb;

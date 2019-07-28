@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
@@ -19,7 +19,7 @@ pub use self::float::*;
 pub use self::string::*;
 
 // bail out implementation for mixed-type collections
-impl FromMrb<Vec<Value>> for Value {
+impl Convert<Vec<Value>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -42,7 +42,7 @@ impl FromMrb<Vec<Value>> for Value {
     }
 }
 
-impl FromMrb<Vec<Option<Value>>> for Value {
+impl Convert<Vec<Option<Value>>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -76,7 +76,7 @@ impl FromMrb<Vec<Option<Value>>> for Value {
     }
 }
 
-impl TryFromMrb<Value> for Vec<Value> {
+impl TryConvert<Value> for Vec<Value> {
     type From = Ruby;
     type To = Rust;
 
@@ -108,7 +108,7 @@ impl TryFromMrb<Value> for Vec<Value> {
     }
 }
 
-impl TryFromMrb<Value> for Vec<Option<Value>> {
+impl TryConvert<Value> for Vec<Option<Value>> {
     type From = Ruby;
     type To = Rust;
 

@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate artichoke_backend;
 
-use artichoke_backend::convert::{FromMrb, RustBackedValue, TryFromMrb};
+use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
 use artichoke_backend::def::{rust_data_free, ClassLike, Define};
 use artichoke_backend::eval::MrbEval;
 use artichoke_backend::file::MrbFile;

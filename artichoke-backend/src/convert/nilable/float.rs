@@ -1,10 +1,10 @@
 use crate::convert::float::Float;
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Mrb;
 
-impl FromMrb<Option<Float>> for Value {
+impl Convert<Option<Float>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -19,7 +19,7 @@ impl FromMrb<Option<Float>> for Value {
 
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
-impl TryFromMrb<Value> for Option<Float> {
+impl TryConvert<Value> for Option<Float> {
     type From = Ruby;
     type To = Rust;
 
@@ -41,7 +41,7 @@ mod tests {
     use quickcheck_macros::quickcheck;
 
     use crate::convert::float::Float;
-    use crate::convert::{FromMrb, TryFromMrb};
+    use crate::convert::{Convert, TryConvert};
     use crate::eval::MrbEval;
     use crate::sys;
     use crate::value::types::Ruby;

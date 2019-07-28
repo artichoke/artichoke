@@ -3,7 +3,7 @@
 use std::cmp;
 use std::mem;
 
-use crate::convert::{FromMrb, RustBackedValue, TryFromMrb};
+use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::Regexp;
 use crate::sys;

@@ -146,7 +146,7 @@ mod tests {
     use std::rc::Rc;
 
     use crate::convert::object::RustBackedValue;
-    use crate::convert::FromMrb;
+    use crate::convert::Convert;
     use crate::def::{rust_data_free, ClassLike, Define};
     use crate::sys;
     use crate::value::{Value, ValueLike};

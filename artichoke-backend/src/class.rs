@@ -202,7 +202,7 @@ mod tests {
     use std::rc::Rc;
 
     use crate::class::Spec;
-    use crate::convert::TryFromMrb;
+    use crate::convert::TryConvert;
     use crate::def::{ClassLike, Define, EnclosingRubyScope};
     use crate::eval::MrbEval;
     use crate::module;

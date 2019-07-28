@@ -1,4 +1,4 @@
-use crate::convert::FromMrb;
+use crate::convert::Convert;
 use crate::sys;
 use crate::value::Value;
 use crate::{Mrb, MrbError};

@@ -16,7 +16,7 @@ pub struct Monitor;
 // https://github.com/ruby/spec/tree/master/library/monitor
 #[cfg(test)]
 mod tests {
-    use crate::convert::TryFromMrb;
+    use crate::convert::TryConvert;
     use crate::eval::MrbEval;
 
     #[test]

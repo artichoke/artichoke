@@ -5,7 +5,7 @@ use std::fmt;
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{FromMrb, TryFromMrb};
+use crate::convert::{Convert, TryConvert};
 use crate::exception::{LastError, MrbExceptionHandler};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
@@ -62,7 +62,7 @@ where
 
     fn funcall<T, M, A>(&self, func: M, args: A) -> Result<T, MrbError>
     where
-        T: TryFromMrb<Value, From = types::Ruby, To = types::Rust>,
+        T: TryConvert<Value, From = types::Ruby, To = types::Rust>,
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
@@ -156,7 +156,7 @@ where
 
     fn funcall_with_block<T, M, A>(&self, func: M, args: A, block: Value) -> Result<T, MrbError>
     where
-        T: TryFromMrb<Value, From = types::Ruby, To = types::Rust>,
+        T: TryConvert<Value, From = types::Ruby, To = types::Rust>,
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
@@ -345,7 +345,7 @@ impl Value {
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
     pub fn try_into<T>(self) -> Result<T, MrbError>
     where
-        T: TryFromMrb<Self, From = types::Ruby, To = types::Rust>,
+        T: TryConvert<Self, From = types::Ruby, To = types::Rust>,
     {
         let interp = Rc::clone(&self.interp);
         unsafe { T::try_from_mrb(&interp, self) }.map_err(MrbError::ConvertToRust)
@@ -357,7 +357,7 @@ impl Value {
     /// If you want to consume this [`Value`], use [`Value::try_into`].
     pub fn itself<T>(&self) -> Result<T, MrbError>
     where
-        T: TryFromMrb<Self, From = types::Ruby, To = types::Rust>,
+        T: TryConvert<Self, From = types::Ruby, To = types::Rust>,
     {
         self.clone().try_into::<T>()
     }
@@ -380,7 +380,7 @@ impl ValueLike for Value {
     }
 }
 
-impl FromMrb<Value> for Value {
+impl Convert<Value> for Value {
     type From = types::Ruby;
     type To = types::Rust;
 
@@ -415,7 +415,7 @@ impl Clone for Value {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::FromMrb;
+    use crate::convert::Convert;
     use crate::eval::MrbEval;
     use crate::gc::MrbGarbageCollection;
     use crate::value::{Value, ValueLike};

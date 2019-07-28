@@ -21,7 +21,7 @@ pub struct Mutex;
 mod tests {
     #![allow(clippy::shadow_unrelated)]
 
-    use crate::convert::TryFromMrb;
+    use crate::convert::TryConvert;
     use crate::eval::MrbEval;
     // use crate::MrbError;
 

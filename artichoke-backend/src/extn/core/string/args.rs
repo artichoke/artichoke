@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::mem;
 
-use crate::convert::{RustBackedValue, TryFromMrb};
+use crate::convert::{RustBackedValue, TryConvert};
 use crate::extn::core::regexp::Regexp;
 use crate::Mrb;
 use crate::sys;

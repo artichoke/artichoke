@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
@@ -8,7 +8,7 @@ use crate::Mrb;
 
 pub type Int = i64;
 
-impl FromMrb<Int> for Value {
+impl Convert<Int> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -17,7 +17,7 @@ impl FromMrb<Int> for Value {
     }
 }
 
-impl FromMrb<u8> for Value {
+impl Convert<u8> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -26,7 +26,7 @@ impl FromMrb<u8> for Value {
     }
 }
 
-impl FromMrb<u16> for Value {
+impl Convert<u16> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -35,7 +35,7 @@ impl FromMrb<u16> for Value {
     }
 }
 
-impl FromMrb<u32> for Value {
+impl Convert<u32> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -44,7 +44,7 @@ impl FromMrb<u32> for Value {
     }
 }
 
-impl FromMrb<i8> for Value {
+impl Convert<i8> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -53,7 +53,7 @@ impl FromMrb<i8> for Value {
     }
 }
 
-impl FromMrb<i16> for Value {
+impl Convert<i16> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -62,7 +62,7 @@ impl FromMrb<i16> for Value {
     }
 }
 
-impl FromMrb<i32> for Value {
+impl Convert<i32> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -71,7 +71,7 @@ impl FromMrb<i32> for Value {
     }
 }
 
-impl TryFromMrb<Value> for Int {
+impl TryConvert<Value> for Int {
     type From = Ruby;
     type To = Rust;
 
@@ -89,7 +89,7 @@ impl TryFromMrb<Value> for Int {
     }
 }
 
-impl TryFromMrb<Value> for usize {
+impl TryConvert<Value> for usize {
     type From = Ruby;
     type To = Rust;
 
@@ -114,7 +114,7 @@ mod tests {
     use quickcheck_macros::quickcheck;
 
     use crate::convert::fixnum::Int;
-    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::convert::{Convert, Error, TryConvert};
     use crate::eval::MrbEval;
     use crate::sys;
     use crate::value::types::{Ruby, Rust};

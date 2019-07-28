@@ -300,7 +300,7 @@ impl MrbEval for Mrb {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::{FromMrb, TryFromMrb};
+    use crate::convert::{Convert, TryConvert};
     use crate::def::{ClassLike, Define};
     use crate::eval::{EvalContext, MrbEval};
     use crate::file::MrbFile;

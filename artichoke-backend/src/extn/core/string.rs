@@ -1,6 +1,6 @@
 use log::trace;
 
-use crate::convert::{FromMrb, TryFromMrb};
+use crate::convert::{Convert, TryConvert};
 use crate::def::{ClassLike, Define};
 use crate::eval::MrbEval;
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
@@ -68,7 +68,7 @@ impl RString {
 // https://ruby-doc.org/core-2.6.3/String.html
 #[cfg(test)]
 mod tests {
-    use crate::convert::FromMrb;
+    use crate::convert::Convert;
     use crate::eval::MrbEval;
     use crate::extn::core::string;
     use crate::value::{Value, ValueLike};

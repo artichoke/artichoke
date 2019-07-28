@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{FromMrb, RustBackedValue};
+use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;

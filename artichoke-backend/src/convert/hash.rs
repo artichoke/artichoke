@@ -4,17 +4,17 @@ use std::hash::BuildHasher;
 
 use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Mrb;
 
 // TODO: implement `PartialEq`, `Eq`, and `Hash` on `Value`, see GH-159.
-// TODO: implement `FromMrb<HashMap<Value, Value>>`, see GH-160.
+// TODO: implement `Convert<HashMap<Value, Value>>`, see GH-160.
 
 // bail out implementation for mixed-type collections
-impl FromMrb<Vec<(Value, Value)>> for Value {
+impl Convert<Vec<(Value, Value)>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -29,7 +29,7 @@ impl FromMrb<Vec<(Value, Value)>> for Value {
     }
 }
 
-impl FromMrb<Vec<(Option<Value>, Value)>> for Value {
+impl Convert<Vec<(Option<Value>, Value)>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -46,7 +46,7 @@ impl FromMrb<Vec<(Option<Value>, Value)>> for Value {
     }
 }
 
-impl FromMrb<Vec<(Value, Option<Value>)>> for Value {
+impl Convert<Vec<(Value, Option<Value>)>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -63,7 +63,7 @@ impl FromMrb<Vec<(Value, Option<Value>)>> for Value {
     }
 }
 
-impl FromMrb<Vec<(Option<Value>, Option<Value>)>> for Value {
+impl Convert<Vec<(Option<Value>, Option<Value>)>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -80,7 +80,7 @@ impl FromMrb<Vec<(Option<Value>, Option<Value>)>> for Value {
     }
 }
 
-impl TryFromMrb<Value> for Vec<(Value, Value)> {
+impl TryConvert<Value> for Vec<(Value, Value)> {
     type From = Ruby;
     type To = Rust;
 
@@ -119,7 +119,7 @@ impl TryFromMrb<Value> for Vec<(Value, Value)> {
 macro_rules! hash_converter {
     ($key:ty => $value:ty) => {
         #[allow(clippy::use_self)]
-        impl FromMrb<Vec<($key, $value)>> for Value {
+        impl Convert<Vec<($key, $value)>> for Value {
             type From = Rust;
             type To = Ruby;
 
@@ -137,7 +137,7 @@ macro_rules! hash_converter {
         }
 
         #[allow(clippy::use_self)]
-        impl FromMrb<HashMap<$key, $value>> for Value {
+        impl Convert<HashMap<$key, $value>> for Value {
             type From = Rust;
             type To = Ruby;
 
@@ -147,7 +147,7 @@ macro_rules! hash_converter {
             }
         }
 
-        impl<S: BuildHasher + Default> TryFromMrb<Value> for HashMap<$key, $value, S> {
+        impl<S: BuildHasher + Default> TryConvert<Value> for HashMap<$key, $value, S> {
             type From = Ruby;
             type To = Rust;
 
@@ -233,7 +233,7 @@ hash_impl!(Int);
 hash_impl!(String);
 
 #[allow(clippy::use_self)]
-impl FromMrb<Vec<(&str, Value)>> for Value {
+impl Convert<Vec<(&str, Value)>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -250,7 +250,7 @@ impl FromMrb<Vec<(&str, Value)>> for Value {
     }
 }
 
-impl FromMrb<HashMap<&str, Self>> for Value {
+impl Convert<HashMap<&str, Self>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -265,7 +265,7 @@ mod value {
     mod tests {
         use std::collections::HashMap;
 
-        use crate::convert::{FromMrb, TryFromMrb};
+        use crate::convert::{Convert, TryConvert};
         use crate::value::Value;
 
         #[test]

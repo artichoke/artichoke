@@ -1,9 +1,9 @@
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Mrb;
 
-impl FromMrb<Vec<bool>> for Value {
+impl Convert<Vec<bool>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -18,7 +18,7 @@ impl FromMrb<Vec<bool>> for Value {
 
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
-impl TryFromMrb<Value> for Vec<bool> {
+impl TryConvert<Value> for Vec<bool> {
     type From = Ruby;
     type To = Rust;
 
@@ -35,7 +35,7 @@ impl TryFromMrb<Value> for Vec<bool> {
     }
 }
 
-impl FromMrb<Vec<Option<bool>>> for Value {
+impl Convert<Vec<Option<bool>>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -50,7 +50,7 @@ impl FromMrb<Vec<Option<bool>>> for Value {
 
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
-impl TryFromMrb<Value> for Vec<Option<bool>> {
+impl TryConvert<Value> for Vec<Option<bool>> {
     type From = Ruby;
     type To = Rust;
 
@@ -72,7 +72,7 @@ mod tests {
     use quickcheck_macros::quickcheck;
     use std::convert::TryFrom;
 
-    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::convert::{Convert, Error, TryConvert};
     use crate::eval::MrbEval;
     use crate::sys;
     use crate::value::types::{Ruby, Rust};

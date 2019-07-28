@@ -1,7 +1,7 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
 
-use artichoke_backend::convert::FromMrb;
+use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::{EvalContext, MrbEval};
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;

@@ -2,7 +2,7 @@
 
 use std::mem;
 
-use crate::convert::{FromMrb, RustBackedValue};
+use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::regexp::{syntax, Regexp};
 use crate::sys;
 use crate::value::types::Ruby;

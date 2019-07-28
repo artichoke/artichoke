@@ -32,7 +32,7 @@
 //! The [`ValueLike`](value::ValueLike) trait exposes a _funcall interface_
 //! which can call Ruby functions on a [`Value`](value::Value) using a `String`
 //! function name and a `Vec<Value>` or arguments. funcall takes a type
-//! parameter bound by [`TryFromMrb`](convert::TryFromMrb) and converts the
+//! parameter bound by [`TryConvert`](convert::TryConvert) and converts the
 //! result of the function call to a Rust type (which may be `Value` or another
 //! "native" type).
 //!
@@ -101,7 +101,7 @@
 //! #[macro_use]
 //! extern crate artichoke_backend;
 //!
-//! use artichoke_backend::convert::{FromMrb, RustBackedValue, TryFromMrb};
+//! use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
 //! use artichoke_backend::def::{rust_data_free, ClassLike, Define};
 //! use artichoke_backend::eval::MrbEval;
 //! use artichoke_backend::file::MrbFile;
@@ -171,10 +171,10 @@
 //!
 //! There are two converter traits:
 //!
-//! - [`FromMrb`](convert::FromMrb) provides infallible conversions that return
+//! - [`Convert`](convert::Convert) provides infallible conversions that return
 //!   `Self`. Converting from a Rust native type to a Ruby `mrb_value` is
 //!   usually an infallible conversion.
-//! - [`TryFromMrb`](convert::TryFromMrb) provides fallible conversions that
+//! - [`TryConvert`](convert::TryConvert) provides fallible conversions that
 //!   return `Result<Self, Error>`. Converting from a Ruby `mrb_value` to a Rust
 //!   native type is always an fallible conversion because an `mrb_value` may be
 //!   any type tag.

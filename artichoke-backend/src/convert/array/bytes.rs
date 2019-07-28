@@ -1,9 +1,9 @@
-use crate::convert::{Error, FromMrb, TryFromMrb};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Mrb;
 
-impl FromMrb<Vec<Vec<u8>>> for Value {
+impl Convert<Vec<Vec<u8>>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -12,7 +12,7 @@ impl FromMrb<Vec<Vec<u8>>> for Value {
     }
 }
 
-impl FromMrb<Vec<&[u8]>> for Value {
+impl Convert<Vec<&[u8]>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -27,7 +27,7 @@ impl FromMrb<Vec<&[u8]>> for Value {
 
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
-impl TryFromMrb<Value> for Vec<Vec<u8>> {
+impl TryConvert<Value> for Vec<Vec<u8>> {
     type From = Ruby;
     type To = Rust;
 
@@ -46,7 +46,7 @@ impl TryFromMrb<Value> for Vec<Vec<u8>> {
 
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
-impl FromMrb<Vec<Option<Vec<u8>>>> for Value {
+impl Convert<Vec<Option<Vec<u8>>>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -61,7 +61,7 @@ impl FromMrb<Vec<Option<Vec<u8>>>> for Value {
 
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
-impl FromMrb<Vec<Option<&[u8]>>> for Value {
+impl Convert<Vec<Option<&[u8]>>> for Value {
     type From = Rust;
     type To = Ruby;
 
@@ -76,7 +76,7 @@ impl FromMrb<Vec<Option<&[u8]>>> for Value {
 
 #[allow(clippy::use_self)]
 // https://github.com/rust-lang/rust-clippy/issues/4143
-impl TryFromMrb<Value> for Vec<Option<Vec<u8>>> {
+impl TryConvert<Value> for Vec<Option<Vec<u8>>> {
     type From = Ruby;
     type To = Rust;
 
@@ -94,13 +94,13 @@ impl TryFromMrb<Value> for Vec<Option<Vec<u8>>> {
 }
 
 #[cfg(test)]
-// FromMrb<Vec<Vec<u8>>> is implemented in terms of FromMrb<Vec<&[u8]>> so only
+// Convert<Vec<Vec<u8>>> is implemented in terms of Convert<Vec<&[u8]>> so only
 // implement the tests for Vec<u8> to exercise both code paths.
 mod tests {
     use quickcheck_macros::quickcheck;
     use std::convert::TryFrom;
 
-    use crate::convert::{Error, FromMrb, TryFromMrb};
+    use crate::convert::{Convert, Error, TryConvert};
     use crate::eval::MrbEval;
     use crate::sys;
     use crate::value::types::{Ruby, Rust};
