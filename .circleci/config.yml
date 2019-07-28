@@ -7,24 +7,24 @@ commands:
     parameters:
       target:
         type: string
-      steps:
-        - restore_cache:
-            keys:
-              - ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
-        - run:
-            name: mruby extn Bundle Install
-            working_directory: << parameters.target >>
-            command: bundle install --path ~/vendor/{{ checksum "<< parameters.target >>/Gemfile.lock" }}
-        - run:
-            name: mruby extn Lint Ruby With RuboCop
-            working_directory: << parameters.target >>
-            command: |
-              bundle exec rubocop --version
-              bundle exec rubocop
-        - save_cache:
-            key: ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
-            paths:
-              - ~/vendor/{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+    steps:
+      - restore_cache:
+          keys:
+            - ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+      - run:
+          name: mruby extn Bundle Install
+          working_directory: << parameters.target >>
+          command: bundle install --path ~/vendor/{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+      - run:
+          name: mruby extn Lint Ruby With RuboCop
+          working_directory: << parameters.target >>
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+      - save_cache:
+          key: ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+          paths:
+            - ~/vendor/{{ checksum "<< parameters.target >>/Gemfile.lock" }}
 jobs:
   rust:
     docker:
