@@ -11,7 +11,7 @@ Artichoke is a Ruby implementation written in Rust. Artichoke aspires to be
 source-compatible with [Ruby 2.6.3](https://github.com/ruby/ruby/tree/v2_6_3)
 and pass 100% of [ruby/spec](/spec-runner/spec/ruby).
 
-Artichoke is a work-in-progress. When complete, Artichoke will differ from MRI
+Artichoke is a work-in-progress. When complete, Artichoke will improve upon MRI
 in the following ways:
 
 - True parallelism with no GIL.
@@ -33,3 +33,4 @@ Artichoke will deviate from MRI in the following ways:
 - The only supported encodings are UTF-8,
   [maybe UTF-8](https://github.com/BurntSushi/bstr), and binary.
 - Ruby source files are always interpreted as UTF-8.
+- No equivalent C API, which means C extensions are unsupported.
