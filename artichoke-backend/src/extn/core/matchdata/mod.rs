@@ -16,7 +16,7 @@ use onig::Regex;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
-use crate::eval::MrbEval;
+use crate::eval::Eval;
 use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
 use crate::extn::core::regexp::Regexp;
 use crate::sys;

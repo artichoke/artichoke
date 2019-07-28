@@ -3,10 +3,9 @@ use std::ffi::{c_void, CString};
 use std::mem;
 use std::rc::Rc;
 
-use crate::exception::{LastError, MrbExceptionHandler};
+use crate::exception::{ExceptionHandler, LastError};
 use crate::sys::{self, DescribeState};
-use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::value::Value; use crate::{ArtichokeError, Mrb};
 
 const TOP_FILENAME: &str = "(eval)";
 
@@ -49,20 +48,19 @@ impl Protect {
     }
 }
 
-/// `EvalContext` is used to manipulate the state of a wrapped
-/// [`sys::mrb_state`]. [`Mrb`] maintains a stack of `EvalContext`s and
-/// [`MrbEval::eval`] uses the current context to set the `__FILE__` magic
+/// `Context` is used to manipulate the state of a wrapped
+/// [`sys::mrb_state`]. [`Mrb`] maintains a stack of `Context`s and
+/// [`Eval::eval`] uses the current context to set the `__FILE__` magic
 /// constant on the [`sys::mrbc_context`].
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EvalContext {
+pub struct Context {
     /// Value of the `__FILE__` magic constant that also appears in stack
     /// frames.
     pub filename: String,
 }
 
-impl EvalContext {
-    /// Create a new [`EvalContext`].
+impl Context {
+    /// Create a new [`Context`].
     pub fn new<T>(filename: T) -> Self
     where
         T: AsRef<str>,
@@ -72,14 +70,14 @@ impl EvalContext {
         }
     }
 
-    /// Create a root, or default, [`EvalContext`]. The root context sets the
+    /// Create a root, or default, [`Context`]. The root context sets the
     /// `__FILE__` magic constant to "(eval)".
     pub fn root() -> Self {
         Self::default()
     }
 }
 
-impl Default for EvalContext {
+impl Default for Context {
     fn default() -> Self {
         Self {
             filename: TOP_FILENAME.to_owned(),
@@ -87,59 +85,56 @@ impl Default for EvalContext {
     }
 }
 
-/// Interpreters that implement [`MrbEval`] expose methods for injecting code
+/// Interpreters that implement [`Eval`] expose methods for injecting code
 /// into a [`sys::mrb_state`] and extracting [`Value`]s from the interpereter.
 ///
-/// Implementations are expected to maintain a stack of [`EvalContext`] objects
+/// Implementations are expected to maintain a stack of [`Context`] objects
 /// that maintain filename context across nested invocations of
-/// [`MrbEval::eval`].
-#[allow(clippy::module_name_repetitions)]
-pub trait MrbEval {
-    /// Eval code on the mruby interpreter using the current [`EvalContext`] or
-    /// [`EvalContext::root`] if none is present on the stack.
+/// [`Eval::eval`].
+pub trait Eval {
+    /// Eval code on the artichoke interpreter using the current [`Context`] or
+    /// [`Context::root`] if none is present on the stack.
     fn eval<T>(&self, code: T) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>;
 
-    /// Eval code on the mruby interpreter using the current [`EvalContext`] or
-    /// [`EvalContext::root`] if none is present on the stack.
+    /// Eval code on the artichoke interpreter using the current [`Context`] or
+    /// [`Context::root`] if none is present on the stack.
     ///
-    /// This function does not wrap calls to the mruby VM in `mrb_protect` which
-    /// means exceptions will unwind past this call.
+    /// Exceptions will unwind past this call.
     fn unchecked_eval<T>(&self, code: T) -> Value
     where
         T: AsRef<[u8]>;
 
-    /// Eval code on the mruby interpreter using a custom [`EvalContext`].
+    /// Eval code on the artichoke interpreter using a custom [`Context`].
     ///
-    /// `EvalContext` allows manipulating interpreter state before eval, for
+    /// `Context` allows manipulating interpreter state before eval, for
     /// example, setting the `__FILE__` magic constant.
-    fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, ArtichokeError>
+    fn eval_with_context<T>(&self, code: T, context: Context) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>;
 
-    /// Eval code on the mruby interpreter using a custom [`EvalContext`].
+    /// Eval code on the artichoke interpreter using a custom [`Context`].
     ///
-    /// `EvalContext` allows manipulating interpreter state before eval, for
+    /// `Context` allows manipulating interpreter state before eval, for
     /// example, setting the `__FILE__` magic constant.
     ///
-    /// This function does not wrap calls to the mruby VM in `mrb_protect` which
-    /// means exceptions will unwind past this call.
-    fn unchecked_eval_with_context<T>(&self, code: T, context: EvalContext) -> Value
+    /// Exceptions will unwind past this call.
+    fn unchecked_eval_with_context<T>(&self, code: T, context: Context) -> Value
     where
         T: AsRef<[u8]>;
 
-    /// Peek at the top of the [`EvalContext`] stack.
-    fn peek_context(&self) -> Option<EvalContext>;
+    /// Peek at the top of the [`Context`] stack.
+    fn peek_context(&self) -> Option<Context>;
 
-    /// Push an [`EvalContext`] onto the stack.
-    fn push_context(&self, context: EvalContext);
+    /// Push an [`Context`] onto the stack.
+    fn push_context(&self, context: Context);
 
-    /// Pop an [`EvalContext`] from the stack.
+    /// Pop an [`Context`] from the stack.
     fn pop_context(&self);
 }
 
-impl MrbEval for Mrb {
+impl Eval for Mrb {
     fn eval<T>(&self, code: T) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>,
@@ -152,14 +147,14 @@ impl MrbEval for Mrb {
             (borrow.mrb, borrow.ctx)
         };
 
-        // Grab the persistent `EvalContext` from the context on the `State` or
+        // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
         let context = {
             let api = self.borrow();
             if let Some(context) = api.context_stack.last() {
                 context.clone()
             } else {
-                EvalContext::root()
+                Context::root()
             }
         };
 
@@ -222,14 +217,14 @@ impl MrbEval for Mrb {
             (borrow.mrb, borrow.ctx)
         };
 
-        // Grab the persistent `EvalContext` from the context on the `State` or
+        // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
         let context = {
             let api = self.borrow();
             if let Some(context) = api.context_stack.last() {
                 context.clone()
             } else {
-                EvalContext::root()
+                Context::root()
             }
         };
 
@@ -262,7 +257,7 @@ impl MrbEval for Mrb {
         Value::new(self, value)
     }
 
-    fn eval_with_context<T>(&self, code: T, context: EvalContext) -> Result<Value, ArtichokeError>
+    fn eval_with_context<T>(&self, code: T, context: Context) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>,
     {
@@ -272,7 +267,7 @@ impl MrbEval for Mrb {
         result
     }
 
-    fn unchecked_eval_with_context<T>(&self, code: T, context: EvalContext) -> Value
+    fn unchecked_eval_with_context<T>(&self, code: T, context: Context) -> Value
     where
         T: AsRef<[u8]>,
     {
@@ -282,12 +277,12 @@ impl MrbEval for Mrb {
         result
     }
 
-    fn peek_context(&self) -> Option<EvalContext> {
+    fn peek_context(&self) -> Option<Context> {
         let api = self.borrow();
         api.context_stack.last().cloned()
     }
 
-    fn push_context(&self, context: EvalContext) {
+    fn push_context(&self, context: Context) {
         let mut api = self.borrow_mut();
         api.context_stack.push(context);
     }
@@ -302,7 +297,7 @@ impl MrbEval for Mrb {
 mod tests {
     use crate::convert::{Convert, TryConvert};
     use crate::def::{ClassLike, Define};
-    use crate::eval::{EvalContext, MrbEval};
+    use crate::eval::{Context, Eval};
     use crate::file::MrbFile;
     use crate::load::MrbLoadSources;
     use crate::sys;
@@ -320,7 +315,7 @@ mod tests {
     #[test]
     fn context_is_restored_after_eval() {
         let interp = crate::interpreter().expect("mrb init");
-        let context = EvalContext::new("context.rb");
+        let context = Context::new("context.rb");
         interp.push_context(context);
         interp.eval("15").expect("eval");
         assert_eq!(interp.borrow().context_stack.len(), 1);
@@ -386,17 +381,17 @@ NestedEval.file
     fn eval_with_context() {
         let interp = crate::interpreter().expect("mrb init");
         let result = interp
-            .eval_with_context("__FILE__", EvalContext::new("source.rb"))
+            .eval_with_context("__FILE__", Context::new("source.rb"))
             .expect("eval");
         let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "source.rb");
         let result = interp
-            .eval_with_context("__FILE__", EvalContext::new("source.rb"))
+            .eval_with_context("__FILE__", Context::new("source.rb"))
             .expect("eval");
         let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "source.rb");
         let result = interp
-            .eval_with_context("__FILE__", EvalContext::new("main.rb"))
+            .eval_with_context("__FILE__", Context::new("main.rb"))
             .expect("eval");
         let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "main.rb");

@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
-use crate::eval::MrbEval;
+use crate::eval::Eval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::sys;
 use crate::value::Value;

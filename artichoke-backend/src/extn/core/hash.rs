@@ -1,4 +1,4 @@
-use crate::eval::MrbEval;
+use crate::eval::Eval;
 use crate::ArtichokeError;
 use crate::Mrb;
 

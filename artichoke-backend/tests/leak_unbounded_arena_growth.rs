@@ -20,7 +20,7 @@
 //! This test fails before commit
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
-use mruby::eval::MrbEval;
+use mruby::eval::Eval;
 use mruby::gc::MrbGarbageCollection;
 use mruby::ArtichokeError;
 use std::rc::Rc;

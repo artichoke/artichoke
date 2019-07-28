@@ -112,7 +112,7 @@ impl MrbGarbageCollection for Mrb {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::gc::MrbGarbageCollection;
 
     #[test]

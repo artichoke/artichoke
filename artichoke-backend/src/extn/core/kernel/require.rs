@@ -4,7 +4,7 @@ use std::mem;
 use std::rc::Rc;
 
 use crate::convert::TryConvert;
-use crate::eval::{EvalContext, MrbEval};
+use crate::eval::{Context, Eval};
 use crate::extn::core::error::{LoadError, RubyException};
 use crate::fs::RequireFunc;
 use crate::sys;
@@ -27,7 +27,7 @@ pub struct Require {
 
 impl Require {
     pub unsafe fn require(self, interp: Mrb) -> sys::mrb_value {
-        let context = EvalContext::new(self.file.as_str());
+        let context = Context::new(self.file.as_str());
         // Require Rust MrbFile first because an MrbFile may define classes and
         // module with `MrbLoadSources` and Ruby files can require arbitrary
         // other files, including some child sources that may depend on these
@@ -86,7 +86,7 @@ pub mod method {
     use std::path::{Path, PathBuf};
     use std::rc::Rc;
 
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::fs::RUBY_LOAD_PATH;
     use crate::Mrb;
 

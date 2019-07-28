@@ -37,7 +37,7 @@ mod tests {
     use quickcheck_macros::quickcheck;
 
     use crate::convert::{Convert, TryConvert};
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::sys;
     use crate::value::types::Ruby;
     use crate::value::Value;

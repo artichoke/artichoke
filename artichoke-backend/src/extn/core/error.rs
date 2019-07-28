@@ -168,7 +168,7 @@ mod tests {
     use std::rc::Rc;
 
     use crate::def::{ClassLike, Define};
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::exception::Exception;
     use crate::extn::core::error::{RubyException, RuntimeError};
     use crate::file::MrbFile;

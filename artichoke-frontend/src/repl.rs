@@ -5,7 +5,7 @@
 //! multi-line Ruby expressions, CTRL-C to break out of an expression, and can
 //! inspect return values and exception backtraces.
 
-use artichoke_backend::eval::{EvalContext, MrbEval};
+use artichoke_backend::eval::{Context, Eval};
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::sys;
 use artichoke_backend::ArtichokeError;
@@ -85,7 +85,7 @@ pub fn run(
     let interp = artichoke_backend::interpreter().map_err(Error::Ruby)?;
 
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
-    interp.push_context(EvalContext::new(REPL_FILENAME));
+    interp.push_context(Context::new(REPL_FILENAME));
     unsafe {
         let api = interp.borrow();
         (*api.ctx).lineno = 1;

@@ -1,4 +1,4 @@
-use crate::eval::MrbEval;
+use crate::eval::Eval;
 use crate::load::MrbLoadSources;
 use crate::{ArtichokeError, Mrb};
 
@@ -22,7 +22,7 @@ mod tests {
     #![allow(clippy::shadow_unrelated)]
 
     use crate::convert::TryConvert;
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     // use crate::ArtichokeError;
 
     #[test]

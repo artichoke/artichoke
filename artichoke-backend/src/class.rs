@@ -204,7 +204,7 @@ mod tests {
     use crate::class::Spec;
     use crate::convert::TryConvert;
     use crate::def::{ClassLike, Define, EnclosingRubyScope};
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::module;
 
     #[test]

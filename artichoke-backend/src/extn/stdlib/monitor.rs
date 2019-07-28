@@ -17,7 +17,7 @@ pub struct Monitor;
 #[cfg(test)]
 mod tests {
     use crate::convert::TryConvert;
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
 
     #[test]
     fn mon_initialize() {

@@ -158,7 +158,7 @@ mod tests {
 
     use crate::class;
     use crate::def::{ClassLike, EnclosingRubyScope};
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::module::Spec;
 
     #[test]

@@ -126,7 +126,7 @@ impl MrbExceptionHandler for Mrb {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::exception::Exception;
     use crate::value::ValueLike;
     use crate::ArtichokeError;

@@ -2,7 +2,7 @@
 #![deny(clippy::all, clippy::pedantic)]
 
 use artichoke_backend::convert::Convert;
-use artichoke_backend::eval::{EvalContext, MrbEval};
+use artichoke_backend::eval::{Context, Eval};
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
 use std::env;
@@ -47,7 +47,7 @@ fn main() {
     );
     data.protect();
     unsafe { sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$data"), data.inner()) }
-    let ctx = EvalContext::new("(main)");
+    let ctx = Context::new("(main)");
     if let Err(err) = interp.eval_with_context(program, ctx) {
         eprintln!("{}", err);
         process::exit(1);

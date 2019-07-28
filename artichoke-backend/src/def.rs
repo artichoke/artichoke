@@ -351,7 +351,7 @@ mod tests {
     mod functional {
         use crate::convert::TryConvert;
         use crate::def::{ClassLike, Define};
-        use crate::eval::MrbEval;
+        use crate::eval::Eval;
         use crate::sys;
 
         #[test]

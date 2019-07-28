@@ -17,7 +17,7 @@ pub struct Forwardable;
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/forwardable/rdoc/Forwardable.html
 #[cfg(test)]
 mod tests {
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
 
     #[test]
     #[allow(clippy::shadow_unrelated)]

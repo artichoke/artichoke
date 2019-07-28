@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use crate::class;
 use crate::def::{EnclosingRubyScope, Free};
-use crate::eval::EvalContext;
+use crate::eval::Context;
 use crate::fs::MrbFilesystem;
 use crate::module;
 use crate::sys::{self, DescribeState};
@@ -20,7 +20,7 @@ pub struct State {
     classes: HashMap<TypeId, Rc<RefCell<class::Spec>>>,
     modules: HashMap<TypeId, Rc<RefCell<module::Spec>>>,
     pub vfs: MrbFilesystem,
-    pub(crate) context_stack: Vec<EvalContext>,
+    pub(crate) context_stack: Vec<Context>,
     pub num_set_regexp_capture_globals: usize,
     symbol_cache: HashMap<String, sys::mrb_sym>,
 }

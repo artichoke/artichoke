@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
-use crate::eval::{EvalContext, MrbEval};
+use crate::eval::{Context, Eval};
 use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeError};
 use crate::sys;
 use crate::value::types::Ruby;
@@ -86,7 +86,7 @@ impl Kernel {
                 };
                 if result.is_ok() {
                     if let Some(contents) = req.ruby {
-                        interp.unchecked_eval_with_context(contents, EvalContext::new(req.file));
+                        interp.unchecked_eval_with_context(contents, Context::new(req.file));
                     }
                     Value::convert(&interp, true).inner()
                 } else {
@@ -120,7 +120,7 @@ impl Kernel {
                 };
                 if result.is_ok() {
                     if let Some(contents) = req.ruby {
-                        interp.unchecked_eval_with_context(contents, EvalContext::new(req.file));
+                        interp.unchecked_eval_with_context(contents, Context::new(req.file));
                     }
                     Value::convert(&interp, true).inner()
                 } else {
@@ -194,7 +194,7 @@ impl Kernel {
 #[cfg(test)]
 mod tests {
     use crate::convert::TryConvert;
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::file::MrbFile;
     use crate::load::MrbLoadSources;
     use crate::{ArtichokeError, Mrb};

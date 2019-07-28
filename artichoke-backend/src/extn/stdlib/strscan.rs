@@ -16,7 +16,7 @@ pub struct StringScanner;
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/strscan/rdoc/StringScanner.html
 #[cfg(test)]
 mod tests {
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::load::MrbLoadSources;
 
     #[test]

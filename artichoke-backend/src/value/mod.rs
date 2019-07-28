@@ -421,7 +421,7 @@ impl Clone for Value {
 #[cfg(test)]
 mod tests {
     use crate::convert::Convert;
-    use crate::eval::MrbEval;
+    use crate::eval::Eval;
     use crate::gc::MrbGarbageCollection;
     use crate::value::{Value, ValueLike};
     use crate::ArtichokeError;

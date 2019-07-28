@@ -15,11 +15,11 @@
 //! ### Evaling Source Code
 //!
 //! artichoke-backend crate exposes eval on the `State` with the
-//! [`MrbEval`](eval::MrbEval) trait. Side effects from eval are persisted
+//! [`Eval`](eval::Eval) trait. Side effects from eval are persisted
 //! across invocations.
 //!
 //! ```rust
-//! use artichoke_backend::eval::MrbEval;
+//! use artichoke_backend::eval::Eval;
 //!
 //! let interp = artichoke_backend::interpreter().unwrap();
 //! let result = interp.eval("10 * 10").unwrap();
@@ -49,12 +49,12 @@
 //! [`Kernel#require` and `Kernel#require_relative`](extn::core::kernel::Kernel)
 //! which loads sources from the VFS. For Ruby sources, the source is loaded
 //! from the VFS as a `Vec<u8>` and evaled with
-//! [`MrbEval::eval_with_context`](eval::MrbEval::eval_with_context). For Rust
+//! [`Eval::eval_with_context`](eval::Eval::eval_with_context). For Rust
 //! sources, [`MrbFile::require`](file::MrbFile::require) methods are stored as
 //! custom metadata on [`File`](artichoke_vfs::FakeFileSystem) nodes in the VFS.
 //!
 //! ```rust
-//! use artichoke_backend::eval::MrbEval;
+//! use artichoke_backend::eval::Eval;
 //! use artichoke_backend::load::MrbLoadSources;
 //!
 //! let mut interp = artichoke_backend::interpreter().unwrap();
@@ -103,7 +103,7 @@
 //!
 //! use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
 //! use artichoke_backend::def::{rust_data_free, ClassLike, Define};
-//! use artichoke_backend::eval::MrbEval;
+//! use artichoke_backend::eval::Eval;
 //! use artichoke_backend::file::MrbFile;
 //! use artichoke_backend::load::MrbLoadSources;
 //! use artichoke_backend::sys;
@@ -252,7 +252,7 @@ pub use mruby_sys as sys;
 /// [`State`](state::State), even across an FFI boundary.
 ///
 /// Functionality is added to the interpreter via traits, for example,
-/// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::MrbEval).
+/// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
 pub type Mrb = Rc<RefCell<state::State>>;
 
 /// Errors returned by artichoke-backend crate.
@@ -266,7 +266,7 @@ pub enum ArtichokeError {
     ConvertToRust(convert::Error<value::types::Ruby, value::types::Rust>),
     /// Exception raised during eval.
     ///
-    /// See [`MrbEval`](eval::MrbEval).
+    /// See [`Eval`](eval::Eval).
     // TODO: wrap an `Exception` instead of a `String`, see GH-152.
     Exec(String),
     /// Unable to initalize interpreter.

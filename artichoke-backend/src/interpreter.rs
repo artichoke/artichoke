@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::ffi::c_void;
 use std::rc::Rc;
 
-use crate::eval::MrbEval;
+use crate::eval::Eval;
 use crate::extn;
 use crate::fs::MrbFilesystem;
 use crate::gc::MrbGarbageCollection;
