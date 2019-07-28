@@ -9,12 +9,12 @@ use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeE
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 mod args;
 pub mod require;
 
-pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let warning = interp.borrow_mut().def_module::<Warning>("Warning", None);
     warning
         .borrow_mut()
@@ -197,7 +197,7 @@ mod tests {
     use crate::eval::Eval;
     use crate::file::File;
     use crate::load::LoadSources;
-    use crate::{ArtichokeError, Mrb};
+    use crate::{Artichoke, ArtichokeError};
 
     // Integration test for `Kernel::require`:
     //
@@ -211,7 +211,7 @@ mod tests {
         struct TestFile;
 
         impl File for TestFile {
-            fn require(interp: Mrb) -> Result<(), ArtichokeError> {
+            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
                 interp.eval("@i = 255")?;
                 Ok(())
             }
@@ -287,7 +287,7 @@ mod tests {
     fn require_path_defined_as_source_then_mrbfile() {
         struct Foo;
         impl File for Foo {
-            fn require(interp: Mrb) -> Result<(), ArtichokeError> {
+            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
                 interp.eval("module Foo; RUST = 7; end")?;
                 Ok(())
             }
@@ -312,7 +312,7 @@ mod tests {
     fn require_path_defined_as_mrbfile_then_source() {
         struct Foo;
         impl File for Foo {
-            fn require(interp: Mrb) -> Result<(), ArtichokeError> {
+            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
                 interp.eval("module Foo; RUST = 7; end")?;
                 Ok(())
             }

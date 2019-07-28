@@ -1,6 +1,6 @@
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 /// Return a [`Value`]-wrapped reference to "top self".
 ///
@@ -15,7 +15,7 @@ pub trait TopSelf {
     fn top_self(&self) -> Value;
 }
 
-impl TopSelf for Mrb {
+impl TopSelf for Artichoke {
     fn top_self(&self) -> Value {
         Value::new(self, unsafe { sys::mrb_top_self(self.borrow().mrb) })
     }

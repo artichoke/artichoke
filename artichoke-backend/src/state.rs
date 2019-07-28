@@ -12,8 +12,8 @@ use crate::fs::Filesystem;
 use crate::module;
 use crate::sys::{self, DescribeState};
 
-// NOTE: MrbState assumes that it it is stored in `mrb_state->ud` wrapped in a
-// [`Rc`] with type [`Mrb`] as created by [`crate::interpreter`].
+// NOTE: ArtichokeState assumes that it it is stored in `mrb_state->ud` wrapped in a
+// [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
 pub struct State {
     pub mrb: *mut sys::mrb_state,
     pub ctx: *mut sys::mrbc_context,

@@ -5,14 +5,14 @@ use std::convert::TryFrom;
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::matchdata::MatchData;
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
     Fatal,
 }
 
-pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
     let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;

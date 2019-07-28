@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::exception::{ExceptionHandler, LastError};
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 const TOP_FILENAME: &str = "(eval)";
 
@@ -16,7 +16,7 @@ struct Protect {
 }
 
 impl Protect {
-    fn new(interp: &Mrb, code: &[u8]) -> Self {
+    fn new(interp: &Artichoke, code: &[u8]) -> Self {
         Self {
             ctx: interp.borrow().ctx,
             code: code.to_vec(),
@@ -50,7 +50,7 @@ impl Protect {
 }
 
 /// `Context` is used to manipulate the state of a wrapped
-/// [`sys::mrb_state`]. [`Mrb`] maintains a stack of `Context`s and
+/// [`sys::mrb_state`]. [`Artichoke`] maintains a stack of `Context`s and
 /// [`Eval::eval`] uses the current context to set the `__FILE__` magic
 /// constant on the [`sys::mrbc_context`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -135,14 +135,14 @@ pub trait Eval {
     fn pop_context(&self);
 }
 
-impl Eval for Mrb {
+impl Eval for Artichoke {
     fn eval<T>(&self, code: T) -> Result<Value, ArtichokeError>
     where
         T: AsRef<[u8]>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Mrb` to
-        // get access to the underlying `MrbState`.
+        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
+        // get access to the underlying `ArtichokeState`.
         let (mrb, ctx) = {
             let borrow = self.borrow();
             (borrow.mrb, borrow.ctx)
@@ -211,8 +211,8 @@ impl Eval for Mrb {
         T: AsRef<[u8]>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Mrb` to
-        // get access to the underlying `MrbState`.
+        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
+        // get access to the underlying `ArtichokeState`.
         let (mrb, ctx) = {
             let borrow = self.borrow();
             (borrow.mrb, borrow.ctx)
@@ -303,7 +303,7 @@ mod tests {
     use crate::load::LoadSources;
     use crate::sys;
     use crate::value::Value;
-    use crate::{ArtichokeError, Mrb};
+    use crate::{Artichoke, ArtichokeError};
 
     #[test]
     fn root_eval_context() {
@@ -350,7 +350,7 @@ mod tests {
         }
 
         impl File for NestedEval {
-            fn require(interp: Mrb) -> Result<(), ArtichokeError> {
+            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
                 let spec = {
                     let mut api = interp.borrow_mut();
                     let spec = api.def_module::<Self>("NestedEval", None);

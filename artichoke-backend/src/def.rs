@@ -8,7 +8,7 @@ use crate::class;
 use crate::convert::RustBackedValue;
 use crate::module;
 use crate::sys;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
@@ -150,7 +150,7 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
-    pub fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass> {
+    pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
         match self {
             EnclosingRubyScope::Class { spec } => spec.borrow().rclass(interp),
             EnclosingRubyScope::Module { spec } => spec.borrow().rclass(interp),
@@ -218,10 +218,10 @@ where
     ///
     /// Returns the [`RClass *`](sys::RClass) of the newly defined item.
     ///
-    /// This function takes a mutable borrow on the [`Mrb`] interpreter. Ensure
+    /// This function takes a mutable borrow on the [`Artichoke`] interpreter. Ensure
     /// that there are no outstanding borrows on the interpreter or else Rust
     /// will panic.
-    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, ArtichokeError>;
+    fn define(&self, interp: &Artichoke) -> Result<*mut sys::RClass, ArtichokeError>;
 }
 
 /// `ClassLike` trait unifies `class::Spec` and `module::Spec`.
@@ -239,7 +239,7 @@ where
 
     fn enclosing_scope(&self) -> Option<EnclosingRubyScope>;
 
-    fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass>;
+    fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass>;
 
     /// Compute the fully qualified name of a Class or module. See
     /// [`EnclosingRubyScope::fqname`].

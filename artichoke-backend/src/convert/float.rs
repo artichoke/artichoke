@@ -2,7 +2,7 @@ use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 pub type Float = f64;
 
@@ -10,7 +10,7 @@ impl Convert<Float> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: Float) -> Self {
+    fn convert(interp: &Artichoke, value: Float) -> Self {
         let mrb = interp.borrow().mrb;
         Self::new(interp, unsafe { sys::mrb_sys_float_value(mrb, value) })
     }
@@ -21,7 +21,7 @@ impl TryConvert<Value> for Float {
     type To = Rust;
 
     unsafe fn try_convert(
-        _interp: &Mrb,
+        _interp: &Artichoke,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {

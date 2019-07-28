@@ -1,13 +1,13 @@
 use crate::convert::{Convert, Error, TryConvert};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 impl Convert<String> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: String) -> Self {
+    fn convert(interp: &Artichoke, value: String) -> Self {
         // mruby `String` is just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
         Self::convert(interp, value.as_bytes())
@@ -18,7 +18,7 @@ impl Convert<&str> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: &str) -> Self {
+    fn convert(interp: &Artichoke, value: &str) -> Self {
         // mruby `String` is just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
         Self::convert(interp, value.as_bytes())
@@ -29,7 +29,10 @@ impl TryConvert<Value> for String {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         if value.ruby_type() == Ruby::Symbol {
             return Ok(value.to_s());
         }

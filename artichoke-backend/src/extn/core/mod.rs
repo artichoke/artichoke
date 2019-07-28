@@ -1,6 +1,6 @@
 use crate::eval::Eval;
+use crate::Artichoke;
 use crate::ArtichokeError;
-use crate::Mrb;
 
 pub mod array;
 pub mod env;
@@ -13,7 +13,7 @@ pub mod regexp;
 pub mod string;
 pub mod thread;
 
-pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("object.rb"))?;
     array::patch(interp)?;
     env::patch(interp)?;

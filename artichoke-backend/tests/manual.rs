@@ -11,7 +11,7 @@ use artichoke_backend::file::File;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
-use artichoke_backend::{ArtichokeError, Mrb};
+use artichoke_backend::{Artichoke, ArtichokeError};
 use std::io::Write;
 use std::mem;
 
@@ -32,7 +32,7 @@ impl Container {
         }
 
         impl Args {
-            unsafe fn extract(interp: &Mrb) -> Result<Self, ArtichokeError> {
+            unsafe fn extract(interp: &Artichoke) -> Result<Self, ArtichokeError> {
                 let inner = <mem::MaybeUninit<sys::mrb_value>>::uninit();
                 let mut argspec = vec![];
                 // TODO: use a constant argspec, see GH-174.
@@ -72,7 +72,7 @@ impl Container {
 }
 
 impl File for Container {
-    fn require(interp: Mrb) -> Result<(), ArtichokeError> {
+    fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
         let spec = {
             let mut api = interp.borrow_mut();
             let spec =

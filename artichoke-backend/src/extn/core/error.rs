@@ -6,9 +6,9 @@ use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::sys;
 use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
-pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let exception = interp
         .borrow_mut()
         .def_class::<Exception>("Exception", None, None);
@@ -63,17 +63,17 @@ pub trait RubyException: 'static + Sized {
     /// **Warning**: This function calls [`sys::mrb_sys_raise`] which modifies
     /// the stack with `longjmp`. mruby expects raise to be called at some stack
     /// frame below an eval. If this is not the case, mruby will segfault.
-    unsafe fn raise(interp: Mrb, message: &'static str) -> sys::mrb_value {
+    unsafe fn raise(interp: Artichoke, message: &'static str) -> sys::mrb_value {
         Self::raisef::<Value>(interp, message, vec![])
     }
 
-    unsafe fn raisef<V>(interp: Mrb, message: &'static str, format: Vec<V>) -> sys::mrb_value
+    unsafe fn raisef<V>(interp: Artichoke, message: &'static str, format: Vec<V>) -> sys::mrb_value
     where
         Value: Convert<V>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Mrb` to
-        // get access to the underlying `MrbState`.
+        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
+        // get access to the underlying `ArtichokeState`.
         let mrb = interp.borrow().mrb;
 
         let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
@@ -173,7 +173,7 @@ mod tests {
     use crate::extn::core::error::{RubyException, RuntimeError};
     use crate::file::File;
     use crate::sys;
-    use crate::{ArtichokeError, Mrb};
+    use crate::{Artichoke, ArtichokeError};
 
     struct Run;
 
@@ -185,7 +185,7 @@ mod tests {
     }
 
     impl File for Run {
-        fn require(interp: Mrb) -> Result<(), ArtichokeError> {
+        fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
             let spec = interp.borrow_mut().def_class::<Self>("Run", None, None);
             spec.borrow_mut()
                 .add_self_method("run", Self::run, sys::mrb_args_none());

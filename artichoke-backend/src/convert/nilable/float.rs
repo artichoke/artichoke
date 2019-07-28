@@ -2,13 +2,13 @@ use crate::convert::float::Float;
 use crate::convert::{Convert, Error, TryConvert};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 impl Convert<Option<Float>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: Option<Float>) -> Self {
+    fn convert(interp: &Artichoke, value: Option<Float>) -> Self {
         if let Some(value) = value {
             Self::convert(interp, value)
         } else {
@@ -23,7 +23,10 @@ impl TryConvert<Value> for Option<Float> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         let value = <Option<Value>>::try_convert(interp, value)?;
         if let Some(item) = value {
             Ok(Some(Float::try_convert(interp, item)?))

@@ -10,7 +10,7 @@ use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -25,7 +25,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
-    pub unsafe fn extract(interp: &Mrb) -> Self {
+    pub unsafe fn extract(interp: &Artichoke) -> Self {
         let mut other = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
@@ -42,7 +42,7 @@ impl Args {
 }
 
 #[allow(clippy::if_same_then_else)]
-pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let slf = data.borrow();
     if let Some(other) = args.other {

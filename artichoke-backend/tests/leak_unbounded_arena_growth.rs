@@ -7,7 +7,7 @@
 //!
 //! Checks for memory leaks stemming from improperly grabage collecting Ruby
 //! objects created in C functions, like the call to exc.inspect in
-//! [`MrbApi::current_exception`].
+//! [`ArtichokeApi::current_exception`].
 //!
 //! The test exposes a function that raises an exception with a 1MB `String`
 //! message. The test reuses one mruby interpreter for all `ITERATIONS`.
@@ -32,7 +32,7 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
 #[test]
 fn unbounded_arena_growth() {
-    // MrbApi::current_exception
+    // ArtichokeApi::current_exception
     let interp = mruby::interpreter().expect("mrb init");
     let code = r#"
 def bad_code

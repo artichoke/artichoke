@@ -8,7 +8,7 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -24,7 +24,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
+    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
@@ -40,7 +40,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
     let mrb = interp.borrow().mrb;
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let string = if let Some(string) = args.string {

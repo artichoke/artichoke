@@ -9,24 +9,24 @@ use std::rc::Rc;
 
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
-/// Extract an [`Mrb`] interpreter from the userdata pointer on a
+/// Extract an [`Artichoke`] interpreter from the userdata pointer on a
 /// [`sys::mrb_state`].
 ///
 /// This function is unsafe! It manipulates a raw pointer stored as a
 /// [`c_void`](std::ffi::c_void) on `mrb->ud`. `from_user_data` assumes that
 /// this [`c_void`](std::ffi::c_void) was created with [`Rc::into_raw`], see
-/// calling this function, [`Rc::strong_count`] on the [`Mrb`] instance will
+/// calling this function, [`Rc::strong_count`] on the [`Artichoke`] instance will
 /// increase by one.
-pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Mrb, ArtichokeError> {
+pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeError> {
     if mrb.is_null() {
-        error!("Attempted to extract Mrb from null mrb_state");
+        error!("Attempted to extract Artichoke from null mrb_state");
         return Err(ArtichokeError::Uninitialized);
     }
     let ptr = (*mrb).ud;
     if ptr.is_null() {
-        error!("Attempted to extract Mrb from null mrb_state->ud pointer");
+        error!("Attempted to extract Artichoke from null mrb_state->ud pointer");
         return Err(ArtichokeError::Uninitialized);
     }
     // Extract the smart pointer that wraps the API from the user data on
@@ -41,7 +41,10 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Mrb, ArtichokeE
     // get deallocated before `mrb_close` is called.
     mem::forget(ud);
     // At this point, `Rc::strong_count` will be increased by 1.
-    trace!("Extracted Mrb from user data pointer on {}", mrb.debug());
+    trace!(
+        "Extracted Artichoke from user data pointer on {}",
+        mrb.debug()
+    );
     Ok(api)
 }
 

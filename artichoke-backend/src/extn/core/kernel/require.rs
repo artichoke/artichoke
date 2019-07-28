@@ -9,7 +9,7 @@ use crate::extn::core::error::{LoadError, RubyException};
 use crate::fs::RequireFunc;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -26,7 +26,7 @@ pub struct Require {
 }
 
 impl Require {
-    pub unsafe fn require(self, interp: Mrb) -> sys::mrb_value {
+    pub unsafe fn require(self, interp: Artichoke) -> sys::mrb_value {
         let context = Context::new(self.file.as_str());
         // Require Rust File first because an File may define classes and
         // module with `LoadSources` and Ruby files can require arbitrary
@@ -64,7 +64,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
+    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
@@ -88,15 +88,15 @@ pub mod method {
 
     use crate::eval::Eval;
     use crate::fs::RUBY_LOAD_PATH;
-    use crate::Mrb;
+    use crate::Artichoke;
 
     use super::{Args, Error, Require};
 
-    pub fn require(interp: &Mrb, args: Args) -> Result<Require, Error> {
+    pub fn require(interp: &Artichoke, args: Args) -> Result<Require, Error> {
         require_impl(interp, args, RUBY_LOAD_PATH)
     }
 
-    pub fn require_relative(interp: &Mrb, args: Args) -> Result<Require, Error> {
+    pub fn require_relative(interp: &Artichoke, args: Args) -> Result<Require, Error> {
         let context = interp
             .peek_context()
             .ok_or_else(|| Error::CannotLoad(args.file.clone()))?;
@@ -108,7 +108,7 @@ pub mod method {
         require_impl(interp, args, base.as_str())
     }
 
-    fn require_impl(interp: &Mrb, args: Args, base: &str) -> Result<Require, Error> {
+    fn require_impl(interp: &Artichoke, args: Args, base: &str) -> Result<Require, Error> {
         let interp = Rc::clone(interp);
         // Track whether any iterations of the loop successfully required some
         // Ruby sources.

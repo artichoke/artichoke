@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::file::File;
 use crate::fs::RUBY_LOAD_PATH;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 #[allow(clippy::module_name_repetitions)]
 pub trait LoadSources {
@@ -61,7 +61,7 @@ pub trait LoadSources {
     }
 }
 
-impl LoadSources for Mrb {
+impl LoadSources for Artichoke {
     fn def_file<T>(
         &self,
         filename: T,

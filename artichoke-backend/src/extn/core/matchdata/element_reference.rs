@@ -7,7 +7,7 @@ use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -28,7 +28,7 @@ pub enum Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o|o?\0";
 
-    pub unsafe fn extract(interp: &Mrb, num_captures: usize) -> Result<Self, Error> {
+    pub unsafe fn extract(interp: &Artichoke, num_captures: usize) -> Result<Self, Error> {
         let num_captures = i64::try_from(num_captures).map_err(|_| Error::Fatal)?;
         let mut first = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut second = <mem::MaybeUninit<sys::mrb_value>>::uninit();
@@ -61,7 +61,7 @@ impl Args {
     }
 
     unsafe fn is_range(
-        interp: &Mrb,
+        interp: &Artichoke,
         first: sys::mrb_value,
         num_captures: i64,
     ) -> Result<Option<Self>, Error> {
@@ -86,7 +86,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
     let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;

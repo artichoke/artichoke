@@ -1,8 +1,8 @@
 use crate::load::LoadSources;
+use crate::Artichoke;
 use crate::ArtichokeError;
-use crate::Mrb;
 
-pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("uri.rb", include_str!("uri.rb"))?;
     interp.def_rb_source_file("uri/common.rb", include_str!("uri/common.rb"))?;
     interp.def_rb_source_file("uri/file.rb", include_str!("uri/file.rb"))?;

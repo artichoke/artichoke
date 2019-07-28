@@ -6,11 +6,11 @@ use crate::eval::Eval;
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
 use crate::sys;
 use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 mod scan;
 
-pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }

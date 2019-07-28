@@ -1,7 +1,7 @@
 use crate::convert::Convert;
 use crate::sys;
 use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 pub mod core;
 pub mod stdlib;
@@ -9,7 +9,7 @@ pub mod stdlib;
 pub const RUBY_PLATFORM: &str = "x86_64-unknown-mruby";
 pub const INPUT_RECORD_SEPARATOR: &str = "\n";
 
-pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let mrb = interp.borrow().mrb;
     unsafe {
         let ruby_platform = Value::convert(interp, RUBY_PLATFORM);

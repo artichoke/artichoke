@@ -11,7 +11,7 @@ use crate::def::ClassLike;
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::{self, Value};
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].
 ///
@@ -38,7 +38,7 @@ where
     /// an `Rc<RefCell<_>>`.
     unsafe fn try_into_ruby(
         self,
-        interp: &Mrb,
+        interp: &Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, ArtichokeError> {
         let mrb = interp.borrow().mrb;
@@ -94,7 +94,7 @@ where
     /// [`Ruby::Data`] and that the `RClass *` of the spec matches the
     /// [`Value`].
     unsafe fn try_from_ruby(
-        interp: &Mrb,
+        interp: &Artichoke,
         slf: &Value,
     ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
         let mrb = interp.borrow().mrb;
@@ -136,7 +136,7 @@ where
     ///
     /// Implementations should override this method if they need to supply
     /// arguments to initialize the Ruby class.
-    fn new_obj_args(&self, interp: &Mrb) -> Vec<sys::mrb_value> {
+    fn new_obj_args(&self, interp: &Artichoke) -> Vec<sys::mrb_value> {
         let _ = interp;
         vec![]
     }

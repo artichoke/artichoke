@@ -1,8 +1,8 @@
 use crate::eval::Eval;
 use crate::load::LoadSources;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
-pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
         .borrow_mut()
         .def_class::<Thread>("Thread", None, None);

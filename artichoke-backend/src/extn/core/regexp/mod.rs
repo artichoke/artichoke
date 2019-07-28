@@ -15,7 +15,7 @@ use crate::eval::Eval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::sys;
 use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 pub mod enc;
 pub mod opts;
@@ -39,7 +39,7 @@ pub mod source;
 pub mod to_s;
 pub mod union;
 
-pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("regexp.rb"))?;
     let regexp =
         interp
@@ -143,7 +143,7 @@ impl Hash for Regexp {
 }
 
 impl RustBackedValue for Regexp {
-    fn new_obj_args(&self, interp: &Mrb) -> Vec<sys::mrb_value> {
+    fn new_obj_args(&self, interp: &Artichoke) -> Vec<sys::mrb_value> {
         vec![
             Value::convert(interp, self.literal_pattern.as_str()).inner(),
             Value::convert(interp, self.literal_options.flags().bits()).inner(),

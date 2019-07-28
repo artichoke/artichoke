@@ -2,7 +2,7 @@ use std::error;
 use std::fmt;
 
 use crate::value::{types, Value};
-use crate::Mrb;
+use crate::Artichoke;
 
 mod array;
 mod boolean;
@@ -28,7 +28,7 @@ pub trait Convert<T> {
     type From;
     type To;
 
-    fn convert(interp: &Mrb, value: T) -> Self;
+    fn convert(interp: &Artichoke, value: T) -> Self;
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -39,7 +39,10 @@ where
     type From;
     type To;
 
-    unsafe fn try_convert(interp: &Mrb, value: T) -> Result<Self, Error<Self::From, Self::To>>;
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: T,
+    ) -> Result<Self, Error<Self::From, Self::To>>;
 }
 
 /// Provide a falible converter for types that implement an infallible
@@ -51,7 +54,10 @@ where
     type From = <Self as Convert<From>>::From;
     type To = <Self as Convert<From>>::To;
 
-    unsafe fn try_convert(interp: &Mrb, value: From) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: From,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         Ok(Convert::convert(interp, value))
     }
 }
@@ -101,7 +107,7 @@ impl Convert<Value> for () {
     type From = types::Ruby;
     type To = types::Rust;
 
-    fn convert(_interp: &Mrb, _value: Value) -> Self {}
+    fn convert(_interp: &Artichoke, _value: Value) -> Self {}
 }
 
 #[cfg(test)]

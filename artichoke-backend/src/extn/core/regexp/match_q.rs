@@ -7,7 +7,7 @@ use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -25,7 +25,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o|o?\0";
 
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
+    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut pos = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut has_pos = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
@@ -56,7 +56,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let string = if let Some(string) = args.string {
         string

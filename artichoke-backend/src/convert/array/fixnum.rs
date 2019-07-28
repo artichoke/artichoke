@@ -2,13 +2,13 @@ use crate::convert::fixnum::Int;
 use crate::convert::{Convert, Error, TryConvert};
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 impl Convert<Vec<Int>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: Vec<Int>) -> Self {
+    fn convert(interp: &Artichoke, value: Vec<Int>) -> Self {
         let mut values = Vec::with_capacity(value.len());
         for item in value {
             values.push(Self::convert(interp, item));
@@ -23,7 +23,10 @@ impl TryConvert<Value> for Vec<Int> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         let values = <Vec<Value>>::try_convert(interp, value)?;
         let mut vec = Self::with_capacity(values.len());
         for item in values {
@@ -37,7 +40,7 @@ impl Convert<Vec<Option<Int>>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: Vec<Option<Int>>) -> Self {
+    fn convert(interp: &Artichoke, value: Vec<Option<Int>>) -> Self {
         let mut values = Vec::with_capacity(value.len());
         for item in value {
             values.push(Self::convert(interp, item));
@@ -52,7 +55,10 @@ impl TryConvert<Value> for Vec<Option<Int>> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         let values = <Vec<Value>>::try_convert(interp, value)?;
         let mut vec = Self::with_capacity(values.len());
         for item in values {

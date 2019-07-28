@@ -21,7 +21,7 @@ use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeErro
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 pub mod begin;
 pub mod captures;
@@ -38,7 +38,7 @@ pub mod string;
 pub mod to_a;
 pub mod to_s;
 
-pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let match_data = interp.borrow_mut().def_class::<MatchData>(
         "MatchData",
         None,

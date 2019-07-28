@@ -8,7 +8,7 @@ use crate::convert::{Convert, TryConvert};
 use crate::extn::core::regexp::syntax;
 use crate::sys;
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -24,7 +24,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
+    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
             interp.borrow().mrb,
@@ -40,7 +40,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, args: &Args) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
     Ok(Value::convert(
         interp,
         syntax::escape(args.pattern.as_str()),

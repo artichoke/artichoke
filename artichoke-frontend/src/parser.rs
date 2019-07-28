@@ -1,7 +1,7 @@
 //! Parser for Ruby code that determines if it is fit to eval on an interpreter.
 
 use artichoke_backend::sys;
-use artichoke_backend::Mrb;
+use artichoke_backend::Artichoke;
 use std::convert::TryFrom;
 use std::ffi::CStr;
 
@@ -62,7 +62,7 @@ pub struct Parser {
 
 impl Parser {
     /// Create a new parser from an interpreter instance.
-    pub fn new(interp: &Mrb) -> Option<Self> {
+    pub fn new(interp: &Artichoke) -> Option<Self> {
         let mrb = interp.borrow().mrb;
         let context = interp.borrow().ctx;
         let parser = unsafe { sys::mrb_parser_new(mrb) };

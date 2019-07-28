@@ -9,8 +9,8 @@ use crate::convert::{Convert, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
+use crate::Artichoke;
 use crate::ArtichokeError;
-use crate::Mrb;
 
 pub mod types;
 
@@ -58,7 +58,7 @@ where
 {
     fn inner(&self) -> sys::mrb_value;
 
-    fn interp(&self) -> &Mrb;
+    fn interp(&self) -> &Artichoke;
 
     fn funcall<T, M, A>(&self, func: M, args: A) -> Result<T, ArtichokeError>
     where
@@ -87,8 +87,8 @@ where
             value
         }
         // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Mrb` to
-        // get access to the underlying `MrbState`.
+        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
+        // get access to the underlying `ArtichokeState`.
         let (mrb, _ctx) = {
             let borrow = self.interp().borrow();
             (borrow.mrb, borrow.ctx)
@@ -187,8 +187,8 @@ where
             value
         }
         // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Mrb` to
-        // get access to the underlying `MrbState`.
+        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
+        // get access to the underlying `ArtichokeState`.
         let (mrb, _ctx) = {
             let borrow = self.interp().borrow();
             (borrow.mrb, borrow.ctx)
@@ -265,13 +265,13 @@ where
 
 /// Wrapper around a [`sys::mrb_value`].
 pub struct Value {
-    interp: Mrb,
+    interp: Artichoke,
     value: sys::mrb_value,
 }
 
 impl Value {
     /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
-    pub fn new(interp: &Mrb, value: sys::mrb_value) -> Self {
+    pub fn new(interp: &Artichoke, value: sys::mrb_value) -> Self {
         Self {
             interp: Rc::clone(interp),
             value,
@@ -380,7 +380,7 @@ impl ValueLike for Value {
         self.value
     }
 
-    fn interp(&self) -> &Mrb {
+    fn interp(&self) -> &Artichoke {
         &self.interp
     }
 }
@@ -389,7 +389,7 @@ impl Convert<Value> for Value {
     type From = types::Ruby;
     type To = types::Rust;
 
-    fn convert(_interp: &Mrb, value: Self) -> Self {
+    fn convert(_interp: &Artichoke, value: Self) -> Self {
         value
     }
 }

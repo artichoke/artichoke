@@ -108,7 +108,7 @@
 //! use artichoke_backend::load::LoadSources;
 //! use artichoke_backend::sys;
 //! use artichoke_backend::value::Value;
-//! use artichoke_backend::{Mrb, ArtichokeError};
+//! use artichoke_backend::{Artichoke, ArtichokeError};
 //! use std::io::Write;
 //! use std::mem;
 //!
@@ -143,7 +143,7 @@
 //! impl RustBackedValue for Container {}
 //!
 //! impl File for Container {
-//!   fn require(interp: Mrb) -> Result<(), ArtichokeError> {
+//!   fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
 //!         let spec = interp.borrow_mut().def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
 //!         spec.borrow_mut().add_method("initialize", Self::initialize, sys::mrb_args_req(1));
 //!         spec.borrow_mut().add_method("value", Self::value, sys::mrb_args_none());
@@ -166,7 +166,7 @@
 //!
 //! The [`convert` module](convert) provides implementations for conversions
 //! between `mrb_value` Ruby types and native Rust types like `i64` and
-//! `HashMap<String, Option<Vec<u8>>>` using an [`Mrb`](interpreter::Mrb)
+//! `HashMap<String, Option<Vec<u8>>>` using an [`Artichoke`](interpreter::Artichoke)
 //! interpreter.
 //!
 //! There are two converter traits:
@@ -253,7 +253,7 @@ pub use mruby_sys as sys;
 ///
 /// Functionality is added to the interpreter via traits, for example,
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
-pub type Mrb = Rc<RefCell<state::State>>;
+pub type Artichoke = Rc<RefCell<state::State>>;
 
 /// Errors returned by artichoke-backend crate.
 #[derive(Debug)]
@@ -286,7 +286,7 @@ pub enum ArtichokeError {
     /// [`sys::mrb_funcall_with_block`], [`sys::mrb_yield`], and
     /// [`sys::mrb_yield_argv`].
     TooManyArgs { given: usize, max: usize },
-    /// Attempted to extract an [`Mrb`] from a [`sys::mrb_state`] but could not.
+    /// Attempted to extract an [`Artichoke`] from a [`sys::mrb_state`] but could not.
     Uninitialized,
     /// Eval or funcall returned an interpreter-internal value.
     ///

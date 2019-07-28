@@ -3,7 +3,7 @@ use log::warn;
 use crate::convert::Convert;
 use crate::sys;
 use crate::value::{Value, ValueLike};
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 /// Interpreters that implement [`Warn`] expose methods for emitting warnings
 /// during execution.
@@ -20,7 +20,7 @@ pub trait Warn {
     fn warn(&self, message: &str) -> Result<(), ArtichokeError>;
 }
 
-impl Warn for Mrb {
+impl Warn for Artichoke {
     fn warn(&self, message: &str) -> Result<(), ArtichokeError> {
         warn!("rb warning: {}", message);
         let mrb = self.borrow().mrb;

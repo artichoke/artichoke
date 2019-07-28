@@ -9,7 +9,7 @@ use crate::extn::core::regexp::{syntax, Regexp};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -26,7 +26,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o&\0";
 
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
+    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mut pattern = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut block = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
@@ -63,7 +63,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Error> {
     let mrb = interp.borrow().mrb;
     let regexp = args.regexp.ok_or(Error::WrongType)?;
     let s = value.itself().map_err(|_| Error::Fatal)?;

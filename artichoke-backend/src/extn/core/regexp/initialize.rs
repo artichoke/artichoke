@@ -11,7 +11,7 @@ use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
 use crate::warn::Warn;
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -31,7 +31,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"o|o?o?\0";
 
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, Error> {
+    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mut pattern = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut opts = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut has_opts = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
@@ -87,7 +87,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
     let mut literal_options = args.options.unwrap_or_default();
     let literal_pattern =
         if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &args.pattern) } {

@@ -1,8 +1,8 @@
 use crate::eval::Eval;
+use crate::Artichoke;
 use crate::ArtichokeError;
-use crate::Mrb;
 
-pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
         .borrow_mut()
         .def_class::<Module>("Module", None, None);

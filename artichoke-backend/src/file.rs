@@ -1,5 +1,5 @@
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 pub trait File {
-    fn require(interp: Mrb) -> Result<(), ArtichokeError>;
+    fn require(interp: Artichoke) -> Result<(), ArtichokeError>;
 }

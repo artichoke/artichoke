@@ -2,13 +2,13 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 
 //! This integration test checks for segfaults that stem from the improper
-//! handling of `Rc` when storing the `Mrb` interpreter in the `sys::mrb_state`
+//! handling of `Rc` when storing the `Artichoke` interpreter in the `sys::mrb_state`
 //! userdata pointer as a `*mut c_void`.
 //!
 //! Checks for memory leaks stemming from improperly grabage collecting Ruby
 //! objects created in C functions, like the call to `sys::mrb_funcall_argv`.
 //!
-//! This test takes out `u8::MAX + 1` clones on the `Mrb` and attempts a full
+//! This test takes out `u8::MAX + 1` clones on the `Artichoke` and attempts a full
 //! gc.
 //!
 //! If this test segfaults, we are improperly transmuting the `Rc` smart
@@ -17,13 +17,16 @@
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::state::State;
 use artichoke_backend::sys;
-use artichoke_backend::Mrb;
+use artichoke_backend::Artichoke;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 #[test]
 fn segfault_rc_transmute() {
-    println!("size of Rc<RefCell<State>>: {}", std::mem::size_of::<Mrb>());
+    println!(
+        "size of Rc<RefCell<State>>: {}",
+        std::mem::size_of::<Artichoke>()
+    );
     println!(
         "size of RefCell<State>: {}",
         std::mem::size_of::<RefCell<State>>()

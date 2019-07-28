@@ -10,7 +10,7 @@ use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
 use crate::method;
 use crate::sys;
 use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 pub struct Spec {
     name: String,
@@ -45,7 +45,7 @@ impl Spec {
         }
     }
 
-    pub fn new_instance(&self, interp: &Mrb, args: &[Value]) -> Option<Value> {
+    pub fn new_instance(&self, interp: &Artichoke, args: &[Value]) -> Option<Value> {
         let rclass = self.rclass(interp)?;
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
         let value = unsafe {
@@ -59,7 +59,7 @@ impl Spec {
         Some(Value::new(interp, value))
     }
 
-    pub fn value(&self, interp: &Mrb) -> Option<Value> {
+    pub fn value(&self, interp: &Artichoke) -> Option<Value> {
         let rclass = self.rclass(interp)?;
         let module = unsafe { sys::mrb_sys_class_value(rclass) };
         Some(Value::new(interp, module))
@@ -101,7 +101,7 @@ impl ClassLike for Spec {
         self.enclosing_scope.clone()
     }
 
-    fn rclass(&self, interp: &Mrb) -> Option<*mut sys::RClass> {
+    fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
         if let Some(rclass) = *self.memoized_rclass.borrow() {
             return Some(rclass);
         }
@@ -162,7 +162,7 @@ impl PartialEq for Spec {
 }
 
 impl Define for Spec {
-    fn define(&self, interp: &Mrb) -> Result<*mut sys::RClass, ArtichokeError> {
+    fn define(&self, interp: &Artichoke) -> Result<*mut sys::RClass, ArtichokeError> {
         let mrb = interp.borrow().mrb;
         let super_class = if let Some(ref spec) = self.super_class {
             spec.borrow()

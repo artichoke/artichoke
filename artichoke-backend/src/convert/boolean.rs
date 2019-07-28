@@ -2,13 +2,13 @@ use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 impl Convert<bool> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: bool) -> Self {
+    fn convert(interp: &Artichoke, value: bool) -> Self {
         if value {
             Self::new(interp, unsafe { sys::mrb_sys_true_value() })
         } else {
@@ -22,7 +22,7 @@ impl TryConvert<Value> for bool {
     type To = Rust;
 
     unsafe fn try_convert(
-        _interp: &Mrb,
+        _interp: &Artichoke,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
         match value.ruby_type() {

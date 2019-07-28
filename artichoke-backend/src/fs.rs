@@ -1,13 +1,13 @@
-//! [`Mrb`] virtual filesystem used for storing Ruby sources.
+//! [`Artichoke`] virtual filesystem used for storing Ruby sources.
 
 use artichoke_vfs::{FakeFileSystem, FileSystem};
 use std::path::Path;
 
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
-pub type RequireFunc = fn(Mrb) -> Result<(), ArtichokeError>;
+pub type RequireFunc = fn(Artichoke) -> Result<(), ArtichokeError>;
 
 /// Virtual filesystem that wraps a [`artichoke_vfs`] [`FakeFileSystem`].
 pub struct Filesystem {

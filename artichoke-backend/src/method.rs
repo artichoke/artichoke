@@ -5,8 +5,8 @@ use std::hash::{Hash, Hasher};
 
 use crate::def::Method;
 use crate::sys;
+use crate::Artichoke;
 use crate::ArtichokeError;
-use crate::Mrb;
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum Type {
@@ -53,7 +53,7 @@ impl Spec {
 
     pub unsafe fn define(
         &self,
-        interp: &Mrb,
+        interp: &Artichoke,
         into: *mut sys::RClass,
     ) -> Result<(), ArtichokeError> {
         let mrb = interp.borrow().mrb;

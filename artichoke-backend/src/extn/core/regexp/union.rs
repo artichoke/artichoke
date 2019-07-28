@@ -7,7 +7,7 @@ use crate::extn::core::regexp::{syntax, Regexp};
 use crate::sys;
 use crate::value::types::Ruby;
 use crate::value::{Value, ValueLike};
-use crate::Mrb;
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -23,7 +23,7 @@ pub struct Args {
 impl Args {
     const ARGSPEC: &'static [u8] = b"*\0";
 
-    pub unsafe fn extract(interp: &Mrb) -> Self {
+    pub unsafe fn extract(interp: &Artichoke) -> Self {
         let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
         let mut count = <mem::MaybeUninit<usize>>::uninit();
         sys::mrb_get_args(
@@ -41,7 +41,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Mrb, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
     let mrb = interp.borrow().mrb;
     let pattern = if args.rest.is_empty() {
         "(?!)".to_owned()

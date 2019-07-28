@@ -5,9 +5,9 @@ use artichoke_backend::eval::Eval;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::top_self::TopSelf;
 use artichoke_backend::value::{Value, ValueLike};
-use artichoke_backend::{ArtichokeError, Mrb};
+use artichoke_backend::{Artichoke, ArtichokeError};
 
-pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;
     for source in Sources::iter() {
         let content = Sources::get(&source).map(Cow::into_owned).unwrap();
@@ -23,12 +23,12 @@ struct Sources;
 #[derive(Debug)]
 pub struct Runner {
     specs: Vec<String>,
-    interp: Mrb,
+    interp: Artichoke,
     enforce: bool,
 }
 
 impl Runner {
-    pub fn new(interp: Mrb) -> Self {
+    pub fn new(interp: Artichoke) -> Self {
         Self {
             specs: vec![],
             interp,

@@ -5,7 +5,7 @@ use std::fmt;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 /// Metadata about a Ruby exception.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -64,7 +64,7 @@ pub trait ExceptionHandler {
     fn last_error(&self) -> LastError;
 }
 
-impl ExceptionHandler for Mrb {
+impl ExceptionHandler for Artichoke {
     fn last_error(&self) -> LastError {
         let _arena = self.create_arena_savepoint();
         let mrb = { self.borrow().mrb };

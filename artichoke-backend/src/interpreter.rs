@@ -9,14 +9,14 @@ use crate::fs::Filesystem;
 use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
-/// Create and initialize an [`Mrb`] interpreter.
+/// Create and initialize an [`Artichoke`] interpreter.
 ///
 /// This function creates a new [`State`], embeds it in the [`sys::mrb_state`],
 /// initializes an [in memory virtual filesystem](Filesystem), and loads the
 /// [`extn`] extensions to Ruby Core and Stdlib.
-pub fn interpreter() -> Result<Mrb, ArtichokeError> {
+pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     let vfs = Filesystem::new()?;
     let mrb = unsafe { sys::mrb_open() };
     if mrb.is_null() {
@@ -35,9 +35,9 @@ pub fn interpreter() -> Result<Mrb, ArtichokeError> {
         (*mrb).ud = ptr as *mut c_void;
     }
 
-    // Transmute the void * pointer to the Rc back into the Mrb type. After this
+    // Transmute the void * pointer to the Rc back into the Artichoke type. After this
     // operation `Rc::strong_count` will still be 1. This dance is required to
-    // avoid leaking Mrb objects, which will let the `Drop` impl close the mrb
+    // avoid leaking Artichoke objects, which will let the `Drop` impl close the mrb
     // context and interpreter.
     let interp = unsafe { Rc::from_raw(ptr) };
 

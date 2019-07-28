@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::sys;
-use crate::Mrb;
+use crate::Artichoke;
 
 /// Arena savepoint that can be restored to ensure mruby objects are reaped.
 ///
@@ -20,7 +20,7 @@ use crate::Mrb;
 #[derive(Debug, Clone)]
 pub struct ArenaIndex {
     index: i32,
-    interp: Mrb,
+    interp: Artichoke,
 }
 
 impl ArenaIndex {
@@ -81,7 +81,7 @@ pub trait MrbGarbageCollection {
     fn disable_gc(&self) -> bool;
 }
 
-impl MrbGarbageCollection for Mrb {
+impl MrbGarbageCollection for Artichoke {
     fn create_arena_savepoint(&self) -> ArenaIndex {
         ArenaIndex {
             index: unsafe { sys::mrb_sys_gc_arena_save(self.borrow().mrb) },

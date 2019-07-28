@@ -3,7 +3,7 @@ use std::mem;
 
 use crate::sys;
 use crate::value::Value;
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 #[derive(Debug)]
 pub struct Rest {
@@ -11,7 +11,7 @@ pub struct Rest {
 }
 
 impl Rest {
-    pub unsafe fn extract(interp: &Mrb) -> Result<Self, ArtichokeError> {
+    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, ArtichokeError> {
         let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
         let mut count = <mem::MaybeUninit<usize>>::uninit();
         // TODO: use a constant argspec, see GH-174.

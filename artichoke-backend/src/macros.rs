@@ -3,7 +3,7 @@
 // available to all modules within the mruby crate in addition to being
 // exported.
 
-/// Extract an [`Mrb`](interpreter::Mrb) instance from the userdata on a
+/// Extract an [`Artichoke`](interpreter::Artichoke) instance from the userdata on a
 /// [`sys::mrb_state`].
 ///
 /// If there is an error when extracting the Rust wrapper around the

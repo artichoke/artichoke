@@ -1,4 +1,4 @@
-use crate::{ArtichokeError, Mrb};
+use crate::{Artichoke, ArtichokeError};
 
 pub mod delegate;
 pub mod forwardable;
@@ -10,7 +10,7 @@ pub mod strscan;
 mod stubs;
 pub mod uri;
 
-pub fn patch(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     stubs::patch(interp)?;
     delegate::init(interp)?;
     forwardable::init(interp)?;

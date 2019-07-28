@@ -4,13 +4,13 @@ use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
 use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Mrb;
+use crate::Artichoke;
 
 impl Convert<Vec<u8>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: Vec<u8>) -> Self {
+    fn convert(interp: &Artichoke, value: Vec<u8>) -> Self {
         Self::convert(interp, value.as_slice())
     }
 }
@@ -19,7 +19,7 @@ impl Convert<&[u8]> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn convert(interp: &Mrb, value: &[u8]) -> Self {
+    fn convert(interp: &Artichoke, value: &[u8]) -> Self {
         let mrb = interp.borrow().mrb;
         // mruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
@@ -33,7 +33,10 @@ impl TryConvert<Value> for Vec<u8> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: Value,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
         let mrb = interp.borrow().mrb;
         match value.ruby_type() {
             Ruby::String => {

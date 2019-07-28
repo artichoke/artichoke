@@ -1,8 +1,8 @@
 use crate::load::LoadSources;
+use crate::Artichoke;
 use crate::ArtichokeError;
-use crate::Mrb;
 
-pub fn init(interp: &Mrb) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
         .borrow_mut()
         .def_class::<OpenStruct>("OpenStruct", None, None);
