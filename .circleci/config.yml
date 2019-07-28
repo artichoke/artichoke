@@ -194,9 +194,9 @@ workflows:
       - ruby
       - shell-format
       - shellcheck/check:
-          exclude:
-            - ./spec-runner/spec/*
-            - "*vendor/*"
+          # we should also exclude "vendor" here but shellcheck/check exclude
+          # only support a single exclude path.
+          exclude: ./spec-runner/spec/*
       - text
       - docs-deploy:
           requires:
