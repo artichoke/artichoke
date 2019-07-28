@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn arena_restore_on_explicit_restore() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let baseline_object_count = interp.live_object_count();
         let arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn arena_restore_on_drop() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let baseline_object_count = interp.live_object_count();
         {
             let _arena = interp.create_arena_savepoint();
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn arena_clone() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let baseline_object_count = interp.live_object_count();
         let arena = interp.create_arena_savepoint();
         let arena_clone = arena.clone();
@@ -180,7 +180,7 @@ mod tests {
     }
     #[test]
     fn enable_disable_gc() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         interp.disable_gc();
         let arena = interp.create_arena_savepoint();
         interp
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn gc_after_empty_eval() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let arena = interp.create_arena_savepoint();
         let baseline_object_count = interp.live_object_count();
         drop(interp.eval("").expect("eval"));
@@ -231,7 +231,7 @@ mod tests {
 
     #[test]
     fn gc_functional_test() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let baseline_object_count = interp.live_object_count();
         let initial_arena = interp.create_arena_savepoint();
         for _ in 0..2000 {

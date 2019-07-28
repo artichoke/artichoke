@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn string_equal_squiggle() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         string::patch(&interp).expect("string init");
 
         let value = interp.eval(r#""cat o' 9 tails" =~ /\d/"#).unwrap();
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn string_idx() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         string::patch(&interp).expect("string init");
 
         assert_eq!(
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn string_scan() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         string::patch(&interp).expect("string init");
 
         let s = Value::convert(&interp, "abababa");
@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn string_unary_minus() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         string::patch(&interp).expect("string init");
 
         let s = interp.eval("-'abababa'").expect("eval");

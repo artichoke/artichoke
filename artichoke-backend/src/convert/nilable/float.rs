@@ -49,7 +49,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let result = unsafe { <Option<Float>>::try_convert(&interp, value) }.map(|_| ());
@@ -58,7 +58,7 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_value(v: Option<Float>) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, v);
         if let Some(v) = v {
             let value = unsafe { Float::try_convert(&interp, value) }.expect("convert");
@@ -70,7 +70,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(v: Option<Float>) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, v);
         let value = unsafe { <Option<Float>>::try_convert(&interp, value) }.expect("convert");
         match (value, v) {

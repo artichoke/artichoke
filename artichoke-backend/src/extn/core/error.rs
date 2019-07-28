@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn raise() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         Run::require(Rc::clone(&interp)).unwrap();
         let value = interp.eval("Run.run").map(|_| ());
         let expected = Exception::new(

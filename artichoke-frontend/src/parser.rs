@@ -5,9 +5,10 @@ use artichoke_backend::Artichoke;
 use std::convert::TryFrom;
 use std::ffi::CStr;
 
-/// State shows whether mruby can parse some code or why it cannot. This enum
-/// only encapsulates whether mruby can parse the code. It may still have
-/// syntactic or semantic errors.
+/// State shows whether artichoke can parse some code or why it cannot.
+///
+/// This enum only encapsulates whether artichoke can parse the code. It may
+/// still have syntactic or semantic errors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum State {
     /// Internal parser error. This is a fatal error.

@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn return_exception() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let result = interp
             .eval("raise ArgumentError.new('waffles')")
             .map(|_| ());
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn return_exception_with_no_backtrace() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let result = interp.eval("def bad; (; end").map(|_| ());
         let expected = Exception::new("SyntaxError", "waffles", None, "SyntaxError: syntax error");
         assert_eq!(result, Err(ArtichokeError::Exec(expected.to_string())));
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn raise_does_not_panic_or_segfault() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let _ = interp.eval(r#"raise 'foo'"#);
         let _ = interp.eval(r#"raise 'foo'"#);
         let _ = interp.eval(r#"eval "raise 'foo'""#);

@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let expected = Error {
@@ -73,14 +73,14 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, b);
         value.ruby_type() == Ruby::Bool
     }
 
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, b);
         let inner = value.inner();
         let is_false = unsafe { sys::mrb_sys_value_is_false(inner) };
@@ -95,7 +95,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, b);
         let value = unsafe { bool::try_convert(&interp, value) }.expect("convert");
         value == b
@@ -103,7 +103,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, i);
         let value = unsafe { bool::try_convert(&interp, value) };
         let expected = Err(Error {

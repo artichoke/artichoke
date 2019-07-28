@@ -37,7 +37,7 @@ fn segfault_rc_transmute() {
         std::mem::size_of::<sys::mrb_value>()
     );
 
-    let interp = artichoke_backend::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("init");
     // Increase the strong count on the Rc to 255.
     let mut interps = vec![];
     for _ in 0..254 {
@@ -45,7 +45,7 @@ fn segfault_rc_transmute() {
     }
     println!("strong count = {}", Rc::strong_count(&interp));
 
-    // create an object to collect on the mruby heap.
+    // create an object to collect on the artichoke heap.
     let bytes = std::iter::repeat(255_u8)
         .take(1024 * 1024)
         .collect::<Vec<_>>();

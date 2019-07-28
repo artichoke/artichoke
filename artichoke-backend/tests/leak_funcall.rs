@@ -8,7 +8,7 @@
 //! objects created in C functions, like the call to `sys::mrb_funcall_argv`.
 //!
 //! This test creates a 1MB Ruby string and calls `dup` in a loop. The test
-//! reuses one mruby interpreter for all `ITERATIONS`.
+//! reuses one artichoke interpreter for all `ITERATIONS`.
 //!
 //! If resident memory increases more than 10MB during the test, we likely are
 //! leaking memory.
@@ -24,7 +24,7 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 30;
 
 #[test]
 fn funcall_arena() {
-    let interp = artichoke_backend::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("init");
     let s = Value::convert(&interp, "a".repeat(1024 * 1024));
 
     leak::Detector::new("ValueLike::funcall", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {

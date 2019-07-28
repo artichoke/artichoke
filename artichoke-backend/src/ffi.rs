@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn from_user_data_null_user_data() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let mrb = interp.borrow().mrb;
         unsafe {
             // fake null user data
@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn from_user_data() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let mrb = interp.borrow().mrb;
         let res = unsafe { super::from_user_data(mrb) };
         assert!(res.is_ok());
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn from_user_data_rc_refcount() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         assert_eq!(Rc::strong_count(&interp), 1);
         let mrb = interp.borrow().mrb;
         let res = unsafe { super::from_user_data(mrb) };

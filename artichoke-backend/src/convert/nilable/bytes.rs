@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let result = unsafe { <Option<Vec<u8>>>::try_convert(&interp, value) }.map(|_| ());
@@ -72,7 +72,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_value(v: Option<Vec<u8>>) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, v.clone());
         if let Some(v) = v {
             let value = unsafe { <Vec<u8>>::try_convert(&interp, value) }.expect("convert");
@@ -85,7 +85,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(v: Option<Vec<u8>>) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, v.clone());
         let value = unsafe { <Option<Vec<u8>>>::try_convert(&interp, value) }.expect("convert");
         value == v

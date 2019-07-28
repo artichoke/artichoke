@@ -33,7 +33,7 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 #[test]
 fn unbounded_arena_growth() {
     // ArtichokeApi::current_exception
-    let interp = artichoke_backend::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("init");
     let code = r#"
 def bad_code
   raise ArgumentError.new("n" * 1024 * 1024)
@@ -63,7 +63,7 @@ end
     });
 
     // Value::to_s
-    let interp = artichoke_backend::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("init");
     let expected = "a".repeat(1024 * 1024);
     leak::Detector::new("to_s", ITERATIONS, LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
@@ -79,7 +79,7 @@ end
     );
 
     // Value::to_s_debug
-    let interp = artichoke_backend::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("init");
     let expected = format!(r#"String<"{}">"#, "a".repeat(1024 * 1024));
     leak::Detector::new("to_s_debug", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {

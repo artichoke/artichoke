@@ -38,8 +38,8 @@ pub unsafe extern "C" fn rust_data_free<T: RustBackedValue>(
 /// `String#start_with?`.
 ///
 /// ```ruby
-/// s = 'mruby crate'
-/// s.start_with?('mruby')
+/// s = 'artichoke crate'
+/// s.start_with?('artichoke')
 /// ```
 ///
 /// To extract method arguments, use [`sys::mrb_get_args`] and the suppilied
@@ -88,7 +88,7 @@ impl EnclosingRubyScope {
     /// struct Fixnum;
     /// struct Inner;
     ///
-    /// let interp = artichoke_backend::interpreter().expect("mrb init");
+    /// let interp = artichoke_backend::interpreter().expect("init");
     /// let mut api = interp.borrow_mut();
     /// if let Some(scope) = api.class_spec::<Fixnum>().map(EnclosingRubyScope::class) {
     ///     api.def_class::<Inner>("Inner", Some(scope), None);
@@ -122,7 +122,7 @@ impl EnclosingRubyScope {
     /// struct Kernel;
     /// struct Inner;
     ///
-    /// let interp = artichoke_backend::interpreter().expect("mrb init");
+    /// let interp = artichoke_backend::interpreter().expect("init");
     /// let mut api = interp.borrow_mut();
     /// if let Some(scope) = api.module_spec::<Kernel>().map(EnclosingRubyScope::module) {
     ///     api.def_class::<Inner>("Inner", Some(scope), None);
@@ -268,7 +268,7 @@ mod tests {
         struct ClassUnderClass; // A::C::F
 
         // Setup: define module and class hierarchy
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         {
             let mut api = interp.borrow_mut();
             let root = api.def_module::<Root>("A", None);
@@ -312,25 +312,34 @@ mod tests {
             .module_spec::<Root>()
             .expect("Root not defined");
         assert_eq!(&spec.borrow().fqname(), "A");
-        assert_eq!(&format!("{}", spec.borrow()), "mruby module spec -- A");
+        assert_eq!(&format!("{}", spec.borrow()), "artichoke module spec -- A");
         let spec = interp
             .borrow()
             .module_spec::<ModuleUnderRoot>()
             .expect("ModuleUnderRoot not defined");
         assert_eq!(&spec.borrow().fqname(), "A::B");
-        assert_eq!(&format!("{}", spec.borrow()), "mruby module spec -- A::B");
+        assert_eq!(
+            &format!("{}", spec.borrow()),
+            "artichoke module spec -- A::B"
+        );
         let spec = interp
             .borrow()
             .class_spec::<ClassUnderRoot>()
             .expect("ClassUnderRoot not defined");
         assert_eq!(&spec.borrow().fqname(), "A::C");
-        assert_eq!(&format!("{}", spec.borrow()), "mruby class spec -- A::C");
+        assert_eq!(
+            &format!("{}", spec.borrow()),
+            "artichoke class spec -- A::C"
+        );
         let spec = interp
             .borrow()
             .class_spec::<ClassUnderModule>()
             .expect("ClassUnderModule not defined");
         assert_eq!(&spec.borrow().fqname(), "A::B::D");
-        assert_eq!(&format!("{}", spec.borrow()), "mruby class spec -- A::B::D");
+        assert_eq!(
+            &format!("{}", spec.borrow()),
+            "artichoke class spec -- A::B::D"
+        );
         let spec = interp
             .borrow()
             .module_spec::<ModuleUnderClass>()
@@ -338,14 +347,17 @@ mod tests {
         assert_eq!(&spec.borrow().fqname(), "A::C::E");
         assert_eq!(
             &format!("{}", spec.borrow()),
-            "mruby module spec -- A::C::E"
+            "artichoke module spec -- A::C::E"
         );
         let spec = interp
             .borrow()
             .class_spec::<ClassUnderClass>()
             .expect("ClassUnderClass not defined");
         assert_eq!(&spec.borrow().fqname(), "A::C::F");
-        assert_eq!(&format!("{}", spec.borrow()), "mruby class spec -- A::C::F");
+        assert_eq!(
+            &format!("{}", spec.borrow()),
+            "artichoke class spec -- A::C::F"
+        );
     }
 
     mod functional {
@@ -369,7 +381,7 @@ mod tests {
                     }
                 }
             }
-            let interp = crate::interpreter().expect("mrb init");
+            let interp = crate::interpreter().expect("init");
             let (cls, module) = {
                 let mut api = interp.borrow_mut();
                 let cls = api.def_class::<Class>("DefineMethodTestClass", None, None);

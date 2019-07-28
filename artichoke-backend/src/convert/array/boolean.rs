@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let expected = Error {
@@ -94,7 +94,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_value(v: Vec<bool>) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, v.clone());
         let inner = value.inner();
         let size = i64::try_from(v.len()).expect("vec size");
@@ -104,7 +104,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(v: Vec<bool>) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, v.clone());
         unsafe { <Vec<bool>>::try_convert(&interp, value) == Ok(v) }
     }

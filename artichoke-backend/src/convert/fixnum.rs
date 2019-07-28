@@ -122,7 +122,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
         let expected = Error {
@@ -135,14 +135,14 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_fixnum(i: Int) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, i);
         value.ruby_type() == Ruby::Fixnum
     }
 
     #[quickcheck]
     fn fixnum_with_value(i: Int) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, i);
         let inner = value.inner();
         let cint = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
@@ -151,7 +151,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(i: Int) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, i);
         let value = unsafe { Int::try_convert(&interp, value) }.expect("convert");
         value == i
@@ -159,7 +159,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, b);
         let value = unsafe { Int::try_convert(&interp, value) };
         let expected = Err(Error {
@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn fixnum_to_usize() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, 100);
         let value = unsafe { usize::try_convert(&interp, value) };
         let expected = Ok(100);

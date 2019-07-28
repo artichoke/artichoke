@@ -112,7 +112,7 @@ impl fmt::Debug for Spec {
 
 impl fmt::Display for Spec {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "mruby module spec -- {}", self.fqname())
+        write!(f, "artichoke module spec -- {}", self.fqname())
     }
 }
 
@@ -163,14 +163,14 @@ mod tests {
 
     #[test]
     fn rclass_for_undef_root_module() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let spec = Spec::new("Foo", None);
         assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_undef_nested_module() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let scope = Spec::new("Kernel", None);
         let scope = EnclosingRubyScope::module(Rc::new(RefCell::new(scope)));
         let spec = Spec::new("Foo", Some(scope));
@@ -179,14 +179,14 @@ mod tests {
 
     #[test]
     fn rclass_for_root_module() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let spec = Spec::new("Kernel", None);
         assert!(spec.rclass(&interp).is_some());
     }
 
     #[test]
     fn rclass_for_nested_module() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         interp
             .eval("module Foo; module Bar; end; end")
             .expect("eval");
@@ -198,7 +198,7 @@ mod tests {
 
     #[test]
     fn rclass_for_nested_module_under_class() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         interp
             .eval("class Foo; module Bar; end; end")
             .expect("eval");

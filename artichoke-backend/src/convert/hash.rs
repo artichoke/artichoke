@@ -270,7 +270,7 @@ mod value {
 
         #[test]
         fn roundtrip_kv() {
-            let interp = crate::interpreter().expect("mrb init");
+            let interp = crate::interpreter().expect("init");
 
             let map = vec![
                 (Value::convert(&interp, 1), Value::convert(&interp, 2)),

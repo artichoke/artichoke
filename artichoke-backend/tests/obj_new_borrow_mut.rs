@@ -30,7 +30,7 @@ unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
 
 #[test]
 fn obj_new_borrow_mut() {
-    let interp = artichoke_backend::interpreter().expect("mrb init");
+    let interp = artichoke_backend::interpreter().expect("init");
     let class = interp.borrow_mut().def_class::<Obj>("Obj", None, None);
     class
         .borrow_mut()

@@ -187,7 +187,7 @@ mod tests {
 
     #[test]
     fn convert_obj_roundtrip() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let spec = interp.borrow_mut().def_class::<Container>(
             "Container",
             None,
@@ -216,7 +216,7 @@ mod tests {
 
     #[test]
     fn convert_obj_not_data() {
-        let interp = crate::interpreter().expect("mrb init");
+        let interp = crate::interpreter().expect("init");
         let spec = interp.borrow_mut().def_class::<Container>(
             "Container",
             None,

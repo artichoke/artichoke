@@ -313,7 +313,7 @@ impl fmt::Display for ArtichokeError {
             ArtichokeError::ArgSpec => write!(f, "could not generate argspec"),
             ArtichokeError::ConvertToRuby(inner) => write!(f, "conversion error: {}", inner),
             ArtichokeError::ConvertToRust(inner) => write!(f, "conversion error: {}", inner),
-            ArtichokeError::Exec(backtrace) => write!(f, "mruby exception: {}", backtrace),
+            ArtichokeError::Exec(backtrace) => write!(f, "{}", backtrace),
             ArtichokeError::New => write!(f, "failed to create mrb interpreter"),
             ArtichokeError::NotDefined(fqname) => write!(f, "{} not defined", fqname),
             ArtichokeError::SourceNotFound(source) => {
@@ -335,7 +335,7 @@ impl fmt::Display for ArtichokeError {
 
 impl error::Error for ArtichokeError {
     fn description(&self) -> &str {
-        "mruby interpreter error"
+        "artichoke interpreter error"
     }
 
     fn cause(&self) -> Option<&dyn error::Error> {
