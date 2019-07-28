@@ -1,7 +1,7 @@
 # artichoke-backend
 
 artichoke-backend crate provides a Ruby interpreter. It currently is implemented
-with [`mruby-sys`](mruby_sys).
+with [`mruby-sys`](/mruby-sys).
 
 ## Execute Ruby Code
 
@@ -188,3 +188,13 @@ Supported conversions:
 
 The infallible converters are safe Rust functions. The fallibile converters are
 `unsafe` Rust functions.
+
+## License
+
+artichoke-backend is licensed with the [MIT License](/LICENSE) (c) Ryan
+Lopopolo.
+
+CactusRef contains Ruby sources derived from Ruby @
+[2.6.3](https://github.com/ruby/ruby/tree/v2_6_3) which is copyright Yukihiro
+Matsumoto \<matz@netlab.jp\> under the
+[2-clause BSDL License](https://github.com/ruby/ruby/blob/v2_6_3/COPYING).
