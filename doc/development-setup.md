@@ -18,8 +18,8 @@ Merges will be blocked by CI if there are lint errors.
 
 A PR must have tests for it to be merged. The
 [Rust book chapter on testing](https://doc.rust-lang.org/book/ch11-00-testing.html)
-is a good place to start. If you'd like to see some examples in Artichoke,
-take a look at the `Value` tests in
+is a good place to start. If you'd like to see some examples in Artichoke, take
+a look at the `Value` tests in
 [`mruby/src/value/mod.rs`](/mruby/src/value/mod.rs).
 
 To run tests:
@@ -121,9 +121,9 @@ errors.
 
 ### Ruby
 
-Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x.
-The [`.ruby-version`](/.ruby-version) file in the root of Artichoke specifies
-Ruby 2.6.3.
+Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
+[`.ruby-version`](/.ruby-version) file in the root of Artichoke specifies Ruby
+2.6.3.
 
 If you use [RVM](https://rvm.io/), you can install Ruby dependencies by running:
 
@@ -142,7 +142,7 @@ gem install bundler
 rbenv rehash
 ```
 
-To lint Ruby sources, ferrocarril uses
+To lint Ruby sources, Artichoke uses
 [RuboCop](https://github.com/rubocop-hq/rubocop). `yarn lint` installs RuboCop
 and all other gems automatically.
 

@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-yarn install &> /dev/null
+yarn install &>/dev/null
 PATH="$(yarn bin):$PATH"
 export PATH
 cd "$(pkg-dir)"
@@ -39,10 +39,10 @@ check() {
     xargs -0 -n1 bash -c '_check_clang_format "$@"' _
 }
 
-if [[ "$#" -gt "0" && "$1" == '--check' ]]; then
+if [[ $# -gt 0 && $1 == '--check' ]]; then
   yarn run clang-format --version
   check
-elif [[ "$#" -gt "0" && "$1" == '--format' ]]; then
+elif [[ $# -gt 0 && $1 == '--format' ]]; then
   yarn run clang-format --version
   format
 else

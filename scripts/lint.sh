@@ -42,7 +42,7 @@ lint_ruby_sources mruby-bin/ruby
 # C sources
 
 ## Format with clang-format
-./scripts/format-c.sh
+./scripts/format-c.sh --format
 
 # Shell sources
 
