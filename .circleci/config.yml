@@ -136,7 +136,7 @@ jobs:
           name: Format Shell Sources
           command: |
             shfmt -version
-            shfmt -f . | grep -v target/ | grep -v node_modules/ | xargs shfmt -i 2 -ci -s -w
+            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -w
   text:
     docker:
       - image: circleci/node:lts
@@ -193,7 +193,10 @@ workflows:
       - c
       - ruby
       - shell-format
-      - shellcheck/check
+      - shellcheck/check:
+          exclude:
+            - ./spec-runner/spec/*
+            - "*vendor/*"
       - text
       - docs-deploy:
           requires:

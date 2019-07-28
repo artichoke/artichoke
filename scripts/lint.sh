@@ -47,11 +47,13 @@ lint_ruby_sources mruby-bin/ruby
 # Shell sources
 
 ## Format with shfmt
-shfmt -f . | grep -v target/ | grep -v node_modules/ | xargs shfmt -i 2 -ci -s -w
+shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -w
 ## Lint with shellcheck
-shfmt -f . | grep -v target/ | grep -v node_modules/ | xargs shellcheck
+shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/ | grep -v vendor/ | xargs shellcheck
 
 # Text sources (e.g. HTML, Markdown)
 
 ## Format with prettier
-prettier --write --prose-wrap always '**/*.{css,html,js,json,md}'
+yarn run prettier --write --prose-wrap always \
+  './*.{css,html,js,json,md}' \
+  '{!(target),!(node_modules)}**/*.{css,html,js,json,md}'
