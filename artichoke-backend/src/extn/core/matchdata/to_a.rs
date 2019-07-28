@@ -18,5 +18,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
     let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
     let vec = captures.iter().collect::<Vec<_>>();
-    Ok(Value::from_mrb(&interp, vec))
+    Ok(Value::convert(&interp, vec))
 }

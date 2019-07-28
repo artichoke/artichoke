@@ -407,22 +407,22 @@ mod tests {
             let result = interp
                 .eval("DefineMethodTestClass.new.value")
                 .expect("eval");
-            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
             assert_eq!(result, 64);
             let result = interp.eval("DefineMethodTestClass.value").expect("eval");
-            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
             assert_eq!(result, 8);
             let result = interp.eval("DefineMethodTestModule.value").expect("eval");
-            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
             assert_eq!(result, 27);
             let result = interp.eval("DynamicTestClass.new.value").expect("eval");
-            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
             assert_eq!(result, 64);
             let result = interp.eval("DynamicTestClass.value").expect("eval");
-            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
             assert_eq!(result, 8);
             let result = interp.eval("DynamicTestModule.value").expect("eval");
-            let result = unsafe { i64::try_from_mrb(&interp, result).expect("convert") };
+            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
             assert_eq!(result, 27);
         }
     }

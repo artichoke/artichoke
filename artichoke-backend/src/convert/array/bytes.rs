@@ -7,8 +7,8 @@ impl Convert<Vec<Vec<u8>>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<Vec<u8>>) -> Self {
-        Self::from_mrb(interp, value.iter().map(Vec::as_slice).collect::<Vec<_>>())
+    fn convert(interp: &Mrb, value: Vec<Vec<u8>>) -> Self {
+        Self::convert(interp, value.iter().map(Vec::as_slice).collect::<Vec<_>>())
     }
 }
 
@@ -16,12 +16,12 @@ impl Convert<Vec<&[u8]>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<&[u8]>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<&[u8]>) -> Self {
         let mut values = Vec::with_capacity(value.len());
         for item in value {
-            values.push(Self::from_mrb(interp, item));
+            values.push(Self::convert(interp, item));
         }
-        Self::from_mrb(interp, values)
+        Self::convert(interp, values)
     }
 }
 
@@ -31,14 +31,11 @@ impl TryConvert<Value> for Vec<Vec<u8>> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        interp: &Mrb,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        let values = <Vec<Value>>::try_from_mrb(interp, value)?;
+    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+        let values = <Vec<Value>>::try_convert(interp, value)?;
         let mut vec = Self::with_capacity(values.len());
         for item in values {
-            vec.push(<Vec<u8>>::try_from_mrb(interp, item)?);
+            vec.push(<Vec<u8>>::try_convert(interp, item)?);
         }
         Ok(vec)
     }
@@ -50,12 +47,12 @@ impl Convert<Vec<Option<Vec<u8>>>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<Option<Vec<u8>>>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<Option<Vec<u8>>>) -> Self {
         let mut values = Vec::with_capacity(value.len());
         for item in value {
-            values.push(Self::from_mrb(interp, item));
+            values.push(Self::convert(interp, item));
         }
-        Self::from_mrb(interp, values)
+        Self::convert(interp, values)
     }
 }
 
@@ -65,12 +62,12 @@ impl Convert<Vec<Option<&[u8]>>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<Option<&[u8]>>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<Option<&[u8]>>) -> Self {
         let mut values = Vec::with_capacity(value.len());
         for item in value {
-            values.push(Self::from_mrb(interp, item));
+            values.push(Self::convert(interp, item));
         }
-        Self::from_mrb(interp, values)
+        Self::convert(interp, values)
     }
 }
 
@@ -80,14 +77,11 @@ impl TryConvert<Value> for Vec<Option<Vec<u8>>> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        interp: &Mrb,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        let values = <Vec<Value>>::try_from_mrb(interp, value)?;
+    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+        let values = <Vec<Value>>::try_convert(interp, value)?;
         let mut vec = Self::with_capacity(values.len());
         for item in values {
-            vec.push(<Option<Vec<u8>>>::try_from_mrb(interp, item)?);
+            vec.push(<Option<Vec<u8>>>::try_convert(interp, item)?);
         }
         Ok(vec)
     }
@@ -115,7 +109,7 @@ mod tests {
             from: Ruby::Object,
             to: Rust::Vec,
         };
-        let result = unsafe { <Vec<Vec<u8>>>::try_from_mrb(&interp, value) }.map(|_| ());
+        let result = unsafe { <Vec<Vec<u8>>>::try_convert(&interp, value) }.map(|_| ());
         assert_eq!(result, Err(expected));
     }
 
@@ -123,7 +117,7 @@ mod tests {
     #[quickcheck]
     fn convert_to_value(v: Vec<Vec<u8>>) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, v.clone());
+        let value = Value::convert(&interp, v.clone());
         let inner = value.inner();
         let size = i64::try_from(v.len()).expect("vec size");
         unsafe { sys::mrb_sys_ary_len(inner) == size }
@@ -133,7 +127,7 @@ mod tests {
     #[quickcheck]
     fn roundtrip(v: Vec<Vec<u8>>) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, v.clone());
-        unsafe { <Vec<Vec<u8>>>::try_from_mrb(&interp, value) == Ok(v) }
+        let value = Value::convert(&interp, v.clone());
+        unsafe { <Vec<Vec<u8>>>::try_convert(&interp, value) == Ok(v) }
     }
 }

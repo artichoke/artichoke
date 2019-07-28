@@ -100,7 +100,7 @@ pub trait RubyException: 'static + Sized {
 
         let mut formatargs = format
             .into_iter()
-            .map(|item| Value::from_mrb(&interp, item).inner())
+            .map(|item| Value::convert(&interp, item).inner())
             .collect::<Vec<_>>();
         // `mrb_sys_raise` will call longjmp which will unwind the stack.
         // Anything we haven't cleaned up at this point will leak, so drop

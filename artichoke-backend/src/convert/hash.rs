@@ -18,7 +18,7 @@ impl Convert<Vec<(Value, Value)>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<(Self, Self)>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<(Self, Self)>) -> Self {
         let mrb = interp.borrow().mrb;
         let hash =
             unsafe { sys::mrb_hash_new_capa(mrb, i64::try_from(value.len()).unwrap_or_default()) };
@@ -33,16 +33,16 @@ impl Convert<Vec<(Option<Value>, Value)>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<(Option<Self>, Self)>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<(Option<Self>, Self)>) -> Self {
         let pairs = value
             .into_iter()
             .map(|(key, value)| {
-                let key = Self::from_mrb(&interp, key);
-                let value = Self::from_mrb(&interp, value);
+                let key = Self::convert(&interp, key);
+                let value = Self::convert(&interp, value);
                 (key, value)
             })
             .collect::<Vec<(Self, Self)>>();
-        Self::from_mrb(interp, pairs)
+        Self::convert(interp, pairs)
     }
 }
 
@@ -50,16 +50,16 @@ impl Convert<Vec<(Value, Option<Value>)>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<(Self, Option<Self>)>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<(Self, Option<Self>)>) -> Self {
         let pairs = value
             .into_iter()
             .map(|(key, value)| {
-                let key = Self::from_mrb(&interp, key);
-                let value = Self::from_mrb(&interp, value);
+                let key = Self::convert(&interp, key);
+                let value = Self::convert(&interp, value);
                 (key, value)
             })
             .collect::<Vec<(Self, Self)>>();
-        Self::from_mrb(interp, pairs)
+        Self::convert(interp, pairs)
     }
 }
 
@@ -67,16 +67,16 @@ impl Convert<Vec<(Option<Value>, Option<Value>)>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<(Option<Self>, Option<Self>)>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<(Option<Self>, Option<Self>)>) -> Self {
         let pairs = value
             .into_iter()
             .map(|(key, value)| {
-                let key = Self::from_mrb(&interp, key);
-                let value = Self::from_mrb(&interp, value);
+                let key = Self::convert(&interp, key);
+                let value = Self::convert(&interp, value);
                 (key, value)
             })
             .collect::<Vec<(Self, Self)>>();
-        Self::from_mrb(interp, pairs)
+        Self::convert(interp, pairs)
     }
 }
 
@@ -84,10 +84,7 @@ impl TryConvert<Value> for Vec<(Value, Value)> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        interp: &Mrb,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
         let mrb = interp.borrow().mrb;
         match value.ruby_type() {
             Ruby::Hash => {
@@ -123,16 +120,16 @@ macro_rules! hash_converter {
             type From = Rust;
             type To = Ruby;
 
-            fn from_mrb(interp: &Mrb, value: Vec<($key, $value)>) -> Self {
+            fn convert(interp: &Mrb, value: Vec<($key, $value)>) -> Self {
                 let pairs = value
                     .into_iter()
                     .map(|(key, value)| {
-                        let key = Self::from_mrb(&interp, key);
-                        let value = Self::from_mrb(&interp, value);
+                        let key = Self::convert(&interp, key);
+                        let value = Self::convert(&interp, value);
                         (key, value)
                     })
                     .collect::<Vec<(Self, Self)>>();
-                Self::from_mrb(interp, pairs)
+                Self::convert(interp, pairs)
             }
         }
 
@@ -141,9 +138,9 @@ macro_rules! hash_converter {
             type From = Rust;
             type To = Ruby;
 
-            fn from_mrb(interp: &Mrb, value: HashMap<$key, $value>) -> Self {
+            fn convert(interp: &Mrb, value: HashMap<$key, $value>) -> Self {
                 let pairs = value.into_iter().collect::<Vec<($key, $value)>>();
-                Self::from_mrb(interp, pairs)
+                Self::convert(interp, pairs)
             }
         }
 
@@ -151,15 +148,15 @@ macro_rules! hash_converter {
             type From = Ruby;
             type To = Rust;
 
-            unsafe fn try_from_mrb(
+            unsafe fn try_convert(
                 interp: &Mrb,
                 value: Value,
             ) -> Result<Self, Error<Self::From, Self::To>> {
-                let pairs = <Vec<(Value, Value)>>::try_from_mrb(interp, value)?;
+                let pairs = <Vec<(Value, Value)>>::try_convert(interp, value)?;
                 let mut hash = Self::default();
                 for (key, value) in pairs.into_iter() {
-                    let key = <$key>::try_from_mrb(interp, key)?;
-                    let value = <$value>::try_from_mrb(&interp, value)?;
+                    let key = <$key>::try_convert(interp, key)?;
+                    let value = <$value>::try_convert(&interp, value)?;
                     hash.insert(key, value);
                 }
                 Ok(hash)
@@ -237,16 +234,16 @@ impl Convert<Vec<(&str, Value)>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<(&str, Value)>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<(&str, Value)>) -> Self {
         let pairs = value
             .into_iter()
             .map(|(key, value)| {
-                let key = Self::from_mrb(&interp, key);
-                let value = Self::from_mrb(&interp, value);
+                let key = Self::convert(&interp, key);
+                let value = Self::convert(&interp, value);
                 (key, value)
             })
             .collect::<Vec<(Self, Self)>>();
-        Self::from_mrb(interp, pairs)
+        Self::convert(interp, pairs)
     }
 }
 
@@ -254,9 +251,9 @@ impl Convert<HashMap<&str, Self>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: HashMap<&str, Self>) -> Self {
+    fn convert(interp: &Mrb, value: HashMap<&str, Self>) -> Self {
         let pairs = value.into_iter().collect::<Vec<(&str, Self)>>();
-        Self::from_mrb(interp, pairs)
+        Self::convert(interp, pairs)
     }
 }
 
@@ -273,20 +270,20 @@ mod value {
             let interp = crate::interpreter().expect("mrb init");
 
             let map = vec![
-                (Value::from_mrb(&interp, 1), Value::from_mrb(&interp, 2)),
-                (Value::from_mrb(&interp, 7), Value::from_mrb(&interp, 8)),
+                (Value::convert(&interp, 1), Value::convert(&interp, 2)),
+                (Value::convert(&interp, 7), Value::convert(&interp, 8)),
             ];
 
-            let value = Value::from_mrb(&interp, map);
+            let value = Value::convert(&interp, map);
             assert_eq!("{1=>2, 7=>8}", value.to_s());
 
             let pairs =
-                unsafe { <Vec<(Value, Value)>>::try_from_mrb(&interp, value) }.expect("convert");
+                unsafe { <Vec<(Value, Value)>>::try_convert(&interp, value) }.expect("convert");
             let map = pairs
                 .into_iter()
                 .map(|(key, value)| {
-                    let key = unsafe { i64::try_from_mrb(&interp, key) }.expect("convert");
-                    let value = unsafe { i64::try_from_mrb(&interp, value) }.expect("convert");
+                    let key = unsafe { i64::try_convert(&interp, key) }.expect("convert");
+                    let value = unsafe { i64::try_convert(&interp, value) }.expect("convert");
                     (key, value)
                 })
                 .collect::<HashMap<_, _>>();

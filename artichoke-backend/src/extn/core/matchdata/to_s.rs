@@ -17,5 +17,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
     let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
-    Ok(Value::from_mrb(&interp, captures.at(0).unwrap_or_default()))
+    Ok(Value::convert(&interp, captures.at(0).unwrap_or_default()))
 }

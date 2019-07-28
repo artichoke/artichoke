@@ -75,7 +75,7 @@ impl State {
     /// extern "C" fn value(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value
     /// {
     ///     let interp = unsafe { unwrap_interpreter!(mrb) };
-    ///     Value::from_mrb(&interp, 29).inner()
+    ///     Value::convert(&interp, 29).inner()
     /// }
     ///
     /// fn main() {
@@ -144,7 +144,7 @@ impl State {
     /// extern "C" fn value(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value
     /// {
     ///     let interp = unsafe { unwrap_interpreter!(mrb) };
-    ///     Value::from_mrb(&interp, 29).inner()
+    ///     Value::convert(&interp, 29).inner()
     /// }
     ///
     /// fn main() {

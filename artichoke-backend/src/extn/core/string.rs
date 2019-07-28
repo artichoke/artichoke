@@ -35,10 +35,10 @@ pub struct RString;
 impl RString {
     unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        if let Ok(s) = String::try_from_mrb(&interp, Value::new(&interp, slf)) {
+        if let Ok(s) = String::try_convert(&interp, Value::new(&interp, slf)) {
             if let Some(first) = s.chars().next() {
                 // One UTF-8 character, which are at most 32 bits.
-                Value::from_mrb(&interp, first as u32).inner()
+                Value::convert(&interp, first as u32).inner()
             } else {
                 drop(s);
                 ArgumentError::raise(interp, "empty string")
@@ -144,7 +144,7 @@ mod tests {
         let interp = crate::interpreter().expect("mrb init");
         string::patch(&interp).expect("string init");
 
-        let s = Value::from_mrb(&interp, "abababa");
+        let s = Value::convert(&interp, "abababa");
         let result = s
             .funcall::<Vec<String>, _, _>("scan", &[interp.eval("/./").expect("eval")])
             .expect("funcall");

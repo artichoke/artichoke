@@ -53,6 +53,6 @@ copy != instance
         let interp = crate::interpreter().expect("mrb init");
         interp.eval("require 'monitor'").expect("require");
         let result = interp.eval(spec).expect("spec");
-        assert!(unsafe { bool::try_from_mrb(&interp, result) }.expect("convert"));
+        assert!(unsafe { bool::try_convert(&interp, result) }.expect("convert"));
     }
 }

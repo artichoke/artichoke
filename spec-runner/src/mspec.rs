@@ -52,7 +52,7 @@ impl Runner {
             println!("{}", err);
             assert!(!self.enforce);
         }
-        let specs = Value::from_mrb(&self.interp, self.specs);
+        let specs = Value::convert(&self.interp, self.specs);
         self.interp
             .top_self()
             .funcall::<bool, _, _>("run_specs", &[specs])

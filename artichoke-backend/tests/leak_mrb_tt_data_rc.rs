@@ -61,8 +61,7 @@ impl Container {
                 argspec.write_all(b"\0").map_err(|_| MrbError::ArgSpec)?;
                 sys::mrb_get_args(interp.borrow().mrb, argspec.as_ptr() as *const i8, &inner);
                 let inner = Value::new(interp, inner.assume_init());
-                let inner =
-                    String::try_from_mrb(&interp, inner).map_err(MrbError::ConvertToRust)?;
+                let inner = String::try_convert(&interp, inner).map_err(MrbError::ConvertToRust)?;
                 Ok(Self { inner })
             }
         }
@@ -73,7 +72,7 @@ impl Container {
                 let container = Self { inner: args.inner };
                 container.try_into_ruby(&interp, Some(slf))
             })
-            .unwrap_or_else(|_| Value::from_mrb(&interp, None::<Value>))
+            .unwrap_or_else(|_| Value::convert(&interp, None::<Value>))
             .inner()
     }
 }

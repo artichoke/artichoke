@@ -237,7 +237,7 @@ impl MatchData {
         match result {
             Ok(result) => result.inner(),
             Err(offset::Error::NoMatch) | Err(offset::Error::NoGroup) => {
-                Value::from_mrb(&interp, vec![None::<Value>, None::<Value>]).inner()
+                Value::convert(&interp, vec![None::<Value>, None::<Value>]).inner()
             }
             Err(offset::Error::IndexType) => TypeError::raise(interp, "Unexpected capture group"),
             Err(offset::Error::Fatal) => {
@@ -313,7 +313,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         match to_s::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(to_s::Error::NoMatch) => Value::from_mrb(&interp, [0_u8; 0].as_ref()).inner(),
+            Err(to_s::Error::NoMatch) => Value::convert(&interp, [0_u8; 0].as_ref()).inner(),
             Err(to_s::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#to_s error"),
         }
     }

@@ -125,7 +125,7 @@
 //!         let cont = Self { inner: int };
 //!         cont
 //!             .try_into_ruby(&interp, Some(slf))
-//!             .unwrap_or_else(|_| Value::from_mrb(&interp, None::<Value>))
+//!             .unwrap_or_else(|_| Value::convert(&interp, None::<Value>))
 //!             .inner()
 //!     }
 //!
@@ -133,9 +133,9 @@
 //!         let interp = unwrap_interpreter!(mrb);
 //!         if let Ok(cont) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
 //!             let borrow = cont.borrow();
-//!             Value::from_mrb(&interp, borrow.inner).inner()
+//!             Value::convert(&interp, borrow.inner).inner()
 //!         } else {
-//!             Value::from_mrb(&interp, None::<Value>).inner()
+//!             Value::convert(&interp, None::<Value>).inner()
 //!         }
 //!     }
 //! }

@@ -34,9 +34,9 @@ impl Args {
             first.as_mut_ptr(),
         );
         let first = first.assume_init();
-        if let Ok(index) = i64::try_from_mrb(interp, Value::new(interp, first)) {
+        if let Ok(index) = i64::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Index(index))
-        } else if let Ok(name) = String::try_from_mrb(interp, Value::new(interp, first)) {
+        } else if let Ok(name) = String::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Name(name))
         } else if let Ok(index) = Value::new(interp, first).funcall::<i64, _, _>("to_int", &[]) {
             Ok(Args::Index(index))
@@ -78,5 +78,5 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     let begin = match_against[0..begin].chars().count();
     let begin = begin + borrow.region.start;
     let begin = i64::try_from(begin).map_err(|_| Error::Fatal)?;
-    Ok(Value::from_mrb(&interp, begin))
+    Ok(Value::convert(&interp, begin))
 }

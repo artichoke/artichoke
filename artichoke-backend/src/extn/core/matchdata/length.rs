@@ -20,8 +20,8 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let captures = regex.captures(match_against);
     if let Some(captures) = captures {
         let len = i64::try_from(captures.len()).map_err(|_| Error::Fatal)?;
-        Ok(Value::from_mrb(interp, len))
+        Ok(Value::convert(interp, len))
     } else {
-        Ok(Value::from_mrb(interp, 0))
+        Ok(Value::convert(interp, 0))
     }
 }

@@ -21,5 +21,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     // skip 0 (full match) capture group
     iter.next();
     let vec = iter.collect::<Vec<_>>();
-    Ok(Value::from_mrb(&interp, vec))
+    Ok(Value::convert(&interp, vec))
 }

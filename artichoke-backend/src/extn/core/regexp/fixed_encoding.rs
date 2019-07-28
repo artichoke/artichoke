@@ -18,9 +18,9 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
         Encoding::No
             if i64::from(borrow.literal_options.flags().bits()) & Regexp::NOENCODING == 0 =>
         {
-            Ok(Value::from_mrb(interp, false))
+            Ok(Value::convert(interp, false))
         }
-        Encoding::Fixed | Encoding::No => Ok(Value::from_mrb(interp, true)),
-        Encoding::None => Ok(Value::from_mrb(interp, false)),
+        Encoding::Fixed | Encoding::No => Ok(Value::convert(interp, true)),
+        Encoding::None => Ok(Value::convert(interp, false)),
     }
 }

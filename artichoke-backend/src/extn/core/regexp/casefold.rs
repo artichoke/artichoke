@@ -13,5 +13,5 @@ pub enum Error {
 pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
-    Ok(Value::from_mrb(interp, borrow.literal_options.ignore_case))
+    Ok(Value::convert(interp, borrow.literal_options.ignore_case))
 }

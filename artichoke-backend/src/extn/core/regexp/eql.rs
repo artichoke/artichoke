@@ -48,11 +48,11 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     if let Some(other) = args.other {
         let borrow = other.borrow();
         if slf.pattern == borrow.pattern {
-            Ok(Value::from_mrb(interp, slf.encoding == borrow.encoding))
+            Ok(Value::convert(interp, slf.encoding == borrow.encoding))
         } else {
-            Ok(Value::from_mrb(interp, false))
+            Ok(Value::convert(interp, false))
         }
     } else {
-        Ok(Value::from_mrb(interp, false))
+        Ok(Value::convert(interp, false))
     }
 }

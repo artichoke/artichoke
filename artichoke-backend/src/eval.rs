@@ -313,7 +313,7 @@ mod tests {
     fn root_eval_context() {
         let interp = crate::interpreter().expect("mrb init");
         let result = interp.eval("__FILE__").expect("eval");
-        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "(eval)");
     }
 
@@ -348,7 +348,7 @@ mod tests {
                 if let Ok(value) = interp.eval("__FILE__") {
                     value.inner()
                 } else {
-                    Value::from_mrb(&interp, None::<Value>).inner()
+                    Value::convert(&interp, None::<Value>).inner()
                 }
             }
         }
@@ -378,7 +378,7 @@ require 'nested_eval'
 NestedEval.file
         "#;
         let result = interp.eval(code).expect("eval");
-        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "/src/lib/nested_eval.rb");
     }
 
@@ -388,17 +388,17 @@ NestedEval.file
         let result = interp
             .eval_with_context("__FILE__", EvalContext::new("source.rb"))
             .expect("eval");
-        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "source.rb");
         let result = interp
             .eval_with_context("__FILE__", EvalContext::new("source.rb"))
             .expect("eval");
-        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "source.rb");
         let result = interp
             .eval_with_context("__FILE__", EvalContext::new("main.rb"))
             .expect("eval");
-        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "main.rb");
     }
 
@@ -422,7 +422,7 @@ NestedEval.file
         );
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval("'a' * 10 ").expect("eval");
-        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(result, "a".repeat(10));
     }
 
@@ -433,7 +433,7 @@ NestedEval.file
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
         let result = interp.eval("require 'source'; file").expect("eval");
-        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "/src/lib/source.rb");
     }
 
@@ -444,7 +444,7 @@ NestedEval.file
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
         let result = interp.eval("require 'source'; __FILE__").expect("eval");
-        let result = unsafe { String::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
         assert_eq!(&result, "(eval)");
     }
 

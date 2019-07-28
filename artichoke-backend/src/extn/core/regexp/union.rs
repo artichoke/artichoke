@@ -91,7 +91,7 @@ pub fn method(interp: &Mrb, args: Args, slf: sys::mrb_value) -> Result<Value, Er
             mrb,
             sys::mrb_sys_class_ptr(slf),
             1,
-            [Value::from_mrb(interp, pattern).inner()].as_ptr() as *const sys::mrb_value,
+            [Value::convert(interp, pattern).inner()].as_ptr() as *const sys::mrb_value,
         )
     };
     Ok(Value::new(interp, value))

@@ -32,7 +32,7 @@ impl Args {
             string.as_mut_ptr(),
         );
         let string = string.assume_init();
-        if let Ok(pattern) = String::try_from_mrb(interp, Value::new(interp, string)) {
+        if let Ok(pattern) = String::try_convert(interp, Value::new(interp, string)) {
             Ok(Self { pattern })
         } else {
             Err(Error::NoImplicitConversionToString)
@@ -41,7 +41,7 @@ impl Args {
 }
 
 pub fn method(interp: &Mrb, args: &Args) -> Result<Value, Error> {
-    Ok(Value::from_mrb(
+    Ok(Value::convert(
         interp,
         syntax::escape(args.pattern.as_str()),
     ))

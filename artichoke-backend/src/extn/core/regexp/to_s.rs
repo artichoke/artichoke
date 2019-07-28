@@ -14,5 +14,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
     let s = borrow.pattern.to_string();
-    Ok(Value::from_mrb(interp, s))
+    Ok(Value::convert(interp, s))
 }

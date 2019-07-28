@@ -7,11 +7,11 @@ impl Convert<Option<bool>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Option<bool>) -> Self {
+    fn convert(interp: &Mrb, value: Option<bool>) -> Self {
         if let Some(value) = value {
-            Self::from_mrb(interp, value)
+            Self::convert(interp, value)
         } else {
-            Self::from_mrb(interp, None::<Self>)
+            Self::convert(interp, None::<Self>)
         }
     }
 }
@@ -22,13 +22,10 @@ impl TryConvert<Value> for Option<bool> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        interp: &Mrb,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        let value = <Option<Value>>::try_from_mrb(interp, value)?;
+    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+        let value = <Option<Value>>::try_convert(interp, value)?;
         if let Some(item) = value {
-            Ok(Some(bool::try_from_mrb(interp, item)?))
+            Ok(Some(bool::try_convert(interp, item)?))
         } else {
             Ok(None)
         }
@@ -50,16 +47,16 @@ mod tests {
         let interp = crate::interpreter().expect("mrb init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
-        let result = unsafe { <Option<bool>>::try_from_mrb(&interp, value) }.map(|_| ());
+        let result = unsafe { <Option<bool>>::try_convert(&interp, value) }.map(|_| ());
         assert_eq!(result.map_err(|e| e.from), Err(Ruby::Object));
     }
 
     #[quickcheck]
     fn convert_to_value(v: Option<bool>) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, v);
+        let value = Value::convert(&interp, v);
         if let Some(v) = v {
-            let value = unsafe { bool::try_from_mrb(&interp, value) }.expect("convert");
+            let value = unsafe { bool::try_convert(&interp, value) }.expect("convert");
             value == v
         } else {
             unsafe { sys::mrb_sys_value_is_nil(value.inner()) }
@@ -69,8 +66,8 @@ mod tests {
     #[quickcheck]
     fn roundtrip(v: Option<bool>) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, v);
-        let value = unsafe { <Option<bool>>::try_from_mrb(&interp, value) }.expect("convert");
+        let value = Value::convert(&interp, v);
+        let value = unsafe { <Option<bool>>::try_convert(&interp, value) }.expect("convert");
         value == v
     }
 }

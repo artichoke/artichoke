@@ -145,9 +145,9 @@ impl Hash for Regexp {
 impl RustBackedValue for Regexp {
     fn new_obj_args(&self, interp: &Mrb) -> Vec<sys::mrb_value> {
         vec![
-            Value::from_mrb(interp, self.literal_pattern.as_str()).inner(),
-            Value::from_mrb(interp, self.literal_options.flags().bits()).inner(),
-            Value::from_mrb(interp, self.encoding.flags()).inner(),
+            Value::convert(interp, self.literal_pattern.as_str()).inner(),
+            Value::convert(interp, self.literal_options.flags().bits()).inner(),
+            Value::convert(interp, self.encoding.flags()).inner(),
         ]
     }
 }
@@ -309,7 +309,7 @@ impl Regexp {
         match result {
             Ok(result) => result.inner(),
             Err(case_compare::Error::NoImplicitConversionToString) => {
-                Value::from_mrb(&interp, false).inner()
+                Value::convert(&interp, false).inner()
             }
             Err(case_compare::Error::Fatal) => {
                 RuntimeError::raise(interp, "fatal Regexp#=== error")
@@ -328,7 +328,7 @@ impl Regexp {
         match result {
             Ok(result) => result.inner(),
             Err(match_operator::Error::NoImplicitConversionToString) => {
-                Value::from_mrb(&interp, false).inner()
+                Value::convert(&interp, false).inner()
             }
             Err(match_operator::Error::Fatal) => {
                 RuntimeError::raise(interp, "fatal Regexp#=== error")

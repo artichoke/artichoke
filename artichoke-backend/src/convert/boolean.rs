@@ -8,7 +8,7 @@ impl Convert<bool> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: bool) -> Self {
+    fn convert(interp: &Mrb, value: bool) -> Self {
         if value {
             Self::new(interp, unsafe { sys::mrb_sys_true_value() })
         } else {
@@ -21,7 +21,7 @@ impl TryConvert<Value> for bool {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
+    unsafe fn try_convert(
         _interp: &Mrb,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
@@ -67,21 +67,21 @@ mod tests {
             from: Ruby::Object,
             to: Rust::Bool,
         };
-        let result = unsafe { <bool>::try_from_mrb(&interp, value) }.map(|_| ());
+        let result = unsafe { <bool>::try_convert(&interp, value) }.map(|_| ());
         assert_eq!(result, Err(expected));
     }
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, b);
+        let value = Value::convert(&interp, b);
         value.ruby_type() == Ruby::Bool
     }
 
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, b);
+        let value = Value::convert(&interp, b);
         let inner = value.inner();
         let is_false = unsafe { sys::mrb_sys_value_is_false(inner) };
         let is_true = unsafe { sys::mrb_sys_value_is_true(inner) };
@@ -96,16 +96,16 @@ mod tests {
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, b);
-        let value = unsafe { bool::try_from_mrb(&interp, value) }.expect("convert");
+        let value = Value::convert(&interp, b);
+        let value = unsafe { bool::try_convert(&interp, value) }.expect("convert");
         value == b
     }
 
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, i);
-        let value = unsafe { bool::try_from_mrb(&interp, value) };
+        let value = Value::convert(&interp, i);
+        let value = unsafe { bool::try_convert(&interp, value) };
         let expected = Err(Error {
             from: Ruby::Fixnum,
             to: Rust::Bool,

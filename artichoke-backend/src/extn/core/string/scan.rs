@@ -67,7 +67,7 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
     let mrb = interp.borrow().mrb;
     let regexp = args.regexp.ok_or(Error::WrongType)?;
     let s = value.itself().map_err(|_| Error::Fatal)?;
-    let s = unsafe { String::try_from_mrb(&interp, s) }.map_err(|_| Error::WrongType)?;
+    let s = unsafe { String::try_convert(&interp, s) }.map_err(|_| Error::WrongType)?;
 
     let gc_was_enabled = interp.disable_gc();
 
@@ -102,12 +102,12 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
                     groups.push(captures.at(group));
                 }
                 unsafe {
-                    sys::mrb_gv_set(mrb, sym, Value::from_mrb(interp, capture).inner());
+                    sys::mrb_gv_set(mrb, sym, Value::convert(interp, capture).inner());
                 }
             }
             interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
 
-            let matched = Value::from_mrb(interp, groups);
+            let matched = Value::convert(interp, groups);
             if let Some(pos) = captures.pos(0) {
                 matchdata.borrow_mut().set_region(pos.0, pos.1);
             }
@@ -124,7 +124,7 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
         for pos in regex.find_iter(s.as_str()) {
             was_match = true;
             let scanned = &s[pos.0..pos.1];
-            let matched = Value::from_mrb(interp, scanned);
+            let matched = Value::convert(interp, scanned);
             matchdata.borrow_mut().set_region(pos.0, pos.1);
             if let Some(ref block) = args.block {
                 unsafe {
@@ -144,7 +144,7 @@ pub fn method(interp: &Mrb, args: Args, value: Value) -> Result<Value, Error> {
     let result = if args.block.is_some() {
         value
     } else {
-        Value::from_mrb(interp, collected)
+        Value::convert(interp, collected)
     };
     if gc_was_enabled {
         interp.enable_gc();

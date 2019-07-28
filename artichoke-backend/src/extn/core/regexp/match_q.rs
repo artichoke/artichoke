@@ -39,14 +39,14 @@ impl Args {
         let string = string.assume_init();
         let has_pos = has_pos.assume_init() != 0;
         let string = if let Ok(string) =
-            <Option<String>>::try_from_mrb(&interp, Value::new(interp, string))
+            <Option<String>>::try_convert(&interp, Value::new(interp, string))
         {
             string
         } else {
             return Err(Error::StringType);
         };
         let pos = if has_pos {
-            let pos = i64::try_from_mrb(&interp, Value::new(&interp, pos.assume_init()))
+            let pos = i64::try_convert(&interp, Value::new(&interp, pos.assume_init()))
                 .map_err(|_| Error::PosType)?;
             Some(pos)
         } else {
@@ -61,14 +61,14 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     let string = if let Some(string) = args.string {
         string
     } else {
-        return Ok(Value::from_mrb(interp, false));
+        return Ok(Value::convert(interp, false));
     };
     let pos = args.pos.unwrap_or_default();
     let pos = if pos < 0 {
         let strlen = i64::try_from(string.chars().count()).unwrap_or_default();
         let pos = strlen + pos;
         if pos < 0 {
-            return Ok(Value::from_mrb(interp, false));
+            return Ok(Value::convert(interp, false));
         }
         usize::try_from(pos).map_err(|_| Error::Fatal)?
     } else {
@@ -76,12 +76,12 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
     };
     // onig will panic if pos is beyond the end of string
     if pos > string.chars().count() {
-        return Ok(Value::from_mrb(interp, false));
+        return Ok(Value::convert(interp, false));
     }
     let byte_offset = string.chars().take(pos).collect::<String>().len();
 
     let borrow = data.borrow();
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
     let match_target = &string[byte_offset..];
-    Ok(Value::from_mrb(interp, regex.find(match_target).is_some()))
+    Ok(Value::convert(interp, regex.find(match_target).is_some()))
 }

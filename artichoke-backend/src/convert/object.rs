@@ -165,9 +165,9 @@ mod tests {
             let value = Value::new(&interp, slf);
             if let Ok(container) = Self::try_from_ruby(&interp, &value) {
                 let borrow = container.borrow();
-                Value::from_mrb(&interp, borrow.inner.as_str()).inner()
+                Value::convert(&interp, borrow.inner.as_str()).inner()
             } else {
-                Value::from_mrb(&interp, None::<Value>).inner()
+                Value::convert(&interp, None::<Value>).inner()
             }
         }
     }
@@ -231,7 +231,7 @@ mod tests {
         spec.borrow_mut().mrb_value_is_rust_backed(true);
         spec.borrow().define(&interp).expect("class install");
 
-        let value = Value::from_mrb(&interp, "string");
+        let value = Value::convert(&interp, "string");
         let class = value.funcall::<Value, _, _>("class", &[]).expect("funcall");
         assert_eq!(class.to_s(), "String");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };

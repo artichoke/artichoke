@@ -44,14 +44,14 @@ impl Args {
         let second = second.assume_init();
         let has_length = has_second.assume_init() != 0;
         if has_length {
-            let start = i64::try_from_mrb(&interp, Value::new(interp, first))
+            let start = i64::try_convert(&interp, Value::new(interp, first))
                 .map_err(|_| Error::IndexType)?;
-            let len = usize::try_from_mrb(&interp, Value::new(interp, second))
+            let len = usize::try_convert(&interp, Value::new(interp, second))
                 .map_err(|_| Error::LengthType)?;
             Ok(Args::StartLen(start, len))
-        } else if let Ok(index) = i64::try_from_mrb(interp, Value::new(interp, first)) {
+        } else if let Ok(index) = i64::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Index(index))
-        } else if let Ok(name) = String::try_from_mrb(interp, Value::new(interp, first)) {
+        } else if let Ok(name) = String::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Name(name))
         } else if let Some(args) = Self::is_range(interp, first, num_captures)? {
             Ok(args)
@@ -98,13 +98,13 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                 // Positive i64 must be usize
                 let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
                 match captures.len().checked_sub(index) {
-                    Some(0) | None => Ok(Value::from_mrb(interp, None::<Value>)),
-                    Some(index) => Ok(Value::from_mrb(interp, captures.at(index))),
+                    Some(0) | None => Ok(Value::convert(interp, None::<Value>)),
+                    Some(index) => Ok(Value::convert(interp, captures.at(index))),
                 }
             } else {
                 // Positive i64 must be usize
                 let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
-                Ok(Value::from_mrb(interp, captures.at(index)))
+                Ok(Value::convert(interp, captures.at(index)))
             }
         }
         Args::Name(name) => {
@@ -126,7 +126,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
                         .and_then(|index| captures.at(index))
                 })
                 .last();
-            Ok(Value::from_mrb(interp, group))
+            Ok(Value::convert(interp, group))
         }
         Args::StartLen(start, len) => {
             let start = if start < 0 {
@@ -141,7 +141,7 @@ pub fn method(interp: &Mrb, args: Args, value: &Value) -> Result<Value, Error> {
             for index in start..(start + len) {
                 matches.push(captures.at(index));
             }
-            Ok(Value::from_mrb(interp, matches))
+            Ok(Value::convert(interp, matches))
         }
     }
 }

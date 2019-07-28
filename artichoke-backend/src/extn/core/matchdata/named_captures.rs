@@ -31,5 +31,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
             map.insert(name.to_owned(), None);
         }
     }
-    Ok(Value::from_mrb(interp, map))
+    Ok(Value::convert(interp, map))
 }

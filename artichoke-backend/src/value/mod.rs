@@ -149,7 +149,7 @@ where
                 Err(MrbError::UnreachableValue(value.inner().tt))
             }
             LastError::None => unsafe {
-                T::try_from_mrb(self.interp(), value).map_err(MrbError::ConvertToRust)
+                T::try_convert(self.interp(), value).map_err(MrbError::ConvertToRust)
             },
         }
     }
@@ -247,13 +247,13 @@ where
                 Err(MrbError::UnreachableValue(value.inner().tt))
             }
             LastError::None => unsafe {
-                T::try_from_mrb(self.interp(), value).map_err(MrbError::ConvertToRust)
+                T::try_convert(self.interp(), value).map_err(MrbError::ConvertToRust)
             },
         }
     }
 
     fn respond_to(&self, method: &str) -> Result<bool, MrbError> {
-        let method = Value::from_mrb(self.interp(), method);
+        let method = Value::convert(self.interp(), method);
         self.funcall::<bool, _, _>("respond_to?", &[method])
     }
 }
@@ -348,7 +348,7 @@ impl Value {
         T: TryConvert<Self, From = types::Ruby, To = types::Rust>,
     {
         let interp = Rc::clone(&self.interp);
-        unsafe { T::try_from_mrb(&interp, self) }.map_err(MrbError::ConvertToRust)
+        unsafe { T::try_convert(&interp, self) }.map_err(MrbError::ConvertToRust)
     }
 
     /// Call `#itself` on this [`Value`] and try to convert the result to type
@@ -384,7 +384,7 @@ impl Convert<Value> for Value {
     type From = types::Ruby;
     type To = types::Rust;
 
-    fn from_mrb(_interp: &Mrb, value: Self) -> Self {
+    fn convert(_interp: &Mrb, value: Self) -> Self {
         value
     }
 }
@@ -425,7 +425,7 @@ mod tests {
     fn to_s_true() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, true);
+        let value = Value::convert(&interp, true);
         let string = value.to_s();
         assert_eq!(string, "true");
     }
@@ -434,7 +434,7 @@ mod tests {
     fn debug_true() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, true);
+        let value = Value::convert(&interp, true);
         let debug = value.to_s_debug();
         assert_eq!(debug, "Boolean<true>");
     }
@@ -443,7 +443,7 @@ mod tests {
     fn inspect_true() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, true);
+        let value = Value::convert(&interp, true);
         let debug = value.inspect();
         assert_eq!(debug, "true");
     }
@@ -452,7 +452,7 @@ mod tests {
     fn to_s_false() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, false);
+        let value = Value::convert(&interp, false);
         let string = value.to_s();
         assert_eq!(string, "false");
     }
@@ -461,7 +461,7 @@ mod tests {
     fn debug_false() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, false);
+        let value = Value::convert(&interp, false);
         let debug = value.to_s_debug();
         assert_eq!(debug, "Boolean<false>");
     }
@@ -470,7 +470,7 @@ mod tests {
     fn inspect_false() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, false);
+        let value = Value::convert(&interp, false);
         let debug = value.inspect();
         assert_eq!(debug, "false");
     }
@@ -479,7 +479,7 @@ mod tests {
     fn to_s_nil() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, None::<Value>);
+        let value = Value::convert(&interp, None::<Value>);
         let string = value.to_s();
         assert_eq!(string, "");
     }
@@ -488,7 +488,7 @@ mod tests {
     fn debug_nil() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, None::<Value>);
+        let value = Value::convert(&interp, None::<Value>);
         let debug = value.to_s_debug();
         assert_eq!(debug, "NilClass<nil>");
     }
@@ -497,7 +497,7 @@ mod tests {
     fn inspect_nil() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, None::<Value>);
+        let value = Value::convert(&interp, None::<Value>);
         let debug = value.inspect();
         assert_eq!(debug, "nil");
     }
@@ -506,7 +506,7 @@ mod tests {
     fn to_s_fixnum() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, 255);
+        let value = Value::convert(&interp, 255);
         let string = value.to_s();
         assert_eq!(string, "255");
     }
@@ -515,7 +515,7 @@ mod tests {
     fn debug_fixnum() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, 255);
+        let value = Value::convert(&interp, 255);
         let debug = value.to_s_debug();
         assert_eq!(debug, "Fixnum<255>");
     }
@@ -524,7 +524,7 @@ mod tests {
     fn inspect_fixnum() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, 255);
+        let value = Value::convert(&interp, 255);
         let debug = value.inspect();
         assert_eq!(debug, "255");
     }
@@ -533,7 +533,7 @@ mod tests {
     fn to_s_string() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, "interstate");
+        let value = Value::convert(&interp, "interstate");
         let string = value.to_s();
         assert_eq!(string, "interstate");
     }
@@ -542,7 +542,7 @@ mod tests {
     fn debug_string() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, "interstate");
+        let value = Value::convert(&interp, "interstate");
         let debug = value.to_s_debug();
         assert_eq!(debug, r#"String<"interstate">"#);
     }
@@ -551,7 +551,7 @@ mod tests {
     fn inspect_string() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, "interstate");
+        let value = Value::convert(&interp, "interstate");
         let debug = value.inspect();
         assert_eq!(debug, r#""interstate""#);
     }
@@ -560,7 +560,7 @@ mod tests {
     fn to_s_empty_string() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, "");
+        let value = Value::convert(&interp, "");
         let string = value.to_s();
         assert_eq!(string, "");
     }
@@ -569,7 +569,7 @@ mod tests {
     fn debug_empty_string() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, "");
+        let value = Value::convert(&interp, "");
         let debug = value.to_s_debug();
         assert_eq!(debug, r#"String<"">"#);
     }
@@ -578,7 +578,7 @@ mod tests {
     fn inspect_empty_string() {
         let interp = crate::interpreter().expect("mrb init");
 
-        let value = Value::from_mrb(&interp, "");
+        let value = Value::convert(&interp, "");
         let debug = value.inspect();
         assert_eq!(debug, r#""""#);
     }
@@ -617,18 +617,18 @@ mod tests {
         assert!(!live.is_dead());
         // Fixnums are immediate even if they are created directly without an
         // interpreter.
-        let fixnum = Value::from_mrb(&interp, 99);
+        let fixnum = Value::convert(&interp, 99);
         assert!(!fixnum.is_dead());
     }
 
     #[test]
     fn funcall() {
         let interp = crate::interpreter().expect("mrb init");
-        let nil = Value::from_mrb(&interp, None::<Value>);
+        let nil = Value::convert(&interp, None::<Value>);
         assert!(nil.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
-        let s = Value::from_mrb(&interp, "foo");
+        let s = Value::convert(&interp, "foo");
         assert!(!s.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
-        let delim = Value::from_mrb(&interp, "");
+        let delim = Value::convert(&interp, "");
         let split = s
             .funcall::<Vec<String>, _, _>("split", &[delim])
             .expect("split");
@@ -638,8 +638,8 @@ mod tests {
     #[test]
     fn funcall_different_types() {
         let interp = crate::interpreter().expect("mrb init");
-        let nil = Value::from_mrb(&interp, None::<Value>);
-        let s = Value::from_mrb(&interp, "foo");
+        let nil = Value::convert(&interp, None::<Value>);
+        let s = Value::convert(&interp, "foo");
         let eql = nil.funcall::<bool, _, _>("==", &[s]);
         assert_eq!(eql, Ok(false));
     }
@@ -647,8 +647,8 @@ mod tests {
     #[test]
     fn funcall_type_error() {
         let interp = crate::interpreter().expect("mrb init");
-        let nil = Value::from_mrb(&interp, None::<Value>);
-        let s = Value::from_mrb(&interp, "foo");
+        let nil = Value::convert(&interp, None::<Value>);
+        let s = Value::convert(&interp, "foo");
         let result = s.funcall::<String, _, _>("+", &[nil]);
         assert_eq!(
             result,
@@ -659,8 +659,8 @@ mod tests {
     #[test]
     fn funcall_method_not_exists() {
         let interp = crate::interpreter().expect("mrb init");
-        let nil = Value::from_mrb(&interp, None::<Value>);
-        let s = Value::from_mrb(&interp, "foo");
+        let nil = Value::convert(&interp, None::<Value>);
+        let s = Value::convert(&interp, "foo");
         let result = nil.funcall::<bool, _, _>("garbage_method_name", &[s]);
         assert_eq!(
             result,

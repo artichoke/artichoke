@@ -20,11 +20,11 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     for (name, index) in regex.capture_names() {
         map.push((
             name,
-            Value::from_mrb(
+            Value::convert(
                 interp,
                 index.iter().map(|idx| i64::from(*idx)).collect::<Vec<_>>(),
             ),
         ));
     }
-    Ok(Value::from_mrb(interp, map))
+    Ok(Value::convert(interp, map))
 }

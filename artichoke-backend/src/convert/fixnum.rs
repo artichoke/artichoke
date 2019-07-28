@@ -12,7 +12,7 @@ impl Convert<Int> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Int) -> Self {
+    fn convert(interp: &Mrb, value: Int) -> Self {
         Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
@@ -21,8 +21,8 @@ impl Convert<u8> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: u8) -> Self {
-        Self::from_mrb(interp, Int::from(value))
+    fn convert(interp: &Mrb, value: u8) -> Self {
+        Self::convert(interp, Int::from(value))
     }
 }
 
@@ -30,8 +30,8 @@ impl Convert<u16> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: u16) -> Self {
-        Self::from_mrb(interp, Int::from(value))
+    fn convert(interp: &Mrb, value: u16) -> Self {
+        Self::convert(interp, Int::from(value))
     }
 }
 
@@ -39,8 +39,8 @@ impl Convert<u32> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: u32) -> Self {
-        Self::from_mrb(interp, Int::from(value))
+    fn convert(interp: &Mrb, value: u32) -> Self {
+        Self::convert(interp, Int::from(value))
     }
 }
 
@@ -48,8 +48,8 @@ impl Convert<i8> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: i8) -> Self {
-        Self::from_mrb(interp, Int::from(value))
+    fn convert(interp: &Mrb, value: i8) -> Self {
+        Self::convert(interp, Int::from(value))
     }
 }
 
@@ -57,8 +57,8 @@ impl Convert<i16> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: i16) -> Self {
-        Self::from_mrb(interp, Int::from(value))
+    fn convert(interp: &Mrb, value: i16) -> Self {
+        Self::convert(interp, Int::from(value))
     }
 }
 
@@ -66,8 +66,8 @@ impl Convert<i32> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: i32) -> Self {
-        Self::from_mrb(interp, Int::from(value))
+    fn convert(interp: &Mrb, value: i32) -> Self {
+        Self::convert(interp, Int::from(value))
     }
 }
 
@@ -75,7 +75,7 @@ impl TryConvert<Value> for Int {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
+    unsafe fn try_convert(
         _interp: &Mrb,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
@@ -93,11 +93,8 @@ impl TryConvert<Value> for usize {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        interp: &Mrb,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        if let Ok(result) = Int::try_from_mrb(interp, value) {
+    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
+        if let Ok(result) = Int::try_convert(interp, value) {
             if let Ok(result) = Self::try_from(result) {
                 return Ok(result);
             }
@@ -129,21 +126,21 @@ mod tests {
             from: Ruby::Object,
             to: Rust::SignedInt,
         };
-        let result = unsafe { Int::try_from_mrb(&interp, value) }.map(|_| ());
+        let result = unsafe { Int::try_convert(&interp, value) }.map(|_| ());
         assert_eq!(result, Err(expected));
     }
 
     #[quickcheck]
     fn convert_to_fixnum(i: Int) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, i);
+        let value = Value::convert(&interp, i);
         value.ruby_type() == Ruby::Fixnum
     }
 
     #[quickcheck]
     fn fixnum_with_value(i: Int) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, i);
+        let value = Value::convert(&interp, i);
         let inner = value.inner();
         let cint = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
         cint == i
@@ -152,16 +149,16 @@ mod tests {
     #[quickcheck]
     fn roundtrip(i: Int) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, i);
-        let value = unsafe { Int::try_from_mrb(&interp, value) }.expect("convert");
+        let value = Value::convert(&interp, i);
+        let value = unsafe { Int::try_convert(&interp, value) }.expect("convert");
         value == i
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, b);
-        let value = unsafe { Int::try_from_mrb(&interp, value) };
+        let value = Value::convert(&interp, b);
+        let value = unsafe { Int::try_convert(&interp, value) };
         let expected = Err(Error {
             from: Ruby::Bool,
             to: Rust::SignedInt,
@@ -172,12 +169,12 @@ mod tests {
     #[test]
     fn fixnum_to_usize() {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, 100);
-        let value = unsafe { usize::try_from_mrb(&interp, value) };
+        let value = Value::convert(&interp, 100);
+        let value = unsafe { usize::try_convert(&interp, value) };
         let expected = Ok(100);
         assert_eq!(value, expected);
-        let value = Value::from_mrb(&interp, -100);
-        let value = unsafe { usize::try_from_mrb(&interp, value) };
+        let value = Value::convert(&interp, -100);
+        let value = unsafe { usize::try_convert(&interp, value) };
         let expected = Err(Error {
             from: Ruby::Fixnum,
             to: Rust::UnsignedInt,

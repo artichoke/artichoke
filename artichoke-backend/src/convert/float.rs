@@ -10,7 +10,7 @@ impl Convert<Float> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Float) -> Self {
+    fn convert(interp: &Mrb, value: Float) -> Self {
         let mrb = interp.borrow().mrb;
         Self::new(interp, unsafe { sys::mrb_sys_float_value(mrb, value) })
     }
@@ -20,7 +20,7 @@ impl TryConvert<Value> for Float {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
+    unsafe fn try_convert(
         _interp: &Mrb,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
@@ -54,21 +54,21 @@ mod tests {
             from: Ruby::Object,
             to: Rust::Float,
         };
-        let result = unsafe { Float::try_from_mrb(&interp, value) }.map(|_| ());
+        let result = unsafe { Float::try_convert(&interp, value) }.map(|_| ());
         assert_eq!(result, Err(expected));
     }
 
     #[quickcheck]
     fn convert_to_float(f: Float) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, f);
+        let value = Value::convert(&interp, f);
         value.ruby_type() == Ruby::Float
     }
 
     #[quickcheck]
     fn float_with_value(f: Float) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, f);
+        let value = Value::convert(&interp, f);
         let inner = value.inner();
         let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
         (cdouble - f).abs() < std::f64::EPSILON
@@ -77,16 +77,16 @@ mod tests {
     #[quickcheck]
     fn roundtrip(f: Float) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, f);
-        let value = unsafe { Float::try_from_mrb(&interp, value) }.expect("convert");
+        let value = Value::convert(&interp, f);
+        let value = unsafe { Float::try_convert(&interp, value) }.expect("convert");
         (value - f).abs() < std::f64::EPSILON
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("mrb init");
-        let value = Value::from_mrb(&interp, b);
-        let value = unsafe { Float::try_from_mrb(&interp, value) };
+        let value = Value::convert(&interp, b);
+        let value = unsafe { Float::try_convert(&interp, value) };
         let expected = Err(Error {
             from: Ruby::Bool,
             to: Rust::Float,

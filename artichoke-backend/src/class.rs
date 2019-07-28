@@ -223,10 +223,10 @@ mod tests {
         let result = interp
             .eval("RustError.new.is_a?(StandardError)")
             .expect("eval");
-        let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { bool::try_convert(&interp, result).expect("convert") };
         assert!(result, "RustError instances are instance of StandardError");
         let result = interp.eval("RustError < StandardError").expect("eval");
-        let result = unsafe { bool::try_from_mrb(&interp, result).expect("convert") };
+        let result = unsafe { bool::try_convert(&interp, result).expect("convert") };
         assert!(result, "RustError inherits from StandardError");
     }
 

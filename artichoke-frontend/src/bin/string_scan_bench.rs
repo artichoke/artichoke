@@ -41,7 +41,7 @@ fn main() {
         process::exit(1);
     }
 
-    let data = Value::from_mrb(
+    let data = Value::convert(
         &interp,
         include_bytes!("../../ruby/fixtures/learnxinyminutes.txt").as_ref(),
     );

@@ -19,5 +19,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
         borrow.literal_options.modifier_string(),
         borrow.encoding.string()
     );
-    Ok(Value::from_mrb(interp, s))
+    Ok(Value::convert(interp, s))
 }

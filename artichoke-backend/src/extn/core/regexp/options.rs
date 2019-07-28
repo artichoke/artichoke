@@ -14,5 +14,5 @@ pub fn method(interp: &Mrb, value: &Value) -> Result<Value, Error> {
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
     let opts = i64::from(borrow.literal_options.flags().bits()) | borrow.encoding.flags();
-    Ok(Value::from_mrb(interp, opts))
+    Ok(Value::convert(interp, opts))
 }

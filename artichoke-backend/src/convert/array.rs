@@ -23,7 +23,7 @@ impl Convert<Vec<Value>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<Self>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<Self>) -> Self {
         let mrb = interp.borrow().mrb;
         let array =
             unsafe { sys::mrb_ary_new_capa(mrb, i64::try_from(value.len()).unwrap_or_default()) };
@@ -46,7 +46,7 @@ impl Convert<Vec<Option<Value>>> for Value {
     type From = Rust;
     type To = Ruby;
 
-    fn from_mrb(interp: &Mrb, value: Vec<Option<Self>>) -> Self {
+    fn convert(interp: &Mrb, value: Vec<Option<Self>>) -> Self {
         let mrb = interp.borrow().mrb;
         let array =
             unsafe { sys::mrb_ary_new_capa(mrb, i64::try_from(value.len()).unwrap_or_default()) };
@@ -80,10 +80,7 @@ impl TryConvert<Value> for Vec<Value> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        interp: &Mrb,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
         let mrb = interp.borrow().mrb;
         match value.ruby_type() {
             Ruby::Array => {
@@ -112,10 +109,7 @@ impl TryConvert<Value> for Vec<Option<Value>> {
     type From = Ruby;
     type To = Rust;
 
-    unsafe fn try_from_mrb(
-        interp: &Mrb,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+    unsafe fn try_convert(interp: &Mrb, value: Value) -> Result<Self, Error<Self::From, Self::To>> {
         let mrb = interp.borrow().mrb;
         match value.ruby_type() {
             Ruby::Array => {
