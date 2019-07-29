@@ -1,9 +1,10 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all, clippy::pedantic)]
 
-use artichoke_frontend::repl;
-use std::io;
-
-fn main() -> Result<(), repl::Error> {
-    repl::run(io::stdout(), io::stderr(), None)
+#[cfg(not(target_arch = "wasm32"))]
+fn main() -> Result<(), artichoke_frontend::repl::Error> {
+    artichoke_frontend::repl::run(std::io::stdout(), std::io::stderr(), None)
 }
+
+#[cfg(target_arch = "wasm32")]
+fn main() {}
