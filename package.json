@@ -103,6 +103,7 @@
     }
   },
   "scripts": {
+    "build-wasm": "./scripts/build-wasm.sh",
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
     "lint": "./scripts/lint.sh",
     "loc": "loc --exclude vendor ffi\\.rs artichoke-frontend/ruby/fixtures spec-runner/spec"

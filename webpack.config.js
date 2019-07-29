@@ -32,7 +32,16 @@ module.exports = (env, argv) => {
     cssLoader = MiniCssExtractPlugin.loader;
   }
   return {
-    context: path.resolve(__dirname),
+    context: path.resolve(__dirname, "artichoke-wasm/src"),
+    resolve: {
+      alias: {
+        "artichoke-wasm": path.resolve(
+          __dirname,
+          `target/wasm32-unknown-emscripten/${target}`
+        )
+      }
+    },
+    entry: path.resolve(__dirname, "artichoke-wasm/src/main.js"),
     output: {
       path: path.resolve(__dirname, `target/webpack/${target}`)
     },
