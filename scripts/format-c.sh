@@ -7,6 +7,8 @@ PATH="$(yarn bin):$PATH"
 export PATH
 cd "$(pkg-dir)"
 
+set -x
+
 format() {
   find . -type f \
     -and \( -name '*.h' -or -name '*.c' \) \
