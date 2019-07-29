@@ -51,7 +51,17 @@ shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/
 ## Lint with shellcheck
 shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/ | grep -v vendor/ | xargs shellcheck
 
-# Text sources (e.g. HTML, Markdown)
+# Web sources
 
 ## Format with prettier
-yarn run prettier --write --prose-wrap always './*.{css,html,js,json,md}' '**/*.{css,html,js,json,md}'
+./scripts/format-text.sh --format "css"
+./scripts/format-text.sh --format "html"
+./scripts/format-text.sh --format "js"
+./scripts/format-text.sh --format "json"
+./scripts/format-text.sh --format "yaml"
+./scripts/format-text.sh --format "yml"
+
+# Text sources
+
+## Format with prettier
+./scripts/format-text.sh --format "md"
