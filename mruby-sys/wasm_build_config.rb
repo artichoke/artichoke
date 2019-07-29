@@ -20,12 +20,12 @@ MRuby::CrossBuild.new('sys-emscripten') do |conf|
   conf.cc.flags << '-Os'
   conf.cc.flags << '-fPIC'
   conf.linker.command = 'emcc'
-  conf.linker.flags = %w[-s WASM=1 -s ENVIRONMENT=web -s LINKABLE=1 -s EXPORT_ALL=1]
+  conf.linker.flags = %w[-s LINKABLE=1 -s EXPORT_ALL=1]
   conf.archiver.command = 'emar'
 
   # C compiler settings
   # https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
-  conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_UTF8_STRING]
+  conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_UTF8_STRING MRB_INT32]
 
   conf.bins = []
 

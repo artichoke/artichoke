@@ -139,55 +139,39 @@ fn main() {
         "cargo:rerun-if-changed={}/mruby-sys/ext.h",
         Build::ext_include_dir()
     );
-    if env::var("TARGET").unwrap().starts_with("wasm32-") {
-        cc::Build::new()
-            .file(Build::ext_source_file())
-            .include(Build::mruby_include_dir())
-            .include(Build::ext_include_dir())
-            .include(format!(
-                "{}/../target/emsdk/fastcomp/emscripten/system/include/libc",
-                Build::root()
-            ))
-            .compile("libmrubysys.a");
-    } else {
-        cc::Build::new()
-            .file(Build::ext_source_file())
-            .include(Build::mruby_include_dir())
-            .include(Build::ext_include_dir())
-            .compile("libmrubysys.a");
-    }
+    cc::Build::new()
+        .file(Build::ext_source_file())
+        .include(Build::mruby_include_dir())
+        .include(Build::ext_include_dir())
+        .compile("libmrubysys.a");
 
-    println!("cargo:rerun-if-changed={}", Build::bindgen_source_header());
-    let bindings_path: PathBuf = [&env::var("OUT_DIR").unwrap(), "ffi.rs"].iter().collect();
-    let mut bindings = bindgen::Builder::default()
-        .header(Build::bindgen_source_header())
-        .clang_arg(format!("-I{}", Build::mruby_include_dir()))
-        .clang_arg(format!("-I{}", Build::ext_include_dir()))
-        .clang_arg("-DMRB_DISABLE_STDIO")
-        .clang_arg("-DMRB_UTF8_STRING");
-    if env::var("TARGET").unwrap().starts_with("wasm32-") {
-        bindings = bindings.clang_arg("-DMRB_INT32").clang_arg(format!(
-            "-I{}/../target/emsdk/fastcomp/emscripten/system/include/libc",
-            Build::root()
-        ));
+    if !env::var("TARGET").unwrap().starts_with("wasm32-") {
+        println!("cargo:rerun-if-changed={}", Build::bindgen_source_header());
+        let bindings_path: PathBuf = [&Build::root(), "src", "ffi.rs"].iter().collect();
+        let bindings = bindgen::Builder::default()
+            .header(Build::bindgen_source_header())
+            .clang_arg(format!("-I{}", Build::mruby_include_dir()))
+            .clang_arg(format!("-I{}", Build::ext_include_dir()))
+            .clang_arg("-DMRB_DISABLE_STDIO")
+            .clang_arg("-DMRB_UTF8_STRING")
+            .whitelist_function("^mrb.*")
+            .whitelist_type("^mrb.*")
+            .whitelist_var("^mrb.*")
+            .whitelist_var("^MRB.*")
+            .whitelist_var("^MRUBY.*")
+            .whitelist_var("REGEXP_CLASS")
+            .rustified_enum("mrb_vtype")
+            .rustified_enum("mrb_lex_state_enum")
+            .rustified_enum("mrb_range_beg_len")
+            .rustfmt_bindings(true)
+            // work around warnings caused by cargo doc interpreting Ruby doc blocks
+            // as Rust code.
+            // See: https://github.com/rust-lang/rust-bindgen/issues/426
+            .generate_comments(false)
+            .generate()
+            .expect("Unable to generate mruby bindings");
+        bindings
+            .write_to_file(bindings_path)
+            .expect("Unable to write mruby bindings");
     }
-    bindings
-        .whitelist_function("^mrb.*")
-        .whitelist_type("^mrb.*")
-        .whitelist_var("^mrb.*")
-        .whitelist_var("^MRB.*")
-        .whitelist_var("^MRUBY.*")
-        .whitelist_var("REGEXP_CLASS")
-        .rustified_enum("mrb_vtype")
-        .rustified_enum("mrb_lex_state_enum")
-        .rustified_enum("mrb_range_beg_len")
-        .rustfmt_bindings(true)
-        // work around warnings caused by cargo doc interpreting Ruby doc blocks
-        // as Rust code.
-        // See: https://github.com/rust-lang/rust-bindgen/issues/426
-        .generate_comments(false)
-        .generate()
-        .expect("Unable to generate mruby bindings")
-        .write_to_file(bindings_path)
-        .expect("Unable to write mruby bindings");
 }

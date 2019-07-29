@@ -6,7 +6,10 @@ use crate::value::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub type Int = i64;
+#[cfg(target_arch = "wasm32")]
+pub type Int = i32;
 
 impl Convert<Int> for Value {
     type From = Rust;
@@ -62,6 +65,7 @@ impl Convert<i16> for Value {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl Convert<i32> for Value {
     type From = Rust;
     type To = Ruby;
