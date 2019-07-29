@@ -7,7 +7,7 @@ MRuby::Build.new do |conf|
   if ENV['VisualStudioVersion'] || ENV['VSINSTALLDIR']
     toolchain :visualcpp
   else
-    toolchain :gcc
+    toolchain :clang
   end
 
   # include the default GEMs
@@ -28,7 +28,7 @@ MRuby::CrossBuild.new('sys') do |conf|
   if ENV['VisualStudioVersion'] || ENV['VSINSTALLDIR']
     toolchain :visualcpp
   else
-    toolchain :gcc
+    toolchain :clang
     conf.cc.flags << '-fPIC'
   end
 
