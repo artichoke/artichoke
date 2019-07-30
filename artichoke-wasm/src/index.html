@@ -174,46 +174,15 @@
       </div>
     </div>
     <script type="text/javascript">
-      const read_string = (state, ptr) => {
-        const len = _artichoke_string_getlen(state, ptr);
-        const chars = [];
-        for (let idx = 0; idx < len; idx++) {
-          let char = _artichoke_string_getch(state, ptr, idx);
-          chars.push(String.fromCharCode(char));
-        }
-        return chars.join("");
-      };
-      const write_string = (state, s) => {
-        const ptr = _artichoke_string_new(state);
-        for (let idx = 0; idx < s.length; idx++) {
-          let char = s.charCodeAt(idx);
-          _artichoke_string_putch(state, ptr, char);
-        }
-        return ptr;
-      };
-      const eval_ruby = source => {
-        const code = write_string(artichoke, source);
-        const output = _artichoke_eval(artichoke, code);
-        const result = read_string(artichoke, output);
-        _artichoke_string_free(artichoke, code);
-        _artichoke_string_free(artichoke, output);
-        return result;
-      };
-      const playground_run = () => {
-        const editor = ace.edit("editor");
-        const source = editor.getValue();
-        const output = eval_ruby(source);
-        document.getElementById("output").innerText = output;
-      };
       var Module = {
-        onRuntimeInitialized: function() {
+        onRuntimeInitialized: () => {
           window.artichoke = _artichoke_web_repl_init();
           document.getElementById(
             "artichoke-build-info"
-          ).innerText = read_string(artichoke, 0);
+          ).innerText = _artichoke_build_info();
           document
             .getElementById("run")
-            .addEventListener("click", playground_run);
+            .addEventListener("click", _artichoke_playground_eval);
         }
       };
     </script>
