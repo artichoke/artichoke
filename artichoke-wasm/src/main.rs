@@ -8,8 +8,6 @@ use artichoke_backend::Artichoke;
 use std::mem;
 use std::panic::{self, AssertUnwindSafe};
 
-// mod parser;
-// mod repl;
 mod meta;
 mod string;
 
