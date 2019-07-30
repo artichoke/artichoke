@@ -1,6 +1,5 @@
-use crate::convert::fixnum::Int;
 use crate::convert::{Convert, Error, TryConvert};
-use crate::value::types::{Ruby, Rust};
+use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -40,11 +39,10 @@ impl TryConvert<Value> for Option<Int> {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::fixnum::Int;
     use crate::convert::{Convert, TryConvert};
     use crate::eval::Eval;
     use crate::sys;
-    use crate::value::types::Ruby;
+    use crate::types::{Int, Ruby};
     use crate::value::Value;
 
     #[test]

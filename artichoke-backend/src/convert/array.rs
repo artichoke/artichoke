@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
-use crate::value::types::{Ruby, Rust};
+use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -26,17 +26,13 @@ impl Convert<Vec<Value>> for Value {
     fn convert(interp: &Artichoke, value: Vec<Self>) -> Self {
         let mrb = interp.borrow().mrb;
         let array =
-            unsafe { sys::mrb_ary_new_capa(mrb, i64::try_from(value.len()).unwrap_or_default()) };
+            unsafe { sys::mrb_ary_new_capa(mrb, Int::try_from(value.len()).unwrap_or_default()) };
 
         for (idx, item) in value.iter().enumerate() {
+            let idx = Int::try_from(idx).unwrap_or_default();
             unsafe {
-                sys::mrb_ary_set(
-                    mrb,
-                    array,
-                    i64::try_from(idx).unwrap_or_default(),
-                    item.inner(),
-                )
-            };
+                sys::mrb_ary_set(mrb, array, idx, item.inner());
+            }
         }
         Self::new(interp, array)
     }
@@ -49,27 +45,18 @@ impl Convert<Vec<Option<Value>>> for Value {
     fn convert(interp: &Artichoke, value: Vec<Option<Self>>) -> Self {
         let mrb = interp.borrow().mrb;
         let array =
-            unsafe { sys::mrb_ary_new_capa(mrb, i64::try_from(value.len()).unwrap_or_default()) };
+            unsafe { sys::mrb_ary_new_capa(mrb, Int::try_from(value.len()).unwrap_or_default()) };
 
         for (idx, item) in value.iter().enumerate() {
+            let idx = Int::try_from(idx).unwrap_or_default();
             if let Some(item) = item {
                 unsafe {
-                    sys::mrb_ary_set(
-                        mrb,
-                        array,
-                        i64::try_from(idx).unwrap_or_default(),
-                        item.inner(),
-                    )
-                };
+                    sys::mrb_ary_set(mrb, array, idx, item.inner());
+                }
             } else {
                 unsafe {
-                    sys::mrb_ary_set(
-                        mrb,
-                        array,
-                        i64::try_from(idx).unwrap_or_default(),
-                        sys::mrb_sys_nil_value(),
-                    )
-                };
+                    sys::mrb_ary_set(mrb, array, idx, sys::mrb_sys_nil_value());
+                }
             }
         }
         Self::new(interp, array)

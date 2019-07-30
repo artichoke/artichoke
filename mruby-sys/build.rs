@@ -19,11 +19,16 @@ impl Build {
     }
 
     fn build_config() -> String {
-        format!(
-            "{}/{}_build_config.rb",
-            &Build::root(),
-            &env::var("PROFILE").expect("PROFILE")
-        )
+        let target = env::var("TARGET").unwrap();
+        if target.starts_with("wasm32-") {
+            format!("{}/wasm_build_config.rb", &Build::root(),)
+        } else {
+            format!(
+                "{}/{}_build_config.rb",
+                &Build::root(),
+                &env::var("PROFILE").expect("PROFILE")
+            )
+        }
     }
 
     fn ext_source_dir() -> String {
@@ -59,7 +64,14 @@ impl Build {
     }
 
     fn mruby_out_dir() -> String {
-        format!("{}/sys/lib", &Build::mruby_build_dir())
+        let target = env::var("TARGET").unwrap();
+        if target == "wasm32-unknown-unknown" {
+            format!("{}/sys-wasm/lib", &Build::mruby_build_dir())
+        } else if target == "wasm32-unknown-emscripten" {
+            format!("{}/sys-emscripten/lib", &Build::mruby_build_dir())
+        } else {
+            format!("{}/sys/lib", &Build::mruby_build_dir())
+        }
     }
 
     fn bindgen_source_header() -> String {
@@ -127,19 +139,42 @@ fn main() {
         "cargo:rerun-if-changed={}/mruby-sys/ext.h",
         Build::ext_include_dir()
     );
-    cc::Build::new()
-        .file(Build::ext_source_file())
-        .include(Build::mruby_include_dir())
-        .include(Build::ext_include_dir())
-        .compile("libmrubysys.a");
+    if env::var("TARGET").unwrap().starts_with("wasm32-") {
+        cc::Build::new()
+            .file(Build::ext_source_file())
+            .include(Build::mruby_include_dir())
+            .include(Build::ext_include_dir())
+            .include(format!(
+                "{}/../target/emsdk/fastcomp/emscripten/system/include/libc",
+                Build::root()
+            ))
+            .compile("libmrubysys.a");
+    } else {
+        cc::Build::new()
+            .file(Build::ext_source_file())
+            .include(Build::mruby_include_dir())
+            .include(Build::ext_include_dir())
+            .compile("libmrubysys.a");
+    }
 
     println!("cargo:rerun-if-changed={}", Build::bindgen_source_header());
-    let bindings_path: PathBuf = [&Build::root(), "src", "ffi.rs"].iter().collect();
-    let bindings = bindgen::Builder::default()
+    let bindings_path: PathBuf = [&env::var("OUT_DIR").unwrap(), "ffi.rs"].iter().collect();
+    let mut bindings = bindgen::Builder::default()
         .header(Build::bindgen_source_header())
         .clang_arg(format!("-I{}", Build::mruby_include_dir()))
         .clang_arg(format!("-I{}", Build::ext_include_dir()))
         .clang_arg("-DMRB_DISABLE_STDIO")
+        .clang_arg("-DMRB_UTF8_STRING");
+    if env::var("TARGET").unwrap().starts_with("wasm32-") {
+        bindings = bindings
+            .clang_arg("-DMRB_INT32")
+            .clang_arg(format!(
+                "-I{}/../target/emsdk/fastcomp/emscripten/system/include/libc",
+                Build::root()
+            ))
+            .clang_arg("-fvisibility=default");
+    }
+    bindings
         .whitelist_function("^mrb.*")
         .whitelist_type("^mrb.*")
         .whitelist_var("^mrb.*")
@@ -155,8 +190,7 @@ fn main() {
         // See: https://github.com/rust-lang/rust-bindgen/issues/426
         .generate_comments(false)
         .generate()
-        .expect("Unable to generate mruby bindings");
-    bindings
+        .expect("Unable to generate mruby bindings")
         .write_to_file(bindings_path)
         .expect("Unable to write mruby bindings");
 }

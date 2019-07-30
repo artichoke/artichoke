@@ -13,7 +13,9 @@ mod args;
 #[allow(non_upper_case_globals)]
 #[allow(non_snake_case)]
 #[allow(clippy::all, clippy::pedantic)]
-mod ffi;
+mod ffi {
+    include!(concat!(env!("OUT_DIR"), "/ffi.rs"));
+}
 
 #[path = "ffi_tests.rs"]
 #[cfg(test)]

@@ -9,7 +9,7 @@ use std::rc::Rc;
 use crate::convert::Error;
 use crate::def::ClassLike;
 use crate::sys;
-use crate::value::types::{Ruby, Rust};
+use crate::types::{Ruby, Rust};
 use crate::value::{self, Value};
 use crate::{Artichoke, ArtichokeError};
 

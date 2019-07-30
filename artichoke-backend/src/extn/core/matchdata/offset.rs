@@ -6,6 +6,7 @@ use std::mem;
 use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
 use crate::sys;
+use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -19,7 +20,7 @@ pub enum Error {
 
 #[derive(Debug, Clone)]
 pub enum Args {
-    Index(i64),
+    Index(Int),
     Name(String),
 }
 
@@ -34,7 +35,7 @@ impl Args {
             first.as_mut_ptr(),
         );
         let first = first.assume_init();
-        if let Ok(index) = i64::try_convert(interp, Value::new(interp, first)) {
+        if let Ok(index) = Int::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Index(index))
         } else if let Ok(name) = String::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Name(name))
@@ -72,9 +73,9 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     let (begin, end) = captures.pos(index).ok_or(Error::NoMatch)?;
     let begin = match_against[0..begin].chars().count();
     let begin = begin + borrow.region.start;
-    let begin = i64::try_from(begin).map_err(|_| Error::Fatal)?;
+    let begin = Int::try_from(begin).map_err(|_| Error::Fatal)?;
     let end = match_against[0..end].chars().count();
     let end = end + borrow.region.start;
-    let end = i64::try_from(end).map_err(|_| Error::Fatal)?;
+    let end = Int::try_from(end).map_err(|_| Error::Fatal)?;
     Ok(Value::convert(&interp, vec![begin, end]))
 }

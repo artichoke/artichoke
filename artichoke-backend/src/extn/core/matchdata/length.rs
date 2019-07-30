@@ -4,6 +4,7 @@ use std::convert::TryFrom;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::matchdata::MatchData;
+use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -19,7 +20,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
     let captures = regex.captures(match_against);
     if let Some(captures) = captures {
-        let len = i64::try_from(captures.len()).map_err(|_| Error::Fatal)?;
+        let len = Int::try_from(captures.len()).map_err(|_| Error::Fatal)?;
         Ok(Value::convert(interp, len))
     } else {
         Ok(Value::convert(interp, 0))

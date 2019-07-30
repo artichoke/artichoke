@@ -1,5 +1,4 @@
 use log::trace;
-use std::io::{self, Write};
 use std::rc::Rc;
 
 use crate::convert::Convert;
@@ -7,7 +6,7 @@ use crate::def::{ClassLike, Define};
 use crate::eval::{Context, Eval};
 use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeError};
 use crate::sys;
-use crate::value::types::Ruby;
+use crate::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
@@ -143,22 +142,23 @@ impl Kernel {
         let args = args::Rest::extract(&interp);
 
         for value in args.map(|args| args.rest).unwrap_or_default() {
-            print!("{}", value.to_s());
+            let s = value.to_s();
+            interp.borrow_mut().print(s.as_str());
         }
-        let _ = io::stdout().flush();
         sys::mrb_sys_nil_value()
     }
 
     unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        fn do_puts(value: Value) {
+        fn do_puts(interp: &Artichoke, value: Value) {
             if value.ruby_type() == Ruby::Array {
                 if let Ok(array) = value.try_into::<Vec<Value>>() {
                     for value in array {
-                        do_puts(value);
+                        do_puts(interp, value);
                     }
                 }
             } else {
-                println!("{}", value.to_s());
+                let s = value.to_s();
+                interp.borrow_mut().puts(s.as_str());
             }
         }
 
@@ -168,10 +168,10 @@ impl Kernel {
             .unwrap_or_default();
 
         if rest.is_empty() {
-            println!();
+            interp.borrow_mut().puts("");
         }
         for value in rest {
-            do_puts(value);
+            do_puts(&interp, value);
         }
         sys::mrb_sys_nil_value()
     }

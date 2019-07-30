@@ -3,6 +3,7 @@
 use std::hash::{Hash, Hasher};
 
 use crate::extn::core::regexp::Regexp;
+use crate::types::Int;
 use crate::value::Value;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -18,7 +19,7 @@ pub enum Encoding {
 }
 
 impl Encoding {
-    pub fn flags(self) -> i64 {
+    pub fn flags(self) -> Int {
         match self {
             Encoding::Fixed => Regexp::FIXEDENCODING,
             Encoding::No => Regexp::NOENCODING,
@@ -62,7 +63,7 @@ impl PartialEq for Encoding {
 impl Eq for Encoding {}
 
 pub fn parse(value: &Value) -> Result<Encoding, Error> {
-    if let Ok(encoding) = value.itself::<i64>() {
+    if let Ok(encoding) = value.itself::<Int>() {
         // Only deal with Encoding opts
         let encoding = encoding & !Regexp::ALL_REGEXP_OPTS;
         if encoding == Regexp::FIXEDENCODING {

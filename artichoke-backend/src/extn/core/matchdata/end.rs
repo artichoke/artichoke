@@ -6,6 +6,7 @@ use std::mem;
 use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
 use crate::sys;
+use crate::types::Int;
 use crate::value::{Value, ValueLike};
 use crate::Artichoke;
 
@@ -19,7 +20,7 @@ pub enum Error {
 
 #[derive(Debug, Clone)]
 pub enum Args {
-    Index(i64),
+    Index(Int),
     Name(String),
 }
 
@@ -34,11 +35,11 @@ impl Args {
             first.as_mut_ptr(),
         );
         let first = first.assume_init();
-        if let Ok(index) = i64::try_convert(interp, Value::new(interp, first)) {
+        if let Ok(index) = Int::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Index(index))
         } else if let Ok(name) = String::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Name(name))
-        } else if let Ok(index) = Value::new(interp, first).funcall::<i64, _, _>("to_int", &[]) {
+        } else if let Ok(index) = Value::new(interp, first).funcall::<Int, _, _>("to_int", &[]) {
             Ok(Args::Index(index))
         } else {
             Err(Error::IndexType)
@@ -77,6 +78,6 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     let end = captures.pos(index).ok_or(Error::NoMatch)?.1;
     let end = match_against[0..end].chars().count();
     let end = end + borrow.region.start;
-    let end = i64::try_from(end).map_err(|_| Error::Fatal)?;
+    let end = Int::try_from(end).map_err(|_| Error::Fatal)?;
     Ok(Value::convert(&interp, end))
 }

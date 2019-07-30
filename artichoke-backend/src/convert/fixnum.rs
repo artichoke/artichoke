@@ -2,27 +2,18 @@ use std::convert::TryFrom;
 
 use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
-use crate::value::types::{Ruby, Rust};
+use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
-
-pub type Int = i64;
-
-impl Convert<Int> for Value {
-    type From = Rust;
-    type To = Ruby;
-
-    fn convert(interp: &Artichoke, value: Int) -> Self {
-        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(value) })
-    }
-}
 
 impl Convert<u8> for Value {
     type From = Rust;
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: u8) -> Self {
-        Self::convert(interp, Int::from(value))
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -31,16 +22,54 @@ impl Convert<u16> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: u16) -> Self {
-        Self::convert(interp, Int::from(value))
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl Convert<u32> for Value {
     type From = Rust;
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: u32) -> Self {
-        Self::convert(interp, Int::from(value))
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl TryConvert<u32> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: u32,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
+        let num = Int::try_from(value).map_err(|_| Error {
+            from: Rust::UnsignedInt,
+            to: Ruby::Fixnum,
+        })?;
+        Ok(Self::new(interp, sys::mrb_sys_fixnum_value(num)))
+    }
+}
+
+impl TryConvert<u64> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: u64,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
+        let num = Int::try_from(value).map_err(|_| Error {
+            from: Rust::UnsignedInt,
+            to: Ruby::Fixnum,
+        })?;
+        Ok(Self::new(interp, sys::mrb_sys_fixnum_value(num)))
     }
 }
 
@@ -49,7 +78,9 @@ impl Convert<i8> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: i8) -> Self {
-        Self::convert(interp, Int::from(value))
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -58,7 +89,9 @@ impl Convert<i16> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: i16) -> Self {
-        Self::convert(interp, Int::from(value))
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -67,7 +100,36 @@ impl Convert<i32> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: i32) -> Self {
-        Self::convert(interp, Int::from(value))
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Convert<i64> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    fn convert(interp: &Artichoke, value: Int) -> Self {
+        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(value) })
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl TryConvert<i64> for Value {
+    type From = Rust;
+    type To = Ruby;
+
+    unsafe fn try_convert(
+        interp: &Artichoke,
+        value: i64,
+    ) -> Result<Self, Error<Self::From, Self::To>> {
+        let num = Int::try_from(value).map_err(|_| Error {
+            from: Rust::SignedInt,
+            to: Ruby::Fixnum,
+        })?;
+        Ok(Self::convert(interp, num))
     }
 }
 
@@ -113,11 +175,10 @@ impl TryConvert<Value> for usize {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::fixnum::Int;
     use crate::convert::{Convert, Error, TryConvert};
     use crate::eval::Eval;
     use crate::sys;
-    use crate::value::types::{Ruby, Rust};
+    use crate::types::{Int, Ruby, Rust};
     use crate::value::Value;
 
     #[test]
