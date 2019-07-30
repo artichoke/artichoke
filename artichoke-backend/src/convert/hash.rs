@@ -21,7 +21,7 @@ impl Convert<Vec<(Value, Value)>> for Value {
     fn convert(interp: &Artichoke, value: Vec<(Self, Self)>) -> Self {
         let mrb = interp.borrow().mrb;
         let hash =
-            unsafe { sys::mrb_hash_new_capa(mrb, i64::try_from(value.len()).unwrap_or_default()) };
+            unsafe { sys::mrb_hash_new_capa(mrb, Int::try_from(value.len()).unwrap_or_default()) };
         for (key, val) in value {
             unsafe { sys::mrb_hash_set(mrb, hash, key.inner(), val.inner()) };
         }
@@ -265,7 +265,7 @@ mod value {
     mod tests {
         use std::collections::HashMap;
 
-        use crate::convert::{Convert, TryConvert};
+        use crate::convert::{Convert, Int, TryConvert};
         use crate::value::Value;
 
         #[test]
@@ -285,8 +285,8 @@ mod value {
             let map = pairs
                 .into_iter()
                 .map(|(key, value)| {
-                    let key = unsafe { i64::try_convert(&interp, key) }.expect("convert");
-                    let value = unsafe { i64::try_convert(&interp, value) }.expect("convert");
+                    let key = unsafe { Int::try_convert(&interp, key) }.expect("convert");
+                    let value = unsafe { Int::try_convert(&interp, value) }.expect("convert");
                     (key, value)
                 })
                 .collect::<HashMap<_, _>>();

@@ -1,6 +1,6 @@
 use log::trace;
 
-use crate::convert::{Convert, TryConvert};
+use crate::convert::TryConvert;
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
@@ -41,7 +41,12 @@ impl RString {
         if let Ok(s) = String::try_convert(&interp, Value::new(&interp, slf)) {
             if let Some(first) = s.chars().next() {
                 // One UTF-8 character, which are at most 32 bits.
-                Value::convert(&interp, first as u32).inner()
+                if let Ok(value) = Value::try_convert(&interp, first as u32) {
+                    value.inner()
+                } else {
+                    drop(s);
+                    ArgumentError::raise(interp, "Unicode out of range")
+                }
             } else {
                 drop(s);
                 ArgumentError::raise(interp, "empty string")

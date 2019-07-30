@@ -6,6 +6,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
+use crate::convert::Int;
 use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
 use crate::method;
 use crate::sys;
@@ -48,11 +49,12 @@ impl Spec {
     pub fn new_instance(&self, interp: &Artichoke, args: &[Value]) -> Option<Value> {
         let rclass = self.rclass(interp)?;
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
+        let arglen = Int::try_from(args.len()).unwrap_or_default();
         let value = unsafe {
             sys::mrb_obj_new(
                 interp.borrow().mrb,
                 rclass,
-                i64::try_from(args.len()).unwrap_or_default(),
+                arglen,
                 args.as_ptr() as *const sys::mrb_value,
             )
         };

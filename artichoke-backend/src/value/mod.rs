@@ -5,7 +5,7 @@ use std::fmt;
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{Convert, TryConvert};
+use crate::convert::{Convert, Int, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
@@ -80,7 +80,7 @@ where
                 // This will always unwrap because we've already checked that we
                 // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less
                 // than i64 max value.
-                i64::try_from(args.args.len()).unwrap_or_default(),
+                Int::try_from(args.args.len()).unwrap_or_default(),
                 args.args.as_ptr(),
             );
             sys::mrb_sys_raise_current_exception(mrb);
@@ -179,7 +179,7 @@ where
                 // This will always unwrap because we've already checked that we
                 // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less
                 // than i64 max value.
-                i64::try_from(args.args.len()).unwrap_or_default(),
+                Int::try_from(args.args.len()).unwrap_or_default(),
                 args.args.as_ptr(),
                 args.block,
             );
