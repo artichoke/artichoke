@@ -1,6 +1,8 @@
 //! [`Regexp#named_captures`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-named_captures)
 
-use crate::convert::{Convert, RustBackedValue};
+use std::convert::TryFrom;
+
+use crate::convert::{Convert, Int, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
 use crate::value::Value;
 use crate::Artichoke;
@@ -18,13 +20,12 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     // compliance.
     let mut map = vec![];
     for (name, index) in regex.capture_names() {
-        map.push((
-            name,
-            Value::convert(
-                interp,
-                index.iter().map(|idx| i64::from(*idx)).collect::<Vec<_>>(),
-            ),
-        ));
+        let mut indexes = vec![];
+        for idx in index {
+            let idx = Int::try_from(*idx).map_err(|_| Error::Fatal)?;
+            indexes.push(idx);
+        }
+        map.push((name, Value::convert(interp, indexes)));
     }
     Ok(Value::convert(interp, map))
 }

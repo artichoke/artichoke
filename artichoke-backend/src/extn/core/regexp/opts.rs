@@ -2,6 +2,7 @@
 
 use onig::RegexOptions;
 
+use crate::convert::Int;
 use crate::extn::core::regexp::Regexp;
 use crate::value::Value;
 
@@ -65,7 +66,7 @@ pub fn parse(value: &Value) -> Options {
     // Regexp::EXTENDED, Regexp::IGNORECASE, and Regexp::MULTILINE, logically
     // or-ed together. Otherwise, if options is not nil or false, the regexp
     // will be case insensitive.
-    if let Ok(options) = value.itself::<i64>() {
+    if let Ok(options) = value.itself::<Int>() {
         // Only deal with Regexp opts
         let options = options & Regexp::ALL_REGEXP_OPTS;
         Options {

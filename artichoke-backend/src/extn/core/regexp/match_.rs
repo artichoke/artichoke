@@ -4,7 +4,7 @@ use std::cmp;
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{Convert, Int, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
@@ -21,7 +21,7 @@ pub enum Error {
 #[derive(Debug)]
 pub struct Args {
     pub string: Option<String>,
-    pub pos: Option<i64>,
+    pub pos: Option<Int>,
     pub block: Option<Value>,
 }
 
@@ -52,7 +52,7 @@ impl Args {
             return Err(Error::StringType);
         };
         let pos = if has_pos {
-            let pos = i64::try_convert(&interp, Value::new(&interp, pos.assume_init()))
+            let pos = Int::try_convert(&interp, Value::new(&interp, pos.assume_init()))
                 .map_err(|_| Error::PosType)?;
             Some(pos)
         } else {
@@ -81,7 +81,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     };
     let pos = args.pos.unwrap_or_default();
     let pos = if pos < 0 {
-        let strlen = i64::try_from(string.chars().count()).unwrap_or_default();
+        let strlen = Int::try_from(string.chars().count()).unwrap_or_default();
         let pos = strlen + pos;
         if pos < 0 {
             return Ok(Value::convert(interp, None::<Value>));

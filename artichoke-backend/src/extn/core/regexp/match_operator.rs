@@ -4,7 +4,7 @@ use std::cmp;
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{Convert, Int, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
@@ -99,7 +99,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
             }
             (
                 matchdata,
-                Value::convert(interp, i64::try_from(match_pos.0).ok()),
+                Value::convert(interp, Int::try_from(match_pos.0).ok()),
             )
         } else {
             (matchdata, Value::convert(interp, None::<Value>))

@@ -3,7 +3,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use crate::convert::{Convert, RustBackedValue};
+use crate::convert::{Convert, Int, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
 use crate::value::Value;
 use crate::Artichoke;
@@ -20,5 +20,5 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     borrow.hash(&mut s);
     let hash = s.finish();
     #[allow(clippy::cast_possible_wrap)]
-    Ok(Value::convert(interp, hash as i64))
+    Ok(Value::convert(interp, hash as Int))
 }
