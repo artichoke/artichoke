@@ -5,15 +5,18 @@ set -x
 
 shopt -s globstar
 
+cargo build
+spec_runner="$(pwd)/target/debug/spec-runner"
+
 run_core_spec() {
   pushd "spec-runner/spec/ruby/core" >/dev/null
-  cargo run --bin spec-runner "$1"/**/*.rb
+  $spec_runner "$1"/**/*.rb
   popd >/dev/null
 }
 
 run_library_spec() {
   pushd "spec-runner/spec/ruby/library" >/dev/null
-  cargo run --bin spec-runner "$1"/**/*.rb
+  $spec_runner "$1"/**/*.rb
   popd >/dev/null
 }
 
