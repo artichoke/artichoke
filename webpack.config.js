@@ -41,7 +41,7 @@ module.exports = (env, argv) => {
         )
       }
     },
-    entry: path.resolve(__dirname, "artichoke-wasm/src/main.js"),
+    entry: path.resolve(__dirname, "artichoke-wasm/src/playground.js"),
     output: {
       path: path.resolve(__dirname, `target/webpack/${target}`)
     },
