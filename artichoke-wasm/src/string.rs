@@ -18,19 +18,25 @@ impl Heap {
         self.memory.remove(&ptr);
     }
 
-    pub fn string_getch(&self, ptr: u32, idx: u32) -> u32 {
-        if let Some(s) = self.memory.get(&ptr) {
-            s.as_bytes()[idx as usize] as u32
-        } else {
-            0
-        }
-    }
-
     pub fn string_getlen(&self, ptr: u32) -> u32 {
         if let Some(s) = self.memory.get(&ptr) {
             s.as_bytes().len() as u32
         } else {
             0
+        }
+    }
+
+    pub fn string_getch(&self, ptr: u32, idx: u32) -> u8 {
+        if let Some(s) = self.memory.get(&ptr) {
+            s.as_bytes()[idx as usize]
+        } else {
+            0
+        }
+    }
+
+    pub fn string_putch(&mut self, ptr: u32, ch: u8) {
+        if let Some(s) = self.memory.get_mut(&ptr) {
+            s.push(ch as char);
         }
     }
 }

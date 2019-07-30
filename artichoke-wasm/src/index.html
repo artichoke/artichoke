@@ -133,6 +133,14 @@
         }
         return chars.join("");
       };
+      const write_string = (state, s) => {
+        const ptr = _artichoke_string_new(state);
+        for (let idx = 0; idx < s.length; idx++) {
+          let char = s.charCodeAt(idx);
+          _artichoke_string_putch(state, ptr, char);
+        }
+        return ptr;
+      };
       var Module = {
         onRuntimeInitialized: function() {
           window.artichoke = _artichoke_web_repl_init();

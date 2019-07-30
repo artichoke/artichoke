@@ -53,11 +53,6 @@ pub fn artichoke_string_free(state: u32, ptr: u32) {
         panic!("null pointer");
     }
     let mut state = unsafe { Box::from_raw(state as *mut State) };
-    println!(
-        "freeing string pointer {} from {:?}",
-        ptr,
-        state.interp.borrow()
-    );
     state.heap.free(ptr);
     mem::forget(state);
 }
@@ -68,31 +63,30 @@ pub fn artichoke_string_getlen(state: u32, ptr: u32) -> u32 {
         panic!("null pointer");
     }
     let state = unsafe { Box::from_raw(state as *mut State) };
-    println!(
-        "retrieving string pointer {} from {:?}",
-        ptr,
-        state.interp.borrow()
-    );
     let len = state.heap.string_getlen(ptr);
     mem::forget(state);
     len
 }
 
 #[no_mangle]
-pub fn artichoke_string_getch(state: u32, ptr: u32, idx: u32) -> u32 {
+pub fn artichoke_string_getch(state: u32, ptr: u32, idx: u32) -> u8 {
     if state == 0 {
         panic!("null pointer");
     }
     let state = unsafe { Box::from_raw(state as *mut State) };
-    println!(
-        "retrieving byte {} in string pointer {} from {:?}",
-        idx,
-        ptr,
-        state.interp.borrow()
-    );
     let ch = state.heap.string_getch(ptr, idx);
     mem::forget(state);
     ch
+}
+
+#[no_mangle]
+pub fn artichoke_string_putch(state: u32, ptr: u32, ch: u8) {
+    if state == 0 {
+        panic!("null pointer");
+    }
+    let mut state = unsafe { Box::from_raw(state as *mut State) };
+    state.heap.string_putch(ptr, ch);
+    mem::forget(state);
 }
 
 #[cfg(link_args = r#"
@@ -100,7 +94,7 @@ pub fn artichoke_string_getch(state: u32, ptr: u32, idx: u32) -> u32 {
     -s LINKABLE=1
     -s ASSERTIONS=1
     -s ENVIRONMENT='web'
-    -s EXPORTED_FUNCTIONS=["_artichoke_web_repl_init","_artichoke_string_new","_artichoke_string_free","_artichoke_string_getlen","_artichoke_string_getch"]
+    -s EXPORTED_FUNCTIONS=["_artichoke_web_repl_init","_artichoke_string_new","_artichoke_string_free","_artichoke_string_getlen","_artichoke_string_getch","_artichoke_string_putch"]
     -s EXTRA_EXPORTED_RUNTIME_METHODS=["ccall","cwrap"]
 "#)]
 #[allow(unused_attributes)]
