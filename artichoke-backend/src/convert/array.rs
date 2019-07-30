@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
-use crate::convert::{Convert, Error, Int, TryConvert};
+use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
-use crate::types::{Ruby, Rust};
+use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 

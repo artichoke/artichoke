@@ -2,6 +2,13 @@ use std::fmt;
 
 use crate::sys;
 
+// Parameterize Fixnum integer type based on architecture.
+#[cfg(not(target_arch = "wasm32"))]
+pub type Int = i64;
+// WASM builds target 32-bit Ruby `Integer`s.
+#[cfg(target_arch = "wasm32")]
+pub type Int = i32;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Rust {
     Bool,

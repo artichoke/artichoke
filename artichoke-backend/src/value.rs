@@ -5,11 +5,11 @@ use std::fmt;
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{Convert, Int, TryConvert};
+use crate::convert::{Convert, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
-use crate::types::{Ruby, Rust};
+use crate::types::{Int, Ruby, Rust};
 use crate::Artichoke;
 use crate::ArtichokeError;
 

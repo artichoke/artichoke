@@ -2,8 +2,8 @@
 
 use std::hash::{Hash, Hasher};
 
-use crate::convert::Int;
 use crate::extn::core::regexp::Regexp;
+use crate::types::Int;
 use crate::value::Value;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]

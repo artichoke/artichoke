@@ -6,10 +6,10 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-use crate::convert::Int;
 use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
 use crate::method;
 use crate::sys;
+use crate::types::Int;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 

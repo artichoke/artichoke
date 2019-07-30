@@ -2,22 +2,18 @@ use std::convert::TryFrom;
 
 use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
-use crate::types::{Ruby, Rust};
+use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
-
-#[cfg(not(target_arch = "wasm32"))]
-pub type Int = i64;
-// WASM builds target 32-bit Ruby `Integer`s.
-#[cfg(target_arch = "wasm32")]
-pub type Int = i32;
 
 impl Convert<u8> for Value {
     type From = Rust;
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: u8) -> Self {
-        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(Int::from(value)) })
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -26,7 +22,9 @@ impl Convert<u16> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: u16) -> Self {
-        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(Int::from(value)) })
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -36,7 +34,9 @@ impl Convert<u32> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: u32) -> Self {
-        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(Int::from(value)) })
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -78,7 +78,9 @@ impl Convert<i8> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: i8) -> Self {
-        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(Int::from(value)) })
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -87,7 +89,9 @@ impl Convert<i16> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: i16) -> Self {
-        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(Int::from(value)) })
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -96,7 +100,9 @@ impl Convert<i32> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: i32) -> Self {
-        Self::new(interp, unsafe { sys::mrb_sys_fixnum_value(Int::from(value)) })
+        Self::new(interp, unsafe {
+            sys::mrb_sys_fixnum_value(Int::from(value))
+        })
     }
 }
 
@@ -169,11 +175,10 @@ impl TryConvert<Value> for usize {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::fixnum::Int;
     use crate::convert::{Convert, Error, TryConvert};
     use crate::eval::Eval;
     use crate::sys;
-    use crate::types::{Ruby, Rust};
+    use crate::types::{Int, Ruby, Rust};
     use crate::value::Value;
 
     #[test]

@@ -2,11 +2,10 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::hash::BuildHasher;
 
-use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
 use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
-use crate::types::{Ruby, Rust};
+use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -265,7 +264,7 @@ mod value {
     mod tests {
         use std::collections::HashMap;
 
-        use crate::convert::{Convert, Int, TryConvert};
+        use crate::types::Int;
         use crate::value::Value;
 
         #[test]

@@ -3,9 +3,10 @@
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::convert::{Convert, Int, RustBackedValue, TryConvert};
+use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
+use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 

@@ -9,11 +9,12 @@ use std::hash::{Hash, Hasher};
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{Convert, Int, RustBackedValue};
+use crate::convert::{Convert, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::sys;
+use crate::types::Int;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 

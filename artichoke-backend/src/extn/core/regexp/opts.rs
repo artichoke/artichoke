@@ -2,8 +2,8 @@
 
 use onig::RegexOptions;
 
-use crate::convert::Int;
 use crate::extn::core::regexp::Regexp;
+use crate::types::Int;
 use crate::value::Value;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]

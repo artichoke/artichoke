@@ -2,8 +2,9 @@
 
 use std::convert::TryFrom;
 
-use crate::convert::{Convert, Int, RustBackedValue};
+use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::regexp::Regexp;
+use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
