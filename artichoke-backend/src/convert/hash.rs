@@ -264,6 +264,7 @@ mod value {
     mod tests {
         use std::collections::HashMap;
 
+        use crate::convert::{Convert, TryConvert};
         use crate::types::Int;
         use crate::value::Value;
 

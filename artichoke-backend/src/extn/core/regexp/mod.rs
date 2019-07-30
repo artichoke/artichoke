@@ -9,7 +9,7 @@ use std::hash::{Hash, Hasher};
 use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{Convert, RustBackedValue};
+use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
@@ -145,9 +145,15 @@ impl Hash for Regexp {
 
 impl RustBackedValue for Regexp {
     fn new_obj_args(&self, interp: &Artichoke) -> Vec<sys::mrb_value> {
+        let literal_options = unsafe {
+            // use try_convert to support 32-bit Int.
+            Value::try_convert(interp, self.literal_options.flags().bits())
+                .unwrap()
+                .inner()
+        };
         vec![
             Value::convert(interp, self.literal_pattern.as_str()).inner(),
-            Value::convert(interp, self.literal_options.flags().bits() as i32).inner(),
+            literal_options,
             Value::convert(interp, self.encoding.flags()).inner(),
         ]
     }
