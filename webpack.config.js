@@ -68,7 +68,7 @@ module.exports = (env, argv) => {
         },
         {
           test: /-wasm\.js$/,
-          use: ["uglify-loader", "file-loader"]
+          use: ["uglify-loader", "script-loader"]
         },
         {
           test: /\.wasm$/,
