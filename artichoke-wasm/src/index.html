@@ -108,8 +108,7 @@
       <div class="d-flex my-1">
         <button id="run" type="button" class="btn btn-primary">Run</button>
         <code id="artichoke-build-info" class="mx-1 my-auto">
-          Artichoke mruby 2.0 [2.0.1-12] [rustc 1.38.0-nightly 6e310f2
-          2019-07-07]
+          Loading ...
         </code>
       </div>
       <div class="d-flex h-100 flex-grow">
@@ -124,5 +123,24 @@
         </p>
       </div>
     </div>
+    <script type="text/javascript">
+      const read_string = (state, ptr) => {
+        const len = _artichoke_string_getlen(state, ptr);
+        const chars = [];
+        for (let idx = 0; idx < len; idx++) {
+          let char = _artichoke_string_getch(state, ptr, idx);
+          chars.push(String.fromCharCode(char));
+        }
+        return chars.join("");
+      };
+      var Module = {
+        onRuntimeInitialized: function() {
+          window.artichoke = _artichoke_web_repl_init();
+          document.getElementById(
+            "artichoke-build-info"
+          ).innerText = read_string(artichoke, 0);
+        }
+      };
+    </script>
   </body>
 </html>
