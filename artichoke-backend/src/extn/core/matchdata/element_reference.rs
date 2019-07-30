@@ -3,7 +3,7 @@
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{Convert, Int, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
 use crate::sys;
 use crate::value::Value;
@@ -20,16 +20,16 @@ pub enum Error {
 
 #[derive(Debug, Clone)]
 pub enum Args {
-    Index(i64),
+    Index(Int),
     Name(String),
-    StartLen(i64, usize),
+    StartLen(Int, usize),
 }
 
 impl Args {
     const ARGSPEC: &'static [u8] = b"o|o?\0";
 
     pub unsafe fn extract(interp: &Artichoke, num_captures: usize) -> Result<Self, Error> {
-        let num_captures = i64::try_from(num_captures).map_err(|_| Error::Fatal)?;
+        let num_captures = Int::try_from(num_captures).map_err(|_| Error::Fatal)?;
         let mut first = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut second = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut has_second = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
@@ -44,12 +44,12 @@ impl Args {
         let second = second.assume_init();
         let has_length = has_second.assume_init() != 0;
         if has_length {
-            let start = i64::try_convert(&interp, Value::new(interp, first))
+            let start = Int::try_convert(&interp, Value::new(interp, first))
                 .map_err(|_| Error::IndexType)?;
             let len = usize::try_convert(&interp, Value::new(interp, second))
                 .map_err(|_| Error::LengthType)?;
             Ok(Args::StartLen(start, len))
-        } else if let Ok(index) = i64::try_convert(interp, Value::new(interp, first)) {
+        } else if let Ok(index) = Int::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Index(index))
         } else if let Ok(name) = String::try_convert(interp, Value::new(interp, first)) {
             Ok(Args::Name(name))
@@ -63,7 +63,7 @@ impl Args {
     unsafe fn is_range(
         interp: &Artichoke,
         first: sys::mrb_value,
-        num_captures: i64,
+        num_captures: Int,
     ) -> Result<Option<Self>, Error> {
         let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
         let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
@@ -95,14 +95,14 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     match args {
         Args::Index(index) => {
             if index < 0 {
-                // Positive i64 must be usize
+                // Positive Int must be usize
                 let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
                 match captures.len().checked_sub(index) {
                     Some(0) | None => Ok(Value::convert(interp, None::<Value>)),
                     Some(index) => Ok(Value::convert(interp, captures.at(index))),
                 }
             } else {
-                // Positive i64 must be usize
+                // Positive Int must be usize
                 let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
                 Ok(Value::convert(interp, captures.at(index)))
             }
