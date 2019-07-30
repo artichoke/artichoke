@@ -18,6 +18,10 @@ impl Heap {
         self.memory.remove(&ptr);
     }
 
+    pub fn string(&self, ptr: u32) -> &str {
+        self.memory.get(&ptr).map(|s| s.as_ref()).unwrap_or_default()
+    }
+
     pub fn string_getlen(&self, ptr: u32) -> u32 {
         if let Some(s) = self.memory.get(&ptr) {
             s.as_bytes().len() as u32

@@ -3,8 +3,10 @@
 #![allow(clippy::cast_possible_truncation, clippy::cast_lossless)]
 #![feature(link_args)]
 
+use artichoke_backend::eval::Eval;
 use artichoke_backend::Artichoke;
 use std::mem;
+use std::panic::{self, AssertUnwindSafe};
 
 // mod parser;
 // mod repl;
@@ -89,12 +91,29 @@ pub fn artichoke_string_putch(state: u32, ptr: u32, ch: u8) {
     mem::forget(state);
 }
 
+#[no_mangle]
+pub fn artichoke_eval(state: u32, ptr: u32) -> u32 {
+    if state == 0 {
+        panic!("null pointer");
+    }
+    let mut state = unsafe { Box::from_raw(state as *mut State) };
+    let code = state.heap.string(ptr);
+    let result = match panic::catch_unwind(AssertUnwindSafe(|| state.interp.eval(code))) {
+        Ok(Ok(value)) => format!("=> {}", value.inspect()),
+        Ok(Err(err)) => err.to_string(),
+        Err(_) => format!("Panicked during eval"),
+    };
+    let s = state.heap.allocate(result);
+    mem::forget(state);
+    s
+}
+
 #[cfg(link_args = r#"
     -s WASM=1
     -s LINKABLE=1
     -s ASSERTIONS=1
     -s ENVIRONMENT='web'
-    -s EXPORTED_FUNCTIONS=["_artichoke_web_repl_init","_artichoke_string_new","_artichoke_string_free","_artichoke_string_getlen","_artichoke_string_getch","_artichoke_string_putch"]
+    -s EXPORTED_FUNCTIONS=["_artichoke_web_repl_init","_artichoke_string_new","_artichoke_string_free","_artichoke_string_getlen","_artichoke_string_getch","_artichoke_string_putch","_artichoke_eval"]
     -s EXTRA_EXPORTED_RUNTIME_METHODS=["ccall","cwrap"]
 "#)]
 #[allow(unused_attributes)]
