@@ -63,8 +63,8 @@
       }
     </style>
 
-    <div class="container">
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container min-vh-100 vh-100 d-flex flex-column flex-grow">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light d-flex">
         <a class="navbar-brand" href="#">
           <img
             width="40"
@@ -104,13 +104,25 @@
           </ul>
         </div>
       </nav>
-      <h1>Artichoke Ruby Playground</h1>
-      <p>
-        This is a version of
-        <a href="https://github.com/artichoke/artichoke">Artichoke Ruby</a> that
-        runs in your browser using
-        <a href="https://webassembly.org/">WebAssembly</a>.
-      </p>
+
+      <div class="d-flex my-1">
+        <button id="run" type="button" class="btn btn-primary">Run</button>
+        <code id="artichoke-build-info" class="mx-1 my-auto">
+          Artichoke mruby 2.0 [2.0.1-12] [rustc 1.38.0-nightly 6e310f2
+          2019-07-07]
+        </code>
+      </div>
+      <div class="d-flex h-100 flex-grow">
+        <div id="editor" class="h-100 col-8"></div>
+        <pre id="output" class="h-100 w-100 ml-1 border overflow-auto"></pre>
+      </div>
+      <div class="d-flex">
+        <p>
+          Playground powered by a
+          <a href="https://webassembly.org/">WebAssembly</a> build of
+          <a href="https://github.com/artichoke/artichoke">Artichoke Ruby</a>.
+        </p>
+      </div>
     </div>
   </body>
 </html>
