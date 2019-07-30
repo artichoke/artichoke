@@ -166,10 +166,13 @@ fn main() {
         .clang_arg("-DMRB_DISABLE_STDIO")
         .clang_arg("-DMRB_UTF8_STRING");
     if env::var("TARGET").unwrap().starts_with("wasm32-") {
-        bindings = bindings.clang_arg("-DMRB_INT32").clang_arg(format!(
-            "-I{}/../target/emsdk/fastcomp/emscripten/system/include/libc",
-            Build::root()
-        ));
+        bindings = bindings
+            .clang_arg("-DMRB_INT32")
+            .clang_arg(format!(
+                "-I{}/../target/emsdk/fastcomp/emscripten/system/include/libc",
+                Build::root()
+            ))
+            .clang_arg("-fvisibility=default");
     }
     bindings
         .whitelist_function("^mrb.*")
