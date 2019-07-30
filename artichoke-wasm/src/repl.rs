@@ -1,5 +1,3 @@
-#![cfg(target_arch = "wasm32")]
-
 //! A REPL (read–eval–print–loop) for an artichoke interpreter exposed by
 //! the [`artichoke-backend`](artichoke_backend) crate.
 //!
@@ -9,7 +7,6 @@
 
 use artichoke_backend::eval::{Context, Eval};
 use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_backend::sys;
 use artichoke_backend::{Artichoke, ArtichokeError};
 use js_sys::Array;
 use wasm_bindgen::JsValue;
@@ -46,26 +43,7 @@ impl State {
     }
 }
 
-pub fn build_info() -> String {
-    let mut buf = "Artichoke ".to_owned();
-    buf.push('\n');
-    buf.push_str(sys::mruby_sys_version(true).as_str());
-    buf.push_str(
-        format!(
-            " [rustc {} {} {} {}]",
-            env!("TARGET"),
-            env!("RUSTC_VERSION"),
-            env!("RUSTC_COMMIT_HASH"),
-            env!("RUSTC_COMMIT_DATE")
-        )
-        .as_str(),
-    );
-    buf
-}
-
 pub fn init() -> Result<State, Error> {
-    console::log(&Array::of1(&JsValue::from_str(build_info().as_str())));
-
     let interp = artichoke_backend::interpreter().map_err(Error::Ruby)?;
 
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
