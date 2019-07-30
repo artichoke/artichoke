@@ -87,6 +87,7 @@ jobs:
       - run:
           name: WASM Build
           command: |
+            rustup target add wasm32-unknown-emscripten
             . ./scripts/activate-wasm-build-env.sh
             ./scripts/build-wasm.sh --release --no-webpack
       - run:
