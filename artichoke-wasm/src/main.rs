@@ -3,7 +3,7 @@
 #![allow(clippy::cast_possible_truncation, clippy::cast_lossless)]
 #![feature(link_args)]
 
-use artichoke_backend::eval::Eval;
+use artichoke_backend::eval::{Context, Eval};
 use artichoke_backend::Artichoke;
 use std::mem;
 use std::panic::{self, AssertUnwindSafe};
@@ -12,6 +12,8 @@ use std::panic::{self, AssertUnwindSafe};
 // mod repl;
 mod meta;
 mod string;
+
+const REPL_FILENAME: &str = "(playground)";
 
 struct State {
     interp: Artichoke,
@@ -28,6 +30,7 @@ pub fn artichoke_web_repl_init() -> u32 {
         }
     };
     interp.borrow_mut().capture_output();
+    interp.push_context(Context::new(REPL_FILENAME));
     let mut state = Box::new(State {
         interp,
         heap: string::Heap::default(),
