@@ -2,6 +2,7 @@ use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
+use std::io::{self, Write};
 use std::mem;
 use std::rc::Rc;
 
@@ -23,6 +24,7 @@ pub struct State {
     pub(crate) context_stack: Vec<Context>,
     pub num_set_regexp_capture_globals: usize,
     symbol_cache: HashMap<String, sys::mrb_sym>,
+    captured_output: Option<String>,
 }
 
 impl State {
@@ -39,6 +41,33 @@ impl State {
             context_stack: vec![],
             num_set_regexp_capture_globals: 0,
             symbol_cache: HashMap::default(),
+            captured_output: None,
+        }
+    }
+
+    pub fn capture_output(&mut self) {
+        self.captured_output = Some(String::default());
+    }
+
+    pub fn get_and_clear_captured_output(&mut self) -> String {
+        self.captured_output.replace(String::default()).unwrap_or_default()
+    }
+
+    pub fn print(&mut self, s: &str) {
+        if let Some(ref mut captured_output) = self.captured_output {
+            captured_output.push_str(s);
+        } else {
+            print!("{}", s);
+            let _ = io::stdout().flush();
+        }
+    }
+
+    pub fn puts(&mut self, s: &str) {
+        if let Some(ref mut captured_output) = self.captured_output {
+            captured_output.push_str(s);
+            captured_output.push('\n');
+        } else {
+            println!("{}", s);
         }
     }
 
