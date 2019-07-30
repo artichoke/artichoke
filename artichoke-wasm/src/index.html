@@ -194,7 +194,10 @@
       const eval_ruby = source => {
         const code = write_string(artichoke, source);
         const output = _artichoke_eval(artichoke, code);
-        return read_string(artichoke, output);
+        const result = read_string(artichoke, output);
+        _artichoke_string_free(artichoke, code);
+        _artichoke_string_free(artichoke, output);
+        return result;
       };
       const playground_run = () => {
         const editor = ace.edit("editor");
