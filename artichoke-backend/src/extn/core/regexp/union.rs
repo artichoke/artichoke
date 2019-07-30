@@ -5,7 +5,7 @@ use std::mem;
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::regexp::{syntax, Regexp};
 use crate::sys;
-use crate::value::types::Ruby;
+use crate::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::Artichoke;
 

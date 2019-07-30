@@ -3,7 +3,7 @@
 
 use crate::convert::Convert;
 use crate::sys;
-use crate::value::types::{Ruby, Rust};
+use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 

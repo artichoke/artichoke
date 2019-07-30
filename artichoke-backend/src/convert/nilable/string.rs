@@ -1,5 +1,5 @@
 use crate::convert::{Convert, Error, TryConvert};
-use crate::value::types::{Ruby, Rust};
+use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -53,7 +53,7 @@ mod tests {
     use crate::convert::{Convert, TryConvert};
     use crate::eval::Eval;
     use crate::sys;
-    use crate::value::types::Ruby;
+    use crate::types::Ruby;
     use crate::value::Value;
 
     #[test]

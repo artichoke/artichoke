@@ -7,7 +7,7 @@ use crate::def::{ClassLike, Define};
 use crate::eval::{Context, Eval};
 use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeError};
 use crate::sys;
-use crate::value::types::Ruby;
+use crate::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 

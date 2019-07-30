@@ -182,7 +182,7 @@ mod tests {
     use std::ffi::CString;
 
     use crate::sys;
-    use crate::value::types::*;
+    use crate::types::*;
 
     #[test]
     fn nil_type() {

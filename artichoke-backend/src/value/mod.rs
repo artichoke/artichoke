@@ -9,14 +9,11 @@ use crate::convert::{Convert, Int, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
+use crate::types::{Ruby, Rust};
 use crate::Artichoke;
 use crate::ArtichokeError;
 
-pub mod types;
-
-/// Max argument count for function calls including initialize.
-///
-/// Defined in `vm.c`.
+/// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 
 struct ProtectArgs {
@@ -62,7 +59,7 @@ where
 
     fn funcall<T, M, A>(&self, func: M, args: A) -> Result<T, ArtichokeError>
     where
-        T: TryConvert<Value, From = types::Ruby, To = types::Rust>,
+        T: TryConvert<Value, From = Ruby, To = Rust>,
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
@@ -110,7 +107,7 @@ where
         }
         trace!(
             "Calling {}#{} with {} args",
-            types::Ruby::from(self.inner()),
+            Ruby::from(self.inner()),
             func.as_ref(),
             args.len()
         );
@@ -161,7 +158,7 @@ where
         block: Value,
     ) -> Result<T, ArtichokeError>
     where
-        T: TryConvert<Value, From = types::Ruby, To = types::Rust>,
+        T: TryConvert<Value, From = Ruby, To = Rust>,
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
@@ -210,7 +207,7 @@ where
         }
         trace!(
             "Calling {}#{} with {} args and block",
-            types::Ruby::from(self.inner()),
+            Ruby::from(self.inner()),
             func.as_ref(),
             args.len()
         );
@@ -283,9 +280,9 @@ impl Value {
         self.value
     }
 
-    /// Return this values [Rust-mapped type tag](types::Ruby).
-    pub fn ruby_type(&self) -> types::Ruby {
-        types::Ruby::from(self.value)
+    /// Return this values [Rust-mapped type tag](Ruby).
+    pub fn ruby_type(&self) -> Ruby {
+        Ruby::from(self.value)
     }
 
     /// Some type tags like [`MRB_TT_UNDEF`](sys::mrb_vtype::MRB_TT_UNDEF) are
@@ -293,12 +290,12 @@ impl Value {
     /// unspecified and may result in a segfault.
     ///
     /// After extracting a [`sys::mrb_value`] from the interpreter, check to see
-    /// if the value is [unreachable](types::Ruby::Unreachable) and propagate an
+    /// if the value is [unreachable](Ruby::Unreachable) and propagate an
     /// [`ArtichokeError::UnreachableValue`](crate::ArtichokeError::UnreachableValue) error.
     ///
     /// See: <https://github.com/mruby/mruby/issues/4460>
     pub fn is_unreachable(&self) -> bool {
-        self.ruby_type() == types::Ruby::Unreachable
+        self.ruby_type() == Ruby::Unreachable
     }
 
     /// Prevent this value from being garbage collected.
@@ -350,7 +347,7 @@ impl Value {
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
     pub fn try_into<T>(self) -> Result<T, ArtichokeError>
     where
-        T: TryConvert<Self, From = types::Ruby, To = types::Rust>,
+        T: TryConvert<Self, From = Ruby, To = Rust>,
     {
         let interp = Rc::clone(&self.interp);
         unsafe { T::try_convert(&interp, self) }.map_err(ArtichokeError::ConvertToRust)
@@ -362,7 +359,7 @@ impl Value {
     /// If you want to consume this [`Value`], use [`Value::try_into`].
     pub fn itself<T>(&self) -> Result<T, ArtichokeError>
     where
-        T: TryConvert<Self, From = types::Ruby, To = types::Rust>,
+        T: TryConvert<Self, From = Ruby, To = Rust>,
     {
         self.clone().try_into::<T>()
     }
@@ -386,8 +383,8 @@ impl ValueLike for Value {
 }
 
 impl Convert<Value> for Value {
-    type From = types::Ruby;
-    type To = types::Rust;
+    type From = Ruby;
+    type To = Rust;
 
     fn convert(_interp: &Artichoke, value: Self) -> Self {
         value
@@ -408,7 +405,7 @@ impl fmt::Debug for Value {
 
 impl Clone for Value {
     fn clone(&self) -> Self {
-        if self.ruby_type() == types::Ruby::Data {
+        if self.ruby_type() == Ruby::Data {
             panic!("Cannot safely clone a Value with type tag Ruby::Data.");
         }
         Self {

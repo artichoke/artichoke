@@ -6,7 +6,7 @@ use crate::convert::fixnum::Int;
 use crate::convert::float::Float;
 use crate::convert::{Convert, Error, TryConvert};
 use crate::sys;
-use crate::value::types::{Ruby, Rust};
+use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 

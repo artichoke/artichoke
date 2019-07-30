@@ -1,7 +1,8 @@
 use std::error;
 use std::fmt;
 
-use crate::value::{types, Value};
+use crate::types::{Ruby, Rust};
+use crate::value::Value;
 use crate::Artichoke;
 
 mod array;
@@ -104,8 +105,8 @@ where
 
 // This converter implementation is for Ruby functions that return void.
 impl Convert<Value> for () {
-    type From = types::Ruby;
-    type To = types::Rust;
+    type From = Ruby;
+    type To = Rust;
 
     fn convert(_interp: &Artichoke, _value: Value) -> Self {}
 }
@@ -113,7 +114,7 @@ impl Convert<Value> for () {
 #[cfg(test)]
 mod tests {
     use crate::convert::Error;
-    use crate::value::types::*;
+    use crate::types::{Ruby, Rust};
 
     #[test]
     fn ruby_to_rust_error_display() {
