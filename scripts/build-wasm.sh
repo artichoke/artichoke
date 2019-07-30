@@ -15,6 +15,7 @@ target="wasm32-unknown-emscripten"
 profile=""
 out="target/webpack/debug/"
 webpack_mode="development"
+no_webpack=""
 
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -29,6 +30,9 @@ while [[ $# -gt 0 ]]; do
       out="target/webpack/release/"
       webpack_mode="production"
       ;;
+    --no-webpack)
+      no_webpack="1"
+      ;;
   esac
 done
 
@@ -41,5 +45,8 @@ if [[ -z $profile ]]; then
 else
   cargo build -Z config-profile --target "$target" -p artichoke-wasm "$profile"
 fi
-yarn run webpack --mode "$webpack_mode"
-yarn run webpack-dev-server --mode "$webpack_mode" --content-base "$out" --open
+
+if [[ -z $no_webpack ]]; then
+  yarn run webpack --mode "$webpack_mode"
+  yarn run webpack-dev-server --mode "$webpack_mode" --content-base "$out" --open
+fi

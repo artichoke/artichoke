@@ -85,6 +85,11 @@ jobs:
           environment:
             RUSTDOCFLAGS: "-Z unstable-options --enable-index-page"
       - run:
+          name: WASM Build
+          command: |
+            . ./scripts/activate-wasm-build-env.sh
+            ./scripts/build-wasm.sh --release --no-webpack
+      - run:
           name: ruby/spec Compliance Regression Test
           command: |
             ./scripts/spec-compliance.sh
@@ -97,6 +102,7 @@ jobs:
           root: target
           paths:
             - doc
+            - wasm32-unknown-emscripten
   c:
     docker:
       - image: circleci/node:lts
@@ -180,6 +186,12 @@ jobs:
           paths:
             - ~/.cache/yarn
             - node_modules
+      - run:
+          name: Webpack build of WASM assets
+          command: yarn run webpack --mode production
+      - run:
+          name: Copy WASM assets to dist
+          command: cp ./target/webpack/release/* ./target/doc
       - run:
           name: Configure git
           command: |
