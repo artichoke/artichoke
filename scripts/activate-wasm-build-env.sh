@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 ensure_emsdk() {
   yarn install >/dev/null 2>&1
   # shellcheck disable=SC2091
