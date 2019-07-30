@@ -176,18 +176,19 @@
     <script type="text/javascript">
       const read_string = (state, ptr) => {
         const len = _artichoke_string_getlen(state, ptr);
-        const chars = [];
+        const bytes = [];
         for (let idx = 0; idx < len; idx++) {
-          let char = _artichoke_string_getch(state, ptr, idx);
-          chars.push(String.fromCharCode(char));
+          let byte = _artichoke_string_getch(state, ptr, idx);
+          bytes.push(byte);
         }
-        return chars.join("");
+        return new TextDecoder().decode(new Uint8Array(bytes));
       };
       const write_string = (state, s) => {
         const ptr = _artichoke_string_new(state);
-        for (let idx = 0; idx < s.length; idx++) {
-          let char = s.charCodeAt(idx);
-          _artichoke_string_putch(state, ptr, char);
+        const bytes = new TextEncoder().encode(s);;
+        for (let idx = 0; idx < bytes.length; idx++) {
+          let byte = bytes[idx];
+          _artichoke_string_putch(state, ptr, byte);
         }
         return ptr;
       };

@@ -6,9 +6,12 @@ import "artichoke-wasm/artichoke_wasm.wasm";
 import "artichoke-wasm/deps/artichoke-wasm.js";
 
 const sample = `
+# The following calls to Kernel#require include real implementations of Ruby
+# Standard Library packages.
+#
 # https://ruby-doc.org/stdlib-2.5.1/libdoc/forwardable/rdoc/Forwardable.html
-require 'forwardable'
 # https://ruby-doc.org/stdlib-2.6.3/libdoc/set/rdoc/Set.html
+require 'forwardable'
 require 'set'
 
 class Registry
@@ -22,10 +25,9 @@ end
 
 registry = Registry.new
 
-3.times do
-  10.times do |record|
-    registry.add(record)
-  end
+10.times do |record|
+  registry.add("Artichoke")
+  registry.add("💎")
 end
 
 puts registry.to_a
