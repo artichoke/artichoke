@@ -4,11 +4,6 @@
 # executing a build.
 
 set -euo pipefail
-
-PATH="$(yarn bin):$PATH"
-export PATH
-cd "$(pkg-dir)"
-
 set -x
 
 target="wasm32-unknown-emscripten"
