@@ -102,9 +102,13 @@ pub fn artichoke_eval(state: u32, ptr: u32) -> u32 {
     let result = match panic::catch_unwind(AssertUnwindSafe(|| state.interp.eval(code))) {
         Ok(Ok(value)) => format!("=> {}", value.inspect()),
         Ok(Err(err)) => err.to_string(),
-        Err(_) => format!("Panicked during eval"),
+        Err(_) => "Panicked during eval".to_owned(),
     };
-    let result = format!("{}{}", state.interp.borrow_mut().get_and_clear_captured_output(), result);
+    let result = format!(
+        "{}{}",
+        state.interp.borrow_mut().get_and_clear_captured_output(),
+        result
+    );
     let s = state.heap.allocate(result);
     mem::forget(state);
     s

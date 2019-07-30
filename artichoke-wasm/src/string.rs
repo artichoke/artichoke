@@ -19,7 +19,10 @@ impl Heap {
     }
 
     pub fn string(&self, ptr: u32) -> &str {
-        self.memory.get(&ptr).map(|s| s.as_ref()).unwrap_or_default()
+        self.memory
+            .get(&ptr)
+            .map(|s| s.as_ref())
+            .unwrap_or_default()
     }
 
     pub fn string_getlen(&self, ptr: u32) -> u32 {

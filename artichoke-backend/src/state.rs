@@ -50,7 +50,9 @@ impl State {
     }
 
     pub fn get_and_clear_captured_output(&mut self) -> String {
-        self.captured_output.replace(String::default()).unwrap_or_default()
+        self.captured_output
+            .replace(String::default())
+            .unwrap_or_default()
     }
 
     pub fn print(&mut self, s: &str) {
