@@ -60,6 +60,8 @@ shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/
 ./scripts/format-text.sh --format "json"
 ./scripts/format-text.sh --format "yaml"
 ./scripts/format-text.sh --format "yml"
+## Lint with eslint
+yarn run eslint --fix .
 
 # Text sources
 

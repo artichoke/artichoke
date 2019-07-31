@@ -136,6 +136,22 @@ jobs:
           target: ./artichoke-frontend/ruby
       - rubocop:
           target: ./spec-runner/src
+  js:
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - checkout
+      - restore_cache:
+          key: js-yarn-v2-{{ checksum "yarn.lock" }}
+      - run: yarn install
+      - save_cache:
+          key: js-yarn-v2-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
+            - node_modules
+      - run:
+          name: Lint JavaScript with eslint
+          command: yarn run eslint .
   shell-format:
     docker:
       - image: peterdavehello/shfmt:latest
@@ -208,6 +224,7 @@ workflows:
       - rust
       - c
       - ruby
+      - js
       - shell-format
       - shellcheck/check:
           # we should also exclude "vendor" here but shellcheck/check exclude
