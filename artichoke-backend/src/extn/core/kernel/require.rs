@@ -82,7 +82,6 @@ impl Args {
 
 pub mod method {
     use log::trace;
-    use path_abs::PathAbs;
     use std::path::{Path, PathBuf};
     use std::rc::Rc;
 
@@ -125,11 +124,6 @@ pub mod method {
             vec![path.join(args.file.as_str())]
         };
         for path in files {
-            // canonicalize path (remove '.' and '..' components).
-            let path = match PathAbs::new(path) {
-                Ok(path) => path,
-                Err(_) => continue,
-            };
             let is_file = {
                 let api = interp.borrow();
                 api.vfs.is_file(path.as_path())

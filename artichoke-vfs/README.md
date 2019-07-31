@@ -15,7 +15,7 @@ the file system into particular states.
 
 ## License
 
-artichoke-vfs is a fork of `filesystem` crate at
+artichoke-vfs is a fork of filesystem at
 [v0.4.4](https://github.com/iredelmeier/filesystem-rs/tree/v0.4.4) copyright
-Isobel Redelmeier under the
+Isobel Redelmeier. filesystem is licensed with the
 [MIT License](https://github.com/iredelmeier/filesystem-rs/blob/v0.4.4/LICENSE).
