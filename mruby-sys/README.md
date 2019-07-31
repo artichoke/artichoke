@@ -23,16 +23,16 @@ things with C unions that are more convenient to do in C.
 
 mruby-sys is licensed under the [MIT License](../LICENSE).
 
-Some portions of mruby-sys are derived from
-[mrusty @ 1.0.0](https://github.com/anima-engine/mrusty/tree/v1.0.0) which is
-Copyright (C) 2016 Dragoș Tiselice under the
+mruby-sys vendors and links against [mruby](https://github.com/mruby/mruby)
+which is Copyright (c) 2019 mruby developers. mruby is licensed with the
+[MIT License](https://github.com/mruby/mruby/blob/master/LICENSE).
+
+Some portions of mruby-sys are derived from mrusty @
+[1.0.0](https://github.com/anima-engine/mrusty/tree/v1.0.0) which is Copyright
+(C) 2016 Dragoș Tiselice. mrusty is licensed with the
 [Mozilla Public License 2.0](https://github.com/anima-engine/mrusty/blob/v1.0.0/LICENSE).
 
-Some portions of mruby-sys are derived from
-[go-mruby @ cd6a04a](https://github.com/mitchellh/go-mruby/tree/cd6a04a) which
-is Copyright (c) 2017 Mitchell Hashimoto under the
+Some portions of mruby-sys are derived from go-mruby @
+[cd6a04a](https://github.com/mitchellh/go-mruby/tree/cd6a04a) which is Copyright
+(c) 2017 Mitchell Hashimoto. go-mruby is licensed with the
 [MIT License](https://github.com/mitchellh/go-mruby/blob/cd6a04a/LICENSE).
-
-mruby-sys links against [mruby](https://github.com/mruby/mruby) which is
-Copyright (c) 2019 mruby developers under the
-[MIT License](https://github.com/mruby/mruby/blob/master/LICENSE).
