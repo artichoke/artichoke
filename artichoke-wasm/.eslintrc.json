@@ -1,4 +1,9 @@
 {
+  "globals": {
+    "_artichoke_web_repl_init": "readonly",
+    "_artichoke_build_info": "readonly",
+    "_artichoke_playground_eval": "readonly"
+  },
   "rules": {
     "no-underscore-dangle": "off"
   }

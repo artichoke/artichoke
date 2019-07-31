@@ -151,7 +151,7 @@ jobs:
             - node_modules
       - run:
           name: Lint JavaScript with eslint
-          command: yarn run eslint .
+          command: yarn run eslint --ext .html,.js .
   shell-format:
     docker:
       - image: peterdavehello/shfmt:latest
