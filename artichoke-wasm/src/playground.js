@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import ace from "ace-builds";
 import "ace-builds/webpack-resolver";
 import "artichoke-wasm/artichoke_wasm.wasm";
-import "artichoke-wasm/deps/artichoke-wasm.js";
+import "artichoke-wasm/deps/artichoke-wasm";
 
 const sample = `
 # The following calls to Kernel#require include real implementations of Ruby
@@ -44,41 +44,43 @@ ace.edit("editor", {
 
 ace.edit("editor").setValue(sample.trim(), -1);
 
-const read_string = (state, ptr) => {
-  const len = window._artichoke_string_getlen(state, ptr);
-  const bytes = [];
-  for (let idx = 0; idx < len; idx++) {
-    let byte = window._artichoke_string_getch(state, ptr, idx);
-    bytes.push(byte);
+const Heap = {
+  read(state, ptr) {
+    const len = window._artichoke_string_getlen(state, ptr);
+    const bytes = [];
+    for (let idx = 0; idx < len; idx += 1) {
+      const byte = window._artichoke_string_getch(state, ptr, idx);
+      bytes.push(byte);
+    }
+    return new TextDecoder().decode(new Uint8Array(bytes));
+  },
+  write(state, s) {
+    const ptr = window._artichoke_string_new(state);
+    const bytes = new TextEncoder().encode(s);
+    for (let idx = 0; idx < bytes.length; idx += 1) {
+      const byte = bytes[idx];
+      window._artichoke_string_putch(state, ptr, byte);
+    }
+    return ptr;
   }
-  return new TextDecoder().decode(new Uint8Array(bytes));
 };
 
-const write_string = (state, s) => {
-  const ptr = window._artichoke_string_new(state);
-  const bytes = new TextEncoder().encode(s);
-  for (let idx = 0; idx < bytes.length; idx++) {
-    let byte = bytes[idx];
-    window._artichoke_string_putch(state, ptr, byte);
-  }
-  return ptr;
-};
-
-const eval_ruby = source => {
-  const code = write_string(artichoke, source);
+const evalRuby = source => {
+  const { artichoke } = window;
+  const code = Heap.write(artichoke, source);
   const output = window._artichoke_eval(artichoke, code);
-  const result = read_string(artichoke, output);
+  const result = Heap.read(artichoke, output);
   window._artichoke_string_free(artichoke, code);
   window._artichoke_string_free(artichoke, output);
   return result;
 };
 
-const playground_run = () => {
+const playgroundRun = () => {
   const editor = ace.edit("editor");
   const source = editor.getValue();
-  const output = eval_ruby(source);
+  const output = evalRuby(source);
   document.getElementById("output").innerText = output;
 };
 
-window._artichoke_build_info = () => read_string(window.artichoke, 0);
-window._artichoke_playground_eval = playground_run;
+window._artichoke_build_info = () => Heap.read(window.artichoke, 0);
+window._artichoke_playground_eval = playgroundRun;
