@@ -152,11 +152,11 @@ jobs:
       - run:
           name: Fake Wasm Sources
           command: |
-            mkdir -p target/wasm32-unknown-emscripten/debug/
+            mkdir -p target/wasm32-unknown-emscripten/debug/deps
             touch target/wasm32-unknown-emscripten/debug/artichoke-wasm.js
             touch target/wasm32-unknown-emscripten/debug/artichoke_wasm.wasm
             touch target/wasm32-unknown-emscripten/debug/deps/artichoke-wasm.js
-            mkdir -p target/wasm32-unknown-emscripten/release/
+            mkdir -p target/wasm32-unknown-emscripten/release/deps
             touch target/wasm32-unknown-emscripten/release/artichoke-wasm.js
             touch target/wasm32-unknown-emscripten/release/artichoke_wasm.wasm
             touch target/wasm32-unknown-emscripten/release/deps/artichoke-wasm.js
