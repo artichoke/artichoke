@@ -1,7 +1,9 @@
 # Artichoke Ruby
 
 [![CircleCI](https://circleci.com/gh/artichoke/artichoke.svg?style=svg)](https://circleci.com/gh/artichoke/artichoke)
-[![Documentation](https://img.shields.io/badge/docs-artichoke-blue.svg)](https://artichoke.github.io/artichoke/)
+[![Backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
+[![Virtual filesystem documentation](https://img.shields.io/badge/docs-artichoke--vfs-blue.svg)](https://artichoke.github.io/artichoke/artichoke_vfs/)
+[![mruby-sys documentation](https://img.shields.io/badge/docs-mruby--sys-blue.svg)](https://artichoke.github.io/artichoke/mruby_sys/)
 
 <p align="center">
   <img width="200" height="200" src="https://raw.githubusercontent.com/artichoke/logo/master/dist/artichoke-rb.png">
