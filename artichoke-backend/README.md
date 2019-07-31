@@ -198,3 +198,11 @@ CactusRef contains Ruby sources derived from Ruby @
 [2.6.3](https://github.com/ruby/ruby/tree/v2_6_3) which is copyright Yukihiro
 Matsumoto \<matz@netlab.jp\> under the
 [2-clause BSDL License](https://github.com/ruby/ruby/blob/v2_6_3/COPYING).
+
+artichoke-backend contains a fork of path_abs @
+[8370838](https://github.com/vitiral/path_abs/tree/8370838b6110786c2ba7cf7fd984a4783f37701c)
+which is copyright (c) 2018 Garrett Berg, vitiral@gmail.com. path_abs is dual
+licensed with the
+[MIT License](https://github.com/vitiral/path_abs/blob/8370838b6110786c2ba7cf7fd984a4783f37701c/LICENSE-MIT)
+and
+[Apache 2.0 License](https://github.com/vitiral/path_abs/blob/8370838b6110786c2ba7cf7fd984a4783f37701c/LICENSE-APACHE).
