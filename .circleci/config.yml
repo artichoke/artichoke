@@ -150,6 +150,15 @@ jobs:
             - ~/.cache/yarn
             - node_modules
       - run:
+          name: Fake Wasm Sources
+          command: |
+            mkdir -p target/wasm32-unknown-emscripten/debug/
+            touch target/wasm32-unknown-emscripten/debug/artichoke-wasm.js
+            touch target/wasm32-unknown-emscripten/debug/artichoke_wasm.wasm
+            mkdir -p target/wasm32-unknown-emscripten/release/
+            touch target/wasm32-unknown-emscripten/release/artichoke-wasm.js
+            touch target/wasm32-unknown-emscripten/release/artichoke_wasm.wasm
+      - run:
           name: Lint JavaScript with eslint
           command: yarn run eslint --ext .html,.js .
   shell-format:
