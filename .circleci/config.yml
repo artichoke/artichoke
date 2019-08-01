@@ -232,7 +232,7 @@ jobs:
             git config user.name "ci-build"
       - run:
           name: Deploy docs to gh-pages branch
-          command: yarn run gh-pages --message "[skip ci] generate docs" --dist target/doc
+          command: yarn run gh-pages --message "[skip ci] generate docs" --dist target/doc --git "$(which git)"
 workflows:
   version: 2
   build:
