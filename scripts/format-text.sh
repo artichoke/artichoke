@@ -34,7 +34,7 @@ check() {
     -and -not -path '*target*' \
     -and -not -path '*node_modules*' \
     -and -not -path '*spec/ruby*' -print0 |
-    xargs -0 yarn run prettier --write --check $(wrap "$1")
+    xargs -0 yarn run prettier --check $(wrap "$1")
 }
 
 if [[ $# -gt 1 && $1 == '--check' ]]; then
