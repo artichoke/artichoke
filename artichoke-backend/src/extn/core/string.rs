@@ -3,15 +3,11 @@ use log::trace;
 use crate::convert::TryConvert;
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
-#[cfg(target_arch = "wasm32")]
-use crate::extn::core::error::{ArgumentError, RubyException};
-#[cfg(not(target_arch = "wasm32"))]
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
 use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
-#[cfg(not(target_arch = "wasm32"))]
 mod scan;
 
 pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -25,7 +21,6 @@ pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     string
         .borrow_mut()
         .add_method("ord", RString::ord, sys::mrb_args_none());
-    #[cfg(not(target_arch = "wasm32"))]
     string
         .borrow_mut()
         .add_method("scan", RString::scan, sys::mrb_args_req(1));
@@ -61,7 +56,6 @@ impl RString {
         }
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     unsafe extern "C" fn scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
