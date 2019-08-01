@@ -4,37 +4,7 @@ import ace from "ace-builds";
 import "ace-builds/webpack-resolver";
 import "artichoke-wasm/artichoke_wasm.wasm";
 import "artichoke-wasm/deps/artichoke-wasm";
-const sample = `
-# frozen_string_literal: true
-
-require 'forwardable'
-require 'json'
-
-class Properties
-  extend Forwardable
-  def_delegators :@properties, :[], :[]=, :to_json
-
-  def initialize(name)
-    @name = name
-    @properties = {}
-  end
-
-  def inspect
-    @name
-  end
-end
-
-artichoke = Properties.new('Artichoke Ruby')
-artichoke[:language] = 'Ruby'
-artichoke[:implementation] = 'Artichoke'
-artichoke[:target] = 'wasm'
-artichoke[:emoji] = '💎'
-
-serialized = JSON.pretty_generate(artichoke)
-puts serialized if serialized =~ /💎/
-
-artichoke
-`;
+import sample from "./playground.rb";
 
 ace.edit("editor", {
   mode: "ace/mode/ruby",

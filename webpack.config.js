@@ -82,6 +82,10 @@ module.exports = (env, argv) => {
           use: ["svg-url-loader", "svgo-loader"]
         },
         {
+          test: /\.rb$/,
+          use: ["raw-loader"]
+        },
+        {
           test: /-wasm\.js$/,
           use: ["uglify-loader", "script-loader"]
         },
