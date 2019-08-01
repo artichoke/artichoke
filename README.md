@@ -25,7 +25,7 @@ MRI in the following ways:
   [Deterministic garbage collection](https://github.com/artichoke/artichoke/milestone/5).
 - ✅ Single binary distribution (all Ruby sources from core and stdlib are
   embedded in `artichoke` executable).
-- ❌ [WASM build target](https://github.com/artichoke/artichoke/milestone/6).
+- ❌ [WebAssembly build target](https://github.com/artichoke/artichoke/milestone/6).
 - ❌ [mruby](https://github.com/mruby/mruby)-compatible
   [C API (all 311 `MRB_API` functions)](https://github.com/artichoke/artichoke/milestone/7).
 - ❌

@@ -85,7 +85,7 @@ jobs:
           environment:
             RUSTDOCFLAGS: "-Z unstable-options --enable-index-page"
       - run:
-          name: WASM Build
+          name: Wasm Build
           command: |
             rustup target add wasm32-unknown-emscripten
             . ./scripts/activate-wasm-build-env.sh
@@ -220,10 +220,10 @@ jobs:
             - ~/.cache/yarn
             - node_modules
       - run:
-          name: Webpack build of WASM assets
+          name: Webpack build of Wasm assets
           command: yarn run webpack --mode production
       - run:
-          name: Copy WASM assets to dist
+          name: Copy Wasm assets to dist
           command: cp ./target/webpack/release/* ./target/doc
       - run:
           name: Configure git
