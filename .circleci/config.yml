@@ -161,6 +161,11 @@ jobs:
             touch target/wasm32-unknown-emscripten/release/artichoke_wasm.wasm
             touch target/wasm32-unknown-emscripten/release/deps/artichoke-wasm.js
       - run:
+          name: yarn check
+          command: |
+            yarn check --integrity
+            yarn check --verify-tree
+      - run:
           name: Lint JavaScript with eslint
           command: yarn run eslint --ext .html,.js .
   shell-format:
