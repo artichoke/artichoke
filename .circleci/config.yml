@@ -85,7 +85,7 @@ jobs:
           environment:
             RUSTDOCFLAGS: "-Z unstable-options --enable-index-page"
       - run:
-          name: WASM Build
+          name: Wasm Build
           command: |
             rustup target add wasm32-unknown-emscripten
             . ./scripts/activate-wasm-build-env.sh
@@ -161,6 +161,11 @@ jobs:
             touch target/wasm32-unknown-emscripten/release/artichoke_wasm.wasm
             touch target/wasm32-unknown-emscripten/release/deps/artichoke-wasm.js
       - run:
+          name: yarn check
+          command: |
+            yarn check --integrity
+            yarn check --verify-tree
+      - run:
           name: Lint JavaScript with eslint
           command: yarn run eslint --ext .html,.js .
   shell-format:
@@ -193,8 +198,8 @@ jobs:
             ./scripts/format-text.sh --check "html"
             ./scripts/format-text.sh --check "js"
             ./scripts/format-text.sh --check "json"
-            ./scripts/format-text.sh --format "yaml"
-            ./scripts/format-text.sh --format "yml"
+            ./scripts/format-text.sh --check "yaml"
+            ./scripts/format-text.sh --check "yml"
             ./scripts/format-text.sh --check "md"
   docs-deploy:
     docker:
@@ -215,10 +220,10 @@ jobs:
             - ~/.cache/yarn
             - node_modules
       - run:
-          name: Webpack build of WASM assets
+          name: Webpack build of Wasm assets
           command: yarn run webpack --mode production
       - run:
-          name: Copy WASM assets to dist
+          name: Copy Wasm assets to dist
           command: cp ./target/webpack/release/* ./target/doc
       - run:
           name: Configure git
@@ -227,7 +232,7 @@ jobs:
             git config user.name "ci-build"
       - run:
           name: Deploy docs to gh-pages branch
-          command: yarn run gh-pages --message "[skip ci] generate docs" --dist target/doc
+          command: yarn run gh-pages --message "[skip ci] generate docs" --dist target/doc --git "$(which git)"
 workflows:
   version: 2
   build:
