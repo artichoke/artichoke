@@ -198,8 +198,8 @@ jobs:
             ./scripts/format-text.sh --check "html"
             ./scripts/format-text.sh --check "js"
             ./scripts/format-text.sh --check "json"
-            ./scripts/format-text.sh --format "yaml"
-            ./scripts/format-text.sh --format "yml"
+            ./scripts/format-text.sh --check "yaml"
+            ./scripts/format-text.sh --check "yml"
             ./scripts/format-text.sh --check "md"
   docs-deploy:
     docker:
