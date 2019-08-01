@@ -117,7 +117,6 @@ pub fn artichoke_eval(state: u32, ptr: u32) -> u32 {
 
 #[cfg(link_args = r#"
     -s WASM=1
-    -s LINKABLE=1
     -s ASSERTIONS=1
     -s ENVIRONMENT='web'
     -s TOTAL_MEMORY=5242880
