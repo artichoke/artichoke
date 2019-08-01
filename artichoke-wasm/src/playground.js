@@ -6,32 +6,35 @@ import "artichoke-wasm/artichoke_wasm.wasm";
 import "artichoke-wasm/deps/artichoke-wasm";
 
 const sample = `
-# The following calls to Kernel#require include real implementations of Ruby
-# Standard Library packages.
-#
-# https://ruby-doc.org/stdlib-2.5.1/libdoc/forwardable/rdoc/Forwardable.html
-# https://ruby-doc.org/stdlib-2.6.3/libdoc/set/rdoc/Set.html
+# frozen_string_literal: true
+
 require 'forwardable'
-require 'set'
+require 'json'
 
-class Registry
+class Properties
   extend Forwardable
-  def_delegators :@records, :add, :to_a
+  def_delegators :@properties, :[], :[]=, :to_json
 
-  def initialize
-    @records = Set.new
+  def initialize(name)
+    @name = name
+    @properties = {}
+  end
+
+  def inspect
+    @name
   end
 end
 
-registry = Registry.new
+artichoke = Properties.new('Artichoke Ruby')
+artichoke[:language] = 'Ruby'
+artichoke[:implementation] = 'Artichoke'
+artichoke[:target] = 'wasm'
+artichoke[:emoji] = '💎'
 
-10.times do |record|
-  registry.add("Artichoke")
-  registry.add("💎")
-end
+serialized = JSON.pretty_generate(artichoke)
+puts serialized if serialized =~ /💎/
 
-puts registry.to_a
-registry.to_a
+artichoke
 `;
 
 ace.edit("editor", {
