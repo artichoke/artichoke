@@ -34,7 +34,10 @@ impl Options {
         bits
     }
 
-    pub fn modifier_string(self) -> &'static str {
+    // This function should return a &'static str but linking fails under the
+    // wasm32-unknown-emscripten build if this function does not return an owned
+    // String.
+    pub fn modifier_string(self) -> String {
         match (self.multiline, self.ignore_case, self.extended) {
             (true, true, true) => "mix",
             (true, true, false) => "mi",
@@ -45,9 +48,13 @@ impl Options {
             (false, false, true) => "x",
             (false, false, false) => "",
         }
+        .to_owned()
     }
 
-    fn onig_string(self) -> &'static str {
+    // This function should return a &'static str but linking fails under the
+    // wasm32-unknown-emscripten build if this function does not return an owned
+    // String.
+    fn onig_string(self) -> String {
         match (self.multiline, self.ignore_case, self.extended) {
             (true, true, true) => "mix",
             (true, true, false) => "mi-x",
@@ -58,6 +65,7 @@ impl Options {
             (false, false, true) => "x-mi",
             (false, false, false) => "-mix",
         }
+        .to_owned()
     }
 }
 
@@ -104,14 +112,14 @@ pub fn parse_pattern(pattern: &str, mut opts: Options) -> (String, Options) {
     match chars.next() {
         None => {
             pat_buf.push_str("(?");
-            pat_buf.push_str(opts.onig_string());
+            pat_buf.push_str(opts.onig_string().as_str());
             pat_buf.push(':');
             pat_buf.push(')');
             return (pat_buf, opts);
         }
         Some(token) if token != '(' => {
             pat_buf.push_str("(?");
-            pat_buf.push_str(opts.onig_string());
+            pat_buf.push_str(opts.onig_string().as_str());
             pat_buf.push(':');
             pat_buf.push_str(pattern);
             pat_buf.push(')');
@@ -123,7 +131,7 @@ pub fn parse_pattern(pattern: &str, mut opts: Options) -> (String, Options) {
     match chars.next() {
         None => {
             pat_buf.push_str("(?");
-            pat_buf.push_str(opts.onig_string());
+            pat_buf.push_str(opts.onig_string().as_str());
             pat_buf.push(':');
             pat_buf.push_str(pattern);
             pat_buf.push(')');
@@ -131,7 +139,7 @@ pub fn parse_pattern(pattern: &str, mut opts: Options) -> (String, Options) {
         }
         Some(token) if token != '?' => {
             pat_buf.push_str("(?");
-            pat_buf.push_str(opts.onig_string());
+            pat_buf.push_str(opts.onig_string().as_str());
             pat_buf.push(':');
             pat_buf.push_str(pattern);
             pat_buf.push(')');
@@ -156,7 +164,7 @@ pub fn parse_pattern(pattern: &str, mut opts: Options) -> (String, Options) {
             ':' => break,
             _ => {
                 pat_buf.push_str("(?");
-                pat_buf.push_str(opts.onig_string());
+                pat_buf.push_str(opts.onig_string().as_str());
                 pat_buf.push(':');
                 pat_buf.push_str(pattern);
                 pat_buf.push(')');
