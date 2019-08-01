@@ -63,7 +63,22 @@ module.exports = (env, argv) => {
           use: ["url-loader", "image-webpack-loader"]
         },
         {
+          test: /@artichoke\/logo\/logo\.svg/,
+          use: [
+            {
+              loader: "file-loader",
+              options: {
+                name: "[name].[ext]"
+              }
+            },
+            {
+              loader: "svgo-loader"
+            }
+          ]
+        },
+        {
           test: /\.svg$/,
+          exclude: /@artichoke\/logo\/logo\.svg/,
           use: ["svg-url-loader", "svgo-loader"]
         },
         {

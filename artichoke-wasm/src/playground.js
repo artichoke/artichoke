@@ -4,7 +4,6 @@ import ace from "ace-builds";
 import "ace-builds/webpack-resolver";
 import "artichoke-wasm/artichoke_wasm.wasm";
 import "artichoke-wasm/deps/artichoke-wasm";
-
 const sample = `
 # frozen_string_literal: true
 
