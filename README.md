@@ -6,7 +6,7 @@
 [![mruby-sys documentation](https://img.shields.io/badge/docs-mruby--sys-blue.svg)](https://artichoke.github.io/artichoke/mruby_sys/)
 
 <p align="center">
-  <img width="200" height="200" src="https://raw.githubusercontent.com/artichoke/logo/master/dist/artichoke-rb.png">
+  <img width="200" height="200" src="https://artichoke.github.io/artichoke/logo.svg">
 </p>
 
 Artichoke is a Ruby implementation written in Rust. Artichoke aspires to be
