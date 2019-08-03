@@ -1,51 +1,35 @@
-# Development Setup
+# Contributing to Artichoke
+
+👋 Hi and welcome to [Artichoke](https://github.com/artichoke). Thanks for
+taking the time to contribute! 💪💎🙌
+
+Artichoke aspires to be a Ruby 2.6.3-compatible implementation of the Ruby
+programming language.
+[There is lots to do](https://github.com/artichoke/artichoke/issues).
+
+If Artichoke does not run Ruby source code in the same way that MRI does, it is
+a bug and we would appreciate if you
+[filed an issue so we can fix it](https://github.com/artichoke/artichoke/issues/new).
+
+If you would like to contribute code 👩‍💻👨‍💻, find an issue that looks interesting
+and leave a comment that you're beginning to investigate. If there is no issue,
+please file one before beginning to work on a PR.
+
+## Implementation Philosophy
+
+- Prefer pure Ruby implementations when initially implementing features.
+- A feature is not done until it passes [ruby/spec](/doc/ruby-spec.md).
+- Move implementations to Rust for performance, e.g.
+  [using Serde to implement the JSON package](https://github.com/artichoke/artichoke/issues/77).
+- If there is a Rust crate that does what we need, prefer to use it. Forking is
+  OK, too, e.g.
+  [artichoke/rust-onig](https://github.com/artichoke/rust-onig/tree/wasm).
+
+## Setup
 
 Artichoke includes Rust, Ruby, C, Shell, and Text sources. Developing on
 Artichoke requires configuring several dependencies, which are orchestrated by
 [Yarn](https://yarnpkg.com/).
-
-## Linting
-
-Once you are [set up](#dependencies), run the following to lint sources:
-
-```shell
-yarn lint
-```
-
-Merges will be blocked by CI if there are lint errors.
-
-## Testing
-
-A PR must have tests for it to be merged. The
-[Rust book chapter on testing](https://doc.rust-lang.org/book/ch11-00-testing.html)
-is a good place to start. If you'd like to see some examples in Artichoke, take
-a look at the `Value` tests in
-[`mruby/src/value/mod.rs`](/mruby/src/value/mod.rs).
-
-To run tests:
-
-```shell
-cargo test
-```
-
-If you are only working on one package, it can speed up iteration time to only
-build and run tests for that package:
-
-```shell
-cargo test -p mruby
-```
-
-`cargo test` accepts a filter argument that will limit test execution to tests
-that substring match. For example, to run all of the
-[`Regexp`](/mruby/src/extn/core/regexp.rs) tests:
-
-```shell
-cargo test -p mruby regexp
-```
-
-Tests are run for every PR. All builds must pass before merging a PR.
-
-## Dependencies
 
 ### Rust Toolchain
 
@@ -158,6 +142,50 @@ On macOS, you can install shfmt and shellcheck with
 brew install shfmt shellcheck
 ```
 
+## Code Quality
+
+### Linting
+
+Once you [configure a development environment](#setup), run the following to
+lint sources:
+
+```shell
+yarn lint
+```
+
+Merges will be blocked by CI if there are lint errors.
+
+### Testing
+
+A PR must have tests for it to be merged. The
+[Rust book chapter on testing](https://doc.rust-lang.org/book/ch11-00-testing.html)
+is a good place to start. If you'd like to see some examples in Artichoke, take
+a look at the `Value` tests in
+[`artichoke-backend/src/value/mod.rs`](/artichoke-backend/src/value/mod.rs).
+
+To run tests:
+
+```shell
+cargo test
+```
+
+If you are only working on one package, it can speed up iteration time to only
+build and run tests for that package:
+
+```shell
+cargo test -p artichoke-backend
+```
+
+`cargo test` accepts a filter argument that will limit test execution to tests
+that substring match. For example, to run all of the
+[`Regexp`](/artichoke-backend/src/extn/core/regexp.rs) tests:
+
+```shell
+cargo test -p artichoke-backend regexp
+```
+
+Tests are run for every PR. All builds must pass before merging a PR.
+
 ## Updating Dependencies
 
 ### Rust Toolchain
@@ -203,7 +231,9 @@ would like to update the dependency and deal with any breakage, please do;
 otherwise, please
 [file an issue](https://github.com/artichoke/artichoke/issues/new).
 
-## Source Code Statistics
+## Code Analysis
+
+### Source Code Statistics
 
 To view statistics about the source code in Artichoke, you can run `yarn loc`,
 which depends on [loc](https://github.com/cgag/loc). You can install loc by
@@ -213,7 +243,7 @@ running:
 cargo install loc
 ```
 
-## Flamegraphs
+### Flamegraphs
 
 To generate flamegraphs with, you need the
 [inferno flamegraph implementation](https://github.com/jonhoo/inferno). You can
