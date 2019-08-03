@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+
 require 'erb'
 
 raise 'must provide a library to import' if ARGV[0].nil?
