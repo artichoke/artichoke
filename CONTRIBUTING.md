@@ -161,7 +161,7 @@ A PR must have tests for it to be merged. The
 [Rust book chapter on testing](https://doc.rust-lang.org/book/ch11-00-testing.html)
 is a good place to start. If you'd like to see some examples in Artichoke, take
 a look at the `Value` tests in
-[`mruby/src/value/mod.rs`](/mruby/src/value/mod.rs).
+[`artichoke-backend/src/value/mod.rs`](/artichoke-backend/src/value/mod.rs).
 
 To run tests:
 
@@ -173,15 +173,15 @@ If you are only working on one package, it can speed up iteration time to only
 build and run tests for that package:
 
 ```shell
-cargo test -p mruby
+cargo test -p artichoke-backend
 ```
 
 `cargo test` accepts a filter argument that will limit test execution to tests
 that substring match. For example, to run all of the
-[`Regexp`](/mruby/src/extn/core/regexp.rs) tests:
+[`Regexp`](/artichoke-backend/src/extn/core/regexp.rs) tests:
 
 ```shell
-cargo test -p mruby regexp
+cargo test -p artichoke-backend regexp
 ```
 
 Tests are run for every PR. All builds must pass before merging a PR.
