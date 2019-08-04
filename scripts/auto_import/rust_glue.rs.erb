@@ -1,0 +1,17 @@
+#![allow(clippy::pedantic)]
+use crate::load::LoadSources;
+use crate::Artichoke;
+use crate::ArtichokeError;
+
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    <% constants.each do |constant| %>
+    interp
+        .borrow_mut()
+        .def_class::<<%=constant%>>("<%=constant%>", None, None);
+    <% end %>
+    interp.def_rb_source_file("<%=filename%>", include_str!("<%=filename%>"))?;
+    Ok(())
+}
+<% constants.each_with_index do |constant, i| %>
+pub struct <%=constant%>;
+<% end %>

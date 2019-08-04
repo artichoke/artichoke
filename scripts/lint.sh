@@ -45,6 +45,8 @@ lint_ruby_sources artichoke-backend/src/extn
 lint_ruby_sources artichoke-frontend/ruby
 ## spec-runner
 lint_ruby_sources spec-runner/src
+## scripts
+lint_ruby_sources scripts/
 
 # C sources
 
