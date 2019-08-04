@@ -30,7 +30,6 @@ impl Build {
 fn main() {
     let opts = CopyOptions::new();
     let _ = dir::remove(Build::ruby_source_dir());
-
     dir::copy(
         Build::ruby_vendored_dir(),
         env::var("OUT_DIR").unwrap(),

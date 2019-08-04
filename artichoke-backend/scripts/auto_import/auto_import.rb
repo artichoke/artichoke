@@ -24,4 +24,5 @@ File.write("#{OUT_DIR}#{rust_filename}", output)
 
 # Add test for spec compliance. Make a commit here.
 # Run spec compliance tests with yarn spec.
-# If the tests pass, great. If they do not, there is likely a bug in Artichoke or an upstream bug in mruby. We can discuss in this issue how to proceed.
+# If the tests pass, great. If they do not, there is likely a bug in Artichoke
+# or an upstream bug in mruby. We can discuss in this issue how to proceed.
