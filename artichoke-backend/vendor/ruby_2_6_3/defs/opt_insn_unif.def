@@ -1,0 +1,27 @@
+#
+# a definition of instruction unification
+#
+#
+
+__END__
+
+putobject putobject
+putobject putstring
+putobject setlocal
+
+putstring putstring
+putstring putobject
+putstring setlocal
+
+# putnil end
+
+dup setlocal
+
+# from tarai
+getlocal getlocal
+# getlocal send
+
+# from tak, ackermann
+getlocal putobject
+
+
