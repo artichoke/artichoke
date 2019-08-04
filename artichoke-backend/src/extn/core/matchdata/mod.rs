@@ -157,8 +157,10 @@ impl MatchData {
         let num_captures = match Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
             Ok(data) => {
                 if let Some(regex) = (*data.borrow().regexp.regex).as_ref() {
-                    let Backend::Onig(regex) = regex;
-                    regex.captures_len()
+                    match regex {
+                        Backend::Onig(regex) => regex.captures_len(),
+                        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
+                    }
                 } else {
                     0
                 }

@@ -18,20 +18,24 @@ pub enum Error {
 pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
-    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
-    let Backend::Onig(regex) = regex;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
     let mut map = HashMap::default();
-    for (name, indexes) in regex.capture_names() {
-        'name: for index in indexes.iter().rev() {
-            let index = usize::try_from(*index).map_err(|_| Error::Fatal)?;
-            if let Some(capture) = captures.at(index) {
-                map.insert(name.to_owned(), Some(capture.to_owned()));
-                break 'name;
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    match regex {
+        Backend::Onig(regex) => {
+            let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
+            for (name, indexes) in regex.capture_names() {
+                'name: for index in indexes.iter().rev() {
+                    let index = usize::try_from(*index).map_err(|_| Error::Fatal)?;
+                    if let Some(capture) = captures.at(index) {
+                        map.insert(name.to_owned(), Some(capture.to_owned()));
+                        break 'name;
+                    }
+                    map.insert(name.to_owned(), None);
+                }
             }
-            map.insert(name.to_owned(), None);
         }
-    }
+        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
+    };
     Ok(Value::convert(interp, map))
 }

@@ -17,18 +17,22 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let borrow = data.borrow();
     let mut names = vec![];
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
-    let Backend::Onig(regex) = regex;
-    let mut capture_names = regex.capture_names().collect::<Vec<_>>();
-    capture_names.sort_by(|a, b| {
-        a.1.iter()
-            .fold(u32::max_value(), |a, &b| a.min(b))
-            .partial_cmp(b.1.iter().fold(&u32::max_value(), |a, b| a.min(b)))
-            .unwrap_or(Ordering::Equal)
-    });
-    for (name, _) in capture_names {
-        if !names.contains(&name) {
-            names.push(name);
+    match regex {
+        Backend::Onig(regex) => {
+            let mut capture_names = regex.capture_names().collect::<Vec<_>>();
+            capture_names.sort_by(|a, b| {
+                a.1.iter()
+                    .fold(u32::max_value(), |a, &b| a.min(b))
+                    .partial_cmp(b.1.iter().fold(&u32::max_value(), |a, b| a.min(b)))
+                    .unwrap_or(Ordering::Equal)
+            });
+            for (name, _) in capture_names {
+                if !names.contains(&name) {
+                    names.push(name);
+                }
+            }
         }
+        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     }
     Ok(Value::convert(&interp, names))
 }

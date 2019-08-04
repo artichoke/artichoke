@@ -37,6 +37,7 @@ dependencies = [
  "onig 4.3.2 (git+https://github.com/artichoke/rust-onig?branch=wasm)",
  "quickcheck 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickcheck_macros 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
