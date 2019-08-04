@@ -21,6 +21,17 @@ const plugins = [
       useShortDoctype: true
     }
   }),
+  new HtmlWebPackPlugin({
+    template: "regexp-benchmark.html",
+    filename: "benchmarks/regexp/index.html",
+    minify: {
+      collapseWhitespace: true,
+      minifyCSS: true,
+      minifyJS: true,
+      removeComments: true,
+      useShortDoctype: true
+    }
+  }),
   new HtmlWebpackInlineSourcePlugin()
 ];
 
@@ -35,6 +46,7 @@ module.exports = (env, argv) => {
     context: path.resolve(__dirname, "artichoke-wasm/src"),
     resolve: {
       alias: {
+        "artichoke-bench": path.resolve(__dirname, `target/bench`),
         "artichoke-wasm": path.resolve(
           __dirname,
           `target/wasm32-unknown-emscripten/${target}`
@@ -43,7 +55,8 @@ module.exports = (env, argv) => {
     },
     entry: path.resolve(__dirname, "artichoke-wasm/src/playground.js"),
     output: {
-      path: path.resolve(__dirname, `target/webpack/${target}`)
+      path: path.resolve(__dirname, `target/webpack/${target}`),
+      publicPath: "/artichoke/"
     },
     module: {
       rules: [
@@ -82,7 +95,7 @@ module.exports = (env, argv) => {
           use: ["svg-url-loader", "svgo-loader"]
         },
         {
-          test: /\.rb$/,
+          test: /\.(rb|txt)$/,
           use: ["raw-loader"]
         },
         {
