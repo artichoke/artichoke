@@ -56,9 +56,9 @@ lint_ruby_sources scripts
 # Shell sources
 
 ## Format with shfmt
-shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -w
+shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v /vendor/ | xargs shfmt -i 2 -ci -s -w
 ## Lint with shellcheck
-shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v spec-runner/spec/ | grep -v vendor/ | xargs shellcheck
+shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v /vendor/ | xargs shellcheck
 
 # Web sources
 

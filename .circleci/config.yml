@@ -245,9 +245,7 @@ workflows:
       - js
       - shell-format
       - shellcheck/check:
-          # we should also exclude "vendor" here but shellcheck/check exclude
-          # only support a single exclude path.
-          exclude: ./spec-runner/spec/*
+          exclude: "*/vendor/*"
       - text
       - docs-deploy:
           requires:

@@ -15,7 +15,7 @@ impl Build {
     }
 
     fn mspec_vendored_dir() -> String {
-        format!("{}/spec/mspec", &Build::root(),)
+        format!("{}/vendor/mspec", &Build::root(),)
     }
 
     fn mspec_source_dir() -> String {
@@ -23,7 +23,7 @@ impl Build {
     }
 
     fn patch(patch: &str) -> String {
-        format!("{}/spec/{}", Build::root(), patch)
+        format!("{}/vendor/{}", Build::root(), patch)
     }
 }
 
