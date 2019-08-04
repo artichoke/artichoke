@@ -6,7 +6,7 @@ use std::mem;
 
 use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
@@ -99,6 +99,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
 
     let borrow = data.borrow();
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
+    let Backend::Onig(regex) = regex;
     let match_target = &string[byte_offset..];
     if let Some(captures) = regex.captures(match_target) {
         let num_regexp_globals_to_set = {

@@ -5,7 +5,7 @@ use std::mem;
 
 use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -57,6 +57,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     };
     let borrow = data.borrow();
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
+    let Backend::Onig(regex) = regex;
     let matchdata = if let Some(captures) = regex.captures(string.as_str()) {
         let num_regexp_globals_to_set = {
             let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;

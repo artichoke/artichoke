@@ -4,6 +4,7 @@ use std::cmp::Ordering;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::matchdata::MatchData;
+use crate::extn::core::regexp::Backend;
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -16,6 +17,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
     let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    let Backend::Onig(regex) = regex;
     let mut names = vec![];
     let mut capture_names = regex.capture_names().collect::<Vec<_>>();
     capture_names.sort_by(|a, b| {

@@ -5,7 +5,7 @@ use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::enc::Encoding;
 use crate::extn::core::regexp::opts::Options;
-use crate::extn::core::regexp::{syntax, Regexp};
+use crate::extn::core::regexp::{syntax, Backend, Regexp};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};
@@ -80,6 +80,7 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
     let mut was_match = false;
     let mut collected = vec![];
     let regex = (*regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    let Backend::Onig(regex) = regex;
     let len = regex.captures_len();
 
     if len > 0 {
