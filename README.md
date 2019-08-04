@@ -30,6 +30,8 @@ MRI in the following ways:
   [WebAssembly build target](https://github.com/artichoke/artichoke/milestone/6).
   Partially supported with the wasm32-unknown-emscripten target on the
   [playground](https://artichoke.github.io/artichoke/).
+- ❌ [MRI](https://github.com/ruby/ruby)-compatible
+  [C API](https://github.com/artichoke/artichoke/milestone/7).
 - ❌ [mruby](https://github.com/mruby/mruby)-compatible
   [C API (all 311 `MRB_API` functions)](https://github.com/artichoke/artichoke/milestone/7).
 - ❌
@@ -46,7 +48,6 @@ Artichoke will deviate from MRI in the following ways:
 - The only supported encodings are UTF-8,
   [maybe UTF-8](https://github.com/BurntSushi/bstr), and binary.
 - Ruby source files are always interpreted as UTF-8.
-- No equivalent C API, which means C extensions are unsupported.
 
 ## ruby/spec
 
