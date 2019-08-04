@@ -136,6 +136,8 @@ jobs:
           target: ./artichoke-frontend/ruby
       - rubocop:
           target: ./spec-runner/src
+      - rubocop:
+          target: ./scripts
   js:
     docker:
       - image: circleci/node:lts
