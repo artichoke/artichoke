@@ -91,60 +91,64 @@ impl Args {
 pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
-    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
-    let Backend::Onig(regex) = regex;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
-    match args {
-        Args::Index(index) => {
-            if index < 0 {
-                // Positive Int must be usize
-                let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
-                match captures.len().checked_sub(index) {
-                    Some(0) | None => Ok(Value::convert(interp, None::<Value>)),
-                    Some(index) => Ok(Value::convert(interp, captures.at(index))),
-                }
-            } else {
-                // Positive Int must be usize
-                let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
-                Ok(Value::convert(interp, captures.at(index)))
-            }
-        }
-        Args::Name(name) => {
-            let index = regex
-                .capture_names()
-                .find_map(|capture| {
-                    if capture.0 == name {
-                        Some(capture.1)
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    match regex {
+        Backend::Onig(regex) => {
+            let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
+            match args {
+                Args::Index(index) => {
+                    if index < 0 {
+                        // Positive Int must be usize
+                        let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
+                        match captures.len().checked_sub(index) {
+                            Some(0) | None => Ok(Value::convert(interp, None::<Value>)),
+                            Some(index) => Ok(Value::convert(interp, captures.at(index))),
+                        }
                     } else {
-                        None
+                        // Positive Int must be usize
+                        let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
+                        Ok(Value::convert(interp, captures.at(index)))
                     }
-                })
-                .ok_or_else(|| Error::NoGroup(name))?;
-            let group = index
-                .iter()
-                .filter_map(|index| {
-                    usize::try_from(*index)
-                        .ok()
-                        .and_then(|index| captures.at(index))
-                })
-                .last();
-            Ok(Value::convert(interp, group))
-        }
-        Args::StartLen(start, len) => {
-            let start = if start < 0 {
-                // Positive i64 must be usize
-                let start = usize::try_from(-start).map_err(|_| Error::Fatal)?;
-                captures.len().checked_sub(start).ok_or(Error::Fatal)?
-            } else {
-                // Positive i64 must be usize
-                usize::try_from(start).map_err(|_| Error::Fatal)?
-            };
-            let mut matches = vec![];
-            for index in start..(start + len) {
-                matches.push(captures.at(index));
+                }
+                Args::Name(name) => {
+                    let index = regex
+                        .capture_names()
+                        .find_map(|capture| {
+                            if capture.0 == name {
+                                Some(capture.1)
+                            } else {
+                                None
+                            }
+                        })
+                        .ok_or_else(|| Error::NoGroup(name))?;
+                    let group = index
+                        .iter()
+                        .filter_map(|index| {
+                            usize::try_from(*index)
+                                .ok()
+                                .and_then(|index| captures.at(index))
+                        })
+                        .last();
+                    Ok(Value::convert(interp, group))
+                }
+                Args::StartLen(start, len) => {
+                    let start = if start < 0 {
+                        // Positive i64 must be usize
+                        let start = usize::try_from(-start).map_err(|_| Error::Fatal)?;
+                        captures.len().checked_sub(start).ok_or(Error::Fatal)?
+                    } else {
+                        // Positive i64 must be usize
+                        usize::try_from(start).map_err(|_| Error::Fatal)?
+                    };
+                    let mut matches = vec![];
+                    for index in start..(start + len) {
+                        matches.push(captures.at(index));
+                    }
+                    Ok(Value::convert(interp, matches))
+                }
             }
-            Ok(Value::convert(interp, matches))
         }
+        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     }
 }

@@ -15,9 +15,13 @@ pub enum Error {
 pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
-    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
-    let Backend::Onig(regex) = regex;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
-    Ok(Value::convert(&interp, captures.at(0).unwrap_or_default()))
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    match regex {
+        Backend::Onig(regex) => {
+            let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
+            Ok(Value::convert(&interp, captures.at(0).unwrap_or_default()))
+        }
+        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
+    }
 }

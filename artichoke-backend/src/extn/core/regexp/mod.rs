@@ -5,6 +5,7 @@
 //! the `Args` struct for invoking the function.
 
 use onig::{self, Syntax};
+use regex;
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::rc::Rc;
@@ -129,6 +130,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 #[derive(Debug)]
 pub enum Backend {
     Onig(onig::Regex),
+    Rust(regex::Regex),
 }
 
 #[derive(Debug, Clone, Default)]

@@ -81,9 +81,11 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     }
     let byte_offset = string.chars().take(pos).collect::<String>().len();
 
+    let match_target = &string[byte_offset..];
     let borrow = data.borrow();
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
-    let Backend::Onig(regex) = regex;
-    let match_target = &string[byte_offset..];
-    Ok(Value::convert(interp, regex.find(match_target).is_some()))
+    match regex {
+        Backend::Onig(regex) => Ok(Value::convert(interp, regex.find(match_target).is_some())),
+        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
+    }
 }

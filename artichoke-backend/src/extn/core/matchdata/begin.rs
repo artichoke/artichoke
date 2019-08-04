@@ -51,33 +51,37 @@ impl Args {
 pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
-    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
-    let Backend::Onig(regex) = regex;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
-    let index = match args {
-        Args::Index(index) => {
-            if index < 0 {
-                // Positive Int must be usize
-                let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
-                captures.len().checked_sub(index).ok_or(Error::Fatal)?
-            } else {
-                // Positive Int must be usize
-                usize::try_from(index).map_err(|_| Error::Fatal)?
-            }
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    let begin = match regex {
+        Backend::Onig(regex) => {
+            let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
+            let index = match args {
+                Args::Index(index) => {
+                    if index < 0 {
+                        // Positive Int must be usize
+                        let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
+                        captures.len().checked_sub(index).ok_or(Error::Fatal)?
+                    } else {
+                        // Positive Int must be usize
+                        usize::try_from(index).map_err(|_| Error::Fatal)?
+                    }
+                }
+                Args::Name(name) => {
+                    let index = regex
+                        .capture_names()
+                        .find(|capture| capture.0 == name)
+                        .ok_or(Error::NoGroup)?
+                        .1
+                        .last()
+                        .ok_or(Error::NoMatch)?;
+                    usize::try_from(*index).map_err(|_| Error::Fatal)?
+                }
+            };
+            captures.pos(index).ok_or(Error::NoMatch)?.0
         }
-        Args::Name(name) => {
-            let index = regex
-                .capture_names()
-                .find(|capture| capture.0 == name)
-                .ok_or(Error::NoGroup)?
-                .1
-                .last()
-                .ok_or(Error::NoMatch)?;
-            usize::try_from(*index).map_err(|_| Error::Fatal)?
-        }
+        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     };
-    let begin = captures.pos(index).ok_or(Error::NoMatch)?.0;
     let begin = match_against[0..begin].chars().count();
     let begin = begin + borrow.region.start;
     let begin = Int::try_from(begin).map_err(|_| Error::Fatal)?;
