@@ -6,7 +6,7 @@ use std::mem;
 
 use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
@@ -50,6 +50,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
+    let Backend::Onig(regex) = regex;
     let string = if let Some(string) = args.string {
         string
     } else {

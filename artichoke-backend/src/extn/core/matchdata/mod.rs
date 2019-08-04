@@ -12,13 +12,11 @@
 //! are
 //! [implemented in Ruby](https://github.com/artichoke/artichoke/blob/master/artichoke-backend/src/extn/core/matchdata/matchdata.rb).
 
-use onig::Regex;
-
 use crate::convert::{Convert, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
@@ -157,9 +155,14 @@ impl MatchData {
     ) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
         let num_captures = match Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
-            Ok(data) => (*data.borrow().regexp.regex)
-                .as_ref()
-                .map_or(0, Regex::captures_len),
+            Ok(data) => {
+                if let Some(regex) = (*data.borrow().regexp.regex).as_ref() {
+                    let Backend::Onig(regex) = regex;
+                    regex.captures_len()
+                } else {
+                    0
+                }
+            }
             Err(_) => return sys::mrb_sys_nil_value(),
         };
         let value = Value::new(&interp, slf);

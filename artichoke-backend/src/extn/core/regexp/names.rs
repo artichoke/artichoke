@@ -3,7 +3,7 @@
 use std::cmp::Ordering;
 
 use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp::{Backend, Regexp};
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -17,6 +17,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let borrow = data.borrow();
     let mut names = vec![];
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
+    let Backend::Onig(regex) = regex;
     let mut capture_names = regex.capture_names().collect::<Vec<_>>();
     capture_names.sort_by(|a, b| {
         a.1.iter()

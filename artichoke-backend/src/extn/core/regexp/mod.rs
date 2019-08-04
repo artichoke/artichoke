@@ -4,7 +4,7 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
-use onig::{Regex, Syntax};
+use onig::{self, Syntax};
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::rc::Rc;
@@ -126,6 +126,11 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     Ok(())
 }
 
+#[derive(Debug)]
+pub enum Backend {
+    Onig(onig::Regex),
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Regexp {
     literal_pattern: String,
@@ -133,7 +138,7 @@ pub struct Regexp {
     literal_options: opts::Options,
     options: opts::Options,
     encoding: enc::Encoding,
-    pub regex: Rc<Option<Regex>>,
+    pub regex: Rc<Option<Backend>>,
 }
 
 impl Hash for Regexp {
@@ -178,7 +183,9 @@ impl Regexp {
         options: opts::Options,
         encoding: enc::Encoding,
     ) -> Option<Self> {
-        let regex = Regex::with_options(&pattern, options.flags(), Syntax::ruby()).ok()?;
+        let regex = Backend::Onig(
+            onig::Regex::with_options(&pattern, options.flags(), Syntax::ruby()).ok()?,
+        );
         let regex = Rc::new(Some(regex));
         let regexp = Self {
             literal_pattern,

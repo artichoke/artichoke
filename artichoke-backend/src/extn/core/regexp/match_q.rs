@@ -4,7 +4,7 @@ use std::convert::TryFrom;
 use std::mem;
 
 use crate::convert::{Convert, RustBackedValue, TryConvert};
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
@@ -83,6 +83,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
 
     let borrow = data.borrow();
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
+    let Backend::Onig(regex) = regex;
     let match_target = &string[byte_offset..];
     Ok(Value::convert(interp, regex.find(match_target).is_some()))
 }

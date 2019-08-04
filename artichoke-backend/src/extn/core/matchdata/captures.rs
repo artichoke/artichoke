@@ -2,6 +2,7 @@
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::matchdata::MatchData;
+use crate::extn::core::regexp::Backend;
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -15,6 +16,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
     let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    let Backend::Onig(regex) = regex;
     let match_against = &borrow.string[borrow.region.start..borrow.region.end];
     let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
     let mut iter = captures.iter();
