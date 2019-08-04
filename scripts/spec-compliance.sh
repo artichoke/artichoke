@@ -9,13 +9,13 @@ cargo build
 spec_runner="$(pwd)/target/debug/spec-runner"
 
 run_core_spec() {
-  pushd "spec-runner/spec/ruby/core" >/dev/null
+  pushd "spec-runner/vendor/ruby/core" >/dev/null
   $spec_runner "$1"/**/*.rb
   popd >/dev/null
 }
 
 run_library_spec() {
-  pushd "spec-runner/spec/ruby/library" >/dev/null
+  pushd "spec-runner/vendor/ruby/library" >/dev/null
   $spec_runner "$1"/**/*.rb
   popd >/dev/null
 }
