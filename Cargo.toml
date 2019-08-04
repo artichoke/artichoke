@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "artichoke-backend",
+  "artichoke-core",
   "artichoke-frontend",
   "artichoke-vfs",
   "artichoke-wasm",
