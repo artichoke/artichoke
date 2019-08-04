@@ -94,6 +94,10 @@ jobs:
           name: ruby/spec Compliance Regression Test
           command: |
             ./scripts/spec-compliance.sh
+      - run:
+          name: Artichoke Regexp Bench
+          command: |
+            ./scripts/bench-regexp.sh --artichoke
       - save_cache:
           key: rust-cargo-v2-{{ checksum "Cargo.lock" }}
           paths:
@@ -102,6 +106,7 @@ jobs:
       - persist_to_workspace:
           root: target
           paths:
+            - bench
             - doc
             - wasm32-unknown-emscripten
   c:
@@ -138,6 +143,14 @@ jobs:
           target: ./spec-runner/src
       - rubocop:
           target: ./scripts
+      - run:
+          name: MRI Regexp Bench
+          command: |
+            ./scripts/bench-regexp.sh --mri
+      - persist_to_workspace:
+          root: target
+          paths:
+            - bench
   js:
     docker:
       - image: circleci/node:lts
