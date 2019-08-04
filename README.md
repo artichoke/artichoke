@@ -28,6 +28,8 @@ MRI in the following ways:
   embedded in `artichoke` executable).
 - ❌
   [WebAssembly build target](https://github.com/artichoke/artichoke/milestone/6).
+  Partially supported with the wasm32-unknown-emscripten target on the
+  [playground](https://artichoke.github.io/artichoke/).
 - ❌ [mruby](https://github.com/mruby/mruby)-compatible
   [C API (all 311 `MRB_API` functions)](https://github.com/artichoke/artichoke/milestone/7).
 - ❌
