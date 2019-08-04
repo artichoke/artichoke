@@ -1,3 +1,5 @@
+//! Support for Ruby `Exception`s.
+
 use std::fmt;
 
 use crate::ArtichokeError;

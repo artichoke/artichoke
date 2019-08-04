@@ -1,5 +1,5 @@
 #![deny(clippy::all, clippy::pedantic)]
-#![deny(warnings, intra_doc_link_resolution_failure)]
+#![deny(missing_docs, warnings, intra_doc_link_resolution_failure)]
 #![doc(deny(warnings))]
 
 //! # artichoke-core
@@ -46,7 +46,12 @@ pub enum ArtichokeError {
     /// Class or module with this name is not defined in the artichoke VM.
     NotDefined(String),
     /// Arg count exceeds maximum allowed by the VM.
-    TooManyArgs { given: usize, max: usize },
+    TooManyArgs {
+        /// Number of arguments supplied.
+        given: usize,
+        /// Maximum number of arguments supported.
+        max: usize,
+    },
     /// Attempted to use an uninitialized interpreter.
     Uninitialized,
     /// Eval or funcall returned an interpreter-internal value.

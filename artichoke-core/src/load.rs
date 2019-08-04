@@ -7,6 +7,8 @@ use crate::ArtichokeError;
 /// and Rust sources into the VM.
 #[allow(clippy::module_name_repetitions)]
 pub trait LoadSources {
+    /// Concrete type object to modify the interpreter once a source is
+    /// `require`d.
     type Require;
 
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub

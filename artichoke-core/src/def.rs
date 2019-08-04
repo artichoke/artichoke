@@ -129,6 +129,9 @@ pub trait ClassLike {
     /// `ClassLike`.
     fn add_self_method(&mut self, name: &str, method: Self::Method, args: Self::ArgSpec);
 
+    /// Name of this `Class` or `Module`.
+    ///
+    /// The local constant defined in the [`EnclosingRubyScope`].
     fn name(&self) -> String;
 
     /// The [`EnclosingRubyScope`] this `ClassLike` will be defined under or

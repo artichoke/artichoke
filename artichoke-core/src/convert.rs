@@ -1,27 +1,53 @@
+//! Convert between Rust and Ruby objects.
+
 use std::error;
 use std::fmt;
 
+/// Infallible conversion between two types.
+///
+/// See [`std::convert::From`].
 pub trait Convert {
+    /// Concrete type for the interpreter.
     type Artichoke;
+
+    /// Concrete type for source of the conversion.
     type From;
+
+    /// Concrete type for an error this conversion may produce.
+    ///
+    /// `Error` is required for infallible conversions so they can be wrapped
+    /// by a [fallible conversion](TryConvert) blanked implementation.
     type Error;
 
+    /// Performs the infallible conversion.
     fn convert(interp: Self::Artichoke, value: Self::From) -> Self;
 }
 
+/// Fallible conversions between two types.
+///
+/// See [`std::convert::TryFrom`].
 #[allow(clippy::module_name_repetitions)]
 pub trait TryConvert
 where
     Self: Sized,
 {
+    /// Concrete type for the interpreter.
     type Artichoke;
+
+    /// Concrete type for source of the conversion.
     type From;
+
+    /// Concrete type for an error this conversion may produce.
+    ///
+    /// `Error` is required for infallible conversions so they can be wrapped
+    /// by a [fallible conversion](TryConvert) blanked implementation.
     type Error;
 
+    /// Performs the fallible conversion.
     unsafe fn try_convert(interp: Self::Artichoke, value: Self::From) -> Result<Self, Self::Error>;
 }
 
-/// Provide a falible converter for types that implement an infallible
+/// Provide a fallible converter for types that implement an infallible
 /// conversion.
 impl<T> TryConvert for T
 where
@@ -36,6 +62,7 @@ where
     }
 }
 
+/// Error for a failed conversion from `From` to `To`.
 #[derive(Clone, Eq, PartialEq)]
 pub struct Error<From, To> {
     from: From,
