@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 log = "0.4.6"
+regex = "1"
 
 [dependencies.artichoke-vfs]
 path = "../artichoke-vfs"
