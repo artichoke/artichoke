@@ -15,6 +15,11 @@ If you would like to contribute code 👩‍💻👨‍💻, find an issue that 
 and leave a comment that you're beginning to investigate. If there is no issue,
 please file one before beginning to work on a PR.
 
+## Discussion
+
+If you'd like to engage in a discussion outside of GitHub, you can
+[join Artichoke's public Discord server](https://discord.gg/QCe2tp2).
+
 ## Implementation Philosophy
 
 - Prefer pure Ruby implementations when initially implementing features.
