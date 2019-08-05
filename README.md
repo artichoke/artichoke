@@ -11,7 +11,7 @@
 </p>
 
 Artichoke is a Ruby implementation written in Rust. Artichoke aspires to be
-source-compatible with [Ruby 2.6.3](https://github.com/ruby/ruby/tree/v2_6_3).
+compatible with [Ruby 2.6.3](https://github.com/ruby/ruby/tree/v2_6_3).
 
 ## Why Artichoke?
 
