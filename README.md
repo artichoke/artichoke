@@ -1,6 +1,8 @@
 # Artichoke Ruby
 
 [![CircleCI](https://circleci.com/gh/artichoke/artichoke.svg?style=svg)](https://circleci.com/gh/artichoke/artichoke)
+[![Discord](https://img.shields.io/discord/607683947496734760)](https://discord.gg/QCe2tp2)
+<br>
 [![Core documentation](https://img.shields.io/badge/docs-artichoke--core-blue.svg)](https://artichoke.github.io/artichoke/artichoke_core/)
 [![Virtual filesystem documentation](https://img.shields.io/badge/docs-artichoke--vfs-blue.svg)](https://artichoke.github.io/artichoke/artichoke_vfs/)
 [![mruby backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
@@ -87,3 +89,8 @@ a bug and we would appreciate if you
 If you would like to contribute code 👩‍💻👨‍💻, find an issue that looks interesting
 and leave a comment that you're beginning to investigate. If there is no issue,
 please file one before beginning to work on a PR.
+
+### Discussion
+
+If you'd like to engage in a discussion outside of GitHub, you can
+[join Artichoke's public Discord server](https://discord.gg/QCe2tp2).
