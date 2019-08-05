@@ -41,6 +41,7 @@ lint_ruby_sources() {
 
 ## Backend Core and StdLib
 lint_ruby_sources artichoke-backend/src/extn
+lint_ruby_sources artichoke-backend/scripts
 ## Frontend bins
 lint_ruby_sources artichoke-frontend/ruby
 ## spec-runner

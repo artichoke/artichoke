@@ -23,3 +23,6 @@ env_logger = "0.6.1"
 libc = "0.2"
 quickcheck = "0.8"
 quickcheck_macros = "0.8"
+
+[build-dependencies]
+fs_extra = "1.1.0"
