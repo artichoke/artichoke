@@ -67,8 +67,8 @@ The Artichoke Playground runs a [WebAssembly](https://webassembly.org/) build of
 Artichoke.
 
 If you would prefer to run a local build,
-[set up a Rust toolchain](/doc/development-setup.md) and launch an interactive
-Artichoke shell with:
+[set up a Rust toolchain](/CONTRIBUTING.md#rust-toolchain) and launch an
+interactive Artichoke shell with:
 
 ```shell
 cargo run -p artichoke-frontend --bin airb
