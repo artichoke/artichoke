@@ -9,7 +9,9 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .borrow_mut()
         .def_class::<<%=constant%>>("<%=constant%>", None, None);
     <% end %>
-    interp.def_rb_source_file("<%=filename%>", include_str!("<%=filename%>"))?;
+    <% sources.each do |(file, source)| %>
+      interp.def_rb_source_file("<%=file%>.rb", include_str!(concat!(env!("OUT_DIR"), "/src/generated/<%=file%>.rs")))?;
+    <% end %>
     Ok(())
 }
 <% constants.each_with_index do |constant, i| %>
