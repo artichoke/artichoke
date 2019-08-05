@@ -2,9 +2,10 @@
 
 # The purpose of this script is to open a fresh interpreter, pull the constants,
 # require a library and figure out what constants were added.
-base = ARGV[0]
-package = ARGV[1]
-require package
-lib_sources = $LOADED_FEATURES.select { |f| f.start_with?(base) }
-package_sources = lib_sources.select { |f| f =~ %r{/#{package}} }
+BASE = ARGV[0]
+PACKAGE = ARGV[1]
+$LOAD_PATH.unshift(BASE)
+require PACKAGE
+lib_sources = $LOADED_FEATURES.select { |f| f.include?(BASE) }
+package_sources = lib_sources.select { |f| f =~ /#{PACKAGE}/ }
 puts package_sources.sort

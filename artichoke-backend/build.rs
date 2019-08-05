@@ -3,10 +3,8 @@
 #![doc(deny(warnings))]
 
 use fs_extra::dir;
-// use fs_extra::file::{self, CopyOptions};
 use std::env;
 use std::fs;
-use std::path::Path;
 use std::process::Command;
 
 /// Path helpers
@@ -29,25 +27,30 @@ impl Build {
         format!("{}/vendor/ruby_2_6_3", &Build::root())
     }
 
+    fn ruby_vendored_lib_dir() -> String {
+        format!("{}/lib", &Build::ruby_vendored_dir())
+    }
+
     fn patch(patch: &str) -> String {
         format!("{}/vendor/{}", Build::root(), patch)
     }
 
     fn get_package_files(package: &str) -> String {
-        let output = Command::new("bash")
-            .arg("-c")
+        let output = Command::new("ruby")
             .arg(format!(
-                "ruby -I {}/lib {}/scripts/auto_import/get_package_files.rb '{}' '{}'",
-                &Build::ruby_vendored_dir(),
-                &Build::root(),
-                &Build::ruby_vendored_dir(),
-                package
+                "{}/scripts/auto_import/get_package_files.rb",
+                Build::root()
             ))
+            .arg(Build::ruby_vendored_lib_dir())
+            .arg(package)
             .output()
             .unwrap();
 
         if !output.status.success() {
-            panic!("Command executed with failing error code");
+            panic!(
+                "Command executed with failing error: {}",
+                String::from_utf8(output.stderr).unwrap()
+            );
         }
         return String::from_utf8(output.stdout).unwrap();
     }
@@ -56,49 +59,44 @@ impl Build {
         format!("{}/{}.rs", Build::generated_dir(), package)
     }
 
-    fn generate_rust_glue(package: &str) {
-        println!(
-            "{}",
-            format!(
-                "ruby {}/scripts/auto_import/auto_import.rb '{}' '{}'",
-                &Build::root(),
-                package,
-                Build::generated_package_out(&package),
-            )
-        );
-        Command::new("bash")
-            .arg("-c")
+    // The invoked Ruby script handles writing the output to disk
+    fn generate_rust_glue(package: &str, sources: Vec<String>) {
+        let output = Command::new("ruby")
             .arg(format!(
-                "ruby {}/scripts/auto_import/auto_import.rb '{}' '{}'",
-                &Build::ruby_vendored_dir(),
-                package,
-                Build::generated_package_out(&package),
+                "{}/scripts/auto_import/auto_import.rb",
+                Build::root()
             ))
+            .arg(Build::ruby_vendored_lib_dir())
+            .arg(&package)
+            .arg(Build::generated_package_out(&package))
+            .arg(sources.join(","))
             .output()
             .unwrap();
+
+        if !output.status.success() {
+            panic!(
+                "Command executed with failing error: {}",
+                String::from_utf8(output.stderr).unwrap()
+            );
+        }
     }
 }
 
 fn main() {
-    // let opts = file::CopyOptions::new();
     let _ = dir::remove(Build::ruby_source_dir());
-
     fs::create_dir_all(Build::generated_dir()).unwrap();
 
     for package in vec!["benchmark"] {
-        for package_file in Build::get_package_files(package).split("\n") {
-            if package_file != "" {
-                let output_file =
-                    package_file.replace(&Build::ruby_vendored_dir(), &Build::ruby_source_dir());
-                let dir = Path::new(&output_file).parent().unwrap();
-
-                fs::create_dir_all(&dir).unwrap();
-
-                fs::copy(package_file, &output_file).unwrap();
-            }
+        let sources = Build::get_package_files(package)
+            .trim()
+            .split("\n")
+            .map(String::from)
+            .collect::<Vec<_>>();
+        for package_file in &sources {
+            let output_file = format!("{}/{}.rb", Build::generated_dir(), package);
+            fs::copy(package_file, &output_file).unwrap();
         }
-
-        Build::generate_rust_glue(package)
+        Build::generate_rust_glue(package, sources);
     }
     println!("{}", Build::ruby_source_dir());
 
@@ -111,7 +109,7 @@ fn main() {
             .unwrap()
             .success()
         {
-            panic!("Failed to patch mspec sources with {}", patch);
+            panic!("Failed to patch Ruby lib sources with {}", patch);
         }
     }
 }
