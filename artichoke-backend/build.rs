@@ -17,6 +17,10 @@ impl Build {
         env::var("CARGO_MANIFEST_DIR").unwrap()
     }
 
+    fn generated_dir() -> String {
+        format!("{}/src/generated", env::var("OUT_DIR").unwrap())
+    }
+
     fn ruby_source_dir() -> String {
         format!("{}/ruby_2_6_3", env::var("OUT_DIR").unwrap())
     }
@@ -47,13 +51,41 @@ impl Build {
         }
         return String::from_utf8(output.stdout).unwrap();
     }
+
+    fn generated_package_out(package: &str) -> String {
+        format!("{}/{}.rs", Build::generated_dir(), package)
+    }
+
+    fn generate_rust_glue(package: &str) {
+        println!(
+            "{}",
+            format!(
+                "ruby {}/scripts/auto_import/auto_import.rb '{}' '{}'",
+                &Build::root(),
+                package,
+                Build::generated_package_out(&package),
+            )
+        );
+        Command::new("bash")
+            .arg("-c")
+            .arg(format!(
+                "ruby {}/scripts/auto_import/auto_import.rb '{}' '{}'",
+                &Build::ruby_vendored_dir(),
+                package,
+                Build::generated_package_out(&package),
+            ))
+            .output()
+            .unwrap();
+    }
 }
 
 fn main() {
     // let opts = file::CopyOptions::new();
     let _ = dir::remove(Build::ruby_source_dir());
 
-    for package in vec!["uri"] {
+    fs::create_dir_all(Build::generated_dir()).unwrap();
+
+    for package in vec!["benchmark"] {
         for package_file in Build::get_package_files(package).split("\n") {
             if package_file != "" {
                 let output_file =
@@ -65,6 +97,8 @@ fn main() {
                 fs::copy(package_file, &output_file).unwrap();
             }
         }
+
+        Build::generate_rust_glue(package)
     }
     println!("{}", Build::ruby_source_dir());
 
