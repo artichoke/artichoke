@@ -93,6 +93,7 @@ VM backends offer an opportunity to experiment with:
 - [Dynamic codegen](https://github.com/artichoke/artichoke/labels/A-codegen).
 - [Compilation](https://github.com/artichoke/artichoke/labels/A-compiler).
 - [Parallelism and eliminating the GIL](https://github.com/artichoke/artichoke/labels/A-parallelism).
+- [Memory management and garbage collection techniques](https://github.com/artichoke/artichoke/labels/A-memory-management).
 
 ### Frontend
 
