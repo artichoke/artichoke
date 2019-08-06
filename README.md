@@ -12,8 +12,8 @@
   <img width="200" height="200" src="https://artichoke.github.io/artichoke/logo.svg">
 </p>
 
-Artichoke is a platform for implementing
-[spec-compliant](https://github.com/ruby/spec) Ruby implementations. Artichoke
+Artichoke is a platform for building
+[MRI-compatible](https://github.com/ruby/spec) Ruby implementations. Artichoke
 provides a Ruby runtime implemented in Rust that can be loaded into many VM
 backends.
 
