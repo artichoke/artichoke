@@ -183,7 +183,7 @@ cargo test -p artichoke-backend
 
 `cargo test` accepts a filter argument that will limit test execution to tests
 that substring match. For example, to run all of the
-[`Regexp`](/artichoke-backend/src/extn/core/regexp.rs) tests:
+[`Regexp`](/artichoke-backend/src/extn/core/regexp) tests:
 
 ```shell
 cargo test -p artichoke-backend regexp
