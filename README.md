@@ -62,9 +62,14 @@ Artichoke core will support embedding with:
 
 #### Experimentation
 
-Implementing the Ruby runtime in Rust offers an opportunity to experiment with
-[single binary distributions](https://github.com/artichoke/artichoke/labels/A-single-binary)
-independently from a particular VM backend.
+A Rust-implemented Ruby runtime offers an opportunity to experiment with:
+
+- [Improving performance](https://github.com/artichoke/artichoke/labels/A-performance)
+  of MRI Core and Standard Library.
+- Implementing the runtime with
+  [state-of-the-art dependencies](https://github.com/artichoke/artichoke/labels/A-deps).
+- Distributing
+  [single-binary builds](https://github.com/artichoke/artichoke/labels/A-single-binary).
 
 ### VM Backend
 
