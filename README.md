@@ -48,7 +48,7 @@ Ruby specs. The runtime will be implemented in a hybrid of Rust and Ruby. The
 [`Regexp` implementation](/artichoke-backend/src/extn/core/regexp) is a
 representative example of the approach.
 
-### Embedding
+#### Embedding
 
 Artichoke core will support embedding with:
 
