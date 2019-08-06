@@ -12,55 +12,96 @@
   <img width="200" height="200" src="https://artichoke.github.io/artichoke/logo.svg">
 </p>
 
-Artichoke is a Ruby implementation written in Rust. Artichoke aspires to be
-compatible with [Ruby 2.6.3](https://github.com/ruby/ruby/tree/v2_6_3).
+Artichoke is a platform for implementing
+[spec-compliant](https://github.com/ruby/spec) Ruby implementations. Artichoke
+provides a Ruby runtime implemented in Rust that can be loaded into many VM
+backends.
 
-## Why Artichoke?
+## Architecture
 
-Artichoke is a work-in-progress. When functional, Artichoke will improve upon
-MRI in the following ways:
+A Ruby implementation based on Artichoke consists of three components: Artichoke
+core, a VM backend, and the Artichoke frontend.
 
-- ❌
-  [True parallelism with no GIL](https://github.com/artichoke/artichoke/milestone/4).
-- ❌
-  [Optional multi-threading](https://github.com/artichoke/artichoke/milestone/4).
-- ❌
-  [Deterministic garbage collection](https://github.com/artichoke/artichoke/milestone/5).
-- ✅ Single binary distribution (all Ruby sources from core and stdlib are
-  embedded in `artichoke` executable).
-- ❌
-  [WebAssembly build target](https://github.com/artichoke/artichoke/milestone/6).
-  Partially supported with the wasm32-unknown-emscripten target on the
-  [playground](https://artichoke.github.io/artichoke/).
-- ❌ [MRI](https://github.com/ruby/ruby)-compatible
-  [C API](https://github.com/artichoke/artichoke/milestone/7).
-- ❌ [mruby](https://github.com/mruby/mruby)-compatible
-  [C API (all 311 `MRB_API` functions)](https://github.com/artichoke/artichoke/milestone/7).
-- ❌
-  [Emoji identifiers (classes, modules, methods, variables) 💪](https://github.com/artichoke/artichoke/milestone/8).
-- ❌
-  [Optional Standard Library](https://github.com/artichoke/artichoke/milestone/9).
-- ✅
-  [Native Rust extensions exposed via `require` of virtual files](https://github.com/artichoke/artichoke/milestone/10).
-- ❌
-  [Filesystem access is either via the system or via an in-memory virtual filesystem](https://github.com/artichoke/artichoke/milestone/11).
+### Core
 
-Artichoke will deviate from MRI in the following ways:
+[Artichoke core](https://artichoke.github.io/artichoke/artichoke_core/) exposes
+a set of traits that define:
 
-- The only supported encodings are UTF-8,
-  [maybe UTF-8](https://github.com/BurntSushi/bstr), and binary.
-- Ruby source files are always interpreted as UTF-8.
+- Capabilities of a VM backend.
+- Capabilities of a
+  [Ruby `Value`](https://artichoke.github.io/artichoke/artichoke_core/value/trait.Value.html).
+- Interoperability between the VM backend and the Rust-implemented core.
 
-## ruby/spec
+Capabilities a Ruby implementation must provide include
+[evaling code](https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html),
+[declaring classes and modules](https://artichoke.github.io/artichoke/artichoke_core/def/trait.DeclareClassLike.html),
+and
+[exposing _top self_](https://artichoke.github.io/artichoke/artichoke_core/top_self/trait.TopSelf.html).
 
-Artichoke intends to pass 100% of [ruby/spec](/spec-runner/spec/ruby) with the
-exception of specs for non-UTF-8 encodings. To view current progress on
-ruby/spec compliance, see
-[`scripts/spec-compliance.sh`](/scripts/spec-compliance.sh) or the tracking
-milestones for ❌
-[language](https://github.com/artichoke/artichoke/milestone/1), ❌
-[Core](https://github.com/artichoke/artichoke/milestone/2), and ❌
-[Standard Library](https://github.com/artichoke/artichoke/milestone/3).
+#### Runtime
+
+Artichoke core provides an implementation-agnostic Ruby runtime which any
+implementation can load. The runtime in Artichoke core will pass 100% of the
+[Core](https://github.com/artichoke/artichoke/labels/A-ruby-core) and
+[Standard Library](https://github.com/artichoke/artichoke/labels/A-ruby-stdlib)
+Ruby specs. The runtime will be implemented in a hybrid of Rust and Ruby. The
+[`Regexp` implementation](/artichoke-backend/src/extn/core/regexp) is a
+representative example of the approach.
+
+### Embedding
+
+Artichoke core will support embedding with:
+
+- Multiple
+  [filesystem backends](https://github.com/artichoke/artichoke/labels/A-filesystem),
+  including an in-memory
+  [virtual filesystem](https://artichoke.github.io/artichoke/artichoke_vfs/).
+- [Optional standard-library](https://github.com/artichoke/artichoke/labels/A-optional-stdlib).
+- [Optional multi-threading](https://github.com/artichoke/artichoke/labels/A-parallelism).
+- Capturable IO.
+
+#### Experimentation
+
+Implementing the Ruby runtime in Rust offers an opportunity to experiment with
+[single binary distributions](https://github.com/artichoke/artichoke/labels/A-single-binary)
+independently from a particular VM backend.
+
+### VM Backend
+
+Artichoke core does not provide a parser or a VM for executing Ruby. VM backends
+provide these functions.
+
+Artichoke currently includes an [mruby](https://github.com/mruby/mruby) backend.
+There are plans to add an [MRI](https://github.com/ruby/ruby) backend and a pure
+Rust backend.
+
+VM backends are responsible for passing 100% of the
+[Language](https://github.com/artichoke/artichoke/labels/A-ruby-language) Ruby
+specs.
+
+#### Experimentation
+
+VM backends offer an opportunity to experiment with:
+
+- [Dynamic codegen](https://github.com/artichoke/artichoke/labels/A-codegen).
+- [Compilation](https://github.com/artichoke/artichoke/labels/A-compiler).
+- [Parallelism and eliminating the GIL](https://github.com/artichoke/artichoke/labels/A-parallelism).
+
+### Frontend
+
+Artichoke will include `ruby` and `irb`
+[binary frontends](https://github.com/artichoke/artichoke/labels/A-frontend)
+with dynamically selectable VM backends.
+
+Artichoke will produce a
+[WebAssembly frontend](https://github.com/artichoke/artichoke/labels/A-cross-build).
+
+Artichoke will include implementation-agnostic
+[C APIs](https://github.com/artichoke/artichoke/labels/A-C-API) targeting:
+
+- [MRI API](https://github.com/artichoke/artichoke/labels/CAPI-MRI) from Ruby.
+- [`MRB_API`](https://github.com/artichoke/artichoke/labels/CAPI-mruby) from
+  mruby.
 
 ## Try Artichoke
 
