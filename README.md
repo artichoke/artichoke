@@ -33,7 +33,7 @@ a set of traits that define:
 - Interoperability between the VM backend and the Rust-implemented core.
 
 Capabilities a Ruby implementation must provide include
-[evaling code](https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html),
+[evaluating code](https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html),
 [declaring classes and modules](https://artichoke.github.io/artichoke/artichoke_core/def/trait.DeclareClassLike.html),
 and
 [exposing _top self_](https://artichoke.github.io/artichoke/artichoke_core/top_self/trait.TopSelf.html).
