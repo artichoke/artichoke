@@ -76,8 +76,10 @@ A Rust-implemented Ruby runtime offers an opportunity to experiment with:
 Artichoke core does not provide a parser or a VM for executing Ruby. VM backends
 provide these functions.
 
-Artichoke currently includes an [mruby](https://github.com/mruby/mruby) backend.
-There are plans to add an [MRI](https://github.com/ruby/ruby) backend and a pure
+Artichoke currently includes an
+[mruby backend](https://github.com/artichoke/artichoke/labels/B-mruby). There
+are plans to add an
+[MRI backend](https://github.com/artichoke/artichoke/labels/B-MRI) and a pure
 Rust backend.
 
 VM backends are responsible for passing 100% of the
