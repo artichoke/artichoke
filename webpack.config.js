@@ -7,7 +7,7 @@ const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 
 const plugins = [
   new MiniCssExtractPlugin({
-    filename: "[name].css",
+    filename: "[hash].css",
     chunkFilename: "[id].css"
   }),
   new HtmlWebPackPlugin({
@@ -43,6 +43,7 @@ module.exports = (env, argv) => {
     },
     entry: path.resolve(__dirname, "artichoke-wasm/src/playground.js"),
     output: {
+      filename: "[hash].bundle.js",
       path: path.resolve(__dirname, `target/webpack/${target}`)
     },
     module: {
