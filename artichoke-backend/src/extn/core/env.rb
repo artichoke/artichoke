@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
-ENV = Object.new
+class ENV
+  attr_reader :_env
+  def initialize()
+    @_env = initialize_internal()
+  end
 
-class << ENV
-  def [](_name)
-    nil
+  def [](name)
+    '234'
   end
 end
