@@ -41,8 +41,20 @@ pub struct Env {}
 #[allow(dead_code)]
 impl Env {
     unsafe extern "C" fn set(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let _interp = unwrap_interpreter!(mrb);
-        sys::mrb_sys_nil_value()
+        let interp = unwrap_interpreter!(mrb);
+
+        match Env::set_internal(&interp, "".to_string(), "".to_string()) {
+            Some(_value) => sys::mrb_sys_nil_value(),
+            None => sys::mrb_sys_nil_value(),
+        }
+    }
+
+    // set_env
+    // This function may panic if key is empty, contains an ASCII equals sign '='
+    //      or the NUL character '\0', or when the value contains the NUL character.
+    fn set_internal(_interp: &Artichoke, key: String, value: String) -> Option<sys::mrb_value> {
+        env::set_var(key, value);
+        None
     }
 
     unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
@@ -57,7 +69,7 @@ impl Env {
                 None => sys::mrb_sys_nil_value(),
             }
         } else {
-            ArgumentError::raise(interp, "wrong number of arguments (given 0, expected 1)");
+            ArgumentError::raise(interp, "ENV[..] incorrect arguments");
             sys::mrb_sys_nil_value()
         }
     }
@@ -106,7 +118,7 @@ mod tests {
 
     #[test]
     #[allow(non_snake_case)]
-    fn test_env_has_PATH() {
+    fn test_env_get_PATH() {
         let interp = crate::interpreter().expect("init");
         env::patch(&interp).expect("env init");
 
@@ -120,7 +132,7 @@ mod tests {
     }
 
     #[test]
-    fn test_with_unexisting_variable() {
+    fn test_env_get_unexisting_variable() {
         let interp = crate::interpreter().expect("init");
         env::patch(&interp).expect("env init");
 
@@ -133,12 +145,14 @@ mod tests {
     }
 
     #[test]
-    fn test_with_env_get_without_args() {
+    fn test_env_get_with_incorrect_number_of_args() {
         let interp = crate::interpreter().expect("init");
         env::patch(&interp).expect("env init");
 
-        let non_existing_env_variable = (&interp).eval(r"ENV[]");
+        let env_get_no_args = (&interp).eval(r"ENV[]");
+        assert!(env_get_no_args.is_err());
 
-        assert!(non_existing_env_variable.is_err());
+        let env_get_two_args = (&interp).eval(r"ENV['abc', 'def']");
+        assert!(env_get_two_args.is_err());
     }
 }
