@@ -1,54 +1,64 @@
 use log::trace;
+use std::env;
 
+use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
+use crate::gc::MrbGarbageCollection;
 use crate::sys;
+use crate::value::Value;
 use crate::Artichoke;
 use crate::ArtichokeError;
-use std::collections::HashMap;
+use std::ffi::OsString;
 
 pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.borrow().class_spec::<Env>().is_some() {
         return Ok(());
     }
 
-    let env = interp.borrow_mut().def_class::<Env>("ENV", None, None);
-    env.borrow_mut().add_method(
-        "initialize_internal",
-        Env::initialize_internal,
-        sys::mrb_args_none(),
-    );
+    let env = interp.borrow_mut().def_class::<Env>("EnvClass", None, None);
 
-    interp.eval(include_str!("env.rb"))?;
+    env.borrow_mut()
+        .add_method("[]", Env::get, sys::mrb_args_req(1));
 
     env.borrow()
         .define(interp)
         .map_err(|_| ArtichokeError::New)?;
+
+    interp.eval(include_str!("env.rb"))?;
+
     trace!("Patched ENV onto interpreter");
 
     Ok(())
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct Env {
-    env: HashMap<String, String>,
-}
+pub struct Env {}
 
+#[allow(dead_code)]
 impl Env {
-    pub fn new(env: HashMap<String, String>) -> Self {
-        Env { env }
+    unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = unwrap_interpreter!(mrb);
+
+        let key = "PATH";
+        match env::var_os(key) {
+            Some(value) => match Env::get_internal(&interp, value) {
+                Some(result) => result.inner(),
+                None => sys::mrb_sys_nil_value(),
+            },
+            None => sys::mrb_sys_nil_value(),
+        }
     }
 
-    unsafe extern "C" fn initialize_internal(
-        mrb: *mut sys::mrb_state,
-        _slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        let _interp = unwrap_interpreter!(mrb);
+    fn get_internal(interp: &Artichoke, value: OsString) -> Option<Value> {
+        let gc_was_enabled = interp.disable_gc();
+        let string_value = value.to_str().unwrap();
 
-        // fill the ENV here
+        let result = Value::convert(interp, string_value);
+        if gc_was_enabled {
+            interp.enable_gc();
+        }
 
-        println!("Initialize called");
-        sys::mrb_sys_nil_value()
+        Some(result)
     }
 }
 
