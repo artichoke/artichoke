@@ -49,7 +49,7 @@ jobs:
           # https://github.com/mruby/mruby/blob/master/doc/guides/compile.md#prerequisites
           name: Install mruby Build Dependencies
           command: |
-            sudo apt-get install -y binutils bison gperf ruby-full
+            sudo apt-get install -y bison gperf ruby-full
             bison --version
             gperf --version
             ruby --version
