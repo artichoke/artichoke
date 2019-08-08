@@ -28,7 +28,7 @@ impl Env {
         let mrb: *mut mrb_state = interp.borrow().mrb;
         sys::mrb_get_args(
             mrb,
-            Env::TWO_STRINGS_ARGS_SPEC.as_ptr() as *const i8,
+            Self::TWO_STRINGS_ARGS_SPEC.as_ptr() as *const i8,
             key.as_mut_ptr(),
             value.as_mut_ptr(),
         );
@@ -48,27 +48,25 @@ impl Env {
     // set_env
     // This function may panic if key is empty, contains an ASCII equals sign '='
     //      or the NUL character '\0', or when the value contains the NUL character.
-    fn validate_set_args(key: &String, value: &Option<String>) -> Result<(), EnvError> {
+    fn validate_set_args(key: &str, value: &Option<String>) -> Result<(), EnvError> {
         if key.find('=').is_some() || key.find('\0').is_some() {
             return Err(EnvError::InvalidSetKey);
         }
 
-        if value.is_some() {
-            if value.clone().unwrap().find('\0').is_some() {
-                return Err(EnvError::InvalidSetValue);
-            }
+        if value.is_some() && value.clone().unwrap().find('\0').is_some() {
+            return Err(EnvError::InvalidSetValue);
         }
 
         Ok(())
     }
-    fn set_internal(key: &String, value: &Option<String>) {
+    fn set_internal(key: &str, value: &Option<String>) {
         match value {
             Some(string) => env::set_var(OsString::from(key), OsString::from(string)),
             None => env::remove_var(OsString::from(key)),
         }
     }
 
-    fn os_string_to_value(interp: &Artichoke, key: OsString) -> Value {
+    fn os_string_to_value(interp: &Artichoke, key: &OsString) -> Value {
         let gc_was_enabled = interp.disable_gc();
 
         let string_value = key.to_str().unwrap();
@@ -88,7 +86,7 @@ impl Env {
         let mrb: *mut mrb_state = interp.borrow().mrb;
         sys::mrb_get_args(
             mrb,
-            Env::STRING_SINGLE_ARG_SPEC.as_ptr() as *const i8,
+            Self::STRING_SINGLE_ARG_SPEC.as_ptr() as *const i8,
             other.as_mut_ptr(),
         );
         let other = other.assume_init();
@@ -98,9 +96,9 @@ impl Env {
         Some(arg_value.to_s())
     }
 
-    unsafe fn get_internal(interp: &Artichoke, arg_name: &String) -> sys::mrb_value {
+    unsafe fn get_internal(interp: &Artichoke, arg_name: &str) -> sys::mrb_value {
         if let Some(variable_value) = env::var_os(arg_name) {
-            Env::os_string_to_value(interp, variable_value).inner()
+            Self::os_string_to_value(interp, &variable_value).inner()
         } else {
             sys::mrb_sys_nil_value()
         }
@@ -111,8 +109,8 @@ impl RubyEnvNativeApi for Env {
     unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
 
-        if let Some(arg_name) = Env::extract_string_arg(&interp) {
-            Env::get_internal(&interp, &arg_name)
+        if let Some(arg_name) = Self::extract_string_arg(&interp) {
+            Self::get_internal(&interp, &arg_name)
         } else {
             ArgumentError::raise(interp, "ENV[..] incorrect arguments");
             sys::mrb_sys_nil_value()
@@ -122,12 +120,12 @@ impl RubyEnvNativeApi for Env {
     unsafe extern "C" fn set(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
 
-        let (key, value) = Env::extract_two_string_args(&interp);
+        let (key, value) = Self::extract_two_string_args(&interp);
 
-        match Env::validate_set_args(&key, &value) {
+        match Self::validate_set_args(&key, &value) {
             Ok(_res) => {
-                Env::set_internal(&key, &value);
-                Env::get_internal(&interp, &key)
+                Self::set_internal(&key, &value);
+                Self::get_internal(&interp, &key)
             }
             Err(error) => {
                 match error {
