@@ -81,6 +81,28 @@ cargo fmt -- --check
 cargo clippy --all-targets --all-features
 ```
 
+### C Toolchain
+
+#### `cc` Crate
+
+Artichoke and some of its dependencies use the Rust
+[`cc` crate](https://crates.io/crates/cc) to build. `cc` uses a
+[platform-dependent C compiler](https://github.com/alexcrichton/cc-rs#compile-time-requirements)
+to compile C sources. On Unix, `cc` crate uses the `cc` binary.
+
+#### mruby Backend
+
+To build the Artichoke mruby backend, you will need a C compiler toolchain. By
+default, mruby requires the following to compile:
+
+- ar
+- gcc
+- bison
+- gperf
+
+You can override the requirement for gcc by setting the `CC` and `LD`
+environment variables.
+
 ### Node.js
 
 Artichoke uses Yarn and Node.js for linting and orchestration.
