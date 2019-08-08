@@ -9,22 +9,29 @@ use log::trace;
 mod backends;
 mod env_object;
 mod errors;
-use backends::EnvStdBackend;
+use backends::{EnvBackend, EnvStdBackend};
 use env_object::{Env, RubyEnvNativeApi};
 
 pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    if interp.borrow().class_spec::<Env<EnvStdBackend>>().is_some() {
+    patch_internal_with_backend::<EnvStdBackend>(interp)
+}
+
+fn patch_internal_with_backend<T: EnvBackend>(interp: &Artichoke) -> Result<(), ArtichokeError>
+where
+    T: 'static,
+{
+    if interp.borrow().class_spec::<Env<T>>().is_some() {
         return Ok(());
     }
 
     let env = interp
         .borrow_mut()
-        .def_class::<Env<EnvStdBackend>>("EnvClass", None, None);
+        .def_class::<Env<T>>("EnvClass", None, None);
 
     env.borrow_mut()
-        .add_method("[]", Env::<EnvStdBackend>::get, sys::mrb_args_req(1));
+        .add_method("[]", Env::<T>::get, sys::mrb_args_req(1));
     env.borrow_mut()
-        .add_method("[]=", Env::<EnvStdBackend>::set, sys::mrb_args_req(2));
+        .add_method("[]=", Env::<T>::set, sys::mrb_args_req(2));
 
     env.borrow()
         .define(interp)
