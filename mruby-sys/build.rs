@@ -3,9 +3,13 @@
 #![doc(deny(warnings))]
 
 use fs_extra::dir::{self, CopyOptions};
+use std::collections::HashSet;
 use std::env;
+use std::ffi::OsStr;
+use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use walkdir::WalkDir;
 
 /// vendored mruby version
 const MRUBY_REVISION: &str = "bc7c5d3";
@@ -14,72 +18,88 @@ const MRUBY_REVISION: &str = "bc7c5d3";
 struct Build;
 
 impl Build {
-    fn root() -> String {
-        env::var("CARGO_MANIFEST_DIR").unwrap()
+    fn root() -> PathBuf {
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
     }
 
-    fn build_config() -> String {
-        let target = env::var("TARGET").unwrap();
-        if target.starts_with("wasm32-") {
-            format!("{}/wasm_build_config.rb", &Build::root(),)
-        } else {
-            format!(
-                "{}/{}_build_config.rb",
-                &Build::root(),
-                &env::var("PROFILE").expect("PROFILE")
-            )
-        }
+    fn gems() -> Vec<&'static str> {
+        vec![
+            "mruby-compiler",
+            "mruby-eval",
+            "mruby-method",
+            "mruby-error",
+            "mruby-metaprog",
+            "mruby-pack",
+            "mruby-sprintf",
+            "mruby-math",
+            "mruby-time",
+            "mruby-struct",
+            "mruby-compar-ext",
+            "mruby-enum-ext",
+            "mruby-numeric-ext",
+            "mruby-array-ext",
+            "mruby-hash-ext",
+            "mruby-range-ext",
+            "mruby-proc-ext",
+            "mruby-symbol-ext",
+            "mruby-random",
+            "mruby-object-ext",
+            "mruby-kernel-ext",
+            "mruby-class-ext",
+            "mruby-fiber",
+            "mruby-enumerator",
+            "mruby-enum-lazy",
+            "mruby-toplevel-ext",
+        ]
     }
 
-    fn ext_source_dir() -> String {
-        format!("{}/mruby-sys", &Build::root())
+    fn build_config() -> PathBuf {
+        Build::root().join("build_config.rb")
     }
 
-    fn ext_include_dir() -> String {
-        format!("{}/include", Build::ext_source_dir())
+    fn ext_source_dir() -> PathBuf {
+        Build::root().join("mruby-sys")
     }
 
-    fn ext_source_file() -> String {
-        format!("{}/src/mruby-sys/ext.c", &Build::ext_source_dir())
+    fn ext_include_dir() -> PathBuf {
+        Build::ext_source_dir().join("include")
     }
 
-    fn mruby_vendored_dir() -> String {
-        format!("{}/vendor/mruby-{}", &Build::root(), MRUBY_REVISION)
+    fn ext_source_file() -> PathBuf {
+        Build::ext_source_dir()
+            .join("src")
+            .join("mruby-sys")
+            .join("ext.c")
     }
 
-    fn mruby_source_dir() -> String {
-        format!("{}/mruby-{}", &env::var("OUT_DIR").unwrap(), MRUBY_REVISION)
+    fn mruby_vendored_dir() -> PathBuf {
+        Build::root()
+            .join("vendor")
+            .join(format!("mruby-{}", MRUBY_REVISION))
     }
 
-    fn mruby_minirake() -> String {
-        format!("{}/minirake", Build::mruby_source_dir())
+    fn mruby_source_dir() -> PathBuf {
+        PathBuf::from(env::var("OUT_DIR").unwrap()).join(format!("mruby-{}", MRUBY_REVISION))
     }
 
-    fn mruby_include_dir() -> String {
-        format!("{}/include", Build::mruby_source_dir())
+    fn mruby_minirake() -> PathBuf {
+        Build::mruby_source_dir().join("minirake")
     }
 
-    fn mruby_build_dir() -> String {
-        format!("{}/{}", &env::var("OUT_DIR").unwrap(), "mruby-build")
+    fn mruby_include_dir() -> PathBuf {
+        Build::mruby_source_dir().join("include")
     }
 
-    fn mruby_out_dir() -> String {
-        let target = env::var("TARGET").unwrap();
-        if target == "wasm32-unknown-unknown" {
-            format!("{}/sys-wasm/lib", &Build::mruby_build_dir())
-        } else if target == "wasm32-unknown-emscripten" {
-            format!("{}/sys-emscripten/lib", &Build::mruby_build_dir())
-        } else {
-            format!("{}/sys/lib", &Build::mruby_build_dir())
-        }
+    fn mruby_build_dir() -> PathBuf {
+        PathBuf::from(env::var("OUT_DIR").unwrap()).join("mruby-build")
     }
 
-    fn bindgen_source_header() -> String {
-        format!("{}/mruby-sys.h", &Build::ext_include_dir())
+    fn bindgen_source_header() -> PathBuf {
+        Build::ext_include_dir().join("mruby-sys.h")
     }
 
-    fn patch(patch: &str) -> String {
-        format!("{}/vendor/{}", Build::root(), patch)
+    fn patch(patch: &str) -> PathBuf {
+        Build::root().join("vendor").join(patch)
     }
 }
 
@@ -93,10 +113,16 @@ fn main() {
     )
     .unwrap();
     for patch in vec!["0001-Support-parsing-a-Regexp-literal-with-CRuby-options.patch"] {
-        println!("cargo:rerun-if-changed={}", Build::patch(patch));
+        println!(
+            "cargo:rerun-if-changed={}",
+            Build::patch(patch).to_string_lossy()
+        );
         if !Command::new("bash")
             .arg("-c")
-            .arg(format!("patch -p1 < '{}'", Build::patch(patch)))
+            .arg(format!(
+                "patch -p1 < '{}'",
+                Build::patch(patch).to_string_lossy()
+            ))
             .current_dir(Build::mruby_source_dir())
             .status()
             .unwrap()
@@ -106,6 +132,15 @@ fn main() {
         }
     }
 
+    let mut gembox = String::from("MRuby::GemBox.new { |conf| ");
+    for gem in Build::gems() {
+        gembox.push_str("conf.gem core: '");
+        gembox.push_str(gem);
+        gembox.push_str("';");
+    }
+    gembox.push('}');
+    fs::write(Build::mruby_source_dir().join("sys.gembox"), gembox).unwrap();
+
     // Build the mruby static library with its built in minirake build system.
     // minirake dynamically generates some c source files so we can't build
     // directly with the `cc` crate.
@@ -113,8 +148,10 @@ fn main() {
     println!("cargo:rustc-env=MRUBY_REVISION={}", MRUBY_REVISION);
     println!("cargo:rerun-if-env-changed=MRUBY_REVISION");
     println!("cargo:rerun-if-env-changed=PROFILE");
-    println!("cargo:rerun-if-changed={}", Build::build_config());
-    println!("cargo:rerun-if-changed={}/sys.gembox", Build::root());
+    println!(
+        "cargo:rerun-if-changed={}",
+        Build::build_config().to_string_lossy()
+    );
     if !Command::new(Build::mruby_minirake())
         .arg("--jobs")
         .arg("4")
@@ -125,56 +162,92 @@ fn main() {
         .unwrap()
         .success()
     {
-        panic!("Failed to build libmruby.a");
+        panic!("Failed to build generate mruby C sources");
     }
 
-    // Set static lib and search path flags so rustc will link libmruby.a
-    // into our binary.
-    println!("cargo:rustc-link-lib=static=mruby");
-    println!("cargo:rustc-link-search=native={}", Build::mruby_out_dir());
+    let mut sources = HashSet::new();
+    sources.insert(Build::ext_source_file());
+    let walker = WalkDir::new(Build::mruby_source_dir()).into_iter();
+    for entry in walker {
+        if let Ok(entry) = entry {
+            let is_gem = Build::gems()
+                .iter()
+                .any(|gem| entry.path().to_str().map(|path| path.contains(gem)) == Some(true));
+            let is_core = entry.path().to_str().map(|path| {
+                let core_prefix = Build::mruby_source_dir().join("src");
+                path.starts_with(core_prefix.to_str().unwrap())
+            }) == Some(true);
+            if is_gem || is_core {
+                if entry.path().extension().and_then(OsStr::to_str) == Some("c") {
+                    sources.insert(entry.path().to_owned());
+                }
+            }
+        }
+    }
+    let walker = WalkDir::new(Build::mruby_build_dir().join("sys")).into_iter();
+    for entry in walker {
+        if let Ok(entry) = entry {
+            let is_gem = Build::gems()
+                .iter()
+                .any(|gem| entry.path().to_str().map(|path| path.contains(gem)) == Some(true));
+            let is_mrbgem_infra = entry
+                .path()
+                .to_str()
+                .map(|path| path.ends_with("gem_init.c") || path.ends_with("mrblib.c"))
+                == Some(true);
+            if is_gem || is_mrbgem_infra {
+                if entry.path().extension().and_then(OsStr::to_str) == Some("c") {
+                    sources.insert(entry.path().to_owned());
+                }
+            }
+        }
+    }
+    let mrb_int = if env::var("TARGET").unwrap().starts_with("wasm32") {
+        "MRB_INT32"
+    } else {
+        "MRB_INT64"
+    };
 
     // Build the extension library
-    println!("cargo:rerun-if-changed={}", Build::ext_source_file());
-    println!(
-        "cargo:rerun-if-changed={}/mruby-sys/ext.h",
-        Build::ext_include_dir()
-    );
-    if env::var("TARGET").unwrap().starts_with("wasm32-") {
-        cc::Build::new()
-            .file(Build::ext_source_file())
-            .include(Build::mruby_include_dir())
-            .include(Build::ext_include_dir())
-            .include(format!(
-                "{}/../target/emsdk/fastcomp/emscripten/system/include/libc",
-                Build::root()
-            ))
-            .compile("libmrubysys.a");
-    } else {
-        cc::Build::new()
-            .file(Build::ext_source_file())
-            .include(Build::mruby_include_dir())
-            .include(Build::ext_include_dir())
-            .compile("libmrubysys.a");
+    let mut build = cc::Build::new();
+    build
+        .warnings(false)
+        .files(sources)
+        .include(Build::mruby_include_dir())
+        .include(Build::ext_include_dir())
+        .define("MRB_DISABLE_STDIO", None)
+        .define("MRB_UTF8_STRING", None)
+        .define(mrb_int, None);
+
+    for gem in Build::gems() {
+        let mut dir = "include";
+        if gem == "mruby-compiler" {
+            dir = "core";
+        }
+        let gem_include_dir = Build::mruby_source_dir()
+            .join("mrbgems")
+            .join(gem)
+            .join(dir);
+        build.include(gem_include_dir);
     }
 
-    println!("cargo:rerun-if-changed={}", Build::bindgen_source_header());
-    let bindings_path: PathBuf = [&env::var("OUT_DIR").unwrap(), "ffi.rs"].iter().collect();
-    let mut bindings = bindgen::Builder::default()
-        .header(Build::bindgen_source_header())
-        .clang_arg(format!("-I{}", Build::mruby_include_dir()))
-        .clang_arg(format!("-I{}", Build::ext_include_dir()))
+    build.compile("libmrubysys.a");
+
+    println!(
+        "cargo:rerun-if-changed={}",
+        Build::bindgen_source_header().to_string_lossy()
+    );
+    let bindings_out_path: PathBuf = PathBuf::from(env::var("OUT_DIR").unwrap()).join("ffi.rs");
+    let mut bindgen = bindgen::Builder::default()
+        .header(Build::bindgen_source_header().to_string_lossy())
+        .clang_arg(format!(
+            "-I{}",
+            Build::mruby_include_dir().to_string_lossy()
+        ))
+        .clang_arg(format!("-I{}", Build::ext_include_dir().to_string_lossy()))
         .clang_arg("-DMRB_DISABLE_STDIO")
-        .clang_arg("-DMRB_UTF8_STRING");
-    if env::var("TARGET").unwrap().starts_with("wasm32-") {
-        bindings = bindings
-            .clang_arg("-DMRB_INT32")
-            .clang_arg(format!(
-                "-I{}/../target/emsdk/fastcomp/emscripten/system/include/libc",
-                Build::root()
-            ))
-            .clang_arg("-fvisibility=default");
-    }
-    bindings
+        .clang_arg("-DMRB_UTF8_STRING")
+        .clang_arg(format!("-D{}", mrb_int))
         .whitelist_function("^mrb.*")
         .whitelist_type("^mrb.*")
         .whitelist_var("^mrb.*")
@@ -188,9 +261,20 @@ fn main() {
         // work around warnings caused by cargo doc interpreting Ruby doc blocks
         // as Rust code.
         // See: https://github.com/rust-lang/rust-bindgen/issues/426
-        .generate_comments(false)
+        .generate_comments(false);
+    if env::var("TARGET").unwrap().starts_with("wasm32") {
+        bindgen = bindgen
+            .clang_arg(format!(
+                "-I{}",
+                Build::root()
+                    .join("../target/emsdk/fastcomp/emscripten/system/include/libc")
+                    .to_string_lossy()
+            ))
+            .clang_arg("-fvisibility=default");
+    }
+    bindgen
         .generate()
         .expect("Unable to generate mruby bindings")
-        .write_to_file(bindings_path)
+        .write_to_file(bindings_out_path)
         .expect("Unable to write mruby bindings");
 }
