@@ -1,7 +1,6 @@
 use crate::convert::Convert;
 use crate::extn::core::error::{ArgumentError, RubyException};
-use std::env;
-use std::ffi::OsString;
+use std::marker::PhantomData;
 use std::mem;
 
 use crate::gc::MrbGarbageCollection;
@@ -9,6 +8,7 @@ use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
+use super::backends::EnvBackend;
 use super::errors::EnvError;
 use mruby_sys::mrb_state;
 
@@ -17,9 +17,11 @@ pub trait RubyEnvNativeApi {
     unsafe extern "C" fn set(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
 }
 
-pub struct Env;
+pub struct Env<T: EnvBackend> {
+    phantom: PhantomData<T>,
+}
 
-impl Env {
+impl<T: EnvBackend> Env<T> {
     const TWO_STRINGS_ARGS_SPEC: &'static [u8] = b"SS!\0";
 
     unsafe fn extract_two_string_args(interp: &Artichoke) -> (String, Option<String>) {
@@ -60,17 +62,13 @@ impl Env {
         Ok(())
     }
     fn set_internal(key: &str, value: &Option<String>) {
-        match value {
-            Some(string) => env::set_var(OsString::from(key), OsString::from(string)),
-            None => env::remove_var(OsString::from(key)),
-        }
+        T::set_value(key, value);
     }
 
-    fn os_string_to_value(interp: &Artichoke, key: &OsString) -> Value {
+    fn string_to_value(interp: &Artichoke, key: &String) -> Value {
         let gc_was_enabled = interp.disable_gc();
 
-        let string_value = key.to_str().unwrap();
-        let result = Value::convert(interp, string_value);
+        let result = Value::convert(interp, key.as_str());
 
         if gc_was_enabled {
             interp.enable_gc();
@@ -97,15 +95,16 @@ impl Env {
     }
 
     unsafe fn get_internal(interp: &Artichoke, arg_name: &str) -> sys::mrb_value {
-        if let Some(variable_value) = env::var_os(arg_name) {
-            Self::os_string_to_value(interp, &variable_value).inner()
-        } else {
-            sys::mrb_sys_nil_value()
+        let value = T::get_value(arg_name);
+
+        match value {
+            Some(variable_value) => Self::string_to_value(interp, &variable_value).inner(),
+            None => sys::mrb_sys_nil_value(),
         }
     }
 }
 
-impl RubyEnvNativeApi for Env {
+impl<T: EnvBackend> RubyEnvNativeApi for Env<T> {
     unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
 
