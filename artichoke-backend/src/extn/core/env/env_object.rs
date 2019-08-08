@@ -20,26 +20,52 @@ pub trait RubyEnvNativeApi {
 pub struct Env;
 
 impl Env {
-    fn extract_two_string_args(_interp: &Artichoke) -> Option<(String, String)> {
-        None
+    const TWO_STRINGS_ARGS_SPEC: &'static [u8] = b"SS!\0";
+
+    unsafe fn extract_two_string_args(interp: &Artichoke) -> (String, Option<String>) {
+        let mut key = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mut value = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+        let mrb: *mut mrb_state = interp.borrow().mrb;
+        sys::mrb_get_args(
+            mrb,
+            Env::TWO_STRINGS_ARGS_SPEC.as_ptr() as *const i8,
+            key.as_mut_ptr(),
+            value.as_mut_ptr(),
+        );
+        let key = key.assume_init();
+        let value = value.assume_init();
+
+        let key_v = Value::new(interp, key);
+        let value_v = Value::new(interp, value);
+
+        if sys::mrb_sys_value_is_nil(value_v.inner()) {
+            (key_v.to_s(), None)
+        } else {
+            (key_v.to_s(), Some(value_v.to_s()))
+        }
     }
 
     // set_env
     // This function may panic if key is empty, contains an ASCII equals sign '='
     //      or the NUL character '\0', or when the value contains the NUL character.
-    fn validate_set_args(key: &String, value: &String) -> Result<(), EnvError> {
+    fn validate_set_args(key: &String, value: &Option<String>) -> Result<(), EnvError> {
         if key.find('=').is_some() || key.find('\0').is_some() {
             return Err(EnvError::InvalidSetKey);
         }
 
-        if value.find('\0').is_some() {
-            return Err(EnvError::InvalidSetValue);
+        if value.is_some() {
+            if value.clone().unwrap().find('\0').is_some() {
+                return Err(EnvError::InvalidSetValue);
+            }
         }
 
         Ok(())
     }
-    fn set_internal(key: &String, value: &String) {
-        env::set_var(key, value);
+    fn set_internal(key: &String, value: &Option<String>) {
+        match value {
+            Some(string) => env::set_var(OsString::from(key), OsString::from(string)),
+            None => env::remove_var(OsString::from(key)),
+        }
     }
 
     fn os_string_to_value(interp: &Artichoke, key: OsString) -> Value {
@@ -72,7 +98,7 @@ impl Env {
         Some(arg_value.to_s())
     }
 
-    unsafe fn get_internal(interp: &Artichoke, arg_name: String) -> sys::mrb_value {
+    unsafe fn get_internal(interp: &Artichoke, arg_name: &String) -> sys::mrb_value {
         if let Some(variable_value) = env::var_os(arg_name) {
             Env::os_string_to_value(interp, variable_value).inner()
         } else {
@@ -86,7 +112,7 @@ impl RubyEnvNativeApi for Env {
         let interp = unwrap_interpreter!(mrb);
 
         if let Some(arg_name) = Env::extract_string_arg(&interp) {
-            Env::get_internal(&interp, arg_name)
+            Env::get_internal(&interp, &arg_name)
         } else {
             ArgumentError::raise(interp, "ENV[..] incorrect arguments");
             sys::mrb_sys_nil_value()
@@ -96,27 +122,24 @@ impl RubyEnvNativeApi for Env {
     unsafe extern "C" fn set(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
 
-        if let Some((key, value)) = Env::extract_two_string_args(&interp) {
-            match Env::validate_set_args(&key, &value) {
-                Ok(_res) => {
-                    Env::set_internal(&key, &value);
-                    Env::get_internal(&interp, key)
-                }
-                Err(error) => {
-                    // TODO we might need to set errno here...
-                    match error {
-                        EnvError::InvalidSetKey => {
-                            ArgumentError::raise(interp, "Invalid key for ENV set")
-                        }
-                        EnvError::InvalidSetValue => {
-                            ArgumentError::raise(interp, "Invalid value for ENV set")
-                        }
-                    };
-                    sys::mrb_sys_nil_value()
-                }
+        let (key, value) = Env::extract_two_string_args(&interp);
+
+        match Env::validate_set_args(&key, &value) {
+            Ok(_res) => {
+                Env::set_internal(&key, &value);
+                Env::get_internal(&interp, &key)
             }
-        } else {
-            sys::mrb_sys_nil_value()
+            Err(error) => {
+                match error {
+                    EnvError::InvalidSetKey => {
+                        ArgumentError::raise(interp, "Invalid key for ENV set")
+                    }
+                    EnvError::InvalidSetValue => {
+                        ArgumentError::raise(interp, "Invalid value for ENV set")
+                    }
+                };
+                sys::mrb_sys_nil_value()
+            }
         }
     }
 }
@@ -125,6 +148,7 @@ impl RubyEnvNativeApi for Env {
 mod tests {
     use crate::eval::Eval;
     use crate::extn::core::env;
+    use crate::sys;
 
     #[test]
     fn test_env_initialized() {
@@ -214,4 +238,49 @@ mod tests {
         // then
         assert_eq!("val2", env_set_2_value);
     }
+
+    #[test]
+    fn test_set_get() {
+        // given
+        let interp = crate::interpreter().expect("init");
+        env::patch(&interp).expect("env init");
+        let var_name = "81fdf184-01b4-4248-82db-3b3e8482abf6";
+        let var_value = "val";
+        let set_var_cmd = format!(r"ENV['{0}'] = '{1}'", var_name, var_value);
+        let get_var_cmd = format!(r"ENV['{0}']", var_name);
+
+        // when
+        (&interp).eval(set_var_cmd).unwrap();
+        let get_result = (&interp).eval(get_var_cmd).unwrap().try_into::<String>();
+
+        // then
+        assert!(get_result.is_ok());
+        assert_eq!(var_value, get_result.unwrap());
+    }
+
+    #[test]
+    fn test_set_nil() {
+        // given
+        let interp = crate::interpreter().expect("init");
+        env::patch(&interp).expect("env init");
+        let var_name = "9a557fda-73a6-4de8-8999-ddeda18703f2";
+        let var_value = "val";
+        let set_var_cmd = format!(r"ENV['{0}'] = '{1}'", var_name, var_value);
+        let set_nil = format!(r"ENV['{0}'] = nil", var_name);
+        let get_var_cmd = format!(r"ENV['{0}']", var_name);
+
+        // when
+        (&interp).eval(set_var_cmd).unwrap();
+        let first_result = (&interp).eval(&get_var_cmd).unwrap().try_into::<String>();
+        (&interp).eval(set_nil).unwrap();
+        let last_result = (&interp).eval(&get_var_cmd).unwrap();
+
+        // then
+        assert!(first_result.is_ok());
+        assert_eq!(var_value, first_result.unwrap());
+        unsafe {
+            assert!(sys::mrb_sys_value_is_nil(last_result.inner()));
+        }
+    }
+
 }
