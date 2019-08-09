@@ -16,7 +16,8 @@ use std::collections::HashMap;
 pub trait RubyEnvNativeApi {
     unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
     unsafe extern "C" fn set(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
-    unsafe extern "C" fn to_h(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
+    unsafe extern "C" fn env_to_h(mrb: *mut sys::mrb_state, _slf: sys::mrb_value)
+        -> sys::mrb_value;
 }
 
 pub struct Env<T: EnvBackend> {
@@ -67,10 +68,10 @@ impl<T: EnvBackend> Env<T> {
         T::set_value(key, value);
     }
 
-    fn string_to_value(interp: &Artichoke, key: &String) -> Value {
+    fn string_to_value(interp: &Artichoke, key: &str) -> Value {
         let gc_was_enabled = interp.disable_gc();
 
-        let result = Value::convert(interp, key.as_str());
+        let result = Value::convert(interp, key);
 
         if gc_was_enabled {
             interp.enable_gc();
@@ -117,10 +118,10 @@ impl<T: EnvBackend> Env<T> {
         }
     }
 
-    unsafe fn to_h_internal(interp: &Artichoke) -> sys::mrb_value {
-        let env_data = T::to_h();
+    unsafe fn env_to_h_internal(interp: &Artichoke) -> sys::mrb_value {
+        let env = T::convert_to_h();
 
-        Self::hash_map_to_value(interp, env_data).inner()
+        Self::hash_map_to_value(interp, env).inner()
     }
 }
 
@@ -160,10 +161,13 @@ impl<T: EnvBackend> RubyEnvNativeApi for Env<T> {
         }
     }
 
-    unsafe extern "C" fn to_h(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C" fn env_to_h(
+        mrb: *mut sys::mrb_state,
+        _slf: sys::mrb_value,
+    ) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
 
-        Self::to_h_internal(&interp)
+        Self::env_to_h_internal(&interp)
     }
 }
 

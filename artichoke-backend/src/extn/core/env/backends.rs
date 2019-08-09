@@ -6,7 +6,7 @@ use std::sync::RwLock;
 pub trait EnvBackend {
     fn get_value(env_name: &str) -> Option<String>;
     fn set_value(env_name: &str, env_value: Option<&String>);
-    fn to_h() -> HashMap<String, String>;
+    fn convert_to_h() -> HashMap<String, String>;
 }
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ impl EnvBackend for EnvStdBackend {
         }
     }
 
-    fn to_h() -> HashMap<String, String> {
+    fn convert_to_h() -> HashMap<String, String> {
         env::vars()
             .map(move |(var_name, var_value)| (var_name, var_value))
             .collect()
@@ -97,7 +97,7 @@ impl EnvBackend for EnvHashMapBackend {
         };
     }
 
-    fn to_h() -> HashMap<String, String> {
+    fn convert_to_h() -> HashMap<String, String> {
         hashmap_storage::ENV_STORAGE.get_hash()
     }
 }
@@ -173,10 +173,10 @@ mod tests {
             let env2_value = "value2".to_string();
 
             // when
-            let size_before = EnvHashMapBackend::to_h().len();
+            let size_before = EnvHashMapBackend::convert_to_h().len();
             EnvHashMapBackend::set_value(env1_name, Some(&env1_value));
             EnvHashMapBackend::set_value(env2_name, Some(&env2_value));
-            let data = EnvHashMapBackend::to_h();
+            let data = EnvHashMapBackend::convert_to_h();
             let size_after = data.len();
 
             // then
