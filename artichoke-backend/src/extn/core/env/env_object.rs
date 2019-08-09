@@ -92,7 +92,7 @@ impl<T: EnvBackend> Env<T> {
         result
     }
 
-    const STRING_SINGLE_ARG_SPEC: &'static [u8] = b"o\0";
+    const STRING_SINGLE_ARG_SPEC: &'static [u8] = b"S\0";
 
     unsafe fn extract_string_arg(interp: &Artichoke) -> Option<String> {
         let mut other = <mem::MaybeUninit<sys::mrb_value>>::uninit();
@@ -181,24 +181,6 @@ mod tests {
     fn test_env_initialized() {
         let interp = crate::interpreter().expect("init");
         env::patch(&interp).expect("env init");
-    }
-
-    #[test]
-    #[allow(non_snake_case)]
-    fn test_env_get_PATH() {
-        // given
-        let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
-
-        // when
-        let PATH_variable_value: String = (&interp)
-            .eval(r"ENV['PATH']")
-            .unwrap()
-            .try_into::<String>()
-            .unwrap();
-
-        // then
-        assert_eq!(PATH_variable_value.is_empty(), false);
     }
 
     #[test]
