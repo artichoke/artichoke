@@ -11,10 +11,12 @@ use crate::Artichoke;
 use super::backends::EnvBackend;
 use super::errors::EnvError;
 use mruby_sys::mrb_state;
+use std::collections::HashMap;
 
 pub trait RubyEnvNativeApi {
     unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
     unsafe extern "C" fn set(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
+    unsafe extern "C" fn to_h(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
 }
 
 pub struct Env<T: EnvBackend> {
@@ -77,6 +79,18 @@ impl<T: EnvBackend> Env<T> {
         result
     }
 
+    fn hash_map_to_value(interp: &Artichoke, data: HashMap<String, String>) -> Value {
+        let gc_was_enabled = interp.disable_gc();
+
+        let result = Value::convert(interp, data);
+
+        if gc_was_enabled {
+            interp.enable_gc();
+        }
+
+        result
+    }
+
     const STRING_SINGLE_ARG_SPEC: &'static [u8] = b"o\0";
 
     unsafe fn extract_string_arg(interp: &Artichoke) -> Option<String> {
@@ -101,6 +115,12 @@ impl<T: EnvBackend> Env<T> {
             Some(variable_value) => Self::string_to_value(interp, &variable_value).inner(),
             None => sys::mrb_sys_nil_value(),
         }
+    }
+
+    unsafe fn to_h_internal(interp: &Artichoke) -> sys::mrb_value {
+        let env_data = T::to_h();
+
+        Self::hash_map_to_value(interp, env_data).inner()
     }
 }
 
@@ -138,6 +158,12 @@ impl<T: EnvBackend> RubyEnvNativeApi for Env<T> {
                 sys::mrb_sys_nil_value()
             }
         }
+    }
+
+    unsafe extern "C" fn to_h(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = unwrap_interpreter!(mrb);
+
+        Self::to_h_internal(&interp)
     }
 }
 

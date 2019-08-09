@@ -32,6 +32,8 @@ where
         .add_method("[]", Env::<T>::get, sys::mrb_args_req(1));
     env.borrow_mut()
         .add_method("[]=", Env::<T>::set, sys::mrb_args_req(2));
+    env.borrow_mut()
+        .add_method("to_h", Env::<T>::to_h, sys::mrb_args_none());
 
     env.borrow()
         .define(interp)
