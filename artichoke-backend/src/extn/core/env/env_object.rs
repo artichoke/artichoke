@@ -61,7 +61,7 @@ impl<T: EnvBackend> Env<T> {
 
         Ok(())
     }
-    fn set_internal(key: &str, value: &Option<String>) {
+    fn set_internal(key: &str, value: Option<&String>) {
         T::set_value(key, value);
     }
 
@@ -123,7 +123,7 @@ impl<T: EnvBackend> RubyEnvNativeApi for Env<T> {
 
         match Self::validate_set_args(&key, &value) {
             Ok(_res) => {
-                Self::set_internal(&key, &value);
+                Self::set_internal(&key, value.as_ref());
                 Self::get_internal(&interp, &key)
             }
             Err(error) => {

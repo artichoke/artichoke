@@ -203,6 +203,9 @@
 //! The infallible converters are safe Rust functions. The fallibile converters are
 //! `unsafe` Rust functions.
 
+#[macro_use]
+extern crate lazy_static;
+
 use std::cell::RefCell;
 use std::error;
 use std::fmt;
