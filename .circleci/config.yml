@@ -89,7 +89,7 @@ jobs:
           command: |
             rustup target add wasm32-unknown-emscripten
             . ./scripts/activate-wasm-build-env.sh
-            ./scripts/build-wasm.sh --release --no-webpack
+            cargo build --target wasm32-unknown-emscripten
       - run:
           name: ruby/spec Compliance Regression Test
           command: |

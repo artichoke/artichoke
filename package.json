@@ -116,10 +116,10 @@
     }
   },
   "scripts": {
-    "build-wasm": "./scripts/build-wasm.sh",
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
     "lint": "./scripts/lint.sh",
     "loc": "loc --exclude vendor artichoke-frontend/ruby/fixtures spec-runner/spec",
+    "serve-wasm": "webpack-dev-server --mode development --content-base target/webpack/debug/ --open",
     "spec": "./scripts/spec-compliance.sh"
   },
   "dependencies": {
