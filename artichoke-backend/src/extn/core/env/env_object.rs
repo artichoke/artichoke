@@ -1,9 +1,7 @@
-use crate::convert::Convert;
-use crate::extn::core::error::{ArgumentError, RubyException};
-use std::marker::PhantomData;
+use crate::convert::{Convert, RustBackedValue};
+use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError};
 use std::mem;
 
-use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -11,26 +9,33 @@ use crate::Artichoke;
 use super::backends::EnvBackend;
 use super::errors::EnvError;
 use mruby_sys::mrb_state;
-use std::collections::HashMap;
 
 pub trait RubyEnvNativeApi {
-    unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
-    unsafe extern "C" fn set(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value;
-    unsafe extern "C" fn env_to_h(mrb: *mut sys::mrb_state, _slf: sys::mrb_value)
-        -> sys::mrb_value;
+    unsafe extern "C" fn initialize(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value;
+    unsafe extern "C" fn get(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
+    unsafe extern "C" fn set(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
+    unsafe extern "C" fn env_to_h(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
 }
 
 pub struct Env<T: EnvBackend> {
-    phantom: PhantomData<T>,
+    backend: T,
 }
 
 impl<T: EnvBackend> Env<T> {
+    pub fn new() -> Self {
+        Self { backend: T::new() }
+    }
+
     const TWO_STRINGS_ARGS_SPEC: &'static [u8] = b"SS!\0";
 
     unsafe fn extract_two_string_args(interp: &Artichoke) -> (String, Option<String>) {
         let mut key = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut value = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mrb: *mut mrb_state = interp.borrow().mrb;
+        let mrb: *mut mrb_state = (*interp.as_ptr()).mrb;
+
         sys::mrb_get_args(
             mrb,
             Self::TWO_STRINGS_ARGS_SPEC.as_ptr() as *const i8,
@@ -64,39 +69,29 @@ impl<T: EnvBackend> Env<T> {
 
         Ok(())
     }
-    fn set_internal(key: &str, value: Option<&String>) {
-        T::set_value(key, value);
-    }
 
-    fn string_to_value(interp: &Artichoke, key: &str) -> Value {
-        let gc_was_enabled = interp.disable_gc();
+    unsafe fn set_internal(&self, interp: Artichoke) -> sys::mrb_value {
+        let (key, value) = Self::extract_two_string_args(&interp);
 
-        let result = Value::convert(interp, key);
-
-        if gc_was_enabled {
-            interp.enable_gc();
+        match Self::validate_set_args(&key, &value) {
+            Ok(_res) => {
+                self.backend.set_value(&key, value.as_ref());
+                Value::convert(&interp, self.backend.get_value(&key)).inner()
+            }
+            Err(error) => match error {
+                EnvError::InvalidSetKey => ArgumentError::raise(interp, "Invalid key for ENV set"),
+                EnvError::InvalidSetValue => {
+                    ArgumentError::raise(interp, "Invalid value for ENV set")
+                }
+            },
         }
-
-        result
-    }
-
-    fn hash_map_to_value(interp: &Artichoke, data: HashMap<String, String>) -> Value {
-        let gc_was_enabled = interp.disable_gc();
-
-        let result = Value::convert(interp, data);
-
-        if gc_was_enabled {
-            interp.enable_gc();
-        }
-
-        result
     }
 
     const STRING_SINGLE_ARG_SPEC: &'static [u8] = b"S\0";
 
     unsafe fn extract_string_arg(interp: &Artichoke) -> Option<String> {
         let mut other = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mrb: *mut mrb_state = interp.borrow().mrb;
+        let mrb: *mut mrb_state = (*interp.as_ptr()).mrb;
         sys::mrb_get_args(
             mrb,
             Self::STRING_SINGLE_ARG_SPEC.as_ptr() as *const i8,
@@ -109,67 +104,79 @@ impl<T: EnvBackend> Env<T> {
         Some(arg_value.to_s())
     }
 
-    unsafe fn get_internal(interp: &Artichoke, arg_name: &str) -> sys::mrb_value {
-        let value = T::get_value(arg_name);
-
-        match value {
-            Some(variable_value) => Self::string_to_value(interp, &variable_value).inner(),
-            None => sys::mrb_sys_nil_value(),
+    unsafe fn get_internal(&self, interp: &Artichoke) -> sys::mrb_value {
+        if let Some(arg_name) = Self::extract_string_arg(interp) {
+            if let Some(variable_value) = self.backend.get_value(&arg_name) {
+                Value::convert(interp, variable_value).inner()
+            } else {
+                sys::mrb_sys_nil_value()
+            }
+        } else {
+            ArgumentError::raise(interp.to_owned(), "ENV[..] incorrect arguments")
         }
     }
 
-    unsafe fn env_to_h_internal(interp: &Artichoke) -> sys::mrb_value {
-        let env = T::convert_to_h();
+    unsafe fn env_to_h_internal(&self, interp: &Artichoke) -> sys::mrb_value {
+        let env = self.backend.as_map();
 
-        Self::hash_map_to_value(interp, env).inner()
+        Value::convert(interp, env).inner()
     }
 }
 
-impl<T: EnvBackend> RubyEnvNativeApi for Env<T> {
-    unsafe extern "C" fn get(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = unwrap_interpreter!(mrb);
-
-        if let Some(arg_name) = Self::extract_string_arg(&interp) {
-            Self::get_internal(&interp, &arg_name)
-        } else {
-            ArgumentError::raise(interp, "ENV[..] incorrect arguments");
-            sys::mrb_sys_nil_value()
-        }
-    }
-
-    unsafe extern "C" fn set(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = unwrap_interpreter!(mrb);
-
-        let (key, value) = Self::extract_two_string_args(&interp);
-
-        match Self::validate_set_args(&key, &value) {
-            Ok(_res) => {
-                Self::set_internal(&key, value.as_ref());
-                Self::get_internal(&interp, &key)
-            }
-            Err(error) => {
-                match error {
-                    EnvError::InvalidSetKey => {
-                        ArgumentError::raise(interp, "Invalid key for ENV set")
-                    }
-                    EnvError::InvalidSetValue => {
-                        ArgumentError::raise(interp, "Invalid value for ENV set")
-                    }
-                };
-                sys::mrb_sys_nil_value()
-            }
-        }
-    }
-
-    unsafe extern "C" fn env_to_h(
+impl<T: EnvBackend> RubyEnvNativeApi for Env<T>
+where
+    T: 'static,
+{
+    unsafe extern "C" fn initialize(
         mrb: *mut sys::mrb_state,
-        _slf: sys::mrb_value,
+        slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
 
-        Self::env_to_h_internal(&interp)
+        let new_object = Self::new();
+        let this = new_object.try_into_ruby(&interp, Some(slf));
+
+        match this {
+            Ok(value) => value.inner(),
+            Err(_) => RuntimeError::raise(interp, "Cannot initialize new ENV object"),
+        }
+    }
+
+    unsafe extern "C" fn get(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = unwrap_interpreter!(mrb);
+
+        if let Ok(this) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+            let that = this.as_ref().borrow();
+            that.get_internal(&interp)
+        } else {
+            RuntimeError::raise(interp, "ENV::get Unable to access self object")
+        }
+    }
+
+    unsafe extern "C" fn set(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp: Artichoke = unwrap_interpreter!(mrb);
+
+        if let Ok(this) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+            let that = this.as_ref().borrow();
+            that.set_internal(interp)
+        } else {
+            RuntimeError::raise(interp, "Unable to access self object")
+        }
+    }
+
+    unsafe extern "C" fn env_to_h(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp: Artichoke = unwrap_interpreter!(mrb);
+
+        if let Ok(this) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+            let that = this.as_ref().borrow();
+            that.env_to_h_internal(&interp)
+        } else {
+            RuntimeError::raise(interp, "Unable to access self object")
+        }
     }
 }
+
+impl<T: EnvBackend> RustBackedValue for Env<T> where T: 'static {}
 
 #[cfg(test)]
 mod tests {

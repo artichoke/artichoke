@@ -28,6 +28,10 @@ where
         .borrow_mut()
         .def_class::<Env<T>>("EnvClass", None, None);
 
+    env.borrow_mut().mrb_value_is_rust_backed(true);
+
+    env.borrow_mut()
+        .add_method("initialize", Env::<T>::initialize, sys::mrb_args_none());
     env.borrow_mut()
         .add_method("[]", Env::<T>::get, sys::mrb_args_req(1));
     env.borrow_mut()
