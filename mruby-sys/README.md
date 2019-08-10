@@ -27,6 +27,11 @@ mruby-sys vendors and links against [mruby](https://github.com/mruby/mruby)
 which is Copyright (c) 2019 mruby developers. mruby is licensed with the
 [MIT License](https://github.com/mruby/mruby/blob/master/LICENSE).
 
+mruby-sys vendors headers provided by
+[emsdk](https://github.com/emscripten-core/emsdk) which is Copyright (c) 2018
+Emscripten authors. emsdk is licensed with the
+[MIT/Expat License](https://github.com/emscripten-core/emsdk/blob/master/LICENSE).
+
 Some portions of mruby-sys are derived from mrusty @
 [1.0.0](https://github.com/anima-engine/mrusty/tree/v1.0.0) which is Copyright
 (C) 2016 Dragoș Tiselice. mrusty is licensed with the
