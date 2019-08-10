@@ -19,7 +19,7 @@ struct Build;
 
 impl Build {
     fn root() -> PathBuf {
-        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
+        PathBuf::from(env::var("OUT_DIR").unwrap()).join("mruby-sys")
     }
 
     fn gems() -> Vec<&'static str> {
@@ -72,14 +72,19 @@ impl Build {
             .join("ext.c")
     }
 
-    fn mruby_vendored_dir() -> PathBuf {
+    fn wasm_include_dir() -> PathBuf {
         Build::root()
             .join("vendor")
-            .join(format!("mruby-{}", MRUBY_REVISION))
+            .join("emscripten")
+            .join("system")
+            .join("include")
+            .join("libc")
     }
 
     fn mruby_source_dir() -> PathBuf {
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join(format!("mruby-{}", MRUBY_REVISION))
+        Build::root()
+            .join("vendor")
+            .join(format!("mruby-{}", MRUBY_REVISION))
     }
 
     fn mruby_minirake() -> PathBuf {
@@ -91,7 +96,7 @@ impl Build {
     }
 
     fn mruby_build_dir() -> PathBuf {
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("mruby-build")
+        Build::root().join("mruby-build")
     }
 
     fn bindgen_source_header() -> PathBuf {
@@ -105,9 +110,9 @@ impl Build {
 
 fn main() {
     let opts = CopyOptions::new();
-    let _ = dir::remove(Build::mruby_source_dir());
+    let _ = dir::remove(Build::root());
     dir::copy(
-        Build::mruby_vendored_dir(),
+        env::var("CARGO_MANIFEST_DIR").unwrap(),
         env::var("OUT_DIR").unwrap(),
         &opts,
     )
@@ -139,7 +144,7 @@ fn main() {
         gembox.push_str("';");
     }
     gembox.push('}');
-    fs::write(Build::mruby_source_dir().join("sys.gembox"), gembox).unwrap();
+    fs::write(Build::root().join("sys.gembox"), gembox).unwrap();
 
     // Build the mruby static library with its built in minirake build system.
     // minirake dynamically generates some c source files so we can't build
@@ -231,6 +236,10 @@ fn main() {
         build.include(gem_include_dir);
     }
 
+    if env::var("TARGET").unwrap().starts_with("wasm32") {
+        build.include(Build::wasm_include_dir());
+    }
+
     build.compile("libmrubysys.a");
 
     println!(
@@ -264,12 +273,7 @@ fn main() {
         .generate_comments(false);
     if env::var("TARGET").unwrap().starts_with("wasm32") {
         bindgen = bindgen
-            .clang_arg(format!(
-                "-I{}",
-                Build::root()
-                    .join("../target/emsdk/fastcomp/emscripten/system/include/libc")
-                    .to_string_lossy()
-            ))
+            .clang_arg(format!("-I{}", Build::wasm_include_dir().to_string_lossy()))
             .clang_arg("-fvisibility=default");
     }
     bindgen
