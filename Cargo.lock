@@ -65,14 +65,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "artichoke-wasm"
-version = "0.1.0"
-dependencies = [
- "artichoke-backend 0.1.0",
- "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "atty"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
