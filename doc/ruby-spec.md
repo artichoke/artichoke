@@ -52,6 +52,7 @@ as part of CI and will ensure that a suite that does pass continues to pass.
 
 | Type    | Suite           |
 | ------- | --------------- |
+| Core    | `Comparable`    |
 | Core    | `MatchData`     |
 | Core    | `Regexp`        |
 | Library | `Monitor`       |
