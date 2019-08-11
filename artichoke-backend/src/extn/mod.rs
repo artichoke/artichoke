@@ -9,7 +9,7 @@ pub mod stdlib;
 pub const RUBY_PLATFORM: &str = "x86_64-unknown-artichoke";
 pub const INPUT_RECORD_SEPARATOR: &str = "\n";
 
-pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let mrb = interp.borrow().mrb;
     unsafe {
         let ruby_platform = Value::convert(interp, RUBY_PLATFORM);
@@ -31,7 +31,7 @@ pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
             input_record_separator.inner(),
         );
     }
-    core::patch(interp)?;
-    stdlib::patch(interp)?;
+    core::init(interp)?;
+    stdlib::init(interp)?;
     Ok(())
 }

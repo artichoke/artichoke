@@ -185,14 +185,14 @@ mod tests {
     #[test]
     fn test_env_initialized() {
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
     }
 
     #[test]
     fn test_env_get_unexisting_variable() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
 
         // when
         let non_existing_env_variable = (&interp)
@@ -208,7 +208,7 @@ mod tests {
     fn test_env_get_with_incorrect_number_of_args() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
 
         // when
         let env_get_no_args = (&interp).eval(r"ENV[]");
@@ -223,7 +223,7 @@ mod tests {
     fn test_env_set() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
 
         // when
         let env_set_random_var =
@@ -239,7 +239,7 @@ mod tests {
     fn test_two_set() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
 
         // when
         let _env_set_1 = (&interp).eval(r"ENV['f38e2156-0633-4b06-80e7-9d5fa4b5a553'] = 'val1'");
@@ -257,7 +257,7 @@ mod tests {
     fn test_set_get() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
         let var_name = "81fdf184-01b4-4248-82db-3b3e8482abf6";
         let var_value = "val";
         let set_var_cmd = format!(r"ENV['{0}'] = '{1}'", var_name, var_value);
@@ -276,7 +276,7 @@ mod tests {
     fn test_set_nil() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
         let var_name = "9a557fda-73a6-4de8-8999-ddeda18703f2";
         let var_value = "val";
         let set_var_cmd = format!(r"ENV['{0}'] = '{1}'", var_name, var_value);
@@ -299,7 +299,7 @@ mod tests {
     fn test_get_name_with_null_byte() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
 
         // when
         let result = interp.eval(r#"ENV["bar\0"]"#);
@@ -320,7 +320,7 @@ mod tests {
     fn test_set_name_with_null_byte() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
 
         // when
         let result = interp.eval(r#"ENV["bar\0"] = "foo""#);
@@ -341,7 +341,7 @@ mod tests {
     fn test_set_value_with_null_byte() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
 
         // when
         let result = interp.eval(r#"ENV['bar'] = "foo\0""#);
@@ -362,7 +362,7 @@ mod tests {
     fn test_set_value_with_equal() {
         // given
         let interp = crate::interpreter().expect("init");
-        env::patch(&interp).expect("env init");
+        env::init(&interp).expect("env init");
 
         // when
         let result = interp.eval(r#"ENV['bar='] = "foo""#);

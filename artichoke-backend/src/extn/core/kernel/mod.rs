@@ -13,7 +13,7 @@ use crate::{Artichoke, ArtichokeError};
 mod args;
 pub mod require;
 
-pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let warning = interp.borrow_mut().def_module::<Warning>("Warning", None);
     warning
         .borrow_mut()

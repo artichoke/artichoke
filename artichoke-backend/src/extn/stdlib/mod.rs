@@ -9,8 +9,8 @@ pub mod set;
 pub mod strscan;
 mod stubs;
 
-pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    stubs::patch(interp)?;
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    stubs::init(interp)?;
     delegate::init(interp)?;
     forwardable::init(interp)?;
     json::init(interp)?;

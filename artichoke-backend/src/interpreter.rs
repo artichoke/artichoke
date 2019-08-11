@@ -41,8 +41,8 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     // context and interpreter.
     let interp = unsafe { Rc::from_raw(ptr) };
 
-    // Patch mruby builtins with Rust extensions
-    extn::patch(&interp)?;
+    // Initialize Artichoke Core and Standard Library runtime
+    extn::init(&interp)?;
 
     debug!("Allocated {}", mrb.debug());
 

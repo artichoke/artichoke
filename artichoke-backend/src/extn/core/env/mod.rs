@@ -13,11 +13,11 @@ mod env_object;
 use backends::{EnvBackend, EnvStdBackend};
 use env_object::{Env, RubyEnvNativeApi};
 
-pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    patch_internal_with_backend::<EnvStdBackend>(interp)
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    init_internal_with_backend::<EnvStdBackend>(interp)
 }
 
-fn patch_internal_with_backend<T: EnvBackend>(interp: &Artichoke) -> Result<(), ArtichokeError>
+fn init_internal_with_backend<T: EnvBackend>(interp: &Artichoke) -> Result<(), ArtichokeError>
 where
     T: 'static,
 {
