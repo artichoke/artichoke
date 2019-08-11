@@ -1,14 +1,15 @@
-use crate::def::{ClassLike, Define};
+use log::trace;
+use std::error;
+use std::fmt;
 
+use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
 use crate::sys;
-use crate::Artichoke;
-use crate::ArtichokeError;
-use log::trace;
+use crate::{Artichoke, ArtichokeError};
 
 mod backends;
 mod env_object;
-mod errors;
+
 use backends::{EnvBackend, EnvStdBackend};
 use env_object::{Env, RubyEnvNativeApi};
 
@@ -48,4 +49,49 @@ where
     trace!("Patched ENV onto interpreter");
 
     Ok(())
+}
+
+#[derive(Clone, Eq, PartialEq, Hash)]
+pub enum Error {
+    Fatal,
+    NameContainsNullByte,
+    Os(String), // should this be a `Value`?
+    ValueContainsNullByte,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::Fatal => write!(f, "fatal ENV error"),
+            Error::NameContainsNullByte => {
+                write!(f, "bad environment variable name: contains null byte")
+            }
+            Error::Os(arg) => write!(f, "Errno::EINVAL (Invalid argument - setenv({}))", arg),
+            Error::ValueContainsNullByte => {
+                write!(f, "bad environment variable value: contains null byte")
+            }
+        }
+    }
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::Fatal => write!(f, "RuntimeError: {}", self),
+            Error::NameContainsNullByte | Error::ValueContainsNullByte => {
+                write!(f, "ArgumentError: {}", self)
+            }
+            Error::Os(arg) => write!(f, "Errno::EINVAL (Invalid argument - setenv({}))", arg),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        "ENV error"
+    }
+
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
+    }
 }

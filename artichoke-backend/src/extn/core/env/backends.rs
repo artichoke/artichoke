@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 use std::env;
-use std::ffi::OsString;
 use std::sync::RwLock;
+
+use crate::extn::core::env::Error;
 
 pub trait EnvBackend {
     fn new() -> Self;
-    fn get_value(&self, env_name: &str) -> Option<String>;
-    fn set_value(&self, env_name: &str, env_value: Option<&String>);
+    fn get_value(&self, name: &str) -> Result<Option<String>, Error>;
+    fn set_value(&self, name: &str, value: Option<&str>) -> Result<(), Error>;
     fn as_map(&self) -> HashMap<String, String>;
 }
 
@@ -19,18 +20,57 @@ impl EnvBackend for EnvStdBackend {
         Self {}
     }
 
-    fn get_value(&self, env_name: &str) -> Option<String> {
-        if let Some(value) = env::var_os(env_name) {
-            Some(String::from(value.to_str().unwrap()))
+    fn get_value(&self, name: &str) -> Result<Option<String>, Error> {
+        // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
+        // https://doc.rust-lang.org/std/env/fn.set_var.html
+        // https://doc.rust-lang.org/std/env/fn.remove_var.html
+        //
+        // This function may panic if key is empty, contains an ASCII equals
+        // sign '=' or the NUL character '\0', or when the value contains the
+        // NUL character.
+        if name.is_empty() || name.contains('=') {
+            return Err(Error::Os(name.to_owned()));
+        }
+        if name.contains('\0') {
+            return Err(Error::NameContainsNullByte);
+        }
+        if let Some(value) = env::var_os(name) {
+            // todo convert the OsString to bytes
+            value
+                .to_str()
+                .ok_or(Error::Fatal)
+                .map(String::from)
+                .map(Some)
         } else {
-            None
+            Ok(None)
         }
     }
 
-    fn set_value(&self, env_name: &str, env_value: Option<&String>) {
-        match env_value {
-            Some(string) => env::set_var(OsString::from(env_name), OsString::from(string)),
-            None => env::remove_var(OsString::from(env_name)),
+    fn set_value(&self, name: &str, value: Option<&str>) -> Result<(), Error> {
+        // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
+        // https://doc.rust-lang.org/std/env/fn.set_var.html
+        // https://doc.rust-lang.org/std/env/fn.remove_var.html
+        //
+        // This function may panic if key is empty, contains an ASCII equals
+        // sign '=' or the NUL character '\0', or when the value contains the
+        // NUL character.
+        if name.is_empty() || name.contains('=') {
+            return Err(Error::Os(name.to_owned()));
+        }
+        if name.contains('\0') {
+            return Err(Error::NameContainsNullByte);
+        }
+
+        match value {
+            Some(value) if value.contains('\0') => Err(Error::ValueContainsNullByte),
+            Some(value) => {
+                env::set_var(name, value);
+                Ok(())
+            }
+            None => {
+                env::remove_var(name);
+                Ok(())
+            }
         }
     }
 
@@ -90,20 +130,19 @@ impl EnvBackend for EnvHashMapBackend {
         }
     }
 
-    fn get_value(&self, env_name: &str) -> Option<String> {
-        self.env_storage.data.read().unwrap().get(env_name).cloned()
+    fn get_value(&self, name: &str) -> Result<Option<String>, Error> {
+        let guard = self.env_storage.data.read().map_err(|_| Error::Fatal)?;
+        Ok(guard.get(name).cloned())
     }
 
-    fn set_value(&self, env_name: &str, env_value: Option<&String>) {
-        match env_value {
-            Some(value) => self
-                .env_storage
-                .data
-                .write()
-                .unwrap()
-                .insert(env_name.to_owned(), value.to_owned()),
-            None => self.env_storage.data.write().unwrap().remove(env_name),
-        };
+    fn set_value(&self, name: &str, value: Option<&str>) -> Result<(), Error> {
+        let mut guard = self.env_storage.data.write().map_err(|_| Error::Fatal)?;
+        if let Some(value) = value {
+            guard.insert(name.to_owned(), value.to_owned());
+        } else {
+            guard.remove(name);
+        }
+        Ok(())
     }
 
     fn as_map(&self) -> HashMap<String, String> {
@@ -123,12 +162,11 @@ mod tests {
         let env_value = "value".to_string();
 
         // when
-        backend.set_value(env_name, Some(&env_value));
+        backend.set_value(env_name, Some(&env_value)).unwrap();
         let value = backend.get_value(env_name);
 
         // then
-        assert!(value.is_some());
-        assert_eq!(env_value, value.unwrap());
+        assert_eq!(Ok(Some(env_value)), value);
     }
 
     #[test]
@@ -139,12 +177,12 @@ mod tests {
         let env_value = "value".to_string();
 
         // when
-        backend.set_value(env_name, Some(&env_value));
-        backend.set_value(env_name, None);
+        backend.set_value(env_name, Some(&env_value)).unwrap();
+        backend.set_value(env_name, None).unwrap();
         let value = backend.get_value(env_name);
 
         // then
-        assert!(value.is_none());
+        assert_eq!(Ok(None), value);
     }
 
     #[test]
@@ -158,8 +196,8 @@ mod tests {
 
         // when
         let size_before = backend.as_map().len();
-        backend.set_value(env1_name, Some(&env1_value));
-        backend.set_value(env2_name, Some(&env2_value));
+        backend.set_value(env1_name, Some(&env1_value)).unwrap();
+        backend.set_value(env2_name, Some(&env2_value)).unwrap();
         let data = backend.as_map();
         let size_after = data.len();
 
