@@ -9,13 +9,6 @@ cd "$(pkg-dir)"
 
 set -x
 
-mkdir -p target/wasm32-unknown-emscripten/debug/deps
-touch target/wasm32-unknown-emscripten/debug/artichoke_wasm.wasm
-touch target/wasm32-unknown-emscripten/debug/deps/artichoke-wasm.js
-mkdir -p target/wasm32-unknown-emscripten/release/deps
-touch target/wasm32-unknown-emscripten/release/artichoke_wasm.wasm
-touch target/wasm32-unknown-emscripten/release/deps/artichoke-wasm.js
-
 # Yarn orchestration
 
 ## Lint package.json
