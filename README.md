@@ -113,9 +113,8 @@ Artichoke will include implementation-agnostic
 
 ## Try Artichoke
 
-You can [try Artichoke in your browser](https://artichoke.github.io/artichoke/).
-The Artichoke Playground runs a [WebAssembly](https://webassembly.org/) build of
-Artichoke.
+You can [try Artichoke in your browser](https://artichoke.run). The Artichoke
+Playground runs a [WebAssembly](https://webassembly.org/) build of Artichoke.
 
 If you would prefer to run a local build,
 [set up a Rust toolchain](/CONTRIBUTING.md#rust-toolchain) and launch an

@@ -88,14 +88,6 @@ jobs:
           name: Check Docs
           command: |
             cargo doc --no-deps --all
-          environment:
-            RUSTDOCFLAGS: "-Z unstable-options --enable-index-page"
-      - run:
-          name: Wasm Build
-          command: |
-            rustup target add wasm32-unknown-emscripten
-            . ./scripts/activate-wasm-build-env.sh
-            cargo build --target wasm32-unknown-emscripten
       - run:
           name: ruby/spec Compliance Regression Test
           command: |
@@ -109,7 +101,6 @@ jobs:
           root: target
           paths:
             - doc
-            - wasm32-unknown-emscripten
   c:
     docker:
       - image: circleci/node:lts
@@ -158,17 +149,6 @@ jobs:
             - ~/.cache/yarn
             - node_modules
       - run:
-          name: Fake Wasm Sources
-          command: |
-            mkdir -p target/wasm32-unknown-emscripten/debug/deps
-            touch target/wasm32-unknown-emscripten/debug/artichoke-wasm.js
-            touch target/wasm32-unknown-emscripten/debug/artichoke_wasm.wasm
-            touch target/wasm32-unknown-emscripten/debug/deps/artichoke-wasm.js
-            mkdir -p target/wasm32-unknown-emscripten/release/deps
-            touch target/wasm32-unknown-emscripten/release/artichoke-wasm.js
-            touch target/wasm32-unknown-emscripten/release/artichoke_wasm.wasm
-            touch target/wasm32-unknown-emscripten/release/deps/artichoke-wasm.js
-      - run:
           name: yarn check
           command: |
             yarn check --integrity
@@ -209,7 +189,7 @@ jobs:
             ./scripts/format-text.sh --check "yaml"
             ./scripts/format-text.sh --check "yml"
             ./scripts/format-text.sh --check "md"
-  docs-deploy:
+  gh-pages-deploy:
     docker:
       - image: node:8.10.0
     steps:
@@ -228,19 +208,15 @@ jobs:
             - ~/.cache/yarn
             - node_modules
       - run:
-          name: Webpack build of Wasm assets
-          command: yarn run webpack --mode production
-      - run:
-          name: Copy Wasm assets to dist
-          command: cp ./target/webpack/release/* ./target/doc
-      - run:
-          name: Configure git
-          command: |
-            git config user.email "ci-build@hyperbo.la"
-            git config user.name "ci-build"
+          name: Copy playground redirect
+          command: cp assets/* target/doc
       - run:
           name: Deploy docs to gh-pages branch
-          command: yarn run gh-pages --message "[skip ci] generate docs" --dist target/doc --git "$(which git)"
+          command: |
+            yarn run gh-pages \
+              --user "ci-build <ci-build@hyperbo.la>" \
+              --message "[skip ci] build docs" \
+              --dist target/doc
 workflows:
   version: 2
   build:
@@ -253,7 +229,7 @@ workflows:
       - shellcheck/check:
           exclude: "*/vendor/*"
       - text
-      - docs-deploy:
+      - gh-pages-deploy:
           requires:
             - rust
           filters:
