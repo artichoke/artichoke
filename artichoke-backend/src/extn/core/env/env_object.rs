@@ -182,7 +182,8 @@ impl<T: EnvBackend> RustBackedValue for Env<T> where T: 'static {}
 mod tests {
     use crate::eval::Eval;
     use crate::extn::core::env;
-    use crate::sys;
+    use crate::value::Value;
+    use crate::ArtichokeError;
 
     #[test]
     fn test_env_initialized() {
@@ -294,9 +295,90 @@ mod tests {
         // then
         assert!(first_result.is_ok());
         assert_eq!(var_value, first_result.unwrap());
-        unsafe {
-            assert!(sys::mrb_sys_value_is_nil(last_result.inner()));
-        }
+        assert!(last_result.try_into::<Option<Value>>().unwrap().is_none());
     }
 
+    #[test]
+    fn test_get_name_with_null_byte() {
+        // given
+        let interp = crate::interpreter().expect("init");
+        env::patch(&interp).expect("env init");
+
+        // when
+        let result = interp.eval(r#"ENV["bar\0"]"#);
+
+        // then
+        assert!(result.is_err());
+        let expected_backtrace = r#"
+(eval):1: bad environment variable name: contains null byte (ArgumentError)
+(eval):1
+        "#;
+        assert_eq!(
+            result.map(|_| ()),
+            Err(ArtichokeError::Exec(expected_backtrace.trim().to_owned()))
+        );
+    }
+
+    #[test]
+    fn test_set_name_with_null_byte() {
+        // given
+        let interp = crate::interpreter().expect("init");
+        env::patch(&interp).expect("env init");
+
+        // when
+        let result = interp.eval(r#"ENV["bar\0"] = "foo""#);
+
+        // then
+        assert!(result.is_err());
+        let expected_backtrace = r#"
+(eval):1: bad environment variable name: contains null byte (ArgumentError)
+(eval):1
+        "#;
+        assert_eq!(
+            result.map(|_| ()),
+            Err(ArtichokeError::Exec(expected_backtrace.trim().to_owned()))
+        );
+    }
+
+    #[test]
+    fn test_set_value_with_null_byte() {
+        // given
+        let interp = crate::interpreter().expect("init");
+        env::patch(&interp).expect("env init");
+
+        // when
+        let result = interp.eval(r#"ENV['bar'] = "foo\0""#);
+
+        // then
+        assert!(result.is_err());
+        let expected_backtrace = r#"
+(eval):1: bad environment variable value: contains null byte (ArgumentError)
+(eval):1
+        "#;
+        assert_eq!(
+            result.map(|_| ()),
+            Err(ArtichokeError::Exec(expected_backtrace.trim().to_owned()))
+        );
+    }
+
+    #[test]
+    fn test_set_value_with_equal() {
+        // given
+        let interp = crate::interpreter().expect("init");
+        env::patch(&interp).expect("env init");
+
+        // when
+        let result = interp.eval(r#"ENV['bar='] = "foo""#);
+
+        // then
+        assert!(result.is_err());
+        let expected_backtrace = r#"
+(eval):1: invalid argument - setenv(bar=) (RuntimeError)
+(eval):1
+        "#;
+        assert_eq!(
+            result.map(|_| ()),
+            Err(ArtichokeError::Exec(expected_backtrace.trim().to_owned()))
+        );
+    }
 }
