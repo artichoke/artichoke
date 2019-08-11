@@ -207,7 +207,11 @@ fn main() {
             .map(String::from)
             .collect::<Vec<_>>();
         for source in &sources {
-            println!("source = {:?}, prefix = {:?}", source, Build::ruby_vendored_lib_dir());
+            println!(
+                "source = {:?}, prefix = {:?}",
+                source,
+                Build::ruby_vendored_lib_dir()
+            );
             let package_source = PathBuf::from(source.to_owned());
             let package_source = package_source.strip_prefix(Build::ruby_vendored_lib_dir());
             let out = Build::generated_dir().join(package_source.unwrap());
