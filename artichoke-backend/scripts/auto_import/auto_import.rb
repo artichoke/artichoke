@@ -13,7 +13,7 @@ out_file = ARGV[2]
 sources = ARGV[3].to_s.split(',').map { |source| source.gsub(%r{^.*#{base}/?}, '').gsub(/\.rb$/, '') }
 auto_import_dir = File.dirname(__FILE__)
 # Import the Ruby 2.6.3 sources.
-constants = `#{auto_import_dir}/get_constants_loaded.rb "#{base}" "#{package}"`.split("\n")
+constants = `ruby --disable-did_you_mean --disable-gems #{auto_import_dir}/get_constants_loaded.rb "#{base}" "#{package}"`.split("\n")
 
 # Add Rust glue, like this example for ostruct. Make a commit here.
 template = File.read("#{auto_import_dir}/rust_glue.rs.erb")
