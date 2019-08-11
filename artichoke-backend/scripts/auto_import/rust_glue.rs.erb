@@ -9,7 +9,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .def_class::<<%=constant%>>("<%=constant%>", None, None);
     <% end %>
     <% sources.each do |(file, source)| %>
-      interp.def_rb_source_file("<%=file%>.rb", include_str!(concat!(env!("OUT_DIR"), "/src/generated/<%=file%>.rs")))?;
+      interp.def_rb_source_file("<%=file%>.rb", include_str!(concat!(env!("OUT_DIR"), "/src/generated/<%=file%>.rb")))?;
     <% end %>
     Ok(())
 }
