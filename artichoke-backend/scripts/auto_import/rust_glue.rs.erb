@@ -4,11 +4,11 @@ use crate::ArtichokeError;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     <% constants.each do |(constant, klass)| %>
-    <% if klass == "class" %>
+    <% if klass == "Class" %>
     interp
         .borrow_mut()
         .def_class::<<%= constant %>>("<%= constant %>", None, None);
-    <% elsif klass == "module" %>
+    <% elsif klass == "Module" %>
     interp
         .borrow_mut()
         .def_module::<<%= constant %>>("<%= constant %>", None);
