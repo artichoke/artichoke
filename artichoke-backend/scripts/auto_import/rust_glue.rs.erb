@@ -3,16 +3,27 @@ use crate::Artichoke;
 use crate::ArtichokeError;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    <% constants.each do |constant| %>
+    <% constants.each do |(constant, klass)| %>
+    <% if klass == "class" %>
     interp
         .borrow_mut()
-        .def_class::<<%=constant%>>("<%=constant%>", None, None);
+        .def_class::<<%= constant %>>("<%= constant %>", None, None);
+    <% elsif klass == "module" %>
+    interp
+        .borrow_mut()
+        .def_module::<<%= constant %>>("<%= constant %>", None);
+    <% else %>
+    panic!("unknown constant class <%= klass %> for constant <%= constant %>");
+    <% end %>
     <% end %>
     <% sources.each do |(file, source)| %>
-      interp.def_rb_source_file("<%=file%>.rb", include_str!(concat!(env!("OUT_DIR"), "/src/generated/<%=file%>.rb")))?;
+    interp.def_rb_source_file(
+        "<%= file %>.rb",
+        include_str!(concat!(env!("OUT_DIR"), "/src/generated/<%= file %>.rb"))
+    )?;
     <% end %>
     Ok(())
 }
-<% constants.each_with_index do |constant, i| %>
-pub struct <%=constant%>;
+<% constants.each_with_index do |(constant, _), i| %>
+pub struct <%= constant %>;
 <% end %>
