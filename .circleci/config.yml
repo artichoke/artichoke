@@ -30,7 +30,7 @@ commands:
 jobs:
   rust:
     docker:
-      - image: circleci/rust:latest
+      - image: circleci/rust:buster
     steps:
       - checkout
       - restore_cache:
@@ -46,13 +46,19 @@ jobs:
             rustfmt --version
             cargo clippy -- --version
       - run:
+          # Debian Buster includes ruby 2.5
+          # FIXME: we should really be installing 2.6.3 since that is our stdlib dep.
+          name: Install MRI Ruby
+          command: |
+            sudo apt-get install -y ruby-full
+            ruby --version
+      - run:
           # https://github.com/mruby/mruby/blob/master/doc/guides/compile.md#prerequisites
           name: Install mruby Build Dependencies
           command: |
-            sudo apt-get install -y bison gperf ruby-full
+            sudo apt-get install -y bison gperf
             bison --version
             gperf --version
-            ruby --version
       - run:
           # needed for cc crate in build.rs
           name: Install mruby-sys Build Dependencies
