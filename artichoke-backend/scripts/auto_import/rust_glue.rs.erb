@@ -13,7 +13,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .borrow_mut()
         .def_module::<<%= constant %>>("<%= constant %>", None);
     <% else %>
-    panic!("unknown constant class <%= klass %> for constant <%= constant %>");
+    // Skipping constant <%= constant %> with class <%= klass %>
     <% end %>
     <% end %>
     <% sources.each do |(file, source)| %>
