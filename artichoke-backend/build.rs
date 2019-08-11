@@ -67,6 +67,9 @@ impl Build {
 
     // The invoked Ruby script handles writing the output to disk
     fn generate_rust_glue(package: &str, sources: Vec<String>) {
+        if let Some(parent) = Build::generated_package_out(&package).parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
         let script = Build::root()
             .join("scripts")
             .join("auto_import")
@@ -101,12 +104,18 @@ fn main() {
         let sources = Build::get_package_files(package)
             .trim()
             .split("\n")
+            .filter(|s| !s.is_empty())
             .map(String::from)
             .collect::<Vec<_>>();
         for source in &sources {
+            println!("source = {:?}, prefix = {:?}", source, Build::ruby_vendored_lib_dir());
             let package_source = PathBuf::from(source.to_owned());
             let package_source = package_source.strip_prefix(Build::ruby_vendored_lib_dir());
             let out = Build::generated_dir().join(package_source.unwrap());
+            if let Some(parent) = out.parent() {
+                fs::create_dir_all(parent).unwrap();
+            }
+            println!("source = {:?}, dest = {:?}", source, out);
             fs::copy(source, &out).unwrap();
         }
         Build::generate_rust_glue(package, sources);
