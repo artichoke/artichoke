@@ -34,7 +34,6 @@ impl Build {
             "mruby-math",
             "mruby-time",
             "mruby-struct",
-            "mruby-compar-ext",
             "mruby-enum-ext",
             "mruby-numeric-ext",
             "mruby-array-ext",
