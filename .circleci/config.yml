@@ -210,12 +210,15 @@ jobs:
             - ~/.cache/yarn
             - node_modules
       - run:
+          name: Copy playground redirect
+          command: cp assets/* target/doc
+      - run:
           name: Deploy docs to gh-pages branch
           command: |
             yarn run gh-pages \
               --user "ci-build <ci-build@hyperbo.la>" \
               --message "[skip ci] build docs" \
-              --dist target/dist
+              --dist target/doc
 workflows:
   version: 2
   build:
