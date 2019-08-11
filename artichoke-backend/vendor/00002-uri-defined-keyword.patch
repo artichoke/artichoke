@@ -1,0 +1,25 @@
+commit 35be70248c8c59fcf85e01aae87ecd3d4e7edb03
+Author: Ryan Lopopolo <rjl@hyperbo.la>
+Date:   Sat Jun 15 09:53:33 2019 +0400
+
+    Work around SyntaxErrors in uri/generic
+
+    - defined? keyword is not implemented in mruby
+
+diff --git a/src/generated/uri/generic.rb b/src/generated/uri/generic.rb
+index ea79e795..9be16ea1 100644
+--- a/src/generated/uri/generic.rb
++++ b/src/generated/uri/generic.rb
+@@ -288,11 +288,7 @@ module URI
+     # Unless a URI::Parser is defined, DEFAULT_PARSER is used.
+     #
+     def parser
+-      if !defined?(@parser) || !@parser
+-        DEFAULT_PARSER
+-      else
+-        @parser || DEFAULT_PARSER
+-      end
++      @parser || DEFAULT_PARSER
+     end
+
+     # Replaces self by other URI object.
