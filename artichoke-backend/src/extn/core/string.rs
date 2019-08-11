@@ -10,7 +10,7 @@ use crate::{Artichoke, ArtichokeError};
 
 mod scan;
 
-pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }
@@ -84,7 +84,7 @@ mod tests {
     #[test]
     fn string_equal_squiggle() {
         let interp = crate::interpreter().expect("init");
-        string::patch(&interp).expect("string init");
+        string::init(&interp).expect("string init");
 
         let value = interp.eval(r#""cat o' 9 tails" =~ /\d/"#).unwrap();
         assert_eq!(value.try_into::<Option<i64>>(), Ok(Some(7)));
@@ -95,7 +95,7 @@ mod tests {
     #[test]
     fn string_idx() {
         let interp = crate::interpreter().expect("init");
-        string::patch(&interp).expect("string init");
+        string::init(&interp).expect("string init");
 
         assert_eq!(
             &interp
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn string_scan() {
         let interp = crate::interpreter().expect("init");
-        string::patch(&interp).expect("string init");
+        string::init(&interp).expect("string init");
 
         let s = Value::convert(&interp, "abababa");
         let result = s
@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn string_unary_minus() {
         let interp = crate::interpreter().expect("init");
-        string::patch(&interp).expect("string init");
+        string::init(&interp).expect("string init");
 
         let s = interp.eval("-'abababa'").expect("eval");
         let result = s.funcall::<bool, _, _>("frozen?", &[]).expect("funcall");

@@ -2,7 +2,7 @@ use crate::load::LoadSources;
 use crate::Artichoke;
 use crate::ArtichokeError;
 
-pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("erb.rb", "class ERB; def initialize(*args); end; end")?;
     interp.def_rb_source_file("time.rb", "")?;
     interp.def_rb_source_file("fileutils.rb", "")?;

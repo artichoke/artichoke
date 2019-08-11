@@ -8,7 +8,7 @@ use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
-pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let exception = interp
         .borrow_mut()
         .def_class::<Exception>("Exception", None, None);

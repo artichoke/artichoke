@@ -13,17 +13,17 @@ pub mod regexp;
 pub mod string;
 pub mod thread;
 
-pub fn patch(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("object.rb"))?;
-    array::patch(interp)?;
-    env::patch(interp)?;
-    error::patch(interp)?;
-    hash::patch(interp)?;
-    kernel::patch(interp)?;
+    array::init(interp)?;
+    env::init(interp)?;
+    error::init(interp)?;
+    hash::init(interp)?;
+    kernel::init(interp)?;
     matchdata::init(interp)?;
-    module::patch(interp)?;
+    module::init(interp)?;
     regexp::init(interp)?;
-    string::patch(interp)?;
+    string::init(interp)?;
     thread::init(interp)?;
     Ok(())
 }
