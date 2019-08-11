@@ -88,8 +88,6 @@ jobs:
           name: Check Docs
           command: |
             cargo doc --no-deps --all
-          environment:
-            RUSTDOCFLAGS: "-Z unstable-options --enable-index-page"
       - run:
           name: ruby/spec Compliance Regression Test
           command: |
