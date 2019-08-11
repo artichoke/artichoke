@@ -209,7 +209,7 @@ jobs:
             ./scripts/format-text.sh --check "yaml"
             ./scripts/format-text.sh --check "yml"
             ./scripts/format-text.sh --check "md"
-  docs-deploy:
+  gh-pages-deploy:
     docker:
       - image: node:8.10.0
     steps:
@@ -234,13 +234,12 @@ jobs:
           name: Copy Wasm assets to dist
           command: cp ./target/webpack/release/* ./target/doc
       - run:
-          name: Configure git
-          command: |
-            git config user.email "ci-build@hyperbo.la"
-            git config user.name "ci-build"
-      - run:
           name: Deploy docs to gh-pages branch
-          command: yarn run gh-pages --message "[skip ci] generate docs" --dist target/doc --git "$(which git)"
+          command: |
+            yarn run gh-pages \
+              --user "ci-build <ci-build@hyperbo.la>" \
+              --message "[skip ci] build docs" \
+              --dist target/dist
 workflows:
   version: 2
   build:
@@ -253,7 +252,7 @@ workflows:
       - shellcheck/check:
           exclude: "*/vendor/*"
       - text
-      - docs-deploy:
+      - gh-pages-deploy:
           requires:
             - rust
           filters:

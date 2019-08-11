@@ -42,7 +42,7 @@
     "eslint-plugin-jsx-a11y": "^6.0.2",
     "eslint-plugin-prettier": "^3.0.1",
     "eslint-plugin-react": "^7.12.0",
-    "gh-pages": "^2.1.0",
+    "gh-pages": "^2.1.1",
     "package-json-validator": "^0.6.3",
     "path": "^0.12.7",
     "pkg-dir-cli": "^2.1.0",
