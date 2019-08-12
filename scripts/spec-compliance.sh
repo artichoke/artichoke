@@ -20,6 +20,7 @@ run_library_spec() {
   popd >/dev/null
 }
 
+run_core_spec "comparable"
 run_core_spec "matchdata"
 run_core_spec "regexp"
 
