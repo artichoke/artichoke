@@ -397,6 +397,52 @@ class Array
     replace(result)
   end
 
+  def slice!(*args)
+    case args.length
+    when 1
+      arg = range = index = args[0]
+      case arg
+      when Range
+        start = range.begin
+        raise TypeError, "No implicit conversion of #{start.class} into Integer" unless start.is_a?(Integer)
+
+        len = range.size
+        return nil if start.abs > length
+
+        start += length if start.negative?
+        len = length - start if start + len > length
+
+        slice = self[start, len]
+        self[start, len] = []
+        slice
+      when Integer
+        return nil if index.abs > length
+
+        index += length if index.negative?
+
+        delete_at(index)
+      else
+        raise TypeError, "No implicit conversion of #{arg.class} into Integer"
+      end
+    when 2
+      start = args[0]
+      len = args[1]
+      raise TypeError, "No implicit conversion of #{start.class} into Integer" unless start.is_a?(Integer)
+      raise TypeError, "No implicit conversion of #{len.class} into Integer" unless len.is_a?(Integer)
+
+      return nil if start.abs > length
+
+      start += length if start.negative?
+      len = length - start if start + len > length
+
+      slice = self[start, len]
+      self[start, len] = []
+      slice
+    else
+      raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1..2)"
+    end
+  end
+
   def to_a
     self
   end
