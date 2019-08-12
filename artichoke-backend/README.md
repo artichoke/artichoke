@@ -194,6 +194,11 @@ The infallible converters are safe Rust functions. The fallibile converters are
 artichoke-backend is licensed with the [MIT License](/LICENSE) (c) Ryan
 Lopopolo.
 
+Some portions of artichoke-backend are derived from
+[mruby](https://github.com/mruby/mruby) which is Copyright (c) 2019 mruby
+developers. mruby is licensed with the
+[MIT License](https://github.com/mruby/mruby/blob/master/LICENSE).
+
 Some portions of artichoke-backend are derived from Ruby @
 [2.6.3](https://github.com/ruby/ruby/tree/v2_6_3) which is copyright Yukihiro
 Matsumoto \<matz@netlab.jp\>. Ruby is licensed with the

@@ -36,8 +36,6 @@ impl Build {
             "mruby-struct",
             "mruby-enum-ext",
             "mruby-numeric-ext",
-            "mruby-array-ext",
-            "mruby-hash-ext",
             "mruby-range-ext",
             "mruby-proc-ext",
             "mruby-symbol-ext",
