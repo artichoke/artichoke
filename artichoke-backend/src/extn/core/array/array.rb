@@ -2,7 +2,7 @@
 
 class Array
   def &(other)
-    raise TypeError, "can't convert #{other.class} into Array" unless other.class == Array
+    raise TypeError, "can't convert #{other.class} into Array" unless other.is_a?(Array)
 
     hash = {}
     array = []
@@ -26,7 +26,7 @@ class Array
   end
 
   def -(other)
-    raise TypeError, "can't convert #{other.class} into Array" unless other.class == Array
+    raise TypeError, "can't convert #{other.class} into Array" unless other.is_a?(Array)
 
     hash = {}
     array = []
@@ -259,14 +259,14 @@ class Array
   def index(val = NONE, &block)
     return to_enum(:find_index, val) if !block && val == NONE
 
-    self[val] unless block
-
-    idx = 0
-    len = size
-    while idx < len
-      return idx if block.call self[idx]
-
-      idx += 1
+    if block
+      each_with_index do |obj, idx|
+        return idx if block.call(obj)
+      end
+    else
+      each_with_index do |obj, idx|
+        return idx if obj == val
+      end
     end
     nil
   end
@@ -409,7 +409,7 @@ class Array
     h = {}
     each do |v|
       v = blk.call(v) if blk
-      raise TypeError, "wrong element type #{v.class}" unless v.class == Array
+      raise TypeError, "wrong element type #{v.class}" unless v.is_a?(Array)
       raise ArgumentError, "wrong array length (expected 2, was #{v.length})" unless v.length == 2
 
       h[v[0]] = v[1]
@@ -471,7 +471,7 @@ class Array
   end
 
   def |(other)
-    raise TypeError, "can't convert #{other.class} into Array" unless other.class == Array
+    raise TypeError, "can't convert #{other.class} into Array" unless other.is_a?(Array)
 
     ary = self + other
     ary.uniq! || ary
