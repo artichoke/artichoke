@@ -9,7 +9,7 @@
 [![mruby-sys documentation](https://img.shields.io/badge/docs-mruby--sys-blue.svg)](https://artichoke.github.io/artichoke/mruby_sys/)
 
 <p align="center">
-  <img width="200" height="200" src="https://artichoke.github.io/artichoke/logo.svg">
+  <img width="200" height="200" src="https://artichoke.run/logo.svg">
 </p>
 
 Artichoke is a platform for building
