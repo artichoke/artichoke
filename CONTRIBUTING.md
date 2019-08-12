@@ -95,12 +95,11 @@ to compile C sources. On Unix, `cc` crate uses the `cc` binary.
 To build the Artichoke mruby backend, you will need a C compiler toolchain. By
 default, mruby requires the following to compile:
 
-- ar
-- gcc
+- clang
 - bison
-- gperf
+- ar
 
-You can override the requirement for gcc by setting the `CC` and `LD`
+You can override the requirement for clang by setting the `CC` and `LD`
 environment variables.
 
 ### Node.js

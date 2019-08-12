@@ -12,8 +12,10 @@ MRuby::Build.new do |conf|
   if ENV['VisualStudioVersion'] || ENV['VSINSTALLDIR']
     toolchain :visualcpp
   else
-    toolchain :gcc
+    toolchain :clang
   end
+  conf.gperf.command = 'true'
+  conf.gperf.compile_options = ''
 
   conf.bins = ['mrbc']
   conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'bootstrap')
@@ -26,6 +28,8 @@ MRuby::CrossBuild.new('sys') do |conf|
   conf.cxx.command = 'true'
   conf.objc.command = 'true'
   conf.asm.command = 'true'
+  conf.gperf.command = 'true'
+  conf.gperf.compile_options = ''
   conf.linker.command = 'true'
   conf.archiver.command = 'true'
 
