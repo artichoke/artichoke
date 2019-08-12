@@ -24,6 +24,7 @@ where
     if interp.borrow().class_spec::<Env<T>>().is_some() {
         return Ok(());
     }
+    interp.eval(include_str!("env.rb"))?;
 
     let env = interp
         .borrow_mut()
@@ -44,7 +45,7 @@ where
         .define(interp)
         .map_err(|_| ArtichokeError::New)?;
 
-    interp.eval(include_str!("env.rb"))?;
+    interp.eval("ENV = EnvClass.new")?;
 
     trace!("Patched ENV onto interpreter");
 
