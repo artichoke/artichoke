@@ -97,7 +97,6 @@ default, mruby requires the following to compile:
 
 - clang
 - bison
-- gperf
 - ar
 
 You can override the requirement for clang by setting the `CC` and `LD`
