@@ -56,9 +56,8 @@ jobs:
           # https://github.com/mruby/mruby/blob/master/doc/guides/compile.md#prerequisites
           name: Install mruby Build Dependencies
           command: |
-            sudo apt-get install -y bison gperf
+            sudo apt-get install -y bison
             bison --version
-            gperf --version
       - run:
           # needed for cc crate in build.rs
           name: Install mruby-sys Build Dependencies

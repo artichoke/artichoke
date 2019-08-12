@@ -14,6 +14,7 @@ MRuby::Build.new do |conf|
   else
     toolchain :clang
   end
+  conf.gperf.command = 'true'
 
   conf.bins = ['mrbc']
   conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'bootstrap')
@@ -26,6 +27,7 @@ MRuby::CrossBuild.new('sys') do |conf|
   conf.cxx.command = 'true'
   conf.objc.command = 'true'
   conf.asm.command = 'true'
+  conf.gperf.command = 'true'
   conf.linker.command = 'true'
   conf.archiver.command = 'true'
 
