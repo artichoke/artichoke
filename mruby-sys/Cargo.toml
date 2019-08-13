@@ -12,6 +12,7 @@ links = "mruby"
 # not possible to annotate these doctests with `ignore` because you can only add
 # attributes to fenced code blocks.
 doctest = false
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 
