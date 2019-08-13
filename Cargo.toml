@@ -6,6 +6,7 @@ members = [
   "artichoke-vfs",
   "mruby-sys",
   "spec-runner",
+  "wasm",
 ]
 
 [profile.release]
