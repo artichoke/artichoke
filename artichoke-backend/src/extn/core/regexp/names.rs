@@ -19,7 +19,11 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
     match regex {
         Backend::Onig(regex) => {
-            let mut capture_names = regex.capture_names().collect::<Vec<_>>();
+            let mut capture_names = vec![];
+            regex.foreach_name(|group, group_indexes| {
+                capture_names.push((group.to_owned(), group_indexes.to_vec()));
+                true
+            });
             capture_names.sort_by(|a, b| {
                 a.1.iter()
                     .fold(u32::max_value(), |a, &b| a.min(b))

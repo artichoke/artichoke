@@ -15,8 +15,9 @@ path = "../artichoke-vfs"
 path = "../mruby-sys"
 
 [dependencies.onig]
-git = "https://github.com/artichoke/rust-onig"
-branch = "wasm"
+version = "5"
+# git = "https://github.com/artichoke/rust-onig"
+# branch = "wasm"
 
 [dev-dependencies]
 env_logger = "0.6.1"
