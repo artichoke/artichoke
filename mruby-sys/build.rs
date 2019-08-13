@@ -106,6 +106,7 @@ impl Build {
 }
 
 fn main() {
+    let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let opts = CopyOptions::new();
     let _ = dir::remove(Build::root());
     dir::copy(
@@ -204,7 +205,7 @@ fn main() {
             }
         }
     }
-    let mrb_int = if env::var("TARGET").unwrap().starts_with("wasm32") {
+    let mrb_int = if arch == "wasm32" {
         "MRB_INT32"
     } else {
         "MRB_INT64"
@@ -233,8 +234,9 @@ fn main() {
         build.include(gem_include_dir);
     }
 
-    if env::var("TARGET").unwrap().starts_with("wasm32") {
+    if arch == "wasm32" || arch == "wasm64" {
         build.include(Build::wasm_include_dir());
+        build.define("MRB_DISABLE_DIRECT_THREADING", None);
     }
 
     build.compile("libmrubysys.a");
@@ -268,9 +270,10 @@ fn main() {
         // as Rust code.
         // See: https://github.com/rust-lang/rust-bindgen/issues/426
         .generate_comments(false);
-    if env::var("TARGET").unwrap().starts_with("wasm32") {
+    if arch == "wasm32" || arch == "wasm64" {
         bindgen = bindgen
             .clang_arg(format!("-I{}", Build::wasm_include_dir().to_string_lossy()))
+            .clang_arg("-DMRB_DISABLE_DIRECT_THREADING")
             .clang_arg("-fvisibility=default");
     }
     bindgen
