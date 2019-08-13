@@ -33,28 +33,19 @@ class EnvClass
     end
 
     def has_key?(name)
-        ! self[name].nil?
+        self.to_h.has_key?(name)
     end
 
     def has_value?(value)
-        ! self.key(value).nil?
+        self.to_h.has_value?(value)
     end
 
     def include?(name)
-        self.has_key?(name)
+        self.to_h.has_key?(name)
     end
 
     def key(value)
-        result = nil
-
-        self.to_h.each do |var_name, var_value|
-            if var_value == value
-                result = var_name
-                break
-            end
-        end
-
-        result
+        self.to_h.key(value)
     end
 
     def length
@@ -62,11 +53,11 @@ class EnvClass
     end
 
     def size
-        self.length
+        self.to_h.size
     end
 
     def keys
-        self.to_h.map {|var_name, var_value| var_name}
+        self.to_h.keys
     end
 
     def rehash
@@ -74,7 +65,7 @@ class EnvClass
     end
 
     def to_a
-        self.to_h.map {|var_name, var_value| [var_name, var_value]}
+        self.to_h.to_a
     end
 
     def to_s
@@ -82,15 +73,43 @@ class EnvClass
     end
 
     def value?(name)
-        ! self.key(name).nil?
+        self.to_h.value?(name)
     end
 
     def values
-        self.to_h.map {|var_name, var_value| var_value}
+        self.to_h.values
     end
 
     def slice(*keys)
         self.to_h.slice(*keys)
     end
 
+    def values_at(*names)
+        self.to_h.values_at(*names)
+    end
+
+    def to_hash
+        self.to_h
+    end
+
+    def shift 
+        envs = self.to_h
+        
+        a_pair = envs.shift
+
+        if a_pair.nil?
+            return nil
+        else
+            self[a_pair[0]] = nil
+            return a_pair
+        end
+    end
+
+    def update(hash)
+        hash.each do |key, value|
+            self[key] = value
+        end
+
+        self.to_h
+    end
 end
