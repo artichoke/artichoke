@@ -115,7 +115,10 @@ fn main() {
         &opts,
     )
     .unwrap();
-    for patch in vec!["0001-Support-parsing-a-Regexp-literal-with-CRuby-options.patch"] {
+    for patch in vec![
+        "0001-Support-parsing-a-Regexp-literal-with-CRuby-options.patch",
+        "0002-Allow-externally-specifying-MRB_API.patch",
+    ] {
         println!(
             "cargo:rerun-if-changed={}",
             Build::patch(patch).to_string_lossy()
@@ -237,6 +240,7 @@ fn main() {
     if arch == "wasm32" || arch == "wasm64" {
         build.include(Build::wasm_include_dir());
         build.define("MRB_DISABLE_DIRECT_THREADING", None);
+        build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
     }
 
     build.compile("libmrubysys.a");
@@ -274,7 +278,7 @@ fn main() {
         bindgen = bindgen
             .clang_arg(format!("-I{}", Build::wasm_include_dir().to_string_lossy()))
             .clang_arg("-DMRB_DISABLE_DIRECT_THREADING")
-            .clang_arg("-fvisibility=default");
+            .clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
     }
     bindgen
         .generate()

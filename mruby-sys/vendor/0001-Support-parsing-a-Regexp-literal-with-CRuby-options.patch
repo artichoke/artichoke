@@ -1,7 +1,7 @@
 From eb02dcd12b808af7d1cb3b144e6d99df3efaa82a Mon Sep 17 00:00:00 2001
 From: Ryan Lopopolo <rjl@hyperbo.la>
 Date: Wed, 19 Jun 2019 23:24:01 +0100
-Subject: [PATCH] Support parsing a Regexp literal with CRuby options
+Subject: [PATCH 1/2] Support parsing a Regexp literal with CRuby options
 
 CRuby supports a 's' `Regexp` option for `Regexp` literals, e.g. `/foo/s`
 that alters the encoding in the same way as the 'u' option. This commit

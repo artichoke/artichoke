@@ -1,0 +1,33 @@
+From 2d4db11e0bc5b2510c2d3efc50a42e588029eef3 Mon Sep 17 00:00:00 2001
+From: Ryan Lopopolo <rjl@hyperbo.la>
+Date: Wed, 14 Aug 2019 01:18:56 -0700
+Subject: [PATCH 2/2] Allow externally specifying MRB_API
+
+This allows supporting extern declarations for unsupported targets, like wasm.
+---
+ include/mruby/common.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/mruby/common.h b/include/mruby/common.h
+index dc9e3acc..b59438af 100644
+--- a/include/mruby/common.h
++++ b/include/mruby/common.h
+@@ -62,6 +62,7 @@ MRB_BEGIN_DECL
+ #define MRB_INLINE static inline
+ 
+ /** Declare a public MRuby API function. */
++#ifndef MRB_API
+ #if defined(MRB_BUILD_AS_DLL)
+ #if defined(MRB_CORE) || defined(MRB_LIB)
+ # define MRB_API __declspec(dllexport)
+@@ -71,6 +72,7 @@ MRB_BEGIN_DECL
+ #else
+ # define MRB_API extern
+ #endif
++#endif
+ 
+ MRB_END_DECL
+ 
+-- 
+2.22.0
+
