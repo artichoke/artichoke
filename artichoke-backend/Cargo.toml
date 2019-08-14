@@ -16,7 +16,7 @@ path = "../mruby-sys"
 
 [dependencies.onig]
 git = "https://github.com/artichoke/rust-onig"
-branch = "wasm2"
+branch = "wasm3"
 
 [dev-dependencies]
 env_logger = "0.6.1"
