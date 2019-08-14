@@ -1,18 +1,15 @@
 use artichoke_backend::eval::Eval;
 use artichoke_backend::types::Int;
+use wasm_bindgen::prelude::*;
 
-#[no_mangle]
+#[wasm_bindgen]
 pub fn artichoke_wasm_eval() -> Int {
     let interp = if let Ok(interp) = artichoke_backend::interpreter() {
         interp
     } else {
         return -1;
     };
-    let value = if let Ok(value) = interp.eval("10 * 10") {
-        value
-    } else {
-        return -2;
-    };
+    let value = interp.unchecked_eval("10 * 10");
     value.try_into::<Int>().unwrap_or(-3)
 }
 
