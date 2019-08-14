@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use log::{error, trace, warn};
 use std::ffi::{c_void, CString};
 use std::mem;
@@ -168,22 +169,22 @@ impl Eval for Artichoke {
         }
         drop(context);
 
-        let args = Rc::new(Protect::new(self, code.as_ref()));
+        let args = Box::new(Protect::new(self, code.as_ref()));
         drop(code);
         trace!("Evaling code on {}", mrb.debug());
-        let value = unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
-            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+        // let value = unsafe {
+        //     let data = sys::mrb_sys_cptr_value(mrb, Box::into_raw(args) as *mut c_void);
+        //     let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value =
-                sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
-            drop(args);
-            if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-            }
-            value
-        };
-        let value = Value::new(self, value);
+        //     let value =
+        //         sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
+        //     drop(args);
+        //     if state.assume_init() != 0 {
+        //         (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+        //     }
+        //     value
+        // };
+        let value = Value::new(self, unsafe { sys::mrb_sys_nil_value() });
 
         match self.last_error() {
             LastError::Some(exception) => {
@@ -238,24 +239,25 @@ impl Eval for Artichoke {
         }
         drop(context);
 
-        let args = Rc::new(Protect::new(self, code.as_ref()));
+        let args = Box::new(Protect::new(self, code.as_ref()));
         drop(code);
         trace!("Evaling code on {}", mrb.debug());
-        let value = unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
-            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+        // let value = unsafe {
+        //     let data = sys::mrb_sys_cptr_value(mrb, Box::into_raw(args) as *mut c_void);
+        //     let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value =
-                sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
-            drop(args);
-            if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-                sys::mrb_sys_raise_current_exception(mrb);
-                unreachable!("mrb_raise will unwind the stack with longjmp");
-            }
-            value
-        };
-        Value::new(self, value)
+        //     let value =
+        //         sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
+        //     drop(args);
+        //     if state.assume_init() != 0 {
+        //         (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+        //         sys::mrb_sys_raise_current_exception(mrb);
+        //         unreachable!("mrb_raise will unwind the stack with longjmp");
+        //     }
+        //     value
+        // };
+        // Value::new(self, value)
+        Value::new(self, unsafe { sys::mrb_sys_nil_value() })
     }
 
     fn eval_with_context<T>(&self, code: T, context: Context) -> Result<Value, ArtichokeError>

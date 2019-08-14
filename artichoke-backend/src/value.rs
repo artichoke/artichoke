@@ -1,8 +1,10 @@
+#![allow(warnings)]
+
 use log::{error, trace, warn};
 use std::convert::TryFrom;
-use std::ffi::c_void;
+// use std::ffi::c_void;
 use std::fmt;
-use std::mem;
+// use std::mem;
 use std::rc::Rc;
 
 use crate::convert::{Convert, TryConvert};
@@ -68,17 +70,17 @@ where
             data: sys::mrb_value,
         ) -> sys::mrb_value {
             let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = Rc::from_raw(ptr as *const ProtectArgs);
+            let args = Box::from_raw(ptr as *mut ProtectArgs);
 
             let value = sys::mrb_funcall_argv(
                 mrb,
-                args.slf,
-                args.func_sym,
+                (*args).slf,
+                (*args).func_sym,
                 // This will always unwrap because we've already checked that we
                 // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less
                 // than i64 max value.
-                Int::try_from(args.args.len()).unwrap_or_default(),
-                args.args.as_ptr(),
+                Int::try_from((*args).args.len()).unwrap_or_default(),
+                (*args).args.as_ptr(),
             );
             sys::mrb_sys_raise_current_exception(mrb);
             value
@@ -86,7 +88,7 @@ where
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
-        let (mrb, _ctx) = {
+        let (_mrb, _ctx) = {
             let borrow = self.interp().borrow();
             (borrow.mrb, borrow.ctx)
         };
@@ -111,22 +113,23 @@ where
             func.as_ref(),
             args.len()
         );
-        let args = Rc::new(ProtectArgs::new(
+        let _args = Box::new(ProtectArgs::new(
             self.inner(),
             self.interp().borrow_mut().sym_intern(func.as_ref()),
             args,
         ));
-        let value = unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
-            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+        // let value = unsafe {
+        //     //let data = sys::mrb_sys_cptr_value(mrb, Box::into_raw(args) as *mut c_void);
+        //     let data = sys::mrb_sys_nil_value();
+        //     let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value = sys::mrb_protect(mrb, Some(run_protected), data, state.as_mut_ptr());
-            if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-            }
-            value
-        };
-        let value = Value::new(self.interp(), value);
+        //     let value = sys::mrb_protect(mrb, Some(run_protected), data, state.as_mut_ptr());
+        //     if state.assume_init() != 0 {
+        //         (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+        //     }
+        //     value
+        // };
+        let value = Value::new(self.interp(), unsafe { sys::mrb_sys_nil_value() });
 
         match self.interp().last_error() {
             LastError::Some(exception) => {
@@ -167,18 +170,18 @@ where
             data: sys::mrb_value,
         ) -> sys::mrb_value {
             let ptr = sys::mrb_sys_cptr_ptr(data);
-            let args = Rc::from_raw(ptr as *const ProtectArgsWithBlock);
+            let args = Box::from_raw(ptr as *mut ProtectArgsWithBlock);
 
             let value = sys::mrb_funcall_with_block(
                 mrb,
-                args.slf,
-                args.func_sym,
+                (*args).slf,
+                (*args).func_sym,
                 // This will always unwrap because we've already checked that we
                 // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less
                 // than i64 max value.
-                Int::try_from(args.args.len()).unwrap_or_default(),
-                args.args.as_ptr(),
-                args.block,
+                Int::try_from((*args).args.len()).unwrap_or_default(),
+                (*args).args.as_ptr(),
+                (*args).block,
             );
             sys::mrb_sys_raise_current_exception(mrb);
             value
@@ -186,7 +189,7 @@ where
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
-        let (mrb, _ctx) = {
+        let (_mrb, _ctx) = {
             let borrow = self.interp().borrow();
             (borrow.mrb, borrow.ctx)
         };
@@ -211,7 +214,7 @@ where
             func.as_ref(),
             args.len()
         );
-        let args = Rc::new(
+        let _args = Box::new(
             ProtectArgs::new(
                 self.inner(),
                 self.interp().borrow_mut().sym_intern(func.as_ref()),
@@ -219,17 +222,18 @@ where
             )
             .with_block(block.inner()),
         );
-        let value = unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(args) as *mut c_void);
-            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+        // let value = unsafe {
+        //     //let data = sys::mrb_sys_cptr_value(mrb, Box::into_raw(args) as *mut c_void);
+        //     let data = sys::mrb_sys_nil_value();
+        //     let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value = sys::mrb_protect(mrb, Some(run_protected), data, state.as_mut_ptr());
-            if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-            }
-            value
-        };
-        let value = Value::new(self.interp(), value);
+        //     let value = sys::mrb_protect(mrb, Some(run_protected), data, state.as_mut_ptr());
+        //     if state.assume_init() != 0 {
+        //         (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+        //     }
+        //     value
+        // };
+        let value = Value::new(self.interp(), unsafe { sys::mrb_sys_nil_value() });
 
         match self.interp().last_error() {
             LastError::Some(exception) => {
@@ -305,7 +309,11 @@ impl Value {
     /// [`ArenaIndex::restore`](crate::gc::ArenaIndex::restore) restores the
     /// arena to an index before this call to protect.
     pub fn protect(&self) {
-        unsafe { sys::mrb_gc_protect(self.interp.borrow().mrb, self.value) }
+        // let mrb = self.interp.borrow().mrb;
+        // let value = self.value;
+        // unsafe {
+        //    sys::mrb_gc_protect(mrb, value);
+        // }
     }
 
     /// Return whether this object is unreachable by any GC roots.
