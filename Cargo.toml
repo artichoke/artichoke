@@ -5,6 +5,7 @@ members = [
   "artichoke-frontend",
   "artichoke-vfs",
   "diamond",
+  "diamond-rs",
   "mruby-sys",
   "spec-runner",
   "wasm",

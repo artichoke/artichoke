@@ -45,15 +45,6 @@ impl Build {
             .join("ext.c")
     }
 
-    fn wasm_include_dir() -> PathBuf {
-        Build::root()
-            .join("vendor")
-            .join("emscripten")
-            .join("system")
-            .join("include")
-            .join("libc")
-    }
-
     fn mruby_source_dir() -> PathBuf {
         Build::root()
             .join("vendor")
@@ -72,17 +63,12 @@ impl Build {
         Build::root().join("mruby-build")
     }
 
-    fn bindgen_source_header() -> PathBuf {
-        Build::ext_include_dir().join("mruby-sys.h")
-    }
-
     fn patch(patch: &str) -> PathBuf {
         Build::root().join("vendor").join(patch)
     }
 }
 
 fn main() {
-    let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let opts = CopyOptions::new();
     let _ = dir::remove(Build::root());
     dir::copy(
@@ -167,6 +153,7 @@ fn main() {
         }
     }
     let walker = WalkDir::new(Build::mruby_build_dir().join("sys")).into_iter();
+    let mut counter = 0;
     for entry in walker {
         if let Ok(entry) = entry {
             let is_gem = Build::gems()
@@ -178,17 +165,30 @@ fn main() {
                 .map(|path| path.ends_with("gem_init.c") || path.ends_with("mrblib.c"))
                 == Some(true);
             if is_gem || is_mrbgem_infra {
-                if entry.path().extension().and_then(OsStr::to_str) == Some("c") {
-                    sources.insert(entry.path().to_owned());
+                let mut path = entry.path().to_path_buf();
+                if path.to_string_lossy().contains("test") {
+                    continue;
+                }
+                if path.extension().and_then(OsStr::to_str) == Some("c") {
+                    if path.file_name().and_then(OsStr::to_str) == Some("gem_init.c") {
+                        let dest = path
+                            .parent()
+                            .unwrap()
+                            .join(format!("gem_init_{}.c", counter));
+                        counter += 1;
+                        fs_extra::file::move_file(
+                            path,
+                            dest.as_path(),
+                            &fs_extra::file::CopyOptions::new(),
+                        )
+                        .unwrap();
+                        path = dest;
+                    }
+                    sources.insert(path.to_owned());
                 }
             }
         }
     }
-    let mrb_int = if arch == "wasm32" {
-        "MRB_INT32"
-    } else {
-        "MRB_INT64"
-    };
 
     // Build the extension library
     let mut build = cc::Build::new();
@@ -199,7 +199,7 @@ fn main() {
         .include(Build::ext_include_dir())
         .define("MRB_DISABLE_STDIO", None)
         .define("MRB_UTF8_STRING", None)
-        .define(mrb_int, None);
+        .define("MRB_DISABLE_DIRECT_THREADING", None);
 
     for gem in Build::gems() {
         let mut dir = "include";
@@ -213,52 +213,5 @@ fn main() {
         build.include(gem_include_dir);
     }
 
-    if arch == "wasm32" || arch == "wasm64" {
-        build.include(Build::wasm_include_dir());
-        build.define("MRB_DISABLE_DIRECT_THREADING", None);
-        build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
-    }
-
     build.compile("libmrubysys.a");
-
-    println!(
-        "cargo:rerun-if-changed={}",
-        Build::bindgen_source_header().to_string_lossy()
-    );
-    let bindings_out_path: PathBuf = PathBuf::from(env::var("OUT_DIR").unwrap()).join("ffi.rs");
-    let mut bindgen = bindgen::Builder::default()
-        .header(Build::bindgen_source_header().to_string_lossy())
-        .clang_arg(format!(
-            "-I{}",
-            Build::mruby_include_dir().to_string_lossy()
-        ))
-        .clang_arg(format!("-I{}", Build::ext_include_dir().to_string_lossy()))
-        .clang_arg("-DMRB_DISABLE_STDIO")
-        .clang_arg("-DMRB_UTF8_STRING")
-        .clang_arg(format!("-D{}", mrb_int))
-        .whitelist_function("^mrb.*")
-        .whitelist_type("^mrb.*")
-        .whitelist_var("^mrb.*")
-        .whitelist_var("^MRB.*")
-        .whitelist_var("^MRUBY.*")
-        .whitelist_var("REGEXP_CLASS")
-        .rustified_enum("mrb_vtype")
-        .rustified_enum("mrb_lex_state_enum")
-        .rustified_enum("mrb_range_beg_len")
-        .rustfmt_bindings(true)
-        // work around warnings caused by cargo doc interpreting Ruby doc blocks
-        // as Rust code.
-        // See: https://github.com/rust-lang/rust-bindgen/issues/426
-        .generate_comments(false);
-    if arch == "wasm32" || arch == "wasm64" {
-        bindgen = bindgen
-            .clang_arg(format!("-I{}", Build::wasm_include_dir().to_string_lossy()))
-            .clang_arg("-DMRB_DISABLE_DIRECT_THREADING")
-            .clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
-    }
-    bindgen
-        .generate()
-        .expect("Unable to generate mruby bindings")
-        .write_to_file(bindings_out_path)
-        .expect("Unable to write mruby bindings");
 }

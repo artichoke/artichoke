@@ -1,0 +1,18 @@
+[package]
+name = "diamond-rs"
+authors = ["C2Rust"]
+version = "0.0.0"
+publish = false
+edition = "2018"
+
+[lib]
+path = "lib.rs"
+crate-type = ["staticlib"]
+
+[dependencies]
+c2rust-bitfields = "0.2"
+f128 = "0.2"
+num-traits = "0.2"
+libc = "0.2"
+
+
