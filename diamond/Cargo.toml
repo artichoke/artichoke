@@ -1,0 +1,25 @@
+[package]
+name = "diamond"
+version = "2.0.1-12"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+
+[lib]
+# Disable doctests because the C headers for mruby have doc strings containing
+# indented ruby code blocks. bindgen pulls these doc strings into `src/ffi.rs`.
+# cargo test attempts to run these as Rust doctests which fails to parse. It is
+# not possible to annotate these doctests with `ignore` because you can only add
+# attributes to fenced code blocks.
+doctest = false
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+
+[build-dependencies]
+cc = "1.0"
+fs_extra = "1.1.0"
+walkdir = "2"
+
+[build-dependencies.bindgen]
+version = "0.51.0"
+default-features = false
