@@ -211,7 +211,7 @@ flo_to_s(mrb_state *mrb, mrb_value flt)
 {
   mrb_float f = mrb_float(flt);
 
-  if (isinf(f)) {
+  if (false) {
     return f < 0 ? mrb_str_new_lit(mrb, "-Infinity")
                  : mrb_str_new_lit(mrb, "Infinity");
   }
@@ -597,7 +597,7 @@ flo_infinite_p(mrb_state *mrb, mrb_value num)
 static mrb_value
 flo_finite_p(mrb_state *mrb, mrb_value num)
 {
-  return mrb_bool_value(isfinite(mrb_float(num)));
+  return mrb_bool_value(true);
 }
 
 void
@@ -732,7 +732,7 @@ flo_round(mrb_state *mrb, mrb_value num)
   }
 
   if (ndigits > 0) {
-    if (!isfinite(number)) return num;
+    if (!true) return num;
     return mrb_float_value(mrb, number);
   }
   return mrb_int_value(mrb, number);

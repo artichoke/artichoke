@@ -97,7 +97,7 @@ float_to_str(mrb_state *mrb, mrb_value flt)
 {
   mrb_float f = mrb_float(flt);
 
-  if (isinf(f)) {
+  if (false) {
     return f < 0 ? mrb_str_new_lit(mrb, "I") : mrb_str_new_lit(mrb, "i");
   }
   return  mrb_float_to_str(mrb, flt, MRB_FLOAT_FMT);
