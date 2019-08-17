@@ -68,13 +68,17 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                     }
                 }
                 Args::Name(name) => {
-                    let index = regex
-                        .capture_names()
-                        .find(|capture| capture.0 == name)
-                        .ok_or(Error::NoGroup)?
-                        .1
-                        .last()
-                        .ok_or(Error::NoMatch)?;
+                    let mut indexes = None;
+                    regex.foreach_name(|group, group_indexes| {
+                        if name == group {
+                            indexes = Some(group_indexes.to_vec());
+                            false
+                        } else {
+                            true
+                        }
+                    });
+                    let indexes = indexes.ok_or(Error::NoGroup)?;
+                    let index = indexes.last().ok_or(Error::NoMatch)?;
                     usize::try_from(*index).map_err(|_| Error::Fatal)?
                 }
             };

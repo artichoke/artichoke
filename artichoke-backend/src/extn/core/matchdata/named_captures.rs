@@ -24,16 +24,17 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     match regex {
         Backend::Onig(regex) => {
             let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
-            for (name, indexes) in regex.capture_names() {
-                'name: for index in indexes.iter().rev() {
-                    let index = usize::try_from(*index).map_err(|_| Error::Fatal)?;
+            regex.foreach_name(|group, group_indexes| {
+                'name: for index in group_indexes.iter().rev() {
+                    let index = usize::try_from(*index).unwrap_or_default();
                     if let Some(capture) = captures.at(index) {
-                        map.insert(name.to_owned(), Some(capture.to_owned()));
+                        map.insert(group.to_owned(), Some(capture.to_owned()));
                         break 'name;
                     }
-                    map.insert(name.to_owned(), None);
+                    map.insert(group.to_owned(), None);
                 }
-            }
+                true
+            });
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     };

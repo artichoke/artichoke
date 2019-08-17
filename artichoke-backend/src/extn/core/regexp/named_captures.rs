@@ -22,14 +22,15 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
     match regex {
         Backend::Onig(regex) => {
-            for (name, index) in regex.capture_names() {
+            regex.foreach_name(|group, group_indexes| {
                 let mut indexes = vec![];
-                for idx in index {
-                    let idx = Int::try_from(*idx).map_err(|_| Error::Fatal)?;
+                for idx in group_indexes {
+                    let idx = Int::try_from(*idx).unwrap_or_default();
                     indexes.push(idx);
                 }
-                map.push((name, Value::convert(interp, indexes)));
-            }
+                map.push((group.to_owned(), Value::convert(interp, indexes)));
+                true
+            });
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     }
