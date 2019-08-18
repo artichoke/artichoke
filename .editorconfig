@@ -65,6 +65,9 @@ indent_size = 2
 [*.{yml,yaml}]
 indent_size = 2
 
+[Dockerfile]
+indent_size = 4
+
 # Ignore paths
 [**/{node_modules,target,vendor}/**]
 charset = unset
