@@ -87,7 +87,7 @@ impl Parser {
             let ptr = bytes.as_ptr() as *const i8;
             (*self.parser).s = ptr;
             (*self.parser).send = ptr.offset(len);
-            (*self.parser).lineno = i32::from((*self.context).lineno);
+            (*self.parser).lineno = (*self.context).lineno;
             sys::mrb_parser_parse(self.parser, self.context);
 
             if !(*self.parser).parsing_heredoc.is_null() {

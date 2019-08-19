@@ -162,11 +162,11 @@ mod tests {
             let mrb = mrb_open();
             assert_eq!(
                 format!("{:?}", *mrb),
-                format!("mruby 2.0 (v2.0.1 rev bc7c5d3) interpreter at {:p}", &*mrb)
+                format!("mruby 2.0 (v2.0.1 rev b0786f62) interpreter at {:p}", &*mrb)
             );
             assert_eq!(
                 mrb.debug(),
-                format!("mruby 2.0 (v2.0.1 rev bc7c5d3) interpreter at {:p}", &*mrb)
+                format!("mruby 2.0 (v2.0.1 rev b0786f62) interpreter at {:p}", &*mrb)
             );
             mrb_close(mrb);
         }
@@ -185,7 +185,7 @@ mod tests {
     fn revision() {
         unsafe {
             let mrb = mrb_open();
-            assert_eq!(mrb.revision(), "bc7c5d3");
+            assert_eq!(mrb.revision(), "b0786f62");
             mrb_close(mrb);
         }
     }

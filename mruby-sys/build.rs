@@ -12,7 +12,7 @@ use std::process::Command;
 use walkdir::WalkDir;
 
 /// vendored mruby version
-const MRUBY_REVISION: &str = "bc7c5d3";
+const MRUBY_REVISION: &str = "b0786f62";
 
 /// Path helpers
 struct Build;
@@ -78,9 +78,7 @@ impl Build {
     }
 
     fn mruby_source_dir() -> PathBuf {
-        Build::root()
-            .join("vendor")
-            .join(format!("mruby-{}", MRUBY_REVISION))
+        Build::root().join("vendor").join("mruby")
     }
 
     fn mruby_minirake() -> PathBuf {
