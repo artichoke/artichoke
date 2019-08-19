@@ -34,7 +34,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: rust-cargo-v2-{{ checksum "Cargo.lock" }}
+          key: rust-cargo-v3-{{ checksum "Cargo.lock" }}
       - run:
           name: Install Rust Toolchain
           command: |
@@ -92,7 +92,7 @@ jobs:
           command: |
             ./scripts/spec-compliance.sh
       - save_cache:
-          key: rust-cargo-v2-{{ checksum "Cargo.lock" }}
+          key: rust-cargo-v3-{{ checksum "Cargo.lock" }}
           paths:
             - "~/.cargo"
             - "./target"
