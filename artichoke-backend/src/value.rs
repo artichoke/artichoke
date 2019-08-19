@@ -655,7 +655,7 @@ mod tests {
         assert_eq!(
             result,
             Err(ArtichokeError::Exec(
-                "TypeError: expected String".to_owned()
+                "TypeError: nil cannot be converted to String".to_owned()
             ))
         );
     }
