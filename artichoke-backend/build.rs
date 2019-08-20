@@ -34,10 +34,6 @@ impl Build {
         Build::ruby_vendored_dir().join("lib")
     }
 
-    fn patch(patch: &str) -> PathBuf {
-        Build::root().join("vendor").join(patch)
-    }
-
     fn get_package_files(package: &str) -> String {
         let script = Build::root()
             .join("scripts")
@@ -222,24 +218,5 @@ fn main() {
             fs::copy(source, &out).unwrap();
         }
         Build::generate_rust_glue(package, sources);
-    }
-
-    for patch in vec![
-        "00001-uri-brackets-for-ivar-interpolation.patch",
-        "00002-uri-defined-keyword.patch",
-    ] {
-        if !Command::new("bash")
-            .arg("-c")
-            .arg(format!(
-                "patch -p1 < '{}'",
-                Build::patch(patch).to_str().unwrap()
-            ))
-            .current_dir(env::var("OUT_DIR").unwrap())
-            .status()
-            .unwrap()
-            .success()
-        {
-            panic!("Failed to patch Ruby lib sources with {}", patch);
-        }
     }
 }
