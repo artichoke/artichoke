@@ -4,26 +4,22 @@
 
 use fs_extra::dir::{self, CopyOptions};
 use std::env;
-use std::process::Command;
+use std::path::PathBuf;
 
 /// Path helpers
 struct Build;
 
 impl Build {
-    fn root() -> String {
-        env::var("CARGO_MANIFEST_DIR").unwrap()
+    fn root() -> PathBuf {
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap())
     }
 
-    fn mspec_vendored_dir() -> String {
-        format!("{}/vendor/mspec", &Build::root(),)
+    fn mspec_vendored_dir() -> PathBuf {
+        Build::root().join("vendor").join("mspec")
     }
 
-    fn mspec_source_dir() -> String {
-        format!("{}/mspec", env::var("OUT_DIR").unwrap())
-    }
-
-    fn patch(patch: &str) -> String {
-        format!("{}/vendor/{}", Build::root(), patch)
+    fn mspec_source_dir() -> PathBuf {
+        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("mspec")
     }
 }
 
@@ -32,27 +28,8 @@ fn main() {
     let _ = dir::remove(Build::mspec_source_dir());
     dir::copy(
         Build::mspec_vendored_dir(),
-        env::var("OUT_DIR").unwrap(),
+        env::var_os("OUT_DIR").unwrap(),
         &opts,
     )
     .unwrap();
-    for patch in vec![
-        "0001-Add-mruby-engine-detection-to-mspec-platform-guard.patch",
-        "0002-Add-fallback-for-Fixnum-size.patch",
-        "0003-Short-circuit-in-mspec-helpers-tmp.patch",
-        "0004-Call-Kernel-require-instead-of-Kernel-load.patch",
-        "0005-Remove-reference-to-SystemExit.patch",
-        "0006-Use-explicit-call-to-to_int.patch",
-    ] {
-        if !Command::new("bash")
-            .arg("-c")
-            .arg(format!("patch -p1 < '{}'", Build::patch(patch)))
-            .current_dir(Build::mspec_source_dir())
-            .status()
-            .unwrap()
-            .success()
-        {
-            panic!("Failed to patch mspec sources with {}", patch);
-        }
-    }
 }

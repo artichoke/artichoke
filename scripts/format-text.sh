@@ -19,10 +19,9 @@ format() {
   # shellcheck disable=SC2046
   find . -type f \
     -and -name "*.$1" \
-    -and -not -path '*vendor*' \
-    -and -not -path '*target*' \
-    -and -not -path '*node_modules*' \
-    -and -not -path '*spec/ruby*' -print0 |
+    -and -not -path '*vendor/*/*' \
+    -and -not -path '*target/*' \
+    -and -not -path '*node_modules/*' -print0 |
     xargs -0 yarn run prettier --write $(wrap "$1")
 }
 
@@ -30,10 +29,9 @@ check() {
   # shellcheck disable=SC2046
   find . -type f \
     -and -name "*.$1" \
-    -and -not -path '*vendor*' \
-    -and -not -path '*target*' \
-    -and -not -path '*node_modules*' \
-    -and -not -path '*spec/ruby*' -print0 |
+    -and -not -path '*vendor/*/*' \
+    -and -not -path '*target/*' \
+    -and -not -path '*node_modules/*' -print0 |
     xargs -0 yarn run prettier --check $(wrap "$1")
 }
 
