@@ -17,7 +17,7 @@ describe "ThreadGroup#enclose" do
     default_group = @thread.group
     thread_group.add(@thread)
     thread_group.enclose
-    lambda do
+    -> do
       default_group.add(@thread)
     end.should raise_error(ThreadError)
   end
