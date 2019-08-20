@@ -3,6 +3,11 @@
 # should clean up any temporary files created so that the temp
 # directory is empty when the process exits.
 
+# mruby does not support `at_exit` and there is no need to clean up so only set
+# the `SPEC_TEMP_DIR` constant and return.
+SPEC_TEMP_DIR = "rubyspec_temp"
+return
+
 SPEC_TEMP_DIR = File.expand_path(ENV["SPEC_TEMP_DIR"] || "rubyspec_temp")
 
 SPEC_TEMP_UNIQUIFIER = "0"
