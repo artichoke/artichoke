@@ -288,11 +288,7 @@ module URI
     # Unless a URI::Parser is defined, DEFAULT_PARSER is used.
     #
     def parser
-      if !defined?(@parser) || !@parser
-        DEFAULT_PARSER
-      else
-        @parser || DEFAULT_PARSER
-      end
+      @parser || DEFAULT_PARSER
     end
 
     # Replaces self by other URI object.
