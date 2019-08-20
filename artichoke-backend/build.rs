@@ -13,17 +13,17 @@ struct Build;
 
 impl Build {
     fn root() -> PathBuf {
-        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap())
     }
 
     fn generated_dir() -> PathBuf {
-        PathBuf::from(env::var("OUT_DIR").unwrap())
+        PathBuf::from(env::var_os("OUT_DIR").unwrap())
             .join("src")
             .join("generated")
     }
 
     fn ruby_source_dir() -> PathBuf {
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("ruby")
+        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("ruby")
     }
 
     fn ruby_vendored_dir() -> PathBuf {
