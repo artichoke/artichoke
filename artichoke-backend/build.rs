@@ -23,11 +23,11 @@ impl Build {
     }
 
     fn ruby_source_dir() -> PathBuf {
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("ruby_2_6_3")
+        PathBuf::from(env::var("OUT_DIR").unwrap()).join("ruby")
     }
 
     fn ruby_vendored_dir() -> PathBuf {
-        Build::root().join("vendor").join("ruby_2_6_3")
+        Build::root().join("vendor").join("ruby")
     }
 
     fn ruby_vendored_lib_dir() -> PathBuf {
