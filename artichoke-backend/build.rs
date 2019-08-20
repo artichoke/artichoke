@@ -13,29 +13,25 @@ struct Build;
 
 impl Build {
     fn root() -> PathBuf {
-        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap())
     }
 
     fn generated_dir() -> PathBuf {
-        PathBuf::from(env::var("OUT_DIR").unwrap())
+        PathBuf::from(env::var_os("OUT_DIR").unwrap())
             .join("src")
             .join("generated")
     }
 
     fn ruby_source_dir() -> PathBuf {
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("ruby_2_6_3")
+        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("ruby")
     }
 
     fn ruby_vendored_dir() -> PathBuf {
-        Build::root().join("vendor").join("ruby_2_6_3")
+        Build::root().join("vendor").join("ruby")
     }
 
     fn ruby_vendored_lib_dir() -> PathBuf {
         Build::ruby_vendored_dir().join("lib")
-    }
-
-    fn patch(patch: &str) -> PathBuf {
-        Build::root().join("vendor").join(patch)
     }
 
     fn get_package_files(package: &str) -> String {
@@ -58,7 +54,7 @@ impl Build {
                 String::from_utf8(output.stderr).unwrap()
             );
         }
-        return String::from_utf8(output.stdout).unwrap();
+        String::from_utf8(output.stdout).unwrap()
     }
 
     fn generated_package_out(package: &str) -> PathBuf {
@@ -222,24 +218,5 @@ fn main() {
             fs::copy(source, &out).unwrap();
         }
         Build::generate_rust_glue(package, sources);
-    }
-
-    for patch in vec![
-        "00001-uri-brackets-for-ivar-interpolation.patch",
-        "00002-uri-defined-keyword.patch",
-    ] {
-        if !Command::new("bash")
-            .arg("-c")
-            .arg(format!(
-                "patch -p1 < '{}'",
-                Build::patch(patch).to_str().unwrap()
-            ))
-            .current_dir(env::var("OUT_DIR").unwrap())
-            .status()
-            .unwrap()
-            .success()
-        {
-            panic!("Failed to patch Ruby lib sources with {}", patch);
-        }
     }
 }
