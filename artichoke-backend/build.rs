@@ -54,7 +54,7 @@ impl Build {
                 String::from_utf8(output.stderr).unwrap()
             );
         }
-        return String::from_utf8(output.stdout).unwrap();
+        String::from_utf8(output.stdout).unwrap()
     }
 
     fn generated_package_out(package: &str) -> PathBuf {
