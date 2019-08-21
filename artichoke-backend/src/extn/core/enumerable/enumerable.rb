@@ -208,7 +208,6 @@ module Enumerable
     end
     ary
   end
-  alias collect_concat flat_map
 
   def group_by(&block)
     return to_enum :group_by unless block
@@ -470,4 +469,6 @@ module Enumerable
     end
     result
   end
+
+  alias collect_concat flat_map
 end
