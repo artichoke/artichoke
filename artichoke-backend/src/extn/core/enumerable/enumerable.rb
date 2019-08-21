@@ -4,10 +4,13 @@
 # Enumerable
 #
 module Enumerable
-  def all?(pat = NONE, &block)
-    if pat != NONE
+  def all?(*args, &block)
+    if !args.empty?
       each do |val|
-        return false unless pat === val # rubocop:disable Style/CaseEquality
+        # case equality === is part of the spec
+        # rubocop:disable Style/CaseEquality
+        return false unless args[0] === val
+        # rubocop:enable Style/CaseEquality
       end
     elsif block
       each { |val| return false unless block.call(val) }
@@ -17,10 +20,13 @@ module Enumerable
     true
   end
 
-  def any?(pat = NONE, &block)
-    if pat != NONE
+  def any?(*args, &block)
+    if !args.empty?
       each do |val|
-        return true if pat === val # rubocop:disable Style/CaseEquality
+        # case equality === is part of the spec
+        # rubocop:disable Style/CaseEquality
+        return true if args[0] === val
+        # rubocop:enable Style/CaseEquality
       end
     elsif block
       each { |val| return true if block.call(val) }
@@ -30,17 +36,17 @@ module Enumerable
     false
   end
 
-  def count(elem = NONE, &block)
+  def count(*args, &block)
     count = 0
     if block
       each do |val|
         count += 1 if block.call(val)
       end
-    elsif elem == NONE
+    elsif args.empty?
       each { count += 1 }
     else
       each do |val|
-        count += 1 if val == elem
+        count += 1 if val == args[0]
       end
     end
     count
@@ -143,8 +149,8 @@ module Enumerable
     obj
   end
 
-  def find_index(val = NONE, &block)
-    return to_enum(:find_index, val) if !block && val == NONE
+  def find_index(*args, &block)
+    return to_enum(:find_index, args[0]) if !block && args.empty?
 
     idx = 0
     if block
@@ -155,7 +161,7 @@ module Enumerable
       end
     else
       each do |elem|
-        return idx if elem == val
+        return idx if elem == args[0]
 
         idx += 1
       end
@@ -301,10 +307,13 @@ module Enumerable
     [min, max]
   end
 
-  def none?(pat = NONE, &block)
-    if pat != NONE
+  def none?(*args, &block)
+    if !args.empty?
       each do |val|
-        return false if pat === val # rubocop:disable Style/CaseEquality
+        # case equality === is part of the spec
+        # rubocop:disable Style/CaseEquality
+        return false if args[0] === val
+        # rubocop:enable Style/CaseEquality
       end
     elsif block
       each do |val|
@@ -318,11 +327,14 @@ module Enumerable
     true
   end
 
-  def one?(pat = NONE, &block)
+  def one?(*args, &block)
     count = 0
-    if pat != NONE
+    if !args.empty?
       each do |val|
-        count += 1 if pat === val # rubocop:disable Style/CaseEquality
+        # case equality === is part of the spec
+        # rubocop:disable Style/CaseEquality
+        count += 1 if args[0] === val
+        # rubocop:enable Style/CaseEquality
         return false if count > 1
       end
     elsif block
