@@ -6,26 +6,26 @@
 module Enumerable
   def all?(pat = NONE, &block)
     if pat != NONE
-      each do |*val|
-        return false unless pat === val.__svalue # rubocop:disable Style/CaseEquality
+      each do |val|
+        return false unless pat === val # rubocop:disable Style/CaseEquality
       end
     elsif block
-      each { |*val| return false unless block.call(*val) }
+      each { |val| return false unless block.call(val) }
     else
-      each { |*val| return false unless val.__svalue }
+      each { |val| return false unless val }
     end
     true
   end
 
   def any?(pat = NONE, &block)
     if pat != NONE
-      each do |*val|
-        return true if pat === val.__svalue # rubocop:disable Style/CaseEquality
+      each do |val|
+        return true if pat === val # rubocop:disable Style/CaseEquality
       end
     elsif block
-      each { |*val| return true if block.call(*val) }
+      each { |val| return true if block.call(val) }
     else
-      each { |*val| return true if val.__svalue }
+      each { |val| return true if val }
     end
     false
   end
@@ -33,14 +33,14 @@ module Enumerable
   def count(elem = NONE, &block)
     count = 0
     if block
-      each do |*val|
-        count += 1 if block.call(*val)
+      each do |val|
+        count += 1 if block.call(val)
       end
     elsif elem == NONE
       each { count += 1 }
     else
-      each do |*val|
-        count += 1 if val.__svalue == elem
+      each do |val|
+        count += 1 if val == elem
       end
     end
     count
@@ -79,7 +79,13 @@ module Enumerable
     raise ArgumentError, 'attempt to drop negative size' if size.negative?
 
     ary = []
-    each { |*val| size.zero? ? ary << val.__svalue : size -= 1 }
+    each do |val|
+      if size.zero?
+        ary << val
+      else
+        size -= 1
+      end
+    end
     ary
   end
 
@@ -88,9 +94,9 @@ module Enumerable
 
     ary = []
     state = false
-    each do |*val|
-      state = true if !state && !block.call(*val)
-      ary << val.__svalue if state
+    each do |val|
+      state = true if !state && !block.call(val)
+      ary << val if state
     end
     ary
   end
@@ -103,9 +109,9 @@ module Enumerable
 
     ary = []
     size = size.to_i
-    each do |*val|
+    each do |val|
       ary.shift if ary.size == size
-      ary << val.__svalue
+      ary << val
       block.call(ary.dup) if ary.size == size
     end
     nil
@@ -119,8 +125,8 @@ module Enumerable
 
     ary = []
     size = size.to_i
-    each do |*val|
-      ary << val.__svalue
+    each do |val|
+      ary << val
       if ary.size == size
         block.call(ary)
         ary = []
@@ -133,7 +139,7 @@ module Enumerable
   def each_with_object(obj, &block)
     return to_enum(:each_with_object, obj) unless block
 
-    each { |*val| block.call(val.__svalue, obj) }
+    each { |val| block.call(val, obj) }
     obj
   end
 
@@ -142,14 +148,14 @@ module Enumerable
 
     idx = 0
     if block
-      each do |*e|
-        return idx if block.call(*e)
+      each do |elem|
+        return idx if block.call(elem)
 
         idx += 1
       end
     else
-      each do |*e|
-        return idx if e.__svalue == val
+      each do |elem|
+        return idx if elem == val
 
         idx += 1
       end
@@ -160,8 +166,8 @@ module Enumerable
   def first(*args)
     case args.length
     when 0
-      each do |*val|
-        return val.__svalue
+      each do |val|
+        return val
       end
       nil
     when 1
@@ -171,8 +177,8 @@ module Enumerable
       ary = []
       return ary if i.zero?
 
-      each do |*val|
-        ary << val.__svalue
+      each do |val|
+        ary << val
         i -= 1
         break if i.zero?
       end
@@ -186,12 +192,12 @@ module Enumerable
     return to_enum :flat_map unless block
 
     ary = []
-    each do |*e|
-      e2 = block.call(*e)
-      if e2.respond_to? :each
-        e2.each { |e3| ary.push(e3) }
+    each do |elem|
+      elem2 = block.call(elem)
+      if elem2.respond_to? :each
+        elem2.each { |elem3| ary.push(elem3) }
       else
-        ary.push(e2)
+        ary.push(elem2)
       end
     end
     ary
@@ -202,10 +208,9 @@ module Enumerable
     return to_enum :group_by unless block
 
     h = {}
-    each do |*val|
-      key = block.call(*val)
-      sv = val.__svalue
-      h.key?(key) ? (h[key] << sv) : (h[key] = [sv])
+    each do |val|
+      key = block.call(val)
+      h.key?(key) ? (h[key] << val) : (h[key] = [val])
     end
     h
   end
@@ -217,13 +222,13 @@ module Enumerable
     max = nil
     max_cmp = nil
 
-    each do |*val|
+    each do |val|
       if first
-        max = val.__svalue
-        max_cmp = block.call(*val)
+        max = val
+        max_cmp = block.call(val)
         first = false
-      elsif (cmp = block.call(*val)) > max_cmp
-        max = val.__svalue
+      elsif (cmp = block.call(val)) > max_cmp
+        max = val
         max_cmp = cmp
       end
     end
@@ -237,13 +242,13 @@ module Enumerable
     min = nil
     min_cmp = nil
 
-    each do |*val|
+    each do |val|
       if first
-        min = val.__svalue
-        min_cmp = block.call(*val)
+        min = val
+        min_cmp = block.call(val)
         first = false
-      elsif (cmp = block.call(*val)) < min_cmp
-        min = val.__svalue
+      elsif (cmp = block.call(val)) < min_cmp
+        min = val
         min_cmp = cmp
       end
     end
@@ -255,8 +260,7 @@ module Enumerable
     min = nil
     first = true
 
-    each do |*val|
-      val = val.__svalue
+    each do |val|
       if first
         max = val
         min = val
@@ -281,16 +285,16 @@ module Enumerable
     min_cmp = nil
     first = true
 
-    each do |*val|
+    each do |val|
       if first
-        max = min = val.__svalue
-        max_cmp = min_cmp = block.call(*val)
+        max = min = val
+        max_cmp = min_cmp = block.call(val)
         first = false
-      elsif (cmp = block.call(*val)) > max_cmp
-        max = val.__svalue
+      elsif (cmp = block.call(val)) > max_cmp
+        max = val
         max_cmp = cmp
-      elsif (cmp = block.call(*val)) < min_cmp
-        min = val.__svalue
+      elsif (cmp = block.call(val)) < min_cmp
+        min = val
         min_cmp = cmp
       end
     end
@@ -299,16 +303,16 @@ module Enumerable
 
   def none?(pat = NONE, &block)
     if pat != NONE
-      each do |*val|
-        return false if pat === val.__svalue # rubocop:disable Style/CaseEquality # rubocop:disable Style/CaseEquality
+      each do |val|
+        return false if pat === val # rubocop:disable Style/CaseEquality
       end
     elsif block
-      each do |*val|
-        return false if block.call(*val)
+      each do |val|
+        return false if block.call(val)
       end
     else
-      each do |*val|
-        return false if val.__svalue
+      each do |val|
+        return false if val
       end
     end
     true
@@ -317,18 +321,18 @@ module Enumerable
   def one?(pat = NONE, &block)
     count = 0
     if pat != NONE
-      each do |*val|
-        count += 1 if pat === val.__svalue # rubocop:disable Style/CaseEquality
+      each do |val|
+        count += 1 if pat === val # rubocop:disable Style/CaseEquality
         return false if count > 1
       end
     elsif block
-      each do |*val|
-        count += 1 if block.call(*val)
+      each do |val|
+        count += 1 if block.call(val)
         return false if count > 1
       end
     else
-      each do |*val|
-        count += 1 if val.__svalue
+      each do |val|
+        count += 1 if val
         return false if count > 1
       end
     end
@@ -369,8 +373,8 @@ module Enumerable
     ary = []
     return ary if i.zero?
 
-    each do |*val|
-      ary << val.__svalue
+    each do |val|
+      ary << val
       i -= 1
       break if i.zero?
     end
@@ -381,10 +385,10 @@ module Enumerable
     return to_enum :take_while unless block
 
     ary = []
-    each do |*val|
-      return ary unless block.call(*val)
+    each do |val|
+      return ary unless block.call(val)
 
-      ary << val.__svalue
+      ary << val
     end
     ary
   end
@@ -400,8 +404,7 @@ module Enumerable
         h[v[0]] = v[1]
       end
     else
-      each do |*v|
-        v = v.__svalue
+      each do |v|
         raise TypeError, "wrong element type #{v.class} (expected Array)" unless v.is_a? Array
         raise ArgumentError, "element has wrong array length (expected 2, was #{v.size})" if v.size != 2
 
@@ -418,13 +421,11 @@ module Enumerable
   def uniq(&block)
     hash = {}
     if block
-      each do |*v|
-        v = v.__svalue
+      each do |v|
         hash[block.call(v)] ||= v
       end
     else
-      each do |*v|
-        v = v.__svalue
+      each do |v|
         hash[v] ||= v
       end
     end
@@ -440,9 +441,9 @@ module Enumerable
     end
 
     i = 0
-    each do |*val|
+    each do |val|
       a = []
-      a.push(val.__svalue)
+      a.push(val)
       idx = 0
       while idx < arg.size
         a.push(arg[idx][i])
