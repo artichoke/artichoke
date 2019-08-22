@@ -101,7 +101,7 @@ module Enumerable
     ary = []
     state = false
     each do |val|
-      state = true if !state && !block.call(val)
+      state ||= !block.call(val)
       ary << val if state
     end
     ary
@@ -212,12 +212,14 @@ module Enumerable
   def group_by(&block)
     return to_enum :group_by unless block
 
-    h = {}
+    groups = {}
     each do |val|
-      key = block.call(val)
-      h.key?(key) ? (h[key] << val) : (h[key] = [val])
+      group = block.call(val)
+      values = h.fetch(group, [])
+      values << val
+      groups[group] = values
     end
-    h
+    groups
   end
 
   def max_by(&block)
