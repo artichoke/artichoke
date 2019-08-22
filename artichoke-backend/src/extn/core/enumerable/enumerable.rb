@@ -215,7 +215,7 @@ module Enumerable
     groups = {}
     each do |val|
       group = block.call(val)
-      values = h.fetch(group, [])
+      values = groups.fetch(group, [])
       values << val
       groups[group] = values
     end
