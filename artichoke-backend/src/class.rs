@@ -173,7 +173,9 @@ impl Define for Spec {
         } else {
             unsafe { (*mrb).object_class }
         };
-        let rclass = if let Some(ref scope) = self.enclosing_scope {
+        let rclass = if let Some(rclass) = self.rclass(interp) {
+            rclass
+        } else if let Some(ref scope) = self.enclosing_scope {
             let scope = scope
                 .rclass(interp)
                 .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname()))?;

@@ -40,6 +40,9 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .def_class::<IndexError>("IndexError", None, None);
     interp
         .borrow_mut()
+        .def_class::<RangeError>("RangeError", None, None);
+    interp
+        .borrow_mut()
         .def_class::<RuntimeError>("RuntimeError", None, None);
     interp
         .borrow_mut()
@@ -147,6 +150,11 @@ impl RubyException for ArgumentError {}
 pub struct IndexError;
 
 impl RubyException for IndexError {}
+
+#[allow(clippy::module_name_repetitions)]
+pub struct RangeError;
+
+impl RubyException for RangeError {}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct RuntimeError;
