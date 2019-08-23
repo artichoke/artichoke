@@ -22,7 +22,7 @@
 # binary data into purely printable characters.
 
 module Base64
-  module_function
+  #module_function
 
   # Returns the Base64-encoded version of +bin+.
   # This method complies with RFC 2045.
@@ -35,7 +35,7 @@ module Base64
   #
   #    Tm93IGlzIHRoZSB0aW1lIGZvciBhbGwgZ29vZCBjb2RlcnMKdG8gbGVhcm4g
   #    UnVieQ==
-  def encode64(bin)
+  def self.encode64(bin)
     [bin].pack("m")
   end
 
@@ -55,14 +55,14 @@ module Base64
   #    This is line two
   #    This is line three
   #    And so on...
-  def decode64(str)
+  def self.decode64(str)
     str.unpack1("m")
   end
 
   # Returns the Base64-encoded version of +bin+.
   # This method complies with RFC 4648.
   # No line feeds are added.
-  def strict_encode64(bin)
+  def self.strict_encode64(bin)
     [bin].pack("m0")
   end
 
@@ -80,7 +80,7 @@ module Base64
   # The alphabet uses '-' instead of '+' and '_' instead of '/'.
   # Note that the result can still contain '='.
   # You can remove the padding by setting +padding+ as false.
-  def urlsafe_encode64(bin, padding: true)
+  def self.urlsafe_encode64(bin, padding: true)
     str = strict_encode64(bin).tr("+/", "-_")
     str = str.delete("=") unless padding
     str
@@ -94,7 +94,7 @@ module Base64
   # The padding character is optional.
   # This method accepts both correctly-padded and unpadded input.
   # Note that it still rejects incorrectly-padded input.
-  def urlsafe_decode64(str)
+  def self.urlsafe_decode64(str)
     # NOTE: RFC 4648 does say nothing about unpadded input, but says that
     # "the excess pad characters MAY also be ignored", so it is inferred that
     # unpadded input is also acceptable.
