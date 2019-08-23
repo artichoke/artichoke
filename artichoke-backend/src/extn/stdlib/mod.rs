@@ -10,6 +10,7 @@ pub mod strscan;
 mod stubs;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    base64::init(interp)?;
     stubs::init(interp)?;
     delegate::init(interp)?;
     forwardable::init(interp)?;
@@ -23,6 +24,8 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 }
 
 pub mod base64 {
+    //! Ruby Base64 package, implemented with embedded sources from MRI 2.6.3.
+    // See scripts/auto_import/.
     include!(concat!(env!("OUT_DIR"), "/src/generated/base64.rs"));
 }
 
