@@ -75,12 +75,9 @@ impl Integer {
                 // ```
                 if let Ok(chr) = Int::try_convert(&interp, Value::new(&interp, slf)) {
                     match u8::try_from(chr) {
-                        Ok(chr @ 0..=127) => {
-                            // ASCII encoding
-                            Value::convert(&interp, vec![chr]).inner()
-                        }
-                        Ok(chr @ 128..=255) => {
-                            // BINARY/ASCII-8BIT encoding
+                        Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
+                            // ASCII encoding | Binary/ASCII-8BIT encoding
+                            // Without `Encoding` support, these two arms are the same
                             Value::convert(&interp, vec![chr]).inner()
                         }
                         _ => {
