@@ -12,7 +12,7 @@ use std::process::Command;
 use walkdir::WalkDir;
 
 /// vendored mruby version
-const MRUBY_REVISION: &str = "bc7c5d3";
+const MRUBY_REVISION: &str = "b0786f62";
 
 /// Path helpers
 struct Build;
@@ -78,9 +78,7 @@ impl Build {
     }
 
     fn mruby_source_dir() -> PathBuf {
-        Build::root()
-            .join("vendor")
-            .join(format!("mruby-{}", MRUBY_REVISION))
+        Build::root().join("vendor").join("mruby")
     }
 
     fn mruby_minirake() -> PathBuf {
@@ -102,10 +100,6 @@ impl Build {
     fn bindgen_source_header() -> PathBuf {
         Build::ext_include_dir().join("mruby-sys.h")
     }
-
-    fn patch(patch: &str) -> PathBuf {
-        Build::root().join("vendor").join(patch)
-    }
 }
 
 fn main() {
@@ -118,25 +112,6 @@ fn main() {
         &opts,
     )
     .unwrap();
-    for patch in vec!["0001-Support-parsing-a-Regexp-literal-with-CRuby-options.patch"] {
-        println!(
-            "cargo:rerun-if-changed={}",
-            Build::patch(patch).to_string_lossy()
-        );
-        if !Command::new("bash")
-            .arg("-c")
-            .arg(format!(
-                "patch -p1 < '{}'",
-                Build::patch(patch).to_string_lossy()
-            ))
-            .current_dir(Build::mruby_source_dir())
-            .status()
-            .unwrap()
-            .success()
-        {
-            panic!("Failed to patch mruby sources with {}", patch);
-        }
-    }
 
     let mut gembox = String::from("MRuby::GemBox.new { |conf| ");
     for gem in Build::gems() {
