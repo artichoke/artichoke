@@ -22,6 +22,10 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     Ok(())
 }
 
+pub mod base64 {
+    include!(concat!(env!("OUT_DIR"), "/src/generated/base64.rs"));
+}
+
 pub mod uri {
     //! Ruby URI package, implemented with embedded sources from MRI 2.6.3.
     // See scripts/auto_import/.

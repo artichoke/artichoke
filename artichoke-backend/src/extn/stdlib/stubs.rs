@@ -15,7 +15,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     )?;
     interp.def_rb_source_file("digest.rb", "require 'digest/sha1'")?;
     interp.def_rb_source_file("digest/sha1.rb", "module Digest; class SHA1; def self.hexdigest(*args); 'a9993e364706816aba3e25717850c26c9cd0d89d'; end; def self.base64digest(*args); 'qZk+NkcGgWq6PiVxeFDCbJzQ2J0='; end; end; end")?;
-    interp.def_rb_source_file("base64.rb", "")?;
     interp.def_rb_source_file("logger.rb", "")?;
     Ok(())
 }
