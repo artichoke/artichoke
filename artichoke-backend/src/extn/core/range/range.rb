@@ -1,14 +1,19 @@
+# frozen_string_literal: true
+
 class Range
   def first(*args)
     return self.begin if args.empty?
 
     raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" unless args.length == 1
+
     nv = args[0]
     n = nv.__to_int
-    raise ArgumentError, "negative array size (or size too big)" unless 0 <= n
+    raise ArgumentError, 'negative array size (or size too big)' unless n >= 0
+
     ary = []
     each do |i|
       break if n <= 0
+
       ary.push(i)
       n -= 1
     end
@@ -16,13 +21,13 @@ class Range
   end
 
   def max(&block)
-    val = self.first
+    val = first
     last = self.last
     return super if block
 
     # fast path for numerics
-    if val.kind_of?(Numeric) && last.kind_of?(Numeric)
-      raise TypeError if exclude_end? && !last.kind_of?(Fixnum)
+    if val.is_a?(Numeric) && last.is_a?(Numeric)
+      raise TypeError if exclude_end? && !last.is_a?(Integer)
       return nil if val > last
       return nil if val == last && exclude_end?
 
@@ -36,12 +41,12 @@ class Range
   end
 
   def min(&block)
-    val = self.first
+    val = first
     last = self.last
     return super if block
 
     # fast path for numerics
-    if val.kind_of?(Numeric) && last.kind_of?(Numeric)
+    if val.is_a?(Numeric) && last.is_a?(Numeric)
       return nil if val > last
       return nil if val == last && exclude_end?
 
