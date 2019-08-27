@@ -214,8 +214,10 @@ fn main() {
         build.include(gem_include_dir);
     }
 
-    if env::var("TARGET").unwrap().starts_with("wasm32") {
+    if let Ok("wasm32") | Ok("wasm64") = arch.as_ref().map(String::as_str) {
         build.include(Build::wasm_include_dir());
+        build.define("MRB_DISABLE_DIRECT_THREADING", None);
+        build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
     }
 
     build.compile("libmrubysys.a");
@@ -249,10 +251,11 @@ fn main() {
         // as Rust code.
         // See: https://github.com/rust-lang/rust-bindgen/issues/426
         .generate_comments(false);
-    if let Ok("wasm32") = arch.as_ref().map(String::as_str) {
+    if let Ok("wasm32") | Ok("wasm64") = arch.as_ref().map(String::as_str) {
         bindgen = bindgen
             .clang_arg(format!("-I{}", Build::wasm_include_dir().to_string_lossy()))
-            .clang_arg("-fvisibility=default");
+            .clang_arg("-DMRB_DISABLE_DIRECT_THREADING")
+            .clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
     }
     bindgen
         .generate()
