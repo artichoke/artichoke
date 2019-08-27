@@ -117,7 +117,7 @@ class SpecCollector
 
     report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
     @errors.each do |state|
-      puts '', "#{RED}#{state.description}#{PLAIN}", '', state.backtrace
+      puts '', "#{RED}#{state.description}#{PLAIN}", "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}", '', state.backtrace
     end
     puts ''
     report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
