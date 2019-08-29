@@ -5,12 +5,12 @@ class Proc
     call(*args)
   end
 
-  def yield(*args)
-    call(*args)
+  def <<(other)
+    ->(*args, &block) { call(other.call(*args, &block)) }
   end
 
-  def to_proc
-    self
+  def >>(other)
+    ->(*args, &block) { other.call(call(*args, &block)) }
   end
 
   def curry(arity = self.arity)
@@ -40,11 +40,11 @@ class Proc
     make_curry.call
   end
 
-  def <<(other)
-    ->(*args, &block) { call(other.call(*args, &block)) }
+  def to_proc
+    self
   end
 
-  def >>(other)
-    ->(*args, &block) { other.call(call(*args, &block)) }
+  def yield(*args)
+    call(*args)
   end
 end
