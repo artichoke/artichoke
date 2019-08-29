@@ -64,6 +64,7 @@
     "parser": "babel-eslint",
     "plugins": [
       "html",
+      "import",
       "prettier"
     ],
     "extends": [
@@ -91,13 +92,6 @@
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
     "lint": "./scripts/lint.sh",
     "loc": "loc --exclude vendor artichoke-frontend/ruby/fixtures spec-runner/spec",
-    "serve-wasm": "webpack-dev-server --mode development --content-base target/webpack/debug/ --open",
     "spec": "./scripts/spec-compliance.sh"
-  },
-  "dependencies": {
-    "ace-builds": "^1.4.5",
-    "bootstrap": "^4.3.1",
-    "jquery": "^3.4.1",
-    "popper.js": "^1.15.0"
   }
 }
