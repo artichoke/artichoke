@@ -1,5 +1,6 @@
-class Proc
+# frozen_string_literal: true
 
+class Proc
   def ===(*args)
     call(*args)
   end
@@ -12,21 +13,21 @@ class Proc
     self
   end
 
-  def curry(arity=self.arity)
+  def curry(arity = self.arity)
     type = :proc
-    abs = lambda {|a| a < 0 ? -a - 1 : a}
+    abs = ->(a) { a.negative? ? -a - 1 : a }
     arity = abs[arity]
     if lambda?
       type = :lambda
       self_arity = self.arity
       if (self_arity >= 0 && arity != self_arity) ||
-         (self_arity < 0 && abs[self_arity] > arity)
+         (self_arity.negative? && abs[self_arity] > arity)
         raise ArgumentError, "wrong number of arguments (#{arity} for #{abs[self_arity]})"
       end
     end
 
     pproc = self
-    make_curry = proc do |given_args=[]|
+    make_curry = proc do |given_args = []|
       __send__(type) do |*args|
         new_args = given_args + args
         if new_args.size >= arity
@@ -46,5 +47,4 @@ class Proc
   def >>(other)
     ->(*args, &block) { other.call(call(*args, &block)) }
   end
-
 end
