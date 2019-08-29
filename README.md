@@ -138,7 +138,7 @@ a bug and we would appreciate if you
 If you would like to contribute code 👩‍💻👨‍💻, find an issue that looks interesting
 and leave a comment that you're beginning to investigate. If there is no issue,
 please file one before beginning to work on a PR.
-[Good first issues are labeled `E-Easy`](https://github.com/artichoke/artichoke/labels/E-easy).
+[Good first issues are labeled `E-easy`](https://github.com/artichoke/artichoke/labels/E-easy).
 
 ### Discussion
 
