@@ -25,6 +25,10 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("chr", Integer::chr, sys::mrb_args_opt(1));
 
     integer
+        .borrow_mut()
+        .add_method("size", Integer::size, sys::mrb_args_none());
+
+    integer
         .borrow()
         .define(interp)
         .map_err(|_| ArtichokeError::New)?;
@@ -106,6 +110,20 @@ impl Integer {
                     vec![argc],
                 )
             }
+        }
+    }
+
+    pub unsafe extern "C" fn size(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = unwrap_interpreter!(mrb);
+        let nil = Value::convert(&interp, None::<Value>);
+        if let Ok(_value) = Int::try_convert(&interp, Value::new(&interp, slf)) {
+            if let Ok(size) = Int::try_from(mem::size_of::<Int>()) {
+                Value::convert(&interp, size).inner()
+            } else {
+                nil.inner()
+            }
+        } else {
+            nil.inner()
         }
     }
 }
