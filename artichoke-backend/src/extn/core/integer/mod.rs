@@ -5,7 +5,7 @@ use std::mem;
 use crate::convert::{Convert, TryConvert};
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::error::{ArgumentError, RangeError, RubyException};
+use crate::extn::core::error::{ArgumentError, RangeError, RubyException, RuntimeError};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
@@ -115,15 +115,15 @@ impl Integer {
 
     pub unsafe extern "C" fn size(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        let nil = Value::convert(&interp, None::<Value>);
-        if let Ok(_value) = Int::try_convert(&interp, Value::new(&interp, slf)) {
+        let result = Int::try_convert(&interp, Value::new(&interp, slf));
+        if result.is_ok() {
             if let Ok(size) = Int::try_from(mem::size_of::<Int>()) {
                 Value::convert(&interp, size).inner()
             } else {
-                nil.inner()
+                RuntimeError::raise(interp, "fatal Integer#size error")
             }
         } else {
-            nil.inner()
+            RuntimeError::raise(interp, "fatal Integer#size error")
         }
     }
 }
