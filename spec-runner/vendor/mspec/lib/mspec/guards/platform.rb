@@ -40,7 +40,7 @@ class PlatformGuard < SpecGuard
     os?(:windows)
   end
 
-  WORD_SIZE = 1.size * 8 rescue 4 * 8
+  WORD_SIZE = 1.size * 8
 
   POINTER_SIZE = begin
     require 'rbconfig/sizeof'
