@@ -16,6 +16,7 @@ pub mod numeric;
 pub mod range;
 pub mod regexp;
 pub mod string;
+pub mod symbol;
 pub mod thread;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -34,6 +35,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     range::init(interp)?;
     regexp::init(interp)?;
     string::init(interp)?;
+    symbol::init(interp)?;
     thread::init(interp)?;
     Ok(())
 }
