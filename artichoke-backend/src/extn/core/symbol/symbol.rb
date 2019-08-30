@@ -35,5 +35,10 @@ class Symbol
     empty?
   end
 
+  def length
+    to_s.length
+  end
+
+  alias size length
   alias intern to_sym
 end
