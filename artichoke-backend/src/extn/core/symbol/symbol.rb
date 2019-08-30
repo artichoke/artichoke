@@ -3,8 +3,6 @@
 class Symbol
   include Comparable
 
-  alias intern to_sym
-
   def capitalize
     (to_s.capitalize! || self).to_sym
   end
@@ -36,4 +34,6 @@ class Symbol
   def empty?
     empty?
   end
+
+  alias intern to_sym
 end
