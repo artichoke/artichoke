@@ -35,7 +35,6 @@ impl Build {
             "mruby-time",
             "mruby-struct",
             "mruby-proc-ext",
-            "mruby-symbol-ext",
             "mruby-random",
             "mruby-object-ext",
             "mruby-kernel-ext",
