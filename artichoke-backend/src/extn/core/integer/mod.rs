@@ -5,7 +5,7 @@ use std::mem;
 use crate::convert::{Convert, TryConvert};
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::error::{ArgumentError, RangeError, RubyException};
+use crate::extn::core::error::{ArgumentError, RangeError, RubyException, RuntimeError};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
@@ -23,6 +23,10 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     integer
         .borrow_mut()
         .add_method("chr", Integer::chr, sys::mrb_args_opt(1));
+
+    integer
+        .borrow_mut()
+        .add_method("size", Integer::size, sys::mrb_args_none());
 
     integer
         .borrow()
@@ -106,6 +110,20 @@ impl Integer {
                     vec![argc],
                 )
             }
+        }
+    }
+
+    pub unsafe extern "C" fn size(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = unwrap_interpreter!(mrb);
+        let result = Int::try_convert(&interp, Value::new(&interp, slf));
+        if result.is_ok() {
+            if let Ok(size) = Int::try_from(mem::size_of::<Int>()) {
+                Value::convert(&interp, size).inner()
+            } else {
+                RuntimeError::raise(interp, "fatal Integer#size error")
+            }
+        } else {
+            RuntimeError::raise(interp, "fatal Integer#size error")
         }
     }
 }
