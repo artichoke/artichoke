@@ -1,34 +1,39 @@
+# frozen_string_literal: true
+
 class Symbol
   include Comparable
 
   alias intern to_sym
 
   def capitalize
-    (self.to_s.capitalize! || self).to_sym
+    (to_s.capitalize! || self).to_sym
   end
 
   def downcase
-    (self.to_s.downcase! || self).to_sym
+    (to_s.downcase! || self).to_sym
   end
 
   def upcase
-    (self.to_s.upcase! || self).to_sym
+    (to_s.upcase! || self).to_sym
   end
 
   def casecmp(other)
-    return nil unless other.kind_of?(Symbol)
-    lhs =  self.to_s; lhs.upcase!
+    return nil unless other.is_a?(Symbol)
+
+    lhs = to_s
+    lhs.upcase!
     rhs = other.to_s.upcase
     lhs <=> rhs
   end
 
   def casecmp?(sym)
-    c = self.casecmp(sym)
+    c = casecmp(sym)
     return nil if c.nil?
-    return c == 0
+
+    c.zero?
   end
 
   def empty?
-    self.length == 0
+    empty?
   end
 end
