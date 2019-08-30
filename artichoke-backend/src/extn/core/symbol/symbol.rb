@@ -32,7 +32,7 @@ class Symbol
   end
 
   def empty?
-    empty?
+    to_s.empty?
   end
 
   def length
