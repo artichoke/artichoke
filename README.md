@@ -31,7 +31,7 @@ If you would prefer to run a local build, you can
 [set up a Rust toolchain](/CONTRIBUTING.md#rust-toolchain) and launch an
 interactive Artichoke shell with:
 
-```shell
+```sh
 cargo run -p artichoke-frontend --bin airb
 ```
 

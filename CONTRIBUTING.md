@@ -39,7 +39,7 @@ Artichoke requires configuring several dependencies, which are orchestrated by
 
 ### Rust Toolchain
 
-Artichoke depends on nightly Rust and several compiler plugins for linting and
+Artichoke depends on Rust and several compiler plugins for linting and
 formatting. The specific version of Rust Artichoke requires is specified in the
 [toolchain file](/rust-toolchain)
 
@@ -49,7 +49,7 @@ The recommended way to install the Rust toolchain is with
 [rustup](https://rustup.rs/). On macOS, you can install rustup with
 [Homebrew](https://docs.brew.sh/Installation):
 
-```shell
+```sh
 brew install rustup-init
 rustup-init
 ```
@@ -57,7 +57,7 @@ rustup-init
 Once you have rustup, you can install the Rust toolchain needed to compile
 Artichoke.
 
-```shell
+```sh
 rustup toolchain install "$(cat rust-toolchain)"
 rustup component add rustfmt
 rustup component add clippy
@@ -69,14 +69,14 @@ Artichoke depends on several Rust libraries, or crates. Once you have the Rust
 toolchain installed, you can install the crates specified in
 [`Cargo.lock`](/Cargo.lock) by running:
 
-```shell
+```sh
 cargo build
 ```
 
 You can check to see that this worked by running the following and observing no
 errors:
 
-```shell
+```sh
 cargo test
 cargo fmt -- --check
 cargo clippy --all-targets --all-features
@@ -114,7 +114,7 @@ You will need to install
 On macOS, you can install Node.js and Yarn with
 [Homebrew](https://docs.brew.sh/Installation):
 
-```shell
+```sh
 brew install node yarn
 ```
 
@@ -123,7 +123,7 @@ brew install node yarn
 Once you have Yarn installed, you can install the packages specified in
 [`package.json`](/package.json) by running:
 
-```shell
+```sh
 yarn install
 ```
 
@@ -138,7 +138,7 @@ Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
 
 If you use [RVM](https://rvm.io/), you can install Ruby dependencies by running:
 
-```shell
+```sh
 rvm install "$(cat .ruby-version)"
 gem install bundler
 ```
@@ -147,7 +147,7 @@ If you use [rbenv](https://github.com/rbenv/rbenv) and
 [ruby-build](https://github.com/rbenv/ruby-build), you can install Ruby
 dependencies by running:
 
-```shell
+```sh
 rbenv install "$(cat .ruby-version)"
 gem install bundler
 rbenv rehash
@@ -165,7 +165,7 @@ Artichoke uses [shfmt](https://github.com/mvdan/sh) for formatting and
 On macOS, you can install shfmt and shellcheck with
 [Homebrew](https://docs.brew.sh/Installation):
 
-```shell
+```sh
 brew install shfmt shellcheck
 ```
 
@@ -176,7 +176,7 @@ brew install shfmt shellcheck
 Once you [configure a development environment](#setup), run the following to
 lint sources:
 
-```shell
+```sh
 yarn lint
 ```
 
@@ -192,14 +192,14 @@ a look at the `Value` tests in
 
 To run tests:
 
-```shell
+```sh
 cargo test
 ```
 
 If you are only working on one package, it can speed up iteration time to only
 build and run tests for that package:
 
-```shell
+```sh
 cargo test -p artichoke-backend
 ```
 
@@ -207,7 +207,7 @@ cargo test -p artichoke-backend
 that substring match. For example, to run all of the
 [`Regexp`](/artichoke-backend/src/extn/core/regexp) tests:
 
-```shell
+```sh
 cargo test -p artichoke-backend regexp
 ```
 
@@ -237,7 +237,7 @@ feature, update the version number in `Cargo.toml`.
 To update Rust crate dependencies run the following command and check in the
 updated `Cargo.lock` file:
 
-```shell
+```sh
 cargo update
 ```
 
@@ -248,7 +248,7 @@ To see what packages are outdated, you can run `yarn outdated`.
 To update Node.js package dependencies run the following command and check in
 the updated `yarn.lock` file:
 
-```shell
+```sh
 yarn upgrade
 ```
 
@@ -266,7 +266,7 @@ To view statistics about the source code in Artichoke, you can run `yarn loc`,
 which depends on [loc](https://github.com/cgag/loc). You can install loc by
 running:
 
-```shell
+```sh
 cargo install loc
 ```
 
@@ -276,6 +276,6 @@ To generate flamegraphs with, you need the
 [inferno flamegraph implementation](https://github.com/jonhoo/inferno). You can
 install inferno by running:
 
-```shell
+```sh
 cargo install inferno
 ```
