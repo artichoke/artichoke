@@ -32,11 +32,12 @@ class Symbol
     lhs <=> rhs
   end
 
-  def casecmp?(sym)
-    c = casecmp(sym)
-    return nil if c.nil?
-
-    c.zero?
+  def casecmp?(other)
+    # Returns true if `self` and `other` are equal after Unicode case folding,
+    # false if they are not equal.
+    #
+    # Delegate to String#casecmp? which is also Unicode case folding-aware.
+    to_s.casecmp?(other.to_s)
   end
 
   def downcase
