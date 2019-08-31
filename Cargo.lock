@@ -602,21 +602,31 @@ dependencies = [
 
 [[package]]
 name = "rust-embed"
-version = "4.5.0"
+version = "5.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "rust-embed-impl 4.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rust-embed-impl 5.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rust-embed-utils 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "walkdir 2.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "rust-embed-impl"
-version = "4.5.0"
+version = "5.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "quote 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rust-embed-utils 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "shellexpand 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.11.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "walkdir 2.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "rust-embed-utils"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
  "walkdir 2.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -686,7 +696,7 @@ version = "0.1.0"
 dependencies = [
  "artichoke-backend 0.1.0",
  "fs_extra 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rust-embed 4.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rust-embed 5.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -918,8 +928,9 @@ dependencies = [
 "checksum regex 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "88c3d9193984285d544df4a30c23a4e62ead42edf70a4452ceb76dac1ce05c26"
 "checksum regex-syntax 0.6.11 (registry+https://github.com/rust-lang/crates.io-index)" = "b143cceb2ca5e56d5671988ef8b15615733e7ee16cd348e064333b251b89343f"
 "checksum rust-argon2 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4ca4eaef519b494d1f2848fc602d18816fed808a981aedf4f1f00ceb7c9d32cf"
-"checksum rust-embed 4.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "87d03df18bbdfa087d46e74598715032a69b2a0811cdedc1b6cccadc5332f183"
-"checksum rust-embed-impl 4.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f02513e276f68b7520798f8d9a47ce4039103566ec7632559768a8d36ff1027e"
+"checksum rust-embed 5.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8defb88737955626d62a4c7d90e2acf552a79b2f5bd7526cd46697f2d98eb45c"
+"checksum rust-embed-impl 5.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6d88346d83619c94beddba4f2ffee53c4cd006afd44c303182c7bcc8b6abe5ae"
+"checksum rust-embed-utils 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "97655158074ccb2d2cfb1ccb4c956ef0f4054e43a2c1e71146d4991e6961e105"
 "checksum rustc-demangle 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)" = "4c691c0e608126e00913e33f0ccf3727d5fc84573623b8d65b2df340b5201783"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 "checksum rustyline 4.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0f47ea1ceb347d2deae482d655dc8eef4bd82363d3329baffa3818bd76fea48b"
