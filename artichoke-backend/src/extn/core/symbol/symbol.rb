@@ -13,6 +13,10 @@ class Symbol
     to_s =~ other
   end
 
+  def [](*args)
+    to_s[*args]
+  end
+
   def capitalize
     (to_s.capitalize! || self).to_sym
   end
