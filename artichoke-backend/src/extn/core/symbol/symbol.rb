@@ -76,6 +76,10 @@ class Symbol
     ->(obj, *args, &block) { obj.__send__(self, *args, &block) }
   end
 
+  def to_sym
+    self
+  end
+
   def upcase
     to_s.upcase.intern
   end
