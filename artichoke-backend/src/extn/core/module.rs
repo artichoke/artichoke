@@ -4,6 +4,7 @@ use crate::ArtichokeError;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
+        .0
         .borrow_mut()
         .def_class::<Module>("Module", None, None);
     interp.eval(include_str!("module.rb"))?;

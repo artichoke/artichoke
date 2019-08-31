@@ -31,7 +31,7 @@ impl Args {
         let mut pos = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut has_pos = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
         sys::mrb_get_args(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             string.as_mut_ptr(),
             pos.as_mut_ptr(),

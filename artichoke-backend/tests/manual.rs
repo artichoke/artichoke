@@ -42,7 +42,7 @@ impl Container {
                 argspec
                     .write_all(b"\0")
                     .map_err(|_| ArtichokeError::ArgSpec)?;
-                sys::mrb_get_args(interp.borrow().mrb, argspec.as_ptr() as *const i8, &inner);
+                sys::mrb_get_args(interp.0.borrow().mrb, argspec.as_ptr() as *const i8, &inner);
                 let inner = Value::new(interp, inner.assume_init());
                 let inner =
                     i64::try_convert(&interp, inner).map_err(ArtichokeError::ConvertToRust)?;
@@ -74,7 +74,7 @@ impl Container {
 impl File for Container {
     fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
         let spec = {
-            let mut api = interp.borrow_mut();
+            let mut api = interp.0.borrow_mut();
             let spec =
                 api.def_class::<Box<Self>>("Container", None, Some(rust_data_free::<Box<Self>>));
             spec.borrow_mut()

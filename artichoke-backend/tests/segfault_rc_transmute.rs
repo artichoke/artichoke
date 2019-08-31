@@ -41,9 +41,9 @@ fn segfault_rc_transmute() {
     // Increase the strong count on the Rc to 255.
     let mut interps = vec![];
     for _ in 0..254 {
-        interps.push(Rc::clone(&interp));
+        interps.push(Rc::clone(&interp.0));
     }
-    println!("strong count = {}", Rc::strong_count(&interp));
+    println!("strong count = {}", Rc::strong_count(&interp.0));
 
     // create an object to collect on the artichoke heap.
     let bytes = std::iter::repeat(255_u8)
@@ -51,7 +51,7 @@ fn segfault_rc_transmute() {
         .collect::<Vec<_>>();
     let _val = unsafe {
         sys::mrb_str_new(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             bytes.as_ptr() as *const i8,
             bytes.len(),
         )
@@ -62,9 +62,9 @@ fn segfault_rc_transmute() {
     println!("full gc succeeded");
 
     // temporarily increase strong count to 256 and drop the reference
-    let temp = Rc::clone(&interp);
+    let temp = Rc::clone(&interp.0);
     drop(temp);
-    println!("strong count = {}", Rc::strong_count(&interp));
+    println!("strong count = {}", Rc::strong_count(&interp.0));
 
     println!("attempting full gc");
     interp.full_gc();
@@ -72,8 +72,8 @@ fn segfault_rc_transmute() {
     println!("full gc succeeded");
 
     // Increase the strong count to 256, which is beyond u8::MAX
-    interps.push(Rc::clone(&interp));
-    println!("strong count = {}", Rc::strong_count(&interp));
+    interps.push(Rc::clone(&interp.0));
+    println!("strong count = {}", Rc::strong_count(&interp.0));
 
     println!("attempting full gc");
     interp.full_gc();

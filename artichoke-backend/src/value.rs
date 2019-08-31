@@ -87,7 +87,7 @@ where
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
         let (mrb, _ctx) = {
-            let borrow = self.interp().borrow();
+            let borrow = self.interp().0.borrow();
             (borrow.mrb, borrow.ctx)
         };
 
@@ -113,7 +113,7 @@ where
         );
         let args = Rc::new(ProtectArgs::new(
             self.inner(),
-            self.interp().borrow_mut().sym_intern(func.as_ref()),
+            self.interp().0.borrow_mut().sym_intern(func.as_ref()),
             args,
         ));
         let value = unsafe {
@@ -187,7 +187,7 @@ where
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
         let (mrb, _ctx) = {
-            let borrow = self.interp().borrow();
+            let borrow = self.interp().0.borrow();
             (borrow.mrb, borrow.ctx)
         };
 
@@ -214,7 +214,7 @@ where
         let args = Rc::new(
             ProtectArgs::new(
                 self.inner(),
-                self.interp().borrow_mut().sym_intern(func.as_ref()),
+                self.interp().0.borrow_mut().sym_intern(func.as_ref()),
                 args,
             )
             .with_block(block.inner()),
@@ -270,7 +270,7 @@ impl Value {
     /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
     pub fn new(interp: &Artichoke, value: sys::mrb_value) -> Self {
         Self {
-            interp: Rc::clone(interp),
+            interp: interp.clone(),
             value,
         }
     }
@@ -305,12 +305,12 @@ impl Value {
     /// [`ArenaIndex::restore`](crate::gc::ArenaIndex::restore) restores the
     /// arena to an index before this call to protect.
     pub fn protect(&self) {
-        unsafe { sys::mrb_gc_protect(self.interp.borrow().mrb, self.value) }
+        unsafe { sys::mrb_gc_protect(self.interp.0.borrow().mrb, self.value) }
     }
 
     /// Return whether this object is unreachable by any GC roots.
     pub fn is_dead(&self) -> bool {
-        unsafe { sys::mrb_sys_value_is_dead(self.interp.borrow().mrb, self.value) }
+        unsafe { sys::mrb_sys_value_is_dead(self.interp.0.borrow().mrb, self.value) }
     }
 
     /// Call `#to_s` on this [`Value`].
@@ -349,7 +349,8 @@ impl Value {
     where
         T: TryConvert<Self, From = Ruby, To = Rust>,
     {
-        let interp = Rc::clone(&self.interp);
+        // We must clone interp out of self because try_convert consumes self.
+        let interp = self.interp.clone();
         unsafe { T::try_convert(&interp, self) }.map_err(ArtichokeError::ConvertToRust)
     }
 
@@ -409,7 +410,7 @@ impl Clone for Value {
             panic!("Cannot safely clone a Value with type tag Ruby::Data.");
         }
         Self {
-            interp: Rc::clone(&self.interp),
+            interp: self.interp.clone(),
             value: self.value,
         }
     }

@@ -27,7 +27,7 @@ impl Args {
         let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
         let mut count = <mem::MaybeUninit<usize>>::uninit();
         sys::mrb_get_args(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             args.as_mut_ptr(),
             count.as_mut_ptr(),
@@ -42,7 +42,7 @@ impl Args {
 }
 
 pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
-    let mrb = interp.borrow().mrb;
+    let mrb = interp.0.borrow().mrb;
     let pattern = if args.rest.is_empty() {
         "(?!)".to_owned()
     } else if args.rest.len() == 1 {

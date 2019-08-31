@@ -11,10 +11,11 @@ use crate::{Artichoke, ArtichokeError};
 mod scan;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    if interp.borrow().class_spec::<RString>().is_some() {
+    if interp.0.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }
     let string = interp
+        .0
         .borrow_mut()
         .def_class::<RString>("String", None, None);
     interp.eval(include_str!("string.rb"))?;

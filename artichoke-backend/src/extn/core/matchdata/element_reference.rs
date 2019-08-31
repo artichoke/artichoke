@@ -36,7 +36,7 @@ impl Args {
         let mut second = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut has_second = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
         sys::mrb_get_args(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             first.as_mut_ptr(),
             second.as_mut_ptr(),
@@ -70,7 +70,7 @@ impl Args {
         let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
         let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
         let check_range = sys::mrb_range_beg_len(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             first,
             start.as_mut_ptr(),
             len.as_mut_ptr(),

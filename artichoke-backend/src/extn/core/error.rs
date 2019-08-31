@@ -10,9 +10,11 @@ use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let exception = interp
+        .0
         .borrow_mut()
         .def_class::<Exception>("Exception", None, None);
     let scripterror = interp
+        .0
         .borrow_mut()
         .def_class::<ScriptError>("ScriptError", None, None);
     scripterror
@@ -23,6 +25,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .define(interp)
         .map_err(|_| ArtichokeError::New)?;
     let loaderror = interp
+        .0
         .borrow_mut()
         .def_class::<LoadError>("LoadError", None, None);
     loaderror
@@ -33,21 +36,27 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .define(interp)
         .map_err(|_| ArtichokeError::New)?;
     interp
+        .0
         .borrow_mut()
         .def_class::<ArgumentError>("ArgumentError", None, None);
     interp
+        .0
         .borrow_mut()
         .def_class::<IndexError>("IndexError", None, None);
     interp
+        .0
         .borrow_mut()
         .def_class::<RangeError>("RangeError", None, None);
     interp
+        .0
         .borrow_mut()
         .def_class::<RuntimeError>("RuntimeError", None, None);
     interp
+        .0
         .borrow_mut()
         .def_class::<SyntaxError>("SyntaxError", None, None);
     interp
+        .0
         .borrow_mut()
         .def_class::<TypeError>("TypeError", None, None);
     Ok(())
@@ -77,9 +86,9 @@ pub trait RubyException: 'static + Sized {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
 
-        let spec = if let Some(spec) = interp.borrow().class_spec::<Self>() {
+        let spec = if let Some(spec) = interp.0.borrow().class_spec::<Self>() {
             spec
         } else {
             return sys::mrb_sys_nil_value();
@@ -173,8 +182,6 @@ impl RubyException for TypeError {}
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
-
     use crate::def::{ClassLike, Define};
     use crate::eval::Eval;
     use crate::exception::Exception;
@@ -194,7 +201,7 @@ mod tests {
 
     impl File for Run {
         fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
-            let spec = interp.borrow_mut().def_class::<Self>("Run", None, None);
+            let spec = interp.0.borrow_mut().def_class::<Self>("Run", None, None);
             spec.borrow_mut()
                 .add_self_method("run", Self::run, sys::mrb_args_none());
             spec.borrow().define(&interp)?;
@@ -205,7 +212,7 @@ mod tests {
     #[test]
     fn raise() {
         let interp = crate::interpreter().expect("init");
-        Run::require(Rc::clone(&interp)).unwrap();
+        Run::require(interp.clone()).unwrap();
         let value = interp.eval("Run.run").map(|_| ());
         let expected = Exception::new(
             "RuntimeError",

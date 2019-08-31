@@ -67,7 +67,7 @@ pub trait ExceptionHandler {
 impl ExceptionHandler for Artichoke {
     fn last_error(&self) -> LastError {
         let _arena = self.create_arena_savepoint();
-        let mrb = { self.borrow().mrb };
+        let mrb = { self.0.borrow().mrb };
         let exc = unsafe {
             let exc = (*mrb).exc;
             // Clear the current exception from the mruby interpreter so

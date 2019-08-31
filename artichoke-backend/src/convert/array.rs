@@ -24,7 +24,7 @@ impl Convert<Vec<Value>> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: Vec<Self>) -> Self {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         let array =
             unsafe { sys::mrb_ary_new_capa(mrb, Int::try_from(value.len()).unwrap_or_default()) };
 
@@ -43,7 +43,7 @@ impl Convert<Vec<Option<Value>>> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: Vec<Option<Self>>) -> Self {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         let array =
             unsafe { sys::mrb_ary_new_capa(mrb, Int::try_from(value.len()).unwrap_or_default()) };
 
@@ -71,7 +71,7 @@ impl TryConvert<Value> for Vec<Value> {
         interp: &Artichoke,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         match value.ruby_type() {
             Ruby::Array => {
                 let array = value.inner();
@@ -103,7 +103,7 @@ impl TryConvert<Value> for Vec<Option<Value>> {
         interp: &Artichoke,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         match value.ruby_type() {
             Ruby::Array => {
                 let array = value.inner();

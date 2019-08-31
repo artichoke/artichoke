@@ -28,7 +28,7 @@ impl Args {
     pub unsafe fn extract(interp: &Artichoke) -> Self {
         let mut other = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             other.as_mut_ptr(),
         );

@@ -1,5 +1,4 @@
 use log::trace;
-use std::rc::Rc;
 
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
@@ -14,7 +13,7 @@ mod args;
 pub mod require;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let warning = interp.borrow_mut().def_module::<Warning>("Warning", None);
+    let warning = interp.0.borrow_mut().def_module::<Warning>("Warning", None);
     warning
         .borrow_mut()
         .add_method("warn", Warning::warn, sys::mrb_args_req(1));
@@ -25,7 +24,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .borrow()
         .define(interp)
         .map_err(|_| ArtichokeError::New)?;
-    let kernel = interp.borrow_mut().def_module::<Kernel>("Kernel", None);
+    let kernel = interp.0.borrow_mut().def_module::<Kernel>("Kernel", None);
     kernel
         .borrow_mut()
         .add_method("require", Kernel::require, sys::mrb_args_rest());
@@ -57,7 +56,7 @@ pub struct Warning;
 impl Warning {
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        let stderr = sys::mrb_gv_get(mrb, interp.borrow_mut().sym_intern("$stderr"));
+        let stderr = sys::mrb_gv_get(mrb, interp.0.borrow_mut().sym_intern("$stderr"));
         if !sys::mrb_sys_value_is_nil(stderr) {
             let args = args::Rest::extract(&interp);
             let stderr = Value::new(&interp, stderr);
@@ -79,7 +78,7 @@ impl Kernel {
         match result {
             Ok(req) => {
                 let result = if let Some(req) = req.rust {
-                    req(Rc::clone(&interp))
+                    req(interp.clone())
                 } else {
                     Ok(())
                 };
@@ -113,7 +112,7 @@ impl Kernel {
         match result {
             Ok(req) => {
                 let result = if let Some(req) = req.rust {
-                    req(Rc::clone(&interp))
+                    req(interp.clone())
                 } else {
                     Ok(())
                 };
@@ -143,7 +142,7 @@ impl Kernel {
 
         for value in args.map(|args| args.rest).unwrap_or_default() {
             let s = value.to_s();
-            interp.borrow_mut().print(s.as_str());
+            interp.0.borrow_mut().print(s.as_str());
         }
         sys::mrb_sys_nil_value()
     }
@@ -158,7 +157,7 @@ impl Kernel {
                 }
             } else {
                 let s = value.to_s();
-                interp.borrow_mut().puts(s.as_str());
+                interp.0.borrow_mut().puts(s.as_str());
             }
         }
 
@@ -168,7 +167,7 @@ impl Kernel {
             .unwrap_or_default();
 
         if rest.is_empty() {
-            interp.borrow_mut().puts("");
+            interp.0.borrow_mut().puts("");
         }
         for value in rest {
             do_puts(&interp, value);

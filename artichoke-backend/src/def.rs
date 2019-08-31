@@ -89,7 +89,7 @@ impl EnclosingRubyScope {
     /// struct Inner;
     ///
     /// let interp = artichoke_backend::interpreter().expect("init");
-    /// let mut api = interp.borrow_mut();
+    /// let mut api = interp.0.borrow_mut();
     /// if let Some(scope) = api.class_spec::<Fixnum>().map(EnclosingRubyScope::class) {
     ///     api.def_class::<Inner>("Inner", Some(scope), None);
     /// }
@@ -123,7 +123,7 @@ impl EnclosingRubyScope {
     /// struct Inner;
     ///
     /// let interp = artichoke_backend::interpreter().expect("init");
-    /// let mut api = interp.borrow_mut();
+    /// let mut api = interp.0.borrow_mut();
     /// if let Some(scope) = api.module_spec::<Kernel>().map(EnclosingRubyScope::module) {
     ///     api.def_class::<Inner>("Inner", Some(scope), None);
     /// }
@@ -270,7 +270,7 @@ mod tests {
         // Setup: define module and class hierarchy
         let interp = crate::interpreter().expect("init");
         {
-            let mut api = interp.borrow_mut();
+            let mut api = interp.0.borrow_mut();
             let root = api.def_module::<Root>("A", None);
             let mod_under_root = api.def_module::<ModuleUnderRoot>(
                 "B",
@@ -294,26 +294,28 @@ mod tests {
             );
         }
 
-        let spec = interp.borrow().module_spec::<Root>().unwrap();
+        let spec = interp.0.borrow().module_spec::<Root>().unwrap();
         spec.borrow().define(&interp).expect("def module");
-        let spec = interp.borrow().module_spec::<ModuleUnderRoot>().unwrap();
+        let spec = interp.0.borrow().module_spec::<ModuleUnderRoot>().unwrap();
         spec.borrow().define(&interp).expect("def module");
-        let spec = interp.borrow().class_spec::<ClassUnderRoot>().unwrap();
+        let spec = interp.0.borrow().class_spec::<ClassUnderRoot>().unwrap();
         spec.borrow().define(&interp).expect("def class");
-        let spec = interp.borrow().class_spec::<ClassUnderModule>().unwrap();
+        let spec = interp.0.borrow().class_spec::<ClassUnderModule>().unwrap();
         spec.borrow().define(&interp).expect("def class");
-        let spec = interp.borrow().module_spec::<ModuleUnderClass>().unwrap();
+        let spec = interp.0.borrow().module_spec::<ModuleUnderClass>().unwrap();
         spec.borrow().define(&interp).expect("def module");
-        let spec = interp.borrow().class_spec::<ClassUnderClass>().unwrap();
+        let spec = interp.0.borrow().class_spec::<ClassUnderClass>().unwrap();
         spec.borrow().define(&interp).expect("def class");
 
         let spec = interp
+            .0
             .borrow()
             .module_spec::<Root>()
             .expect("Root not defined");
         assert_eq!(&spec.borrow().fqname(), "A");
         assert_eq!(&format!("{}", spec.borrow()), "artichoke module spec -- A");
         let spec = interp
+            .0
             .borrow()
             .module_spec::<ModuleUnderRoot>()
             .expect("ModuleUnderRoot not defined");
@@ -323,6 +325,7 @@ mod tests {
             "artichoke module spec -- A::B"
         );
         let spec = interp
+            .0
             .borrow()
             .class_spec::<ClassUnderRoot>()
             .expect("ClassUnderRoot not defined");
@@ -332,6 +335,7 @@ mod tests {
             "artichoke class spec -- A::C"
         );
         let spec = interp
+            .0
             .borrow()
             .class_spec::<ClassUnderModule>()
             .expect("ClassUnderModule not defined");
@@ -341,6 +345,7 @@ mod tests {
             "artichoke class spec -- A::B::D"
         );
         let spec = interp
+            .0
             .borrow()
             .module_spec::<ModuleUnderClass>()
             .expect("ModuleUnderClass not defined");
@@ -350,6 +355,7 @@ mod tests {
             "artichoke module spec -- A::C::E"
         );
         let spec = interp
+            .0
             .borrow()
             .class_spec::<ClassUnderClass>()
             .expect("ClassUnderClass not defined");
@@ -383,7 +389,7 @@ mod tests {
             }
             let interp = crate::interpreter().expect("init");
             let (cls, module) = {
-                let mut api = interp.borrow_mut();
+                let mut api = interp.0.borrow_mut();
                 let cls = api.def_class::<Class>("DefineMethodTestClass", None, None);
                 let module = api.def_module::<Module>("DefineMethodTestModule", None);
                 cls.borrow_mut()

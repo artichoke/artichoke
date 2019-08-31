@@ -4,6 +4,7 @@ use crate::ArtichokeError;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
+        .0
         .borrow_mut()
         .def_module::<StringScanner>("StringScanner", None);
     interp.def_rb_source_file("strscan.rb", include_str!("strscan.rb"))?;

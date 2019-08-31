@@ -4,6 +4,7 @@ use crate::ArtichokeError;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
+        .0
         .borrow_mut()
         .def_class::<Monitor>("Monitor", None, None);
     interp.def_rb_source_file("monitor.rb", include_str!("monitor.rb"))?;

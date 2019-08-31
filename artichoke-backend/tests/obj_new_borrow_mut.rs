@@ -24,14 +24,14 @@ impl RustBackedValue for Obj {}
 
 unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    interp.borrow_mut();
+    interp.0.borrow_mut();
     slf
 }
 
 #[test]
 fn obj_new_borrow_mut() {
     let interp = artichoke_backend::interpreter().expect("init");
-    let class = interp.borrow_mut().def_class::<Obj>("Obj", None, None);
+    let class = interp.0.borrow_mut().def_class::<Obj>("Obj", None, None);
     class
         .borrow_mut()
         .add_method("initialize", initialize, sys::mrb_args_none());

@@ -23,7 +23,7 @@ impl Rest {
             .write_all(b"\0")
             .map_err(|_| ArtichokeError::ArgSpec)?;
         sys::mrb_get_args(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             argspec.as_ptr() as *const i8,
             args.as_mut_ptr(),
             count.as_mut_ptr(),

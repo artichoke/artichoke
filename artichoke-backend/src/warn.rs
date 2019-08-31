@@ -23,9 +23,9 @@ pub trait Warn {
 impl Warn for Artichoke {
     fn warn(&self, message: &str) -> Result<(), ArtichokeError> {
         warn!("rb warning: {}", message);
-        let mrb = self.borrow().mrb;
+        let mrb = self.0.borrow().mrb;
         let kernel = unsafe {
-            let stderr = sys::mrb_gv_get(mrb, self.borrow_mut().sym_intern("$stderr"));
+            let stderr = sys::mrb_gv_get(mrb, self.0.borrow_mut().sym_intern("$stderr"));
             if sys::mrb_sys_value_is_nil(stderr) {
                 return Ok(());
             }

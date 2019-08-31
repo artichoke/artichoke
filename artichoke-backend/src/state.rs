@@ -112,7 +112,7 @@ impl State {
     /// fn main() {
     ///     let interp = artichoke_backend::interpreter().expect("init");
     ///     let spec = {
-    ///         let mut api = interp.borrow_mut();
+    ///         let mut api = interp.0.borrow_mut();
     ///         let spec = api.def_class::<()>("Container", None, None);
     ///         spec.borrow_mut().add_method("value", value, sys::mrb_args_none());
     ///         spec.borrow_mut().add_self_method("value", value, sys::mrb_args_none());
@@ -181,7 +181,7 @@ impl State {
     /// fn main() {
     ///     let interp = artichoke_backend::interpreter().expect("init");
     ///     let spec = {
-    ///         let mut api = interp.borrow_mut();
+    ///         let mut api = interp.0.borrow_mut();
     ///         let spec = api.def_module::<()>("Container", None);
     ///         spec.borrow_mut().add_method("value", value, sys::mrb_args_none());
     ///         spec.borrow_mut().add_self_method("value", value, sys::mrb_args_none());

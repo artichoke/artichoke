@@ -10,7 +10,7 @@ pub const RUBY_PLATFORM: &str = "x86_64-unknown-artichoke";
 pub const INPUT_RECORD_SEPARATOR: &str = "\n";
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let mrb = interp.borrow().mrb;
+    let mrb = interp.0.borrow().mrb;
     unsafe {
         let ruby_platform = Value::convert(interp, RUBY_PLATFORM);
         sys::mrb_define_global_const(
@@ -27,7 +27,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         let input_record_separator = Value::convert(interp, INPUT_RECORD_SEPARATOR);
         sys::mrb_gv_set(
             mrb,
-            interp.borrow_mut().sym_intern("$/"),
+            interp.0.borrow_mut().sym_intern("$/"),
             input_record_separator.inner(),
         );
     }

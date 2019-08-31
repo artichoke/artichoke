@@ -45,6 +45,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("regexp.rb"))?;
     let regexp =
         interp
+            .0
             .borrow_mut()
             .def_class::<Regexp>("Regexp", None, Some(rust_data_free::<Regexp>));
     regexp.borrow_mut().mrb_value_is_rust_backed(true);

@@ -70,7 +70,7 @@ impl LoadSources for Artichoke {
     where
         T: AsRef<str>,
     {
-        let api = self.borrow();
+        let api = self.0.borrow();
         let path = self.normalize_source_path(filename.as_ref());
         if let Some(parent) = path.parent() {
             api.vfs.create_dir_all(parent)?;
@@ -102,7 +102,7 @@ impl LoadSources for Artichoke {
         T: AsRef<str>,
         F: AsRef<[u8]>,
     {
-        let api = self.borrow();
+        let api = self.0.borrow();
         let path = self.normalize_source_path(filename.as_ref());
         if let Some(parent) = path.parent() {
             api.vfs.create_dir_all(parent)?;

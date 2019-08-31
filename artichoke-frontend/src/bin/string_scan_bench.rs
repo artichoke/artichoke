@@ -18,7 +18,7 @@ fn main() {
             process::exit(1);
         }
     };
-    let mrb = interp.borrow().mrb;
+    let mrb = interp.0.borrow().mrb;
 
     // program is either supplied as a file via command line argument or piped
     // in via stdin.
@@ -46,7 +46,7 @@ fn main() {
         include_bytes!("../../ruby/fixtures/learnxinyminutes.txt").as_ref(),
     );
     data.protect();
-    unsafe { sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$data"), data.inner()) }
+    unsafe { sys::mrb_gv_set(mrb, interp.0.borrow_mut().sym_intern("$data"), data.inner()) }
     let ctx = Context::new("(main)");
     if let Err(err) = interp.eval_with_context(program, ctx) {
         eprintln!("{}", err);

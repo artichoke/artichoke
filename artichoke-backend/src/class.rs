@@ -52,7 +52,7 @@ impl Spec {
         let arglen = Int::try_from(args.len()).unwrap_or_default();
         let value = unsafe {
             sys::mrb_obj_new(
-                interp.borrow().mrb,
+                interp.0.borrow().mrb,
                 rclass,
                 arglen,
                 args.as_ptr() as *const sys::mrb_value,
@@ -107,7 +107,7 @@ impl ClassLike for Spec {
         if let Some(rclass) = *self.memoized_rclass.borrow() {
             return Some(rclass);
         }
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(scope) = scope.rclass(interp) {
                 if unsafe { sys::mrb_class_defined_under(mrb, scope, self.cstring.as_ptr()) } != 0 {
@@ -165,7 +165,7 @@ impl PartialEq for Spec {
 
 impl Define for Spec {
     fn define(&self, interp: &Artichoke) -> Result<*mut sys::RClass, ArtichokeError> {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         let super_class = if let Some(ref spec) = self.super_class {
             spec.borrow()
                 .rclass(interp)
@@ -216,7 +216,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let standard_error = Rc::new(RefCell::new(Spec::new("StandardError", None, None)));
         let spec = {
-            let mut api = interp.borrow_mut();
+            let mut api = interp.0.borrow_mut();
             let spec = api.def_class::<()>("RustError", None, None);
             spec.borrow_mut()
                 .with_super_class(Rc::clone(&standard_error));
@@ -240,7 +240,7 @@ mod tests {
         struct SubClass;
         let interp = crate::interpreter().expect("init");
         let (base, sub) = {
-            let mut api = interp.borrow_mut();
+            let mut api = interp.0.borrow_mut();
             let base = api.def_class::<BaseClass>("BaseClass", None, None);
             let sub = api.def_class::<SubClass>("SubClass", None, None);
             sub.borrow_mut().with_super_class(Rc::clone(&base));
@@ -249,7 +249,7 @@ mod tests {
         base.borrow().define(&interp).expect("def class");
         sub.borrow().define(&interp).expect("def class");
         {
-            let api = interp.borrow();
+            let api = interp.0.borrow();
             // this should not panic
             let _ = api.class_spec::<BaseClass>().unwrap().borrow_mut();
             let _ = api.class_spec::<SubClass>().unwrap().borrow_mut();
