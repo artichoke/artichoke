@@ -9,6 +9,14 @@ cargo build
 cargo test
 ```
 
+Cross-builds are supported with the normal cargo invocation (although they are
+not yet tested in CI):
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo build --target wasm32-unknown-unknown
+```
+
 ## Prerequisites
 
 ### Rust Toolchain
