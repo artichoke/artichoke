@@ -32,7 +32,7 @@ impl<T: EnvBackend> Env<T> {
     unsafe fn extract_two_string_args(interp: &Artichoke) -> (String, Option<String>) {
         let mut key = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut value = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
 
         sys::mrb_get_args(
             mrb,
@@ -65,7 +65,7 @@ impl<T: EnvBackend> Env<T> {
 
     unsafe fn extract_string_arg(interp: &Artichoke) -> Result<String, Error> {
         let mut other = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         sys::mrb_get_args(
             mrb,
             Self::STRING_SINGLE_ARG_SPEC.as_ptr() as *const i8,

@@ -23,7 +23,6 @@
 use artichoke_backend::eval::Eval;
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::ArtichokeError;
-use std::rc::Rc;
 
 mod leak;
 
@@ -49,7 +48,7 @@ end
         "n".repeat(1024 * 1024)
     );
     leak::Detector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
-        let interp = Rc::clone(&interp);
+        let interp = interp.clone();
         let code = "bad_code";
         let arena = interp.create_arena_savepoint();
         let result = interp.eval(code).map(|_| ());
@@ -67,7 +66,7 @@ end
     let expected = "a".repeat(1024 * 1024);
     leak::Detector::new("to_s", ITERATIONS, LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
-            let interp = Rc::clone(&interp);
+            let interp = interp.clone();
             let arena = interp.create_arena_savepoint();
             let result = interp.eval("'a' * 1024 * 1024").expect("eval");
             arena.restore();
@@ -75,7 +74,7 @@ end
             drop(result);
             interp.incremental_gc();
         },
-        || Rc::clone(&interp).full_gc(),
+        || interp.clone().full_gc(),
     );
 
     // Value::to_s_debug
@@ -83,7 +82,7 @@ end
     let expected = format!(r#"String<"{}">"#, "a".repeat(1024 * 1024));
     leak::Detector::new("to_s_debug", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
-            let interp = Rc::clone(&interp);
+            let interp = interp.clone();
             let arena = interp.create_arena_savepoint();
             let result = interp.eval("'a' * 1024 * 1024").expect("eval");
             arena.restore();
@@ -91,6 +90,6 @@ end
             drop(result);
             interp.incremental_gc();
         },
-        || Rc::clone(&interp).full_gc(),
+        || interp.clone().full_gc(),
     );
 }

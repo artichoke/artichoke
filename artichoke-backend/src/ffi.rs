@@ -45,7 +45,7 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, Arti
         "Extracted Artichoke from user data pointer on {}",
         mrb.debug()
     );
-    Ok(api)
+    Ok(Artichoke(api))
 }
 
 #[cfg(test)]
@@ -63,7 +63,7 @@ mod tests {
     #[test]
     fn from_user_data_null_user_data() {
         let interp = crate::interpreter().expect("init");
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         unsafe {
             // fake null user data
             (*mrb).ud = std::ptr::null_mut();
@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn from_user_data() {
         let interp = crate::interpreter().expect("init");
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         let res = unsafe { super::from_user_data(mrb) };
         assert!(res.is_ok());
     }
@@ -83,12 +83,12 @@ mod tests {
     #[test]
     fn from_user_data_rc_refcount() {
         let interp = crate::interpreter().expect("init");
-        assert_eq!(Rc::strong_count(&interp), 1);
-        let mrb = interp.borrow().mrb;
+        assert_eq!(Rc::strong_count(&interp.0), 1);
+        let mrb = interp.0.borrow().mrb;
         let res = unsafe { super::from_user_data(mrb) };
-        assert_eq!(Rc::strong_count(&interp), 2);
+        assert_eq!(Rc::strong_count(&interp.0), 2);
         assert!(res.is_ok());
         drop(res);
-        assert_eq!(Rc::strong_count(&interp), 1);
+        assert_eq!(Rc::strong_count(&interp.0), 1);
     }
 }

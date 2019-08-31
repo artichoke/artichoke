@@ -1,7 +1,6 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
 use std::mem;
-use std::rc::Rc;
 
 use crate::convert::TryConvert;
 use crate::eval::{Context, Eval};
@@ -35,7 +34,7 @@ impl Require {
         if let Some(require) = self.rust {
             // dynamic, Rust-backed `File` require
             interp.push_context(context.clone());
-            let response = require(Rc::clone(&interp));
+            let response = require(interp.clone());
             interp.pop_context();
             if response.is_err() {
                 let file = self.file.clone();
@@ -67,7 +66,7 @@ impl Args {
     pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             string.as_mut_ptr(),
         );
@@ -83,7 +82,6 @@ impl Args {
 pub mod method {
     use log::trace;
     use std::path::{Path, PathBuf};
-    use std::rc::Rc;
 
     use crate::eval::Eval;
     use crate::fs::RUBY_LOAD_PATH;
@@ -108,7 +106,7 @@ pub mod method {
     }
 
     fn require_impl(interp: &Artichoke, args: Args, base: &str) -> Result<Require, Error> {
-        let interp = Rc::clone(interp);
+        let interp = interp.clone();
         // Track whether any iterations of the loop successfully required some
         // Ruby sources.
         let mut path = PathBuf::from(args.file.as_str());
@@ -125,7 +123,7 @@ pub mod method {
         };
         for path in files {
             let is_file = {
-                let api = interp.borrow();
+                let api = interp.0.borrow();
                 api.vfs.is_file(path.as_path())
             };
             if !is_file {
@@ -134,7 +132,7 @@ pub mod method {
                 continue;
             }
             let metadata = {
-                let api = interp.borrow();
+                let api = interp.0.borrow();
                 api.vfs.metadata(path.as_path()).unwrap_or_default()
             };
             // If a file is already required, short circuit.
@@ -151,7 +149,7 @@ pub mod method {
             // arbitrary other files, including some child sources that may
             // depend on these module definitions.
             let contents = {
-                let api = interp.borrow();
+                let api = interp.0.borrow();
                 api.vfs.read_file(path.as_path())
             };
             let require = Require {
@@ -160,7 +158,7 @@ pub mod method {
                 ruby: contents.ok(),
             };
             let metadata = metadata.mark_required();
-            let borrow = interp.borrow();
+            let borrow = interp.0.borrow();
             borrow
                 .vfs
                 .set_metadata(path.as_path(), metadata)

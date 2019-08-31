@@ -18,7 +18,7 @@ struct Protect {
 impl Protect {
     fn new(interp: &Artichoke, code: &[u8]) -> Self {
         Self {
-            ctx: interp.borrow().ctx,
+            ctx: interp.0.borrow().ctx,
             code: code.to_vec(),
         }
     }
@@ -144,14 +144,14 @@ impl Eval for Artichoke {
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
         let (mrb, ctx) = {
-            let borrow = self.borrow();
+            let borrow = self.0.borrow();
             (borrow.mrb, borrow.ctx)
         };
 
         // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
         let context = {
-            let api = self.borrow();
+            let api = self.0.borrow();
             if let Some(context) = api.context_stack.last() {
                 context.clone()
             } else {
@@ -214,14 +214,14 @@ impl Eval for Artichoke {
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
         let (mrb, ctx) = {
-            let borrow = self.borrow();
+            let borrow = self.0.borrow();
             (borrow.mrb, borrow.ctx)
         };
 
         // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
         let context = {
-            let api = self.borrow();
+            let api = self.0.borrow();
             if let Some(context) = api.context_stack.last() {
                 context.clone()
             } else {
@@ -279,17 +279,17 @@ impl Eval for Artichoke {
     }
 
     fn peek_context(&self) -> Option<Context> {
-        let api = self.borrow();
+        let api = self.0.borrow();
         api.context_stack.last().cloned()
     }
 
     fn push_context(&self, context: Context) {
-        let mut api = self.borrow_mut();
+        let mut api = self.0.borrow_mut();
         api.context_stack.push(context);
     }
 
     fn pop_context(&self) {
-        let mut api = self.borrow_mut();
+        let mut api = self.0.borrow_mut();
         api.context_stack.pop();
     }
 }
@@ -319,14 +319,14 @@ mod tests {
         let context = Context::new("context.rb");
         interp.push_context(context);
         interp.eval("15").expect("eval");
-        assert_eq!(interp.borrow().context_stack.len(), 1);
+        assert_eq!(interp.0.borrow().context_stack.len(), 1);
     }
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
         let interp = crate::interpreter().expect("init");
         interp.eval("15").expect("eval");
-        assert_eq!(interp.borrow().context_stack.len(), 0);
+        assert_eq!(interp.0.borrow().context_stack.len(), 0);
     }
 
     #[test]
@@ -352,7 +352,7 @@ mod tests {
         impl File for NestedEval {
             fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
                 let spec = {
-                    let mut api = interp.borrow_mut();
+                    let mut api = interp.0.borrow_mut();
                     let spec = api.def_module::<Self>("NestedEval", None);
                     spec.borrow_mut().add_self_method(
                         "file",

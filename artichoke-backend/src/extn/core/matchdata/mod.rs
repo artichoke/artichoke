@@ -37,7 +37,7 @@ pub mod to_a;
 pub mod to_s;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let match_data = interp.borrow_mut().def_class::<MatchData>(
+    let match_data = interp.0.borrow_mut().def_class::<MatchData>(
         "MatchData",
         None,
         Some(rust_data_free::<MatchData>),

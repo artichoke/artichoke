@@ -56,7 +56,7 @@ impl Spec {
         interp: &Artichoke,
         into: *mut sys::RClass,
     ) -> Result<(), ArtichokeError> {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         match self.method_type {
             Type::Class => {
                 sys::mrb_define_class_method(

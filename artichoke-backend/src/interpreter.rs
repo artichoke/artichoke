@@ -39,7 +39,7 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     // operation `Rc::strong_count` will still be 1. This dance is required to
     // avoid leaking Artichoke objects, which will let the `Drop` impl close the mrb
     // context and interpreter.
-    let interp = unsafe { Rc::from_raw(ptr) };
+    let interp = Artichoke(unsafe { Rc::from_raw(ptr) });
 
     // Initialize Artichoke Core and Standard Library runtime
     extn::init(&interp)?;

@@ -17,6 +17,6 @@ pub trait TopSelf {
 
 impl TopSelf for Artichoke {
     fn top_self(&self) -> Value {
-        Value::new(self, unsafe { sys::mrb_top_self(self.borrow().mrb) })
+        Value::new(self, unsafe { sys::mrb_top_self(self.0.borrow().mrb) })
     }
 }

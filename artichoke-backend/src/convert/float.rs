@@ -11,7 +11,7 @@ impl Convert<Float> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: Float) -> Self {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         Self::new(interp, unsafe { sys::mrb_sys_float_value(mrb, value) })
     }
 }

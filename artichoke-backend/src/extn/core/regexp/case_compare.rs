@@ -27,7 +27,7 @@ impl Args {
     pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             string.as_mut_ptr(),
         );
@@ -41,7 +41,7 @@ impl Args {
 }
 
 pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
-    let mrb = interp.borrow().mrb;
+    let mrb = interp.0.borrow().mrb;
     let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let string = if let Some(string) = args.string {
         string
@@ -49,7 +49,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
         unsafe {
             sys::mrb_gv_set(
                 mrb,
-                interp.borrow_mut().sym_intern("$~"),
+                interp.0.borrow_mut().sym_intern("$~"),
                 sys::mrb_sys_nil_value(),
             );
             return Ok(Value::convert(interp, false));
@@ -61,14 +61,15 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
         Backend::Onig(regex) => {
             if let Some(captures) = regex.captures(string.as_str()) {
                 let num_regexp_globals_to_set = {
-                    let num_previously_set_globals = interp.borrow().num_set_regexp_capture_globals;
+                    let num_previously_set_globals =
+                        interp.0.borrow().num_set_regexp_capture_globals;
                     cmp::max(num_previously_set_globals, captures.len())
                 };
                 for group in 0..num_regexp_globals_to_set {
                     let sym = if group == 0 {
-                        interp.borrow_mut().sym_intern("$&")
+                        interp.0.borrow_mut().sym_intern("$&")
                     } else {
-                        interp.borrow_mut().sym_intern(&format!("${}", group))
+                        interp.0.borrow_mut().sym_intern(&format!("${}", group))
                     };
 
                     let value = Value::convert(&interp, captures.at(group));
@@ -76,19 +77,19 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                         sys::mrb_gv_set(mrb, sym, value.inner());
                     }
                 }
-                interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
+                interp.0.borrow_mut().num_set_regexp_capture_globals = captures.len();
 
                 if let Some(match_pos) = captures.pos(0) {
                     let pre_match = &string[..match_pos.0];
                     let post_match = &string[match_pos.1..];
                     unsafe {
-                        let pre_match_sym = interp.borrow_mut().sym_intern("$`");
+                        let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
                         sys::mrb_gv_set(
                             mrb,
                             pre_match_sym,
                             Value::convert(interp, pre_match).inner(),
                         );
-                        let post_match_sym = interp.borrow_mut().sym_intern("$'");
+                        let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
                         sys::mrb_gv_set(
                             mrb,
                             post_match_sym,
@@ -100,13 +101,13 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                 unsafe { matchdata.try_into_ruby(&interp, None) }.map_err(|_| Error::Fatal)?
             } else {
                 unsafe {
-                    let pre_match_sym = interp.borrow_mut().sym_intern("$`");
+                    let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
                     sys::mrb_gv_set(
                         mrb,
                         pre_match_sym,
                         Value::convert(interp, None::<Value>).inner(),
                     );
-                    let post_match_sym = interp.borrow_mut().sym_intern("$'");
+                    let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
                     sys::mrb_gv_set(
                         mrb,
                         post_match_sym,
@@ -119,7 +120,11 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     };
     unsafe {
-        sys::mrb_gv_set(mrb, interp.borrow_mut().sym_intern("$~"), matchdata.inner());
+        sys::mrb_gv_set(
+            mrb,
+            interp.0.borrow_mut().sym_intern("$~"),
+            matchdata.inner(),
+        );
     }
     Ok(Value::convert(&interp, !unsafe {
         sys::mrb_sys_value_is_nil(matchdata.inner())

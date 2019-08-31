@@ -3,8 +3,9 @@ use crate::Artichoke;
 use crate::ArtichokeError;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    interp.borrow_mut().def_class::<Set>("Set", None, None);
+    interp.0.borrow_mut().def_class::<Set>("Set", None, None);
     interp
+        .0
         .borrow_mut()
         .def_class::<SortedSet>("SortedSet", None, None);
     interp.def_rb_source_file("set.rb", include_str!("set.rb"))?;

@@ -6,10 +6,12 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     <% constants.each do |(constant, klass)| %>
     <% if klass == "Class" %>
     interp
+        .0
         .borrow_mut()
         .def_class::<<%= constant %>>("<%= constant %>", None, None);
     <% elsif klass == "Module" %>
     interp
+        .0
         .borrow_mut()
         .def_module::<<%= constant %>>("<%= constant %>", None);
     <% else %>

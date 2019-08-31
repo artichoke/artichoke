@@ -4,6 +4,7 @@ use crate::ArtichokeError;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
+        .0
         .borrow_mut()
         .def_module::<Forwardable>("Forwardable", None);
     interp.def_rb_source_file("forwardable.rb", include_str!("forwardable.rb"))?;

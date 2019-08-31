@@ -12,11 +12,12 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    if interp.borrow().class_spec::<Integer>().is_some() {
+    if interp.0.borrow().class_spec::<Integer>().is_some() {
         return Ok(());
     }
 
     let integer = interp
+        .0
         .borrow_mut()
         .def_class::<Integer>("Integer", None, None);
 

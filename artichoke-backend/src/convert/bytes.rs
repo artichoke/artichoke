@@ -20,7 +20,7 @@ impl Convert<&[u8]> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: &[u8]) -> Self {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         // mruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
         let raw = value.as_ptr() as *const i8;
@@ -37,7 +37,7 @@ impl TryConvert<Value> for Vec<u8> {
         interp: &Artichoke,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         match value.ruby_type() {
             Ruby::String => {
                 let bytes = value.inner();
@@ -98,7 +98,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, v.clone());
         let inner = value.inner();
-        let len = unsafe { sys::mrb_string_value_len(interp.borrow().mrb, inner) };
+        let len = unsafe { sys::mrb_string_value_len(interp.0.borrow().mrb, inner) };
         let len = usize::try_from(len).expect("usize");
         v.len() == len
     }

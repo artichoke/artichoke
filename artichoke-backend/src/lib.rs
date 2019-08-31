@@ -117,7 +117,7 @@
 //! impl Container {
 //!     unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
 //!         let interp = unwrap_interpreter!(mrb);
-//!         let api = interp.borrow();
+//!         let api = interp.0.borrow();
 //!         let int = mem::uninitialized::<sys::mrb_int>();
 //!         let mut argspec = vec![];
 //!         argspec.write_all(format!("{}\0", sys::specifiers::INTEGER).as_bytes()).unwrap();
@@ -144,7 +144,7 @@
 //!
 //! impl File for Container {
 //!   fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
-//!         let spec = interp.borrow_mut().def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
+//!         let spec = interp.0.borrow_mut().def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
 //!         spec.borrow_mut().add_method("initialize", Self::initialize, sys::mrb_args_req(1));
 //!         spec.borrow_mut().add_method("value", Self::value, sys::mrb_args_none());
 //!         spec.borrow_mut().mrb_value_is_rust_backed(true);
@@ -254,7 +254,8 @@ pub use mruby_sys as sys;
 ///
 /// Functionality is added to the interpreter via traits, for example,
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
-pub type Artichoke = Rc<RefCell<state::State>>;
+#[derive(Debug, Clone)]
+pub struct Artichoke(pub Rc<RefCell<state::State>>); // TODO: this should not be pub
 
 /// Errors returned by artichoke-backend crate.
 #[derive(Debug)]

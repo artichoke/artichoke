@@ -4,9 +4,13 @@ use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
+        .0
         .borrow_mut()
         .def_class::<Thread>("Thread", None, None);
-    interp.borrow_mut().def_class::<Mutex>("Mutex", None, None);
+    interp
+        .0
+        .borrow_mut()
+        .def_class::<Mutex>("Mutex", None, None);
     interp.def_rb_source_file("thread.rb", include_str!("thread.rb"))?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement

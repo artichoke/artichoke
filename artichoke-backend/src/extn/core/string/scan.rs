@@ -29,7 +29,7 @@ impl Args {
         let mut pattern = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut block = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
-            interp.borrow().mrb,
+            interp.0.borrow().mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             pattern.as_mut_ptr(),
             block.as_mut_ptr(),
@@ -63,12 +63,12 @@ impl Args {
 }
 
 pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Error> {
-    let mrb = interp.borrow().mrb;
+    let mrb = interp.0.borrow().mrb;
     let regexp = args.regexp.ok_or(Error::WrongType)?;
     let s = value.itself().map_err(|_| Error::Fatal)?;
     let s = unsafe { String::try_convert(&interp, s) }.map_err(|_| Error::WrongType)?;
 
-    let last_match_sym = interp.borrow_mut().sym_intern("$~");
+    let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
     let data = MatchData::new(s.as_str(), regexp.clone(), 0, s.len());
     let data = unsafe { data.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)?;
     unsafe { sys::mrb_gv_set(mrb, last_match_sym, data.inner()) };
@@ -87,14 +87,14 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
                     let mut groups = vec![];
                     let num_regexp_globals_to_set = {
                         let num_previously_set_globals =
-                            interp.borrow().num_set_regexp_capture_globals;
+                            interp.0.borrow().num_set_regexp_capture_globals;
                         cmp::max(num_previously_set_globals, captures.len())
                     };
                     for group in 0..num_regexp_globals_to_set {
                         let sym = if group == 0 {
-                            interp.borrow_mut().sym_intern("$&")
+                            interp.0.borrow_mut().sym_intern("$&")
                         } else {
-                            interp.borrow_mut().sym_intern(&format!("${}", group))
+                            interp.0.borrow_mut().sym_intern(&format!("${}", group))
                         };
 
                         let capture = captures.at(group);
@@ -105,7 +105,7 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
                             sys::mrb_gv_set(mrb, sym, Value::convert(interp, capture).inner());
                         }
                     }
-                    interp.borrow_mut().num_set_regexp_capture_globals = captures.len();
+                    interp.0.borrow_mut().num_set_regexp_capture_globals = captures.len();
 
                     let matched = Value::convert(interp, groups);
                     if let Some(pos) = captures.pos(0) {

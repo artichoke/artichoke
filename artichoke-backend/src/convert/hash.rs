@@ -18,7 +18,7 @@ impl Convert<Vec<(Value, Value)>> for Value {
     type To = Ruby;
 
     fn convert(interp: &Artichoke, value: Vec<(Self, Self)>) -> Self {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         let hash =
             unsafe { sys::mrb_hash_new_capa(mrb, Int::try_from(value.len()).unwrap_or_default()) };
         for (key, val) in value {
@@ -87,7 +87,7 @@ impl TryConvert<Value> for Vec<(Value, Value)> {
         interp: &Artichoke,
         value: Value,
     ) -> Result<Self, Error<Self::From, Self::To>> {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         match value.ruby_type() {
             Ruby::Hash => {
                 let hash = value.inner();

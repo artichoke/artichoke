@@ -89,7 +89,7 @@ pub fn run(
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
     interp.push_context(Context::new(REPL_FILENAME));
     unsafe {
-        let api = interp.borrow();
+        let api = interp.0.borrow();
         (*api.ctx).lineno = 1;
     }
 
@@ -129,7 +129,7 @@ pub fn run(
                 for line in buf.lines() {
                     rl.add_history_entry(line);
                     unsafe {
-                        let api = interp.borrow();
+                        let api = interp.0.borrow();
                         (*api.ctx).lineno += 1;
                     }
                 }

@@ -41,8 +41,9 @@ where
         interp: &Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, ArtichokeError> {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         let spec = interp
+            .0
             .borrow()
             .class_spec::<Self>()
             .ok_or(ArtichokeError::ConvertToRuby(Error {
@@ -97,7 +98,7 @@ where
         interp: &Artichoke,
         slf: &Value,
     ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
-        let mrb = interp.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
             return Err(ArtichokeError::ConvertToRust(Error {
@@ -106,6 +107,7 @@ where
             }));
         }
         let spec = interp
+            .0
             .borrow()
             .class_spec::<Self>()
             .ok_or_else(|| ArtichokeError::NotDefined("class".to_owned()))?;
@@ -188,7 +190,7 @@ mod tests {
     #[test]
     fn convert_obj_roundtrip() {
         let interp = crate::interpreter().expect("init");
-        let spec = interp.borrow_mut().def_class::<Container>(
+        let spec = interp.0.borrow_mut().def_class::<Container>(
             "Container",
             None,
             Some(rust_data_free::<Container>),
@@ -217,7 +219,7 @@ mod tests {
     #[test]
     fn convert_obj_not_data() {
         let interp = crate::interpreter().expect("init");
-        let spec = interp.borrow_mut().def_class::<Container>(
+        let spec = interp.0.borrow_mut().def_class::<Container>(
             "Container",
             None,
             Some(rust_data_free::<Container>),
@@ -226,7 +228,7 @@ mod tests {
         spec.borrow_mut()
             .add_method("value", Container::value, sys::mrb_args_none());
         spec.borrow().define(&interp).expect("class install");
-        let spec = interp.borrow_mut().def_class::<Box<Other>>(
+        let spec = interp.0.borrow_mut().def_class::<Box<Other>>(
             "Other",
             None,
             Some(rust_data_free::<Container>),

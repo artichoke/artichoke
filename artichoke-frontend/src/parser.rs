@@ -64,8 +64,8 @@ pub struct Parser {
 impl Parser {
     /// Create a new parser from an interpreter instance.
     pub fn new(interp: &Artichoke) -> Option<Self> {
-        let mrb = interp.borrow().mrb;
-        let context = interp.borrow().ctx;
+        let mrb = interp.0.borrow().mrb;
+        let context = interp.0.borrow().ctx;
         let parser = unsafe { sys::mrb_parser_new(mrb) };
         if parser.is_null() {
             None

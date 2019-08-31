@@ -81,8 +81,8 @@ mod tests {
     fn convert_to_string(s: String) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = Value::convert(&interp, s.clone());
-        let ptr = unsafe { sys::mrb_string_value_ptr(interp.borrow().mrb, value.inner()) };
-        let len = unsafe { sys::mrb_string_value_len(interp.borrow().mrb, value.inner()) };
+        let ptr = unsafe { sys::mrb_string_value_ptr(interp.0.borrow().mrb, value.inner()) };
+        let len = unsafe { sys::mrb_string_value_len(interp.0.borrow().mrb, value.inner()) };
         let string =
             unsafe { std::slice::from_raw_parts(ptr as *const u8, len.try_into().unwrap()) };
         s.as_bytes() == string

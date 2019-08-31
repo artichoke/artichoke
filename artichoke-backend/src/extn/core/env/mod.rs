@@ -21,11 +21,12 @@ fn init_internal_with_backend<T: EnvBackend>(interp: &Artichoke) -> Result<(), A
 where
     T: 'static,
 {
-    if interp.borrow().class_spec::<Env<T>>().is_some() {
+    if interp.0.borrow().class_spec::<Env<T>>().is_some() {
         return Ok(());
     }
 
     let env = interp
+        .0
         .borrow_mut()
         .def_class::<Env<T>>("EnvClass", None, None);
 
