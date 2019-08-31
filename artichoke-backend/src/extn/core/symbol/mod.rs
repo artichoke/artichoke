@@ -1,0 +1,13 @@
+use crate::eval::Eval;
+use crate::Artichoke;
+use crate::ArtichokeError;
+
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    interp
+        .borrow_mut()
+        .def_class::<Symbol>("Symbol", None, None);
+    interp.eval(include_str!("symbol.rb"))?;
+    Ok(())
+}
+
+pub struct Symbol;
