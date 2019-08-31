@@ -56,10 +56,28 @@ class Symbol
     to_s.length
   end
 
+  def match(*args)
+    to_s.match(*args)
+  end
+
+  def match?(*args)
+    to_s.match?(*args)
+  end
+
+  def succ
+    to_s.succ.intern
+  end
+
+  def swapcase
+    to_s.swapcase.intern
+  end
+
   def upcase
     to_s.upcase.intern
   end
 
-  alias size length
   alias intern to_sym
+  alias next succ
+  alias size length
+  alias slice []
 end
