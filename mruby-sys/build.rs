@@ -31,11 +31,7 @@ impl Build {
             "mruby-metaprog",     // APIs on Kernel and Module for accessing classes and variables
             "mruby-pack",         // Array#pack and String#unpack
             "mruby-sprintf",      // Kernel#sprintf, Kernel#format, String#%
-            "mruby-math",         // Math module from core
-            "mruby-time",         // Time class from core
-            "mruby-struct",       // Struct class from core
             "mruby-proc-ext",     // required by mruby-method, see GH-32
-            "mruby-random",       // Kernel#rand
             "mruby-object-ext",   // Pending removal, see GH-32
             "mruby-kernel-ext",   // Pending removal, see GH-32
             "mruby-class-ext",    // Pending removal, see GH-32
