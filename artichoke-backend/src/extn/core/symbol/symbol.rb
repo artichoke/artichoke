@@ -3,6 +3,12 @@
 class Symbol
   include Comparable
 
+  def <=>(other)
+    return nil unless other.is_a?(Symbol)
+
+    to_s <=> other.to_s
+  end
+
   def capitalize
     (to_s.capitalize! || self).to_sym
   end
