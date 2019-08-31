@@ -32,9 +32,11 @@ class Symbol
   def casecmp(other)
     return nil unless other.is_a?(Symbol)
 
-    lhs = to_s
-    lhs.upcase!
-    rhs = other.to_s.upcase
+    # Case-insensitive version of Symbol#<=>. Currently, case-insensitivity only
+    # works on characters A-Z/a-z, not all of Unicode. This is different from
+    # Symbol#casecmp?.
+    lhs = to_s.tr('a-z', 'A-Z')
+    rhs = other.to_s.tr('a-z', 'A-Z')
     lhs <=> rhs
   end
 
