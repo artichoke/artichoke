@@ -39,7 +39,7 @@ Artichoke requires configuring several dependencies, which are orchestrated by
 
 ### Rust Toolchain
 
-Artichoke depends on nightly Rust and several compiler plugins for linting and
+Artichoke depends on Rust and several compiler plugins for linting and
 formatting. The specific version of Rust Artichoke requires is specified in the
 [toolchain file](/rust-toolchain)
 
