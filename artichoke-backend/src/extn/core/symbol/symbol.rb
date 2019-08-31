@@ -48,12 +48,16 @@ class Symbol
     self == :''
   end
 
-  def upcase
-    to_s.upcase.intern
+  def encoding
+    raise NotImplementedError, 'Artichoke does not have Encoding support'
   end
 
   def length
     to_s.length
+  end
+
+  def upcase
+    to_s.upcase.intern
   end
 
   alias size length
