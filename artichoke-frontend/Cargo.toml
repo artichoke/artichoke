@@ -8,7 +8,7 @@ edition = "2018"
 rustc_version = "0.2.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rustyline = "4.1.0"
+rustyline = "5.0.2"
 
 [dependencies.artichoke-backend]
 path = "../artichoke-backend"
