@@ -72,6 +72,10 @@ class Symbol
     to_s.swapcase.intern
   end
 
+  def to_proc
+    ->(obj, *args, &block) { obj.__send__(self, *args, &block) }
+  end
+
   def upcase
     to_s.upcase.intern
   end
