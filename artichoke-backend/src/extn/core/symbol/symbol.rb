@@ -9,6 +9,10 @@ class Symbol
     to_s <=> other.to_s
   end
 
+  def =~(other)
+    to_s =~ other
+  end
+
   def capitalize
     (to_s.capitalize! || self).to_sym
   end
