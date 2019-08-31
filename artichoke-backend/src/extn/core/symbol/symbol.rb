@@ -18,15 +18,7 @@ class Symbol
   end
 
   def capitalize
-    (to_s.capitalize! || self).to_sym
-  end
-
-  def downcase
-    (to_s.downcase! || self).to_sym
-  end
-
-  def upcase
-    (to_s.upcase! || self).to_sym
+    to_s.capitalize.intern
   end
 
   def casecmp(other)
@@ -45,6 +37,14 @@ class Symbol
     return nil if c.nil?
 
     c.zero?
+  end
+
+  def downcase
+    to_s.downcase.intern
+  end
+
+  def upcase
+    to_s.upcase.intern
   end
 
   def empty?
