@@ -47,7 +47,6 @@ impl Integer {
         let interp = unwrap_interpreter!(mrb);
         let mut encoding = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let argc = sys::mrb_get_args(mrb, b"|o\0".as_ptr() as *const i8, encoding.as_mut_ptr());
-        println!("argc {:?}", argc);
         match argc {
             0 => {
                 // When no encoding is supplied, MRI assumes the encoding is
