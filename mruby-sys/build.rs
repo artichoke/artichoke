@@ -24,25 +24,21 @@ impl Build {
 
     fn gems() -> Vec<&'static str> {
         vec![
-            "mruby-compiler",
-            "mruby-eval",
-            "mruby-method",
-            "mruby-error",
-            "mruby-metaprog",
-            "mruby-pack",
-            "mruby-sprintf",
-            "mruby-math",
-            "mruby-time",
-            "mruby-struct",
-            "mruby-proc-ext",
-            "mruby-random",
-            "mruby-object-ext",
-            "mruby-kernel-ext",
-            "mruby-class-ext",
-            "mruby-fiber",
-            "mruby-enumerator",
-            "mruby-enum-lazy",
-            "mruby-toplevel-ext",
+            "mruby-compiler",     // Ruby parser and bytecode generation
+            "mruby-error",        // `mrb_raise`, `mrb_protect`
+            "mruby-eval",         // eval, instance_eval, and friends
+            "mruby-metaprog",     // APIs on Kernel and Module for accessing classes and variables
+            "mruby-method",       // `Method`, `UnboundMethod`, and method APIs on Kernel and Module
+            "mruby-toplevel-ext", // expose API for top self
+            "mruby-enumerator",   // Enumerator class from core
+            "mruby-enum-lazy",    // Enumerable#lazy
+            "mruby-fiber",        // Fiber class from core, required by mruby-enumerator
+            "mruby-pack",         // Array#pack and String#unpack
+            "mruby-sprintf",      // Kernel#sprintf, Kernel#format, String#%
+            "mruby-class-ext",    // Pending removal, see GH-32
+            "mruby-kernel-ext",   // Pending removal, see GH-32
+            "mruby-object-ext",   // Pending removal, see GH-32
+            "mruby-proc-ext",     // required by mruby-method, see GH-32
         ]
     }
 
