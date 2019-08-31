@@ -6,7 +6,6 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::enc::Encoding;
 use crate::extn::core::regexp::opts::Options;
 use crate::extn::core::regexp::{syntax, Backend, Regexp};
-use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::Artichoke;
@@ -68,8 +67,6 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
     let regexp = args.regexp.ok_or(Error::WrongType)?;
     let s = value.itself().map_err(|_| Error::Fatal)?;
     let s = unsafe { String::try_convert(&interp, s) }.map_err(|_| Error::WrongType)?;
-
-    let gc_was_enabled = interp.disable_gc();
 
     let last_match_sym = interp.borrow_mut().sym_intern("$~");
     let data = MatchData::new(s.as_str(), regexp.clone(), 0, s.len());
@@ -152,8 +149,5 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
     } else {
         Value::convert(interp, collected)
     };
-    if gc_was_enabled {
-        interp.enable_gc();
-    }
     Ok(result)
 }
