@@ -44,12 +44,12 @@ class Symbol
     to_s.downcase.intern
   end
 
-  def upcase
-    to_s.upcase.intern
+  def empty?
+    self == :''
   end
 
-  def empty?
-    to_s.empty?
+  def upcase
+    to_s.upcase.intern
   end
 
   def length
