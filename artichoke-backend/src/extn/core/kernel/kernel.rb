@@ -46,11 +46,6 @@ module Kernel
     self == NOT_SET
   end
 
-  def tap
-    yield self
-    self
-  end
-
   # Throws an object, uncaught throws will bubble up through other catch blocks.
   #
   # @param [Symbol] tag  tag being thrown
@@ -66,11 +61,4 @@ module Kernel
   def throw(tag, value = nil)
     raise UncaughtThrowError.new(tag, value)
   end
-
-  def yield_self(&block)
-    return to_enum :yield_self unless block
-    block.call(self)
-  end
-
-  alias then yield_self
 end
