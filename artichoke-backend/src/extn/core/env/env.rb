@@ -87,6 +87,11 @@ class EnvClass
     to_h.slice(*keys)
   end
 
+  def store(name, value)
+    self[name] = value
+    value
+  end
+
   def to_a
     to_h.to_a
   end
