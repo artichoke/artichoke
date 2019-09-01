@@ -3,6 +3,7 @@
 #![doc(deny(warnings))]
 
 use fs_extra::dir;
+use rayon::prelude::*;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -95,7 +96,7 @@ fn main() {
     fs::create_dir_all(Build::generated_dir()).unwrap();
     println!("{:?}", Build::generated_dir());
 
-    for package in vec![
+    let packages = vec![
         "abbrev",
         "base64",
         "benchmark",
@@ -195,14 +196,16 @@ fn main() {
         // "win32ole", native code, not requirable on all platforms
         "yaml",
         "zlib",
-    ] {
+    ];
+
+    packages.par_iter().for_each(|package| {
         let sources = Build::get_package_files(package)
             .trim()
             .split("\n")
             .filter(|s| !s.is_empty())
             .map(String::from)
             .collect::<Vec<_>>();
-        for source in &sources {
+        sources.par_iter().for_each(|source| {
             println!(
                 "source = {:?}, prefix = {:?}",
                 source,
@@ -216,7 +219,7 @@ fn main() {
             }
             println!("source = {:?}, dest = {:?}", source, out);
             fs::copy(source, &out).unwrap();
-        }
+        });
         Build::generate_rust_glue(package, sources);
-    }
+    });
 }

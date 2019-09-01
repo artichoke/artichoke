@@ -27,3 +27,4 @@ quickcheck_macros = "0.8"
 
 [build-dependencies]
 fs_extra = "1.1.0"
+rayon = "1.1"
