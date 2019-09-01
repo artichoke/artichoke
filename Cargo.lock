@@ -33,6 +33,7 @@ dependencies = [
 name = "artichoke-backend"
 version = "0.1.0"
 dependencies = [
+ "artichoke-core 0.1.0",
  "artichoke-vfs 0.5.0-alpha",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fs_extra 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",

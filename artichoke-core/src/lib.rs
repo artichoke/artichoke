@@ -50,7 +50,8 @@ pub enum ArtichokeError {
     /// Exception raised during eval.
     ///
     /// See [`Eval`](eval::Eval).
-    Exec(exception::Exception),
+    // TODO: disabled for migration Exec(exception::Exception),
+    Exec(String),
     /// Unable to initalize interpreter.
     New,
     /// Class or module with this name is not defined in the artichoke VM.

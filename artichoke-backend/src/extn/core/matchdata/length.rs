@@ -24,9 +24,9 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
             let captures = regex.captures(match_against);
             if let Some(captures) = captures {
                 let len = Int::try_from(captures.len()).map_err(|_| Error::Fatal)?;
-                Ok(Value::convert(interp, len))
+                Ok(interp.convert(len))
             } else {
-                Ok(Value::convert(interp, 0))
+                Ok(interp.convert(0))
             }
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),

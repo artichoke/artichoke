@@ -18,5 +18,5 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let borrow = data.borrow();
     let opts = Int::try_from(borrow.literal_options.flags().bits()).map_err(|_| Error::Fatal)?
         | borrow.encoding.flags();
-    Ok(Value::convert(interp, opts))
+    Ok(interp.convert(opts))
 }

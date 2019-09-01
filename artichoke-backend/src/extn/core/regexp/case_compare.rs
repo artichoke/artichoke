@@ -32,7 +32,7 @@ impl Args {
             string.as_mut_ptr(),
         );
         let string = string.assume_init();
-        if let Ok(string) = <Option<String>>::try_convert(interp, Value::new(interp, string)) {
+        if let Ok(string) = interp.try_convert(Value::new(interp, string)) {
             Ok(Self { string })
         } else {
             Err(Error::NoImplicitConversionToString)
@@ -52,7 +52,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                 interp.0.borrow_mut().sym_intern("$~"),
                 sys::mrb_sys_nil_value(),
             );
-            return Ok(Value::convert(interp, false));
+            return Ok(interp.convert(false));
         }
     };
     let borrow = data.borrow();
@@ -72,7 +72,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                         interp.0.borrow_mut().sym_intern(&format!("${}", group))
                     };
 
-                    let value = Value::convert(&interp, captures.at(group));
+                    let value = interp.convert(captures.at(group));
                     unsafe {
                         sys::mrb_gv_set(mrb, sym, value.inner());
                     }
@@ -84,17 +84,9 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                     let post_match = &string[match_pos.1..];
                     unsafe {
                         let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
-                        sys::mrb_gv_set(
-                            mrb,
-                            pre_match_sym,
-                            Value::convert(interp, pre_match).inner(),
-                        );
+                        sys::mrb_gv_set(mrb, pre_match_sym, interp.convert(pre_match).inner());
                         let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
-                        sys::mrb_gv_set(
-                            mrb,
-                            post_match_sym,
-                            Value::convert(interp, post_match).inner(),
-                        );
+                        sys::mrb_gv_set(mrb, post_match_sym, interp.convert(post_match).inner());
                     }
                 }
                 let matchdata = MatchData::new(string.as_str(), borrow.clone(), 0, string.len());
@@ -102,19 +94,11 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
             } else {
                 unsafe {
                     let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
-                    sys::mrb_gv_set(
-                        mrb,
-                        pre_match_sym,
-                        Value::convert(interp, None::<Value>).inner(),
-                    );
+                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert(None::<Value>).inner());
                     let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
-                    sys::mrb_gv_set(
-                        mrb,
-                        post_match_sym,
-                        Value::convert(interp, None::<Value>).inner(),
-                    );
+                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert(None::<Value>).inner());
                 }
-                Value::convert(interp, None::<Value>)
+                interp.convert(None::<Value>)
             }
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
@@ -126,7 +110,5 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
             matchdata.inner(),
         );
     }
-    Ok(Value::convert(&interp, !unsafe {
-        sys::mrb_sys_value_is_nil(matchdata.inner())
-    }))
+    Ok(interp.convert(!unsafe { sys::mrb_sys_value_is_nil(matchdata.inner()) }))
 }

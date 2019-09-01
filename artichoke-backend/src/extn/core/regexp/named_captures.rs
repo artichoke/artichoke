@@ -28,11 +28,11 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
                     let idx = Int::try_from(*idx).unwrap_or_default();
                     indexes.push(idx);
                 }
-                map.push((group.to_owned(), Value::convert(interp, indexes)));
+                map.push((group.to_owned(), interp.convert(indexes)));
                 true
             });
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     }
-    Ok(Value::convert(interp, map))
+    Ok(interp.convert(map))
 }

@@ -128,7 +128,7 @@ impl ExceptionHandler for Artichoke {
 mod tests {
     use crate::eval::Eval;
     use crate::exception::Exception;
-    use crate::value::ValueLike;
+    use crate::value::{Value, ValueLike};
     use crate::ArtichokeError;
 
     #[test]
@@ -183,7 +183,7 @@ fail
             "#,
         );
         let kernel = interp.eval(r#"Kernel"#).unwrap();
-        let _ = kernel.funcall::<(), _, _>("raise", &[]);
-        let _ = kernel.funcall::<(), _, _>("raise", &[]);
+        let _ = kernel.funcall::<Value, _, _>("raise", &[]);
+        let _ = kernel.funcall::<Value, _, _>("raise", &[]);
     }
 }

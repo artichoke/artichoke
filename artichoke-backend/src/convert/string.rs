@@ -1,49 +1,56 @@
-use crate::convert::{Convert, Error, TryConvert};
+use std::ffi::CStr;
+use std::str;
+
+use crate::convert::{Convert, TryConvert};
+use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, ArtichokeError};
 
-impl Convert<String> for Value {
-    type From = Rust;
-    type To = Ruby;
-
-    fn convert(interp: &Artichoke, value: String) -> Self {
-        // mruby `String` is just bytes, so get a pointer to the underlying
+impl Convert<String, Value> for Artichoke {
+    fn convert(&self, value: String) -> Value {
+        // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        Self::convert(interp, value.as_bytes())
+        let result: Value = self.convert(value.as_bytes());
+        result
     }
 }
 
-impl Convert<&str> for Value {
-    type From = Rust;
-    type To = Ruby;
-
-    fn convert(interp: &Artichoke, value: &str) -> Self {
-        // mruby `String` is just bytes, so get a pointer to the underlying
+impl Convert<&str, Value> for Artichoke {
+    fn convert(&self, value: &str) -> Value {
+        // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        Self::convert(interp, value.as_bytes())
+        let result: Value = self.convert(value.as_bytes());
+        result
     }
 }
 
-impl TryConvert<Value> for String {
-    type From = Ruby;
-    type To = Rust;
+impl TryConvert<Value, String> for Artichoke {
+    fn try_convert(&self, value: Value) -> Result<String, ArtichokeError> {
+        let result: Result<&str, _> = self.try_convert(value);
+        result.map(String::from)
+    }
+}
 
-    unsafe fn try_convert(
-        interp: &Artichoke,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        if value.ruby_type() == Ruby::Symbol {
-            return Ok(value.to_s());
-        }
-        // `Vec<u8>` converter operates on `Ruby::String`
-        let bytes = <Vec<u8>>::try_convert(interp, value).map_err(|err| Error {
-            from: err.from,
-            to: Rust::String,
-        })?;
+impl<'a> TryConvert<Value, &'a str> for Artichoke {
+    fn try_convert(&self, value: Value) -> Result<&'a str, ArtichokeError> {
+        let type_tag = value.ruby_type();
+        let bytes = if let Ruby::Symbol = type_tag {
+            let mrb = self.0.borrow().mrb;
+            let bytes = unsafe { sys::mrb_sys_symbol_name(mrb, value.inner()) };
+            let slice = unsafe { CStr::from_ptr(bytes) };
+            slice.to_bytes()
+        } else {
+            value
+                .try_into::<&[u8]>()
+                .map_err(|_| ArtichokeError::ConvertToRust {
+                    from: type_tag,
+                    to: Rust::String,
+                })?
+        };
         // This converter requires that the bytes be valid UTF-8 data. If the
-        // `mrb_value` is binary data, use the `Vec<u8>` converter.
-        Self::from_utf8(bytes).map_err(|_| Error {
+        // `mrb_value` contains binary data, use the `Vec<u8>` converter.
+        str::from_utf8(bytes).map_err(|_| ArtichokeError::ConvertToRust {
             from: Ruby::String,
             to: Rust::String,
         })
@@ -57,30 +64,30 @@ mod tests {
     use quickcheck_macros::quickcheck;
     use std::convert::TryInto;
 
-    use crate::convert::{Convert, Error, TryConvert};
+    use crate::convert::Convert;
     use crate::eval::Eval;
     use crate::sys;
     use crate::types::{Ruby, Rust};
-    use crate::value::Value;
+    use crate::ArtichokeError;
 
     #[test]
     fn fail_convert() {
         let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
-        let expected = Error {
+        let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Object,
             to: Rust::String,
-        };
-        let result = unsafe { String::try_convert(&interp, value) }.map(|_| ());
-        assert_eq!(result, Err(expected));
+        });
+        let result = value.try_into::<String>();
+        assert_eq!(result, expected);
     }
 
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_string(s: String) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, s.clone());
+        let value = interp.convert(s.clone());
         let ptr = unsafe { sys::mrb_string_value_ptr(interp.0.borrow().mrb, value.inner()) };
         let len = unsafe { sys::mrb_string_value_len(interp.0.borrow().mrb, value.inner()) };
         let string =
@@ -92,7 +99,7 @@ mod tests {
     #[quickcheck]
     fn string_with_value(s: String) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, s.clone());
+        let value = interp.convert(s.clone());
         value.to_s() == s
     }
 
@@ -100,17 +107,17 @@ mod tests {
     #[quickcheck]
     fn roundtrip(s: String) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, s.clone());
-        let value = unsafe { String::try_convert(&interp, value) }.expect("convert");
+        let value = interp.convert(s.clone());
+        let value = value.try_into::<String>().expect("convert");
         value == s
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, b);
-        let value = unsafe { String::try_convert(&interp, value) };
-        let expected = Err(Error {
+        let value = interp.convert(b);
+        let value = value.try_into::<String>();
+        let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Bool,
             to: Rust::String,
         });
@@ -121,7 +128,7 @@ mod tests {
     fn symbol_to_string() {
         let interp = crate::interpreter().expect("init");
         let value = interp.eval(":sym").expect("eval");
-        let value = unsafe { String::try_convert(&interp, value) }.expect("convert");
+        let value = value.try_into::<String>().expect("convert");
         assert_eq!(&value, "sym");
     }
 }

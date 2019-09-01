@@ -206,7 +206,6 @@ mod tests {
     use std::rc::Rc;
 
     use crate::class::Spec;
-    use crate::convert::TryConvert;
     use crate::def::{ClassLike, Define, EnclosingRubyScope};
     use crate::eval::Eval;
     use crate::module;
@@ -227,10 +226,10 @@ mod tests {
         let result = interp
             .eval("RustError.new.is_a?(StandardError)")
             .expect("eval");
-        let result = unsafe { bool::try_convert(&interp, result).expect("convert") };
+        let result = result.try_into::<bool>().expect("convert");
         assert!(result, "RustError instances are instance of StandardError");
         let result = interp.eval("RustError < StandardError").expect("eval");
-        let result = unsafe { bool::try_convert(&interp, result).expect("convert") };
+        let result = result.try_into::<bool>().expect("convert");
         assert!(result, "RustError inherits from StandardError");
     }
 

@@ -24,9 +24,9 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
                 & Regexp::NOENCODING
                 == 0 =>
         {
-            Ok(Value::convert(interp, false))
+            Ok(interp.convert(false))
         }
-        Encoding::Fixed | Encoding::No => Ok(Value::convert(interp, true)),
-        Encoding::None => Ok(Value::convert(interp, false)),
+        Encoding::Fixed | Encoding::No => Ok(interp.convert(true)),
+        Encoding::None => Ok(interp.convert(false)),
     }
 }

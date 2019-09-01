@@ -19,5 +19,5 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
         borrow.literal_options.modifier_string(),
         borrow.encoding.string()
     );
-    Ok(Value::convert(interp, s))
+    Ok(interp.convert(s))
 }

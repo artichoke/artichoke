@@ -1,32 +1,26 @@
-use crate::convert::{Convert, Error, TryConvert};
+use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, ArtichokeError};
 
 pub type Float = f64;
 
-impl Convert<Float> for Value {
-    type From = Rust;
-    type To = Ruby;
-
-    fn convert(interp: &Artichoke, value: Float) -> Self {
-        let mrb = interp.0.borrow().mrb;
-        Self::new(interp, unsafe { sys::mrb_sys_float_value(mrb, value) })
+impl Convert<Float, Value> for Artichoke {
+    fn convert(&self, value: Float) -> Value {
+        let mrb = self.0.borrow().mrb;
+        Value::new(self, unsafe { sys::mrb_sys_float_value(mrb, value) })
     }
 }
 
-impl TryConvert<Value> for Float {
-    type From = Ruby;
-    type To = Rust;
-
-    unsafe fn try_convert(
-        _interp: &Artichoke,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+impl TryConvert<Value, Float> for Artichoke {
+    fn try_convert(&self, value: Value) -> Result<Float, ArtichokeError> {
         match value.ruby_type() {
-            Ruby::Float => Ok(sys::mrb_sys_float_to_cdouble(value.inner())),
-            type_tag => Err(Error {
+            Ruby::Float => {
+                let value = value.inner();
+                Ok(unsafe { sys::mrb_sys_float_to_cdouble(value) })
+            }
+            type_tag => Err(ArtichokeError::ConvertToRust {
                 from: type_tag,
                 to: Rust::Float,
             }),
@@ -39,36 +33,36 @@ mod tests {
     use quickcheck_macros::quickcheck;
 
     use crate::convert::float::Float;
-    use crate::convert::{Convert, Error, TryConvert};
+    use crate::convert::Convert;
     use crate::eval::Eval;
     use crate::sys;
     use crate::types::{Ruby, Rust};
-    use crate::value::Value;
+    use crate::ArtichokeError;
 
     #[test]
     fn fail_convert() {
         let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
-        let expected = Error {
+        let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Object,
             to: Rust::Float,
-        };
-        let result = unsafe { Float::try_convert(&interp, value) }.map(|_| ());
-        assert_eq!(result, Err(expected));
+        });
+        let result = value.try_into::<Float>();
+        assert_eq!(result, expected);
     }
 
     #[quickcheck]
     fn convert_to_float(f: Float) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, f);
+        let value = interp.convert(f);
         value.ruby_type() == Ruby::Float
     }
 
     #[quickcheck]
     fn float_with_value(f: Float) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, f);
+        let value = interp.convert(f);
         let inner = value.inner();
         let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
         (cdouble - f).abs() < std::f64::EPSILON
@@ -77,17 +71,17 @@ mod tests {
     #[quickcheck]
     fn roundtrip(f: Float) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, f);
-        let value = unsafe { Float::try_convert(&interp, value) }.expect("convert");
+        let value = interp.convert(f);
+        let value = value.try_into::<Float>().expect("convert");
         (value - f).abs() < std::f64::EPSILON
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, b);
-        let value = unsafe { Float::try_convert(&interp, value) };
-        let expected = Err(Error {
+        let value = interp.convert(b);
+        let value = value.try_into::<Float>();
+        let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Bool,
             to: Rust::Float,
         });

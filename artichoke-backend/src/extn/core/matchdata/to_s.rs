@@ -20,7 +20,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     match regex {
         Backend::Onig(regex) => {
             let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
-            Ok(Value::convert(&interp, captures.at(0).unwrap_or_default()))
+            Ok(interp.convert(captures.at(0).unwrap_or_default()))
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     }

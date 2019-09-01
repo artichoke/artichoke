@@ -58,7 +58,7 @@ impl<T: EnvBackend> Env<T> {
 
         self.backend
             .set_value(&key, value.as_ref().map(String::as_str))
-            .map(|_| Value::convert(&interp, value))
+            .map(|_| interp.convert(value))
     }
 
     const STRING_SINGLE_ARG_SPEC: &'static [u8] = b"S\0";
@@ -75,19 +75,19 @@ impl<T: EnvBackend> Env<T> {
 
         let name = Value::new(interp, other);
         // argspec guarantees a String
-        String::try_convert(interp, name).map_err(|_| Error::Fatal)
+        interp.try_convert(name).map_err(|_| Error::Fatal)
     }
 
     unsafe fn get_internal(&self, interp: &Artichoke) -> Result<Value, Error> {
         let name = Self::extract_string_arg(interp)?;
         self.backend
             .get_value(&name)
-            .map(|value| Value::convert(&interp, value))
+            .map(|value| interp.convert(value))
     }
 
     unsafe fn env_to_h_internal(&self, interp: &Artichoke) -> Value {
         let env = self.backend.as_map();
-        Value::convert(interp, env)
+        interp.convert(env)
     }
 }
 
@@ -127,7 +127,7 @@ where
                 ArgumentError::raise(interp, "bad environment variable name: contains null byte")
             }
             Err(Error::Os(arg)) => {
-                let fmt = Value::convert(&interp, arg);
+                let fmt = interp.convert(arg);
                 RuntimeError::raisef(interp, "invalid argument - setenv(%S)", vec![fmt])
             }
             Err(Error::ValueContainsNullByte) => {
@@ -152,7 +152,7 @@ where
                 ArgumentError::raise(interp, "bad environment variable name: contains null byte")
             }
             Err(Error::Os(arg)) => {
-                let fmt = Value::convert(&interp, arg);
+                let fmt = interp.convert(arg);
                 RuntimeError::raisef(interp, "invalid argument - setenv(%S)", vec![fmt])
             }
             Err(Error::ValueContainsNullByte) => {

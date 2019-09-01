@@ -12,7 +12,8 @@ pub enum Error {
 
 pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     if let Ok(data) = unsafe { MatchData::try_from_ruby(interp, value) } {
-        Value::convert(interp, data.borrow().string.as_str())
+        interp
+            .convert(data.borrow().string.as_str())
             .freeze()
             .map_err(|_| Error::Fatal)
     } else {

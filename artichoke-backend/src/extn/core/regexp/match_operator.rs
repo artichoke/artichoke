@@ -34,7 +34,7 @@ impl Args {
             string.as_mut_ptr(),
         );
         let string = string.assume_init();
-        if let Ok(string) = <Option<String>>::try_convert(interp, Value::new(interp, string)) {
+        if let Ok(string) = interp.try_convert(Value::new(interp, string)) {
             Ok(Self { string })
         } else {
             Err(Error::NoImplicitConversionToString)
@@ -51,7 +51,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
         string
     } else {
         unsafe {
-            let nil = Value::convert(interp, None::<Value>);
+            let nil = interp.convert(None::<Value>);
             sys::mrb_gv_set(mrb, interp.0.borrow_mut().sym_intern("$~"), nil.inner());
             return Ok(nil);
         }
@@ -74,7 +74,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                         interp.0.borrow_mut().sym_intern(&format!("${}", group))
                     };
 
-                    let value = Value::convert(&interp, captures.at(group));
+                    let value = interp.convert(captures.at(group));
                     unsafe {
                         sys::mrb_gv_set(mrb, sym, value.inner());
                     }
@@ -89,50 +89,24 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                     let post_match = &string[match_pos.1..];
                     unsafe {
                         let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
-                        sys::mrb_gv_set(
-                            mrb,
-                            pre_match_sym,
-                            Value::convert(interp, pre_match).inner(),
-                        );
+                        sys::mrb_gv_set(mrb, pre_match_sym, interp.convert(pre_match).inner());
                         let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
-                        sys::mrb_gv_set(
-                            mrb,
-                            post_match_sym,
-                            Value::convert(interp, post_match).inner(),
-                        );
+                        sys::mrb_gv_set(mrb, post_match_sym, interp.convert(post_match).inner());
                     }
-                    (
-                        matchdata,
-                        Value::convert(interp, Int::try_from(match_pos.0).ok()),
-                    )
+                    (matchdata, interp.convert(Int::try_from(match_pos.0).ok()))
                 } else {
-                    (matchdata, Value::convert(interp, None::<Value>))
+                    (matchdata, interp.convert(None::<Value>))
                 }
             } else {
                 unsafe {
                     let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
-                    sys::mrb_gv_set(
-                        mrb,
-                        last_match_sym,
-                        Value::convert(interp, None::<Value>).inner(),
-                    );
+                    sys::mrb_gv_set(mrb, last_match_sym, interp.convert(None::<Value>).inner());
                     let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
-                    sys::mrb_gv_set(
-                        mrb,
-                        pre_match_sym,
-                        Value::convert(interp, None::<Value>).inner(),
-                    );
+                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert(None::<Value>).inner());
                     let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
-                    sys::mrb_gv_set(
-                        mrb,
-                        post_match_sym,
-                        Value::convert(interp, None::<Value>).inner(),
-                    );
+                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert(None::<Value>).inner());
                 }
-                (
-                    Value::convert(interp, None::<Value>),
-                    Value::convert(interp, None::<Value>),
-                )
+                (interp.convert(None::<Value>), interp.convert(None::<Value>))
             }
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),

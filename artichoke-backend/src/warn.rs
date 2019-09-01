@@ -32,6 +32,7 @@ impl Warn for Artichoke {
             let kernel = (*mrb).kernel_module;
             Value::new(self, sys::mrb_sys_module_value(kernel))
         };
-        kernel.funcall::<(), _, _>("warn", &[Value::convert(self, message)])
+        kernel.funcall::<Value, _, _>("warn", &[self.convert(message)])?;
+        Ok(())
     }
 }

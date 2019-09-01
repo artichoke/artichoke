@@ -91,7 +91,7 @@ pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Val
             mrb,
             sys::mrb_sys_class_ptr(slf),
             1,
-            [Value::convert(interp, pattern).inner()].as_ptr() as *const sys::mrb_value,
+            [interp.convert(pattern).inner()].as_ptr() as *const sys::mrb_value,
         )
     };
     Ok(Value::new(interp, value))

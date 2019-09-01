@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate artichoke_backend;
 
-use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
+use artichoke_backend::convert::{Convert, RustBackedValue};
 use artichoke_backend::def::{rust_data_free, ClassLike, Define};
 use artichoke_backend::eval::Eval;
 use artichoke_backend::file::File;
@@ -12,7 +12,6 @@ use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
-use std::io::Write;
 use std::mem;
 
 #[derive(Clone, Debug, Default)]
@@ -32,20 +31,17 @@ impl Container {
         }
 
         impl Args {
+            const ARGSPEC: &'static [u8] = b"o\0";
+
             unsafe fn extract(interp: &Artichoke) -> Result<Self, ArtichokeError> {
                 let inner = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-                let mut argspec = vec![];
-                // TODO: use a constant argspec, see GH-174.
-                argspec
-                    .write_all(sys::specifiers::OBJECT.as_bytes())
-                    .map_err(|_| ArtichokeError::ArgSpec)?;
-                argspec
-                    .write_all(b"\0")
-                    .map_err(|_| ArtichokeError::ArgSpec)?;
-                sys::mrb_get_args(interp.0.borrow().mrb, argspec.as_ptr() as *const i8, &inner);
+                sys::mrb_get_args(
+                    interp.0.borrow().mrb,
+                    Self::ARGSPEC.as_ptr() as *const i8,
+                    &inner,
+                );
                 let inner = Value::new(interp, inner.assume_init());
-                let inner =
-                    i64::try_convert(&interp, inner).map_err(ArtichokeError::ConvertToRust)?;
+                let inner = inner.try_into::<i64>()?;
                 Ok(Self { inner })
             }
         }
@@ -56,7 +52,7 @@ impl Container {
                 let container = Box::new(Self { inner: args.inner });
                 container.try_into_ruby(&interp, Some(slf))
             })
-            .unwrap_or_else(|_| Value::convert(&interp, None::<Value>))
+            .unwrap_or_else(|_| interp.convert(None::<Value>))
             .inner()
     }
 
@@ -64,9 +60,9 @@ impl Container {
         let interp = unwrap_interpreter!(mrb);
         if let Ok(data) = <Box<Self>>::try_from_ruby(&interp, &Value::new(&interp, slf)) {
             let borrow = data.borrow();
-            Value::convert(&interp, borrow.inner).inner()
+            interp.convert(borrow.inner).inner()
         } else {
-            Value::convert(&interp, None::<Value>).inner()
+            interp.convert(None::<Value>).inner()
         }
     }
 }
@@ -98,8 +94,8 @@ fn define_rust_backed_ruby_class() {
 
     interp.eval("require 'container'").expect("require");
     let result = interp.eval("Container.new(15).value").expect("eval");
-    assert_eq!(unsafe { i64::try_convert(&interp, result) }, Ok(15));
+    assert_eq!(result.try_into::<i64>(), Ok(15));
     // Ensure Rc is cloned correctly and still points to valid memory.
     let result = interp.eval("Container.new(15).value").expect("eval");
-    assert_eq!(unsafe { i64::try_convert(&interp, result) }, Ok(15));
+    assert_eq!(result.try_into::<i64>(), Ok(15));
 }

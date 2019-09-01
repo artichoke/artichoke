@@ -17,7 +17,6 @@ pub struct Monitor;
 // https://github.com/ruby/spec/tree/master/library/monitor
 #[cfg(test)]
 mod tests {
-    use crate::convert::TryConvert;
     use crate::eval::Eval;
 
     #[test]
@@ -54,6 +53,6 @@ copy != instance
         let interp = crate::interpreter().expect("init");
         interp.eval("require 'monitor'").expect("require");
         let result = interp.eval(spec).expect("spec");
-        assert!(unsafe { bool::try_convert(&interp, result) }.expect("convert"));
+        assert!(result.try_into::<bool>().expect("convert"));
     }
 }

@@ -4,7 +4,6 @@
 use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::{Context, Eval};
 use artichoke_backend::sys;
-use artichoke_backend::value::Value;
 use std::env;
 use std::fs::File;
 use std::io::{self, Read};
@@ -41,10 +40,7 @@ fn main() {
         process::exit(1);
     }
 
-    let data = Value::convert(
-        &interp,
-        include_bytes!("../../ruby/fixtures/learnxinyminutes.txt").as_ref(),
-    );
+    let data = interp.convert(include_bytes!("../../ruby/fixtures/learnxinyminutes.txt").as_ref());
     data.protect();
     unsafe { sys::mrb_gv_set(mrb, interp.0.borrow_mut().sym_intern("$data"), data.inner()) }
     let ctx = Context::new("(main)");

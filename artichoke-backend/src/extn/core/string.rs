@@ -39,17 +39,16 @@ pub struct RString;
 impl RString {
     unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        if let Ok(s) = String::try_convert(&interp, Value::new(&interp, slf)) {
+        let value = Value::new(&interp, slf);
+        if let Ok(s) = value.try_into::<&str>() {
             if let Some(first) = s.chars().next() {
                 // One UTF-8 character, which are at most 32 bits.
-                if let Ok(value) = Value::try_convert(&interp, first as u32) {
+                if let Ok(value) = interp.try_convert(first as u32) {
                     value.inner()
                 } else {
-                    drop(s);
                     ArgumentError::raise(interp, "Unicode out of range")
                 }
             } else {
-                drop(s);
                 ArgumentError::raise(interp, "empty string")
             }
         } else {
@@ -80,7 +79,7 @@ mod tests {
     use crate::convert::Convert;
     use crate::eval::Eval;
     use crate::extn::core::string;
-    use crate::value::{Value, ValueLike};
+    use crate::value::ValueLike;
 
     #[test]
     fn string_equal_squiggle() {
@@ -153,7 +152,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         string::init(&interp).expect("string init");
 
-        let s = Value::convert(&interp, "abababa");
+        let s = interp.convert("abababa");
         let result = s
             .funcall::<Vec<String>, _, _>("scan", &[interp.eval("/./").expect("eval")])
             .expect("funcall");
