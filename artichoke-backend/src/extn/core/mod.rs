@@ -13,6 +13,7 @@ pub mod kernel;
 pub mod matchdata;
 pub mod module;
 pub mod numeric;
+pub mod object;
 pub mod proc;
 pub mod range;
 pub mod regexp;
@@ -33,6 +34,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     matchdata::init(interp)?;
     module::init(interp)?;
     numeric::init(interp)?;
+    object::init(interp)?;
     proc::init(interp)?;
     range::init(interp)?;
     regexp::init(interp)?;
