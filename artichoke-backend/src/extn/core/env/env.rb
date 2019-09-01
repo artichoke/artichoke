@@ -4,7 +4,9 @@ class EnvClass
   def assoc(name)
     value = self[name]
 
-    value.nil? ? nil : [name, self[name]]
+    return nil if value.nil?
+
+    [name, value]
   end
 
   def clear
@@ -28,7 +30,7 @@ class EnvClass
   def delete_if
     return to_enum(:delete_if) unless block_given?
 
-    each do |key, value|
+    to_h.each do |key, value|
       delete(key) if yield key, value
     end
     to_h
@@ -101,7 +103,7 @@ class EnvClass
   def shift
     envs = to_h
 
-    return nil if envs.nil?
+    return nil if envs.nil? || envs.empty?
 
     name, value = envs.shift
 
