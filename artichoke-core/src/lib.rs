@@ -34,9 +34,19 @@ pub enum ArtichokeError {
     /// Failed to create an argspec.
     ArgSpec,
     /// Failed to convert from a Rust type to a [`Value`](value::Value).
-    ConvertToRuby(convert::Error<types::Rust, types::Ruby>),
+    ConvertToRuby {
+        /// Source type of conversion.
+        from: types::Rust,
+        /// Destination type of conversion.
+        to: types::Ruby,
+    },
     /// Failed to convert from a [`Value`](value::Value) to a Rust type.
-    ConvertToRust(convert::Error<types::Ruby, types::Rust>),
+    ConvertToRust {
+        /// Source type of conversion.
+        from: types::Ruby,
+        /// Destination type of conversion.
+        to: types::Rust,
+    },
     /// Exception raised during eval.
     ///
     /// See [`Eval`](eval::Eval).
@@ -64,6 +74,7 @@ pub enum ArtichokeError {
 
 impl Eq for ArtichokeError {}
 
+// TODO: remove this impl. I think this is only a kludge for tests.
 impl PartialEq for ArtichokeError {
     fn eq(&self, other: &Self) -> bool {
         // this is a hack because io::Error does not impl PartialEq
@@ -75,8 +86,12 @@ impl fmt::Display for ArtichokeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ArtichokeError::ArgSpec => write!(f, "could not generate argspec"),
-            ArtichokeError::ConvertToRuby(inner) => write!(f, "conversion error: {}", inner),
-            ArtichokeError::ConvertToRust(inner) => write!(f, "conversion error: {}", inner),
+            ArtichokeError::ConvertToRuby { from, to } => {
+                write!(f, "failed to convert from {} to {}", from, to)
+            }
+            ArtichokeError::ConvertToRust { from, to } => {
+                write!(f, "failed to convert from {} to {}", from, to)
+            }
             ArtichokeError::Exec(backtrace) => write!(f, "{}", backtrace),
             ArtichokeError::New => write!(f, "failed to create mrb interpreter"),
             ArtichokeError::NotDefined(fqname) => write!(f, "{} not defined", fqname),
@@ -101,8 +116,6 @@ impl error::Error for ArtichokeError {
 
     fn cause(&self) -> Option<&dyn error::Error> {
         match self {
-            ArtichokeError::ConvertToRuby(inner) => Some(inner),
-            ArtichokeError::ConvertToRust(inner) => Some(inner),
             ArtichokeError::Vfs(inner) => Some(inner),
             _ => None,
         }

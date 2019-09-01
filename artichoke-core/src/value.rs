@@ -4,7 +4,10 @@ use crate::convert::TryConvert;
 use crate::ArtichokeError;
 
 /// A value in the Artichoke VM, equivalent to an `RValue` in MRI.
-pub trait Value {
+pub trait Value
+where
+    Self: Sized,
+{
     /// Concrete type for Artichoke interpreter.
     type Artichoke;
 
@@ -14,9 +17,6 @@ pub trait Value {
     /// Concrete type for blocks passed to [`funcall`](Value::funcall).
     type Block;
 
-    /// Concrete type for return values of [`funcall`](Value::funcall).
-    type ReturnValue;
-
     /// Call a method on this [`Value`] with arguments and an optional block.
     fn funcall<T, M, A>(
         &self,
@@ -25,14 +25,14 @@ pub trait Value {
         block: Option<Self::Block>,
     ) -> Result<T, ArtichokeError>
     where
-        T: TryConvert;
+        Self::Artichoke: TryConvert<Self, T>;
 
     /// Consume `self` and try to convert `self` to type `T`.
     ///
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
     fn try_into<T>(self) -> Result<T, ArtichokeError>
     where
-        T: TryConvert;
+        Self::Artichoke: TryConvert<Self, T>;
 
     /// Call `#itself` on this [`Value`] and try to convert the result to type
     /// `T`.
@@ -40,7 +40,7 @@ pub trait Value {
     /// If you want to consume this [`Value`], use [`Value::try_into`].
     fn itself<T>(&self) -> Result<T, ArtichokeError>
     where
-        T: TryConvert;
+        Self::Artichoke: TryConvert<Self, T>;
 
     /// Call `#freeze` on this [`Value`].
     fn freeze(&mut self) -> Result<(), ArtichokeError>;
