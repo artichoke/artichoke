@@ -9,9 +9,9 @@ class Object
   end
 
   def yield_self(&block)
-    return to_enum :yield_self unless block
+    return block.call(self) if block
 
-    block.call(self)
+    to_enum :yield_self
   end
 
   alias then yield_self
