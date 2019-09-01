@@ -40,6 +40,26 @@ module Kernel
     e.value
   end
 
+  # Placeholder for Array spec to pass
+  def Integer(arg, base=0, exception: true)
+    return arg.to_int if arg.respond_to?(:toint)
+    return arg.to_i if arg.respond_to?(:to_i)
+    0
+  end
+
+  def Array(arg) # rubocop:disable Naming/MethodName
+    return arg if arg.is_a?(Array)
+
+    ret = nil
+    ret = arg.to_ary if arg.respond_to?(:to_ary)
+    ret = arg.to_a if ret.nil? && arg.respond_to?(:to_a)
+
+    return [arg] if ret.nil?
+    return ret if ret.is_a?(Array)
+
+    raise TypeError
+  end
+
   # Throws an object, uncaught throws will bubble up through other catch blocks.
   #
   # @param [Symbol] tag  tag being thrown
