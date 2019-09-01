@@ -19,17 +19,25 @@ class EnvClass
 
     def delete(name)
         value = self[name]
-        self[name] = nil
+        return nil if value.nil?
 
-        if block_given? and value.nil?
-            yield name
-        end
+        self[name] = nil
+        yield name if block_given?
 
         value
     end
 
+    def delete_if
+        return to_enum(:delete_if) unless block_given?
+      
+        each do |key, value|
+          delete(key) if yield key, value
+        end
+        to_h
+    end
+
     def empty?
-        return self.to_h.empty?
+        self.to_h.empty?
     end
 
     def has_key?(name)
@@ -94,15 +102,13 @@ class EnvClass
 
     def shift 
         envs = self.to_h
-        
-        a_pair = envs.shift
 
-        if a_pair.nil?
-            return nil
-        else
-            self[a_pair[0]] = nil
-            return a_pair
-        end
+        return nil if envs.nil?
+        
+        name, value = envs.shift
+
+        self[name] = nil
+        return [name, value]
     end
 
     def update(hash)
