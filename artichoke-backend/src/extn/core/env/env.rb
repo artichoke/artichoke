@@ -56,48 +56,16 @@ class EnvClass
     to_h.key(value)
   end
 
-  def length
-    to_h.length
-  end
-
-  def size
-    to_h.size
-  end
-
   def keys
     to_h.keys
   end
 
+  def length
+    to_h.length
+  end
+
   def rehash
     nil
-  end
-
-  def to_a
-    to_h.to_a
-  end
-
-  def to_s
-    'ENV'
-  end
-
-  def value?(name)
-    to_h.value?(name)
-  end
-
-  def values
-    to_h.values
-  end
-
-  def slice(*keys)
-    to_h.slice(*keys)
-  end
-
-  def values_at(*names)
-    to_h.values_at(*names)
-  end
-
-  def to_hash
-    to_h
   end
 
   def shift
@@ -111,11 +79,43 @@ class EnvClass
     [name, value]
   end
 
+  def size
+    to_h.size
+  end
+
+  def slice(*keys)
+    to_h.slice(*keys)
+  end
+
+  def to_a
+    to_h.to_a
+  end
+
+  def to_hash
+    to_h
+  end
+
+  def to_s
+    'ENV'
+  end
+
   def update(hash)
     hash.each do |key, value|
       self[key] = value
     end
 
     to_h
+  end
+
+  def value?(name)
+    to_h.value?(name)
+  end
+
+  def values
+    to_h.values
+  end
+
+  def values_at(*names)
+    to_h.values_at(*names)
   end
 end
