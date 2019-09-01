@@ -40,12 +40,6 @@ module Kernel
     e.value
   end
 
-  NOT_SET = Object.new
-
-  def not_set?
-    self == NOT_SET
-  end
-
   # Throws an object, uncaught throws will bubble up through other catch blocks.
   #
   # @param [Symbol] tag  tag being thrown
