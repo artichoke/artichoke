@@ -1,4 +1,8 @@
 class Object
+  def itself
+    self
+  end
+
   def tap
     yield self
     self
