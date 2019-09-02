@@ -23,6 +23,12 @@ with MRI Ruby 2.6.3.
 
 ## Try Artichoke
 
+<p align="center">
+  <a href="https://artichoke.run">
+    <img height="200" src="https://artichoke.run/playground.png">
+  </a>
+</p>
+
 You can [try Artichoke in your browser](https://artichoke.run). The
 [Artichoke Playground](https://github.com/artichoke/playground) runs a
 [WebAssembly](https://webassembly.org/) build of Artichoke.
