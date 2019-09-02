@@ -46,14 +46,16 @@ impl Args {
         let second = second.assume_init();
         let has_length = has_second.assume_init() != 0;
         if has_length {
-            let start = Int::try_convert(&interp, Value::new(interp, first))
+            let start = interp
+                .try_convert(Value::new(interp, first))
                 .map_err(|_| Error::IndexType)?;
-            let len = usize::try_convert(&interp, Value::new(interp, second))
+            let len = interp
+                .try_convert(Value::new(interp, second))
                 .map_err(|_| Error::LengthType)?;
             Ok(Args::StartLen(start, len))
-        } else if let Ok(index) = Int::try_convert(interp, Value::new(interp, first)) {
+        } else if let Ok(index) = interp.try_convert(Value::new(interp, first)) {
             Ok(Args::Index(index))
-        } else if let Ok(name) = String::try_convert(interp, Value::new(interp, first)) {
+        } else if let Ok(name) = interp.try_convert(Value::new(interp, first)) {
             Ok(Args::Name(name))
         } else if let Some(args) = Self::is_range(interp, first, num_captures)? {
             Ok(args)
@@ -102,13 +104,13 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                         // Positive Int must be usize
                         let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
                         match captures.len().checked_sub(index) {
-                            Some(0) | None => Ok(Value::convert(interp, None::<Value>)),
-                            Some(index) => Ok(Value::convert(interp, captures.at(index))),
+                            Some(0) | None => Ok(interp.convert(None::<Value>)),
+                            Some(index) => Ok(interp.convert(captures.at(index))),
                         }
                     } else {
                         // Positive Int must be usize
                         let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
-                        Ok(Value::convert(interp, captures.at(index)))
+                        Ok(interp.convert(captures.at(index)))
                     }
                 }
                 Args::Name(name) => {
@@ -130,7 +132,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                                 .and_then(|index| captures.at(index))
                         })
                         .last();
-                    Ok(Value::convert(interp, group))
+                    Ok(interp.convert(group))
                 }
                 Args::StartLen(start, len) => {
                     let start = if start < 0 {
@@ -145,7 +147,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                     for index in start..(start + len) {
                         matches.push(captures.at(index));
                     }
-                    Ok(Value::convert(interp, matches))
+                    Ok(interp.convert(matches))
                 }
             }
         }

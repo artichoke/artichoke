@@ -21,7 +21,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
         Backend::Onig(regex) => {
             let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
             let vec = captures.iter().collect::<Vec<_>>();
-            Ok(Value::convert(&interp, vec))
+            Ok(interp.convert(vec))
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     }

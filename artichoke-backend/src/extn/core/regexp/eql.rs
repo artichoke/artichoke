@@ -48,11 +48,11 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     if let Some(other) = args.other {
         let borrow = other.borrow();
         if slf.pattern == borrow.pattern {
-            Ok(Value::convert(interp, slf.encoding == borrow.encoding))
+            Ok(interp.convert(slf.encoding == borrow.encoding))
         } else {
-            Ok(Value::convert(interp, false))
+            Ok(interp.convert(false))
         }
     } else {
-        Ok(Value::convert(interp, false))
+        Ok(interp.convert(false))
     }
 }

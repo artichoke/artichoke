@@ -39,15 +39,14 @@ impl Args {
         );
         let string = string.assume_init();
         let has_pos = has_pos.assume_init() != 0;
-        let string = if let Ok(string) =
-            <Option<String>>::try_convert(&interp, Value::new(interp, string))
-        {
+        let string = if let Ok(string) = interp.try_convert(Value::new(interp, string)) {
             string
         } else {
             return Err(Error::StringType);
         };
         let pos = if has_pos {
-            let pos = Int::try_convert(&interp, Value::new(&interp, pos.assume_init()))
+            let pos = interp
+                .try_convert(Value::new(&interp, pos.assume_init()))
                 .map_err(|_| Error::PosType)?;
             Some(pos)
         } else {
@@ -62,14 +61,14 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     let string = if let Some(string) = args.string {
         string
     } else {
-        return Ok(Value::convert(interp, false));
+        return Ok(interp.convert(false));
     };
     let pos = args.pos.unwrap_or_default();
     let pos = if pos < 0 {
         let strlen = Int::try_from(string.chars().count()).unwrap_or_default();
         let pos = strlen + pos;
         if pos < 0 {
-            return Ok(Value::convert(interp, false));
+            return Ok(interp.convert(false));
         }
         usize::try_from(pos).map_err(|_| Error::Fatal)?
     } else {
@@ -77,7 +76,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     };
     // onig will panic if pos is beyond the end of string
     if pos > string.chars().count() {
-        return Ok(Value::convert(interp, false));
+        return Ok(interp.convert(false));
     }
     let byte_offset = string.chars().take(pos).collect::<String>().len();
 
@@ -85,7 +84,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     let borrow = data.borrow();
     let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
     match regex {
-        Backend::Onig(regex) => Ok(Value::convert(interp, regex.find(match_target).is_some())),
+        Backend::Onig(regex) => Ok(interp.convert(regex.find(match_target).is_some())),
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     }
 }

@@ -36,9 +36,9 @@ impl Args {
             first.as_mut_ptr(),
         );
         let first = first.assume_init();
-        if let Ok(index) = Int::try_convert(interp, Value::new(interp, first)) {
+        if let Ok(index) = interp.try_convert(Value::new(interp, first)) {
             Ok(Args::Index(index))
-        } else if let Ok(name) = String::try_convert(interp, Value::new(interp, first)) {
+        } else if let Ok(name) = interp.try_convert(Value::new(interp, first)) {
             Ok(Args::Name(name))
         } else if let Ok(index) = Value::new(interp, first).funcall::<Int, _, _>("to_int", &[]) {
             Ok(Args::Index(index))
@@ -89,5 +89,5 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     let end = match_against[0..end].chars().count();
     let end = end + borrow.region.start;
     let end = Int::try_from(end).map_err(|_| Error::Fatal)?;
-    Ok(Value::convert(&interp, end))
+    Ok(interp.convert(end))
 }

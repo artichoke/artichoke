@@ -1,56 +1,57 @@
 use std::convert::TryFrom;
+use std::slice;
 
-use crate::convert::{Convert, Error, TryConvert};
+use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, ArtichokeError};
 
-impl Convert<Vec<u8>> for Value {
-    type From = Rust;
-    type To = Ruby;
-
-    fn convert(interp: &Artichoke, value: Vec<u8>) -> Self {
-        Self::convert(interp, value.as_slice())
+impl Convert<Vec<u8>, Value> for Artichoke {
+    fn convert(&self, value: Vec<u8>) -> Value {
+        self.convert(value.as_slice())
     }
 }
 
-impl Convert<&[u8]> for Value {
-    type From = Rust;
-    type To = Ruby;
-
-    fn convert(interp: &Artichoke, value: &[u8]) -> Self {
-        let mrb = interp.0.borrow().mrb;
-        // mruby strings contain raw bytes, so we can convert from a &[u8] to a
+impl Convert<&[u8], Value> for Artichoke {
+    fn convert(&self, value: &[u8]) -> Value {
+        let mrb = self.0.borrow().mrb;
+        // Ruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
         let raw = value.as_ptr() as *const i8;
         let len = value.len();
-        Self::new(interp, unsafe { sys::mrb_str_new(mrb, raw, len) })
+        // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
+        // to worry about the lifetime of the slice passed into this converter.
+        Value::new(self, unsafe { sys::mrb_str_new(mrb, raw, len) })
     }
 }
 
-impl TryConvert<Value> for Vec<u8> {
-    type From = Ruby;
-    type To = Rust;
+impl TryConvert<Value, Vec<u8>> for Artichoke {
+    fn try_convert(&self, value: Value) -> Result<Vec<u8>, ArtichokeError> {
+        let result: &[u8] = self.try_convert(value)?;
+        Ok(result.to_vec())
+    }
+}
 
-    unsafe fn try_convert(
-        interp: &Artichoke,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
-        let mrb = interp.0.borrow().mrb;
+impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
+    fn try_convert(&self, value: Value) -> Result<&'a [u8], ArtichokeError> {
+        let mrb = self.0.borrow().mrb;
         match value.ruby_type() {
             Ruby::String => {
                 let bytes = value.inner();
-                let raw = sys::mrb_string_value_ptr(mrb, bytes) as *const u8;
-                let len = sys::mrb_string_value_len(mrb, bytes);
-                let len = usize::try_from(len).map_err(|_| Error {
+                let raw = unsafe { sys::mrb_string_value_ptr(mrb, bytes) as *const u8 };
+                let len = unsafe { sys::mrb_string_value_len(mrb, bytes) };
+                let len = usize::try_from(len).map_err(|_| ArtichokeError::ConvertToRust {
                     from: Ruby::String,
                     to: Rust::Bytes,
                 })?;
-                let slice = std::slice::from_raw_parts(raw, len);
-                Ok(slice.to_vec())
+                // We can return a borrowed slice because the memory is stored
+                // on the mruby heap. As long as `value` is reachable, this
+                // slice points to valid memory.
+                let slice = unsafe { slice::from_raw_parts(raw, len) };
+                Ok(slice)
             }
-            type_tag => Err(Error {
+            type_tag => Err(ArtichokeError::ConvertToRust {
                 from: type_tag,
                 to: Rust::Bytes,
             }),
@@ -65,30 +66,30 @@ mod tests {
     use quickcheck_macros::quickcheck;
     use std::convert::TryFrom;
 
-    use crate::convert::{Convert, Error, TryConvert};
+    use crate::convert::Convert;
     use crate::eval::Eval;
     use crate::sys;
     use crate::types::{Ruby, Rust};
-    use crate::value::Value;
+    use crate::ArtichokeError;
 
     #[test]
     fn fail_convert() {
         let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
-        let expected = Error {
+        let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Object,
             to: Rust::Bytes,
-        };
-        let result = unsafe { <Vec<u8>>::try_convert(&interp, value) }.map(|_| ());
-        assert_eq!(result, Err(expected));
+        });
+        let result = value.try_into::<Vec<u8>>();
+        assert_eq!(result, expected);
     }
 
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_vec(v: Vec<u8>) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, v.clone());
+        let value = interp.convert(v.clone());
         value.ruby_type() == Ruby::String
     }
 
@@ -96,7 +97,7 @@ mod tests {
     #[quickcheck]
     fn vec_with_value(v: Vec<u8>) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, v.clone());
+        let value = interp.convert(v.clone());
         let inner = value.inner();
         let len = unsafe { sys::mrb_string_value_len(interp.0.borrow().mrb, inner) };
         let len = usize::try_from(len).expect("usize");
@@ -107,17 +108,17 @@ mod tests {
     #[quickcheck]
     fn roundtrip(v: Vec<u8>) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, v.clone());
-        let value = unsafe { <Vec<u8>>::try_convert(&interp, value) }.expect("convert");
+        let value = interp.convert(v.clone());
+        let value = value.try_into::<Vec<u8>>().expect("convert");
         value == v
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, b);
-        let value = unsafe { <Vec<u8>>::try_convert(&interp, value) };
-        let expected = Err(Error {
+        let value = interp.convert(b);
+        let value = value.try_into::<Vec<u8>>();
+        let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Bool,
             to: Rust::Bytes,
         });

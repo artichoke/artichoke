@@ -367,7 +367,6 @@ mod tests {
     }
 
     mod functional {
-        use crate::convert::TryConvert;
         use crate::def::{ClassLike, Define};
         use crate::eval::Eval;
         use crate::sys;
@@ -425,22 +424,22 @@ mod tests {
             let result = interp
                 .eval("DefineMethodTestClass.new.value")
                 .expect("eval");
-            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
+            let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 64);
             let result = interp.eval("DefineMethodTestClass.value").expect("eval");
-            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
+            let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 8);
             let result = interp.eval("DefineMethodTestModule.value").expect("eval");
-            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
+            let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 27);
             let result = interp.eval("DynamicTestClass.new.value").expect("eval");
-            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
+            let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 64);
             let result = interp.eval("DynamicTestClass.value").expect("eval");
-            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
+            let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 8);
             let result = interp.eval("DynamicTestModule.value").expect("eval");
-            let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
+            let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 27);
         }
     }

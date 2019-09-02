@@ -4,7 +4,7 @@ use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::Eval;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::top_self::TopSelf;
-use artichoke_backend::value::{Value, ValueLike};
+use artichoke_backend::value::ValueLike;
 use artichoke_backend::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -56,7 +56,7 @@ impl Runner {
             println!("{}", err);
             assert!(!self.enforce);
         }
-        let specs = Value::convert(&self.interp, self.specs);
+        let specs = self.interp.convert(self.specs);
         self.interp
             .top_self()
             .funcall::<bool, _, _>("run_specs", &[specs])

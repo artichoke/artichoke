@@ -2,7 +2,7 @@ use log::trace;
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::convert::{Convert, TryConvert};
+use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::error::{ArgumentError, RangeError, RubyException, RuntimeError};
@@ -77,12 +77,12 @@ impl Integer {
                 //         1: from (irb):9:in `chr'
                 // RangeError (256 out of char range)
                 // ```
-                if let Ok(chr) = Int::try_convert(&interp, Value::new(&interp, slf)) {
+                if let Ok(chr) = Value::new(&interp, slf).try_into::<Int>() {
                     match u8::try_from(chr) {
                         Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
                             // ASCII encoding | Binary/ASCII-8BIT encoding
                             // Without `Encoding` support, these two arms are the same
-                            Value::convert(&interp, vec![chr]).inner()
+                            interp.convert(vec![chr]).inner()
                         }
                         _ => {
                             let value = Value::new(&interp, slf);
@@ -103,7 +103,7 @@ impl Integer {
                 )
             }
             n => {
-                let argc = Value::convert(&interp, n);
+                let argc = interp.convert(n);
                 ArgumentError::raisef(
                     interp,
                     "wrong number of arguments (given %i, expected 0..1)",
@@ -115,10 +115,10 @@ impl Integer {
 
     pub unsafe extern "C" fn size(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        let result = Int::try_convert(&interp, Value::new(&interp, slf));
-        if result.is_ok() {
+        let value = Value::new(&interp, slf);
+        if value.try_into::<Int>().is_ok() {
             if let Ok(size) = Int::try_from(mem::size_of::<Int>()) {
-                Value::convert(&interp, size).inner()
+                interp.convert(size).inner()
             } else {
                 RuntimeError::raise(interp, "fatal Integer#size error")
             }

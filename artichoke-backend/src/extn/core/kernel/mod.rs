@@ -86,12 +86,12 @@ impl Kernel {
                     if let Some(contents) = req.ruby {
                         interp.unchecked_eval_with_context(contents, Context::new(req.file));
                     }
-                    Value::convert(&interp, true).inner()
+                    interp.convert(true).inner()
                 } else {
                     LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
                 }
             }
-            Err(require::Error::AlreadyRequired) => Value::convert(&interp, false).inner(),
+            Err(require::Error::AlreadyRequired) => interp.convert(false).inner(),
             Err(require::Error::CannotLoad(file)) => {
                 LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
             }
@@ -120,12 +120,12 @@ impl Kernel {
                     if let Some(contents) = req.ruby {
                         interp.unchecked_eval_with_context(contents, Context::new(req.file));
                     }
-                    Value::convert(&interp, true).inner()
+                    interp.convert(true).inner()
                 } else {
                     LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
                 }
             }
-            Err(require::Error::AlreadyRequired) => Value::convert(&interp, false).inner(),
+            Err(require::Error::AlreadyRequired) => interp.convert(false).inner(),
             Err(require::Error::CannotLoad(file)) => {
                 LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
             }
@@ -184,7 +184,7 @@ impl Kernel {
             if !string.ends_with('\n') {
                 string = format!("{}\n", string);
             }
-            Warning::warn(mrb, Value::convert(&interp, string).inner());
+            Warning::warn(mrb, interp.convert(string).inner());
         }
         sys::mrb_sys_nil_value()
     }
@@ -192,7 +192,6 @@ impl Kernel {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::TryConvert;
     use crate::eval::Eval;
     use crate::file::File;
     use crate::load::LoadSources;
@@ -221,16 +220,16 @@ mod tests {
             .def_file_for_type::<_, TestFile>("file.rb")
             .expect("def file");
         let result = interp.eval("require 'file'").expect("eval");
-        let require_result = unsafe { bool::try_convert(&interp, result) };
+        let require_result = result.try_into::<bool>();
         assert_eq!(require_result, Ok(true));
         let result = interp.eval("@i").expect("eval");
-        let i_result = unsafe { i64::try_convert(&interp, result) };
+        let i_result = result.try_into::<i64>();
         assert_eq!(i_result, Ok(255));
         let result = interp.eval("@i = 1000; require 'file'").expect("eval");
-        let second_require_result = unsafe { bool::try_convert(&interp, result) };
+        let second_require_result = result.try_into::<bool>();
         assert_eq!(second_require_result, Ok(false));
         let result = interp.eval("@i").expect("eval");
-        let second_i_result = unsafe { i64::try_convert(&interp, result) };
+        let second_i_result = result.try_into::<i64>();
         assert_eq!(second_i_result, Ok(1000));
         let result = interp.eval("require 'non-existent-source'").map(|_| ());
         let expected = r#"
@@ -250,9 +249,9 @@ mod tests {
             .def_rb_source_file("/foo/bar/source.rb", "# a source file")
             .expect("def file");
         let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
-        assert!(unsafe { bool::try_convert(&interp, result).expect("convert") });
+        assert!(result.try_into::<bool>().expect("convert"));
         let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
-        assert!(!unsafe { bool::try_convert(&interp, result).expect("convert") });
+        assert!(!result.try_into::<bool>().expect("convert"));
     }
 
     #[test]
@@ -265,7 +264,7 @@ mod tests {
             .def_rb_source_file("/foo/bar.rb", "# a source file")
             .expect("def file");
         let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
-        assert!(unsafe { bool::try_convert(&interp, result).expect("convert") });
+        assert!(result.try_into::<bool>().expect("convert"));
     }
 
     #[test]
@@ -297,10 +296,10 @@ mod tests {
             .expect("def");
         interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
         let result = interp.eval("require 'foo'").expect("eval");
-        let result = unsafe { bool::try_convert(&interp, result).expect("convert") };
+        let result = result.try_into::<bool>().expect("convert");
         assert!(result, "successfully required foo.rb");
         let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
-        let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
+        let result = result.try_into::<i64>().expect("convert");
         assert_eq!(
             result, 10,
             "defined Ruby and Rust sources from single require"
@@ -322,10 +321,10 @@ mod tests {
             .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
             .expect("def");
         let result = interp.eval("require 'foo'").expect("eval");
-        let result = unsafe { bool::try_convert(&interp, result).expect("convert") };
+        let result = result.try_into::<bool>().expect("convert");
         assert!(result, "successfully required foo.rb");
         let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
-        let result = unsafe { i64::try_convert(&interp, result).expect("convert") };
+        let result = result.try_into::<i64>().expect("convert");
         assert_eq!(
             result, 10,
             "defined Ruby and Rust sources from single require"

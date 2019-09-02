@@ -14,5 +14,5 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
     let post_match = &borrow.string[borrow.region.end..];
-    Ok(Value::convert(&interp, post_match))
+    Ok(interp.convert(post_match))
 }

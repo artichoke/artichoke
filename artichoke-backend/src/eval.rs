@@ -200,7 +200,7 @@ impl Eval for Artichoke {
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue(value.inner().tt))
+                Err(ArtichokeError::UnreachableValue)
             }
             LastError::None => Ok(value),
         }
@@ -296,7 +296,7 @@ impl Eval for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::{Convert, TryConvert};
+    use crate::convert::Convert;
     use crate::def::{ClassLike, Define};
     use crate::eval::{Context, Eval};
     use crate::file::File;
@@ -309,8 +309,8 @@ mod tests {
     fn root_eval_context() {
         let interp = crate::interpreter().expect("init");
         let result = interp.eval("__FILE__").expect("eval");
-        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
-        assert_eq!(&result, "(eval)");
+        let result = result.try_into::<&str>().expect("convert");
+        assert_eq!(result, "(eval)");
     }
 
     #[test]
@@ -344,7 +344,7 @@ mod tests {
                 if let Ok(value) = interp.eval("__FILE__") {
                     value.inner()
                 } else {
-                    Value::convert(&interp, None::<Value>).inner()
+                    interp.convert(None::<Value>).inner()
                 }
             }
         }
@@ -374,8 +374,8 @@ require 'nested_eval'
 NestedEval.file
         "#;
         let result = interp.eval(code).expect("eval");
-        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
-        assert_eq!(&result, "/src/lib/nested_eval.rb");
+        let result = result.try_into::<&str>().expect("convert");
+        assert_eq!(result, "/src/lib/nested_eval.rb");
     }
 
     #[test]
@@ -384,18 +384,18 @@ NestedEval.file
         let result = interp
             .eval_with_context("__FILE__", Context::new("source.rb"))
             .expect("eval");
-        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
-        assert_eq!(&result, "source.rb");
+        let result = result.try_into::<&str>().expect("convert");
+        assert_eq!(result, "source.rb");
         let result = interp
             .eval_with_context("__FILE__", Context::new("source.rb"))
             .expect("eval");
-        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
-        assert_eq!(&result, "source.rb");
+        let result = result.try_into::<&str>().expect("convert");
+        assert_eq!(result, "source.rb");
         let result = interp
             .eval_with_context("__FILE__", Context::new("main.rb"))
             .expect("eval");
-        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
-        assert_eq!(&result, "main.rb");
+        let result = result.try_into::<&str>().expect("convert");
+        assert_eq!(result, "main.rb");
     }
 
     #[test]
@@ -418,7 +418,7 @@ NestedEval.file
         );
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval("'a' * 10 ").expect("eval");
-        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
+        let result = result.try_into::<&str>().expect("convert");
         assert_eq!(result, "a".repeat(10));
     }
 
@@ -429,8 +429,8 @@ NestedEval.file
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
         let result = interp.eval("require 'source'; file").expect("eval");
-        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
-        assert_eq!(&result, "/src/lib/source.rb");
+        let result = result.try_into::<&str>().expect("convert");
+        assert_eq!(result, "/src/lib/source.rb");
     }
 
     #[test]
@@ -440,8 +440,8 @@ NestedEval.file
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
         let result = interp.eval("require 'source'; __FILE__").expect("eval");
-        let result = unsafe { String::try_convert(&interp, result).expect("convert") };
-        assert_eq!(&result, "(eval)");
+        let result = result.try_into::<&str>().expect("convert");
+        assert_eq!(result, "(eval)");
     }
 
     #[test]

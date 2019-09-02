@@ -6,7 +6,6 @@ use std::mem;
 use std::ptr;
 use std::rc::Rc;
 
-use crate::convert::Error;
 use crate::def::ClassLike;
 use crate::sys;
 use crate::types::{Ruby, Rust};
@@ -42,21 +41,19 @@ where
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, ArtichokeError> {
         let mrb = interp.0.borrow().mrb;
-        let spec = interp
-            .0
-            .borrow()
-            .class_spec::<Self>()
-            .ok_or(ArtichokeError::ConvertToRuby(Error {
+        let spec = interp.0.borrow().class_spec::<Self>().ok_or_else(|| {
+            ArtichokeError::ConvertToRuby {
                 from: Rust::Object,
                 to: Ruby::Object,
-            }))?;
+            }
+        })?;
         let rclass = spec
             .borrow()
             .rclass(interp)
-            .ok_or(ArtichokeError::ConvertToRuby(Error {
+            .ok_or_else(|| ArtichokeError::ConvertToRuby {
                 from: Rust::Object,
                 to: Ruby::Object,
-            }))?;
+            })?;
         let mut slf = if let Some(slf) = slf {
             slf
         } else {
@@ -101,10 +98,10 @@ where
         let mrb = interp.0.borrow().mrb;
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
-            return Err(ArtichokeError::ConvertToRust(Error {
+            return Err(ArtichokeError::ConvertToRust {
                 from: slf.ruby_type(),
                 to: Rust::Object,
-            }));
+            });
         }
         let spec = interp
             .0
@@ -114,10 +111,10 @@ where
         // Sanity check that the RClass matches.
         if let Some(rclass) = spec.borrow().rclass(interp) {
             if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
-                return Err(ArtichokeError::ConvertToRust(Error {
+                return Err(ArtichokeError::ConvertToRust {
                     from: slf.ruby_type(),
                     to: Rust::Object,
-                }));
+                });
             }
         } else {
             return Err(ArtichokeError::NotDefined("class".to_owned()));
@@ -170,9 +167,9 @@ mod tests {
             let value = Value::new(&interp, slf);
             if let Ok(container) = Self::try_from_ruby(&interp, &value) {
                 let borrow = container.borrow();
-                Value::convert(&interp, borrow.inner.as_str()).inner()
+                interp.convert(borrow.inner.as_str()).inner()
             } else {
-                Value::convert(&interp, None::<Value>).inner()
+                interp.convert(None::<Value>).inner()
             }
         }
     }
@@ -236,7 +233,7 @@ mod tests {
         spec.borrow_mut().mrb_value_is_rust_backed(true);
         spec.borrow().define(&interp).expect("class install");
 
-        let value = Value::convert(&interp, "string");
+        let value = interp.convert("string");
         let class = value.funcall::<Value, _, _>("class", &[]).expect("funcall");
         assert_eq!(class.to_s(), "String");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };

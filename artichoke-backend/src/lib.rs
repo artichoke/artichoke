@@ -125,7 +125,7 @@
 //!         let cont = Self { inner: int };
 //!         cont
 //!             .try_into_ruby(&interp, Some(slf))
-//!             .unwrap_or_else(|_| Value::convert(&interp, None::<Value>))
+//!             .unwrap_or_else(|_| interp.convert(None::<Value>))
 //!             .inner()
 //!     }
 //!
@@ -133,9 +133,9 @@
 //!         let interp = unwrap_interpreter!(mrb);
 //!         if let Ok(cont) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
 //!             let borrow = cont.borrow();
-//!             Value::convert(&interp, borrow.inner).inner()
+//!             interp.convert(borrow.inner).inner()
 //!         } else {
-//!             Value::convert(&interp, None::<Value>).inner()
+//!             interp.convert(None::<Value>).inner()
 //!         }
 //!     }
 //! }
@@ -204,9 +204,6 @@
 //! `unsafe` Rust functions.
 
 use std::cell::RefCell;
-use std::error;
-use std::fmt;
-use std::io;
 use std::rc::Rc;
 
 #[macro_use]
@@ -240,6 +237,8 @@ pub use interpreter::interpreter;
 /// artichoke-backend crate.
 pub use mruby_sys as sys;
 
+pub use artichoke_core::ArtichokeError;
+
 /// Interpreter instance.
 ///
 /// The interpreter [`State`](state::State) is wrapped in an `Rc<RefCell<_>>`.
@@ -256,96 +255,3 @@ pub use mruby_sys as sys;
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
 #[derive(Debug, Clone)]
 pub struct Artichoke(pub Rc<RefCell<state::State>>); // TODO: this should not be pub
-
-/// Errors returned by artichoke-backend crate.
-#[derive(Debug)]
-pub enum ArtichokeError {
-    /// Failed to create an [argspec](sys::args) `CString`.
-    ArgSpec,
-    /// Failed to convert from a Rust type to a [`sys::mrb_value`].
-    ConvertToRuby(convert::Error<types::Rust, types::Ruby>),
-    /// Failed to convert from a [`sys::mrb_value`] to a Rust type.
-    ConvertToRust(convert::Error<types::Ruby, types::Rust>),
-    /// Exception raised during eval.
-    ///
-    /// See [`Eval`](eval::Eval).
-    // TODO: wrap an `Exception` instead of a `String`, see GH-152.
-    Exec(String),
-    /// Unable to initalize interpreter.
-    ///
-    /// See [`sys::mrb_open`], [`interpreter`](interpreter::interpreter).
-    New,
-    /// Class or module with this name is not defined in the artichoke VM.
-    NotDefined(String),
-    /// Unable to load Ruby source file with this path from the embedded
-    /// sources.
-    ///
-    /// See [`rust_embed`](https://docs.rs/rust-embed/).
-    SourceNotFound(String),
-    /// Arg count exceeds maximum allowed by artichoke.
-    ///
-    /// Affects [`sys::mrb_funcall`], [`sys::mrb_funcall_argv`],
-    /// [`sys::mrb_funcall_with_block`], [`sys::mrb_yield`], and
-    /// [`sys::mrb_yield_argv`].
-    TooManyArgs { given: usize, max: usize },
-    /// Attempted to extract an [`Artichoke`] from a [`sys::mrb_state`] but could not.
-    Uninitialized,
-    /// Eval or funcall returned an interpreter-internal value.
-    ///
-    /// See [`Value::is_unreachable`](value::Value::is_unreachable).
-    UnreachableValue(sys::mrb_vtype),
-    /// [`io::Error`] when interacting with virtual filesystem.
-    ///
-    /// See [`artichoke_vfs`].
-    Vfs(io::Error),
-}
-
-impl Eq for ArtichokeError {}
-
-impl PartialEq for ArtichokeError {
-    fn eq(&self, other: &Self) -> bool {
-        // this is a hack because io::Error does not impl PartialEq
-        format!("{}", self) == format!("{}", other)
-    }
-}
-
-impl fmt::Display for ArtichokeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ArtichokeError::ArgSpec => write!(f, "could not generate argspec"),
-            ArtichokeError::ConvertToRuby(inner) => write!(f, "conversion error: {}", inner),
-            ArtichokeError::ConvertToRust(inner) => write!(f, "conversion error: {}", inner),
-            ArtichokeError::Exec(backtrace) => write!(f, "{}", backtrace),
-            ArtichokeError::New => write!(f, "failed to create mrb interpreter"),
-            ArtichokeError::NotDefined(fqname) => write!(f, "{} not defined", fqname),
-            ArtichokeError::SourceNotFound(source) => {
-                write!(f, "Could not load Ruby source {}", source)
-            }
-            ArtichokeError::TooManyArgs { given, max } => write!(
-                f,
-                "Too many args for funcall. Gave {}, but max is {}",
-                given, max
-            ),
-            ArtichokeError::Uninitialized => write!(f, "mrb interpreter not initialized"),
-            ArtichokeError::UnreachableValue(tt) => {
-                write!(f, "extracted unreachable type {:?} from interpreter", tt)
-            }
-            ArtichokeError::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
-        }
-    }
-}
-
-impl error::Error for ArtichokeError {
-    fn description(&self) -> &str {
-        "artichoke interpreter error"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        match self {
-            ArtichokeError::ConvertToRuby(inner) => Some(inner),
-            ArtichokeError::ConvertToRust(inner) => Some(inner),
-            ArtichokeError::Vfs(inner) => Some(inner),
-            _ => None,
-        }
-    }
-}

@@ -9,7 +9,7 @@ use crate::convert::{Convert, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
-use crate::types::{Int, Ruby, Rust};
+use crate::types::{self, Int, Ruby};
 use crate::Artichoke;
 use crate::ArtichokeError;
 
@@ -59,7 +59,7 @@ where
 
     fn funcall<T, M, A>(&self, func: M, args: A) -> Result<T, ArtichokeError>
     where
-        T: TryConvert<Value, From = Ruby, To = Rust>,
+        Artichoke: TryConvert<Value, T>,
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
@@ -107,7 +107,7 @@ where
         }
         trace!(
             "Calling {}#{} with {} args",
-            Ruby::from(self.inner()),
+            types::ruby_from_mrb_value(self.inner()),
             func.as_ref(),
             args.len()
         );
@@ -143,11 +143,9 @@ where
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue(value.inner().tt))
+                Err(ArtichokeError::UnreachableValue)
             }
-            LastError::None => unsafe {
-                T::try_convert(self.interp(), value).map_err(ArtichokeError::ConvertToRust)
-            },
+            LastError::None => self.interp().try_convert(value),
         }
     }
 
@@ -158,7 +156,7 @@ where
         block: Value,
     ) -> Result<T, ArtichokeError>
     where
-        T: TryConvert<Value, From = Ruby, To = Rust>,
+        Artichoke: TryConvert<Value, T>,
         M: AsRef<str>,
         A: AsRef<[Value]>,
     {
@@ -207,7 +205,7 @@ where
         }
         trace!(
             "Calling {}#{} with {} args and block",
-            Ruby::from(self.inner()),
+            types::ruby_from_mrb_value(self.inner()),
             func.as_ref(),
             args.len()
         );
@@ -246,16 +244,14 @@ where
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue(value.inner().tt))
+                Err(ArtichokeError::UnreachableValue)
             }
-            LastError::None => unsafe {
-                T::try_convert(self.interp(), value).map_err(ArtichokeError::ConvertToRust)
-            },
+            LastError::None => self.interp().try_convert(value),
         }
     }
 
     fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError> {
-        let method = Value::convert(self.interp(), method);
+        let method: Value = self.interp().convert(method);
         self.funcall::<bool, _, _>("respond_to?", &[method])
     }
 }
@@ -282,7 +278,7 @@ impl Value {
 
     /// Return this values [Rust-mapped type tag](Ruby).
     pub fn ruby_type(&self) -> Ruby {
-        Ruby::from(self.value)
+        types::ruby_from_mrb_value(self.value)
     }
 
     /// Some type tags like [`MRB_TT_UNDEF`](sys::mrb_vtype::MRB_TT_UNDEF) are
@@ -347,11 +343,11 @@ impl Value {
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
     pub fn try_into<T>(self) -> Result<T, ArtichokeError>
     where
-        T: TryConvert<Self, From = Ruby, To = Rust>,
+        Artichoke: TryConvert<Self, T>,
     {
         // We must clone interp out of self because try_convert consumes self.
         let interp = self.interp.clone();
-        unsafe { T::try_convert(&interp, self) }.map_err(ArtichokeError::ConvertToRust)
+        interp.try_convert(self)
     }
 
     /// Call `#itself` on this [`Value`] and try to convert the result to type
@@ -360,7 +356,7 @@ impl Value {
     /// If you want to consume this [`Value`], use [`Value::try_into`].
     pub fn itself<T>(&self) -> Result<T, ArtichokeError>
     where
-        T: TryConvert<Self, From = Ruby, To = Rust>,
+        Artichoke: TryConvert<Self, T>,
     {
         self.clone().try_into::<T>()
     }
@@ -383,11 +379,8 @@ impl ValueLike for Value {
     }
 }
 
-impl Convert<Value> for Value {
-    type From = Ruby;
-    type To = Rust;
-
-    fn convert(_interp: &Artichoke, value: Self) -> Self {
+impl Convert<Value, Value> for Artichoke {
+    fn convert(&self, value: Value) -> Value {
         value
     }
 }
@@ -428,7 +421,7 @@ mod tests {
     fn to_s_true() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, true);
+        let value = interp.convert(true);
         let string = value.to_s();
         assert_eq!(string, "true");
     }
@@ -437,7 +430,7 @@ mod tests {
     fn debug_true() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, true);
+        let value = interp.convert(true);
         let debug = value.to_s_debug();
         assert_eq!(debug, "Boolean<true>");
     }
@@ -446,7 +439,7 @@ mod tests {
     fn inspect_true() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, true);
+        let value = interp.convert(true);
         let debug = value.inspect();
         assert_eq!(debug, "true");
     }
@@ -455,7 +448,7 @@ mod tests {
     fn to_s_false() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, false);
+        let value = interp.convert(false);
         let string = value.to_s();
         assert_eq!(string, "false");
     }
@@ -464,7 +457,7 @@ mod tests {
     fn debug_false() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, false);
+        let value = interp.convert(false);
         let debug = value.to_s_debug();
         assert_eq!(debug, "Boolean<false>");
     }
@@ -473,7 +466,7 @@ mod tests {
     fn inspect_false() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, false);
+        let value = interp.convert(false);
         let debug = value.inspect();
         assert_eq!(debug, "false");
     }
@@ -482,7 +475,7 @@ mod tests {
     fn to_s_nil() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, None::<Value>);
+        let value = interp.convert(None::<Value>);
         let string = value.to_s();
         assert_eq!(string, "");
     }
@@ -491,7 +484,7 @@ mod tests {
     fn debug_nil() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, None::<Value>);
+        let value = interp.convert(None::<Value>);
         let debug = value.to_s_debug();
         assert_eq!(debug, "NilClass<nil>");
     }
@@ -500,7 +493,7 @@ mod tests {
     fn inspect_nil() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, None::<Value>);
+        let value = interp.convert(None::<Value>);
         let debug = value.inspect();
         assert_eq!(debug, "nil");
     }
@@ -509,7 +502,7 @@ mod tests {
     fn to_s_fixnum() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, 255);
+        let value: Value = interp.convert(255);
         let string = value.to_s();
         assert_eq!(string, "255");
     }
@@ -518,7 +511,7 @@ mod tests {
     fn debug_fixnum() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, 255);
+        let value: Value = interp.convert(255);
         let debug = value.to_s_debug();
         assert_eq!(debug, "Fixnum<255>");
     }
@@ -527,7 +520,7 @@ mod tests {
     fn inspect_fixnum() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, 255);
+        let value: Value = interp.convert(255);
         let debug = value.inspect();
         assert_eq!(debug, "255");
     }
@@ -536,7 +529,7 @@ mod tests {
     fn to_s_string() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, "interstate");
+        let value = interp.convert("interstate");
         let string = value.to_s();
         assert_eq!(string, "interstate");
     }
@@ -545,7 +538,7 @@ mod tests {
     fn debug_string() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, "interstate");
+        let value = interp.convert("interstate");
         let debug = value.to_s_debug();
         assert_eq!(debug, r#"String<"interstate">"#);
     }
@@ -554,7 +547,7 @@ mod tests {
     fn inspect_string() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, "interstate");
+        let value = interp.convert("interstate");
         let debug = value.inspect();
         assert_eq!(debug, r#""interstate""#);
     }
@@ -563,7 +556,7 @@ mod tests {
     fn to_s_empty_string() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, "");
+        let value = interp.convert("");
         let string = value.to_s();
         assert_eq!(string, "");
     }
@@ -572,7 +565,7 @@ mod tests {
     fn debug_empty_string() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, "");
+        let value = interp.convert("");
         let debug = value.to_s_debug();
         assert_eq!(debug, r#"String<"">"#);
     }
@@ -581,7 +574,7 @@ mod tests {
     fn inspect_empty_string() {
         let interp = crate::interpreter().expect("init");
 
-        let value = Value::convert(&interp, "");
+        let value = interp.convert("");
         let debug = value.inspect();
         assert_eq!(debug, r#""""#);
     }
@@ -620,18 +613,18 @@ mod tests {
         assert!(!live.is_dead());
         // Fixnums are immediate even if they are created directly without an
         // interpreter.
-        let fixnum = Value::convert(&interp, 99);
+        let fixnum: Value = interp.convert(99);
         assert!(!fixnum.is_dead());
     }
 
     #[test]
     fn funcall() {
         let interp = crate::interpreter().expect("init");
-        let nil = Value::convert(&interp, None::<Value>);
+        let nil = interp.convert(None::<Value>);
         assert!(nil.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
-        let s = Value::convert(&interp, "foo");
+        let s = interp.convert("foo");
         assert!(!s.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
-        let delim = Value::convert(&interp, "");
+        let delim = interp.convert("");
         let split = s
             .funcall::<Vec<String>, _, _>("split", &[delim])
             .expect("split");
@@ -641,8 +634,8 @@ mod tests {
     #[test]
     fn funcall_different_types() {
         let interp = crate::interpreter().expect("init");
-        let nil = Value::convert(&interp, None::<Value>);
-        let s = Value::convert(&interp, "foo");
+        let nil = interp.convert(None::<Value>);
+        let s = interp.convert("foo");
         let eql = nil.funcall::<bool, _, _>("==", &[s]);
         assert_eq!(eql, Ok(false));
     }
@@ -650,8 +643,8 @@ mod tests {
     #[test]
     fn funcall_type_error() {
         let interp = crate::interpreter().expect("init");
-        let nil = Value::convert(&interp, None::<Value>);
-        let s = Value::convert(&interp, "foo");
+        let nil = interp.convert(None::<Value>);
+        let s = interp.convert("foo");
         let result = s.funcall::<String, _, _>("+", &[nil]);
         assert_eq!(
             result,
@@ -664,8 +657,8 @@ mod tests {
     #[test]
     fn funcall_method_not_exists() {
         let interp = crate::interpreter().expect("init");
-        let nil = Value::convert(&interp, None::<Value>);
-        let s = Value::convert(&interp, "foo");
+        let nil = interp.convert(None::<Value>);
+        let s = interp.convert("foo");
         let result = nil.funcall::<bool, _, _>("garbage_method_name", &[s]);
         assert_eq!(
             result,

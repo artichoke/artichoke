@@ -1,46 +1,37 @@
-use crate::convert::{Convert, Error, TryConvert};
+use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, ArtichokeError};
 
-impl Convert<bool> for Value {
-    type From = Rust;
-    type To = Ruby;
-
-    fn convert(interp: &Artichoke, value: bool) -> Self {
+impl Convert<bool, Value> for Artichoke {
+    fn convert(&self, value: bool) -> Value {
         if value {
-            Self::new(interp, unsafe { sys::mrb_sys_true_value() })
+            Value::new(self, unsafe { sys::mrb_sys_true_value() })
         } else {
-            Self::new(interp, unsafe { sys::mrb_sys_false_value() })
+            Value::new(self, unsafe { sys::mrb_sys_false_value() })
         }
     }
 }
 
-impl TryConvert<Value> for bool {
-    type From = Ruby;
-    type To = Rust;
-
-    unsafe fn try_convert(
-        _interp: &Artichoke,
-        value: Value,
-    ) -> Result<Self, Error<Self::From, Self::To>> {
+impl TryConvert<Value, bool> for Artichoke {
+    fn try_convert(&self, value: Value) -> Result<bool, ArtichokeError> {
         match value.ruby_type() {
             Ruby::Bool => {
-                let inner = value.inner();
-                if sys::mrb_sys_value_is_true(inner) {
+                let value = value.inner();
+                if unsafe { sys::mrb_sys_value_is_true(value) } {
                     Ok(true)
-                } else if sys::mrb_sys_value_is_false(inner) {
+                } else if unsafe { sys::mrb_sys_value_is_false(value) } {
                     Ok(false)
                 } else {
                     // This should be unreachable
-                    Err(Error {
+                    Err(ArtichokeError::ConvertToRust {
                         from: Ruby::Bool,
                         to: Rust::Bool,
                     })
                 }
             }
-            type_tag => Err(Error {
+            type_tag => Err(ArtichokeError::ConvertToRust {
                 from: type_tag,
                 to: Rust::Bool,
             }),
@@ -52,61 +43,62 @@ impl TryConvert<Value> for bool {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::{Convert, Error, TryConvert};
+    use crate::convert::Convert;
     use crate::eval::Eval;
     use crate::sys;
     use crate::types::{Ruby, Rust};
-    use crate::value::Value;
+    use crate::ArtichokeError;
 
     #[test]
     fn fail_convert() {
         let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval("Object.new").expect("eval");
-        let expected = Error {
+        let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Object,
             to: Rust::Bool,
-        };
-        let result = unsafe { <bool>::try_convert(&interp, value) }.map(|_| ());
-        assert_eq!(result, Err(expected));
+        });
+        let result = value.try_into::<bool>();
+        assert_eq!(result, expected);
     }
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, b);
+        let value = interp.convert(b);
         value.ruby_type() == Ruby::Bool
     }
 
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, b);
-        let inner = value.inner();
-        let is_false = unsafe { sys::mrb_sys_value_is_false(inner) };
-        let is_true = unsafe { sys::mrb_sys_value_is_true(inner) };
-        let is_nil = unsafe { sys::mrb_sys_value_is_nil(inner) };
+        let value = interp.convert(b);
+        let value = value.inner();
         if b {
-            is_true && !is_nil
+            !unsafe { sys::mrb_sys_value_is_false(value) }
+                && unsafe { sys::mrb_sys_value_is_true(value) }
+                && !unsafe { sys::mrb_sys_value_is_nil(value) }
         } else {
-            is_false && !is_nil
+            !unsafe { sys::mrb_sys_value_is_true(value) }
+                && unsafe { sys::mrb_sys_value_is_false(value) }
+                && !unsafe { sys::mrb_sys_value_is_nil(value) }
         }
     }
 
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, b);
-        let value = unsafe { bool::try_convert(&interp, value) }.expect("convert");
+        let value = interp.convert(b);
+        let value = value.try_into::<bool>().expect("convert");
         value == b
     }
 
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
         let interp = crate::interpreter().expect("init");
-        let value = Value::convert(&interp, i);
-        let value = unsafe { bool::try_convert(&interp, value) };
-        let expected = Err(Error {
+        let value = interp.convert(i);
+        let value = value.try_into::<bool>();
+        let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Fixnum,
             to: Rust::Bool,
         });

@@ -81,7 +81,7 @@ pub trait RubyException: 'static + Sized {
 
     unsafe fn raisef<V>(interp: Artichoke, message: &'static str, format: Vec<V>) -> sys::mrb_value
     where
-        Value: Convert<V>,
+        Artichoke: Convert<V, Value>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
@@ -112,7 +112,7 @@ pub trait RubyException: 'static + Sized {
 
         let mut formatargs = format
             .into_iter()
-            .map(|item| Value::convert(&interp, item).inner())
+            .map(|item| interp.convert(item).inner())
             .collect::<Vec<_>>();
         // `mrb_sys_raise` will call longjmp which will unwind the stack.
         // Anything we haven't cleaned up at this point will leak, so drop

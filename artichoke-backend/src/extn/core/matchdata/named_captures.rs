@@ -38,5 +38,5 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     };
-    Ok(Value::convert(interp, map))
+    Ok(interp.convert(map))
 }

@@ -153,16 +153,15 @@ impl Hash for Regexp {
 
 impl RustBackedValue for Regexp {
     fn new_obj_args(&self, interp: &Artichoke) -> Vec<sys::mrb_value> {
-        let literal_options = unsafe {
+        let literal_options =
             // use try_convert to support 32-bit Int.
-            Value::try_convert(interp, self.literal_options.flags().bits())
+            interp.try_convert(self.literal_options.flags().bits())
                 .unwrap()
-                .inner()
-        };
+                .inner();
         vec![
-            Value::convert(interp, self.literal_pattern.as_str()).inner(),
+            interp.convert(self.literal_pattern.as_str()).inner(),
             literal_options,
-            Value::convert(interp, self.encoding.flags()).inner(),
+            interp.convert(self.encoding.flags()).inner(),
         ]
     }
 }
@@ -325,9 +324,7 @@ impl Regexp {
             .and_then(|args| case_compare::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(case_compare::Error::NoImplicitConversionToString) => {
-                Value::convert(&interp, false).inner()
-            }
+            Err(case_compare::Error::NoImplicitConversionToString) => interp.convert(false).inner(),
             Err(case_compare::Error::Fatal) => {
                 RuntimeError::raise(interp, "fatal Regexp#=== error")
             }
@@ -345,7 +342,7 @@ impl Regexp {
         match result {
             Ok(result) => result.inner(),
             Err(match_operator::Error::NoImplicitConversionToString) => {
-                Value::convert(&interp, false).inner()
+                interp.convert(false).inner()
             }
             Err(match_operator::Error::Fatal) => {
                 RuntimeError::raise(interp, "fatal Regexp#=== error")

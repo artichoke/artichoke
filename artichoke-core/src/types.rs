@@ -102,8 +102,36 @@ pub enum Ruby {
     Unreachable,
 }
 
+impl Ruby {
+    /// Ruby `Class` name for VM type.
+    pub fn class_name(&self) -> &'static str {
+        match self {
+            Ruby::Array => "Array",
+            Ruby::Bool => "Boolean",
+            Ruby::Class => "Class",
+            Ruby::CPointer => "C Pointer",
+            Ruby::Data => "Rust-backed Ruby instance",
+            Ruby::Exception => "Exception",
+            Ruby::Fiber => "Fiber",
+            Ruby::Fixnum => "Fixnum",
+            Ruby::Float => "Float",
+            Ruby::Hash => "Hash",
+            Ruby::InlineStruct => "Inline Struct",
+            Ruby::Module => "Module",
+            Ruby::Nil => "NilClass",
+            Ruby::Object => "Object",
+            Ruby::Proc => "Proc",
+            Ruby::Range => "Range",
+            Ruby::SingletonClass => "Singleton (anonymous) class",
+            Ruby::String => "String",
+            Ruby::Symbol => "Symbol",
+            Ruby::Unreachable => "internal and unreachable",
+        }
+    }
+}
+
 impl fmt::Display for Ruby {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "Ruby {}", self.class_name())
     }
 }

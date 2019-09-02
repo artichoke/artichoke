@@ -66,10 +66,10 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
     let mrb = interp.0.borrow().mrb;
     let regexp = args.regexp.ok_or(Error::WrongType)?;
     let s = value.itself().map_err(|_| Error::Fatal)?;
-    let s = unsafe { String::try_convert(&interp, s) }.map_err(|_| Error::WrongType)?;
+    let s = interp.try_convert(s).map_err(|_| Error::WrongType)?;
 
     let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
-    let data = MatchData::new(s.as_str(), regexp.clone(), 0, s.len());
+    let data = MatchData::new(s, regexp.clone(), 0, s.len());
     let data = unsafe { data.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)?;
     unsafe { sys::mrb_gv_set(mrb, last_match_sym, data.inner()) };
     let matchdata = unsafe { MatchData::try_from_ruby(interp, &data) }.map_err(|_| Error::Fatal)?;
@@ -82,7 +82,7 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
             let len = regex.captures_len();
 
             if len > 0 {
-                for captures in regex.captures_iter(s.as_str()) {
+                for captures in regex.captures_iter(s) {
                     was_match = true;
                     let mut groups = vec![];
                     let num_regexp_globals_to_set = {
@@ -102,12 +102,12 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
                             groups.push(captures.at(group));
                         }
                         unsafe {
-                            sys::mrb_gv_set(mrb, sym, Value::convert(interp, capture).inner());
+                            sys::mrb_gv_set(mrb, sym, interp.convert(capture).inner());
                         }
                     }
                     interp.0.borrow_mut().num_set_regexp_capture_globals = captures.len();
 
-                    let matched = Value::convert(interp, groups);
+                    let matched = interp.convert(groups);
                     if let Some(pos) = captures.pos(0) {
                         matchdata.borrow_mut().set_region(pos.0, pos.1);
                     }
@@ -121,10 +121,10 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
                     }
                 }
             } else {
-                for pos in regex.find_iter(s.as_str()) {
+                for pos in regex.find_iter(s) {
                     was_match = true;
                     let scanned = &s[pos.0..pos.1];
-                    let matched = Value::convert(interp, scanned);
+                    let matched = interp.convert(scanned);
                     matchdata.borrow_mut().set_region(pos.0, pos.1);
                     if let Some(ref block) = args.block {
                         unsafe {
@@ -147,7 +147,7 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
     let result = if args.block.is_some() {
         value
     } else {
-        Value::convert(interp, collected)
+        interp.convert(collected)
     };
     Ok(result)
 }

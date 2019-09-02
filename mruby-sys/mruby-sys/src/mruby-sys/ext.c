@@ -15,6 +15,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <mruby-sys/ext.h>
+#include <mruby/string.h>
 
 // Check whether `mrb_value` is nil, false, or true
 
@@ -132,7 +133,8 @@ MRB_API mrb_value mrb_sys_proc_value(struct mrb_state *mrb,
 
 MRB_API const char *mrb_sys_symbol_name(struct mrb_state *mrb,
                                         mrb_value value) {
-  return mrb_sym2name(mrb, mrb_symbol(value));
+  mrb_value sym = mrb_sym2str(mrb, mrb_symbol(value));
+  return mrb_str_to_cstr(mrb, sym);
 }
 
 MRB_API mrb_value mrb_sys_new_symbol(struct mrb_state *mrb, const char *string,
