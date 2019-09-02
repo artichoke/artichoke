@@ -27,6 +27,8 @@ with MRI Ruby 2.6.3.
   <a href="https://artichoke.run">
     <img style="max-width: 400px" width="400" src="https://artichoke.run/playground.png?bust">
   </a>
+  <br>
+  <em>Artichoke Ruby Wasm Playground</em>
 </p>
 
 You can [try Artichoke in your browser](https://artichoke.run). The
