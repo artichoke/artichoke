@@ -25,7 +25,7 @@ with MRI Ruby 2.6.3.
 
 <p align="center">
   <a href="https://artichoke.run">
-    <img height="200" src="https://artichoke.run/playground.png?bust">
+    <img height="400" src="https://artichoke.run/playground.png?bust">
   </a>
 </p>
 
