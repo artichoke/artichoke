@@ -88,7 +88,9 @@ impl TryConvert<i64, Value> for Artichoke {
             from: Rust::UnsignedInt,
             to: Ruby::Fixnum,
         })?;
-        Ok(Self::new(self, unsafe { sys::mrb_sys_fixnum_value(value) }))
+        Ok(Value::new(self, unsafe {
+            sys::mrb_sys_fixnum_value(value)
+        }))
     }
 }
 
