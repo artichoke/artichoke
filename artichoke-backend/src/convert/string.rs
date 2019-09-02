@@ -37,6 +37,11 @@ impl<'a> TryConvert<Value, &'a str> for Artichoke {
         let type_tag = value.ruby_type();
         let bytes = if let Ruby::Symbol = type_tag {
             let mrb = self.0.borrow().mrb;
+            // mruby does not expose an API to get the raw byte contents of a
+            // `Symbol`. For non-literal symbols and non-ASCII symbols,
+            // `sys::mrb_sys_symbol_name` round trips through a `String`
+            // `mrb_value` to turn a `char *` wrapped in quotes into a
+            // `char *`.
             let bytes = unsafe { sys::mrb_sys_symbol_name(mrb, value.inner()) };
             let slice = unsafe { CStr::from_ptr(bytes) };
             slice.to_bytes()
