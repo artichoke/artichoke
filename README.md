@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://artichoke.run">
-    <img width="200" height="200" src="https://artichoke.run/logo.svg">
+    <img height="200" src="https://artichoke.run/logo.svg">
   </a>
 </p>
 
@@ -25,7 +25,7 @@ with MRI Ruby 2.6.3.
 
 <p align="center">
   <a href="https://artichoke.run">
-    <img height="400" src="https://artichoke.run/playground.png?bust">
+    <img style="max-height: 400px" src="https://artichoke.run/playground.png?bust">
   </a>
 </p>
 
