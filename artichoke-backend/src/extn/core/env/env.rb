@@ -52,6 +52,10 @@ class EnvClass
     to_h.key?(name)
   end
 
+  def invert
+    to_h.invert
+  end
+
   def key(value)
     to_h.key(value)
   end
@@ -83,13 +87,47 @@ class EnvClass
     to_h.size
   end
 
+  def replace(hash)
+    clear
+
+    hash.each do |key, value|
+      self[key] = value
+    end
+
+    self
+  end
+
+  def select
+    return to_enum(:select) unless block_given?
+
+    to_h.select { |key, value| yield key, value }
+  end
+
+  def select!
+    return to_enum(:select!) unless block_given?
+
+    old_env = to_h
+
+    new_envs = old_env.select { |key, value| yield key, value }
+
+    # returns nil if no changes were made
+    return nil if new_envs == old_env
+
+    clear
+
+    new_envs.each do |key, value|
+      self[key] = value
+    end
+
+    self
+  end
+
   def slice(*keys)
     to_h.slice(*keys)
   end
 
   def store(name, value)
     self[name] = value
-    value
   end
 
   def to_a
