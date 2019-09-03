@@ -18,7 +18,7 @@ where
     type Block;
 
     /// Call a method on this [`Value`] with arguments and an optional block.
-    fn funcall<T, M, A>(
+    fn funcall<T>(
         &self,
         func: &str,
         args: &[Self::Arg],
@@ -45,15 +45,18 @@ where
     /// Call `#freeze` on this [`Value`].
     fn freeze(&mut self) -> Result<(), ArtichokeError>;
 
-    /// Call `#inspect` on this [`Value`].
-    ///
-    /// This function can never fail.
-    fn inspect(&self) -> String;
+    /// Whether `self` is `nil`
+    fn is_nil(&self) -> bool;
 
     /// Whether `self` responds to a method.
     ///
     /// Equivalent to invoking `#respond_to?` on this [`Value`].
     fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError>;
+
+    /// Call `#inspect` on this [`Value`].
+    ///
+    /// This function can never fail.
+    fn inspect(&self) -> String;
 
     /// Call `#to_s` on this [`Value`].
     ///

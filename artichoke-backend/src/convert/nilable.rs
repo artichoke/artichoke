@@ -7,7 +7,7 @@ use crate::convert::float::Float;
 use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Int, Ruby};
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 // bail out implementation for mixed-type collections
@@ -51,8 +51,7 @@ macro_rules! ruby_to_option {
         impl<'a> TryConvert<Value, Option<$elem>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Option<$elem>, ArtichokeError> {
                 if let Some(value) = self.convert(value) {
-                    let result: Result<$elem, _> = self.try_convert(value);
-                    result.map(Some)
+                    value.try_into::<$elem>().map(Some)
                 } else {
                     Ok(None)
                 }

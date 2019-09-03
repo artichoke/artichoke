@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::extn::core::regexp::Regexp;
 use crate::types::Int;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -75,7 +75,7 @@ pub fn parse(value: &Value) -> Result<Encoding, Error> {
         } else {
             Err(Error::InvalidEncoding)
         }
-    } else if let Ok(encoding) = value.itself::<String>() {
+    } else if let Ok(encoding) = value.itself::<&str>() {
         if encoding.contains('u') && encoding.contains('n') {
             return Err(Error::InvalidEncoding);
         }

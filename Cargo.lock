@@ -59,6 +59,7 @@ name = "artichoke-frontend"
 version = "0.1.0"
 dependencies = [
  "artichoke-backend 0.1.0",
+ "artichoke-core 0.1.0",
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustyline 5.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -771,6 +772,7 @@ name = "spec-runner"
 version = "0.1.0"
 dependencies = [
  "artichoke-backend 0.1.0",
+ "artichoke-core 0.1.0",
  "fs_extra 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-embed 5.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

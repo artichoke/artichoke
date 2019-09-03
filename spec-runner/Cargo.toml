@@ -9,6 +9,9 @@ edition = "2018"
 [dependencies.artichoke-backend]
 path = "../artichoke-backend"
 
+[dependencies.artichoke-core]
+path = "../artichoke-core"
+
 [dependencies.rust-embed]
 version = "5.1.0"
 features = ["interpolate-folder-path"]

@@ -5,7 +5,7 @@ use crate::convert::float::Float;
 use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 // bail out implementation for mixed-type collections
@@ -73,7 +73,7 @@ macro_rules! ruby_to_array {
                 let elems: Vec<Value> = self.try_convert(value)?;
                 let mut vec = <Vec<$elem>>::with_capacity(elems.len());
                 for elem in elems.into_iter() {
-                    let elem: $elem = self.try_convert(elem)?;
+                    let elem = elem.try_into::<$elem>()?;
                     vec.push(elem);
                 }
                 Ok(vec)

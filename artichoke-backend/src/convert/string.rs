@@ -4,7 +4,7 @@ use std::str;
 use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Ruby, Rust};
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 impl Convert<String, Value> for Artichoke {
