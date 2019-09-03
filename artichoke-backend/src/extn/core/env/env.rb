@@ -52,52 +52,58 @@ class EnvClass
     to_h.key?(name)
   end
 
+  def invert
+    to_h.invert
+  end
+
   def key(value)
     to_h.key(value)
-  end
-
-  def length
-    to_h.length
-  end
-
-  def size
-    to_h.size
   end
 
   def keys
     to_h.keys
   end
 
+  def length
+    to_h.length
+  end
+
   def rehash
     nil
   end
 
-  def to_a
-    to_h.to_a
+  def replace(hash)
+    hash.each do |k, v|
+      self[k] = v
+    end
+
+    select! { |k, _| hash.key?(k) }
   end
 
-  def to_s
-    'ENV'
+  def select
+    return to_enum(:select) unless block_given?
+
+    to_h.select { |key, value| yield key, value }
   end
 
-  def value?(name)
-    to_h.value?(name)
-  end
+  def select!
+    return to_enum(:select!) unless block_given?
 
-  def values
-    to_h.values
-  end
+    env = to_h
 
-  def slice(*keys)
-    to_h.slice(*keys)
-  end
+    # collect all the keys where the block evaluates to false
+    to_remove = env.reject do |key, value|
+      yield key, value
+    end
 
-  def values_at(*names)
-    to_h.values_at(*names)
-  end
+    # returns nil if no changes were made
+    return nil if to_remove.empty?
 
-  def to_hash
-    to_h
+    to_remove.each do |key, _|
+      delete(key)
+    end
+
+    self
   end
 
   def shift
@@ -111,11 +117,47 @@ class EnvClass
     [name, value]
   end
 
+  def size
+    to_h.size
+  end
+
+  def slice(*keys)
+    to_h.slice(*keys)
+  end
+
+  def store(name, value)
+    self[name] = value
+  end
+
+  def to_a
+    to_h.to_a
+  end
+
+  def to_hash
+    to_h
+  end
+
+  def to_s
+    'ENV'
+  end
+
   def update(hash)
     hash.each do |key, value|
       self[key] = value
     end
 
     to_h
+  end
+
+  def value?(name)
+    to_h.value?(name)
+  end
+
+  def values
+    to_h.values
+  end
+
+  def values_at(*names)
+    to_h.values_at(*names)
   end
 end
