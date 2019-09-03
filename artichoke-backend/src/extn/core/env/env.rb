@@ -72,6 +72,40 @@ class EnvClass
     nil
   end
 
+  def replace(hash)
+    hash.each do |k, v|
+      self[k] = v
+    end
+
+    select! { |k, _| hash.key?(k) }
+  end
+
+  def select
+    return to_enum(:select) unless block_given?
+
+    to_h.select { |key, value| yield key, value }
+  end
+
+  def select!
+    return to_enum(:select!) unless block_given?
+
+    env = to_h
+
+    # collect all the keys where the block evaluates to false
+    to_remove = env.reject do |key, value|
+      yield key, value
+    end
+
+    # returns nil if no changes were made
+    return nil if to_remove.empty?
+
+    to_remove.each do |key, _|
+      delete(key)
+    end
+
+    self
+  end
+
   def shift
     envs = to_h
 
@@ -85,41 +119,6 @@ class EnvClass
 
   def size
     to_h.size
-  end
-
-  def replace(hash)
-    clear
-
-    hash.each do |key, value|
-      self[key] = value
-    end
-
-    self
-  end
-
-  def select
-    return to_enum(:select) unless block_given?
-
-    to_h.select { |key, value| yield key, value }
-  end
-
-  def select!
-    return to_enum(:select!) unless block_given?
-
-    old_env = to_h
-
-    new_envs = old_env.select { |key, value| yield key, value }
-
-    # returns nil if no changes were made
-    return nil if new_envs == old_env
-
-    clear
-
-    new_envs.each do |key, value|
-      self[key] = value
-    end
-
-    self
   end
 
   def slice(*keys)
