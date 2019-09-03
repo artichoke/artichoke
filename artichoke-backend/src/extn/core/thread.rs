@@ -26,6 +26,7 @@ mod tests {
     #![allow(clippy::shadow_unrelated)]
 
     use crate::eval::Eval;
+    use crate::value::ValueLike;
     use crate::ArtichokeError;
 
     #[test]

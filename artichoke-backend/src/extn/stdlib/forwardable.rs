@@ -19,6 +19,7 @@ pub struct Forwardable;
 #[cfg(test)]
 mod tests {
     use crate::eval::Eval;
+    use crate::value::ValueLike;
 
     #[test]
     #[allow(clippy::shadow_unrelated)]

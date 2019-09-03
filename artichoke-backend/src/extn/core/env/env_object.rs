@@ -179,7 +179,7 @@ impl<T: EnvBackend> RustBackedValue for Env<T> where T: 'static {}
 mod tests {
     use crate::eval::Eval;
     use crate::extn::core::env;
-    use crate::value::Value;
+    use crate::value::{Value, ValueLike};
     use crate::ArtichokeError;
 
     #[test]

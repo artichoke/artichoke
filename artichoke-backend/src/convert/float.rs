@@ -37,6 +37,7 @@ mod tests {
     use crate::eval::Eval;
     use crate::sys;
     use crate::types::{Ruby, Rust};
+    use crate::value::ValueLike;
     use crate::ArtichokeError;
 
     #[test]

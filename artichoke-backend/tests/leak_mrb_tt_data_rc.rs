@@ -26,6 +26,7 @@ use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_core::value::Value as ValueLike;
 use std::mem;
 
 mod leak;

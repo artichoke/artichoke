@@ -539,7 +539,7 @@ mod tests {
 
     use crate::convert::Convert;
     use crate::types::Int;
-    use crate::value::Value;
+    use crate::value::{Value, ValueLike};
 
     #[test]
     fn roundtrip_kv() {

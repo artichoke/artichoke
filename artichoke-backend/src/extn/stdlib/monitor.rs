@@ -18,6 +18,7 @@ pub struct Monitor;
 #[cfg(test)]
 mod tests {
     use crate::eval::Eval;
+    use crate::value::ValueLike;
 
     #[test]
     fn mon_initialize() {

@@ -198,6 +198,7 @@ mod tests {
     use crate::eval::Eval;
     use crate::file::File;
     use crate::load::LoadSources;
+    use crate::value::ValueLike;
     use crate::{Artichoke, ArtichokeError};
 
     // Integration test for `Kernel::require`:
