@@ -201,16 +201,14 @@ mod tests {
         };
 
         let value = unsafe { obj.try_into_ruby(&interp, None) }.expect("convert");
-        let class = value.funcall::<Value, _, _>("class", &[]).expect("funcall");
+        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), "Container");
         let data = unsafe { Container::try_from_ruby(&interp, &value) }.expect("convert");
         assert_eq!(Rc::strong_count(&data), 2);
         assert_eq!(&data.borrow().inner, "contained string contents");
         drop(data);
-        let inner = value
-            .funcall::<String, _, _>("value", &[])
-            .expect("funcall");
-        assert_eq!(&inner, "contained string contents");
+        let inner = value.funcall::<&str>("value", &[], None).expect("funcall");
+        assert_eq!(inner, "contained string contents");
     }
 
     #[test]
@@ -234,13 +232,13 @@ mod tests {
         spec.borrow().define(&interp).expect("class install");
 
         let value = interp.convert("string");
-        let class = value.funcall::<Value, _, _>("class", &[]).expect("funcall");
+        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), "String");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };
         assert!(data.is_err());
         let value =
             unsafe { Box::new(Other::default()).try_into_ruby(&interp, None) }.expect("convert");
-        let class = value.funcall::<Value, _, _>("class", &[]).expect("funcall");
+        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), "Other");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };
         assert!(data.is_err());

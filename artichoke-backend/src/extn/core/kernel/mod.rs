@@ -60,9 +60,12 @@ impl Warning {
         if !sys::mrb_sys_value_is_nil(stderr) {
             let args = args::Rest::extract(&interp);
             let stderr = Value::new(&interp, stderr);
-            // TODO: introduce a `unchecked_funcall` to propagate errors.
-            let _ = stderr
-                .funcall::<Value, _, _>("print", args.map(|args| args.rest).unwrap_or_default());
+            // TODO: introduce a `unchecked_funcall` to propagate errors, GH-249.
+            let _ = stderr.funcall::<Value>(
+                "print",
+                args.map(|args| args.rest).unwrap_or_default().as_ref(),
+                None,
+            );
         }
         sys::mrb_sys_nil_value()
     }
