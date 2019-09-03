@@ -40,7 +40,7 @@ impl Args {
             Ok(Args::Index(index))
         } else if let Ok(name) = interp.try_convert(Value::new(interp, first)) {
             Ok(Args::Name(name))
-        } else if let Ok(index) = Value::new(interp, first).funcall::<Int, _, _>("to_int", &[]) {
+        } else if let Ok(index) = Value::new(interp, first).funcall::<Int>("to_int", &[], None) {
             Ok(Args::Index(index))
         } else {
             Err(Error::IndexType)

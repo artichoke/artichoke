@@ -83,11 +83,14 @@ where
 
     fn interp(&self) -> &Artichoke;
 
-    fn funcall<T, M, A>(&self, func: M, args: A) -> Result<T, ArtichokeError>
+    fn funcall<T>(
+        &self,
+        func: &str,
+        args: &[Value],
+        block: Option<Value>,
+    ) -> Result<T, ArtichokeError>
     where
         Artichoke: TryConvert<Value, T>,
-        M: AsRef<str>,
-        A: AsRef<[Value]>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
@@ -112,95 +115,20 @@ where
             });
         }
         trace!(
-            "Calling {}#{} with {} args",
+            "Calling {}#{} with {} args{}",
             types::ruby_from_mrb_value(self.inner()),
-            func.as_ref(),
-            args.len()
+            func,
+            args.len(),
+            if block.is_some() { " and block" } else { "" }
         );
-        let protect = Protect::new(
+        let mut protect = Protect::new(
             self.inner(),
             self.interp().0.borrow_mut().sym_intern(func.as_ref()),
             args.as_ref(),
         );
-        let value = unsafe {
-            let data =
-                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
-            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
-
-            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
-            if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-            }
-            value
-        };
-        let value = Value::new(self.interp(), value);
-
-        match self.interp().last_error() {
-            LastError::Some(exception) => {
-                warn!("runtime error with exception backtrace: {}", exception);
-                Err(ArtichokeError::Exec(exception.to_string()))
-            }
-            LastError::UnableToExtract(err) => {
-                error!("failed to extract exception after runtime error: {}", err);
-                Err(err)
-            }
-            LastError::None if value.is_unreachable() => {
-                // Unreachable values are internal to the mruby interpreter and
-                // interacting with them via the C API is unspecified and may
-                // result in a segfault.
-                //
-                // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue)
-            }
-            LastError::None => self.interp().try_convert(value),
+        if let Some(block) = block {
+            protect = protect.with_block(block.inner());
         }
-    }
-
-    fn funcall_with_block<T, M, A>(
-        &self,
-        func: M,
-        args: A,
-        block: Value,
-    ) -> Result<T, ArtichokeError>
-    where
-        Artichoke: TryConvert<Value, T>,
-        M: AsRef<str>,
-        A: AsRef<[Value]>,
-    {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let (mrb, _ctx) = {
-            let borrow = self.interp().0.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
-
-        let _arena = self.interp().create_arena_savepoint();
-
-        let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
-        if args.len() > MRB_FUNCALL_ARGC_MAX {
-            warn!(
-                "Too many args supplied to funcall_with_block: given {}, max {}.",
-                args.len(),
-                MRB_FUNCALL_ARGC_MAX
-            );
-            return Err(ArtichokeError::TooManyArgs {
-                given: args.len(),
-                max: MRB_FUNCALL_ARGC_MAX,
-            });
-        }
-        trace!(
-            "Calling {}#{} with {} args and block",
-            types::ruby_from_mrb_value(self.inner()),
-            func.as_ref(),
-            args.len()
-        );
-        let protect = Protect::new(
-            self.inner(),
-            self.interp().0.borrow_mut().sym_intern(func.as_ref()),
-            args.as_ref(),
-        )
-        .with_block(block.inner());
         let value = unsafe {
             let data =
                 sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
@@ -237,7 +165,7 @@ where
 
     fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError> {
         let method: Value = self.interp().convert(method);
-        self.funcall::<bool, _, _>("respond_to?", &[method])
+        self.funcall::<bool>("respond_to?", &[method], None)
     }
 }
 
@@ -298,7 +226,7 @@ impl Value {
     ///
     /// This function can never fail.
     pub fn to_s(&self) -> String {
-        self.funcall::<String, _, _>("to_s", &[])
+        self.funcall::<String>("to_s", &[], None)
             .unwrap_or_else(|_| "<unknown>".to_owned())
     }
 
@@ -319,7 +247,7 @@ impl Value {
     ///
     /// This function can never fail.
     pub fn inspect(&self) -> String {
-        self.funcall::<String, _, _>("inspect", &[])
+        self.funcall::<String>("inspect", &[], None)
             .unwrap_or_else(|_| "<unknown>".to_owned())
     }
 
@@ -348,7 +276,7 @@ impl Value {
 
     /// Call `#freeze` on this [`Value`] and consume `self`.
     pub fn freeze(self) -> Result<Self, ArtichokeError> {
-        let frozen = self.funcall::<Self, _, _>("freeze", &[])?;
+        let frozen = self.funcall::<Self>("freeze", &[], None)?;
         frozen.protect();
         Ok(frozen)
     }
@@ -606,14 +534,14 @@ mod tests {
     fn funcall() {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
-        assert!(nil.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
+        assert!(nil.funcall::<bool>("nil?", &[], None).expect("nil?"));
         let s = interp.convert("foo");
-        assert!(!s.funcall::<bool, _, _>("nil?", &[]).expect("nil?"));
+        assert!(!s.funcall::<bool>("nil?", &[], None).expect("nil?"));
         let delim = interp.convert("");
         let split = s
-            .funcall::<Vec<String>, _, _>("split", &[delim])
+            .funcall::<Vec<&str>>("split", &[delim], None)
             .expect("split");
-        assert_eq!(split, vec!["f".to_owned(), "o".to_owned(), "o".to_owned()])
+        assert_eq!(split, vec!["f", "o", "o"])
     }
 
     #[test]
@@ -621,7 +549,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let eql = nil.funcall::<bool, _, _>("==", &[s]);
+        let eql = nil.funcall::<bool>("==", &[s], None);
         assert_eq!(eql, Ok(false));
     }
 
@@ -630,7 +558,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let result = s.funcall::<String, _, _>("+", &[nil]);
+        let result = s.funcall::<String>("+", &[nil], None);
         assert_eq!(
             result,
             Err(ArtichokeError::Exec(
@@ -644,7 +572,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let result = nil.funcall::<bool, _, _>("garbage_method_name", &[s]);
+        let result = nil.funcall::<bool>("garbage_method_name", &[s], None);
         assert_eq!(
             result,
             Err(ArtichokeError::Exec(

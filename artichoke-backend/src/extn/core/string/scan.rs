@@ -39,8 +39,8 @@ impl Args {
         let regexp = if let Ok(regexp) = Regexp::try_from_ruby(interp, &Value::new(interp, pattern))
         {
             Some(regexp.borrow().clone())
-        } else if let Some(ref pattern) = Value::new(interp, pattern)
-            .funcall::<Option<String>, _, _>("to_str", &[])
+        } else if let Some(pattern) = Value::new(interp, pattern)
+            .funcall::<Option<&str>>("to_str", &[], None)
             .map_err(|_| Error::WrongType)?
         {
             Regexp::new(

@@ -55,8 +55,8 @@ pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Val
             {
                 if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
                     patterns.push(regexp.borrow().pattern.clone());
-                } else if let Ok(pattern) = pattern.funcall::<String, _, _>("to_str", &[]) {
-                    patterns.push(syntax::escape(pattern.as_str()));
+                } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                    patterns.push(syntax::escape(pattern));
                 } else {
                     return Err(Error::NoImplicitConversionToString);
                 }
@@ -66,8 +66,8 @@ pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Val
             let pattern = arg;
             if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
                 regexp.borrow().pattern.clone()
-            } else if let Ok(pattern) = pattern.funcall::<String, _, _>("to_str", &[]) {
-                syntax::escape(pattern.as_str())
+            } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                syntax::escape(pattern)
             } else {
                 return Err(Error::NoImplicitConversionToString);
             }
@@ -77,8 +77,8 @@ pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Val
         for pattern in args.rest {
             if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
                 patterns.push(regexp.borrow().pattern.clone());
-            } else if let Ok(pattern) = pattern.funcall::<String, _, _>("to_str", &[]) {
-                patterns.push(syntax::escape(pattern.as_str()));
+            } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                patterns.push(syntax::escape(pattern));
             } else {
                 return Err(Error::NoImplicitConversionToString);
             }

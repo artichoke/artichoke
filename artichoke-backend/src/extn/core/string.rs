@@ -154,39 +154,21 @@ mod tests {
 
         let s = interp.convert("abababa");
         let result = s
-            .funcall::<Vec<String>, _, _>("scan", &[interp.eval("/./").expect("eval")])
+            .funcall::<Vec<&str>>("scan", &[interp.eval("/./").expect("eval")], None)
             .expect("funcall");
-        assert_eq!(
-            result,
-            vec!["a", "b", "a", "b", "a", "b", "a"]
-                .into_iter()
-                .map(str::to_owned)
-                .collect::<Vec<_>>()
-        );
+        assert_eq!(result, vec!["a", "b", "a", "b", "a", "b", "a"]);
         let result = s
-            .funcall::<Vec<String>, _, _>("scan", &[interp.eval("/../").expect("eval")])
+            .funcall::<Vec<&str>>("scan", &[interp.eval("/../").expect("eval")], None)
             .expect("funcall");
-        assert_eq!(
-            result,
-            vec!["ab", "ab", "ab"]
-                .into_iter()
-                .map(str::to_owned)
-                .collect::<Vec<_>>()
-        );
+        assert_eq!(result, vec!["ab", "ab", "ab"]);
         let result = s
-            .funcall::<Vec<String>, _, _>("scan", &[interp.eval("'aba'").expect("eval")])
+            .funcall::<Vec<&str>>("scan", &[interp.eval("'aba'").expect("eval")], None)
             .expect("funcall");
-        assert_eq!(
-            result,
-            vec!["aba", "aba"]
-                .into_iter()
-                .map(str::to_owned)
-                .collect::<Vec<_>>()
-        );
+        assert_eq!(result, vec!["aba", "aba"]);
         let result = s
-            .funcall::<Vec<String>, _, _>("scan", &[interp.eval("'no no no'").expect("eval")])
+            .funcall::<Vec<&str>>("scan", &[interp.eval("'no no no'").expect("eval")], None)
             .expect("funcall");
-        assert_eq!(result, <Vec<String>>::new());
+        assert_eq!(result, <Vec<&str>>::new());
     }
 
     #[test]
@@ -195,9 +177,9 @@ mod tests {
         string::init(&interp).expect("string init");
 
         let s = interp.eval("-'abababa'").expect("eval");
-        let result = s.funcall::<bool, _, _>("frozen?", &[]).expect("funcall");
-        assert!(result);
-        let result = s.funcall::<String, _, _>("itself", &[]).expect("funcall");
-        assert_eq!(result, "abababa");
+        let result = s.funcall::<bool>("frozen?", &[], None);
+        assert_eq!(result, Ok(true));
+        let result = s.funcall::<&str>("itself", &[], None);
+        assert_eq!(result, Ok("abababa"));
     }
 }
