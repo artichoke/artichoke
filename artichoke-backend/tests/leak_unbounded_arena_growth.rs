@@ -1,6 +1,7 @@
-#![cfg(not(target_os = "macos"))]
 #![deny(clippy::all, clippy::pedantic)]
 #![deny(warnings, intra_doc_link_resolution_failure)]
+// Tests are compiled but not executed on macOS
+#![cfg_attr(target_os = "macos", allow(dead_code))]
 
 //! This integration test checks for memory leaks that stem from improper
 //! handling of `mrb_state`.
@@ -23,13 +24,14 @@
 use artichoke_backend::eval::Eval;
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::ArtichokeError;
+use artichoke_core::value::Value as ValueLike;
 
 mod leak;
 
 const ITERATIONS: usize = 100;
 const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
-#[test]
+#[cfg_attr(not(target_os = "macos"), test)]
 fn unbounded_arena_growth() {
     // ArtichokeApi::current_exception
     let interp = artichoke_backend::interpreter().expect("init");

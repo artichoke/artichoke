@@ -304,7 +304,7 @@ mod tests {
     use crate::file::File;
     use crate::load::LoadSources;
     use crate::sys;
-    use crate::value::Value;
+    use crate::value::{Value, ValueLike};
     use crate::{Artichoke, ArtichokeError};
 
     #[test]

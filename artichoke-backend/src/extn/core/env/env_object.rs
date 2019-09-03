@@ -5,7 +5,7 @@ use std::mem;
 use crate::extn::core::env::backends::EnvBackend;
 use crate::extn::core::env::Error;
 use crate::sys;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::Artichoke;
 
 pub trait RubyEnvNativeApi {
@@ -46,7 +46,7 @@ impl<T: EnvBackend> Env<T> {
         let key_v = Value::new(interp, key);
         let value_v = Value::new(interp, value);
 
-        if sys::mrb_sys_value_is_nil(value_v.inner()) {
+        if value_v.is_nil() {
             (key_v.to_s(), None)
         } else {
             (key_v.to_s(), Some(value_v.to_s()))
@@ -179,7 +179,7 @@ impl<T: EnvBackend> RustBackedValue for Env<T> where T: 'static {}
 mod tests {
     use crate::eval::Eval;
     use crate::extn::core::env;
-    use crate::value::Value;
+    use crate::value::{Value, ValueLike};
     use crate::ArtichokeError;
 
     #[test]

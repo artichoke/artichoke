@@ -370,6 +370,7 @@ mod tests {
         use crate::def::{ClassLike, Define};
         use crate::eval::Eval;
         use crate::sys;
+        use crate::value::ValueLike;
 
         #[test]
         fn define_method() {

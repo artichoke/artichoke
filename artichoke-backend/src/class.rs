@@ -209,6 +209,7 @@ mod tests {
     use crate::def::{ClassLike, Define, EnclosingRubyScope};
     use crate::eval::Eval;
     use crate::module;
+    use crate::value::ValueLike;
 
     #[test]
     fn super_class() {

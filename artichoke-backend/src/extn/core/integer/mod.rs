@@ -8,7 +8,7 @@ use crate::eval::Eval;
 use crate::extn::core::error::{ArgumentError, RangeError, RubyException, RuntimeError};
 use crate::sys;
 use crate::types::Int;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {

@@ -5,7 +5,7 @@ use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
 use crate::sys;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 mod scan;

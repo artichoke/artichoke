@@ -4,7 +4,7 @@ use onig::RegexOptions;
 
 use crate::extn::core::regexp::Regexp;
 use crate::types::Int;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct Options {
@@ -87,7 +87,7 @@ pub fn parse(value: &Value) -> Options {
             Some(false) | None => Options::default(),
             _ => Options::ignore_case(),
         }
-    } else if let Ok(options) = value.itself::<Option<String>>() {
+    } else if let Ok(options) = value.itself::<Option<&str>>() {
         if let Some(options) = options {
             Options {
                 multiline: options.contains('m'),

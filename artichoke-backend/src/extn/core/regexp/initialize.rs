@@ -9,7 +9,7 @@ use crate::extn::core::regexp::enc::{self, Encoding};
 use crate::extn::core::regexp::opts::{self, Options};
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::warn::Warn;
 use crate::Artichoke;
 

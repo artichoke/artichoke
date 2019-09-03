@@ -20,6 +20,7 @@
 //!
 //! ```rust
 //! use artichoke_backend::eval::Eval;
+//! use artichoke_core::value::Value as ValueLike;
 //!
 //! let interp = artichoke_backend::interpreter().unwrap();
 //! let result = interp.eval("10 * 10").unwrap();
@@ -56,6 +57,7 @@
 //! ```rust
 //! use artichoke_backend::eval::Eval;
 //! use artichoke_backend::load::LoadSources;
+//! use artichoke_core::value::Value as ValueLike;
 //!
 //! let mut interp = artichoke_backend::interpreter().unwrap();
 //! let code = "
@@ -66,8 +68,8 @@
 //! interp.def_rb_source_file("source.rb", code).unwrap();
 //! interp.eval("require 'source'").unwrap();
 //! let result = interp.eval("source_location").unwrap();
-//! let result = result.try_into::<String>().unwrap();
-//! assert_eq!(&result, "/src/lib/source.rb");
+//! let result = result.try_into::<&str>().unwrap();
+//! assert_eq!(result, "/src/lib/source.rb");
 //! ```
 //!
 //! ## Embed Rust Objects in `mrb_value`
@@ -109,6 +111,7 @@
 //! use artichoke_backend::sys;
 //! use artichoke_backend::value::Value;
 //! use artichoke_backend::{Artichoke, ArtichokeError};
+//! use artichoke_core::value::Value as ValueLike;
 //! use std::io::Write;
 //! use std::mem;
 //!

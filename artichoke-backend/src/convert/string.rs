@@ -4,7 +4,7 @@ use std::str;
 use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Ruby, Rust};
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 impl Convert<String, Value> for Artichoke {
@@ -67,12 +67,13 @@ impl<'a> TryConvert<Value, &'a str> for Artichoke {
 // the tests for String to exercise both code paths.
 mod tests {
     use quickcheck_macros::quickcheck;
-    use std::convert::TryInto;
+    use std::convert::TryFrom;
 
     use crate::convert::Convert;
     use crate::eval::Eval;
     use crate::sys;
     use crate::types::{Ruby, Rust};
+    use crate::value::ValueLike;
     use crate::ArtichokeError;
 
     #[test]
@@ -96,7 +97,7 @@ mod tests {
         let ptr = unsafe { sys::mrb_string_value_ptr(interp.0.borrow().mrb, value.inner()) };
         let len = unsafe { sys::mrb_string_value_len(interp.0.borrow().mrb, value.inner()) };
         let string =
-            unsafe { std::slice::from_raw_parts(ptr as *const u8, len.try_into().unwrap()) };
+            unsafe { std::slice::from_raw_parts(ptr as *const u8, usize::try_from(len).unwrap()) };
         s.as_bytes() == string
     }
 

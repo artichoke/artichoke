@@ -4,8 +4,8 @@ use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::Eval;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::top_self::TopSelf;
-use artichoke_backend::value::ValueLike;
 use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_core::value::Value;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;

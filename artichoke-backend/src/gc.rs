@@ -112,6 +112,7 @@ impl MrbGarbageCollection for Artichoke {
 mod tests {
     use crate::eval::Eval;
     use crate::gc::MrbGarbageCollection;
+    use crate::value::ValueLike;
 
     #[test]
     fn arena_restore_on_explicit_restore() {

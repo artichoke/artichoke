@@ -12,3 +12,6 @@ rustyline = "5.0.2"
 
 [dependencies.artichoke-backend]
 path = "../artichoke-backend"
+
+[dependencies.artichoke-core]
+path = "../artichoke-core"

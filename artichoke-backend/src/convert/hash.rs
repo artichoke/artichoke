@@ -6,7 +6,7 @@ use crate::convert::float::Float;
 use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
-use crate::value::Value;
+use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 // TODO: implement `PartialEq`, `Eq`, and `Hash` on `Value`, see GH-159.
@@ -539,7 +539,7 @@ mod tests {
 
     use crate::convert::Convert;
     use crate::types::Int;
-    use crate::value::Value;
+    use crate::value::{Value, ValueLike};
 
     #[test]
     fn roundtrip_kv() {

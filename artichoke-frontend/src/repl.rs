@@ -11,6 +11,7 @@ use artichoke_backend::eval::{Context, Eval};
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::sys;
 use artichoke_backend::ArtichokeError;
+use artichoke_core::value::Value;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::io::{self, Write};
