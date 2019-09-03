@@ -23,6 +23,7 @@
 use artichoke_backend::eval::Eval;
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::ArtichokeError;
+use artichoke_core::value::Value as ValueLike;
 
 mod leak;
 
