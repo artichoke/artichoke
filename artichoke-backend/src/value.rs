@@ -169,7 +169,7 @@ impl ValueLike for Value {
 
         let _arena = self.interp.create_arena_savepoint();
 
-        let args = args.as_ref().iter().map(Value::inner).collect::<Vec<_>>();
+        let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
             warn!(
                 "Too many args supplied to funcall: given {}, max {}.",
@@ -207,7 +207,7 @@ impl ValueLike for Value {
             }
             value
         };
-        let value = Value::new(&self.interp, value);
+        let value = Self::new(&self.interp, value);
 
         match self.interp.last_error() {
             LastError::Some(exception) => {
@@ -262,7 +262,7 @@ impl ValueLike for Value {
     }
 
     fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError> {
-        let method: Value = self.interp.convert(method);
+        let method = self.interp.convert(method);
         self.funcall::<bool>("respond_to?", &[method], None)
     }
 
