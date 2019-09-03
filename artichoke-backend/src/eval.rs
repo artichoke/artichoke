@@ -1,7 +1,6 @@
 use log::{error, trace, warn};
 use std::ffi::{c_void, CString};
 use std::mem;
-use std::rc::Rc;
 
 use crate::exception::{ExceptionHandler, LastError};
 use crate::sys::{self, DescribeState};
@@ -10,34 +9,36 @@ use crate::{Artichoke, ArtichokeError};
 
 const TOP_FILENAME: &str = "(eval)";
 
-struct Protect {
+// `Protect` must be `Copy` because the call to `mrb_load_nstring_cxt` can
+// unwind with `longjmp` which does not allow Rust to run destructors.
+#[derive(Clone, Copy)]
+struct Protect<'a> {
     ctx: *mut sys::mrbc_context,
-    code: Vec<u8>,
+    code: &'a [u8],
 }
 
-impl Protect {
-    fn new(interp: &Artichoke, code: &[u8]) -> Self {
+impl<'a> Protect<'a> {
+    fn new(interp: &Artichoke, code: &'a [u8]) -> Self {
         Self {
             ctx: interp.0.borrow().ctx,
-            code: code.to_vec(),
+            code,
         }
     }
 
-    unsafe extern "C" fn run_protected(
-        mrb: *mut sys::mrb_state,
-        data: sys::mrb_value,
-    ) -> sys::mrb_value {
+    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
         let ptr = sys::mrb_sys_cptr_ptr(data);
-        let args = Rc::from_raw(ptr as *const Self);
-        let ctx = args.ctx;
-        let code = args.code.as_ptr();
-        let len = args.code.len();
-        // Drop the `Rc` before calling `mrb_load_nstring_ctx` which can
-        // potentially unwind the stack with `longjmp`. To make sure eval and
-        // unchecked_eval can free the code buffer, the `Rc::strong_count` must
-        // be decreased. This is safe to do and `code` pointer will not be
-        // dangling because strong count is always 2 right now.
-        drop(args);
+        // `Protect` must be `Copy` because the call to `mrb_load_nstring_cxt`
+        // can unwind with `longjmp` which does not allow Rust to run
+        // destructors.
+        let protect = Box::from_raw(ptr as *mut Self);
+
+        // Pull all of the args out of the `Box` so we can free the
+        // heap-allocated `Box`.
+        let ctx = protect.ctx;
+        let code = protect.code;
+
+        // Drop the `Box` to ensure it is freed.
+        drop(protect);
 
         // Execute arbitrary ruby code, which may generate objects with C APIs
         // if backed by Rust functions.
@@ -45,7 +46,7 @@ impl Protect {
         // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
         // which means the most recent value returned by eval will always be
         // considered live by the GC.
-        sys::mrb_load_nstring_cxt(mrb, code as *const i8, len, ctx)
+        sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx)
     }
 }
 
@@ -166,18 +167,15 @@ impl Eval for Artichoke {
         } else {
             warn!("Could not set {} as mrc context filename", context.filename);
         }
-        drop(context);
 
-        let args = Rc::new(Protect::new(self, code.as_ref()));
-        drop(code);
+        let protect = Protect::new(self, code.as_ref());
         trace!("Evaling code on {}", mrb.debug());
         let value = unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
+            let data =
+                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
             let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value =
-                sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
-            drop(args);
+            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
             if state.assume_init() != 0 {
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
             }
@@ -236,19 +234,23 @@ impl Eval for Artichoke {
         } else {
             warn!("Could not set {} as mrc context filename", context.filename);
         }
-        drop(context);
 
-        let args = Rc::new(Protect::new(self, code.as_ref()));
-        drop(code);
+        let protect = Protect::new(self, code.as_ref());
         trace!("Evaling code on {}", mrb.debug());
         let value = unsafe {
-            let data = sys::mrb_sys_cptr_value(mrb, Rc::into_raw(Rc::clone(&args)) as *mut c_void);
+            let data =
+                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
             let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
 
-            let value =
-                sys::mrb_protect(mrb, Some(Protect::run_protected), data, state.as_mut_ptr());
-            drop(args);
+            // We call `mrb_protect` even though we are doing an unchecked eval
+            // because we need to provide a landing pad to deallocate the
+            // heap-allocated objects that we've passed as borrows to `protect`.
+            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
             if state.assume_init() != 0 {
+                // drop all bindings to heap-allocated objects because we are
+                // about to unwind with longjmp.
+                drop(context);
+                drop(code);
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
                 sys::mrb_sys_raise_current_exception(mrb);
                 unreachable!("mrb_raise will unwind the stack with longjmp");
