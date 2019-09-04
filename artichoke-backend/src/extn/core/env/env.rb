@@ -76,6 +76,12 @@ class EnvClass
     raise KeyError, 'Variable ' + name + " doesn't exist"
   end
 
+  def filter
+    return to_enum(:filter) unless block_given?
+
+    to_h.select { |key, value| yield key, value }
+  end
+
   def has_key?(name) # rubocop:disable PredicateName
     to_h.key?(name)
   end
