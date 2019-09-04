@@ -1,4 +1,3 @@
-use log::trace;
 use std::convert::TryFrom;
 use std::mem;
 

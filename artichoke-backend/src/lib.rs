@@ -206,6 +206,9 @@
 //! The infallible converters are safe Rust functions. The fallibile converters are
 //! `unsafe` Rust functions.
 
+#[macro_use]
+extern crate log;
+
 use std::cell::RefCell;
 use std::rc::Rc;
 

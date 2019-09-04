@@ -1,5 +1,3 @@
-use log::warn;
-
 use crate::convert::Convert;
 use crate::sys;
 use crate::value::{Value, ValueLike};

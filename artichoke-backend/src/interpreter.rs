@@ -1,4 +1,3 @@
-use log::{debug, error};
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::rc::Rc;

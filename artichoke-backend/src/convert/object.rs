@@ -1,4 +1,3 @@
-use log::warn;
 use std::cell::RefCell;
 use std::convert::TryInto;
 use std::ffi::c_void;

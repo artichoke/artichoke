@@ -1,4 +1,3 @@
-use log::warn;
 use std::ffi::CString;
 use std::rc::Rc;
 

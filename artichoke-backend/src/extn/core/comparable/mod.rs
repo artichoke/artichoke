@@ -1,5 +1,3 @@
-use log::trace;
-
 use crate::def::Define;
 use crate::eval::Eval;
 use crate::{Artichoke, ArtichokeError};

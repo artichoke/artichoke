@@ -1,4 +1,3 @@
-use log::trace;
 use std::error;
 use std::fmt;
 

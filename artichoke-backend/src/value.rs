@@ -1,4 +1,3 @@
-use log::{error, trace, warn};
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::fmt;

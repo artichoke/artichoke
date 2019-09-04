@@ -2,7 +2,6 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
-use log::{error, trace};
 use std::cell::RefCell;
 use std::mem;
 use std::rc::Rc;
