@@ -36,8 +36,44 @@ class EnvClass
     to_h
   end
 
+  def each
+    return to_enum(:each) unless block_given?
+
+    to_h.each { |key, value| yield key, value }
+  end
+
+  def each_key
+    return to_enum(:each_key) unless block_given?
+
+    to_h.each_key { |key| yield key }
+  end
+
+  def each_pair
+    return to_enum(:each) unless block_given?
+
+    to_h.each_pair { |key, value| yield key, value }
+  end
+
+  def each_value
+    return to_enum(:each_value) unless block_given?
+
+    to_h.each_value { |value| yield value }
+  end
+
   def empty?
     to_h.empty?
+  end
+
+  def fetch(name, default = nil)
+    value = self[name]
+
+    return value unless value.nil?
+
+    return yield name if block_given?
+
+    return default unless default.nil?
+
+    raise KeyError, 'Variable ' + name + " doesn't exist"
   end
 
   def has_key?(name) # rubocop:disable PredicateName
