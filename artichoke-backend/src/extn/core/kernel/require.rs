@@ -80,7 +80,7 @@ impl Args {
 }
 
 pub mod method {
-    use log::trace;
+
     use std::path::{Path, PathBuf};
 
     use crate::eval::Eval;

@@ -1,4 +1,3 @@
-use log::{debug, trace};
 use std::ffi::c_void;
 use std::fmt;
 

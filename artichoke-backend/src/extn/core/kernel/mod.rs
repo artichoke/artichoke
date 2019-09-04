@@ -1,5 +1,3 @@
-use log::trace;
-
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::eval::{Context, Eval};

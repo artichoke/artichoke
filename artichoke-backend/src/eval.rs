@@ -1,4 +1,3 @@
-use log::{error, trace, warn};
 use std::ffi::{c_void, CString};
 use std::mem;
 
