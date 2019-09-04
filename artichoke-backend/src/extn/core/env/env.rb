@@ -82,6 +82,12 @@ class EnvClass
     to_h.select { |key, value| yield key, value }
   end
 
+  def filter!
+    return to_enum(:filter!) unless block_given?
+
+    select! { |key, value| yield key, value }
+  end
+
   def has_key?(name) # rubocop:disable PredicateName
     to_h.key?(name)
   end
@@ -94,8 +100,26 @@ class EnvClass
     to_h.key?(name)
   end
 
+  def index(value)
+    to_h.key(value)
+  end
+
+  def inspect
+    to_h.to_s
+  end
+
   def invert
     to_h.invert
+  end
+
+  def keep_if
+    return to_enum(:keep_if) unless block_given?
+
+    to_h.each do |key, value|
+      delete(key) unless yield key, value
+    end
+
+    to_h
   end
 
   def key(value)
