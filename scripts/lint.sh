@@ -32,15 +32,7 @@ lint_ruby_sources() {
   popd >/dev/null
 }
 
-## Backend Core and StdLib
-lint_ruby_sources artichoke-backend/src/extn
-lint_ruby_sources artichoke-backend/scripts
-## Frontend bins
-lint_ruby_sources artichoke-frontend/ruby
-## spec-runner
-lint_ruby_sources spec-runner/src
-## scripts
-lint_ruby_sources scripts
+lint_ruby_sources .
 
 # C sources
 
