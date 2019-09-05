@@ -64,14 +64,14 @@ class EnvClass
     to_h.empty?
   end
 
-  def fetch(name, default = nil)
+  def fetch(name, default = (not_set = true))
     value = self[name]
 
     return value unless value.nil?
 
     return yield name if block_given?
 
-    return default unless default.nil?
+    return default if not_set.nil?
 
     raise KeyError, "key not found: #{name}"
   end
