@@ -22,7 +22,7 @@ class Range
   def last(*args)
     return self.end if args.empty?
 
-    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected #{inspect})" unless args.length == 1
+    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..1)" if args.length > 1
 
     arg = args[0]
     classname = arg.class
