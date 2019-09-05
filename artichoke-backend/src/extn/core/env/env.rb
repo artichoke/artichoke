@@ -36,8 +36,56 @@ class EnvClass
     to_h
   end
 
+  def each
+    return to_enum(:each) unless block_given?
+
+    to_h.each { |key, value| yield key, value }
+  end
+
+  def each_key
+    return to_enum(:each_key) unless block_given?
+
+    to_h.each_key { |key| yield key }
+  end
+
+  def each_pair
+    return to_enum(:each) unless block_given?
+
+    to_h.each_pair { |key, value| yield key, value }
+  end
+
+  def each_value
+    return to_enum(:each_value) unless block_given?
+
+    to_h.each_value { |value| yield value }
+  end
+
   def empty?
     to_h.empty?
+  end
+
+  def fetch(name, default = (not_set = true))
+    value = self[name]
+
+    return value unless value.nil?
+
+    return yield name if block_given?
+
+    return default if not_set.nil?
+
+    raise KeyError, "key not found: #{name}"
+  end
+
+  def filter
+    return to_enum(:filter) unless block_given?
+
+    to_h.select { |key, value| yield key, value }
+  end
+
+  def filter!
+    return to_enum(:filter!) unless block_given?
+
+    select! { |key, value| yield key, value }
   end
 
   def has_key?(name) # rubocop:disable PredicateName
@@ -52,12 +100,34 @@ class EnvClass
     to_h.key?(name)
   end
 
+  def index(value)
+    to_h.key(value)
+  end
+
+  def inspect
+    to_h.to_s
+  end
+
   def invert
     to_h.invert
   end
 
+  def keep_if
+    return to_enum(:keep_if) unless block_given?
+
+    to_h.each do |key, value|
+      delete(key) unless yield key, value
+    end
+
+    to_h
+  end
+
   def key(value)
     to_h.key(value)
+  end
+
+  def key?(name)
+    !self[name].nil?
   end
 
   def keys
@@ -68,8 +138,26 @@ class EnvClass
     to_h.length
   end
 
+  def member?(name)
+    !self[name].nil?
+  end
+
+  def rassoc(value)
+    to_h.each do |k, v|
+      return [k, v] if v == value
+    end
+
+    nil
+  end
+
   def rehash
     nil
+  end
+
+  def reject
+    return to_enum(:reject) unless block_given?
+
+    to_h.delete_if { |key, value| yield key, value }
   end
 
   def replace(hash)
