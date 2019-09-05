@@ -19,6 +19,21 @@ class Range
     ary
   end
 
+  def last(*args)
+    return self.end if args.empty?
+
+    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" unless args.length == 1
+
+    arg = args[0]
+    raise TypeError, "no implicit conversion of #{arg.class} into Integer" unless arg.respond_to?(:to_int)
+
+    n = arg.to_int
+    raise TypeError, "can't convert #{arg.class} to Integer (#{arg.class}#to_int gives #{n.class})" unless n.is_a?(Integer)
+
+    array = to_a
+    array.last(n.to_int)
+  end
+
   def max(&block)
     val = first
     last = self.last
