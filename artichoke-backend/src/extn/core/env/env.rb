@@ -73,7 +73,7 @@ class EnvClass
 
     return default unless default.nil?
 
-    raise KeyError, 'Variable ' + name + " doesn't exist"
+    raise KeyError, "key not found: #{name}"
   end
 
   def filter
