@@ -127,13 +127,7 @@ jobs:
           name: Install bundler 2
           command: sudo gem install bundler
       - rubocop:
-          target: ./artichoke-backend/src/extn
-      - rubocop:
-          target: ./artichoke-frontend/ruby
-      - rubocop:
-          target: ./spec-runner/src
-      - rubocop:
-          target: ./scripts
+          target: .
   js:
     docker:
       - image: circleci/node:lts

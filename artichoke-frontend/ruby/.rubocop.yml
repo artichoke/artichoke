@@ -1,7 +1,0 @@
-AllCops:
-  TargetRubyVersion: 2.5
-  DisplayCopNames: true
-Metrics:
-  Enabled: false
-Style/Documentation:
-  Enabled: false

@@ -1,0 +1,11 @@
+AllCops:
+  TargetRubyVersion: 2.6
+  DisplayCopNames: true
+  Exclude:
+    - "**/node_modules/**/*"
+    - "**/target/**/*"
+    - "**/vendor/**/*"
+Metrics:
+  Enabled: false
+Style/Documentation:
+  Enabled: false
