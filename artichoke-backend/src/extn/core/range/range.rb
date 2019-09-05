@@ -2,13 +2,11 @@
 
 class Range
   def cover?(*args)
-    # Failed tests:
-    # Range#cover? compares values using <=>
     raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" unless args.length == 1
+
     range_begin = self.begin
     range_end = self.end
 
-    # when range is empty
     return false if exclude_end? && (range_begin <=> range_end) == 0
 
     val = args[0]
