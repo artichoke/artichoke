@@ -127,7 +127,7 @@ class EnvClass
   end
 
   def key?(name)
-    ! self[name].nil?
+    !self[name].nil?
   end
 
   def keys
@@ -139,12 +139,12 @@ class EnvClass
   end
 
   def member?(name)
-    ! self[name].nil?
+    !self[name].nil?
   end
 
   def rassoc(value)
-    to_h.each do |k,v|
-      return [k,v] if v == value
+    to_h.each do |k, v|
+      return [k, v] if v == value
     end
 
     nil
