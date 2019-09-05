@@ -1,7 +1,5 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
-use std::mem;
-
 use crate::convert::TryConvert;
 use crate::eval::{Context, Eval};
 use crate::extn::core::error::{LoadError, RubyException};
@@ -56,21 +54,12 @@ impl Require {
 }
 
 #[derive(Debug, Clone)]
-pub struct Args {
-    pub file: String,
+pub struct Args<'a> {
+    pub file: &'a str,
 }
 
-impl Args {
-    const ARGSPEC: &'static [u8] = b"o\0";
-
-    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
-        let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        sys::mrb_get_args(
-            interp.0.borrow().mrb,
-            Self::ARGSPEC.as_ptr() as *const i8,
-            string.as_mut_ptr(),
-        );
-        let string = string.assume_init();
+impl<'a> Args<'a> {
+    pub fn validate(interp: &Artichoke, string: sys::mrb_value) -> Result<Self, Error> {
         if let Ok(file) = interp.try_convert(Value::new(interp, string)) {
             Ok(Self { file })
         } else {
@@ -96,12 +85,12 @@ pub mod method {
     pub fn require_relative(interp: &Artichoke, args: Args) -> Result<Require, Error> {
         let context = interp
             .peek_context()
-            .ok_or_else(|| Error::CannotLoad(args.file.clone()))?;
+            .ok_or_else(|| Error::CannotLoad(args.file.to_owned()))?;
         let base = PathBuf::from(context.filename)
             .parent()
             .and_then(Path::to_str)
             .map(str::to_owned)
-            .ok_or_else(|| Error::CannotLoad(args.file.clone()))?;
+            .ok_or_else(|| Error::CannotLoad(args.file.to_owned()))?;
         require_impl(interp, args, base.as_str())
     }
 
@@ -109,17 +98,17 @@ pub mod method {
         let interp = interp.clone();
         // Track whether any iterations of the loop successfully required some
         // Ruby sources.
-        let mut path = PathBuf::from(args.file.as_str());
+        let mut path = PathBuf::from(args.file);
         let files = if path.is_relative() {
             path = PathBuf::from(base);
             let mut files = Vec::with_capacity(2);
             if !args.file.ends_with(".rb") {
-                files.push(path.join(format!("{}.rb", args.file.as_str())))
+                files.push(path.join(format!("{}.rb", args.file)))
             }
-            files.push(path.join(args.file.as_str()));
+            files.push(path.join(args.file));
             files
         } else {
-            vec![path.join(args.file.as_str())]
+            vec![path.join(args.file)]
         };
         for path in files {
             let is_file = {
@@ -171,6 +160,6 @@ pub mod method {
             );
             return Ok(require);
         }
-        Err(Error::CannotLoad(args.file))
+        Err(Error::CannotLoad(args.file.to_owned()))
     }
 }
