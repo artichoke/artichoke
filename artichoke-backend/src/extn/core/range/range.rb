@@ -22,10 +22,12 @@ class Range
   def last(*args)
     return self.end if args.empty?
 
-    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" unless args.length == 1
+    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected #{inspect})" unless args.length == 1
 
     arg = args[0]
-    raise TypeError, "no implicit conversion of #{arg.class} into Integer" unless arg.respond_to?(:to_int)
+    classname = arg.class
+    classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
+    raise TypeError, "no implicit conversion of #{classname} into Integer" unless arg.respond_to?(:to_int)
 
     n = arg.to_int
     raise TypeError, "can't convert #{arg.class} to Integer (#{arg.class}#to_int gives #{n.class})" unless n.is_a?(Integer)
