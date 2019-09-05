@@ -22,13 +22,13 @@ macro_rules! unwrap_interpreter {
 }
 
 pub mod argspec {
-    pub const NONE: &'static [u8] = b"\0";
-    pub const REQ1: &'static [u8] = b"o\0";
-    pub const REQ1_OPT1: &'static [u8] = b"o|o\0";
-    pub const REQ1_OPT2: &'static [u8] = b"o|oo\0";
-    pub const REQ1_REQBLOCK: &'static [u8] = b"o&\0";
-    pub const REQ1_REQBLOCK_OPT1: &'static [u8] = b"o&|o\0";
-    pub const REST: &'static [u8] = b"*\0";
+    pub const NONE: &[u8] = b"\0";
+    pub const REQ1: &[u8] = b"o\0";
+    pub const REQ1_OPT1: &[u8] = b"o|o\0";
+    pub const REQ1_OPT2: &[u8] = b"o|oo\0";
+    pub const REQ1_REQBLOCK: &[u8] = b"o&\0";
+    pub const REQ1_REQBLOCK_OPT1: &[u8] = b"o&|o\0";
+    pub const REST: &[u8] = b"*\0";
 }
 
 /// Extract [`sys::mrb_value`]s from a [`sys::mrb_state`] to adapt a C
@@ -52,10 +52,7 @@ macro_rules! mrb_get_args {
             req1.as_mut_ptr(),
         );
         match argc {
-            1 => {
-                let req1 = req1.assume_init();
-                req1
-            }
+            1 => req1.assume_init(),
             _ => unreachable!("mrb_get_args should have raised"),
         }
     }};

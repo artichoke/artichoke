@@ -178,7 +178,7 @@ impl Kernel {
         let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
 
-        for value in args.into_iter() {
+        for value in args.iter() {
             let mut string = Value::new(&interp, *value).to_s();
             if !string.ends_with('\n') {
                 string = format!("{}\n", string);

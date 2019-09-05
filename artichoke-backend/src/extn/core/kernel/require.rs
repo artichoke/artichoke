@@ -53,7 +53,7 @@ impl Require {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Args<'a> {
     pub file: &'a str,
 }
