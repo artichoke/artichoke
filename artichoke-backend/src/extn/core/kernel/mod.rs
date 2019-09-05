@@ -7,7 +7,6 @@ use crate::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
-mod args;
 pub mod require;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -53,17 +52,17 @@ pub struct Warning;
 
 impl Warning {
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
         let stderr = sys::mrb_gv_get(mrb, interp.0.borrow_mut().sym_intern("$stderr"));
-        if !sys::mrb_sys_value_is_nil(stderr) {
-            let args = args::Rest::extract(&interp);
-            let stderr = Value::new(&interp, stderr);
+        let stderr = Value::new(&interp, stderr);
+        if !stderr.is_nil() {
+            let args = args
+                .iter()
+                .map(|arg| Value::new(&interp, *arg))
+                .collect::<Vec<_>>();
             // TODO: introduce a `unchecked_funcall` to propagate errors, GH-249.
-            let _ = stderr.funcall::<Value>(
-                "print",
-                args.map(|args| args.rest).unwrap_or_default().as_ref(),
-                None,
-            );
+            let _ = stderr.funcall::<Value>("print", args.as_ref(), None);
         }
         sys::mrb_sys_nil_value()
     }
@@ -73,8 +72,9 @@ pub struct Kernel;
 
 impl Kernel {
     unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let file = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let args = require::Args::extract(&interp);
+        let args = require::Args::validate(&interp, file);
         let result = args.and_then(|args| require::method::require(&interp, args));
         match result {
             Ok(req) => {
@@ -107,8 +107,9 @@ impl Kernel {
         mrb: *mut sys::mrb_state,
         _slf: sys::mrb_value,
     ) -> sys::mrb_value {
+        let file = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let args = require::Args::extract(&interp);
+        let args = require::Args::validate(&interp, file);
         let result = args.and_then(|args| require::method::require_relative(&interp, args));
         match result {
             Ok(req) => {
@@ -138,11 +139,11 @@ impl Kernel {
     }
 
     unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
-        let args = args::Rest::extract(&interp);
 
-        for value in args.map(|args| args.rest).unwrap_or_default() {
-            let s = value.to_s();
+        for value in args.iter() {
+            let s = Value::new(&interp, *value).to_s();
             interp.0.borrow_mut().print(s.as_str());
         }
         sys::mrb_sys_nil_value()
@@ -162,26 +163,23 @@ impl Kernel {
             }
         }
 
+        let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
-        let rest = args::Rest::extract(&interp)
-            .map(|args| args.rest)
-            .unwrap_or_default();
-
-        if rest.is_empty() {
+        if args.is_empty() {
             interp.0.borrow_mut().puts("");
         }
-        for value in rest {
-            do_puts(&interp, value);
+        for value in args.iter() {
+            do_puts(&interp, Value::new(&interp, *value));
         }
         sys::mrb_sys_nil_value()
     }
 
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
-        let args = args::Rest::extract(&interp);
 
-        for value in args.map(|args| args.rest).unwrap_or_default() {
-            let mut string = value.to_s();
+        for value in args.iter() {
+            let mut string = Value::new(&interp, *value).to_s();
             if !string.ends_with('\n') {
                 string = format!("{}\n", string);
             }
