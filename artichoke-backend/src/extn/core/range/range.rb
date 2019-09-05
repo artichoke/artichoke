@@ -31,7 +31,7 @@ class Range
     raise TypeError, "can't convert #{arg.class} to Integer (#{arg.class}#to_int gives #{n.class})" unless n.is_a?(Integer)
 
     array = to_a
-    array.last(n.to_int)
+    array.last(n)
   end
 
   def max(&block)
