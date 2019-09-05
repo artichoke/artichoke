@@ -126,6 +126,10 @@ class EnvClass
     to_h.key(value)
   end
 
+  def key?(name)
+    ! self[name].nil?
+  end
+
   def keys
     to_h.keys
   end
@@ -134,8 +138,26 @@ class EnvClass
     to_h.length
   end
 
+  def member?(name)
+    ! self[name].nil?
+  end
+
+  def rassoc(value)
+    to_h.each do |k,v|
+      return [k,v] if v == value
+    end
+
+    nil
+  end
+
   def rehash
     nil
+  end
+
+  def reject
+    return to_enum(:reject) unless block_given?
+
+    to_h.delete_if { |key, value| yield key, value }
   end
 
   def replace(hash)
