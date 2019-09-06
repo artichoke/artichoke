@@ -68,6 +68,23 @@ class Range
     ary
   end
 
+  def last(*args)
+    return self.end if args.empty?
+
+    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..1)" if args.length > 1
+
+    arg = args[0]
+    classname = arg.class
+    classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
+    raise TypeError, "no implicit conversion of #{classname} into Integer" unless arg.respond_to?(:to_int)
+
+    n = arg.to_int
+    raise TypeError, "can't convert #{arg.class} to Integer (#{arg.class}#to_int gives #{n.class})" unless n.is_a?(Integer)
+
+    array = to_a
+    array.last(n)
+  end
+
   def max(&block)
     val = first
     last = self.last
