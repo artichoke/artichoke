@@ -10,13 +10,13 @@ spec_runner="$(pwd)/target/debug/spec-runner"
 
 run_core_spec() {
   pushd "spec-runner/vendor/spec/core" >/dev/null
-  $spec_runner "$1"/**/*.rb
+  $spec_runner ../**/shared/**/*.rb "$1"/**/*.rb
   popd >/dev/null
 }
 
 run_library_spec() {
   pushd "spec-runner/vendor/spec/library" >/dev/null
-  $spec_runner "$1"/**/*.rb
+  $spec_runner ../**/shared/**/*.rb "$1"/**/*.rb
   popd >/dev/null
 }
 
