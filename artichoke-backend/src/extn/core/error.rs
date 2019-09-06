@@ -1,3 +1,43 @@
+//! # Ruby Exception Hierarchy
+//!
+//! The built-in subclasses of
+//! [`Exception`](https://ruby-doc.org/core-2.6.3/Exception.html) are:
+//!
+//! - `NoMemoryError`
+//! - `ScriptError`
+//!   - `LoadError`
+//!   - `NotImplementedError`
+//!   - `SyntaxError`
+//! - `SecurityError`
+//! - `SignalException`
+//!   - `Interrupt`
+//! - `StandardError` -- default for `rescue`
+//!   - `ArgumentError`
+//!     - `UncaughtThrowError`
+//!   - `EncodingError`
+//!   - `FiberError`
+//!   - `IOError`
+//!     - `EOFError`
+//!   - `IndexError`
+//!     - `KeyError`
+//!     - `StopIteration`
+//!   - `LocalJumpError`
+//!   - `NameError`
+//!     - `NoMethodError`
+//!   - `RangeError`
+//!     - `FloatDomainError`
+//!   - `RegexpError`
+//!   - `RuntimeError` -- default for `raise`
+//!     - `FrozenError`
+//!   - `SystemCallError`
+//!     - `Errno::*`
+//!   - `ThreadError`
+//!   - `TypeError`
+//!   - `ZeroDivisionError`
+//! - `SystemExit`
+//! - `SystemStackError`
+//! - `fatal` -- impossible to rescue
+
 use std::ffi::CString;
 use std::rc::Rc;
 
