@@ -82,6 +82,10 @@ pub mod method {
         require_impl(interp, args, RUBY_LOAD_PATH)
     }
 
+    pub fn load(interp: &Artichoke, args: Args) -> Result<Require, Error> {
+        load_impl(interp, args, RUBY_LOAD_PATH)
+    }
+
     pub fn require_relative(interp: &Artichoke, args: Args) -> Result<Require, Error> {
         let context = interp
             .peek_context()
@@ -154,6 +158,67 @@ pub mod method {
                 .map_err(|_| Error::Fatal)?;
             trace!(
                 r#"Successful require of "{}" at {:?} on {:?}"#,
+                args.file,
+                path,
+                borrow
+            );
+            return Ok(require);
+        }
+        Err(Error::CannotLoad(args.file.to_owned()))
+    }
+
+    fn load_impl(interp: &Artichoke, args: Args, base: &str) -> Result<Require, Error> {
+        let interp = interp.clone();
+        let mut path = PathBuf::from(args.file);
+        let files = if path.is_relative() {
+            path = PathBuf::from(base);
+            let mut files = Vec::with_capacity(2);
+            if !args.file.ends_with(".rb") {
+                files.push(path.join(format!("{}.rb", args.file)))
+            }
+            files.push(path.join(args.file));
+            files
+        } else {
+            vec![path.join(args.file)]
+        };
+
+        for path in files {
+            let is_file = {
+                let api = interp.0.borrow();
+                api.vfs.is_file(path.as_path())
+            };
+
+            if !is_file {
+                continue;
+            }
+
+            let metadata = {
+                let api = interp.0.borrow();
+                api.vfs.metadata(path.as_path()).unwrap_or_default()
+            };
+            let file = if let Some(filename) = path.as_path().to_str() {
+                filename
+            } else {
+                "(require)"
+            };
+
+            let contents = {
+                let api = interp.0.borrow();
+                api.vfs.read_file(path.as_path())
+            };
+
+            let require = Require {
+                file: file.to_owned(),
+                rust: metadata.require,
+                ruby: contents.ok(),
+            };
+            let borrow = interp.0.borrow();
+            borrow
+                .vfs
+                .set_metadata(path.as_path(), metadata)
+                .map_err(|_| Error::Fatal)?;
+            trace!(
+                r#"Succesful load of "{}" at {:?} on {:?}"#,
                 args.file,
                 path,
                 borrow
