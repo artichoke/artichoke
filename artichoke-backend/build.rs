@@ -311,7 +311,7 @@ fn main() {
     let mut commit = metadata.commit_hash.unwrap();
     commit.truncate(7);
     println!(
-        "cargo:rustc-env=ARTICHOKE_COMPILER_VERSION=rustc {} [{}] on {}",
+        "cargo:rustc-env=ARTICHOKE_COMPILER_VERSION=Rust {} (rev {}) on {}",
         metadata.semver, commit, metadata.host
     );
 }
