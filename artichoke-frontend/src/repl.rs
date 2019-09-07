@@ -9,8 +9,7 @@
 
 use artichoke_backend::eval::{Context, Eval};
 use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_backend::sys;
-use artichoke_backend::ArtichokeError;
+use artichoke_backend::{Artichoke, ArtichokeError};
 use artichoke_core::value::Value;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
@@ -57,22 +56,22 @@ impl Default for PromptConfig {
     }
 }
 
-fn preamble() -> Result<String, Error> {
+fn preamble(interp: &Artichoke) -> Result<String, Error> {
+    let description = interp
+        .eval("RUBY_DESCRIPTION")
+        .map_err(Error::Ruby)?
+        .try_into::<&str>()
+        .map_err(Error::Ruby)?;
+    let compiler = interp
+        .eval("ARTICHOKE_COMPILER_VERSION")
+        .map_err(Error::Ruby)?
+        .try_into::<&str>()
+        .map_err(Error::Ruby)?;
     let mut buf = String::new();
-    let metadata = rustc_version::version_meta().map_err(|_| Error::ReplInit)?;
-    buf.push_str(sys::mruby_sys_version(true).as_str());
+    buf.push_str(description);
     buf.push('\n');
     buf.push('[');
-    buf.push_str(format!("Compiled with rustc {}", metadata.semver).as_str());
-    if let Some(mut commit) = metadata.commit_hash {
-        commit.truncate(7);
-        buf.push(' ');
-        buf.push_str(commit.as_str());
-    }
-    if let Some(date) = metadata.commit_date {
-        buf.push(' ');
-        buf.push_str(date.as_str());
-    }
+    buf.push_str(compiler);
     buf.push(']');
     Ok(buf)
 }
@@ -83,9 +82,9 @@ pub fn run(
     mut error: impl Write,
     config: Option<PromptConfig>,
 ) -> Result<(), Error> {
-    writeln!(output, "{}", preamble()?).map_err(Error::Io)?;
     let config = config.unwrap_or_else(Default::default);
     let interp = artichoke_backend::interpreter().map_err(Error::Ruby)?;
+    writeln!(output, "{}", preamble(&interp)?).map_err(Error::Io)?;
 
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
     interp.push_context(Context::new(REPL_FILENAME));

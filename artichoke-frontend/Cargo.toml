@@ -4,9 +4,6 @@ version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 
-[dependencies]
-rustc_version = "0.2.3"
-
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rustyline = "5.0.2"
 

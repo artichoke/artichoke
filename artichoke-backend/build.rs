@@ -2,12 +2,15 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![doc(deny(warnings))]
 
+use chrono::{DateTime, Datelike, NaiveDateTime, Utc};
 use fs_extra::dir;
 use rayon::prelude::*;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use std::str::FromStr;
+use target_lexicon::Triple;
 
 /// Path helpers
 struct Build;
@@ -222,4 +225,93 @@ fn main() {
         });
         Build::generate_rust_glue(package, sources);
     });
+
+    // Release information
+
+    // birth date taken from git log of first commit.
+    let initial_commit = Command::new("git")
+        .arg("rev-list")
+        .arg("--max-parents=0")
+        .arg("HEAD")
+        .output()
+        .unwrap();
+    if !initial_commit.status.success() {
+        panic!(
+            "Command executed with failing error: {}",
+            String::from_utf8(initial_commit.stderr).unwrap()
+        );
+    }
+    let initial_commit = String::from_utf8(initial_commit.stdout).unwrap();
+    let birth_date = Command::new("git")
+        .arg("show")
+        .arg("--no-patch")
+        .arg("--format=%cD")
+        .arg(initial_commit.trim())
+        .output()
+        .unwrap();
+    if !birth_date.status.success() {
+        panic!(
+            "Command executed with failing error: {}",
+            String::from_utf8(birth_date.stderr).unwrap()
+        );
+    }
+    let birth_date = String::from_utf8(birth_date.stdout).unwrap();
+    let birth_date =
+        <DateTime<Utc>>::from(DateTime::parse_from_rfc2822(birth_date.trim()).expect("birth"));
+    let build_date: DateTime<Utc> = Utc::now();
+    println!(
+        "cargo:rustc-env=RUBY_RELEASE_DATE={}",
+        NaiveDateTime::from_timestamp(build_date.timestamp(), 0).date()
+    );
+    println!("cargo:rustc-env=RUBY_RELEASE_YEAR={}", build_date.year());
+    println!("cargo:rustc-env=RUBY_RELEASE_MONTH={}", build_date.month());
+    println!("cargo:rustc-env=RUBY_RELEASE_DAY={}", build_date.day());
+
+    let revision_count = Command::new("git")
+        .arg("rev-list")
+        .arg("--count")
+        .arg("HEAD")
+        .output()
+        .unwrap();
+    if !revision_count.status.success() {
+        panic!(
+            "Command executed with failing error: {}",
+            String::from_utf8(revision_count.stderr).unwrap()
+        );
+    }
+    let revision_count = String::from_utf8(revision_count.stdout).unwrap();
+    println!("cargo:rustc-env=RUBY_REVISION={}", revision_count);
+
+    let target_platform = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
+    let ruby_platform = format!(
+        "{}-{}",
+        target_platform.architecture, target_platform.operating_system
+    );
+    println!("cargo:rustc-env=RUBY_PLATFORM={}", ruby_platform);
+
+    println!(
+        "cargo:rustc-env=RUBY_COPYRIGHT=Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
+        if birth_date.year() == build_date.year() {
+            format!("{}", birth_date.year())
+        } else {
+            format!("{}-{}", birth_date.year(), build_date.year())
+        }
+    );
+
+    println!(
+        "cargo:rustc-env=RUBY_DESCRIPTION=artichoke {} ({} revision {}) [{}]",
+        env::var("CARGO_PKG_VERSION").unwrap(),
+        NaiveDateTime::from_timestamp(build_date.timestamp(), 0).date(),
+        revision_count.trim(),
+        ruby_platform
+    );
+
+    // compiler info
+    let metadata = rustc_version::version_meta().unwrap();
+    let mut commit = metadata.commit_hash.unwrap();
+    commit.truncate(7);
+    println!(
+        "cargo:rustc-env=ARTICHOKE_COMPILER_VERSION=Rust {} (rev {}) on {}",
+        metadata.semver, commit, metadata.host
+    );
 }
