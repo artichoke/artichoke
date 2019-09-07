@@ -21,7 +21,7 @@ pub const ARTICHOKE_COMPILER_VERSION: &str = env!("ARTICHOKE_COMPILER_VERSION");
 pub const INPUT_RECORD_SEPARATOR: &str = "\n";
 
 macro_rules! global_const {
-    ($interp:expr, $constant:ident) => {
+    ($interp:expr, $constant:ident) => {{
         let mrb = $interp.0.borrow().mrb;
         unsafe {
             sys::mrb_define_global_const(
@@ -30,8 +30,8 @@ macro_rules! global_const {
                 $interp.convert($constant).inner(),
             );
         }
-    };
-    ($interp:expr, $constant:ident as Int) => {
+    }};
+    ($interp:expr, $constant:ident as Int) => {{
         let mrb = $interp.0.borrow().mrb;
         let constant = $constant.parse::<Int>().map_err(|_| ArtichokeError::New)?;
         unsafe {
@@ -41,7 +41,7 @@ macro_rules! global_const {
                 $interp.convert(constant).inner(),
             );
         }
-    };
+    }};
 }
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
