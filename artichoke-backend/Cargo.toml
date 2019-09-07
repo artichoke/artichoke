@@ -29,5 +29,8 @@ quickcheck = "0.9"
 quickcheck_macros = "0.8"
 
 [build-dependencies]
+chrono = "0.4"
 fs_extra = "1.1.0"
 rayon = "1.1"
+rustc_version = "0.2.3"
+target-lexicon = "0.8.1"
