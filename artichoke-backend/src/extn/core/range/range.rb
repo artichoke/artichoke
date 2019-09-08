@@ -151,10 +151,10 @@ class Range
         return 0 if delta <= 0.0
 
         delta = if delta < 1.0
-              0
-            else
-              (delta - err).floor
-            end
+                  0
+                else
+                  (delta - err).floor
+                end
       else
         return 0 if delta < 0.0
 
