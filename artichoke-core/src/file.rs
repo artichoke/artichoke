@@ -13,5 +13,5 @@ pub trait File {
     /// This function can mutate interpreter state, such as defining classes and
     /// modules. This function is equivalent to the "init" methods of
     /// C-implemented Rubygems.
-    fn require(interp: Self::Artichoke) -> Result<(), ArtichokeError>;
+    fn require(interp: &Self::Artichoke) -> Result<(), ArtichokeError>;
 }

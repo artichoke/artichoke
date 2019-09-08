@@ -1,5 +1,7 @@
 //! Load Ruby and Rust sources into the VM.
 
+use std::path::Path;
+
 use crate::file::File;
 use crate::ArtichokeError;
 
@@ -19,7 +21,7 @@ pub trait LoadSources {
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_file(&self, filename: &str, require: Self::Require) -> Result<(), ArtichokeError>;
+    fn def_file(&self, filename: Path, require: Self::Require) -> Result<(), ArtichokeError>;
 
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
     /// Ruby file is added to the filesystem and [`File::require`] will
@@ -29,7 +31,7 @@ pub trait LoadSources {
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_file_for_type<F>(&self, filename: &str) -> Result<(), ArtichokeError>
+    fn def_file_for_type<F>(&self, filename: Path) -> Result<(), ArtichokeError>
     where
         F: File;
 
@@ -39,9 +41,5 @@ pub trait LoadSources {
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_rb_source_file<T, F>(
-        &self,
-        filename: &str,
-        contents: &[u8],
-    ) -> Result<(), ArtichokeError>;
+    fn def_rb_source_file(&self, filename: Path, contents: &[u8]) -> Result<(), ArtichokeError>;
 }
