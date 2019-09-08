@@ -140,30 +140,28 @@ class Range
     elsif range_begin.is_a?(Float) || range_end.is_a?(Float)
       epsilon = Float::EPSILON
       unit = 1.0
+      delta = range_end - range_begin / unit
 
-      n = (range_end - range_begin) / unit
-
-      return n.abs if range_end > range_begin && n.abs.infinite?
+      return delta.abs if range_end > range_begin && delta.abs.infinite?
 
       err = (range_begin.abs + range_end.abs + (range_end - range_begin).abs) / unit.abs * epsilon
-
       err = 0.5 if err > 0.5
 
       if exclude_end?
-        return 0 if n <= 0.0
+        return 0 if delta <= 0.0
 
-        n = if n < 1
+        delta = if delta < 1.0
               0
             else
-              (n - err).floor
+              (delta - err).floor
             end
       else
-        return 0 if n < 0.0
+        return 0 if delta < 0.0
 
-        n = (n + err).floor
+        delta = (delta + err).floor
       end
 
-      return n + 1
+      return delta + 1
     end
   end
 end
