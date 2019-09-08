@@ -7,6 +7,7 @@ pub mod comparable;
 pub mod enumerable;
 pub mod env;
 pub mod error;
+pub mod float;
 pub mod hash;
 pub mod integer;
 pub mod kernel;
@@ -28,6 +29,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     enumerable::init(interp)?;
     env::init(interp)?;
     error::init(interp)?;
+    float::init(interp)?;
     hash::init(interp)?;
     integer::init(interp)?;
     kernel::init(interp)?;

@@ -34,12 +34,6 @@ class FalseClass
   end
 end
 
-class Float
-  def to_int
-    floor
-  end
-end
-
 class Integer
   def dup
     self

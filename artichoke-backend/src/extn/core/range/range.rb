@@ -122,4 +122,48 @@ class Range
     # delegate to Enumerable
     super
   end
+
+  def size
+    range_begin = self.begin
+    range_end = self.end
+
+    return Float::INFINITY if range_end.nil?
+
+    if range_begin.is_a?(Integer) && range_end.is_a?(Integer)
+      delta = range_end - range_begin
+      diff = 1
+      delta -= 1 if exclude_end?
+
+      return 0 if delta.negative?
+
+      return delta / diff + 1
+    elsif range_begin.is_a?(Float) || range_end.is_a?(Float)
+      epsilon = Float::EPSILON
+      unit = 1.0
+
+      n = (range_end - range_begin) / unit
+
+      return n.abs if range_end > range_begin && n.abs.infinite?
+
+      err = (range_begin.abs + range_end.abs + (range_end - range_begin).abs) / unit.abs * epsilon
+
+      err = 0.5 if err > 0.5
+
+      if exclude_end?
+        return 0 if n <= 0.0
+
+        n = if n < 1
+              0
+            else
+              (n - err).floor
+            end
+      else
+        return 0 if n < 0.0
+
+        n = (n + err).floor
+      end
+
+      return n + 1
+    end
+  end
 end
