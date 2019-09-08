@@ -118,7 +118,7 @@ impl Kernel {
                 } else {
                     Ok(())
                 };
-                if result.is_ok(){
+                if result.is_ok() {
                     if let Some(contents) = req.ruby {
                         interp.unchecked_eval_with_context(contents, Context::new(req.file));
                     }
@@ -130,7 +130,7 @@ impl Kernel {
             Err(require::Error::AlreadyRequired) => interp.convert(false).inner(),
             Err(require::Error::CannotLoad(file)) => {
                 LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
-            },
+            }
             Err(require::Error::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
             Err(require::Error::NoImplicitConversionToString) => {
                 ArgumentError::raise(interp, "No implicit conversion to String")
