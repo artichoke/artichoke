@@ -15,6 +15,16 @@ wrap() {
   fi
 }
 
+parser() {
+  if [[ $1 == "yml" ]]; then
+    echo "--parser yaml"
+  elif [[ $1 == "md" ]]; then
+    echo "--parser markdown"
+  else
+    echo "--parser $1"
+  fi
+}
+
 format() {
   # shellcheck disable=SC2046
   find . -type f \
@@ -22,7 +32,7 @@ format() {
     -and -not -path '*vendor/*/*' \
     -and -not -path '*target/*' \
     -and -not -path '*node_modules/*' -print0 |
-    xargs -0 yarn run prettier --write $(wrap "$1")
+    xargs -0 yarn run prettier $(parser "$1") --write $(wrap "$1")
 }
 
 check() {
@@ -32,7 +42,7 @@ check() {
     -and -not -path '*vendor/*/*' \
     -and -not -path '*target/*' \
     -and -not -path '*node_modules/*' -print0 |
-    xargs -0 yarn run prettier --check $(wrap "$1")
+    xargs -0 yarn run prettier $(parser "$1") --check $(wrap "$1")
 }
 
 if [[ $# -gt 1 && $1 == '--check' ]]; then
