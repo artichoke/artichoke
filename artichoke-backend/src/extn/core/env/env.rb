@@ -160,6 +160,26 @@ class EnvClass
     to_h.delete_if { |key, value| yield key, value }
   end
 
+  def reject!
+    return to_enum(:reject!) unless block_given?
+
+    env = to_h
+
+    # collect all the keys where the block evaluates to true
+    to_remove = env.reject do |key, value|
+      yield key, value
+    end
+
+    # returns nil if no changes were made
+    return nil if to_remove.empty?
+
+    to_remove.each do |key, _|
+      delete(key)
+    end
+
+    self
+  end
+
   def replace(hash)
     hash.each do |k, v|
       self[k] = v
