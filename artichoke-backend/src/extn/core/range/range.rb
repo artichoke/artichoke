@@ -122,4 +122,47 @@ class Range
     # delegate to Enumerable
     super
   end
+
+  def size
+    range_begin = self.begin
+    range_end = self.end
+
+    return Float::INFINITY if range_end.nil?
+
+    if range_begin.is_a?(Integer) && range_end.is_a?(Integer)
+      delta = range_end - range_begin
+      delta -= 1 if exclude_end?
+
+      return 0 if delta.negative?
+
+      return delta + 1
+    elsif range_begin.is_a?(Float) || range_end.is_a?(Float)
+      epsilon = Float::EPSILON
+      delta = range_end - range_begin
+
+      return Float::INFINITY if range_end > range_begin && delta.abs.infinite?
+
+      err = (range_begin.abs + range_end.abs + (range_end - range_begin).abs) * epsilon
+      err = 0.5 if err > 0.5
+
+      if exclude_end?
+        return 0 if delta <= 0.0
+
+        delta = if delta < 1.0
+                  0
+                else
+                  (delta - err).floor
+                end
+      else
+        return 0 if delta < 0.0
+
+        delta = (delta + err).floor
+      end
+
+      return delta + 1
+    elsif range_begin.respond_to?(:succ) && range_end.respond_to?(:succ)
+      # TODO: implement Range#size for object that responds to :succ
+      raise NotImplementedError
+    end
+  end
 end
