@@ -131,20 +131,18 @@ class Range
 
     if range_begin.is_a?(Integer) && range_end.is_a?(Integer)
       delta = range_end - range_begin
-      diff = 1
       delta -= 1 if exclude_end?
 
       return 0 if delta.negative?
 
-      return delta / diff + 1
+      return delta + 1
     elsif range_begin.is_a?(Float) || range_end.is_a?(Float)
       epsilon = Float::EPSILON
-      unit = 1.0
-      delta = range_end - range_begin / unit
+      delta = range_end - range_begin
 
       return delta.abs if range_end > range_begin && delta.abs.infinite?
 
-      err = (range_begin.abs + range_end.abs + (range_end - range_begin).abs) / unit.abs * epsilon
+      err = (range_begin.abs + range_end.abs + (range_end - range_begin).abs) * epsilon
       err = 0.5 if err > 0.5
 
       if exclude_end?
