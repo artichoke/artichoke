@@ -160,6 +160,9 @@ class Range
       end
 
       return delta + 1
+    elsif range_begin.respond_to?(:succ) && range_end.respond_to?(:succ)
+      # TODO: implement Range#size for object that responds to :succ
+      raise NotImplementedError
     end
   end
 end
