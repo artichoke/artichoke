@@ -140,7 +140,7 @@ class Range
       epsilon = Float::EPSILON
       delta = range_end - range_begin
 
-      return delta.abs if range_end > range_begin && delta.abs.infinite?
+      return Float::INFINITY if range_end > range_begin && delta.abs.infinite?
 
       err = (range_begin.abs + range_end.abs + (range_end - range_begin).abs) * epsilon
       err = 0.5 if err > 0.5
