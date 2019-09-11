@@ -1,4 +1,5 @@
 use log::trace;
+// use std::mem;
 
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
@@ -174,6 +175,24 @@ impl Kernel {
         }
         sys::mrb_sys_nil_value()
     }
+
+    // unsafe extern "C" fn raise(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+    //     let interp = unwrap_interpreter!(mrb);
+    //     let mut first = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+    //     let mut second = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+    //     let mut exception = <mem::MaybeUninit<sys::mrb_value>>::uninit();
+    //     let argc = sys::mrb_get_args(mrb, b"|oo\0".as_ptr() as *const i8, first.as_mut_ptr(), second.as_mut_ptr());
+    //
+    //     match argc {
+    //         0 => {
+    //             sys::mrb_raisef(mrb, )
+    //         }
+    //         1 => {}
+    //         n => {
+    //             exception = sys::mrb_make_exception(mrb, argc, vec![first, second]);
+    //         }
+    //     }
+    // }
 
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
