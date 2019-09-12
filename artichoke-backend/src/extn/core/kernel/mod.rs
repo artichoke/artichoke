@@ -99,7 +99,9 @@ impl Kernel {
             Err(require::ErrorReq::CannotLoad(file)) => {
                 LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
             }
-            Err(require::ErrorReq::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
+            Err(require::ErrorReq::Fatal) => {
+                RuntimeError::raise(interp, "fatal Kernel#require error")
+            }
             Err(require::ErrorReq::NoImplicitConversionToString) => {
                 ArgumentError::raise(interp, "No implicit conversion to String")
             }
@@ -130,7 +132,9 @@ impl Kernel {
             Err(require::ErrorLoad::CannotLoad(file)) => {
                 LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
             }
-            Err(require::ErrorLoad::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
+            Err(require::ErrorLoad::Fatal) => {
+                RuntimeError::raise(interp, "fatal Kernel#require error")
+            }
             Err(require::ErrorLoad::NoImplicitConversionToString) => {
                 ArgumentError::raise(interp, "No implicit conversion to String")
             }
@@ -165,7 +169,9 @@ impl Kernel {
             Err(require::ErrorReq::CannotLoad(file)) => {
                 LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
             }
-            Err(require::ErrorReq::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
+            Err(require::ErrorReq::Fatal) => {
+                RuntimeError::raise(interp, "fatal Kernel#require error")
+            }
             Err(require::ErrorReq::NoImplicitConversionToString) => {
                 ArgumentError::raise(interp, "No implicit conversion to String")
             }

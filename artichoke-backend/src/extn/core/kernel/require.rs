@@ -75,7 +75,7 @@ impl<'a> Args<'a> {
 
     pub fn validate_load(interp: &Artichoke, string: sys::mrb_value) -> Result<Self, ErrorLoad> {
         if let Ok(file) = interp.try_convert(Value::new(interp, string)) {
-            Ok(Self {file})
+            Ok(Self { file })
         } else {
             Err(ErrorLoad::NoImplicitConversionToString)
         }
@@ -90,7 +90,7 @@ pub mod method {
     use crate::fs::RUBY_LOAD_PATH;
     use crate::Artichoke;
 
-    use super::{Args, ErrorReq, ErrorLoad, Require};
+    use super::{Args, ErrorLoad, ErrorReq, Require};
 
     pub fn require(interp: &Artichoke, args: Args) -> Result<Require, ErrorReq> {
         require_impl(interp, args, RUBY_LOAD_PATH)
