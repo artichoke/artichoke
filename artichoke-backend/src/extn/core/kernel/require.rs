@@ -187,9 +187,6 @@ pub mod method {
         let files = if path.is_relative() {
             path = PathBuf::from(base);
             let mut files = Vec::with_capacity(2);
-            if !args.file.ends_with(".rb") {
-                files.push(path.join(format!("{}.rb", args.file)))
-            }
             files.push(path.join(args.file));
             files
         } else {
