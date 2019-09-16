@@ -96,6 +96,7 @@ impl Build {
 
 fn main() {
     let arch = env::var("CARGO_CFG_TARGET_ARCH");
+    let os = env::var("CARGO_CFG_TARGET_OS");
     let opts = CopyOptions::new();
     let _ = dir::remove(Build::root());
     dir::copy(
@@ -208,9 +209,11 @@ fn main() {
     }
 
     if let Ok("wasm32") | Ok("wasm64") = arch.as_ref().map(String::as_str) {
-        build.include(Build::wasm_include_dir());
         build.define("MRB_DISABLE_DIRECT_THREADING", None);
-        build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
+        if let Ok("unknown") = os.as_ref().map(String::as_str) {
+            build.include(Build::wasm_include_dir());
+            build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
+        }
     }
 
     build.compile("libmrubysys.a");
