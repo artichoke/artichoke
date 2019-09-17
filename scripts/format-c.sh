@@ -12,10 +12,9 @@ set -x
 format() {
   find . -type f \
     -and \( -name '*.h' -or -name '*.c' \) \
-    -and -not -path '*vendor*' \
-    -and -not -path '*target*' \
-    -and -not -path '*node_modules*' \
-    -and -not -path '*spec/ruby*' -print0 |
+    -and -not -path '*vendor/*/*' \
+    -and -not -path '*target/*' \
+    -and -not -path '*node_modules/*' -print0 |
     xargs -0 yarn run clang-format -i
 }
 
@@ -34,10 +33,9 @@ export -f _check_clang_format
 check() {
   find . -type f \
     -and \( -name '*.h' -or -name '*.c' \) \
-    -and -not -path '*vendor*' \
-    -and -not -path '*target*' \
-    -and -not -path '*node_modules*' \
-    -and -not -path '*spec/ruby*' -print0 |
+    -and -not -path '*vendor/*/*' \
+    -and -not -path '*target/*' \
+    -and -not -path '*node_modules/*' -print0 |
     xargs -0 -n1 bash -c '_check_clang_format "$@"' _
 }
 
