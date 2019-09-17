@@ -113,7 +113,6 @@ pub mod method {
     }
 
     fn require_impl(interp: &Artichoke, args: Args, base: &str) -> Result<Require, ErrorReq> {
-        let interp = interp.clone();
         // Track whether any iterations of the loop successfully required some
         // Ruby sources.
         let mut path = PathBuf::from(args.file);
@@ -182,7 +181,6 @@ pub mod method {
     }
 
     fn load_impl(interp: &Artichoke, args: Args, base: &str) -> Result<Require, ErrorLoad> {
-        let interp = interp.clone();
         let mut path = PathBuf::from(args.file);
         let files = if path.is_relative() {
             path = PathBuf::from(base);

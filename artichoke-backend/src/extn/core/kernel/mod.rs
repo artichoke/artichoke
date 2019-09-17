@@ -133,7 +133,7 @@ impl Kernel {
                 LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
             }
             Err(require::ErrorLoad::Fatal) => {
-                RuntimeError::raise(interp, "fatal Kernel#require error")
+                RuntimeError::raise(interp, "fatal Kernel#load error")
             }
             Err(require::ErrorLoad::NoImplicitConversionToString) => {
                 ArgumentError::raise(interp, "No implicit conversion to String")
