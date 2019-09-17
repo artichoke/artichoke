@@ -141,38 +141,6 @@ impl Kernel {
         }
     }
 
-    unsafe extern "C" fn load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let args = require::Args::validate(&interp, file);
-        let result = args.and_then(|args| require::method::load(&interp, args));
-        match result {
-            Ok(req) => {
-                let result = if let Some(req) = req.rust {
-                    req(interp.clone())
-                } else {
-                    Ok(())
-                };
-                if result.is_ok() {
-                    if let Some(contents) = req.ruby {
-                        interp.unchecked_eval_with_context(contents, Context::new(req.file));
-                    }
-                    interp.convert(true).inner()
-                } else {
-                    LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
-                }
-            }
-            Err(require::Error::AlreadyRequired) => interp.convert(false).inner(),
-            Err(require::Error::CannotLoad(file)) => {
-                LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
-            }
-            Err(require::Error::Fatal) => RuntimeError::raise(interp, "fatal Kernel#require error"),
-            Err(require::Error::NoImplicitConversionToString) => {
-                ArgumentError::raise(interp, "No implicit conversion to String")
-            }
-        }
-    }
-
     unsafe extern "C" fn require_relative(
         mrb: *mut sys::mrb_state,
         _slf: sys::mrb_value,
