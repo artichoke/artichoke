@@ -109,7 +109,7 @@ fn main() {
         // "coverage", implemented with native code in MRI
         "csv",
         // "date", implemented with native code in MRI
-        "dbm",
+        // "dbm", implemented with native code in MRI and not present in some build configurations. See GH-206.
         // "debug", this package outputs on require which breaks the autogen script
         "delegate",
         "digest",
@@ -125,7 +125,7 @@ fn main() {
         "fileutils",
         "find",
         "forwardable",
-        "gdbm",
+        // "gdbm", implemented with native code in MRI and not present in some build configurations. See GH-206.
         "getoptlong",
         "io/console",
         "io/nonblock",
@@ -198,7 +198,7 @@ fn main() {
         "webrick",
         // "win32ole", native code, not requirable on all platforms
         "yaml",
-        "zlib",
+        // "zlib", implemented with native code in MRI
     ];
 
     packages.par_iter().for_each(|package| {
