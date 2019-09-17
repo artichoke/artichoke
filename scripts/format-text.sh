@@ -16,10 +16,12 @@ wrap() {
 }
 
 parser() {
-  if [[ $1 == "yml" ]]; then
-    echo "--parser yaml"
+  if [[ $1 == "js" ]]; then
+    echo "--parser babel"
   elif [[ $1 == "md" ]]; then
     echo "--parser markdown"
+  elif [[ $1 == "yml" ]]; then
+    echo "--parser yaml"
   else
     echo "--parser $1"
   fi
