@@ -9,8 +9,14 @@ use crate::value::Value;
 use crate::Artichoke;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub enum Error {
+pub enum ErrorReq {
     AlreadyRequired,
+    CannotLoad(String),
+    Fatal,
+    NoImplicitConversionToString,
+}
+
+pub enum ErrorLoad {
     CannotLoad(String),
     Fatal,
     NoImplicitConversionToString,
@@ -59,11 +65,19 @@ pub struct Args<'a> {
 }
 
 impl<'a> Args<'a> {
-    pub fn validate(interp: &Artichoke, string: sys::mrb_value) -> Result<Self, Error> {
+    pub fn validate_require(interp: &Artichoke, string: sys::mrb_value) -> Result<Self, ErrorReq> {
         if let Ok(file) = interp.try_convert(Value::new(interp, string)) {
             Ok(Self { file })
         } else {
-            Err(Error::NoImplicitConversionToString)
+            Err(ErrorReq::NoImplicitConversionToString)
+        }
+    }
+
+    pub fn validate_load(interp: &Artichoke, string: sys::mrb_value) -> Result<Self, ErrorLoad> {
+        if let Ok(file) = interp.try_convert(Value::new(interp, string)) {
+            Ok(Self { file })
+        } else {
+            Err(ErrorLoad::NoImplicitConversionToString)
         }
     }
 }
@@ -76,26 +90,29 @@ pub mod method {
     use crate::fs::RUBY_LOAD_PATH;
     use crate::Artichoke;
 
-    use super::{Args, Error, Require};
+    use super::{Args, ErrorLoad, ErrorReq, Require};
 
-    pub fn require(interp: &Artichoke, args: Args) -> Result<Require, Error> {
+    pub fn require(interp: &Artichoke, args: Args) -> Result<Require, ErrorReq> {
         require_impl(interp, args, RUBY_LOAD_PATH)
     }
 
-    pub fn require_relative(interp: &Artichoke, args: Args) -> Result<Require, Error> {
+    pub fn load(interp: &Artichoke, args: Args) -> Result<Require, ErrorLoad> {
+        load_impl(interp, args, RUBY_LOAD_PATH)
+    }
+
+    pub fn require_relative(interp: &Artichoke, args: Args) -> Result<Require, ErrorReq> {
         let context = interp
             .peek_context()
-            .ok_or_else(|| Error::CannotLoad(args.file.to_owned()))?;
+            .ok_or_else(|| ErrorReq::CannotLoad(args.file.to_owned()))?;
         let base = PathBuf::from(context.filename)
             .parent()
             .and_then(Path::to_str)
             .map(str::to_owned)
-            .ok_or_else(|| Error::CannotLoad(args.file.to_owned()))?;
+            .ok_or_else(|| ErrorReq::CannotLoad(args.file.to_owned()))?;
         require_impl(interp, args, base.as_str())
     }
 
-    fn require_impl(interp: &Artichoke, args: Args, base: &str) -> Result<Require, Error> {
-        let interp = interp.clone();
+    fn require_impl(interp: &Artichoke, args: Args, base: &str) -> Result<Require, ErrorReq> {
         // Track whether any iterations of the loop successfully required some
         // Ruby sources.
         let mut path = PathBuf::from(args.file);
@@ -126,7 +143,7 @@ pub mod method {
             };
             // If a file is already required, short circuit.
             if metadata.is_already_required() {
-                return Err(Error::AlreadyRequired);
+                return Err(ErrorReq::AlreadyRequired);
             }
             let file = if let Some(filename) = path.as_path().to_str() {
                 filename
@@ -151,7 +168,7 @@ pub mod method {
             borrow
                 .vfs
                 .set_metadata(path.as_path(), metadata)
-                .map_err(|_| Error::Fatal)?;
+                .map_err(|_| ErrorReq::Fatal)?;
             trace!(
                 r#"Successful require of "{}" at {:?} on {:?}"#,
                 args.file,
@@ -160,6 +177,53 @@ pub mod method {
             );
             return Ok(require);
         }
-        Err(Error::CannotLoad(args.file.to_owned()))
+        Err(ErrorReq::CannotLoad(args.file.to_owned()))
+    }
+
+    fn load_impl(interp: &Artichoke, args: Args, base: &str) -> Result<Require, ErrorLoad> {
+        let mut path = PathBuf::from(args.file);
+        let files = if path.is_relative() {
+            path = PathBuf::from(base);
+            let mut files = Vec::with_capacity(2);
+            files.push(path.join(args.file));
+            files
+        } else {
+            vec![path.join(args.file)]
+        };
+
+        for path in files {
+            let is_file = {
+                let api = interp.0.borrow();
+                api.vfs.is_file(path.as_path())
+            };
+
+            if !is_file {
+                continue;
+            }
+
+            let metadata = {
+                let api = interp.0.borrow();
+                api.vfs.metadata(path.as_path()).unwrap_or_default()
+            };
+            let file = if let Some(filename) = path.as_path().to_str() {
+                filename
+            } else {
+                "(require)"
+            };
+
+            let contents = {
+                let api = interp.0.borrow();
+                api.vfs.read_file(path.as_path())
+            };
+
+            let require = Require {
+                file: file.to_owned(),
+                rust: metadata.require,
+                ruby: contents.ok(),
+            };
+            trace!(r#"Succesful load of "{}" at {:?}"#, args.file, path);
+            return Ok(require);
+        }
+        Err(ErrorLoad::CannotLoad(args.file.to_owned()))
     }
 }
