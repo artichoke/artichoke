@@ -109,7 +109,7 @@ fn main() {
         // "coverage", implemented with native code in MRI
         "csv",
         // "date", implemented with native code in MRI
-        "dbm",
+        // "dbm",
         // "debug", this package outputs on require which breaks the autogen script
         "delegate",
         "digest",
