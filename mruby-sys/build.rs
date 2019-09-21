@@ -193,6 +193,7 @@ fn main() {
         .include(Build::ext_include_dir())
         .define("MRB_DISABLE_STDIO", None)
         .define("MRB_UTF8_STRING", None)
+        .define("ARTICHOKE", None)
         .define(mrb_int, None);
 
     for gem in Build::gems() {
