@@ -60,13 +60,18 @@ module Kernel
     return arg if arg.is_a?(Hash)
     return {} if arg.nil? || arg == []
 
+    classname = arg.class
+
     if arg.respond_to?(:to_hash)
       ret = arg.to_hash
-      return {} if ret.nil? || ret.empty?
+
       return ret if ret.is_a?(Hash)
+
+      raise TypeError, "can't convert #{classname} into Hash" if ret.nil?
+      raise TypeError, "can't convert #{classname} to Hash (#{classname}#to_hash gives #{ret.class})"
     end
 
-    raise TypeError
+    raise TypeError, "can't convert #{classname} into Hash"
   end
 
   def Integer(arg, base = 0, exception: true) # rubocop:disable Naming/MethodName
