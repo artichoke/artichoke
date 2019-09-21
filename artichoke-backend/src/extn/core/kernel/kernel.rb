@@ -260,7 +260,7 @@ module Kernel
       return ret if ret.is_a?(String)
     end
 
-    raise TypeError
+    raise TypeError, "can't convert #{arg.class} into String"
   end
 
   # Throws an object, uncaught throws will bubble up through other catch blocks.
