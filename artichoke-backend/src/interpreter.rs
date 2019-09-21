@@ -17,7 +17,7 @@ use crate::{Artichoke, ArtichokeError};
 /// [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     let vfs = Filesystem::new()?;
-    let mrb = unsafe { sys::mrb_open() };
+    let mrb = unsafe { sys::mrb_open_core(Some(sys::mrb_default_allocf), std::ptr::null_mut()) };
     if mrb.is_null() {
         error!("Failed to allocate mrb interprter");
         return Err(ArtichokeError::New);
