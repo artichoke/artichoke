@@ -20,20 +20,10 @@ run_library_spec() {
   popd >/dev/null
 }
 
-run_kernel_spec() {
-  pushd "spec-runner/vendor/spec/core" >/dev/null
-  $spec_runner kernel/shared/**/*.rb kernel/fixtures/**/*.rb kernel/Integer_spec.rb
-  # kernel/Array_spec.rb kernel/Integer_spec.rb kernel/Float_spec.rb kernel/String_spec.rb kernel/Hash_spec.rb
-  # kernel/fail_spec.rb kernel/caller_spec.rb kernel/__method___spec.rb
-  popd >/dev/null
-}
+run_core_spec "comparable"
+run_core_spec "matchdata"
+run_core_spec "regexp"
 
-run_kernel_spec
-
-# run_core_spec "comparable"
-# run_core_spec "matchdata"
-# run_core_spec "regexp"
-#
-# run_library_spec "monitor"
-# run_library_spec "stringscanner"
-# run_library_spec "uri"
+run_library_spec "monitor"
+run_library_spec "stringscanner"
+run_library_spec "uri"
