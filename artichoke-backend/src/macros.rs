@@ -24,6 +24,7 @@ macro_rules! unwrap_interpreter {
 pub mod argspec {
     pub const NONE: &[u8] = b"\0";
     pub const REQ1: &[u8] = b"o\0";
+    pub const OPT1: &[u8] = b"|o\0";
     pub const REQ1_OPT1: &[u8] = b"o|o\0";
     pub const REQ1_OPT2: &[u8] = b"o|oo\0";
     pub const REQ1_REQBLOCK: &[u8] = b"o&\0";
@@ -53,6 +54,22 @@ macro_rules! mrb_get_args {
         );
         match argc {
             1 => req1.assume_init(),
+            _ => unreachable!("mrb_get_args should have raised"),
+        }
+    }};
+    ($mrb:expr, optional = 1) => {{
+        let mut opt1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let argc = $crate::sys::mrb_get_args(
+            $mrb,
+            $crate::macros::argspec::OPT1.as_ptr() as *const i8,
+            opt1.as_mut_ptr(),
+        );
+        match argc {
+            1 => {
+                let opt1 = opt1.assume_init();
+                Some(opt1)
+            }
+            0 => None,
             _ => unreachable!("mrb_get_args should have raised"),
         }
     }};
