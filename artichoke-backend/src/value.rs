@@ -102,6 +102,22 @@ impl Value {
         types::ruby_from_mrb_value(self.value)
     }
 
+    pub fn pretty_name<'a>(&self) -> &'a str {
+        if let Ok(true) = Self::new(&self.interp, self.value).try_into::<bool>() {
+            "true"
+        } else if let Ok(false) = Self::new(&self.interp, self.value).try_into::<bool>() {
+            "false"
+        } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Value>>() {
+            "nil"
+        } else if self.ruby_type() == Ruby::Data {
+            self.funcall::<Value>("class", &[], None)
+                .and_then(|class| class.funcall::<&'a str>("name", &[], None))
+                .unwrap_or_default()
+        } else {
+            self.ruby_type().class_name()
+        }
+    }
+
     /// Some type tags like [`MRB_TT_UNDEF`](sys::mrb_vtype::MRB_TT_UNDEF) are
     /// internal to the mruby VM and manipulating them with the [`sys`] API is
     /// unspecified and may result in a segfault.
