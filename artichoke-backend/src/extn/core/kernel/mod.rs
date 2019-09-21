@@ -1,5 +1,4 @@
 use log::trace;
-// use std::mem;
 
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};

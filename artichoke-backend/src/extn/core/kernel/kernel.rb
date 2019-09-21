@@ -68,13 +68,14 @@ module Kernel
       return ret if ret.is_a?(Hash)
 
       raise TypeError, "can't convert #{classname} into Hash" if ret.nil?
+
       raise TypeError, "can't convert #{classname} to Hash (#{classname}#to_hash gives #{ret.class})"
     end
 
     raise TypeError, "can't convert #{classname} into Hash"
   end
 
-  def Integer(arg, base = 0, exception: true) # rubocop:disable Naming/MethodName
+  def Integer(arg, base = 0) # rubocop:disable Naming/MethodName
     raise ArgumentError, 'base specified for non string value' if base.positive? && arg.is_a?(Numeric)
 
     classname = arg.class
