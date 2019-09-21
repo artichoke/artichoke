@@ -22,6 +22,10 @@
 #include "value_array.h"
 #include <mruby/throw.h>
 
+#ifdef ARTICHOKE
+#include <mruby-sys/ext.h>
+#endif
+
 #ifdef MRB_DISABLE_STDIO
 #if defined(__cplusplus)
 extern "C" {
@@ -2427,43 +2431,48 @@ RETRY_TRY_BLOCK:
     }
 
     CASE(OP_ARRAY, BB) {
-      mrb_value v = mrb_ary_new_from_values(mrb, b, &regs[a]);
+      mrb_value v = ARY_NEW_FROM_VALUES(mrb, b, &regs[a]);
       regs[a] = v;
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
     }
     CASE(OP_ARRAY2, BBB) {
-      mrb_value v = mrb_ary_new_from_values(mrb, c, &regs[b]);
+      mrb_value v = ARY_NEW_FROM_VALUES(mrb, c, &regs[b]);
       regs[a] = v;
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
     }
 
     CASE(OP_ARYCAT, B) {
-      mrb_value splat = mrb_ary_splat(mrb, regs[a+1]);
+      mrb_value splat = ARY_SPLAT(mrb, regs[a+1]);
       if (mrb_nil_p(regs[a])) {
         regs[a] = splat;
       }
       else {
-        mrb_ary_concat(mrb, regs[a], splat);
+        ARY_CONCAT(mrb, regs[a], splat);
       }
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
     }
 
     CASE(OP_ARYPUSH, B) {
-      mrb_ary_push(mrb, regs[a], regs[a+1]);
+      ARY_PUSH(mrb, regs[a], regs[a+1]);
       NEXT;
     }
 
     CASE(OP_ARYDUP, B) {
       mrb_value ary = regs[a];
+#ifdef ARTICHOKE
+      ary = artichoke_ary_clone(mrb, ary);
+#else
+      // TODO: how would we get an `OP_ARYDUP` on values that are not `Array`s?
       if (mrb_array_p(ary)) {
         ary = mrb_ary_new_from_values(mrb, RARRAY_LEN(ary), RARRAY_PTR(ary));
       }
       else {
         ary = mrb_ary_new_from_values(mrb, 1, &ary);
       }
+#endif
       regs[a] = ary;
       NEXT;
     }
@@ -2480,18 +2489,39 @@ RETRY_TRY_BLOCK:
         }
       }
       else {
-        v = mrb_ary_ref(mrb, v, c);
+        v = ARY_REF(mrb, v, c);
         regs[a] = v;
       }
       NEXT;
     }
 
     CASE(OP_ASET, BBB) {
-      mrb_ary_set(mrb, regs[b], c, regs[a]);
+      ARY_SET(mrb, regs[b], c, regs[a]);
       NEXT;
     }
 
     CASE(OP_APOST, BBB) {
+#ifdef ARTICHOKE
+      // regs is a `mrb_value*`
+      mrb_value v = regs[a];
+      int pre  = b;
+      int post = c;
+      mrb_value ary;
+      int len, idx;
+
+      v = artichoke_value_to_ary(mrb, v);
+      len = artichoke_ary_len(mrb, v);
+      ary = v;
+      v = mrb_ary_new_capa(mrb, 0);
+      regs[a++] = v;
+      for (idx=0; idx+pre<len; idx++) {
+        regs[a+idx] = artichoke_ary_ref(mrb, ary, pre+idx);
+      }
+      while (idx < post) {
+        SET_NIL_VALUE(regs[a+idx]);
+        idx++;
+      }
+#else
       mrb_value v = regs[a];
       int pre  = b;
       int post = c;
@@ -2521,6 +2551,7 @@ RETRY_TRY_BLOCK:
           idx++;
         }
       }
+#endif
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
     }

@@ -16,6 +16,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef ARTICHOKE
+#include <mruby-sys/ext.h>
+#endif
+
 struct tmpl {
   mrb_value str;
   int idx;
@@ -152,9 +156,9 @@ static int
 unpack_c(mrb_state *mrb, const void *src, int srclen, mrb_value ary, unsigned int flags)
 {
   if (flags & PACK_FLAG_SIGNED)
-    mrb_ary_push(mrb, ary, mrb_fixnum_value(*(signed char *)src));
+    ARY_PUSH(mrb, ary, mrb_fixnum_value(*(signed char *)src));
   else
-    mrb_ary_push(mrb, ary, mrb_fixnum_value(*(unsigned char *)src));
+    ARY_PUSH(mrb, ary, mrb_fixnum_value(*(unsigned char *)src));
   return 1;
 }
 
@@ -188,7 +192,7 @@ unpack_s(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, un
   if ((flags & PACK_FLAG_SIGNED) && (n >= 0x8000)) {
     n -= 0x10000;
   }
-  mrb_ary_push(mrb, ary, mrb_fixnum_value(n));
+  ARY_PUSH(mrb, ary, mrb_fixnum_value(n));
   return 2;
 }
 
@@ -251,7 +255,7 @@ unpack_l(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, un
 #endif
     n = ul;
   }
-  mrb_ary_push(mrb, ary, mrb_fixnum_value(n));
+  ARY_PUSH(mrb, ary, mrb_fixnum_value(n));
   return 4;
 }
 
@@ -318,7 +322,7 @@ unpack_q(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, un
     }
     n = ull;
   }
-  mrb_ary_push(mrb, ary, mrb_fixnum_value(n));
+  ARY_PUSH(mrb, ary, mrb_fixnum_value(n));
   return 8;
 }
 
@@ -381,7 +385,7 @@ unpack_double(mrb_state *mrb, const unsigned char * src, int srclen, mrb_value a
       memcpy(buffer, src, 8);
     }
   }
-  mrb_ary_push(mrb, ary, mrb_float_value(mrb, d));
+  ARY_PUSH(mrb, ary, mrb_float_value(mrb, d));
 
   return 8;
 }
@@ -444,7 +448,7 @@ unpack_float(mrb_state *mrb, const unsigned char * src, int srclen, mrb_value ar
       memcpy(buffer, src, 4);
     }
   }
-  mrb_ary_push(mrb, ary, mrb_float_value(mrb, f));
+  ARY_PUSH(mrb, ary, mrb_float_value(mrb, f));
 
   return 4;
 }
@@ -563,7 +567,7 @@ unpack_utf8(mrb_state *mrb, const unsigned char * src, int srclen, mrb_value ary
     return 1;
   }
   uv = utf8_to_uv(mrb, (const char *)src, &lenp);
-  mrb_ary_push(mrb, ary, mrb_fixnum_value((mrb_int)uv));
+  ARY_PUSH(mrb, ary, mrb_fixnum_value((mrb_int)uv));
   return (int)lenp;
 }
 
@@ -634,7 +638,7 @@ unpack_a(mrb_state *mrb, const void *src, int slen, mrb_value ary, long count, u
 
   if (copylen < 0) copylen = 0;
   dst = mrb_str_new(mrb, sptr, (mrb_int)copylen);
-  mrb_ary_push(mrb, ary, dst);
+  ARY_PUSH(mrb, ary, dst);
   return slen;
 }
 
@@ -726,7 +730,7 @@ unpack_h(mrb_state *mrb, const void *src, int slen, mrb_value ary, int count, un
   }
 
   dst = mrb_str_resize(mrb, dst, dptr - dptr0);
-  mrb_ary_push(mrb, ary, dst);
+  ARY_PUSH(mrb, ary, dst);
   return (int)(sptr - sptr0);
 }
 
@@ -849,7 +853,7 @@ unpack_m(mrb_state *mrb, const void *src, int slen, mrb_value ary, unsigned int 
 
 done:
   dst = mrb_str_resize(mrb, dst, dptr - dptr0);
-  mrb_ary_push(mrb, ary, dst);
+  ARY_PUSH(mrb, ary, dst);
   return (int)(sptr - sptr0);
 }
 
@@ -1141,7 +1145,7 @@ mrb_pack_pack(mrb_state *mrb, mrb_value ary)
       if (count == 0 && !(flags & PACK_FLAG_WIDTH))
         break;
 
-      o = mrb_ary_ref(mrb, ary, aidx);
+      o = ARY_REF(mrb, ary, aidx);
       if (type == PACK_TYPE_INTEGER) {
         o = mrb_to_int(mrb, o);
       }
@@ -1228,7 +1232,7 @@ pack_unpack(mrb_state *mrb, mrb_value str, int single)
   srcidx = 0;
   srclen = (int)RSTRING_LEN(str);
 
-  result = mrb_ary_new(mrb);
+  result = ARY_NEW(mrb);
   while (has_tmpl(&tmpl)) {
     read_tmpl(mrb, &tmpl, &dir, &type, &size, &count, &flags);
 
@@ -1258,7 +1262,7 @@ pack_unpack(mrb_state *mrb, mrb_value str, int single)
     while (count != 0) {
       if (srclen - srcidx < size) {
         while (count-- > 0) {
-          mrb_ary_push(mrb, result, mrb_nil_value());
+          ARY_PUSH(mrb, result, mrb_nil_value());
         }
         break;
       }

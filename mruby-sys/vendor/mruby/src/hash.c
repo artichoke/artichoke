@@ -11,6 +11,10 @@
 #include <mruby/string.h>
 #include <mruby/variable.h>
 
+#ifdef ARTICHOKE
+#include <mruby-sys/ext.h>
+#endif
+
 #ifndef MRB_WITHOUT_FLOAT
 /* a function to get hash value of a float number */
 mrb_int mrb_float_id(mrb_float f);
@@ -129,7 +133,7 @@ ht_hash_equal(mrb_state *mrb, htable *t, mrb_value a, mrb_value b)
       }
       return eql;
     }
-  } 
+  }
 }
 
 /* Creates the hash table. */
@@ -1190,7 +1194,7 @@ mrb_hash_empty_m(mrb_state *mrb, mrb_value self)
 static int
 hash_keys_i(mrb_state *mrb, mrb_value key, mrb_value val, void *p)
 {
-  mrb_ary_push(mrb, *(mrb_value*)p, key);
+  ARY_PUSH(mrb, *(mrb_value*)p, key);
   return 0;
 }
 
@@ -1215,8 +1219,8 @@ mrb_hash_keys(mrb_state *mrb, mrb_value hash)
   mrb_value ary;
 
   if (!t || (size = t->size) == 0)
-    return mrb_ary_new(mrb);
-  ary = mrb_ary_new_capa(mrb, size);
+    return ARY_NEW(mrb);
+  ary = ARY_NEW_CAPA(mrb, size);
   ht_foreach(mrb, t, hash_keys_i, (void*)&ary);
   return ary;
 }
@@ -1224,7 +1228,7 @@ mrb_hash_keys(mrb_state *mrb, mrb_value hash)
 static int
 hash_vals_i(mrb_state *mrb, mrb_value key, mrb_value val, void *p)
 {
-  mrb_ary_push(mrb, *(mrb_value*)p, val);
+  ARY_PUSH(mrb, *(mrb_value*)p, val);
   return 0;
 }
 
@@ -1249,8 +1253,8 @@ mrb_hash_values(mrb_state *mrb, mrb_value hash)
   mrb_value ary;
 
   if (!t || (size = t->size) == 0)
-    return mrb_ary_new(mrb);
-  ary = mrb_ary_new_capa(mrb, size);
+    return ARY_NEW(mrb);
+  ary = ARY_NEW_CAPA(mrb, size);
   ht_foreach(mrb, t, hash_vals_i, (void*)&ary);
   return ary;
 }
@@ -1306,7 +1310,7 @@ static int
 hash_has_value_i(mrb_state *mrb, mrb_value key, mrb_value val, void *p)
 {
   struct has_v_arg *arg = (struct has_v_arg*)p;
-  
+
   if (mrb_equal(mrb, arg->val, val)) {
     arg->found = TRUE;
     return 1;
@@ -1334,7 +1338,7 @@ mrb_hash_has_value(mrb_state *mrb, mrb_value hash)
 {
   mrb_value val;
   struct has_v_arg arg;
-  
+
   mrb_get_args(mrb, "o", &val);
   arg.found = FALSE;
   arg.val = val;

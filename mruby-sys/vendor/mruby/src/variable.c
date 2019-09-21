@@ -11,6 +11,10 @@
 #include <mruby/string.h>
 #include <mruby/variable.h>
 
+#ifdef ARTICHOKE
+#include <mruby-sys/ext.h>
+#endif
+
 #ifndef MRB_IV_SEGMENT_SIZE
 #define MRB_IV_SEGMENT_SIZE 4
 #endif
@@ -543,7 +547,7 @@ iv_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
   ary = *(mrb_value*)p;
   s = mrb_sym2name_len(mrb, sym, &len);
   if (len > 1 && s[0] == '@' && s[1] != '@') {
-    mrb_ary_push(mrb, ary, mrb_symbol_value(sym));
+    ARY_PUSH(mrb, ary, mrb_symbol_value(sym));
   }
   return 0;
 }
@@ -570,7 +574,7 @@ mrb_obj_instance_variables(mrb_state *mrb, mrb_value self)
 {
   mrb_value ary;
 
-  ary = mrb_ary_new(mrb);
+  ary = ARY_NEW(mrb);
   if (obj_iv_p(self)) {
     iv_foreach(mrb, mrb_obj_ptr(self)->iv, iv_i, &ary);
   }
@@ -587,7 +591,7 @@ cv_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
   ary = *(mrb_value*)p;
   s = mrb_sym2name_len(mrb, sym, &len);
   if (len > 2 && s[0] == '@' && s[1] == '@') {
-    mrb_ary_push(mrb, ary, mrb_symbol_value(sym));
+    ARY_PUSH(mrb, ary, mrb_symbol_value(sym));
   }
   return 0;
 }
@@ -614,7 +618,7 @@ mrb_mod_class_variables(mrb_state *mrb, mrb_value mod)
   mrb_value ary;
   struct RClass *c;
 
-  ary = mrb_ary_new(mrb);
+  ary = ARY_NEW(mrb);
   c = mrb_class_ptr(mod);
   while (c) {
     iv_foreach(mrb, c->iv, cv_i, &ary);
@@ -882,7 +886,7 @@ const_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
   ary = *(mrb_value*)p;
   s = mrb_sym2name_len(mrb, sym, &len);
   if (len >= 1 && ISUPPER(s[0])) {
-    mrb_ary_push(mrb, ary, mrb_symbol_value(sym));
+    ARY_PUSH(mrb, ary, mrb_symbol_value(sym));
   }
   return 0;
 }
@@ -902,7 +906,7 @@ mrb_mod_constants(mrb_state *mrb, mrb_value mod)
   struct RClass *c = mrb_class_ptr(mod);
 
   mrb_get_args(mrb, "|b", &inherit);
-  ary = mrb_ary_new(mrb);
+  ary = ARY_NEW(mrb);
   while (c) {
     iv_foreach(mrb, c->iv, const_i, &ary);
     if (!inherit) break;
@@ -946,7 +950,7 @@ gv_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
   mrb_value ary;
 
   ary = *(mrb_value*)p;
-  mrb_ary_push(mrb, ary, mrb_symbol_value(sym));
+  ARY_PUSH(mrb, ary, mrb_symbol_value(sym));
   return 0;
 }
 
@@ -964,7 +968,7 @@ mrb_value
 mrb_f_global_variables(mrb_state *mrb, mrb_value self)
 {
   iv_tbl *t = mrb->globals;
-  mrb_value ary = mrb_ary_new(mrb);
+  mrb_value ary = ARY_NEW(mrb);
 
   iv_foreach(mrb, t, gv_i, &ary);
   return ary;
