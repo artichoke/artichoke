@@ -45,12 +45,15 @@ module Kernel
 
     ret = nil
     ret = arg.to_ary if arg.respond_to?(:to_ary)
+    classname = arg.class
+
+    raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{ret.class})" unless ret.nil? || ret.is_a?(Array)
+
     ret = arg.to_a if ret.nil? && arg.respond_to?(:to_a)
 
-    return [arg] if ret.nil?
-    return ret if ret.is_a?(Array)
+    raise TypeError, "can't convert #{classname} to Array (#{classname}#to_a gives #{ret.class})" unless ret.nil? || ret.is_a?(Array)
 
-    raise TypeError
+    ret.nil? ? [arg] : ret
   end
 
   def Hash(arg) # rubocop:disable Naming/MethodName
