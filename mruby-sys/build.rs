@@ -36,7 +36,6 @@ impl Build {
             "mruby-pack",         // Array#pack and String#unpack
             "mruby-sprintf",      // Kernel#sprintf, Kernel#format, String#%
             "mruby-class-ext",    // Pending removal, see GH-32
-            "mruby-kernel-ext",   // Pending removal, see GH-32
             "mruby-proc-ext",     // required by mruby-method, see GH-32
         ]
     }
