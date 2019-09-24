@@ -158,7 +158,7 @@ pub unsafe extern "C" fn artichoke_ary_pop(
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
-    let result = array::pop(&interp, ary);
+    let result = array::pop(&interp, &ary);
     match result {
         Ok(value) => interp.convert(value).inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -217,7 +217,7 @@ pub unsafe extern "C" fn artichoke_ary_ref(
     let ary = Value::new(&interp, ary);
     let result = isize::try_from(offset)
         .map_err(|_| Error::Fatal)
-        .and_then(|offset| array::element_reference(&interp, ary, offset));
+        .and_then(|offset| array::element_reference(&interp, &ary, offset));
     match result {
         Ok(value) => interp.convert(value).inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -275,7 +275,7 @@ pub unsafe extern "C" fn artichoke_ary_clone(
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, value);
-    let result = array::clone(&interp, ary);
+    let result = array::clone(&interp, &ary);
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -330,7 +330,7 @@ pub unsafe extern "C" fn artichoke_ary_len(
         Err(_) => return 0,
     };
     let ary = Value::new(&interp, ary);
-    let result = array::len(&interp, ary)
+    let result = array::len(&interp, &ary)
         .and_then(|len| sys::mrb_int::try_from(len).map_err(|_| Error::Fatal));
     match result {
         Ok(len) => len,

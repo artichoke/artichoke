@@ -107,10 +107,10 @@ impl Value {
             "true"
         } else if let Ok(false) = Self::new(&self.interp, self.value).try_into::<bool>() {
             "false"
-        } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Value>>() {
+        } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Self>>() {
             "nil"
         } else if self.ruby_type() == Ruby::Data {
-            self.funcall::<Value>("class", &[], None)
+            self.funcall::<Self>("class", &[], None)
                 .and_then(|class| class.funcall::<&'a str>("name", &[], None))
                 .unwrap_or_default()
         } else {

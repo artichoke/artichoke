@@ -34,6 +34,7 @@ pub struct Array {
 
 impl RustBackedValue for Array {}
 
+#[allow(clippy::similar_names)]
 pub fn assoc(interp: &Artichoke, car: Value, cdr: Value) -> Result<Value, Error> {
     let _ = interp;
     let buffer = VecDeque::from(vec![car, cdr]);
@@ -83,11 +84,11 @@ pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
     Ok(ary)
 }
 
-pub fn element_reference(
-    interp: &Artichoke,
-    ary: Value,
+pub fn element_reference<'a>(
+    interp: &'a Artichoke,
+    ary: &Value,
     offset: isize,
-) -> Result<Option<Value>, Error> {
+) -> Result<Option<Value>, Error<'a>> {
     let ary = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let borrow = ary.borrow();
     let offset = if offset >= 0 {
@@ -111,7 +112,7 @@ pub fn element_reference(
     Ok(borrow.buffer.get(offset).cloned())
 }
 
-pub fn pop(interp: &Artichoke, ary: Value) -> Result<Option<Value>, Error> {
+pub fn pop<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Option<Value>, Error<'a>> {
     let ary = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = ary.borrow_mut();
     Ok(borrow.buffer.pop_back())
@@ -197,13 +198,13 @@ pub fn element_set(
     Ok(ary)
 }
 
-pub fn len(interp: &Artichoke, ary: Value) -> Result<usize, Error> {
+pub fn len<'a>(interp: &'a Artichoke, ary: &Value) -> Result<usize, Error<'a>> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let borrow = array.borrow();
     Ok(borrow.buffer.len())
 }
 
-pub fn clone(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
+pub fn clone<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Value, Error<'a>> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let borrow = array.borrow();
     let clone = borrow.clone();
