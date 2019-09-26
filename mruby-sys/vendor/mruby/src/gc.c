@@ -20,6 +20,10 @@
 #include <mruby/error.h>
 #include <mruby/throw.h>
 
+#ifdef ARTICHOKE
+#include <mruby-sys/ext.h>
+#endif
+
 /*
   = Tri-color Incremental Garbage Collection
 
@@ -697,6 +701,16 @@ gc_mark_children(mrb_state *mrb, mrb_gc *gc, struct RBasic *obj)
   case MRB_TT_DATA:
   case MRB_TT_EXCEPTION:
     mrb_gc_mark_iv(mrb, (struct RObject*)obj);
+#ifdef ARTICHOKE
+    mrb_value ary = mrb_obj_value((struct RObject*)obj);
+    if (artichoke_ary_check(mrb, ary)) {
+      mrb_int len = artichoke_ary_len(mrb, ary);
+      mrb_int idx;
+      for (idx = 0; idx < len; idx++) {
+        mrb_gc_mark_value(mrb, ARY_REF(mrb, ary, idx));
+      }
+    }
+#endif
     break;
 
   case MRB_TT_PROC:
@@ -983,6 +997,12 @@ gc_gray_mark(mrb_state *mrb, mrb_gc *gc, struct RBasic *obj)
   case MRB_TT_DATA:
   case MRB_TT_EXCEPTION:
     children += mrb_gc_mark_iv_size(mrb, (struct RObject*)obj);
+#ifdef ARTICHOKE
+    mrb_value ary = mrb_obj_value((struct RObject*)obj);
+    if (artichoke_ary_check(mrb, ary)) {
+      children += artichoke_ary_len(mrb, ary);
+    }
+#endif
     break;
 
   case MRB_TT_ENV:

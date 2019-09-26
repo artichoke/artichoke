@@ -179,3 +179,4 @@ MRB_API void artichoke_ary_replace(mrb_state *mrb, mrb_value self,
                                    mrb_value other);
 MRB_API void artichoke_ary_set(mrb_state *mrb, mrb_value ary, mrb_int n,
                                mrb_value val);
+MRB_API mrb_bool artichoke_ary_check(mrb_state *mrb, mrb_value ary);
