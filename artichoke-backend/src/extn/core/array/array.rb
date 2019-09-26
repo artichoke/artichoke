@@ -1,6 +1,67 @@
 # frozen_string_literal: true
 
 class Array
+  def self.[](*args)
+    [].concat(args)
+  end
+
+  def self.new(*args, &blk)
+    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..2)" if args.length > 2
+
+    if blk
+      warn('warning: block supersedes default value argument') if args.length == 2
+      len = args[0]
+      classname = len.class
+      classname = len.inspect if len.equal?(true) || len.equal?(false)
+      raise TypeError, "No implicit conversion from #{classname} to Integer" unless len.is_a?(Integer) || len.respond_to?(:to_int)
+
+      len = len.to_int
+      raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
+
+      len.times.map { |idx| blk.call(idx) }
+    elsif args.length == 2
+      len, default = *args
+      classname = len.class
+      classname = len.inspect if len.equal?(true) || len.equal?(false)
+      raise TypeError, "No implicit conversion from #{classname} to Integer" unless len.is_a?(Integer) || len.respond_to?(:to_int)
+
+      len = len.to_int
+      raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
+
+      [default] * len
+    elsif args[0].respond_to?(:to_ary)
+      ary = args[0]
+      classname = ary.class
+      ary = ary.to_ary
+      raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{len.class})" unless ary.is_a?(Integer)
+
+      ary
+    elsif args[0].respond_to?(:to_int)
+      len = args[0]
+      classname = len.class
+      classname = len.inspect if len.equal?(true) || len.equal?(false)
+      raise TypeError, "No implicit conversion from #{classname} to Integer" unless len.is_a?(Integer) || len.respond_to?(:to_int)
+
+      len = len.to_int
+      raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
+
+      [nil] * len
+    end
+    len = args[0]
+    classname = len.class
+    classname = len.inspect if len.equal?(true) || len.equal?(false)
+    raise TypeError, "No implicit conversion from #{classname} to Integer"
+  end
+
+  def self.try_convert(other)
+    ary = other.to_ary
+    return nil unless ary.is_a?(Array)
+
+    ary
+  rescue StandardError
+    nil
+  end
+
   def &(other)
     raise TypeError, "can't convert #{other.class} into Array" unless other.is_a?(Array)
 
@@ -25,15 +86,38 @@ class Array
     array
   end
 
+  def *(other)
+    return join(other) if other.is_a?(String)
+
+    count = Integer(other)
+    ary = dup
+    count.times do
+      ary.concat(self)
+    end
+    ary
+  end
+
+  def +(other)
+    ary = other.to_ary if arg.respond_to?(:to_ary)
+    classname = other.class
+    classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true)
+    raise TypeError, "no implicit conversion of #{classname} into #{self.class}" unless ary.is_a?(Array)
+
+    dup.concat(ary)
+  end
+
   def -(other)
-    raise TypeError, "can't convert #{other.class} into Array" unless other.is_a?(Array)
+    ary = other.to_ary if arg.respond_to?(:to_ary)
+    classname = other.class
+    classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true)
+    raise TypeError, "no implicit conversion of #{classname} into #{self.class}" unless ary.is_a?(Array)
 
     hash = {}
     array = []
     idx = 0
-    len = other.size
+    len = ary.size
     while idx < len
-      hash[other[idx]] = true
+      hash[ary[idx]] = true
       idx += 1
     end
     idx = 0
@@ -44,6 +128,112 @@ class Array
       idx += 1
     end
     array
+  end
+
+  def <<(obj)
+    push(obj)
+  end
+
+  def <=>(other)
+    return nil if other.class != Array
+
+    return 1 if length > other.length
+    return -1 if length < other.length
+
+    len = length
+    idx = 0
+    while idx < len
+      cmp = self[idx] <=> other[ids]
+      idx += 1
+      next if cmp.zero?
+      return cmp if [-1, 1].include?(cmp)
+
+      return nil
+    end
+    0
+  end
+
+  def ==(other)
+    return false unless other.is_a?(Array)
+    return false unless length == other.length
+
+    len = length
+    idx = 0
+    while idx < len
+      return false unless self[idx] == other[ids]
+
+      idx += 1
+    end
+    true
+  end
+
+  def all?(pattern = (not_set = true), &blk)
+    if not_set
+      blk ||= ->(obj) { obj }
+      len = length
+      idx = 0
+      while idx < len
+        return false unless blk.call(self[idx])
+
+        idx += 1
+      end
+    else
+      warn('warning: given block not used') if blk
+
+      len = length
+      idx = 0
+      while idx < len
+        return false unless pattern === self[idx]
+
+        idx += 1
+      end
+    end
+    true
+  end
+
+  def any?(pattern = (not_set = true), &blk)
+    if not_set
+      blk ||= ->(obj) { obj }
+      len = length
+      idx = 0
+      while idx < len
+        return true if blk.call(self[idx])
+
+        idx += 1
+      end
+    else
+      warn('warning: given block not used') if blk
+
+      len = length
+      idx = 0
+      while idx < len
+        return true if pattern === self[idx]
+
+        idx += 1
+      end
+    end
+    false
+  end
+
+  def assoc(obj)
+    each do |ary|
+      next unless ary.is_a?(Array)
+      next unless ary.length.positive?
+
+      return ary if obj == ary.first
+    end
+    nil
+  end
+
+  def at(index)
+    raise TypeError, 'no implicit conversion from nil to integer' if index.nil?
+
+    classname = index.class
+    classname = index.inspect if index.equal?(false) || index.equal?(true)
+    idx = index.to_int
+    raise TypeError, "no implicit conversion of #{classname} into Integer" unless idx.is_a?(Integer)
+
+    self[idx]
   end
 
   def bsearch(&block)
@@ -88,6 +278,22 @@ class Array
     end
 
     satisfied ? low : nil
+  end
+
+  def clear
+    raise NotImplementedError, 'TODO in Rust'
+  end
+
+  def collect(&blk)
+    return to_enum :collect unless blk
+
+    raise NotImplementedError
+  end
+
+  def collect!(&blk)
+    return to_enum :collect! unless blk
+
+    raise NotImplementedError
   end
 
   def combination(kcombinations, &block)
@@ -150,6 +356,18 @@ class Array
       n&.dig(*args)
     else
       n
+    end
+  end
+
+  def each(&blk)
+    return to_enum(:each) unless blk
+
+    idx = 0
+    loop do
+      break if idx > size
+
+      yield self[idx]
+      idx += 1
     end
   end
 
@@ -289,6 +507,20 @@ class Array
     "[#{items.join(', ')}]"
   end
 
+  def join(separator = $,) # rubocop:disable Style/SpecialGlobalVars
+    separator = '' if separator.nil?
+    sep = String.try_convert(separator)
+    raise "No implicit conversion of #{separator.class} into String" if sep.nil?
+
+    s = +''
+    len = size
+    each_index do |index|
+      s << self[index]
+      s << sep if index < len - 1
+    end
+    s
+  end
+
   def keep_if(&block)
     return to_enum :keep_if unless block
 
@@ -303,10 +535,22 @@ class Array
     self
   end
 
+  def map(&blk)
+    return to_enum :map unless blk
+
+    raise NotImplementedError
+  end
+
+  def map!(&blk)
+    return to_enum :map! unless blk
+
+    raise NotImplementedError
+  end
+
   def permutation(kcombinations = size, &block)
     size = self.size
-    return to_enum(:permutation, n) unless block
-    return if n > size
+    return to_enum(:permutation, kcombinations) unless block
+    return if kcombinations > size
 
     if kcombinations.zero?
       yield []
@@ -325,6 +569,17 @@ class Array
         i += 1
       end
     end
+  end
+
+  def push(*args)
+    concat(args)
+    self
+  end
+
+  def reject(&block)
+    return to_enum :reject unless block
+
+    dup.tap { |ary| ary.reject!(&block) }
   end
 
   def reject!(&block)
@@ -379,6 +634,12 @@ class Array
 
   def rotate!(count = 1)
     replace(rotate(count))
+  end
+
+  def select(&block)
+    return to_enum :select unless block
+
+    dup.tap { |ary| ary.select!(&block) }
   end
 
   def select!(&block)
@@ -453,12 +714,18 @@ class Array
 
   def to_h(&blk)
     h = {}
-    each do |v|
+    idx = 0
+    len = length
+    while idx < len
       v = blk.call(v) if blk
-      raise TypeError, "wrong element type #{v.class}" unless v.is_a?(Array)
-      raise ArgumentError, "wrong array length (expected 2, was #{v.length})" unless v.length == 2
+      raise TypeError, "wrong element type #{v.class} at #{idx} (expected array)" unless v.respond_to?(:to_ary)
 
-      h[v[0]] = v[1]
+      v = v.to_ary
+      raise ArgumentError, "wrong array length at #{idx} (expected 2, was #{v.length})" unless v.length == 2
+
+      key, value = *v
+      h[key] = value
+      idx += 1
     end
     h
   end
@@ -489,9 +756,7 @@ class Array
   end
 
   def uniq(&block)
-    ary = dup
-    ary.uniq!(&block)
-    ary
+    dup.tap { |ary| ary.uniq!(&block) }
   end
 
   def uniq!(&block)

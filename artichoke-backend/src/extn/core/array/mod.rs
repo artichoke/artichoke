@@ -3,18 +3,62 @@ use std::collections::VecDeque;
 use std::convert::TryFrom;
 
 use crate::convert::{Convert, RustBackedValue};
-use crate::def::Define;
+use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
+use crate::sys;
+use crate::types::Int;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 mod mruby;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let array = interp
-        .0
+    let array =
+        interp
+            .0
+            .borrow_mut()
+            .def_class::<Array>("Array", None, Some(rust_data_free::<Array>));
+    array.borrow_mut().mrb_value_is_rust_backed(true);
+
+    /*
+    mrb_define_method(mrb, a, "+",               mrb_ary_plus,         MRB_ARGS_REQ(1));   /* 15.2.12.5.1  */
+    mrb_define_method(mrb, a, "*",               mrb_ary_times,        MRB_ARGS_REQ(1));   /* 15.2.12.5.2  */
+    mrb_define_method(mrb, a, "<<",              mrb_ary_push_m,       MRB_ARGS_REQ(1));   /* 15.2.12.5.3  */
+    mrb_define_method(mrb, a, "[]",              mrb_ary_aget,         MRB_ARGS_ARG(1,1)); /* 15.2.12.5.4  */
+    mrb_define_method(mrb, a, "[]=",             mrb_ary_aset,         MRB_ARGS_ARG(2,1)); /* 15.2.12.5.5  */
+    mrb_define_method(mrb, a, "clear",           mrb_ary_clear_m,      MRB_ARGS_NONE());   /* 15.2.12.5.6  */
+    mrb_define_method(mrb, a, "concat",          mrb_ary_concat_m,     MRB_ARGS_REQ(1));   /* 15.2.12.5.8  */
+    mrb_define_method(mrb, a, "delete_at",       mrb_ary_delete_at,    MRB_ARGS_REQ(1));   /* 15.2.12.5.9  */
+    mrb_define_method(mrb, a, "empty?",          mrb_ary_empty_p,      MRB_ARGS_NONE());   /* 15.2.12.5.12 */
+    mrb_define_method(mrb, a, "first",           mrb_ary_first,        MRB_ARGS_OPT(1));   /* 15.2.12.5.13 */
+    mrb_define_method(mrb, a, "index",           mrb_ary_index_m,      MRB_ARGS_REQ(1));   /* 15.2.12.5.14 */
+    mrb_define_method(mrb, a, "initialize_copy", mrb_ary_replace_m,    MRB_ARGS_REQ(1));   /* 15.2.12.5.16 */
+    mrb_define_method(mrb, a, "join",            mrb_ary_join_m,       MRB_ARGS_OPT(1));   /* 15.2.12.5.17 */
+    mrb_define_method(mrb, a, "last",            mrb_ary_last,         MRB_ARGS_OPT(1));   /* 15.2.12.5.18 */
+    mrb_define_method(mrb, a, "length",          mrb_ary_size,         MRB_ARGS_NONE());   /* 15.2.12.5.19 */
+    mrb_define_method(mrb, a, "pop",             mrb_ary_pop,          MRB_ARGS_NONE());   /* 15.2.12.5.21 */
+    mrb_define_method(mrb, a, "push",            mrb_ary_push_m,       MRB_ARGS_ANY());    /* 15.2.12.5.22 */
+    mrb_define_method(mrb, a, "replace",         mrb_ary_replace_m,    MRB_ARGS_REQ(1));   /* 15.2.12.5.23 */
+    mrb_define_method(mrb, a, "reverse",         mrb_ary_reverse,      MRB_ARGS_NONE());   /* 15.2.12.5.24 */
+    mrb_define_method(mrb, a, "reverse!",        mrb_ary_reverse_bang, MRB_ARGS_NONE());   /* 15.2.12.5.25 */
+    mrb_define_method(mrb, a, "rindex",          mrb_ary_rindex_m,     MRB_ARGS_REQ(1));   /* 15.2.12.5.26 */
+    mrb_define_method(mrb, a, "shift",           mrb_ary_shift,        MRB_ARGS_NONE());   /* 15.2.12.5.27 */
+    mrb_define_method(mrb, a, "size",            mrb_ary_size,         MRB_ARGS_NONE());   /* 15.2.12.5.28 */
+    mrb_define_method(mrb, a, "slice",           mrb_ary_aget,         MRB_ARGS_ARG(1,1)); /* 15.2.12.5.29 */
+    mrb_define_method(mrb, a, "unshift",         mrb_ary_unshift_m,    MRB_ARGS_ANY());    /* 15.2.12.5.30 */
+    */
+    array
         .borrow_mut()
-        .def_class::<Array>("Array", None, None);
+        .add_method("concat", mruby::ary_concat, sys::mrb_args_any());
+    array
+        .borrow_mut()
+        .add_method("length", mruby::length, sys::mrb_args_none());
+    array
+        .borrow_mut()
+        .add_method("pop", mruby::artichoke_ary_pop, sys::mrb_args_none());
+    array
+        .borrow_mut()
+        .add_method("size", mruby::length, sys::mrb_args_none());
     array.borrow().define(interp)?;
     interp.eval(include_str!("array.rb"))?;
     Ok(())
@@ -84,7 +128,7 @@ pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
     Ok(ary)
 }
 
-pub fn element_reference<'a>(
+pub fn ary_ref<'a>(
     interp: &'a Artichoke,
     ary: &Value,
     offset: isize,
@@ -112,8 +156,87 @@ pub fn element_reference<'a>(
     Ok(borrow.buffer.get(offset).cloned())
 }
 
+#[derive(Debug, Clone)]
+pub enum ElementReferenceArgs {
+    Index(Int),
+    Name(String),
+    StartLen(Int, usize),
+}
+
+pub fn element_reference(
+    interp: &Artichoke,
+    args: ElementReferenceArgs,
+    value: &Value,
+) -> Result<Value, Error> {
+    let data = unsafe { Array::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
+    let borrow = data.borrow();
+    let match_against = &borrow.string[borrow.region.start..borrow.region.end];
+    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    match regex {
+        Backend::Onig(regex) => {
+            let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
+            match args {
+                Args::Index(index) => {
+                    if index < 0 {
+                        // Positive Int must be usize
+                        let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
+                        match captures.len().checked_sub(index) {
+                            Some(0) | None => Ok(interp.convert(None::<Value>)),
+                            Some(index) => Ok(interp.convert(captures.at(index))),
+                        }
+                    } else {
+                        // Positive Int must be usize
+                        let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
+                        Ok(interp.convert(captures.at(index)))
+                    }
+                }
+                Args::Name(name) => {
+                    let mut indexes = None;
+                    regex.foreach_name(|group, group_indexes| {
+                        if name == group {
+                            indexes = Some(group_indexes.to_vec());
+                            false
+                        } else {
+                            true
+                        }
+                    });
+                    let indexes = indexes.ok_or_else(|| Error::NoGroup(name))?;
+                    let group = indexes
+                        .iter()
+                        .filter_map(|index| {
+                            usize::try_from(*index)
+                                .ok()
+                                .and_then(|index| captures.at(index))
+                        })
+                        .last();
+                    Ok(interp.convert(group))
+                }
+                Args::StartLen(start, len) => {
+                    let start = if start < 0 {
+                        // Positive i64 must be usize
+                        let start = usize::try_from(-start).map_err(|_| Error::Fatal)?;
+                        captures.len().checked_sub(start).ok_or(Error::Fatal)?
+                    } else {
+                        // Positive i64 must be usize
+                        usize::try_from(start).map_err(|_| Error::Fatal)?
+                    };
+                    let mut matches = vec![];
+                    for index in start..(start + len) {
+                        matches.push(captures.at(index));
+                    }
+                    Ok(interp.convert(matches))
+                }
+            }
+        }
+        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
+    }
+}
+
 pub fn pop<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Option<Value>, Error<'a>> {
-    let ary = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
+    let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|e| {
+        println!("{:?}", e);
+        Error::Fatal
+    })?;
     let mut borrow = ary.borrow_mut();
     Ok(borrow.buffer.pop_back())
 }
