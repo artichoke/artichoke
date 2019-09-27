@@ -2509,10 +2509,10 @@ RETRY_TRY_BLOCK:
       mrb_value ary;
       int len, idx;
 
-      v = artichoke_value_to_ary(mrb, v);
+      v = artichoke_ary_splat(mrb, v);
       len = artichoke_ary_len(mrb, v);
       ary = v;
-      v = mrb_ary_new_capa(mrb, 0);
+      v = ARY_NEW_CAPA(mrb, 0);
       regs[a++] = v;
       for (idx=0; idx+pre<len; idx++) {
         regs[a+idx] = artichoke_ary_ref(mrb, ary, pre+idx);

@@ -497,14 +497,16 @@ class Array
   end
 
   def inspect
-    items = map do |item|
-      if object_id == item.object_id
-        '[...]'
-      else
-        item.inspect
-      end
+    s = +''
+    sep = ', '
+    index = 0
+    len = length
+    while index < len
+      s << self[index].inspect
+      s << sep if index < len - 1
+      index += 1
     end
-    "[#{items.join(', ')}]"
+    s
   end
 
   def join(separator = $,) # rubocop:disable Style/SpecialGlobalVars
@@ -513,10 +515,12 @@ class Array
     raise "No implicit conversion of #{separator.class} into String" if sep.nil?
 
     s = +''
+    index = 0
     len = size
-    each_index do |index|
+    while index < len
       s << self[index]
       s << sep if index < len - 1
+      index += 1
     end
     s
   end

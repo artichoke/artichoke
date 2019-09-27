@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::convert::float::Float;
-use crate::convert::{Convert, TryConvert};
+use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::extn::core::array::Array;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::{Value, ValueLike};
@@ -43,6 +44,11 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
                     elems.push(elem);
                 }
                 Ok(elems)
+            }
+            Ruby::Data => {
+                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let borrow = array.borrow();
+                Ok(Vec::from(borrow.buffer.clone()))
             }
             type_tag => Err(ArtichokeError::ConvertToRust {
                 from: type_tag,

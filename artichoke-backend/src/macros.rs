@@ -90,7 +90,7 @@ macro_rules! mrb_get_args {
             }
             1 => {
                 let req1 = req1.assume_init();
-                (req1, None, None)
+                (req1, None)
             }
             _ => unreachable!("mrb_get_args should have raised"),
         }

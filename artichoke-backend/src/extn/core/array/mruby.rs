@@ -1,4 +1,7 @@
+use artichoke_core::types::Ruby;
+use artichoke_core::value::Value as ValueLike;
 use std::convert::TryFrom;
+use std::mem;
 use std::slice;
 
 use crate::convert::{Convert, RustBackedValue};
@@ -7,6 +10,7 @@ use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeErro
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
+use crate::Artichoke;
 
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 #[no_mangle]
@@ -76,6 +80,10 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
                 .map(|val| Value::new(&interp, *val))
                 .collect::<Vec<_>>();
             array::from_values(&interp, values.as_slice())
+        })
+        .map_err(|err| {
+            println!("{:?}", err);
+            err
         });
     match result {
         Ok(value) => value.inner(),
@@ -103,7 +111,10 @@ pub unsafe extern "C" fn artichoke_ary_splat(
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, value);
-    let result = array::splat(&interp, value);
+    let result = array::splat(&interp, value).map_err(|err| {
+        println!("{:?}", err);
+        err
+    });
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -132,7 +143,10 @@ pub unsafe extern "C" fn artichoke_ary_concat(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::concat(&interp, ary, other);
+    let result = array::concat(&interp, ary, other).map_err(|err| {
+        println!("{:?}", err);
+        err
+    });
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -188,7 +202,10 @@ pub unsafe extern "C" fn artichoke_ary_push(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let value = Value::new(&interp, value);
-    let result = array::push(&interp, ary, value);
+    let result = array::push(&interp, ary, value).map_err(|err| {
+        println!("{:?}", err);
+        err
+    });
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -218,7 +235,11 @@ pub unsafe extern "C" fn artichoke_ary_ref(
     let ary = Value::new(&interp, ary);
     let result = isize::try_from(offset)
         .map_err(|_| Error::Fatal)
-        .and_then(|offset| array::ary_ref(&interp, &ary, offset));
+        .and_then(|offset| array::ary_ref(&interp, &ary, offset))
+        .map_err(|err| {
+            println!("{:?}", err);
+            err
+        });
     match result {
         Ok(value) => interp.convert(value).inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -359,6 +380,12 @@ pub unsafe extern "C" fn artichoke_ary_len(
     }
 }
 
+pub unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+    let len = artichoke_ary_len(mrb, ary);
+    let interp = unwrap_interpreter!(mrb);
+    interp.convert(len).inner()
+}
+
 pub unsafe extern "C" fn ary_concat(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
@@ -386,11 +413,6 @@ pub unsafe extern "C" fn ary_concat(
     }
 }
 
-pub unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
-    let len = artichoke_ary_len(mrb, ary);
-    sys::mrb_sys_fixnum_value(len)
-}
-
 #[no_mangle]
 pub unsafe extern "C" fn artichoke_ary_check(
     mrb: *mut sys::mrb_state,
@@ -408,80 +430,101 @@ pub unsafe extern "C" fn artichoke_ary_check(
     }
 }
 
-pub unsafe fn extract(interp: &Artichoke, num_captures: usize) -> Result<Self, Error> {
-    let num_captures = Int::try_from(num_captures).map_err(|_| Error::Fatal)?;
-    let mut first = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-    let mut second = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-    let mut has_second = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
-    sys::mrb_get_args(
-        interp.0.borrow().mrb,
-        Self::ARGSPEC.as_ptr() as *const i8,
-        first.as_mut_ptr(),
-        second.as_mut_ptr(),
-        has_second.as_mut_ptr(),
-    );
-    let first = first.assume_init();
-    let second = second.assume_init();
-    let has_length = has_second.assume_init() != 0;
-}
-
-unsafe fn is_range(
-    interp: &Artichoke,
-    first: sys::mrb_value,
-    num_captures: Int,
-) -> Result<Option<Self>, Error> {
-    let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
-    let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
-    let check_range = sys::mrb_range_beg_len(
-        interp.0.borrow().mrb,
-        first,
-        start.as_mut_ptr(),
-        len.as_mut_ptr(),
-        num_captures + 1,
-        0_u8,
-    );
-    let start = start.assume_init();
-    let len = len.assume_init();
-    if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
-        let len = usize::try_from(len).map_err(|_| Error::LengthType)?;
-        Ok(Some(Args::StartLen(start, len)))
-    } else {
-        Ok(None)
-    }
-}
-
-fn ary_element_reference_args<'a>(
+pub unsafe extern "C" fn ary_element_reference(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
-) -> Result<sys::mrb_value, Error<'a>> {
-    let len = artichoke_ary_len(mrb, ary);
+) -> sys::mrb_value {
+    fn ary_element_reference_args<'a>(
+        interp: &'a Artichoke,
+        first: Value,
+        second: Option<Value>,
+        len: Int,
+    ) -> Result<Option<array::ElementReferenceArgs>, Error<'a>> {
+        if let Some(length) = second {
+            let start_type = first.pretty_name();
+            let start = first
+                .try_into::<Int>()
+                .map_err(|_| Error::NoImplicitConversion {
+                    from: start_type,
+                    to: "Integer",
+                })?;
+            let len_type = length.pretty_name();
+            let len = length
+                .try_into::<usize>()
+                .map_err(|_| Error::NoImplicitConversion {
+                    from: len_type,
+                    to: "Integer",
+                })?;
+            Ok(Some(array::ElementReferenceArgs::StartLen(start, len)))
+        } else if let Ruby::Data = first.ruby_type() {
+            Err(Error::NoImplicitConversion {
+                from: first.pretty_name(),
+                to: "Integer",
+            })
+        } else if let Ok(index) = first.clone().try_into::<Int>() {
+            Ok(Some(array::ElementReferenceArgs::Index(index)))
+        } else if let Some(args) = unsafe { is_range(interp, &first, len)? } {
+            Ok(Some(args))
+        } else {
+            Ok(None)
+        }
+    }
+
+    unsafe fn is_range<'a>(
+        interp: &'a Artichoke,
+        first: &Value,
+        length: Int,
+    ) -> Result<Option<array::ElementReferenceArgs>, Error<'a>> {
+        let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        let check_range = sys::mrb_range_beg_len(
+            interp.0.borrow().mrb,
+            first.inner(),
+            start.as_mut_ptr(),
+            len.as_mut_ptr(),
+            length + 1,
+            0_u8,
+        );
+        let start = start.assume_init();
+        let len = len.assume_init();
+        if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
+            let len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
+                from: "Integer",
+                to: "Integer",
+            })?;
+            Ok(Some(array::ElementReferenceArgs::StartLen(start, len)))
+        } else {
+            Ok(None)
+        }
+    }
+
     let (first, second) = mrb_get_args!(mrb, required = 1, optional = 1);
     let interp = unwrap_interpreter!(mrb);
-    if let Some(length) = second {
-        let start = Value::new(&interp, first);
-        let start_type = start.pretty_name();
-        let start = start.try_into::<Int>().map_err(|_| {
-            Err(Error::NoImplicitConversion {
-                from: start_type,
-                to: "Integer",
-            })
-        })?;
-        let len = Value::new(&interp, length);
-        let len_type = len.pretty_name();
-        let len = len.try_into::<usize>().map_err(|_| {
-            Err(Error::NoImplicitConversion {
-                from: len_type,
-                to: "Integer",
-            })
-        })?;
-        Ok(Args::StartLen(start, len))
-    } else if let Ok(index) = interp.try_convert(Value::new(interp, first)) {
-        Ok(Args::Index(index))
-    } else if let Ok(name) = interp.try_convert(Value::new(interp, first)) {
-        Ok(Args::Name(name))
-    } else if let Some(args) = Self::is_range(interp, first, num_captures)? {
-        Ok(args)
-    } else {
-        Err(Error::IndexType)
+    let first = Value::new(&interp, first);
+    let second = second.map(|second| Value::new(&interp, second));
+    let args = ary_element_reference_args(&interp, first, second, artichoke_ary_len(mrb, ary));
+    let ary = Value::new(&interp, ary);
+    let result = args.and_then(|args| {
+        if let Some(args) = args {
+            array::element_reference(&interp, &ary, args)
+        } else {
+            Ok(interp.convert(None::<Value>))
+        }
+    });
+    match result {
+        Ok(value) => value.inner(),
+        Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::IndexTooSmall { index, minimum }) => {
+            let format_args = vec![interp.convert(format!(
+                "index {} too small for array; minimum: {}",
+                index, minimum
+            ))];
+            IndexError::raisef(interp, "%S", format_args)
+        }
+        Err(Error::NoImplicitConversion { from, to }) => {
+            let format_args = vec![interp.convert(from), interp.convert(to)];
+            TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
     }
 }

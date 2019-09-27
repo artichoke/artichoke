@@ -47,23 +47,29 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     mrb_define_method(mrb, a, "slice",           mrb_ary_aget,         MRB_ARGS_ARG(1,1)); /* 15.2.12.5.29 */
     mrb_define_method(mrb, a, "unshift",         mrb_ary_unshift_m,    MRB_ARGS_ANY());    /* 15.2.12.5.30 */
     */
+    array.borrow_mut().add_method(
+        "[]",
+        mruby::ary_element_reference,
+        sys::mrb_args_req_and_opt(1, 1),
+    );
     array
         .borrow_mut()
         .add_method("concat", mruby::ary_concat, sys::mrb_args_any());
     array
         .borrow_mut()
-        .add_method("length", mruby::length, sys::mrb_args_none());
+        .add_method("length", mruby::ary_len, sys::mrb_args_none());
     array
         .borrow_mut()
         .add_method("pop", mruby::artichoke_ary_pop, sys::mrb_args_none());
     array
         .borrow_mut()
-        .add_method("size", mruby::length, sys::mrb_args_none());
+        .add_method("size", mruby::ary_len, sys::mrb_args_none());
     array.borrow().define(interp)?;
     interp.eval(include_str!("array.rb"))?;
     Ok(())
 }
 
+#[derive(Debug)]
 pub enum Error<'a> {
     Artichoke(ArtichokeError),
     Fatal,
@@ -73,7 +79,7 @@ pub enum Error<'a> {
 
 #[derive(Debug, Clone)]
 pub struct Array {
-    buffer: VecDeque<Value>,
+    pub buffer: VecDeque<Value>,
 }
 
 impl RustBackedValue for Array {}
@@ -108,6 +114,7 @@ pub fn from_values<'a>(interp: &'a Artichoke, values: &[Value]) -> Result<Value,
 }
 
 pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Error> {
+    println!("splat");
     let buffer = if value.respond_to("to_a").map_err(Error::Artichoke)? {
         value
             .funcall::<Vec<Value>>("to_a", &[], None)
@@ -115,9 +122,11 @@ pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Error> {
     } else {
         vec![value]
     };
+    println!("converted");
     let ary = Array {
         buffer: VecDeque::from(buffer),
     };
+    println!("{:?}", ary);
     unsafe { ary.try_into_ruby(interp, None) }.map_err(Error::Artichoke)
 }
 
@@ -156,79 +165,49 @@ pub fn ary_ref<'a>(
     Ok(borrow.buffer.get(offset).cloned())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum ElementReferenceArgs {
     Index(Int),
-    Name(String),
     StartLen(Int, usize),
 }
 
-pub fn element_reference(
-    interp: &Artichoke,
+pub fn element_reference<'a>(
+    interp: &'a Artichoke,
+    ary: &Value,
     args: ElementReferenceArgs,
-    value: &Value,
-) -> Result<Value, Error> {
-    let data = unsafe { Array::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
+) -> Result<Value, Error<'a>> {
+    let data = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
     let borrow = data.borrow();
-    let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let regex = (*borrow.regexp.regex).as_ref().ok_or(Error::Fatal)?;
-    match regex {
-        Backend::Onig(regex) => {
-            let captures = regex.captures(match_against).ok_or(Error::NoMatch)?;
-            match args {
-                Args::Index(index) => {
-                    if index < 0 {
-                        // Positive Int must be usize
-                        let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
-                        match captures.len().checked_sub(index) {
-                            Some(0) | None => Ok(interp.convert(None::<Value>)),
-                            Some(index) => Ok(interp.convert(captures.at(index))),
-                        }
-                    } else {
-                        // Positive Int must be usize
-                        let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
-                        Ok(interp.convert(captures.at(index)))
-                    }
+    match args {
+        ElementReferenceArgs::Index(index) => {
+            if index < 0 {
+                // Positive Int must be usize
+                let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
+                match borrow.buffer.len().checked_sub(index) {
+                    Some(0) | None => Ok(interp.convert(None::<Value>)),
+                    Some(index) => Ok(interp.convert(borrow.buffer.get(index))),
                 }
-                Args::Name(name) => {
-                    let mut indexes = None;
-                    regex.foreach_name(|group, group_indexes| {
-                        if name == group {
-                            indexes = Some(group_indexes.to_vec());
-                            false
-                        } else {
-                            true
-                        }
-                    });
-                    let indexes = indexes.ok_or_else(|| Error::NoGroup(name))?;
-                    let group = indexes
-                        .iter()
-                        .filter_map(|index| {
-                            usize::try_from(*index)
-                                .ok()
-                                .and_then(|index| captures.at(index))
-                        })
-                        .last();
-                    Ok(interp.convert(group))
-                }
-                Args::StartLen(start, len) => {
-                    let start = if start < 0 {
-                        // Positive i64 must be usize
-                        let start = usize::try_from(-start).map_err(|_| Error::Fatal)?;
-                        captures.len().checked_sub(start).ok_or(Error::Fatal)?
-                    } else {
-                        // Positive i64 must be usize
-                        usize::try_from(start).map_err(|_| Error::Fatal)?
-                    };
-                    let mut matches = vec![];
-                    for index in start..(start + len) {
-                        matches.push(captures.at(index));
-                    }
-                    Ok(interp.convert(matches))
-                }
+            } else {
+                // Positive Int must be usize
+                let index = usize::try_from(index).map_err(|_| Error::Fatal)?;
+                Ok(interp.convert(borrow.buffer.get(index)))
             }
         }
-        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
+        ElementReferenceArgs::StartLen(start, len) => {
+            let start = if start < 0 {
+                // Positive i64 must be usize
+                let start = usize::try_from(-start).map_err(|_| Error::Fatal)?;
+                borrow.buffer.len().checked_sub(start).ok_or(Error::Fatal)?
+            } else {
+                // Positive i64 must be usize
+                usize::try_from(start).map_err(|_| Error::Fatal)?
+            };
+            let mut slice = Vec::with_capacity(len);
+            for index in start..(start + len) {
+                slice.push(interp.convert(borrow.buffer.get(index)));
+            }
+            from_values(&interp, slice.as_slice())
+        }
     }
 }
 
@@ -249,12 +228,15 @@ pub fn unshift(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Er
 }
 
 pub fn concat(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Error> {
+    println!("concat");
     let ary_type = ary.pretty_name();
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
+    println!("extract self ary for concat");
     let mut borrow = array.borrow_mut();
     let ruby_type = other.pretty_name();
     if let Ok(other) = other.try_into::<Vec<Value>>() {
         borrow.buffer.extend(other);
+        println!("concat extend");
         Ok(ary)
     } else {
         Err(Error::NoImplicitConversion {
