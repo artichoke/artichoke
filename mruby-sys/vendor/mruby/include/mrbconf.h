@@ -235,6 +235,10 @@
 #  define ARY_PUSH(mrb, ary, other)            artichoke_ary_push(mrb, ary, other)
 #  define ARY_REF(mrb, ary, idx)               artichoke_ary_ref(mrb, ary, idx)
 #  define ARY_SET(mrb, ary, idx, val)          artichoke_ary_set(mrb, ary, idx, val)
+#  define ARY_SHIFT(mrb, ary)                  artichoke_ary_shift(mrb, ary)
+#  define ARY_UNSHIFT(mrb, ary, val)           artichoke_ary_unshift(mrb, ary, val)
+#  define ARRAY_LEN(mrb, ary)                  artichoke_ary_len(mrb, ary)
+#  define ARY_CHECK(mrb, ary)                  artichoke_ary_check(mrb, ary)
 #else
 #  define ARY_NEW(mrb)                         mrb_ary_new(mrb)
 #  define ARY_NEW_CAPA(mrb, len)               mrb_ary_new_capa(mrb, len)
@@ -245,6 +249,10 @@
 #  define ARY_PUSH(mrb, ary, other)            mrb_ary_push(mrb, ary, other)
 #  define ARY_REF(mrb, ary, idx)               mrb_ary_ref(mrb, ary, idx)
 #  define ARY_SET(mrb, ary, idx, val)          mrb_ary_set(mrb, ary, idx, val)
+#  define ARY_SHIFT(mrb, ary)                  mrb_ary_shift(mrb, ary)
+#  define ARY_UNSHIFT(mrb, ary, val)           mrb_ary_unshift(mrb, ary, val)
+#  define ARRAY_LEN(mrb, ary)                  RARRAY_LEN(ary)
+#  define ARY_CHECK(mrb, ary)                  mrb_array_p(ary)
 #endif
 
 #endif  /* MRUBYCONF_H */
