@@ -878,7 +878,7 @@ argnum_error(mrb_state *mrb, mrb_int num)
 
   if (argc < 0) {
     mrb_value args = mrb->c->stack[1];
-    if (ARY_CHECK(args)) {
+    if (ARY_CHECK(mrb, args)) {
       argc = ARRAY_LEN(mrb, args);
     }
   }
@@ -2521,7 +2521,7 @@ RETRY_TRY_BLOCK:
 
     CASE(OP_APOST, BBB) {
       mrb_value v = regs[a];
-      mrb_value out = ARY_NEW_CAPA(mrb, 0);
+      mrb_value out;
       int pre  = b;
       int post = c;
       int len, idx;
@@ -2530,13 +2530,27 @@ RETRY_TRY_BLOCK:
         v = ARY_NEW_FROM_VALUES(mrb, 1, &regs[a]);
       }
       len = ARRAY_LEN(mrb, v);
-      regs[a++] = v;
-      for (idx=0; idx+pre<len; idx++) {
-        regs[a+idx] = ARY_REF(mrb, v, pre+idx);
+      if (len > pre + post) {
+        out = ARY_NEW_CAPA(mrb, len - pre - post);
+        int udx;
+        for (udx = 0; udx < len - pre - post; udx++) {
+          ARY_SET(mrb, out, udx, ARY_REF(mrb, v, pre + udx));
+        }
+        regs[a++] = out;
+        while (post--) {
+          regs[a++] = ARY_REF(mrb, v, len-post-1);
+        }
       }
-      while (idx < post) {
-        SET_NIL_VALUE(regs[a+idx]);
-        idx++;
+      else {
+        out = ARY_NEW_CAPA(mrb, 0);
+        regs[a++] = out;
+        for (idx=0; idx+pre<len; idx++) {
+          regs[a+idx] = ARY_REF(mrb, v, pre+idx);
+        }
+        while (idx < post) {
+          SET_NIL_VALUE(regs[a+idx]);
+          idx++;
+        }
       }
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
