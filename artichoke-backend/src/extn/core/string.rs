@@ -1,7 +1,7 @@
 use crate::convert::TryConvert;
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError, TypeError};
+use crate::extn::core::exception::{ArgumentError, RubyException, RuntimeError, TypeError};
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};

@@ -6,7 +6,7 @@ use std::slice;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::array::{self, Error};
-use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
+use crate::extn::core::exception::{IndexError, RubyException, RuntimeError, TypeError};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;

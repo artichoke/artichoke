@@ -58,6 +58,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     global_const!(interp, ARTICHOKE_COMPILER_VERSION);
 
     core::init(interp)?;
-    stdlib::init(interp)?;
+    // stdlib::init(interp)?;
     Ok(())
 }

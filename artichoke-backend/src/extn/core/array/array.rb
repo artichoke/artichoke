@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Array
+  include Enumerable
+
   def self.[](*args)
     [].concat(args)
   end
@@ -287,13 +289,19 @@ class Array
   def collect(&blk)
     return to_enum :collect unless blk
 
-    raise NotImplementedError
+    dup.tap { |ary| ary.collect!(&blk) }
   end
 
-  def collect!(&blk)
-    return to_enum :collect! unless blk
+  def collect!(&block)
+    return to_enum :collect! unless block
 
-    raise NotImplementedError
+    idx = 0
+    len = size
+    while idx < len
+      self[idx] = block.call self[idx]
+      idx += 1
+    end
+    self
   end
 
   def combination(kcombinations, &block)
@@ -336,6 +344,15 @@ class Array
     end
   end
 
+  def delete(key, &block)
+    while i = index(key)
+      delete_at(i)
+      ret = key
+    end
+    return block.call if ret.nil? && block
+    ret
+  end
+
   def delete_if(&block)
     return to_enum :delete_if unless block
 
@@ -359,16 +376,39 @@ class Array
     end
   end
 
-  def each(&blk)
-    return to_enum(:each) unless blk
+  def each(&block)
+    return to_enum :each unless block
 
     idx = 0
-    loop do
-      break if idx > size
-
-      yield self[idx]
+    while idx < length
+      block.call(self[idx])
       idx += 1
     end
+    self
+  end
+
+  def each_index(&block)
+    return to_enum :each_index unless block
+
+    idx = 0
+    while idx < length
+      block.call(idx)
+      idx += 1
+    end
+    self
+  end
+
+  def eql?(other)
+    other = self.__ary_eq(other)
+    return false if other == false
+    return true  if other == true
+    len = self.size
+    i = 0
+    while i < len
+      return false unless self[i].eql?(other[i])
+      i += 1
+    end
+    return true
   end
 
   def fetch(index, ifnone = NONE, &block)
@@ -539,18 +579,6 @@ class Array
     self
   end
 
-  def map(&blk)
-    return to_enum :map unless blk
-
-    raise NotImplementedError
-  end
-
-  def map!(&blk)
-    return to_enum :map! unless blk
-
-    raise NotImplementedError
-  end
-
   def permutation(kcombinations = size, &block)
     size = self.size
     return to_enum(:permutation, kcombinations) unless block
@@ -708,6 +736,75 @@ class Array
     end
   end
 
+  def sort(&block)
+    self.dup.sort!(&block)
+  end
+
+  def sort!(&block)
+    stack = [ [ 0, self.size - 1 ] ]
+    until stack.empty?
+      left, mid, right = stack.pop
+      if right == nil
+        right = mid
+        # sort self[left..right]
+        if left < right
+          if left + 1 == right
+            lval = self[left]
+            rval = self[right]
+            cmp = if block then block.call(lval,rval) else lval <=> rval end
+            if cmp.nil?
+              raise ArgumentError, "comparison of #{lval.inspect} and #{rval.inspect} failed"
+            end
+            if cmp > 0
+              self[left]  = rval
+              self[right] = lval
+            end
+          else
+            mid = ((left + right + 1) / 2).floor
+            stack.push [ left, mid, right ]
+            stack.push [ mid, right ]
+            stack.push [ left, (mid - 1) ] if left < mid - 1
+          end
+        end
+      else
+        lary = self[left, mid - left]
+        lsize = lary.size
+
+        # The entity sharing between lary and self may cause a large memory
+        # copy operation in the merge loop below.  This harmless operation
+        # cancels the sharing and provides a huge performance gain.
+        lary[0] = lary[0]
+
+        # merge
+        lidx = 0
+        ridx = mid
+        (left..right).each { |i|
+          if lidx >= lsize
+            break
+          elsif ridx > right
+            self[i, lsize - lidx] = lary[lidx, lsize - lidx]
+            break
+          else
+            lval = lary[lidx]
+            rval = self[ridx]
+            cmp = if block then block.call(lval,rval) else lval <=> rval end
+            if cmp.nil?
+              raise ArgumentError, "comparison of #{lval.inspect} and #{rval.inspect} failed"
+            end
+            if cmp <= 0
+              self[i] = lval
+              lidx += 1
+            else
+              self[i] = rval
+              ridx += 1
+            end
+          end
+        }
+      end
+    end
+    self
+  end
+
   def to_a
     self
   end
@@ -793,5 +890,7 @@ class Array
   end
 
   alias append push
+  alias map collect
+  alias map! collect!
   alias prepend unshift
 end

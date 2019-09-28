@@ -1,5 +1,5 @@
 use crate::convert::{Convert, RustBackedValue, TryConvert};
-use crate::extn::core::error::{ArgumentError, RubyException, RuntimeError};
+use crate::extn::core::exception::{ArgumentError, RubyException, RuntimeError};
 use std::mem;
 
 use crate::extn::core::env::backends::EnvBackend;

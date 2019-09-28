@@ -13,7 +13,7 @@ use std::rc::Rc;
 use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
+use crate::extn::core::exception::{RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;

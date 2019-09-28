@@ -94,8 +94,7 @@ impl ExceptionHandler for Artichoke {
         // backtrace = exception.backtrace
         // ```
         let exception = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
-        println!("{}", exception.to_s_debug());
-        /*
+        println!("{:?}", exception);
         let class = exception
             .funcall::<Value>("class", &[], None)
             .and_then(|exception| exception.funcall::<String>("name", &[], None));
@@ -123,8 +122,6 @@ impl ExceptionHandler for Artichoke {
         };
         debug!("Extracted exception from interpreter: {}", exception);
         LastError::Some(exception)
-        */
-        LastError::None
     }
 }
 

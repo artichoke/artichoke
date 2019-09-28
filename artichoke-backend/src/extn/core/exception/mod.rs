@@ -43,11 +43,13 @@ use std::rc::Rc;
 
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
+use crate::eval::Eval;
 use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    interp.eval(include_bytes!("exception.rb").as_ref())?;
     let exception = interp
         .0
         .borrow_mut()
@@ -224,7 +226,7 @@ mod tests {
     use crate::def::{ClassLike, Define};
     use crate::eval::Eval;
     use crate::exception::Exception;
-    use crate::extn::core::error::{RubyException, RuntimeError};
+    use crate::extn::core::exception::{RubyException, RuntimeError};
     use crate::file::File;
     use crate::sys;
     use crate::{Artichoke, ArtichokeError};

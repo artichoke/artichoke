@@ -6,7 +6,7 @@ pub mod array;
 pub mod comparable;
 pub mod enumerable;
 pub mod env;
-pub mod error;
+pub mod exception;
 pub mod float;
 pub mod hash;
 pub mod integer;
@@ -23,12 +23,13 @@ pub mod symbol;
 pub mod thread;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    module::init(interp)?;
+    exception::init(interp)?;
     interp.eval(include_str!("object.rb"))?;
     array::init(interp)?;
     comparable::init(interp)?;
     enumerable::init(interp)?;
     env::init(interp)?;
-    error::init(interp)?;
     float::init(interp)?;
     hash::init(interp)?;
     integer::init(interp)?;

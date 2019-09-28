@@ -4,7 +4,7 @@ use std::mem;
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::error::{ArgumentError, RangeError, RubyException, RuntimeError};
+use crate::extn::core::exception::{ArgumentError, RangeError, RubyException, RuntimeError};
 use crate::sys;
 use crate::types::Int;
 use crate::value::{Value, ValueLike};
