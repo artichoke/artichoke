@@ -497,7 +497,7 @@ class Array
   end
 
   def inspect
-    s = +''
+    s = +'['
     sep = ', '
     index = 0
     len = length
@@ -506,7 +506,7 @@ class Array
       s << sep if index < len - 1
       index += 1
     end
-    s
+    s << ']'
   end
 
   def join(separator = $,) # rubocop:disable Style/SpecialGlobalVars

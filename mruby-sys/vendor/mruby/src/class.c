@@ -5,6 +5,7 @@
 */
 
 #include <stdarg.h>
+#include <stdlib.h>
 #include <mruby.h>
 #include <mruby/array.h>
 #include <mruby/class.h>
@@ -526,25 +527,21 @@ mrb_get_argc(mrb_state *mrb)
   mrb_int argc = mrb->c->ci->argc;
 
   if (argc < 0) {
-    struct RArray *a = mrb_ary_ptr(mrb->c->stack[1]);
-
-    argc = ARY_LEN(a);
+    argc = ARRAY_LEN(mrb, mrb->c->stack[1]);
   }
   return argc;
 }
 
-MRB_API mrb_value*
+MRB_API mrb_value
 mrb_get_argv(mrb_state *mrb)
 {
   mrb_int argc = mrb->c->ci->argc;
-  mrb_value *array_argv;
+  mrb_value array_argv;
   if (argc < 0) {
-    struct RArray *a = mrb_ary_ptr(mrb->c->stack[1]);
-
-    array_argv = ARY_PTR(a);
+    array_argv = mrb->c->stack[1];
   }
   else {
-    array_argv = NULL;
+    array_argv = mrb_nil_value();
   }
   return array_argv;
 }
@@ -588,15 +585,23 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
   va_list ap;
   mrb_int argc = mrb_get_argc(mrb);
   mrb_int arg_i = 0;
-  mrb_value *array_argv = mrb_get_argv(mrb);
+  mrb_value argv_value = mrb_get_argv(mrb);
+  mrb_value *array_argv = malloc(argc * sizeof (mrb_value));
   mrb_bool opt = FALSE;
   mrb_bool opt_skip = TRUE;
   mrb_bool given = TRUE;
 
+  int udx;
+  if (ARY_CHECK(mrb, argv_value)) {
+    for (udx = 0; udx < argc; udx++) {
+      array_argv[udx] = ARY_REF(mrb, argv_value, udx);
+    }
+  }
+
   va_start(ap, format);
 
 #define ARGV \
-  (array_argv ? array_argv : (mrb->c->stack + 1))
+  (ARY_CHECK(mrb, argv_value) ? array_argv : (mrb->c->stack + 1))
 
   while ((c = *fmt++)) {
     switch (c) {
@@ -909,7 +914,10 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
       }
       break;
     case '|':
-      if (opt_skip && i == argc) return argc;
+      if (opt_skip && i == argc) {
+        free(array_argv);
+        return argc;
+      }
       opt = TRUE;
       break;
     case '?':
@@ -966,6 +974,7 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
     mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong number of arguments");
   }
   va_end(ap);
+  free(array_argv);
   return i;
 }
 

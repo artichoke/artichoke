@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <math.h>
 #include <mruby.h>
 #include <mruby/array.h>
@@ -877,8 +878,8 @@ argnum_error(mrb_state *mrb, mrb_int num)
 
   if (argc < 0) {
     mrb_value args = mrb->c->stack[1];
-    if (mrb_array_p(args)) {
-      argc = RARRAY_LEN(args);
+    if (ARY_CHECK(args)) {
+      argc = ARRAY_LEN(mrb, args);
     }
   }
   if (mrb->c->ci->mid) {
@@ -1746,20 +1747,25 @@ RETRY_TRY_BLOCK:
       int b  = MRB_ASPEC_BLOCK(a);
       */
       int argc = mrb->c->ci->argc;
-      mrb_value argv = ARY_NEW_FROM_VALUES(mrb, argc, regs + 1);
-// #error "What?"
-      mrb_value argv0 = ARY_REF(mrb, argv, 0);
+      mrb_value *argv = regs+1;
+      mrb_value * const argv0 = argv;
       int const len = m1 + o + r + m2;
       int const blk_pos = len + kd + 1;
-      mrb_value blk = ARY_REF(mrb, argv, argc < 0 ? 1 : argc);
+      mrb_value *blk = &argv[argc < 0 ? 1 : argc];
       mrb_value kdict;
       int kargs = kd;
+      mrb_value *argv_from_array = NULL;
 
       /* arguments is passed with Array */
       if (argc < 0) {
         mrb_value ary = regs[1];
-        argv = ary;
         argc = ARRAY_LEN(mrb, ary);
+        argv_from_array = malloc(argc * sizeof (mrb_value));
+        argv = argv_from_array;
+        int udx;
+        for (udx = 0; udx < argc; udx++) {
+          argv[udx] = ARY_REF(mrb, ary, udx);
+        }
         mrb_gc_protect(mrb, ary);
       }
 
@@ -1771,10 +1777,16 @@ RETRY_TRY_BLOCK:
         }
       }
       /* extract first argument array to arguments */
-      else if (len > 1 && argc == 1 && ARY_CHECK(mrb, ARY_REF(mrb, argv, 0))) {
-        mrb_gc_protect(mrb, ARY_REF(mrb, argv, 0));
-        argc = ARRAY_LEN(mrb, ARY_REF(mrb, argv, 0));
-        argv = ARY_REF(mrb, argv, 0);
+      else if (len > 1 && argc == 1 && ARY_CHECK(mrb, argv[0])) {
+        mrb_value ary = argv[0];
+        argc = ARRAY_LEN(mrb, ary);
+        argv_from_array = malloc(argc * sizeof (mrb_value));
+        argv = argv_from_array;
+        int udx;
+        for (udx = 0; udx < argc; udx++) {
+          argv[udx] = ARY_REF(mrb, ary, udx);
+        }
+        mrb_gc_protect(mrb, ary);
       }
 
       if (kd) {
@@ -1784,8 +1796,8 @@ RETRY_TRY_BLOCK:
           kargs = 0;
         }
         else {
-          if (!mrb_nil_p(argv) && argc > 0 && mrb_hash_p(ARY_REF(mrb, argv, argc - 1))) {
-            kdict = ARY_REF(mrb, argv, argc - 1);
+          if (argv && argc > 0 && mrb_hash_p(argv[argc-1])) {
+            kdict = argv[argc-1];
             mrb_hash_check_kdict(mrb, kdict);
           }
           else if (r || argc <= m1+m2+o
@@ -1803,34 +1815,25 @@ RETRY_TRY_BLOCK:
         }
       }
 
-// #error "What?"
       /* no rest arguments */
       if (argc-kargs < len) {
         int mlen = m2;
         if (argc < m1+m2) {
           mlen = m1 < argc ? argc - m1 : 0;
         }
-        regs[blk_pos] = blk; /* move block */
+        regs[blk_pos] = *blk; /* move block */
         if (kd) regs[len + 1] = kdict;
 
         /* copy mandatory and optional arguments */
-        if (mrb_obj_id(argv0) != mrb_obj_id(ARY_REF(mrb, argv, 0))) {
-          int udx;
-          for (udx = 0; udx < argc - mlen; udx++) {
-            regs[1 + udx] = ARY_REF(mrb, argv, udx);
-          }
-          // value_move(&regs[1], argv, argc-mlen); /* m1 + o */
+        if (argv0 != argv) {
+          value_move(&regs[1], argv, argc-mlen); /* m1 + o */
         }
         if (argc < m1) {
           stack_clear(&regs[argc+1], m1-argc);
         }
         /* copy post mandatory arguments */
         if (mlen) {
-          int udx;
-          for (udx = 0; udx < mlen; udx++) {
-            regs[len - m2 + 1 + udx] = ARY_REF(mrb, argv, mlen + udx);
-          }
-          // value_move(&regs[len-m2+1], &argv[argc-mlen], mlen);
+          value_move(&regs[len-m2+1], &argv[argc-mlen], mlen);
         }
         if (mlen < m2) {
           stack_clear(&regs[len-m2+mlen+1], m2-mlen);
@@ -1845,37 +1848,25 @@ RETRY_TRY_BLOCK:
       }
       else {
         int rnum = 0;
-        if (mrb_obj_id(argv0) != mrb_obj_id(ARY_REF(mrb, argv, 0))) {
-          regs[blk_pos] = blk; /* move block */
+        if (argv0 != argv) {
+          regs[blk_pos] = *blk; /* move block */
           if (kd) regs[len + 1] = kdict;
-          int udx;
-          for (udx = 0; udx < m1 + o; udx++) {
-            regs[1] = ARY_REF(mrb, argv, udx);
-          }
-          // value_move(&regs[1], argv, m1+o);
+          value_move(&regs[1], argv, m1+o);
         }
         if (r) {
           mrb_value ary;
 
           rnum = argc-m1-o-m2-kargs;
-          ary = ARY_NEW_CAPA(mrb, m1 + o);
-          int udx;
-          for (udx = 0; udx < rnum; udx++) {
-            ARY_SET(mrb, ary, udx, ARY_REF(mrb, argv, m1 + o + udx));
-          }
+          ary = ARY_NEW_FROM_VALUES(mrb, rnum, argv+m1+o);
           regs[m1+o+1] = ary;
         }
         if (m2) {
           if (argc-m2 > m1) {
-            int udx;
-            for (udx = 0; udx < m2; udx++) {
-              regs[m1 + o + r + 1 + udx] = ARY_REF(mrb, argv, m1 + o + rnum + udx);
-            }
-            // value_move(&regs[m1+o+r+1], &argv[m1+o+rnum], m2);
+            value_move(&regs[m1+o+r+1], &argv[m1+o+rnum], m2);
           }
         }
-        if (mrb_obj_id(argv0) == mrb_obj_id(ARY_REF(mrb, argv, 0))) {
-          regs[blk_pos] = blk; /* move block */
+        if (argv0 == argv) {
+          regs[blk_pos] = *blk; /* move block */
           if (kd) regs[len + 1] = kdict;
         }
         pc += o*3;
@@ -1887,6 +1878,9 @@ RETRY_TRY_BLOCK:
       /* clear local (but non-argument) variables */
       if (irep->nlocals-blk_pos-1 > 0) {
         stack_clear(&regs[blk_pos+1], irep->nlocals-blk_pos-1);
+      }
+      if (argv_from_array != NULL) {
+        free(argv_from_array);
       }
       JUMP;
     }
@@ -2488,17 +2482,16 @@ RETRY_TRY_BLOCK:
 
     CASE(OP_ARYDUP, B) {
       mrb_value ary = regs[a];
+      if (ARY_CHECK(mrb, ary)) {
 #ifdef ARTICHOKE
-      ary = artichoke_ary_clone(mrb, ary);
+        ary = artichoke_ary_clone(mrb, ary);
 #else
-      // TODO: how would we get an `OP_ARYDUP` on values that are not `Array`s?
-      if (mrb_array_p(ary)) {
         ary = ARY_NEW_FROM_VALUES(mrb, RARRAY_LEN(ary), RARRAY_PTR(ary));
+#endif
       }
       else {
         ary = ARY_NEW_FROM_VALUES(mrb, 1, &ary);
       }
-#endif
       regs[a] = ary;
       NEXT;
     }
@@ -2506,7 +2499,7 @@ RETRY_TRY_BLOCK:
     CASE(OP_AREF, BBB) {
       mrb_value v = regs[b];
 
-      if (!mrb_array_p(v)) {
+      if (!ARY_CHECK(mrb, v)) {
         if (c == 0) {
           regs[a] = v;
         }
@@ -2527,57 +2520,24 @@ RETRY_TRY_BLOCK:
     }
 
     CASE(OP_APOST, BBB) {
-#ifdef ARTICHOKE
-      // regs is a `mrb_value*`
       mrb_value v = regs[a];
+      mrb_value out = ARY_NEW_CAPA(mrb, 0);
       int pre  = b;
       int post = c;
-      mrb_value ary;
       int len, idx;
 
-      v = artichoke_ary_splat(mrb, v);
-      len = artichoke_ary_len(mrb, v);
-      ary = v;
-      v = ARY_NEW_CAPA(mrb, 0);
+      if (!ARY_CHECK(mrb, v)) {
+        v = ARY_NEW_FROM_VALUES(mrb, 1, &regs[a]);
+      }
+      len = ARRAY_LEN(mrb, v);
       regs[a++] = v;
       for (idx=0; idx+pre<len; idx++) {
-        regs[a+idx] = artichoke_ary_ref(mrb, ary, pre+idx);
+        regs[a+idx] = ARY_REF(mrb, v, pre+idx);
       }
       while (idx < post) {
         SET_NIL_VALUE(regs[a+idx]);
         idx++;
       }
-#else
-      mrb_value v = regs[a];
-      int pre  = b;
-      int post = c;
-      struct RArray *ary;
-      int len, idx;
-
-      if (!mrb_array_p(v)) {
-        v = ARY_NEW_FROM_VALUES(mrb, 1, &regs[a]);
-      }
-      ary = mrb_ary_ptr(v);
-      len = (int)ARY_LEN(ary);
-      if (len > pre + post) {
-        v = ARY_NEW_FROM_VALUES(mrb, len - pre - post, ARY_PTR(ary)+pre);
-        regs[a++] = v;
-        while (post--) {
-          regs[a++] = ARY_PTR(ary)[len-post-1];
-        }
-      }
-      else {
-        v = ARY_NEW_CAPA(mrb, 0);
-        regs[a++] = v;
-        for (idx=0; idx+pre<len; idx++) {
-          regs[a+idx] = ARY_PTR(ary)[pre+idx];
-        }
-        while (idx < post) {
-          SET_NIL_VALUE(regs[a+idx]);
-          idx++;
-        }
-      }
-#endif
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
     }

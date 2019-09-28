@@ -430,6 +430,60 @@ pub unsafe extern "C" fn artichoke_ary_check(
     }
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn artichoke_ary_shift(
+    mrb: *mut sys::mrb_state,
+    ary: sys::mrb_value,
+) -> sys::mrb_value {
+    let interp = unwrap_interpreter!(mrb);
+    let ary = Value::new(&interp, ary);
+    let result = array::shift(&interp, &ary, 1);
+    match result {
+        Ok(value) => value.inner(),
+        Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::IndexTooSmall { index, minimum }) => {
+            let format_args = vec![interp.convert(format!(
+                "index {} too small for array; minimum: {}",
+                index, minimum
+            ))];
+            IndexError::raisef(interp, "%S", format_args)
+        }
+        Err(Error::NoImplicitConversion { from, to }) => {
+            let format_args = vec![interp.convert(from), interp.convert(to)];
+            TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn artichoke_ary_unshift(
+    mrb: *mut sys::mrb_state,
+    ary: sys::mrb_value,
+    val: sys::mrb_value,
+) -> sys::mrb_value {
+    let interp = unwrap_interpreter!(mrb);
+    let ary = Value::new(&interp, ary);
+    let val = Value::new(&interp, val);
+    let result = array::unshift(&interp, ary, val);
+    match result {
+        Ok(value) => value.inner(),
+        Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::IndexTooSmall { index, minimum }) => {
+            let format_args = vec![interp.convert(format!(
+                "index {} too small for array; minimum: {}",
+                index, minimum
+            ))];
+            IndexError::raisef(interp, "%S", format_args)
+        }
+        Err(Error::NoImplicitConversion { from, to }) => {
+            let format_args = vec![interp.convert(from), interp.convert(to)];
+            TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+    }
+}
+
 pub unsafe extern "C" fn ary_element_reference(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
