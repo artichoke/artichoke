@@ -191,7 +191,7 @@ module Enumerable
     ary = []
     each do |val|
       ary.push(val) if block.call(val)
-    eendd
+    end
     ary
   end
 

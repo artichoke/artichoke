@@ -23,12 +23,15 @@ pub mod symbol;
 pub mod thread;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    // These core classes are ordered according to the dependency DAG between
+    // them.
+    enumerable::init(interp)?;
     module::init(interp)?;
     exception::init(interp)?;
     interp.eval(include_str!("object.rb"))?;
+    // `Array` depends on: `Enumerable`, `attr_accessor` (defined in `Module`)
     array::init(interp)?;
     comparable::init(interp)?;
-    enumerable::init(interp)?;
     env::init(interp)?;
     float::init(interp)?;
     hash::init(interp)?;

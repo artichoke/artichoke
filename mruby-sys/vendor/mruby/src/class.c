@@ -948,7 +948,7 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
               *var = ARGV+arg_i;
             }
             else {
-              mrb_value args = ary_new_from_values(mrb, *pl, ARGV+arg_i);
+              mrb_value args = mrb_ary_new_from_values(mrb, *pl, ARGV+arg_i);
               RARRAY(args)->c = NULL;
               *var = RARRAY_PTR(args);
             }

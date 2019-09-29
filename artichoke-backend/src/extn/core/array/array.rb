@@ -1,7 +1,12 @@
 # frozen_string_literal: true
 
 class Array
-  include Enumerable
+  # include depends on Array#reverse which hasn't been defined yet so inline the
+  # `Module` include.
+  #
+  # include Enumerable
+  Enumerable.append_features(self)
+  Enumerable.included(self)
 
   def self.[](*args)
     [].concat(args)
@@ -892,5 +897,5 @@ class Array
   alias append push
   alias map collect
   alias map! collect!
-  alias prepend unshift
+  # alias prepend unshift
 end
