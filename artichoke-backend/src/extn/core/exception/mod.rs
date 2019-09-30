@@ -171,6 +171,12 @@ pub trait RubyException: 'static + Sized {
                 drop(formatargs);
                 sys::mrb_raisef(mrb, eclass, message_ptr, arg1)
             }
+            2 => {
+                let arg1 = formatargs.remove(0);
+                let arg2 = formatargs.remove(0);
+                drop(formatargs);
+                sys::mrb_raisef(mrb, eclass, message_ptr, arg1, arg2)
+            }
             _ => panic!("unsupported raisef format arg count. See mruby/src/extn/core/error.rs."),
         }
         unreachable!("mrb_raise will unwind the stack with longjmp");

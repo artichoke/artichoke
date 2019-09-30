@@ -246,6 +246,19 @@ module Kernel
     raise TypeError, "can't convert #{arg.class} into String"
   end
 
+  def loop(&block)
+    return to_enum :loop unless block
+
+    yield while true # rubocop:disable Style/InfiniteLoop, Lint/LiteralAsCondition
+  rescue StopIteration => e
+    e.result
+  end
+
+  # 11.4.4 Step c)
+  def !~(other)
+    !(self =~ other) # rubocop:disable Style/InverseMethods
+  end
+
   # Throws an object, uncaught throws will bubble up through other catch blocks.
   #
   # @param [Symbol] tag  tag being thrown

@@ -15,6 +15,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <mruby-sys/ext.h>
+#include <mruby/range.h>
 #include <mruby/string.h>
 
 // Check whether `mrb_value` is nil, false, or true
@@ -27,6 +28,10 @@ MRB_API _Bool mrb_sys_value_is_false(mrb_value value) {
 
 MRB_API _Bool mrb_sys_value_is_true(mrb_value value) {
   return mrb_true_p(value);
+}
+
+MRB_API _Bool mrb_sys_range_excl(mrb_state *mrb, mrb_value value) {
+  return mrb_range_excl_p(mrb, value);
 }
 
 // Extract pointers from `mrb_value`s

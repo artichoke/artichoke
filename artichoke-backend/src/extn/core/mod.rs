@@ -34,13 +34,13 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     array::init(interp)?;
     comparable::init(interp)?;
     env::init(interp)?;
-    float::init(interp)?;
     hash::init(interp)?;
+    numeric::init(interp)?;
     integer::init(interp)?;
+    float::init(interp)?;
     kernel::init(interp)?;
     matchdata::init(interp)?;
     module::init(interp)?;
-    numeric::init(interp)?;
     object::init(interp)?;
     proc::init(interp)?;
     range::init(interp)?;

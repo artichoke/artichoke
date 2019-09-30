@@ -105,7 +105,7 @@ class Array
   end
 
   def +(other)
-    ary = other.to_ary if arg.respond_to?(:to_ary)
+    ary = other.to_ary if other.respond_to?(:to_ary)
     classname = other.class
     classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true)
     raise TypeError, "no implicit conversion of #{classname} into #{self.class}" unless ary.is_a?(Array)
@@ -114,7 +114,7 @@ class Array
   end
 
   def -(other)
-    ary = other.to_ary if arg.respond_to?(:to_ary)
+    ary = other.to_ary if other.respond_to?(:to_ary)
     classname = other.class
     classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true)
     raise TypeError, "no implicit conversion of #{classname} into #{self.class}" unless ary.is_a?(Array)
@@ -303,7 +303,7 @@ class Array
     idx = 0
     len = size
     while idx < len
-      self[idx] = block.call self[idx]
+      self[idx] = block.call(self[idx])
       idx += 1
     end
     self
@@ -511,8 +511,10 @@ class Array
     ar = []
     idx = 0
     len = size
+    puts inspect
     while idx < len
       e = self[idx]
+      puts e.inspect
       if e.is_a?(Array) && (depth.nil? || depth.positive?)
         ar += e.flatten(depth.nil? ? nil : depth - 1)
         modified = true
@@ -552,6 +554,7 @@ class Array
     index = 0
     len = length
     while index < len
+      puts self[index].class
       s << self[index].inspect
       s << sep if index < len - 1
       index += 1

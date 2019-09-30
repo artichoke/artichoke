@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Range
+  include Enumerable
+
   def cover?(*args)
     raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" unless args.length == 1
 
@@ -50,6 +52,47 @@ class Range
     cmp_max <= 0
   end
 
+  def each(&block)
+    return to_enum :each unless block
+
+    val = self.first
+    last = self.last
+
+    if val.kind_of?(Fixnum) && last.kind_of?(Fixnum) # fixnums are special
+      lim = last
+      lim += 1 unless exclude_end?
+      i = val
+      while i < lim
+        block.call(i)
+        i += 1
+      end
+      return self
+    end
+
+    if val.kind_of?(String) && last.kind_of?(String) # strings are special
+      if val.respond_to? :upto
+        return val.upto(last, exclude_end?, &block)
+      else
+        str_each = true
+      end
+    end
+
+    raise TypeError, "can't iterate" unless val.respond_to? :succ
+
+    return self if (val <=> last) > 0
+
+    while (val <=> last) < 0
+      block.call(val)
+      val = val.succ
+      if str_each
+        break if val.size > last.size
+      end
+    end
+
+    block.call(val) if !exclude_end? && (val <=> last) == 0
+    self
+  end
+
   def first(*args)
     return self.begin if args.empty?
 
@@ -66,6 +109,12 @@ class Range
       n -= 1
     end
     ary
+  end
+
+  def hash
+    h = first.hash ^ last.hash
+    h += 1 if exclude_end?
+    h
   end
 
   def last(*args)

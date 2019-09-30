@@ -3,13 +3,13 @@ use std::ffi::c_void;
 use std::fmt;
 use std::mem;
 
-use crate::convert::{Convert, TryConvert};
+use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
+use crate::extn::core::array::Array;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::types::{self, Int, Ruby};
-use crate::Artichoke;
-use crate::ArtichokeError;
+use crate::{Artichoke, ArtichokeError};
 
 pub(crate) use artichoke_core::value::Value as ValueLike;
 
@@ -307,12 +307,22 @@ impl fmt::Debug for Value {
 
 impl Clone for Value {
     fn clone(&self) -> Self {
-        if self.ruby_type() == Ruby::Data {
-            panic!("Cannot safely clone a Value with type tag Ruby::Data.");
-        }
-        Self {
-            interp: self.interp.clone(),
-            value: self.value,
+        if let Ruby::Data = self.ruby_type() {
+            if let Ok(ary) = unsafe { Array::try_from_ruby(&self.interp, self) } {
+                unsafe {
+                    ary.borrow()
+                        .clone()
+                        .try_into_ruby(&self.interp, None)
+                        .expect("Array clone")
+                }
+            } else {
+                panic!("Cannot safely clone a Value with type tag Ruby::Data.");
+            }
+        } else {
+            Self {
+                interp: self.interp.clone(),
+                value: self.value,
+            }
         }
     }
 }

@@ -52,6 +52,11 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         mruby::ary_element_reference,
         sys::mrb_args_req_and_opt(1, 1),
     );
+    array.borrow_mut().add_method(
+        "[]=",
+        mruby::ary_element_assignment,
+        sys::mrb_args_req_and_opt(2, 1),
+    );
     array
         .borrow_mut()
         .add_method("concat", mruby::ary_concat, sys::mrb_args_any());
@@ -84,8 +89,19 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 pub enum Error<'a> {
     Artichoke(ArtichokeError),
     Fatal,
-    IndexTooSmall { index: isize, minimum: isize },
-    NoImplicitConversion { from: &'a str, to: &'a str },
+    IndexTooSmall {
+        index: isize,
+        minimum: isize,
+    },
+    NoImplicitConversion {
+        from: &'a str,
+        to: &'a str,
+    },
+    RangeError {
+        min: isize,
+        max: isize,
+        exclusive: bool,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -222,6 +238,77 @@ pub fn element_reference<'a>(
     }
 }
 
+pub fn element_assignment<'a>(
+    interp: &'a Artichoke,
+    ary: &Value,
+    args: ElementReferenceArgs,
+    other: Value,
+) -> Result<Value, Error<'a>> {
+    let data = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
+    let mut borrow = data.borrow_mut();
+    match args {
+        ElementReferenceArgs::Index(index) => {
+            let index = if index < 0 {
+                // Positive Int must be usize
+                usize::try_from(-index).map_err(|_| Error::Fatal)?
+            } else {
+                // Positive Int must be usize
+                usize::try_from(index).map_err(|_| Error::Fatal)?
+            };
+            let len = borrow.buffer.len();
+            if index > len {
+                for _ in len..index {
+                    borrow.buffer.push_back(interp.convert(None::<Value>));
+                }
+                borrow.buffer.push_back(other.clone());
+            } else {
+                borrow.buffer.insert(index, other.clone());
+            };
+        }
+        ElementReferenceArgs::StartLen(start, len) => {
+            let other_ary = to_ary(interp, other.clone())?;
+            let other_data =
+                unsafe { Array::try_from_ruby(interp, &other_ary) }.map_err(|_| Error::Fatal)?;
+            let other_borrow = other_data.borrow();
+
+            let start = if start < 0 {
+                // Positive i64 must be usize
+                let start = usize::try_from(-start).map_err(|_| Error::Fatal)?;
+                borrow.buffer.len().checked_sub(start).ok_or(Error::Fatal)?
+            } else {
+                // Positive i64 must be usize
+                usize::try_from(start).map_err(|_| Error::Fatal)?
+            };
+            let buf_len = borrow.buffer.len();
+            let other_len = other_borrow.buffer.len();
+            if start > buf_len {
+                for _ in buf_len..start {
+                    borrow.buffer.push_back(interp.convert(None::<Value>));
+                }
+                borrow.buffer.extend(other_borrow.buffer.clone());
+                if start + len > other_len {
+                    for _ in (start + len)..other_len {
+                        borrow.buffer.push_back(interp.convert(None::<Value>));
+                    }
+                }
+            } else if other_len < len {
+                for index in start..other_len {
+                    let idx = start + index;
+                    if start + idx >= borrow.buffer.len() {
+                        borrow.buffer.push_back(other_borrow.buffer[index].clone());
+                    } else {
+                        borrow.buffer[start + index] = other_borrow.buffer[index].clone();
+                    }
+                }
+                for _ in other_len..start + len {
+                    borrow.buffer.remove(len);
+                }
+            };
+        }
+    }
+    Ok(other)
+}
+
 pub fn pop<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Option<Value>, Error<'a>> {
     let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|e| {
         println!("{:?}", e);
@@ -250,25 +337,19 @@ pub fn shift<'a>(interp: &'a Artichoke, ary: &Value, count: usize) -> Result<Val
 }
 
 pub fn unshift(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Error> {
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|e| {
-        println!("{:?}", e);
-        Error::Fatal
-    })?;
+    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     borrow.buffer.push_front(value);
     Ok(ary)
 }
 
 pub fn concat(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Error> {
-    println!("concat");
     let ary_type = ary.pretty_name();
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
-    println!("extract self ary for concat");
     let mut borrow = array.borrow_mut();
     let ruby_type = other.pretty_name();
     if let Ok(other) = other.try_into::<Vec<Value>>() {
         borrow.buffer.extend(other);
-        println!("concat extend");
         Ok(ary)
     } else {
         Err(Error::NoImplicitConversion {

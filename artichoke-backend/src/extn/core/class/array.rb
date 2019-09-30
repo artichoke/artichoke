@@ -506,8 +506,10 @@ class Array
     ar = []
     idx = 0
     len = size
+    puts inspect
     while idx < len
       e = self[idx]
+      puts e.inspect
       if e.is_a?(Array) && (depth.nil? || depth.positive?)
         ar += e.flatten(depth.nil? ? nil : depth - 1)
         modified = true

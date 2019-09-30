@@ -6,7 +6,9 @@ use std::slice;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::array::{self, Error};
-use crate::extn::core::exception::{IndexError, RubyException, RuntimeError, TypeError};
+use crate::extn::core::exception::{
+    IndexError, RangeError, RubyException, RuntimeError, TypeError,
+};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
@@ -31,6 +33,18 @@ pub unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -59,6 +73,18 @@ pub unsafe extern "C" fn artichoke_ary_new_capa(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -100,6 +126,18 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
     }
 }
 
@@ -129,6 +167,18 @@ pub unsafe extern "C" fn artichoke_ary_splat(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -162,6 +212,18 @@ pub unsafe extern "C" fn artichoke_ary_concat(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
     }
 }
 
@@ -188,6 +250,18 @@ pub unsafe extern "C" fn artichoke_ary_pop(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -220,6 +294,18 @@ pub unsafe extern "C" fn artichoke_ary_push(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -255,6 +341,18 @@ pub unsafe extern "C" fn artichoke_ary_ref(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
     }
 }
 
@@ -287,6 +385,18 @@ pub unsafe extern "C" fn artichoke_ary_set(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
     }
 }
 
@@ -313,6 +423,18 @@ pub unsafe extern "C" fn artichoke_ary_clone(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
     }
 }
 
@@ -338,6 +460,18 @@ pub unsafe extern "C" fn artichoke_value_to_ary(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -377,6 +511,19 @@ pub unsafe extern "C" fn artichoke_ary_len(
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args);
             0
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args);
+            0
+        }
     }
 }
 
@@ -410,6 +557,18 @@ pub unsafe extern "C" fn ary_concat(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
     }
 }
 
@@ -436,6 +595,18 @@ pub unsafe extern "C" fn ary_initialize_copy(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -480,6 +651,18 @@ pub unsafe extern "C" fn artichoke_ary_shift(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
     }
 }
 
@@ -505,6 +688,18 @@ pub unsafe extern "C" fn ary_reverse(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
         }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
     }
 }
 
@@ -529,6 +724,18 @@ pub unsafe extern "C" fn ary_reverse_bang(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -557,6 +764,18 @@ pub unsafe extern "C" fn artichoke_ary_unshift(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
@@ -656,6 +875,137 @@ pub unsafe extern "C" fn ary_element_reference(
         Err(Error::NoImplicitConversion { from, to }) => {
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
+        }
+    }
+}
+
+pub unsafe extern "C" fn ary_element_assignment(
+    mrb: *mut sys::mrb_state,
+    ary: sys::mrb_value,
+) -> sys::mrb_value {
+    fn ary_element_assignment_args<'a>(
+        interp: &'a Artichoke,
+        first: Value,
+        second: Option<Value>,
+        third: Option<Value>,
+        len: Int,
+    ) -> Result<(array::ElementReferenceArgs, Value), Error<'a>> {
+        if let Some(value) = third {
+            let length = second.ok_or(Error::Fatal)?;
+            let start_type = first.pretty_name();
+            let start = first
+                .try_into::<Int>()
+                .map_err(|_| Error::NoImplicitConversion {
+                    from: start_type,
+                    to: "Integer",
+                })?;
+            let len_type = length.pretty_name();
+            let len = length
+                .try_into::<usize>()
+                .map_err(|_| Error::NoImplicitConversion {
+                    from: len_type,
+                    to: "Integer",
+                })?;
+            Ok((array::ElementReferenceArgs::StartLen(start, len), value))
+        } else if let Some(value) = second {
+            if let Ok(index) = first.clone().try_into::<Int>() {
+                Ok((array::ElementReferenceArgs::Index(index), value))
+            } else {
+                unsafe { is_range(interp, &first, len) }.map(|args| (args, value))
+            }
+        } else {
+            Err(Error::Fatal)
+        }
+    }
+
+    unsafe fn is_range<'a>(
+        interp: &'a Artichoke,
+        first: &Value,
+        length: Int,
+    ) -> Result<array::ElementReferenceArgs, Error<'a>> {
+        let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        let check_range = sys::mrb_range_beg_len(
+            interp.0.borrow().mrb,
+            first.inner(),
+            start.as_mut_ptr(),
+            len.as_mut_ptr(),
+            length + 1,
+            0_u8,
+        );
+        let start = start.assume_init();
+        let len = len.assume_init();
+        let exclusive = sys::mrb_sys_range_excl(interp.0.borrow().mrb, first.inner());
+        if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
+            let mut len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
+                from: "Integer",
+                to: "Integer",
+            })?;
+            if exclusive {
+                len -= 1;
+            }
+            Ok(array::ElementReferenceArgs::StartLen(start, len))
+        } else {
+            let min = isize::try_from(start).map_err(|_| Error::Fatal)?;
+            let len = isize::try_from(len).map_err(|_| Error::Fatal)?;
+            Err(Error::RangeError {
+                min,
+                max: min + len,
+                exclusive,
+            })
+        }
+    }
+
+    let (first, second, third) = mrb_get_args!(mrb, required = 1, optional = 2);
+    let interp = unwrap_interpreter!(mrb);
+    let first = Value::new(&interp, first);
+    let second = second.map(|second| Value::new(&interp, second));
+    let third = third.map(|third| Value::new(&interp, third));
+    let args =
+        ary_element_assignment_args(&interp, first, second, third, artichoke_ary_len(mrb, ary));
+    let ary = Value::new(&interp, ary);
+    let result =
+        args.and_then(|(args, value)| array::element_assignment(&interp, &ary, args, value));
+    match result {
+        Ok(value) => value.inner(),
+        Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::IndexTooSmall { index, minimum }) => {
+            let format_args = vec![interp.convert(format!(
+                "index {} too small for array; minimum: {}",
+                index, minimum
+            ))];
+            IndexError::raisef(interp, "%S", format_args)
+        }
+        Err(Error::NoImplicitConversion { from, to }) => {
+            let format_args = vec![interp.convert(from), interp.convert(to)];
+            TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
+        }
+        Err(Error::RangeError {
+            min,
+            max,
+            exclusive,
+        }) => {
+            println!("min = {}", min);
+            println!("max = {}", max);
+            let format_args = if exclusive {
+                vec![interp.convert(format!("{}..{} out of range", min, max))]
+            } else {
+                vec![interp.convert(format!("{}...{} out of range", min, max))]
+            };
+            RangeError::raisef(interp, "%S", format_args)
         }
     }
 }
