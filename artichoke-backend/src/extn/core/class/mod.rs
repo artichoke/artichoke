@@ -55,11 +55,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     array
         .borrow_mut()
         .add_method("concat", mruby::ary_concat, sys::mrb_args_any());
-    array.borrow_mut().add_method(
-        "initialize_copy",
-        mruby::ary_initialize_copy,
-        sys::mrb_args_req(1),
-    );
     array
         .borrow_mut()
         .add_method("length", mruby::ary_len, sys::mrb_args_none());
@@ -69,9 +64,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     array
         .borrow_mut()
         .add_method("reverse", mruby::ary_reverse, sys::mrb_args_none());
-    array
-        .borrow_mut()
-        .add_method("reverse!", mruby::ary_reverse_bang, sys::mrb_args_none());
     array
         .borrow_mut()
         .add_method("size", mruby::ary_len, sys::mrb_args_none());
@@ -303,18 +295,6 @@ pub fn replace(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Er
 
 pub fn reverse(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
-    let borrow = array.borrow();
-    let len = borrow.buffer.len();
-    let mut buffer = VecDeque::with_capacity(borrow.buffer.len());
-    for offset in 1..=len {
-        buffer.push_back(borrow.buffer[len - offset].clone());
-    }
-    let result = Array { buffer };
-    unsafe { result.try_into_ruby(interp, None) }.map_err(Error::Artichoke)
-}
-
-pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     let mut front = 0;
     let mut back = borrow.buffer.len() - 1;
@@ -371,18 +351,6 @@ pub fn clone<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Value, Error<'a>>
     let borrow = array.borrow();
     let clone = borrow.clone();
     unsafe { clone.try_into_ruby(interp, None) }.map_err(Error::Artichoke)
-}
-
-pub fn initialize_copy<'a>(
-    interp: &'a Artichoke,
-    ary: Value,
-    other: &Value,
-) -> Result<Value, Error<'a>> {
-    let other = unsafe { Array::try_from_ruby(interp, other) }.map_err(|_| Error::Fatal)?;
-    let clone = Array {
-        buffer: other.borrow().buffer.clone(),
-    };
-    unsafe { clone.try_into_ruby(interp, Some(ary.inner())) }.map_err(Error::Artichoke)
 }
 
 pub fn to_ary(interp: &Artichoke, ary: Value) -> Result<Value, Error> {

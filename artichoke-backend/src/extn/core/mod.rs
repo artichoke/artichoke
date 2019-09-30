@@ -27,6 +27,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     // them.
     enumerable::init(interp)?;
     module::init(interp)?;
+    // Some `Exception`s depend on: `attr_accessor` (defined in `Module`)
     exception::init(interp)?;
     interp.eval(include_str!("object.rb"))?;
     // `Array` depends on: `Enumerable`, `attr_accessor` (defined in `Module`)
@@ -46,6 +47,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     regexp::init(interp)?;
     string::init(interp)?;
     symbol::init(interp)?;
-    thread::init(interp)?;
+    // thread::init(interp)?;
     Ok(())
 }

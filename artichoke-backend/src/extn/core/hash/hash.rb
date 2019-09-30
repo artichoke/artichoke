@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Hash
+  include Enumerable
+
   def self.[](*object)
     length = object.length
     if length == 1
@@ -54,6 +56,18 @@ class Hash
     end
   end
 
+  def ==(other)
+    return true if equal?(other)
+    return false unless other.is_a?(Hash)
+    return false unless size == other.size
+
+    each do |k, _|
+      return false unless other.key?(k)
+      return false unless self[k] == other[k]
+    end
+    true
+  end
+
   def >(other)
     raise TypeError, "can't convert #{other.class} to Hash" unless other.is_a?(Hash)
 
@@ -91,6 +105,12 @@ class Hash
     replace(hash)
   end
 
+  def delete(key, &block)
+    return block.call(key) if block && !key?(key)
+
+    raise NotImplementedError
+  end
+
   def delete_if(&block)
     return to_enum :delete_if unless block
 
@@ -107,6 +127,46 @@ class Hash
     else
       n
     end
+  end
+
+  def each(&block)
+    return to_enum :each unless block
+
+    len = size
+    idx = 0
+    while idx < len
+      key = keys[idx]
+      block.call([key, self[key]])
+      idx += 1
+      len = size
+    end
+    self
+  end
+
+  def each_key(&block)
+    return to_enum :each_key unless block
+
+    keys.each { |k| block.call(k) }
+    self
+  end
+
+  def each_value(&block)
+    return to_enum :each_value unless block
+
+    keys.each { |k| block.call(self[k]) }
+    self
+  end
+
+  def eql?(other)
+    return true if equal?(other)
+    return false unless other.is_a?(Hash)
+    return false if size != other.size
+
+    each do |k, _|
+      return false unless other.key?(k)
+      return false unless self[k].eql?(other[k])
+    end
+    true
   end
 
   def fetch(key, none = NONE, &block)
@@ -175,6 +235,24 @@ class Hash
     nil
   end
 
+  def merge(other, &block)
+    raise TypeError, "Hash required (#{other.class} given)" unless Hash === other
+
+    h = dup
+    if block
+      other.each_key do |k|
+        if key?(k)
+          block.call(k, self[k], other[k])
+        else
+          other[k]
+        end
+      end
+    else
+      other.each_key { |k| h[k] = other[k] }
+    end
+    h
+  end
+
   def merge!(other, &block)
     raise TypeError, "Hash required (#{other.class} given)" unless other.is_a?(Hash)
 
@@ -184,6 +262,68 @@ class Hash
       end
     else
       other.each_key { |k| self[k] = other[k] }
+    end
+    self
+  end
+
+  def reject(&block)
+    return to_enum :reject unless block
+
+    h = {}
+    each do |k, v|
+      h[k] = v unless block.call([k, v])
+    end
+    h
+  end
+
+  def reject!(&block)
+    return to_enum :reject! unless block
+
+    keys = []
+    each do |k, v|
+      keys.push(k) if block.call([k, v])
+    end
+    return nil if keys.empty?
+
+    keys.each { |k| delete(k) }
+    self
+  end
+
+  def replace(hash)
+    raise TypeError, "Hash required (#{hash.class} given)" unless Hash === hash
+
+    clear
+    hash.each_key { |k| self[k] = hash[k] }
+    if hash.default_proc
+      self.default_proc = hash.default_proc
+    else
+      self.default = hash.default
+    end
+    self
+  end
+
+  def select(&block)
+    return to_enum :select unless block
+
+    h = {}
+    each do |k, v|
+      h[k] = v if block.call([k, v])
+    end
+    h
+  end
+
+  def select!(&block)
+    return to_enum :select! unless block
+
+    keys = []
+    each do |k, v|
+      keys.push(k) unless block.call([k, v])
+    end
+
+    return nil if keys.empty?
+
+    keys.each do |k|
+      delete(k)
     end
     self
   end
@@ -242,7 +382,8 @@ class Hash
     self
   end
 
-  alias to_s inspect
   alias each_pair each
+  alias initialize_copy replace
+  alias to_s inspect
   alias update merge!
 end

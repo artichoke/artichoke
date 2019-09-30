@@ -1141,7 +1141,7 @@ mrb_pack_pack(mrb_state *mrb, mrb_value ary)
         continue;
     }
 
-    for (; aidx < RARRAY_LEN(ary); aidx++) {
+    for (; aidx < ARRAY_LEN(mrb, ary); aidx++) {
       if (count == 0 && !(flags & PACK_FLAG_WIDTH))
         break;
 
@@ -1303,8 +1303,8 @@ pack_unpack(mrb_state *mrb, mrb_value str, int single)
   }
 
   if (single) {
-    if (RARRAY_LEN(result) > 0) {
-      return RARRAY_PTR(result)[0];
+    if (ARRAY_LEN(mrb, result) > 0) {
+      return ARY_REF(mrb, result, 0);
     }
     return mrb_nil_value();
   }
@@ -1329,7 +1329,7 @@ mrb_mruby_pack_gem_init(mrb_state *mrb)
   check_little_endian();
   make_base64_dec_tab();
 
-  mrb_define_method(mrb, mrb->array_class, "pack", mrb_pack_pack, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, mrb_class_get(mrb, "Array"), "pack", mrb_pack_pack, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, mrb->string_class, "unpack", mrb_pack_unpack, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, mrb->string_class, "unpack1", mrb_pack_unpack1, MRB_ARGS_REQ(1));
 }

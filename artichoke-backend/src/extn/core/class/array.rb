@@ -403,22 +403,17 @@ class Array
     self
   end
 
-  def empty?
-    length.zero?
-  end
-
   def eql?(other)
-    return true if equal?(other)
-    return false unless other.is_a?(Array)
-
-    len = size
+    other = self.__ary_eq(other)
+    return false if other == false
+    return true  if other == true
+    len = self.size
     i = 0
     while i < len
       return false unless self[i].eql?(other[i])
-
       i += 1
     end
-    true
+    return true
   end
 
   def fetch(index, ifnone = NONE, &block)
@@ -641,21 +636,6 @@ class Array
     else
       self
     end
-  end
-
-  def replace(other)
-    classname = other.class
-    classname = other.inspect if other.equal?(true) || other.equal?(false) || other.nil?
-    ary =
-      if other.is_a?(Array)
-        other
-      elsif other.respond_to?(:to_ary)
-        other = other.to_ary
-        raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{other.class})" unless other.is_a?(Array)
-      else
-        raise TypeError, "no implicit conversion of #{classname} into Array" unless other.is_a?(Array)
-      end
-    self[0, length] = ary
   end
 
   def reverse_each(&block)

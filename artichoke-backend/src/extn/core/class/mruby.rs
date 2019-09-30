@@ -413,33 +413,6 @@ pub unsafe extern "C" fn ary_concat(
     }
 }
 
-pub unsafe extern "C" fn ary_initialize_copy(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
-    let other = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let other = Value::new(&interp, other);
-    let result = array::initialize_copy(&interp, ary, &other);
-    match result {
-        Ok(value) => value.inner(),
-        Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
-        Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
-        Err(Error::IndexTooSmall { index, minimum }) => {
-            let format_args = vec![interp.convert(format!(
-                "index {} too small for array; minimum: {}",
-                index, minimum
-            ))];
-            IndexError::raisef(interp, "%S", format_args)
-        }
-        Err(Error::NoImplicitConversion { from, to }) => {
-            let format_args = vec![interp.convert(from), interp.convert(to)];
-            TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
-        }
-    }
-}
-
 #[no_mangle]
 pub unsafe extern "C" fn artichoke_ary_check(
     mrb: *mut sys::mrb_state,
@@ -483,6 +456,7 @@ pub unsafe extern "C" fn artichoke_ary_shift(
     }
 }
 
+#[no_mangle]
 pub unsafe extern "C" fn ary_reverse(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
@@ -490,31 +464,6 @@ pub unsafe extern "C" fn ary_reverse(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let result = array::reverse(&interp, ary);
-    match result {
-        Ok(value) => value.inner(),
-        Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
-        Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
-        Err(Error::IndexTooSmall { index, minimum }) => {
-            let format_args = vec![interp.convert(format!(
-                "index {} too small for array; minimum: {}",
-                index, minimum
-            ))];
-            IndexError::raisef(interp, "%S", format_args)
-        }
-        Err(Error::NoImplicitConversion { from, to }) => {
-            let format_args = vec![interp.convert(from), interp.convert(to)];
-            TypeError::raisef(interp, "No implicit conversion from %S to %S", format_args)
-        }
-    }
-}
-
-pub unsafe extern "C" fn ary_reverse_bang(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let result = array::reverse_bang(&interp, ary);
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),

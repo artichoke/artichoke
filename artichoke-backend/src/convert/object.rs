@@ -94,6 +94,12 @@ where
         interp: &Artichoke,
         slf: &Value,
     ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
+        if slf.ruby_type() != Ruby::Data {
+            return Err(ArtichokeError::ConvertToRust {
+                from: slf.ruby_type(),
+                to: Rust::Object,
+            });
+        }
         let mrb = interp.0.borrow().mrb;
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
