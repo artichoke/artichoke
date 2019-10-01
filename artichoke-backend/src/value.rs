@@ -316,7 +316,10 @@ impl Clone for Value {
                         .expect("Array clone")
                 }
             } else {
-                panic!("Cannot safely clone a Value with type tag Ruby::Data.");
+                panic!(
+                    "Cannot safely clone a Value with type tag Ruby::Data: {:?}",
+                    self
+                );
             }
         } else {
             Self {

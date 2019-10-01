@@ -88,6 +88,12 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 #[derive(Debug)]
 pub enum Error<'a> {
     Artichoke(ArtichokeError),
+    CannotConvert {
+        to: &'a str,
+        from: &'a str,
+        method: &'a str,
+        gives: &'a str,
+    },
     Fatal,
     IndexTooSmall {
         index: isize,
@@ -141,7 +147,6 @@ pub fn from_values<'a>(interp: &'a Artichoke, values: &[Value]) -> Result<Value,
 }
 
 pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Error> {
-    println!("splat");
     let buffer = if value.respond_to("to_a").map_err(Error::Artichoke)? {
         value
             .funcall::<Vec<Value>>("to_a", &[], None)
@@ -149,11 +154,9 @@ pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Error> {
     } else {
         vec![value]
     };
-    println!("converted");
     let ary = Array {
         buffer: VecDeque::from(buffer),
     };
-    println!("{:?}", ary);
     unsafe { ary.try_into_ruby(interp, None) }.map_err(Error::Artichoke)
 }
 
@@ -310,19 +313,13 @@ pub fn element_assignment<'a>(
 }
 
 pub fn pop<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Option<Value>, Error<'a>> {
-    let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|e| {
-        println!("{:?}", e);
-        Error::Fatal
-    })?;
+    let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = ary.borrow_mut();
     Ok(borrow.buffer.pop_back())
 }
 
 pub fn shift<'a>(interp: &'a Artichoke, ary: &Value, count: usize) -> Result<Value, Error<'a>> {
-    let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|e| {
-        println!("{:?}", e);
-        Error::Fatal
-    })?;
+    let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = ary.borrow_mut();
     let mut popped = VecDeque::with_capacity(count);
     for _ in 0..count {
@@ -348,9 +345,21 @@ pub fn concat(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Err
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     let ruby_type = other.pretty_name();
-    if let Ok(other) = other.try_into::<Vec<Value>>() {
-        borrow.buffer.extend(other);
+    if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
+        borrow.buffer.extend(other.borrow().buffer.clone());
         Ok(ary)
+    } else if let Ok(other) = other.funcall("to_a", &[], None) {
+        if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
+            borrow.buffer.extend(other.borrow().buffer.clone());
+            Ok(ary)
+        } else {
+            Err(Error::CannotConvert {
+                to: "Array",
+                from: ruby_type,
+                method: "to_ary",
+                gives: other.pretty_name(),
+            })
+        }
     } else {
         Err(Error::NoImplicitConversion {
             from: ruby_type,

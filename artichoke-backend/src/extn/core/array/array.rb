@@ -511,12 +511,12 @@ class Array
     ar = []
     idx = 0
     len = size
-    puts inspect
+    # puts inspect
     while idx < len
       e = self[idx]
-      puts e.inspect
+      # puts e.inspect
       if e.is_a?(Array) && (depth.nil? || depth.positive?)
-        ar += e.flatten(depth.nil? ? nil : depth - 1)
+        ar.concat(e.flatten(depth.nil? ? nil : depth - 1))
         modified = true
       else
         ar << e
@@ -554,6 +554,7 @@ class Array
     index = 0
     len = length
     while index < len
+      puts 'inspect loop'
       puts self[index].class
       s << self[index].inspect
       s << sep if index < len - 1

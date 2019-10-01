@@ -19,9 +19,25 @@ use crate::Artichoke;
 pub unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let result = array::new(&interp);
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -59,9 +75,25 @@ pub unsafe extern "C" fn artichoke_ary_new_capa(
     let result = usize::try_from(capacity)
         .map_err(|_| Error::Fatal)
         .and_then(|capacity| array::with_capacity(&interp, capacity));
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -106,14 +138,26 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
                 .map(|val| Value::new(&interp, *val))
                 .collect::<Vec<_>>();
             array::from_values(&interp, values.as_slice())
-        })
-        .map_err(|err| {
-            println!("{:?}", err);
-            err
         });
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -149,13 +193,26 @@ pub unsafe extern "C" fn artichoke_ary_splat(
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, value);
-    let result = array::splat(&interp, value).map_err(|err| {
-        println!("{:?}", err);
-        err
-    });
+    let result = array::splat(&interp, value);
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -193,13 +250,30 @@ pub unsafe extern "C" fn artichoke_ary_concat(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::concat(&interp, ary, other).map_err(|err| {
-        println!("{:?}", err);
-        err
-    });
+    let result = array::concat(&interp, ary, other);
+    if let Ok(ary) = result.as_ref() {
+        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+        sys::mrb_write_barrier(mrb, basic);
+    }
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -236,9 +310,28 @@ pub unsafe extern "C" fn artichoke_ary_pop(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let result = array::pop(&interp, &ary);
+    if let Ok(Some(_)) = result.as_ref() {
+        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+        sys::mrb_write_barrier(mrb, basic);
+    }
     match result {
         Ok(value) => interp.convert(value).inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -276,13 +369,30 @@ pub unsafe extern "C" fn artichoke_ary_push(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let value = Value::new(&interp, value);
-    let result = array::push(&interp, ary, value).map_err(|err| {
-        println!("{:?}", err);
-        err
-    });
+    let result = array::push(&interp, ary, value);
+    if let Ok(ary) = result.as_ref() {
+        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+        sys::mrb_write_barrier(mrb, basic);
+    }
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -321,14 +431,26 @@ pub unsafe extern "C" fn artichoke_ary_ref(
     let ary = Value::new(&interp, ary);
     let result = isize::try_from(offset)
         .map_err(|_| Error::Fatal)
-        .and_then(|offset| array::ary_ref(&interp, &ary, offset))
-        .map_err(|err| {
-            println!("{:?}", err);
-            err
-        });
+        .and_then(|offset| array::ary_ref(&interp, &ary, offset));
     match result {
-        Ok(value) => interp.convert(value).inner(),
+        Ok(Some(value)) => value.inner(),
+        Ok(None) => sys::mrb_sys_nil_value(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -365,14 +487,34 @@ pub unsafe extern "C" fn artichoke_ary_set(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let array = Value::new(&interp, ary);
     let value = Value::new(&interp, value);
     let result = isize::try_from(offset)
         .map_err(|_| Error::Fatal)
-        .and_then(|offset| array::element_set(&interp, ary, offset, value));
+        .and_then(|offset| array::element_set(&interp, array, offset, value));
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary);
+        sys::mrb_write_barrier(mrb, basic);
+    }
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -408,9 +550,25 @@ pub unsafe extern "C" fn artichoke_ary_clone(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, value);
     let result = array::clone(&interp, &ary);
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -446,9 +604,25 @@ pub unsafe extern "C" fn artichoke_value_to_ary(
     let interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, value);
     let result = array::to_ary(&interp, value);
+    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -492,6 +666,22 @@ pub unsafe extern "C" fn artichoke_ary_len(
         Ok(len) => len,
         Err(Error::Artichoke(_)) => {
             RuntimeError::raise(interp, "artichoke error");
+            0
+        }
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args);
             0
         }
         Err(Error::Fatal) => {
@@ -542,9 +732,28 @@ pub unsafe extern "C" fn ary_concat(
     let ary = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
     let result = array::concat(&interp, ary, other);
+    if let Ok(ary) = result.as_ref() {
+        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+        sys::mrb_write_barrier(mrb, basic);
+    }
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -584,6 +793,21 @@ pub unsafe extern "C" fn ary_initialize_copy(
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -636,9 +860,28 @@ pub unsafe extern "C" fn artichoke_ary_shift(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let result = array::shift(&interp, &ary, 1);
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+        sys::mrb_write_barrier(mrb, basic);
+    }
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -676,6 +919,21 @@ pub unsafe extern "C" fn ary_reverse(
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -713,6 +971,21 @@ pub unsafe extern "C" fn ary_reverse_bang(
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -747,12 +1020,31 @@ pub unsafe extern "C" fn artichoke_ary_unshift(
     val: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let array = Value::new(&interp, ary);
     let val = Value::new(&interp, val);
-    let result = array::unshift(&interp, ary, val);
+    let result = array::unshift(&interp, array, val);
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary);
+        sys::mrb_write_barrier(mrb, basic);
+    }
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -864,6 +1156,21 @@ pub unsafe extern "C" fn ary_element_reference(
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -978,9 +1285,28 @@ pub unsafe extern "C" fn ary_element_assignment(
     let ary = Value::new(&interp, ary);
     let result =
         args.and_then(|(args, value)| array::element_assignment(&interp, &ary, args, value));
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+        sys::mrb_write_barrier(mrb, basic);
+    }
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
+        Err(Error::CannotConvert {
+            to,
+            from,
+            method,
+            gives,
+        }) => {
+            let format_args = vec![interp.convert(format!(
+                "can't convert {from} to {to} ({from}#{method} gives {gives})",
+                to = to,
+                from = from,
+                method = method,
+                gives = gives
+            ))];
+            RangeError::raisef(interp, "%S", format_args)
+        }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
@@ -998,8 +1324,6 @@ pub unsafe extern "C" fn ary_element_assignment(
             max,
             exclusive,
         }) => {
-            println!("min = {}", min);
-            println!("max = {}", max);
             let format_args = if exclusive {
                 vec![interp.convert(format!("{}..{} out of range", min, max))]
             } else {
