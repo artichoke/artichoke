@@ -440,9 +440,21 @@ pub fn replace(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Er
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     let ruby_type = other.pretty_name();
-    if let Ok(other) = other.try_into::<Vec<Value>>() {
-        borrow.buffer = VecDeque::from(other);
+    if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
+        borrow.buffer.extend(other.borrow().buffer.clone());
         Ok(ary)
+    } else if let Ok(other) = other.funcall("to_ary", &[], None) {
+        if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
+            borrow.buffer.extend(other.borrow().buffer.clone());
+            Ok(ary)
+        } else {
+            Err(Error::CannotConvert {
+                to: "Array",
+                from: ruby_type,
+                method: "to_ary",
+                gives: other.pretty_name(),
+            })
+        }
     } else {
         Err(Error::NoImplicitConversion {
             from: ruby_type,
