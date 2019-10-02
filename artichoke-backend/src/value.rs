@@ -309,10 +309,10 @@ impl Clone for Value {
     fn clone(&self) -> Self {
         if let Ruby::Data = self.ruby_type() {
             if let Ok(ary) = unsafe { Array::try_from_ruby(&self.interp, self) } {
+                let cloned = ary.borrow().clone();
                 unsafe {
-                    ary.borrow()
-                        .clone()
-                        .try_into_ruby(&self.interp, None)
+                    cloned
+                        .try_into_ruby(&self.interp, Some(self.inner()))
                         .expect("Array clone")
                 }
             } else {
