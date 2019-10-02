@@ -547,10 +547,23 @@ pub fn initialize_copy<'a>(
     unsafe { clone.try_into_ruby(interp, Some(ary.inner())) }.map_err(Error::Artichoke)
 }
 
-pub fn to_ary(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
-    if unsafe { Array::try_from_ruby(interp, &ary) }.is_ok() {
-        Ok(ary)
+pub fn to_ary(interp: &Artichoke, value: Value) -> Result<Value, Error> {
+    dbg!();
+    if unsafe { Array::try_from_ruby(interp, &value) }.is_ok() {
+        Ok(value)
+    } else if let Ok(ary) = value.funcall::<Value>("to_a", &[], None) {
+        let ruby_type = ary.pretty_name();
+        if unsafe { Array::try_from_ruby(interp, &ary) }.is_ok() {
+            Ok(ary)
+        } else {
+            Err(Error::CannotConvert {
+                to: "Array",
+                from: ruby_type,
+                method: "to_a",
+                gives: ary.pretty_name(),
+            })
+        }
     } else {
-        from_values(interp, &[ary])
+        from_values(interp, &[value])
     }
 }
