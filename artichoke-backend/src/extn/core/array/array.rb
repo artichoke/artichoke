@@ -97,7 +97,7 @@ class Array
     return join(other) if other.is_a?(String)
 
     count = Integer(other)
-    ary = dup
+    ary = []
     count.times do
       ary.concat(self)
     end
@@ -190,7 +190,7 @@ class Array
       len = length
       idx = 0
       while idx < len
-        return false unless pattern === self[idx]
+        return false unless pattern === self[idx] # rubocop:disable Style/CaseEquality
 
         idx += 1
       end
@@ -214,7 +214,7 @@ class Array
       len = length
       idx = 0
       while idx < len
-        return true if pattern === self[idx]
+        return true if pattern === self[idx] # rubocop:disable Style/CaseEquality
 
         idx += 1
       end
@@ -223,11 +223,16 @@ class Array
   end
 
   def assoc(obj)
-    each do |ary|
+    idx = 0
+    len = length
+    while idx < len
+      ary = self[idx]
       next unless ary.is_a?(Array)
       next unless ary.length.positive?
 
       return ary if obj == ary.first
+
+      idx += 1
     end
     nil
   end
@@ -235,10 +240,21 @@ class Array
   def at(index)
     raise TypeError, 'no implicit conversion from nil to integer' if index.nil?
 
-    classname = index.class
-    classname = index.inspect if index.equal?(false) || index.equal?(true)
-    idx = index.to_int
-    raise TypeError, "no implicit conversion of #{classname} into Integer" unless idx.is_a?(Integer)
+    idx =
+      if index.is_a?(Integer)
+        index
+      elsif index.respond_to?(:to_int)
+        classname = index.class
+        classname = index.inspect if index.equal?(false) || index.equal?(true)
+        idx = index.to_int
+        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{idx.class})" unless idx.is_a?(Integer)
+
+        idx
+      else
+        classname = index.class
+        classname = index.inspect if index.equal?(false) || index.equal?(true)
+        raise TypeError, "no implicit conversion of #{classname} into Integer"
+      end
 
     self[idx]
   end
@@ -335,9 +351,7 @@ class Array
   end
 
   def compact
-    result = dup
-    result.compact!
-    result
+    reject(&:nil?)
   end
 
   def compact!
@@ -349,12 +363,89 @@ class Array
     end
   end
 
+  def count(obj = (not_set = true), &block)
+    count = 0
+    idx = 0
+    len = length
+    if not_set
+      return len unless block
+
+      while idx < len
+        item = self[idx]
+        count += 1 if block.call(item)
+        idx += 1
+      end
+    else
+      warn('warning: given block not used') if block
+
+      while idx < len
+        item = self[idx]
+        count += 1 if obj == item
+        idx += 1
+      end
+    end
+    count
+  end
+
+  def cycle(num = (not_set = true), &block)
+    unless block
+      return to_enum(:cycle) if not_set
+
+      return to_enum(:cycle, num)
+    end
+
+    if not_set
+      loop do
+        idx = 0
+        len = length
+        while idx < len
+          block.call(self[idx])
+          idx += 1
+        end
+      end
+    else
+      return [] if num.nil?
+
+      count =
+        if num.is_a?(Integer)
+          num
+        elsif num.respond_to?(:to_int)
+          classname = num.class
+          classname = num.inspect if index.equal?(false) || index.equal?(true)
+          num = num.to_int
+          raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})" unless num.is_a?(Integer)
+
+          num
+        else
+          classname = num.class
+          classname = num.inspect if index.equal?(false) || index.equal?(true)
+          raise TypeError, "no implicit conversion of #{classname} into Integer"
+        end
+      return [] unless count.positive?
+
+      iteration = 0
+      while iteration < count
+        idx = 0
+        len = length
+        while idx < len
+          block.call(self[idx])
+          idx += 1
+        end
+        iteration += 1
+      end
+    end
+  end
+
   def delete(key, &block)
-    while i = index(key)
+    sentinel = Object.new
+    ret = sentinel
+    while (i = index(key))
       delete_at(i)
       ret = key
     end
-    return block.call if ret.nil? && block
+
+    return block.call if ret == sentinel && block
+
     ret
   end
 
@@ -373,12 +464,51 @@ class Array
   end
 
   def dig(idx, *args)
-    n = self[idx]
-    if !args.empty?
-      n&.dig(*args)
+    item = self[idx]
+    if args.empty?
+      item
     else
-      n
+      item&.dig(*args)
     end
+  end
+
+  def drop(num)
+    count =
+      if num.is_a?(Integer)
+        num
+      elsif num.nil?
+        raise TypeError, 'no implicit conversion from nil to integer'
+      elsif num.respond_to?(:to_int)
+        classname = num.class
+        classname = num.inspect if index.equal?(false) || index.equal?(true)
+        num = num.to_int
+        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})" unless num.is_a?(Integer)
+
+        num
+      else
+        classname = num.class
+        classname = num.inspect if index.equal?(false) || index.equal?(true)
+        raise TypeError, "no implicit conversion of #{classname} into Integer"
+      end
+    raise ArgumentError, 'attempt to drop negative size' if count.negative?
+    return self if count.zero?
+
+    self[0, count] = []
+  end
+
+  def drop_while(&block)
+    return to_enum(:drop_while) unless block
+
+    drop_until = 0
+    idx = 0
+    while idx < length
+      drop = block.call(self[idx])
+      drop_until += 1 if drop
+      break unless drop
+
+      idx += 1
+    end
+    self[0, drop_until] = []
   end
 
   def each(&block)
@@ -421,16 +551,16 @@ class Array
     true
   end
 
-  def fetch(index, ifnone = NONE, &block)
-    warn 'block supersedes default value argument' if !index.nil? && ifnone != NONE && block
+  def fetch(index, default = (not_set = true), &block)
+    warn 'block supersedes default value argument' if !index.nil? && !not_set && block
 
     idx = index
     idx += size if idx.negative?
     if idx.negative? || size <= idx
       return block.call(index) if block
-      raise IndexError, "index #{n} outside of array bounds: #{-size}...#{size}" if ifnone == NONE
+      raise IndexError, "index #{n} outside of array bounds: #{-size}...#{size}" if not_set
 
-      return ifnone
+      return default
     end
     self[idx]
   end
@@ -500,6 +630,79 @@ class Array
     self
   end
 
+  def filter(&block)
+    return to_enum(:filter) unless block
+
+    res = []
+    idx = 0
+    len = length
+    while idx < len
+      item = self[idx]
+      res << item if block.call(item).equal?(true)
+      idx += 1
+    end
+    res
+  end
+
+  def filter!(&block)
+    return to_enum(:filter!) unless block
+
+    res = filter(&block)
+    return nil if length == res.length
+
+    self[0, length] = res
+  end
+
+  def find_index(obj = (not_set = true), &block)
+    return to_enum(:find_index, obj) if !block && not_set
+
+    idx = 0
+    len = length
+    if not_set
+      while idx < len
+        item = self[idx]
+        return idx if block.call(item).equal?(true)
+
+        idx += 1
+      end
+    else
+      warn('warning: given block not used') if block
+
+      while idx < len
+        item = self[idx]
+        return idx if obj == item
+
+        idx += 1
+      end
+    end
+    nil
+  end
+
+  def first(num = (not_set = true))
+    return self[0] if not_set
+
+    count =
+      if num.is_a?(Integer)
+        num
+      elsif num.nil?
+        raise TypeError, 'no implicit conversion from nil to integer'
+      elsif num.respond_to?(:to_int)
+        classname = num.class
+        classname = num.inspect if index.equal?(false) || index.equal?(true)
+        num = num.to_int
+        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})" unless num.is_a?(Integer)
+
+        num
+      else
+        classname = num.class
+        classname = num.inspect if index.equal?(false) || index.equal?(true)
+        raise TypeError, "no implicit conversion of #{classname} into Integer"
+      end
+    raise ArgumentError, 'negative array size' if count.negative?
+
+    self[0, count]
+  end
+
   def flatten(depth = nil)
     res = dup
     res.flatten! depth
@@ -510,7 +713,7 @@ class Array
     modified = false
     ar = []
     idx = 0
-    len = size
+    len = length
     # puts inspect
     while idx < len
       e = self[idx]
@@ -523,19 +726,38 @@ class Array
       end
       idx += 1
     end
-    replace(ar) if modified
+    self[0, len] = ar if modified
   end
 
-  def index(val = NONE, &block)
-    return to_enum(:find_index, val) if !block && val == NONE
+  def include?(object)
+    idx = 0
+    len = length
+    while idx < len
+      return true if object == self[idx]
 
-    if block
-      each_with_index do |obj, idx|
+      idx += 1
+    end
+    false
+  end
+
+  def index(val = (not_set = true), &block)
+    return to_enum(:index) if !block && not_set
+
+    idx = 0
+    len = length
+    if not_set
+      while idx < len
         return idx if block.call(obj)
+
+        idx += 1
       end
     else
-      each_with_index do |obj, idx|
+      warn('warning: given block not used') if block
+
+      while idx < len
         return idx if obj == val
+
+        idx += 1
       end
     end
     nil
@@ -551,30 +773,31 @@ class Array
   def inspect
     s = +'['
     sep = ', '
-    index = 0
+    idx = 0
     len = length
-    while index < len
-      puts 'inspect loop'
-      puts self[index].class
-      s << self[index].inspect
-      s << sep if index < len - 1
-      index += 1
+    while idx < len
+      s << self[idx].inspect
+      s << sep if idx < len - 1
+      idx += 1
     end
     s << ']'
   end
 
   def join(separator = $,) # rubocop:disable Style/SpecialGlobalVars
+    classname = separator.class
+    classname = separator.inspect if separator.equal?(true) || separator.equal?(false)
+
     separator = '' if separator.nil?
     sep = String.try_convert(separator)
-    raise "No implicit conversion of #{separator.class} into String" if sep.nil?
+    raise "No implicit conversion of #{classname} into String" if sep.nil?
 
     s = +''
-    index = 0
+    idx = 0
     len = size
-    while index < len
-      s << self[index]
-      s << sep if index < len - 1
-      index += 1
+    while idx < len
+      s << self[idx].to_s
+      s << sep if idx < len - 1
+      idx += 1
     end
     s
   end
@@ -591,6 +814,43 @@ class Array
       end
     end
     self
+  end
+
+  def last(num = (not_set = true))
+    return self[-1] if not_set
+
+    count =
+      if num.is_a?(Integer)
+        num
+      elsif num.nil?
+        raise TypeError, 'no implicit conversion from nil to integer'
+      elsif num.respond_to?(:to_int)
+        classname = num.class
+        classname = num.inspect if index.equal?(false) || index.equal?(true)
+        num = num.to_int
+        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})" unless num.is_a?(Integer)
+
+        num
+      else
+        classname = num.class
+        classname = num.inspect if index.equal?(false) || index.equal?(true)
+        raise TypeError, "no implicit conversion of #{classname} into Integer"
+      end
+    raise ArgumentError, 'negative array size' if count.negative?
+
+    self[len - count, count]
+  end
+
+  def max(*)
+    raise NotImplementedError
+  end
+
+  def min(*)
+    raise NotImplementedError
+  end
+
+  def none?(pattern = (not_set = true), &block)
+    raise NotImplementedError
   end
 
   def permutation(kcombinations = size, &block)
@@ -617,9 +877,28 @@ class Array
     end
   end
 
+  def product(*args)
+    raise NotImplementedError
+  end
+
   def push(*args)
     concat(args)
     self
+  end
+
+  def rassoc(obj)
+    idx = 0
+    len = length
+    while idx < len
+      ary = self[idx]
+      next unless ary.is_a?(Array)
+      next unless ary.length.positive?
+
+      return ary if obj == ary[1]
+
+      idx += 1
+    end
+    nil
   end
 
   def reject(&block)
@@ -645,6 +924,14 @@ class Array
     else
       self
     end
+  end
+
+  def repeated_combination(num, &block)
+    raise NotImplementedError
+  end
+
+  def repeated_permutation(num, &block)
+    raise NotImplementedError
   end
 
   def replace(other)
@@ -673,6 +960,16 @@ class Array
     self
   end
 
+  def rindex(val = (not_set = true), &block)
+    return to_enum(:rindex) if !block && not_set
+
+    if not_set
+      reverse.index(&block)
+    else
+      reverse.index(val, &block)
+    end
+  end
+
   def rotate(count = 1)
     ary = []
     len = length
@@ -697,6 +994,10 @@ class Array
     replace(rotate(count))
   end
 
+  def sample(*args)
+    raise NotImplementedError, 'TODO implement in Rust'
+  end
+
   def select(&block)
     return to_enum :select unless block
 
@@ -717,6 +1018,14 @@ class Array
     return nil if len == result.size
 
     replace(result)
+  end
+
+  def shuffle(rng = (not_set = true))
+    raise NotImplementedError, 'TODO implement in Rust'
+  end
+
+  def shuffle!(rng = (not_set = true))
+    raise NotImplementedError, 'TODO implement in Rust'
   end
 
   def slice!(*args)
@@ -766,11 +1075,11 @@ class Array
   end
 
   def sort(&block)
-    self.dup.sort!(&block)
+    dup.sort!(&block)
   end
 
   def sort!(&block)
-    stack = [ [ 0, self.size - 1 ] ]
+    stack = [ [ 0, size - 1 ] ]
     until stack.empty?
       left, mid, right = stack.pop
       if right == nil
@@ -834,8 +1143,26 @@ class Array
     self
   end
 
+  def sort_by!(&block)
+    raise NotImplementedError
+  end
+
+  def sum(init = 0, &block)
+    idx = 0
+    sum = init
+    while idx < length
+      item = self[idx]
+      item = block.call(item) if block
+
+      sum += item
+    end
+    sum
+  end
+
   def to_a
-    self
+    self if self.class == Array
+
+    [].concat(self)
   end
 
   def to_ary
@@ -911,6 +1238,36 @@ class Array
     end
   end
 
+  def values_at(*selectors)
+    ary = []
+    idx = 0
+    len = selectors.length
+    while idx < len
+      selector = selectors[idx]
+      case selector
+      when Integer
+        ary << self[selector]
+      when Range
+        ary.concat!(self[selector])
+      else
+        classname = selector.class
+        classname = selector.inspect if selector.equal?(true) || selector.equal?(false) || selector.nil?
+        raise TypeError, "No implicit conversion from #{classname} to Integer" unless selector.respond_to?(:to_int)
+
+        selector = selector.to_int
+        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{selector.class})" unless selector.is_a?(Integer)
+
+        ary << self[selector]
+      end
+      idx += 1
+    end
+    ary
+  end
+
+  def zip(*args, &block)
+    raise NotImplementedError
+  end
+
   def |(other)
     raise TypeError, "can't convert #{other.class} into Array" unless other.is_a?(Array)
 
@@ -921,5 +1278,10 @@ class Array
   alias append push
   alias map collect
   alias map! collect!
+  # TODO implement Array#unshift in Rust
   # alias prepend unshift
+  alias slice []
+  alias take drop
+  alias take_while drop_while
+  alias to_s inspect
 end
