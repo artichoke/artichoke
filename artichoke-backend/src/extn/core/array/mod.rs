@@ -369,19 +369,28 @@ pub fn pop<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Option<Value>, Erro
     Ok(borrow.buffer.pop_back())
 }
 
-pub fn shift<'a>(interp: &'a Artichoke, ary: &Value, count: usize) -> Result<Value, Error<'a>> {
+pub fn shift<'a>(
+    interp: &'a Artichoke,
+    ary: &Value,
+    count: Option<usize>,
+) -> Result<Value, Error<'a>> {
     let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = ary.borrow_mut();
-    let mut popped = VecDeque::with_capacity(count);
-    for _ in 0..count {
-        let item = borrow.buffer.pop_front();
-        if item.is_none() {
-            break;
+    if let Some(count) = count {
+        let mut popped = VecDeque::with_capacity(count);
+        for _ in 0..count {
+            let item = borrow.buffer.pop_front();
+            if item.is_none() {
+                break;
+            }
+            popped.push_back(interp.convert(item));
         }
-        popped.push_back(interp.convert(item));
+        let popped = Array { buffer: popped };
+        unsafe { popped.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)
+    } else {
+        let popped = borrow.buffer.pop_front();
+        Ok(interp.convert(popped))
     }
-    let popped = Array { buffer: popped };
-    unsafe { popped.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)
 }
 
 pub fn unshift(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Error> {

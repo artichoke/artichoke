@@ -859,7 +859,7 @@ pub unsafe extern "C" fn artichoke_ary_shift(
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
-    let result = array::shift(&interp, &ary, 1);
+    let result = array::shift(&interp, &ary, Some(1));
     if result.is_ok() {
         let basic = sys::mrb_sys_basic_ptr(ary.inner());
         sys::mrb_write_barrier(mrb, basic);
