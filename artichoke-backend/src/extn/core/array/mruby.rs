@@ -248,11 +248,11 @@ pub unsafe extern "C" fn artichoke_ary_concat(
     other: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let array = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::concat(&interp, ary, other);
-    if let Ok(ary) = result.as_ref() {
-        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+    let result = array::concat(&interp, array, other);
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
     }
     dbg!();
@@ -308,10 +308,10 @@ pub unsafe extern "C" fn artichoke_ary_pop(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let result = array::pop(&interp, &ary);
-    if let Ok(Some(_)) = result.as_ref() {
-        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+    let array = Value::new(&interp, ary);
+    let result = array::pop(&interp, &array);
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
     }
     match result {
@@ -367,11 +367,11 @@ pub unsafe extern "C" fn artichoke_ary_push(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let array = Value::new(&interp, ary);
     let value = Value::new(&interp, value);
-    let result = array::push(&interp, ary, value);
-    if let Ok(ary) = result.as_ref() {
-        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+    let result = array::push(&interp, array, value);
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
     }
     dbg!();
@@ -729,11 +729,11 @@ pub unsafe extern "C" fn ary_concat(
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let array = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::concat(&interp, ary, other);
-    if let Ok(ary) = result.as_ref() {
-        let basic = sys::mrb_sys_basic_ptr(ary.inner());
+    let result = array::concat(&interp, array, other);
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
     }
     match result {
@@ -787,9 +787,13 @@ pub unsafe extern "C" fn ary_initialize_copy(
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let array = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::initialize_copy(&interp, ary, &other);
+    let result = array::initialize_copy(&interp, array, &other);
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary);
+        sys::mrb_write_barrier(mrb, basic);
+    }
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -966,8 +970,12 @@ pub unsafe extern "C" fn ary_reverse_bang(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let result = array::reverse_bang(&interp, ary);
+    let array = Value::new(&interp, ary);
+    let result = array::reverse_bang(&interp, array);
+    if result.is_ok() {
+        let basic = sys::mrb_sys_basic_ptr(ary);
+        sys::mrb_write_barrier(mrb, basic);
+    }
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
