@@ -132,6 +132,7 @@ end
 
 def run_specs(*specs)
   specs = specs.flatten
+  puts specs.inspect
   MSpec.register_files(specs)
 
   collector = SpecCollector.new

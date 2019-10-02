@@ -43,6 +43,7 @@ module MSpec
     state.parent = current
 
     MSpec.register_current state
+    puts "describe '#{mod}'"
     state.describe(&block)
 
     state.process unless state.shared? or current
@@ -85,7 +86,8 @@ module MSpec
       setup_env
       store :file, file
       actions :load
-      protect("loading #{file}") { Kernel.require file }
+      # protect("loading #{file}") { Kernel.require file }
+      Kernel.require file
       actions :unload
     end
   end

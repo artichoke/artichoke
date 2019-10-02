@@ -174,13 +174,14 @@ class Array
     true
   end
 
-  def all?(pattern = (not_set = true), &blk)
+  def all?(pattern = (not_set = true), &block)
     if not_set
-      blk ||= ->(obj) { obj }
+      puts inspect if respond_to?(:puts)
       len = length
       idx = 0
       while idx < len
-        return false unless blk.call(self[idx])
+        puts idx if respond_to?(:puts)
+        return false unless block.call(self[idx])
 
         idx += 1
       end
@@ -514,8 +515,10 @@ class Array
   def each(&block)
     return to_enum :each unless block
 
+    puts 'each' if respond_to?(:puts)
     idx = 0
     while idx < length
+      puts "#{idx}, #{self[idx]}" if respond_to?(:puts)
       block.call(self[idx])
       idx += 1
     end

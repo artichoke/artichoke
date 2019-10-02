@@ -548,7 +548,6 @@ pub fn initialize_copy<'a>(
 }
 
 pub fn to_ary(interp: &Artichoke, value: Value) -> Result<Value, Error> {
-    dbg!();
     if unsafe { Array::try_from_ruby(interp, &value) }.is_ok() {
         Ok(value)
     } else if let Ok(ary) = value.funcall::<Value>("to_a", &[], None) {

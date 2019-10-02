@@ -19,7 +19,6 @@ use crate::Artichoke;
 pub unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let result = array::new(&interp);
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -75,7 +74,6 @@ pub unsafe extern "C" fn artichoke_ary_new_capa(
     let result = usize::try_from(capacity)
         .map_err(|_| Error::Fatal)
         .and_then(|capacity| array::with_capacity(&interp, capacity));
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -139,7 +137,6 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
                 .collect::<Vec<_>>();
             array::from_values(&interp, values.as_slice())
         });
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -194,7 +191,6 @@ pub unsafe extern "C" fn artichoke_ary_splat(
     let interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, value);
     let result = array::splat(&interp, value);
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -255,7 +251,6 @@ pub unsafe extern "C" fn artichoke_ary_concat(
         let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
     }
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -374,7 +369,6 @@ pub unsafe extern "C" fn artichoke_ary_push(
         let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
     }
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -496,7 +490,6 @@ pub unsafe extern "C" fn artichoke_ary_set(
         let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
     }
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -550,7 +543,6 @@ pub unsafe extern "C" fn artichoke_ary_clone(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, value);
     let result = array::clone(&interp, &ary);
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -604,7 +596,6 @@ pub unsafe extern "C" fn artichoke_value_to_ary(
     let interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, value);
     let result = array::to_ary(&interp, value);
-    dbg!();
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
