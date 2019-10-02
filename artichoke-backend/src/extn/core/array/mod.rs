@@ -147,17 +147,31 @@ pub fn from_values<'a>(interp: &'a Artichoke, values: &[Value]) -> Result<Value,
 }
 
 pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Error> {
-    let buffer = if value.respond_to("to_a").map_err(Error::Artichoke)? {
-        value
-            .funcall::<Vec<Value>>("to_a", &[], None)
-            .map_err(Error::Artichoke)?
+    if unsafe { Array::try_from_ruby(interp, &value) }.is_ok() {
+        return Ok(value);
+    }
+    if value.respond_to("to_a").map_err(Error::Artichoke)? {
+        let value_type = value.pretty_name();
+        let value = value
+            .funcall::<Value>("to_a", &[], None)
+            .map_err(Error::Artichoke)?;
+        if unsafe { Array::try_from_ruby(interp, &value) }.is_ok() {
+            Ok(value)
+        } else {
+            Err(Error::CannotConvert {
+                to: "Array",
+                from: value_type,
+                method: "to_a",
+                gives: value.pretty_name(),
+            })
+        }
     } else {
-        vec![value]
-    };
-    let ary = Array {
-        buffer: VecDeque::from(buffer),
-    };
-    unsafe { ary.try_into_ruby(interp, None) }.map_err(Error::Artichoke)
+        let buffer = vec![value];
+        let ary = Array {
+            buffer: VecDeque::from(buffer),
+        };
+        unsafe { ary.try_into_ruby(interp, None) }.map_err(Error::Artichoke)
+    }
 }
 
 pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
