@@ -408,7 +408,7 @@ pub fn concat(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Err
     if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
         borrow.buffer.extend(other.borrow().buffer.clone());
         Ok(ary)
-    } else if let Ok(other) = other.funcall("to_a", &[], None) {
+    } else if let Ok(other) = other.funcall("to_ary", &[], None) {
         if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
             borrow.buffer.extend(other.borrow().buffer.clone());
             Ok(ary)
