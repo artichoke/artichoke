@@ -283,7 +283,27 @@ pub fn element_assignment<'a>(
             };
         }
         ElementReferenceArgs::StartLen(start, len) => {
-            let other_ary = to_ary(interp, other.clone())?;
+            let other_ary = if unsafe { Array::try_from_ruby(interp, &other) }.is_ok() {
+                other.clone()
+            } else if let Ok(true) = other.respond_to("to_ary") {
+                let ruby_type = other.pretty_name();
+                if let Ok(other) = other.funcall("to_ary", &[], None) {
+                    if unsafe { Array::try_from_ruby(interp, &other) }.is_ok() {
+                        other
+                    } else {
+                        return Err(Error::CannotConvert {
+                            to: "Array",
+                            from: ruby_type,
+                            method: "to_ary",
+                            gives: other.pretty_name(),
+                        });
+                    }
+                } else {
+                    return Err(Error::Fatal);
+                }
+            } else {
+                from_values(interp, &[other.clone()])?
+            };
             let other_data =
                 unsafe { Array::try_from_ruby(interp, &other_ary) }.map_err(|_| Error::Fatal)?;
             let other_borrow = other_data.borrow();
