@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::convert::TryFrom;
 
 use crate::convert::float::Float;
@@ -12,18 +12,10 @@ use crate::{Artichoke, ArtichokeError};
 // bail out implementation for mixed-type collections
 impl Convert<Vec<Value>, Value> for Artichoke {
     fn convert(&self, value: Vec<Value>) -> Value {
-        let mrb = self.0.borrow().mrb;
-        let capa = Int::try_from(value.len()).unwrap_or_default();
-        let array = unsafe { sys::mrb_ary_new_capa(mrb, capa) };
-
-        for (idx, item) in value.iter().enumerate() {
-            let idx = Int::try_from(idx).unwrap_or_default();
-            let item = item.inner();
-            unsafe {
-                sys::mrb_ary_set(mrb, array, idx, item);
-            }
-        }
-        Value::new(self, array)
+        let ary = Array {
+            buffer: VecDeque::from(value),
+        };
+        unsafe { ary.try_into_ruby(self, None) }.expect("Array into Value")
     }
 }
 
