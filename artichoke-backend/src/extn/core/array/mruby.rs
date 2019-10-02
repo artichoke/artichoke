@@ -1113,10 +1113,17 @@ pub unsafe extern "C" fn ary_element_reference(
             })
         } else if let Ok(index) = first.clone().try_into::<Int>() {
             Ok(Some(array::ElementReferenceArgs::Index(index)))
-        } else if let Some(args) = unsafe { is_range(interp, &first, len)? } {
-            Ok(Some(args))
+        } else if let Ruby::Range = first.ruby_type() {
+            if let Some(args) = unsafe { is_range(interp, &first, len)? } {
+                Ok(Some(args))
+            } else {
+                Ok(None)
+            }
         } else {
-            Ok(None)
+            Err(Error::NoImplicitConversion {
+                from: first.pretty_name(),
+                to: "Integer",
+            })
         }
     }
 
