@@ -323,24 +323,41 @@ pub fn element_assignment<'a>(
                     borrow.buffer.push_back(interp.convert(None::<Value>));
                 }
                 borrow.buffer.extend(other_borrow.buffer.clone());
-                if start + len > other_len {
-                    for _ in (start + len)..other_len {
-                        borrow.buffer.push_back(interp.convert(None::<Value>));
+            } else if start + other_len < buf_len {
+                if other_len == len {
+                    for index in 0..other_len {
+                        let idx = start + index;
+                        borrow.buffer[idx] = other_borrow.buffer[index].clone();
+                    }
+                } else if other_len < len {
+                    for index in 0..other_len {
+                        let idx = start + index;
+                        borrow.buffer[idx] = other_borrow.buffer[index].clone();
+                    }
+                    let at = start + other_len;
+                    for _ in other_len..len {
+                        borrow.buffer.remove(at);
+                    }
+                } else {
+                    for index in 0..len {
+                        let idx = start + index;
+                        borrow.buffer[idx] = other_borrow.buffer[index].clone();
+                    }
+                    for idx in len..len + other_len {
+                        let at = start + idx;
+                        borrow.buffer.insert(at, other_borrow.buffer[idx].clone());
                     }
                 }
-            } else if other_len < len {
-                for index in start..other_len {
+            } else {
+                // we are guaranteed to need to call push_back.
+                for index in 0..(len - start) {
                     let idx = start + index;
-                    if start + idx >= borrow.buffer.len() {
-                        borrow.buffer.push_back(other_borrow.buffer[index].clone());
-                    } else {
-                        borrow.buffer[start + index] = other_borrow.buffer[index].clone();
-                    }
+                    borrow.buffer[idx] = other_borrow.buffer[index].clone();
                 }
-                for _ in other_len..start + len {
-                    borrow.buffer.remove(len);
+                for index in len - start..other_len {
+                    borrow.buffer.push_back(other_borrow.buffer[index].clone());
                 }
-            };
+            }
         }
     }
     Ok(other)
