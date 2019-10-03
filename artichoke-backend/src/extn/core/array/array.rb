@@ -996,6 +996,8 @@ class Array
       elsif other.respond_to?(:to_ary)
         other = other.to_ary
         raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{other.class})" unless other.is_a?(Array)
+
+        other
       else
         raise TypeError, "no implicit conversion of #{classname} into Array" unless other.is_a?(Array)
       end
