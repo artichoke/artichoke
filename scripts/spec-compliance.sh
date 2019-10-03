@@ -20,5 +20,11 @@ run_library_spec() {
   popd >/dev/null
 }
 
-run_core_spec "array"
+# run_core_spec "array"
+run_core_spec "comparable"
+run_core_spec "matchdata"
+run_core_spec "regexp"
 
+run_library_spec "monitor"
+run_library_spec "stringscanner"
+run_library_spec "uri"

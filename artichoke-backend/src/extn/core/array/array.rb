@@ -237,9 +237,9 @@ class Array
       idx = 0
       while idx < length
         if block
-          return true unless block.call(self[idx])
+          return true if block.call(self[idx])
         else
-          return true unless self[idx]
+          return true if self[idx]
         end
 
         idx += 1
@@ -929,6 +929,8 @@ class Array
   end
 
   def push(*args)
+    raise FrozenError, "can't modify frozen Array" if frozen?
+
     concat(args)
     self
   end
@@ -1074,6 +1076,45 @@ class Array
     return nil if len == result.size
 
     replace(result)
+  end
+
+  def shift(num = Artichoke::Array::NOT_SET)
+    not_set = num.equal?(Artichoke::Array::NOT_SET)
+    if not_set
+      result = first
+      self[0, 1] = []
+    else
+      count =
+        if num.is_a?(Integer)
+          num
+        elsif num.nil?
+          raise TypeError, 'no implicit conversion from nil to integer'
+        elsif num.respond_to?(:to_int)
+          classname = num.class
+          classname = num.inspect if index.equal?(false) || index.equal?(true)
+          num = num.to_int
+          raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})" unless num.is_a?(Integer)
+
+          num
+        else
+          classname = num.class
+          classname = num.inspect if index.equal?(false) || index.equal?(true)
+          raise TypeError, "no implicit conversion of #{classname} into Integer"
+        end
+      raise ArgumentError, 'negative array size' if count.negative?
+
+      return [] if empty?
+
+      if count > length
+        result = dup
+        clear
+        return result
+      end
+
+      result = first(count)
+      self[0, count] = []
+    end
+    result
   end
 
   def shuffle(rng = (not_set = true))

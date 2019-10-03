@@ -115,10 +115,10 @@ class Enumerator
   #
   # Use of this form is discouraged.  Use Kernel#enum_for or Kernel#to_enum
   # instead.
-  def initialize(obj=NONE, meth=:each, *args, &block)
+  def initialize(obj = Artichoke::Array::NOT_SET, meth=:each, *args, &block)
     if block
       obj = Generator.new(&block)
-    elsif obj == NONE
+    elsif obj == Artichoke::Array::NOT_SET
       raise ArgumentError, "wrong number of arguments (given 0, expected 1+)"
     end
 
