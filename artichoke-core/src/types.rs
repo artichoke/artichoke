@@ -3,7 +3,7 @@
 use std::fmt;
 
 /// Classes of Rust types.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Rust {
     /// Rust `bool` type.
     Bool,
@@ -38,7 +38,7 @@ impl fmt::Display for Rust {
 }
 
 /// Classes of Ruby types.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Ruby {
     /// Ruby `Array` type.
     Array,
@@ -100,6 +100,9 @@ pub enum Ruby {
     /// Unreachable interpreter value. Receiving one of these from the
     /// interpreter is a bug.
     Unreachable,
+    /// A special `Value` that is a placeholder for collections that own
+    /// themselves.
+    RecursiveSelfOwnership,
 }
 
 impl Ruby {
@@ -126,6 +129,7 @@ impl Ruby {
             Ruby::String => "String",
             Ruby::Symbol => "Symbol",
             Ruby::Unreachable => "internal and unreachable",
+            Ruby::RecursiveSelfOwnership => "recursive self ownership",
         }
     }
 }

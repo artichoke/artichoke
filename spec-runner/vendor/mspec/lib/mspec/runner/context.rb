@@ -66,6 +66,7 @@ class ContextState
         @parents.unshift state
         state = state.parent
       end
+      puts "parents = #{@parents.inspect}"
     end
   end
 
@@ -175,7 +176,6 @@ class ContextState
   # NOT evaluate any blocks if +check+ is true and
   # <tt>MSpec.mode?(:pretend)</tt> is true.
   def protect(what, blocks, check=true)
-    puts blocks.inspect
     return true if check and MSpec.mode? :pretend
     Array(blocks).all? { |block| MSpec.protect what, &block }
   end

@@ -95,6 +95,7 @@ pub enum Error<'a> {
         gives: &'a str,
     },
     Fatal,
+    Frozen,
     IndexTooSmall {
         index: isize,
         minimum: isize,
@@ -175,6 +176,9 @@ pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Error> {
 }
 
 pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     borrow.buffer.clear();
@@ -228,7 +232,7 @@ pub fn element_reference<'a>(
                 // Positive Int must be usize
                 let index = usize::try_from(-index).map_err(|_| Error::Fatal)?;
                 match borrow.buffer.len().checked_sub(index) {
-                    Some(0) | None => Ok(interp.convert(None::<Value>)),
+                    None => Ok(interp.convert(None::<Value>)),
                     Some(index) => Ok(interp.convert(borrow.buffer.get(index))),
                 }
             } else {
@@ -261,6 +265,9 @@ pub fn element_assignment<'a>(
     args: ElementReferenceArgs,
     other: Value,
 ) -> Result<Value, Error<'a>> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let data = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = data.borrow_mut();
     match args {
@@ -273,14 +280,10 @@ pub fn element_assignment<'a>(
                 usize::try_from(index).map_err(|_| Error::Fatal)?
             };
             let len = borrow.buffer.len();
-            if index > len {
-                for _ in len..index {
-                    borrow.buffer.push_back(interp.convert(None::<Value>));
-                }
-                borrow.buffer.push_back(other.clone());
-            } else {
-                borrow.buffer.insert(index, other.clone());
-            };
+            for _ in len..=index {
+                borrow.buffer.push_back(interp.convert(None::<Value>));
+            }
+            borrow.buffer[index] = other.clone();
         }
         ElementReferenceArgs::StartLen(start, len) => {
             let other_ary = if unsafe { Array::try_from_ruby(interp, &other) }.is_ok() {
@@ -364,6 +367,9 @@ pub fn element_assignment<'a>(
 }
 
 pub fn pop<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Option<Value>, Error<'a>> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = ary.borrow_mut();
     Ok(borrow.buffer.pop_back())
@@ -374,6 +380,9 @@ pub fn shift<'a>(
     ary: &Value,
     count: Option<usize>,
 ) -> Result<Value, Error<'a>> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = ary.borrow_mut();
     if let Some(count) = count {
@@ -394,6 +403,9 @@ pub fn shift<'a>(
 }
 
 pub fn unshift(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Error> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     borrow.buffer.push_front(value);
@@ -401,11 +413,18 @@ pub fn unshift(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Er
 }
 
 pub fn concat(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Error> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let ary_type = ary.pretty_name();
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     let ruby_type = other.pretty_name();
-    if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
+    if ary == other {
+        let copy = borrow.buffer.clone();
+        borrow.buffer.extend(copy);
+        Ok(ary)
+    } else if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
         borrow.buffer.extend(other.borrow().buffer.clone());
         Ok(ary)
     } else if let Ok(other) = other.funcall("to_ary", &[], None) {
@@ -429,6 +448,9 @@ pub fn concat(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Err
 }
 
 pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Error> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     borrow.buffer.push_back(value);
@@ -436,6 +458,9 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Error
 }
 
 pub fn replace(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Error> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let ary_type = ary.pretty_name();
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
@@ -476,6 +501,9 @@ pub fn reverse(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
 }
 
 pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     let mut front = 0;
@@ -494,6 +522,9 @@ pub fn element_set(
     offset: isize,
     value: Value,
 ) -> Result<Value, Error> {
+    if ary.is_frozen() {
+        return Err(Error::Frozen);
+    }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
     let offset = if offset >= 0 {
@@ -515,10 +546,10 @@ pub fn element_set(
         }
     };
     let fill = offset.checked_sub(borrow.buffer.len()).unwrap_or_default();
-    for _ in 0..fill {
+    for _ in 0..=fill {
         borrow.buffer.push_back(interp.convert(None::<Value>));
     }
-    borrow.buffer.insert(offset, value);
+    borrow.buffer[offset] = value;
     Ok(ary)
 }
 

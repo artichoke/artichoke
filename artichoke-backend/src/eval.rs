@@ -246,8 +246,19 @@ impl Eval for Artichoke {
             // heap-allocated objects that we've passed as borrows to `protect`.
             let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
             if state.assume_init() != 0 {
+                debug!("Exception during Eval::unchecked_eval");
                 // drop all bindings to heap-allocated objects because we are
                 // about to unwind with longjmp.
+                println!("{:?}", std::str::from_utf8(code.as_ref()));
+                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+                match self.last_error() {
+                    LastError::Some(exception) => {
+                        warn!("runtime error with exception backtrace: {}", exception);
+                        println!("{:?}", exception.to_string());
+                        panic!();
+                    }
+                    _ => {}
+                }
                 drop(context);
                 drop(code);
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);

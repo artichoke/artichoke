@@ -83,6 +83,10 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
         .0
         .borrow_mut()
+        .def_class::<FrozenError>("FrozenError", None, None);
+    interp
+        .0
+        .borrow_mut()
         .def_class::<IndexError>("IndexError", None, None);
     interp
         .0
@@ -201,6 +205,11 @@ impl RubyException for LoadError {}
 pub struct ArgumentError;
 
 impl RubyException for ArgumentError {}
+
+#[allow(clippy::module_name_repetitions)]
+pub struct FrozenError;
+
+impl RubyException for FrozenError {}
 
 #[allow(clippy::module_name_repetitions)]
 pub struct IndexError;

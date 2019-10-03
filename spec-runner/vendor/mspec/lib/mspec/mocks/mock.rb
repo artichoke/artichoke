@@ -27,7 +27,9 @@ module Mock
   end
 
   def self.has_key?(keys, sym)
-    !!keys.find { |k| k.first == sym }
+    puts sym.inspect
+    puts keys.inspect
+    !!keys.find { |k| puts "k = #{k.inspect}"; k.first == sym }
   end
 
   def self.replaced?(sym)
@@ -66,6 +68,7 @@ module Mock
     suppress_warning {
       meta.class_eval {
         define_method(sym) do |*args, &block|
+          puts "install #{sym} with args = #{args.inspect}"
           Mock.verify_call self, sym, *args, &block
         end
       }

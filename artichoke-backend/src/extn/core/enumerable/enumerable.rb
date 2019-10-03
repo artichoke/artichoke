@@ -92,7 +92,7 @@ module Enumerable
     return to_enum :detect, ifnone unless block
 
     each do |val|
-      return val if block.call(*val)
+      return val if block.call(val)
     end
     ifnone&.call
   end

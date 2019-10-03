@@ -7,7 +7,7 @@ use std::slice;
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::array::{self, Error};
 use crate::extn::core::exception::{
-    IndexError, RangeError, RubyException, RuntimeError, TypeError,
+    FrozenError, IndexError, RangeError, RubyException, RuntimeError, TypeError,
 };
 use crate::sys;
 use crate::types::Int;
@@ -38,6 +38,7 @@ pub unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -93,6 +94,7 @@ pub unsafe extern "C" fn artichoke_ary_new_capa(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -156,6 +158,7 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -210,6 +213,7 @@ pub unsafe extern "C" fn artichoke_ary_splat(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -270,6 +274,7 @@ pub unsafe extern "C" fn artichoke_ary_concat(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -328,6 +333,7 @@ pub unsafe extern "C" fn artichoke_ary_pop(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -388,6 +394,7 @@ pub unsafe extern "C" fn artichoke_ary_push(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -446,6 +453,7 @@ pub unsafe extern "C" fn artichoke_ary_ref(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -509,6 +517,7 @@ pub unsafe extern "C" fn artichoke_ary_set(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -562,6 +571,7 @@ pub unsafe extern "C" fn artichoke_ary_clone(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -615,6 +625,7 @@ pub unsafe extern "C" fn artichoke_value_to_ary(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -677,6 +688,10 @@ pub unsafe extern "C" fn artichoke_ary_len(
         }
         Err(Error::Fatal) => {
             RuntimeError::raise(interp, "fatal Array error");
+            0
+        }
+        Err(Error::Frozen) => {
+            FrozenError::raise(interp, "can't modify frozen Array");
             0
         }
         Err(Error::IndexTooSmall { index, minimum }) => {
@@ -746,6 +761,7 @@ pub unsafe extern "C" fn ary_concat(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -804,6 +820,7 @@ pub unsafe extern "C" fn ary_initialize_copy(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -878,6 +895,7 @@ pub unsafe extern "C" fn artichoke_ary_shift(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -930,6 +948,7 @@ pub unsafe extern "C" fn ary_reverse(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -986,6 +1005,7 @@ pub unsafe extern "C" fn ary_reverse_bang(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -1045,6 +1065,7 @@ pub unsafe extern "C" fn artichoke_ary_unshift(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -1178,6 +1199,7 @@ pub unsafe extern "C" fn ary_element_reference(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",
@@ -1314,6 +1336,7 @@ pub unsafe extern "C" fn ary_element_assignment(
             RangeError::raisef(interp, "%S", format_args)
         }
         Err(Error::Fatal) => RuntimeError::raise(interp, "fatal Array error"),
+        Err(Error::Frozen) => FrozenError::raise(interp, "can't modify frozen Array"),
         Err(Error::IndexTooSmall { index, minimum }) => {
             let format_args = vec![interp.convert(format!(
                 "index {} too small for array; minimum: {}",

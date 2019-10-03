@@ -53,6 +53,7 @@ class SpecCollector
     @total += 1
     @spec_state = nil
     print '.'
+    print _state.inspect
   end
 
   def after(_state)
@@ -61,6 +62,8 @@ class SpecCollector
 
   def exception(state)
     skipped = false
+    puts state.exception
+    puts state.exception.backtrace
     if state.exception.is_a?(NoMethodError)
       skipped = true if state.message =~ /'allocate'/
       skipped = true if state.message =~ /'encoding'/
@@ -81,6 +84,7 @@ class SpecCollector
     elsif state.exception.is_a?(TypeError)
       skipped = true if state.it =~ /encoding/
     elsif state.exception.is_a?(NotImplementedError)
+      puts state.exception.inspect
       @not_implemented += 1
       @spec_state = "\b#{YELLOW}N#{PLAIN}"
       return

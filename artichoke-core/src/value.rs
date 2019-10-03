@@ -45,6 +45,9 @@ where
     /// Call `#freeze` on this [`Value`].
     fn freeze(&mut self) -> Result<(), ArtichokeError>;
 
+    /// Call `#frozen?` on this [`Value`].
+    fn is_frozen(&self) -> bool;
+
     /// Whether `self` is `nil`
     fn is_nil(&self) -> bool;
 

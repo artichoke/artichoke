@@ -86,8 +86,8 @@ class Module
   end
 
   alias attr attr_reader
-  alias const_missing_without_autoload const_missing
-  alias const_missing const_missing_with_autoload
+  # alias const_missing_without_autoload const_missing
+  # alias const_missing const_missing_with_autoload
 end
 
 def self.autoload(const, path)

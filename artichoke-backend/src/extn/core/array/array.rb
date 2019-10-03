@@ -1,5 +1,15 @@
 # frozen_string_literal: true
 
+module Artichoke
+  class Array
+    # This object exists because of an mruby bug where blocks are not created
+    # if a method has an argument with a default value assignment expression.
+    #
+    # https://github.com/mruby/mruby/issues/4746
+    NOT_SET = Object.new.freeze
+  end
+end
+
 class Array
   # include depends on Array#reverse which hasn't been defined yet so inline the
   # `Module` include.
@@ -142,20 +152,29 @@ class Array
   end
 
   def <=>(other)
-    return nil if other.class != Array
-
-    return 1 if length > other.length
-    return -1 if length < other.length
+    return nil unless other.is_a?(Array)
 
     len = length
+    return len <=> other.length unless len == other.length
+
     idx = 0
     while idx < len
-      cmp = self[idx] <=> other[ids]
-      idx += 1
-      next if cmp.zero?
-      return cmp if [-1, 1].include?(cmp)
+      if self[idx].equal?(other[idx])
+        idx += 1
+        next
+      end
+      cmp = self[idx] <=> other[idx]
+      return false if cmp.nil?
 
-      return nil
+      unless cmp.is_a?(Numeric)
+        classname = other.class
+        classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
+      end
+
+      return cmp unless cmp.zero?
+
+      idx += 1
     end
     0
   end
@@ -167,26 +186,31 @@ class Array
     len = length
     idx = 0
     while idx < len
-      return false unless self[idx] == other[ids]
+      cmp = self[idx] <=> other[idx]
+      return nil if cmp.nil?
+      raise ArgumentError unless cmp.is_a?(Numeric)
+      return false unless cmp.zero?
 
       idx += 1
     end
     true
   end
 
-  def all?(pattern = (not_set = true), &block)
+  def all?(pattern = Artichoke::Array::NOT_SET, &block)
+    not_set = pattern.equal?(Artichoke::Array::NOT_SET)
     if not_set
-      puts inspect if respond_to?(:puts)
-      len = length
       idx = 0
-      while idx < len
-        puts idx if respond_to?(:puts)
-        return false unless block.call(self[idx])
+      while idx < length
+        if block
+          return false unless block.call(self[idx])
+        else
+          return false unless self[idx]
+        end
 
         idx += 1
       end
     else
-      warn('warning: given block not used') if blk
+      warn('warning: given block not used') if block
 
       len = length
       idx = 0
@@ -199,18 +223,21 @@ class Array
     true
   end
 
-  def any?(pattern = (not_set = true), &blk)
+  def any?(pattern = Artichoke::Array::NOT_SET, &block)
+    not_set = pattern.equal?(Artichoke::Array::NOT_SET)
     if not_set
-      blk ||= ->(obj) { obj }
-      len = length
       idx = 0
-      while idx < len
-        return true if blk.call(self[idx])
+      while idx < length
+        if block
+          return true unless block.call(self[idx])
+        else
+          return true unless self[idx]
+        end
 
         idx += 1
       end
     else
-      warn('warning: given block not used') if blk
+      warn('warning: given block not used') if block
 
       len = length
       idx = 0
@@ -228,12 +255,11 @@ class Array
     len = length
     while idx < len
       ary = self[idx]
+      idx += 1
       next unless ary.is_a?(Array)
       next unless ary.length.positive?
 
       return ary if obj == ary.first
-
-      idx += 1
     end
     nil
   end
@@ -308,18 +334,23 @@ class Array
     raise NotImplementedError, 'TODO in Rust'
   end
 
-  def collect(&blk)
-    return to_enum :collect unless blk
+  def collect(&block)
+    return to_enum :collect unless block
 
-    dup.tap { |ary| ary.collect!(&blk) }
+    ary = []
+    idx = 0
+    while idx < length
+      ary << block.call(self[idx])
+      idx += 1
+    end
+    ary
   end
 
   def collect!(&block)
     return to_enum :collect! unless block
 
     idx = 0
-    len = size
-    while idx < len
+    while idx < length
       self[idx] = block.call(self[idx])
       idx += 1
     end
@@ -364,7 +395,8 @@ class Array
     end
   end
 
-  def count(obj = (not_set = true), &block)
+  def count(obj = Artichoke::Array::NOT_SET, &block)
+    not_set = obj.equal?(Artichoke::Array::NOT_SET)
     count = 0
     idx = 0
     len = length
@@ -388,7 +420,8 @@ class Array
     count
   end
 
-  def cycle(num = (not_set = true), &block)
+  def cycle(num = Artichoke::Array::NOT_SET, &block)
+    not_set = num.equal?(Artichoke::Array::NOT_SET)
     unless block
       return to_enum(:cycle) if not_set
 
@@ -515,10 +548,8 @@ class Array
   def each(&block)
     return to_enum :each unless block
 
-    puts 'each' if respond_to?(:puts)
     idx = 0
     while idx < length
-      puts "#{idx}, #{self[idx]}" if respond_to?(:puts)
       block.call(self[idx])
       idx += 1
     end
@@ -554,7 +585,8 @@ class Array
     true
   end
 
-  def fetch(index, default = (not_set = true), &block)
+  def fetch(index, default = Artichoke::Array::NOT_SET, &block)
+    not_set = default.equal?(Artichoke::Array::NOT_SET)
     warn 'block supersedes default value argument' if !index.nil? && !not_set && block
 
     idx = index
@@ -656,7 +688,8 @@ class Array
     self[0, length] = res
   end
 
-  def find_index(obj = (not_set = true), &block)
+  def find_index(obj = Artichoke::Array::NOT_SET, &block)
+    not_set = obj.equal?(Artichoke::Array::NOT_SET)
     return to_enum(:find_index, obj) if !block && not_set
 
     idx = 0
@@ -717,10 +750,8 @@ class Array
     ar = []
     idx = 0
     len = length
-    # puts inspect
     while idx < len
       e = self[idx]
-      # puts e.inspect
       if e.is_a?(Array) && (depth.nil? || depth.positive?)
         ar.concat(e.flatten(depth.nil? ? nil : depth - 1))
         modified = true
@@ -743,7 +774,8 @@ class Array
     false
   end
 
-  def index(val = (not_set = true), &block)
+  def index(val = Artichoke::Array::NOT_SET, &block)
+    not_set = val.equal?(Artichoke::Array::NOT_SET)
     return to_enum(:index) if !block && not_set
 
     idx = 0
@@ -852,7 +884,8 @@ class Array
     raise NotImplementedError
   end
 
-  def none?(pattern = (not_set = true), &block)
+  def none?(pattern = Artichoke::Array::NOT_SET, &block)
+    not_set = pattern.equal?(Artichoke::Array::NOT_SET)
     raise NotImplementedError
   end
 
@@ -894,12 +927,11 @@ class Array
     len = length
     while idx < len
       ary = self[idx]
+      idx += 1
       next unless ary.is_a?(Array)
       next unless ary.length.positive?
 
       return ary if obj == ary[1]
-
-      idx += 1
     end
     nil
   end
@@ -907,26 +939,33 @@ class Array
   def reject(&block)
     return to_enum :reject unless block
 
-    dup.tap { |ary| ary.reject!(&block) }
+    ary = []
+    idx = 0
+    while idx < length
+      item = self[idx]
+      ary << item unless block.call(item)
+      idx += 1
+    end
+    ary
   end
 
   def reject!(&block)
     return to_enum :reject! unless block
 
-    len = size
+    ary = []
     idx = 0
-    while idx < size
-      if block.call(self[idx])
-        delete_at(idx)
+    while idx < length
+      item = self[idx]
+      if block.call(item)
+        modified = true
       else
-        idx += 1
+        ary << item
       end
+      idx += 1
     end
-    if size == len
-      nil
-    else
-      self
-    end
+    return nil unless modified
+
+    self[0, length] = ary
   end
 
   def repeated_combination(num, &block)
@@ -963,7 +1002,8 @@ class Array
     self
   end
 
-  def rindex(val = (not_set = true), &block)
+  def rindex(val = Artichoke::Array::NOT_SET, &block)
+    not_set = val.equal?(Artichoke::Array::NOT_SET)
     return to_enum(:rindex) if !block && not_set
 
     if not_set
@@ -1241,6 +1281,11 @@ class Array
     end
   end
 
+  def unshift(*args)
+    self[0, 0] = *args
+    self
+  end
+
   def values_at(*selectors)
     ary = []
     idx = 0
@@ -1281,8 +1326,7 @@ class Array
   alias append push
   alias map collect
   alias map! collect!
-  # TODO implement Array#unshift in Rust
-  # alias prepend unshift
+  alias prepend unshift
   alias slice []
   alias take drop
   alias take_while drop_while

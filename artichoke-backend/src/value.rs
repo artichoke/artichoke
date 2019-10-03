@@ -110,9 +110,13 @@ impl Value {
         } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Self>>() {
             "nil"
         } else if self.ruby_type() == Ruby::Data {
-            self.funcall::<Self>("class", &[], None)
-                .and_then(|class| class.funcall::<&'a str>("name", &[], None))
-                .unwrap_or_default()
+            if unsafe { Array::try_from_ruby(&self.interp, self) }.is_ok() {
+                "Array"
+            } else {
+                self.funcall::<Self>("class", &[], None)
+                    .and_then(|class| class.funcall::<&'a str>("name", &[], None))
+                    .unwrap_or_default()
+            }
         } else {
             self.ruby_type().class_name()
         }
@@ -262,9 +266,14 @@ impl ValueLike for Value {
     }
 
     fn freeze(&mut self) -> Result<(), ArtichokeError> {
-        let frozen = self.funcall::<Self>("freeze", &[], None)?;
-        frozen.protect();
+        self.funcall::<Self>("freeze", &[], None)?;
         Ok(())
+    }
+
+    fn is_frozen(&self) -> bool {
+        let mrb = self.interp.0.borrow().mrb;
+        let slf = self.inner();
+        unsafe { sys::mrb_sys_obj_frozen(mrb, slf) }
     }
 
     fn inspect(&self) -> String {
@@ -307,26 +316,18 @@ impl fmt::Debug for Value {
 
 impl Clone for Value {
     fn clone(&self) -> Self {
-        if let Ruby::Data = self.ruby_type() {
-            if let Ok(ary) = unsafe { Array::try_from_ruby(&self.interp, self) } {
-                let cloned = ary.borrow().clone();
-                unsafe {
-                    cloned
-                        .try_into_ruby(&self.interp, Some(self.inner()))
-                        .expect("Array clone")
-                }
-            } else {
-                panic!(
-                    "Cannot safely clone a Value with type tag Ruby::Data: {:?}",
-                    self
-                );
-            }
-        } else {
-            Self {
-                interp: self.interp.clone(),
-                value: self.value,
-            }
+        Self {
+            interp: self.interp.clone(),
+            value: self.value,
         }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(unsafe { sys::mrb_sys_basic_ptr(self.inner()) }, unsafe {
+            sys::mrb_sys_basic_ptr(other.inner())
+        })
     }
 }
 

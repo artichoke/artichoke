@@ -289,6 +289,7 @@ impl Regexp {
 
     unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
+        interp.0.borrow_mut();
         let value = Value::new(&interp, slf);
         let result =
             match_::Args::extract(&interp).and_then(|args| match_::method(&interp, args, &value));

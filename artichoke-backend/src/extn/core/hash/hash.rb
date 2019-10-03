@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+module Artichoke
+  class Hash
+    NOT_SET = Object.new.freeze
+  end
+end
+
 class Hash
   include Enumerable
 
@@ -108,7 +114,8 @@ class Hash
   def delete(key, &block)
     return block.call(key) if block && !key?(key)
 
-    raise NotImplementedError
+    # TODO: mruby internal method call
+    __delete(key)
   end
 
   def delete_if(&block)
@@ -169,13 +176,14 @@ class Hash
     true
   end
 
-  def fetch(key, none = NONE, &block)
+  def fetch(key, default = Artichoke::Hash::NOT_SET, &block)
+    not_set = default.equal?(Artichoke::Hash::NOT_SET)
     if key?(key)
       self[key]
     elsif block
       block.call(key)
-    elsif none != NONE
-      none
+    elsif !not_set
+      default
     else
       raise KeyError, "Key not found: #{key.inspect}"
     end

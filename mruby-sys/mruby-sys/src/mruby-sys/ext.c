@@ -34,6 +34,11 @@ MRB_API _Bool mrb_sys_range_excl(mrb_state *mrb, mrb_value value) {
   return mrb_range_excl_p(mrb, value);
 }
 
+MRB_API _Bool mrb_sys_obj_frozen(mrb_state *mrb, mrb_value value) {
+  (void)(mrb);
+  return MRB_FROZEN_P(mrb_basic_ptr(value));
+}
+
 // Extract pointers from `mrb_value`s
 
 MRB_API mrb_int mrb_sys_fixnum_to_cint(mrb_value value) {

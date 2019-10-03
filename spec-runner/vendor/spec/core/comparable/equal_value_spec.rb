@@ -49,7 +49,7 @@ describe "Comparable#==" do
     end
 
     it "raises an ArgumentError" do
-      -> { (a == b) }.should raise_error(ArgumentError)
+      -> { puts "xxxxxxxxxxxxx: #{b.class.inspect}"; (a == b) }.should raise_error(ArgumentError)
     end
   end
 
