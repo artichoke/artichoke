@@ -1317,7 +1317,7 @@ class Array
       when Integer
         ary << self[selector]
       when Range
-        ary.concat!(self[selector])
+        ary.concat(self[selector])
       else
         classname = selector.class
         classname = selector.inspect if selector.equal?(true) || selector.equal?(false) || selector.nil?
