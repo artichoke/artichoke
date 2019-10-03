@@ -98,9 +98,10 @@ mod tests {
     #[quickcheck]
     fn vec_with_value(v: Vec<u8>) -> bool {
         let interp = crate::interpreter().expect("init");
+        let mrb = interp.0.borrow().mrb;
         let value = interp.convert(v.clone());
         let inner = value.inner();
-        let len = unsafe { sys::mrb_string_value_len(interp.0.borrow().mrb, inner) };
+        let len = unsafe { sys::mrb_string_value_len(mrb, inner) };
         let len = usize::try_from(len).expect("usize");
         v.len() == len
     }

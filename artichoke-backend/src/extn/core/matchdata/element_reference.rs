@@ -31,12 +31,13 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o|o?\0";
 
     pub unsafe fn extract(interp: &Artichoke, num_captures: usize) -> Result<Self, Error> {
+        let mrb = interp.0.borrow().mrb;
         let num_captures = Int::try_from(num_captures).map_err(|_| Error::Fatal)?;
         let mut first = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut second = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut has_second = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
         sys::mrb_get_args(
-            interp.0.borrow().mrb,
+            mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             first.as_mut_ptr(),
             second.as_mut_ptr(),
@@ -69,10 +70,11 @@ impl Args {
         first: sys::mrb_value,
         num_captures: Int,
     ) -> Result<Option<Self>, Error> {
+        let mrb = interp.0.borrow().mrb;
         let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
         let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
         let check_range = sys::mrb_range_beg_len(
-            interp.0.borrow().mrb,
+            mrb,
             first,
             start.as_mut_ptr(),
             len.as_mut_ptr(),

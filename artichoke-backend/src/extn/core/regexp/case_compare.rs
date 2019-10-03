@@ -1,5 +1,6 @@
 //! [`Regexp#===`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-3D-3D)
 
+use artichoke_core::value::Value as ValueLike;
 use std::cmp;
 use std::mem;
 
@@ -25,9 +26,10 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
     pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
+        let mrb = interp.0.borrow().mrb;
         let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
-            interp.0.borrow().mrb,
+            mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             string.as_mut_ptr(),
         );
@@ -46,12 +48,9 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     let string = if let Some(string) = args.string {
         string
     } else {
+        let sym = interp.0.borrow_mut().sym_intern("$~");
         unsafe {
-            sys::mrb_gv_set(
-                mrb,
-                interp.0.borrow_mut().sym_intern("$~"),
-                sys::mrb_sys_nil_value(),
-            );
+            sys::mrb_gv_set(mrb, sym, sys::mrb_sys_nil_value());
             return Ok(interp.convert(false));
         }
     };
@@ -103,12 +102,9 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     };
+    let sym = interp.0.borrow_mut().sym_intern("$~");
     unsafe {
-        sys::mrb_gv_set(
-            mrb,
-            interp.0.borrow_mut().sym_intern("$~"),
-            matchdata.inner(),
-        );
+        sys::mrb_gv_set(mrb, sym, matchdata.inner());
     }
-    Ok(interp.convert(!unsafe { sys::mrb_sys_value_is_nil(matchdata.inner()) }))
+    Ok(interp.convert(!matchdata.is_nil()))
 }

@@ -24,10 +24,11 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"*\0";
 
     pub unsafe fn extract(interp: &Artichoke) -> Self {
+        let mrb = interp.0.borrow().mrb;
         let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
         let mut count = <mem::MaybeUninit<usize>>::uninit();
         sys::mrb_get_args(
-            interp.0.borrow().mrb,
+            mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             args.as_mut_ptr(),
             count.as_mut_ptr(),

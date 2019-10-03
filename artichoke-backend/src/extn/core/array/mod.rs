@@ -384,20 +384,25 @@ pub fn shift<'a>(
         return Err(Error::Frozen);
     }
     let ary = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
-    let mut borrow = ary.borrow_mut();
     if let Some(count) = count {
         let mut popped = VecDeque::with_capacity(count);
-        for _ in 0..count {
-            let item = borrow.buffer.pop_front();
-            if item.is_none() {
-                break;
+        {
+            let mut borrow = ary.borrow_mut();
+            for _ in 0..count {
+                let item = borrow.buffer.pop_front();
+                if item.is_none() {
+                    break;
+                }
+                popped.push_back(interp.convert(item));
             }
-            popped.push_back(interp.convert(item));
         }
         let popped = Array { buffer: popped };
         unsafe { popped.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)
     } else {
-        let popped = borrow.buffer.pop_front();
+        let popped = {
+            let mut borrow = ary.borrow_mut();
+            borrow.buffer.pop_front()
+        };
         Ok(interp.convert(popped))
     }
 }
@@ -506,6 +511,9 @@ pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
     }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();
+    if borrow.buffer.is_empty() {
+        return Ok(ary);
+    }
     let mut front = 0;
     let mut back = borrow.buffer.len() - 1;
     while front < back {

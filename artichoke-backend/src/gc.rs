@@ -30,7 +30,8 @@ impl ArenaIndex {
 
 impl Drop for ArenaIndex {
     fn drop(&mut self) {
-        unsafe { sys::mrb_sys_gc_arena_restore(self.interp.0.borrow().mrb, self.index) };
+        let mrb = self.interp.0.borrow().mrb;
+        unsafe { sys::mrb_sys_gc_arena_restore(mrb, self.index) };
     }
 }
 

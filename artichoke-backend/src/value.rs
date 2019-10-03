@@ -142,12 +142,14 @@ impl Value {
     /// [`ArenaIndex::restore`](crate::gc::ArenaIndex::restore) restores the
     /// arena to an index before this call to protect.
     pub fn protect(&self) {
-        unsafe { sys::mrb_gc_protect(self.interp.0.borrow().mrb, self.value) }
+        let mrb = self.interp.0.borrow().mrb;
+        unsafe { sys::mrb_gc_protect(mrb, self.value) }
     }
 
     /// Return whether this object is unreachable by any GC roots.
     pub fn is_dead(&self) -> bool {
-        unsafe { sys::mrb_sys_value_is_dead(self.interp.0.borrow().mrb, self.value) }
+        let mrb = self.interp.0.borrow().mrb;
+        unsafe { sys::mrb_sys_value_is_dead(mrb, self.value) }
     }
 
     /// Generate a debug representation of self.
