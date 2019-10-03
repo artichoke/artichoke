@@ -36,7 +36,7 @@ class Array
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
-      raise ArgumentError, 'argument too big' if len > 1e19
+      raise ArgumentError, 'argument too big' if len > 1e18
 
       len.times.map { |idx| blk.call(idx) }
     elsif args.length == 2
@@ -48,7 +48,7 @@ class Array
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
-      raise ArgumentError, 'argument too big' if len > 1e19
+      raise ArgumentError, 'argument too big' if len > 1e18
 
       [default] * len
     elsif args[0].respond_to?(:to_ary)
@@ -67,7 +67,7 @@ class Array
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
-      raise ArgumentError, 'argument too big' if len > 1e19
+      raise ArgumentError, 'argument too big' if len > 1e18
 
       [nil] * len
     else
