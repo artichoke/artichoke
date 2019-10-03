@@ -3,7 +3,6 @@ use crate::def::{ClassLike, Define};
 use crate::eval::{Context, Eval};
 use crate::extn::core::exception::{ArgumentError, LoadError, RubyException, RuntimeError};
 use crate::sys;
-use crate::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
@@ -191,11 +190,9 @@ impl Kernel {
 
     unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         fn do_puts(interp: &Artichoke, value: Value) {
-            if value.ruby_type() == Ruby::Array {
-                if let Ok(array) = value.try_into::<Vec<Value>>() {
-                    for value in array {
-                        do_puts(interp, value);
-                    }
+            if let Ok(array) = value.clone().try_into::<Vec<Value>>() {
+                for value in array {
+                    do_puts(interp, value);
                 }
             } else {
                 let s = value.to_s();
@@ -208,6 +205,7 @@ impl Kernel {
         if args.is_empty() {
             interp.0.borrow_mut().puts("");
         }
+        interp.0.borrow_mut();
         for value in args.iter() {
             do_puts(&interp, Value::new(&interp, *value));
         }

@@ -1146,8 +1146,11 @@ pub unsafe extern "C" fn ary_element_reference(
     ) -> Result<Option<array::ElementReferenceArgs>, Error<'a>> {
         let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
         let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        let mrb = interp.0.borrow().mrb;
+        // `mrb_range_beg_len` can raise.
+        // TODO: Wrap this in a call to `mrb_protect`.
         let check_range = sys::mrb_range_beg_len(
-            interp.0.borrow().mrb,
+            mrb,
             first.inner(),
             start.as_mut_ptr(),
             len.as_mut_ptr(),
@@ -1156,11 +1159,15 @@ pub unsafe extern "C" fn ary_element_reference(
         );
         let start = start.assume_init();
         let len = len.assume_init();
+        let exclusive = sys::mrb_sys_range_excl(mrb, first.inner());
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
-            let len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
+            let mut len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
                 from: "Integer",
                 to: "Integer",
             })?;
+            if exclusive && len > 0 {
+                len -= 1;
+            }
             Ok(Some(array::ElementReferenceArgs::StartLen(start, len)))
         } else {
             Ok(None)
@@ -1236,7 +1243,7 @@ pub unsafe extern "C" fn ary_element_assignment(
         second: Option<Value>,
         third: Option<Value>,
         len: Int,
-    ) -> Result<(array::ElementReferenceArgs, Value), Error<'a>> {
+    ) -> Result<Option<(array::ElementReferenceArgs, Value)>, Error<'a>> {
         if let Some(value) = third {
             let length = second.ok_or(Error::Fatal)?;
             let start_type = first.pretty_name();
@@ -1253,12 +1260,17 @@ pub unsafe extern "C" fn ary_element_assignment(
                     from: len_type,
                     to: "Integer",
                 })?;
-            Ok((array::ElementReferenceArgs::StartLen(start, len), value))
+            Ok(Some((
+                array::ElementReferenceArgs::StartLen(start, len),
+                value,
+            )))
         } else if let Some(value) = second {
             if let Ok(index) = first.clone().try_into::<Int>() {
-                Ok((array::ElementReferenceArgs::Index(index), value))
+                Ok(Some((array::ElementReferenceArgs::Index(index), value)))
+            } else if first.ruby_type() == Ruby::Range {
+                unsafe { is_range(interp, &first, len) }.map(|args| Some((args, value)))
             } else {
-                unsafe { is_range(interp, &first, len) }.map(|args| (args, value))
+                Ok(None)
             }
         } else {
             Err(Error::Fatal)
@@ -1272,8 +1284,11 @@ pub unsafe extern "C" fn ary_element_assignment(
     ) -> Result<array::ElementReferenceArgs, Error<'a>> {
         let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
         let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        let mrb = interp.0.borrow().mrb;
+        // `mrb_range_beg_len` can raise.
+        // TODO: Wrap this in a call to `mrb_protect`.
         let check_range = sys::mrb_range_beg_len(
-            interp.0.borrow().mrb,
+            mrb,
             first.inner(),
             start.as_mut_ptr(),
             len.as_mut_ptr(),
@@ -1282,13 +1297,13 @@ pub unsafe extern "C" fn ary_element_assignment(
         );
         let start = start.assume_init();
         let len = len.assume_init();
-        let exclusive = sys::mrb_sys_range_excl(interp.0.borrow().mrb, first.inner());
+        let exclusive = sys::mrb_sys_range_excl(mrb, first.inner());
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
             let mut len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
                 from: "Integer",
                 to: "Integer",
             })?;
-            if exclusive {
+            if exclusive && len > 0 {
                 len -= 1;
             }
             Ok(array::ElementReferenceArgs::StartLen(start, len))
@@ -1311,8 +1326,15 @@ pub unsafe extern "C" fn ary_element_assignment(
     let args =
         ary_element_assignment_args(&interp, first, second, third, artichoke_ary_len(mrb, ary));
     let ary = Value::new(&interp, ary);
-    let result =
-        args.and_then(|(args, value)| array::element_assignment(&interp, &ary, args, value));
+    let result = args.and_then(|args| {
+        if let Some((args, value)) = args {
+            array::element_assignment(&interp, &ary, args, value)
+        } else if ary.is_frozen() {
+            Err(Error::Frozen)
+        } else {
+            Ok(interp.convert(None::<Value>))
+        }
+    });
     if result.is_ok() {
         let basic = sys::mrb_sys_basic_ptr(ary.inner());
         sys::mrb_write_barrier(mrb, basic);

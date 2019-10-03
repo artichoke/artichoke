@@ -178,6 +178,7 @@ impl ValueLike for Value {
     where
         Self::Artichoke: TryConvert<Self, T>,
     {
+        self.interp.0.borrow_mut();
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
@@ -207,11 +208,8 @@ impl ValueLike for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let mut protect = Protect::new(
-            self.inner(),
-            self.interp.0.borrow_mut().sym_intern(func.as_ref()),
-            args.as_ref(),
-        );
+        let func = self.interp.0.borrow_mut().sym_intern(func.as_ref());
+        let mut protect = Protect::new(self.inner(), func, args.as_ref());
         if let Some(block) = block {
             protect = protect.with_block(block.inner());
         }

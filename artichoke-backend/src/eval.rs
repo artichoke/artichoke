@@ -255,7 +255,6 @@ impl Eval for Artichoke {
                     LastError::Some(exception) => {
                         warn!("runtime error with exception backtrace: {}", exception);
                         println!("{:?}", exception.to_string());
-                        panic!();
                     }
                     _ => {}
                 }

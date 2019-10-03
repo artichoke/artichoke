@@ -24,6 +24,7 @@ class Array
 
   def self.new(*args, &blk)
     raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..2)" if args.length > 2
+    puts args[0]
 
     if blk
       warn('warning: block supersedes default value argument') if args.length == 2
@@ -35,6 +36,8 @@ class Array
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
+      raise ArgumentError, 'argument too big' if len > 1e19
+
       len.times.map { |idx| blk.call(idx) }
     elsif args.length == 2
       len, default = *args
@@ -44,6 +47,8 @@ class Array
 
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
+
+      raise ArgumentError, 'argument too big' if len > 1e19
 
       [default] * len
     elsif args[0].respond_to?(:to_ary)
@@ -62,12 +67,15 @@ class Array
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
+      raise ArgumentError, 'argument too big' if len > 1e19
+
       [nil] * len
+    else
+      len = args[0]
+      classname = len.class
+      classname = len.inspect if len.equal?(true) || len.equal?(false)
+      raise TypeError, "No implicit conversion from #{classname} to Integer"
     end
-    len = args[0]
-    classname = len.class
-    classname = len.inspect if len.equal?(true) || len.equal?(false)
-    raise TypeError, "No implicit conversion from #{classname} to Integer"
   end
 
   def self.try_convert(other)
@@ -601,6 +609,7 @@ class Array
   end
 
   def fill(arg0 = nil, arg1 = nil, arg2 = nil, &block)
+    raise NotImplementedError
     raise ArgumentError, 'wrong number of arguments (0 for 1..3)' if arg0.nil? && arg1.nil? && arg2.nil? && !block
 
     beg = len = 0
@@ -649,6 +658,8 @@ class Array
           beg + arg2
         end
     end
+
+    raise ArgumentError, 'argument too big' if len > (2**(0.size * 8)) - 1
 
     i = beg
     if block

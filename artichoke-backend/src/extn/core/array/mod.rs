@@ -353,11 +353,11 @@ pub fn element_assignment<'a>(
                 }
             } else {
                 // we are guaranteed to need to call push_back.
-                for index in 0..(len - start) {
+                for index in 0..(buf_len - start) {
                     let idx = start + index;
                     borrow.buffer[idx] = other_borrow.buffer[index].clone();
                 }
-                for index in len - start..other_len {
+                for index in buf_len - start..other_len {
                     borrow.buffer.push_back(other_borrow.buffer[index].clone());
                 }
             }
