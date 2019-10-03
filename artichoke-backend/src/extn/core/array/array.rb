@@ -1210,7 +1210,15 @@ class Array
       item = self[idx]
       item = block.call(item) if block
 
+      classname = item.class
+      classname = item.inspect if item.equal?(true) || item.equal?(false) || item.nil?
+      raise TypeError, "#{classname} can't be coerced into Integer" unless item.respond_to?(:to_i)
+
+      item = item.to_i
+      raise TypeError, "#{classname} can't be coerced into Integer" unless item.is_a?(Integer)
+
       sum += item
+      idx += 1
     end
     sum
   end
