@@ -250,7 +250,7 @@ pub unsafe extern "C" fn artichoke_ary_concat(
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::concat(&interp, array, other);
+    let result = array::concat(&interp, array, Some(other));
     if result.is_ok() {
         let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
@@ -733,10 +733,10 @@ pub unsafe extern "C" fn ary_concat(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
-    let other = mrb_get_args!(mrb, required = 1);
+    let other = mrb_get_args!(mrb, optional = 1);
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
-    let other = Value::new(&interp, other);
+    let other = other.map(|other| Value::new(&interp, other));
     let result = array::concat(&interp, array, other);
     if result.is_ok() {
         let basic = sys::mrb_sys_basic_ptr(ary);

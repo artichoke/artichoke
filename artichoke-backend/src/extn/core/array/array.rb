@@ -7,6 +7,65 @@ module Artichoke
     #
     # https://github.com/mruby/mruby/issues/4746
     NOT_SET = Object.new.freeze
+
+    def self.reachable?(src, dest, reachable_objects = nil)
+      raise ArgumentError, 'reachable requires an Array src' unless src.is_a?(::Array)
+
+      reachable_objects ||= ::Hash.new { |h, k| h[k] = [] }
+      reachable_objects[src.object_id] << src.class unless reachable_objects.key?(src.object_id)
+      return true if reachable_objects[dest.object_id].include?(dest.class)
+
+      reachable_objects[dest.object_id] << dest.class
+      case dest
+      when nil, true, false, ::Integer, ::Float
+        return false
+      when ::Array
+        dest.each do |item|
+          return true if reachable?(src, item, reachable_objects)
+        end
+      when ::Hash
+        dest.each_pair do |key, value|
+          return true if reachable?(src, key, reachable_objects)
+          return true if reachable?(src, value, reachable_objects)
+        end
+      end
+      dest.instance_variables.each do |iv|
+        return true if reachable?(src, dest.instance_variable_get(iv), reachable_objects)
+      end
+      false
+    end
+
+    def self.reachable_depth(src, dest, depth = 1, reachable_objects = nil)
+      raise ArgumentError, 'reachable requires an Array src' unless src.is_a?(::Array)
+
+      reachable_objects ||= ::Hash.new { |h, k| h[k] = [] }
+      reachable_objects[src.object_id] << src.class unless reachable_objects.key?(src.object_id)
+      return depth if reachable_objects[dest.object_id].include?(dest.class)
+
+      reachable_objects[dest.object_id] << dest.class
+      case dest
+      when nil, true, false, ::Integer, ::Float
+        return nil
+      when ::Array
+        dest.each do |item|
+          maybe_depth = reachable_depth(src, item, depth + 1, reachable_objects)
+          return maybe_depth if maybe_depth
+        end
+      when ::Hash
+        dest.each_pair do |key, value|
+          maybe_depth = reachable_depth(src, key, depth + 1, reachable_objects)
+          return maybe_depth if maybe_depth
+
+          maybe_depth = reachable_depth(src, value, depth + 1, reachable_objects)
+          return maybe_depth if maybe_depth
+        end
+      end
+      dest.instance_variables.each do |iv|
+        maybe_depth = reachable_depth(src, dest.instance_variable_get(iv), depth + 1, reachable_objects)
+        return maybe_depth if maybe_depth
+      end
+      nil
+    end
   end
 end
 
@@ -19,15 +78,18 @@ class Array
   Enumerable.included(self)
 
   def self.[](*args)
-    [].concat(args)
+    new(args.length) { |idx| args[idx] }
   end
 
+  # TODO this should be initialize and it should be implemented in Rust
   def self.new(*args, &blk)
     raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..2)" if args.length > 2
-    puts args[0]
 
-    if blk
-      warn('warning: block supersedes default value argument') if args.length == 2
+    if args.length.zero?
+      []
+    elsif blk
+      raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" if args.length != 1
+
       len = args[0]
       classname = len.class
       classname = len.inspect if len.equal?(true) || len.equal?(false)
@@ -36,7 +98,7 @@ class Array
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
-      raise ArgumentError, 'argument too big' if len > 1e18
+      raise ArgumentError, 'argument too big' if len > 1e18 # TODO: this is a hack
 
       len.times.map { |idx| blk.call(idx) }
     elsif args.length == 2
@@ -48,7 +110,7 @@ class Array
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
-      raise ArgumentError, 'argument too big' if len > 1e18
+      raise ArgumentError, 'argument too big' if len > 1e18 # TODO: this is a hack
 
       [default] * len
     elsif args[0].respond_to?(:to_ary)
@@ -67,7 +129,7 @@ class Array
       len = len.to_int
       raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
-      raise ArgumentError, 'argument too big' if len > 1e18
+      raise ArgumentError, 'argument too big' if len > 1e18 # TODO: this is a hack
 
       [nil] * len
     else
@@ -202,6 +264,8 @@ class Array
       idx += 1
     end
     true
+  rescue NoMethodError
+    false
   end
 
   def all?(pattern = Artichoke::Array::NOT_SET, &block)
@@ -267,7 +331,7 @@ class Array
       next unless ary.is_a?(Array)
       next unless ary.length.positive?
 
-      return ary if obj == ary.first
+      return ary if ary.first == obj
     end
     nil
   end
@@ -339,7 +403,8 @@ class Array
   end
 
   def clear
-    raise NotImplementedError, 'TODO in Rust'
+    self[0, length] = []
+    self
   end
 
   def collect(&block)
@@ -356,6 +421,7 @@ class Array
 
   def collect!(&block)
     return to_enum :collect! unless block
+    raise FrozenError, "can't modify frozen Array" if frozen?
 
     idx = 0
     while idx < length
@@ -395,12 +461,42 @@ class Array
   end
 
   def compact!
-    result = reject(&:nil?)
-    if result.size == size
-      nil
-    else
-      replace(result)
+    raise FrozenError, "can't modify frozen Array" if frozen?
+
+    reject!(&:nil?)
+  end
+
+  def concat(*args)
+    raise FrozenError, "can't modify frozen Array" if frozen?
+    return self if args.length.zero?
+
+    idx = 0
+    len = args.length
+    while idx < len
+      arg = args[idx]
+      args[idx] = arg.dup if arg.equal?(self)
+
+      idx += 1
     end
+
+    idx = 0
+    while idx < len
+      other = args[idx]
+      ary =
+        if other.is_a?(Array)
+          other
+        elsif other.respond_to?(:to_ary)
+          other = other.to_ary
+          raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{other.class})" unless other.is_a?(Array)
+
+          other
+        else
+          raise TypeError, "no implicit conversion of #{classname} into Array" unless other.is_a?(Array)
+        end
+      self[length, 0] = ary
+      idx += 1
+    end
+    self
   end
 
   def count(obj = Artichoke::Array::NOT_SET, &block)
@@ -428,16 +524,13 @@ class Array
     count
   end
 
-  def cycle(num = Artichoke::Array::NOT_SET, &block)
-    not_set = num.equal?(Artichoke::Array::NOT_SET)
-    unless block
-      return to_enum(:cycle) if not_set
+  def cycle(num = nil, &block)
+    return to_enum(:cycle, num) unless block
 
-      return to_enum(:cycle, num)
-    end
+    if num.nil?
+      return nil if empty?
 
-    if not_set
-      loop do
+      while true # rubocop:disable Lint/LiteralAsCondition
         idx = 0
         len = length
         while idx < len
@@ -446,24 +539,22 @@ class Array
         end
       end
     else
-      return [] if num.nil?
-
       count =
         if num.is_a?(Integer)
           num
         elsif num.respond_to?(:to_int)
           classname = num.class
-          classname = num.inspect if index.equal?(false) || index.equal?(true)
+          classname = num.inspect if num.equal?(false) || num.equal?(true)
           num = num.to_int
           raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})" unless num.is_a?(Integer)
 
           num
         else
           classname = num.class
-          classname = num.inspect if index.equal?(false) || index.equal?(true)
+          classname = num.inspect if num.equal?(false) || num.equal?(true)
           raise TypeError, "no implicit conversion of #{classname} into Integer"
         end
-      return [] unless count.positive?
+      return nil unless count.positive?
 
       iteration = 0
       while iteration < count
@@ -482,26 +573,56 @@ class Array
     sentinel = Object.new
     ret = sentinel
     while (i = index(key))
-      delete_at(i)
-      ret = key
+      ret = delete_at(i)
     end
 
-    return block.call if ret == sentinel && block
+    return block.call if ret.equal?(sentinel) && block
+    return nil if ret.equal?(sentinel)
 
+    ret
+  end
+
+  def delete_at(index)
+    raise FrozenError, "can't modify frozen Array" if frozen?
+
+    index =
+      if index.is_a?(Integer)
+        index
+      elsif index.nil?
+        raise TypeError, 'no implicit conversion from nil to integer'
+      elsif index.respond_to?(:to_int)
+        classname = index.class
+        classname = index.inspect if index.equal?(false) || index.equal?(true)
+        index = index.to_int
+        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{index.class})" unless index.is_a?(Integer)
+
+        index
+      else
+        classname = index.class
+        classname = index.inspect if index.equal?(false) || index.equal?(true)
+        raise TypeError, "no implicit conversion of #{classname} into Integer"
+      end
+    index += length if index.negative?
+    return nil if index >= length
+    return nil if index.negative?
+
+    ret = self[index]
+    self[index, 1] = []
     ret
   end
 
   def delete_if(&block)
     return to_enum :delete_if unless block
+    raise FrozenError, "can't modify frozen Array" if frozen?
 
     idx = 0
+    delete_indexes = []
     while idx < size
-      if block.call(self[idx])
-        delete_at(idx)
-      else
-        idx += 1
-      end
+      delete_indexes << idx if block.call(self[idx])
+
+      idx += 1
     end
+    delete_indexes.reverse_each { |index| delete_at(index) }
     self
   end
 
@@ -582,13 +703,20 @@ class Array
   def eql?(other)
     return true if equal?(other)
     return false unless other.is_a?(Array)
+    return false if length != other.length
 
-    len = size
+    len = length
     i = 0
     while i < len
-      return false unless self[i].eql?(other[i])
-
+      s = self[i]
+      o = other[i]
       i += 1
+      if Artichoke::Array.reachable?(self, o)
+        return false unless s.equal?(o)
+
+        next
+      end
+      return false unless s.eql?(o)
     end
     true
   end
@@ -793,7 +921,7 @@ class Array
     len = length
     if not_set
       while idx < len
-        return idx if block.call(obj)
+        return idx if block.call(self[idx])
 
         idx += 1
       end
@@ -801,7 +929,7 @@ class Array
       warn('warning: given block not used') if block
 
       while idx < len
-        return idx if obj == val
+        return idx if val == self[idx]
 
         idx += 1
       end
@@ -822,7 +950,13 @@ class Array
     idx = 0
     len = length
     while idx < len
-      s << self[idx].inspect
+      if (depth = Artichoke::Array.reachable_depth(self, self[idx]))
+        s << '[' * depth
+        s << '...'
+        s << ']' * depth
+      else
+        s << self[idx].inspect
+      end
       s << sep if idx < len - 1
       idx += 1
     end
@@ -944,7 +1078,7 @@ class Array
       next unless ary.is_a?(Array)
       next unless ary.length.positive?
 
-      return ary if obj == ary[1]
+      return ary if ary[1] == obj
     end
     nil
   end
@@ -967,6 +1101,7 @@ class Array
 
     ary = []
     idx = 0
+    modified = false
     while idx < length
       item = self[idx]
       if block.call(item)
@@ -979,6 +1114,7 @@ class Array
     return nil unless modified
 
     self[0, length] = ary
+    self
   end
 
   def repeated_combination(num, &block)

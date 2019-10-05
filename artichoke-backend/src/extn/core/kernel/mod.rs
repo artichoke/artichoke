@@ -205,7 +205,6 @@ impl Kernel {
         if args.is_empty() {
             interp.0.borrow_mut().puts("");
         }
-        interp.0.borrow_mut();
         for value in args.iter() {
             do_puts(&interp, Value::new(&interp, *value));
         }

@@ -40,8 +40,6 @@ module Comparable
   end
 
   def ==(other)
-    return false unless respond_to?(:<=>)
-
     cmp = (self <=> other)
     puts "cmp = #{cmp.class}, #{cmp.inspect}"
     return false if cmp.nil?

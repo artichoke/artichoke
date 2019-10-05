@@ -417,10 +417,15 @@ pub fn unshift(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Er
     Ok(ary)
 }
 
-pub fn concat(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Error> {
+pub fn concat(interp: &Artichoke, ary: Value, other: Option<Value>) -> Result<Value, Error> {
     if ary.is_frozen() {
         return Err(Error::Frozen);
     }
+    let other = if let Some(other) = other {
+        other
+    } else {
+        return Ok(ary);
+    };
     let ary_type = ary.pretty_name();
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let mut borrow = array.borrow_mut();

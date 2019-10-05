@@ -46,13 +46,16 @@ where
                 to: Ruby::Object,
             }
         })?;
-        let rclass = spec
-            .borrow()
-            .rclass(interp)
-            .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                from: Rust::Object,
-                to: Ruby::Object,
-            })?;
+        let rclass = if let Some(obj) = slf {
+            sys::mrb_sys_class_of_value(mrb, obj)
+        } else {
+            spec.borrow()
+                .rclass(interp)
+                .ok_or_else(|| ArtichokeError::ConvertToRuby {
+                    from: Rust::Object,
+                    to: Ruby::Object,
+                })?
+        };
         let mut slf = if let Some(slf) = slf {
             slf
         } else {
