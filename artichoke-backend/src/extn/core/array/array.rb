@@ -657,6 +657,7 @@ class Array
     return self if count.zero?
 
     self[0, count] = []
+    self
   end
 
   def drop_while(&block)
