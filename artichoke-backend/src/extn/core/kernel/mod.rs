@@ -1,10 +1,15 @@
-use crate::convert::Convert;
+use regex::Regex;
+use std::str::FromStr;
+
+use crate::convert::{Convert, TryConvert};
 use crate::def::{ClassLike, Define};
 use crate::eval::{Context, Eval};
 use crate::extn::core::exception::{ArgumentError, LoadError, RubyException, RuntimeError};
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
+
+use mruby_sys::mrb_vtype::MRB_TT_FIXNUM;
 
 pub mod require;
 
@@ -28,6 +33,14 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         "require_relative",
         Kernel::require_relative,
         sys::mrb_args_rest(),
+    );
+    kernel
+        .borrow_mut()
+        .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 2));
+    kernel.borrow_mut().add_self_method(
+        "Integer",
+        Kernel::integer,
+        sys::mrb_args_req_and_opt(1, 2),
     );
     kernel
         .borrow_mut()
@@ -105,6 +118,161 @@ impl Kernel {
                 ArgumentError::raise(interp, "No implicit conversion to String")
             }
         }
+    }
+
+    unsafe extern "C" fn integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = unwrap_interpreter!(mrb);
+        let (arg, base, exception) = mrb_get_args!(mrb, required = 1, optional = 2);
+        let mut buf = String::new();
+
+        let mut radix: Option<i64> = None;
+        if let Some(base) = base {
+            radix = if let Ok(base) = interp.try_convert(Value::new(&interp, base)) {
+                base
+            } else {
+                None
+            };
+        }
+
+        if arg.tt == MRB_TT_FIXNUM && radix.is_some() {
+            return ArgumentError::raise(interp, "base specified for non string value");
+        }
+
+        let arg = if let Ok(arg) = interp.try_convert(Value::new(&interp, arg)) {
+            arg
+        } else {
+            ""
+        };
+
+        // If have consecutive embedded underscore, argument error!
+        let multi_underscore_re = Regex::new(r"__+").unwrap();
+        if arg.starts_with('_') || arg.ends_with('_') || multi_underscore_re.is_match(arg) {
+            return ArgumentError::raisef(interp, "invalid value for Integer(): \"%S\"", vec![arg]);
+        }
+
+        // Remove embedded underscore `_`
+        // because they represent error in `from_str_radix` & `from_str`
+        let arg = arg.replace('_', "");
+
+        // Remove leading and trailing white space,
+        // because they represent error in `from_str_radix` & `from_str`.
+        let arg = arg.trim();
+        let arg = if arg.starts_with('-') {
+            buf.push('-');
+            &arg[1..]
+        } else if arg.starts_with('+') {
+            buf.push('+');
+            &arg[1..]
+        } else {
+            arg
+        };
+
+        let mut raise_exception = true;
+        if let Some(exception) = exception {
+            raise_exception =
+                if let Ok(raise_exception) = interp.try_convert(Value::new(&interp, exception)) {
+                    raise_exception
+                } else {
+                    true
+                };
+        }
+
+        let mut parsed_radix = None;
+
+        // if `arg` is null byte, raise `ArgumentError`
+        if arg.contains('\0') {
+            return ArgumentError::raise(interp, "string contains null byte");
+        }
+
+        if arg.starts_with('0') && arg.len() > 2 {
+            match &arg[0..2] {
+                "0b" | "0B" => {
+                    buf.push_str(&arg[2..]);
+                    parsed_radix = Some(2);
+                }
+                "0o" | "0O" => {
+                    buf.push_str(&arg[2..]);
+                    parsed_radix = Some(8);
+                }
+                "0d" | "0D" => {
+                    buf.push_str(&arg[2..]);
+                    parsed_radix = Some(10);
+                }
+                "0x" | "0X" => {
+                    buf.push_str(&arg[2..]);
+                    parsed_radix = Some(16);
+                }
+                prefix if &prefix[0..1] == "0" => {
+                    buf.push_str(&arg[1..]);
+                    parsed_radix = Some(8);
+                }
+                _ => {}
+            };
+        } else {
+            buf.push_str(arg);
+        }
+
+        let result = match (radix, parsed_radix) {
+            (Some(radix), Some(parsed_radix)) => {
+                if radix != parsed_radix {
+                    return ArgumentError::raisef(
+                        interp,
+                        "invalid value for Integer(): \"%S\"",
+                        vec![arg],
+                    );
+                }
+                if let Ok(v) = i64::from_str_radix(buf.as_str(), radix as u32) {
+                    v
+                } else {
+                    return ArgumentError::raisef(
+                        interp,
+                        "invalid value for Integer(): \"%S\"",
+                        vec![arg],
+                    );
+                }
+            }
+            (Some(radix), None) => {
+                if radix < 2 || radix > 36 {
+                    return ArgumentError::raisef(interp, "invalid radix %S", vec![radix]);
+                }
+                if let Ok(v) = i64::from_str_radix(buf.as_str(), radix as u32) {
+                    v
+                } else {
+                    return ArgumentError::raisef(
+                        interp,
+                        "invalid value for Integer(): \"%S\"",
+                        vec![arg],
+                    );
+                }
+            }
+            (None, Some(radix)) => {
+                if radix < 2 || radix > 36 {
+                    return ArgumentError::raisef(interp, "invalid radix %S", vec![radix]);
+                }
+                if let Ok(v) = i64::from_str_radix(buf.as_str(), radix as u32) {
+                    v
+                } else {
+                    return ArgumentError::raisef(
+                        interp,
+                        "invalid value for Integer(): \"%S\"",
+                        vec![arg],
+                    );
+                }
+            }
+            (None, None) => {
+                if let Ok(v) = i64::from_str(buf.as_str()) {
+                    v
+                } else {
+                    return ArgumentError::raisef(
+                        interp,
+                        "invalid value for Integer(): \"%S\"",
+                        vec![arg],
+                    );
+                }
+            }
+        };
+
+        interp.convert(result).inner()
     }
 
     unsafe extern "C" fn load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
