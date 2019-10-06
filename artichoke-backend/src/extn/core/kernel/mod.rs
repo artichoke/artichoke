@@ -136,7 +136,7 @@ impl Kernel {
                     if raise_exception {
                         ArgumentError::raisef(
                             interp,
-                            "invalid value for Integer(): \"%s\"",
+                            "invalid value for Integer(): \"%S\"",
                             vec![v],
                         )
                     } else {
