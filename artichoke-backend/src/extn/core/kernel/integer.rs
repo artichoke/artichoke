@@ -26,6 +26,10 @@ pub struct Args {
 impl Args {
     pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mrb = interp.0.borrow().mrb;
+
+        // TODO: when `base` is not passed, but `exception: true` is,
+        // exception argument goes into arg, which is not right,
+        // we might want to get the argument manually.
         let (arg, base, exception) = mrb_get_args!(mrb, required = 1, optional = 2);
 
         let raise_exception: Option<HashMap<String, bool>> = match exception {
@@ -84,9 +88,15 @@ pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
 
     let mut string = String::new();
 
-    // If have consecutive embedded underscore, argument error!
+    // If have mutliple consecutive embedded underscores, argument error!
     let multi_underscore_re = Regex::new(r"__+").unwrap();
     if arg.starts_with('_') || arg.ends_with('_') || multi_underscore_re.is_match(arg) {
+        return Err(Error::InvalidValue(arg.into(), raise_exception));
+    }
+
+    // If have multiple consecutive leading/trailing signs, argument error!
+    let multi_sign_re = Regex::new(r"\+\++|\-\-+").unwrap();
+    if multi_sign_re.is_match(arg) {
         return Err(Error::InvalidValue(arg.into(), raise_exception));
     }
 
