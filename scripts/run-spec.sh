@@ -12,7 +12,7 @@ if [[ $# -eq 2 ]]; then
   component="$2"
   cargo build
   pushd "spec-runner/vendor/spec" >/dev/null
-  $spec_runner ./**/shared/**/*.rb ./**/fixtures/**/*.rb "./$family/$component/${spec}_spec.rb"
+  $spec_runner ./**/shared/**/*.rb ./**/fixtures/**/*.rb "./$family/$component/"*_spec.rb
 elif [[ $# -eq 3 ]]; then
   family="$1"
   component="$2"
