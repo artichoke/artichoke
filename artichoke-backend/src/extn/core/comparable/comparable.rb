@@ -40,11 +40,11 @@ module Comparable
   end
 
   def ==(other)
+    return false unless respond_to?(:<=>)
+
     cmp = (self <=> other)
-    puts "cmp = #{cmp.class}, #{cmp.inspect}"
     return false if cmp.nil?
 
-    puts "cmp = #{cmp.class}, #{cmp.inspect}"
     unless cmp.is_a?(Numeric)
       classname = other.class
       classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)

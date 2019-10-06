@@ -1315,15 +1315,15 @@ class Array
   end
 
   def sort(&block)
-    return self if length <= 1
-
-    if length == 2
-      cmp = self[0] <=> self[1]
-      reverse! if cmp.positive?
-      return self
-    end
+    return dup if length <= 1
 
     block ||= ->(a, b) { a <=> b }
+    if length == 2
+      cmp = block.call(self[0], self[1])
+      reverse if cmp.positive?
+      return dup
+    end
+
     ary = dup
     middle = (ary.length / 2).to_i
     left = ary[0...middle].sort(&block)
@@ -1334,7 +1334,7 @@ class Array
     until left.empty? || right.empty?
       # change the direction of this comparison to change the direction of the sort
       result <<
-        if block.call(left.first, right.first) <= 0
+        if block.call(left[0], right[0]) <= 0
           left.shift
         else
           right.shift
@@ -1344,13 +1344,18 @@ class Array
   end
 
   def sort!(&block)
+    raise FrozenError, "can't modify frozen Array" if frozen?
+    return self if length <= 1
+
     self[0, length] = sort(&block)
   end
 
   def sort_by!(&block)
+    raise FrozenError, "can't modify frozen Array" if frozen?
     return to_enum(:sort_by) unless block
+    return self if length <= 1
 
-    sort!(&block)
+    sort! { |left, right| block.call(left) <=> block.call(right) }
   end
 
   def sum(init = 0, &block)

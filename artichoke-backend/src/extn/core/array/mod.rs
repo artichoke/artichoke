@@ -268,8 +268,6 @@ pub fn element_assignment<'a>(
     if ary.is_frozen() {
         return Err(Error::Frozen);
     }
-    let data = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
-    let mut borrow = data.borrow_mut();
     match args {
         ElementReferenceArgs::Index(index) => {
             let index = if index < 0 {
@@ -279,6 +277,8 @@ pub fn element_assignment<'a>(
                 // Positive Int must be usize
                 usize::try_from(index).map_err(|_| Error::Fatal)?
             };
+            let data = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
+            let mut borrow = data.borrow_mut();
             let len = borrow.buffer.len();
             for _ in len..=index {
                 borrow.buffer.push_back(interp.convert(None::<Value>));
@@ -307,9 +307,14 @@ pub fn element_assignment<'a>(
             } else {
                 from_values(interp, &[other.clone()])?
             };
-            let other_data =
-                unsafe { Array::try_from_ruby(interp, &other_ary) }.map_err(|_| Error::Fatal)?;
-            let other_borrow = other_data.borrow();
+            let mut other_buffer = {
+                let other_data = unsafe { Array::try_from_ruby(interp, &other_ary) }
+                    .map_err(|_| Error::Fatal)?;
+                let other_borrow = other_data.borrow();
+                other_borrow.buffer.clone()
+            };
+            let data = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
+            let mut borrow = data.borrow_mut();
 
             let start = if start < 0 {
                 // Positive i64 must be usize
@@ -320,45 +325,51 @@ pub fn element_assignment<'a>(
                 usize::try_from(start).map_err(|_| Error::Fatal)?
             };
             let buf_len = borrow.buffer.len();
-            let other_len = other_borrow.buffer.len();
+            let other_len = other_buffer.len();
             if start > buf_len {
                 for _ in buf_len..start {
                     borrow.buffer.push_back(interp.convert(None::<Value>));
                 }
-                borrow.buffer.extend(other_borrow.buffer.clone());
+                borrow.buffer.extend(other_buffer);
             } else if start + other_len < buf_len {
                 if other_len == len {
-                    for index in 0..other_len {
+                    for (index, item) in other_buffer.drain(0..).enumerate() {
                         let idx = start + index;
-                        borrow.buffer[idx] = other_borrow.buffer[index].clone();
+                        borrow.buffer[idx] = item;
                     }
                 } else if other_len < len {
-                    for index in 0..other_len {
+                    for (index, item) in other_buffer.drain(0..).enumerate() {
                         let idx = start + index;
-                        borrow.buffer[idx] = other_borrow.buffer[index].clone();
+                        borrow.buffer[idx] = item;
                     }
                     let at = start + other_len;
                     for _ in other_len..len {
                         borrow.buffer.remove(at);
                     }
                 } else {
-                    for index in 0..len {
+                    for (index, item) in other_buffer.drain(0..len).enumerate() {
                         let idx = start + index;
-                        borrow.buffer[idx] = other_borrow.buffer[index].clone();
+                        borrow.buffer[idx] = item;
                     }
-                    for idx in len..len + other_len {
-                        let at = start + idx;
-                        borrow.buffer.insert(at, other_borrow.buffer[idx].clone());
+                    for (index, item) in other_buffer.drain(0..len).enumerate() {
+                        let at = start + other_len + index;
+                        borrow.buffer.insert(at, item);
                     }
                 }
             } else {
                 // we are guaranteed to need to call push_back.
-                for index in 0..(buf_len - start) {
-                    let idx = start + index;
-                    borrow.buffer[idx] = other_borrow.buffer[index].clone();
-                }
-                for index in buf_len - start..other_len {
-                    borrow.buffer.push_back(other_borrow.buffer[index].clone());
+                let mut idx = start;
+                for item in other_buffer.drain(0..) {
+                    if idx < buf_len {
+                        borrow.buffer[idx] = item;
+                        idx += 1;
+                    } else if idx > buf_len {
+                        borrow.buffer.push_back(item);
+                        idx += 1;
+                    } else {
+                        borrow.buffer.insert(idx, item);
+                        idx += 1;
+                    }
                 }
             }
         }

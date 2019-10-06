@@ -66,7 +66,6 @@ class ContextState
         @parents.unshift state
         state = state.parent
       end
-      puts "parents = #{@parents.inspect}"
     end
   end
 

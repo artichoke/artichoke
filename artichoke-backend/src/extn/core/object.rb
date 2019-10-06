@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 class NilClass
+  def <=>(other)
+    return 0 if other.class == NilClass
+
+    nil
+  end
+
   def dup
     self
   end
