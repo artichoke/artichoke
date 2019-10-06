@@ -15,10 +15,10 @@ module Artichoke
       reachable_objects[src.object_id] << src.class unless reachable_objects.key?(src.object_id)
       return true if reachable_objects[dest.object_id].include?(dest.class)
 
+      return false if dest.equal?(nil) || dest.equal?(true) || dest.equal?(false) || dest.is_a?(::Integer) || dest.is_a?(::Float)
+
       reachable_objects[dest.object_id] << dest.class
       case dest
-      when nil, true, false, ::Integer, ::Float
-        return false
       when ::Array
         dest.each do |item|
           return true if reachable?(src, item, reachable_objects)
@@ -33,38 +33,6 @@ module Artichoke
         return true if reachable?(src, dest.instance_variable_get(iv), reachable_objects)
       end
       false
-    end
-
-    def self.reachable_depth(src, dest, depth = 1, reachable_objects = nil)
-      raise ArgumentError, 'reachable requires an Array src' unless src.is_a?(::Array)
-
-      reachable_objects ||= ::Hash.new { |h, k| h[k] = [] }
-      reachable_objects[src.object_id] << src.class unless reachable_objects.key?(src.object_id)
-      return depth if reachable_objects[dest.object_id].include?(dest.class)
-
-      reachable_objects[dest.object_id] << dest.class
-      case dest
-      when nil, true, false, ::Integer, ::Float
-        return nil
-      when ::Array
-        dest.each do |item|
-          maybe_depth = reachable_depth(src, item, depth + 1, reachable_objects)
-          return maybe_depth if maybe_depth
-        end
-      when ::Hash
-        dest.each_pair do |key, value|
-          maybe_depth = reachable_depth(src, key, depth + 1, reachable_objects)
-          return maybe_depth if maybe_depth
-
-          maybe_depth = reachable_depth(src, value, depth + 1, reachable_objects)
-          return maybe_depth if maybe_depth
-        end
-      end
-      dest.instance_variables.each do |iv|
-        maybe_depth = reachable_depth(src, dest.instance_variable_get(iv), depth + 1, reachable_objects)
-        return maybe_depth if maybe_depth
-      end
-      nil
     end
   end
 end
@@ -81,7 +49,7 @@ class Array
     new(args.length) { |idx| args[idx] }
   end
 
-  # TODO this should be initialize and it should be implemented in Rust
+  # TODO: this should be initialize and it should be implemented in Rust
   def self.new(*args, &blk)
     raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..2)" if args.length > 2
 
@@ -431,29 +399,92 @@ class Array
     self
   end
 
-  def combination(kcombinations, &block)
-    size = self.size
-    return to_enum(:combination, kcombinations) unless block
-    return if n > size
+  def combination(len, &block)
+    len =
+      if len.is_a?(Integer)
+        len
+      elsif len.nil?
+        raise TypeError, 'no implicit conversion from nil to integer'
+      elsif len.respond_to?(:to_int)
+        classname = len.class
+        classname = len.inspect if len.equal?(false) || len.equal?(true)
+        len = len.to_int
+        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
 
-    if kcombinations.zero?
-      yield []
-    elsif kcombinations == 1
-      i = 0
-      while i < size
-        yield [self[i]]
-        i += 1
+        len
+      else
+        classname = len.class
+        classname = len.inspect if len.equal?(false) || len.equal?(true)
+        raise TypeError, "no implicit conversion of #{classname} into Integer"
       end
+
+    return to_enum(:combination, len) unless block
+    return self if len > length
+    return self if len.negative?
+
+    if len.zero?
+      block.call([])
+    elsif len == 1
+      ary = dup
+      idx = 0
+      while idx < length
+        block.call([ary[idx]])
+        idx += 1
+      end
+    elsif len == length
+      block.call(dup)
     else
-      i = 0
-      while i < size
-        result = [self[i]]
-        self[i + 1..-1].combination(n - 1) do |c|
-          yield result + c
+      choose = lambda do |setlen, subsetlen|
+        raise "k(#{subsetlen}) > n(#{setlen})" if subsetlen > setlen
+
+        @memo ||= {}
+        key = [setlen, subsetlen]
+        @memo.fetch(key) do
+          subsetlen = setlen - subsetlen if subsetlen > (setlen / 2).to_i
+
+          numer = 1
+          denom = 1
+          index = 1
+          while index <= subsetlen
+            numer *= setlen - index + 1
+            denom *= index
+            index += 1
+          end
+          (numer / denom).to_i
         end
-        i += 1
+      end
+      ary = dup
+      n = ary.length
+      x = 1
+      p = len
+      tot = choose.call(n, p)
+      while x <= tot
+        c = Array.new(p, 0)
+        idx = 0
+        r = 0
+        k = 0
+        while idx < p - 1
+          c[idx] =
+            if idx.zero?
+              0
+            else
+              c[idx - 1]
+            end
+          loop do
+            c[idx] += 1
+            r = choose.call(n - c[idx], p - (idx + 1))
+            k += r
+            break if k >= x
+          end
+          k -= r
+          idx += 1
+        end
+        c[p - 1] = c[p - 2] + x - k
+        block.call(c.map { |udx| ary[udx - 1] })
+        x += 1
       end
     end
+    self
   end
 
   def compact
@@ -951,13 +982,13 @@ class Array
     idx = 0
     len = length
     while idx < len
-      if (depth = Artichoke::Array.reachable_depth(self, self[idx]))
-        s << '[' * depth
-        s << '...'
-        s << ']' * depth
-      else
-        s << self[idx].inspect
-      end
+      s <<
+        if Artichoke::Array.reachable?(self, self[idx])
+          # TODO: properly handle nested structures
+          '[...]'
+        else
+          self[idx].inspect
+        end
       s << sep if idx < len - 1
       idx += 1
     end
@@ -1309,76 +1340,42 @@ class Array
   end
 
   def sort(&block)
-    dup.sort!(&block)
+    return self if length <= 1
+
+    if length == 2
+      cmp = self[0] <=> self[1]
+      reverse! if cmp.positive?
+      return self
+    end
+
+    block ||= ->(a, b) { a <=> b }
+    ary = dup
+    middle = (ary.length / 2).to_i
+    left = ary[0...middle].sort(&block)
+    right = ary[middle..-1].sort(&block)
+
+    # merge
+    result = []
+    until left.empty? || right.empty?
+      # change the direction of this comparison to change the direction of the sort
+      result <<
+        if block.call(left.first, right.first) <= 0
+          left.shift
+        else
+          right.shift
+        end
+    end
+    result + left + right
   end
 
   def sort!(&block)
-    stack = [ [ 0, size - 1 ] ]
-    until stack.empty?
-      left, mid, right = stack.pop
-      if right == nil
-        right = mid
-        # sort self[left..right]
-        if left < right
-          if left + 1 == right
-            lval = self[left]
-            rval = self[right]
-            cmp = if block then block.call(lval,rval) else lval <=> rval end
-            if cmp.nil?
-              raise ArgumentError, "comparison of #{lval.inspect} and #{rval.inspect} failed"
-            end
-            if cmp > 0
-              self[left]  = rval
-              self[right] = lval
-            end
-          else
-            mid = ((left + right + 1) / 2).floor
-            stack.push [ left, mid, right ]
-            stack.push [ mid, right ]
-            stack.push [ left, (mid - 1) ] if left < mid - 1
-          end
-        end
-      else
-        lary = self[left, mid - left]
-        lsize = lary.size
-
-        # The entity sharing between lary and self may cause a large memory
-        # copy operation in the merge loop below.  This harmless operation
-        # cancels the sharing and provides a huge performance gain.
-        lary[0] = lary[0]
-
-        # merge
-        lidx = 0
-        ridx = mid
-        (left..right).each { |i|
-          if lidx >= lsize
-            break
-          elsif ridx > right
-            self[i, lsize - lidx] = lary[lidx, lsize - lidx]
-            break
-          else
-            lval = lary[lidx]
-            rval = self[ridx]
-            cmp = if block then block.call(lval,rval) else lval <=> rval end
-            if cmp.nil?
-              raise ArgumentError, "comparison of #{lval.inspect} and #{rval.inspect} failed"
-            end
-            if cmp <= 0
-              self[i] = lval
-              lidx += 1
-            else
-              self[i] = rval
-              ridx += 1
-            end
-          end
-        }
-      end
-    end
-    self
+    self[0, length] = sort(&block)
   end
 
   def sort_by!(&block)
-    raise NotImplementedError
+    return to_enum(:sort_by) unless block
+
+    sort!(&block)
   end
 
   def sum(init = 0, &block)

@@ -1154,20 +1154,16 @@ pub unsafe extern "C" fn ary_element_reference(
             first.inner(),
             start.as_mut_ptr(),
             len.as_mut_ptr(),
-            length + 1,
+            length,
             0_u8,
         );
         let start = start.assume_init();
         let len = len.assume_init();
-        let exclusive = sys::mrb_sys_range_excl(mrb, first.inner());
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
-            let mut len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
+            let len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
                 from: "Integer",
                 to: "Integer",
             })?;
-            if exclusive && len > 0 {
-                len -= 1;
-            }
             Ok(Some(array::ElementReferenceArgs::StartLen(start, len)))
         } else {
             Ok(None)
@@ -1292,20 +1288,17 @@ pub unsafe extern "C" fn ary_element_assignment(
             first.inner(),
             start.as_mut_ptr(),
             len.as_mut_ptr(),
-            length + 1,
+            length,
             0_u8,
         );
         let start = start.assume_init();
         let len = len.assume_init();
         let exclusive = sys::mrb_sys_range_excl(mrb, first.inner());
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
-            let mut len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
+            let len = usize::try_from(len).map_err(|_| Error::NoImplicitConversion {
                 from: "Integer",
                 to: "Integer",
             })?;
-            if exclusive && len > 0 {
-                len -= 1;
-            }
             Ok(array::ElementReferenceArgs::StartLen(start, len))
         } else {
             let min = isize::try_from(start).map_err(|_| Error::Fatal)?;
