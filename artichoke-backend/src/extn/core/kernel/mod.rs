@@ -123,7 +123,7 @@ impl Kernel {
         let interp = unwrap_interpreter!(mrb);
 
         match integer::Args::extract(&interp) {
-            Ok(args) => match integer::method(&interp, args) {
+            Ok(args) => match integer::method(&interp, &args) {
                 Ok(v) => v.inner(),
                 Err(integer::Error::InvalidRadix(v, raise_exception)) => {
                     if raise_exception {

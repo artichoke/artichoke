@@ -77,7 +77,7 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Artichoke, args: Args) -> Result<Value, Error> {
+pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
     let arg = args.arg.as_str();
     let radix = args.radix;
     let raise_exception = args.raise_exception;
