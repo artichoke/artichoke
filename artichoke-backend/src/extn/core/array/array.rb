@@ -399,89 +399,64 @@ class Array
     self
   end
 
-  def combination(len, &block)
-    len =
-      if len.is_a?(Integer)
-        len
-      elsif len.nil?
+  def combination(k, &block) # rubocop:disable Naming/UncommunicativeMethodParamName
+    k =
+      if k.is_a?(Integer)
+        k
+      elsif k.nil?
         raise TypeError, 'no implicit conversion from nil to integer'
-      elsif len.respond_to?(:to_int)
-        classname = len.class
-        classname = len.inspect if len.equal?(false) || len.equal?(true)
-        len = len.to_int
-        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
+      elsif k.respond_to?(:to_int)
+        classname = k.class
+        classname = k.inspect if k.equal?(false) || k.equal?(true)
+        k = k.to_int
+        raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{k.class})" unless k.is_a?(Integer)
 
-        len
+        k
       else
-        classname = len.class
-        classname = len.inspect if len.equal?(false) || len.equal?(true)
+        classname = k.class
+        classname = k.inspect if k.equal?(false) || k.equal?(true)
         raise TypeError, "no implicit conversion of #{classname} into Integer"
       end
 
-    return to_enum(:combination, len) unless block
-    return self if len > length
-    return self if len.negative?
+    return to_enum(:combination, k) unless block
+    return self if k > length
+    return self if k.negative?
 
-    if len.zero?
+    if k.zero?
       block.call([])
-    elsif len == 1
+    elsif k == 1
       ary = dup
+      len = length
       idx = 0
-      while idx < length
+      while idx < len
         block.call([ary[idx]])
         idx += 1
       end
-    elsif len == length
+    elsif k == length
       block.call(dup)
     else
-      choose = lambda do |setlen, subsetlen|
-        raise "k(#{subsetlen}) > n(#{setlen})" if subsetlen > setlen
-
-        @memo ||= {}
-        key = [setlen, subsetlen]
-        @memo.fetch(key) do
-          subsetlen = setlen - subsetlen if subsetlen > (setlen / 2).to_i
-
-          numer = 1
-          denom = 1
-          index = 1
-          while index <= subsetlen
-            numer *= setlen - index + 1
-            denom *= index
-            index += 1
-          end
-          (numer / denom).to_i
-        end
-      end
       ary = dup
-      n = ary.length
-      x = 1
-      p = len
-      tot = choose.call(n, p)
-      while x <= tot
-        c = Array.new(p, 0)
-        idx = 0
-        r = 0
-        k = 0
-        while idx < p - 1
-          c[idx] =
-            if idx.zero?
-              0
-            else
-              c[idx - 1]
-            end
-          loop do
-            c[idx] += 1
-            r = choose.call(n - c[idx], p - (idx + 1))
-            k += r
-            break if k >= x
-          end
-          k -= r
-          idx += 1
+      len = length
+      indexes = (0...k).to_a
+      incr = k - 1
+      loop do
+        while indexes[incr] < len
+          block.call(indexes.map { |i| ary[i] })
+          indexes[incr] += 1
         end
-        c[p - 1] = c[p - 2] + x - k
-        block.call(c.map { |udx| ary[udx - 1] })
-        x += 1
+
+        reset = incr
+        until reset.negative?
+          reset -= 1
+          prev = indexes[reset]
+          break unless prev + 1 >= len
+        end
+        base = indexes[reset] + 1
+        replace = k - reset
+        indexes[reset, replace] = (base...(base + replace)).to_a
+        break if indexes[0] + k > len
+
+        incr = k - 1
       end
     end
     self
