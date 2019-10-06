@@ -1,10 +1,8 @@
 use regex::Regex;
 use std::collections::HashMap;
-use std::mem;
 use std::str::FromStr;
 
 use crate::convert::{Convert, TryConvert};
-use crate::sys;
 use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
@@ -16,7 +14,6 @@ pub enum Error {
     InvalidValue(String, bool),
     InvalidRadix(String, bool),
     NoImplicitConversionToString(String, bool),
-    WrongNumberOfArguments(i64),
 }
 
 #[derive(Debug)]
@@ -27,51 +24,16 @@ pub struct Args {
 }
 
 impl Args {
-    const ARGSPEC: &'static [u8] = b"o|o?H?\0";
-
     pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
-        // let mrb = interp.0.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
 
-        let mut arg = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        // Since `mrb_get_args` does not support keyword argument yet,
-        // the workaround is to initialize the arguments before the keyword arguments.
-        // https://github.com/mruby/mruby/issues/4596
-        let mut base = <mem::MaybeUninit<sys::mrb_value>>::new(interp.convert(0 as u32).inner());
-        // let mut exception = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mut default_exception = HashMap::new();
-        default_exception.insert("exception", true);
-        let mut exception =
-            <mem::MaybeUninit<sys::mrb_value>>::new(interp.convert(default_exception).inner());
-        let argc = sys::mrb_get_args(
-            interp.0.borrow().mrb,
-            Self::ARGSPEC.as_ptr() as *const i8,
-            arg.as_mut_ptr(),
-            base.as_mut_ptr(),
-            exception.as_mut_ptr(),
-        );
+        // TODO: when `base` is not passed, but `exception: true` is,
+        // exception argument goes into arg, which is not right,
+        // we might want to get the argument manually.
+        let (arg, base, exception) = mrb_get_args!(mrb, required = 1, optional = 2);
 
-        println!("argc: {}", argc);
-
-        let arg_s = match argc {
-            1 => Some((arg.assume_init(), None, None)),
-            2 => Some((arg.assume_init(), Some(base.assume_init()), None)),
-            3 => Some((
-                arg.assume_init(),
-                Some(base.assume_init()),
-                Some(exception.assume_init()),
-            )),
-            _ => None,
-        };
-
-        if arg_s.is_none() {
-            return Err(Error::WrongNumberOfArguments(argc));
-        }
-
-        // let (arg, base, exception) = mrb_get_args!(mrb, required = 1, optional = 2);
-        let (arg, base, exception) = arg_s.unwrap();
-
-        let raise_exception: Option<HashMap<String, bool>> = if let Some(exception) = exception {
-            match interp.try_convert(Value::new(interp, exception)) {
+        let raise_exception: Option<HashMap<String, bool>> = match exception {
+            Some(exception) => match interp.try_convert(Value::new(interp, exception)) {
                 Ok(exception) => {
                     println!("Exception: {:?}", exception);
                     exception
@@ -80,9 +42,8 @@ impl Args {
                     println!("Error: {:?}", e);
                     None
                 }
-            }
-        } else {
-            None
+            },
+            _ => None,
         };
         let raise_exception: bool = if let Some(raise_exception) = raise_exception {
             *raise_exception.get("exception").unwrap_or_else(|| &true)
