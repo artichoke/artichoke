@@ -34,14 +34,8 @@ impl Args {
 
         let raise_exception: Option<HashMap<String, bool>> = match exception {
             Some(exception) => match interp.try_convert(Value::new(interp, exception)) {
-                Ok(exception) => {
-                    println!("Exception: {:?}", exception);
-                    exception
-                }
-                Err(e) => {
-                    println!("Error: {:?}", e);
-                    None
-                }
+                Ok(exception) => exception,
+                Err(_) => None,
             },
             _ => None,
         };
