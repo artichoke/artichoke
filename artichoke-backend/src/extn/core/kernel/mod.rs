@@ -4,7 +4,7 @@
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
 use crate::eval::{Context, Eval};
-use crate::extn::core::exception::{ArgumentError, LoadError, RubyException, RuntimeError};
+use crate::extn::core::error::{ArgumentError, LoadError, RubyException, RuntimeError, TypeError};
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
@@ -125,22 +125,46 @@ impl Kernel {
         match integer::Args::extract(&interp) {
             Ok(args) => match integer::method(&interp, args) {
                 Ok(v) => v.inner(),
-                Err(integer::Error::InvalidRadix(v)) => {
-                    ArgumentError::raisef(interp, "invalid radix", vec![v])
+                Err(integer::Error::InvalidRadix(v, raise_exception)) => {
+                    if raise_exception {
+                        ArgumentError::raisef(interp, "invalid radix", vec![v])
+                    } else {
+                        interp.convert(None::<Value>).inner()
+                    }
                 }
-                Err(integer::Error::InvalidValue(v)) => {
-                    ArgumentError::raisef(interp, "invalid value for Integer(): \"%s\"", vec![v])
+                Err(integer::Error::InvalidValue(v, raise_exception)) => {
+                    if raise_exception {
+                        ArgumentError::raisef(
+                            interp,
+                            "invalid value for Integer(): \"%s\"",
+                            vec![v],
+                        )
+                    } else {
+                        interp.convert(None::<Value>).inner()
+                    }
+                }
+                Err(integer::Error::ContainsNullByte(raise_exception)) => {
+                    if raise_exception {
+                        ArgumentError::raise(interp, "string contains null byte")
+                    } else {
+                        interp.convert(None::<Value>).inner()
+                    }
                 }
                 _ => RuntimeError::raise(interp, "fatal Kernel#Integer error"),
             },
-            Err(integer::Error::BaseSpecifiedForNonString) => {
-                ArgumentError::raise(interp, "base specified for non string value")
+            Err(integer::Error::NoImplicitConversionToString(class_name, raise_exception)) => {
+                if raise_exception {
+                    TypeError::raisef(interp, "can't convert %S into String", vec![class_name])
+                } else {
+                    interp.convert(None::<Value>).inner()
+                }
             }
-            Err(integer::Error::InvalidValue(v)) => {
-                ArgumentError::raisef(interp, "invalid value for Integer(): \"%s\"", vec![v])
-            }
-            Err(integer::Error::ContainsNullByte) => {
-                ArgumentError::raise(interp, "string contains null byte")
+            Err(integer::Error::BaseSpecifiedForNonString(raise_exception)) => {
+                if raise_exception {
+                    ArgumentError::raise(interp, "base specified for non string value")
+                } else {
+                    interp.convert(None::<Value>).inner()
+                }
             }
             _ => RuntimeError::raise(interp, "fatal Kernel#Integer error"),
         }
