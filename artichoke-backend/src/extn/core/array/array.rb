@@ -240,14 +240,19 @@ class Array
     not_set = pattern.equal?(Artichoke::Array::NOT_SET)
     if not_set
       idx = 0
-      while idx < length
-        if block
+      if block
+        while idx < length
           return false unless block.call(self[idx])
-        else
-          return false unless self[idx]
-        end
 
-        idx += 1
+          idx += 1
+        end
+      else
+        len = length
+        while idx < len
+          return false unless self[idx]
+
+          idx += 1
+        end
       end
     else
       warn('warning: given block not used') if block
@@ -267,14 +272,19 @@ class Array
     not_set = pattern.equal?(Artichoke::Array::NOT_SET)
     if not_set
       idx = 0
-      while idx < length
-        if block
+      if block
+        while idx < length
           return true if block.call(self[idx])
-        else
-          return true if self[idx]
-        end
 
-        idx += 1
+          idx += 1
+        end
+      else
+        len = length
+        while idx < len
+          return true if self[idx]
+
+          idx += 1
+        end
       end
     else
       warn('warning: given block not used') if block
