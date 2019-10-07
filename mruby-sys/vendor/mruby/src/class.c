@@ -933,7 +933,7 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
       {
         mrb_value **var;
         mrb_int *pl;
-        mrb_bool nocopy = array_argv ? TRUE : FALSE;
+        mrb_bool nocopy = FALSE;
 
         if (*format == '!') {
           format++;
