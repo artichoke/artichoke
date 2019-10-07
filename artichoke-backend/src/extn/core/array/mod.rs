@@ -286,33 +286,30 @@ pub fn element_assignment<'a>(
             borrow.buffer[index] = other.clone();
         }
         ElementReferenceArgs::StartLen(start, len) => {
-            let other_ary = if unsafe { Array::try_from_ruby(interp, &other) }.is_ok() {
-                other.clone()
-            } else if let Ok(true) = other.respond_to("to_ary") {
-                let ruby_type = other.pretty_name();
-                if let Ok(other) = other.funcall("to_ary", &[], None) {
-                    if unsafe { Array::try_from_ruby(interp, &other) }.is_ok() {
-                        other
+            let mut other_buffer =
+                if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
+                    other.borrow().buffer.clone()
+                } else if let Ok(true) = other.respond_to("to_ary") {
+                    let ruby_type = other.pretty_name();
+                    if let Ok(other) = other.funcall("to_ary", &[], None) {
+                        if let Ok(other) = unsafe { Array::try_from_ruby(interp, &other) } {
+                            other.borrow().buffer.clone()
+                        } else {
+                            return Err(Error::CannotConvert {
+                                to: "Array",
+                                from: ruby_type,
+                                method: "to_ary",
+                                gives: other.pretty_name(),
+                            });
+                        }
                     } else {
-                        return Err(Error::CannotConvert {
-                            to: "Array",
-                            from: ruby_type,
-                            method: "to_ary",
-                            gives: other.pretty_name(),
-                        });
+                        return Err(Error::Fatal);
                     }
                 } else {
-                    return Err(Error::Fatal);
-                }
-            } else {
-                from_values(interp, &[other.clone()])?
-            };
-            let mut other_buffer = {
-                let other_data = unsafe { Array::try_from_ruby(interp, &other_ary) }
-                    .map_err(|_| Error::Fatal)?;
-                let other_borrow = other_data.borrow();
-                other_borrow.buffer.clone()
-            };
+                    let mut buffer = VecDeque::with_capacity(1);
+                    buffer.push_back(other.clone());
+                    buffer
+                };
             let data = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| Error::Fatal)?;
             let mut borrow = data.borrow_mut();
 
