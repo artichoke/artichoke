@@ -1048,7 +1048,34 @@ class Array
 
   def none?(pattern = Artichoke::Array::NOT_SET, &block)
     not_set = pattern.equal?(Artichoke::Array::NOT_SET)
-    raise NotImplementedError
+    if not_set
+      idx = 0
+      if block
+        while idx < length
+          return false if block.call(self[idx]).equal?(true)
+
+          idx += 1
+        end
+      else
+        len = length
+        while idx < len
+          return false if self[idx].equal?(true)
+
+          idx += 1
+        end
+      end
+    else
+      warn('warning: given block not used') if block
+
+      len = length
+      idx = 0
+      while idx < len
+        return false if pattern === self[idx] # rubocop:disable Style/CaseEquality
+
+        idx += 1
+      end
+    end
+    true
   end
 
   def permutation(kcombinations = size, &block)
