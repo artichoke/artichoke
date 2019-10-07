@@ -1316,9 +1316,18 @@ pub unsafe extern "C" fn ary_element_assignment(
     let first = Value::new(&interp, first);
     let second = second.map(|second| Value::new(&interp, second));
     let third = third.map(|third| Value::new(&interp, third));
-    let args =
-        ary_element_assignment_args(&interp, first, second, third, artichoke_ary_len(mrb, ary));
     let ary = Value::new(&interp, ary);
+    let args = if ary.is_frozen() {
+        Err(Error::Frozen)
+    } else {
+        ary_element_assignment_args(
+            &interp,
+            first,
+            second,
+            third,
+            artichoke_ary_len(mrb, ary.inner()),
+        )
+    };
     let result = args.and_then(|args| {
         if let Some((args, value)) = args {
             array::element_assignment(&interp, &ary, args, value)
