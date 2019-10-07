@@ -47,6 +47,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     regexp::init(interp)?;
     string::init(interp)?;
     symbol::init(interp)?;
-    // thread::init(interp)?;
+    thread::init(interp)?;
     Ok(())
 }
