@@ -1495,7 +1495,7 @@ class Array
   end
 
   def unshift(*args)
-    self[0, 0] = *args
+    self[0, 0] = args
     self
   end
 
