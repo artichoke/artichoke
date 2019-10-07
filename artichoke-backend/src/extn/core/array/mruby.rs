@@ -50,7 +50,7 @@ pub unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -106,7 +106,7 @@ pub unsafe extern "C" fn artichoke_ary_new_capa(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -170,7 +170,7 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -225,7 +225,7 @@ pub unsafe extern "C" fn artichoke_ary_splat(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -286,7 +286,7 @@ pub unsafe extern "C" fn artichoke_ary_concat(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -345,7 +345,7 @@ pub unsafe extern "C" fn artichoke_ary_pop(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -406,7 +406,7 @@ pub unsafe extern "C" fn artichoke_ary_push(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -465,7 +465,7 @@ pub unsafe extern "C" fn artichoke_ary_ref(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -529,7 +529,7 @@ pub unsafe extern "C" fn artichoke_ary_set(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -583,7 +583,7 @@ pub unsafe extern "C" fn artichoke_ary_clone(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -637,7 +637,7 @@ pub unsafe extern "C" fn artichoke_value_to_ary(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -707,7 +707,7 @@ pub unsafe extern "C" fn artichoke_ary_len(
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args);
             0
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -773,7 +773,7 @@ pub unsafe extern "C" fn ary_concat(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -832,7 +832,7 @@ pub unsafe extern "C" fn ary_initialize_copy(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -907,7 +907,7 @@ pub unsafe extern "C" fn artichoke_ary_shift(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -960,7 +960,7 @@ pub unsafe extern "C" fn ary_reverse(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -1017,7 +1017,7 @@ pub unsafe extern "C" fn ary_reverse_bang(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -1077,7 +1077,7 @@ pub unsafe extern "C" fn artichoke_ary_unshift(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -1096,12 +1096,12 @@ pub unsafe extern "C" fn ary_element_reference(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
-    fn ary_element_reference_args<'a>(
-        interp: &'a Artichoke,
+    fn ary_element_reference_args(
+        interp: &Artichoke,
         first: Value,
         second: Option<Value>,
         len: Int,
-    ) -> Result<Option<array::ElementReferenceArgs>, Error<'a>> {
+    ) -> Result<Option<array::ElementReferenceArgs>, Error> {
         if let Some(length) = second {
             let start_type = first.pretty_name();
             let start = first
@@ -1214,7 +1214,7 @@ pub unsafe extern "C" fn ary_element_reference(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,
@@ -1233,13 +1233,13 @@ pub unsafe extern "C" fn ary_element_assignment(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
-    fn ary_element_assignment_args<'a>(
-        interp: &'a Artichoke,
+    fn ary_element_assignment_args(
+        interp: &Artichoke,
         first: Value,
         second: Option<Value>,
         third: Option<Value>,
         len: Int,
-    ) -> Result<Option<(array::ElementReferenceArgs, Value)>, Error<'a>> {
+    ) -> Result<Option<(array::ElementReferenceArgs, Value)>, Error> {
         if let Some(value) = third {
             let length = second.ok_or(Error::Fatal)?;
             let start_type = first.pretty_name();
@@ -1250,14 +1250,14 @@ pub unsafe extern "C" fn ary_element_assignment(
                     to: "Integer",
                 })?;
             let len_type = length.pretty_name();
-            let len = length
+            let length = length
                 .try_into::<usize>()
                 .map_err(|_| Error::NoImplicitConversion {
                     from: len_type,
                     to: "Integer",
                 })?;
             Ok(Some((
-                array::ElementReferenceArgs::StartLen(start, len),
+                array::ElementReferenceArgs::StartLen(start, length),
                 value,
             )))
         } else if let Some(value) = second {
@@ -1303,7 +1303,7 @@ pub unsafe extern "C" fn ary_element_assignment(
         } else {
             let min = isize::try_from(start).map_err(|_| Error::Fatal)?;
             let len = isize::try_from(len).map_err(|_| Error::Fatal)?;
-            Err(Error::RangeError {
+            Err(Error::Range {
                 min,
                 max: min + len,
                 exclusive,
@@ -1372,7 +1372,7 @@ pub unsafe extern "C" fn ary_element_assignment(
             let format_args = vec![interp.convert(from), interp.convert(to)];
             TypeError::raisef(interp, "No implicit conversion of %S into %S", format_args)
         }
-        Err(Error::RangeError {
+        Err(Error::Range {
             min,
             max,
             exclusive,

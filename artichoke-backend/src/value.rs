@@ -272,8 +272,8 @@ impl ValueLike for Value {
 
     fn is_frozen(&self) -> bool {
         let mrb = self.interp.0.borrow().mrb;
-        let slf = self.inner();
-        unsafe { sys::mrb_sys_obj_frozen(mrb, slf) }
+        let inner = self.inner();
+        unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
     }
 
     fn inspect(&self) -> String {

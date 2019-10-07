@@ -114,6 +114,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 /// be called from Rust functions that are exposed on the mruby interpreter via
 /// [`class::Spec`](crate::class::Spec) and
 /// [`module::Spec`](crate::module::Spec).
+#[allow(clippy::module_name_repetitions)]
 pub trait RubyException: 'static + Sized {
     /// Raise the `Exception` defined with this type with a message.
     ///
@@ -191,47 +192,38 @@ pub struct Exception;
 
 impl RubyException for Exception {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct ScriptError;
 
 impl RubyException for ScriptError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct LoadError;
 
 impl RubyException for LoadError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct ArgumentError;
 
 impl RubyException for ArgumentError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct FrozenError;
 
 impl RubyException for FrozenError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct IndexError;
 
 impl RubyException for IndexError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct RangeError;
 
 impl RubyException for RangeError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct RuntimeError;
 
 impl RubyException for RuntimeError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct SyntaxError;
 
 impl RubyException for SyntaxError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct TypeError;
 
 impl RubyException for TypeError {}

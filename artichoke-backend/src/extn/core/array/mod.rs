@@ -104,7 +104,7 @@ pub enum Error<'a> {
         from: &'a str,
         to: &'a str,
     },
-    RangeError {
+    Range {
         min: isize,
         max: isize,
         exclusive: bool,
