@@ -3,9 +3,9 @@
 use std::mem;
 
 use crate::convert::{Convert, RustBackedValue};
+use crate::extn::core::array::Array;
 use crate::extn::core::regexp::{syntax, Regexp};
 use crate::sys;
-use crate::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::Artichoke;
 
@@ -48,13 +48,11 @@ pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Val
         "(?!)".to_owned()
     } else if args.rest.len() == 1 {
         let arg = args.rest.into_iter().nth(0).unwrap();
-        if arg.ruby_type() == Ruby::Array {
+        if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &arg) } {
+            let borrow = ary.borrow();
             let mut patterns = vec![];
-            for pattern in arg
-                .itself::<Vec<Value>>()
-                .map_err(|_| Error::NoImplicitConversionToString)?
-            {
-                if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
+            for pattern in &borrow.buffer {
+                if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, pattern) } {
                     patterns.push(regexp.borrow().pattern.clone());
                 } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
                     patterns.push(syntax::escape(pattern));
