@@ -15,7 +15,7 @@
 #include <mruby/istruct.h>
 
 #ifdef ARTICHOKE
-#include <mruby-sys/ext.h>
+#include <mruby-sys/artichoke.h>
 #endif
 
 MRB_API mrb_bool

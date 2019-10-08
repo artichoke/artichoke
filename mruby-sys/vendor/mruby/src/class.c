@@ -19,7 +19,7 @@
 #include <mruby/opcode.h>
 
 #ifdef ARTICHOKE
-#include <mruby-sys/ext.h>
+#include <mruby-sys/artichoke.h>
 #endif
 
 KHASH_DEFINE(mt, mrb_sym, mrb_method_t, TRUE, kh_int_hash_func, kh_int_hash_equal)

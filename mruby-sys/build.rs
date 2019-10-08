@@ -210,8 +210,10 @@ fn main() {
         .include(Build::ext_include_dir())
         .define("MRB_DISABLE_STDIO", None)
         .define("MRB_UTF8_STRING", None)
-        .define("ARTICHOKE", None)
         .define(mrb_int, None);
+    if env::var("CARGO_FEATURE_ARTICHOKE").is_ok() {
+        build.define("ARTICHOKE", None);
+    }
 
     for gem in Build::gems() {
         let mut dir = "include";
@@ -269,6 +271,9 @@ fn main() {
             .clang_arg(format!("-I{}", Build::wasm_include_dir().to_string_lossy()))
             .clang_arg("-DMRB_DISABLE_DIRECT_THREADING")
             .clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
+    }
+    if env::var("CARGO_FEATURE_ARTICHOKE").is_ok() {
+        bindgen = bindgen.clang_arg("-DARTICHOKE");
     }
     bindgen
         .generate()

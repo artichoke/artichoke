@@ -7,7 +7,7 @@
 #include "mruby/string.h"
 
 #ifdef ARTICHOKE
-#include <mruby-sys/ext.h>
+#include <mruby-sys/artichoke.h>
 #endif
 
 typedef enum {

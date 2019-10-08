@@ -13,6 +13,10 @@ links = "mruby"
 # attributes to fenced code blocks.
 doctest = false
 
+[features]
+default = []
+artichoke = []
+
 [dependencies]
 
 [build-dependencies]

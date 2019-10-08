@@ -4,7 +4,7 @@
 #include <mruby/proc.h>
 
 #ifdef ARTICHOKE
-#include <mruby-sys/ext.h>
+#include <mruby-sys/artichoke.h>
 #endif
 
 #define fiber_ptr(o) ((struct RFiber*)mrb_ptr(o))

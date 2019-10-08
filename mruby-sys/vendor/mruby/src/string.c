@@ -23,7 +23,7 @@
 #include <mruby/numeric.h>
 
 #ifdef ARTICHOKE
-#include <mruby-sys/ext.h>
+#include <mruby-sys/artichoke.h>
 #endif
 
 typedef struct mrb_shared_string {

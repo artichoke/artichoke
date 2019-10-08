@@ -12,7 +12,7 @@
 #include <mruby/variable.h>
 
 #ifdef ARTICHOKE
-#include <mruby-sys/ext.h>
+#include <mruby-sys/artichoke.h>
 #endif
 
 #ifndef MRB_WITHOUT_FLOAT

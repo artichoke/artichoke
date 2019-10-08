@@ -11,7 +11,7 @@
 #include <mruby/array.h>
 
 #ifdef ARTICHOKE
-#include <mruby-sys/ext.h>
+#include <mruby-sys/artichoke.h>
 #endif
 
 #define RANGE_INITIALIZED_MASK 1

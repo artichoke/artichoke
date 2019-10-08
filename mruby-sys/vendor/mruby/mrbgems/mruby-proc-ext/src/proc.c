@@ -6,7 +6,7 @@
 #include <mruby/debug.h>
 
 #ifdef ARTICHOKE
-#include <mruby-sys/ext.h>
+#include <mruby-sys/artichoke.h>
 #endif
 
 static mrb_value
