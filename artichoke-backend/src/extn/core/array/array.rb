@@ -110,10 +110,11 @@ class Array
 
   def self.try_convert(other)
     ary = other.to_ary
-    return nil unless ary.is_a?(Array)
+    return nil if ary.nil?
+    raise TypeError, "can't convert #{other.class} to Array (#{other.class}#to_ary gives #{ary.class})" unless ary.is_a?(Array)
 
     ary
-  rescue StandardError
+  rescue NoMethodError
     nil
   end
 
@@ -224,12 +225,15 @@ class Array
     len = length
     idx = 0
     while idx < len
-      cmp = self[idx] <=> other[idx]
+      left = self[idx]
+      right = other[idx]
+      idx += 1
+      next if left.equal?(right)
+
+      cmp = left <=> right
       return false if cmp.nil?
       raise ArgumentError unless cmp.is_a?(Numeric)
       return false unless cmp.zero?
-
-      idx += 1
     end
     true
   rescue NoMethodError
@@ -746,7 +750,7 @@ class Array
     idx += size if idx.negative?
     if idx.negative? || size <= idx
       return block.call(index) if block
-      raise IndexError, "index #{n} outside of array bounds: #{-size}...#{size}" if not_set
+      raise IndexError, "index #{idx} outside of array bounds: #{-size}...#{size}" if not_set
 
       return default
     end
@@ -923,7 +927,7 @@ class Array
     idx = 0
     len = length
     while idx < len
-      return true if object == self[idx]
+      return true if self[idx] == object
 
       idx += 1
     end
@@ -935,9 +939,8 @@ class Array
     return to_enum(:index) if !block && not_set
 
     idx = 0
-    len = length
     if not_set
-      while idx < len
+      while idx < length
         return idx if block.call(self[idx])
 
         idx += 1
@@ -945,8 +948,9 @@ class Array
     else
       warn('warning: given block not used') if block
 
+      len = length
       while idx < len
-        return idx if val == self[idx]
+        return idx if self[idx] == val
 
         idx += 1
       end
@@ -1035,7 +1039,10 @@ class Array
       end
     raise ArgumentError, 'negative array size' if count.negative?
 
-    self[len - count, count]
+    return [] if count.zero?
+    return dup if count > length
+
+    self[-count..-1]
   end
 
   def max(*)
@@ -1184,6 +1191,7 @@ class Array
         raise TypeError, "no implicit conversion of #{classname} into Array" unless other.is_a?(Array)
       end
     self[0, length] = ary
+    self
   end
 
   def reverse_each(&block)
@@ -1244,16 +1252,21 @@ class Array
 
   def select!(&block)
     return to_enum :select! unless block
+    raise FrozenError, "can't modify frozen Array" if frozen?
 
     result = []
     idx = 0
-    len = size
-    while idx < len
+    skipped = false
+    while idx < length
       elem = self[idx]
-      result << elem if block.call(elem)
+      if block.call(elem)
+        result << elem
+      else
+        skipped = true
+      end
       idx += 1
     end
-    return nil if len == result.size
+    return nil unless skipped
 
     replace(result)
   end
@@ -1434,7 +1447,7 @@ class Array
   end
 
   def to_a
-    self if self.class == Array
+    return self if self.class == Array
 
     [].concat(self)
   end
