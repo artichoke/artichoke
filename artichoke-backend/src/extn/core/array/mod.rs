@@ -1,4 +1,5 @@
 use artichoke_core::value::Value as ValueLike;
+use std::cmp;
 use std::collections::VecDeque;
 use std::convert::TryFrom;
 
@@ -250,11 +251,13 @@ pub fn element_reference<'a>(
                 // Positive i64 must be usize
                 usize::try_from(start).map_err(|_| Error::Fatal)?
             };
-            let mut slice = Vec::with_capacity(len);
-            for index in start..(start + len) {
-                slice.push(interp.convert(borrow.buffer.get(index)));
+            let mut array = VecDeque::with_capacity(len);
+            let buf_len = borrow.buffer.len();
+            for index in start..cmp::min(start + len, buf_len) {
+                array.push_back(interp.convert(borrow.buffer.get(index)));
             }
-            from_values(&interp, slice.as_slice())
+            let array = Array { buffer: array };
+            unsafe { array.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)
         }
     }
 }
