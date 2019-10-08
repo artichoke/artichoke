@@ -1402,6 +1402,7 @@ class Array
     return self if length <= 1
 
     self[0, length] = sort(&block)
+    self
   end
 
   def sort_by!(&block)
