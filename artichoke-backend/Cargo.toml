@@ -16,6 +16,8 @@ path = "../artichoke-vfs"
 
 [dependencies.mruby-sys]
 path = "../mruby-sys"
+default-features = false
+features = ["artichoke"]
 
 [dependencies.onig]
 version = "5"
