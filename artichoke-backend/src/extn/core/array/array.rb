@@ -1356,9 +1356,16 @@ class Array
 
     block ||= ->(a, b) { a <=> b }
     if length == 2
-      cmp = block.call(self[0], self[1])
-      reverse if cmp.positive?
-      return dup
+      l = self[0]
+      r = self[1]
+      begin
+        cmp = block.call(l, r)
+        return dup if cmp <= 0
+        return reverse if cmp > 0 # rubocop:disable Style/NumericPredicate
+      rescue StandardError
+        raise ArgumentError, "comparison of #{l.class} with #{r.class} failed"
+      end
+      raise ArgumentError, "comparison of #{l.class} with #{r.class} failed"
     end
 
     ary = dup
@@ -1370,12 +1377,22 @@ class Array
     result = []
     until left.empty? || right.empty?
       # change the direction of this comparison to change the direction of the sort
-      result <<
-        if block.call(left[0], right[0]) <= 0
-          left.shift
-        else
-          right.shift
-        end
+      l = left[0]
+      r = right[0]
+
+      begin
+        cmp = block.call(l, r)
+        result <<
+          if cmp <= 0
+            left.shift
+          elsif cmp > 0 # rubocop:disable Style/NumericPredicate
+            right.shift
+          else
+            raise ArgumentError, "comparison of #{l.class} with #{r.class} failed"
+          end
+      rescue StandardError
+        raise ArgumentError, "comparison of #{l.class} with #{r.class} failed"
+      end
     end
     result + left + right
   end
