@@ -225,7 +225,7 @@ class Array
     idx = 0
     while idx < len
       cmp = self[idx] <=> other[idx]
-      return nil if cmp.nil?
+      return false if cmp.nil?
       raise ArgumentError unless cmp.is_a?(Numeric)
       return false unless cmp.zero?
 
