@@ -4,6 +4,7 @@ use std::hash::BuildHasher;
 
 use crate::convert::float::Float;
 use crate::convert::{Convert, TryConvert};
+use crate::extn::core::array;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::{Value, ValueLike};
@@ -43,7 +44,7 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
                 for idx in 0..size {
                     // Doing a `hash[key]` access is guaranteed to succeed since
                     // we're iterating over the keys in the hash.
-                    let key = unsafe { sys::mrb_ary_ref(mrb, keys, idx) };
+                    let key = unsafe { array::mruby::artichoke_ary_ref(mrb, keys, idx) };
                     let value = unsafe { sys::mrb_hash_get(mrb, hash, key) };
                     pairs.push((Value::new(self, key), Value::new(self, value)));
                 }

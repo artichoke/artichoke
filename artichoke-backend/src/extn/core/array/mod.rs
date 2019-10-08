@@ -11,7 +11,7 @@ use crate::types::Int;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
-mod mruby;
+pub mod mruby;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let array =
