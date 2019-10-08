@@ -328,6 +328,9 @@ pub fn element_assignment<'a>(
             let other_len = other_buffer.len();
             if len == 0 {
                 let mut idx = start;
+                for _ in buf_len..start {
+                    borrow.buffer.push_back(interp.convert(None::<Value>));
+                }
                 for item in other_buffer.drain(0..) {
                     borrow.buffer.insert(idx, item);
                     idx += 1;
