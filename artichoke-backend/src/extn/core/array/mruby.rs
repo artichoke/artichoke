@@ -796,7 +796,7 @@ pub unsafe extern "C" fn ary_initialize_copy(
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::initialize_copy(&interp, array, &other);
+    let result = array::initialize_copy(&interp, &array, &other);
     if result.is_ok() {
         let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
@@ -928,7 +928,7 @@ pub unsafe extern "C" fn ary_reverse(
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
-    let result = array::reverse(&interp, ary);
+    let result = array::reverse(&interp, &ary);
     match result {
         Ok(value) => value.inner(),
         Err(Error::Artichoke(_)) => RuntimeError::raise(interp, "artichoke error"),
@@ -1111,13 +1111,13 @@ pub unsafe extern "C" fn ary_element_reference(
                     to: "Integer",
                 })?;
             let len_type = length.pretty_name();
-            let len = length
+            let length = length
                 .try_into::<usize>()
                 .map_err(|_| Error::NoImplicitConversion {
                     from: len_type,
                     to: "Integer",
                 })?;
-            Ok(Some(array::ElementReferenceArgs::StartLen(start, len)))
+            Ok(Some(array::ElementReferenceArgs::StartLen(start, length)))
         } else if let Ruby::Data = first.ruby_type() {
             Err(Error::NoImplicitConversion {
                 from: first.pretty_name(),

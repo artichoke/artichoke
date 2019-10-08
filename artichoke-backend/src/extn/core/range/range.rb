@@ -55,10 +55,10 @@ class Range
   def each(&block)
     return to_enum :each unless block
 
-    val = self.first
+    val = first
     last = self.last
 
-    if val.kind_of?(Fixnum) && last.kind_of?(Fixnum) # fixnums are special
+    if val.is_a?(Integer) && last.is_a?(Integer) # fixnums are special
       lim = last
       lim += 1 unless exclude_end?
       i = val
@@ -69,19 +69,17 @@ class Range
       return self
     end
 
-    if val.kind_of?(String) && last.kind_of?(String) # strings are special
-      if val.respond_to? :upto
-        return val.upto(last, exclude_end?, &block)
-      else
-        str_each = true
-      end
+    if val.is_a?(String) && last.is_a?(String) # strings are special
+      return val.upto(last, exclude_end?, &block) if val.respond_to? :upto
+
+      str_each = true
     end
 
     raise TypeError, "can't iterate" unless val.respond_to? :succ
 
-    return self if (val <=> last) > 0
+    return self if (val <=> last) > 0 # rubocop:disable Style/NumericPredicate
 
-    while (val <=> last) < 0
+    while (val <=> last) < 0 # rubocop:disable Style/NumericPredicate
       block.call(val)
       val = val.succ
       if str_each
@@ -89,7 +87,7 @@ class Range
       end
     end
 
-    block.call(val) if !exclude_end? && (val <=> last) == 0
+    block.call(val) if !exclude_end? && (val <=> last) == 0 # rubocop:disable Style/NumericPredicate
     self
   end
 

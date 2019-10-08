@@ -189,10 +189,10 @@ impl Kernel {
     }
 
     unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        fn do_puts(interp: &Artichoke, value: Value) {
+        fn do_puts(interp: &Artichoke, value: &Value) {
             if let Ok(array) = value.clone().try_into::<Vec<Value>>() {
                 for value in array {
-                    do_puts(interp, value);
+                    do_puts(interp, &value);
                 }
             } else {
                 let s = value.to_s();
@@ -206,7 +206,7 @@ impl Kernel {
             interp.0.borrow_mut().puts("");
         }
         for value in args.iter() {
-            do_puts(&interp, Value::new(&interp, *value));
+            do_puts(&interp, &Value::new(&interp, *value));
         }
         sys::mrb_sys_nil_value()
     }

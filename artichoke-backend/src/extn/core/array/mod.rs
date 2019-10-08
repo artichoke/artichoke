@@ -487,7 +487,7 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Error
     Ok(ary)
 }
 
-pub fn replace(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Error> {
+pub fn replace<'a>(interp: &'a Artichoke, ary: Value, other: &Value) -> Result<Value, Error<'a>> {
     if ary.is_frozen() {
         return Err(Error::Frozen);
     }
@@ -518,7 +518,7 @@ pub fn replace(interp: &Artichoke, ary: Value, other: Value) -> Result<Value, Er
     }
 }
 
-pub fn reverse(interp: &Artichoke, ary: Value) -> Result<Value, Error> {
+pub fn reverse<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Value, Error<'a>> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| Error::Fatal)?;
     let borrow = array.borrow();
     let len = borrow.buffer.len();
@@ -601,7 +601,7 @@ pub fn clone<'a>(interp: &'a Artichoke, ary: &Value) -> Result<Value, Error<'a>>
 
 pub fn initialize_copy<'a>(
     interp: &'a Artichoke,
-    ary: Value,
+    ary: &Value,
     other: &Value,
 ) -> Result<Value, Error<'a>> {
     let other = unsafe { Array::try_from_ruby(interp, other) }.map_err(|_| Error::Fatal)?;

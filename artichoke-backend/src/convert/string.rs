@@ -93,7 +93,7 @@ mod tests {
     #[quickcheck]
     fn convert_to_string(s: String) -> bool {
         let interp = crate::interpreter().expect("init");
-        let mrb = self.interp.0.borrow().mrb;
+        let mrb = interp.0.borrow().mrb;
         let value = interp.convert(s.clone());
         let ptr = unsafe { sys::mrb_string_value_ptr(mrb, value.inner()) };
         let len = unsafe { sys::mrb_string_value_len(mrb, value.inner()) };

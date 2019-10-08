@@ -244,7 +244,7 @@ class Hash
   end
 
   def merge(other, &block)
-    raise TypeError, "Hash required (#{other.class} given)" unless Hash === other
+    raise TypeError, "Hash required (#{other.class} given)" unless other.is_a?(Hash)
 
     h = dup
     if block
@@ -298,7 +298,7 @@ class Hash
   end
 
   def replace(hash)
-    raise TypeError, "Hash required (#{hash.class} given)" unless Hash === hash
+    raise TypeError, "Hash required (#{hash.class} given)" unless hash.is_a?(Hash)
 
     clear
     hash.each_key { |k| self[k] = hash[k] }

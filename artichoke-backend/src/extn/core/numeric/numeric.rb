@@ -50,7 +50,7 @@ class Numeric
     self > 0 # rubocop:disable Style/NumericPredicate
   end
 
-  def times &block
+  def times(&block)
     return to_enum :times unless block
 
     i = 0

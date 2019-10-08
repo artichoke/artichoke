@@ -107,7 +107,7 @@ pub enum Ruby {
 
 impl Ruby {
     /// Ruby `Class` name for VM type.
-    pub fn class_name(&self) -> &'static str {
+    pub fn class_name(self) -> &'static str {
         match self {
             Ruby::Array => "Array",
             Ruby::Bool => "Boolean",

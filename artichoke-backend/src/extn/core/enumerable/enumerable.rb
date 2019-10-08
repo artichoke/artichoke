@@ -258,7 +258,7 @@ module Enumerable
   def grep(pattern, &block)
     ary = []
     each do |val|
-      if pattern === val
+      if pattern === val # rubocop:disable Style/CaseEquality
         if block
           ary.push(block.call(val))
         else
@@ -290,14 +290,15 @@ module Enumerable
   end
 
   def inject(*args, &block)
-    raise ArgumentError, "too many arguments" if args.size > 2
-    if Symbol === args[-1]
+    raise ArgumentError, 'too many arguments' if args.size > 2
+
+    if args[-1].is_a?(Symbol)
       sym = args[-1]
-      block = ->(x,y){x.__send__(sym,y)}
+      block = ->(x, y) { x.__send__(sym, y) }
       args.pop
     end
     if args.empty?
-      flag = true  # no initial argument
+      flag = true # no initial argument
       result = nil
     else
       flag = false
@@ -316,19 +317,17 @@ module Enumerable
   end
 
   def max(&block)
-    flag = true  # 1st element?
+    flag = true # 1st element?
     result = nil
     each do |val|
       if flag
         # 1st element
         result = val
         flag = false
-      else
-        if block
-          result = val if block.call(val, result) > 0
-        else
-          result = val if (val <=> result) > 0
-        end
+      elsif block
+        result = val if block.call(val, result) > 0 # rubocop:disable Style/NumericPredicate
+      elsif (val <=> result) > 0 # rubocop:disable Style/NumericPredicate
+        result = val
       end
     end
     result
@@ -355,19 +354,17 @@ module Enumerable
   end
 
   def min(&block)
-    flag = true  # 1st element?
+    flag = true # 1st element?
     result = nil
     each do |val|
       if flag
         # 1st element
         result = val
         flag = false
-      else
-        if block
-          result = val if block.call(val, result) < 0
-        else
-          result = val if (val <=> result) < 0
-        end
+      elsif block
+        result = val if block.call(val, result) < 0 # rubocop:disable Style/NumericPredicate
+      elsif (val <=> result) < 0 # rubocop:disable Style/NumericPredicate
+        result = val
       end
     end
     result
@@ -522,7 +519,7 @@ module Enumerable
   end
 
   def sort(&block)
-    self.map(&:itself).sort(&block)
+    map(&:itself).sort(&block)
   end
 
   def sort_by(&block)

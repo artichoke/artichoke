@@ -758,7 +758,6 @@ class Array
   end
 
   def fill(arg0 = nil, arg1 = nil, arg2 = nil, &block)
-    raise NotImplementedError
     raise ArgumentError, 'wrong number of arguments (0 for 1..3)' if arg0.nil? && arg1.nil? && arg2.nil? && !block
 
     beg = len = 0
@@ -1109,7 +1108,7 @@ class Array
     end
   end
 
-  def product(*args)
+  def product(*_args)
     raise NotImplementedError
   end
 
@@ -1168,11 +1167,11 @@ class Array
     self
   end
 
-  def repeated_combination(num, &block)
+  def repeated_combination(_num)
     raise NotImplementedError
   end
 
-  def repeated_permutation(num, &block)
+  def repeated_permutation(_num)
     raise NotImplementedError
   end
 
@@ -1240,7 +1239,7 @@ class Array
     replace(rotate(count))
   end
 
-  def sample(*args)
+  def sample(*_args)
     raise NotImplementedError, 'TODO implement in Rust'
   end
 
@@ -1310,11 +1309,11 @@ class Array
     result
   end
 
-  def shuffle(rng = (not_set = true))
+  def shuffle(_rng = (not_set = true)) # rubocop:disable Lint/UselessAssignment
     raise NotImplementedError, 'TODO implement in Rust'
   end
 
-  def shuffle!(rng = (not_set = true))
+  def shuffle!(_rng = (not_set = true)) # rubocop:disable Lint/UselessAssignment
     raise NotImplementedError, 'TODO implement in Rust'
   end
 
@@ -1556,7 +1555,7 @@ class Array
     ary
   end
 
-  def zip(*args, &block)
+  def zip(*_args)
     raise NotImplementedError
   end
 
