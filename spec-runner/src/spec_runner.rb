@@ -117,7 +117,8 @@ class SpecCollector
 
     report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
     @errors.each do |state|
-      puts '', "#{RED}#{state.description}#{PLAIN}", "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}", '', state.backtrace
+      puts '', "#{RED}#{state.description}#{PLAIN}", "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}"
+      puts '', state.backtrace unless state.exception.is_a?(SystemStackError)
     end
     puts ''
     report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
