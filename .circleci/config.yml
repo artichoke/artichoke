@@ -70,7 +70,7 @@ jobs:
             cargo build
       - run:
           name: Test Workspace
-          command:
+          command: |
             cargo test -p mruby-sys
             cargo test -p artichoke-backend
           environment:
