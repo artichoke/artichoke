@@ -65,9 +65,11 @@ class SpecCollector
       skipped = true if state.message =~ /'allocate'/
       skipped = true if state.message =~ /'encoding'/
       skipped = true if state.message =~ /'private_instance_methods'/
+      skipped = true if state.message =~ /'size'/ # Enumerable#size is not implemented on mruby
       skipped = true if state.message =~ /'taint'/
       skipped = true if state.message =~ /'tainted\?'/
       skipped = true if state.message =~ /'untrust'/
+      skipped = true if state.message =~ /'untrusted\?'/
     elsif state.exception.is_a?(SpecExpectationNotMetError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
