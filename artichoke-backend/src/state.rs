@@ -232,6 +232,8 @@ impl State {
 impl Drop for State {
     fn drop(&mut self) {
         unsafe {
+            // TODO: this assumption is no longer true now that copies of the
+            // `State` are stored in `Array`s in the interpreter.
             // At this point, the only ref to the smart poitner wrapping the
             // state is stored in the `mrb_state->ud` pointer. Rematerialize the
             // `Rc`, set the userdata pointer to null, and drop the `Rc` to

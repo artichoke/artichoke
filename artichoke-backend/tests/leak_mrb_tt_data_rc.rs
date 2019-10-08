@@ -92,6 +92,8 @@ impl File for Container {
 }
 
 #[test]
+#[should_panic]
+// the interpreter is never dropped because it holds references to itself.
 fn rust_backed_mrb_value_smart_pointer_leak() {
     leak::Detector::new("smart pointer", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let interp = artichoke_backend::interpreter().expect("init");
