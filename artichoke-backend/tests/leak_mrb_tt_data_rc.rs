@@ -102,7 +102,6 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
         let code = "require 'container'; Container.new('a' * 1024 * 1024)";
         let result = interp.eval(code);
         assert_eq!(true, result.is_ok());
-        interp.0.borrow_mut().close();
-        drop(interp);
+        interp.close();
     });
 }

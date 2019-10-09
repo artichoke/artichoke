@@ -261,3 +261,12 @@ pub use artichoke_core::ArtichokeError;
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
 #[derive(Debug, Clone)]
 pub struct Artichoke(pub Rc<RefCell<state::State>>); // TODO: this should not be pub
+
+impl Artichoke {
+    /// Consume an interpreter and free all
+    /// [live](gc::MrbGarbageCollection::live_objects) [`Value`](value::Value)s.
+    pub fn close(self) {
+        self.0.borrow_mut().close();
+        drop(self)
+    }
+}

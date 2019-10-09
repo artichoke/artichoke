@@ -266,42 +266,7 @@ impl State {
 
 impl Drop for State {
     fn drop(&mut self) {
-        unsafe {
-            // At this point, the only refs to the smart poitner wrapping the
-            // state are stored in the `mrb_state->ud` pointer and any
-            // `MRB_TT_DATA` objects in the mruby heap.
-            //
-            // To clean up:
-            //
-            // - Save the raw pointer to the `Artichoke` from the user data.
-            // - Free the mrb context.
-            // - Close the interpreter which frees every object in the heap and
-            //   drops the strong count on the Rc to 1.
-            // - Rematerialize the `Rc`.
-            // - Drop the `Rc` which drops the strong count to 0 and frees the
-            //   state.
-            // - Set the userdata pointer to null.
-            // - Set context and mrb properties to null.
-            if self.mrb.is_null() {
-                return;
-            }
-            let ptr = (*self.mrb).ud;
-            // Free mrb data structures
-            sys::mrbc_context_free(self.mrb, self.ctx);
-            sys::mrb_close(self.mrb);
-
-            if ptr.is_null() {
-                return;
-            }
-            let ud = Rc::from_raw(ptr as *const RefCell<Self>);
-            // cleanup pointers
-            (*self.mrb).ud = std::ptr::null_mut();
-            mem::drop(ud);
-
-            // Cleanup dangling pointers
-            self.ctx = std::ptr::null_mut();
-            self.mrb = std::ptr::null_mut();
-        };
+        self.close();
     }
 }
 
