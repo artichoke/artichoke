@@ -32,7 +32,7 @@ use std::mem;
 mod leak;
 
 const ITERATIONS: usize = 100;
-const LEAK_TOLERANCE: i64 = 1024 * 1024 * 10;
+const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
 #[derive(Clone, Debug, Default)]
 struct Container {
@@ -92,8 +92,6 @@ impl File for Container {
 }
 
 #[test]
-#[should_panic]
-// the interpreter is never dropped because it holds references to itself.
 fn rust_backed_mrb_value_smart_pointer_leak() {
     leak::Detector::new("smart pointer", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let interp = artichoke_backend::interpreter().expect("init");
@@ -104,6 +102,7 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
         let code = "require 'container'; Container.new('a' * 1024 * 1024)";
         let result = interp.eval(code);
         assert_eq!(true, result.is_ok());
+        interp.0.borrow_mut().close();
         drop(interp);
     });
 }
