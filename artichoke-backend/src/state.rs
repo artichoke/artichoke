@@ -95,13 +95,12 @@ impl State {
                 return;
             }
             let ptr = (*self.mrb).ud;
-            // Free mrb data structures
-            sys::mrbc_context_free(self.mrb, self.ctx);
-            sys::mrb_close(self.mrb);
-
             if ptr.is_null() {
                 return;
             }
+            // Free mrb data structures
+            sys::mrbc_context_free(self.mrb, self.ctx);
+            sys::mrb_close(self.mrb);
             let ud = Rc::from_raw(ptr as *const RefCell<Self>);
             // cleanup pointers
             (*self.mrb).ud = std::ptr::null_mut();
