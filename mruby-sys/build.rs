@@ -213,6 +213,7 @@ fn main() {
         .define(mrb_int, None);
     if env::var("CARGO_FEATURE_ARTICHOKE").is_ok() {
         build.define("ARTICHOKE", None);
+        build.define("DISABLE_GEMS", None);
     }
 
     for gem in Build::gems() {
