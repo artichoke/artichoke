@@ -940,7 +940,9 @@ root_scan_phase(mrb_state *mrb, mrb_gc *gc)
   mrb_gc_mark(mrb, (struct RBasic*)mrb->module_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->proc_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->string_class);
+#ifndef ARTICHOKE
   mrb_gc_mark(mrb, (struct RBasic*)mrb->array_class);
+#endif
   mrb_gc_mark(mrb, (struct RBasic*)mrb->hash_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->range_class);
 
