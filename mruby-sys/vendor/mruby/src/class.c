@@ -532,16 +532,21 @@ mrb_get_argc(mrb_state *mrb)
   return argc;
 }
 
-MRB_API mrb_value
+MRB_API mrb_value*
 mrb_get_argv(mrb_state *mrb)
 {
   mrb_int argc = mrb->c->ci->argc;
-  mrb_value array_argv;
+  mrb_value *array_argv;
   if (argc < 0) {
-    array_argv = mrb->c->stack[1];
+    mrb_int argc = ARRAY_LEN(mrb, mrb->c->stack[1]);
+    array_argv = RARRAY_PTR(mrb_ary_new_capa(mrb, argc));
+    int udx;
+    for (udx = 0; udx < argc; udx++) {
+      array_argv[udx] = ARY_REF(mrb, mrb->c->stack[1], udx);
+    }
   }
   else {
-    array_argv = mrb_nil_value();
+    array_argv = NULL;
   }
   return array_argv;
 }
@@ -585,23 +590,15 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
   va_list ap;
   mrb_int argc = mrb_get_argc(mrb);
   mrb_int arg_i = 0;
-  mrb_value argv_value = mrb_get_argv(mrb);
-  mrb_value *array_argv = malloc(argc * sizeof (mrb_value));
+  mrb_value *array_argv = mrb_get_argv(mrb);
   mrb_bool opt = FALSE;
   mrb_bool opt_skip = TRUE;
   mrb_bool given = TRUE;
 
-  int udx;
-  if (ARY_CHECK(mrb, argv_value)) {
-    for (udx = 0; udx < argc; udx++) {
-      array_argv[udx] = ARY_REF(mrb, argv_value, udx);
-    }
-  }
-
   va_start(ap, format);
 
 #define ARGV \
-  (ARY_CHECK(mrb, argv_value) ? array_argv : (mrb->c->stack + 1))
+  (array_argv ? array_argv : (mrb->c->stack + 1))
 
   while ((c = *fmt++)) {
     switch (c) {
@@ -914,10 +911,7 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
       }
       break;
     case '|':
-      if (opt_skip && i == argc) {
-        free(array_argv);
-        return argc;
-      }
+      if (opt_skip && i == argc) return argc;
       opt = TRUE;
       break;
     case '?':
@@ -933,7 +927,7 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
       {
         mrb_value **var;
         mrb_int *pl;
-        mrb_bool nocopy = FALSE;
+        mrb_bool nocopy = array_argv ? TRUE : FALSE;
 
         if (*format == '!') {
           format++;
@@ -974,7 +968,6 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
     mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong number of arguments");
   }
   va_end(ap);
-  free(array_argv);
   return i;
 }
 

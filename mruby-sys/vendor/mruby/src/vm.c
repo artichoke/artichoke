@@ -1754,14 +1754,12 @@ RETRY_TRY_BLOCK:
       mrb_value *blk = &argv[argc < 0 ? 1 : argc];
       mrb_value kdict;
       int kargs = kd;
-      mrb_value *argv_from_array = NULL;
 
       /* arguments is passed with Array */
       if (argc < 0) {
         mrb_value ary = regs[1];
         argc = ARRAY_LEN(mrb, ary);
-        argv_from_array = malloc(argc * sizeof (mrb_value));
-        argv = argv_from_array;
+        argv = RARRAY_PTR(mrb_ary_new_capa(mrb, argc));
         int udx;
         for (udx = 0; udx < argc; udx++) {
           argv[udx] = ARY_REF(mrb, ary, udx);
@@ -1780,8 +1778,7 @@ RETRY_TRY_BLOCK:
       else if (len > 1 && argc == 1 && ARY_CHECK(mrb, argv[0])) {
         mrb_value ary = argv[0];
         argc = ARRAY_LEN(mrb, ary);
-        argv_from_array = malloc(argc * sizeof (mrb_value));
-        argv = argv_from_array;
+        argv = RARRAY_PTR(mrb_ary_new_capa(mrb, argc));
         int udx;
         for (udx = 0; udx < argc; udx++) {
           argv[udx] = ARY_REF(mrb, ary, udx);
@@ -1878,9 +1875,6 @@ RETRY_TRY_BLOCK:
       /* clear local (but non-argument) variables */
       if (irep->nlocals-blk_pos-1 > 0) {
         stack_clear(&regs[blk_pos+1], irep->nlocals-blk_pos-1);
-      }
-      if (argv_from_array != NULL) {
-        free(argv_from_array);
       }
       JUMP;
     }
