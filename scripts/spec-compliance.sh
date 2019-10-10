@@ -11,105 +11,129 @@ fi
 
 set -x
 
-# ./scripts/run-spec.sh core array allocate
-./scripts/run-spec.sh core array any
-./scripts/run-spec.sh core array append
-./scripts/run-spec.sh core array array
-./scripts/run-spec.sh core array assoc
-./scripts/run-spec.sh core array at
-# ./scripts/run-spec.sh core array bsearch
-# ./scripts/run-spec.sh core array bsearch_index
-./scripts/run-spec.sh core array clear
-# ./scripts/run-spec.sh core array clone
-./scripts/run-spec.sh core array collect
-./scripts/run-spec.sh core array combination
-./scripts/run-spec.sh core array compact
-# ./scripts/run-spec.sh core array comparison
-# ./scripts/run-spec.sh core array concat
-./scripts/run-spec.sh core array count
-./scripts/run-spec.sh core array cycle
-./scripts/run-spec.sh core array delete_at
-./scripts/run-spec.sh core array delete_if
-./scripts/run-spec.sh core array delete
-# ./scripts/run-spec.sh core array difference
-# ./scripts/run-spec.sh core array dig
-./scripts/run-spec.sh core array drop
-# ./scripts/run-spec.sh core array drop_while
-# ./scripts/run-spec.sh core array dup
-./scripts/run-spec.sh core array each_index
-./scripts/run-spec.sh core array each
-# ./scripts/run-spec.sh core array element_reference
-# ./scripts/run-spec.sh core array element_set
-./scripts/run-spec.sh core array empty
-# ./scripts/run-spec.sh core array eql
-# ./scripts/run-spec.sh core array equal_value
-# ./scripts/run-spec.sh core array fetch
-# ./scripts/run-spec.sh core array fill
-# ./scripts/run-spec.sh core array filter
-# ./scripts/run-spec.sh core array find_index
-# ./scripts/run-spec.sh core array first
-# ./scripts/run-spec.sh core array flatten
-./scripts/run-spec.sh core array frozen
-# ./scripts/run-spec.sh core array hash
-./scripts/run-spec.sh core array include
-# ./scripts/run-spec.sh core array index
-# ./scripts/run-spec.sh core array initialize
-# ./scripts/run-spec.sh core array insert
-# ./scripts/run-spec.sh core array inspect
-# ./scripts/run-spec.sh core array intersection
-# ./scripts/run-spec.sh core array join
-# ./scripts/run-spec.sh core array keep_if
-./scripts/run-spec.sh core array last
-./scripts/run-spec.sh core array length
-./scripts/run-spec.sh core array map
-# ./scripts/run-spec.sh core array max
-# ./scripts/run-spec.sh core array min
-# ./scripts/run-spec.sh core array minus
-# ./scripts/run-spec.sh core array multiply
-# ./scripts/run-spec.sh core array new
-# ./scripts/run-spec.sh core array partition
-# ./scripts/run-spec.sh core array permutation
-./scripts/run-spec.sh core array plus
-# ./scripts/run-spec.sh core array pop
-./scripts/run-spec.sh core array prepend
-# ./scripts/run-spec.sh core array product
-./scripts/run-spec.sh core array push
-./scripts/run-spec.sh core array rassoc
-# ./scripts/run-spec.sh core array reject
-# ./scripts/run-spec.sh core array repeated_combination
-# ./scripts/run-spec.sh core array repeated_permutation
-./scripts/run-spec.sh core array replace
-./scripts/run-spec.sh core array reverse_each
-./scripts/run-spec.sh core array reverse
-# ./scripts/run-spec.sh core array rindex
-# ./scripts/run-spec.sh core array rotate
-# ./scripts/run-spec.sh core array sample
-# ./scripts/run-spec.sh core array select
-./scripts/run-spec.sh core array shift
-# ./scripts/run-spec.sh core array shuffle
-./scripts/run-spec.sh core array size
-# ./scripts/run-spec.sh core array slice
-./scripts/run-spec.sh core array sort_by
-# ./scripts/run-spec.sh core array sort
-# ./scripts/run-spec.sh core array sum
-# ./scripts/run-spec.sh core array take
-# ./scripts/run-spec.sh core array take_while
-# ./scripts/run-spec.sh core array to_a
-./scripts/run-spec.sh core array to_ary
-# ./scripts/run-spec.sh core array to_h
-# ./scripts/run-spec.sh core array to_s
-# ./scripts/run-spec.sh core array transpose
-./scripts/run-spec.sh core array try_convert
-# ./scripts/run-spec.sh core array union
-# ./scripts/run-spec.sh core array uniq
-./scripts/run-spec.sh core array unshift
-# ./scripts/run-spec.sh core array values_at
-# ./scripts/run-spec.sh core array zip
+shopt -s globstar
 
-./scripts/run-spec.sh core comparable
-./scripts/run-spec.sh core matchdata
-./scripts/run-spec.sh core regexp
+cargo build
+spec_runner="$(pwd)/target/debug/spec-runner"
 
-./scripts/run-spec.sh library monitor
-./scripts/run-spec.sh library stringscanner
-./scripts/run-spec.sh library uri
+run_spec() {
+  if [[ $# -eq 2 ]]; then
+    family="$1"
+    component="$2"
+    pushd "spec-runner/vendor/spec" >/dev/null
+    $spec_runner ./**/shared/**/*.rb ./**/fixtures/**/*.rb "./$family/$component/"*_spec.rb
+    popd
+  elif [[ $# -eq 3 ]]; then
+    family="$1"
+    component="$2"
+    spec="$3"
+    pushd "spec-runner/vendor/spec" >/dev/null
+    $spec_runner ./**/shared/**/*.rb ./**/fixtures/**/*.rb "./$family/$component/${spec}_spec.rb"
+    popd
+  else
+    echo 1>&2 "Usage: $0 language|core|library component [spec]"
+  fi
+}
+
+# run_spec core array allocate
+run_spec core array any
+run_spec core array append
+run_spec core array array
+run_spec core array assoc
+run_spec core array at
+# run_spec core array bsearch
+# run_spec core array bsearch_index
+run_spec core array clear
+# run_spec core array clone
+run_spec core array collect
+run_spec core array combination
+run_spec core array compact
+# run_spec core array comparison
+# run_spec core array concat
+run_spec core array count
+run_spec core array cycle
+run_spec core array delete_at
+run_spec core array delete_if
+run_spec core array delete
+# run_spec core array difference
+# run_spec core array dig
+run_spec core array drop
+# run_spec core array drop_while
+# run_spec core array dup
+run_spec core array each_index
+run_spec core array each
+# run_spec core array element_reference
+# run_spec core array element_set
+run_spec core array empty
+# run_spec core array eql
+# run_spec core array equal_value
+# run_spec core array fetch
+# run_spec core array fill
+# run_spec core array filter
+# run_spec core array find_index
+# run_spec core array first
+# run_spec core array flatten
+run_spec core array frozen
+# run_spec core array hash
+run_spec core array include
+# run_spec core array index
+# run_spec core array initialize
+# run_spec core array insert
+# run_spec core array inspect
+# run_spec core array intersection
+# run_spec core array join
+# run_spec core array keep_if
+run_spec core array last
+run_spec core array length
+run_spec core array map
+# run_spec core array max
+# run_spec core array min
+# run_spec core array minus
+# run_spec core array multiply
+# run_spec core array new
+# run_spec core array partition
+# run_spec core array permutation
+run_spec core array plus
+# run_spec core array pop
+run_spec core array prepend
+# run_spec core array product
+run_spec core array push
+run_spec core array rassoc
+# run_spec core array reject
+# run_spec core array repeated_combination
+# run_spec core array repeated_permutation
+run_spec core array replace
+run_spec core array reverse_each
+run_spec core array reverse
+# run_spec core array rindex
+# run_spec core array rotate
+# run_spec core array sample
+# run_spec core array select
+run_spec core array shift
+# run_spec core array shuffle
+run_spec core array size
+# run_spec core array slice
+run_spec core array sort_by
+# run_spec core array sort
+# run_spec core array sum
+# run_spec core array take
+# run_spec core array take_while
+# run_spec core array to_a
+run_spec core array to_ary
+# run_spec core array to_h
+# run_spec core array to_s
+# run_spec core array transpose
+run_spec core array try_convert
+# run_spec core array union
+# run_spec core array uniq
+run_spec core array unshift
+# run_spec core array values_at
+# run_spec core array zip
+
+run_spec core comparable
+run_spec core matchdata
+run_spec core regexp
+
+run_spec library monitor
+run_spec library stringscanner
+run_spec library uri
