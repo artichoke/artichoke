@@ -1,5 +1,17 @@
 # artichoke-backend Vendored Dependencies
 
+## mruby
+
+[mruby](https://github.com/mruby/mruby) is an embeddable implementation of Ruby
+with a rich C API. The mruby VM is being used to bootstrap Artichoke.
+
+artichoke-backend [vendors](mruby) a
+[fork of mruby](https://github.com/artichoke/mruby/tree/artichoke-vendor).
+
+This fork tracks [mruby master](https://github.com/mruby/mruby/tree/master)
+closely and
+[includes some patches](https://github.com/artichoke/mruby/compare/master...artichoke:artichoke-vendor?expand=1).
+
 ## Ruby
 
 [Ruby](https://github.com/ruby/ruby) is MRI Ruby, the reference implementation
