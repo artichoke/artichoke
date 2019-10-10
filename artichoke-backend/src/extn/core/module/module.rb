@@ -1,6 +1,27 @@
 # frozen_string_literal: true
 
 class Module
+  def attr_accessor(*names)
+    attr_reader(*names)
+    attr_writer(*names)
+  end
+
+  def include(*args)
+    args.reverse.each do |m|
+      m.append_features(self)
+      m.included(self)
+    end
+    self
+  end
+
+  def prepend(*args)
+    args.reverse.each do |m|
+      m.prepend_features(self)
+      m.prepended(self)
+    end
+    self
+  end
+
   class Autoloaders
     class << self
       attr_accessor :top_self
@@ -64,8 +85,9 @@ class Module
     end
   end
 
-  alias const_missing_without_autoload const_missing
-  alias const_missing const_missing_with_autoload
+  alias attr attr_reader
+  # alias const_missing_without_autoload const_missing
+  # alias const_missing const_missing_with_autoload
 end
 
 def self.autoload(const, path)

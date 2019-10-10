@@ -65,9 +65,11 @@ class SpecCollector
       skipped = true if state.message =~ /'allocate'/
       skipped = true if state.message =~ /'encoding'/
       skipped = true if state.message =~ /'private_instance_methods'/
+      skipped = true if state.message =~ /'size'/ # Enumerable#size is not implemented on mruby
       skipped = true if state.message =~ /'taint'/
       skipped = true if state.message =~ /'tainted\?'/
       skipped = true if state.message =~ /'untrust'/
+      skipped = true if state.message =~ /'untrusted\?'/
     elsif state.exception.is_a?(SpecExpectationNotMetError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
@@ -117,7 +119,8 @@ class SpecCollector
 
     report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
     @errors.each do |state|
-      puts '', "#{RED}#{state.description}#{PLAIN}", "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}", '', state.backtrace
+      puts '', "#{RED}#{state.description}#{PLAIN}", "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}"
+      puts '', state.backtrace unless state.exception.is_a?(SystemStackError)
     end
     puts ''
     report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)

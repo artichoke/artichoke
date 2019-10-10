@@ -70,7 +70,9 @@ jobs:
             cargo build
       - run:
           name: Test Workspace
-          command: cargo test --all-features
+          command: |
+            cargo test -p mruby-sys
+            cargo test -p artichoke-backend
           environment:
             RUST_BACKTRACE: 1
       - run:

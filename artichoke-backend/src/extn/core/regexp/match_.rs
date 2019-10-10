@@ -30,12 +30,13 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o&|o?\0";
 
     pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
+        let mrb = interp.0.borrow().mrb;
         let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut pos = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         let mut has_pos = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
         let mut block = <mem::MaybeUninit<sys::mrb_value>>::uninit();
         sys::mrb_get_args(
-            interp.0.borrow().mrb,
+            mrb,
             Self::ARGSPEC.as_ptr() as *const i8,
             string.as_mut_ptr(),
             block.as_mut_ptr(),
@@ -73,13 +74,10 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
     let string = if let Some(string) = args.string {
         string
     } else {
+        let sym = interp.0.borrow_mut().sym_intern("$~");
         unsafe {
             let matchdata = interp.convert(None::<Value>);
-            sys::mrb_gv_set(
-                mrb,
-                interp.0.borrow_mut().sym_intern("$~"),
-                matchdata.inner(),
-            );
+            sys::mrb_gv_set(mrb, sym, matchdata.inner());
             return Ok(matchdata);
         }
     };
@@ -140,8 +138,9 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                 }
                 let data =
                     unsafe { matchdata.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)?;
+                let sym = interp.0.borrow_mut().sym_intern("$~");
                 unsafe {
-                    sys::mrb_gv_set(mrb, interp.0.borrow_mut().sym_intern("$~"), data.inner());
+                    sys::mrb_gv_set(mrb, sym, data.inner());
                 }
                 if let Some(block) = args.block {
                     Ok(Value::new(interp, unsafe {

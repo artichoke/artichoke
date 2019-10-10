@@ -14,6 +14,10 @@
 #include <mruby/error.h>
 #include <mruby/istruct.h>
 
+#ifdef ARTICHOKE
+#include <mruby-sys/artichoke.h>
+#endif
+
 MRB_API mrb_bool
 mrb_func_basic_p(mrb_state *mrb, mrb_value obj, mrb_sym mid, mrb_func_t func)
 {
@@ -694,7 +698,7 @@ mrb_obj_missing(mrb_state *mrb, mrb_value mod)
   mrb_int alen;
 
   mrb_get_args(mrb, "n*!", &name, &a, &alen);
-  mrb_method_missing(mrb, name, mod, mrb_ary_new_from_values(mrb, alen, a));
+  mrb_method_missing(mrb, name, mod, ARY_NEW_FROM_VALUES(mrb, alen, a));
   /* not reached */
   return mrb_nil_value();
 }
@@ -749,12 +753,12 @@ mrb_obj_ceqq(mrb_state *mrb, mrb_value self)
   mrb_value v;
   mrb_int i, len;
   mrb_sym eqq = mrb_intern_lit(mrb, "===");
-  mrb_value ary = mrb_ary_splat(mrb, self);
+  mrb_value ary = ARY_SPLAT(mrb, self);
 
   mrb_get_args(mrb, "o", &v);
   len = RARRAY_LEN(ary);
   for (i=0; i<len; i++) {
-    mrb_value c = mrb_funcall_argv(mrb, mrb_ary_entry(ary, i), eqq, 1, &v);
+    mrb_value c = mrb_funcall_argv(mrb, ARY_REF(mrb, ary, i), eqq, 1, &v);
     if (mrb_test(c)) return mrb_true_value();
   }
   return mrb_false_value();

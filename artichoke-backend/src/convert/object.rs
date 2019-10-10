@@ -46,13 +46,16 @@ where
                 to: Ruby::Object,
             }
         })?;
-        let rclass = spec
-            .borrow()
-            .rclass(interp)
-            .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                from: Rust::Object,
-                to: Ruby::Object,
-            })?;
+        let rclass = if let Some(obj) = slf {
+            sys::mrb_sys_class_of_value(mrb, obj)
+        } else {
+            spec.borrow()
+                .rclass(interp)
+                .ok_or_else(|| ArtichokeError::ConvertToRuby {
+                    from: Rust::Object,
+                    to: Ruby::Object,
+                })?
+        };
         let mut slf = if let Some(slf) = slf {
             slf
         } else {
@@ -94,6 +97,12 @@ where
         interp: &Artichoke,
         slf: &Value,
     ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
+        if slf.ruby_type() != Ruby::Data {
+            return Err(ArtichokeError::ConvertToRust {
+                from: slf.ruby_type(),
+                to: Rust::Object,
+            });
+        }
         let mrb = interp.0.borrow().mrb;
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {

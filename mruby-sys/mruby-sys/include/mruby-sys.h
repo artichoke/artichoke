@@ -33,3 +33,7 @@
 #include <mruby/version.h>
 
 #include <mruby-sys/ext.h>
+
+#ifdef ARTICHOKE
+#include <mruby-sys/artichoke.h>
+#endif

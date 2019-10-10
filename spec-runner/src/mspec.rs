@@ -51,6 +51,8 @@ impl Runner {
         init(&self.interp).unwrap();
         self.interp.def_rb_source_file("/src/spec_helper.rb", "")?;
         self.interp
+            .def_rb_source_file("/src/lib/spec_helper.rb", "")?;
+        self.interp
             .def_rb_source_file("/src/test/spec_runner", include_str!("spec_runner.rb"))?;
         if let Err(err) = self.interp.eval("require '/src/test/spec_runner'") {
             println!("{}", err);

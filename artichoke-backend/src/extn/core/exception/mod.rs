@@ -43,11 +43,13 @@ use std::rc::Rc;
 
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
+use crate::eval::Eval;
 use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    interp.eval(include_bytes!("exception.rb").as_ref())?;
     let exception = interp
         .0
         .borrow_mut()
@@ -81,6 +83,10 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp
         .0
         .borrow_mut()
+        .def_class::<FrozenError>("FrozenError", None, None);
+    interp
+        .0
+        .borrow_mut()
         .def_class::<IndexError>("IndexError", None, None);
     interp
         .0
@@ -108,6 +114,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 /// be called from Rust functions that are exposed on the mruby interpreter via
 /// [`class::Spec`](crate::class::Spec) and
 /// [`module::Spec`](crate::module::Spec).
+#[allow(clippy::module_name_repetitions)]
 pub trait RubyException: 'static + Sized {
     /// Raise the `Exception` defined with this type with a message.
     ///
@@ -169,6 +176,12 @@ pub trait RubyException: 'static + Sized {
                 drop(formatargs);
                 sys::mrb_raisef(mrb, eclass, message_ptr, arg1)
             }
+            2 => {
+                let arg1 = formatargs.remove(0);
+                let arg2 = formatargs.remove(0);
+                drop(formatargs);
+                sys::mrb_raisef(mrb, eclass, message_ptr, arg1, arg2)
+            }
             _ => panic!("unsupported raisef format arg count. See mruby/src/extn/core/error.rs."),
         }
         unreachable!("mrb_raise will unwind the stack with longjmp");
@@ -179,42 +192,38 @@ pub struct Exception;
 
 impl RubyException for Exception {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct ScriptError;
 
 impl RubyException for ScriptError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct LoadError;
 
 impl RubyException for LoadError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct ArgumentError;
 
 impl RubyException for ArgumentError {}
 
-#[allow(clippy::module_name_repetitions)]
+pub struct FrozenError;
+
+impl RubyException for FrozenError {}
+
 pub struct IndexError;
 
 impl RubyException for IndexError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct RangeError;
 
 impl RubyException for RangeError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct RuntimeError;
 
 impl RubyException for RuntimeError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct SyntaxError;
 
 impl RubyException for SyntaxError {}
 
-#[allow(clippy::module_name_repetitions)]
 pub struct TypeError;
 
 impl RubyException for TypeError {}
@@ -224,7 +233,7 @@ mod tests {
     use crate::def::{ClassLike, Define};
     use crate::eval::Eval;
     use crate::exception::Exception;
-    use crate::extn::core::error::{RubyException, RuntimeError};
+    use crate::extn::core::exception::{RubyException, RuntimeError};
     use crate::file::File;
     use crate::sys;
     use crate::{Artichoke, ArtichokeError};

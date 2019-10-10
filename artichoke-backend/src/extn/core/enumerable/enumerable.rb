@@ -36,6 +36,14 @@ module Enumerable
     false
   end
 
+  def collect(&block)
+    return to_enum :collect unless block
+
+    ary = []
+    each { |val| ary.push(block.call(val)) }
+    ary
+  end
+
   def count(*args, &block)
     count = 0
     if block
@@ -78,6 +86,15 @@ module Enumerable
     end
 
     nil
+  end
+
+  def detect(ifnone = nil, &block)
+    return to_enum :detect, ifnone unless block
+
+    each do |val|
+      return val if block.call(val)
+    end
+    ifnone&.call
   end
 
   def drop(size)
@@ -142,11 +159,40 @@ module Enumerable
     nil
   end
 
+  def each_with_index(&block)
+    return to_enum :each_with_index unless block
+
+    i = 0
+    each do |val|
+      block.call(val, i)
+      i += 1
+    end
+    self
+  end
+
   def each_with_object(obj, &block)
     return to_enum(:each_with_object, obj) unless block
 
     each { |val| block.call(val, obj) }
     obj
+  end
+
+  def entries
+    ary = []
+    each do |val|
+      ary.push(val)
+    end
+    ary
+  end
+
+  def find_all(&block)
+    return to_enum :find_all unless block
+
+    ary = []
+    each do |val|
+      ary.push(val) if block.call(val)
+    end
+    ary
   end
 
   def find_index(*args, &block)
@@ -209,6 +255,20 @@ module Enumerable
     ary
   end
 
+  def grep(pattern, &block)
+    ary = []
+    each do |val|
+      if pattern === val # rubocop:disable Style/CaseEquality
+        if block
+          ary.push(block.call(val))
+        else
+          ary.push(val)
+        end
+      end
+    end
+    ary
+  end
+
   def group_by(&block)
     return to_enum :group_by unless block
 
@@ -220,6 +280,57 @@ module Enumerable
       groups[group] = values
     end
     groups
+  end
+
+  def include?(obj)
+    each do |val|
+      return true if val == obj
+    end
+    false
+  end
+
+  def inject(*args, &block)
+    raise ArgumentError, 'too many arguments' if args.size > 2
+
+    if args[-1].is_a?(Symbol)
+      sym = args[-1]
+      block = ->(x, y) { x.__send__(sym, y) }
+      args.pop
+    end
+    if args.empty?
+      flag = true # no initial argument
+      result = nil
+    else
+      flag = false
+      result = args[0]
+    end
+    each do |val|
+      if flag
+        # push first element as initial
+        flag = false
+        result = val
+      else
+        result = block.call(result, val)
+      end
+    end
+    result
+  end
+
+  def max(&block)
+    flag = true # 1st element?
+    result = nil
+    each do |val|
+      if flag
+        # 1st element
+        result = val
+        flag = false
+      elsif block
+        result = val if block.call(val, result) > 0 # rubocop:disable Style/NumericPredicate
+      elsif (val <=> result) > 0 # rubocop:disable Style/NumericPredicate
+        result = val
+      end
+    end
+    result
   end
 
   def max_by(&block)
@@ -240,6 +351,23 @@ module Enumerable
       end
     end
     max
+  end
+
+  def min(&block)
+    flag = true # 1st element?
+    result = nil
+    each do |val|
+      if flag
+        # 1st element
+        result = val
+        flag = false
+      elsif block
+        result = val if block.call(val, result) < 0 # rubocop:disable Style/NumericPredicate
+      elsif (val <=> result) < 0 # rubocop:disable Style/NumericPredicate
+        result = val
+      end
+    end
+    result
   end
 
   def min_by(&block)
@@ -353,6 +481,31 @@ module Enumerable
     count == 1
   end
 
+  def partition(&block)
+    return to_enum :partition unless block
+
+    left = []
+    right = []
+    each do |val|
+      if block.call(val)
+        left.push(val)
+      else
+        right.push(val)
+      end
+    end
+    [left, right]
+  end
+
+  def reject(&block)
+    return to_enum :reject unless block
+
+    ary = []
+    each do |val|
+      ary.push(val) unless block.call(val)
+    end
+    ary
+  end
+
   def reverse_each(&block)
     return to_enum :reverse_each unless block
 
@@ -363,6 +516,10 @@ module Enumerable
       i -= 1
     end
     self
+  end
+
+  def sort(&block)
+    map(&:itself).sort(&block)
   end
 
   def sort_by(&block)
@@ -473,4 +630,10 @@ module Enumerable
   end
 
   alias collect_concat flat_map
+  alias find detect
+  alias map collect
+  alias member? include?
+  alias reduce inject
+  alias select find_all
+  alias to_a entries
 end

@@ -15,7 +15,7 @@
 use crate::convert::{Convert, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::error::{IndexError, RubyException, RuntimeError, TypeError};
+use crate::extn::core::exception::{IndexError, RubyException, RuntimeError, TypeError};
 use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
 use crate::value::Value;

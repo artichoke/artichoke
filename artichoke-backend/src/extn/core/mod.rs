@@ -6,7 +6,7 @@ pub mod array;
 pub mod comparable;
 pub mod enumerable;
 pub mod env;
-pub mod error;
+pub mod exception;
 pub mod float;
 pub mod hash;
 pub mod integer;
@@ -23,19 +23,24 @@ pub mod symbol;
 pub mod thread;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    // These core classes are ordered according to the dependency DAG between
+    // them.
+    enumerable::init(interp)?;
+    module::init(interp)?;
+    // Some `Exception`s depend on: `attr_accessor` (defined in `Module`)
+    exception::init(interp)?;
     interp.eval(include_str!("object.rb"))?;
+    // `Array` depends on: `Enumerable`, `attr_accessor` (defined in `Module`)
     array::init(interp)?;
     comparable::init(interp)?;
-    enumerable::init(interp)?;
     env::init(interp)?;
-    error::init(interp)?;
-    float::init(interp)?;
     hash::init(interp)?;
+    numeric::init(interp)?;
     integer::init(interp)?;
+    float::init(interp)?;
     kernel::init(interp)?;
     matchdata::init(interp)?;
     module::init(interp)?;
-    numeric::init(interp)?;
     object::init(interp)?;
     proc::init(interp)?;
     range::init(interp)?;

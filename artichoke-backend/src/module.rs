@@ -63,13 +63,14 @@ impl ClassLike for Spec {
 
     fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
         let mrb = interp.0.borrow().mrb;
+        let sym = interp.0.borrow_mut().sym_intern(self.name.as_str());
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(scope) = scope.rclass(interp) {
                 let defined = unsafe {
                     sys::mrb_const_defined_at(
                         mrb,
                         sys::mrb_sys_obj_value(scope as *mut c_void),
-                        interp.0.borrow_mut().sym_intern(self.name.as_str()),
+                        sym,
                     )
                 };
                 if defined == 0 {
@@ -90,7 +91,7 @@ impl ClassLike for Spec {
                 sys::mrb_const_defined_at(
                     mrb,
                     sys::mrb_sys_obj_value((*mrb).object_class as *mut c_void),
-                    interp.0.borrow_mut().sym_intern(self.name.as_str()),
+                    sym,
                 )
             };
             if defined == 0 {

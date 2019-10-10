@@ -21,6 +21,12 @@ impl Convert<Option<Value>, Value> for Artichoke {
     }
 }
 
+impl Convert<Option<&Value>, Value> for Artichoke {
+    fn convert(&self, value: Option<&Value>) -> Value {
+        self.convert(value.cloned())
+    }
+}
+
 impl Convert<Value, Option<Value>> for Artichoke {
     fn convert(&self, value: Value) -> Option<Value> {
         if let Ruby::Nil = value.ruby_type() {

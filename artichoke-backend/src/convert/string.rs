@@ -93,9 +93,10 @@ mod tests {
     #[quickcheck]
     fn convert_to_string(s: String) -> bool {
         let interp = crate::interpreter().expect("init");
+        let mrb = interp.0.borrow().mrb;
         let value = interp.convert(s.clone());
-        let ptr = unsafe { sys::mrb_string_value_ptr(interp.0.borrow().mrb, value.inner()) };
-        let len = unsafe { sys::mrb_string_value_len(interp.0.borrow().mrb, value.inner()) };
+        let ptr = unsafe { sys::mrb_string_value_ptr(mrb, value.inner()) };
+        let len = unsafe { sys::mrb_string_value_len(mrb, value.inner()) };
         let string =
             unsafe { std::slice::from_raw_parts(ptr as *const u8, usize::try_from(len).unwrap()) };
         s.as_bytes() == string

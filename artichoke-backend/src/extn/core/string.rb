@@ -66,6 +66,8 @@ class Encoding
 end
 
 class String
+  include Comparable
+
   def self.try_convert(obj = nil)
     raise ArgumentError if obj.nil?
     return obj if obj.is_a?(String)
@@ -285,6 +287,18 @@ class String
 
   def dump
     raise NotImplementedError
+  end
+
+  def each_byte(&block)
+    return to_enum(:each_byte, &block) unless block
+
+    bytes = self.bytes
+    pos = 0
+    while pos < bytes.size
+      block.call(bytes[pos])
+      pos += 1
+    end
+    self
   end
 
   def each_codepoint

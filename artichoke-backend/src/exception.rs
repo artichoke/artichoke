@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use std::ffi::c_void;
 use std::fmt;
 

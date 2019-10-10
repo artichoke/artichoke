@@ -1,23 +1,5 @@
 # frozen_string_literal: true
 
-# Exception raised by a throw
-class UncaughtThrowError < ArgumentError
-  # @!attribute [r] tag
-  #   @return [Symbol] tag object, mostly a Symbol
-  attr_reader :tag
-  # @!attribute [r] value
-  #   @return [Array] extra parameters passed in
-  attr_reader :value
-
-  # @param [Symbol] tag  object to throw
-  # @param [Object] value  any object to return to the catch block
-  def initialize(tag, value = nil)
-    @tag = tag
-    @value = value
-    super "uncaught throw #{tag}"
-  end
-end
-
 module Kernel
   # Setup a catch block and wait for an object to be thrown, the
   # catch end without catching anything.
@@ -262,6 +244,19 @@ module Kernel
     end
 
     raise TypeError, "can't convert #{arg.class} into String"
+  end
+
+  def loop(&block)
+    return to_enum :loop unless block
+
+    yield while true # rubocop:disable Style/InfiniteLoop, Lint/LiteralAsCondition
+  rescue StopIteration => e
+    e.result
+  end
+
+  # 11.4.4 Step c)
+  def !~(other)
+    !(self =~ other) # rubocop:disable Style/InverseMethods
   end
 
   # Throws an object, uncaught throws will bubble up through other catch blocks.

@@ -30,7 +30,8 @@ impl ArenaIndex {
 
 impl Drop for ArenaIndex {
     fn drop(&mut self) {
-        unsafe { sys::mrb_sys_gc_arena_restore(self.interp.0.borrow().mrb, self.index) };
+        let mrb = self.interp.0.borrow().mrb;
+        unsafe { sys::mrb_sys_gc_arena_restore(mrb, self.index) };
     }
 }
 
@@ -81,30 +82,36 @@ pub trait MrbGarbageCollection {
 
 impl MrbGarbageCollection for Artichoke {
     fn create_arena_savepoint(&self) -> ArenaIndex {
+        let mrb = self.0.borrow().mrb;
         ArenaIndex {
-            index: unsafe { sys::mrb_sys_gc_arena_save(self.0.borrow().mrb) },
+            index: unsafe { sys::mrb_sys_gc_arena_save(mrb) },
             interp: self.clone(),
         }
     }
 
     fn live_object_count(&self) -> i32 {
-        unsafe { sys::mrb_sys_gc_live_objects(self.0.borrow().mrb) }
+        let mrb = self.0.borrow().mrb;
+        unsafe { sys::mrb_sys_gc_live_objects(mrb) }
     }
 
     fn incremental_gc(&self) {
-        unsafe { sys::mrb_incremental_gc(self.0.borrow().mrb) };
+        let mrb = self.0.borrow().mrb;
+        unsafe { sys::mrb_incremental_gc(mrb) };
     }
 
     fn full_gc(&self) {
-        unsafe { sys::mrb_full_gc(self.0.borrow().mrb) };
+        let mrb = self.0.borrow().mrb;
+        unsafe { sys::mrb_full_gc(mrb) };
     }
 
     fn enable_gc(&self) -> bool {
-        unsafe { sys::mrb_sys_gc_enable(self.0.borrow().mrb) }
+        let mrb = self.0.borrow().mrb;
+        unsafe { sys::mrb_sys_gc_enable(mrb) }
     }
 
     fn disable_gc(&self) -> bool {
-        unsafe { sys::mrb_sys_gc_disable(self.0.borrow().mrb) }
+        let mrb = self.0.borrow().mrb;
+        unsafe { sys::mrb_sys_gc_disable(mrb) }
     }
 }
 

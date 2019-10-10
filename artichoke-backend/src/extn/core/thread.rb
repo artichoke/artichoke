@@ -59,14 +59,10 @@ class Thread
     # TODO: not implemented
   end
 
-  singleton_class.send(:alias_method, :kill, :exit)
-
   def self.fork(*args, &blk)
     # TODO: handle subclassing behavior correctly.
     new(*args, blk)
   end
-
-  singleton_class.send(:alias_method, :start, :fork)
 
   def self.handle_interrupt(_hash)
     # https://ruby-doc.org/core-2.6.3/Thread.html#method-c-handle_interrupt
@@ -95,13 +91,17 @@ class Thread
   end
 
   @report_on_exception = false
-  class << self
-    attr_accessor :report_on_exception
-  end
 
   def self.stop
     # noop since there is no scheduler
     nil
+  end
+
+  class << self
+    attr_accessor :report_on_exception
+
+    alias kill exit
+    alias start fork
   end
 
   def initialize(root = false)

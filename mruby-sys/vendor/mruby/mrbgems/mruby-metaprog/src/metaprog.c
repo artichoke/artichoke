@@ -6,6 +6,10 @@
 #include "mruby/class.h"
 #include "mruby/string.h"
 
+#ifdef ARTICHOKE
+#include <mruby-sys/artichoke.h>
+#endif
+
 typedef enum {
   NOEX_PUBLIC    = 0x00,
   NOEX_NOSUPER   = 0x01,
@@ -140,7 +144,7 @@ mrb_local_variables(mrb_state *mrb, mrb_value self)
   proc = mrb->c->ci[-1].proc;
 
   if (MRB_PROC_CFUNC_P(proc)) {
-    return mrb_ary_new(mrb);
+    return ARY_NEW(mrb);
   }
   vars = mrb_hash_new(mrb);
   while (proc) {
@@ -214,10 +218,10 @@ mrb_class_instance_method_list(mrb_state *mrb, mrb_bool recur, struct RClass* kl
     klass = klass->super;
   }
 
-  ary = mrb_ary_new_capa(mrb, kh_size(set));
+  ary = ARY_NEW_CAPA(mrb, kh_size(set));
   for (i=0;i<kh_end(set);i++) {
     if (kh_exist(set, i)) {
-      mrb_ary_push(mrb, ary, mrb_symbol_value(kh_key(set, i)));
+      ARY_PUSH(mrb, ary, mrb_symbol_value(kh_key(set, i)));
     }
   }
   kh_destroy(st, mrb, set);
@@ -329,10 +333,10 @@ mrb_obj_singleton_methods(mrb_state *mrb, mrb_bool recur, mrb_value obj)
       }
   }
 
-  ary = mrb_ary_new(mrb);
+  ary = ARY_NEW(mrb);
   for (i=0;i<kh_end(set);i++) {
     if (kh_exist(set, i)) {
-      mrb_ary_push(mrb, ary, mrb_symbol_value(kh_key(set, i)));
+      ARY_PUSH(mrb, ary, mrb_symbol_value(kh_key(set, i)));
     }
   }
   kh_destroy(st, mrb, set);
@@ -551,11 +555,11 @@ mrb_mod_included_modules(mrb_state *mrb, mrb_value self)
   struct RClass *origin = c;
 
   MRB_CLASS_ORIGIN(origin);
-  result = mrb_ary_new(mrb);
+  result = ARY_NEW(mrb);
   while (c) {
     if (c != origin && c->tt == MRB_TT_ICLASS) {
       if (c->c->tt == MRB_TT_MODULE) {
-        mrb_ary_push(mrb, result, mrb_obj_value(c->c));
+        ARY_PUSH(mrb, result, mrb_obj_value(c->c));
       }
     }
     c = c->super;
@@ -662,7 +666,7 @@ mrb_mod_s_nesting(mrb_state *mrb, mrb_value mod)
   struct RClass *c = NULL;
 
   mrb_get_args(mrb, "");
-  ary = mrb_ary_new(mrb);
+  ary = ARY_NEW(mrb);
   proc = mrb->c->ci[-1].proc;   /* callee proc */
   mrb_assert(!MRB_PROC_CFUNC_P(proc));
   while (proc) {
@@ -671,7 +675,7 @@ mrb_mod_s_nesting(mrb_state *mrb, mrb_value mod)
 
       if (c2 != c) {
         c = c2;
-        mrb_ary_push(mrb, ary, mrb_obj_value(c));
+        ARY_PUSH(mrb, ary, mrb_obj_value(c));
       }
     }
     proc = proc->upper;

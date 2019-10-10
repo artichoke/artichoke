@@ -3,13 +3,13 @@ use std::ffi::c_void;
 use std::fmt;
 use std::mem;
 
-use crate::convert::{Convert, TryConvert};
+use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
+use crate::extn::core::array::Array;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::types::{self, Int, Ruby};
-use crate::Artichoke;
-use crate::ArtichokeError;
+use crate::{Artichoke, ArtichokeError};
 
 pub(crate) use artichoke_core::value::Value as ValueLike;
 
@@ -102,6 +102,26 @@ impl Value {
         types::ruby_from_mrb_value(self.value)
     }
 
+    pub fn pretty_name<'a>(&self) -> &'a str {
+        if let Ok(true) = Self::new(&self.interp, self.value).try_into::<bool>() {
+            "true"
+        } else if let Ok(false) = Self::new(&self.interp, self.value).try_into::<bool>() {
+            "false"
+        } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Self>>() {
+            "nil"
+        } else if self.ruby_type() == Ruby::Data {
+            if unsafe { Array::try_from_ruby(&self.interp, self) }.is_ok() {
+                "Array"
+            } else {
+                self.funcall::<Self>("class", &[], None)
+                    .and_then(|class| class.funcall::<&'a str>("name", &[], None))
+                    .unwrap_or_default()
+            }
+        } else {
+            self.ruby_type().class_name()
+        }
+    }
+
     /// Some type tags like [`MRB_TT_UNDEF`](sys::mrb_vtype::MRB_TT_UNDEF) are
     /// internal to the mruby VM and manipulating them with the [`sys`] API is
     /// unspecified and may result in a segfault.
@@ -122,12 +142,14 @@ impl Value {
     /// [`ArenaIndex::restore`](crate::gc::ArenaIndex::restore) restores the
     /// arena to an index before this call to protect.
     pub fn protect(&self) {
-        unsafe { sys::mrb_gc_protect(self.interp.0.borrow().mrb, self.value) }
+        let mrb = self.interp.0.borrow().mrb;
+        unsafe { sys::mrb_gc_protect(mrb, self.value) }
     }
 
     /// Return whether this object is unreachable by any GC roots.
     pub fn is_dead(&self) -> bool {
-        unsafe { sys::mrb_sys_value_is_dead(self.interp.0.borrow().mrb, self.value) }
+        let mrb = self.interp.0.borrow().mrb;
+        unsafe { sys::mrb_sys_value_is_dead(mrb, self.value) }
     }
 
     /// Generate a debug representation of self.
@@ -158,6 +180,7 @@ impl ValueLike for Value {
     where
         Self::Artichoke: TryConvert<Self, T>,
     {
+        self.interp.0.borrow_mut();
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
@@ -187,11 +210,8 @@ impl ValueLike for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let mut protect = Protect::new(
-            self.inner(),
-            self.interp.0.borrow_mut().sym_intern(func.as_ref()),
-            args.as_ref(),
-        );
+        let func = self.interp.0.borrow_mut().sym_intern(func.as_ref());
+        let mut protect = Protect::new(self.inner(), func, args.as_ref());
         if let Some(block) = block {
             protect = protect.with_block(block.inner());
         }
@@ -246,9 +266,14 @@ impl ValueLike for Value {
     }
 
     fn freeze(&mut self) -> Result<(), ArtichokeError> {
-        let frozen = self.funcall::<Self>("freeze", &[], None)?;
-        frozen.protect();
+        self.funcall::<Self>("freeze", &[], None)?;
         Ok(())
+    }
+
+    fn is_frozen(&self) -> bool {
+        let mrb = self.interp.0.borrow().mrb;
+        let inner = self.inner();
+        unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
     }
 
     fn inspect(&self) -> String {
@@ -291,13 +316,18 @@ impl fmt::Debug for Value {
 
 impl Clone for Value {
     fn clone(&self) -> Self {
-        if self.ruby_type() == Ruby::Data {
-            panic!("Cannot safely clone a Value with type tag Ruby::Data.");
-        }
         Self {
             interp: self.interp.clone(),
             value: self.value,
         }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(unsafe { sys::mrb_sys_basic_ptr(self.inner()) }, unsafe {
+            sys::mrb_sys_basic_ptr(other.inner())
+        })
     }
 }
 

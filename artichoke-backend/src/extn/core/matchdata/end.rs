@@ -29,12 +29,9 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
     pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
+        let mrb = interp.0.borrow().mrb;
         let mut first = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        sys::mrb_get_args(
-            interp.0.borrow().mrb,
-            Self::ARGSPEC.as_ptr() as *const i8,
-            first.as_mut_ptr(),
-        );
+        sys::mrb_get_args(mrb, Self::ARGSPEC.as_ptr() as *const i8, first.as_mut_ptr());
         let first = first.assume_init();
         if let Ok(index) = interp.try_convert(Value::new(interp, first)) {
             Ok(Args::Index(index))

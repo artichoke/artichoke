@@ -15,6 +15,10 @@
 #include <mruby/numeric.h>
 #include <mruby/data.h>
 
+#ifdef ARTICHOKE
+#include <mruby-sys/artichoke.h>
+#endif
+
 struct backtrace_location {
   int32_t lineno;
   mrb_sym method_id;
@@ -233,13 +237,13 @@ mrb_unpack_backtrace(mrb_state *mrb, mrb_value backtrace)
 
   if (mrb_nil_p(backtrace)) {
   empty_backtrace:
-    return mrb_ary_new_capa(mrb, 0);
+    return ARY_NEW_CAPA(mrb, 0);
   }
   if (mrb_array_p(backtrace)) return backtrace;
   bt = (struct backtrace_location*)mrb_data_check_get_ptr(mrb, backtrace, &bt_type);
   if (bt == NULL) goto empty_backtrace;
   n = (mrb_int)RDATA(backtrace)->flags;
-  backtrace = mrb_ary_new_capa(mrb, n);
+  backtrace = ARY_NEW_CAPA(mrb, n);
   ai = mrb_gc_arena_save(mrb);
   for (i = 0; i < n; i++) {
     const struct backtrace_location *entry = &bt[i];
@@ -251,7 +255,7 @@ mrb_unpack_backtrace(mrb_state *mrb, mrb_value backtrace)
       mrb_str_cat_lit(mrb, btline, ":in ");
       mrb_str_cat_cstr(mrb, btline, mrb_sym2name(mrb, entry->method_id));
     }
-    mrb_ary_push(mrb, backtrace, btline);
+    ARY_PUSH(mrb, backtrace, btline);
     mrb_gc_arena_restore(mrb, ai);
   }
 

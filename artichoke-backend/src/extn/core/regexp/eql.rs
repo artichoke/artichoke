@@ -26,12 +26,9 @@ impl Args {
     const ARGSPEC: &'static [u8] = b"o\0";
 
     pub unsafe fn extract(interp: &Artichoke) -> Self {
+        let mrb = interp.0.borrow().mrb;
         let mut other = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        sys::mrb_get_args(
-            interp.0.borrow().mrb,
-            Self::ARGSPEC.as_ptr() as *const i8,
-            other.as_mut_ptr(),
-        );
+        sys::mrb_get_args(mrb, Self::ARGSPEC.as_ptr() as *const i8, other.as_mut_ptr());
         let other = other.assume_init();
         if let Ok(other) = Regexp::try_from_ruby(interp, &Value::new(interp, other)) {
             Self { other: Some(other) }

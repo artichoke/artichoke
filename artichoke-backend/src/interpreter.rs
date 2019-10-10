@@ -43,6 +43,13 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     // Initialize Artichoke Core and Standard Library runtime
     extn::init(&interp)?;
 
+    // Load mrbgems
+    unsafe {
+        let arena = interp.create_arena_savepoint();
+        sys::mrb_init_mrbgems(mrb);
+        arena.restore();
+    }
+
     debug!("Allocated {}", mrb.debug());
 
     // mruby lazily initializes some core objects like top_self and generates a

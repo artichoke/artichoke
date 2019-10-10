@@ -2,7 +2,7 @@
 
 use crate::convert::TryConvert;
 use crate::eval::{Context, Eval};
-use crate::extn::core::error::{LoadError, RubyException};
+use crate::extn::core::exception::{LoadError, RubyException};
 use crate::fs::RequireFunc;
 use crate::sys;
 use crate::value::Value;
