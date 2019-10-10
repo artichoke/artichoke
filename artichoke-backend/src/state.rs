@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io::{self, Write};
-use std::mem;
 use std::rc::Rc;
 
 use crate::class;
@@ -101,11 +100,6 @@ impl State {
             // Free mrb data structures
             sys::mrbc_context_free(self.mrb, self.ctx);
             sys::mrb_close(self.mrb);
-            let ud = Rc::from_raw(ptr as *const RefCell<Self>);
-            // cleanup pointers
-            (*self.mrb).ud = std::ptr::null_mut();
-            mem::drop(ud);
-
             // Cleanup dangling pointers
             self.ctx = std::ptr::null_mut();
             self.mrb = std::ptr::null_mut();
@@ -260,12 +254,6 @@ impl State {
                 sys::mrb_intern(mrb, sym.as_ptr() as *const i8, sym.len())
             });
         *interned
-    }
-}
-
-impl Drop for State {
-    fn drop(&mut self) {
-        self.close();
     }
 }
 

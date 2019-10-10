@@ -267,6 +267,5 @@ impl Artichoke {
     /// [live](gc::MrbGarbageCollection::live_objects) [`Value`](value::Value)s.
     pub fn close(self) {
         self.0.borrow_mut().close();
-        drop(self)
     }
 }
