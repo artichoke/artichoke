@@ -231,19 +231,15 @@ pub mod load;
 pub mod method;
 pub mod module;
 pub mod state;
+/// C bindings for mruby, customized for Artichoke.
+pub mod sys;
 pub mod top_self;
 pub mod types;
 pub mod value;
 pub mod warn;
 
-pub use interpreter::interpreter;
-/// Re-exported bindings from [`mruby_sys`].
-///
-/// Useful for referring to [`mruby_sys`] from macros defined in
-/// artichoke-backend crate.
-pub use mruby_sys as sys;
-
 pub use artichoke_core::ArtichokeError;
+pub use interpreter::interpreter;
 
 /// Interpreter instance.
 ///
