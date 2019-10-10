@@ -2,15 +2,19 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![doc(deny(warnings))]
 
-use fs_extra::dir;
+use fs_extra::dir::{self, CopyOptions};
 use std::fs;
 
 mod buildpath {
     use std::env;
     use std::path::PathBuf;
 
-    pub fn root() -> PathBuf {
+    pub fn crate_root() -> PathBuf {
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap())
+    }
+
+    pub fn build_root() -> PathBuf {
+        PathBuf::from(env::var("OUT_DIR").unwrap()).join("artichoke-mruby")
     }
 
     pub mod out {
@@ -36,7 +40,7 @@ mod buildpath {
         use std::path::PathBuf;
 
         fn ruby_vendored_dir() -> PathBuf {
-            super::root().join("vendor").join("ruby")
+            super::crate_root().join("vendor").join("ruby")
         }
 
         pub fn ruby_vendored_lib_dir() -> PathBuf {
@@ -44,6 +48,251 @@ mod buildpath {
         }
     }
 
+}
+
+mod libmruby {
+    use std::collections::HashMap;
+    use std::env;
+    use std::ffi::OsStr;
+    use std::fs;
+    use std::path::{Component, PathBuf};
+    use std::process::Command;
+    use std::str::FromStr;
+    use target_lexicon::{Architecture, OperatingSystem, Triple};
+    use walkdir::WalkDir;
+
+    use super::buildpath;
+
+    fn gems() -> Vec<&'static str> {
+        vec![
+            "mruby-compiler",     // Ruby parser and bytecode generation
+            "mruby-error",        // `mrb_raise`, `mrb_protect`
+            "mruby-eval",         // eval, instance_eval, and friends
+            "mruby-metaprog",     // APIs on Kernel and Module for accessing classes and variables
+            "mruby-method",       // `Method`, `UnboundMethod`, and method APIs on Kernel and Module
+            "mruby-toplevel-ext", // expose API for top self
+            "mruby-enumerator",   // Enumerator class from core
+            "mruby-enum-lazy",    // Enumerable#lazy
+            "mruby-fiber",        // Fiber class from core, required by mruby-enumerator
+            "mruby-pack",         // Array#pack and String#unpack
+            "mruby-sprintf",      // Kernel#sprintf, Kernel#format, String#%
+            "mruby-class-ext",    // Pending removal, see GH-32
+            "mruby-proc-ext",     // required by mruby-method, see GH-32
+        ]
+    }
+
+    fn build_config() -> PathBuf {
+        mruby_source_dir().join("build_config.rb")
+    }
+
+    fn ext_source_dir() -> PathBuf {
+        buildpath::crate_root().join("mruby-sys")
+    }
+
+    fn ext_include_dir() -> PathBuf {
+        ext_source_dir().join("include")
+    }
+
+    fn ext_source_file() -> PathBuf {
+        ext_source_dir().join("src").join("mruby-sys").join("ext.c")
+    }
+
+    fn wasm_include_dir() -> PathBuf {
+        buildpath::build_root()
+            .join("vendor")
+            .join("emscripten")
+            .join("system")
+            .join("include")
+            .join("libc")
+    }
+
+    fn mruby_source_dir() -> PathBuf {
+        buildpath::build_root().join("mruby")
+    }
+
+    fn mruby_minirake() -> PathBuf {
+        mruby_source_dir().join("minirake")
+    }
+
+    fn mruby_include_dir() -> PathBuf {
+        mruby_source_dir().join("include")
+    }
+
+    fn mruby_build_dir() -> PathBuf {
+        buildpath::build_root().join("mruby-build")
+    }
+
+    fn mruby_generated_source_dir() -> PathBuf {
+        mruby_build_dir().join("sys")
+    }
+
+    fn bindgen_source_header() -> PathBuf {
+        ext_include_dir().join("mruby-sys.h")
+    }
+
+    pub fn build() {
+        let target = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
+
+        fs::create_dir_all(mruby_build_dir()).unwrap();
+        let mut gembox = String::from("MRuby::GemBox.new { |conf| ");
+        for gem in gems() {
+            gembox.push_str("conf.gem core: '");
+            gembox.push_str(gem);
+            gembox.push_str("';");
+        }
+        gembox.push('}');
+        fs::write(mruby_source_dir().join("sys.gembox"), gembox).unwrap();
+
+        // Build the mruby static library with its built in minirake build system.
+        // minirake dynamically generates some c source files so we can't build
+        // directly with the `cc` crate.
+        println!(
+            "cargo:rerun-if-changed={}",
+            build_config().to_str().unwrap()
+        );
+        if !Command::new(mruby_minirake())
+            .arg("--jobs")
+            .arg("4")
+            .env("MRUBY_BUILD_DIR", mruby_build_dir())
+            .env("MRUBY_CONFIG", build_config())
+            .current_dir(mruby_source_dir())
+            .status()
+            .unwrap()
+            .success()
+        {
+            panic!("Failed to build generate mruby C sources");
+        }
+
+        let mut sources = HashMap::new();
+        sources.insert(ext_source_file(), ext_source_file());
+        let walker = WalkDir::new(mruby_source_dir()).into_iter();
+        for entry in walker {
+            if let Ok(entry) = entry {
+                let source = entry.path();
+                let relative_source = source.strip_prefix(mruby_source_dir()).unwrap();
+                let mut is_buildable = source.strip_prefix(mruby_source_dir().join("src")).is_ok();
+                for gem in gems() {
+                    is_buildable |= source
+                        .components()
+                        .any(|component| component == Component::Normal(OsStr::new(gem)));
+                }
+                if relative_source
+                    .components()
+                    .any(|component| component == Component::Normal(OsStr::new("build")))
+                {
+                    // Skip build artifacts generated by minirake invocation that we
+                    // do not intend to build.
+                    is_buildable = false;
+                }
+                if relative_source
+                    .components()
+                    .any(|component| component == Component::Normal(OsStr::new("test")))
+                {
+                    // Skip build artifacts generated by minirake invocation that we
+                    // do not intend to build.
+                    is_buildable = false;
+                }
+                if is_buildable && source.extension().and_then(OsStr::to_str) == Some("c") {
+                    sources.insert(relative_source.to_owned(), source.to_owned());
+                }
+            }
+        }
+        let walker = WalkDir::new(mruby_generated_source_dir()).into_iter();
+        for entry in walker {
+            if let Ok(entry) = entry {
+                let source = entry.path();
+                let mut is_buildable = true;
+                let relative_source = source.strip_prefix(mruby_generated_source_dir()).unwrap();
+                if relative_source
+                    .components()
+                    .any(|component| component == Component::Normal(OsStr::new("test")))
+                {
+                    // Skip build artifacts generated by minirake invocation that we
+                    // do not intend to build.
+                    is_buildable = false;
+                }
+                if is_buildable && source.extension().and_then(OsStr::to_str) == Some("c") {
+                    sources.insert(relative_source.to_owned(), source.to_owned());
+                }
+            }
+        }
+        let mrb_int = if let Architecture::Wasm32 = target.architecture {
+            "MRB_INT32"
+        } else {
+            "MRB_INT64"
+        };
+
+        // Build the extension library
+        let mut build = cc::Build::new();
+        build
+            .warnings(false)
+            .files(sources.values())
+            .include(mruby_include_dir())
+            .include(ext_include_dir())
+            .define("MRB_DISABLE_STDIO", None)
+            .define("MRB_UTF8_STRING", None)
+            .define(mrb_int, None)
+            .define("ARTICHOKE", None)
+            .define("DISABLE_GEMS", None);
+
+        for gem in gems() {
+            let mut dir = "include";
+            if gem == "mruby-compiler" {
+                dir = "core";
+            }
+            let gem_include_dir = mruby_source_dir().join("mrbgems").join(gem).join(dir);
+            build.include(gem_include_dir);
+        }
+
+        if let Architecture::Wasm32 = target.architecture {
+            build.define("MRB_DISABLE_DIRECT_THREADING", None);
+            if let OperatingSystem::Unknown = target.operating_system {
+                build.include(wasm_include_dir());
+                build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
+            }
+        }
+
+        build.compile("libmrubysys.a");
+
+        println!(
+            "cargo:rerun-if-changed={}",
+            bindgen_source_header().to_str().unwrap()
+        );
+        let bindings_out_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("ffi.rs");
+        let mut bindgen = bindgen::Builder::default()
+            .header(bindgen_source_header().to_str().unwrap())
+            .clang_arg(format!("-I{}", mruby_include_dir().to_str().unwrap()))
+            .clang_arg(format!("-I{}", ext_include_dir().to_str().unwrap()))
+            .clang_arg("-DMRB_DISABLE_STDIO")
+            .clang_arg("-DMRB_UTF8_STRING")
+            .clang_arg(format!("-D{}", mrb_int))
+            .clang_arg("-DARTICHOKE")
+            .whitelist_function("^mrb.*")
+            .whitelist_type("^mrb.*")
+            .whitelist_var("^mrb.*")
+            .whitelist_var("^MRB.*")
+            .whitelist_var("^MRUBY.*")
+            .whitelist_var("REGEXP_CLASS")
+            .rustified_enum("mrb_vtype")
+            .rustified_enum("mrb_lex_state_enum")
+            .rustified_enum("mrb_range_beg_len")
+            .rustfmt_bindings(true)
+            // work around warnings caused by cargo doc interpreting Ruby doc blocks
+            // as Rust code.
+            // See: https://github.com/rust-lang/rust-bindgen/issues/426
+            .generate_comments(false);
+        if let Architecture::Wasm32 = target.architecture {
+            bindgen = bindgen
+                .clang_arg(format!("-I{}", wasm_include_dir().to_str().unwrap()))
+                .clang_arg("-DMRB_DISABLE_DIRECT_THREADING")
+                .clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
+        }
+        bindgen
+            .generate()
+            .unwrap()
+            .write_to_file(bindings_out_path)
+            .unwrap();
+    }
 }
 
 mod rubylib {
@@ -77,7 +326,7 @@ mod rubylib {
     }
 
     fn package_files(package: &str) -> String {
-        let script = buildpath::root()
+        let script = buildpath::crate_root()
             .join("scripts")
             .join("auto_import")
             .join("get_package_files.rb");
@@ -105,7 +354,7 @@ mod rubylib {
         if let Some(parent) = pkg_dest.parent() {
             fs::create_dir_all(parent).unwrap();
         }
-        let script = buildpath::root()
+        let script = buildpath::crate_root()
             .join("scripts")
             .join("auto_import")
             .join("auto_import.rb");
@@ -368,10 +617,25 @@ mod release {
     }
 }
 
-fn main() {
+fn clean() {
     let _ = dir::remove(buildpath::out::ruby_source_dir());
-    fs::create_dir_all(buildpath::out::generated_dir()).unwrap();
+    let _ = dir::remove(buildpath::build_root());
 
+    fs::create_dir_all(buildpath::build_root()).unwrap();
+    let opts = CopyOptions::new();
+    dir::copy(
+        buildpath::crate_root().join("vendor").join("mruby"),
+        buildpath::build_root(),
+        &opts,
+    )
+    .unwrap();
+
+    fs::create_dir_all(buildpath::out::generated_dir()).unwrap();
+}
+
+fn main() {
+    clean();
+    libmruby::build();
     rubylib::build();
     release::build();
 }
