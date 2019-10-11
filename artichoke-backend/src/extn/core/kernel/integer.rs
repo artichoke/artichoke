@@ -67,7 +67,7 @@ impl Args<'_> {
             })
         } else {
             Err(Error::NoImplicitConversionToString(
-                value.ruby_type().class_name().into(),
+                value.pretty_name(),
                 raise_exception,
             ))
         }
