@@ -115,10 +115,7 @@ mod libmruby {
         ext_include_dir().join("mruby-sys.h")
     }
 
-    pub fn build() {
-        let target = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
-
-        fs::create_dir_all(mruby_build_dir()).unwrap();
+    fn staticlib(target: &Triple, mrb_int: &str) {
         let mut gembox = String::from("MRuby::GemBox.new { |conf| ");
         for gem in gems() {
             gembox.push_str("conf.gem core: '");
@@ -201,12 +198,6 @@ mod libmruby {
                 }
             }
         }
-        let mrb_int = if let Architecture::Wasm32 = target.architecture {
-            "MRB_INT32"
-        } else {
-            "MRB_INT64"
-        };
-
         // Build the extension library
         let mut build = cc::Build::new();
         build
@@ -238,7 +229,9 @@ mod libmruby {
         }
 
         build.compile("libartichokemruby.a");
+    }
 
+    fn bindgen(target: &Triple, mrb_int: &str) {
         println!(
             "cargo:rerun-if-changed={}",
             bindgen_source_header().to_str().unwrap()
@@ -277,6 +270,18 @@ mod libmruby {
             .unwrap()
             .write_to_file(bindings_out_path)
             .unwrap();
+    }
+
+    pub fn build() {
+        fs::create_dir_all(mruby_build_dir()).unwrap();
+        let target = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
+        let mrb_int = if let Architecture::Wasm32 = target.architecture {
+            "MRB_INT32"
+        } else {
+            "MRB_INT64"
+        };
+        staticlib(&target, mrb_int);
+        bindgen(&target, mrb_int);
     }
 }
 
