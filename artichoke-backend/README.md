@@ -206,6 +206,11 @@ Some portions of artichoke-backend are derived from Ruby @
 Matsumoto \<matz@netlab.jp\>. Ruby is licensed with the
 [2-clause BSDL License](https://github.com/ruby/ruby/blob/v2_6_3/COPYING).
 
+artichoke-backend vendors headers provided by
+[emsdk](https://github.com/emscripten-core/emsdk) which is Copyright (c) 2018
+Emscripten authors. emsdk is licensed with the
+[MIT/Expat License](https://github.com/emscripten-core/emsdk/blob/master/LICENSE).
+
 artichoke-backend contains a fork of path_abs @
 [8370838](https://github.com/vitiral/path_abs/tree/8370838b6110786c2ba7cf7fd984a4783f37701c)
 which is copyright (c) 2018 Garrett Berg, vitiral@gmail.com. path_abs is dual

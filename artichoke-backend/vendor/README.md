@@ -23,3 +23,9 @@ artichoke-backend [vendors](ruby) a
 
 This fork is based on [Ruby 2.6.3](https://github.com/ruby/ruby/tree/v2_6_3) and
 [includes some patches](https://github.com/artichoke/ruby/compare/v2_6_3...artichoke:artichoke-vendor?expand=1).
+
+# Emscripten headers
+
+[emsdk](https://github.com/emscripten-core/emsdk) contains headers for the C standard library that target wasm32-unknown-emscripten and wasm32-unknown-unkown targets.
+
+
