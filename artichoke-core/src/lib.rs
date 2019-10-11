@@ -86,26 +86,24 @@ impl PartialEq for ArtichokeError {
 impl fmt::Display for ArtichokeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ArtichokeError::ArgSpec => write!(f, "could not generate argspec"),
-            ArtichokeError::ConvertToRuby { from, to } => {
+            Self::ArgSpec => write!(f, "could not generate argspec"),
+            Self::ConvertToRuby { from, to } => {
                 write!(f, "failed to convert from {} to {}", from, to)
             }
-            ArtichokeError::ConvertToRust { from, to } => {
+            Self::ConvertToRust { from, to } => {
                 write!(f, "failed to convert from {} to {}", from, to)
             }
-            ArtichokeError::Exec(backtrace) => write!(f, "{}", backtrace),
-            ArtichokeError::New => write!(f, "failed to create mrb interpreter"),
-            ArtichokeError::NotDefined(fqname) => write!(f, "{} not defined", fqname),
-            ArtichokeError::TooManyArgs { given, max } => write!(
+            Self::Exec(backtrace) => write!(f, "{}", backtrace),
+            Self::New => write!(f, "failed to create mrb interpreter"),
+            Self::NotDefined(fqname) => write!(f, "{} not defined", fqname),
+            Self::TooManyArgs { given, max } => write!(
                 f,
                 "Too many args for funcall. Gave {}, but max is {}",
                 given, max
             ),
-            ArtichokeError::Uninitialized => write!(f, "mrb interpreter not initialized"),
-            ArtichokeError::UnreachableValue => {
-                write!(f, "extracted unreachable type from interpreter")
-            }
-            ArtichokeError::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
+            Self::Uninitialized => write!(f, "mrb interpreter not initialized"),
+            Self::UnreachableValue => write!(f, "extracted unreachable type from interpreter"),
+            Self::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
         }
     }
 }
@@ -117,7 +115,7 @@ impl error::Error for ArtichokeError {
 
     fn cause(&self) -> Option<&dyn error::Error> {
         match self {
-            ArtichokeError::Vfs(inner) => Some(inner),
+            Self::Vfs(inner) => Some(inner),
             _ => None,
         }
     }

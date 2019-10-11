@@ -34,11 +34,11 @@ impl Args {
         sys::mrb_get_args(mrb, Self::ARGSPEC.as_ptr() as *const i8, first.as_mut_ptr());
         let first = first.assume_init();
         if let Ok(index) = interp.try_convert(Value::new(interp, first)) {
-            Ok(Args::Index(index))
+            Ok(Self::Index(index))
         } else if let Ok(name) = interp.try_convert(Value::new(interp, first)) {
-            Ok(Args::Name(name))
+            Ok(Self::Name(name))
         } else if let Ok(index) = Value::new(interp, first).funcall::<Int>("to_int", &[], None) {
-            Ok(Args::Index(index))
+            Ok(Self::Index(index))
         } else {
             Err(Error::IndexType)
         }

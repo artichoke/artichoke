@@ -105,7 +105,7 @@ impl EnclosingRubyScope {
     /// ```
     #[allow(clippy::needless_pass_by_value)]
     pub fn class(spec: Rc<RefCell<class::Spec>>) -> Self {
-        EnclosingRubyScope::Class {
+        Self::Class {
             spec: Rc::clone(&spec),
         }
     }
@@ -139,7 +139,7 @@ impl EnclosingRubyScope {
     /// ```
     #[allow(clippy::needless_pass_by_value)]
     pub fn module(spec: Rc<RefCell<module::Spec>>) -> Self {
-        EnclosingRubyScope::Module {
+        Self::Module {
             spec: Rc::clone(&spec),
         }
     }
@@ -152,8 +152,8 @@ impl EnclosingRubyScope {
     /// for each enclosing scope.
     pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
         match self {
-            EnclosingRubyScope::Class { spec } => spec.borrow().rclass(interp),
-            EnclosingRubyScope::Module { spec } => spec.borrow().rclass(interp),
+            Self::Class { spec } => spec.borrow().rclass(interp),
+            Self::Module { spec } => spec.borrow().rclass(interp),
         }
     }
 
@@ -175,8 +175,8 @@ impl EnclosingRubyScope {
     /// for each enclosing scope.
     pub fn fqname(&self) -> String {
         match self {
-            EnclosingRubyScope::Class { spec } => spec.borrow().fqname(),
-            EnclosingRubyScope::Module { spec } => spec.borrow().fqname(),
+            Self::Class { spec } => spec.borrow().fqname(),
+            Self::Module { spec } => spec.borrow().fqname(),
         }
     }
 }
@@ -186,14 +186,8 @@ impl Eq for EnclosingRubyScope {}
 impl PartialEq for EnclosingRubyScope {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (
-                EnclosingRubyScope::Class { spec: this },
-                EnclosingRubyScope::Class { spec: other },
-            ) => this == other,
-            (
-                EnclosingRubyScope::Module { spec: this },
-                EnclosingRubyScope::Module { spec: other },
-            ) => this == other,
+            (Self::Class { spec: this }, Self::Class { spec: other }) => this == other,
+            (Self::Module { spec: this }, Self::Module { spec: other }) => this == other,
             _ => false,
         }
     }
@@ -202,8 +196,8 @@ impl PartialEq for EnclosingRubyScope {
 impl Hash for EnclosingRubyScope {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
-            EnclosingRubyScope::Class { spec } => spec.borrow().hash(state),
-            EnclosingRubyScope::Module { spec } => spec.borrow().hash(state),
+            Self::Class { spec } => spec.borrow().hash(state),
+            Self::Module { spec } => spec.borrow().hash(state),
         };
     }
 }
