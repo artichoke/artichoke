@@ -4,7 +4,6 @@ members = [
   "artichoke-core",
   "artichoke-frontend",
   "artichoke-vfs",
-  "mruby-sys",
   "spec-runner",
 ]
 
