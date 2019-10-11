@@ -30,7 +30,7 @@ commands:
 jobs:
   rust:
     docker:
-      - image: circleci/rust:1.37.0-buster
+      - image: circleci/rust:1.38.0-buster
     steps:
       - checkout
       - restore_cache:
