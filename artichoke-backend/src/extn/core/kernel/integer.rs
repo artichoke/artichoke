@@ -1,4 +1,3 @@
-use regex::Regex;
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -80,97 +79,117 @@ pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
     let radix = args.radix;
     let raise_exception = args.raise_exception;
 
-    let mut string = String::new();
+    let mut digits = String::new();
+    let mut sign = None;
+    let mut err = None;
+    for i in 0..arg.len() {
+        let c = arg.chars().nth(i).unwrap(); // we're sure that it won't be `None`
 
-    // If have mutliple consecutive embedded underscores, argument error!
-    let multi_underscore_re = Regex::new(r"__+").unwrap();
-    if arg.starts_with('_') || arg.ends_with('_') || multi_underscore_re.is_match(arg) {
-        return Err(Error::InvalidValue(arg.into(), raise_exception));
+        // handle space between sign & digit, it should error!
+        if c.is_whitespace() {
+            if i == 0 {
+                continue; // ugly workaround for i - 1 index out of bound!
+            }
+
+            if let Some(prev_c) = arg.chars().nth(i - 1) {
+                if prev_c == '+' || prev_c == '-' {
+                    err = Some(Error::InvalidValue(arg.into(), raise_exception));
+                    break;
+                } else {
+                    continue;
+                }
+            }
+        }
+
+        // ignore an embedded `_`
+        if c == '_' && i > 0 && i < arg.len() - 1 {
+            let next_c = arg.chars().nth(i + 1).unwrap();
+            let prev_c = arg.chars().nth(i - 1).unwrap();
+
+            if next_c.is_numeric() && prev_c.is_numeric() {
+                continue;
+            }
+        }
+
+        if c == '\0' {
+            err = Some(Error::ContainsNullByte(raise_exception));
+            break;
+        }
+
+        if c == '+' || c == '-' {
+            // handle >1 consecutive sign
+            let next_c = arg.chars().nth(i + 1);
+            if next_c.is_none() || next_c == Some('+') || next_c == Some('-') {
+                err = Some(Error::InvalidValue(arg.into(), raise_exception));
+                break;
+            }
+            sign = Some(c);
+        } else {
+            digits.push(c);
+        }
     }
 
-    // If have multiple consecutive leading/trailing signs, argument error!
-    let multi_sign_re = Regex::new(r"\+\++|\-\-+").unwrap();
-    if multi_sign_re.is_match(arg) {
-        return Err(Error::InvalidValue(arg.into(), raise_exception));
-    }
-
-    // Remove embedded underscore `_`
-    // because they represent error in `from_str_radix` & `from_str`
-    let arg = arg.replace('_', "");
-
-    // Remove leading and trailing white space,
-    // because they represent error in `from_str_radix` & `from_str`.
-    let arg = arg.trim();
-    let arg = if arg.starts_with('-') {
-        string.push('-');
-        &arg[1..]
-    } else if arg.starts_with('+') {
-        string.push('+');
-        &arg[1..]
-    } else {
-        arg
-    };
-
-    // if `arg` is null byte, raise `ArgumentError`
-    if arg.contains('\0') {
-        return Err(Error::ContainsNullByte(raise_exception));
+    if let Some(err) = err {
+        return Err(err);
     }
 
     let mut parsed_radix = None;
-    if arg.starts_with('0') && arg.len() > 2 {
-        match &arg[0..2] {
+    if digits.len() >= 2 {
+        match &digits[0..2] {
             "0b" | "0B" => {
-                string.push_str(&arg[2..]);
+                digits = digits[2..].to_string();
                 parsed_radix = Some(2);
             }
             "0o" | "0O" => {
-                string.push_str(&arg[2..]);
+                digits = digits[2..].to_string();
                 parsed_radix = Some(8);
             }
             "0d" | "0D" => {
-                string.push_str(&arg[2..]);
+                digits = digits[2..].to_string();
                 parsed_radix = Some(10);
             }
             "0x" | "0X" => {
-                string.push_str(&arg[2..]);
+                digits = digits[2..].to_string();
                 parsed_radix = Some(16);
             }
             prefix if &prefix[0..1] == "0" => {
-                string.push_str(&arg[1..]);
+                digits = digits[1..].to_string();
                 parsed_radix = Some(8);
             }
             _ => {}
         };
-    } else {
-        string.push_str(arg);
+    }
+
+    if let Some(sign) = sign {
+        digits.insert(0, sign);
     }
 
     match (radix, parsed_radix) {
         (Some(radix), Some(parsed_radix)) => {
             if radix != parsed_radix {
-                return Err(Error::InvalidValue(string, raise_exception));
+                return Err(Error::InvalidValue(digits, raise_exception));
             }
-            if let Ok(v) = i64::from_str_radix(string.as_str(), radix as u32) {
+            if let Ok(v) = i64::from_str_radix(digits.as_str(), radix as u32) {
                 Ok(interp.convert(v))
             } else {
-                Err(Error::InvalidValue(string, raise_exception))
+                Err(Error::InvalidValue(digits, raise_exception))
             }
         }
         (Some(radix), None) | (None, Some(radix)) => {
             if radix < 2 || radix > 36 {
                 return Err(Error::InvalidRadix(radix.to_string(), raise_exception));
             }
-            if let Ok(v) = i64::from_str_radix(string.as_str(), radix as u32) {
+            if let Ok(v) = i64::from_str_radix(digits.as_str(), radix as u32) {
                 Ok(interp.convert(v))
             } else {
-                Err(Error::InvalidValue(string, raise_exception))
+                Err(Error::InvalidValue(digits, raise_exception))
             }
         }
         (None, None) => {
-            if let Ok(v) = i64::from_str(string.as_str()) {
+            if let Ok(v) = i64::from_str(digits.as_str()) {
                 Ok(interp.convert(v))
             } else {
-                Err(Error::InvalidValue(string, raise_exception))
+                Err(Error::InvalidValue(digits, raise_exception))
             }
         }
     }
