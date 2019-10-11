@@ -10,7 +10,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! The tests for crate `mruby-sys` defined in this module serve as an
+//! The tests for the mruby `sys` module defined in this module serve as an
 //! implementation guide and API examples for the `mruby` higher-level
 //! Rust bindings.
 //!
@@ -18,9 +18,9 @@
 //!
 //! ### `mrb_value` Types
 //!
-//! `mrb_type` is defined in the `boxing*.h` family of headers. `mruby-sys`
-//! includes `mruby/boxing_no.h` in `mrb-sys.h` which defines `mrb_type` with a
-//! macro:
+//! `mrb_type` is defined in the `boxing*.h` family of headers. The mruby
+//! bindings includes `mruby/boxing_no.h` in `mrb-sys.h` which defines
+//! `mrb_type` with a macro:
 //!
 //! ```c
 //! #define mrb_type(o)     (o).tt

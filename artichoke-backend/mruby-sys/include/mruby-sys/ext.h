@@ -15,10 +15,10 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 /**
- * C extension bindings of mruby to make implementing the mruby-sys crate
- * easier. The functions defined in mruby-sys.h are limited to those that are
- * either not possible to implment in Rust (e.g. because the functions are
- * inlined) or are simpler to implement in C (e.g. any of the mrb_value
+ * C extension bindings of mruby to make implementing the artichoke-backend
+ * crate easier. The functions defined in mruby-sys.h are limited to those that
+ * are either not possible to implment in Rust (e.g. because the functions are
+ * inlined) or are simpler to implement in C (e.g. any of the `mrb_value`
  * initializers).
  */
 

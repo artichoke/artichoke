@@ -84,8 +84,6 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         sys::mrb_vtype::MRB_TT_ISTRUCT => Ruby::InlineStruct,
         // `MRB_TT_BREAK` is used internally to the mruby VM and appears to
         // have something to do with resuming continuations from Fibers.
-        // mruby-sys does not build support for Fibers so this type tag is
-        // unreachable.
         sys::mrb_vtype::MRB_TT_BREAK => Ruby::Unreachable,
         // `MRB_TT_MAXDEFINE` is a marker enum value used by the mruby VM to
         // dynamically check if a type tag is valid using the less than

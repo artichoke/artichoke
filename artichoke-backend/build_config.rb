@@ -39,6 +39,6 @@ MRuby::CrossBuild.new('sys') do |conf|
 
   conf.bins = []
 
-  # gemset for mruby-sys
+  # gemset for mruby artichoke static lib
   conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'sys')
 end

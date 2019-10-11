@@ -57,8 +57,8 @@ cargo build
 
 ### C Toolchain
 
-Some artichoke dependencies, like [`mruby-sys`](/mruby-sys) and
-[`onig`](https://docs.rs/onig/) build C static libraries and require a C
+Some artichoke dependencies, like the mruby [`sys`](/artichoke-backend/src/sys)
+and [`onig`](https://docs.rs/onig/) build C static libraries and require a C
 compiler.
 
 Artichoke specifically requires clang. Wasm targets require clang-8 or newer.
@@ -70,7 +70,7 @@ Artichoke and some of its dependencies use the Rust
 [platform-dependent C compiler](https://github.com/alexcrichton/cc-rs#compile-time-requirements)
 to compile C sources. On Unix, `cc` crate uses the `cc` binary.
 
-### `mruby-sys` Crate
+### mruby Bindings
 
 To build the Artichoke mruby backend, you will need a C compiler toolchain. By
 default, mruby requires the following to compile:

@@ -1,9 +1,9 @@
 /**
- * mruby-sys is a C extension library written for the mruby-sys crate.
+ * mruby-sys is a C extension library written for the artichoke-backend crate.
  * `mruby-sys.h` includes all public headers for mruby. This file is parsed by
  * `bindgen` in `build.rs` to generate Rust bindings for the C functions and
  * types defined in these the mruby and mruby-sys C headers. These bindings are
- * checked in at `src/ffi.rs`.
+ * exported in the `artichoke_backend::sys` module.
  */
 
 #include <mruby.h>
