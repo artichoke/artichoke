@@ -5,7 +5,8 @@
 //! # artichoke-backend
 //!
 //! artichoke-backend crate provides a Ruby interpreter. It currently is
-//! implemented with [`mruby-sys`](mruby_sys).
+//! implemented with [mruby](https://github.com/mruby/mruby) bindings exported
+//! by the [`sys`] module.
 //!
 //! ## Execute Ruby Code
 //!
@@ -119,13 +120,11 @@
 //!
 //! impl Container {
 //!     unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
+//!         let inner = mrb_get_args!(mrb, required = 1);
 //!         let interp = unwrap_interpreter!(mrb);
-//!         let api = interp.0.borrow();
-//!         let int = mem::uninitialized::<sys::mrb_int>();
-//!         let mut argspec = vec![];
-//!         argspec.write_all(format!("{}\0", sys::specifiers::INTEGER).as_bytes()).unwrap();
-//!         sys::mrb_get_args(mrb, argspec.as_ptr() as *const i8, &int);
-//!         let cont = Self { inner: int };
+//!         let inner = Value::new(&interp, inner);
+//!         let inner = inner.try_into::<i64>().unwrap_or_default();
+//!         let cont = Self { inner };
 //!         cont
 //!             .try_into_ruby(&interp, Some(slf))
 //!             .unwrap_or_else(|_| interp.convert(None::<Value>))
@@ -134,7 +133,8 @@
 //!
 //!     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
 //!         let interp = unwrap_interpreter!(mrb);
-//!         if let Ok(cont) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+//!         let container = Value::new(&interp, slf);
+//!         if let Ok(cont) = Self::try_from_ruby(&interp, &container) {
 //!             let borrow = cont.borrow();
 //!             interp.convert(borrow.inner).inner()
 //!         } else {
@@ -231,19 +231,15 @@ pub mod load;
 pub mod method;
 pub mod module;
 pub mod state;
+/// C bindings for mruby, customized for Artichoke.
+pub mod sys;
 pub mod top_self;
 pub mod types;
 pub mod value;
 pub mod warn;
 
-pub use interpreter::interpreter;
-/// Re-exported bindings from [`mruby_sys`].
-///
-/// Useful for referring to [`mruby_sys`] from macros defined in
-/// artichoke-backend crate.
-pub use mruby_sys as sys;
-
 pub use artichoke_core::ArtichokeError;
+pub use interpreter::interpreter;
 
 /// Interpreter instance.
 ///

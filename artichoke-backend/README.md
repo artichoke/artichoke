@@ -1,7 +1,8 @@
 # artichoke-backend
 
 artichoke-backend crate provides a Ruby interpreter. It currently is implemented
-with [`mruby-sys`](/mruby-sys).
+with [mruby](https://github.com/mruby/mruby) bindings exported by the
+[`sys`](src/sys) module.
 
 ## Execute Ruby Code
 
@@ -15,6 +16,7 @@ effects from eval are persisted across invocations.
 
 ```rust
 use artichoke_backend::eval::Eval;
+use artichoke_core::value::Value as ValueLike;
 
 let interp = artichoke_backend::interpreter().unwrap();
 let result = interp.eval("10 * 10").unwrap();
@@ -36,18 +38,19 @@ artichoke-backend limits functions to a maximum of 16 arguments.
 
 The artichoke-backend `State` embeds an
 [in-memory virtual Unix filesystem](/artichoke-vfs). The VFS stores Ruby sources
-that are either pure Ruby, implemented with a Rust [`File`](file::File), or
-both.
+that are either pure Ruby, implemented with a Rust `File`, or both.
 
-artichoke-backend crate implements `Kernel#require` and
-`Kernel#require_relative` which loads sources from the VFS. For Ruby sources,
-the source is loaded from the VFS as a `Vec<u8>` and evaled with
-`Eval::eval_with_context`. For Rust sources, `File::require` methods are stored
-as custom metadata on [`File`](/artichoke-vfs) nodes in the VFS.
+artichoke-backend crate implements
+[`Kernel#require` and `Kernel#require_relative`](src/extn/core/kernel) which
+loads sources from the VFS. For Ruby sources, the source is loaded from the VFS
+as a `Vec<u8>` and evaled with `Eval::eval_with_context`. For Rust sources,
+`File::require` methods are stored as custom metadata on `File` nodes in the
+VFS.
 
 ```rust
 use artichoke_backend::eval::Eval;
 use artichoke_backend::load::LoadSources;
+use artichoke_core::value::Value as ValueLike;
 
 let mut interp = artichoke_backend::interpreter().unwrap();
 let code = "
@@ -58,8 +61,8 @@ end
 interp.def_rb_source_file("source.rb", code).unwrap();
 interp.eval("require 'source'").unwrap();
 let result = interp.eval("source_location").unwrap();
-let result = result.try_into::<String>().unwrap();
-assert_eq!(&result, "/src/lib/source.rb");
+let result = result.try_into::<&str>().unwrap();
+assert_eq!(result, "/src/lib/source.rb");
 ```
 
 ## Embed Rust Objects in `mrb_value`
@@ -97,6 +100,7 @@ use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_core::value::Value as ValueLike;
 use std::io::Write;
 use std::mem;
 
@@ -104,26 +108,25 @@ struct Container { inner: i64 }
 
 impl Container {
     unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
+        let inner = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let api = interp.borrow();
-        let int = mem::uninitialized::<sys::mrb_int>();
-        let mut argspec = vec![];
-        argspec.write_all(format!("{}\0", sys::specifiers::INTEGER).as_bytes()).unwrap();
-        sys::mrb_get_args(mrb, argspec.as_ptr() as *const i8, &int);
-        let cont = Self { inner: int };
+        let inner = Value::new(&interp, inner);
+        let inner = inner.try_into::<i64>().unwrap_or_default();
+        let cont = Self { inner };
         cont
             .try_into_ruby(&interp, Some(slf))
-            .unwrap_or_else(|_| Value::convert(&interp, None::<Value>))
+            .unwrap_or_else(|_| interp.convert(None::<Value>))
             .inner()
     }
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        if let Ok(cont) = Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+        let container = Value::new(&interp, slf);
+        if let Ok(cont) = Self::try_from_ruby(&interp, &container) {
             let borrow = cont.borrow();
-            Value::convert(&interp, borrow.inner).inner()
+            interp.convert(borrow.inner).inner()
         } else {
-            Value::convert(&interp, None::<Value>).inner()
+            interp.convert(None::<Value>).inner()
         }
     }
 }
@@ -132,7 +135,7 @@ impl RustBackedValue for Container {}
 
 impl File for Container {
   fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
-        let spec = interp.borrow_mut().def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
+        let spec = interp.0.borrow_mut().def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
         spec.borrow_mut().add_method("initialize", Self::initialize, sys::mrb_args_req(1));
         spec.borrow_mut().add_method("value", Self::value, sys::mrb_args_none());
         spec.borrow_mut().mrb_value_is_rust_backed(true);
@@ -154,8 +157,7 @@ fn main() {
 
 The [`convert` module](src/convert) provides implementations for conversions
 between `mrb_value` Ruby types and native Rust types like `i64` and
-`HashMap<String, Option<Vec<u8>>>` using an [`Artichoke`](src/lib.rs)
-interpreter.
+`HashMap<String, Option<Vec<u8>>>` using an `Artichoke` interpreter.
 
 There are two converter traits:
 
@@ -203,6 +205,11 @@ Some portions of artichoke-backend are derived from Ruby @
 [2.6.3](https://github.com/ruby/ruby/tree/v2_6_3) which is copyright Yukihiro
 Matsumoto \<matz@netlab.jp\>. Ruby is licensed with the
 [2-clause BSDL License](https://github.com/ruby/ruby/blob/v2_6_3/COPYING).
+
+artichoke-backend vendors headers provided by
+[emsdk](https://github.com/emscripten-core/emsdk) which is Copyright (c) 2018
+Emscripten authors. emsdk is licensed with the
+[MIT/Expat License](https://github.com/emscripten-core/emsdk/blob/master/LICENSE).
 
 artichoke-backend contains a fork of path_abs @
 [8370838](https://github.com/vitiral/path_abs/tree/8370838b6110786c2ba7cf7fd984a4783f37701c)

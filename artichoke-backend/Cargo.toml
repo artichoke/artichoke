@@ -14,11 +14,6 @@ path = "../artichoke-core"
 [dependencies.artichoke-vfs]
 path = "../artichoke-vfs"
 
-[dependencies.mruby-sys]
-path = "../mruby-sys"
-default-features = false
-features = ["artichoke"]
-
 [dependencies.onig]
 version = "5"
 # git = "https://github.com/artichoke/rust-onig"
@@ -31,8 +26,14 @@ quickcheck = "0.9"
 quickcheck_macros = "0.8"
 
 [build-dependencies]
+cc = "1.0"
 chrono = "0.4"
 fs_extra = "1.1.0"
-rayon = "1.1"
+rayon = "1.2"
 rustc_version = "0.2.3"
 target-lexicon = "0.8.1"
+walkdir = "2"
+
+[build-dependencies.bindgen]
+version = "0.51.1"
+default-features = false

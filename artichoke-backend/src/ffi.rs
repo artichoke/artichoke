@@ -1,4 +1,4 @@
-//! Functions for interacting directly with [`mruby_sys`] structs.
+//! Functions for interacting directly with mruby structs from [`sys`].
 //!
 //! These functions are unsafe. Use them carefully.
 
