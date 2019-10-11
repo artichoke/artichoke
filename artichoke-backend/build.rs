@@ -2,9 +2,6 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![doc(deny(warnings))]
 
-use fs_extra::dir::{self, CopyOptions};
-use std::fs;
-
 mod buildpath {
     use std::env;
     use std::path::PathBuf;
@@ -17,37 +14,21 @@ mod buildpath {
         PathBuf::from(env::var("OUT_DIR").unwrap()).join("artichoke-mruby")
     }
 
-    pub mod out {
-        use std::env;
-        use std::path::PathBuf;
-
-        pub fn ruby_source_dir() -> PathBuf {
-            PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("ruby")
-        }
-
-        pub fn generated_dir() -> PathBuf {
-            PathBuf::from(env::var_os("OUT_DIR").unwrap())
-                .join("src")
-                .join("generated")
-        }
-
-        pub fn generated_package(package: &str) -> PathBuf {
-            generated_dir().join(format!("{}.rs", package))
-        }
-    }
-
     pub mod source {
         use std::path::PathBuf;
 
-        fn ruby_vendored_dir() -> PathBuf {
-            super::crate_root().join("vendor").join("ruby")
+        pub fn ruby_vendored_lib_dir() -> PathBuf {
+            super::crate_root().join("vendor").join("ruby").join("lib")
         }
 
-        pub fn ruby_vendored_lib_dir() -> PathBuf {
-            ruby_vendored_dir().join("lib")
+        pub fn mruby_build_config() -> PathBuf {
+            super::crate_root().join("build_config.rb")
+        }
+
+        pub fn mruby_bootstrap_gembox() -> PathBuf {
+            super::crate_root().join("bootstrap.gembox")
         }
     }
-
 }
 
 mod libmruby {
@@ -81,8 +62,12 @@ mod libmruby {
         ]
     }
 
-    fn build_config() -> PathBuf {
+    pub fn build_config() -> PathBuf {
         mruby_source_dir().join("build_config.rb")
+    }
+
+    pub fn bootstrap_gembox() -> PathBuf {
+        mruby_source_dir().join("bootstrap.gembox")
     }
 
     fn ext_source_dir() -> PathBuf {
@@ -252,7 +237,7 @@ mod libmruby {
             }
         }
 
-        build.compile("libmrubysys.a");
+        build.compile("libartichokemruby.a");
 
         println!(
             "cargo:rerun-if-changed={}",
@@ -297,11 +282,22 @@ mod libmruby {
 
 mod rubylib {
     use rayon::prelude::*;
+    use std::env;
     use std::fs;
     use std::path::PathBuf;
     use std::process::Command;
 
     use super::buildpath;
+
+    pub fn generated_package_dir() -> PathBuf {
+        PathBuf::from(env::var_os("OUT_DIR").unwrap())
+            .join("src")
+            .join("generated")
+    }
+
+    fn generated_package(package: &str) -> PathBuf {
+        generated_package_dir().join(format!("{}.rs", package))
+    }
 
     pub fn build() {
         packages().par_iter().for_each(|package| {
@@ -315,7 +311,7 @@ mod rubylib {
                 let package_source = PathBuf::from(source.to_owned());
                 let package_source =
                     package_source.strip_prefix(buildpath::source::ruby_vendored_lib_dir());
-                let out = buildpath::out::generated_dir().join(package_source.unwrap());
+                let out = generated_package_dir().join(package_source.unwrap());
                 if let Some(parent) = out.parent() {
                     fs::create_dir_all(parent).unwrap();
                 }
@@ -350,7 +346,7 @@ mod rubylib {
 
     // The invoked Ruby script handles writing the output to disk
     fn generate_rust_glue(package: &str, sources: Vec<String>) {
-        let pkg_dest = buildpath::out::generated_package(&package);
+        let pkg_dest = generated_package(&package);
         if let Some(parent) = pkg_dest.parent() {
             fs::create_dir_all(parent).unwrap();
         }
@@ -617,24 +613,55 @@ mod release {
     }
 }
 
-fn clean() {
-    let _ = dir::remove(buildpath::out::ruby_source_dir());
-    let _ = dir::remove(buildpath::build_root());
+mod build {
+    use fs_extra::{dir, file};
+    use std::fs;
 
-    fs::create_dir_all(buildpath::build_root()).unwrap();
-    let opts = CopyOptions::new();
-    dir::copy(
-        buildpath::crate_root().join("vendor").join("mruby"),
-        buildpath::build_root(),
-        &opts,
-    )
-    .unwrap();
+    use super::{buildpath, libmruby, rubylib};
 
-    fs::create_dir_all(buildpath::out::generated_dir()).unwrap();
+    pub fn clean() {
+        let _ = dir::remove(buildpath::build_root());
+    }
+
+    pub fn setup_build_root() {
+        fs::create_dir_all(buildpath::build_root()).unwrap();
+
+        let opts = dir::CopyOptions::new();
+        dir::copy(
+            buildpath::crate_root().join("vendor").join("mruby"),
+            buildpath::build_root(),
+            &opts,
+        )
+        .unwrap();
+        dir::copy(
+            buildpath::crate_root().join("vendor").join("ruby"),
+            buildpath::build_root(),
+            &opts,
+        )
+        .unwrap();
+
+        fs::create_dir_all(rubylib::generated_package_dir()).unwrap();
+
+        let opts = file::CopyOptions::new();
+        let _ = file::remove(libmruby::build_config());
+        file::copy(
+            buildpath::source::mruby_build_config(),
+            libmruby::build_config(),
+            &opts,
+        )
+        .unwrap();
+        file::copy(
+            buildpath::source::mruby_bootstrap_gembox(),
+            libmruby::bootstrap_gembox(),
+            &opts,
+        )
+        .unwrap();
+    }
 }
 
 fn main() {
-    clean();
+    build::clean();
+    build::setup_build_root();
     libmruby::build();
     rubylib::build();
     release::build();
