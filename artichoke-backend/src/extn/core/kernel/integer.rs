@@ -17,13 +17,13 @@ pub enum Error {
 }
 
 #[derive(Debug)]
-pub struct Args {
-    pub arg: String,
+pub struct Args<'a> {
+    pub arg: &'a str,
     pub radix: Option<i64>,
     pub raise_exception: bool,
 }
 
-impl Args {
+impl Args<'_> {
     pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
         let mrb = interp.0.borrow().mrb;
 
@@ -76,7 +76,7 @@ impl Args {
 }
 
 pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
-    let arg = args.arg.as_str();
+    let arg = args.arg;
     let radix = args.radix;
     let raise_exception = args.raise_exception;
 
