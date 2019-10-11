@@ -702,7 +702,7 @@ pub fn args() {
             new_class,
             add_str.as_ptr(),
             Some(add),
-            crate::args::mrb_args_req(2),
+            crate::sys::args::mrb_args_req(2),
         );
 
         let code = "Mine.new.add(1, 1)";

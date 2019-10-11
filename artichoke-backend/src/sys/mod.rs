@@ -132,7 +132,7 @@ impl fmt::Display for mrb_state {
 
 #[cfg(test)]
 mod tests {
-    use crate::{mrb_close, mrb_open, DescribeState};
+    use crate::sys::{mrb_close, mrb_open, DescribeState};
 
     #[test]
     fn interpreter_display() {
