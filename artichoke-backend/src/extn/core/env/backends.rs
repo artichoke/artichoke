@@ -210,5 +210,4 @@ mod tests {
         assert_eq!(env1_value, value1.unwrap().as_str());
         assert_eq!(env2_value, value2.unwrap().as_str());
     }
-
 }

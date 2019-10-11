@@ -35,14 +35,14 @@ pub enum Node<Metadata> {
 impl<Metadata> Node<Metadata> {
     pub fn is_file(&self) -> bool {
         match *self {
-            Node::File(_) => true,
+            Self::File(_) => true,
             _ => false,
         }
     }
 
     pub fn is_dir(&self) -> bool {
         match *self {
-            Node::Dir(_) => true,
+            Self::Dir(_) => true,
             _ => false,
         }
     }

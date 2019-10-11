@@ -21,23 +21,23 @@ pub enum Encoding {
 impl Encoding {
     pub fn flags(self) -> Int {
         match self {
-            Encoding::Fixed => Regexp::FIXEDENCODING,
-            Encoding::No => Regexp::NOENCODING,
-            Encoding::None => 0,
+            Self::Fixed => Regexp::FIXEDENCODING,
+            Self::No => Regexp::NOENCODING,
+            Self::None => 0,
         }
     }
 
     pub fn string(self) -> &'static str {
         match self {
-            Encoding::Fixed | Encoding::None => "",
-            Encoding::No => "n",
+            Self::Fixed | Self::None => "",
+            Self::No => "n",
         }
     }
 }
 
 impl Default for Encoding {
     fn default() -> Self {
-        Encoding::None
+        Self::None
     }
 }
 
@@ -50,11 +50,11 @@ impl Hash for Encoding {
 impl PartialEq for Encoding {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Encoding::No, Encoding::None)
-            | (Encoding::None, Encoding::No)
-            | (Encoding::No, Encoding::No)
-            | (Encoding::None, Encoding::None)
-            | (Encoding::Fixed, Encoding::Fixed) => true,
+            (Self::No, Self::None)
+            | (Self::None, Self::No)
+            | (Self::No, Self::No)
+            | (Self::None, Self::None)
+            | (Self::Fixed, Self::Fixed) => true,
             _ => false,
         }
     }

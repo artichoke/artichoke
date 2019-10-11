@@ -34,7 +34,7 @@ impl State {
     /// whether to buffer code before attempting to eval it on the interpreter.
     pub fn is_code_block_open(&self) -> bool {
         match self {
-            State::Valid | State::UnexpectedEnd | State::UnexpectedRegexpBegin => false,
+            Self::Valid | Self::UnexpectedEnd | Self::UnexpectedRegexpBegin => false,
             _ => true,
         }
     }
@@ -42,7 +42,7 @@ impl State {
 
 impl Default for State {
     fn default() -> Self {
-        State::Valid
+        Self::Valid
     }
 }
 

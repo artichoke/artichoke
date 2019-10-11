@@ -63,12 +63,12 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::Fatal => write!(f, "fatal ENV error"),
-            Error::NameContainsNullByte => {
+            Self::Fatal => write!(f, "fatal ENV error"),
+            Self::NameContainsNullByte => {
                 write!(f, "bad environment variable name: contains null byte")
             }
-            Error::Os(arg) => write!(f, "Errno::EINVAL (Invalid argument - setenv({}))", arg),
-            Error::ValueContainsNullByte => {
+            Self::Os(arg) => write!(f, "Errno::EINVAL (Invalid argument - setenv({}))", arg),
+            Self::ValueContainsNullByte => {
                 write!(f, "bad environment variable value: contains null byte")
             }
         }
@@ -78,11 +78,11 @@ impl fmt::Display for Error {
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::Fatal => write!(f, "RuntimeError: {}", self),
-            Error::NameContainsNullByte | Error::ValueContainsNullByte => {
+            Self::Fatal => write!(f, "RuntimeError: {}", self),
+            Self::NameContainsNullByte | Self::ValueContainsNullByte => {
                 write!(f, "ArgumentError: {}", self)
             }
-            Error::Os(arg) => write!(f, "Errno::EINVAL (Invalid argument - setenv({}))", arg),
+            Self::Os(arg) => write!(f, "Errno::EINVAL (Invalid argument - setenv({}))", arg),
         }
     }
 }

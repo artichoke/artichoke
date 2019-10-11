@@ -53,11 +53,11 @@ impl Args {
             let len = interp
                 .try_convert(Value::new(interp, second))
                 .map_err(|_| Error::LengthType)?;
-            Ok(Args::StartLen(start, len))
+            Ok(Self::StartLen(start, len))
         } else if let Ok(index) = interp.try_convert(Value::new(interp, first)) {
-            Ok(Args::Index(index))
+            Ok(Self::Index(index))
         } else if let Ok(name) = interp.try_convert(Value::new(interp, first)) {
-            Ok(Args::Name(name))
+            Ok(Self::Name(name))
         } else if let Some(args) = Self::is_range(interp, first, num_captures)? {
             Ok(args)
         } else {
@@ -85,7 +85,7 @@ impl Args {
         let len = len.assume_init();
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
             let len = usize::try_from(len).map_err(|_| Error::LengthType)?;
-            Ok(Some(Args::StartLen(start, len)))
+            Ok(Some(Self::StartLen(start, len)))
         } else {
             Ok(None)
         }
