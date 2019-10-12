@@ -37,18 +37,14 @@ register_spec() {
 run_specs_artichoke() {
   bin="$(pwd)/target/debug/spec-runner"
   pushd "spec-runner/vendor/spec" >/dev/null
-  if ! /usr/bin/time -l "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"; then
-    exit 1
-  fi
+  time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
   popd >/dev/null
 }
 
 run_specs_ruby() {
   bin="$(pwd)/spec-runner/src/spec_runner.rb"
   pushd "spec-runner/vendor/spec" >/dev/null
-  if ! /usr/bin/time -l "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"; then
-    exit 1
-  fi
+  time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
   popd >/dev/null
 }
 
