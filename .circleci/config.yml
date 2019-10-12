@@ -90,6 +90,7 @@ jobs:
       - run:
           name: ruby/spec Compliance Regression Test
           command: |
+            sudo apt-get install -y time
             ./scripts/spec-compliance.sh --artichoke
       - save_cache:
           key: rust-cargo-v3-{{ checksum "Cargo.lock" }}
