@@ -1,9 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-if $PROGRAM_NAME == __FILE__
-  $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'vendor', 'mspec', 'lib'))
-end
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'vendor', 'mspec', 'lib')) if $PROGRAM_NAME == __FILE__
 
 class StubIO
   def method_missing(method, *args, &block)

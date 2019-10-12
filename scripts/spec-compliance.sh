@@ -155,11 +155,10 @@ register_spec library monitor
 register_spec library stringscanner
 register_spec library uri
 
-
 if [[ $# -eq 1 ]]; then
-  if [[ "$1" == "--ruby" ]]; then
+  if [[ $1 == "--ruby" ]]; then
     run_specs_ruby
-  elif [[ "$1" == "--artichoke" ]]; then
+  elif [[ $1 == "--artichoke" ]]; then
     cargo build -p spec-runner
     run_specs_artichoke
   else
