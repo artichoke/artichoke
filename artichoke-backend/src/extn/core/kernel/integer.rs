@@ -1,83 +1,54 @@
-use std::collections::HashMap;
+use std::convert::TryInto;
 use std::str::FromStr;
 
 use crate::convert::{Convert, TryConvert};
-use crate::types::Ruby;
+use crate::sys;
+use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Error {
-    BaseSpecifiedForNonString(bool),
-    ContainsNullByte(bool),
-    InvalidValue(String, bool),
-    InvalidRadix(String, bool),
-    NoImplicitConversionToString(String, bool),
+    ContainsNullByte,
+    InvalidValue(String),
+    InvalidRadix(i64),
+    NoImplicitConversionToString(String),
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Args<'a> {
     pub arg: &'a str,
-    pub radix: Option<i64>,
-    pub raise_exception: bool,
+    pub radix: Option<Int>,
 }
 
 impl Args<'_> {
-    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
-        let mrb = interp.0.borrow().mrb;
-
-        // TODO: when `base` is not passed, but `exception: true` is,
-        // exception argument goes into arg, which is not right,
-        // we might want to get the argument manually.
-        let (arg, base, exception) = mrb_get_args!(mrb, required = 1, optional = 2);
-
-        let raise_exception: Option<HashMap<String, bool>> = match exception {
-            Some(exception) => match interp.try_convert(Value::new(interp, exception)) {
-                Ok(exception) => exception,
-                Err(_) => None,
-            },
-            _ => None,
-        };
-        let raise_exception: bool = if let Some(raise_exception) = raise_exception {
-            *raise_exception.get("exception").unwrap_or_else(|| &true)
-        } else {
-            true
-        };
-        let radix: Option<i64> = match base {
-            Some(base) => {
-                if let Ok(base) = interp.try_convert(Value::new(interp, base)) {
-                    base
-                } else {
-                    None
-                }
+    pub unsafe fn extract(
+        interp: &Artichoke,
+        arg: sys::mrb_value,
+        base: Option<sys::mrb_value>,
+    ) -> Result<Self, Error> {
+        let radix: Option<Int> = if let Some(base) = base {
+            match interp.try_convert(Value::new(interp, base)) {
+                Ok(base) => base,
+                _ => None,
             }
-            _ => None,
+        } else {
+            None
         };
 
         let value = Value::new(interp, arg);
-        if value.ruby_type() == Ruby::Fixnum && radix.is_some() {
-            return Err(Error::BaseSpecifiedForNonString(raise_exception));
-        }
-
-        if let Ok(arg) = interp.try_convert(Value::new(interp, arg)) {
-            Ok(Self {
-                arg,
-                radix,
-                raise_exception,
-            })
+        let value_type = value.pretty_name();
+        if let Ok(arg) = interp.try_convert(value) {
+            Ok(Args { arg, radix })
         } else {
-            Err(Error::NoImplicitConversionToString(
-                value.pretty_name(),
-                raise_exception,
-            ))
+            Err(Error::NoImplicitConversionToString(value_type.to_owned()))
         }
     }
 }
 
-pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
+pub fn method<'a>(interp: &'a Artichoke, args: &Args<'a>) -> Result<Value, Error> {
     let arg = args.arg;
     let radix = args.radix;
-    let raise_exception = args.raise_exception;
 
     let mut digits = String::new();
     let mut sign = None;
@@ -93,7 +64,7 @@ pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
 
             if let Some(prev_c) = arg.chars().nth(i - 1) {
                 if prev_c == '+' || prev_c == '-' {
-                    err = Some(Error::InvalidValue(arg.into(), raise_exception));
+                    err = Some(Error::InvalidValue(arg.to_string()));
                     break;
                 } else {
                     continue;
@@ -112,7 +83,7 @@ pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
         }
 
         if c == '\0' {
-            err = Some(Error::ContainsNullByte(raise_exception));
+            err = Some(Error::ContainsNullByte);
             break;
         }
 
@@ -120,7 +91,7 @@ pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
             // handle >1 consecutive sign
             let next_c = arg.chars().nth(i + 1);
             if next_c.is_none() || next_c == Some('+') || next_c == Some('-') {
-                err = Some(Error::InvalidValue(arg.into(), raise_exception));
+                err = Some(Error::InvalidValue(arg.to_string()));
                 break;
             }
             sign = Some(c);
@@ -167,29 +138,32 @@ pub fn method(interp: &Artichoke, args: &Args) -> Result<Value, Error> {
     match (radix, parsed_radix) {
         (Some(radix), Some(parsed_radix)) => {
             if radix != parsed_radix {
-                return Err(Error::InvalidValue(digits, raise_exception));
+                return Err(Error::InvalidValue(digits));
             }
-            if let Ok(v) = i64::from_str_radix(digits.as_str(), radix as u32) {
-                Ok(interp.convert(v))
+            if let Ok(v) = Int::from_str_radix(&digits, radix.try_into().unwrap()) {
+                let result = interp.convert(v);
+                Ok(result)
             } else {
-                Err(Error::InvalidValue(digits, raise_exception))
+                Err(Error::InvalidValue(digits))
             }
         }
         (Some(radix), None) | (None, Some(radix)) => {
             if radix < 2 || radix > 36 {
-                return Err(Error::InvalidRadix(radix.to_string(), raise_exception));
+                return Err(Error::InvalidRadix(radix));
             }
-            if let Ok(v) = i64::from_str_radix(digits.as_str(), radix as u32) {
-                Ok(interp.convert(v))
+            if let Ok(v) = Int::from_str_radix(&digits, radix.try_into().unwrap()) {
+                let result = interp.convert(v);
+                Ok(result)
             } else {
-                Err(Error::InvalidValue(digits, raise_exception))
+                Err(Error::InvalidValue(digits))
             }
         }
         (None, None) => {
-            if let Ok(v) = i64::from_str(digits.as_str()) {
-                Ok(interp.convert(v))
+            if let Ok(v) = i64::from_str(&digits) {
+                let result = interp.convert(v);
+                Ok(result)
             } else {
-                Err(Error::InvalidValue(digits, raise_exception))
+                Err(Error::InvalidValue(digits))
             }
         }
     }
