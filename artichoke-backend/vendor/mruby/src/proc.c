@@ -77,6 +77,9 @@ closure_setup(mrb_state *mrb, struct RProc *p)
       e->c = tc;
       mrb_field_write_barrier(mrb, (struct RBasic*)e, (struct RBasic*)tc);
     }
+    if (MRB_PROC_ENV_P(up) && MRB_PROC_ENV(up)->cxt == NULL) {
+      e->mid = MRB_PROC_ENV(up)->mid;
+    }
   }
   if (e) {
     p->e.env = e;
@@ -184,11 +187,8 @@ mrb_proc_s_new(mrb_state *mrb, mrb_value proc_class)
   mrb_value proc;
   struct RProc *p;
 
-  mrb_get_args(mrb, "&", &blk);
-  if (mrb_nil_p(blk)) {
-    /* Calling Proc.new without a block is not implemented yet */
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "tried to create Proc object without a block");
-  }
+  /* Calling Proc.new without a block is not implemented yet */
+  mrb_get_args(mrb, "&!", &blk);
   p = (struct RProc *)mrb_obj_alloc(mrb, MRB_TT_PROC, mrb_class_ptr(proc_class));
   mrb_proc_copy(p, mrb_proc_ptr(blk));
   proc = mrb_obj_value(p);
@@ -206,7 +206,7 @@ mrb_proc_init_copy(mrb_state *mrb, mrb_value self)
   mrb_value proc;
 
   mrb_get_args(mrb, "o", &proc);
-  if (mrb_type(proc) != MRB_TT_PROC) {
+  if (!mrb_proc_p(proc)) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "not a proc");
   }
   mrb_proc_copy(mrb_proc_ptr(self), mrb_proc_ptr(proc));
@@ -239,7 +239,7 @@ proc_lambda(mrb_state *mrb, mrb_value self)
   if (mrb_nil_p(blk)) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "tried to create Proc object without a block");
   }
-  if (mrb_type(blk) != MRB_TT_PROC) {
+  if (!mrb_proc_p(blk)) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "not a proc");
   }
   p = mrb_proc_ptr(blk);

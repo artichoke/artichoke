@@ -36,10 +36,9 @@
 /* size of the method cache (need to be the power of 2) */
 //#define MRB_METHOD_CACHE_SIZE (1<<7)
 
-/* add -DMRB_METHOD_TABLE_INLINE to reduce the size of method table */
-/* MRB_METHOD_TABLE_INLINE requires LSB of function pointers to be zero */
-/* you might need to specify --falign-functions=n (where n>1) */
-//#define MRB_METHOD_TABLE_INLINE
+/* add -DMRB_METHOD_T_STRUCT on machines that use higher bits of pointers */
+/* no MRB_METHOD_T_STRUCT requires highest 2 bits of function pointers to be zero */
+//#define MRB_METHOD_T_STRUCT
 
 /* add -DMRB_INT16 to use 16bit integer for mrb_int; conflict with MRB_INT32 and MRB_INT64 */
 //#define MRB_INT16
@@ -89,14 +88,10 @@
 /* number of object per heap page */
 //#define MRB_HEAP_PAGE_SIZE 1024
 
-/* if _etext and _edata available, mruby can reduce memory used by symbols */
-//#define MRB_USE_ETEXT_EDATA
+/* if __ehdr_start is available, mruby can reduce memory used by symbols */
+//#define MRB_USE_LINK_TIME_RO_DATA_P
 
-/* do not use __init_array_start to determine readonly data section;
-   effective only when MRB_USE_ETEXT_EDATA is defined */
-//#define MRB_NO_INIT_ARRAY_START
-
-/* if do not works both MRB_USE_ETEXT_EDATA and MRB_NO_INIT_ARRAY_START,
+/* if MRB_USE_LINK_TIME_RO_DATA_P does not work,
    you can try mrb_ro_data_p() that you have implemented yourself in any file;
    prototype is `mrb_bool mrb_ro_data_p(const char *ptr)` */
 //#define MRB_USE_CUSTOM_RO_DATA_P
@@ -190,10 +185,6 @@
 #  define MRB_METHOD_CACHE_SIZE (1<<10)
 # endif
 
-# ifndef MRB_METHOD_TABLE_INLINE
-#  define MRB_METHOD_TABLE_INLINE
-# endif
-
 # ifndef MRB_IV_SEGMENT_SIZE
 #  define MRB_IV_SEGMENT_SIZE 32
 # endif
@@ -210,10 +201,6 @@
 
 # ifndef MRB_METHOD_CACHE_SIZE
 #  define MRB_METHOD_CACHE_SIZE (1<<12)
-# endif
-
-# ifndef MRB_METHOD_TABLE_INLINE
-#  define MRB_METHOD_TABLE_INLINE
 # endif
 
 # ifndef MRB_IV_SEGMENT_SIZE

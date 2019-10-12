@@ -907,7 +907,7 @@ mrb_io_syswrite(mrb_state *mrb, mrb_value io)
   }
 
   mrb_get_args(mrb, "S", &str);
-  if (mrb_type(str) != MRB_TT_STRING) {
+  if (!mrb_string_p(str)) {
     buf = mrb_funcall(mrb, str, "to_s", 0);
   } else {
     buf = str;
@@ -1000,7 +1000,7 @@ static int
 mrb_io_read_data_pending(mrb_state *mrb, mrb_value io)
 {
   mrb_value buf = mrb_iv_get(mrb, io, mrb_intern_cstr(mrb, "@buf"));
-  if (mrb_type(buf) == MRB_TT_STRING && RSTRING_LEN(buf) > 0) {
+  if (mrb_string_p(buf) && RSTRING_LEN(buf) > 0) {
     return 1;
   }
   return 0;
@@ -1294,6 +1294,27 @@ mrb_io_sync(mrb_state *mrb, mrb_value self)
   return mrb_bool_value(fptr->sync);
 }
 
+static mrb_value
+io_bufread(mrb_state *mrb, mrb_value self)
+{
+  mrb_value str, str2;
+  mrb_int len, newlen;
+  struct RString *s;
+  char *p;
+
+  mrb_get_args(mrb, "Si", &str, &len);
+  s = RSTRING(str);
+  mrb_str_modify(mrb, s);
+  p = RSTR_PTR(s);
+  str2 = mrb_str_new(mrb, p, len);
+  newlen = RSTR_LEN(s)-len;
+  memmove(p, p+len, newlen);
+  p[newlen] = '\0';
+  RSTR_SET_LEN(s, newlen);
+
+  return str2;
+}
+
 void
 mrb_init_io(mrb_state *mrb)
 {
@@ -1329,6 +1350,5 @@ mrb_init_io(mrb_state *mrb)
   mrb_define_method(mrb, io, "pid",        mrb_io_pid,        MRB_ARGS_NONE());   /* 15.2.20.5.2 */
   mrb_define_method(mrb, io, "fileno",     mrb_io_fileno,     MRB_ARGS_NONE());
 
-
-  mrb_gv_set(mrb, mrb_intern_cstr(mrb, "$/"), mrb_str_new_cstr(mrb, "\n"));
+  mrb_define_class_method(mrb, io, "_bufread",   io_bufread,        MRB_ARGS_REQ(2));
 }

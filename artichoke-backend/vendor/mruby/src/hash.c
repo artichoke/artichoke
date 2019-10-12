@@ -96,7 +96,7 @@ ht_hash_equal(mrb_state *mrb, htable *t, mrb_value a, mrb_value b)
     return mrb_str_equal(mrb, a, b);
 
   case MRB_TT_SYMBOL:
-    if (mrb_type(b) != MRB_TT_SYMBOL) return FALSE;
+    if (!mrb_symbol_p(b)) return FALSE;
     return mrb_symbol(a) == mrb_symbol(b);
 
   case MRB_TT_FIXNUM:
@@ -580,7 +580,7 @@ static void mrb_hash_modify(mrb_state *mrb, mrb_value hash);
 static inline mrb_value
 ht_key(mrb_state *mrb, mrb_value key)
 {
-  if (mrb_string_p(key) && !MRB_FROZEN_P(mrb_str_ptr(key))) {
+  if (mrb_string_p(key) && !mrb_frozen_p(mrb_str_ptr(key))) {
     key = mrb_str_dup(mrb, key);
     MRB_SET_FROZEN_FLAG(mrb_str_ptr(key));
   }

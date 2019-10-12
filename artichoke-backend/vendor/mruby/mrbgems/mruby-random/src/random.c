@@ -70,7 +70,7 @@ rand_uint32(rand_state *state)
   uint32_t x = seed[0];
   uint32_t y = seed[1];
   uint32_t z = seed[2];
-  uint32_t w = seed[3]; 
+  uint32_t w = seed[3];
   uint32_t t;
 
   t = x ^ (x << 11);
@@ -136,7 +136,7 @@ get_opt(mrb_state* mrb)
 static void
 random_check(mrb_state *mrb, mrb_value random) {
   struct RClass *c = mrb_class_get(mrb, "Random");
-  if (!mrb_obj_is_kind_of(mrb, random, c) || mrb_type(random) != MRB_TT_ISTRUCT) {
+  if (!mrb_obj_is_kind_of(mrb, random, c) || !mrb_istruct_p(random)) {
     mrb_raise(mrb, E_TYPE_ERROR, "Random instance required");
   }
 }
@@ -317,7 +317,7 @@ mrb_ary_sample(mrb_state *mrb, mrb_value ary)
 
       for (;;) {
       retry:
-        r = (mrb_int)rand_uint32(random) % len;
+        r = (mrb_int)(rand_uint32(random) % len);
 
         for (j=0; j<i; j++) {
           if (mrb_fixnum(RARRAY_PTR(result)[j]) == r) {
@@ -355,7 +355,7 @@ void mrb_mruby_random_gem_init(mrb_state *mrb)
   struct RClass *random;
   struct RClass *array = mrb->array_class;
 
-  mrb_assert(sizeof(rand_state) < ISTRUCT_DATA_SIZE);
+  mrb_assert(sizeof(rand_state) <= ISTRUCT_DATA_SIZE);
 
   mrb_define_method(mrb, mrb->kernel_module, "rand", random_f_rand, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, mrb->kernel_module, "srand", random_f_srand, MRB_ARGS_OPT(1));

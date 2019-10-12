@@ -30,7 +30,7 @@ double round(double x) {
 }
 #endif
 
-#ifdef MRB_WITHOUT_FLOAT
+#ifndef MRB_WITHOUT_FLOAT
 # if !defined(__MINGW64__) && defined(_WIN32)
 #  define llround(x) round(x)
 # endif
@@ -379,8 +379,8 @@ current_mrb_time(mrb_state *mrb)
     static time_t last_sec = 0, last_usec = 0;
 
     sec = time(NULL);
-    if (tm->sec != last_sec) {
-      last_sec = tm->sec;
+    if (sec != last_sec) {
+      last_sec = sec;
       last_usec = 0;
     }
     else {

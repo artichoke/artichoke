@@ -3,8 +3,11 @@
 
 def assert_permutation_combination(exp, receiver, meth, *args)
   act = []
-  receiver.__send__(meth, *args) { |v| act << v }
-  assert_equal(exp, act.sort)
+  ret = receiver.__send__(meth, *args) { |v| act << v }
+  assert "assert_#{meth}" do
+    assert_equal(exp, act.sort)
+    assert_same(receiver, ret)
+  end
 end
 
 def assert_permutation(exp, receiver, *args)
@@ -88,6 +91,14 @@ assert("Array#union") do
   c = [1, 5]
 
   assert_equal [1, 2, 3, 4, 5], a.union(b,c)
+end
+
+assert("Array#difference") do
+  a = [1, 2, 3, 1]
+  b = [1, 4]
+  c = [1, 5]
+
+  assert_equal [2, 3], a.difference(b,c)
 end
 
 assert("Array#&") do
@@ -389,6 +400,7 @@ assert("Array#permutation") do
   assert_permutation([[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]], a, 3)
   assert_permutation([[]], a, 0)
   assert_permutation([], a, 4)
+  assert_permutation([], a, -1)
 end
 
 assert("Array#combination") do
@@ -399,6 +411,7 @@ assert("Array#combination") do
   assert_combination([[1,2,3,4]], a, 4)
   assert_combination([[]], a, 0)
   assert_combination([], a, 5)
+  assert_combination([], a, -1)
 end
 
 assert('Array#transpose') do

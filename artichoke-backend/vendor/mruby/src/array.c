@@ -388,7 +388,7 @@ ary_replace(mrb_state *mrb, struct RArray *a, struct RArray *b)
     mrb_write_barrier(mrb, (struct RBasic*)a);
     return;
   }
-  if (!MRB_FROZEN_P(b) && len > ARY_REPLACE_SHARED_MIN) {
+  if (!mrb_frozen_p(b) && len > ARY_REPLACE_SHARED_MIN) {
     ary_make_shared(mrb, b);
     goto shared_b;
   }
@@ -1105,7 +1105,6 @@ mrb_ary_clear(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ary_clear_m(mrb_state *mrb, mrb_value self)
 {
-  mrb_get_args(mrb, "");
   return mrb_ary_clear(mrb, self);
 }
 
@@ -1248,7 +1247,6 @@ mrb_ary_cmp(mrb_state *mrb, mrb_value ary1)
 static mrb_value
 mrb_ary_svalue(mrb_state *mrb, mrb_value ary)
 {
-  mrb_get_args(mrb, "");
   switch (RARRAY_LEN(ary)) {
   case 0:
     return mrb_nil_value();

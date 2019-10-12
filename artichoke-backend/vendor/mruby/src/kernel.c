@@ -57,7 +57,7 @@ mrb_obj_basic_to_s_p(mrb_state *mrb, mrb_value obj)
 MRB_API mrb_value
 mrb_obj_inspect(mrb_state *mrb, mrb_value obj)
 {
-  if ((mrb_type(obj) == MRB_TT_OBJECT) && mrb_obj_basic_to_s_p(mrb, obj)) {
+  if (mrb_object_p(obj) && mrb_obj_basic_to_s_p(mrb, obj)) {
     return mrb_obj_iv_inspect(mrb, mrb_obj_ptr(obj));
   }
   return mrb_any_to_s(mrb, obj);
@@ -331,7 +331,7 @@ mrb_obj_clone(mrb_state *mrb, mrb_value self)
   if (mrb_immediate_p(self)) {
     mrb_raisef(mrb, E_TYPE_ERROR, "can't clone %v", self);
   }
-  if (mrb_type(self) == MRB_TT_SCLASS) {
+  if (mrb_sclass_p(self)) {
     mrb_raise(mrb, E_TYPE_ERROR, "can't clone singleton class");
   }
   p = (struct RObject*)mrb_obj_alloc(mrb, mrb_type(self), mrb_obj_class(mrb, self));
@@ -372,7 +372,7 @@ mrb_obj_dup(mrb_state *mrb, mrb_value obj)
   if (mrb_immediate_p(obj)) {
     mrb_raisef(mrb, E_TYPE_ERROR, "can't dup %v", obj);
   }
-  if (mrb_type(obj) == MRB_TT_SCLASS) {
+  if (mrb_sclass_p(obj)) {
     mrb_raise(mrb, E_TYPE_ERROR, "can't dup singleton class");
   }
   p = mrb_obj_alloc(mrb, mrb_type(obj), mrb_obj_class(mrb, obj));
@@ -435,12 +435,12 @@ mrb_obj_extend_m(mrb_state *mrb, mrb_value self)
   return mrb_obj_extend(mrb, argc, argv, self);
 }
 
-static mrb_value
+MRB_API mrb_value
 mrb_obj_freeze(mrb_state *mrb, mrb_value self)
 {
   if (!mrb_immediate_p(self)) {
     struct RBasic *b = mrb_basic_ptr(self);
-    if (!MRB_FROZEN_P(b)) {
+    if (!mrb_frozen_p(b)) {
       MRB_SET_FROZEN_FLAG(b);
       if (b->c->tt == MRB_TT_SCLASS) MRB_SET_FROZEN_FLAG(b->c);
     }
@@ -451,7 +451,7 @@ mrb_obj_freeze(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_obj_frozen(mrb_state *mrb, mrb_value self)
 {
-  return mrb_bool_value(mrb_immediate_p(self) || MRB_FROZEN_P(mrb_basic_ptr(self)));
+  return mrb_bool_value(mrb_immediate_p(self) || mrb_frozen_p(mrb_basic_ptr(self)));
 }
 
 /* 15.3.1.3.15 */

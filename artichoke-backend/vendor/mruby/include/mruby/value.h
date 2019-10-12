@@ -15,19 +15,20 @@
 MRB_BEGIN_DECL
 
 /**
+ * mruby Symbol.
  * @class mrb_sym
- * @brief mruby Symbol
- * 
+ *
  * You can create an mrb_sym by simply using mrb_str_intern() or mrb_intern_cstr()
  */
 typedef uint32_t mrb_sym;
 
 /**
+ * mruby Boolean.
  * @class mrb_bool
- * @brief mruby Boolean
+ *
  *
  * Used internally to represent boolean. Can be TRUE or FALSE.
- * Not to be confused with Ruby's boolean classes, which can be 
+ * Not to be confused with Ruby's boolean classes, which can be
  * obtained using mrb_false_value() and mrb_true_value()
  */
 typedef uint8_t mrb_bool;
@@ -40,12 +41,15 @@ struct mrb_state;
 #if defined _MSC_VER && _MSC_VER < 1800
 # define PRIo64 "llo"
 # define PRId64 "lld"
+# define PRIu64 "llu"
 # define PRIx64 "llx"
 # define PRIo16 "ho"
 # define PRId16 "hd"
+# define PRIu16 "hu"
 # define PRIx16 "hx"
 # define PRIo32 "o"
 # define PRId32 "d"
+# define PRIu32 "u"
 # define PRIx32 "x"
 #else
 # include <inttypes.h>
@@ -77,6 +81,11 @@ struct mrb_state;
 # define MRB_PRIx PRIx32
 #endif
 
+#ifdef MRB_ENDIAN_BIG
+# define MRB_ENDIAN_LOHI(a,b) a b
+#else
+# define MRB_ENDIAN_LOHI(a,b) b a
+#endif
 
 #ifndef MRB_WITHOUT_FLOAT
 MRB_API double mrb_float_read(const char*, char**);
@@ -107,13 +116,13 @@ static const unsigned int IEEE754_INFINITY_BITS_SINGLE = 0x7F800000;
 
 enum mrb_vtype {
   MRB_TT_FALSE = 0,   /*   0 */
-  MRB_TT_FREE,        /*   1 */
-  MRB_TT_TRUE,        /*   2 */
+  MRB_TT_TRUE,        /*   1 */
+  MRB_TT_FLOAT,       /*   2 */
   MRB_TT_FIXNUM,      /*   3 */
   MRB_TT_SYMBOL,      /*   4 */
   MRB_TT_UNDEF,       /*   5 */
-  MRB_TT_FLOAT,       /*   6 */
-  MRB_TT_CPTR,        /*   7 */
+  MRB_TT_CPTR,        /*   6 */
+  MRB_TT_FREE,        /*   7 */
   MRB_TT_OBJECT,      /*   8 */
   MRB_TT_CLASS,       /*   9 */
   MRB_TT_MODULE,      /*  10 */
@@ -160,8 +169,19 @@ typedef void mrb_value;
 #include "boxing_no.h"
 #endif
 
+#if !defined(MRB_SYMBOL_BITSIZE)
+#define MRB_SYMBOL_BITSIZE (sizeof(mrb_sym) * CHAR_BIT)
+#define MRB_SYMBOL_MAX      UINT32_MAX
+#endif
+
+#ifndef mrb_immediate_p
+#define mrb_immediate_p(o) (mrb_type(o) < MRB_TT_FREE)
+#endif
 #ifndef mrb_fixnum_p
 #define mrb_fixnum_p(o) (mrb_type(o) == MRB_TT_FIXNUM)
+#endif
+#ifndef mrb_symbol_p
+#define mrb_symbol_p(o) (mrb_type(o) == MRB_TT_SYMBOL)
 #endif
 #ifndef mrb_undef_p
 #define mrb_undef_p(o) (mrb_type(o) == MRB_TT_UNDEF)
@@ -175,22 +195,71 @@ typedef void mrb_value;
 #ifndef mrb_true_p
 #define mrb_true_p(o)  (mrb_type(o) == MRB_TT_TRUE)
 #endif
+#ifndef MRB_WITHOUT_FLOAT
+#ifndef mrb_float_p
+#define mrb_float_p(o) (mrb_type(o) == MRB_TT_FLOAT)
+#endif
+#endif
+#ifndef mrb_array_p
+#define mrb_array_p(o) (mrb_type(o) == MRB_TT_ARRAY)
+#endif
+#ifndef mrb_string_p
+#define mrb_string_p(o) (mrb_type(o) == MRB_TT_STRING)
+#endif
+#ifndef mrb_hash_p
+#define mrb_hash_p(o) (mrb_type(o) == MRB_TT_HASH)
+#endif
+#ifndef mrb_cptr_p
+#define mrb_cptr_p(o) (mrb_type(o) == MRB_TT_CPTR)
+#endif
+#ifndef mrb_exception_p
+#define mrb_exception_p(o) (mrb_type(o) == MRB_TT_EXCEPTION)
+#endif
+#ifndef mrb_free_p
+#define mrb_free_p(o) (mrb_type(o) == MRB_TT_FREE)
+#endif
+#ifndef mrb_object_p
+#define mrb_object_p(o) (mrb_type(o) == MRB_TT_OBJECT)
+#endif
+#ifndef mrb_class_p
+#define mrb_class_p(o) (mrb_type(o) == MRB_TT_CLASS)
+#endif
+#ifndef mrb_module_p
+#define mrb_module_p(o) (mrb_type(o) == MRB_TT_MODULE)
+#endif
+#ifndef mrb_iclass_p
+#define mrb_iclass_p(o) (mrb_type(o) == MRB_TT_ICLASS)
+#endif
+#ifndef mrb_sclass_p
+#define mrb_sclass_p(o) (mrb_type(o) == MRB_TT_SCLASS)
+#endif
+#ifndef mrb_proc_p
+#define mrb_proc_p(o) (mrb_type(o) == MRB_TT_PROC)
+#endif
+#ifndef mrb_range_p
+#define mrb_range_p(o) (mrb_type(o) == MRB_TT_RANGE)
+#endif
+#ifndef mrb_file_p
+#define mrb_file_p(o) (mrb_type(o) == MRB_TT_FILE)
+#endif
+#ifndef mrb_env_p
+#define mrb_env_p(o) (mrb_type(o) == MRB_TT_ENV)
+#endif
+#ifndef mrb_data_p
+#define mrb_data_p(o) (mrb_type(o) == MRB_TT_DATA)
+#endif
+#ifndef mrb_fiber_p
+#define mrb_fiber_p(o) (mrb_type(o) == MRB_TT_FIBER)
+#endif
+#ifndef mrb_istruct_p
+#define mrb_istruct_p(o) (mrb_type(o) == MRB_TT_ISTRUCT)
+#endif
+#ifndef mrb_break_p
+#define mrb_break_p(o) (mrb_type(o) == MRB_TT_BREAK)
+#endif
 #ifndef mrb_bool
 #define mrb_bool(o)   (mrb_type(o) != MRB_TT_FALSE)
 #endif
-#if !defined(MRB_SYMBOL_BITSIZE)
-#define MRB_SYMBOL_BITSIZE (sizeof(mrb_sym) * CHAR_BIT)
-#define MRB_SYMBOL_MAX      UINT32_MAX
-#endif
-#ifndef MRB_WITHOUT_FLOAT
-#define mrb_float_p(o) (mrb_type(o) == MRB_TT_FLOAT)
-#endif
-#define mrb_symbol_p(o) (mrb_type(o) == MRB_TT_SYMBOL)
-#define mrb_array_p(o) (mrb_type(o) == MRB_TT_ARRAY)
-#define mrb_string_p(o) (mrb_type(o) == MRB_TT_STRING)
-#define mrb_hash_p(o) (mrb_type(o) == MRB_TT_HASH)
-#define mrb_cptr_p(o) (mrb_type(o) == MRB_TT_CPTR)
-#define mrb_exception_p(o) (mrb_type(o) == MRB_TT_EXCEPTION)
 #define mrb_test(o)   mrb_bool(o)
 
 /**
@@ -296,37 +365,25 @@ mrb_undef_value(void)
   return v;
 }
 
+#if defined(MRB_USE_ETEXT_EDATA) && !defined(MRB_USE_LINK_TIME_RO_DATA_P)
+# ifdef __GNUC__
+#  warning MRB_USE_ETEXT_EDATA is deprecated. Define MRB_USE_LINK_TIME_RO_DATA_P instead.
+# endif
+# define MRB_USE_LINK_TIME_RO_DATA_P
+#endif
+
 #if defined(MRB_USE_CUSTOM_RO_DATA_P)
 /* If you define `MRB_USE_CUSTOM_RO_DATA_P`, you must implement `mrb_ro_data_p()`. */
 mrb_bool mrb_ro_data_p(const char *p);
-#elif defined(MRB_USE_ETEXT_EDATA)
-#if (defined(__APPLE__) && defined(__MACH__))
-#include <mach-o/getsect.h>
-static inline mrb_bool
-mrb_ro_data_p(const char *p)
-{
-  return (const char*)get_etext() < p && p < (const char*)get_edata();
-}
-#else
-extern char _etext[];
-#ifdef MRB_NO_INIT_ARRAY_START
-extern char _edata[];
-
-static inline mrb_bool
-mrb_ro_data_p(const char *p)
-{
-  return _etext < p && p < _edata;
-}
-#else
+#elif defined(MRB_USE_LINK_TIME_RO_DATA_P)
+extern char __ehdr_start[];
 extern char __init_array_start[];
 
 static inline mrb_bool
 mrb_ro_data_p(const char *p)
 {
-  return _etext < p && p < (char*)&__init_array_start;
+  return __ehdr_start < p && p < __init_array_start;
 }
-#endif
-#endif
 #else
 # define mrb_ro_data_p(p) FALSE
 #endif

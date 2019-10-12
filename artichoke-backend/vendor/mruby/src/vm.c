@@ -821,7 +821,7 @@ mrb_yield_cont(mrb_state *mrb, mrb_value b, mrb_value self, mrb_int argc, const 
   if (mrb_nil_p(b)) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "no block given");
   }
-  if (mrb_type(b) != MRB_TT_PROC) {
+  if (!mrb_proc_p(b)) {
     mrb_raise(mrb, E_TYPE_ERROR, "not a block");
   }
 
@@ -841,8 +841,8 @@ break_new(mrb_state *mrb, struct RProc *p, mrb_value val)
   struct RBreak *brk;
 
   brk = (struct RBreak*)mrb_obj_alloc(mrb, MRB_TT_BREAK, NULL);
-  brk->proc = p;
-  brk->val = val;
+  mrb_break_proc_set(brk, p);
+  mrb_break_value_set(brk, val);
 
   return brk;
 }
@@ -1392,7 +1392,7 @@ RETRY_TRY_BLOCK:
 
       recv = regs[a];
       blk = regs[bidx];
-      if (!mrb_nil_p(blk) && mrb_type(blk) != MRB_TT_PROC) {
+      if (!mrb_nil_p(blk) && !mrb_proc_p(blk)) {
         blk = mrb_convert_type(mrb, blk, MRB_TT_PROC, "Proc", "to_proc");
         /* The stack might have been reallocated during mrb_convert_type(),
            see #3622 */
@@ -1440,6 +1440,11 @@ RETRY_TRY_BLOCK:
           ci->proc = p;
           recv = p->body.func(mrb, recv);
         }
+        else if (MRB_METHOD_NOARG_P(m) &&
+                 (argc > 0 || (argc == -1 && ARRAY_LEN(mrb, regs[1]) != 0))) {
+          argnum_error(mrb, 0);
+          goto L_RAISE;
+        }
         else {
           recv = MRB_METHOD_FUNC(m)(mrb, recv);
         }
@@ -1447,7 +1452,7 @@ RETRY_TRY_BLOCK:
         mrb_gc_arena_shrink(mrb, ai);
         if (mrb->exc) goto L_RAISE;
         ci = mrb->c->ci;
-        if (mrb_type(blk) == MRB_TT_PROC) {
+        if (mrb_proc_p(blk)) {
           struct RProc *p = mrb_proc_ptr(blk);
           if (p && !MRB_PROC_STRICT_P(p) && MRB_PROC_ENV(p) == ci[-1].env) {
             p->flags |= MRB_PROC_ORPHAN;
@@ -1558,9 +1563,13 @@ RETRY_TRY_BLOCK:
       struct RClass *cls;
       mrb_callinfo *ci = mrb->c->ci;
       mrb_value recv, blk;
+      struct RProc *p = ci->proc;
       mrb_sym mid = ci->mid;
-      struct RClass* target_class = MRB_PROC_TARGET_CLASS(ci->proc);
+      struct RClass* target_class = MRB_PROC_TARGET_CLASS(p);
 
+      if (MRB_PROC_ENV_P(p) && p->e.env->mid && p->e.env->mid != mid) { /* alias support */
+        mid = p->e.env->mid;    /* restore old mid */
+      }
       mrb_assert(bidx < irep->nregs);
 
       if (mid == 0 || !target_class) {
@@ -1584,7 +1593,7 @@ RETRY_TRY_BLOCK:
         goto L_RAISE;
       }
       blk = regs[bidx];
-      if (!mrb_nil_p(blk) && mrb_type(blk) != MRB_TT_PROC) {
+      if (!mrb_nil_p(blk) && !mrb_proc_p(blk)) {
         blk = mrb_convert_type(mrb, blk, MRB_TT_PROC, "Proc", "to_proc");
         /* The stack or ci stack might have been reallocated during
            mrb_convert_type(), see #3622 and #3784 */
@@ -1948,7 +1957,7 @@ RETRY_TRY_BLOCK:
         else {
           blk = regs[ci->argc+1];
         }
-        if (mrb_type(blk) == MRB_TT_PROC) {
+        if (mrb_proc_p(blk)) {
           struct RProc *p = mrb_proc_ptr(blk);
 
           if (!MRB_PROC_STRICT_P(p) &&
@@ -2033,7 +2042,7 @@ RETRY_TRY_BLOCK:
             if (MRB_PROC_ENV_P(dst)) {
               struct REnv *e = MRB_PROC_ENV(dst);
 
-              if (!MRB_ENV_STACK_SHARED_P(e) || e->cxt != mrb->c) {
+              if (!MRB_ENV_STACK_SHARED_P(e) || (e->cxt && e->cxt != mrb->c)) {
                 localjump_error(mrb, LOCALJUMP_ERROR_RETURN);
                 goto L_RAISE;
               }
@@ -2118,8 +2127,8 @@ RETRY_TRY_BLOCK:
           }
           if (FALSE) {
           L_BREAK:
-            v = ((struct RBreak*)mrb->exc)->val;
-            proc = ((struct RBreak*)mrb->exc)->proc;
+            v = mrb_break_value_get((struct RBreak*)mrb->exc);
+            proc = mrb_break_proc_get((struct RBreak*)mrb->exc);
             mrb->exc = NULL;
             ci = mrb->c->ci;
           }
@@ -2165,7 +2174,7 @@ RETRY_TRY_BLOCK:
         }
         pc = ci->pc;
         ci = mrb->c->ci;
-        DEBUG(fprintf(stderr, "from :%s\n", mrb_sym2name(mrb, ci->mid)));
+        DEBUG(fprintf(stderr, "from :%s\n", mrb_sym_name(mrb, ci->mid)));
         proc = mrb->c->ci->proc;
         irep = proc->body.irep;
         pool = irep->pool;

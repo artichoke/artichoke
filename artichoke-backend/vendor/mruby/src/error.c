@@ -44,10 +44,8 @@ static mrb_value
 exc_initialize(mrb_state *mrb, mrb_value exc)
 {
   mrb_value mesg;
-  mrb_int argc;
-  mrb_value *argv;
 
-  if (mrb_get_args(mrb, "|o*!", &mesg, &argv, &argc) >= 1) {
+  if (mrb_get_args(mrb, "|o", &mesg) == 1) {
     mrb_iv_set(mrb, exc, mrb_intern_lit(mrb, "mesg"), mesg);
   }
   return exc;
@@ -233,7 +231,7 @@ mrb_exc_set(mrb_state *mrb, mrb_value exc)
         (struct RBasic*)mrb->exc == mrb->gc.arena[mrb->gc.arena_idx-1]) {
       mrb->gc.arena_idx--;
     }
-    if (!mrb->gc.out_of_memory && !MRB_FROZEN_P(mrb->exc)) {
+    if (!mrb->gc.out_of_memory && !mrb_frozen_p(mrb->exc)) {
       exc_debug_info(mrb, mrb->exc);
       mrb_keep_backtrace(mrb, exc);
     }
@@ -243,10 +241,15 @@ mrb_exc_set(mrb_state *mrb, mrb_value exc)
 MRB_API mrb_noreturn void
 mrb_exc_raise(mrb_state *mrb, mrb_value exc)
 {
-  if (!mrb_obj_is_kind_of(mrb, exc, mrb->eException_class)) {
-    mrb_raise(mrb, E_TYPE_ERROR, "exception object expected");
+  if (mrb_break_p(exc)) {
+    mrb->exc = mrb_obj_ptr(exc);
   }
-  mrb_exc_set(mrb, exc);
+  else {
+    if (!mrb_obj_is_kind_of(mrb, exc, mrb->eException_class)) {
+      mrb_raise(mrb, E_TYPE_ERROR, "exception object expected");
+    }
+    mrb_exc_set(mrb, exc);
+  }
   if (!mrb->jmp) {
     mrb_p(mrb, exc);
     abort();
@@ -326,7 +329,11 @@ mrb_vformat(mrb_state *mrb, const char *format, va_list ap)
           len = 1;
           goto L_cat;
         case 'd': case 'i':
+#if MRB_INT_MAX < INT_MAX
+          i = (mrb_int)va_arg(ap, int);
+#else
           i = *p == 'd' ? (mrb_int)va_arg(ap, int) : va_arg(ap, mrb_int);
+#endif
           obj = mrb_fixnum_value(i);
           goto L_cat_obj;
 #ifndef MRB_WITHOUT_FLOAT
@@ -586,9 +593,9 @@ mrb_init_exception(mrb_state *mrb)
 
   mrb->eException_class = exception = mrb_define_class(mrb, "Exception", mrb->object_class); /* 15.2.22 */
   MRB_SET_INSTANCE_TT(exception, MRB_TT_EXCEPTION);
-  mrb_define_class_method(mrb, exception, "exception", mrb_instance_new,  MRB_ARGS_ANY());
+  mrb_define_class_method(mrb, exception, "exception", mrb_instance_new,  MRB_ARGS_OPT(1));
   mrb_define_method(mrb, exception, "exception",       exc_exception,     MRB_ARGS_ANY());
-  mrb_define_method(mrb, exception, "initialize",      exc_initialize,    MRB_ARGS_ANY());
+  mrb_define_method(mrb, exception, "initialize",      exc_initialize,    MRB_ARGS_OPT(1));
   mrb_define_method(mrb, exception, "to_s",            exc_to_s,          MRB_ARGS_NONE());
   mrb_define_method(mrb, exception, "message",         exc_message,       MRB_ARGS_NONE());
   mrb_define_method(mrb, exception, "inspect",         exc_inspect,       MRB_ARGS_NONE());
