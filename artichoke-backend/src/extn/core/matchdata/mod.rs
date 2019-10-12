@@ -50,9 +50,11 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     match_data
         .borrow_mut()
         .add_method("captures", MatchData::captures, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("[]", MatchData::element_reference, sys::mrb_args_none());
+    match_data.borrow_mut().add_method(
+        "[]",
+        MatchData::element_reference,
+        sys::mrb_args_req_and_opt(1, 1),
+    );
     match_data
         .borrow_mut()
         .add_method("length", MatchData::length, sys::mrb_args_none());
