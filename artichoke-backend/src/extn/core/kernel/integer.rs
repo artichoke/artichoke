@@ -21,7 +21,7 @@ pub struct Args<'a> {
     pub radix: Option<Int>,
 }
 
-impl Args<'_> {
+impl<'a> Args<'a> {
     pub unsafe fn extract(
         interp: &Artichoke,
         arg: sys::mrb_value,
