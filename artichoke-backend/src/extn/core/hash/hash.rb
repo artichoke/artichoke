@@ -1,11 +1,5 @@
 # frozen_string_literal: true
 
-module Artichoke
-  class Hash
-    NOT_SET = Object.new.freeze
-  end
-end
-
 class Hash
   include Enumerable
 
@@ -176,8 +170,7 @@ class Hash
     true
   end
 
-  def fetch(key, default = Artichoke::Hash::NOT_SET, &block)
-    not_set = default.equal?(Artichoke::Hash::NOT_SET)
+  def fetch(key, default = (not_set = true), &block)
     if key?(key)
       self[key]
     elsif block

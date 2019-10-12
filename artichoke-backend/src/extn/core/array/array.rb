@@ -2,12 +2,6 @@
 
 module Artichoke
   class Array
-    # This object exists because of an mruby bug where blocks are not created
-    # if a method has an argument with a default value assignment expression.
-    #
-    # https://github.com/mruby/mruby/issues/4746
-    NOT_SET = Object.new.freeze
-
     def self.reachable?(src, dest, reachable_objects = nil)
       raise ArgumentError, 'reachable requires an Array src' unless src.is_a?(::Array)
 
@@ -240,8 +234,7 @@ class Array
     false
   end
 
-  def all?(pattern = Artichoke::Array::NOT_SET, &block)
-    not_set = pattern.equal?(Artichoke::Array::NOT_SET)
+  def all?(pattern = (not_set = true), &block)
     if not_set
       idx = 0
       if block
@@ -272,8 +265,7 @@ class Array
     true
   end
 
-  def any?(pattern = Artichoke::Array::NOT_SET, &block)
-    not_set = pattern.equal?(Artichoke::Array::NOT_SET)
+  def any?(pattern = (not_set = true), &block)
     if not_set
       idx = 0
       if block
@@ -519,8 +511,7 @@ class Array
     self
   end
 
-  def count(obj = Artichoke::Array::NOT_SET, &block)
-    not_set = obj.equal?(Artichoke::Array::NOT_SET)
+  def count(obj = (not_set = true), &block)
     count = 0
     idx = 0
     len = length
@@ -742,8 +733,7 @@ class Array
     true
   end
 
-  def fetch(index, default = Artichoke::Array::NOT_SET, &block)
-    not_set = default.equal?(Artichoke::Array::NOT_SET)
+  def fetch(index, default = (not_set = true), &block)
     warn 'block supersedes default value argument' if !index.nil? && !not_set && block
 
     idx = index
@@ -847,8 +837,7 @@ class Array
     self[0, length] = res
   end
 
-  def find_index(obj = Artichoke::Array::NOT_SET, &block)
-    not_set = obj.equal?(Artichoke::Array::NOT_SET)
+  def find_index(obj = (not_set = true), &block)
     return to_enum(:find_index, obj) if !block && not_set
 
     idx = 0
@@ -933,8 +922,7 @@ class Array
     false
   end
 
-  def index(val = Artichoke::Array::NOT_SET, &block)
-    not_set = val.equal?(Artichoke::Array::NOT_SET)
+  def index(val = (not_set = true), &block)
     return to_enum(:index) if !block && not_set
 
     idx = 0
@@ -1052,8 +1040,7 @@ class Array
     raise NotImplementedError
   end
 
-  def none?(pattern = Artichoke::Array::NOT_SET, &block)
-    not_set = pattern.equal?(Artichoke::Array::NOT_SET)
+  def none?(pattern = (not_set = true), &block)
     if not_set
       idx = 0
       if block
@@ -1204,8 +1191,7 @@ class Array
     self
   end
 
-  def rindex(val = Artichoke::Array::NOT_SET, &block)
-    not_set = val.equal?(Artichoke::Array::NOT_SET)
+  def rindex(val = (not_set = true), &block)
     return to_enum(:rindex) if !block && not_set
 
     if not_set
@@ -1270,8 +1256,7 @@ class Array
     replace(result)
   end
 
-  def shift(num = Artichoke::Array::NOT_SET)
-    not_set = num.equal?(Artichoke::Array::NOT_SET)
+  def shift(num = (not_set = true))
     if not_set
       result = first
       self[0, 1] = []
