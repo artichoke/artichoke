@@ -78,6 +78,6 @@
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
     "lint": "./scripts/lint.sh",
     "loc": "loc --exclude target vendor fixtures",
-    "spec": "./scripts/spec-compliance.sh"
+    "spec": "./scripts/spec-compliance.sh --artichoke"
   }
 }
