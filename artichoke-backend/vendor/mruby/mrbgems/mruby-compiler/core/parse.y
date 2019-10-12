@@ -21,6 +21,7 @@
 #include <mruby/proc.h>
 #include <mruby/error.h>
 #include <mruby/throw.h>
+#include <mruby/string.h>
 #include "node.h"
 
 #define YYLEX_PARAM p
@@ -201,12 +202,11 @@ append_gen(parser_state *p, node *a, node *b)
   node *c = a;
 
   if (!a) return b;
+  if (!b) return a;
   while (c->cdr) {
     c = c->cdr;
   }
-  if (b) {
-    c->cdr = b;
-  }
+  c->cdr = b;
   return a;
 }
 #define append(a,b) append_gen(p,(a),(b))
@@ -747,6 +747,15 @@ local_add_margs(parser_state *p, node *n)
   }
 }
 
+static void
+local_add_lv(parser_state *p, node *lv)
+{
+  while (lv) {
+    local_add_f(p, sym(lv->car));
+    lv = lv->cdr;
+  }
+}
+
 /* (m o r m2 tail) */
 /* m: (a b c) */
 /* o: ((a . e1) (b . e2)) */
@@ -763,6 +772,12 @@ new_args(parser_state *p, node *m, node *opt, mrb_sym rest, node *m2, node *tail
   n = cons(m2, tail);
   n = cons(nsym(rest), n);
   n = cons(opt, n);
+  while (opt) {
+    /* opt: (sym . (opt . lv)) -> (sym . opt) */
+    local_add_lv(p, opt->car->cdr->cdr);
+    opt->car->cdr = opt->car->cdr->car;
+    opt = opt->cdr;
+  }
   return cons(m, n);
 }
 
@@ -787,6 +802,8 @@ new_args_tail(parser_state *p, node *kws, node *kwrest, mrb_sym blk)
   }
   for (k = kws; k; k = k->cdr) {
     if (k->car->cdr->cdr->car) { // allocate keywords with default
+      local_add_lv(p, k->car->cdr->cdr->car->cdr);
+      k->car->cdr->cdr->car = k->car->cdr->cdr->car->car;
       local_add_f(p, sym(k->car->cdr->car));
     }
   }
@@ -3231,7 +3248,7 @@ var_ref         : variable
                     }
                 | keyword__FILE__
                     {
-                      const char *fn = mrb_sym2name_len(p->mrb, p->filename_sym, NULL);
+                      const char *fn = mrb_sym_name_len(p->mrb, p->filename_sym, NULL);
                       if (!fn) {
                         fn = "(null)";
                       }
@@ -3292,16 +3309,21 @@ f_arglist       : '(' f_args rparen
                 ;
 
 f_label         : tIDENTIFIER tLABEL_TAG
+                    {
+                      local_nest(p);
+                    }
                 ;
 
 f_kw            : f_label arg
                     {
                       void_expr_error(p, $2);
-                      $$ = new_kw_arg(p, $1, $2);
+                      $$ = new_kw_arg(p, $1, cons($2, locals_node(p)));
+                      local_unnest(p);
                     }
                 | f_label
                     {
                       $$ = new_kw_arg(p, $1, 0);
+                      local_unnest(p);
                     }
                 ;
 
@@ -3502,6 +3524,7 @@ f_arg           : f_arg_item
 f_opt_asgn      : tIDENTIFIER '='
                     {
                       local_add_f(p, $1);
+                      local_nest(p);
                       $$ = $1;
                     }
                 ;
@@ -3509,14 +3532,16 @@ f_opt_asgn      : tIDENTIFIER '='
 f_opt           : f_opt_asgn arg
                     {
                       void_expr_error(p, $2);
-                      $$ = cons(nsym($1), $2);
+                      $$ = cons(nsym($1), cons($2, locals_node(p)));
+                      local_unnest(p);
                     }
                 ;
 
 f_block_opt     : f_opt_asgn primary_value
                     {
                       void_expr_error(p, $2);
-                      $$ = cons(nsym($1), $2);
+                      $$ = cons(nsym($1), cons($2, locals_node(p)));
+                      local_unnest(p);
                     }
                 ;
 
@@ -3741,7 +3766,7 @@ yyerror(parser_state *p, const char *s)
   if (! p->capture_errors) {
 #ifndef MRB_DISABLE_STDIO
     if (p->filename_sym) {
-      const char *filename = mrb_sym2name_len(p->mrb, p->filename_sym, NULL);
+      const char *filename = mrb_sym_name_len(p->mrb, p->filename_sym, NULL);
       fprintf(stderr, "%s:%d:%d: %s\n", filename, p->lineno, p->column, s);
     }
     else {
@@ -3780,7 +3805,7 @@ yywarn(parser_state *p, const char *s)
   if (! p->capture_errors) {
 #ifndef MRB_DISABLE_STDIO
     if (p->filename_sym) {
-      const char *filename = mrb_sym2name_len(p->mrb, p->filename_sym, NULL);
+      const char *filename = mrb_sym_name_len(p->mrb, p->filename_sym, NULL);
       fprintf(stderr, "%s:%d:%d: warning: %s\n", filename, p->lineno, p->column, s);
     }
     else {
@@ -6397,7 +6422,7 @@ dump_args(mrb_state *mrb, node *n, int offset)
 
       while (n2) {
         dump_prefix(n2, offset+2);
-        printf("%s=\n", mrb_sym2name(mrb, sym(n2->car->car)));
+        printf("%s=\n", mrb_sym_name(mrb, sym(n2->car->car)));
         mrb_parser_dump(mrb, n2->car->cdr, offset+3);
         n2 = n2->cdr;
       }
@@ -6406,7 +6431,7 @@ dump_args(mrb_state *mrb, node *n, int offset)
   n = n->cdr;
   if (n->car) {
     dump_prefix(n, offset+1);
-    printf("rest=*%s\n", mrb_sym2name(mrb, sym(n->car)));
+    printf("rest=*%s\n", mrb_sym_name(mrb, sym(n->car)));
   }
   n = n->cdr;
   if (n->car) {
@@ -6422,6 +6447,28 @@ dump_args(mrb_state *mrb, node *n, int offset)
   }
 }
 
+/*
+ * This function restores the GC arena on return.
+ * For this reason, if a process that further generates an object is
+ * performed at the caller, the string pointer returned as the return
+ * value may become invalid.
+ */
+static const char*
+str_dump(mrb_state *mrb, const char *str, int len)
+{
+  mrb_int ai = mrb_gc_arena_save(mrb);
+  mrb_value s;
+# if INT_MAX > MRB_INT_MAX / 4
+  /* check maximum length with "\xNN" charactor */
+  if (len > MRB_INT_MAX / 4) {
+    len = MRB_INT_MAX / 4;
+  }
+# endif
+  s = mrb_str_new(mrb, str, (mrb_int)len);
+  s = mrb_str_dump(mrb, s);
+  mrb_gc_arena_restore(mrb, ai);
+  return RSTRING_PTR(s);
+}
 #endif
 
 void
@@ -6625,7 +6672,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
         while (n2) {
           if (n2->car) {
             if (!first_lval) printf(", ");
-            printf("%s", mrb_sym2name(mrb, sym(n2->car)));
+            printf("%s", mrb_sym_name(mrb, sym(n2->car)));
             first_lval = FALSE;
           }
           n2 = n2->cdr;
@@ -6653,7 +6700,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     mrb_parser_dump(mrb, tree->car, offset+1);
     dump_prefix(tree, offset+1);
     printf("method='%s' (%d)\n",
-        mrb_sym2name(mrb, sym(tree->cdr->car)),
+        mrb_sym_dump(mrb, sym(tree->cdr->car)),
         intn(tree->cdr->car));
     tree = tree->cdr->cdr->car;
     if (tree) {
@@ -6684,11 +6731,11 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     printf("NODE_COLON2:\n");
     mrb_parser_dump(mrb, tree->car, offset+1);
     dump_prefix(tree, offset+1);
-    printf("::%s\n", mrb_sym2name(mrb, sym(tree->cdr)));
+    printf("::%s\n", mrb_sym_name(mrb, sym(tree->cdr)));
     break;
 
   case NODE_COLON3:
-    printf("NODE_COLON3: ::%s\n", mrb_sym2name(mrb, sym(tree)));
+    printf("NODE_COLON3: ::%s\n", mrb_sym_name(mrb, sym(tree)));
     break;
 
   case NODE_ARRAY:
@@ -6784,7 +6831,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     mrb_parser_dump(mrb, tree->car, offset+2);
     tree = tree->cdr;
     dump_prefix(tree, offset+1);
-    printf("op='%s' (%d)\n", mrb_sym2name(mrb, sym(tree->car)), intn(tree->car));
+    printf("op='%s' (%d)\n", mrb_sym_name(mrb, sym(tree->car)), intn(tree->car));
     tree = tree->cdr;
     mrb_parser_dump(mrb, tree->car, offset+1);
     break;
@@ -6836,23 +6883,23 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     break;
 
   case NODE_LVAR:
-    printf("NODE_LVAR %s\n", mrb_sym2name(mrb, sym(tree)));
+    printf("NODE_LVAR %s\n", mrb_sym_name(mrb, sym(tree)));
     break;
 
   case NODE_GVAR:
-    printf("NODE_GVAR %s\n", mrb_sym2name(mrb, sym(tree)));
+    printf("NODE_GVAR %s\n", mrb_sym_name(mrb, sym(tree)));
     break;
 
   case NODE_IVAR:
-    printf("NODE_IVAR %s\n", mrb_sym2name(mrb, sym(tree)));
+    printf("NODE_IVAR %s\n", mrb_sym_name(mrb, sym(tree)));
     break;
 
   case NODE_CVAR:
-    printf("NODE_CVAR %s\n", mrb_sym2name(mrb, sym(tree)));
+    printf("NODE_CVAR %s\n", mrb_sym_name(mrb, sym(tree)));
     break;
 
   case NODE_CONST:
-    printf("NODE_CONST %s\n", mrb_sym2name(mrb, sym(tree)));
+    printf("NODE_CONST %s\n", mrb_sym_name(mrb, sym(tree)));
     break;
 
   case NODE_MATCH:
@@ -6874,7 +6921,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     break;
 
   case NODE_ARG:
-    printf("NODE_ARG %s\n", mrb_sym2name(mrb, sym(tree)));
+    printf("NODE_ARG %s\n", mrb_sym_name(mrb, sym(tree)));
     break;
 
   case NODE_BLOCK_ARG:
@@ -6891,25 +6938,25 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     break;
 
   case NODE_NEGATE:
-    printf("NODE_NEGATE\n");
+    printf("NODE_NEGATE:\n");
     mrb_parser_dump(mrb, tree, offset+1);
     break;
 
   case NODE_STR:
-    printf("NODE_STR \"%s\" len %d\n", (char*)tree->car, intn(tree->cdr));
+    printf("NODE_STR %s len %d\n", str_dump(mrb, (char*)tree->car, intn(tree->cdr)), intn(tree->cdr));
     break;
 
   case NODE_DSTR:
-    printf("NODE_DSTR\n");
+    printf("NODE_DSTR:\n");
     dump_recur(mrb, tree, offset+1);
     break;
 
   case NODE_XSTR:
-    printf("NODE_XSTR \"%s\" len %d\n", (char*)tree->car, intn(tree->cdr));
+    printf("NODE_XSTR %s len %d\n", str_dump(mrb, (char*)tree->car, intn(tree->cdr)), intn(tree->cdr));
     break;
 
   case NODE_DXSTR:
-    printf("NODE_DXSTR\n");
+    printf("NODE_DXSTR:\n");
     dump_recur(mrb, tree, offset+1);
     break;
 
@@ -6918,7 +6965,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     break;
 
   case NODE_DREGX:
-    printf("NODE_DREGX\n");
+    printf("NODE_DREGX:\n");
     dump_recur(mrb, tree->car, offset+1);
     dump_prefix(tree, offset);
     printf("tail: %s\n", (char*)tree->cdr->cdr->car);
@@ -6933,8 +6980,27 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     break;
 
   case NODE_SYM:
-    printf("NODE_SYM :%s (%d)\n", mrb_sym2name(mrb, sym(tree)),
+    printf("NODE_SYM :%s (%d)\n", mrb_sym_dump(mrb, sym(tree)),
            intn(tree));
+    break;
+
+  case NODE_DSYM:
+    printf("NODE_DSYM:\n");
+    mrb_parser_dump(mrb, tree, offset+1);
+    break;
+
+  case NODE_WORDS:
+    printf("NODE_WORDS:\n");
+    dump_recur(mrb, tree, offset+1);
+    break;
+
+  case NODE_SYMBOLS:
+    printf("NODE_SYMBOLS:\n");
+    dump_recur(mrb, tree, offset+1);
+    break;
+
+  case NODE_LITERAL_DELIM:
+    printf("NODE_LITERAL_DELIM\n");
     break;
 
   case NODE_SELF:
@@ -6955,8 +7021,8 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
 
   case NODE_ALIAS:
     printf("NODE_ALIAS %s %s:\n",
-        mrb_sym2name(mrb, sym(tree->car)),
-        mrb_sym2name(mrb, sym(tree->cdr)));
+        mrb_sym_dump(mrb, sym(tree->car)),
+        mrb_sym_dump(mrb, sym(tree->cdr)));
     break;
 
   case NODE_UNDEF:
@@ -6964,7 +7030,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     {
       node *t = tree;
       while (t) {
-        printf(" %s", mrb_sym2name(mrb, sym(t->car)));
+        printf(" %s", mrb_sym_dump(mrb, sym(t->car)));
         t = t->cdr;
       }
     }
@@ -6975,16 +7041,16 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     printf("NODE_CLASS:\n");
     if (tree->car->car == (node*)0) {
       dump_prefix(tree, offset+1);
-      printf(":%s\n", mrb_sym2name(mrb, sym(tree->car->cdr)));
+      printf(":%s\n", mrb_sym_name(mrb, sym(tree->car->cdr)));
     }
     else if (tree->car->car == (node*)1) {
       dump_prefix(tree, offset+1);
-      printf("::%s\n", mrb_sym2name(mrb, sym(tree->car->cdr)));
+      printf("::%s\n", mrb_sym_name(mrb, sym(tree->car->cdr)));
     }
     else {
       mrb_parser_dump(mrb, tree->car->car, offset+1);
       dump_prefix(tree, offset+1);
-      printf("::%s\n", mrb_sym2name(mrb, sym(tree->car->cdr)));
+      printf("::%s\n", mrb_sym_name(mrb, sym(tree->car->cdr)));
     }
     if (tree->cdr->car) {
       dump_prefix(tree, offset+1);
@@ -7000,16 +7066,16 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     printf("NODE_MODULE:\n");
     if (tree->car->car == (node*)0) {
       dump_prefix(tree, offset+1);
-      printf(":%s\n", mrb_sym2name(mrb, sym(tree->car->cdr)));
+      printf(":%s\n", mrb_sym_name(mrb, sym(tree->car->cdr)));
     }
     else if (tree->car->car == (node*)1) {
       dump_prefix(tree, offset+1);
-      printf("::%s\n", mrb_sym2name(mrb, sym(tree->car->cdr)));
+      printf("::%s\n", mrb_sym_name(mrb, sym(tree->car->cdr)));
     }
     else {
       mrb_parser_dump(mrb, tree->car->car, offset+1);
       dump_prefix(tree, offset+1);
-      printf("::%s\n", mrb_sym2name(mrb, sym(tree->car->cdr)));
+      printf("::%s\n", mrb_sym_name(mrb, sym(tree->car->cdr)));
     }
     dump_prefix(tree, offset+1);
     printf("body:\n");
@@ -7027,7 +7093,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
   case NODE_DEF:
     printf("NODE_DEF:\n");
     dump_prefix(tree, offset+1);
-    printf("%s\n", mrb_sym2name(mrb, sym(tree->car)));
+    printf("%s\n", mrb_sym_dump(mrb, sym(tree->car)));
     tree = tree->cdr;
     {
       node *n2 = tree->car;
@@ -7040,7 +7106,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
         while (n2) {
           if (n2->car) {
             if (!first_lval) printf(", ");
-            printf("%s", mrb_sym2name(mrb, sym(n2->car)));
+            printf("%s", mrb_sym_name(mrb, sym(n2->car)));
             first_lval = FALSE;
           }
           n2 = n2->cdr;
@@ -7060,7 +7126,7 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     mrb_parser_dump(mrb, tree->car, offset+1);
     tree = tree->cdr;
     dump_prefix(tree, offset+1);
-    printf(":%s\n", mrb_sym2name(mrb, sym(tree->car)));
+    printf(":%s\n", mrb_sym_dump(mrb, sym(tree->car)));
     tree = tree->cdr->cdr;
     if (tree->car) {
       dump_args(mrb, tree->car, offset+1);
@@ -7097,17 +7163,17 @@ mrb_parser_dump(mrb_state *mrb, node *tree, int offset)
     tree = tree->cdr;
     if (tree->car) {
       dump_prefix(tree, offset+1);
-      printf("block='%s'\n", mrb_sym2name(mrb, sym(tree->car)));
+      printf("block='%s'\n", mrb_sym_name(mrb, sym(tree->car)));
     }
     break;
 
   case NODE_KW_ARG:
-    printf("NODE_KW_ARG %s\n", mrb_sym2name(mrb, sym(tree->car)));
+    printf("NODE_KW_ARG %s:\n", mrb_sym_name(mrb, sym(tree->car)));
     mrb_parser_dump(mrb, tree->cdr->car, offset + 1);
     break;
 
   case NODE_KW_REST_ARGS:
-    printf("NODE_KW_REST_ARGS %s\n", mrb_sym2name(mrb, sym(tree)));
+    printf("NODE_KW_REST_ARGS %s\n", mrb_sym_name(mrb, sym(tree)));
     break;
 
   default:

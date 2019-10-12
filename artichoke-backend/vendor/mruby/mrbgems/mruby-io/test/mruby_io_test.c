@@ -44,7 +44,6 @@ mkdtemp(char *temp)
   return path;
 }
 
-#define mktemp(path) _mktemp(path)
 #define umask(mode) _umask(mode)
 #define rmdir(path) _rmdir(path)
 #else
@@ -155,16 +154,16 @@ mrb_io_test_io_cleanup(mrb_state *mrb, mrb_value self)
   mrb_value symlinkname = mrb_gv_get(mrb, mrb_intern_cstr(mrb, "$mrbtest_io_symlinkname"));
   mrb_value socketname = mrb_gv_get(mrb, mrb_intern_cstr(mrb, "$mrbtest_io_socketname"));
 
-  if (mrb_type(rfname) == MRB_TT_STRING) {
+  if (mrb_string_p(rfname)) {
     remove(RSTRING_PTR(rfname));
   }
-  if (mrb_type(wfname) == MRB_TT_STRING) {
+  if (mrb_string_p(wfname)) {
     remove(RSTRING_PTR(wfname));
   }
-  if (mrb_type(symlinkname) == MRB_TT_STRING) {
+  if (mrb_string_p(symlinkname)) {
     remove(RSTRING_PTR(symlinkname));
   }
-  if (mrb_type(socketname) == MRB_TT_STRING) {
+  if (mrb_string_p(socketname)) {
     remove(RSTRING_PTR(socketname));
   }
 
@@ -197,20 +196,6 @@ mrb_io_test_file_cleanup(mrb_state *mrb, mrb_value self)
   remove("test-bin");
 
   return mrb_nil_value();
-}
-
-static mrb_value
-mrb_io_test_mktemp(mrb_state *mrb, mrb_value klass)
-{
-  mrb_value str;
-  char *cp;
-
-  mrb_get_args(mrb, "S", &str);
-  cp = mrb_str_to_cstr(mrb, str);
-  if (mktemp(cp) == NULL) {
-    mrb_sys_fail(mrb, "mktemp");
-  }
-  return mrb_str_new_cstr(mrb, cp);
 }
 
 static mrb_value
@@ -263,7 +248,6 @@ mrb_mruby_io_gem_test(mrb_state* mrb)
   mrb_define_class_method(mrb, io_test, "file_test_setup", mrb_io_test_file_setup, MRB_ARGS_NONE());
   mrb_define_class_method(mrb, io_test, "file_test_cleanup", mrb_io_test_file_cleanup, MRB_ARGS_NONE());
 
-  mrb_define_class_method(mrb, io_test, "mktemp", mrb_io_test_mktemp, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, io_test, "mkdtemp", mrb_io_test_mkdtemp, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, io_test, "rmdir", mrb_io_test_rmdir, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, io_test, "win?", mrb_io_win_p, MRB_ARGS_NONE());

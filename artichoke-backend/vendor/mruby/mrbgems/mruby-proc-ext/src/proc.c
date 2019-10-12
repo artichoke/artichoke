@@ -76,10 +76,7 @@ mrb_kernel_proc(mrb_state *mrb, mrb_value self)
 {
   mrb_value blk;
 
-  mrb_get_args(mrb, "&", &blk);
-  if (mrb_nil_p(blk)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "tried to create Proc object without a block");
-  }
+  mrb_get_args(mrb, "&!", &blk);
 
   return blk;
 }
@@ -157,7 +154,7 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
       ARY_PUSH(mrb, a, sname);
       if (i < max && irep->lv[i].name) {
         mrb_sym sym = irep->lv[i].name;
-        const char *name = mrb_sym2name(mrb, sym);
+        const char *name = mrb_sym_name(mrb, sym);
         switch (name[0]) {
         case '*': case '&':
           break;

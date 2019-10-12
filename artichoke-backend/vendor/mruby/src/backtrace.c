@@ -132,7 +132,7 @@ print_packed_backtrace(mrb_state *mrb, mrb_value packed)
     if (entry->method_id != 0) {
       const char *method_name;
 
-      method_name = mrb_sym2name(mrb, entry->method_id);
+      method_name = mrb_sym_name(mrb, entry->method_id);
       fprintf(stream, ":in %s", method_name);
       mrb_gc_arena_restore(mrb, ai);
     }
@@ -253,7 +253,7 @@ mrb_unpack_backtrace(mrb_state *mrb, mrb_value backtrace)
     btline = mrb_format(mrb, "%s:%d", entry->filename, entry->lineno);
     if (entry->method_id != 0) {
       mrb_str_cat_lit(mrb, btline, ":in ");
-      mrb_str_cat_cstr(mrb, btline, mrb_sym2name(mrb, entry->method_id));
+      mrb_str_cat_cstr(mrb, btline, mrb_sym_name(mrb, entry->method_id));
     }
     ARY_PUSH(mrb, backtrace, btline);
     mrb_gc_arena_restore(mrb, ai);

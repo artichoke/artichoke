@@ -382,7 +382,7 @@ assign_class_name(mrb_state *mrb, struct RObject *obj, mrb_sym sym, mrb_value v)
 {
   if (namespace_p(obj->tt) && namespace_p(mrb_type(v))) {
     struct RObject *c = mrb_obj_ptr(v);
-    if (obj != c && ISUPPER(mrb_sym2name(mrb, sym)[0])) {
+    if (obj != c && ISUPPER(mrb_sym_name(mrb, sym)[0])) {
       mrb_sym id_classname = mrb_intern_lit(mrb, "__classname__");
       mrb_value o = mrb_obj_iv_get(mrb, c, id_classname);
 
@@ -439,7 +439,7 @@ mrb_iv_name_sym_p(mrb_state *mrb, mrb_sym iv_name)
   const char *s;
   mrb_int len;
 
-  s = mrb_sym2name_len(mrb, iv_name, &len);
+  s = mrb_sym_name_len(mrb, iv_name, &len);
   if (len < 2) return FALSE;
   if (s[0] != '@') return FALSE;
   if (ISDIGIT(s[1])) return FALSE;
@@ -487,10 +487,10 @@ inspect_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
   else {
     mrb_str_cat_lit(mrb, str, ", ");
   }
-  s = mrb_sym2name_len(mrb, sym, &len);
+  s = mrb_sym_name_len(mrb, sym, &len);
   mrb_str_cat(mrb, str, s, len);
   mrb_str_cat_lit(mrb, str, "=");
-  if (mrb_type(v) == MRB_TT_OBJECT) {
+  if (mrb_object_p(v)) {
     ins = mrb_any_to_s(mrb, v);
   }
   else {
@@ -545,7 +545,7 @@ iv_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
   mrb_int len;
 
   ary = *(mrb_value*)p;
-  s = mrb_sym2name_len(mrb, sym, &len);
+  s = mrb_sym_name_len(mrb, sym, &len);
   if (len > 1 && s[0] == '@' && s[1] != '@') {
     ARY_PUSH(mrb, ary, mrb_symbol_value(sym));
   }
@@ -589,7 +589,7 @@ cv_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
   mrb_int len;
 
   ary = *(mrb_value*)p;
-  s = mrb_sym2name_len(mrb, sym, &len);
+  s = mrb_sym_name_len(mrb, sym, &len);
   if (len > 2 && s[0] == '@' && s[1] == '@') {
     ARY_PUSH(mrb, ary, mrb_symbol_value(sym));
   }
@@ -599,7 +599,7 @@ cv_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
 /* 15.2.2.4.19 */
 /*
  *  call-seq:
- *     mod.class_variables   -> array
+ *     mod.class_variables(inherit=true)   -> array
  *
  *  Returns an array of the names of class variables in <i>mod</i>.
  *
@@ -617,11 +617,14 @@ mrb_mod_class_variables(mrb_state *mrb, mrb_value mod)
 {
   mrb_value ary;
   struct RClass *c;
+  mrb_bool inherit = TRUE;
 
+  mrb_get_args(mrb, "|b", &inherit);
   ary = ARY_NEW(mrb);
   c = mrb_class_ptr(mod);
   while (c) {
     iv_foreach(mrb, c->iv, cv_i, &ary);
+    if (!inherit) break;
     c = c->super;
   }
   return ary;
@@ -744,7 +747,13 @@ mrb_vm_cv_get(mrb_state *mrb, mrb_sym sym)
 {
   struct RClass *c;
 
-  c = MRB_PROC_TARGET_CLASS(mrb->c->ci->proc);
+  struct RProc *p = mrb->c->ci->proc;
+
+  for (;;) {
+    c = MRB_PROC_TARGET_CLASS(p);
+    if (c->tt != MRB_TT_SCLASS) break;
+    p = p->upper;
+  }
   return mrb_mod_cv_get(mrb, c, sym);
 }
 
@@ -752,8 +761,13 @@ void
 mrb_vm_cv_set(mrb_state *mrb, mrb_sym sym, mrb_value v)
 {
   struct RClass *c;
+  struct RProc *p = mrb->c->ci->proc;
 
-  c = MRB_PROC_TARGET_CLASS(mrb->c->ci->proc);
+  for (;;) {
+    c = MRB_PROC_TARGET_CLASS(p);
+    if (c->tt != MRB_TT_SCLASS) break;
+    p = p->upper;
+  }
   mrb_mod_cv_set(mrb, c, sym, v);
 }
 
@@ -884,9 +898,17 @@ const_i(mrb_state *mrb, mrb_sym sym, mrb_value v, void *p)
   mrb_int len;
 
   ary = *(mrb_value*)p;
-  s = mrb_sym2name_len(mrb, sym, &len);
+  s = mrb_sym_name_len(mrb, sym, &len);
   if (len >= 1 && ISUPPER(s[0])) {
-    ARY_PUSH(mrb, ary, mrb_symbol_value(sym));
+    mrb_int i, alen = ARRAY_LEN(mrb, ary);
+
+    for (i=0; i<alen; i++) {
+      if (mrb_symbol(ARY_REF(mrb, ary, i)) == sym)
+        break;
+    }
+    if (i==alen) {
+      ARY_PUSH(mrb, ary, mrb_symbol_value(sym));
+    }
   }
   return 0;
 }
@@ -1099,13 +1121,13 @@ mrb_class_find_path(mrb_state *mrb, struct RClass *c)
   mrb_str_cat_cstr(mrb, path, str);
   mrb_str_cat_cstr(mrb, path, "::");
 
-  str = mrb_sym2name_len(mrb, name, &len);
+  str = mrb_sym_name_len(mrb, name, &len);
   mrb_str_cat(mrb, path, str, len);
   if (RSTRING_PTR(path)[0] != '#') {
     iv_del(mrb, c->iv, mrb_intern_lit(mrb, "__outer__"), NULL);
     iv_put(mrb, c->iv, mrb_intern_lit(mrb, "__classname__"), path);
     mrb_field_write_barrier_value(mrb, (struct RBasic*)c, path);
-    path = mrb_str_dup(mrb, path);
+    MRB_SET_FROZEN_FLAG(mrb_obj_ptr(path));
   }
   return path;
 }

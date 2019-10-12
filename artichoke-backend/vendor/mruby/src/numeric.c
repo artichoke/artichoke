@@ -246,9 +246,6 @@ flo_to_s(mrb_state *mrb, mrb_value flt)
       str = mrb_float_to_str(mrb, flt, fmt);
       goto insert_dot_zero;
     }
-    else {
-      mrb_str_cat(mrb, str, ".0", 2);
-    }
 
     return str;
   }
@@ -448,7 +445,6 @@ static mrb_value
 flo_rev(mrb_state *mrb, mrb_value x)
 {
   int64_t v1;
-  mrb_get_args(mrb, "");
   v1 = (int64_t)mrb_float(x);
   return int64_value(mrb, ~v1);
 }
@@ -1556,17 +1552,36 @@ integral_ge(mrb_state *mrb, mrb_value self)
   return mrb_false_value();
 }
 
+MRB_API mrb_int
+mrb_cmp(mrb_state *mrb, mrb_value obj1, mrb_value obj2)
+{
+  mrb_value v;
+
+  switch (mrb_type(obj1)) {
+  case MRB_TT_FIXNUM:
+  case MRB_TT_FLOAT:
+    return cmpnum(mrb, obj1, obj2);
+  case MRB_TT_STRING:
+    if (!mrb_string_p(obj2))
+      return -2;
+    return mrb_str_cmp(mrb, obj1, obj2);
+  default:
+    v = mrb_funcall(mrb, obj1, "<=>", 1, obj2);
+    if (mrb_nil_p(v) || !mrb_fixnum_p(v))
+      return -2;
+    return mrb_fixnum(v);
+  }
+}
+
 static mrb_value
 num_finite_p(mrb_state *mrb, mrb_value self)
 {
-  mrb_get_args(mrb, "");
   return mrb_true_value();
 }
 
 static mrb_value
 num_infinite_p(mrb_state *mrb, mrb_value self)
 {
-  mrb_get_args(mrb, "");
   return mrb_false_value();
 }
 
@@ -1645,8 +1660,8 @@ mrb_init_numeric(mrb_state *mrb)
 #ifndef MRB_WITHOUT_FLOAT
   mrb_define_method(mrb, fixnum,  "to_f",     fix_to_f,        MRB_ARGS_NONE()); /* 15.2.8.3.23 */
 #endif
-  mrb_define_method(mrb, fixnum,  "to_s",     fix_to_s,        MRB_ARGS_NONE()); /* 15.2.8.3.25 */
-  mrb_define_method(mrb, fixnum,  "inspect",  fix_to_s,        MRB_ARGS_NONE());
+  mrb_define_method(mrb, fixnum,  "to_s",     fix_to_s,        MRB_ARGS_OPT(1)); /* 15.2.8.3.25 */
+  mrb_define_method(mrb, fixnum,  "inspect",  fix_to_s,        MRB_ARGS_OPT(1));
   mrb_define_method(mrb, fixnum,  "divmod",   fix_divmod,      MRB_ARGS_REQ(1)); /* 15.2.8.3.30 (x) */
 
 #ifndef MRB_WITHOUT_FLOAT

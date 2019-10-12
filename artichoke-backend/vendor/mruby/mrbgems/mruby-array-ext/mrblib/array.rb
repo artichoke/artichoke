@@ -126,6 +126,22 @@ class Array
 
   ##
   # call-seq:
+  #    ary.difference(other_ary1, other_ary2, ...)   -> new_ary
+  #
+  # Returns a new array that is a copy of the original array, removing all
+  # occurrences of any item that also appear in +other_ary+. The order is
+  # preserved from the original array.
+  #
+  def difference(*args)
+    ary = self.dup
+    args.each do |x|
+      ary = self - x
+    end
+    ary
+  end
+
+  ##
+  # call-seq:
   #    ary & other_ary      -> new_ary
   #
   # Set Intersection---Returns a new array
@@ -815,12 +831,11 @@ class Array
   #  a.permutation(0).to_a #=> [[]] # one permutation of length 0
   #  a.permutation(4).to_a #=> []   # no permutations of length 4
   def permutation(n=self.size, &block)
-    size = self.size
     return to_enum(:permutation, n) unless block
-    return if n > size
+    size = self.size
     if n == 0
-       yield []
-    else
+      yield []
+    elsif 0 < n && n <= size
       i = 0
       while i<size
         result = [self[i]]
@@ -835,6 +850,7 @@ class Array
         i += 1
       end
     end
+    self
   end
 
   ##
@@ -861,9 +877,8 @@ class Array
   #    a.combination(5).to_a  #=> []   # no combinations of length 5
 
   def combination(n, &block)
-    size = self.size
     return to_enum(:combination, n) unless block
-    return if n > size
+    size = self.size
     if n == 0
        yield []
     elsif n == 1
@@ -872,7 +887,7 @@ class Array
         yield [self[i]]
         i += 1
       end
-    else
+    elsif n <= size
       i = 0
       while i<size
         result = [self[i]]
@@ -882,6 +897,7 @@ class Array
         i += 1
       end
     end
+    self
   end
 
   ##
@@ -939,4 +955,5 @@ class Array
 
   alias append push
   alias prepend unshift
+  alias filter! select!
 end
