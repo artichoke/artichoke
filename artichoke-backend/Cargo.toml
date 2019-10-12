@@ -20,7 +20,7 @@ version = "5"
 # branch = "wasm"
 
 [dev-dependencies]
-env_logger = "0.6.1"
+env_logger = "0.7"
 libc = "0.2"
 quickcheck = "0.9"
 quickcheck_macros = "0.8"
