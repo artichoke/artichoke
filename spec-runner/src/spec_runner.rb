@@ -1,4 +1,7 @@
+#!/usr/bin/env ruby
 # frozen_string_literal: true
+
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'vendor', 'mspec', 'lib')) if $PROGRAM_NAME == __FILE__
 
 class StubIO
   def method_missing(method, *args, &block)
@@ -12,8 +15,8 @@ class StubIO
   end
 end
 
-STDOUT = StubIO.new
-STDERR = StubIO.new
+STDOUT = StubIO.new unless Object.const_defined?(:STDOUT)
+STDERR = StubIO.new unless Object.const_defined?(:STDERR)
 RUBY_EXE = '/usr/bin/true'
 
 require 'mspec'
@@ -149,4 +152,10 @@ def run_specs(*specs)
   MSpec.process
 
   collector.success?
+end
+
+if $PROGRAM_NAME == __FILE__
+  ENV['MSPEC_RUNNER'] = '1'
+  specs = ARGV.reject { |file| file.include?('/fixtures/') || file.include?('/shared/') }
+  run_specs(*specs)
 end

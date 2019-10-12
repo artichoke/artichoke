@@ -10,130 +10,158 @@ if command -v yarn; then
 fi
 
 set -x
-
 shopt -s globstar
+declare -a specs
 
-cargo build
-spec_runner="$(pwd)/target/debug/spec-runner"
-
-run_spec() {
+register_spec() {
   if [[ $# -eq 2 ]]; then
     family="$1"
     component="$2"
     pushd "spec-runner/vendor/spec" >/dev/null
-    $spec_runner ./**/shared/**/*.rb ./**/fixtures/**/*.rb "./$family/$component/"*_spec.rb
-    popd
+    for spec in "./$family/$component/"*_spec.rb; do
+      specs+=("$spec")
+    done
+    popd >/dev/null
   elif [[ $# -eq 3 ]]; then
     family="$1"
     component="$2"
     spec="$3"
     pushd "spec-runner/vendor/spec" >/dev/null
-    $spec_runner ./**/shared/**/*.rb ./**/fixtures/**/*.rb "./$family/$component/${spec}_spec.rb"
-    popd
+    specs+=("./$family/$component/${spec}_spec.rb")
+    popd >/dev/null
   else
     echo 1>&2 "Usage: $0 language|core|library component [spec]"
   fi
 }
 
-# run_spec core array allocate
-run_spec core array any
-run_spec core array append
-run_spec core array array
-run_spec core array assoc
-run_spec core array at
-# run_spec core array bsearch
-# run_spec core array bsearch_index
-run_spec core array clear
-# run_spec core array clone
-run_spec core array collect
-run_spec core array combination
-run_spec core array compact
-# run_spec core array comparison
-# run_spec core array concat
-run_spec core array count
-run_spec core array cycle
-run_spec core array delete_at
-run_spec core array delete_if
-run_spec core array delete
-# run_spec core array difference
-# run_spec core array dig
-run_spec core array drop
-# run_spec core array drop_while
-# run_spec core array dup
-run_spec core array each_index
-run_spec core array each
-# run_spec core array element_reference
-# run_spec core array element_set
-run_spec core array empty
-# run_spec core array eql
-# run_spec core array equal_value
-# run_spec core array fetch
-# run_spec core array fill
-# run_spec core array filter
-# run_spec core array find_index
-# run_spec core array first
-# run_spec core array flatten
-run_spec core array frozen
-# run_spec core array hash
-run_spec core array include
-# run_spec core array index
-# run_spec core array initialize
-# run_spec core array insert
-# run_spec core array inspect
-# run_spec core array intersection
-# run_spec core array join
-# run_spec core array keep_if
-run_spec core array last
-run_spec core array length
-run_spec core array map
-# run_spec core array max
-# run_spec core array min
-# run_spec core array minus
-# run_spec core array multiply
-# run_spec core array new
-# run_spec core array partition
-# run_spec core array permutation
-run_spec core array plus
-# run_spec core array pop
-run_spec core array prepend
-# run_spec core array product
-run_spec core array push
-run_spec core array rassoc
-# run_spec core array reject
-# run_spec core array repeated_combination
-# run_spec core array repeated_permutation
-run_spec core array replace
-run_spec core array reverse_each
-run_spec core array reverse
-# run_spec core array rindex
-# run_spec core array rotate
-# run_spec core array sample
-# run_spec core array select
-run_spec core array shift
-# run_spec core array shuffle
-run_spec core array size
-# run_spec core array slice
-run_spec core array sort_by
-# run_spec core array sort
-# run_spec core array sum
-# run_spec core array take
-# run_spec core array take_while
-# run_spec core array to_a
-run_spec core array to_ary
-# run_spec core array to_h
-# run_spec core array to_s
-# run_spec core array transpose
-run_spec core array try_convert
-# run_spec core array union
-# run_spec core array uniq
-run_spec core array unshift
-# run_spec core array values_at
-# run_spec core array zip
+run_specs_artichoke() {
+  bin="$(pwd)/target/debug/spec-runner"
+  pushd "spec-runner/vendor/spec" >/dev/null
+  time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  popd >/dev/null
+}
 
-run_spec core comparable
-run_spec core matchdata
-run_spec core regexp
+run_specs_ruby() {
+  bin="$(pwd)/spec-runner/src/spec_runner.rb"
+  pushd "spec-runner/vendor/spec" >/dev/null
+  time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  popd >/dev/null
+}
 
-run_spec library monitor
-run_spec library stringscanner
-run_spec library uri
+# register_spec core array allocate
+register_spec core array any
+register_spec core array append
+register_spec core array array
+register_spec core array assoc
+register_spec core array at
+# register_spec core array bsearch
+# register_spec core array bsearch_index
+register_spec core array clear
+# register_spec core array clone
+register_spec core array collect
+register_spec core array combination
+register_spec core array compact
+# register_spec core array comparison
+# register_spec core array concat
+register_spec core array count
+register_spec core array cycle
+register_spec core array delete_at
+register_spec core array delete_if
+register_spec core array delete
+# register_spec core array difference
+# register_spec core array dig
+register_spec core array drop
+# register_spec core array drop_while
+# register_spec core array dup
+register_spec core array each_index
+register_spec core array each
+# register_spec core array element_reference
+# register_spec core array element_set
+register_spec core array empty
+# register_spec core array eql
+# register_spec core array equal_value
+# register_spec core array fetch
+# register_spec core array fill
+# register_spec core array filter
+# register_spec core array find_index
+# register_spec core array first
+# register_spec core array flatten
+register_spec core array frozen
+# register_spec core array hash
+register_spec core array include
+# register_spec core array index
+# register_spec core array initialize
+# register_spec core array insert
+# register_spec core array inspect
+# register_spec core array intersection
+# register_spec core array join
+# register_spec core array keep_if
+register_spec core array last
+register_spec core array length
+register_spec core array map
+# register_spec core array max
+# register_spec core array min
+# register_spec core array minus
+# register_spec core array multiply
+# register_spec core array new
+# register_spec core array partition
+# register_spec core array permutation
+register_spec core array plus
+# register_spec core array pop
+register_spec core array prepend
+# register_spec core array product
+register_spec core array push
+register_spec core array rassoc
+# register_spec core array reject
+# register_spec core array repeated_combination
+# register_spec core array repeated_permutation
+register_spec core array replace
+register_spec core array reverse_each
+register_spec core array reverse
+# register_spec core array rindex
+# register_spec core array rotate
+# register_spec core array sample
+# register_spec core array select
+register_spec core array shift
+# register_spec core array shuffle
+register_spec core array size
+# register_spec core array slice
+register_spec core array sort_by
+# register_spec core array sort
+# register_spec core array sum
+# register_spec core array take
+# register_spec core array take_while
+# register_spec core array to_a
+register_spec core array to_ary
+# register_spec core array to_h
+# register_spec core array to_s
+# register_spec core array transpose
+register_spec core array try_convert
+# register_spec core array union
+# register_spec core array uniq
+register_spec core array unshift
+# register_spec core array values_at
+# register_spec core array zip
+
+register_spec core comparable
+register_spec core matchdata
+register_spec core regexp
+
+register_spec library monitor
+register_spec library stringscanner
+register_spec library uri
+
+if [[ $# -eq 1 ]]; then
+  if [[ $1 == "--ruby" ]]; then
+    run_specs_ruby
+  elif [[ $1 == "--artichoke" ]]; then
+    cargo build -p spec-runner
+    run_specs_artichoke
+  else
+    echo 1>&2 "Usage: $0 [ --artichoke | --ruby ]"
+    exit 1
+  fi
+else
+  echo 1>&2 "Usage: $0 [ --artichoke | --ruby ]"
+  exit 1
+fi
