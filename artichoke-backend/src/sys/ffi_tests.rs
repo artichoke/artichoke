@@ -118,11 +118,11 @@ fn symbol_to_string() {
         let literal = name.as_ptr() as *const i8;
         let symbol = mrb_intern_cstr(mrb, literal);
 
-        let s = mrb_sym2name(mrb, symbol) as *const i8;
+        let s = mrb_sym_name(mrb, symbol) as *const i8;
         let s = CStr::from_ptr(s).to_str().expect(":symbol name");
-        assert_eq!(s, r#"":symbol""#);
+        assert_eq!(s, ":symbol");
 
-        let mut s = mrb_sym2str(mrb, symbol);
+        let mut s = mrb_sym_str(mrb, symbol);
         assert_eq!(s.tt, mrb_vtype::MRB_TT_STRING);
         let s = mrb_string_value_cstr(mrb, &mut s) as *const i8;
         let s = CStr::from_ptr(s).to_str().expect(":symbol.to_s");
