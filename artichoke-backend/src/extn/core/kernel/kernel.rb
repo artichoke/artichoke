@@ -1,39 +1,6 @@
 # frozen_string_literal: true
 
 module Kernel
-  def Integer(arg, base = nil, exception: true) # rubocop:disable Naming/MethodName
-    raise ArgumentError, 'base specified for non string value' if base&.positive? && arg.is_a?(Numeric)
-
-    classname = arg.class
-    classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
-
-    if arg&.respond_to?(:to_int)
-      ret = arg.to_int
-
-      # uncritically return the value of to_int even if it is not an Integer
-      return ret if ret.is_a?(Numeric)
-      return ret if ret&.scan(/\D/)&.empty? && ret&.to_i.nil?
-
-      ret = arg.to_i
-
-      return ret if ret.is_a?(Numeric)
-    elsif !arg.is_a?(String) && arg && arg.respond_to?(:to_i)
-      ret = arg.to_i
-
-      return ret if ret.is_a?(Numeric)
-
-      raise TypeError, "can't convert #{classname} to Integer (#{arg.class}#to_i gives #{ret.class})"
-    elsif arg.is_a?(String)
-      return ::Artichoke::Kernel::Integer(arg, base)
-    end
-
-    raise TypeError, "can't convert #{classname} to Integer"
-  rescue StandardError => e
-    return nil if exception.equal?(false)
-
-    raise e
-  end
-
   # Setup a catch block and wait for an object to be thrown, the
   # catch end without catching anything.
   #
@@ -88,6 +55,39 @@ module Kernel
     end
 
     raise TypeError, "can't convert #{classname} into Hash"
+  end
+
+  def Integer(arg, base = nil, exception: true) # rubocop:disable Naming/MethodName
+    raise ArgumentError, 'base specified for non string value' if base&.positive? && arg.is_a?(Numeric)
+
+    classname = arg.class
+    classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
+
+    if arg&.respond_to?(:to_int)
+      ret = arg.to_int
+
+      # uncritically return the value of to_int even if it is not an Integer
+      return ret if ret.is_a?(Numeric)
+      return ret if ret&.scan(/\D/)&.empty? && ret&.to_i.nil?
+
+      ret = arg.to_i
+
+      return ret if ret.is_a?(Numeric)
+    elsif !arg.is_a?(String) && arg && arg.respond_to?(:to_i)
+      ret = arg.to_i
+
+      return ret if ret.is_a?(Numeric)
+
+      raise TypeError, "can't convert #{classname} to Integer (#{arg.class}#to_i gives #{ret.class})"
+    elsif arg.is_a?(String)
+      return ::Artichoke::Kernel::Integer(arg, base)
+    end
+
+    raise TypeError, "can't convert #{classname} to Integer"
+  rescue StandardError => e
+    return nil if exception.equal?(false)
+
+    raise e
   end
 
   def String(arg) # rubocop:disable Naming/MethodName
