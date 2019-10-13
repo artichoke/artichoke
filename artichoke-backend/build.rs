@@ -83,7 +83,7 @@ mod libmruby {
     }
 
     fn wasm_include_dir() -> PathBuf {
-        buildpath::build_root()
+        buildpath::crate_root()
             .join("vendor")
             .join("emscripten")
             .join("system")
@@ -221,9 +221,9 @@ mod libmruby {
         }
 
         if let Architecture::Wasm32 = target.architecture {
-            build.define("MRB_DISABLE_DIRECT_THREADING", None);
+            build.include(wasm_include_dir());
             if let OperatingSystem::Unknown = target.operating_system {
-                build.include(wasm_include_dir());
+                build.define("MRB_DISABLE_DIRECT_THREADING", None);
                 build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
             }
         }
