@@ -1,6 +1,3 @@
-// use regex::Regex;
-// use std::str::FromStr;
-
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define, EnclosingRubyScope};
 use crate::eval::{Context, Eval};
