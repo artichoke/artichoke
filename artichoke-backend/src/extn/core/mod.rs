@@ -3,6 +3,7 @@ use crate::Artichoke;
 use crate::ArtichokeError;
 
 pub mod array;
+pub mod artichoke;
 pub mod comparable;
 pub mod enumerable;
 pub mod env;
@@ -32,6 +33,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("object.rb"))?;
     // `Array` depends on: `Enumerable`, `attr_accessor` (defined in `Module`)
     array::init(interp)?;
+    artichoke::init(interp)?;
     comparable::init(interp)?;
     env::init(interp)?;
     hash::init(interp)?;

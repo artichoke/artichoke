@@ -1,11 +1,15 @@
 use crate::convert::Convert;
-use crate::def::{ClassLike, Define};
+use crate::def::{ClassLike, Define, EnclosingRubyScope};
 use crate::eval::{Context, Eval};
-use crate::extn::core::exception::{ArgumentError, LoadError, RubyException, RuntimeError};
+use crate::extn::core::artichoke::RArtichoke;
+use crate::extn::core::exception::{
+    ArgumentError, LoadError, RubyException, RuntimeError, TypeError,
+};
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
+pub mod integer;
 pub mod require;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -29,6 +33,30 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         Kernel::require_relative,
         sys::mrb_args_rest(),
     );
+    let artichoke_kernel = {
+        let scope = interp
+            .0
+            .borrow_mut()
+            .module_spec::<RArtichoke>()
+            .map(EnclosingRubyScope::module)
+            .unwrap();
+        let spec = interp
+            .0
+            .borrow_mut()
+            .def_module::<Kernel>("Kernel", Some(scope));
+        spec.borrow_mut()
+            .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1));
+        spec.borrow_mut().add_self_method(
+            "Integer",
+            Kernel::integer,
+            sys::mrb_args_req_and_opt(1, 1),
+        );
+        spec
+    };
+    artichoke_kernel
+        .borrow()
+        .define(interp)
+        .map_err(|_| ArtichokeError::New)?;
     kernel
         .borrow_mut()
         .add_self_method("load", Kernel::load, sys::mrb_args_rest());
@@ -103,6 +131,28 @@ impl Kernel {
             }
             Err(require::ErrorReq::NoImplicitConversionToString) => {
                 ArgumentError::raise(interp, "No implicit conversion to String")
+            }
+        }
+    }
+
+    unsafe extern "C" fn integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
+        let interp = unwrap_interpreter!(mrb);
+        let result = integer::Args::extract(&interp, arg, base)
+            .and_then(|args| integer::method(&interp, &args));
+        match result {
+            Ok(value) => value.inner(),
+            Err(integer::Error::InvalidRadix(v)) => {
+                ArgumentError::raisef(interp, "invalid radix", vec![v])
+            }
+            Err(integer::Error::InvalidValue(v)) => {
+                ArgumentError::raisef(interp, "invalid value for Integer(): \"%S\"", vec![v])
+            }
+            Err(integer::Error::ContainsNullByte) => {
+                ArgumentError::raise(interp, "string contains null byte")
+            }
+            Err(integer::Error::NoImplicitConversionToString(class_name)) => {
+                TypeError::raisef(interp, "can't convert %S into String", vec![class_name])
             }
         }
     }
