@@ -67,13 +67,11 @@ pub fn method<'a>(interp: &'a Artichoke, args: &Args<'a>) -> Result<Value, Error
 
     while let Some(current) = chars.next() {
         if current == '\0' {
-
             return Err(Error::ContainsNullByte);
         }
 
         // Ignore an embedded underscore (`_`).
         if current == '_' {
-
             let valid_prev = prev
                 .map(|prev| prev.is_numeric() || prev.is_alphabetic())
                 .unwrap_or_default();
@@ -87,7 +85,6 @@ pub fn method<'a>(interp: &'a Artichoke, args: &Args<'a>) -> Result<Value, Error
             }
         }
         if current.is_whitespace() {
-
             if let Some('+') | Some('-') = prev {
                 return Err(Error::InvalidValue(arg));
             } else {
@@ -99,21 +96,18 @@ pub fn method<'a>(interp: &'a Artichoke, args: &Args<'a>) -> Result<Value, Error
 
         state = match current {
             '+' => {
-
                 if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
                     return Err(Error::InvalidValue(arg));
                 }
                 ParseState::Sign(Sign::Pos)
             }
             '-' => {
-
                 if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
                     return Err(Error::InvalidValue(arg));
                 }
                 ParseState::Sign(Sign::Neg)
             }
             digit => match state {
-
                 ParseState::Initial => {
                     let mut digits = String::new();
                     digits.push(digit);
