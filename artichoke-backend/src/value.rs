@@ -254,7 +254,7 @@ impl ValueLike for Value {
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
-    ) -> Result<Value, ArtichokeError> {
+    ) -> Result<Self, ArtichokeError> {
         self.interp.0.borrow_mut();
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
@@ -264,7 +264,7 @@ impl ValueLike for Value {
             (borrow.mrb, borrow.ctx)
         };
 
-        let _arena = self.interp.create_arena_savepoint();
+        let arena = self.interp.create_arena_savepoint();
 
         let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
@@ -299,16 +299,15 @@ impl ValueLike for Value {
             if state.assume_init() != 0 {
                 // drop all bindings to heap-allocated objects because we are
                 // about to unwind with longjmp.
-                drop(_arena);
+                drop(arena);
                 drop(args);
-                drop(func);
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
                 sys::mrb_sys_raise_current_exception(mrb);
                 unreachable!("mrb_raise will unwind the stack with longjmp");
             }
             value
         };
-        Ok(Value::new(&self.interp, value))
+        Ok(Self::new(&self.interp, value))
     }
 
     fn try_into<T>(self) -> Result<T, ArtichokeError>
