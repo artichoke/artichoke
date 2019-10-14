@@ -64,15 +64,16 @@ pub fn method<'a>(interp: &'a Artichoke, args: &Args<'a>) -> Result<Value, Error
     let mut state = ParseState::Initial;
     let mut chars = arg.chars().skip_while(|c| c.is_whitespace()).peekable();
     let mut prev = None::<char>;
-    while chars.peek().is_some() {
-        let current = chars.next();
 
-        if let Some('\0') = current {
+    while let Some(current) = chars.next() {
+        if current == '\0' {
+
             return Err(Error::ContainsNullByte);
         }
 
         // Ignore an embedded underscore (`_`).
-        if let Some('_') = current {
+        if current == '_' {
+
             let valid_prev = prev
                 .map(|prev| prev.is_numeric() || prev.is_alphabetic())
                 .unwrap_or_default();
@@ -81,33 +82,38 @@ pub fn method<'a>(interp: &'a Artichoke, args: &Args<'a>) -> Result<Value, Error
                 .map(|next| next.is_numeric() || next.is_alphabetic())
                 .unwrap_or_default();
             if valid_prev && valid_next {
-                prev = current;
+                prev = Some(current);
                 continue;
             }
         }
-        if current.map(char::is_whitespace).unwrap_or_default() {
+        if current.is_whitespace() {
+
             if let Some('+') | Some('-') = prev {
                 return Err(Error::InvalidValue(arg));
             } else {
-                prev = current;
+                prev = Some(current);
+
                 continue;
             }
         }
 
         state = match current {
-            Some('+') => {
+            '+' => {
+
                 if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
                     return Err(Error::InvalidValue(arg));
                 }
                 ParseState::Sign(Sign::Pos)
             }
-            Some('-') => {
+            '-' => {
+
                 if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
                     return Err(Error::InvalidValue(arg));
                 }
                 ParseState::Sign(Sign::Neg)
             }
-            Some(digit) => match state {
+            digit => match state {
+
                 ParseState::Initial => {
                     let mut digits = String::new();
                     digits.push(digit);
@@ -123,9 +129,8 @@ pub fn method<'a>(interp: &'a Artichoke, args: &Args<'a>) -> Result<Value, Error
                     ParseState::Accumulate(sign, digits)
                 }
             },
-            None => return Err(Error::InvalidValue(arg)),
         };
-        prev = current;
+        prev = Some(current);
     }
 
     let (candidate, parsed_radix) = if let ParseState::Accumulate(sign, mut digits) = state {
