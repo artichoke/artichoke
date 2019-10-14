@@ -249,6 +249,67 @@ impl ValueLike for Value {
         }
     }
 
+    fn unchecked_funcall(
+        &self,
+        func: &str,
+        args: &[Self::Arg],
+        block: Option<Self::Block>,
+    ) -> Result<Self, ArtichokeError> {
+        self.interp.0.borrow_mut();
+        // Ensure the borrow is out of scope by the time we eval code since
+        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
+        // get access to the underlying `ArtichokeState`.
+        let (mrb, _ctx) = {
+            let borrow = self.interp.0.borrow();
+            (borrow.mrb, borrow.ctx)
+        };
+
+        let arena = self.interp.create_arena_savepoint();
+
+        let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
+        if args.len() > MRB_FUNCALL_ARGC_MAX {
+            warn!(
+                "Too many args supplied to funcall: given {}, max {}.",
+                args.len(),
+                MRB_FUNCALL_ARGC_MAX
+            );
+            return Err(ArtichokeError::TooManyArgs {
+                given: args.len(),
+                max: MRB_FUNCALL_ARGC_MAX,
+            });
+        }
+        trace!(
+            "Calling {}#{} with {} args{}",
+            types::ruby_from_mrb_value(self.inner()),
+            func,
+            args.len(),
+            if block.is_some() { " and block" } else { "" }
+        );
+        let func = self.interp.0.borrow_mut().sym_intern(func.as_ref());
+        let mut protect = Protect::new(self.inner(), func, args.as_ref());
+        if let Some(block) = block {
+            protect = protect.with_block(block.inner());
+        }
+        let value = unsafe {
+            let data =
+                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
+            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+
+            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
+            if state.assume_init() != 0 {
+                // drop all bindings to heap-allocated objects because we are
+                // about to unwind with longjmp.
+                drop(arena);
+                drop(args);
+                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+                sys::mrb_sys_raise_current_exception(mrb);
+                unreachable!("mrb_raise will unwind the stack with longjmp");
+            }
+            value
+        };
+        Ok(Self::new(&self.interp, value))
+    }
+
     fn try_into<T>(self) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>,
