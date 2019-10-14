@@ -31,6 +31,16 @@ macro_rules! global_const {
             );
         }
     }};
+    ($interp:expr, $constant:ident, $value:expr) => {{
+        let mrb = $interp.0.borrow().mrb;
+        unsafe {
+            sys::mrb_define_global_const(
+                mrb,
+                concat!(stringify!($constant), "\0").as_ptr() as *const i8,
+                $interp.convert($value).inner(),
+            );
+        }
+    }};
     ($interp:expr, $constant:ident as Int) => {{
         let mrb = $interp.0.borrow().mrb;
         let constant = $constant.parse::<Int>().map_err(|_| ArtichokeError::New)?;
@@ -44,10 +54,11 @@ macro_rules! global_const {
     }};
 }
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke, backend_name: &str) -> Result<(), ArtichokeError> {
+    let engine_name = format!("{}-{}", interp.convert(RUBY_ENGINE), backend_name);
     global_const!(interp, RUBY_COPYRIGHT);
     global_const!(interp, RUBY_DESCRIPTION);
-    global_const!(interp, RUBY_ENGINE);
+    global_const!(interp, RUBY_ENGINE, engine_name);
     global_const!(interp, RUBY_ENGINE_VERSION);
     global_const!(interp, RUBY_PATCHLEVEL as Int);
     global_const!(interp, RUBY_PLATFORM);

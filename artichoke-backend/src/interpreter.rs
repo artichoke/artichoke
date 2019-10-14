@@ -41,7 +41,7 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     let interp = Artichoke(unsafe { Rc::from_raw(ptr) });
 
     // Initialize Artichoke Core and Standard Library runtime
-    extn::init(&interp)?;
+    extn::init(&interp, "mruby")?;
 
     // Load mrbgems
     unsafe {
