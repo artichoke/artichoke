@@ -142,17 +142,19 @@ impl Kernel {
             .and_then(|args| integer::method(&interp, &args));
         match result {
             Ok(value) => value.inner(),
-            Err(integer::Error::InvalidRadix(v)) => {
-                ArgumentError::raisef(interp, "invalid radix", vec![v])
+            Err(integer::Error::InvalidRadix(radix)) => {
+                ArgumentError::raisef(interp, "invalid radix", vec![radix])
             }
-            Err(integer::Error::InvalidValue(v)) => {
-                ArgumentError::raisef(interp, "invalid value for Integer(): \"%S\"", vec![v])
+            Err(integer::Error::InvalidValue(value)) => {
+                let value = value.to_owned();
+                ArgumentError::raisef(interp, "invalid value for Integer(): \"%S\"", vec![value])
             }
             Err(integer::Error::ContainsNullByte) => {
                 ArgumentError::raise(interp, "string contains null byte")
             }
-            Err(integer::Error::NoImplicitConversionToString(class_name)) => {
-                TypeError::raisef(interp, "can't convert %S into String", vec![class_name])
+            Err(integer::Error::NoImplicitConversionToString(class)) => {
+                let class = class.to_owned();
+                TypeError::raisef(interp, "can't convert %S into String", vec![class])
             }
         }
     }
