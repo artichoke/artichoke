@@ -27,6 +27,14 @@ where
     where
         Self::Artichoke: TryConvert<Self, T>;
 
+    /// Call a method on this [`Value`] with arguments and an optional block.
+    fn unchecked_funcall(
+        &self,
+        func: &str,
+        args: &[Self::Arg],
+        block: Option<Self::Block>,
+    ) -> Result<Self, ArtichokeError>;
+
     /// Consume `self` and try to convert `self` to type `T`.
     ///
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
