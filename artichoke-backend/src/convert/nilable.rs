@@ -42,8 +42,7 @@ macro_rules! option_to_ruby {
         impl<'a> Convert<Option<$elem>, Value> for Artichoke {
             fn convert(&self, value: Option<$elem>) -> Value {
                 if let Some(value) = value {
-                    let result: Value = self.convert(value);
-                    result
+                    self.convert(value)
                 } else {
                     Value::new(self, unsafe { sys::mrb_sys_nil_value() })
                 }
@@ -69,6 +68,7 @@ macro_rules! ruby_to_option {
 // Primitives
 option_to_ruby!(bool);
 option_to_ruby!(Vec<u8>);
+option_to_ruby!(&'a [u8]);
 option_to_ruby!(Int);
 option_to_ruby!(Float);
 option_to_ruby!(String);
@@ -78,6 +78,7 @@ option_to_ruby!(&'a str);
 option_to_ruby!(Vec<Value>);
 option_to_ruby!(Vec<bool>);
 option_to_ruby!(Vec<Vec<u8>>);
+option_to_ruby!(Vec<&'a [u8]>);
 option_to_ruby!(Vec<Int>);
 option_to_ruby!(Vec<Float>);
 option_to_ruby!(Vec<String>);
@@ -243,6 +244,7 @@ option_to_ruby!(HashMap<Option<&'a str>, Option<&'a str>>);
 // Primitives
 ruby_to_option!(bool);
 ruby_to_option!(Vec<u8>);
+ruby_to_option!(&'a [u8]);
 ruby_to_option!(Int);
 ruby_to_option!(Float);
 ruby_to_option!(String);
@@ -252,6 +254,7 @@ ruby_to_option!(&'a str);
 ruby_to_option!(Vec<Value>);
 ruby_to_option!(Vec<bool>);
 ruby_to_option!(Vec<Vec<u8>>);
+ruby_to_option!(Vec<&'a [u8]>);
 ruby_to_option!(Vec<Int>);
 ruby_to_option!(Vec<Float>);
 ruby_to_option!(Vec<String>);
