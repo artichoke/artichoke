@@ -10,6 +10,15 @@ use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 // bail out implementation for mixed-type collections
+impl Convert<&[Value], Value> for Artichoke {
+    fn convert(&self, value: &[Value]) -> Value {
+        let ary = Array {
+            buffer: VecDeque::from(value.to_vec()),
+        };
+        unsafe { ary.try_into_ruby(self, None) }.expect("Array into Value")
+    }
+}
+
 impl Convert<Vec<Value>, Value> for Artichoke {
     fn convert(&self, value: Vec<Value>) -> Value {
         let ary = Array {
@@ -52,6 +61,12 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
 
 macro_rules! array_to_ruby {
     ($elem:ty) => {
+        impl<'a> Convert<&[$elem], Value> for Artichoke {
+            fn convert(&self, value: &[$elem]) -> Value {
+                self.convert(value.to_vec())
+            }
+        }
+
         impl<'a> Convert<Vec<$elem>, Value> for Artichoke {
             fn convert(&self, value: Vec<$elem>) -> Value {
                 let elems = value
@@ -83,6 +98,7 @@ macro_rules! ruby_to_array {
 // Primitives
 array_to_ruby!(bool);
 array_to_ruby!(Vec<u8>);
+array_to_ruby!(&'a [u8]);
 array_to_ruby!(Int);
 array_to_ruby!(Float);
 array_to_ruby!(String);
@@ -92,6 +108,7 @@ array_to_ruby!(&'a str);
 array_to_ruby!(Option<Value>);
 array_to_ruby!(Option<bool>);
 array_to_ruby!(Option<Vec<u8>>);
+array_to_ruby!(Option<&'a [u8]>);
 array_to_ruby!(Option<Int>);
 array_to_ruby!(Option<Float>);
 array_to_ruby!(Option<String>);
@@ -101,6 +118,7 @@ array_to_ruby!(Option<&'a str>);
 array_to_ruby!(Vec<Value>);
 array_to_ruby!(Vec<bool>);
 array_to_ruby!(Vec<Vec<u8>>);
+array_to_ruby!(Vec<&'a [u8]>);
 array_to_ruby!(Vec<Int>);
 array_to_ruby!(Vec<Float>);
 array_to_ruby!(Vec<String>);
@@ -110,6 +128,7 @@ array_to_ruby!(Vec<&'a str>);
 array_to_ruby!(Vec<Option<Value>>);
 array_to_ruby!(Vec<Option<bool>>);
 array_to_ruby!(Vec<Option<Vec<u8>>>);
+array_to_ruby!(Vec<Option<&'a [u8]>>);
 array_to_ruby!(Vec<Option<Int>>);
 array_to_ruby!(Vec<Option<Float>>);
 array_to_ruby!(Vec<Option<String>>);
@@ -266,6 +285,7 @@ array_to_ruby!(HashMap<Option<&'a str>, Option<&'a str>>);
 // Primitives
 ruby_to_array!(bool);
 ruby_to_array!(Vec<u8>);
+ruby_to_array!(&'a [u8]);
 ruby_to_array!(Int);
 ruby_to_array!(Float);
 ruby_to_array!(String);
@@ -275,6 +295,7 @@ ruby_to_array!(&'a str);
 ruby_to_array!(Option<Value>);
 ruby_to_array!(Option<bool>);
 ruby_to_array!(Option<Vec<u8>>);
+ruby_to_array!(Option<&'a [u8]>);
 ruby_to_array!(Option<Int>);
 ruby_to_array!(Option<Float>);
 ruby_to_array!(Option<String>);
@@ -284,6 +305,7 @@ ruby_to_array!(Option<&'a str>);
 ruby_to_array!(Vec<Value>);
 ruby_to_array!(Vec<bool>);
 ruby_to_array!(Vec<Vec<u8>>);
+ruby_to_array!(Vec<&'a [u8]>);
 ruby_to_array!(Vec<Int>);
 ruby_to_array!(Vec<Float>);
 ruby_to_array!(Vec<String>);
@@ -293,6 +315,7 @@ ruby_to_array!(Vec<&'a str>);
 ruby_to_array!(Vec<Option<Value>>);
 ruby_to_array!(Vec<Option<bool>>);
 ruby_to_array!(Vec<Option<Vec<u8>>>);
+ruby_to_array!(Vec<Option<&'a [u8]>>);
 ruby_to_array!(Vec<Option<Int>>);
 ruby_to_array!(Vec<Option<Float>>);
 ruby_to_array!(Vec<Option<String>>);

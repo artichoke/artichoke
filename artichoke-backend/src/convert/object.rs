@@ -175,7 +175,7 @@ mod tests {
             let value = Value::new(&interp, slf);
             if let Ok(container) = Self::try_from_ruby(&interp, &value) {
                 let borrow = container.borrow();
-                interp.convert(borrow.inner.as_str()).inner()
+                interp.convert(borrow.inner.as_bytes()).inner()
             } else {
                 interp.convert(None::<Value>).inner()
             }
