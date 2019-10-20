@@ -40,10 +40,10 @@ fn main() {
         process::exit(1);
     }
 
-    let data = interp.convert(include_bytes!("../../ruby/fixtures/learnxinyminutes.txt").as_ref());
+    let data = interp.convert(&include_bytes!("../../ruby/fixtures/learnxinyminutes.txt")[..]);
     data.protect();
     unsafe { sys::mrb_gv_set(mrb, interp.0.borrow_mut().sym_intern("$data"), data.inner()) }
-    let ctx = Context::new("(main)");
+    let ctx = Context::new(b"(main)".as_ref());
     if let Err(err) = interp.eval_with_context(program, ctx) {
         eprintln!("{}", err);
         process::exit(1);

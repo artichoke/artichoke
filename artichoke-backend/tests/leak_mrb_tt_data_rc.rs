@@ -18,16 +18,16 @@
 #[macro_use]
 extern crate artichoke_backend;
 
-use artichoke_backend::convert::{Convert, RustBackedValue};
+use artichoke_backend::convert::RustBackedValue;
 use artichoke_backend::def::{rust_data_free, ClassLike, Define};
 use artichoke_backend::eval::Eval;
+use artichoke_backend::extn::core::exception::{self, Fatal, RubyException};
 use artichoke_backend::file::File;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
-use artichoke_core::value::Value as ValueLike;
-use std::mem;
+use artichoke_core::value::Value as _;
 
 mod leak;
 
@@ -46,36 +46,27 @@ impl Container {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        struct Args {
-            inner: String,
-        }
-
-        impl Args {
-            const ARGSPEC: &'static [u8] = b"o\0";
-
-            unsafe fn extract(interp: &Artichoke) -> Result<Self, ArtichokeError> {
-                let inner = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-                sys::mrb_get_args(
-                    interp.0.borrow().mrb,
-                    Self::ARGSPEC.as_ptr() as *const i8,
-                    &inner,
-                );
-                let inner = Value::new(interp, inner.assume_init());
-                let inner = inner.try_into::<String>()?;
-                Ok(Self { inner })
-            }
-        }
-
+        let inner = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        Args::extract(&interp)
-            .and_then(|args| {
-                let container = Self { inner: args.inner };
-                container.try_into_ruby(&interp, Some(slf))
-            })
-            .unwrap_or_else(|_| interp.convert(None::<Value>))
-            .inner()
+        let inner = Value::new(&interp, inner);
+        let inner = inner.try_into::<&str>().unwrap_or_else(|_| "").to_owned();
+        let container = Self { inner };
+        let result: Result<Value, Box<dyn RubyException>> =
+            if let Ok(result) = container.try_into_ruby(&interp, Some(slf)) {
+                Ok(result)
+            } else {
+                Err(Box::new(Fatal::new(
+                    &interp,
+                    "Unable to intialize Container Ruby Value",
+                )))
+            };
+        match result {
+            Ok(value) => value.inner(),
+            Err(exception) => exception::raise(interp, exception),
+        }
     }
 }
+
 impl File for Container {
     fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
         let spec = {

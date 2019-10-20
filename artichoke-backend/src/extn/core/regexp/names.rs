@@ -3,20 +3,23 @@
 use std::cmp::Ordering;
 
 use crate::convert::{Convert, RustBackedValue};
+use crate::extn::core::exception::{Fatal, RubyException};
 use crate::extn::core::regexp::{Backend, Regexp};
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum Error {
-    Fatal,
-}
-
-pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Error> {
-    let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
-    let borrow = data.borrow();
+pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Box<dyn RubyException>> {
+    let value = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| {
+        Fatal::new(
+            interp,
+            "Unable to extract Rust Regexp from Ruby Regexp receiver",
+        )
+    })?;
+    let borrow = value.borrow();
     let mut names = vec![];
-    let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
+    let regex = (*borrow.regex)
+        .as_ref()
+        .ok_or_else(|| Fatal::new(interp, "Uninitialized Regexp"))?;
     match regex {
         Backend::Onig(regex) => {
             let mut capture_names = vec![];

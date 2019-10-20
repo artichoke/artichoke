@@ -1,7 +1,7 @@
 use std::cmp;
-use std::mem;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{Convert, RustBackedValue};
+use crate::extn::core::exception::{Fatal, RubyException, TypeError};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::enc::Encoding;
 use crate::extn::core::regexp::opts::Options;
@@ -10,39 +10,23 @@ use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub enum Error {
-    Fatal,
-    WrongType,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Args {
     pub regexp: Option<Regexp>,
     pub block: Option<Value>,
 }
 
 impl Args {
-    const ARGSPEC: &'static [u8] = b"o&\0";
-
-    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
-        let mrb = interp.0.borrow().mrb;
-        let mut pattern = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mut block = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        sys::mrb_get_args(
-            mrb,
-            Self::ARGSPEC.as_ptr() as *const i8,
-            pattern.as_mut_ptr(),
-            block.as_mut_ptr(),
-        );
-        let pattern = pattern.assume_init();
-        let block = block.assume_init();
-        let regexp = if let Ok(regexp) = Regexp::try_from_ruby(interp, &Value::new(interp, pattern))
-        {
+    pub fn extract(
+        interp: &Artichoke,
+        pattern: Value,
+        block: Option<Value>,
+    ) -> Result<Self, Box<dyn RubyException>> {
+        let regexp = if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
             Some(regexp.borrow().clone())
-        } else if let Some(pattern) = Value::new(interp, pattern)
+        } else if let Some(pattern) = pattern
             .funcall::<Option<&str>>("to_str", &[], None)
-            .map_err(|_| Error::WrongType)?
+            .map_err(|_| TypeError::new(interp, "wrong argument type (expected Regexp)"))?
         {
             Regexp::new(
                 syntax::escape(pattern),
@@ -54,30 +38,37 @@ impl Args {
         } else {
             None
         };
-        let block = if sys::mrb_sys_value_is_nil(block) {
-            None
-        } else {
-            Some(Value::new(interp, block))
-        };
         Ok(Self { regexp, block })
     }
 }
 
-pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Error> {
+pub fn method(
+    interp: &Artichoke,
+    args: Args,
+    value: Value,
+) -> Result<Value, Box<dyn RubyException>> {
     let mrb = interp.0.borrow().mrb;
-    let regexp = args.regexp.ok_or(Error::WrongType)?;
-    let s = value.itself().map_err(|_| Error::Fatal)?;
-    let s = interp.try_convert(s).map_err(|_| Error::WrongType)?;
+    let regexp = args
+        .regexp
+        .ok_or_else(|| TypeError::new(interp, "wrong argument type (expected Regexp)"))?;
+    let s = value
+        .clone()
+        .try_into::<&str>()
+        .map_err(|_| Fatal::new(interp, "failed to convert String receiver to Rust String"))?;
 
     let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
-    let data = MatchData::new(s, regexp.clone(), 0, s.len());
-    let data = unsafe { data.try_into_ruby(interp, None) }.map_err(|_| Error::Fatal)?;
-    unsafe { sys::mrb_gv_set(mrb, last_match_sym, data.inner()) };
-    let matchdata = unsafe { MatchData::try_from_ruby(interp, &data) }.map_err(|_| Error::Fatal)?;
+    let mut matchdata = MatchData::new(s, regexp.clone(), 0, s.len());
+    let data = unsafe { matchdata.clone().try_into_ruby(interp, None) }
+        .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
+    unsafe {
+        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+    }
 
     let mut was_match = false;
     let mut collected = vec![];
-    let regex = (*regexp.regex).as_ref().ok_or(Error::Fatal)?;
+    let regex = (*regexp.regex)
+        .as_ref()
+        .ok_or_else(|| Fatal::new(interp, "Failed to extract Regexp"))?;
     match regex {
         Backend::Onig(regex) => {
             let len = regex.captures_len();
@@ -110,7 +101,7 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
 
                     let matched = interp.convert(groups);
                     if let Some(pos) = captures.pos(0) {
-                        matchdata.borrow_mut().set_region(pos.0, pos.1);
+                        matchdata.set_region(pos.0, pos.1);
                     }
                     if let Some(ref block) = args.block {
                         unsafe {
@@ -126,7 +117,7 @@ pub fn method(interp: &Artichoke, args: Args, value: Value) -> Result<Value, Err
                     was_match = true;
                     let scanned = &s[pos.0..pos.1];
                     let matched = interp.convert(scanned);
-                    matchdata.borrow_mut().set_region(pos.0, pos.1);
+                    matchdata.set_region(pos.0, pos.1);
                     if let Some(ref block) = args.block {
                         unsafe {
                             sys::mrb_yield(mrb, block.inner(), matched.inner());

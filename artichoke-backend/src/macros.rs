@@ -28,7 +28,9 @@ pub mod argspec {
     pub const REQ1_OPT1: &[u8] = b"o|o\0";
     pub const REQ1_OPT2: &[u8] = b"o|oo\0";
     pub const REQ1_REQBLOCK: &[u8] = b"o&\0";
-    pub const REQ1_REQBLOCK_OPT1: &[u8] = b"o&|o\0";
+    pub const REQ1_REQBLOCK_OPT1: &[u8] = b"o&|o?\0";
+    pub const REQ2: &[u8] = b"oo\0";
+    pub const REQ2_OPT1: &[u8] = b"oo|o\0";
     pub const REST: &[u8] = b"*\0";
 }
 
@@ -42,7 +44,7 @@ pub mod argspec {
 #[macro_export]
 macro_rules! mrb_get_args {
     ($mrb:expr, none) => {{
-        $crate::sys::mrb_get_args($mrb, $crate::macros::argspec::NONE.as_ptr());
+        $crate::sys::mrb_get_args($mrb, $crate::macros::argspec::NONE.as_ptr() as *const i8);
         ()
     }};
     ($mrb:expr, required = 1) => {{
@@ -135,7 +137,7 @@ macro_rules! mrb_get_args {
             block.as_mut_ptr(),
         );
         match argc {
-            2 => {
+            2 | 1 => {
                 let req1 = req1.assume_init();
                 let block = block.assume_init();
                 (req1, block)
@@ -146,6 +148,7 @@ macro_rules! mrb_get_args {
     ($mrb:expr, required = 1, optional = 1, &block) => {{
         let mut req1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
         let mut opt1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let mut has_opt1 = <std::mem::MaybeUninit<$crate::sys::mrb_bool>>::uninit();
         let mut block = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
         let argc = $crate::sys::mrb_get_args(
             $mrb,
@@ -153,7 +156,9 @@ macro_rules! mrb_get_args {
             req1.as_mut_ptr(),
             block.as_mut_ptr(),
             opt1.as_mut_ptr(),
+            has_opt1.as_mut_ptr(),
         );
+        let has_opt1 = has_opt1.assume_init() != 0;
         match argc {
             3 => {
                 let req1 = req1.assume_init();
@@ -163,8 +168,62 @@ macro_rules! mrb_get_args {
             }
             2 => {
                 let req1 = req1.assume_init();
+                let opt1 = if has_opt1 {
+                    Some(opt1.assume_init())
+                } else {
+                    None
+                };
+                let block = block.assume_init();
+                (req1, opt1, block)
+            }
+            1 => {
+                let req1 = req1.assume_init();
                 let block = block.assume_init();
                 (req1, None, block)
+            }
+            _ => unreachable!("mrb_get_args should have raised"),
+        }
+    }};
+    ($mrb:expr, required = 2) => {{
+        let mut req1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let mut req2 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let argc = $crate::sys::mrb_get_args(
+            $mrb,
+            $crate::macros::argspec::REQ2.as_ptr() as *const i8,
+            req1.as_mut_ptr(),
+            req2.as_mut_ptr(),
+        );
+        match argc {
+            2 => {
+                let req1 = req1.assume_init();
+                let req2 = req2.assume_init();
+                (req1, req2)
+            }
+            _ => unreachable!("mrb_get_args should have raised"),
+        }
+    }};
+    ($mrb:expr, required = 2, optional = 1) => {{
+        let mut req1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let mut req2 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let mut opt1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let argc = $crate::sys::mrb_get_args(
+            $mrb,
+            $crate::macros::argspec::REQ2_OPT1.as_ptr() as *const i8,
+            req1.as_mut_ptr(),
+            req2.as_mut_ptr(),
+            opt1.as_mut_ptr(),
+        );
+        match argc {
+            3 => {
+                let req1 = req1.assume_init();
+                let req2 = req2.assume_init();
+                let opt1 = opt1.assume_init();
+                (req1, req2, Some(opt1))
+            }
+            2 => {
+                let req1 = req1.assume_init();
+                let req2 = req2.assume_init();
+                (req1, req2, None)
             }
             _ => unreachable!("mrb_get_args should have raised"),
         }

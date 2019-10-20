@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::file::File;
 use crate::fs::RUBY_LOAD_PATH;
@@ -45,19 +45,6 @@ pub trait LoadSources {
     where
         T: AsRef<str>,
         F: AsRef<[u8]>;
-
-    /// Normalize path of a Ruby source to be relative to `RUBY_LOAD_PATH`
-    /// unless the path is absolute.
-    fn normalize_source_path<T>(&self, filename: T) -> PathBuf
-    where
-        T: AsRef<str>,
-    {
-        let mut path = PathBuf::from(filename.as_ref());
-        if path.is_relative() {
-            path = PathBuf::from(RUBY_LOAD_PATH).join(filename.as_ref());
-        }
-        path
-    }
 }
 
 impl LoadSources for Artichoke {
@@ -70,7 +57,12 @@ impl LoadSources for Artichoke {
         T: AsRef<str>,
     {
         let api = self.0.borrow();
-        let path = self.normalize_source_path(filename.as_ref());
+        let path = Path::new(filename.as_ref());
+        let path = if path.is_relative() {
+            Path::new(RUBY_LOAD_PATH).join(path)
+        } else {
+            path.to_path_buf()
+        };
         if let Some(parent) = path.parent() {
             api.vfs.create_dir_all(parent)?;
         }
@@ -102,7 +94,12 @@ impl LoadSources for Artichoke {
         F: AsRef<[u8]>,
     {
         let api = self.0.borrow();
-        let path = self.normalize_source_path(filename.as_ref());
+        let path = Path::new(filename.as_ref());
+        let path = if path.is_relative() {
+            Path::new(RUBY_LOAD_PATH).join(path)
+        } else {
+            path.to_path_buf()
+        };
         if let Some(parent) = path.parent() {
             api.vfs.create_dir_all(parent)?;
         }

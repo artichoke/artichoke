@@ -2,9 +2,10 @@
 //! and
 //! [`Regexp::compile`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-compile)
 
-use std::mem;
+use std::str;
 
 use crate::convert::RustBackedValue;
+use crate::extn::core::exception::{Fatal, RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::extn::core::regexp::enc::{self, Encoding};
 use crate::extn::core::regexp::opts::{self, Options};
 use crate::extn::core::regexp::Regexp;
@@ -13,15 +14,7 @@ use crate::value::{Value, ValueLike};
 use crate::warn::Warn;
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum Error {
-    Fatal,
-    NoImplicitConversionToString,
-    Syntax,
-    Unicode,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Args {
     pub pattern: Value,
     pub options: Option<Options>,
@@ -29,55 +22,40 @@ pub struct Args {
 }
 
 impl Args {
-    const ARGSPEC: &'static [u8] = b"o|o?o?\0";
-
-    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
-        let mrb = interp.0.borrow().mrb;
-        let mut pattern = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mut opts = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mut has_opts = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
-        let mut enc = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        let mut has_enc = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
-        sys::mrb_get_args(
-            mrb,
-            Self::ARGSPEC.as_ptr() as *const i8,
-            pattern.as_mut_ptr(),
-            opts.as_mut_ptr(),
-            has_opts.as_mut_ptr(),
-            enc.as_mut_ptr(),
-            has_enc.as_mut_ptr(),
-        );
-        let pattern = pattern.assume_init();
-        let has_opts = has_opts.assume_init() != 0;
-        let has_enc = has_enc.assume_init() != 0;
-        let pattern = Value::new(&interp, pattern);
-        let options = if has_opts {
-            Some(opts::parse(&Value::new(interp, opts.assume_init())))
-        } else {
-            None
-        };
-        let encoding = if has_enc {
-            let encoding = Value::new(interp, enc.assume_init());
-            match enc::parse(&encoding) {
+    pub fn extract(
+        interp: &Artichoke,
+        pattern: Value,
+        options: Option<Value>,
+        encoding: Option<Value>,
+    ) -> Result<Self, Box<dyn RubyException>> {
+        let (options, encoding) = if let Some(encoding) = encoding {
+            let encoding = match enc::parse(&encoding) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
                     let warning = format!("encoding option is ignored -- {}", encoding.to_s());
-                    interp.warn(warning.as_str()).map_err(|_| Error::Fatal)?;
+                    interp
+                        .warn(warning.as_str())
+                        .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
                     None
                 }
-            }
-        } else if has_opts {
-            let encoding = Value::new(interp, opts.assume_init());
-            match enc::parse(&encoding) {
+            };
+            let options = options.as_ref().map(opts::parse);
+            (options, encoding)
+        } else if let Some(options) = options {
+            let encoding = match enc::parse(&options) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let warning = format!("encoding option is ignored -- {}", encoding.to_s());
-                    interp.warn(warning.as_str()).map_err(|_| Error::Fatal)?;
+                    let warning = format!("encoding option is ignored -- {}", options.to_s());
+                    interp
+                        .warn(warning.as_str())
+                        .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
                     None
                 }
-            }
+            };
+            let options = opts::parse(&options);
+            (Some(options), encoding)
         } else {
-            None
+            (None, None)
         };
 
         Ok(Self {
@@ -88,22 +66,37 @@ impl Args {
     }
 }
 
-pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
+pub fn method(
+    interp: &Artichoke,
+    args: Args,
+    into: Option<sys::mrb_value>,
+) -> Result<Value, Box<dyn RubyException>> {
     let mut literal_options = args.options.unwrap_or_default();
     let literal_pattern =
         if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &args.pattern) } {
-            interp
-                .warn("flags ignored when initializing from Regexp")
-                .map_err(|_| Error::Fatal)?;
+            if args.options.is_some() || args.encoding.is_some() {
+                interp
+                    .warn("flags ignored when initializing from Regexp")
+                    .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
+            }
             let borrow = regexp.borrow();
             literal_options = borrow.options;
-            borrow.literal_pattern.clone()
+            borrow.literal_pattern.to_owned()
+        } else if let Ok(bytes) = args.pattern.clone().try_into::<&[u8]>() {
+            str::from_utf8(bytes)
+                .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?
+                // Defer allocating until the parse succeds
+                .to_owned()
+        } else if let Ok(bytes) = args.pattern.funcall::<&[u8]>("to_str", &[], None) {
+            str::from_utf8(bytes)
+                .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?
+                // Defer allocating until the parse succeds
+                .to_owned()
         } else {
-            let bytes = args
-                .pattern
-                .try_into::<Vec<u8>>()
-                .map_err(|_| Error::NoImplicitConversionToString)?;
-            String::from_utf8(bytes).map_err(|_| Error::Unicode)?
+            return Err(Box::new(TypeError::new(
+                interp,
+                "no implicit conversion into String",
+            )));
         };
     let (pattern, options) = opts::parse_pattern(literal_pattern.as_str(), literal_options);
     if let Some(data) = Regexp::new(
@@ -113,12 +106,18 @@ pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Val
         options,
         args.encoding.unwrap_or_default(),
     ) {
-        unsafe {
-            data.try_into_ruby(interp, Some(slf))
-                .map_err(|_| Error::Fatal)
-        }
+        let regexp = unsafe { data.try_into_ruby(interp, into) }.map_err(|_| {
+            Fatal::new(
+                interp,
+                "Failed to initialize Regexp Ruby Value with Rust Regexp",
+            )
+        })?;
+        Ok(regexp)
     } else {
         // Regexp is invalid.
-        Err(Error::Syntax)
+        Err(Box::new(SyntaxError::new(
+            interp,
+            "Failed to parse Regexp pattern",
+        )))
     }
 }

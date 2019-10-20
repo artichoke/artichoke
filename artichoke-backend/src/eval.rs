@@ -1,4 +1,6 @@
+use std::borrow::Cow;
 use std::ffi::{c_void, CString};
+use std::io;
 use std::mem;
 
 use crate::exception::{ExceptionHandler, LastError};
@@ -6,7 +8,7 @@ use crate::sys::{self, DescribeState};
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
-const TOP_FILENAME: &str = "(eval)";
+const TOP_FILENAME: &[u8] = b"(eval)";
 
 // `Protect` must be `Copy` because the call to `mrb_load_nstring_cxt` can
 // unwind with `longjmp` which does not allow Rust to run destructors.
@@ -57,17 +59,17 @@ impl<'a> Protect<'a> {
 pub struct Context {
     /// Value of the `__FILE__` magic constant that also appears in stack
     /// frames.
-    pub filename: String,
+    pub filename: Cow<'static, [u8]>,
 }
 
 impl Context {
     /// Create a new [`Context`].
     pub fn new<T>(filename: T) -> Self
     where
-        T: AsRef<str>,
+        T: Into<Cow<'static, [u8]>>,
     {
         Self {
-            filename: filename.as_ref().to_owned(),
+            filename: filename.into(),
         }
     }
 
@@ -76,13 +78,20 @@ impl Context {
     pub fn root() -> Self {
         Self::default()
     }
+
+    pub fn filename_as_cstring(&self) -> Result<CString, ArtichokeError> {
+        CString::new(self.filename.as_ref()).map_err(|_| {
+            ArtichokeError::Vfs(io::Error::new(
+                io::ErrorKind::Other,
+                "failed to convert context filename to CString",
+            ))
+        })
+    }
 }
 
 impl Default for Context {
     fn default() -> Self {
-        Self {
-            filename: TOP_FILENAME.to_owned(),
-        }
+        Self::new(TOP_FILENAME)
     }
 }
 
@@ -150,21 +159,17 @@ impl Eval for Artichoke {
 
         // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
-        let context = {
+        let filename = {
             let api = self.0.borrow();
             if let Some(context) = api.context_stack.last() {
-                context.clone()
+                context.filename_as_cstring()?
             } else {
-                Context::root()
+                Context::root().filename_as_cstring()?
             }
         };
 
-        if let Ok(cfilename) = CString::new(context.filename.to_owned()) {
-            unsafe {
-                sys::mrbc_filename(mrb, ctx, cfilename.as_ptr() as *const i8);
-            }
-        } else {
-            warn!("Could not set {} as mrc context filename", context.filename);
+        unsafe {
+            sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
         }
 
         let protect = Protect::new(self, code.as_ref());
@@ -217,21 +222,17 @@ impl Eval for Artichoke {
 
         // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
-        let context = {
+        let filename = {
             let api = self.0.borrow();
             if let Some(context) = api.context_stack.last() {
-                context.clone()
+                context.filename_as_cstring().unwrap()
             } else {
-                Context::root()
+                Context::root().filename_as_cstring().unwrap()
             }
         };
 
-        if let Ok(cfilename) = CString::new(context.filename.to_owned()) {
-            unsafe {
-                sys::mrbc_filename(mrb, ctx, cfilename.as_ptr() as *const i8);
-            }
-        } else {
-            warn!("Could not set {} as mrc context filename", context.filename);
+        unsafe {
+            sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
         }
 
         let protect = Protect::new(self, code.as_ref());
@@ -248,7 +249,7 @@ impl Eval for Artichoke {
             if state.assume_init() != 0 {
                 // drop all bindings to heap-allocated objects because we are
                 // about to unwind with longjmp.
-                drop(context);
+                drop(filename);
                 drop(code);
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
                 sys::mrb_sys_raise_current_exception(mrb);
@@ -317,7 +318,7 @@ mod tests {
     #[test]
     fn context_is_restored_after_eval() {
         let interp = crate::interpreter().expect("init");
-        let context = Context::new("context.rb");
+        let context = Context::new(b"context.rb".as_ref());
         interp.push_context(context);
         interp.eval("15").expect("eval");
         assert_eq!(interp.0.borrow().context_stack.len(), 1);
@@ -383,17 +384,17 @@ NestedEval.file
     fn eval_with_context() {
         let interp = crate::interpreter().expect("init");
         let result = interp
-            .eval_with_context("__FILE__", Context::new("source.rb"))
+            .eval_with_context("__FILE__", Context::new(b"source.rb".as_ref()))
             .expect("eval");
         let result = result.try_into::<&str>().expect("convert");
         assert_eq!(result, "source.rb");
         let result = interp
-            .eval_with_context("__FILE__", Context::new("source.rb"))
+            .eval_with_context("__FILE__", Context::new(b"source.rb".as_ref()))
             .expect("eval");
         let result = result.try_into::<&str>().expect("convert");
         assert_eq!(result, "source.rb");
         let result = interp
-            .eval_with_context("__FILE__", Context::new("main.rb"))
+            .eval_with_context("__FILE__", Context::new(b"main.rb".as_ref()))
             .expect("eval");
         let result = result.try_into::<&str>().expect("convert");
         assert_eq!(result, "main.rb");

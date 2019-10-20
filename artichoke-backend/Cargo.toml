@@ -5,7 +5,10 @@ authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 
 [dependencies]
+backtrace = "0.3"
+bstr = "0.2"
 log = "0.4"
+memchr = "2"
 regex = "1"
 
 [dependencies.artichoke-core]

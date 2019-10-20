@@ -1,10 +1,8 @@
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define, EnclosingRubyScope};
-use crate::eval::{Context, Eval};
+use crate::eval::Eval;
 use crate::extn::core::artichoke::RArtichoke;
-use crate::extn::core::exception::{
-    ArgumentError, LoadError, RubyException, RuntimeError, TypeError,
-};
+use crate::extn::core::exception;
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
@@ -101,131 +99,28 @@ impl Warning {
 pub struct Kernel;
 
 impl Kernel {
-    unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let args = require::Args::validate_require(&interp, file);
-        let result = args.and_then(|args| require::method::require(&interp, args));
-        match result {
-            Ok(req) => {
-                let result = if let Some(req) = req.rust {
-                    req(interp.clone())
-                } else {
-                    Ok(())
-                };
-                if result.is_ok() {
-                    if let Some(contents) = req.ruby {
-                        interp.unchecked_eval_with_context(contents, Context::new(req.file));
-                    }
-                    interp.convert(true).inner()
-                } else {
-                    LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
-                }
-            }
-            Err(require::ErrorReq::AlreadyRequired) => interp.convert(false).inner(),
-            Err(require::ErrorReq::CannotLoad(file)) => {
-                LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
-            }
-            Err(require::ErrorReq::Fatal) => {
-                RuntimeError::raise(interp, "fatal Kernel#require error")
-            }
-            Err(require::ErrorReq::NoImplicitConversionToString) => {
-                ArgumentError::raise(interp, "No implicit conversion to String")
-            }
-        }
-    }
-
     unsafe extern "C" fn integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
         let interp = unwrap_interpreter!(mrb);
-        let result = integer::Args::extract(&interp, arg, base)
-            .and_then(|args| integer::method(&interp, &args));
+        let result = integer::method(
+            &interp,
+            Value::new(&interp, arg),
+            base.map(|base| Value::new(&interp, base)),
+        );
         match result {
             Ok(value) => value.inner(),
-            Err(integer::Error::InvalidRadix(radix)) => {
-                ArgumentError::raisef(interp, "invalid radix", vec![radix])
-            }
-            Err(integer::Error::InvalidValue(value)) => {
-                let value = value.to_owned();
-                ArgumentError::raisef(interp, "invalid value for Integer(): \"%S\"", vec![value])
-            }
-            Err(integer::Error::ContainsNullByte) => {
-                ArgumentError::raise(interp, "string contains null byte")
-            }
-            Err(integer::Error::NoImplicitConversionToString(class)) => {
-                let class = class.to_owned();
-                TypeError::raisef(interp, "can't convert %S into String", vec![class])
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     unsafe extern "C" fn load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let args = require::Args::validate_load(&interp, file);
-        let result = args.and_then(|args| require::method::load(&interp, args));
+        let file = Value::new(&interp, file);
+        let result = require::load(&interp, file);
         match result {
-            Ok(req) => {
-                let result = if let Some(req) = req.rust {
-                    req(interp.clone())
-                } else {
-                    Ok(())
-                };
-                if result.is_ok() {
-                    if let Some(contents) = req.ruby {
-                        interp.unchecked_eval_with_context(contents, Context::new(req.file));
-                    }
-                    interp.convert(true).inner()
-                } else {
-                    LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
-                }
-            }
-            Err(require::ErrorLoad::CannotLoad(file)) => {
-                LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
-            }
-            Err(require::ErrorLoad::Fatal) => {
-                RuntimeError::raise(interp, "fatal Kernel#load error")
-            }
-            Err(require::ErrorLoad::NoImplicitConversionToString) => {
-                ArgumentError::raise(interp, "No implicit conversion to String")
-            }
-        }
-    }
-
-    unsafe extern "C" fn require_relative(
-        mrb: *mut sys::mrb_state,
-        _slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let args = require::Args::validate_require(&interp, file);
-        let result = args.and_then(|args| require::method::require_relative(&interp, args));
-        match result {
-            Ok(req) => {
-                let result = if let Some(req) = req.rust {
-                    req(interp.clone())
-                } else {
-                    Ok(())
-                };
-                if result.is_ok() {
-                    if let Some(contents) = req.ruby {
-                        interp.unchecked_eval_with_context(contents, Context::new(req.file));
-                    }
-                    interp.convert(true).inner()
-                } else {
-                    LoadError::raisef(interp, "cannot load such file -- %S", vec![req.file])
-                }
-            }
-            Err(require::ErrorReq::AlreadyRequired) => interp.convert(false).inner(),
-            Err(require::ErrorReq::CannotLoad(file)) => {
-                LoadError::raisef(interp, "cannot load such file -- %S", vec![file])
-            }
-            Err(require::ErrorReq::Fatal) => {
-                RuntimeError::raise(interp, "fatal Kernel#require error")
-            }
-            Err(require::ErrorReq::NoImplicitConversionToString) => {
-                ArgumentError::raise(interp, "No implicit conversion to String")
-            }
+            Ok(value) => value.inner(),
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
@@ -261,6 +156,31 @@ impl Kernel {
             do_puts(&interp, &Value::new(&interp, *value));
         }
         sys::mrb_sys_nil_value()
+    }
+
+    unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let file = mrb_get_args!(mrb, required = 1);
+        let interp = unwrap_interpreter!(mrb);
+        let file = Value::new(&interp, file);
+        let result = require::require(&interp, file, None);
+        match result {
+            Ok(value) => value.inner(),
+            Err(exception) => exception::raise(interp, exception),
+        }
+    }
+
+    unsafe extern "C" fn require_relative(
+        mrb: *mut sys::mrb_state,
+        _slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let file = mrb_get_args!(mrb, required = 1);
+        let interp = unwrap_interpreter!(mrb);
+        let file = Value::new(&interp, file);
+        let result = require::require_relative(&interp, file);
+        match result {
+            Ok(value) => value.inner(),
+            Err(exception) => exception::raise(interp, exception),
+        }
     }
 
     unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {

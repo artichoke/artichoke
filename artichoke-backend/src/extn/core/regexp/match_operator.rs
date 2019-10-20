@@ -1,10 +1,11 @@
 //! [`Regexp#=~`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-7E)
 
+use artichoke_core::value::Value as ValueLike;
 use std::cmp;
 use std::convert::TryFrom;
-use std::mem;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{Convert, RustBackedValue};
+use crate::extn::core::exception::{Fatal, RubyException, TypeError};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
@@ -12,33 +13,22 @@ use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum Error {
-    Fatal,
-    NoImplicitConversionToString,
+#[derive(Debug, Clone, Copy)]
+pub struct Args<'a> {
+    pub pattern: Option<&'a str>,
 }
 
-#[derive(Debug, Clone)]
-pub struct Args {
-    pub string: Option<String>,
-}
-
-impl Args {
-    const ARGSPEC: &'static [u8] = b"o\0";
-
-    pub unsafe fn extract(interp: &Artichoke) -> Result<Self, Error> {
-        let mrb = interp.0.borrow().mrb;
-        let mut string = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        sys::mrb_get_args(
-            mrb,
-            Self::ARGSPEC.as_ptr() as *const i8,
-            string.as_mut_ptr(),
-        );
-        let string = string.assume_init();
-        if let Ok(string) = interp.try_convert(Value::new(interp, string)) {
-            Ok(Self { string })
+impl<'a> Args<'a> {
+    pub fn extract(interp: &Artichoke, pattern: Value) -> Result<Self, Box<dyn RubyException>> {
+        if let Ok(pattern) = pattern.clone().try_into::<Option<&str>>() {
+            Ok(Self { pattern })
+        } else if let Ok(pattern) = pattern.funcall::<Option<&str>>("to_str", &[], None) {
+            Ok(Self { pattern })
         } else {
-            Err(Error::NoImplicitConversionToString)
+            Err(Box::new(TypeError::new(
+                interp,
+                "no implicit conversion into String",
+            )))
         }
     }
 }
@@ -46,24 +36,30 @@ impl Args {
 // TODO: extract named captures and assign to local variables, see GH-156.
 //
 // See: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-7E
-pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
+pub fn method(
+    interp: &Artichoke,
+    args: Args,
+    value: &Value,
+) -> Result<Value, Box<dyn RubyException>> {
     let mrb = interp.0.borrow().mrb;
-    let string = if let Some(string) = args.string {
-        string
+    let value = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| {
+        Fatal::new(
+            interp,
+            "Unable to extract Rust Regexp from Ruby Regexp receiver",
+        )
+    })?;
+    let pattern = if let Some(pattern) = args.pattern {
+        pattern
     } else {
-        let sym = interp.0.borrow_mut().sym_intern("$~");
-        unsafe {
-            let nil = interp.convert(None::<Value>);
-            sys::mrb_gv_set(mrb, sym, nil.inner());
-            return Ok(nil);
-        }
+        return Ok(interp.convert(None::<Value>));
     };
-    let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
-    let borrow = data.borrow();
-    let regex = (*borrow.regex).as_ref().ok_or(Error::Fatal)?;
+    let borrow = value.borrow();
+    let regex = (*borrow.regex)
+        .as_ref()
+        .ok_or_else(|| Fatal::new(interp, "Uninitialized Regexp"))?;
     let (matchdata, pos) = match regex {
         Backend::Onig(regex) => {
-            if let Some(captures) = regex.captures(string.as_str()) {
+            if let Some(captures) = regex.captures(pattern) {
                 let num_regexp_globals_to_set = {
                     let num_previously_set_globals =
                         interp.0.borrow().num_set_regexp_capture_globals;
@@ -83,16 +79,20 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                 }
                 interp.0.borrow_mut().num_set_regexp_capture_globals = captures.len();
 
-                let matchdata = MatchData::new(string.as_str(), borrow.clone(), 0, string.len());
-                let matchdata =
-                    unsafe { matchdata.try_into_ruby(&interp, None) }.map_err(|_| Error::Fatal)?;
+                let matchdata = MatchData::new(pattern, borrow.clone(), 0, pattern.len());
+                let matchdata = unsafe { matchdata.try_into_ruby(interp, None) }.map_err(|_| {
+                    Fatal::new(
+                        interp,
+                        "Failed to initialize Ruby MatchData Value with Rust MatchData",
+                    )
+                })?;
                 if let Some(match_pos) = captures.pos(0) {
-                    let pre_match = &string[..match_pos.0];
-                    let post_match = &string[match_pos.1..];
+                    let pre_match = &pattern[..match_pos.0];
+                    let post_match = &pattern[match_pos.1..];
+                    let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
+                    let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
                     unsafe {
-                        let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
                         sys::mrb_gv_set(mrb, pre_match_sym, interp.convert(pre_match).inner());
-                        let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
                         sys::mrb_gv_set(mrb, post_match_sym, interp.convert(post_match).inner());
                     }
                     (matchdata, interp.convert(Int::try_from(match_pos.0).ok()))
@@ -100,15 +100,16 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Er
                     (matchdata, interp.convert(None::<Value>))
                 }
             } else {
+                let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
+                let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
+                let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
+                let nil = interp.convert(None::<Value>).inner();
                 unsafe {
-                    let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
-                    sys::mrb_gv_set(mrb, last_match_sym, interp.convert(None::<Value>).inner());
-                    let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
-                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert(None::<Value>).inner());
-                    let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
-                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert(None::<Value>).inner());
+                    sys::mrb_gv_set(mrb, last_match_sym, nil);
+                    sys::mrb_gv_set(mrb, pre_match_sym, nil);
+                    sys::mrb_gv_set(mrb, post_match_sym, nil);
                 }
-                (interp.convert(None::<Value>), interp.convert(None::<Value>))
+                (Value::new(interp, nil), Value::new(interp, nil))
             }
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),

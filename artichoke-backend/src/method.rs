@@ -5,10 +5,9 @@ use std::hash::{Hash, Hasher};
 
 use crate::def::Method;
 use crate::sys;
-use crate::Artichoke;
-use crate::ArtichokeError;
+use crate::{Artichoke, ArtichokeError};
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Type {
     Class,
     Global,
