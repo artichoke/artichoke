@@ -96,28 +96,29 @@ impl ExceptionHandler for Artichoke {
         let exception = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
         let class = exception
             .funcall::<Value>("class", &[], None)
-            .and_then(|exception| exception.funcall::<String>("name", &[], None));
+            .and_then(|exception| exception.funcall::<&str>("name", &[], None));
         let class = match class {
             Ok(class) => class,
             Err(err) => return LastError::UnableToExtract(err),
         };
-        let message = match exception.funcall::<String>("message", &[], None) {
+        let message = match exception.funcall::<&str>("message", &[], None) {
             Ok(message) => message,
             Err(err) => return LastError::UnableToExtract(err),
         };
-        let backtrace = match exception.funcall::<Option<Vec<String>>>("backtrace", &[], None) {
+        let backtrace = match exception.funcall::<Option<Vec<&str>>>("backtrace", &[], None) {
             Ok(backtrace) => backtrace,
             Err(err) => return LastError::UnableToExtract(err),
         };
-        let inspect = match exception.funcall::<String>("inspect", &[], None) {
+        let inspect = match exception.funcall::<&str>("inspect", &[], None) {
             Ok(inspect) => inspect,
             Err(err) => return LastError::UnableToExtract(err),
         };
         let exception = Exception {
-            class,
-            message,
-            backtrace,
-            inspect,
+            class: class.to_owned(),
+            message: message.to_owned(),
+            backtrace: backtrace
+                .map(|backtrace| backtrace.into_iter().map(String::from).collect::<Vec<_>>()),
+            inspect: inspect.to_owned(),
         };
         debug!("Extracted exception from interpreter: {}", exception);
         LastError::Some(exception)

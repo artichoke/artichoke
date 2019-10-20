@@ -1,7 +1,7 @@
 use crate::convert::TryConvert;
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::exception::{ArgumentError, RubyException, RuntimeError, TypeError};
+use crate::extn::core::exception::{self, ArgumentError, Fatal};
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
@@ -44,28 +44,36 @@ impl RString {
                 if let Ok(value) = interp.try_convert(first as u32) {
                     value.inner()
                 } else {
-                    ArgumentError::raise(interp, "Unicode out of range")
+                    let exception = ArgumentError::new(&interp, "Unicode out of range");
+                    exception::raise(interp, Box::new(exception))
                 }
             } else {
-                ArgumentError::raise(interp, "empty string")
+                let exception = ArgumentError::new(&interp, "empty string");
+                exception::raise(interp, Box::new(exception))
             }
         } else {
-            sys::mrb_sys_nil_value()
+            let exception = Fatal::new(&interp, "failed to convert String receiver to Rust String");
+            exception::raise(interp, Box::new(exception))
         }
     }
 
     unsafe extern "C" fn scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result =
-            scan::Args::extract(&interp).and_then(|args| scan::method(&interp, args, value));
+        let result = scan::Args::extract(
+            &interp,
+            Value::new(&interp, pattern),
+            Value::new(&interp, block)
+                .try_into::<Option<Value>>()
+                .ok()
+                .unwrap_or_default(),
+        )
+        .and_then(|args| scan::method(&interp, args, value));
 
         match result {
             Ok(result) => result.inner(),
-            Err(scan::Error::WrongType) => {
-                TypeError::raise(interp, "wrong argument type (expected Regexp)")
-            }
-            Err(scan::Error::Fatal) => RuntimeError::raise(interp, "fatal String#scan error"),
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 }

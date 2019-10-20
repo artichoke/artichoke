@@ -1,98 +1,103 @@
-use std::error;
-use std::fmt;
+use artichoke_core::value::Value as _;
+use std::collections::HashMap;
 
-use crate::def::{ClassLike, Define};
-use crate::eval::Eval;
+use crate::convert::{Convert, RustBackedValue};
+use crate::extn::core::exception::{Fatal, RubyException, TypeError};
 use crate::sys;
-use crate::{Artichoke, ArtichokeError};
+use crate::value::Value;
+use crate::Artichoke;
 
-mod backends;
-mod env_object;
+pub mod backend;
+pub mod mruby;
 
-use backends::{EnvBackend, EnvStdBackend};
-use env_object::{Env, RubyEnvNativeApi};
-
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    init_internal_with_backend::<EnvStdBackend>(interp)
+pub trait Env {
+    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Box<dyn RubyException>>;
+    fn put(
+        &mut self,
+        interp: &Artichoke,
+        name: &[u8],
+        value: Option<&[u8]>,
+    ) -> Result<Value, Box<dyn RubyException>>;
+    fn as_map(
+        &self,
+        interp: &Artichoke,
+    ) -> Result<HashMap<Vec<u8>, Vec<u8>>, Box<dyn RubyException>>;
 }
 
-fn init_internal_with_backend<T: EnvBackend>(interp: &Artichoke) -> Result<(), ArtichokeError>
-where
-    T: 'static,
-{
-    if interp.0.borrow().class_spec::<Env<T>>().is_some() {
-        return Ok(());
-    }
-    interp.eval(include_str!("env.rb"))?;
+pub struct ENV(Box<dyn Env>);
 
-    let env = interp
-        .0
-        .borrow_mut()
-        .def_class::<Env<T>>("EnvClass", None, None);
+impl RustBackedValue for ENV {}
 
-    env.borrow_mut().mrb_value_is_rust_backed(true);
-
-    env.borrow_mut()
-        .add_method("initialize", Env::<T>::initialize, sys::mrb_args_none());
-    env.borrow_mut()
-        .add_method("[]", Env::<T>::get, sys::mrb_args_req(1));
-    env.borrow_mut()
-        .add_method("[]=", Env::<T>::set, sys::mrb_args_req(2));
-    env.borrow_mut()
-        .add_method("to_h", Env::<T>::env_to_h, sys::mrb_args_none());
-
-    env.borrow()
-        .define(interp)
-        .map_err(|_| ArtichokeError::New)?;
-
-    interp.eval("ENV = EnvClass.new")?;
-
-    trace!("Patched ENV onto interpreter");
-
-    Ok(())
+pub fn initialize(
+    interp: &Artichoke,
+    into: Option<sys::mrb_value>,
+) -> Result<Value, Box<dyn RubyException>> {
+    let obj = ENV(Box::new(backend::system::System::new()));
+    let result = unsafe { obj.try_into_ruby(&interp, into) }
+        .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby ENV with Rust ENV"))?;
+    Ok(result)
 }
 
-#[derive(Clone, Eq, PartialEq, Hash)]
-pub enum Error {
-    Fatal,
-    NameContainsNullByte,
-    Os(String), // should this be a `Value`?
-    ValueContainsNullByte,
+pub fn element_reference(
+    interp: &Artichoke,
+    obj: Value,
+    name: &Value,
+) -> Result<Value, Box<dyn RubyException>> {
+    let obj = unsafe { ENV::try_from_ruby(interp, &obj) }
+        .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
+    let ruby_type = name.pretty_name();
+    let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
+        name
+    } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
+        name
+    } else {
+        return Err(Box::new(TypeError::new(
+            interp,
+            format!("no implicit conversion of {} into String", ruby_type),
+        )));
+    };
+    let result = obj.borrow().0.get(interp, name)?;
+    Ok(result)
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Fatal => write!(f, "fatal ENV error"),
-            Self::NameContainsNullByte => {
-                write!(f, "bad environment variable name: contains null byte")
-            }
-            Self::Os(arg) => write!(f, "Errno::EINVAL (Invalid argument - setenv({}))", arg),
-            Self::ValueContainsNullByte => {
-                write!(f, "bad environment variable value: contains null byte")
-            }
-        }
-    }
+pub fn element_assignment(
+    interp: &Artichoke,
+    obj: Value,
+    name: &Value,
+    value: Value,
+) -> Result<Value, Box<dyn RubyException>> {
+    let obj = unsafe { ENV::try_from_ruby(interp, &obj) }
+        .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
+    let name_type_name = name.pretty_name();
+    let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
+        name
+    } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
+        name
+    } else {
+        return Err(Box::new(TypeError::new(
+            interp,
+            format!("no implicit conversion of {} into String", name_type_name),
+        )));
+    };
+    let value_type_name = value.pretty_name();
+    let value = if let Ok(value) = value.clone().try_into::<Option<&[u8]>>() {
+        value
+    } else if let Ok(value) = value.clone().funcall::<&[u8]>("to_str", &[], None) {
+        Some(value)
+    } else {
+        return Err(Box::new(TypeError::new(
+            interp,
+            format!("no implicit conversion of {} into String", value_type_name),
+        )));
+    };
+    obj.borrow_mut().0.put(interp, name, value)?;
+    // Return original object, even if we converted it to a `String`.
+    Ok(interp.convert(value))
 }
 
-impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Fatal => write!(f, "RuntimeError: {}", self),
-            Self::NameContainsNullByte | Self::ValueContainsNullByte => {
-                write!(f, "ArgumentError: {}", self)
-            }
-            Self::Os(arg) => write!(f, "Errno::EINVAL (Invalid argument - setenv({}))", arg),
-        }
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        "ENV error"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
+pub fn to_h(interp: &Artichoke, obj: Value) -> Result<Value, Box<dyn RubyException>> {
+    let obj = unsafe { ENV::try_from_ruby(interp, &obj) }
+        .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
+    let result = obj.borrow().0.as_map(interp)?;
+    Ok(interp.convert(result))
 }

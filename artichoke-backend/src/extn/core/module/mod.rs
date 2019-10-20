@@ -6,7 +6,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_class::<Module>("Module", None, None);
-    interp.eval(include_bytes!("module.rb").as_ref())?;
+    interp.eval(&include_bytes!("module.rb")[..])?;
     Ok(())
 }
 

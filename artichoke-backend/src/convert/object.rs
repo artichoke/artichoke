@@ -161,6 +161,7 @@ mod tests {
     use crate::sys;
     use crate::value::{Value, ValueLike};
 
+    #[derive(Debug, Default, Clone)]
     struct Container {
         inner: String,
     }
@@ -184,7 +185,7 @@ mod tests {
 
     impl RustBackedValue for Container {}
 
-    #[derive(Default)]
+    #[derive(Debug, Default, Clone, Copy)]
     // this struct is stack allocated
     struct Other {
         _inner: bool,

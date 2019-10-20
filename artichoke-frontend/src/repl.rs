@@ -87,7 +87,7 @@ pub fn run(
     writeln!(output, "{}", preamble(&interp)?).map_err(Error::Io)?;
 
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
-    interp.push_context(Context::new(REPL_FILENAME));
+    interp.push_context(Context::new(REPL_FILENAME.as_bytes()));
     unsafe {
         let api = interp.0.borrow();
         (*api.ctx).lineno = 1;

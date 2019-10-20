@@ -1,8 +1,6 @@
-use std::ffi::CStr;
 use std::str;
 
 use crate::convert::{Convert, TryConvert};
-use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
@@ -35,24 +33,12 @@ impl TryConvert<Value, String> for Artichoke {
 impl<'a> TryConvert<Value, &'a str> for Artichoke {
     fn try_convert(&self, value: Value) -> Result<&'a str, ArtichokeError> {
         let type_tag = value.ruby_type();
-        let bytes = if let Ruby::Symbol = type_tag {
-            let mrb = self.0.borrow().mrb;
-            // mruby does not expose an API to get the raw byte contents of a
-            // `Symbol`. For non-literal symbols and non-ASCII symbols,
-            // `sys::mrb_sys_symbol_name` round trips through a `String`
-            // `mrb_value` to turn a `char *` wrapped in quotes into a
-            // `char *`.
-            let bytes = unsafe { sys::mrb_sys_symbol_name(mrb, value.inner()) };
-            let slice = unsafe { CStr::from_ptr(bytes) };
-            slice.to_bytes()
-        } else {
-            value
-                .try_into::<&[u8]>()
-                .map_err(|_| ArtichokeError::ConvertToRust {
-                    from: type_tag,
-                    to: Rust::String,
-                })?
-        };
+        let bytes = value
+            .try_into::<&[u8]>()
+            .map_err(|_| ArtichokeError::ConvertToRust {
+                from: type_tag,
+                to: Rust::String,
+            })?;
         // This converter requires that the bytes be valid UTF-8 data. If the
         // `mrb_value` contains binary data, use the `Vec<u8>` converter.
         str::from_utf8(bytes).map_err(|_| ArtichokeError::ConvertToRust {

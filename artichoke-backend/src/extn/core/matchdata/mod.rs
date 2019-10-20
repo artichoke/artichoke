@@ -12,11 +12,11 @@
 //! are
 //! [implemented in Ruby](https://github.com/artichoke/artichoke/blob/master/artichoke-backend/src/extn/core/matchdata/matchdata.rb).
 
-use crate::convert::{Convert, RustBackedValue};
+use crate::convert::RustBackedValue;
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::exception::{IndexError, RubyException, RuntimeError, TypeError};
-use crate::extn::core::regexp::{Backend, Regexp};
+use crate::extn::core::exception;
+use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
@@ -127,27 +127,25 @@ impl MatchData {
     }
 
     unsafe extern "C" fn begin(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let begin = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result =
-            begin::Args::extract(&interp).and_then(|args| begin::method(&interp, args, &value));
+        let result = begin::Args::extract(&interp, Value::new(&interp, begin))
+            .and_then(|args| begin::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(begin::Error::NoMatch) | Err(begin::Error::NoGroup) => sys::mrb_sys_nil_value(),
-            Err(begin::Error::IndexType) => TypeError::raise(interp, "Unexpected capture group"),
-            Err(begin::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#begin error"),
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     unsafe extern "C" fn captures(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match captures::method(&interp, &value) {
+        let result = captures::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(captures::Error::NoMatch) => sys::mrb_sys_nil_value(),
-            Err(captures::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#captures error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
@@ -155,60 +153,46 @@ impl MatchData {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
+        let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
         let interp = unwrap_interpreter!(mrb);
-        let num_captures = match Self::try_from_ruby(&interp, &Value::new(&interp, slf)) {
-            Ok(data) => {
-                if let Some(regex) = (*data.borrow().regexp.regex).as_ref() {
-                    match regex {
-                        Backend::Onig(regex) => regex.captures_len(),
-                        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
-                    }
-                } else {
-                    0
-                }
-            }
-            Err(_) => return sys::mrb_sys_nil_value(),
-        };
         let value = Value::new(&interp, slf);
-        let result = element_reference::Args::extract(&interp, num_captures)
+        let result = element_reference::Args::num_captures(&interp, &value)
+            .and_then(|num_captures| {
+                element_reference::Args::extract(
+                    &interp,
+                    Value::new(&interp, elem),
+                    len.map(|len| Value::new(&interp, len)),
+                    num_captures,
+                )
+            })
             .and_then(|args| element_reference::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(element_reference::Error::NoMatch) => sys::mrb_sys_nil_value(),
-            Err(element_reference::Error::NoGroup(name)) => {
-                IndexError::raisef(interp, "undefined group name reference: %S", vec![name])
-            }
-            Err(element_reference::Error::IndexType)
-            | Err(element_reference::Error::LengthType) => {
-                TypeError::raise(interp, "Unexpected element reference")
-            }
-            Err(element_reference::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#[] error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     unsafe extern "C" fn end(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let end = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
+        // TODO: Value should be consumed before the call to `exception::raise`.
         let value = Value::new(&interp, slf);
-        let result =
-            end::Args::extract(&interp).and_then(|args| end::method(&interp, args, &value));
+        let result = end::Args::extract(&interp, Value::new(&interp, end))
+            .and_then(|args| end::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(end::Error::NoMatch) | Err(end::Error::NoGroup) => sys::mrb_sys_nil_value(),
-            Err(end::Error::IndexType) => TypeError::raise(interp, "Unexpected capture group"),
-            Err(end::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#begin error"),
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     unsafe extern "C" fn length(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match length::method(&interp, &value) {
+        let result = length::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(length::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#length error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
@@ -216,40 +200,36 @@ impl MatchData {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match named_captures::method(&interp, &value) {
+        let result = named_captures::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(named_captures::Error::NoMatch) => sys::mrb_sys_nil_value(),
-            Err(named_captures::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#named_captures error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match names::method(&interp, &value) {
+        let result = names::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(names::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#names error"),
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     unsafe extern "C" fn offset(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let elem = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result =
-            offset::Args::extract(&interp).and_then(|args| offset::method(&interp, args, &value));
+        let result = offset::Args::extract(&interp, Value::new(&interp, elem))
+            .and_then(|args| offset::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(offset::Error::NoMatch) | Err(offset::Error::NoGroup) => {
-                interp.convert(vec![None::<Value>, None::<Value>]).inner()
-            }
-            Err(offset::Error::IndexType) => TypeError::raise(interp, "Unexpected capture group"),
-            Err(offset::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#offset error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
@@ -257,13 +237,13 @@ impl MatchData {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match post_match::method(&interp, &value) {
+        let result = post_match::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(post_match::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#post_match error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
@@ -271,57 +251,59 @@ impl MatchData {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match pre_match::method(&interp, &value) {
+        let result = pre_match::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(pre_match::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#pre_match error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     unsafe extern "C" fn regexp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match regexp::method(&interp, &value) {
+        let result = regexp::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(regexp::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#regexp error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     unsafe extern "C" fn string(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match string::method(&interp, &value) {
+        let result = string::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(string::Error::Fatal) => {
-                RuntimeError::raise(interp, "fatal MatchData#string error")
-            }
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     #[allow(clippy::wrong_self_convention)]
     unsafe extern "C" fn to_a(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match to_a::method(&interp, &value) {
+        let result = to_a::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(to_a::Error::NoMatch) => sys::mrb_sys_nil_value(),
-            Err(to_a::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#to_a error"),
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 
     #[allow(clippy::wrong_self_convention)]
     unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        match to_s::method(&interp, &value) {
+        let result = to_s::method(&interp, &value);
+        match result {
             Ok(result) => result.inner(),
-            Err(to_s::Error::NoMatch) => interp.convert([0_u8; 0].as_ref()).inner(),
-            Err(to_s::Error::Fatal) => RuntimeError::raise(interp, "fatal MatchData#to_s error"),
+            Err(exception) => exception::raise(interp, exception),
         }
     }
 }

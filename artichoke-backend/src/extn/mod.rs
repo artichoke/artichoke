@@ -1,3 +1,5 @@
+#![allow(clippy::needless_pass_by_value)]
+
 use crate::convert::Convert;
 use crate::sys;
 use crate::types::Int;

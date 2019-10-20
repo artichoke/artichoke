@@ -1,6 +1,5 @@
 use crate::eval::Eval;
-use crate::Artichoke;
-use crate::ArtichokeError;
+use crate::{Artichoke, ArtichokeError};
 
 pub mod array;
 pub mod artichoke;
@@ -26,16 +25,16 @@ pub mod thread;
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     // These core classes are ordered according to the dependency DAG between
     // them.
+    interp.eval(include_str!("object.rb"))?;
     enumerable::init(interp)?;
+    // `Array` depends on: `Enumerable`
+    array::init(interp)?;
     module::init(interp)?;
     // Some `Exception`s depend on: `attr_accessor` (defined in `Module`)
     exception::init(interp)?;
-    interp.eval(include_str!("object.rb"))?;
-    // `Array` depends on: `Enumerable`, `attr_accessor` (defined in `Module`)
-    array::init(interp)?;
     artichoke::init(interp)?;
     comparable::init(interp)?;
-    env::init(interp)?;
+    env::mruby::init(interp)?;
     hash::init(interp)?;
     numeric::init(interp)?;
     integer::init(interp)?;

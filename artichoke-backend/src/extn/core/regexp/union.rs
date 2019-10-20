@@ -1,97 +1,96 @@
 //! [`Regexp::union`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-union)
 
-use std::mem;
+use std::str;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::array::Array;
-use crate::extn::core::regexp::{syntax, Regexp};
-use crate::sys;
+use crate::extn::core::exception::{RubyException, RuntimeError, TypeError};
+use crate::extn::core::regexp::{initialize, syntax, Regexp};
 use crate::value::{Value, ValueLike};
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum Error {
-    Fatal,
-    NoImplicitConversionToString,
-}
-
-#[derive(Debug)]
-pub struct Args {
-    pub rest: Vec<Value>,
-}
-
-impl Args {
-    const ARGSPEC: &'static [u8] = b"*\0";
-
-    pub unsafe fn extract(interp: &Artichoke) -> Self {
-        let mrb = interp.0.borrow().mrb;
-        let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
-        let mut count = <mem::MaybeUninit<usize>>::uninit();
-        sys::mrb_get_args(
-            mrb,
-            Self::ARGSPEC.as_ptr() as *const i8,
-            args.as_mut_ptr(),
-            count.as_mut_ptr(),
-        );
-        let args = std::slice::from_raw_parts(args.assume_init(), count.assume_init());
-        let args = args
-            .iter()
-            .map(|value| Value::new(&interp, *value))
-            .collect::<Vec<_>>();
-        Self { rest: args }
-    }
-}
-
-pub fn method(interp: &Artichoke, args: Args, slf: sys::mrb_value) -> Result<Value, Error> {
-    let mrb = interp.0.borrow().mrb;
-    let pattern = if args.rest.is_empty() {
-        "(?!)".to_owned()
-    } else if args.rest.len() == 1 {
-        let arg = args.rest.into_iter().nth(0).unwrap();
-        if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &arg) } {
-            let borrow = ary.borrow();
-            let mut patterns = vec![];
-            for pattern in &borrow.buffer {
-                if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, pattern) } {
-                    patterns.push(regexp.borrow().pattern.clone());
+pub fn method(interp: &Artichoke, args: &[Value]) -> Result<Value, Box<dyn RubyException>> {
+    let mut iter = args.iter().peekable();
+    let pattern = if let Some(first) = iter.next() {
+        if iter.peek().is_none() {
+            if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &first) } {
+                let borrow = ary.borrow();
+                let mut patterns = vec![];
+                for pattern in &borrow.buffer {
+                    if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, pattern) } {
+                        patterns.push(regexp.borrow().pattern.clone());
+                    } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                        patterns.push(syntax::escape(pattern));
+                    } else {
+                        return Err(Box::new(TypeError::new(
+                            interp,
+                            "No implicit conversion into String",
+                        )));
+                    }
+                }
+                patterns.join("|")
+            } else {
+                let pattern = first;
+                if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
+                    regexp.borrow().pattern.clone()
                 } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                    syntax::escape(pattern)
+                } else {
+                    return Err(Box::new(TypeError::new(
+                        interp,
+                        "No implicit conversion into String",
+                    )));
+                }
+            }
+        } else {
+            let mut patterns = vec![];
+            if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &first) } {
+                patterns.push(regexp.borrow().pattern.clone());
+            } else if let Ok(bytes) = first.clone().try_into::<&[u8]>() {
+                let pattern = str::from_utf8(bytes)
+                    .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?;
+                patterns.push(syntax::escape(pattern));
+            } else if let Ok(bytes) = first.funcall::<&[u8]>("to_str", &[], None) {
+                let pattern = str::from_utf8(bytes)
+                    .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?;
+                patterns.push(syntax::escape(pattern));
+            } else {
+                return Err(Box::new(TypeError::new(
+                    interp,
+                    "no implicit conversion into String",
+                )));
+            }
+            for pattern in iter {
+                if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
+                    patterns.push(regexp.borrow().pattern.clone());
+                } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
+                    let pattern = str::from_utf8(bytes)
+                        .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?;
+                    patterns.push(syntax::escape(pattern));
+                } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+                    let pattern = str::from_utf8(bytes)
+                        .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?;
                     patterns.push(syntax::escape(pattern));
                 } else {
-                    return Err(Error::NoImplicitConversionToString);
+                    return Err(Box::new(TypeError::new(
+                        interp,
+                        "no implicit conversion into String",
+                    )));
                 }
             }
             patterns.join("|")
-        } else {
-            let pattern = arg;
-            if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
-                regexp.borrow().pattern.clone()
-            } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
-                syntax::escape(pattern)
-            } else {
-                return Err(Error::NoImplicitConversionToString);
-            }
         }
     } else {
-        let mut patterns = vec![];
-        for pattern in args.rest {
-            if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
-                patterns.push(regexp.borrow().pattern.clone());
-            } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
-                patterns.push(syntax::escape(pattern));
-            } else {
-                return Err(Error::NoImplicitConversionToString);
-            }
-        }
-        patterns.join("|")
+        "(?!)".to_owned()
     };
 
-    let value = unsafe {
-        sys::mrb_obj_new(
-            mrb,
-            sys::mrb_sys_class_ptr(slf),
-            1,
-            [interp.convert(pattern).inner()].as_ptr() as *const sys::mrb_value,
-        )
-    };
-    Ok(Value::new(interp, value))
+    initialize::method(
+        interp,
+        initialize::Args {
+            pattern: interp.convert(pattern),
+            options: None,
+            encoding: None,
+        },
+        None,
+    )
 }

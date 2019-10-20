@@ -1,20 +1,6 @@
 # frozen_string_literal: true
 
-class ArgumentError < StandardError; end
-
-class ScriptError < Exception; end # rubocop:disable Lint/InheritException
-
-class LocalJumpError < ScriptError; end # rubocop:disable Lint/InheritException
-
-class RangeError < StandardError; end
-
-class FloatDomainError < RangeError; end
-
-class RegexpError < StandardError; end
-
-class TypeError < StandardError; end
-
-class NameError < StandardError
+class NameError
   attr_accessor :name
 
   def initialize(message = nil, name = nil)
@@ -23,7 +9,7 @@ class NameError < StandardError
   end
 end
 
-class NoMethodError < NameError
+class NoMethodError
   attr_reader :args
 
   def initialize(message = nil, name = nil, args = nil)
@@ -32,20 +18,12 @@ class NoMethodError < NameError
   end
 end
 
-class IndexError < StandardError; end
-
-class KeyError < IndexError; end
-
-class NotImplementedError < ScriptError; end # rubocop:disable Lint/InheritException
-
-class FrozenError < RuntimeError; end
-
-class StopIteration < IndexError
+class StopIteration
   attr_accessor :result
 end
 
 # Exception raised by a throw
-class UncaughtThrowError < ArgumentError
+class UncaughtThrowError
   # @!attribute [r] tag
   #   @return [Symbol] tag object, mostly a Symbol
   attr_reader :tag

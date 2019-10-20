@@ -1,6 +1,5 @@
 use crate::eval::Eval;
-use crate::Artichoke;
-use crate::ArtichokeError;
+use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.0.borrow_mut().def_class::<Hash>("Hash", None, None);

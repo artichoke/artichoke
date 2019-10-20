@@ -2,54 +2,29 @@
 //! and
 //! [`Regexp#==`](https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-3D-3D)
 
-use std::cell::RefCell;
-use std::mem;
-use std::rc::Rc;
-
 use crate::convert::{Convert, RustBackedValue};
+use crate::extn::core::exception::{Fatal, RubyException};
 use crate::extn::core::regexp::Regexp;
-use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum Error {
-    Fatal,
-}
-
-#[derive(Debug)]
-pub struct Args {
-    pub other: Option<Rc<RefCell<Regexp>>>,
-}
-
-impl Args {
-    const ARGSPEC: &'static [u8] = b"o\0";
-
-    pub unsafe fn extract(interp: &Artichoke) -> Self {
-        let mrb = interp.0.borrow().mrb;
-        let mut other = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-        sys::mrb_get_args(mrb, Self::ARGSPEC.as_ptr() as *const i8, other.as_mut_ptr());
-        let other = other.assume_init();
-        if let Ok(other) = Regexp::try_from_ruby(interp, &Value::new(interp, other)) {
-            Self { other: Some(other) }
-        } else {
-            Self { other: None }
-        }
-    }
-}
-
-#[allow(clippy::if_same_then_else)]
-pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Error> {
-    let data = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| Error::Fatal)?;
-    let slf = data.borrow();
-    if let Some(other) = args.other {
-        let borrow = other.borrow();
-        if slf.pattern == borrow.pattern {
-            Ok(interp.convert(slf.encoding == borrow.encoding))
-        } else {
-            Ok(interp.convert(false))
-        }
+pub fn method(
+    interp: &Artichoke,
+    value: &Value,
+    other: &Value,
+) -> Result<Value, Box<dyn RubyException>> {
+    let other = if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, other) } {
+        regexp
     } else {
-        Ok(interp.convert(false))
-    }
+        return Ok(interp.convert(false));
+    };
+    let value = unsafe { Regexp::try_from_ruby(interp, value) }.map_err(|_| {
+        Fatal::new(
+            interp,
+            "Unable to extract Rust Regexp from Ruby Regexp receiver",
+        )
+    })?;
+    let slf = value.borrow();
+    let oth = other.borrow();
+    Ok(interp.convert(slf.pattern == oth.pattern && slf.encoding == oth.encoding))
 }

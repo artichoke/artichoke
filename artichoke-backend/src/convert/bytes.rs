@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::ffi::CStr;
 use std::slice;
 
 use crate::convert::{Convert, TryConvert};
@@ -37,6 +38,17 @@ impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
     fn try_convert(&self, value: Value) -> Result<&'a [u8], ArtichokeError> {
         let mrb = self.0.borrow().mrb;
         match value.ruby_type() {
+            Ruby::Symbol => {
+                let mrb = self.0.borrow().mrb;
+                // mruby does not expose an API to get the raw byte contents of a
+                // `Symbol`. For non-literal symbols and non-ASCII symbols,
+                // `sys::mrb_sys_symbol_name` round trips through a `String`
+                // `mrb_value` to turn a `char *` wrapped in quotes into a
+                // `char *`.
+                let bytes = unsafe { sys::mrb_sys_symbol_name(mrb, value.inner()) };
+                let slice = unsafe { CStr::from_ptr(bytes) };
+                Ok(slice.to_bytes())
+            }
             Ruby::String => {
                 let bytes = value.inner();
                 let raw = unsafe { sys::mrb_string_value_ptr(mrb, bytes) as *const u8 };
