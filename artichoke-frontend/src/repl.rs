@@ -1,5 +1,3 @@
-#![cfg(not(target_arch = "wasm32"))]
-
 //! A REPL (read–eval–print–loop) for an artichoke interpreter exposed by
 //! the [`artichoke-backend`](artichoke_backend) crate.
 //!
