@@ -2,6 +2,7 @@ use artichoke_backend::eval::{Context, Eval};
 use artichoke_backend::fs;
 use artichoke_core::ArtichokeError;
 use bstr::BStr;
+use std::ffi::OsString;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -14,9 +15,9 @@ struct Opt {
     /// print the copyright
     copyright: bool,
 
-    #[structopt(short = "e")]
+    #[structopt(short = "e", parse(from_os_str))]
     /// one line of script. Several -e's allowed. Omit [programfile]
-    command: Option<Vec<String>>,
+    commands: Vec<OsString>,
 
     #[structopt(parse(from_os_str))]
     programfile: Option<PathBuf>,
@@ -50,11 +51,17 @@ fn try_main() -> Result<(), Error> {
     if opt.copyright {
         let interp = artichoke_backend::interpreter()?;
         interp.eval("puts RUBY_COPYRIGHT")?;
-    } else if let Some(commands) = opt.command {
+    } else if !opt.commands.is_empty() {
         let interp = artichoke_backend::interpreter()?;
         interp.push_context(Context::new(b"-e".as_ref()));
-        for command in commands {
-            interp.eval(command)?;
+        for command in opt.commands {
+            if let Ok(command) = fs::osstr_to_bytes(&interp, command.as_os_str()) {
+                interp.eval(command)?;
+            } else {
+                return Err(Error::from(
+                    "Unable to parse non-UTF-8 command line arguments on this platform",
+                ));
+            }
         }
     } else if let Some(programfile) = opt.programfile {
         let interp = artichoke_backend::interpreter()?;
