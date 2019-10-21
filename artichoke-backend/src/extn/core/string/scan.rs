@@ -18,7 +18,7 @@ fn literal_scan(string: &[u8], pattern: &[u8]) -> usize {
         1
     } else {
         match pattern.len() {
-            0 => 0,
+            0 => unreachable!("handled above"),
             1 => {
                 let byte0 = pattern[0];
                 memchr::memchr_iter(byte0, string).count()
