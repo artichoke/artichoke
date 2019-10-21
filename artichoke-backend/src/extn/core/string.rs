@@ -1,4 +1,4 @@
-use crate::convert::TryConvert;
+use crate::convert::{Convert, TryConvert};
 use crate::def::{ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::exception::{self, ArgumentError, Fatal};
@@ -61,16 +61,12 @@ impl RString {
         let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = scan::Args::extract(
+        let result = scan::method(
             &interp,
+            value,
             Value::new(&interp, pattern),
-            Value::new(&interp, block)
-                .try_into::<Option<Value>>()
-                .ok()
-                .unwrap_or_default(),
-        )
-        .and_then(|args| scan::method(&interp, args, value));
-
+            interp.convert(Value::new(&interp, block)),
+        );
         match result {
             Ok(result) => result.inner(),
             Err(exception) => exception::raise(interp, exception),
