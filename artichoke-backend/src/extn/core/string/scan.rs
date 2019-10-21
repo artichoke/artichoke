@@ -16,29 +16,39 @@ fn literal_scan_count(string: &[u8], pattern: &[u8]) -> (usize, usize) {
         (string.len() + 1, string.len())
     } else if pattern.len() > string.len() {
         (0, 0)
-    } else if pattern == string {
-        (1, 0)
     } else {
+        let mut matches = 0;
+        let mut last_pos = 0;
+        let strlen = string.len();
+        let patlen = pattern.len();
+        let mut start = 0;
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            if is_x86_feature_detected!("sse4.2") {
+                while let Some(pos) = twoway::find_bytes(&string[start..], pattern) {
+                    last_pos = start + pos;
+                    start = start + pos + patlen;
+                    matches += 1;
+                    if start >= strlen {
+                        break;
+                    }
+                }
+                return (matches, last_pos);
+            }
+        }
         match pattern.len() {
             0 => unreachable!("handled above"),
             1 => {
-                let mut matches = 0;
-                let mut last_pos = 0;
                 let byte0 = pattern[0];
                 for pos in memchr::memchr_iter(byte0, string) {
-                    matches += 1;
                     last_pos = pos;
+                    matches += 1;
                 }
                 (matches, last_pos)
             }
             _ => {
-                let mut matches = 0;
-                let mut last_pos = 0;
                 let byte0 = pattern[0];
                 let rest = &pattern[1..];
-                let strlen = string.len();
-                let patlen = pattern.len();
-                let mut start = 0;
                 while let Some(pos) = memchr::memchr(byte0, &string[start..]) {
                     last_pos = pos;
                     let idx = start + pos;
@@ -49,7 +59,9 @@ fn literal_scan_count(string: &[u8], pattern: &[u8]) -> (usize, usize) {
                             start = idx + patlen;
                         }
                     } else {
-                        break;
+                        if start >= strlen {
+                            break;
+                        }
                     }
                 }
                 (matches, last_pos)
@@ -63,34 +75,48 @@ fn literal_scan_with_pos(string: &[u8], pattern: &[u8]) -> Vec<usize> {
         (0..=string.len()).collect::<Vec<_>>()
     } else if pattern.len() > string.len() {
         Vec::with_capacity(0)
-    } else if pattern == string {
-        let mut matches = Vec::with_capacity(1);
-        matches.push(0);
-        matches
     } else {
+        let mut matches = vec![];
+        let strlen = string.len();
+        let patlen = pattern.len();
+        let mut start = 0;
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            if is_x86_feature_detected!("sse4.2") {
+                while let Some(pos) = twoway::find_bytes(&string[start..], pattern) {
+                    start = start + pos + patlen;
+                    matches.push(pos);
+                    if start >= strlen {
+                        break;
+                    }
+                }
+                return matches;
+            }
+        }
         match pattern.len() {
             0 => unreachable!("handled above"),
             1 => {
                 let byte0 = pattern[0];
-                memchr::memchr_iter(byte0, string).collect::<Vec<_>>()
+                for pos in memchr::memchr_iter(byte0, string) {
+                    matches.push(pos);
+                }
+                matches
             }
             _ => {
-                let mut matches = vec![];
                 let byte0 = pattern[0];
                 let rest = &pattern[1..];
-                let strlen = string.len();
-                let patlen = pattern.len();
-                let mut start = 0;
                 while let Some(pos) = memchr::memchr(byte0, &string[start..]) {
                     let idx = start + pos;
                     start = idx + 1;
                     if idx + patlen <= strlen {
                         if &string[idx + 1..idx + patlen] == rest {
-                            matches.push(idx);
+                            matches.push(pos);
                             start = idx + patlen;
                         }
                     } else {
-                        break;
+                        if start >= strlen {
+                            break;
+                        }
                     }
                 }
                 matches

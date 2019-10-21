@@ -10,6 +10,7 @@ bstr = "0.2"
 log = "0.4"
 memchr = "2"
 regex = "1"
+twoway = "0.2"
 
 [dependencies.artichoke-core]
 path = "../artichoke-core"
