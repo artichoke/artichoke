@@ -146,6 +146,7 @@ register_spec core array unshift
 register_spec core comparable
 register_spec core matchdata
 register_spec core regexp
+register_spec core string scan
 
 register_spec library monitor
 register_spec library stringscanner
