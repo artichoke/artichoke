@@ -1,3 +1,4 @@
+use bstr::ByteSlice;
 use std::str;
 
 use crate::convert::{Convert, RustBackedValue};
@@ -10,94 +11,6 @@ use crate::sys;
 use crate::types::Ruby;
 use crate::value::{Value, ValueLike};
 use crate::Artichoke;
-
-fn literal_scan_count(string: &[u8], pattern: &[u8]) -> (usize, usize) {
-    if pattern.is_empty() {
-        (string.len() + 1, string.len())
-    } else if pattern.len() > string.len() {
-        (0, 0)
-    } else if pattern == string {
-        (1, 0)
-    } else {
-        match pattern.len() {
-            0 => unreachable!("handled above"),
-            1 => {
-                let mut matches = 0;
-                let mut last_pos = 0;
-                let byte0 = pattern[0];
-                for pos in memchr::memchr_iter(byte0, string) {
-                    matches += 1;
-                    last_pos = pos;
-                }
-                (matches, last_pos)
-            }
-            _ => {
-                let mut matches = 0;
-                let mut last_pos = 0;
-                let byte0 = pattern[0];
-                let rest = &pattern[1..];
-                let strlen = string.len();
-                let patlen = pattern.len();
-                let mut start = 0;
-                while let Some(pos) = memchr::memchr(byte0, &string[start..]) {
-                    last_pos = pos;
-                    let idx = start + pos;
-                    start = idx + 1;
-                    if idx + patlen <= strlen {
-                        if &string[idx + 1..idx + patlen] == rest {
-                            matches += 1;
-                            start = idx + patlen;
-                        }
-                    } else {
-                        break;
-                    }
-                }
-                (matches, last_pos)
-            }
-        }
-    }
-}
-
-fn literal_scan_with_pos(string: &[u8], pattern: &[u8]) -> Vec<usize> {
-    if pattern.is_empty() {
-        (0..=string.len()).collect::<Vec<_>>()
-    } else if pattern.len() > string.len() {
-        Vec::with_capacity(0)
-    } else if pattern == string {
-        let mut matches = Vec::with_capacity(1);
-        matches.push(0);
-        matches
-    } else {
-        match pattern.len() {
-            0 => unreachable!("handled above"),
-            1 => {
-                let byte0 = pattern[0];
-                memchr::memchr_iter(byte0, string).collect::<Vec<_>>()
-            }
-            _ => {
-                let mut matches = vec![];
-                let byte0 = pattern[0];
-                let rest = &pattern[1..];
-                let strlen = string.len();
-                let patlen = pattern.len();
-                let mut start = 0;
-                while let Some(pos) = memchr::memchr(byte0, &string[start..]) {
-                    let idx = start + pos;
-                    start = idx + 1;
-                    if idx + patlen <= strlen {
-                        if &string[idx + 1..idx + patlen] == rest {
-                            matches.push(idx);
-                            start = idx + patlen;
-                        }
-                    } else {
-                        break;
-                    }
-                }
-                matches
-            }
-        }
-    }
-}
 
 #[allow(clippy::cognitive_complexity)]
 pub fn method(
@@ -122,7 +35,6 @@ pub fn method(
         )))
     } else if let Ok(pattern_bytes) = pattern.clone().try_into::<&[u8]>() {
         if let Some(ref block) = block {
-            let matches = literal_scan_with_pos(string, pattern_bytes);
             // TODO: Regexp and MatchData should operate on byte slices.
             let s = str::from_utf8(string).map_err(|_| {
                 Fatal::new(
@@ -148,8 +60,10 @@ pub fn method(
             let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
             let mut matchdata = MatchData::new(s, regex, 0, string.len());
             let patlen = pattern_bytes.len();
-            for pos in &matches {
-                matchdata.set_region(*pos, pos + patlen);
+            let mut restore_nil = true;
+            for pos in string.find_iter(pattern_bytes) {
+                restore_nil = false;
+                matchdata.set_region(pos, pos + patlen);
                 let data = unsafe { matchdata.clone().try_into_ruby(interp, None) }
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
@@ -158,14 +72,19 @@ pub fn method(
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
             }
-            if matches.is_empty() {
+            if restore_nil {
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                 }
             }
             Ok(value)
         } else {
-            let (matches, last_pos) = literal_scan_count(string, pattern_bytes);
+            let (matches, last_pos) = string
+                .find_iter(pattern_bytes)
+                .enumerate()
+                .last()
+                .map(|(m, p)| (m + 1, p))
+                .unwrap_or_default();
             let mut result = Vec::with_capacity(matches);
             for _ in 0..matches {
                 result.push(interp.convert(pattern_bytes));
@@ -217,7 +136,6 @@ pub fn method(
         let pattern_bytes = pattern.funcall::<&[u8]>("to_str", &[], None);
         if let Ok(pattern_bytes) = pattern_bytes {
             if let Some(ref block) = block {
-                let matches = literal_scan_with_pos(string, pattern_bytes);
                 // TODO: Regexp and MatchData should operate on byte slices.
                 let s = str::from_utf8(string).map_err(|_| {
                     Fatal::new(
@@ -245,8 +163,10 @@ pub fn method(
                 let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
                 let mut matchdata = MatchData::new(s, regex, 0, string.len());
                 let patlen = pattern_bytes.len();
-                for pos in &matches {
-                    matchdata.set_region(*pos, pos + patlen);
+                let mut restore_nil = true;
+                for pos in string.find_iter(pattern_bytes) {
+                    restore_nil = false;
+                    matchdata.set_region(pos, pos + patlen);
                     let data =
                         unsafe { matchdata.clone().try_into_ruby(interp, None) }.map_err(|_| {
                             Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
@@ -257,14 +177,19 @@ pub fn method(
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
                 }
-                if matches.is_empty() {
+                if restore_nil {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                     }
                 }
                 Ok(value)
             } else {
-                let (matches, last_pos) = literal_scan_count(string, pattern_bytes);
+                let (matches, last_pos) = string
+                    .find_iter(pattern_bytes)
+                    .enumerate()
+                    .last()
+                    .map(|(m, p)| (m + 1, p))
+                    .unwrap_or_default();
                 let mut result = Vec::with_capacity(matches);
                 for _ in 0..matches {
                     result.push(interp.convert(pattern_bytes));
