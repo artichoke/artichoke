@@ -207,6 +207,8 @@
 //! `unsafe` Rust functions.
 
 #[macro_use]
+extern crate downcast;
+#[macro_use]
 extern crate log;
 
 use std::cell::RefCell;

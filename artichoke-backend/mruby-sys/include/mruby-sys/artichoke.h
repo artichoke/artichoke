@@ -47,5 +47,9 @@ MRB_API void artichoke_ary_set(mrb_state *mrb, mrb_value ary, mrb_int n,
                                mrb_value val);
 MRB_API mrb_bool artichoke_ary_check(mrb_state *mrb, mrb_value ary);
 
+// GC
+MRB_API void artichoke_gc_mark_ary(mrb_state *mrb, mrb_value ary);
+MRB_API size_t artichoke_gc_mark_ary_size(mrb_state *mrb, mrb_value ary);
+
 // Expose mrbgems subsystem initializer
 MRB_API void mrb_init_mrbgems(mrb_state *mrb);

@@ -1,9 +1,9 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::convert::float::Float;
 use crate::convert::{Convert, RustBackedValue, TryConvert};
-use crate::extn::core::array::Array;
+use crate::extn::core::array::{backend, Array};
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::{Value, ValueLike};
@@ -12,18 +12,14 @@ use crate::{Artichoke, ArtichokeError};
 // bail out implementation for mixed-type collections
 impl Convert<&[Value], Value> for Artichoke {
     fn convert(&self, value: &[Value]) -> Value {
-        let ary = Array {
-            buffer: VecDeque::from(value.to_vec()),
-        };
+        let ary = Array::new(Box::new(backend::buffer::Buffer::from(value)));
         unsafe { ary.try_into_ruby(self, None) }.expect("Array into Value")
     }
 }
 
 impl Convert<Vec<Value>, Value> for Artichoke {
     fn convert(&self, value: Vec<Value>) -> Value {
-        let ary = Array {
-            buffer: VecDeque::from(value),
-        };
+        let ary = Array::new(Box::new(backend::buffer::Buffer::from(value)));
         unsafe { ary.try_into_ruby(self, None) }.expect("Array into Value")
     }
 }
@@ -49,7 +45,7 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
             Ruby::Data => {
                 let array = unsafe { Array::try_from_ruby(self, &value)? };
                 let borrow = array.borrow();
-                Ok(Vec::from(borrow.buffer.clone()))
+                Ok(borrow.as_vec(self))
             }
             type_tag => Err(ArtichokeError::ConvertToRust {
                 from: type_tag,

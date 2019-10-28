@@ -1,4 +1,5 @@
 use crate::sys;
+use crate::value::Value;
 use crate::Artichoke;
 
 /// Arena savepoint that can be restored to ensure mruby objects are reaped.
@@ -53,6 +54,9 @@ pub trait MrbGarbageCollection {
     /// A live object is reachable via top self, the stack, or the arena.
     fn live_object_count(&self) -> i32;
 
+    /// Mark a [`Value`] as reachable in the mruby garbage collector.
+    fn mark_value(&self, value: &Value);
+
     /// Perform an incremental garbage collection.
     ///
     /// An incremental GC is less computationally expensive than a
@@ -92,6 +96,11 @@ impl MrbGarbageCollection for Artichoke {
     fn live_object_count(&self) -> i32 {
         let mrb = self.0.borrow().mrb;
         unsafe { sys::mrb_sys_gc_live_objects(mrb) }
+    }
+
+    fn mark_value(&self, value: &Value) {
+        let mrb = self.0.borrow().mrb;
+        unsafe { sys::mrb_sys_safe_gc_mark(mrb, value.inner()) }
     }
 
     fn incremental_gc(&self) {

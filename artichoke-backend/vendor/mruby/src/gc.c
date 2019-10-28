@@ -699,18 +699,9 @@ gc_mark_children(mrb_state *mrb, mrb_gc *gc, struct RBasic *obj)
 
   case MRB_TT_DATA:
 #ifdef ARTICHOKE
-    {
-      mrb_value maybe_special_value = mrb_obj_value((struct RObject*)obj);
-      if (ARY_CHECK(mrb, maybe_special_value)) {
-        // Artichoke `Array`s may not be contiguous chunks of memory, so we must
-        // mark each value by resolving it with `ARY_REF`.
-        mrb_int len = ARRAY_LEN(mrb, maybe_special_value);
-        mrb_int idx;
-        for (idx = 0; idx < len; idx++) {
-          mrb_gc_mark_value(mrb, ARY_REF(mrb, maybe_special_value, idx));
-        }
-      }
-    }
+    // Artichoke `Array`s may not be contiguous chunks of memory, so we must
+    // mark each value by resolving it with `ARY_REF`.
+    artichoke_gc_mark_ary(mrb, mrb_obj_value((struct RObject*)obj));
     /* fall through */
 #endif
   case MRB_TT_OBJECT:
@@ -1002,12 +993,7 @@ gc_gray_mark(mrb_state *mrb, mrb_gc *gc, struct RBasic *obj)
 
   case MRB_TT_DATA:
 #ifdef ARTICHOKE
-    {
-      mrb_value maybe_special_value = mrb_obj_value((struct RObject*)obj);
-      if (ARY_CHECK(mrb, maybe_special_value)) {
-        children += ARRAY_LEN(mrb, maybe_special_value);
-      }
-    }
+    children += artichoke_gc_mark_ary_size(mrb, mrb_obj_value((struct RObject*)obj));
     /* fall through */
 #endif
   case MRB_TT_OBJECT:

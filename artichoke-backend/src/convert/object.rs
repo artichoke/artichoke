@@ -131,6 +131,12 @@ where
             let borrow = spec.borrow();
             sys::mrb_data_get_ptr(mrb, slf.inner(), borrow.data_type())
         };
+        if ptr.is_null() {
+            return Err(ArtichokeError::ConvertToRust {
+                from: slf.ruby_type(),
+                to: Rust::Object,
+            });
+        }
         let data = Rc::from_raw(ptr as *const RefCell<Self>);
         let value = Rc::clone(&data);
         mem::forget(data);

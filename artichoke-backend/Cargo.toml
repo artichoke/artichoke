@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 backtrace = "0.3"
 bstr = "0.2"
+downcast = "0.10"
 log = "0.4"
 memchr = "2"
 regex = "1"

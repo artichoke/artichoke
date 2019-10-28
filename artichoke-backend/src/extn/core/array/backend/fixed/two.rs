@@ -1,0 +1,217 @@
+use std::borrow::Cow;
+
+use crate::convert::Convert;
+use crate::extn::core::array::{backend, ArrayType};
+use crate::extn::core::exception::RubyException;
+use crate::gc::MrbGarbageCollection;
+use crate::value::Value;
+use crate::Artichoke;
+
+#[derive(Debug, Clone)]
+pub struct Two(Value, Value);
+
+impl Two {
+    pub fn new(first: Value, second: Value) -> Self {
+        Self(first, second)
+    }
+}
+
+impl ArrayType for Two {
+    fn box_clone(&self) -> Box<dyn ArrayType> {
+        Box::new(self.clone())
+    }
+
+    fn gc_mark(&self, interp: &Artichoke) {
+        interp.mark_value(&self.0);
+        interp.mark_value(&self.1);
+    }
+
+    fn real_children(&self) -> usize {
+        2
+    }
+
+    fn len(&self) -> usize {
+        2
+    }
+
+    fn is_empty(&self) -> bool {
+        false
+    }
+
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
+        if index == 0 {
+            Ok(self.0.clone())
+        } else if index == 1 {
+            Ok(self.1.clone())
+        } else {
+            Ok(interp.convert(None::<Value>))
+        }
+    }
+
+    fn slice(
+        &self,
+        interp: &Artichoke,
+        start: usize,
+        len: usize,
+    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+        let _ = interp;
+        if start == 0 && len == 1 {
+            Ok(backend::fixed::one(self.0.clone()))
+        } else if start == 0 && len > 1 {
+            Ok(self.box_clone())
+        } else if start == 1 && len > 0 {
+            Ok(backend::fixed::one(self.1.clone()))
+        } else {
+            Ok(backend::fixed::empty())
+        }
+    }
+
+    fn set(
+        &self,
+        interp: &Artichoke,
+        index: usize,
+        elem: Value,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<(), Box<dyn RubyException>> {
+        let _ = interp;
+        let alloc = if index == 0 {
+            vec![backend::fixed::two(elem, self.1.clone())]
+        } else if index == 1 {
+            vec![backend::fixed::two(self.0.clone(), elem)]
+        } else if index == 2 {
+            let buffer = vec![self.0.clone(), self.1.clone(), elem];
+            let buffer: Box<dyn ArrayType> = Box::new(backend::buffer::Buffer::from(buffer));
+            vec![buffer]
+        } else {
+            vec![
+                self.box_clone(),
+                backend::fixed::hole(index - 2),
+                backend::fixed::one(elem),
+            ]
+        };
+        *realloc = Some(alloc);
+        Ok(())
+    }
+
+    fn set_with_drain(
+        &self,
+        interp: &Artichoke,
+        start: usize,
+        drain: usize,
+        with: Value,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<usize, Box<dyn RubyException>> {
+        let _ = interp;
+        let (alloc, drained) = if start == 0 && drain == 0 {
+            let buffer = vec![with, self.0.clone(), self.1.clone()];
+            let buffer: Box<dyn ArrayType> = Box::new(backend::buffer::Buffer::from(buffer));
+            let alloc = vec![buffer];
+            (alloc, 0)
+        } else if start == 0 && drain == 1 {
+            let alloc = vec![backend::fixed::two(with, self.1.clone())];
+            (alloc, 1)
+        } else if start == 0 {
+            let alloc = vec![backend::fixed::one(with)];
+            (alloc, 2)
+        } else if start == 1 && drain == 0 {
+            let buffer = vec![self.0.clone(), with, self.1.clone()];
+            let buffer: Box<dyn ArrayType> = Box::new(backend::buffer::Buffer::from(buffer));
+            let alloc = vec![buffer];
+            (alloc, 0)
+        } else if start == 1 {
+            let alloc = vec![backend::fixed::two(self.0.clone(), with)];
+            (alloc, 1)
+        } else if start == 2 {
+            let buffer = vec![with, self.0.clone(), self.1.clone()];
+            let buffer: Box<dyn ArrayType> = Box::new(backend::buffer::Buffer::from(buffer));
+            let alloc = vec![buffer];
+            (alloc, 0)
+        } else {
+            let alloc = vec![
+                self.box_clone(),
+                backend::fixed::hole(start - 2),
+                backend::fixed::one(with),
+            ];
+            (alloc, 0)
+        };
+        *realloc = Some(alloc);
+        Ok(drained)
+    }
+
+    fn set_slice(
+        &self,
+        interp: &Artichoke,
+        start: usize,
+        drain: usize,
+        with: Box<dyn ArrayType>,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<usize, Box<dyn RubyException>> {
+        let _ = interp;
+        let (alloc, drained) = if start == 0 && drain == 0 {
+            let alloc = vec![with, self.box_clone()];
+            (alloc, 0)
+        } else if start == 0 && drain == 1 {
+            let alloc = vec![with, backend::fixed::one(self.1.clone())];
+            (alloc, 1)
+        } else if start == 0 {
+            let alloc = vec![with];
+            (alloc, 2)
+        } else if start == 1 && drain == 0 {
+            let alloc = vec![
+                backend::fixed::one(self.0.clone()),
+                with,
+                backend::fixed::one(self.1.clone()),
+            ];
+            (alloc, 0)
+        } else if start == 1 {
+            let alloc = vec![backend::fixed::one(self.0.clone()), with];
+            (alloc, 1)
+        } else if start == 2 {
+            let alloc = vec![self.box_clone(), with];
+            (alloc, 0)
+        } else {
+            let alloc = vec![self.box_clone(), backend::fixed::hole(start - 2), with];
+            (alloc, 0)
+        };
+        *realloc = Some(alloc);
+        Ok(drained)
+    }
+
+    fn concat(
+        &self,
+        interp: &Artichoke,
+        other: Box<dyn ArrayType>,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<(), Box<dyn RubyException>> {
+        if other.len() == 0 {
+            return Ok(());
+        } else if other.len() < backend::buffer::BUFFER_INLINE_MAX - 1 {
+            let mut buffer = Vec::with_capacity(2 + other.len());
+            buffer.push(self.0.clone());
+            buffer.push(self.1.clone());
+            for idx in 0..other.len() {
+                buffer.push(other.get(interp, idx)?);
+            }
+            let buffer: Box<dyn ArrayType> = Box::new(backend::buffer::Buffer::from(buffer));
+            *realloc = Some(vec![buffer]);
+        } else {
+            *realloc = Some(vec![self.box_clone(), other]);
+        }
+        Ok(())
+    }
+
+    fn pop(
+        &self,
+        interp: &Artichoke,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<Value, Box<dyn RubyException>> {
+        let _ = interp;
+        *realloc = Some(vec![backend::fixed::one(self.0.clone())]);
+        Ok(self.1.clone())
+    }
+
+    fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+        let _ = interp;
+        Ok(backend::fixed::two(self.1.clone(), self.0.clone()))
+    }
+}

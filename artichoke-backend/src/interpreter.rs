@@ -40,6 +40,11 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     // context and interpreter.
     let interp = Artichoke(unsafe { Rc::from_raw(ptr) });
 
+    // mruby garbage collection relies on a fully initialized Array, which we
+    // won't have until after `extn::core` is initialized. Disable GC before
+    // init and clean up afterward.
+    interp.disable_gc();
+
     // Initialize Artichoke Core and Standard Library runtime
     extn::init(&interp, "mruby")?;
 
@@ -58,7 +63,10 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     let arena = interp.create_arena_savepoint();
     interp.eval("").map_err(|_| ArtichokeError::New)?;
     arena.restore();
+
+    interp.enable_gc();
     interp.full_gc();
+
     Ok(interp)
 }
 

@@ -28,7 +28,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("object.rb"))?;
     enumerable::init(interp)?;
     // `Array` depends on: `Enumerable`
-    array::init(interp)?;
+    array::mruby::init(interp)?;
     module::init(interp)?;
     // Some `Exception`s depend on: `attr_accessor` (defined in `Module`)
     exception::init(interp)?;
