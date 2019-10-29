@@ -1,8 +1,5 @@
-#![allow(warnings)]
-
 use artichoke_core::value::Value as _;
 use downcast::Any;
-use std::borrow::Cow;
 use std::convert::TryFrom;
 
 use crate::convert::{Convert, RustBackedValue};
