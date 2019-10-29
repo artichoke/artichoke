@@ -239,3 +239,9 @@ MRB_API int mrb_sys_gc_live_objects(mrb_state *mrb) {
   mrb_gc *gc = &mrb->gc;
   return gc->live;
 }
+
+MRB_API void mrb_sys_safe_gc_mark(mrb_state *mrb, mrb_value value) {
+  if (!mrb_immediate_p(value)) {
+    mrb_gc_mark(mrb, mrb_basic_ptr(value));
+  }
+}

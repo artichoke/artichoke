@@ -16,8 +16,8 @@ pub fn method(interp: &Artichoke, args: &[Value]) -> Result<Value, Box<dyn RubyE
             if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &first) } {
                 let borrow = ary.borrow();
                 let mut patterns = vec![];
-                for pattern in &borrow.buffer {
-                    if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, pattern) } {
+                for pattern in borrow.as_vec(interp) {
+                    if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
                         patterns.push(regexp.borrow().pattern.clone());
                     } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
                         patterns.push(syntax::escape(pattern));

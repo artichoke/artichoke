@@ -30,6 +30,7 @@ pub mod argspec {
     pub const REQ1_REQBLOCK: &[u8] = b"o&\0";
     pub const REQ1_REQBLOCK_OPT1: &[u8] = b"o&|o?\0";
     pub const REQ2: &[u8] = b"oo\0";
+    pub const OPT2_OPTBLOCK: &[u8] = b"&|o?o?\0";
     pub const REQ2_OPT1: &[u8] = b"oo|o\0";
     pub const REST: &[u8] = b"*\0";
 }
@@ -201,6 +202,36 @@ macro_rules! mrb_get_args {
             }
             _ => unreachable!("mrb_get_args should have raised"),
         }
+    }};
+    ($mrb:expr, optional = 2, &block) => {{
+        let mut opt1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let mut has_opt1 = <std::mem::MaybeUninit<$crate::sys::mrb_bool>>::uninit();
+        let mut opt2 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        let mut has_opt2 = <std::mem::MaybeUninit<$crate::sys::mrb_bool>>::uninit();
+        let mut block = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();
+        $crate::sys::mrb_get_args(
+            $mrb,
+            $crate::macros::argspec::OPT2_OPTBLOCK.as_ptr() as *const i8,
+            block.as_mut_ptr(),
+            opt1.as_mut_ptr(),
+            has_opt1.as_mut_ptr(),
+            opt2.as_mut_ptr(),
+            has_opt2.as_mut_ptr(),
+        );
+        let has_opt1 = has_opt1.assume_init() != 0;
+        let has_opt2 = has_opt2.assume_init() != 0;
+        let opt1 = if has_opt1 {
+            Some(opt1.assume_init())
+        } else {
+            None
+        };
+        let opt2 = if has_opt2 {
+            Some(opt2.assume_init())
+        } else {
+            None
+        };
+        let block = block.assume_init();
+        (opt1, opt2, block)
     }};
     ($mrb:expr, required = 2, optional = 1) => {{
         let mut req1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();

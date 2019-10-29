@@ -40,66 +40,7 @@ class Array
   Enumerable.included(self)
 
   def self.[](*args)
-    new(args.length) { |idx| args[idx] }
-  end
-
-  # TODO: this should be initialize and it should be implemented in Rust
-  def self.new(*args, &blk)
-    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..2)" if args.length > 2
-
-    if args.length.zero?
-      []
-    elsif blk
-      raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" if args.length != 1
-
-      len = args[0]
-      classname = len.class
-      classname = len.inspect if len.equal?(true) || len.equal?(false)
-      raise TypeError, "No implicit conversion from #{classname} to Integer" unless len.is_a?(Integer) || len.respond_to?(:to_int)
-
-      len = len.to_int
-      raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
-
-      raise ArgumentError, 'argument too big' if len > 1e18 # TODO: this is a hack
-
-      len.times.map { |idx| blk.call(idx) }
-    elsif args.length == 2
-      len, default = *args
-      classname = len.class
-      classname = len.inspect if len.equal?(true) || len.equal?(false)
-      raise TypeError, "No implicit conversion from #{classname} to Integer" unless len.is_a?(Integer) || len.respond_to?(:to_int)
-
-      len = len.to_int
-      raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
-
-      raise ArgumentError, 'argument too big' if len > 1e18 # TODO: this is a hack
-
-      [default] * len
-    elsif args[0].respond_to?(:to_ary)
-      ary = args[0]
-      classname = ary.class
-      ary = ary.to_ary
-      raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{len.class})" unless ary.is_a?(Integer)
-
-      ary
-    elsif args[0].respond_to?(:to_int)
-      len = args[0]
-      classname = len.class
-      classname = len.inspect if len.equal?(true) || len.equal?(false)
-      raise TypeError, "No implicit conversion from #{classname} to Integer" unless len.is_a?(Integer) || len.respond_to?(:to_int)
-
-      len = len.to_int
-      raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{len.class})" unless len.is_a?(Integer)
-
-      raise ArgumentError, 'argument too big' if len > 1e18 # TODO: this is a hack
-
-      [nil] * len
-    else
-      len = args[0]
-      classname = len.class
-      classname = len.inspect if len.equal?(true) || len.equal?(false)
-      raise TypeError, "No implicit conversion from #{classname} to Integer"
-    end
+    Array.new(args.length) { |idx| args[idx] }
   end
 
   def self.try_convert(other)
