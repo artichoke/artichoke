@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
 use crate::extn::core::exception::RubyException;
