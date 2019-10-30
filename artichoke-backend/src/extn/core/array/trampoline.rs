@@ -4,7 +4,7 @@ use std::convert::TryFrom;
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::array::{backend, Array};
 use crate::extn::core::exception::{Fatal, FrozenError, IndexError, RubyException, TypeError};
-use crate::value::Value;
+use crate::value::{Block, Value};
 use crate::Artichoke;
 
 #[allow(clippy::similar_names)]
@@ -409,7 +409,7 @@ pub fn initialize(
     ary: Value,
     first: Option<Value>,
     second: Option<Value>,
-    block: Option<Value>,
+    block: Option<Block>,
 ) -> Result<Value, Box<dyn RubyException>> {
     Array::initialize(interp, first, second, block, ary)
 }

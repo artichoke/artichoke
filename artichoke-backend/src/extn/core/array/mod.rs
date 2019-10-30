@@ -7,7 +7,7 @@ use crate::extn::core::exception::{
     ArgumentError, Fatal, RangeError, RubyException, RuntimeError, TypeError,
 };
 use crate::types::Int;
-use crate::value::Value;
+use crate::value::{Block, Value};
 use crate::warn::Warn;
 use crate::Artichoke;
 
@@ -53,7 +53,7 @@ impl Array {
         interp: &Artichoke,
         first: Option<Value>,
         second: Option<Value>,
-        block: Option<Value>,
+        block: Option<Block>,
         into: Value,
     ) -> Result<Value, Box<dyn RubyException>> {
         let result = if let Some(first) = first {
@@ -97,7 +97,7 @@ impl Array {
                         })?;
                         let idx = interp.convert(idx);
                         // TODO: propagate exceptions from block call.
-                        let elem = block.funcall("call", &[idx], None).map_err(|_| {
+                        let elem = block.yield_arg(interp, idx).map_err(|_| {
                             RuntimeError::new(interp, "exception during Array#initialize block")
                         })?;
                         buffer.push(elem);
@@ -124,7 +124,7 @@ impl Array {
                         })?;
                         let idx = interp.convert(idx);
                         // TODO: propagate exceptions from block call.
-                        let elem = block.funcall("call", &[idx], None).map_err(|_| {
+                        let elem = block.yield_arg(interp, idx).map_err(|_| {
                             RuntimeError::new(interp, "exception during Array#initialize block")
                         })?;
                         buffer.push(elem);

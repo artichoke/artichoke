@@ -9,7 +9,7 @@ use crate::extn::core::regexp::opts::Options;
 use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
 use crate::types::Ruby;
-use crate::value::{Value, ValueLike};
+use crate::value::{Block, Value, ValueLike};
 use crate::Artichoke;
 
 #[allow(clippy::cognitive_complexity)]
@@ -17,7 +17,7 @@ pub fn method(
     interp: &Artichoke,
     value: Value,
     pattern: Value,
-    block: Option<Value>,
+    block: Option<Block>,
 ) -> Result<Value, Box<dyn RubyException>> {
     let string = value.clone().try_into::<&[u8]>().map_err(|_| {
         Fatal::new(
@@ -68,7 +68,10 @@ pub fn method(
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    sys::mrb_yield(mrb, block.inner(), interp.convert(pattern_bytes).inner());
+                }
+                // TODO: Propagate exceptions from yield.
+                let _ = block.yield_arg(interp, interp.convert(pattern_bytes));
+                unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
             }
@@ -173,7 +176,10 @@ pub fn method(
                         })?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                        sys::mrb_yield(mrb, block.inner(), interp.convert(pattern_bytes).inner());
+                    }
+                    // TODO: Propagate exceptions from yield.
+                    let _ = block.yield_arg(interp, interp.convert(pattern_bytes));
+                    unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
                 }
@@ -303,7 +309,10 @@ pub fn method(
                             if let Some(ref block) = block {
                                 unsafe {
                                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                                    sys::mrb_yield(mrb, block.inner(), matched.inner());
+                                }
+                                // TODO: Propagate exceptions from yield.
+                                let _ = block.yield_arg(interp, matched);
+                                unsafe {
                                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                                 }
                             } else {
@@ -326,7 +335,10 @@ pub fn method(
                             if let Some(ref block) = block {
                                 unsafe {
                                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                                    sys::mrb_yield(mrb, block.inner(), matched.inner());
+                                }
+                                // TODO: Propagate exceptions from yield.
+                                let _ = block.yield_arg(interp, matched);
+                                unsafe {
                                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                                 }
                             } else {
