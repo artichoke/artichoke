@@ -4,7 +4,6 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
-use artichoke_core::value::Value as _;
 use onig::{self, Syntax};
 use regex;
 use std::convert::TryFrom;
@@ -279,10 +278,7 @@ impl Regexp {
             &interp,
             Value::new(&interp, pattern),
             pos.map(|pos| Value::new(&interp, pos)),
-            Value::new(&interp, block)
-                .try_into::<Option<Value>>()
-                .ok()
-                .unwrap_or_default(),
+            block,
         )
         .and_then(|args| match_::method(&interp, args, &value));
         match result {

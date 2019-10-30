@@ -180,7 +180,6 @@ impl ValueLike for Value {
     where
         Self::Artichoke: TryConvert<Self, T>,
     {
-        self.interp.0.borrow_mut();
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
@@ -255,7 +254,6 @@ impl ValueLike for Value {
         args: &[Self::Arg],
         block: Option<Self::Block>,
     ) -> Result<Self, ArtichokeError> {
-        self.interp.0.borrow_mut();
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
@@ -389,6 +387,54 @@ impl PartialEq for Value {
         std::ptr::eq(unsafe { sys::mrb_sys_basic_ptr(self.inner()) }, unsafe {
             sys::mrb_sys_basic_ptr(other.inner())
         })
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Block {
+    value: sys::mrb_value,
+}
+
+impl Block {
+    /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
+    pub fn new(block: sys::mrb_value) -> Option<Self> {
+        if unsafe { sys::mrb_sys_value_is_nil(block) } {
+            None
+        } else {
+            Some(Self { value: block })
+        }
+    }
+
+    pub fn yield_arg(&self, interp: &Artichoke, arg: &Value) -> Result<Value, ArtichokeError> {
+        // Ensure the borrow is out of scope by the time we eval code since
+        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
+        // get access to the underlying `ArtichokeState`.
+        let mrb = interp.0.borrow().mrb;
+
+        let _arena = interp.create_arena_savepoint();
+
+        let value = unsafe { sys::mrb_yield(mrb, self.value, arg.inner()) };
+        let value = Value::new(interp, value);
+
+        match interp.last_error() {
+            LastError::Some(exception) => {
+                warn!("runtime error with exception backtrace: {}", exception);
+                Err(ArtichokeError::Exec(exception.to_string()))
+            }
+            LastError::UnableToExtract(err) => {
+                error!("failed to extract exception after runtime error: {}", err);
+                Err(err)
+            }
+            LastError::None if value.is_unreachable() => {
+                // Unreachable values are internal to the mruby interpreter and
+                // interacting with them via the C API is unspecified and may
+                // result in a segfault.
+                //
+                // See: https://github.com/mruby/mruby/issues/4460
+                Err(ArtichokeError::UnreachableValue)
+            }
+            LastError::None => Ok(value),
+        }
     }
 }
 

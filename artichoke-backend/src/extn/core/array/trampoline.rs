@@ -4,7 +4,8 @@ use std::convert::TryFrom;
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::array::{backend, Array};
 use crate::extn::core::exception::{Fatal, FrozenError, IndexError, RubyException, TypeError};
-use crate::value::Value;
+use crate::gc::MrbGarbageCollection;
+use crate::value::{Block, Value};
 use crate::Artichoke;
 
 #[allow(clippy::similar_names)]
@@ -187,8 +188,17 @@ pub fn element_assignment(
             "Unable to extract Rust Array from Ruby Array receiver",
         )
     })?;
+    // TODO: properly handle self-referential sets.
+    if ary == first || ary == second || Some(ary) == third {
+        return Ok(interp.convert(None::<Value>));
+    }
     let mut borrow = array.borrow_mut();
-    borrow.element_assignment(interp, first, second, third)
+    let gc_was_enabled = interp.disable_gc();
+    let result = borrow.element_assignment(interp, first, second, third);
+    if gc_was_enabled {
+        interp.enable_gc();
+    }
+    result
 }
 
 pub fn pop(interp: &Artichoke, ary: &Value) -> Result<Value, Box<dyn RubyException>> {
@@ -205,7 +215,12 @@ pub fn pop(interp: &Artichoke, ary: &Value) -> Result<Value, Box<dyn RubyExcepti
         )
     })?;
     let mut borrow = array.borrow_mut();
-    borrow.pop(interp)
+    let gc_was_enabled = interp.disable_gc();
+    let result = borrow.pop(interp);
+    if gc_was_enabled {
+        interp.enable_gc();
+    }
+    result
 }
 
 pub fn shift(
@@ -228,9 +243,13 @@ pub fn shift(
     if let Some(count) = count {
         let popped = {
             let mut borrow = array.borrow_mut();
-            let popped = borrow.slice(interp, 0, count)?;
+            let gc_was_enabled = interp.disable_gc();
+            let result = borrow.slice(interp, 0, count)?;
             borrow.set_slice(interp, 0, count, backend::fixed::empty())?;
-            popped
+            if gc_was_enabled {
+                interp.enable_gc();
+            }
+            result
         };
         let popped = Array(popped);
         let result = unsafe { popped.try_into_ruby(interp, None) }
@@ -238,7 +257,12 @@ pub fn shift(
         Ok(result)
     } else {
         let mut borrow = array.borrow_mut();
-        borrow.pop(interp)
+        let gc_was_enabled = interp.disable_gc();
+        let result = borrow.pop(interp);
+        if gc_was_enabled {
+            interp.enable_gc();
+        }
+        result
     }
 }
 
@@ -260,7 +284,11 @@ pub fn unshift(
         )
     })?;
     let mut borrow = array.borrow_mut();
+    let gc_was_enabled = interp.disable_gc();
     borrow.set_with_drain(interp, 0, 0, value)?;
+    if gc_was_enabled {
+        interp.enable_gc();
+    }
     Ok(ary)
 }
 
@@ -283,7 +311,11 @@ pub fn concat(
             )
         })?;
         let mut borrow = array.borrow_mut();
+        let gc_was_enabled = interp.disable_gc();
         borrow.concat(interp, other)?;
+        if gc_was_enabled {
+            interp.enable_gc();
+        }
     }
     Ok(ary)
 }
@@ -303,7 +335,11 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Box<d
     })?;
     let idx = array.borrow().len_usize();
     let mut borrow = array.borrow_mut();
+    let gc_was_enabled = interp.disable_gc();
     borrow.set(interp, idx, value)?;
+    if gc_was_enabled {
+        interp.enable_gc();
+    }
     Ok(ary)
 }
 
@@ -332,7 +368,11 @@ pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn Rub
         )
     })?;
     let mut borrow = array.borrow_mut();
+    let gc_was_enabled = interp.disable_gc();
     borrow.reverse_in_place(interp)?;
+    if gc_was_enabled {
+        interp.enable_gc();
+    }
     Ok(ary)
 }
 
@@ -354,28 +394,33 @@ pub fn element_set(
             "Unable to extract Rust Array from Ruby Array receiver",
         )
     })?;
-    let mut borrow = array.borrow_mut();
     let offset = if offset >= 0 {
         usize::try_from(offset)
             .map_err(|_| Fatal::new(interp, "Expected positive index to convert to usize"))?
     } else {
+        let len = array.borrow().len_usize();
         // Positive Int must be usize
         let idx = usize::try_from(-offset)
             .map_err(|_| Fatal::new(interp, "Expected positive index to convert to usize"))?;
-        if let Some(offset) = borrow.len_usize().checked_sub(idx) {
+        if let Some(offset) = len.checked_sub(idx) {
             offset
         } else {
             return Err(Box::new(IndexError::new(
                 interp,
-                format!(
-                    "index {} too small for array; minimum: {}",
-                    offset,
-                    borrow.len_usize()
-                ),
+                format!("index {} too small for array; minimum: {}", offset, len),
             )));
         }
     };
+    // TODO: properly handle self-referential sets.
+    if ary == value {
+        return Ok(interp.convert(None::<Value>));
+    }
+    let mut borrow = array.borrow_mut();
+    let gc_was_enabled = interp.disable_gc();
     borrow.set(interp, offset, value)?;
+    if gc_was_enabled {
+        interp.enable_gc();
+    }
     Ok(ary)
 }
 
@@ -409,7 +454,7 @@ pub fn initialize(
     ary: Value,
     first: Option<Value>,
     second: Option<Value>,
-    block: Option<Value>,
+    block: Option<Block>,
 ) -> Result<Value, Box<dyn RubyException>> {
     Array::initialize(interp, first, second, block, ary)
 }

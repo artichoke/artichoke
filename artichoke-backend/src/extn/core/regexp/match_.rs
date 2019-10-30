@@ -10,14 +10,14 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{Backend, Regexp};
 use crate::sys;
 use crate::types::Int;
-use crate::value::Value;
+use crate::value::{Block, Value};
 use crate::Artichoke;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Args<'a> {
     pub pattern: Option<&'a str>,
     pub pos: Option<Int>,
-    pub block: Option<Value>,
+    pub block: Option<Block>,
 }
 
 impl<'a> Args<'a> {
@@ -25,7 +25,7 @@ impl<'a> Args<'a> {
         interp: &Artichoke,
         pattern: Value,
         pos: Option<Value>,
-        block: Option<Value>,
+        block: Option<Block>,
     ) -> Result<Self, Box<dyn RubyException>> {
         let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&str>>() {
             pattern
@@ -152,9 +152,13 @@ pub fn method(
                     sys::mrb_gv_set(mrb, sym, data.inner());
                 }
                 if let Some(block) = args.block {
-                    Ok(Value::new(interp, unsafe {
-                        sys::mrb_yield(mrb, block.inner(), data.inner())
-                    }))
+                    let result = block.yield_arg(interp, &data).map_err(|_| {
+                        Fatal::new(
+                            interp,
+                            "Failed to initialize Ruby MatchData Value with Rust MatchData",
+                        )
+                    })?;
+                    Ok(result)
                 } else {
                     Ok(data)
                 }

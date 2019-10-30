@@ -141,7 +141,7 @@ macro_rules! mrb_get_args {
             2 | 1 => {
                 let req1 = req1.assume_init();
                 let block = block.assume_init();
-                (req1, block)
+                (req1, $crate::value::Block::new(block))
             }
             _ => unreachable!("mrb_get_args should have raised"),
         }
@@ -165,7 +165,7 @@ macro_rules! mrb_get_args {
                 let req1 = req1.assume_init();
                 let opt1 = opt1.assume_init();
                 let block = block.assume_init();
-                (req1, Some(opt1), block)
+                (req1, Some(opt1), $crate::value::Block::new(block))
             }
             2 => {
                 let req1 = req1.assume_init();
@@ -175,12 +175,12 @@ macro_rules! mrb_get_args {
                     None
                 };
                 let block = block.assume_init();
-                (req1, opt1, block)
+                (req1, opt1, $crate::value::Block::new(block))
             }
             1 => {
                 let req1 = req1.assume_init();
                 let block = block.assume_init();
-                (req1, None, block)
+                (req1, None, $crate::value::Block::new(block))
             }
             _ => unreachable!("mrb_get_args should have raised"),
         }
@@ -231,7 +231,7 @@ macro_rules! mrb_get_args {
             None
         };
         let block = block.assume_init();
-        (opt1, opt2, block)
+        (opt1, opt2, $crate::value::Block::new(block))
     }};
     ($mrb:expr, required = 2, optional = 1) => {{
         let mut req1 = <std::mem::MaybeUninit<$crate::sys::mrb_value>>::uninit();

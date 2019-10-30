@@ -331,7 +331,6 @@ pub unsafe extern "C" fn ary_initialize(
     let array = Value::new(&interp, ary);
     let first = first.map(|first| Value::new(&interp, first));
     let second = second.map(|second| Value::new(&interp, second));
-    let block = interp.convert(Value::new(&interp, block));
     let result = array::trampoline::initialize(&interp, array, first, second, block);
     match result {
         Ok(value) => {
