@@ -152,7 +152,7 @@ pub fn method(
                     sys::mrb_gv_set(mrb, sym, data.inner());
                 }
                 if let Some(block) = args.block {
-                    let result = block.yield_arg(interp, data).map_err(|_| {
+                    let result = block.yield_arg(interp, &data).map_err(|_| {
                         Fatal::new(
                             interp,
                             "Failed to initialize Ruby MatchData Value with Rust MatchData",

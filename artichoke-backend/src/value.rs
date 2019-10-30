@@ -405,7 +405,7 @@ impl Block {
         }
     }
 
-    pub fn yield_arg(&self, interp: &Artichoke, arg: Value) -> Result<Value, ArtichokeError> {
+    pub fn yield_arg(&self, interp: &Artichoke, arg: &Value) -> Result<Value, ArtichokeError> {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.

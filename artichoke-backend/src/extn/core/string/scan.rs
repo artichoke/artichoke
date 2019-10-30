@@ -70,7 +70,7 @@ pub fn method(
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
                 // TODO: Propagate exceptions from yield.
-                let _ = block.yield_arg(interp, interp.convert(pattern_bytes));
+                let _ = block.yield_arg(interp, &interp.convert(pattern_bytes));
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
@@ -178,7 +178,7 @@ pub fn method(
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
                     // TODO: Propagate exceptions from yield.
-                    let _ = block.yield_arg(interp, interp.convert(pattern_bytes));
+                    let _ = block.yield_arg(interp, &interp.convert(pattern_bytes));
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
@@ -311,7 +311,7 @@ pub fn method(
                                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                                 }
                                 // TODO: Propagate exceptions from yield.
-                                let _ = block.yield_arg(interp, matched);
+                                let _ = block.yield_arg(interp, &matched);
                                 unsafe {
                                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                                 }
@@ -337,7 +337,7 @@ pub fn method(
                                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                                 }
                                 // TODO: Propagate exceptions from yield.
-                                let _ = block.yield_arg(interp, matched);
+                                let _ = block.yield_arg(interp, &matched);
                                 unsafe {
                                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                                 }

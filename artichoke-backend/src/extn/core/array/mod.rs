@@ -97,7 +97,7 @@ impl Array {
                         })?;
                         let idx = interp.convert(idx);
                         // TODO: propagate exceptions from block call.
-                        let elem = block.yield_arg(interp, idx).map_err(|_| {
+                        let elem = block.yield_arg(interp, &idx).map_err(|_| {
                             RuntimeError::new(interp, "exception during Array#initialize block")
                         })?;
                         buffer.push(elem);
@@ -124,7 +124,7 @@ impl Array {
                         })?;
                         let idx = interp.convert(idx);
                         // TODO: propagate exceptions from block call.
-                        let elem = block.yield_arg(interp, idx).map_err(|_| {
+                        let elem = block.yield_arg(interp, &idx).map_err(|_| {
                             RuntimeError::new(interp, "exception during Array#initialize block")
                         })?;
                         buffer.push(elem);
