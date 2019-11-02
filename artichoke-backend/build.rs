@@ -208,8 +208,11 @@ mod libmruby {
             .define("MRB_DISABLE_STDIO", None)
             .define("MRB_UTF8_STRING", None)
             .define(mrb_int, None)
-            .define("ARTICHOKE", None)
             .define("DISABLE_GEMS", None);
+
+        if env::var("CARGO_FEATURE_ARTICHOKE_ARRAY").is_ok() {
+            build.define("ARTICHOKE", None);
+        }
 
         for gem in gems() {
             let mut dir = "include";
@@ -246,7 +249,6 @@ mod libmruby {
             .clang_arg("-DMRB_DISABLE_STDIO")
             .clang_arg("-DMRB_UTF8_STRING")
             .clang_arg(format!("-D{}", mrb_int))
-            .clang_arg("-DARTICHOKE")
             .whitelist_function("^mrb.*")
             .whitelist_type("^mrb.*")
             .whitelist_var("^mrb.*")
@@ -266,6 +268,10 @@ mod libmruby {
                 .clang_arg(format!("-I{}", wasm_include_dir().to_str().unwrap()))
                 .clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
         }
+        if env::var("CARGO_FEATURE_ARTICHOKE_ARRAY").is_ok() {
+            bindgen = bindgen.clang_arg("-DARTICHOKE");
+        }
+
         bindgen
             .generate()
             .unwrap()

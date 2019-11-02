@@ -1,6 +1,7 @@
 use crate::eval::Eval;
 use crate::{Artichoke, ArtichokeError};
 
+#[cfg(feature = "artichoke-array")]
 pub mod array;
 pub mod artichoke;
 pub mod comparable;
@@ -28,6 +29,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("object.rb"))?;
     enumerable::init(interp)?;
     // `Array` depends on: `Enumerable`
+    #[cfg(feature = "artichoke-array")]
     array::mruby::init(interp)?;
     module::init(interp)?;
     // Some `Exception`s depend on: `attr_accessor` (defined in `Module`)
