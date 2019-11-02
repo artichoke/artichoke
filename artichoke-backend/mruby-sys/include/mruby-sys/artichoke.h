@@ -1,13 +1,6 @@
-#include <mruby.h>
-#include <mruby/array.h>
 #include <mruby/boxing_no.h>
-#include <mruby/class.h>
 #include <mruby/common.h>
-#include <mruby/data.h>
-#include <mruby/error.h>
-#include <mruby/proc.h>
 #include <mruby/value.h>
-#include <mruby/variable.h>
 
 // Array overrides
 MRB_API mrb_value artichoke_assoc_new(mrb_state *mrb, mrb_value car,
