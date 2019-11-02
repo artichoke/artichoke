@@ -160,10 +160,7 @@ macro_rules! ruby_exception_impl {
                 if let Some(superclass) = superclass {
                     class.borrow_mut().with_super_class(superclass);
                 }
-                class
-                    .borrow()
-                    .define(interp)
-                    .map_err(|_| ArtichokeError::New)?;
+                class.borrow().define(interp)?;
                 Ok(class)
             }
 

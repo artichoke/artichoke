@@ -31,9 +31,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     env.borrow_mut()
         .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none());
 
-    env.borrow()
-        .define(interp)
-        .map_err(|_| ArtichokeError::New)?;
+    env.borrow().define(interp)?;
 
     interp.eval("ENV = EnvClass.new")?;
 

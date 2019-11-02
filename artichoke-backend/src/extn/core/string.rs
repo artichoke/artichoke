@@ -23,10 +23,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     string
         .borrow_mut()
         .add_method("scan", RString::scan, sys::mrb_args_req(1));
-    string
-        .borrow()
-        .define(interp)
-        .map_err(|_| ArtichokeError::New)?;
+    string.borrow().define(interp)?;
     trace!("Patched String onto interpreter");
     Ok(())
 }

@@ -29,10 +29,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .borrow_mut()
         .add_method("size", Integer::size, sys::mrb_args_none());
 
-    integer
-        .borrow()
-        .define(interp)
-        .map_err(|_| ArtichokeError::New)?;
+    integer.borrow().define(interp)?;
 
     interp.eval(include_str!("integer.rb"))?;
 

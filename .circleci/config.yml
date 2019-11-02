@@ -66,6 +66,11 @@ jobs:
             sudo apt-get install -y clang
             clang --version
       - run:
+          name: Build workspace without default features
+          command: |
+            cargo build -p artichoke-backend --no-default-features
+            touch artichoke-backend/build.rs
+      - run:
           name: Build Workspace
           command: |
             cargo build

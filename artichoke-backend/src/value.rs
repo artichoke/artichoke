@@ -3,8 +3,9 @@ use std::ffi::c_void;
 use std::fmt;
 use std::mem;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{Convert, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
+#[cfg(feature = "artichoke-array")]
 use crate::extn::core::array::Array;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
@@ -110,13 +111,16 @@ impl Value {
         } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Self>>() {
             "nil"
         } else if self.ruby_type() == Ruby::Data {
-            if unsafe { Array::try_from_ruby(&self.interp, self) }.is_ok() {
-                "Array"
-            } else {
-                self.funcall::<Self>("class", &[], None)
-                    .and_then(|class| class.funcall::<&'a str>("name", &[], None))
-                    .unwrap_or_default()
+            #[cfg(feature = "artichoke-array")]
+            {
+                use crate::convert::RustBackedValue;
+                if unsafe { Array::try_from_ruby(&self.interp, self) }.is_ok() {
+                    return "Array";
+                }
             }
+            self.funcall::<Self>("class", &[], None)
+                .and_then(|class| class.funcall::<&'a str>("name", &[], None))
+                .unwrap_or_default()
         } else {
             self.ruby_type().class_name()
         }

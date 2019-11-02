@@ -3,6 +3,7 @@
 use std::str;
 
 use crate::convert::{Convert, RustBackedValue};
+#[cfg(feature = "artichoke-array")]
 use crate::extn::core::array::Array;
 use crate::extn::core::exception::{RubyException, RuntimeError, TypeError};
 use crate::extn::core::regexp::{initialize, syntax, Regexp};
@@ -13,10 +14,17 @@ pub fn method(interp: &Artichoke, args: &[Value]) -> Result<Value, Box<dyn RubyE
     let mut iter = args.iter().peekable();
     let pattern = if let Some(first) = iter.next() {
         if iter.peek().is_none() {
-            if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &first) } {
+            #[cfg(feature = "artichoke-array")]
+            let ary = unsafe { Array::try_from_ruby(interp, &first) };
+            #[cfg(not(feature = "artichoke-array"))]
+            let ary = first.clone().try_into::<Vec<Value>>();
+            if let Ok(ary) = ary {
+                #[cfg(feature = "artichoke-array")]
                 let borrow = ary.borrow();
+                #[cfg(feature = "artichoke-array")]
+                let ary = borrow.as_vec(interp);
                 let mut patterns = vec![];
-                for pattern in borrow.as_vec(interp) {
+                for pattern in ary {
                     if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
                         patterns.push(regexp.borrow().pattern.clone());
                     } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
