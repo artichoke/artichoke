@@ -222,9 +222,11 @@ mod libmruby {
 
         if let Architecture::Wasm32 = target.architecture {
             build.include(wasm_include_dir());
-            if let OperatingSystem::Unknown = target.operating_system {
-                build.define("MRB_DISABLE_DIRECT_THREADING", None);
+            if let OperatingSystem::Emscripten = target.operating_system {
+                build.define("MRB_API", Some(r#"__attribute__((used))"#));
+            } else if let OperatingSystem::Unknown = target.operating_system {
                 build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
+                build.define("MRB_DISABLE_DIRECT_THREADING", None);
             }
         }
 
@@ -262,7 +264,6 @@ mod libmruby {
         if let Architecture::Wasm32 = target.architecture {
             bindgen = bindgen
                 .clang_arg(format!("-I{}", wasm_include_dir().to_str().unwrap()))
-                .clang_arg("-DMRB_DISABLE_DIRECT_THREADING")
                 .clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
         }
         bindgen
