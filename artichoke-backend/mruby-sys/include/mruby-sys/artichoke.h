@@ -23,6 +23,3 @@ mrb_bool artichoke_ary_check(mrb_state *mrb, mrb_value ary);
 // GC
 void artichoke_gc_mark_ary(mrb_state *mrb, mrb_value ary);
 size_t artichoke_gc_mark_ary_size(mrb_state *mrb, mrb_value ary);
-
-// Expose mrbgems subsystem initializer
-MRB_API void mrb_init_mrbgems(mrb_state *mrb);

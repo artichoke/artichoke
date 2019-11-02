@@ -37,3 +37,6 @@
 #ifdef ARTICHOKE
 #include <mruby-sys/artichoke.h>
 #endif
+
+// Expose mrbgems subsystem initializer
+MRB_API void mrb_init_mrbgems(mrb_state *mrb);
