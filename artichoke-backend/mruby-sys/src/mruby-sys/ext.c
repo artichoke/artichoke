@@ -15,6 +15,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <mruby-sys/ext.h>
+#include <mruby.h>
+#include <mruby/array.h>
 #include <mruby/range.h>
 #include <mruby/string.h>
 

@@ -22,8 +22,6 @@
  * initializers).
  */
 
-#include <mruby.h>
-#include <mruby/array.h>
 #include <mruby/boxing_no.h>
 #include <mruby/class.h>
 #include <mruby/common.h>
