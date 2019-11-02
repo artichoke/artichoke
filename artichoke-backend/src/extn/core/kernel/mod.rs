@@ -18,10 +18,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     warning
         .borrow_mut()
         .add_self_method("warn", Warning::warn, sys::mrb_args_req(1));
-    warning
-        .borrow()
-        .define(interp)
-        .map_err(|_| ArtichokeError::New)?;
+    warning.borrow().define(interp)?;
     let kernel = interp.0.borrow_mut().def_module::<Kernel>("Kernel", None);
     kernel
         .borrow_mut()
@@ -37,7 +34,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
             .borrow_mut()
             .module_spec::<RArtichoke>()
             .map(EnclosingRubyScope::module)
-            .unwrap();
+            .ok_or(ArtichokeError::New)?;
         let spec = interp
             .0
             .borrow_mut()
@@ -51,10 +48,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         );
         spec
     };
-    artichoke_kernel
-        .borrow()
-        .define(interp)
-        .map_err(|_| ArtichokeError::New)?;
+    artichoke_kernel.borrow().define(interp)?;
     kernel
         .borrow_mut()
         .add_self_method("load", Kernel::load, sys::mrb_args_rest());
@@ -67,10 +61,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     kernel
         .borrow_mut()
         .add_method("warn", Kernel::warn, sys::mrb_args_rest());
-    kernel
-        .borrow()
-        .define(interp)
-        .map_err(|_| ArtichokeError::New)?;
+    kernel.borrow().define(interp)?;
     interp.eval(include_str!("kernel.rb"))?;
     trace!("Patched Kernel#require onto interpreter");
     Ok(())
