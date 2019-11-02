@@ -10,6 +10,7 @@ use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
+#[cfg(feature = "artichoke-array")]
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let array = interp.0.borrow_mut().def_class::<array::Array>(
         "Array",
@@ -54,6 +55,12 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("size", ary_len, sys::mrb_args_none());
     array.borrow().define(interp)?;
 
+    interp.eval(&include_bytes!("array.rb")[..])?;
+    Ok(())
+}
+
+#[cfg(not(feature = "artichoke-array"))]
+pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(&include_bytes!("array.rb")[..])?;
     Ok(())
 }
