@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::convert::TryInto;
 use std::ffi::c_void;
 use std::mem;
 use std::ptr;
@@ -8,7 +7,7 @@ use std::rc::Rc;
 use crate::def::ClassLike;
 use crate::sys;
 use crate::types::{Ruby, Rust};
-use crate::value::{self, Value};
+use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].
@@ -46,42 +45,31 @@ where
                 to: Ruby::Object,
             }
         })?;
-        let rclass = if let Some(obj) = slf {
-            sys::mrb_sys_class_of_value(mrb, obj)
-        } else {
-            spec.borrow()
-                .rclass(interp)
-                .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                    from: Rust::Object,
-                    to: Ruby::Object,
-                })?
-        };
-        let mut slf = if let Some(slf) = slf {
+        let rclass = slf
+            .map(|obj| sys::mrb_sys_class_of_value(mrb, obj))
+            .or_else(|| spec.borrow().rclass(interp))
+            .ok_or_else(|| ArtichokeError::ConvertToRuby {
+                from: Rust::Object,
+                to: Ruby::Object,
+            })?;
+        let obj = if let Some(mut slf) = slf {
+            let data = Rc::new(RefCell::new(self));
+            let ptr = Rc::into_raw(data);
+            sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.borrow().data_type());
             slf
         } else {
-            let args = self.new_obj_args(interp);
-            if args.len() > value::MRB_FUNCALL_ARGC_MAX {
-                warn!(
-                    "Too many args supplied to initialize: given {}, max {}.",
-                    args.len(),
-                    value::MRB_FUNCALL_ARGC_MAX
-                );
-                return Err(ArtichokeError::TooManyArgs {
-                    given: args.len(),
-                    max: value::MRB_FUNCALL_ARGC_MAX,
-                });
-            }
-            // This will always unwrap because we've already checked that we
-            // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
-            // i64 max value.
-            let len = args.len().try_into().unwrap_or_default();
-            sys::mrb_obj_new(mrb, rclass, len, args.as_ptr() as *const sys::mrb_value)
+            let data = Rc::new(RefCell::new(self));
+            let ptr = Rc::into_raw(data);
+            let data = sys::mrb_data_object_alloc(
+                mrb,
+                rclass,
+                ptr as *mut c_void,
+                spec.borrow().data_type(),
+            );
+            sys::mrb_sys_obj_value(data as *mut c_void)
         };
 
-        let data = Rc::new(RefCell::new(self));
-        let ptr = Rc::into_raw(data);
-        sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.borrow().data_type());
-        Ok(Value::new(interp, slf))
+        Ok(Value::new(interp, obj))
     }
 
     /// Extract the Rust object from the [`Value`] if the [`Value`] is backed by
@@ -141,17 +129,6 @@ where
         let value = Rc::clone(&data);
         mem::forget(data);
         Ok(value)
-    }
-
-    /// Return arguments to new when creating a [`sys::mrb_value`].
-    ///
-    /// This default implementation returns an empty [`Vec`] of arguments.
-    ///
-    /// Implementations should override this method if they need to supply
-    /// arguments to initialize the Ruby class.
-    fn new_obj_args(&self, interp: &Artichoke) -> Vec<sys::mrb_value> {
-        let _ = interp;
-        vec![]
     }
 }
 

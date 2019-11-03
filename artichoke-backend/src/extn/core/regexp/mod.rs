@@ -10,7 +10,7 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::RustBackedValue;
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::exception;
@@ -151,20 +151,7 @@ impl Hash for Regexp {
     }
 }
 
-impl RustBackedValue for Regexp {
-    fn new_obj_args(&self, interp: &Artichoke) -> Vec<sys::mrb_value> {
-        let literal_options =
-            // use try_convert to support 32-bit Int.
-            interp.try_convert(self.literal_options.flags().bits())
-                .unwrap()
-                .inner();
-        vec![
-            interp.convert(self.literal_pattern.as_bytes()).inner(),
-            literal_options,
-            interp.convert(self.encoding.flags()).inner(),
-        ]
-    }
-}
+impl RustBackedValue for Regexp {}
 
 impl Regexp {
     pub const IGNORECASE: Int = 1;
