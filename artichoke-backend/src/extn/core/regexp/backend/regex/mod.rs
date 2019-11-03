@@ -4,22 +4,19 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
-use onig::{self, Syntax};
-use regex;
-use std::convert::TryFrom;
+use regex::{Regex, RegexBuilder};
 use std::hash::{Hash, Hasher};
+use std::mem;
 use std::rc::Rc;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{Convert, RustBackedValue};
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
-use crate::extn::core::exception;
+use crate::extn::core::error::{RubyException, RuntimeError, SyntaxError, TypeError};
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
-
-pub mod backend;
 
 pub mod enc;
 pub mod opts;
@@ -47,7 +44,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(include_str!("regexp.rb"))?;
     let regexp =
         interp
-            .0
             .borrow_mut()
             .def_class::<Regexp>("Regexp", None, Some(rust_data_free::<Regexp>));
     regexp.borrow_mut().mrb_value_is_rust_backed(true);
@@ -130,12 +126,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     Ok(())
 }
 
-#[derive(Debug)]
-pub enum Backend {
-    Onig(onig::Regex),
-    Rust(regex::Regex),
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct Regexp {
     literal_pattern: String,
@@ -143,7 +133,7 @@ pub struct Regexp {
     literal_options: opts::Options,
     options: opts::Options,
     encoding: enc::Encoding,
-    pub regex: Rc<Option<Backend>>,
+    pub regex: Rc<Option<Regex>>,
 }
 
 impl Hash for Regexp {
@@ -155,15 +145,10 @@ impl Hash for Regexp {
 
 impl RustBackedValue for Regexp {
     fn new_obj_args(&self, interp: &Artichoke) -> Vec<sys::mrb_value> {
-        let literal_options =
-            // use try_convert to support 32-bit Int.
-            interp.try_convert(self.literal_options.flags().bits())
-                .unwrap()
-                .inner();
         vec![
-            interp.convert(self.literal_pattern.as_bytes()).inner(),
-            literal_options,
-            interp.convert(self.encoding.flags()).inner(),
+            Value::convert(interp, self.literal_pattern.as_str()).inner(),
+            Value::convert(interp, self.literal_options.flags()).inner(),
+            Value::convert(interp, self.encoding.flags()).inner(),
         ]
     }
 }
@@ -187,9 +172,13 @@ impl Regexp {
         options: opts::Options,
         encoding: enc::Encoding,
     ) -> Option<Self> {
-        let regex = Backend::Onig(
-            onig::Regex::with_options(&pattern, options.flags(), Syntax::ruby()).ok()?,
-        );
+        let regex = RegexBuilder::new(&literal_pattern)
+            .multi_line(true)
+            .dot_matches_new_line(options.multiline)
+            .case_insensitive(options.ignore_case)
+            .ignore_whitespace(options.extended)
+            .build()
+            .ok()?;
         let regex = Rc::new(Some(regex));
         let regexp = Self {
             literal_pattern,
@@ -206,98 +195,113 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        let (pattern, options, encoding) = mrb_get_args!(mrb, required = 1, optional = 2);
         let interp = unwrap_interpreter!(mrb);
-        let result = initialize::Args::extract(
-            &interp,
-            Value::new(&interp, pattern),
-            options.map(|options| Value::new(&interp, options)),
-            encoding.map(|encoding| Value::new(&interp, encoding)),
-        )
-        .and_then(|args| initialize::method(&interp, args, Some(slf)));
+        let result = initialize::Args::extract(&interp)
+            .and_then(|args| initialize::method(&interp, args, slf));
         match result {
             Ok(value) => value.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(initialize::Error::NoImplicitConversionToString) => {
+                TypeError::raise(interp, "no implicit conversion into String");
+                unreachable!("raise unwinds the stack with longjmp");
+            }
+            Err(initialize::Error::Syntax) => {
+                SyntaxError::raise(interp, "Failed to parse Regexp pattern");
+                unreachable!("raise unwinds the stack with longjmp");
+            }
+            Err(initialize::Error::Unicode) => {
+                RuntimeError::raise(interp, "Pattern is invalid UTF-8");
+                unreachable!("raise unwinds the stack with longjmp");
+            }
+            Err(initialize::Error::Fatal) => {
+                RuntimeError::raise(interp, "Fatal Regexp#initialize error");
+                unreachable!("raise unwinds the stack with longjmp");
+            }
         }
     }
 
     unsafe extern "C" fn compile(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let args = mrb_get_args!(mrb, *args);
+        let mut args = <mem::MaybeUninit<*const sys::mrb_value>>::uninit();
+        let mut count = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        sys::mrb_get_args(
+            mrb,
+            b"*\0".as_ptr() as *const i8,
+            args.as_mut_ptr(),
+            count.as_mut_ptr(),
+        );
         sys::mrb_obj_new(
             mrb,
             sys::mrb_sys_class_ptr(slf),
-            Int::try_from(args.len()).unwrap_or_default(),
-            args.as_ptr(),
+            count.assume_init(),
+            args.assume_init(),
         )
     }
 
     unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let pattern = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let result = escape::Args::extract(&interp, Value::new(&interp, pattern))
-            .and_then(|args| escape::method(&interp, &args));
+        let result = escape::Args::extract(&interp).and_then(|args| escape::method(&interp, &args));
         match result {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(escape::Error::NoImplicitConversionToString) => {
+                TypeError::raise(interp, "no implicit conversion into String")
+            }
+            Err(escape::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp::escape error"),
         }
     }
 
-    unsafe extern "C" fn union(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let args = mrb_get_args!(mrb, *args);
+    unsafe extern "C" fn union(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        let args = args
-            .iter()
-            .map(|arg| Value::new(&interp, *arg))
-            .collect::<Vec<_>>();
-        let result = union::method(&interp, args.as_slice());
+        let args = union::Args::extract(&interp);
+        let result = union::method(&interp, args, slf);
         match result {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(union::Error::NoImplicitConversionToString) => {
+                TypeError::raise(interp, "no implicit conversion into String")
+            }
+            Err(union::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp::union error"),
         }
     }
 
     unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let (pattern, pos) = mrb_get_args!(mrb, required = 1, optional = 1);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = match_q::Args::extract(
-            &interp,
-            Value::new(&interp, pattern),
-            pos.map(|pos| Value::new(&interp, pos)),
-        )
-        .and_then(|args| match_q::method(&interp, args, &value));
+        let result =
+            match_q::Args::extract(&interp).and_then(|args| match_q::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(match_q::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#match? error"),
+            Err(match_q::Error::PosType) => {
+                TypeError::raise(interp, "No implicit conversion into Integer")
+            }
+            Err(match_q::Error::StringType) => {
+                TypeError::raise(interp, "No implicit conversion into String")
+            }
         }
     }
 
     unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let (pattern, pos, block) = mrb_get_args!(mrb, required = 1, optional = 1, &block);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = match_::Args::extract(
-            &interp,
-            Value::new(&interp, pattern),
-            pos.map(|pos| Value::new(&interp, pos)),
-            block,
-        )
-        .and_then(|args| match_::method(&interp, args, &value));
+        let result =
+            match_::Args::extract(&interp).and_then(|args| match_::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(match_::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#match error"),
+            Err(match_::Error::PosType) => {
+                TypeError::raise(interp, "No implicit conversion into Integer")
+            }
+            Err(match_::Error::StringType) => {
+                TypeError::raise(interp, "No implicit conversion into String")
+            }
         }
     }
 
     unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let other = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
+        let args = eql::Args::extract(&interp);
         let value = Value::new(&interp, slf);
-        let other = Value::new(&interp, other);
-        let result = eql::method(&interp, &value, &other);
-        match result {
+        match eql::method(&interp, args, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(eql::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#== error"),
         }
     }
 
@@ -305,14 +309,18 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        let pattern = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let args = case_compare::Args::extract(Value::new(&interp, pattern));
-        let result = case_compare::method(&interp, args, &value);
+        let result = case_compare::Args::extract(&interp)
+            .and_then(|args| case_compare::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(case_compare::Error::NoImplicitConversionToString) => {
+                Value::convert(&interp, false).inner()
+            }
+            Err(case_compare::Error::Fatal) => {
+                RuntimeError::raise(interp, "fatal Regexp#=== error")
+            }
         }
     }
 
@@ -320,25 +328,29 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        let pattern = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = match_operator::Args::extract(&interp, Value::new(&interp, pattern))
+        let result = match_operator::Args::extract(&interp)
             .and_then(|args| match_operator::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(match_operator::Error::NoImplicitConversionToString) => {
+                Value::convert(&interp, false).inner()
+            }
+            Err(match_operator::Error::Fatal) => {
+                RuntimeError::raise(interp, "fatal Regexp#=== error")
+            }
         }
     }
 
     unsafe extern "C" fn casefold(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = casefold::method(&interp, &value);
-        match result {
+        match casefold::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(casefold::Error::Fatal) => {
+                RuntimeError::raise(interp, "fatal Regexp#casefold? error")
+            }
         }
     }
 
@@ -346,35 +358,31 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = fixed_encoding::method(&interp, &value);
-        match result {
+        match fixed_encoding::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(fixed_encoding::Error::Fatal) => {
+                RuntimeError::raise(interp, "fatal Regexp#fixed_encoding? error")
+            }
         }
     }
 
     unsafe extern "C" fn hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = hash::method(&interp, &value);
-        match result {
+        match hash::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(hash::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#hash error"),
         }
     }
 
     unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = inspect::method(&interp, &value);
-        match result {
+        match inspect::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(inspect::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#inspect error"),
         }
     }
 
@@ -382,58 +390,50 @@ impl Regexp {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = named_captures::method(&interp, &value);
-        match result {
+        match named_captures::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(named_captures::Error::Fatal) => {
+                RuntimeError::raise(interp, "fatal Regexp#named_captures error")
+            }
         }
     }
 
     unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = names::method(&interp, &value);
-        match result {
+        match names::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(names::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#names error"),
         }
     }
 
     unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = options::method(&interp, &value);
-        match result {
+        match options::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(options::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#options error"),
         }
     }
 
     unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = source::method(&interp, &value);
-        match result {
+        match source::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(source::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#source error"),
         }
     }
 
     #[allow(clippy::wrong_self_convention)]
     unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = to_s::method(&interp, &value);
-        match result {
+        match to_s::method(&interp, &value) {
             Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
+            Err(to_s::Error::Fatal) => RuntimeError::raise(interp, "fatal Regexp#to_s error"),
         }
     }
 }
