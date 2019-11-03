@@ -1,9 +1,37 @@
 # frozen_string_literal: true
 
-class EnvClass
+module Artichoke
+  class Environ
+    def self.[](name)
+      @environ ||= new
+      @environ[name]
+    end
+
+    def self.[]=(name, value)
+      @environ ||= new
+      @environ[name] = value
+    end
+
+    def self.to_h
+      @environ ||= new
+      @environ.to_h
+    end
+  end
+end
+
+ENV = Object.new
+
+class << ENV
+  def [](name)
+    ::Artichoke::Environ[name]
+  end
+
+  def []=(name, value)
+    ::Artichoke::Environ[name] = value
+  end
+
   def assoc(name)
     value = self[name]
-
     return nil if value.nil?
 
     [name, value]
@@ -66,11 +94,8 @@ class EnvClass
 
   def fetch(name, default = (not_set = true))
     value = self[name]
-
     return value unless value.nil?
-
     return yield name if block_given?
-
     return default if not_set.nil?
 
     raise KeyError, "key not found: #{name}"
@@ -118,7 +143,6 @@ class EnvClass
     to_h.each do |key, value|
       delete(key) unless yield key, value
     end
-
     to_h
   end
 
@@ -146,7 +170,6 @@ class EnvClass
     to_h.each do |k, v|
       return [k, v] if v == value
     end
-
     nil
   end
 
@@ -164,7 +187,6 @@ class EnvClass
     return to_enum(:reject!) unless block_given?
 
     env = to_h
-
     # collect all the keys where the block evaluates to true
     to_remove = env.reject do |key, value|
       yield key, value
@@ -176,7 +198,6 @@ class EnvClass
     to_remove.each do |key, _|
       delete(key)
     end
-
     self
   end
 
@@ -184,7 +205,6 @@ class EnvClass
     hash.each do |k, v|
       self[k] = v
     end
-
     select! { |k, _| hash.key?(k) }
   end
 
@@ -198,7 +218,6 @@ class EnvClass
     return to_enum(:select!) unless block_given?
 
     env = to_h
-
     # collect all the keys where the block evaluates to false
     to_remove = env.reject do |key, value|
       yield key, value
@@ -210,17 +229,14 @@ class EnvClass
     to_remove.each do |key, _|
       delete(key)
     end
-
     self
   end
 
   def shift
     envs = to_h
-
     return nil if envs.nil? || envs.empty?
 
     name, value = envs.shift
-
     self[name] = nil
     [name, value]
   end
@@ -239,6 +255,10 @@ class EnvClass
 
   def to_a
     to_h.to_a
+  end
+
+  def to_h
+    ::Artichoke::Environ.to_h
   end
 
   def to_hash

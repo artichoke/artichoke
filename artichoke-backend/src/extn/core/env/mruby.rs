@@ -1,5 +1,6 @@
-use crate::def::{ClassLike, Define};
+use crate::def::{rust_data_free, ClassLike, Define, EnclosingRubyScope};
 use crate::eval::Eval;
+use crate::extn::core::artichoke::RArtichoke;
 use crate::extn::core::env;
 use crate::extn::core::exception;
 use crate::sys;
@@ -7,36 +8,40 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    if interp.0.borrow().class_spec::<env::ENV>().is_some() {
+    if interp.0.borrow().class_spec::<env::Environ>().is_some() {
         return Ok(());
     }
     interp.eval(include_str!("env.rb"))?;
 
-    let env = interp
-        .0
-        .borrow_mut()
-        .def_class::<env::ENV>("EnvClass", None, None);
+    let artichoke_environ = {
+        let scope = interp
+            .0
+            .borrow_mut()
+            .module_spec::<RArtichoke>()
+            .map(EnclosingRubyScope::module)
+            .ok_or(ArtichokeError::New)?;
+        let spec = interp.0.borrow_mut().def_class::<env::Environ>(
+            "Environ",
+            Some(scope),
+            Some(rust_data_free::<env::Environ>),
+        );
+        spec.borrow_mut()
+            .add_method("[]", artichoke_env_element_reference, sys::mrb_args_req(1));
+        spec.borrow_mut().add_method(
+            "[]=",
+            artichoke_env_element_assignment,
+            sys::mrb_args_req(2),
+        );
+        spec.borrow_mut()
+            .add_method("initialize", artichoke_env_initialize, sys::mrb_args_none());
 
-    env.borrow_mut().mrb_value_is_rust_backed(true);
-
-    env.borrow_mut()
-        .add_method("initialize", artichoke_env_initialize, sys::mrb_args_none());
-    env.borrow_mut()
-        .add_method("[]", artichoke_env_element_reference, sys::mrb_args_req(1));
-    env.borrow_mut().add_method(
-        "[]=",
-        artichoke_env_element_assignment,
-        sys::mrb_args_req(2),
-    );
-    env.borrow_mut()
-        .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none());
-
-    env.borrow().define(interp)?;
-
-    interp.eval("ENV = EnvClass.new")?;
-
+        spec.borrow_mut()
+            .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none());
+        spec.borrow_mut().mrb_value_is_rust_backed(true);
+        spec
+    };
+    artichoke_environ.borrow().define(interp)?;
     trace!("Patched ENV onto interpreter");
-
     Ok(())
 }
 

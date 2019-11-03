@@ -43,5 +43,6 @@ version = "0.51.1"
 default-features = false
 
 [features]
-default = ["artichoke-array"]
+default = ["artichoke-array", "artichoke-system-environ"]
 artichoke-array = []
+artichoke-system-environ = []
