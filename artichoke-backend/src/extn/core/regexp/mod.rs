@@ -19,6 +19,10 @@ use crate::types::Int;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
+// This module is where multiple Regexp implementations will live. Disabled
+// until work is done to convert this frontend to a newtype wrapper around a
+// trait object.
+#[cfg(feature = "regexp-boxed-trait-object")]
 pub mod backend;
 
 pub mod enc;
