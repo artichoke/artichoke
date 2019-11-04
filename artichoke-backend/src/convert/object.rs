@@ -1,3 +1,4 @@
+use std::any::TypeId;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
@@ -85,12 +86,6 @@ where
         interp: &Artichoke,
         slf: &Value,
     ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
-        if slf.ruby_type() != Ruby::Data {
-            return Err(ArtichokeError::ConvertToRust {
-                from: slf.ruby_type(),
-                to: Rust::Object,
-            });
-        }
         let mrb = interp.0.borrow().mrb;
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
@@ -105,25 +100,22 @@ where
             .class_spec::<Self>()
             .ok_or_else(|| ArtichokeError::NotDefined("class".to_owned()))?;
         // Sanity check that the RClass matches.
-        if let Some(rclass) = spec.borrow().rclass(interp) {
-            if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
-                return Err(ArtichokeError::ConvertToRust {
-                    from: slf.ruby_type(),
-                    to: Rust::Object,
-                });
-            }
-        } else {
-            return Err(ArtichokeError::NotDefined("class".to_owned()));
-        }
-        let ptr = {
-            let borrow = spec.borrow();
-            sys::mrb_data_get_ptr(mrb, slf.inner(), borrow.data_type())
-        };
-        if ptr.is_null() {
+        let borrow = spec.borrow();
+        let rclass = borrow
+            .rclass(interp)
+            .ok_or_else(|| ArtichokeError::NotDefined("class".to_owned()))?;
+        if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
             return Err(ArtichokeError::ConvertToRust {
                 from: slf.ruby_type(),
                 to: Rust::Object,
             });
+        }
+        let ptr = sys::mrb_data_get_ptr(mrb, slf.inner(), borrow.data_type());
+        if ptr.is_null() {
+            panic!(
+                "got null pointer when extracting {:?}",
+                TypeId::of::<Self>()
+            );
         }
         let data = Rc::from_raw(ptr as *const RefCell<Self>);
         let value = Rc::clone(&data);

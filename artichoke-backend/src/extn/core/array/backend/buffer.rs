@@ -28,11 +28,7 @@ impl From<Vec<Value>> for Buffer {
 
 impl<'a> From<&'a [Value]> for Buffer {
     fn from(values: &'a [Value]) -> Self {
-        let mut buffer = Vec::with_capacity(values.len());
-        for value in values {
-            buffer.push(value.clone());
-        }
-        Self(RefCell::new(buffer))
+        Self(RefCell::new(Vec::from(values)))
     }
 }
 
@@ -74,11 +70,7 @@ impl ArrayType for Buffer {
         if start < self.0.borrow().len() {
             let borrow = self.0.borrow();
             let iter = borrow.iter().skip(start).take(len);
-            let mut buffer = vec![];
-            for elem in iter {
-                buffer.push(elem.clone());
-            }
-            Ok(Box::new(Self::from(buffer)))
+            Ok(Box::new(Self(RefCell::new(iter.cloned().collect()))))
         } else {
             Ok(backend::fixed::empty())
         }
@@ -159,13 +151,15 @@ impl ArrayType for Buffer {
             let after = remaining.checked_sub(drain).unwrap_or_default();
             let newlen = start + after + with.len();
             if newlen <= BUFFER_INLINE_MAX {
-                if newlen > buflen {
-                    borrow.reserve(newlen - buflen);
-                }
-                let mut insert = Vec::with_capacity(with.len());
-                for idx in 0..with.len() {
-                    insert.push(with.get(interp, idx)?);
-                }
+                let insert = if let Ok(buffer) = with.downcast_ref::<Self>() {
+                    buffer.0.borrow().clone()
+                } else {
+                    let mut insert = Vec::with_capacity(with.len());
+                    for idx in 0..with.len() {
+                        insert.push(with.get(interp, idx)?);
+                    }
+                    insert
+                };
                 borrow.splice(start..buflen - after, insert);
             } else {
                 let mut alloc = Vec::with_capacity(3);
@@ -190,8 +184,12 @@ impl ArrayType for Buffer {
             for _ in buflen..start {
                 borrow.push(interp.convert(None::<Value>));
             }
-            for idx in 0..with.len() {
-                borrow.push(with.get(interp, idx)?);
+            if let Ok(buffer) = with.downcast_ref::<Self>() {
+                borrow.extend(buffer.0.borrow().clone());
+            } else {
+                for idx in 0..with.len() {
+                    borrow.push(with.get(interp, idx)?);
+                }
             }
             Ok(0)
         } else {
@@ -209,11 +207,15 @@ impl ArrayType for Buffer {
     ) -> Result<(), Box<dyn RubyException>> {
         let mut borrow = self.0.borrow_mut();
         if borrow.len() + other.len() <= BUFFER_INLINE_MAX {
-            if other.len() > borrow.len() {
-                borrow.reserve(other.len());
-            }
-            for idx in 0..other.len() {
-                borrow.push(other.get(interp, idx)?);
+            if let Ok(buffer) = other.downcast_ref::<Self>() {
+                borrow.extend(buffer.0.borrow().clone());
+            } else {
+                if other.len() > borrow.len() {
+                    borrow.reserve(other.len());
+                }
+                for idx in 0..other.len() {
+                    borrow.push(other.get(interp, idx)?);
+                }
             }
         } else {
             let alloc = vec![self.box_clone(), other];
