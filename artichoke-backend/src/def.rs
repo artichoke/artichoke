@@ -1,3 +1,4 @@
+use std::any::TypeId;
 use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::fmt;
@@ -21,10 +22,16 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 /// **Warning**: This free function assumes the `data` pointer is an
 /// `Rc<RefCell<T>>`. If that assumption does not hold, this function has
 /// undefined behavior and may result in a segfault.
-pub unsafe extern "C" fn rust_data_free<T: RustBackedValue>(
+pub unsafe extern "C" fn rust_data_free<T: 'static + RustBackedValue>(
     _mrb: *mut sys::mrb_state,
     data: *mut c_void,
 ) {
+    if data.is_null() {
+        panic!(
+            "Received null pointer in rust_data_free<{:?}>",
+            TypeId::of::<T>()
+        );
+    }
     let data = Rc::from_raw(data as *const RefCell<T>);
     drop(data);
 }
