@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use std::slice;
 
 use crate::convert::{Convert, RustBackedValue};
+#[cfg(feature = "artichoke-array")]
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
 use crate::extn::core::array;
