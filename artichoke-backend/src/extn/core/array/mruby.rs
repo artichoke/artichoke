@@ -114,6 +114,7 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
         .map(|val| Value::new(&interp, *val))
         .collect::<Vec<_>>();
     let result = array::trampoline::from_values(&interp, values.as_slice());
+    drop(values);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(value.inner());
