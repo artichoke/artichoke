@@ -1,6 +1,7 @@
 use artichoke_core::value::Value as _;
 use downcast::Any;
 use std::convert::TryFrom;
+use std::mem;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::exception::{
@@ -265,7 +266,7 @@ impl Array {
         if let Some(mut realloc) = realloc {
             match realloc.len() {
                 0 => self.clear(),
-                1 => self.0 = realloc.remove(0),
+                1 => mem::swap(&mut self.0, &mut realloc[0]),
                 _ => {
                     let aggregate: Box<dyn ArrayType> =
                         Box::new(backend::aggregate::Aggregate::with_parts(realloc));
@@ -300,7 +301,7 @@ impl Array {
         if let Some(mut realloc) = realloc {
             match realloc.len() {
                 0 => self.clear(),
-                1 => self.0 = realloc.remove(0),
+                1 => mem::swap(&mut self.0, &mut realloc[0]),
                 _ => {
                     let aggregate: Box<dyn ArrayType> =
                         Box::new(backend::aggregate::Aggregate::with_parts(realloc));
@@ -324,7 +325,7 @@ impl Array {
         if let Some(mut realloc) = realloc {
             match realloc.len() {
                 0 => self.clear(),
-                1 => self.0 = realloc.remove(0),
+                1 => mem::swap(&mut self.0, &mut realloc[0]),
                 _ => {
                     let aggregate: Box<dyn ArrayType> =
                         Box::new(backend::aggregate::Aggregate::with_parts(realloc));
@@ -347,7 +348,7 @@ impl Array {
         if let Some(mut realloc) = realloc {
             match realloc.len() {
                 0 => self.clear(),
-                1 => self.0 = realloc.remove(0),
+                1 => mem::swap(&mut self.0, &mut realloc[0]),
                 _ => {
                     let aggregate: Box<dyn ArrayType> =
                         Box::new(backend::aggregate::Aggregate::with_parts(realloc));
@@ -401,7 +402,7 @@ impl Array {
         if let Some(mut realloc) = realloc {
             match realloc.len() {
                 0 => self.clear(),
-                1 => self.0 = realloc.remove(0),
+                1 => mem::swap(&mut self.0, &mut realloc[0]),
                 _ => {
                     let aggregate: Box<dyn ArrayType> =
                         Box::new(backend::aggregate::Aggregate::with_parts(realloc));
@@ -428,7 +429,7 @@ impl Array {
         if let Some(mut realloc) = realloc {
             match realloc.len() {
                 0 => self.clear(),
-                1 => self.0 = realloc.remove(0),
+                1 => mem::swap(&mut self.0, &mut realloc[0]),
                 _ => {
                     let aggregate: Box<dyn ArrayType> =
                         Box::new(backend::aggregate::Aggregate::with_parts(realloc));
