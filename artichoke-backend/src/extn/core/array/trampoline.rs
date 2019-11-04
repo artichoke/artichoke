@@ -118,9 +118,9 @@ pub fn to_ary(interp: &Artichoke, value: Value) -> Result<Value, Box<dyn RubyExc
     }
 }
 
-pub fn ary_ref<'a>(
-    interp: &'a Artichoke,
-    ary: &Value,
+pub fn ary_ref(
+    interp: &Artichoke,
+    ary: Value,
     offset: isize,
 ) -> Result<Option<Value>, Box<dyn RubyException>> {
     let ary = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
@@ -201,14 +201,14 @@ pub fn element_assignment(
     result
 }
 
-pub fn pop(interp: &Artichoke, ary: &Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn pop(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
     if ary.is_frozen() {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let array = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| {
+    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
         Fatal::new(
             interp,
             "Unable to extract Rust Array from Ruby Array receiver",
@@ -225,7 +225,7 @@ pub fn pop(interp: &Artichoke, ary: &Value) -> Result<Value, Box<dyn RubyExcepti
 
 pub fn shift(
     interp: &Artichoke,
-    ary: &Value,
+    ary: Value,
     count: Option<usize>,
 ) -> Result<Value, Box<dyn RubyException>> {
     if ary.is_frozen() {
@@ -234,7 +234,7 @@ pub fn shift(
             "can't modify frozen Array",
         )));
     }
-    let array = unsafe { Array::try_from_ruby(interp, ary) }.map_err(|_| {
+    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
         Fatal::new(
             interp,
             "Unable to extract Rust Array from Ruby Array receiver",

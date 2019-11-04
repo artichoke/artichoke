@@ -172,7 +172,7 @@ pub unsafe extern "C" fn artichoke_ary_pop(
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::pop(&interp, &array);
+    let result = array::trampoline::pop(&interp, array);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -214,7 +214,7 @@ pub unsafe extern "C" fn artichoke_ary_ref(
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let offset = isize::try_from(offset).unwrap_or_default();
-    let result = array::trampoline::ary_ref(&interp, &ary, offset);
+    let result = array::trampoline::ary_ref(&interp, ary, offset);
     match result {
         Ok(value) => interp.convert(value).inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -392,7 +392,7 @@ pub unsafe extern "C" fn artichoke_ary_shift(
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::shift(&interp, &array, Some(1));
+    let result = array::trampoline::shift(&interp, array, Some(1));
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
