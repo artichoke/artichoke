@@ -18,6 +18,10 @@
 #include <mruby/class.h>
 #include <mruby/throw.h>
 
+#ifdef ARTICHOKE
+#include <mruby-sys/artichoke.h>
+#endif
+
 MRB_API mrb_value
 mrb_exc_new(mrb_state *mrb, struct RClass *c, const char *ptr, size_t len)
 {
@@ -166,17 +170,15 @@ void mrb_keep_backtrace(mrb_state *mrb, mrb_value exc);
 static void
 set_backtrace(mrb_state *mrb, mrb_value exc, mrb_value backtrace)
 {
-  if (!mrb_array_p(backtrace)) {
+  if (!ARY_CHECK(mrb, backtrace)) {
   type_err:
     mrb_raise(mrb, E_TYPE_ERROR, "backtrace must be Array of String");
   }
   else {
-    const mrb_value *p = RARRAY_PTR(backtrace);
-    const mrb_value *pend = p + RARRAY_LEN(backtrace);
-
-    while (p < pend) {
-      if (!mrb_string_p(*p)) goto type_err;
-      p++;
+    int i;
+    for (i = 0; i < ARRAY_LEN(mrb, backtrace); i++) {
+      mrb_value p = ARY_REF(mrb, backtrace, i);
+      if (!mrb_string_p(p)) goto type_err;
     }
   }
   mrb_iv_set(mrb, exc, mrb_intern_lit(mrb, "backtrace"), backtrace);
