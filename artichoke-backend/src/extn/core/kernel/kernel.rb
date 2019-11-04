@@ -131,4 +131,15 @@ module Kernel
   def throw(tag, value = nil)
     raise UncaughtThrowError.new(tag, value)
   end
+
+  def warn(*msg)
+    msg.each do |warning|
+      warning = warning.to_s
+      warning << "\n" unless warning[-1] == "\n"
+      # TODO: This should call `Warning.warn` but due to method visibility
+      # limitations of the mruby VM, we cannot shadow the warn method there.
+      print(warning)
+    end
+    nil
+  end
 end
