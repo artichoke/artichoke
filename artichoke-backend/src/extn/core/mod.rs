@@ -21,6 +21,7 @@ pub mod regexp;
 pub mod string;
 pub mod symbol;
 pub mod thread;
+pub mod warning;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     // These core classes are ordered according to the dependency DAG between
@@ -49,5 +50,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     string::init(interp)?;
     symbol::init(interp)?;
     thread::init(interp)?;
+    warning::init(interp)?;
     Ok(())
 }
