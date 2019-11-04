@@ -1,24 +1,17 @@
-use crate::convert::Convert;
+use artichoke_core::value::Value as _;
+
 use crate::def::{ClassLike, Define, EnclosingRubyScope};
 use crate::eval::Eval;
 use crate::extn::core::artichoke::RArtichoke;
 use crate::extn::core::exception;
 use crate::sys;
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 pub mod integer;
 pub mod require;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let warning = interp.0.borrow_mut().def_module::<Warning>("Warning", None);
-    warning
-        .borrow_mut()
-        .add_method("warn", Warning::warn, sys::mrb_args_req(1));
-    warning
-        .borrow_mut()
-        .add_self_method("warn", Warning::warn, sys::mrb_args_req(1));
-    warning.borrow().define(interp)?;
     let kernel = interp.0.borrow_mut().def_module::<Kernel>("Kernel", None);
     kernel
         .borrow_mut()
@@ -58,33 +51,10 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     kernel
         .borrow_mut()
         .add_method("puts", Kernel::puts, sys::mrb_args_rest());
-    kernel
-        .borrow_mut()
-        .add_method("warn", Kernel::warn, sys::mrb_args_rest());
     kernel.borrow().define(interp)?;
     interp.eval(include_str!("kernel.rb"))?;
     trace!("Patched Kernel#require onto interpreter");
     Ok(())
-}
-
-pub struct Warning;
-
-impl Warning {
-    unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let args = mrb_get_args!(mrb, *args);
-        let interp = unwrap_interpreter!(mrb);
-        let stderr = sys::mrb_gv_get(mrb, interp.0.borrow_mut().sym_intern("$stderr"));
-        let stderr = Value::new(&interp, stderr);
-        if !stderr.is_nil() {
-            let args = args
-                .iter()
-                .map(|arg| Value::new(&interp, *arg))
-                .collect::<Vec<_>>();
-            // TODO: introduce a `unchecked_funcall` to propagate errors, GH-249.
-            let _ = stderr.funcall::<Value>("print", args.as_ref(), None);
-        }
-        sys::mrb_sys_nil_value()
-    }
 }
 
 pub struct Kernel;
@@ -172,20 +142,6 @@ impl Kernel {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
         }
-    }
-
-    unsafe extern "C" fn warn(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let args = mrb_get_args!(mrb, *args);
-        let interp = unwrap_interpreter!(mrb);
-
-        for value in args.iter() {
-            let mut string = Value::new(&interp, *value).to_s();
-            if !string.ends_with('\n') {
-                string = format!("{}\n", string);
-            }
-            Warning::warn(mrb, interp.convert(string).inner());
-        }
-        sys::mrb_sys_nil_value()
     }
 }
 
