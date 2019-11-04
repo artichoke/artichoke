@@ -138,7 +138,8 @@ module Kernel
       warning << "\n" unless warning[-1] == "\n"
       # TODO: This should call `Warning.warn` but due to method visibility
       # limitations of the mruby VM, we cannot shadow the warn method there.
-      print(warning)
+      out = $stderr || $stdout || self
+      out.print(warning)
     end
     nil
   end
