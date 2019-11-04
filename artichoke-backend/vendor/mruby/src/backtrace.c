@@ -84,12 +84,12 @@ print_backtrace(mrb_state *mrb, mrb_value backtrace)
   mrb_int n;
   FILE *stream = stderr;
 
-  n = RARRAY_LEN(backtrace) - 1;
+  n = ARRAY_LEN(mrb, backtrace) - 1;
   if (n == 0) return;
 
   fprintf(stream, "trace (most recent call last):\n");
   for (i=0; i<n; i++) {
-    mrb_value entry = RARRAY_PTR(backtrace)[n-i-1];
+    mrb_value entry = ARY_REF(mrb, backtrace, n-i-1);
 
     if (mrb_string_p(entry)) {
       fprintf(stream, "\t[%d] %.*s\n", i, (int)RSTRING_LEN(entry), RSTRING_PTR(entry));
@@ -156,7 +156,7 @@ mrb_print_backtrace(mrb_state *mrb)
 
   backtrace = mrb_obj_iv_get(mrb, mrb->exc, mrb_intern_lit(mrb, "backtrace"));
   if (mrb_nil_p(backtrace)) return;
-  if (mrb_array_p(backtrace)) {
+  if (ARY_CHECK(mrb, backtrace)) {
     print_backtrace(mrb, backtrace);
   }
   else {
@@ -239,7 +239,7 @@ mrb_unpack_backtrace(mrb_state *mrb, mrb_value backtrace)
   empty_backtrace:
     return ARY_NEW_CAPA(mrb, 0);
   }
-  if (mrb_array_p(backtrace)) return backtrace;
+  if (ARY_CHECK(mrb, backtrace)) return backtrace;
   bt = (struct backtrace_location*)mrb_data_check_get_ptr(mrb, backtrace, &bt_type);
   if (bt == NULL) goto empty_backtrace;
   n = (mrb_int)RDATA(backtrace)->flags;
@@ -270,7 +270,7 @@ mrb_exc_backtrace(mrb_state *mrb, mrb_value exc)
 
   attr_name = mrb_intern_lit(mrb, "backtrace");
   backtrace = mrb_iv_get(mrb, exc, attr_name);
-  if (mrb_nil_p(backtrace) || mrb_array_p(backtrace)) {
+  if (mrb_nil_p(backtrace) || ARY_CHECK(mrb, backtrace)) {
     return backtrace;
   }
   backtrace = mrb_unpack_backtrace(mrb, backtrace);

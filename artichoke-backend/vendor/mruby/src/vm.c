@@ -1919,7 +1919,7 @@ RETRY_TRY_BLOCK:
 
       if (mrb_hash_p(kdict) && !mrb_hash_empty_p(mrb, kdict)) {
         mrb_value keys = mrb_hash_keys(mrb, kdict);
-        mrb_value key1 = RARRAY_PTR(keys)[0];
+        mrb_value key1 = ARY_REF(mrb, keys, 0);
         mrb_value str = mrb_format(mrb, "unknown keyword: %v", key1);
         mrb_exc_set(mrb, mrb_exc_new_str(mrb, E_ARGUMENT_ERROR, str));
         goto L_RAISE;

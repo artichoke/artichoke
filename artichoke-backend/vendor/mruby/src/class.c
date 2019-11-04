@@ -1009,7 +1009,7 @@ mrb_get_args(mrb_state *mrb, const char *format, ...)
         }
         else if (!mrb_hash_empty_p(mrb, ksrc)) {
           ksrc = mrb_hash_keys(mrb, ksrc);
-          ksrc = RARRAY_PTR(ksrc)[0];
+          ksrc = ARY_REF(mrb, ksrc, 0);
           mrb_raisef(mrb, E_ARGUMENT_ERROR, "unknown keyword: %v", ksrc);
         }
       }

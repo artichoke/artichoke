@@ -756,7 +756,7 @@ mrb_obj_ceqq(mrb_state *mrb, mrb_value self)
   mrb_value ary = ARY_SPLAT(mrb, self);
 
   mrb_get_args(mrb, "o", &v);
-  len = RARRAY_LEN(ary);
+  len = ARRAY_LEN(mrb, ary);
   for (i=0; i<len; i++) {
     mrb_value c = mrb_funcall_argv(mrb, ARY_REF(mrb, ary, i), eqq, 1, &v);
     if (mrb_test(c)) return mrb_true_value();

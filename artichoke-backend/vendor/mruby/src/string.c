@@ -2240,8 +2240,8 @@ mrb_str_split_m(mrb_state *mrb, mrb_value str)
   }
   if (!lim_p && lim == 0) {
     mrb_int len;
-    while ((len = RARRAY_LEN(result)) > 0 &&
-           (tmp = RARRAY_PTR(result)[len-1], RSTRING_LEN(tmp) == 0))
+    while ((len = ARRAY_LEN(mrb, result)) > 0 &&
+           (tmp = ARY_REF(mrb, result, len-1), RSTRING_LEN(tmp) == 0))
       ARY_POP(mrb, result);
   }
 
