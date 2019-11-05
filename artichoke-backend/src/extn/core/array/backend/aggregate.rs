@@ -316,9 +316,9 @@ impl ArrayType for Aggregate {
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<Value, Box<dyn RubyException>> {
         let _ = realloc;
-        if let Some(first) = self.0.last_mut() {
+        if let Some(last) = self.0.last_mut() {
             let mut realloc = None;
-            let popped = first.pop(interp, &mut realloc)?;
+            let popped = last.pop(interp, &mut realloc)?;
             if let Some(realloc) = realloc {
                 let reallocated_parts = realloc.into_iter().filter(|part| !part.is_empty());
                 self.0.pop();
