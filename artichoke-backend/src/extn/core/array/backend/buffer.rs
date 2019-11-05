@@ -144,8 +144,7 @@ impl ArrayType for Buffer {
         with: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<usize, Box<dyn RubyException>> {
-        let mut borrow = self.0.borrow_mut();
-        let buflen = borrow.len();
+        let buflen = self.0.borrow().len();
         if start < buflen {
             let remaining = buflen - start;
             let after = remaining.checked_sub(drain).unwrap_or_default();
@@ -160,8 +159,10 @@ impl ArrayType for Buffer {
                     }
                     insert
                 };
+                let mut borrow = self.0.borrow_mut();
                 borrow.splice(start..buflen - after, insert);
             } else {
+                let borrow = self.0.borrow();
                 let mut alloc = Vec::with_capacity(3);
                 if start > 0 {
                     let buffer: Box<dyn ArrayType> = Box::new(Self::from(&borrow[..start]));
@@ -177,6 +178,7 @@ impl ArrayType for Buffer {
             }
             Ok(remaining - after)
         } else if start + with.len() <= BUFFER_INLINE_MAX {
+            let mut borrow = self.0.borrow_mut();
             let newlen = start + with.len();
             if newlen > buflen {
                 borrow.reserve(newlen - buflen);
