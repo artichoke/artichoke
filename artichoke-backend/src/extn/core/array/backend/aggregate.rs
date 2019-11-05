@@ -128,8 +128,7 @@ impl ArrayType for Aggregate {
     ) -> Result<(), Box<dyn RubyException>> {
         let _ = realloc;
         let mut base = 0;
-        for partidx in 0..self.0.len() {
-            let part = &mut self.0[partidx];
+        for (chunk, part) in self.0.iter_mut().enumerate() {
             let idx = index - base;
             if idx < part.len() {
                 let mut realloc = None;
@@ -138,7 +137,7 @@ impl ArrayType for Aggregate {
                     let reallocated_parts = reallocated_parts
                         .into_iter()
                         .filter(|part| !part.is_empty());
-                    self.0.splice(partidx..=partidx, reallocated_parts);
+                    self.0.splice(chunk..=chunk, reallocated_parts);
                 }
                 return Ok(());
             }
@@ -163,12 +162,12 @@ impl ArrayType for Aggregate {
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = realloc;
         let mut base = 0;
-        for partidx in 0..self.0.len() {
-            let part = &mut self.0[partidx];
+        let mut iter = self.0.iter_mut().enumerate();
+        while let Some((chunk, part)) = iter.next() {
             let idx = start - base;
             if idx < part.len() {
-                let replace_part_begin_idx = partidx;
-                let mut replace_part_end_idx = partidx;
+                let replace_start = chunk;
+                let mut replace_end = chunk;
                 let mut reallocated_parts = None::<Vec<Box<dyn ArrayType>>>;
                 let mut drained = 0;
                 let mut realloc = None;
@@ -182,9 +181,8 @@ impl ArrayType for Aggregate {
                     }
                 }
                 if drained < drain {
-                    for partidx in replace_part_begin_idx + 1..self.0.len() {
-                        let part = &mut self.0[partidx];
-                        replace_part_end_idx = partidx;
+                    while let Some((chunk, part)) = iter.next() {
+                        replace_end = chunk;
                         let mut realloc = None;
                         drained += part.set_slice(
                             interp,
@@ -209,10 +207,8 @@ impl ArrayType for Aggregate {
                     let reallocated_parts = reallocated_parts
                         .into_iter()
                         .filter(|part| !part.is_empty());
-                    self.0.splice(
-                        replace_part_begin_idx..=replace_part_end_idx,
-                        reallocated_parts,
-                    );
+                    self.0
+                        .splice(replace_start..=replace_end, reallocated_parts);
                 }
                 return Ok(drained);
             }
@@ -237,12 +233,12 @@ impl ArrayType for Aggregate {
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = realloc;
         let mut base = 0;
-        for partidx in 0..self.0.len() {
-            let part = &mut self.0[partidx];
+        let mut iter = self.0.iter_mut().enumerate();
+        while let Some((chunk, part)) = iter.next() {
             let idx = start - base;
             if idx < part.len() {
-                let replace_part_begin_idx = partidx;
-                let mut replace_part_end_idx = partidx;
+                let replace_start = chunk;
+                let mut replace_end = chunk;
                 let mut reallocated_parts = None::<Vec<Box<dyn ArrayType>>>;
                 let mut drained = 0;
                 let mut realloc = None;
@@ -256,9 +252,8 @@ impl ArrayType for Aggregate {
                     }
                 }
                 if drained < drain {
-                    for partidx in replace_part_begin_idx + 1..self.0.len() {
-                        let part = &mut self.0[partidx];
-                        replace_part_end_idx = partidx;
+                    while let Some((chunk, part)) = iter.next() {
+                        replace_end = chunk;
                         let mut realloc = None;
                         drained += part.set_slice(
                             interp,
@@ -283,10 +278,8 @@ impl ArrayType for Aggregate {
                     let reallocated_parts = reallocated_parts
                         .into_iter()
                         .filter(|part| !part.is_empty());
-                    self.0.splice(
-                        replace_part_begin_idx..=replace_part_end_idx,
-                        reallocated_parts,
-                    );
+                    self.0
+                        .splice(replace_start..=replace_end, reallocated_parts);
                 }
                 return Ok(drained);
             }
