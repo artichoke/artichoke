@@ -181,7 +181,7 @@ impl ArrayType for Aggregate {
                     }
                 }
                 if drained < drain {
-                    while let Some((chunk, part)) = iter.next() {
+                    for (chunk, part) in iter {
                         replace_end = chunk;
                         let mut realloc = None;
                         drained += part.set_slice(
@@ -252,7 +252,7 @@ impl ArrayType for Aggregate {
                     }
                 }
                 if drained < drain {
-                    while let Some((chunk, part)) = iter.next() {
+                    for (chunk, part) in iter {
                         replace_end = chunk;
                         let mut realloc = None;
                         drained += part.set_slice(
