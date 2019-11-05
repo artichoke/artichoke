@@ -52,7 +52,7 @@ impl ArrayType for Empty {
     }
 
     fn set(
-        &self,
+        &mut self,
         interp: &Artichoke,
         index: usize,
         elem: Value,
@@ -70,7 +70,7 @@ impl ArrayType for Empty {
     }
 
     fn set_with_drain(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -90,7 +90,7 @@ impl ArrayType for Empty {
     }
 
     fn set_slice(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -109,18 +109,20 @@ impl ArrayType for Empty {
     }
 
     fn concat(
-        &self,
+        &mut self,
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        *realloc = Some(vec![other]);
+        if !other.is_empty() {
+            *realloc = Some(vec![other]);
+        }
         Ok(())
     }
 
     fn pop(
-        &self,
+        &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<Value, Box<dyn RubyException>> {

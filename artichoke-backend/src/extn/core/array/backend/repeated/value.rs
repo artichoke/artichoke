@@ -67,7 +67,7 @@ impl ArrayType for Value {
     }
 
     fn set(
-        &self,
+        &mut self,
         interp: &Artichoke,
         index: usize,
         elem: value::Value,
@@ -106,7 +106,7 @@ impl ArrayType for Value {
     }
 
     fn set_with_drain(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -143,7 +143,7 @@ impl ArrayType for Value {
     }
 
     fn set_slice(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -180,7 +180,7 @@ impl ArrayType for Value {
     }
 
     fn concat(
-        &self,
+        &mut self,
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
@@ -191,15 +191,16 @@ impl ArrayType for Value {
     }
 
     fn pop(
-        &self,
+        &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<value::Value, Box<dyn RubyException>> {
         let _ = interp;
-        *realloc = Some(vec![backend::repeated::value(
-            self.0.clone(),
-            self.1.get() - 1,
-        )]);
+        if let Some(len) = NonZeroUsize::new(self.1.get() - 1) {
+            self.1 = len;
+        } else {
+            *realloc = Some(vec![backend::fixed::empty()]);
+        }
         Ok(self.0.clone())
     }
 

@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
 use crate::extn::core::exception::{RangeError, RubyException};
@@ -7,7 +5,7 @@ use crate::value::Value;
 use crate::Artichoke;
 
 #[derive(Default)]
-pub struct Aggregate(RefCell<Vec<Box<dyn ArrayType>>>);
+pub struct Aggregate(Vec<Box<dyn ArrayType>>);
 
 impl Aggregate {
     pub fn new() -> Self {
@@ -15,28 +13,21 @@ impl Aggregate {
     }
 
     pub fn with_parts(parts: Vec<Box<dyn ArrayType>>) -> Self {
-        Self(RefCell::new(
-            parts.into_iter().filter(|part| !part.is_empty()).collect(),
-        ))
+        Self(parts.into_iter().filter(|part| !part.is_empty()).collect())
     }
 
     pub fn into_parts(self) -> Vec<Box<dyn ArrayType>> {
-        self.0.replace(Vec::with_capacity(0))
+        self.0
     }
 
     pub fn parts(&self) -> Vec<Box<dyn ArrayType>> {
-        let borrow = self.0.borrow();
-        let mut parts = Vec::with_capacity(borrow.len());
-        for part in borrow.iter() {
-            parts.push(part.box_clone())
-        }
-        parts
+        self.0.iter().map(|part| part.box_clone()).collect()
     }
 }
 
 impl Clone for Aggregate {
     fn clone(&self) -> Self {
-        Self::with_parts(self.parts())
+        Self(self.parts())
     }
 }
 
@@ -46,16 +37,14 @@ impl ArrayType for Aggregate {
     }
 
     fn gc_mark(&self, interp: &Artichoke) {
-        let borrow = self.0.borrow();
-        for part in borrow.iter() {
+        for part in &self.0 {
             part.gc_mark(interp);
         }
     }
 
     fn real_children(&self) -> usize {
         let mut real_children = 0_usize;
-        let borrow = self.0.borrow();
-        for part in borrow.iter() {
+        for part in &self.0 {
             real_children =
                 if let Some(real_children) = real_children.checked_add(part.real_children()) {
                     real_children
@@ -68,8 +57,7 @@ impl ArrayType for Aggregate {
 
     fn len(&self) -> usize {
         let mut len = 0_usize;
-        let borrow = self.0.borrow();
-        for part in borrow.iter() {
+        for part in &self.0 {
             len = if let Some(len) = len.checked_add(part.len()) {
                 len
             } else {
@@ -85,7 +73,7 @@ impl ArrayType for Aggregate {
 
     fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
         let mut base = 0;
-        for part in self.0.borrow().iter() {
+        for part in &self.0 {
             let idx = index - base;
             if idx < part.len() {
                 return part.get(interp, idx);
@@ -104,8 +92,7 @@ impl ArrayType for Aggregate {
         len: usize,
     ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
         let mut base = 0;
-        let borrow = self.0.borrow();
-        let mut iter = borrow.iter();
+        let mut iter = self.0.iter();
         while let Some(part) = iter.next() {
             let idx = start - base;
             if idx < part.len() {
@@ -133,7 +120,7 @@ impl ArrayType for Aggregate {
     }
 
     fn set(
-        &self,
+        &mut self,
         interp: &Artichoke,
         index: usize,
         elem: Value,
@@ -141,9 +128,7 @@ impl ArrayType for Aggregate {
     ) -> Result<(), Box<dyn RubyException>> {
         let _ = realloc;
         let mut base = 0;
-        let mut borrow = self.0.borrow_mut();
-        for partidx in 0..borrow.len() {
-            let part = &borrow[partidx];
+        for (chunk, part) in self.0.iter_mut().enumerate() {
             let idx = index - base;
             if idx < part.len() {
                 let mut realloc = None;
@@ -152,7 +137,7 @@ impl ArrayType for Aggregate {
                     let reallocated_parts = reallocated_parts
                         .into_iter()
                         .filter(|part| !part.is_empty());
-                    borrow.splice(partidx..=partidx, reallocated_parts);
+                    self.0.splice(chunk..=chunk, reallocated_parts);
                 }
                 return Ok(());
             }
@@ -161,14 +146,14 @@ impl ArrayType for Aggregate {
                 .ok_or_else(|| RangeError::new(interp, "array too big"))?;
         }
         if index > base {
-            borrow.push(backend::fixed::hole(index - base));
+            self.0.push(backend::fixed::hole(index - base));
         }
-        borrow.push(backend::fixed::one(elem));
+        self.0.push(backend::fixed::one(elem));
         Ok(())
     }
 
     fn set_with_drain(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -177,13 +162,12 @@ impl ArrayType for Aggregate {
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = realloc;
         let mut base = 0;
-        let mut borrow = self.0.borrow_mut();
-        for partidx in 0..borrow.len() {
-            let part = &borrow[partidx];
+        let mut iter = self.0.iter_mut().enumerate();
+        while let Some((chunk, part)) = iter.next() {
             let idx = start - base;
             if idx < part.len() {
-                let replace_part_begin_idx = partidx;
-                let mut replace_part_end_idx = partidx;
+                let replace_start = chunk;
+                let mut replace_end = chunk;
                 let mut reallocated_parts = None::<Vec<Box<dyn ArrayType>>>;
                 let mut drained = 0;
                 let mut realloc = None;
@@ -197,9 +181,8 @@ impl ArrayType for Aggregate {
                     }
                 }
                 if drained < drain {
-                    for partidx in replace_part_begin_idx + 1..borrow.len() {
-                        let part = &borrow[partidx];
-                        replace_part_end_idx = partidx;
+                    for (chunk, part) in iter {
+                        replace_end = chunk;
                         let mut realloc = None;
                         drained += part.set_slice(
                             interp,
@@ -224,10 +207,8 @@ impl ArrayType for Aggregate {
                     let reallocated_parts = reallocated_parts
                         .into_iter()
                         .filter(|part| !part.is_empty());
-                    borrow.splice(
-                        replace_part_begin_idx..=replace_part_end_idx,
-                        reallocated_parts,
-                    );
+                    self.0
+                        .splice(replace_start..=replace_end, reallocated_parts);
                 }
                 return Ok(drained);
             }
@@ -236,14 +217,14 @@ impl ArrayType for Aggregate {
                 .ok_or_else(|| RangeError::new(interp, "array too big"))?;
         }
         if start > base {
-            borrow.push(backend::fixed::hole(start - base));
+            self.0.push(backend::fixed::hole(start - base));
         }
-        borrow.push(backend::fixed::one(with));
+        self.0.push(backend::fixed::one(with));
         Ok(0)
     }
 
     fn set_slice(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -252,13 +233,12 @@ impl ArrayType for Aggregate {
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = realloc;
         let mut base = 0;
-        let mut borrow = self.0.borrow_mut();
-        for partidx in 0..borrow.len() {
-            let part = &borrow[partidx];
+        let mut iter = self.0.iter_mut().enumerate();
+        while let Some((chunk, part)) = iter.next() {
             let idx = start - base;
             if idx < part.len() {
-                let replace_part_begin_idx = partidx;
-                let mut replace_part_end_idx = partidx;
+                let replace_start = chunk;
+                let mut replace_end = chunk;
                 let mut reallocated_parts = None::<Vec<Box<dyn ArrayType>>>;
                 let mut drained = 0;
                 let mut realloc = None;
@@ -272,9 +252,8 @@ impl ArrayType for Aggregate {
                     }
                 }
                 if drained < drain {
-                    for partidx in replace_part_begin_idx + 1..borrow.len() {
-                        let part = &borrow[partidx];
-                        replace_part_end_idx = partidx;
+                    for (chunk, part) in iter {
+                        replace_end = chunk;
                         let mut realloc = None;
                         drained += part.set_slice(
                             interp,
@@ -299,10 +278,8 @@ impl ArrayType for Aggregate {
                     let reallocated_parts = reallocated_parts
                         .into_iter()
                         .filter(|part| !part.is_empty());
-                    borrow.splice(
-                        replace_part_begin_idx..=replace_part_end_idx,
-                        reallocated_parts,
-                    );
+                    self.0
+                        .splice(replace_start..=replace_end, reallocated_parts);
                 }
                 return Ok(drained);
             }
@@ -311,14 +288,14 @@ impl ArrayType for Aggregate {
                 .ok_or_else(|| RangeError::new(interp, "array too big"))?;
         }
         if start > base {
-            borrow.push(backend::fixed::hole(start - base));
+            self.0.push(backend::fixed::hole(start - base));
         }
-        borrow.push(with);
+        self.0.push(with);
         Ok(0)
     }
 
     fn concat(
-        &self,
+        &mut self,
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
@@ -326,29 +303,26 @@ impl ArrayType for Aggregate {
         let _ = interp;
         let _ = realloc;
         if let Ok(other) = other.downcast_ref::<Self>() {
-            let mut borrow = self.0.borrow_mut();
-            borrow.extend(other.parts());
+            self.0.extend(other.parts());
         } else {
-            let mut borrow = self.0.borrow_mut();
-            borrow.push(other);
+            self.0.push(other);
         }
         Ok(())
     }
 
     fn pop(
-        &self,
+        &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<Value, Box<dyn RubyException>> {
         let _ = realloc;
-        let mut borrow = self.0.borrow_mut();
-        if let Some(first) = borrow.last() {
+        if let Some(first) = self.0.last_mut() {
             let mut realloc = None;
             let popped = first.pop(interp, &mut realloc)?;
             if let Some(realloc) = realloc {
                 let reallocated_parts = realloc.into_iter().filter(|part| !part.is_empty());
-                borrow.pop();
-                borrow.extend(reallocated_parts);
+                self.0.pop();
+                self.0.extend(reallocated_parts);
             }
             Ok(popped)
         } else {
@@ -357,10 +331,9 @@ impl ArrayType for Aggregate {
     }
 
     fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
-        let borrow = self.0.borrow();
-        let mut parts = Vec::with_capacity(borrow.len());
-        for idx in (0..borrow.len()).rev() {
-            parts.push(borrow[idx].reverse(interp)?);
+        let mut parts = Vec::with_capacity(self.0.len());
+        for idx in (0..self.0.len()).rev() {
+            parts.push(self.0[idx].reverse(interp)?);
         }
         Ok(Box::new(Self::with_parts(parts)))
     }
