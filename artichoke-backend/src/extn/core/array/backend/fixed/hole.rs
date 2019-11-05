@@ -60,7 +60,7 @@ impl ArrayType for Hole {
     }
 
     fn set(
-        &self,
+        &mut self,
         interp: &Artichoke,
         index: usize,
         elem: Value,
@@ -68,6 +68,7 @@ impl ArrayType for Hole {
     ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
         let len = self.0.get();
+        // TODO: optimize for setting `nil`.
         let alloc = if index == 0 && len == 1 {
             vec![backend::fixed::one(elem)]
         } else if index == 0 && len == 2 {
@@ -96,7 +97,7 @@ impl ArrayType for Hole {
     }
 
     fn set_with_drain(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -104,6 +105,7 @@ impl ArrayType for Hole {
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = interp;
+        // TODO: optimize for setting `nil`.
         let (alloc, drained) = if start < self.0.get() {
             let before = start;
             let remaining = self.0.get() - start;
@@ -126,7 +128,7 @@ impl ArrayType for Hole {
     }
 
     fn set_slice(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -134,6 +136,7 @@ impl ArrayType for Hole {
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = interp;
+        // TODO: optimize for setting a `Hole` slice.
         let (alloc, drained) = if start < self.0.get() {
             let before = start;
             let remaining = self.0.get() - start;
@@ -156,27 +159,31 @@ impl ArrayType for Hole {
     }
 
     fn concat(
-        &self,
+        &mut self,
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        *realloc = Some(vec![Box::new(*self), other]);
+        *realloc = Some(vec![self.box_clone(), other]);
         Ok(())
     }
 
     fn pop(
-        &self,
+        &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<Value, Box<dyn RubyException>> {
-        *realloc = Some(vec![backend::fixed::hole(self.0.get() - 1)]);
+        if let Some(len) = NonZeroUsize::new(self.0.get() - 1) {
+            self.0 = len;
+        } else {
+            *realloc = Some(vec![backend::fixed::empty()]);
+        }
         Ok(interp.convert(None::<Value>))
     }
 
     fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
         let _ = interp;
-        Ok(Box::new(*self))
+        Ok(self.box_clone())
     }
 }

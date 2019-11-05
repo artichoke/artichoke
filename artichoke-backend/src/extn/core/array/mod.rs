@@ -467,7 +467,7 @@ pub trait ArrayType: Any {
     ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
 
     fn set(
-        &self,
+        &mut self,
         interp: &Artichoke,
         index: usize,
         elem: Value,
@@ -475,7 +475,7 @@ pub trait ArrayType: Any {
     ) -> Result<(), Box<dyn RubyException>>;
 
     fn set_with_drain(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -484,7 +484,7 @@ pub trait ArrayType: Any {
     ) -> Result<usize, Box<dyn RubyException>>;
 
     fn set_slice(
-        &self,
+        &mut self,
         interp: &Artichoke,
         start: usize,
         drain: usize,
@@ -493,18 +493,20 @@ pub trait ArrayType: Any {
     ) -> Result<usize, Box<dyn RubyException>>;
 
     fn concat(
-        &self,
+        &mut self,
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<(), Box<dyn RubyException>>;
 
     fn pop(
-        &self,
+        &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<Value, Box<dyn RubyException>>;
 
+    // TODO: Change the semantics of this function to do an in place reverse
+    // like `Array#reverse!` and implement Array#reverse` in Ruby.
     fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
 }
 
