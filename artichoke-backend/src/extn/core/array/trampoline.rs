@@ -73,6 +73,13 @@ pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Box<dyn RubyExce
             .map_err(|_| Fatal::new(interp, "Error calling #to_a even though it exists"))?;
         if unsafe { Array::try_from_ruby(interp, &value) }.is_ok() {
             Ok(value)
+        } else if value.is_nil() {
+            let result = backend::fixed::one(value);
+            let result = Array(result);
+            let result = unsafe { result.try_into_ruby(interp, None) }.map_err(|_| {
+                Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array")
+            })?;
+            Ok(result)
         } else {
             Err(Box::new(TypeError::new(
                 interp,
