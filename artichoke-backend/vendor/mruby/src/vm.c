@@ -2472,7 +2472,10 @@ RETRY_TRY_BLOCK:
     }
 
     CASE(OP_ARYCAT, B) {
+      mrb_gc_protect(mrb, regs[a]);
+      mrb_gc_protect(mrb, regs[a+1]);
       mrb_value splat = ARY_SPLAT(mrb, regs[a+1]);
+      mrb_gc_protect(mrb, splat);
       if (mrb_nil_p(regs[a])) {
         regs[a] = splat;
       }
