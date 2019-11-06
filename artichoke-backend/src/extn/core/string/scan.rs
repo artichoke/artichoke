@@ -19,7 +19,7 @@ pub fn method(
     pattern: Value,
     block: Option<Block>,
 ) -> Result<Value, Box<dyn RubyException>> {
-    let string = value.clone().try_into::<&[u8]>().map_err(|_| {
+    let string = value.clone().try_into::<&[u8]>(interp, ).map_err(|_| {
         Fatal::new(
             interp,
             "Unable to convert Ruby String Receiver to Rust byte slice",
@@ -30,10 +30,10 @@ pub fn method(
             interp,
             format!(
                 "wrong argument type {} (expected Regexp)",
-                pattern.pretty_name()
+                pattern.pretty_name(interp)
             ),
         )))
-    } else if let Ok(pattern_bytes) = pattern.clone().try_into::<&[u8]>() {
+    } else if let Ok(pattern_bytes) = pattern.clone().try_into::<&[u8]>(interp, ) {
         if let Some(ref block) = block {
             // TODO: Regexp and MatchData should operate on byte slices.
             let s = str::from_utf8(string).map_err(|_| {
@@ -135,8 +135,8 @@ pub fn method(
             Ok(interp.convert(result))
         }
     } else {
-        let pattern_type_name = pattern.pretty_name();
-        let pattern_bytes = pattern.funcall::<&[u8]>("to_str", &[], None);
+        let pattern_type_name = pattern.pretty_name(interp);
+        let pattern_bytes = pattern.funcall::<&[u8]>(interp, "to_str", &[], None);
         if let Ok(pattern_bytes) = pattern_bytes {
             if let Some(ref block) = block {
                 // TODO: Regexp and MatchData should operate on byte slices.

@@ -61,7 +61,7 @@ impl Runner {
         let specs = self.interp.convert(self.specs);
         self.interp
             .top_self()
-            .funcall::<bool>("run_specs", &[specs], None)
+            .funcall::<bool>(&self.interp, "run_specs", &[specs], None)
     }
 }
 

@@ -185,7 +185,7 @@ impl Eval for Artichoke {
             }
             value
         };
-        let value = Value::new(self, value);
+        let value = Value::new(value);
 
         match self.last_error() {
             LastError::Some(exception) => {
@@ -257,7 +257,7 @@ impl Eval for Artichoke {
             }
             value
         };
-        Value::new(self, value)
+        Value::new(value)
     }
 
     fn eval_with_context<T>(&self, code: T, context: Context) -> Result<Value, ArtichokeError>
@@ -311,7 +311,7 @@ mod tests {
     fn root_eval_context() {
         let interp = crate::interpreter().expect("init");
         let result = interp.eval("__FILE__").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = result.try_into::<&str>(interp).expect("convert");
         assert_eq!(result, "(eval)");
     }
 
@@ -376,7 +376,7 @@ require 'nested_eval'
 NestedEval.file
         "#;
         let result = interp.eval(code).expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = result.try_into::<&str>(interp).expect("convert");
         assert_eq!(result, "/src/lib/nested_eval.rb");
     }
 
@@ -386,17 +386,17 @@ NestedEval.file
         let result = interp
             .eval_with_context("__FILE__", Context::new(b"source.rb".as_ref()))
             .expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = result.try_into::<&str>(interp).expect("convert");
         assert_eq!(result, "source.rb");
         let result = interp
             .eval_with_context("__FILE__", Context::new(b"source.rb".as_ref()))
             .expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = result.try_into::<&str>(interp).expect("convert");
         assert_eq!(result, "source.rb");
         let result = interp
             .eval_with_context("__FILE__", Context::new(b"main.rb".as_ref()))
             .expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = result.try_into::<&str>(interp).expect("convert");
         assert_eq!(result, "main.rb");
     }
 
@@ -420,7 +420,7 @@ NestedEval.file
         );
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval("'a' * 10 ").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = result.try_into::<&str>(interp).expect("convert");
         assert_eq!(result, "a".repeat(10));
     }
 
@@ -431,7 +431,7 @@ NestedEval.file
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
         let result = interp.eval("require 'source'; file").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = result.try_into::<&str>(interp).expect("convert");
         assert_eq!(result, "/src/lib/source.rb");
     }
 
@@ -442,7 +442,7 @@ NestedEval.file
             .def_rb_source_file("source.rb", "def file; __FILE__; end")
             .expect("def file");
         let result = interp.eval("require 'source'; __FILE__").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = result.try_into::<&str>(interp).expect("convert");
         assert_eq!(result, "(eval)");
     }
 

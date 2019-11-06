@@ -72,7 +72,7 @@ where
             sys::mrb_sys_obj_value(data as *mut c_void)
         };
 
-        Ok(Value::new(interp, obj))
+        Ok(Value::new(obj))
     }
 
     /// Extract the Rust object from the [`Value`] if the [`Value`] is backed by
@@ -157,7 +157,7 @@ mod tests {
         ) -> sys::mrb_value {
             let interp = unwrap_interpreter!(mrb);
 
-            let value = Value::new(&interp, slf);
+            let value = Value::new(slf);
             if let Ok(container) = Self::try_from_ruby(&interp, &value) {
                 let borrow = container.borrow();
                 interp.convert(borrow.inner.as_bytes()).inner()
@@ -202,13 +202,13 @@ mod tests {
         };
 
         let value = unsafe { obj.try_into_ruby(&interp, None) }.expect("convert");
-        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
+        let class = value.funcall::<Value>(interp, "class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), "Container");
         let data = unsafe { Container::try_from_ruby(&interp, &value) }.expect("convert");
         assert_eq!(Rc::strong_count(&data), 2);
         assert_eq!(&data.borrow().inner, "contained string contents");
         drop(data);
-        let inner = value.funcall::<&str>("value", &[], None).expect("funcall");
+        let inner = value.funcall::<&str>(interp, "value", &[], None).expect("funcall");
         assert_eq!(inner, "contained string contents");
     }
 
@@ -233,13 +233,13 @@ mod tests {
         spec.borrow().define(&interp).expect("class install");
 
         let value = interp.convert("string");
-        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
+        let class = value.funcall::<Value>(interp, "class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), "String");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };
         assert!(data.is_err());
         let value =
             unsafe { Box::new(Other::default()).try_into_ruby(&interp, None) }.expect("convert");
-        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
+        let class = value.funcall::<Value>(interp, "class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), "Other");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };
         assert!(data.is_err());

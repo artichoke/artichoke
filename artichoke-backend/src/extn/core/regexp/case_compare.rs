@@ -17,12 +17,12 @@ pub struct Args<'a> {
 }
 
 impl<'a> Args<'a> {
-    pub fn extract(pattern: Value) -> Self {
-        if let Ok(pattern) = pattern.clone().try_into::<&str>() {
+    pub fn extract(interp: &Artichoke, pattern: Value) -> Self {
+        if let Ok(pattern) = pattern.try_into::<&str>(interp) {
             Self {
                 pattern: Some(pattern),
             }
-        } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+        } else if let Ok(pattern) = pattern.funcall::<&str>(interp, "to_str", &[], None) {
             Self {
                 pattern: Some(pattern),
             }

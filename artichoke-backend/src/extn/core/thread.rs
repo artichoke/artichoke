@@ -35,7 +35,7 @@ mod tests {
         let result = interp
             .eval("Object.const_defined?(:Thread)")
             .expect("thread");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
     }
 
     #[test]
@@ -43,10 +43,10 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let spec = "Thread.current == Thread.main";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = "Thread.new { Thread.current == Thread.main }.join.value == false";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
     }
 
     #[test]
@@ -54,10 +54,10 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let spec = "Thread.new { 2 + 3 }.join.value == 5";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = "Thread.new { 2 + Thread.new { 3 }.join.value }.join.value == 5";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
     }
 
     #[test]
@@ -65,10 +65,10 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let spec = "Thread.current.status == 'run'";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = "Thread.current.alive?";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
     }
 
     #[test]
@@ -76,16 +76,16 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let spec = "Thread.new { Thread.current }.join.value != Thread.current";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = "Thread.new { Thread.current.name }.join.value != Thread.current.name";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = "Thread.new { Thread.current }.join.value.alive? == false";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = "Thread.new { Thread.current }.join.value.status == false";
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
     }
 
     #[test]
@@ -96,27 +96,27 @@ Thread.current[:local] = 42
 Thread.new { Thread.current.keys.empty? }.join.value
 "#;
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = r#"
 Thread.current[:local] = 42
 Thread.new { Thread.current[:local] = 96 }.join
 Thread.current[:local] == 42
 "#;
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = r#"
 Thread.current.thread_variable_set(:local, 42)
 Thread.new { Thread.current.thread_variables.empty? }.join.value
 "#;
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let spec = r#"
 Thread.current.thread_variable_set(:local, 42)
 Thread.new { Thread.current.thread_variable_set(:local, 96) }.join
 Thread.current.thread_variable_get(:local) == 42
 "#;
         let result = interp.eval(spec).expect("spec");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
     }
 
     #[test]

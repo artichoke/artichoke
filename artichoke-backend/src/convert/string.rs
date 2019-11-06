@@ -34,7 +34,7 @@ impl<'a> TryConvert<Value, &'a str> for Artichoke {
     fn try_convert(&self, value: Value) -> Result<&'a str, ArtichokeError> {
         let type_tag = value.ruby_type();
         let bytes = value
-            .try_into::<&[u8]>()
+            .try_into::<&[u8]>(self)
             .map_err(|_| ArtichokeError::ConvertToRust {
                 from: type_tag,
                 to: Rust::String,
@@ -71,7 +71,7 @@ mod tests {
             from: Ruby::Object,
             to: Rust::String,
         });
-        let result = value.try_into::<String>();
+        let result = value.try_into::<String>(&interp);
         assert_eq!(result, expected);
     }
 
@@ -101,7 +101,7 @@ mod tests {
     fn roundtrip(s: String) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(s.clone());
-        let value = value.try_into::<String>().expect("convert");
+        let value = value.try_into::<String>(&interp).expect("convert");
         value == s
     }
 
@@ -109,7 +109,7 @@ mod tests {
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
-        let value = value.try_into::<String>();
+        let value = value.try_into::<String>(&interp);
         let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Bool,
             to: Rust::String,
@@ -121,7 +121,7 @@ mod tests {
     fn symbol_to_string() {
         let interp = crate::interpreter().expect("init");
         let value = interp.eval(":sym").expect("eval");
-        let value = value.try_into::<String>().expect("convert");
+        let value = value.try_into::<String>(&interp).expect("convert");
         assert_eq!(&value, "sym");
     }
 }

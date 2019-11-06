@@ -5,6 +5,7 @@ use std::hash::{Hash, Hasher};
 use crate::extn::core::regexp::Regexp;
 use crate::types::Int;
 use crate::value::{Value, ValueLike};
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {
@@ -62,8 +63,8 @@ impl PartialEq for Encoding {
 
 impl Eq for Encoding {}
 
-pub fn parse(value: &Value) -> Result<Encoding, Error> {
-    if let Ok(encoding) = value.itself::<Int>() {
+pub fn parse(interp: &Artichoke, value: &Value) -> Result<Encoding, Error> {
+    if let Ok(encoding) = value.itself::<Int>(interp) {
         // Only deal with Encoding opts
         let encoding = encoding & !Regexp::ALL_REGEXP_OPTS;
         if encoding == Regexp::FIXEDENCODING {
@@ -75,7 +76,7 @@ pub fn parse(value: &Value) -> Result<Encoding, Error> {
         } else {
             Err(Error::InvalidEncoding)
         }
-    } else if let Ok(encoding) = value.itself::<&str>() {
+    } else if let Ok(encoding) = value.itself::<&str>(interp) {
         if encoding.contains('u') && encoding.contains('n') {
             return Err(Error::InvalidEncoding);
         }

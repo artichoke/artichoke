@@ -199,9 +199,9 @@ impl Regexp {
         let interp = unwrap_interpreter!(mrb);
         let result = initialize::Args::extract(
             &interp,
-            Value::new(&interp, pattern),
-            options.map(|options| Value::new(&interp, options)),
-            encoding.map(|encoding| Value::new(&interp, encoding)),
+            Value::new(pattern),
+            options.map(|options| Value::new(options)),
+            encoding.map(|encoding| Value::new(encoding)),
         )
         .and_then(|args| initialize::method(&interp, args, Some(slf)));
         match result {
@@ -223,7 +223,7 @@ impl Regexp {
     unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let pattern = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let result = escape::Args::extract(&interp, Value::new(&interp, pattern))
+        let result = escape::Args::extract(&interp, Value::new(pattern))
             .and_then(|args| escape::method(&interp, &args));
         match result {
             Ok(result) => result.inner(),
@@ -234,10 +234,7 @@ impl Regexp {
     unsafe extern "C" fn union(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
-        let args = args
-            .iter()
-            .map(|arg| Value::new(&interp, *arg))
-            .collect::<Vec<_>>();
+        let args = args.iter().map(|arg| Value::new(*arg)).collect::<Vec<_>>();
         let result = union::method(&interp, args.as_slice());
         match result {
             Ok(result) => result.inner(),
@@ -248,13 +245,10 @@ impl Regexp {
     unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let (pattern, pos) = mrb_get_args!(mrb, required = 1, optional = 1);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = match_q::Args::extract(
-            &interp,
-            Value::new(&interp, pattern),
-            pos.map(|pos| Value::new(&interp, pos)),
-        )
-        .and_then(|args| match_q::method(&interp, args, &value));
+        let value = Value::new(slf);
+        let result =
+            match_q::Args::extract(&interp, Value::new(pattern), pos.map(|pos| Value::new(pos)))
+                .and_then(|args| match_q::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
             Err(exception) => exception::raise(interp, exception),
@@ -264,11 +258,11 @@ impl Regexp {
     unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let (pattern, pos, block) = mrb_get_args!(mrb, required = 1, optional = 1, &block);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = match_::Args::extract(
             &interp,
-            Value::new(&interp, pattern),
-            pos.map(|pos| Value::new(&interp, pos)),
+            Value::new(pattern),
+            pos.map(|pos| Value::new(pos)),
             block,
         )
         .and_then(|args| match_::method(&interp, args, &value));
@@ -281,8 +275,8 @@ impl Regexp {
     unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let other = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let other = Value::new(&interp, other);
+        let value = Value::new(slf);
+        let other = Value::new(other);
         let result = eql::method(&interp, &value, &other);
         match result {
             Ok(result) => result.inner(),
@@ -296,8 +290,8 @@ impl Regexp {
     ) -> sys::mrb_value {
         let pattern = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let args = case_compare::Args::extract(Value::new(&interp, pattern));
+        let value = Value::new(slf);
+        let args = case_compare::Args::extract(&interp, Value::new(pattern));
         let result = case_compare::method(&interp, args, &value);
         match result {
             Ok(result) => result.inner(),
@@ -311,8 +305,8 @@ impl Regexp {
     ) -> sys::mrb_value {
         let pattern = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = match_operator::Args::extract(&interp, Value::new(&interp, pattern))
+        let value = Value::new(slf);
+        let result = match_operator::Args::extract(&interp, Value::new(pattern))
             .and_then(|args| match_operator::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
@@ -323,7 +317,7 @@ impl Regexp {
     unsafe extern "C" fn casefold(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = casefold::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -337,7 +331,7 @@ impl Regexp {
     ) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = fixed_encoding::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -348,7 +342,7 @@ impl Regexp {
     unsafe extern "C" fn hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = hash::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -359,7 +353,7 @@ impl Regexp {
     unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = inspect::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -373,7 +367,7 @@ impl Regexp {
     ) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = named_captures::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -384,7 +378,7 @@ impl Regexp {
     unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = names::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -395,7 +389,7 @@ impl Regexp {
     unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = options::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -406,7 +400,7 @@ impl Regexp {
     unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = source::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -418,7 +412,7 @@ impl Regexp {
     unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = to_s::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),

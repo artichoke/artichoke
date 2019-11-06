@@ -32,7 +32,7 @@ impl Convert<&[Value], Value> for Artichoke {
                 sys::mrb_ary_set(mrb, array, idx, item);
             }
         }
-        Value::new(self, array)
+        Value::new(array)
     }
 }
 
@@ -57,7 +57,7 @@ impl Convert<Vec<Value>, Value> for Artichoke {
                 sys::mrb_ary_set(mrb, array, idx, item);
             }
         }
-        Value::new(self, array)
+        Value::new(array)
     }
 }
 
@@ -74,7 +74,7 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
                 })?;
                 let mut elems = <Vec<Value>>::with_capacity(capa);
                 for idx in 0..size {
-                    let elem = Value::new(self, unsafe { sys::mrb_ary_ref(mrb, array, idx) });
+                    let elem = Value::new(unsafe { sys::mrb_ary_ref(mrb, array, idx) });
                     elems.push(elem);
                 }
                 Ok(elems)
@@ -121,7 +121,7 @@ macro_rules! ruby_to_array {
                 let elems: Vec<Value> = self.try_convert(value)?;
                 let mut vec = <Vec<$elem>>::with_capacity(elems.len());
                 for elem in elems.into_iter() {
-                    let elem = elem.try_into::<$elem>()?;
+                    let elem = elem.try_into::<$elem>(self)?;
                     vec.push(elem);
                 }
                 Ok(vec)

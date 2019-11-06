@@ -19,12 +19,12 @@ pub enum Args<'a> {
 
 impl<'a> Args<'a> {
     pub fn extract(interp: &Artichoke, elem: Value) -> Result<Self, Box<dyn RubyException>> {
-        let name = elem.pretty_name();
-        if let Ok(index) = elem.clone().try_into::<Int>() {
+        let name = elem.pretty_name(interp);
+        if let Ok(index) = elem.clone().try_into::<Int>(interp) {
             Ok(Self::Index(index))
-        } else if let Ok(name) = elem.funcall::<&str>("to_str", &[], None) {
+        } else if let Ok(name) = elem.funcall::<&str>(interp, "to_str", &[], None) {
             Ok(Self::Name(name))
-        } else if let Ok(index) = elem.funcall::<Int>("to_int", &[], None) {
+        } else if let Ok(index) = elem.funcall::<Int>(interp, "to_int", &[], None) {
             Ok(Self::Index(index))
         } else {
             Err(Box::new(TypeError::new(

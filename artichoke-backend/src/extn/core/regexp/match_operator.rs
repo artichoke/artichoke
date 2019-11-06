@@ -20,9 +20,9 @@ pub struct Args<'a> {
 
 impl<'a> Args<'a> {
     pub fn extract(interp: &Artichoke, pattern: Value) -> Result<Self, Box<dyn RubyException>> {
-        if let Ok(pattern) = pattern.clone().try_into::<Option<&str>>() {
+        if let Ok(pattern) = pattern.try_into::<Option<&str>>(interp) {
             Ok(Self { pattern })
-        } else if let Ok(pattern) = pattern.funcall::<Option<&str>>("to_str", &[], None) {
+        } else if let Ok(pattern) = pattern.funcall::<Option<&str>>(interp, "to_str", &[], None) {
             Ok(Self { pattern })
         } else {
             Err(Box::new(TypeError::new(
@@ -103,13 +103,13 @@ pub fn method(
                 let last_match_sym = interp.0.borrow_mut().sym_intern("$~");
                 let pre_match_sym = interp.0.borrow_mut().sym_intern("$`");
                 let post_match_sym = interp.0.borrow_mut().sym_intern("$'");
-                let nil = interp.convert(None::<Value>).inner();
+                let nil = interp.convert(None::<Value>);
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, nil);
-                    sys::mrb_gv_set(mrb, pre_match_sym, nil);
-                    sys::mrb_gv_set(mrb, post_match_sym, nil);
+                    sys::mrb_gv_set(mrb, last_match_sym, nil.inner());
+                    sys::mrb_gv_set(mrb, pre_match_sym, nil.inner());
+                    sys::mrb_gv_set(mrb, post_match_sym, nil.inner());
                 }
-                (Value::new(interp, nil), Value::new(interp, nil))
+                (nil, nil)
             }
         }
         Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),

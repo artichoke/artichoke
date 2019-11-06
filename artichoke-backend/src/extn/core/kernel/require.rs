@@ -15,10 +15,10 @@ use crate::Artichoke;
 const RUBY_EXTENSION: &str = "rb";
 
 pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyException>> {
-    let ruby_type = filename.pretty_name();
-    let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
+    let ruby_type = filename.pretty_name(interp);
+    let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>(interp, ) {
         filename
-    } else if let Ok(filename) = filename.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(filename) = filename.funcall::<&[u8]>(interp, "to_str", &[], None) {
         filename
     } else {
         return Err(Box::new(TypeError::new(
@@ -105,10 +105,10 @@ pub fn require(
     filename: Value,
     base: Option<&Path>,
 ) -> Result<Value, Box<dyn RubyException>> {
-    let ruby_type = filename.pretty_name();
-    let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
+    let ruby_type = filename.pretty_name(interp);
+    let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>(interp, ) {
         filename
-    } else if let Ok(filename) = filename.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(filename) = filename.funcall::<&[u8]>(interp, "to_str", &[], None) {
         filename
     } else {
         return Err(Box::new(TypeError::new(

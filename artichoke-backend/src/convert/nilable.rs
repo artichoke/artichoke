@@ -16,7 +16,7 @@ impl Convert<Option<Value>, Value> for Artichoke {
         if let Some(value) = value {
             value
         } else {
-            Value::new(self, unsafe { sys::mrb_sys_nil_value() })
+            Value::new(unsafe { sys::mrb_sys_nil_value() })
         }
     }
 }
@@ -44,7 +44,7 @@ macro_rules! option_to_ruby {
                 if let Some(value) = value {
                     self.convert(value)
                 } else {
-                    Value::new(self, unsafe { sys::mrb_sys_nil_value() })
+                    Value::new(unsafe { sys::mrb_sys_nil_value() })
                 }
             }
         }
@@ -56,7 +56,7 @@ macro_rules! ruby_to_option {
         impl<'a> TryConvert<Value, Option<$elem>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Option<$elem>, ArtichokeError> {
                 if let Some(value) = self.convert(value) {
-                    value.try_into::<$elem>().map(Some)
+                    value.try_into::<$elem>(self).map(Some)
                 } else {
                     Ok(None)
                 }

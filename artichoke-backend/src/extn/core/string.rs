@@ -34,8 +34,8 @@ pub struct RString;
 impl RString {
     unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        if let Ok(s) = value.try_into::<&str>() {
+        let value = Value::new(slf);
+        if let Ok(s) = value.try_into::<&str>(&interp) {
             if let Some(first) = s.chars().next() {
                 // One UTF-8 character, which are at most 32 bits.
                 if let Ok(value) = interp.try_convert(first as u32) {
@@ -57,8 +57,8 @@ impl RString {
     unsafe extern "C" fn scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = scan::method(&interp, value, Value::new(&interp, pattern), block);
+        let value = Value::new(slf);
+        let result = scan::method(&interp, value, Value::new(pattern), block);
         match result {
             Ok(result) => result.inner(),
             Err(exception) => exception::raise(interp, exception),
@@ -95,7 +95,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/[aeiou](.)\1/]")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<String>(interp)
                 .unwrap(),
             "ell"
         );
@@ -103,7 +103,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/[aeiou](.)\1/, 0]")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<String>(interp)
                 .unwrap(),
             "ell"
         );
@@ -111,7 +111,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/[aeiou](.)\1/, 1]")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<String>(interp)
                 .unwrap(),
             "l"
         );
@@ -127,7 +127,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'non_vowel']")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<String>(interp)
                 .unwrap(),
             "l"
         );
@@ -135,7 +135,7 @@ mod tests {
             &interp
                 .eval(r"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'vowel']")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<String>(interp)
                 .unwrap(),
             "e"
         );
@@ -171,9 +171,9 @@ mod tests {
         string::init(&interp).expect("string init");
 
         let s = interp.eval("-'abababa'").expect("eval");
-        let result = s.funcall::<bool>("frozen?", &[], None);
+        let result = s.funcall::<bool>(interp, "frozen?", &[], None);
         assert_eq!(result, Ok(true));
-        let result = s.funcall::<&str>("itself", &[], None);
+        let result = s.funcall::<&str>(interp, "itself", &[], None);
         assert_eq!(result, Ok("abababa"));
     }
 }

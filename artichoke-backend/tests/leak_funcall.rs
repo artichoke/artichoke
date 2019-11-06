@@ -32,7 +32,7 @@ fn funcall_arena() {
         let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
         // we have to call a function that calls into the Ruby VM, so we can't
         // just use `to_s`.
-        let inspect = s.funcall::<String>("inspect", &[], None);
+        let inspect = s.funcall::<String>(&interp, "inspect", &[], None);
         assert_eq!(inspect, Ok(expected));
         interp.incremental_gc();
     });

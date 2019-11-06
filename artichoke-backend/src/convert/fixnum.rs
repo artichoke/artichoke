@@ -9,14 +9,14 @@ use crate::{Artichoke, ArtichokeError};
 impl Convert<u8, Value> for Artichoke {
     fn convert(&self, value: u8) -> Value {
         let value = Int::from(value);
-        Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
+        Value::new(unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
 impl Convert<u16, Value> for Artichoke {
     fn convert(&self, value: u16) -> Value {
         let value = Int::from(value);
-        Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
+        Value::new(unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
@@ -24,7 +24,7 @@ impl Convert<u16, Value> for Artichoke {
 impl Convert<u32, Value> for Artichoke {
     fn convert(&self, value: u32) -> Value {
         let value = Int::from(value);
-        Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
+        Value::new(unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
@@ -35,9 +35,7 @@ impl TryConvert<u32, Value> for Artichoke {
             from: Rust::UnsignedInt,
             to: Ruby::Fixnum,
         })?;
-        Ok(Value::new(self, unsafe {
-            sys::mrb_sys_fixnum_value(value)
-        }))
+        Ok(Value::new(unsafe { sys::mrb_sys_fixnum_value(value) }))
     }
 }
 
@@ -47,37 +45,35 @@ impl TryConvert<u64, Value> for Artichoke {
             from: Rust::UnsignedInt,
             to: Ruby::Fixnum,
         })?;
-        Ok(Value::new(self, unsafe {
-            sys::mrb_sys_fixnum_value(value)
-        }))
+        Ok(Value::new(unsafe { sys::mrb_sys_fixnum_value(value) }))
     }
 }
 
 impl Convert<i8, Value> for Artichoke {
     fn convert(&self, value: i8) -> Value {
         let value = Int::from(value);
-        Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
+        Value::new(unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
 impl Convert<i16, Value> for Artichoke {
     fn convert(&self, value: i16) -> Value {
         let value = Int::from(value);
-        Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
+        Value::new(unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
 impl Convert<i32, Value> for Artichoke {
     fn convert(&self, value: i32) -> Value {
         let value = Int::from(value);
-        Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
+        Value::new(unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 impl Convert<i64, Value> for Artichoke {
     fn convert(&self, value: i64) -> Value {
-        Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
+        Value::new(unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
@@ -88,9 +84,7 @@ impl TryConvert<i64, Value> for Artichoke {
             from: Rust::UnsignedInt,
             to: Ruby::Fixnum,
         })?;
-        Ok(Value::new(self, unsafe {
-            sys::mrb_sys_fixnum_value(value)
-        }))
+        Ok(Value::new(unsafe { sys::mrb_sys_fixnum_value(value) }))
     }
 }
 
@@ -144,7 +138,7 @@ mod tests {
             from: Ruby::Object,
             to: Rust::SignedInt,
         });
-        let result = value.try_into::<Int>();
+        let result = value.try_into::<Int>(&interp);
         assert_eq!(result, expected);
     }
 
@@ -168,7 +162,7 @@ mod tests {
     fn roundtrip(i: Int) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(i);
-        let value = value.try_into::<Int>().expect("convert");
+        let value = value.try_into::<Int>(&interp).expect("convert");
         value == i
     }
 
@@ -176,7 +170,7 @@ mod tests {
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
-        let value = value.try_into::<Int>();
+        let value = value.try_into::<Int>(&interp);
         let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Bool,
             to: Rust::SignedInt,
@@ -188,11 +182,11 @@ mod tests {
     fn fixnum_to_usize() {
         let interp = crate::interpreter().expect("init");
         let value: Value = interp.convert(100);
-        let value = value.try_into::<usize>();
+        let value = value.try_into::<usize>(&interp);
         let expected = Ok(100);
         assert_eq!(value, expected);
         let value: Value = interp.convert(-100);
-        let value = value.try_into::<usize>();
+        let value = value.try_into::<usize>(&interp);
         let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Fixnum,
             to: Rust::UnsignedInt,

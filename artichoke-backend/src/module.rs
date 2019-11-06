@@ -34,7 +34,7 @@ impl Spec {
     pub fn value(&self, interp: &Artichoke) -> Option<Value> {
         let rclass = self.rclass(interp)?;
         let module = unsafe { sys::mrb_sys_module_value(rclass) };
-        Some(Value::new(interp, module))
+        Some(Value::new(module))
     }
 }
 

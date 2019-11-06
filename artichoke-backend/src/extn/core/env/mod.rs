@@ -61,10 +61,10 @@ pub fn element_reference(
 ) -> Result<Value, Box<dyn RubyException>> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
-    let ruby_type = name.pretty_name();
-    let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
+    let ruby_type = name.pretty_name(interp);
+    let name = if let Ok(name) = name.clone().try_into::<&[u8]>(interp) {
         name
-    } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(name) = name.funcall::<&[u8]>(interp, "to_str", &[], None) {
         name
     } else {
         return Err(Box::new(TypeError::new(
@@ -84,10 +84,10 @@ pub fn element_assignment(
 ) -> Result<Value, Box<dyn RubyException>> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
-    let name_type_name = name.pretty_name();
-    let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
+    let name_type_name = name.pretty_name(interp);
+    let name = if let Ok(name) = name.clone().try_into::<&[u8]>(interp) {
         name
-    } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(name) = name.funcall::<&[u8]>(interp, "to_str", &[], None) {
         name
     } else {
         return Err(Box::new(TypeError::new(
@@ -95,10 +95,10 @@ pub fn element_assignment(
             format!("no implicit conversion of {} into String", name_type_name),
         )));
     };
-    let value_type_name = value.pretty_name();
-    let value = if let Ok(value) = value.clone().try_into::<Option<&[u8]>>() {
+    let value_type_name = value.pretty_name(interp);
+    let value = if let Ok(value) = value.try_into::<Option<&[u8]>>(interp) {
         value
-    } else if let Ok(value) = value.clone().funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(value) = value.funcall::<&[u8]>(interp, "to_str", &[], None) {
         Some(value)
     } else {
         return Err(Box::new(TypeError::new(

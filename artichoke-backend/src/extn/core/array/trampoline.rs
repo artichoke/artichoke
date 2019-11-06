@@ -63,12 +63,12 @@ pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Box<dyn RubyExce
         return Ok(value);
     }
     if value
-        .respond_to("to_a")
+        .respond_to(interp, "to_a")
         .map_err(|_| Fatal::new(interp, "Error calling #respond_to?(:to_a)"))?
     {
-        let value_type = value.pretty_name();
+        let value_type = value.pretty_name(interp);
         let value = value
-            .funcall::<Value>("to_a", &[], None)
+            .funcall::<Value>(interp, "to_a", &[], None)
             // TODO: propagate exceptions thrown by `value#to_a`.
             .map_err(|_| Fatal::new(interp, "Error calling #to_a even though it exists"))?;
         if unsafe { Array::try_from_ruby(interp, &value) }.is_ok() {
@@ -79,7 +79,7 @@ pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Box<dyn RubyExce
                 format!(
                     "can't convert {classname} to Array ({classname}#to_a gives {gives})",
                     classname = value_type,
-                    gives = value.pretty_name()
+                    gives = value.pretty_name(interp)
                 ),
             )))
         }
@@ -95,8 +95,8 @@ pub fn splat(interp: &Artichoke, value: Value) -> Result<Value, Box<dyn RubyExce
 pub fn to_ary(interp: &Artichoke, value: Value) -> Result<Value, Box<dyn RubyException>> {
     if unsafe { Array::try_from_ruby(interp, &value) }.is_ok() {
         Ok(value)
-    } else if let Ok(ary) = value.funcall::<Value>("to_a", &[], None) {
-        let ruby_type = ary.pretty_name();
+    } else if let Ok(ary) = value.funcall::<Value>(interp, "to_a", &[], None) {
+        let ruby_type = ary.pretty_name(interp);
         if unsafe { Array::try_from_ruby(interp, &ary) }.is_ok() {
             Ok(ary)
         } else {
@@ -104,7 +104,7 @@ pub fn to_ary(interp: &Artichoke, value: Value) -> Result<Value, Box<dyn RubyExc
                 interp,
                 format!(
                     "can't convert {classname} to Array ({classname}#to_a gives {gives})",
-                    classname = value.pretty_name(),
+                    classname = value.pretty_name(interp),
                     gives = ruby_type
                 ),
             )))
@@ -136,7 +136,7 @@ pub fn ary_ref(
 }
 
 pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -176,7 +176,7 @@ pub fn element_assignment(
     second: Value,
     third: Option<Value>,
 ) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -202,7 +202,7 @@ pub fn element_assignment(
 }
 
 pub fn pop(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -228,7 +228,7 @@ pub fn shift(
     ary: Value,
     count: Option<usize>,
 ) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -271,7 +271,7 @@ pub fn unshift(
     ary: Value,
     value: Value,
 ) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -297,7 +297,7 @@ pub fn concat(
     ary: Value,
     other: Option<Value>,
 ) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -321,7 +321,7 @@ pub fn concat(
 }
 
 pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -355,7 +355,7 @@ pub fn reverse(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyExce
 }
 
 pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -382,7 +382,7 @@ pub fn element_set(
     offset: isize,
     value: Value,
 ) -> Result<Value, Box<dyn RubyException>> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Box::new(FrozenError::new(
             interp,
             "can't modify frozen Array",

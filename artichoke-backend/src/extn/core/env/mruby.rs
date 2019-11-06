@@ -66,8 +66,8 @@ unsafe extern "C" fn artichoke_env_element_reference(
 ) -> sys::mrb_value {
     let name = mrb_get_args!(mrb, required = 1);
     let interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
-    let name = Value::new(&interp, name);
+    let obj = Value::new(slf);
+    let name = Value::new(name);
     let result = env::element_reference(&interp, obj, &name);
     match result {
         Ok(value) => value.inner(),
@@ -82,9 +82,9 @@ unsafe extern "C" fn artichoke_env_element_assignment(
 ) -> sys::mrb_value {
     let (name, value) = mrb_get_args!(mrb, required = 2);
     let interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
-    let name = Value::new(&interp, name);
-    let value = Value::new(&interp, value);
+    let obj = Value::new(slf);
+    let name = Value::new(name);
+    let value = Value::new(value);
     let result = env::element_assignment(&interp, obj, &name, value);
     match result {
         Ok(value) => value.inner(),
@@ -99,7 +99,7 @@ unsafe extern "C" fn artichoke_env_to_h(
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
+    let obj = Value::new(slf);
     let result = env::to_h(&interp, obj);
     match result {
         Ok(value) => value.inner(),

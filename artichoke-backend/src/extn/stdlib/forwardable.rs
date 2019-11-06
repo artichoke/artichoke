@@ -175,7 +175,7 @@ end
                 "#,
             )
             .unwrap()
-            .try_into::<bool>()
+            .try_into::<bool>(interp)
             .unwrap();
         assert!(result);
     }

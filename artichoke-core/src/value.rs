@@ -20,6 +20,7 @@ where
     /// Call a method on this [`Value`] with arguments and an optional block.
     fn funcall<T>(
         &self,
+        interp: &Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
@@ -30,6 +31,7 @@ where
     /// Call a method on this [`Value`] with arguments and an optional block.
     fn unchecked_funcall(
         &self,
+        interp: &Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
@@ -38,7 +40,7 @@ where
     /// Consume `self` and try to convert `self` to type `T`.
     ///
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
-    fn try_into<T>(self) -> Result<T, ArtichokeError>
+    fn try_into<T>(self, interp: &Self::Artichoke) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>;
 
@@ -46,15 +48,15 @@ where
     /// `T`.
     ///
     /// If you want to consume this [`Value`], use [`Value::try_into`].
-    fn itself<T>(&self) -> Result<T, ArtichokeError>
+    fn itself<T>(&self, interp: &Self::Artichoke) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>;
 
     /// Call `#freeze` on this [`Value`].
-    fn freeze(&mut self) -> Result<(), ArtichokeError>;
+    fn freeze(&mut self, interp: &Self::Artichoke) -> Result<(), ArtichokeError>;
 
     /// Call `#frozen?` on this [`Value`].
-    fn is_frozen(&self) -> bool;
+    fn is_frozen(&self, interp: &Self::Artichoke) -> bool;
 
     /// Whether `self` is `nil`
     fn is_nil(&self) -> bool;
@@ -62,15 +64,15 @@ where
     /// Whether `self` responds to a method.
     ///
     /// Equivalent to invoking `#respond_to?` on this [`Value`].
-    fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError>;
+    fn respond_to(&self, interp: &Self::Artichoke, method: &str) -> Result<bool, ArtichokeError>;
 
     /// Call `#inspect` on this [`Value`].
     ///
     /// This function can never fail.
-    fn inspect(&self) -> String;
+    fn inspect(&self, interp: &Self::Artichoke) -> String;
 
     /// Call `#to_s` on this [`Value`].
     ///
     /// This function can never fail.
-    fn to_s(&self) -> String;
+    fn to_s(&self, interp: &Self::Artichoke) -> String;
 }

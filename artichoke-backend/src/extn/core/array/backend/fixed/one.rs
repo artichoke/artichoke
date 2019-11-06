@@ -5,7 +5,7 @@ use crate::gc::MrbGarbageCollection;
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy)]
 pub struct One(Value);
 
 impl One {
@@ -16,7 +16,7 @@ impl One {
 
 impl ArrayType for One {
     fn box_clone(&self) -> Box<dyn ArrayType> {
-        Box::new(self.clone())
+        Box::new(*self)
     }
 
     fn gc_mark(&self, interp: &Artichoke) {

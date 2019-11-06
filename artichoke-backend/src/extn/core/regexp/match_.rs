@@ -27,9 +27,9 @@ impl<'a> Args<'a> {
         pos: Option<Value>,
         block: Option<Block>,
     ) -> Result<Self, Box<dyn RubyException>> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&str>>() {
+        let pattern = if let Ok(pattern) = pattern.try_into::<Option<&str>>(interp) {
             pattern
-        } else if let Ok(pattern) = pattern.funcall::<Option<&str>>("to_str", &[], None) {
+        } else if let Ok(pattern) = pattern.funcall::<Option<&str>>(interp, "to_str", &[], None) {
             pattern
         } else {
             return Err(Box::new(TypeError::new(
@@ -38,9 +38,9 @@ impl<'a> Args<'a> {
             )));
         };
         let pos = if let Some(pos) = pos {
-            if let Ok(pos) = pos.clone().try_into::<Int>() {
+            if let Ok(pos) = pos.clone().try_into::<Int>(interp) {
                 Some(pos)
-            } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
+            } else if let Ok(pos) = pos.funcall::<Int>(interp, "to_int", &[], None) {
                 Some(pos)
             } else {
                 return Err(Box::new(TypeError::new(

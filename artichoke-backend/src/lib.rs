@@ -69,7 +69,7 @@
 //! interp.def_rb_source_file("source.rb", code).unwrap();
 //! interp.eval("require 'source'").unwrap();
 //! let result = interp.eval("source_location").unwrap();
-//! let result = result.try_into::<&str>().unwrap();
+//! let result = result.try_into::<&str>(interp).unwrap();
 //! assert_eq!(result, "/src/lib/source.rb");
 //! ```
 //!
@@ -122,7 +122,7 @@
 //!     unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, mut slf: sys::mrb_value) -> sys::mrb_value {
 //!         let inner = mrb_get_args!(mrb, required = 1);
 //!         let interp = unwrap_interpreter!(mrb);
-//!         let inner = Value::new(&interp, inner);
+//!         let inner = Value::new(inner);
 //!         let inner = inner.try_into::<i64>().unwrap_or_default();
 //!         let cont = Self { inner };
 //!         cont
@@ -133,7 +133,7 @@
 //!
 //!     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
 //!         let interp = unwrap_interpreter!(mrb);
-//!         let container = Value::new(&interp, slf);
+//!         let container = Value::new(slf);
 //!         if let Ok(cont) = Self::try_from_ruby(&interp, &container) {
 //!             let borrow = cont.borrow();
 //!             interp.convert(borrow.inner).inner()

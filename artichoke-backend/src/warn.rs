@@ -29,7 +29,7 @@ impl Warn for Artichoke {
         let warning = warning.borrow().value(self).ok_or_else(|| {
             ArtichokeError::NotDefined("Warn with uninitialized Warning".to_owned())
         })?;
-        warning.funcall::<Value>("warn", &[self.convert(message)], None)?;
+        warning.funcall::<Value>(self, "warn", &[self.convert(message)], None)?;
         Ok(())
     }
 }

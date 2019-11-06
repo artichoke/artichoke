@@ -22,23 +22,23 @@ pub fn element_reference(
     ary_len: usize,
 ) -> Result<ElementReference, Box<dyn RubyException>> {
     if let Some(len) = len {
-        let start = if let Ok(start) = elem.clone().try_into::<Int>() {
+        let start = if let Ok(start) = elem.clone().try_into::<Int>(interp) {
             start
-        } else if let Ok(start) = elem.funcall::<Int>("to_int", &[], None) {
+        } else if let Ok(start) = elem.funcall::<Int>(interp, "to_int", &[], None) {
             start
         } else {
-            let elem_type_name = elem.pretty_name();
+            let elem_type_name = elem.pretty_name(interp);
             return Err(Box::new(TypeError::new(
                 interp,
                 format!("no implicit conversion of {} into Integer", elem_type_name),
             )));
         };
-        let len = if let Ok(len) = len.clone().try_into::<Int>() {
+        let len = if let Ok(len) = len.clone().try_into::<Int>(interp) {
             len
-        } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
+        } else if let Ok(len) = len.funcall::<Int>(interp, "to_int", &[], None) {
             len
         } else {
-            let len_type_name = len.pretty_name();
+            let len_type_name = len.pretty_name(interp);
             return Err(Box::new(TypeError::new(
                 interp,
                 format!("no implicit conversion of {} into Integer", len_type_name),
@@ -50,10 +50,10 @@ pub fn element_reference(
             Ok(ElementReference::Empty)
         }
     } else {
-        let name = elem.pretty_name();
-        if let Ok(index) = elem.clone().try_into::<Int>() {
+        let name = elem.pretty_name(interp);
+        if let Ok(index) = elem.clone().try_into::<Int>(interp) {
             Ok(ElementReference::Index(index))
-        } else if let Ok(index) = elem.funcall::<Int>("to_int", &[], None) {
+        } else if let Ok(index) = elem.funcall::<Int>(interp, "to_int", &[], None) {
             Ok(ElementReference::Index(index))
         } else {
             let rangelen = Int::try_from(ary_len)
@@ -79,10 +79,10 @@ pub fn element_assignment(
 ) -> Result<(usize, Option<usize>, Value), Box<dyn RubyException>> {
     if let Some(elem) = third {
         let start = first;
-        let start_type_name = start.pretty_name();
-        let start = if let Ok(start) = start.clone().try_into::<Int>() {
+        let start_type_name = start.pretty_name(interp);
+        let start = if let Ok(start) = start.clone().try_into::<Int>(interp) {
             start
-        } else if let Ok(start) = start.funcall::<Int>("to_int", &[], None) {
+        } else if let Ok(start) = start.funcall::<Int>(interp, "to_int", &[], None) {
             start
         } else {
             return Err(Box::new(TypeError::new(
@@ -105,10 +105,10 @@ pub fn element_assignment(
             }
         };
         let len = second;
-        let len_type_name = len.pretty_name();
-        let len = if let Ok(len) = len.clone().try_into::<Int>() {
+        let len_type_name = len.pretty_name(interp);
+        let len = if let Ok(len) = len.clone().try_into::<Int>(interp) {
             len
-        } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
+        } else if let Ok(len) = len.funcall::<Int>(interp, "to_int", &[], None) {
             len
         } else {
             return Err(Box::new(TypeError::new(
@@ -124,7 +124,7 @@ pub fn element_assignment(
                 format!("negative length ({})", len),
             )))
         }
-    } else if let Ok(index) = first.clone().try_into::<Int>() {
+    } else if let Ok(index) = first.clone().try_into::<Int>(interp) {
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
@@ -133,7 +133,7 @@ pub fn element_assignment(
                 format!("index {} too small for array; minimum: 0", index),
             )))
         }
-    } else if let Ok(index) = first.funcall::<Int>("to_int", &[], None) {
+    } else if let Ok(index) = first.funcall::<Int>(interp, "to_int", &[], None) {
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
@@ -154,7 +154,7 @@ pub fn element_assignment(
                 }
             }
             Ok(None) => {
-                let start = if let Ok(start) = first.funcall::<Value>("begin", &[], None) {
+                let start = if let Ok(start) = first.funcall::<Value>(interp, "begin", &[], None) {
                     start
                 } else {
                     return Err(Box::new(Fatal::new(
@@ -162,20 +162,20 @@ pub fn element_assignment(
                         "Unable to extract first from Range",
                     )));
                 };
-                let start = if let Ok(start) = start.clone().try_into::<Int>() {
+                let start = if let Ok(start) = start.clone().try_into::<Int>(interp) {
                     start
-                } else if let Ok(start) = start.funcall::<Int>("to_int", &[], None) {
+                } else if let Ok(start) = start.funcall::<Int>(interp, "to_int", &[], None) {
                     start
                 } else {
                     return Err(Box::new(TypeError::new(
                         interp,
                         format!(
                             "no implicit conversion of {} into Integer",
-                            start.pretty_name()
+                            start.pretty_name(interp)
                         ),
                     )));
                 };
-                let end = if let Ok(end) = first.funcall::<Value>("last", &[], None) {
+                let end = if let Ok(end) = first.funcall::<Value>(interp, "last", &[], None) {
                     end
                 } else {
                     return Err(Box::new(Fatal::new(
@@ -183,16 +183,16 @@ pub fn element_assignment(
                         "Unable to extract first from Range",
                     )));
                 };
-                let end = if let Ok(end) = end.clone().try_into::<Int>() {
+                let end = if let Ok(end) = end.clone().try_into::<Int>(interp) {
                     end
-                } else if let Ok(end) = end.funcall::<Int>("to_int", &[], None) {
+                } else if let Ok(end) = end.funcall::<Int>(interp, "to_int", &[], None) {
                     end
                 } else {
                     return Err(Box::new(TypeError::new(
                         interp,
                         format!(
                             "no implicit conversion of {} into Integer",
-                            end.pretty_name()
+                            end.pretty_name(interp)
                         ),
                     )));
                 };
@@ -235,7 +235,7 @@ pub fn element_assignment(
                 }
             }
             Err(_) => {
-                let index_type_name = first.pretty_name();
+                let index_type_name = first.pretty_name(interp);
                 Err(Box::new(TypeError::new(
                     interp,
                     format!("no implicit conversion of {} into Integer", index_type_name),

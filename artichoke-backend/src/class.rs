@@ -54,13 +54,13 @@ impl Spec {
         let value = unsafe {
             sys::mrb_obj_new(mrb, rclass, arglen, args.as_ptr() as *const sys::mrb_value)
         };
-        Some(Value::new(interp, value))
+        Some(Value::new(value))
     }
 
     pub fn value(&self, interp: &Artichoke) -> Option<Value> {
         let rclass = self.rclass(interp)?;
         let module = unsafe { sys::mrb_sys_class_value(rclass) };
-        Some(Value::new(interp, module))
+        Some(Value::new(module))
     }
 
     pub fn data_type(&self) -> &sys::mrb_data_type {
@@ -223,10 +223,10 @@ mod tests {
         let result = interp
             .eval("RustError.new.is_a?(StandardError)")
             .expect("eval");
-        let result = result.try_into::<bool>().expect("convert");
+        let result = result.try_into::<bool>(interp).expect("convert");
         assert!(result, "RustError instances are instance of StandardError");
         let result = interp.eval("RustError < StandardError").expect("eval");
-        let result = result.try_into::<bool>().expect("convert");
+        let result = result.try_into::<bool>(interp).expect("convert");
         assert!(result, "RustError inherits from StandardError");
     }
 

@@ -25,7 +25,7 @@ impl Convert<Vec<(Value, Value)>, Value> for Artichoke {
             let val = val.inner();
             unsafe { sys::mrb_hash_set(mrb, hash, key, val) };
         }
-        Value::new(self, hash)
+        Value::new(hash)
     }
 }
 
@@ -50,7 +50,7 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
                     #[cfg(not(feature = "artichoke-array"))]
                     let key = unsafe { sys::mrb_ary_ref(mrb, keys, idx) };
                     let value = unsafe { sys::mrb_hash_get(mrb, hash, key) };
-                    pairs.push((Value::new(self, key), Value::new(self, value)));
+                    pairs.push((Value::new(key), Value::new(value)));
                 }
                 Ok(pairs)
             }
@@ -109,11 +109,11 @@ macro_rules! ruby_to_hash {
     ($key:ty => $value:ty) => {
         impl<'a> TryConvert<Value, Vec<($key, $value)>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Vec<($key, $value)>, ArtichokeError> {
-                let pairs = value.try_into::<Vec<(Value, Value)>>()?;
+                let pairs = value.try_into::<Vec<(Value, Value)>>(self)?;
                 let mut vec = vec![];
                 for (key, value) in pairs.into_iter() {
-                    let key = key.try_into::<$key>()?;
-                    let value = value.try_into::<$value>()?;
+                    let key = key.try_into::<$key>(self)?;
+                    let value = value.try_into::<$value>(self)?;
                     vec.push((key, value));
                 }
                 Ok(vec)
@@ -127,7 +127,7 @@ macro_rules! ruby_to_hash {
                 &self,
                 value: Value,
             ) -> Result<HashMap<$key, $value, S>, ArtichokeError> {
-                let pairs = value.try_into::<Vec<($key, $value)>>()?;
+                let pairs = value.try_into::<Vec<($key, $value)>>(self)?;
                 let mut hash = HashMap::default();
                 for (key, value) in pairs {
                     hash.insert(key, value);
@@ -139,11 +139,11 @@ macro_rules! ruby_to_hash {
     (no_hash_map | $key:ty => $value:ty) => {
         impl<'a> TryConvert<Value, Vec<($key, $value)>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Vec<($key, $value)>, ArtichokeError> {
-                let pairs = value.try_into::<Vec<(Value, Value)>>()?;
+                let pairs = value.try_into::<Vec<(Value, Value)>>(self)?;
                 let mut vec = vec![];
                 for (key, value) in pairs.into_iter() {
-                    let key = key.try_into::<$key>()?;
-                    let value = value.try_into::<$value>()?;
+                    let key = key.try_into::<$key>(self)?;
+                    let value = value.try_into::<$value>(self)?;
                     vec.push((key, value));
                 }
                 Ok(vec)
@@ -562,8 +562,8 @@ mod tests {
         let map = pairs
             .into_iter()
             .map(|(key, value)| {
-                let key = key.try_into::<Int>().expect("convert");
-                let value = value.try_into::<Int>().expect("convert");
+                let key = key.try_into::<Int>(&interp).expect("convert");
+                let value = value.try_into::<Int>(&interp).expect("convert");
                 (key, value)
             })
             .collect::<HashMap<_, _>>();

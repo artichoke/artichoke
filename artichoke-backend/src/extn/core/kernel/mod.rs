@@ -63,11 +63,7 @@ impl Kernel {
     unsafe extern "C" fn integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
         let interp = unwrap_interpreter!(mrb);
-        let result = integer::method(
-            &interp,
-            Value::new(&interp, arg),
-            base.map(|base| Value::new(&interp, base)),
-        );
+        let result = integer::method(&interp, Value::new(arg), base.map(|base| Value::new(base)));
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
@@ -77,7 +73,7 @@ impl Kernel {
     unsafe extern "C" fn load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let file = Value::new(&interp, file);
+        let file = Value::new(file);
         let result = require::load(&interp, file);
         match result {
             Ok(value) => value.inner(),
@@ -90,7 +86,7 @@ impl Kernel {
         let interp = unwrap_interpreter!(mrb);
 
         for value in args.iter() {
-            let s = Value::new(&interp, *value).to_s();
+            let s = Value::new(*value).to_s(&interp);
             interp.0.borrow_mut().print(s.as_str());
         }
         sys::mrb_sys_nil_value()
@@ -98,12 +94,12 @@ impl Kernel {
 
     unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         fn do_puts(interp: &Artichoke, value: &Value) {
-            if let Ok(array) = value.clone().try_into::<Vec<Value>>() {
+            if let Ok(array) = value.try_into::<Vec<Value>>(interp) {
                 for value in array {
                     do_puts(interp, &value);
                 }
             } else {
-                let s = value.to_s();
+                let s = value.to_s(interp);
                 interp.0.borrow_mut().puts(s.as_str());
             }
         }
@@ -114,7 +110,7 @@ impl Kernel {
             interp.0.borrow_mut().puts("");
         }
         for value in args.iter() {
-            do_puts(&interp, &Value::new(&interp, *value));
+            do_puts(&interp, &Value::new(*value));
         }
         sys::mrb_sys_nil_value()
     }
@@ -122,7 +118,7 @@ impl Kernel {
     unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let file = Value::new(&interp, file);
+        let file = Value::new(file);
         let result = require::require(&interp, file, None);
         match result {
             Ok(value) => value.inner(),
@@ -136,7 +132,7 @@ impl Kernel {
     ) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let file = Value::new(&interp, file);
+        let file = Value::new(file);
         let result = require::require_relative(&interp, file);
         match result {
             Ok(value) => value.inner(),
@@ -176,13 +172,13 @@ mod tests {
             .def_file_for_type::<_, TestFile>("file.rb")
             .expect("def file");
         let result = interp.eval("require 'file'").expect("eval");
-        let require_result = result.try_into::<bool>();
+        let require_result = result.try_into::<bool>(interp);
         assert_eq!(require_result, Ok(true));
         let result = interp.eval("@i").expect("eval");
         let i_result = result.try_into::<i64>();
         assert_eq!(i_result, Ok(255));
         let result = interp.eval("@i = 1000; require 'file'").expect("eval");
-        let second_require_result = result.try_into::<bool>();
+        let second_require_result = result.try_into::<bool>(interp);
         assert_eq!(second_require_result, Ok(false));
         let result = interp.eval("@i").expect("eval");
         let second_i_result = result.try_into::<i64>();
@@ -205,9 +201,9 @@ mod tests {
             .def_rb_source_file("/foo/bar/source.rb", "# a source file")
             .expect("def file");
         let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
         let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
-        assert!(!result.try_into::<bool>().expect("convert"));
+        assert!(!result.try_into::<bool>(interp).expect("convert"));
     }
 
     #[test]
@@ -220,7 +216,7 @@ mod tests {
             .def_rb_source_file("/foo/bar.rb", "# a source file")
             .expect("def file");
         let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
-        assert!(result.try_into::<bool>().expect("convert"));
+        assert!(result.try_into::<bool>(interp).expect("convert"));
     }
 
     #[test]
@@ -252,7 +248,7 @@ mod tests {
             .expect("def");
         interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
         let result = interp.eval("require 'foo'").expect("eval");
-        let result = result.try_into::<bool>().expect("convert");
+        let result = result.try_into::<bool>(interp).expect("convert");
         assert!(result, "successfully required foo.rb");
         let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
         let result = result.try_into::<i64>().expect("convert");
@@ -277,7 +273,7 @@ mod tests {
             .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
             .expect("def");
         let result = interp.eval("require 'foo'").expect("eval");
-        let result = result.try_into::<bool>().expect("convert");
+        let result = result.try_into::<bool>(interp).expect("convert");
         assert!(result, "successfully required foo.rb");
         let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
         let result = result.try_into::<i64>().expect("convert");

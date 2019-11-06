@@ -58,12 +58,12 @@ fn preamble(interp: &Artichoke) -> Result<String, Error> {
     let description = interp
         .eval("RUBY_DESCRIPTION")
         .map_err(Error::Ruby)?
-        .try_into::<&str>()
+        .try_into::<&str>(interp)
         .map_err(Error::Ruby)?;
     let compiler = interp
         .eval("ARTICHOKE_COMPILER_VERSION")
         .map_err(Error::Ruby)?
-        .try_into::<&str>()
+        .try_into::<&str>(interp)
         .map_err(Error::Ruby)?;
     let mut buf = String::new();
     buf.push_str(description);
@@ -114,8 +114,10 @@ pub fn run(
                     continue;
                 }
                 match interp.eval(buf.as_str()) {
-                    Ok(value) => writeln!(output, "{}{}", config.result_prefix, value.inspect())
-                        .map_err(Error::Io)?,
+                    Ok(value) => {
+                        writeln!(output, "{}{}", config.result_prefix, value.inspect(&interp))
+                            .map_err(Error::Io)?
+                    }
                     Err(ArtichokeError::Exec(backtrace)) => {
                         writeln!(error, "Backtrace:").map_err(Error::Io)?;
                         for frame in backtrace.lines() {

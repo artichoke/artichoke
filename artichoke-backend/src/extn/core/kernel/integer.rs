@@ -27,9 +27,9 @@ pub fn method(
         Accumulate(Sign, String),
     }
     let radix = if let Some(radix) = radix {
-        if let Ok(radix) = radix.clone().try_into::<Int>() {
+        if let Ok(radix) = radix.clone().try_into::<Int>(interp) {
             Some(radix)
-        } else if let Ok(radix) = radix.funcall::<Int>("to_int", &[], None) {
+        } else if let Ok(radix) = radix.funcall::<Int>(interp, "to_int", &[], None) {
             Some(radix)
         } else {
             None
@@ -53,10 +53,10 @@ pub fn method(
         }
         None => None,
     };
-    let ruby_type = arg.pretty_name();
-    let arg = if let Ok(arg) = arg.clone().try_into::<&[u8]>() {
+    let ruby_type = arg.pretty_name(interp);
+    let arg = if let Ok(arg) = arg.clone().try_into::<&[u8]>(interp, ) {
         arg
-    } else if let Ok(arg) = arg.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(arg) = arg.funcall::<&[u8]>(interp, "to_str", &[], None) {
         arg
     } else {
         return Err(Box::new(TypeError::new(

@@ -17,9 +17,9 @@ pub struct Args<'a> {
 
 impl<'a> Args<'a> {
     pub fn extract(interp: &Artichoke, pattern: Value) -> Result<Self, Box<dyn RubyException>> {
-        if let Ok(pattern) = pattern.clone().try_into::<&str>() {
+        if let Ok(pattern) = pattern.clone().try_into::<&str>(interp) {
             Ok(Self { pattern })
-        } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+        } else if let Ok(pattern) = pattern.funcall::<&str>(interp, "to_str", &[], None) {
             Ok(Self { pattern })
         } else {
             Err(Box::new(TypeError::new(

@@ -41,7 +41,7 @@ fn main() {
     }
 
     let data = interp.convert(&include_bytes!("../../ruby/fixtures/learnxinyminutes.txt")[..]);
-    data.protect();
+    data.protect(&interp);
     unsafe { sys::mrb_gv_set(mrb, interp.0.borrow_mut().sym_intern("$data"), data.inner()) }
     let ctx = Context::new(b"(main)".as_ref());
     if let Err(err) = interp.eval_with_context(program, ctx) {

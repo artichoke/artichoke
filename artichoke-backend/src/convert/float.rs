@@ -9,7 +9,7 @@ pub type Float = f64;
 impl Convert<Float, Value> for Artichoke {
     fn convert(&self, value: Float) -> Value {
         let mrb = self.0.borrow().mrb;
-        Value::new(self, unsafe { sys::mrb_sys_float_value(mrb, value) })
+        Value::new(unsafe { sys::mrb_sys_float_value(mrb, value) })
     }
 }
 
@@ -49,7 +49,7 @@ mod tests {
             from: Ruby::Object,
             to: Rust::Float,
         });
-        let result = value.try_into::<Float>();
+        let result = value.try_into::<Float>(&interp);
         assert_eq!(result, expected);
     }
 
@@ -73,7 +73,7 @@ mod tests {
     fn roundtrip(f: Float) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(f);
-        let value = value.try_into::<Float>().expect("convert");
+        let value = value.try_into::<Float>(&interp).expect("convert");
         (value - f).abs() < std::f64::EPSILON
     }
 
@@ -81,7 +81,7 @@ mod tests {
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
-        let value = value.try_into::<Float>();
+        let value = value.try_into::<Float>(&interp);
         let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Bool,
             to: Rust::Float,

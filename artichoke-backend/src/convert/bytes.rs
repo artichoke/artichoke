@@ -23,7 +23,7 @@ impl Convert<&[u8], Value> for Artichoke {
         let len = value.len();
         // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
         // to worry about the lifetime of the slice passed into this converter.
-        Value::new(self, unsafe { sys::mrb_str_new(mrb, raw, len) })
+        Value::new(unsafe { sys::mrb_str_new(mrb, raw, len) })
     }
 }
 
@@ -94,7 +94,7 @@ mod tests {
             from: Ruby::Object,
             to: Rust::Bytes,
         });
-        let result = value.try_into::<Vec<u8>>();
+        let result = value.try_into::<Vec<u8>>(&interp);
         assert_eq!(result, expected);
     }
 
@@ -123,7 +123,7 @@ mod tests {
     fn roundtrip(v: Vec<u8>) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(v.clone());
-        let value = value.try_into::<Vec<u8>>().expect("convert");
+        let value = value.try_into::<Vec<u8>>(&interp).expect("convert");
         value == v
     }
 
@@ -131,7 +131,7 @@ mod tests {
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
-        let value = value.try_into::<Vec<u8>>();
+        let value = value.try_into::<Vec<u8>>(&interp);
         let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Bool,
             to: Rust::Bytes,

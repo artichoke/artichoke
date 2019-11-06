@@ -14,7 +14,7 @@ use crate::value::{Value, ValueLike};
 use crate::warn::Warn;
 use crate::Artichoke;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy)]
 pub struct Args {
     pub pattern: Value,
     pub options: Option<Options>,
@@ -29,30 +29,31 @@ impl Args {
         encoding: Option<Value>,
     ) -> Result<Self, Box<dyn RubyException>> {
         let (options, encoding) = if let Some(encoding) = encoding {
-            let encoding = match enc::parse(&encoding) {
+            let encoding = match enc::parse(interp, &encoding) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let warning = format!("encoding option is ignored -- {}", encoding.to_s());
+                    let warning =
+                        format!("encoding option is ignored -- {}", encoding.to_s(interp));
                     interp
                         .warn(warning.as_str())
                         .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
                     None
                 }
             };
-            let options = options.as_ref().map(opts::parse);
+            let options = options.as_ref().map(|opt| opts::parse(interp, opt));
             (options, encoding)
         } else if let Some(options) = options {
-            let encoding = match enc::parse(&options) {
+            let encoding = match enc::parse(interp, &options) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let warning = format!("encoding option is ignored -- {}", options.to_s());
+                    let warning = format!("encoding option is ignored -- {}", options.to_s(interp));
                     interp
                         .warn(warning.as_str())
                         .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
                     None
                 }
             };
-            let options = opts::parse(&options);
+            let options = opts::parse(interp, &options);
             (Some(options), encoding)
         } else {
             (None, None)
@@ -82,12 +83,12 @@ pub fn method(
             let borrow = regexp.borrow();
             literal_options = borrow.options;
             borrow.literal_pattern.to_owned()
-        } else if let Ok(bytes) = args.pattern.clone().try_into::<&[u8]>() {
+        } else if let Ok(bytes) = args.pattern.clone().try_into::<&[u8]>(interp) {
             str::from_utf8(bytes)
                 .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?
                 // Defer allocating until the parse succeds
                 .to_owned()
-        } else if let Ok(bytes) = args.pattern.funcall::<&[u8]>("to_str", &[], None) {
+        } else if let Ok(bytes) = args.pattern.funcall::<&[u8]>(interp, "to_str", &[], None) {
             str::from_utf8(bytes)
                 .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?
                 // Defer allocating until the parse succeds

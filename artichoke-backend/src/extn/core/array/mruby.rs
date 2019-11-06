@@ -112,7 +112,7 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
     let values = slice::from_raw_parts(vals, size);
     let values = values
         .iter()
-        .map(|val| Value::new(&interp, *val))
+        .map(|val| Value::new(*val))
         .collect::<Vec<_>>();
     let result = array::trampoline::from_values(&interp, values.as_slice());
     drop(values);
@@ -133,7 +133,7 @@ pub unsafe extern "C" fn artichoke_ary_splat(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, value);
+    let value = Value::new(value);
     let result = array::trampoline::splat(&interp, value);
     match result {
         Ok(value) => {
@@ -153,8 +153,8 @@ pub unsafe extern "C" fn artichoke_ary_concat(
     other: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let other = Value::new(&interp, other);
+    let array = Value::new(ary);
+    let other = Value::new(other);
     let result = array::trampoline::concat(&interp, array, Some(other));
     match result {
         Ok(value) => {
@@ -173,7 +173,7 @@ pub unsafe extern "C" fn artichoke_ary_pop(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
+    let array = Value::new(ary);
     let result = array::trampoline::pop(&interp, array);
     match result {
         Ok(value) => {
@@ -193,8 +193,8 @@ pub unsafe extern "C" fn artichoke_ary_push(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let value = Value::new(&interp, value);
+    let array = Value::new(ary);
+    let value = Value::new(value);
     let result = array::trampoline::push(&interp, array, value);
     match result {
         Ok(value) => {
@@ -214,7 +214,7 @@ pub unsafe extern "C" fn artichoke_ary_ref(
     offset: sys::mrb_int,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let ary = Value::new(ary);
     let offset = isize::try_from(offset).unwrap_or_default();
     let result = array::trampoline::ary_ref(&interp, ary, offset);
     match result {
@@ -232,8 +232,8 @@ pub unsafe extern "C" fn artichoke_ary_set(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let value = Value::new(&interp, value);
+    let array = Value::new(ary);
+    let value = Value::new(value);
     let offset = isize::try_from(offset).unwrap_or_default();
     let result = array::trampoline::element_set(&interp, array, offset, value);
     match result {
@@ -252,7 +252,7 @@ pub unsafe extern "C" fn artichoke_ary_clone(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, value);
+    let ary = Value::new(value);
     let result = array::trampoline::clone(&interp, ary);
     match result {
         Ok(value) => {
@@ -270,7 +270,7 @@ pub unsafe extern "C" fn artichoke_value_to_ary(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, value);
+    let value = Value::new(value);
     let result = array::trampoline::to_ary(&interp, value);
     match result {
         Ok(value) => {
@@ -291,7 +291,7 @@ pub unsafe extern "C" fn artichoke_ary_len(
         Ok(interp) => interp,
         Err(_) => return 0,
     };
-    let ary = Value::new(&interp, ary);
+    let ary = Value::new(ary);
     let result = array::trampoline::len(&interp, ary)
         .map(|len| sys::mrb_int::try_from(len).unwrap_or_default());
     match result {
@@ -303,7 +303,7 @@ pub unsafe extern "C" fn artichoke_ary_len(
 pub unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let ary = Value::new(ary);
     let result = array::trampoline::len(&interp, ary)
         .map(|len| sys::mrb_int::try_from(len).unwrap_or_default());
     match result {
@@ -318,8 +318,8 @@ pub unsafe extern "C" fn ary_concat(
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, optional = 1);
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let other = other.map(|other| Value::new(&interp, other));
+    let array = Value::new(ary);
+    let other = other.map(|other| Value::new(other));
     let result = array::trampoline::concat(&interp, array, other);
     match result {
         Ok(value) => {
@@ -337,9 +337,9 @@ pub unsafe extern "C" fn ary_initialize(
 ) -> sys::mrb_value {
     let (first, second, block) = mrb_get_args!(mrb, optional = 2, &block);
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let first = first.map(|first| Value::new(&interp, first));
-    let second = second.map(|second| Value::new(&interp, second));
+    let array = Value::new(ary);
+    let first = first.map(|first| Value::new(first));
+    let second = second.map(|second| Value::new(second));
     let result = array::trampoline::initialize(&interp, array, first, second, block);
     match result {
         Ok(value) => {
@@ -357,8 +357,8 @@ pub unsafe extern "C" fn ary_initialize_copy(
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let other = Value::new(&interp, other);
+    let array = Value::new(ary);
+    let other = Value::new(other);
     let result = array::trampoline::initialize_copy(&interp, array, other);
     match result {
         Ok(value) => {
@@ -379,7 +379,7 @@ pub unsafe extern "C" fn artichoke_ary_check(
         Ok(interp) => interp,
         Err(_) => return 0,
     };
-    let ary = Value::new(&interp, ary);
+    let ary = Value::new(ary);
     if array::Array::try_from_ruby(&interp, &ary).is_ok() {
         1_u8
     } else {
@@ -393,7 +393,7 @@ pub unsafe extern "C" fn artichoke_ary_shift(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
+    let array = Value::new(ary);
     let result = array::trampoline::shift(&interp, array, Some(1));
     match result {
         Ok(value) => {
@@ -411,7 +411,7 @@ pub unsafe extern "C" fn ary_reverse(
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let ary = Value::new(ary);
     let result = array::trampoline::reverse(&interp, ary);
     match result {
         Ok(value) => value.inner(),
@@ -425,7 +425,7 @@ pub unsafe extern "C" fn ary_reverse_bang(
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
+    let array = Value::new(ary);
     let result = array::trampoline::reverse_bang(&interp, array);
     match result {
         Ok(value) => {
@@ -444,8 +444,8 @@ pub unsafe extern "C" fn artichoke_ary_unshift(
     val: sys::mrb_value,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let val = Value::new(&interp, val);
+    let array = Value::new(ary);
+    let val = Value::new(val);
     let result = array::trampoline::unshift(&interp, array, val);
     match result {
         Ok(value) => {
@@ -463,9 +463,9 @@ pub unsafe extern "C" fn ary_element_reference(
 ) -> sys::mrb_value {
     let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
     let interp = unwrap_interpreter!(mrb);
-    let elem = Value::new(&interp, elem);
-    let len = len.map(|len| Value::new(&interp, len));
-    let array = Value::new(&interp, ary);
+    let elem = Value::new(elem);
+    let len = len.map(|len| Value::new(len));
+    let array = Value::new(ary);
     let result = array::trampoline::element_reference(&interp, array, elem, len);
     match result {
         Ok(value) => value.inner(),
@@ -479,10 +479,10 @@ pub unsafe extern "C" fn ary_element_assignment(
 ) -> sys::mrb_value {
     let (first, second, third) = mrb_get_args!(mrb, required = 2, optional = 1);
     let interp = unwrap_interpreter!(mrb);
-    let first = Value::new(&interp, first);
-    let second = Value::new(&interp, second);
-    let third = third.map(|third| Value::new(&interp, third));
-    let array = Value::new(&interp, ary);
+    let first = Value::new(first);
+    let second = Value::new(second);
+    let third = third.map(|third| Value::new(third));
+    let array = Value::new(ary);
     let result = array::trampoline::element_assignment(&interp, array, first, second, third);
     match result {
         Ok(value) => {
@@ -497,7 +497,7 @@ pub unsafe extern "C" fn ary_element_assignment(
 #[no_mangle]
 pub unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::mrb_value) {
     if let Ok(interp) = crate::ffi::from_user_data(mrb) {
-        let array = Value::new(&interp, ary);
+        let array = Value::new(ary);
         if let Ok(array) = array::Array::try_from_ruby(&interp, &array) {
             let borrow = array.borrow();
             borrow.gc_mark(&interp);
@@ -511,7 +511,7 @@ pub unsafe extern "C" fn artichoke_gc_mark_ary_size(
     ary: sys::mrb_value,
 ) -> usize {
     if let Ok(interp) = crate::ffi::from_user_data(mrb) {
-        let array = Value::new(&interp, ary);
+        let array = Value::new(ary);
         if let Ok(array) = array::Array::try_from_ruby(&interp, &array) {
             let borrow = array.borrow();
             return borrow.real_children();

@@ -27,7 +27,7 @@ pub fn method(interp: &Artichoke, args: &[Value]) -> Result<Value, Box<dyn RubyE
                 for pattern in ary {
                     if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
                         patterns.push(regexp.borrow().pattern.clone());
-                    } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                    } else if let Ok(pattern) = pattern.funcall::<&str>(interp, "to_str", &[], None) {
                         patterns.push(syntax::escape(pattern));
                     } else {
                         return Err(Box::new(TypeError::new(
@@ -41,7 +41,7 @@ pub fn method(interp: &Artichoke, args: &[Value]) -> Result<Value, Box<dyn RubyE
                 let pattern = first;
                 if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
                     regexp.borrow().pattern.clone()
-                } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                } else if let Ok(pattern) = pattern.funcall::<&str>(interp, "to_str", &[], None) {
                     syntax::escape(pattern)
                 } else {
                     return Err(Box::new(TypeError::new(
@@ -54,11 +54,11 @@ pub fn method(interp: &Artichoke, args: &[Value]) -> Result<Value, Box<dyn RubyE
             let mut patterns = vec![];
             if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &first) } {
                 patterns.push(regexp.borrow().pattern.clone());
-            } else if let Ok(bytes) = first.clone().try_into::<&[u8]>() {
+            } else if let Ok(bytes) = first.clone().try_into::<&[u8]>(interp, ) {
                 let pattern = str::from_utf8(bytes)
                     .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?;
                 patterns.push(syntax::escape(pattern));
-            } else if let Ok(bytes) = first.funcall::<&[u8]>("to_str", &[], None) {
+            } else if let Ok(bytes) = first.funcall::<&[u8]>(interp, "to_str", &[], None) {
                 let pattern = str::from_utf8(bytes)
                     .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?;
                 patterns.push(syntax::escape(pattern));
@@ -71,11 +71,11 @@ pub fn method(interp: &Artichoke, args: &[Value]) -> Result<Value, Box<dyn RubyE
             for pattern in iter {
                 if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
                     patterns.push(regexp.borrow().pattern.clone());
-                } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
+                } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>(interp, ) {
                     let pattern = str::from_utf8(bytes)
                         .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?;
                     patterns.push(syntax::escape(pattern));
-                } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+                } else if let Ok(bytes) = pattern.funcall::<&[u8]>(interp, "to_str", &[], None) {
                     let pattern = str::from_utf8(bytes)
                         .map_err(|_| RuntimeError::new(interp, "Pattern is invalid UTF-8"))?;
                     patterns.push(syntax::escape(pattern));

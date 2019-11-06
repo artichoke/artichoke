@@ -5,6 +5,7 @@ use onig::RegexOptions;
 use crate::extn::core::regexp::Regexp;
 use crate::types::Int;
 use crate::value::{Value, ValueLike};
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct Options {
@@ -69,12 +70,12 @@ impl Options {
     }
 }
 
-pub fn parse(value: &Value) -> Options {
+pub fn parse(interp: &Artichoke, value: &Value) -> Options {
     // If options is an Integer, it should be one or more of the constants
     // Regexp::EXTENDED, Regexp::IGNORECASE, and Regexp::MULTILINE, logically
     // or-ed together. Otherwise, if options is not nil or false, the regexp
     // will be case insensitive.
-    if let Ok(options) = value.itself::<Int>() {
+    if let Ok(options) = value.itself::<Int>(interp) {
         // Only deal with Regexp opts
         let options = options & Regexp::ALL_REGEXP_OPTS;
         Options {
@@ -82,12 +83,12 @@ pub fn parse(value: &Value) -> Options {
             ignore_case: options & Regexp::IGNORECASE > 0,
             extended: options & Regexp::EXTENDED > 0,
         }
-    } else if let Ok(options) = value.itself::<Option<bool>>() {
+    } else if let Ok(options) = value.itself::<Option<bool>>(interp) {
         match options {
             Some(false) | None => Options::default(),
             _ => Options::ignore_case(),
         }
-    } else if let Ok(options) = value.itself::<Option<&str>>() {
+    } else if let Ok(options) = value.itself::<Option<&str>>(interp) {
         if let Some(options) = options {
             Options {
                 multiline: options.contains('m'),

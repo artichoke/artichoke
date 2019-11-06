@@ -60,9 +60,9 @@ impl Array {
         let result = if let Some(first) = first {
             if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
                 ary.borrow().0.box_clone()
-            } else if let Ok(true) = first.respond_to("to_ary") {
-                let ruby_type = first.pretty_name();
-                if let Ok(other) = first.funcall("to_ary", &[], None) {
+            } else if let Ok(true) = first.respond_to(interp, "to_ary") {
+                let ruby_type = first.pretty_name(interp);
+                if let Ok(other) = first.funcall(interp, "to_ary", &[], None) {
                     if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                         other.borrow().0.box_clone()
                     } else {
@@ -71,7 +71,7 @@ impl Array {
                             format!(
                             "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
                             classname = ruby_type,
-                            gives = other.pretty_name()
+                            gives = other.pretty_name(interp)
                         ),
                         )));
                     }
@@ -82,7 +82,7 @@ impl Array {
                         "Error calling #to_a even though it exists",
                     )));
                 }
-            } else if let Ok(len) = first.clone().try_into::<Int>() {
+            } else if let Ok(len) = first.clone().try_into::<Int>(interp) {
                 let len = usize::try_from(len)
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
                 if let Some(block) = block {
@@ -109,7 +109,7 @@ impl Array {
                 } else {
                     backend::fixed::hole(len)
                 }
-            } else if let Ok(len) = first.funcall::<Int>("to_int", &[], None) {
+            } else if let Ok(len) = first.funcall::<Int>(interp, "to_int", &[], None) {
                 let len = usize::try_from(len)
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
                 if let Some(block) = block {
@@ -141,7 +141,7 @@ impl Array {
                     interp,
                     format!(
                         "no implicit conversion of {} into Integer",
-                        first.pretty_name()
+                        first.pretty_name(interp)
                     ),
                 )));
             }
@@ -216,9 +216,9 @@ impl Array {
                     other.borrow().0.box_clone(),
                     &mut realloc,
                 )?;
-            } else if let Ok(true) = elem.respond_to("to_ary") {
-                let ruby_type = elem.pretty_name();
-                if let Ok(other) = elem.funcall("to_ary", &[], None) {
+            } else if let Ok(true) = elem.respond_to(interp, "to_ary") {
+                let ruby_type = elem.pretty_name(interp);
+                if let Ok(other) = elem.funcall(interp, "to_ary", &[], None) {
                     if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                         self.0.set_slice(
                             interp,
@@ -233,7 +233,7 @@ impl Array {
                             format!(
                             "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
                             classname = ruby_type,
-                            gives = other.pretty_name()
+                            gives = other.pretty_name(interp)
                         ),
                         )));
                     }
@@ -354,9 +354,9 @@ impl Array {
     ) -> Result<(), Box<dyn RubyException>> {
         let other = if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             other.borrow().0.box_clone()
-        } else if let Ok(true) = other.respond_to("to_ary") {
-            let ruby_type = other.pretty_name();
-            if let Ok(other) = other.funcall("to_ary", &[], None) {
+        } else if let Ok(true) = other.respond_to(interp, "to_ary") {
+            let ruby_type = other.pretty_name(interp);
+            if let Ok(other) = other.funcall(interp, "to_ary", &[], None) {
                 if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                     other.borrow().0.box_clone()
                 } else {
@@ -365,7 +365,7 @@ impl Array {
                         format!(
                             "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
                             classname = ruby_type,
-                            gives = other.pretty_name()
+                            gives = other.pretty_name(interp)
                         ),
                     )));
                 }
@@ -381,7 +381,7 @@ impl Array {
                 interp,
                 format!(
                     "no implicit conversion of {classname} into Array",
-                    classname = other.pretty_name(),
+                    classname = other.pretty_name(interp),
                 ),
             )));
         };

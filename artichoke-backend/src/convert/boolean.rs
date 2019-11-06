@@ -7,9 +7,9 @@ use crate::{Artichoke, ArtichokeError};
 impl Convert<bool, Value> for Artichoke {
     fn convert(&self, value: bool) -> Value {
         if value {
-            Value::new(self, unsafe { sys::mrb_sys_true_value() })
+            Value::new(unsafe { sys::mrb_sys_true_value() })
         } else {
-            Value::new(self, unsafe { sys::mrb_sys_false_value() })
+            Value::new(unsafe { sys::mrb_sys_false_value() })
         }
     }
 }
@@ -59,7 +59,7 @@ mod tests {
             from: Ruby::Object,
             to: Rust::Bool,
         });
-        let result = value.try_into::<bool>();
+        let result = value.try_into::<bool>(&interp);
         assert_eq!(result, expected);
     }
 
@@ -90,7 +90,7 @@ mod tests {
     fn roundtrip(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
-        let value = value.try_into::<bool>().expect("convert");
+        let value = value.try_into::<bool>(&interp).expect("convert");
         value == b
     }
 
@@ -98,7 +98,7 @@ mod tests {
     fn roundtrip_err(i: i64) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(i);
-        let value = value.try_into::<bool>();
+        let value = value.try_into::<bool>(&interp);
         let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Fixnum,
             to: Rust::Bool,

@@ -92,23 +92,23 @@ impl ExceptionHandler for Artichoke {
         // message = exception.message
         // backtrace = exception.backtrace
         // ```
-        let exception = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
+        let exception = Value::new(unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
         let class = exception
-            .funcall::<Value>("class", &[], None)
-            .and_then(|exception| exception.funcall::<&str>("name", &[], None));
+            .funcall::<Value>(self, "class", &[], None)
+            .and_then(|exception| exception.funcall::<&str>(self, "name", &[], None));
         let class = match class {
             Ok(class) => class,
             Err(err) => return LastError::UnableToExtract(err),
         };
-        let message = match exception.funcall::<&str>("message", &[], None) {
+        let message = match exception.funcall::<&str>(self, "message", &[], None) {
             Ok(message) => message,
             Err(err) => return LastError::UnableToExtract(err),
         };
-        let backtrace = match exception.funcall::<Option<Vec<&str>>>("backtrace", &[], None) {
+        let backtrace = match exception.funcall::<Option<Vec<&str>>>(self, "backtrace", &[], None) {
             Ok(backtrace) => backtrace,
             Err(err) => return LastError::UnableToExtract(err),
         };
-        let inspect = match exception.funcall::<&str>("inspect", &[], None) {
+        let inspect = match exception.funcall::<&str>(self, "inspect", &[], None) {
             Ok(inspect) => inspect,
             Err(err) => return LastError::UnableToExtract(err),
         };
@@ -183,7 +183,7 @@ fail
             "#,
         );
         let kernel = interp.eval(r#"Kernel"#).unwrap();
-        let _ = kernel.funcall::<Value>("raise", &[], None);
-        let _ = kernel.funcall::<Value>("raise", &[], None);
+        let _ = kernel.funcall::<Value>(interp, "raise", &[], None);
+        let _ = kernel.funcall::<Value>(interp, "raise", &[], None);
     }
 }

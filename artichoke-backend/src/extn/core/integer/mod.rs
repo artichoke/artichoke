@@ -44,13 +44,13 @@ impl Integer {
     pub unsafe extern "C" fn chr(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let encoding = mrb_get_args!(mrb, optional = 1);
         let interp = unwrap_interpreter!(mrb);
-        let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
+        let encoding = encoding.map(|encoding| Value::new(encoding));
         let result: Result<Value, Box<dyn RubyException>> = if let Some(encoding) = encoding {
             Err(Box::new(NotImplementedError::new(
                 &interp,
                 format!(
                     "encoding parameter of Integer#chr (given {}) not supported",
-                    encoding.inspect()
+                    encoding.inspect(&interp)
                 ),
             )))
         } else {
@@ -81,7 +81,7 @@ impl Integer {
             //         1: from (irb):9:in `chr'
             // RangeError (256 out of char range)
             // ```
-            if let Ok(chr) = Value::new(&interp, slf).try_into::<Int>() {
+            if let Ok(chr) = Value::new(slf).try_into::<Int>(&interp) {
                 match u8::try_from(chr) {
                     Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
                         // ASCII encoding | Binary/ASCII-8BIT encoding

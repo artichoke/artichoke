@@ -133,8 +133,8 @@ impl MatchData {
     unsafe extern "C" fn begin(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let begin = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = begin::Args::extract(&interp, Value::new(&interp, begin))
+        let value = Value::new(slf);
+        let result = begin::Args::extract(&interp, Value::new(begin))
             .and_then(|args| begin::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
@@ -145,7 +145,7 @@ impl MatchData {
     unsafe extern "C" fn captures(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = captures::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -159,13 +159,13 @@ impl MatchData {
     ) -> sys::mrb_value {
         let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = element_reference::Args::num_captures(&interp, &value)
             .and_then(|num_captures| {
                 element_reference::Args::extract(
                     &interp,
-                    Value::new(&interp, elem),
-                    len.map(|len| Value::new(&interp, len)),
+                    Value::new(elem),
+                    len.map(|len| Value::new(len)),
                     num_captures,
                 )
             })
@@ -180,8 +180,8 @@ impl MatchData {
         let end = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
         // TODO: Value should be consumed before the call to `exception::raise`.
-        let value = Value::new(&interp, slf);
-        let result = end::Args::extract(&interp, Value::new(&interp, end))
+        let value = Value::new(slf);
+        let result = end::Args::extract(&interp, Value::new(end))
             .and_then(|args| end::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
@@ -192,7 +192,7 @@ impl MatchData {
     unsafe extern "C" fn length(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = length::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -206,7 +206,7 @@ impl MatchData {
     ) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = named_captures::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -217,7 +217,7 @@ impl MatchData {
     unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = names::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -228,8 +228,8 @@ impl MatchData {
     unsafe extern "C" fn offset(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let elem = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = offset::Args::extract(&interp, Value::new(&interp, elem))
+        let value = Value::new(slf);
+        let result = offset::Args::extract(&interp, Value::new(elem))
             .and_then(|args| offset::method(&interp, args, &value));
         match result {
             Ok(result) => result.inner(),
@@ -243,7 +243,7 @@ impl MatchData {
     ) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = post_match::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -257,7 +257,7 @@ impl MatchData {
     ) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = pre_match::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -268,7 +268,7 @@ impl MatchData {
     unsafe extern "C" fn regexp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = regexp::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -279,7 +279,7 @@ impl MatchData {
     unsafe extern "C" fn string(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = string::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -291,7 +291,7 @@ impl MatchData {
     unsafe extern "C" fn to_a(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = to_a::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),
@@ -303,7 +303,7 @@ impl MatchData {
     unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
+        let value = Value::new(slf);
         let result = to_s::method(&interp, &value);
         match result {
             Ok(result) => result.inner(),

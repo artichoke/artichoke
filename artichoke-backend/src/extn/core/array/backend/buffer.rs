@@ -9,7 +9,7 @@ use crate::Artichoke;
 
 pub const BUFFER_INLINE_MAX: usize = 128;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Buffer(Vec<Value>);
 
 impl Buffer {

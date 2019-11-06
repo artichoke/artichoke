@@ -15,7 +15,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Box<dyn RubyEx
     })?;
     let mut result = interp.convert(data.borrow().string.as_bytes());
     result
-        .freeze()
+        .freeze(interp)
         .map_err(|_| Fatal::new(interp, "Unable to freeze MatchData#string result"))?;
     Ok(result)
 }
