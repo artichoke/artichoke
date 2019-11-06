@@ -1,4 +1,3 @@
-use std::any::TypeId;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
@@ -26,6 +25,9 @@ pub trait RustBackedValue
 where
     Self: 'static + Sized,
 {
+    /// Class or module name of this data type.
+    fn ruby_type_name() -> &'static str;
+
     /// Try to convert a Rust object into a [`Value`].
     ///
     /// Inject the data pointer into `slf` if it is provided, otherwise call
@@ -113,8 +115,8 @@ where
         let ptr = sys::mrb_data_get_ptr(mrb, slf.inner(), borrow.data_type());
         if ptr.is_null() {
             panic!(
-                "got null pointer when extracting {:?}",
-                TypeId::of::<Self>()
+                "got null pointer when extracting {}",
+                Self::ruby_type_name()
             );
         }
         let data = Rc::from_raw(ptr as *const RefCell<Self>);
@@ -124,7 +126,14 @@ where
     }
 }
 
-impl<T> RustBackedValue for Box<T> where T: RustBackedValue {}
+impl<T> RustBackedValue for Box<T>
+where
+    T: RustBackedValue,
+{
+    fn ruby_type_name() -> &'static str {
+        T::ruby_type_name()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -158,7 +167,11 @@ mod tests {
         }
     }
 
-    impl RustBackedValue for Container {}
+    impl RustBackedValue for Container {
+        fn ruby_type_name() -> &'static str {
+            "Container"
+        }
+    }
 
     #[derive(Debug, Default, Clone, Copy)]
     // this struct is stack allocated
@@ -166,7 +179,11 @@ mod tests {
         _inner: bool,
     }
 
-    impl RustBackedValue for Other {}
+    impl RustBackedValue for Other {
+        fn ruby_type_name() -> &'static str {
+            "Other"
+        }
+    }
 
     #[test]
     fn convert_obj_roundtrip() {

@@ -39,7 +39,11 @@ struct Container {
     inner: String,
 }
 
-impl RustBackedValue for Container {}
+impl RustBackedValue for Container {
+    fn ruby_type_name() -> &'static str {
+        "Container"
+    }
+}
 
 impl Container {
     unsafe extern "C" fn initialize(

@@ -143,7 +143,11 @@
 //!     }
 //! }
 //!
-//! impl RustBackedValue for Container {}
+//! impl RustBackedValue for Container {
+//!     fn ruby_type_name() -> &'static str {
+//!         "Container"
+//!     }
+//! }
 //!
 //! impl File for Container {
 //!   fn require(interp: Artichoke) -> Result<(), ArtichokeError> {

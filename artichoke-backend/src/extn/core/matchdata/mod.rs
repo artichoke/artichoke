@@ -110,7 +110,11 @@ pub struct MatchData {
     region: Region,
 }
 
-impl RustBackedValue for MatchData {}
+impl RustBackedValue for MatchData {
+    fn ruby_type_name() -> &'static str {
+        "MatchData"
+    }
+}
 
 impl MatchData {
     pub fn new(string: &str, regexp: Regexp, start: usize, end: usize) -> Self {

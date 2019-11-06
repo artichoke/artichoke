@@ -151,7 +151,11 @@ impl Hash for Regexp {
     }
 }
 
-impl RustBackedValue for Regexp {}
+impl RustBackedValue for Regexp {
+    fn ruby_type_name() -> &'static str {
+        "Regexp"
+    }
+}
 
 impl Regexp {
     pub const IGNORECASE: Int = 1;

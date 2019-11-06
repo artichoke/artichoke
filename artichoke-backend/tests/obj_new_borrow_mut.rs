@@ -20,7 +20,11 @@ use artichoke_backend::sys;
 
 struct Obj;
 
-impl RustBackedValue for Obj {}
+impl RustBackedValue for Obj {
+    fn ruby_type_name() -> &'static str {
+        "Obj"
+    }
+}
 
 unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);

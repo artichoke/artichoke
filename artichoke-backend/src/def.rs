@@ -1,4 +1,3 @@
-use std::any::TypeId;
 use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::fmt;
@@ -28,8 +27,8 @@ pub unsafe extern "C" fn rust_data_free<T: 'static + RustBackedValue>(
 ) {
     if data.is_null() {
         panic!(
-            "Received null pointer in rust_data_free<{:?}>",
-            TypeId::of::<T>()
+            "Received null pointer in rust_data_free<{}>",
+            T::ruby_type_name()
         );
     }
     let data = Rc::from_raw(data as *const RefCell<T>);

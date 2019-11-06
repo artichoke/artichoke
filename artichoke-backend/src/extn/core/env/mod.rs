@@ -26,7 +26,11 @@ pub trait Env {
 
 pub struct ENV(Box<dyn Env>);
 
-impl RustBackedValue for ENV {}
+impl RustBackedValue for ENV {
+    fn ruby_type_name() -> &'static str {
+        "EnvClass"
+    }
+}
 
 pub fn initialize(
     interp: &Artichoke,
