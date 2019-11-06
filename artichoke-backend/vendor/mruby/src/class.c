@@ -545,7 +545,9 @@ mrb_get_argv(mrb_state *mrb)
   mrb_value *array_argv;
   if (argc < 0) {
     mrb_int argc = ARRAY_LEN(mrb, mrb->c->stack[1]);
-    array_argv = RARRAY_PTR(mrb_ary_new_capa(mrb, argc));
+    mrb_value argv_mrb = mrb_ary_new_capa(mrb, argc);
+    mrb_gc_protect(mrb, argv_mrb);
+    array_argv = RARRAY_PTR(argv_mrb);
     int udx;
     for (udx = 0; udx < argc; udx++) {
       array_argv[udx] = ARY_REF(mrb, mrb->c->stack[1], udx);

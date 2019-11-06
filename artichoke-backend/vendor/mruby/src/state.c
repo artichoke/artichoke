@@ -40,7 +40,9 @@ mrb_open_core(mrb_allocf f, void *ud)
   *mrb->c = mrb_context_zero;
   mrb->root_c = mrb->c;
 
+  mrb->gc.disabled = 1;
   mrb_init_core(mrb);
+  mrb->gc.disabled = 0;
 
   return mrb;
 }

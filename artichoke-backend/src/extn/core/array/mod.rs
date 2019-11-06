@@ -443,7 +443,11 @@ impl Array {
     }
 }
 
-impl RustBackedValue for Array {}
+impl RustBackedValue for Array {
+    fn ruby_type_name() -> &'static str {
+        "Array"
+    }
+}
 
 #[allow(clippy::module_name_repetitions)]
 pub trait ArrayType: Any {
