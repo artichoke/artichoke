@@ -1718,6 +1718,7 @@ RETRY_TRY_BLOCK:
           pp = stack[m1];
         }
         regs[a] = ARY_NEW_CAPA(mrb, m1 + len + m2 + kd);
+        mrb_gc_protect(mrb, regs[a]);
         int i, idx;
         idx = 0;
         if (m1 > 0) {
@@ -1767,13 +1768,15 @@ RETRY_TRY_BLOCK:
       /* arguments is passed with Array */
       if (argc < 0) {
         mrb_value ary = regs[1];
+        mrb_gc_protect(mrb, ary);
         argc = ARRAY_LEN(mrb, ary);
-        argv = RARRAY_PTR(mrb_ary_new_capa(mrb, argc));
+        mrb_value ary_argv = mrb_ary_new_capa(mrb, argc);
+        mrb_gc_protect(mrb, ary_argv);
+        argv = RARRAY_PTR(ary_argv);
         int udx;
         for (udx = 0; udx < argc; udx++) {
           argv[udx] = ARY_REF(mrb, ary, udx);
         }
-        mrb_gc_protect(mrb, ary);
       }
 
       /* strict argument check */
@@ -1786,13 +1789,15 @@ RETRY_TRY_BLOCK:
       /* extract first argument array to arguments */
       else if (len > 1 && argc == 1 && ARY_CHECK(mrb, argv[0])) {
         mrb_value ary = argv[0];
+        mrb_gc_protect(mrb, ary);
         argc = ARRAY_LEN(mrb, ary);
-        argv = RARRAY_PTR(mrb_ary_new_capa(mrb, argc));
+        mrb_value ary_argv = mrb_ary_new_capa(mrb, argc);
+        mrb_gc_protect(mrb, ary_argv);
+        argv = RARRAY_PTR(ary_argv);
         int udx;
         for (udx = 0; udx < argc; udx++) {
           argv[udx] = ARY_REF(mrb, ary, udx);
         }
-        mrb_gc_protect(mrb, ary);
       }
 
       if (kd) {
@@ -2524,31 +2529,34 @@ RETRY_TRY_BLOCK:
 
     CASE(OP_APOST, BBB) {
       mrb_value v = regs[a];
-      mrb_value out;
       int pre  = b;
       int post = c;
+      struct RArray *ary;
       int len, idx;
 
       if (!ARY_CHECK(mrb, v)) {
         v = ARY_NEW_FROM_VALUES(mrb, 1, &regs[a]);
       }
       len = ARRAY_LEN(mrb, v);
+      mrb_value v_mrb = mrb_ary_new_capa(mrb, len);
+      mrb_gc_protect(mrb, v_mrb);
+      ary = mrb_ary_ptr(v_mrb);
+      int i;
+      for (i = 0; i < len; i++) {
+        ARY_PTR(ary)[i] = ARY_REF(mrb, v, i);
+      }
       if (len > pre + post) {
-        out = ARY_NEW_CAPA(mrb, len - pre - post);
-        int udx;
-        for (udx = 0; udx < len - pre - post; udx++) {
-          ARY_SET(mrb, out, udx, ARY_REF(mrb, v, pre + udx));
-        }
-        regs[a++] = out;
+        v = ARY_NEW_FROM_VALUES(mrb, len - pre - post, ARY_PTR(ary)+pre);
+        regs[a++] = v;
         while (post--) {
-          regs[a++] = ARY_REF(mrb, v, len-post-1);
+          regs[a++] = ARY_PTR(ary)[len-post-1];
         }
       }
       else {
-        out = ARY_NEW_CAPA(mrb, 0);
-        regs[a++] = out;
+        v = ARY_NEW_CAPA(mrb, 0);
+        regs[a++] = v;
         for (idx=0; idx+pre<len; idx++) {
-          regs[a+idx] = ARY_REF(mrb, v, pre+idx);
+          regs[a+idx] = ARY_PTR(ary)[pre+idx];
         }
         while (idx < post) {
           SET_NIL_VALUE(regs[a+idx]);

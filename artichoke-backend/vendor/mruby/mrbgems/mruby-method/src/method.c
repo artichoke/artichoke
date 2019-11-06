@@ -276,7 +276,7 @@ method_parameters(mrb_state *mrb, mrb_value self)
 
   if (mrb_nil_p(proc)) {
     mrb_value rest = mrb_symbol_value(mrb_intern_lit(mrb, "rest"));
-    mrb_value arest = mrb_ary_new_from_values(mrb, 1, &rest);
+    mrb_value arest = ARY_NEW_FROM_VALUES(mrb, 1, &rest);
     return ARY_NEW_FROM_VALUES(mrb, 1, &arest);
   }
 
