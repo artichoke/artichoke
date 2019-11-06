@@ -2541,6 +2541,7 @@ RETRY_TRY_BLOCK:
         v = ARY_NEW_FROM_VALUES(mrb, 1, &regs[a]);
       }
       len = ARRAY_LEN(mrb, v);
+      mrb_gc_protect(mrb, v);
       mrb_value v_mrb = mrb_ary_new_capa(mrb, len);
       mrb_gc_protect(mrb, v_mrb);
       ary = mrb_ary_ptr(v_mrb);
