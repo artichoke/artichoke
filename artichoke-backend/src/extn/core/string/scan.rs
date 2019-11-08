@@ -63,9 +63,10 @@ pub fn method(
                 .find_iter(pattern_bytes)
                 .enumerate()
                 .last()
+                .map(|(m, p)| (m + 1, p))
                 .unwrap_or_default();
             let mut result = Vec::with_capacity(matches);
-            for _ in 0..=matches {
+            for _ in 0..matches {
                 result.push(interp.convert(pattern_bytes));
             }
             if matches > 0 {
