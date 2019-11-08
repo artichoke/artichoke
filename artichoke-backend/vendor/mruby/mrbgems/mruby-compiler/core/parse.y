@@ -4544,6 +4544,7 @@ parse_string(parser_state *p)
     char *dup;
 
     newtok(p);
+    f |= 128; // literal
     while (re_opt = nextc(p), re_opt >= 0 && ISALPHA(re_opt)) {
       switch (re_opt) {
       case 'i': f |= 1; break;

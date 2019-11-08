@@ -8,7 +8,6 @@ use std::mem;
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::exception::{Fatal, IndexError, RubyException, TypeError};
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::Backend;
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
@@ -34,13 +33,7 @@ impl<'a> Args<'a> {
             )
         })?;
         let borrow = data.borrow();
-        let regex = (*borrow.regexp.regex)
-            .as_ref()
-            .ok_or_else(|| Fatal::new(interp, "Uninitalized Regexp"))?;
-        match regex {
-            Backend::Onig(regex) => Ok(regex.captures_len()),
-            Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
-        }
+        borrow.regexp.inner().captures_len(interp, None)
     }
 
     pub fn extract(
@@ -144,91 +137,80 @@ pub fn method(
         )
     })?;
     let borrow = data.borrow();
-    let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let regex = (*borrow.regexp.regex)
-        .as_ref()
-        .ok_or_else(|| Fatal::new(interp, "Uninitalized Regexp"))?;
-    match regex {
-        Backend::Onig(regex) => {
-            let captures = if let Some(captures) = regex.captures(match_against) {
-                captures
+    let haystack = &borrow.string[borrow.region.start..borrow.region.end];
+    let mut captures = if let Some(captures) = borrow.regexp.inner().captures(interp, haystack)? {
+        captures
+    } else {
+        return Ok(interp.convert(None::<Value>));
+    };
+    match args {
+        Args::Empty => Ok(interp.convert(None::<Value>)),
+        Args::Index(index) => {
+            if index < 0 {
+                // Positive Int must be usize
+                let idx = usize::try_from(-index).map_err(|_| {
+                    Fatal::new(interp, "Expected positive position to convert to usize")
+                })?;
+                match captures.len().checked_sub(idx) {
+                    Some(0) | None => Ok(interp.convert(None::<Value>)),
+                    Some(index) => Ok(interp.convert(captures.remove(index))),
+                }
             } else {
-                return Ok(interp.convert(None::<Value>));
-            };
-            match args {
-                Args::Empty => Ok(interp.convert(None::<Value>)),
-                Args::Index(index) => {
-                    if index < 0 {
-                        // Positive Int must be usize
-                        let idx = usize::try_from(-index).map_err(|_| {
-                            Fatal::new(interp, "Expected positive position to convert to usize")
-                        })?;
-                        match captures.len().checked_sub(idx) {
-                            Some(0) | None => Ok(interp.convert(None::<Value>)),
-                            Some(index) => Ok(interp.convert(captures.at(index))),
-                        }
-                    } else {
-                        let idx = usize::try_from(index).map_err(|_| {
-                            Fatal::new(interp, "Expected positive position to convert to usize")
-                        })?;
-                        Ok(interp.convert(captures.at(idx)))
-                    }
-                }
-                Args::Name(name) => {
-                    let mut indexes = None;
-                    regex.foreach_name(|group, group_indexes| {
-                        if name == group.as_bytes() {
-                            indexes = Some(group_indexes.to_vec());
-                            false
-                        } else {
-                            true
-                        }
-                    });
-                    if let Some(indexes) = indexes {
-                        let group = indexes
-                            .iter()
-                            .filter_map(|index| {
-                                usize::try_from(*index)
-                                    .ok()
-                                    .and_then(|index| captures.at(index))
-                            })
-                            .last();
-                        Ok(interp.convert(group))
-                    } else {
-                        let groupstr = format!("{:?}", <&BStr>::from(name));
-                        Err(Box::new(IndexError::new(
-                            interp,
-                            format!(
-                                "undefined group name reference: {}",
-                                &groupstr[1..groupstr.len() - 1]
-                            ),
-                        )))
-                    }
-                }
-                Args::StartLen(start, len) => {
-                    let start = if start < 0 {
-                        // Positive Int must be usize
-                        let idx = usize::try_from(-start).map_err(|_| {
-                            Fatal::new(interp, "Expected positive position to convert to usize")
-                        })?;
-                        if let Some(start) = captures.len().checked_sub(idx) {
-                            start
-                        } else {
-                            return Ok(interp.convert(None::<Value>));
-                        }
-                    } else {
-                        usize::try_from(start).map_err(|_| {
-                            Fatal::new(interp, "Expected positive position to convert to usize")
-                        })?
-                    };
-                    let mut matches = Vec::with_capacity(len);
-                    for index in start..(start + len) {
-                        matches.push(captures.at(index));
-                    }
-                    Ok(interp.convert(matches))
+                let idx = usize::try_from(index).map_err(|_| {
+                    Fatal::new(interp, "Expected positive position to convert to usize")
+                })?;
+                if idx < captures.len() {
+                    Ok(interp.convert(captures.remove(idx)))
+                } else {
+                    Ok(interp.convert(None::<Value>))
                 }
             }
         }
-        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
+        Args::Name(name) => {
+            let indexes = borrow
+                .regexp
+                .inner()
+                .capture_indexes_for_name(interp, name)?;
+            if let Some(indexes) = indexes {
+                let group = indexes
+                    .iter()
+                    .copied()
+                    .filter_map(|index| captures.get(index).and_then(Clone::clone))
+                    .last();
+                Ok(interp.convert(group))
+            } else {
+                let groupstr = format!("{:?}", <&BStr>::from(name));
+                Err(Box::new(IndexError::new(
+                    interp,
+                    format!(
+                        "undefined group name reference: {}",
+                        &groupstr[1..groupstr.len() - 1]
+                    ),
+                )))
+            }
+        }
+        Args::StartLen(start, len) => {
+            let start = if start < 0 {
+                // Positive Int must be usize
+                let idx = usize::try_from(-start).map_err(|_| {
+                    Fatal::new(interp, "Expected positive position to convert to usize")
+                })?;
+                if let Some(start) = captures.len().checked_sub(idx) {
+                    start
+                } else {
+                    return Ok(interp.convert(None::<Value>));
+                }
+            } else {
+                usize::try_from(start).map_err(|_| {
+                    Fatal::new(interp, "Expected positive position to convert to usize")
+                })?
+            };
+            let matches = captures
+                .into_iter()
+                .skip(start)
+                .take(len)
+                .collect::<Vec<_>>();
+            Ok(interp.convert(matches))
+        }
     }
 }

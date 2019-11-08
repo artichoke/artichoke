@@ -4,150 +4,482 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
-use onig::{self, Syntax};
-use regex;
+use artichoke_core::value::Value as _;
+use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
+use std::str;
 
+use crate::convert::Convert;
 use crate::convert::RustBackedValue;
-use crate::def::{rust_data_free, ClassLike, Define};
-use crate::eval::Eval;
-use crate::extn::core::exception;
+use crate::extn::core::array::Array;
+use crate::extn::core::exception::{ArgumentError, Fatal, RubyException, TypeError};
 use crate::sys;
 use crate::types::Int;
-use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::value::{Block, Value};
+use crate::warn::Warn;
+use crate::Artichoke;
 
+#[allow(clippy::type_complexity)]
+pub mod backend;
 pub mod enc;
+pub mod mruby;
 pub mod opts;
 pub mod syntax;
+pub mod trampoline;
 
-pub mod case_compare;
-pub mod casefold;
-pub mod eql;
-pub mod escape;
-pub mod fixed_encoding;
-pub mod hash;
-pub mod initialize;
-pub mod inspect;
-pub mod match_;
-pub mod match_operator;
-pub mod match_q;
-pub mod named_captures;
-pub mod names;
-pub mod options;
-pub mod source;
-pub mod to_s;
-pub mod union;
+pub use enc::Encoding;
+pub use opts::Options;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    interp.eval(include_str!("regexp.rb"))?;
-    let regexp =
-        interp
-            .0
-            .borrow_mut()
-            .def_class::<Regexp>("Regexp", None, Some(rust_data_free::<Regexp>));
-    regexp.borrow_mut().mrb_value_is_rust_backed(true);
-    regexp.borrow_mut().add_method(
-        "initialize",
-        Regexp::initialize,
-        sys::mrb_args_req_and_opt(1, 2),
-    );
-    regexp
-        .borrow_mut()
-        .add_self_method("compile", Regexp::compile, sys::mrb_args_rest());
-    regexp
-        .borrow_mut()
-        .add_self_method("escape", Regexp::escape, sys::mrb_args_req(1));
-    regexp
-        .borrow_mut()
-        .add_self_method("quote", Regexp::escape, sys::mrb_args_req(1));
-    regexp
-        .borrow_mut()
-        .add_self_method("union", Regexp::union, sys::mrb_args_rest());
-    regexp
-        .borrow_mut()
-        .add_method("==", Regexp::eql, sys::mrb_args_req(1));
-    regexp
-        .borrow_mut()
-        .add_method("===", Regexp::case_compare, sys::mrb_args_req(1));
-    regexp
-        .borrow_mut()
-        .add_method("=~", Regexp::match_operator, sys::mrb_args_req(1));
-    regexp
-        .borrow_mut()
-        .add_method("casefold?", Regexp::casefold, sys::mrb_args_none());
-    regexp
-        .borrow_mut()
-        .add_method("eql?", Regexp::eql, sys::mrb_args_req(1));
-    regexp.borrow_mut().add_method(
-        "fixed_encoding?",
-        Regexp::fixed_encoding,
-        sys::mrb_args_none(),
-    );
-    regexp
-        .borrow_mut()
-        .add_method("hash", Regexp::hash, sys::mrb_args_none());
-    regexp
-        .borrow_mut()
-        .add_method("inspect", Regexp::inspect, sys::mrb_args_none());
-    regexp
-        .borrow_mut()
-        .add_method("match?", Regexp::match_q, sys::mrb_args_req_and_opt(1, 1));
-    regexp
-        .borrow_mut()
-        .add_method("match", Regexp::match_, sys::mrb_args_req_and_opt(1, 1));
-    regexp.borrow_mut().add_method(
-        "named_captures",
-        Regexp::named_captures,
-        sys::mrb_args_none(),
-    );
-    regexp
-        .borrow_mut()
-        .add_method("names", Regexp::names, sys::mrb_args_none());
-    regexp
-        .borrow_mut()
-        .add_method("options", Regexp::options, sys::mrb_args_none());
-    regexp
-        .borrow_mut()
-        .add_method("source", Regexp::source, sys::mrb_args_none());
-    regexp
-        .borrow_mut()
-        .add_method("to_s", Regexp::to_s, sys::mrb_args_none());
-    regexp.borrow().define(&interp)?;
-    // TODO: Add proper constant defs to class::Spec, see GH-158.
-    interp.eval(format!(
-        "class Regexp; IGNORECASE = {}; EXTENDED = {}; MULTILINE = {}; FIXEDENCODING = {}; NOENCODING = {}; end",
-        Regexp::IGNORECASE,
-        Regexp::EXTENDED,
-        Regexp::MULTILINE,
-        Regexp::FIXEDENCODING,
-        Regexp::NOENCODING,
-    ))?;
-    Ok(())
-}
+pub const IGNORECASE: Int = 1;
+pub const EXTENDED: Int = 2;
+pub const MULTILINE: Int = 4;
+const ALL_REGEXP_OPTS: Int = IGNORECASE | EXTENDED | MULTILINE;
 
-#[derive(Debug)]
-pub enum Backend {
-    Onig(onig::Regex),
-    Rust(regex::Regex),
-}
+pub const FIXEDENCODING: Int = 16;
+pub const NOENCODING: Int = 32;
 
-#[derive(Debug, Clone, Default)]
-pub struct Regexp {
-    literal_pattern: String,
-    pattern: String,
-    literal_options: opts::Options,
-    options: opts::Options,
-    encoding: enc::Encoding,
-    pub regex: Rc<Option<Backend>>,
-}
+pub const LITERAL: Int = 128;
 
-impl Hash for Regexp {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.literal_pattern.hash(state);
-        self.literal_options.hash(state);
+#[derive(Debug, Clone, Hash)]
+pub struct Regexp(Box<dyn RegexpType>);
+
+impl Regexp {
+    pub fn new(
+        interp: &Artichoke,
+        literal_config: Config,
+        derived_config: Config,
+        encoding: Encoding,
+    ) -> Result<Self, Box<dyn RubyException>> {
+        let backend = Box::new(backend::onig::Onig::new(
+            interp,
+            literal_config,
+            derived_config,
+            encoding,
+        )?);
+        Ok(Self(backend))
+    }
+
+    pub fn lazy(pattern: &[u8]) -> Self {
+        let literal_config = Config {
+            pattern: pattern.to_vec(),
+            options: Options::default(),
+        };
+        let backend = Box::new(backend::lazy::Lazy::new(literal_config));
+        Self(backend)
+    }
+
+    pub fn initialize(
+        interp: &Artichoke,
+        pattern: Value,
+        options: Option<Value>,
+        encoding: Option<Value>,
+        into: Option<Value>,
+    ) -> Result<Value, Box<dyn RubyException>> {
+        let (options, encoding) = if let Some(encoding) = encoding {
+            let encoding = match enc::parse(&encoding) {
+                Ok(encoding) => Some(encoding),
+                Err(enc::Error::InvalidEncoding) => {
+                    let warning = format!("encoding option is ignored -- {}", encoding.to_s());
+                    interp
+                        .warn(warning.as_str())
+                        .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
+                    None
+                }
+            };
+            let options = options.as_ref().map(opts::parse);
+            (options, encoding)
+        } else if let Some(options) = options {
+            let encoding = match enc::parse(&options) {
+                Ok(encoding) => Some(encoding),
+                Err(enc::Error::InvalidEncoding) => {
+                    let warning = format!("encoding option is ignored -- {}", options.to_s());
+                    interp
+                        .warn(warning.as_str())
+                        .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
+                    None
+                }
+            };
+            let options = opts::parse(&options);
+            (Some(options), encoding)
+        } else {
+            (None, None)
+        };
+        let literal_config = if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
+            if options.is_some() || encoding.is_some() {
+                interp
+                    .warn("flags ignored when initializing from Regexp")
+                    .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
+            }
+            let borrow = regexp.borrow();
+            let options = borrow.0.literal_config().options;
+            Config {
+                pattern: borrow.0.literal_config().pattern.clone(),
+                options,
+            }
+        } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
+            Config {
+                pattern: bytes.to_vec(),
+                options: options.unwrap_or_default(),
+            }
+        } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+            Config {
+                pattern: bytes.to_vec(),
+                options: options.unwrap_or_default(),
+            }
+        } else {
+            return Err(Box::new(TypeError::new(
+                interp,
+                format!(
+                    "no implicit conversion of {} into String",
+                    pattern.pretty_name()
+                ),
+            )));
+        };
+        let (pattern, options) =
+            opts::parse_pattern(literal_config.pattern.as_slice(), literal_config.options);
+        let derived_config = Config { pattern, options };
+        let regexp = Self::new(
+            interp,
+            literal_config,
+            derived_config,
+            encoding.unwrap_or_default(),
+        )?;
+        let regexp = unsafe { regexp.try_into_ruby(interp, into.as_ref().map(Value::inner)) }
+            .map_err(|_| {
+                Fatal::new(
+                    interp,
+                    "Failed to initialize Regexp Ruby Value with Rust Regexp",
+                )
+            })?;
+        Ok(regexp)
+    }
+
+    pub fn escape(interp: &Artichoke, pattern: Value) -> Result<Value, Box<dyn RubyException>> {
+        let pattern = if let Ok(pattern) = pattern.clone().try_into::<&[u8]>() {
+            pattern
+        } else if let Ok(pattern) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+            pattern
+        } else {
+            return Err(Box::new(TypeError::new(
+                interp,
+                "No implicit conversion into String",
+            )));
+        };
+        let pattern = str::from_utf8(pattern)
+            .map_err(|_| ArgumentError::new(interp, "Self::escape only supports UTF-8 patterns"))?;
+
+        Ok(interp.convert(syntax::escape(pattern)))
+    }
+
+    pub fn union(interp: &Artichoke, patterns: &[Value]) -> Result<Value, Box<dyn RubyException>> {
+        let mut iter = patterns.iter().peekable();
+        let pattern = if let Some(first) = iter.next() {
+            if iter.peek().is_none() {
+                #[cfg(feature = "artichoke-array")]
+                let ary = unsafe { Array::try_from_ruby(interp, &first) };
+                #[cfg(not(feature = "artichoke-array"))]
+                let ary = first.clone().try_into::<Vec<Value>>();
+                if let Ok(ary) = ary {
+                    #[cfg(feature = "artichoke-array")]
+                    let borrow = ary.borrow();
+                    #[cfg(feature = "artichoke-array")]
+                    let ary = borrow.as_vec(interp);
+                    let mut patterns = vec![];
+                    for pattern in ary {
+                        if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
+                            patterns.push(regexp.borrow().0.derived_config().pattern.clone());
+                        } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                            patterns.push(syntax::escape(pattern).into_bytes());
+                        } else {
+                            return Err(Box::new(TypeError::new(
+                                interp,
+                                "No implicit conversion into String",
+                            )));
+                        }
+                    }
+                    bstr::join(b"|", patterns)
+                } else {
+                    let pattern = first;
+                    if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
+                        regexp.borrow().0.derived_config().pattern.clone()
+                    } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                        syntax::escape(pattern).into_bytes()
+                    } else {
+                        return Err(Box::new(TypeError::new(
+                            interp,
+                            "No implicit conversion into String",
+                        )));
+                    }
+                }
+            } else {
+                let mut patterns = vec![];
+                if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &first) } {
+                    patterns.push(regexp.borrow().0.derived_config().pattern.clone());
+                } else if let Ok(bytes) = first.clone().try_into::<&[u8]>() {
+                    let pattern = str::from_utf8(bytes).map_err(|_| {
+                        ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
+                    })?;
+                    patterns.push(syntax::escape(pattern).into_bytes());
+                } else if let Ok(bytes) = first.funcall::<&[u8]>("to_str", &[], None) {
+                    let pattern = str::from_utf8(bytes).map_err(|_| {
+                        ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
+                    })?;
+                    patterns.push(syntax::escape(pattern).into_bytes());
+                } else {
+                    return Err(Box::new(TypeError::new(
+                        interp,
+                        "no implicit conversion into String",
+                    )));
+                }
+                for pattern in iter {
+                    if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
+                        patterns.push(regexp.borrow().0.derived_config().pattern.clone());
+                    } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
+                        let pattern = str::from_utf8(bytes).map_err(|_| {
+                            ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
+                        })?;
+                        patterns.push(syntax::escape(pattern).into_bytes());
+                    } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+                        let pattern = str::from_utf8(bytes).map_err(|_| {
+                            ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
+                        })?;
+                        patterns.push(syntax::escape(pattern).into_bytes());
+                    } else {
+                        return Err(Box::new(TypeError::new(
+                            interp,
+                            "no implicit conversion into String",
+                        )));
+                    }
+                }
+                bstr::join(b"|", patterns)
+            }
+        } else {
+            Vec::from(b"(?!)".as_ref())
+        };
+        let derived_config = {
+            let (pattern, options) = opts::parse_pattern(pattern.as_slice(), Options::default());
+            Config { pattern, options }
+        };
+        let literal_config = Config {
+            pattern,
+            options: Options::default(),
+        };
+        let regexp = Self::new(interp, literal_config, derived_config, Encoding::default())?;
+        let regexp = unsafe { regexp.try_into_ruby(interp, None) }.map_err(|_| {
+            Fatal::new(
+                interp,
+                "Failed to initialize Regexp Ruby Value with Rust Regexp",
+            )
+        })?;
+        Ok(regexp)
+    }
+
+    #[inline]
+    pub fn inner(&self) -> &dyn RegexpType {
+        self.0.as_ref()
+    }
+
+    pub fn case_compare(
+        &self,
+        interp: &Artichoke,
+        other: Value,
+    ) -> Result<Value, Box<dyn RubyException>> {
+        let pattern = if let Ok(pattern) = other.clone().try_into::<&[u8]>() {
+            pattern
+        } else if let Ok(pattern) = other.funcall::<&[u8]>("to_str", &[], None) {
+            pattern
+        } else {
+            let sym = interp.0.borrow_mut().sym_intern("$~");
+            let mrb = interp.0.borrow().mrb;
+            unsafe {
+                sys::mrb_gv_set(mrb, sym, interp.convert(None::<Value>).inner());
+            }
+            return Ok(interp.convert(false));
+        };
+        Ok(interp.convert(self.0.case_match(interp, pattern)?))
+    }
+
+    pub fn eql(&self, interp: &Artichoke, other: Value) -> Result<Value, Box<dyn RubyException>> {
+        if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+            Ok(interp.convert(self.inner() == other.borrow().inner()))
+        } else {
+            Ok(interp.convert(false))
+        }
+    }
+
+    pub fn hash(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        let mut s = DefaultHasher::new();
+        self.0.hash(&mut s);
+        let hash = s.finish();
+        #[allow(clippy::cast_possible_wrap)]
+        Ok(interp.convert(hash as Int))
+    }
+
+    pub fn inspect(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        Ok(interp.convert(self.0.inspect(interp)))
+    }
+
+    pub fn is_casefold(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        Ok(interp.convert(self.0.literal_config().options.ignore_case))
+    }
+
+    pub fn is_fixed_encoding(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        match self.0.encoding() {
+            Encoding::No => {
+                let opts = Int::try_from(self.0.literal_config().options.flags().bits())
+                    .map_err(|_| Fatal::new(interp, "Regexp options do not fit in Integer"))?;
+                Ok(interp.convert(opts & NOENCODING != 0))
+            }
+            Encoding::Fixed => Ok(interp.convert(true)),
+            Encoding::None => Ok(interp.convert(false)),
+        }
+    }
+
+    pub fn is_match(
+        &self,
+        interp: &Artichoke,
+        pattern: Value,
+        pos: Option<Value>,
+    ) -> Result<Value, Box<dyn RubyException>> {
+        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
+            pattern
+        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
+            pattern
+        } else {
+            return Err(Box::new(TypeError::new(
+                interp,
+                format!(
+                    "no implicit conversion of {} into String",
+                    pattern.pretty_name()
+                ),
+            )));
+        };
+        let pattern = if let Some(pattern) = pattern {
+            pattern
+        } else {
+            return Ok(interp.convert(false));
+        };
+        let pos = if let Some(pos) = pos {
+            if let Ok(pos) = pos.clone().try_into::<Int>() {
+                Some(pos)
+            } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
+                Some(pos)
+            } else {
+                return Err(Box::new(TypeError::new(
+                    interp,
+                    format!(
+                        "no implicit conversion of {} into Integer",
+                        pos.pretty_name()
+                    ),
+                )));
+            }
+        } else {
+            None
+        };
+        Ok(interp.convert(self.0.is_match(interp, pattern, pos)?))
+    }
+
+    pub fn match_(
+        &self,
+        interp: &Artichoke,
+        pattern: Value,
+        pos: Option<Value>,
+        block: Option<Block>,
+    ) -> Result<Value, Box<dyn RubyException>> {
+        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
+            pattern
+        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
+            pattern
+        } else {
+            return Err(Box::new(TypeError::new(
+                interp,
+                format!(
+                    "no implicit conversion of {} into String",
+                    pattern.pretty_name()
+                ),
+            )));
+        };
+        let pattern = if let Some(pattern) = pattern {
+            pattern
+        } else {
+            let mrb = interp.0.borrow().mrb;
+            let sym = interp.0.borrow_mut().sym_intern("$~");
+            let matchdata = interp.convert(None::<Value>);
+            unsafe {
+                sys::mrb_gv_set(mrb, sym, matchdata.inner());
+            }
+            return Ok(matchdata);
+        };
+        let pos = if let Some(pos) = pos {
+            if let Ok(pos) = pos.clone().try_into::<Int>() {
+                Some(pos)
+            } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
+                Some(pos)
+            } else {
+                return Err(Box::new(TypeError::new(
+                    interp,
+                    format!(
+                        "no implicit conversion of {} into Integer",
+                        pos.pretty_name()
+                    ),
+                )));
+            }
+        } else {
+            None
+        };
+        Ok(interp.convert(self.0.match_(interp, pattern, pos, block)?))
+    }
+
+    pub fn match_operator(
+        &self,
+        interp: &Artichoke,
+        pattern: Value,
+    ) -> Result<Value, Box<dyn RubyException>> {
+        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
+            pattern
+        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
+            pattern
+        } else {
+            return Err(Box::new(TypeError::new(
+                interp,
+                format!(
+                    "no implicit conversion of {} into String",
+                    pattern.pretty_name()
+                ),
+            )));
+        };
+        let pattern = if let Some(pattern) = pattern {
+            pattern
+        } else {
+            return Ok(interp.convert(None::<Value>));
+        };
+        Ok(interp.convert(self.0.match_operator(interp, pattern)?))
+    }
+
+    pub fn named_captures(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        Ok(interp.convert(self.0.named_captures(interp)?))
+    }
+
+    pub fn names(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        Ok(interp.convert(self.0.names(interp)))
+    }
+
+    pub fn options(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        let opts = Int::try_from(self.0.literal_config().options.flags().bits())
+            .map_err(|_| Fatal::new(interp, "Regexp options do not fit in Integer"))?;
+        let opts = opts | self.0.encoding().flags();
+        Ok(interp.convert(opts))
+    }
+
+    pub fn source(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        Ok(interp.convert(self.0.literal_config().pattern.as_slice()))
+    }
+
+    pub fn string(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+        Ok(interp.convert(self.0.string(interp)))
     }
 }
 
@@ -157,272 +489,151 @@ impl RustBackedValue for Regexp {
     }
 }
 
-impl Regexp {
-    pub const IGNORECASE: Int = 1;
-    pub const EXTENDED: Int = 2;
-    pub const MULTILINE: Int = 4;
-
-    pub const ALL_REGEXP_OPTS: Int = Self::IGNORECASE | Self::EXTENDED | Self::MULTILINE;
-
-    pub const FIXEDENCODING: Int = 16;
-    pub const NOENCODING: Int = 32;
-
-    pub const ALL_ENCODING_OPTS: Int = Self::FIXEDENCODING | Self::NOENCODING;
-
-    pub fn new(
-        literal_pattern: String,
-        pattern: String,
-        literal_options: opts::Options,
-        options: opts::Options,
-        encoding: enc::Encoding,
-    ) -> Option<Self> {
-        let regex = Backend::Onig(
-            onig::Regex::with_options(&pattern, options.flags(), Syntax::ruby()).ok()?,
-        );
-        let regex = Rc::new(Some(regex));
-        let regexp = Self {
-            literal_pattern,
-            pattern,
-            literal_options,
-            options,
-            encoding,
-            regex,
-        };
-        Some(regexp)
-    }
-
-    unsafe extern "C" fn initialize(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        let (pattern, options, encoding) = mrb_get_args!(mrb, required = 1, optional = 2);
-        let interp = unwrap_interpreter!(mrb);
-        let result = initialize::Args::extract(
-            &interp,
-            Value::new(&interp, pattern),
-            options.map(|options| Value::new(&interp, options)),
-            encoding.map(|encoding| Value::new(&interp, encoding)),
-        )
-        .and_then(|args| initialize::method(&interp, args, Some(slf)));
-        match result {
-            Ok(value) => value.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn compile(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let args = mrb_get_args!(mrb, *args);
-        sys::mrb_obj_new(
-            mrb,
-            sys::mrb_sys_class_ptr(slf),
-            Int::try_from(args.len()).unwrap_or_default(),
-            args.as_ptr(),
-        )
-    }
-
-    unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let pattern = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let result = escape::Args::extract(&interp, Value::new(&interp, pattern))
-            .and_then(|args| escape::method(&interp, &args));
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn union(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let args = mrb_get_args!(mrb, *args);
-        let interp = unwrap_interpreter!(mrb);
-        let args = args
-            .iter()
-            .map(|arg| Value::new(&interp, *arg))
-            .collect::<Vec<_>>();
-        let result = union::method(&interp, args.as_slice());
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let (pattern, pos) = mrb_get_args!(mrb, required = 1, optional = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = match_q::Args::extract(
-            &interp,
-            Value::new(&interp, pattern),
-            pos.map(|pos| Value::new(&interp, pos)),
-        )
-        .and_then(|args| match_q::method(&interp, args, &value));
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let (pattern, pos, block) = mrb_get_args!(mrb, required = 1, optional = 1, &block);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = match_::Args::extract(
-            &interp,
-            Value::new(&interp, pattern),
-            pos.map(|pos| Value::new(&interp, pos)),
-            block,
-        )
-        .and_then(|args| match_::method(&interp, args, &value));
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let other = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let other = Value::new(&interp, other);
-        let result = eql::method(&interp, &value, &other);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn case_compare(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        let pattern = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let args = case_compare::Args::extract(Value::new(&interp, pattern));
-        let result = case_compare::method(&interp, args, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn match_operator(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        let pattern = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = match_operator::Args::extract(&interp, Value::new(&interp, pattern))
-            .and_then(|args| match_operator::method(&interp, args, &value));
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn casefold(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = casefold::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn fixed_encoding(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = fixed_encoding::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = hash::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = inspect::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn named_captures(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = named_captures::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = names::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = options::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = source::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-
-    #[allow(clippy::wrong_self_convention)]
-    unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
-        let value = Value::new(&interp, slf);
-        let result = to_s::method(&interp, &value);
-        match result {
-            Ok(result) => result.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
+impl From<Box<dyn RegexpType>> for Regexp {
+    fn from(regexp: Box<dyn RegexpType>) -> Self {
+        Self(regexp)
     }
 }
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct Config {
+    pattern: Vec<u8>,
+    options: opts::Options,
+}
+
+#[allow(clippy::module_name_repetitions, clippy::type_complexity)]
+pub trait RegexpType {
+    fn box_clone(&self) -> Box<dyn RegexpType>;
+    fn debug(&self) -> String;
+    fn literal_config(&self) -> &Config;
+    fn derived_config(&self) -> &Config;
+    fn encoding(&self) -> &Encoding;
+    fn inspect(&self, interp: &Artichoke) -> Vec<u8>;
+    fn string(&self, interp: &Artichoke) -> &[u8];
+
+    fn captures(
+        &self,
+        interp: &Artichoke,
+        haystack: &[u8],
+    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Box<dyn RubyException>>;
+
+    fn capture_indexes_for_name(
+        &self,
+        interp: &Artichoke,
+        name: &[u8],
+    ) -> Result<Option<Vec<usize>>, Box<dyn RubyException>>;
+
+    fn captures_len(
+        &self,
+        interp: &Artichoke,
+        haystack: Option<&[u8]>,
+    ) -> Result<usize, Box<dyn RubyException>>;
+
+    fn capture0<'a>(
+        &self,
+        interp: &Artichoke,
+        haystack: &'a [u8],
+    ) -> Result<Option<&'a [u8]>, Box<dyn RubyException>>;
+
+    fn case_match(
+        &self,
+        interp: &Artichoke,
+        pattern: &[u8],
+    ) -> Result<bool, Box<dyn RubyException>>;
+
+    fn is_match(
+        &self,
+        interp: &Artichoke,
+        pattern: &[u8],
+        pos: Option<Int>,
+    ) -> Result<bool, Box<dyn RubyException>>;
+
+    fn match_(
+        &self,
+        interp: &Artichoke,
+        pattern: &[u8],
+        pos: Option<Int>,
+        block: Option<Block>,
+    ) -> Result<Value, Box<dyn RubyException>>;
+
+    fn match_operator(
+        &self,
+        interp: &Artichoke,
+        pattern: &[u8],
+    ) -> Result<Option<Int>, Box<dyn RubyException>>;
+
+    fn named_captures(
+        &self,
+        interp: &Artichoke,
+    ) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Box<dyn RubyException>>;
+
+    fn named_captures_for_haystack(
+        &self,
+        interp: &Artichoke,
+        haystack: &[u8],
+    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Box<dyn RubyException>>;
+
+    fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>>;
+
+    fn pos(
+        &self,
+        interp: &Artichoke,
+        haystack: &[u8],
+        at: usize,
+    ) -> Result<Option<(usize, usize)>, Box<dyn RubyException>>;
+
+    fn scan(
+        &self,
+        interp: &Artichoke,
+        haystack: Value,
+        block: Option<Block>,
+    ) -> Result<Value, Box<dyn RubyException>>;
+}
+
+impl Clone for Box<dyn RegexpType> {
+    fn clone(&self) -> Self {
+        self.box_clone()
+    }
+}
+
+impl fmt::Debug for Box<dyn RegexpType> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.debug())
+    }
+}
+
+impl Hash for Box<dyn RegexpType> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.literal_config().hash(state);
+    }
+}
+
+impl PartialEq for Box<dyn RegexpType> {
+    fn eq(&self, other: &Self) -> bool {
+        self.derived_config().pattern == other.derived_config().pattern
+            && self.encoding() == other.encoding()
+    }
+}
+
+impl Eq for Box<dyn RegexpType> {}
+
+impl fmt::Debug for &dyn RegexpType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.debug())
+    }
+}
+
+impl Hash for &dyn RegexpType {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.literal_config().hash(state);
+    }
+}
+
+impl PartialEq for &dyn RegexpType {
+    fn eq(&self, other: &Self) -> bool {
+        self.derived_config().pattern == other.derived_config().pattern
+            && self.encoding() == other.encoding()
+    }
+}
+
+impl Eq for &dyn RegexpType {}

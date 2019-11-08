@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::Eval;
 use artichoke_backend::load::LoadSources;
@@ -10,8 +8,8 @@ use artichoke_core::value::Value;
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;
     for source in Sources::iter() {
-        let content = Sources::get(&source).map(Cow::into_owned).unwrap();
-        interp.def_rb_source_file(source, content)?;
+        let content = Sources::get(&source).unwrap();
+        interp.def_rb_source_file(source, content.as_ref())?;
     }
     Ok(())
 }

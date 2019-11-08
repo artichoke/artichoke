@@ -2,7 +2,7 @@
 
 use std::hash::{Hash, Hasher};
 
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp;
 use crate::types::Int;
 use crate::value::{Value, ValueLike};
 
@@ -21,8 +21,8 @@ pub enum Encoding {
 impl Encoding {
     pub fn flags(self) -> Int {
         match self {
-            Self::Fixed => Regexp::FIXEDENCODING,
-            Self::No => Regexp::NOENCODING,
+            Self::Fixed => regexp::FIXEDENCODING,
+            Self::No => regexp::NOENCODING,
             Self::None => 0,
         }
     }
@@ -50,9 +50,9 @@ impl Hash for Encoding {
 impl PartialEq for Encoding {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::No, Self::None)
+            (Self::No, Self::No)
+            | (Self::No, Self::None)
             | (Self::None, Self::No)
-            | (Self::No, Self::No)
             | (Self::None, Self::None)
             | (Self::Fixed, Self::Fixed) => true,
             _ => false,
@@ -65,10 +65,10 @@ impl Eq for Encoding {}
 pub fn parse(value: &Value) -> Result<Encoding, Error> {
     if let Ok(encoding) = value.itself::<Int>() {
         // Only deal with Encoding opts
-        let encoding = encoding & !Regexp::ALL_REGEXP_OPTS;
-        if encoding == Regexp::FIXEDENCODING {
+        let encoding = encoding & !regexp::ALL_REGEXP_OPTS;
+        if encoding == regexp::FIXEDENCODING {
             Ok(Encoding::Fixed)
-        } else if encoding == Regexp::NOENCODING {
+        } else if encoding == regexp::NOENCODING {
             Ok(Encoding::No)
         } else if encoding == 0 {
             Ok(Encoding::default())

@@ -105,7 +105,7 @@ pub struct Region {
 
 #[derive(Debug, Clone)]
 pub struct MatchData {
-    string: String,
+    string: Vec<u8>,
     regexp: Regexp,
     region: Region,
 }
@@ -117,10 +117,10 @@ impl RustBackedValue for MatchData {
 }
 
 impl MatchData {
-    pub fn new(string: &str, regexp: Regexp, start: usize, end: usize) -> Self {
+    pub fn new(string: Vec<u8>, regexp: Regexp, start: usize, end: usize) -> Self {
         let region = Region { start, end };
         Self {
-            string: string.to_owned(),
+            string,
             regexp,
             region,
         }
