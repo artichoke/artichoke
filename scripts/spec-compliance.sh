@@ -13,11 +13,6 @@ set -x
 shopt -s globstar
 declare -a specs
 
-time="time"
-if command -v precise-time; then
-  time="precise-time"
-fi
-
 register_spec() {
   if [[ $# -eq 2 ]]; then
     family="$1"
@@ -42,14 +37,22 @@ register_spec() {
 run_specs_artichoke() {
   bin="$(pwd)/target/debug/spec-runner"
   pushd "spec-runner/vendor/spec" >/dev/null
-  "$time" "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  if command -v precise-time; then
+    precise-time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  else
+    time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  fi
   popd >/dev/null
 }
 
 run_specs_ruby() {
   bin="$(pwd)/spec-runner/src/spec_runner.rb"
   pushd "spec-runner/vendor/spec" >/dev/null
-  "$time" "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  if command -v precise-time; then
+    precise-time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  else
+    time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  fi
   popd >/dev/null
 }
 
