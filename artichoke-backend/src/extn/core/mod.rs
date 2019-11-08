@@ -46,7 +46,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     object::init(interp)?;
     proc::init(interp)?;
     range::init(interp)?;
-    regexp::init(interp)?;
+    regexp::mruby::init(interp)?;
     string::init(interp)?;
     symbol::init(interp)?;
     thread::init(interp)?;

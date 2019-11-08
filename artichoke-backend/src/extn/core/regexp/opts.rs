@@ -2,7 +2,7 @@
 
 use onig::RegexOptions;
 
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp;
 use crate::types::Int;
 use crate::value::{Value, ValueLike};
 
@@ -11,6 +11,7 @@ pub struct Options {
     pub multiline: bool,
     pub ignore_case: bool,
     pub extended: bool,
+    pub literal: bool,
 }
 
 impl Options {
@@ -75,12 +76,11 @@ pub fn parse(value: &Value) -> Options {
     // or-ed together. Otherwise, if options is not nil or false, the regexp
     // will be case insensitive.
     if let Ok(options) = value.itself::<Int>() {
-        // Only deal with Regexp opts
-        let options = options & Regexp::ALL_REGEXP_OPTS;
         Options {
-            multiline: options & Regexp::MULTILINE > 0,
-            ignore_case: options & Regexp::IGNORECASE > 0,
-            extended: options & Regexp::EXTENDED > 0,
+            multiline: options & regexp::MULTILINE > 0,
+            ignore_case: options & regexp::IGNORECASE > 0,
+            extended: options & regexp::EXTENDED > 0,
+            literal: options & regexp::LITERAL > 0,
         }
     } else if let Ok(options) = value.itself::<Option<bool>>() {
         match options {
@@ -93,6 +93,7 @@ pub fn parse(value: &Value) -> Options {
                 multiline: options.contains('m'),
                 ignore_case: options.contains('i'),
                 extended: options.contains('x'),
+                literal: false,
             }
         } else {
             Options::default()
@@ -103,26 +104,26 @@ pub fn parse(value: &Value) -> Options {
 }
 
 // TODO: Add tests for this parse_pattern, see GH-157.
-pub fn parse_pattern(pattern: &str, mut opts: Options) -> (String, Options) {
+pub fn parse_pattern(pattern: &[u8], mut opts: Options) -> (Vec<u8>, Options) {
     let orig_opts = opts;
-    let mut chars = pattern.chars();
+    let mut chars = pattern.iter().copied();
     let mut enabled = true;
-    let mut pat_buf = String::new();
+    let mut pat_buf = Vec::new();
     let mut pointer = 0;
     match chars.next() {
         None => {
-            pat_buf.push_str("(?");
-            pat_buf.push_str(opts.onig_string().as_str());
-            pat_buf.push(':');
-            pat_buf.push(')');
+            pat_buf.extend(b"(?".to_vec());
+            pat_buf.extend(opts.onig_string().into_bytes());
+            pat_buf.push(b':');
+            pat_buf.push(b')');
             return (pat_buf, opts);
         }
-        Some(token) if token != '(' => {
-            pat_buf.push_str("(?");
-            pat_buf.push_str(opts.onig_string().as_str());
-            pat_buf.push(':');
-            pat_buf.push_str(pattern);
-            pat_buf.push(')');
+        Some(token) if token != b'(' => {
+            pat_buf.extend(b"(?".to_vec());
+            pat_buf.extend(opts.onig_string().into_bytes());
+            pat_buf.push(b':');
+            pat_buf.extend(pattern);
+            pat_buf.push(b')');
             return (pat_buf, opts);
         }
         _ => (),
@@ -130,19 +131,19 @@ pub fn parse_pattern(pattern: &str, mut opts: Options) -> (String, Options) {
     pointer += 1;
     match chars.next() {
         None => {
-            pat_buf.push_str("(?");
-            pat_buf.push_str(opts.onig_string().as_str());
-            pat_buf.push(':');
-            pat_buf.push_str(pattern);
-            pat_buf.push(')');
+            pat_buf.extend(b"(?".to_vec());
+            pat_buf.extend(opts.onig_string().into_bytes());
+            pat_buf.push(b':');
+            pat_buf.extend(pattern);
+            pat_buf.push(b')');
             return (pat_buf, opts);
         }
-        Some(token) if token != '?' => {
-            pat_buf.push_str("(?");
-            pat_buf.push_str(opts.onig_string().as_str());
-            pat_buf.push(':');
-            pat_buf.push_str(pattern);
-            pat_buf.push(')');
+        Some(token) if token != b'?' => {
+            pat_buf.extend(b"(?".to_vec());
+            pat_buf.extend(opts.onig_string().into_bytes());
+            pat_buf.push(b':');
+            pat_buf.extend(pattern);
+            pat_buf.push(b')');
             return (pat_buf, opts);
         }
         _ => (),
@@ -151,50 +152,48 @@ pub fn parse_pattern(pattern: &str, mut opts: Options) -> (String, Options) {
     for token in chars {
         pointer += 1;
         match token {
-            '-' => enabled = false,
-            'i' => {
+            b'-' => enabled = false,
+            b'i' => {
                 opts.ignore_case = enabled;
             }
-            'm' => {
+            b'm' => {
                 opts.multiline = enabled;
             }
-            'x' => {
+            b'x' => {
                 opts.extended = enabled;
             }
-            ':' => break,
+            b':' => break,
             _ => {
-                pat_buf.push_str("(?");
-                pat_buf.push_str(opts.onig_string().as_str());
-                pat_buf.push(':');
-                pat_buf.push_str(pattern);
-                pat_buf.push(')');
+                pat_buf.extend(b"(?".to_vec());
+                pat_buf.extend(opts.onig_string().into_bytes());
+                pat_buf.push(b':');
+                pat_buf.extend(pattern);
+                pat_buf.push(b')');
                 return (pat_buf, opts);
             }
         }
     }
-    let mut chars = pattern[pointer..].chars();
-    let mut token = chars.next();
+    let mut chars = pattern[pointer..].iter().copied();
     let mut nest = 1;
-    while token.is_some() {
-        match token {
-            Some(token) if token == '(' => nest += 1,
-            Some(token) if token == ')' => {
-                nest -= 1;
-                if nest == 0 && chars.next().is_some() {
-                    return (
-                        format!("(?{}:{})", orig_opts.onig_string(), pattern),
-                        orig_opts,
-                    );
-                }
-                break;
+    while let Some(token) = chars.next() {
+        if token == b'(' {
+            nest += 1;
+        } else if token == b')' {
+            nest -= 1;
+            if nest == 0 && chars.next().is_some() {
+                pat_buf.extend(b"(?".to_vec());
+                pat_buf.extend(orig_opts.onig_string().into_bytes());
+                pat_buf.push(b':');
+                pat_buf.extend(pattern);
+                pat_buf.push(b')');
+                return (pat_buf, orig_opts);
             }
-            _ => (),
+            break;
         }
-        token = chars.next();
     }
-
-    (
-        format!("(?{}:{}", opts.onig_string(), &pattern[pointer..]),
-        opts,
-    )
+    pat_buf.extend(b"(?".to_vec());
+    pat_buf.extend(opts.onig_string().into_bytes());
+    pat_buf.push(b':');
+    pat_buf.extend(&pattern[pointer..]);
+    (pat_buf, opts)
 }

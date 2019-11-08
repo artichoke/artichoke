@@ -2,11 +2,11 @@
 
 use artichoke_core::value::Value as ValueLike;
 use std::convert::TryFrom;
+use std::str;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::exception::{Fatal, IndexError, RubyException, TypeError};
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::Backend;
 use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
@@ -47,76 +47,60 @@ pub fn method(
         )
     })?;
     let borrow = data.borrow();
-    let match_against = &borrow.string[borrow.region.start..borrow.region.end];
-    let regex = (*borrow.regexp.regex)
-        .as_ref()
-        .ok_or_else(|| Fatal::new(interp, "Uninitalized Regexp"))?;
-    let end = match regex {
-        Backend::Onig(regex) => {
-            let captures = if let Some(captures) = regex.captures(match_against) {
-                captures
+    let haystack = &borrow.string[borrow.region.start..borrow.region.end];
+    let index = match args {
+        Args::Index(index) => {
+            let captures_len = borrow.regexp.inner().captures_len(interp, Some(haystack))?;
+            if index < 0 {
+                // Positive Int must be usize
+                let idx = usize::try_from(-index).map_err(|_| {
+                    Fatal::new(interp, "Expected positive position to convert to usize")
+                })?;
+                captures_len.checked_sub(idx).ok_or_else(|| {
+                    IndexError::new(interp, format!("index {} out of matches", index))
+                })?
+            } else {
+                let idx = usize::try_from(index).map_err(|_| {
+                    Fatal::new(interp, "Expected positive position to convert to usize")
+                })?;
+                if idx > captures_len {
+                    return Err(Box::new(IndexError::new(
+                        interp,
+                        format!("index {} out of matches", index),
+                    )));
+                }
+                idx
+            }
+        }
+        Args::Name(name) => {
+            let indexes = borrow
+                .regexp
+                .inner()
+                .capture_indexes_for_name(interp, name.as_bytes())?;
+            let indexes = if let Some(indexes) = indexes {
+                indexes
             } else {
                 return Ok(interp.convert(None::<Value>));
             };
-            let index = match args {
-                Args::Index(index) => {
-                    if index < 0 {
-                        // Positive Int must be usize
-                        let idx = usize::try_from(-index).map_err(|_| {
-                            Fatal::new(interp, "Expected positive position to convert to usize")
-                        })?;
-                        captures.len().checked_sub(idx).ok_or_else(|| {
-                            IndexError::new(interp, format!("index {} out of matches", index))
-                        })?
-                    } else {
-                        let idx = usize::try_from(index).map_err(|_| {
-                            Fatal::new(interp, "Expected positive position to convert to usize")
-                        })?;
-                        if idx > captures.len() {
-                            return Err(Box::new(IndexError::new(
-                                interp,
-                                format!("index {} out of matches", index),
-                            )));
-                        }
-                        idx
-                    }
-                }
-                Args::Name(name) => {
-                    let mut indexes = None;
-                    regex.foreach_name(|group, group_indexes| {
-                        if name == group {
-                            indexes = Some(group_indexes.to_vec());
-                            false
-                        } else {
-                            true
-                        }
-                    });
-                    if let Some(indexes) = indexes {
-                        if let Some(last) = indexes.last() {
-                            if let Ok(index) = usize::try_from(*last) {
-                                index
-                            } else {
-                                return Ok(interp.convert(None::<Value>));
-                            }
-                        } else {
-                            return Ok(interp.convert(None::<Value>));
-                        }
-                    } else {
-                        return Ok(interp.convert(None::<Value>));
-                    }
-                }
-            };
-            if let Some(pos) = captures.pos(index).map(|pos| pos.1) {
-                pos
+            if let Some(Ok(index)) = indexes.last().copied().map(usize::try_from) {
+                index
             } else {
                 return Ok(interp.convert(None::<Value>));
             }
         }
-        Backend::Rust(_) => unimplemented!("Rust-backed Regexp"),
     };
-    let end = match_against[0..end].chars().count();
-    let end = end + borrow.region.start;
-    let end = Int::try_from(end)
-        .map_err(|_| Fatal::new(interp, "MatchData end pos does not fit in Integer"))?;
-    Ok(interp.convert(end))
+    if let Some((_, end)) = borrow.regexp.inner().pos(interp, haystack, index)? {
+        let end = if let Ok(haystack) = str::from_utf8(&haystack[0..end]) {
+            haystack.chars().count()
+        } else {
+            haystack.len()
+        };
+        let end = end + borrow.region.start;
+        let end = Int::try_from(end)
+            .map_err(|_| Fatal::new(interp, "MatchData end pos does not fit in Integer"))?;
+
+        Ok(interp.convert(end))
+    } else {
+        Ok(interp.convert(None::<Value>))
+    }
 }

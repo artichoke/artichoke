@@ -10,6 +10,8 @@ bstr = "0.2"
 downcast = "0.10"
 log = "0.4"
 memchr = "2"
+once_cell = "1"
+onig = "5"
 regex = "1"
 
 [dependencies.artichoke-core]
@@ -17,11 +19,6 @@ path = "../artichoke-core"
 
 [dependencies.artichoke-vfs]
 path = "../artichoke-vfs"
-
-[dependencies.onig]
-version = "5"
-# git = "https://github.com/artichoke/rust-onig"
-# branch = "wasm"
 
 [dev-dependencies]
 env_logger = "0.7"

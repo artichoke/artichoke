@@ -64,7 +64,9 @@ class SpecCollector
 
   def exception(state)
     skipped = false
-    if state.exception.is_a?(NoMethodError)
+    if state.exception.is_a?(ArgumentError)
+      skipped = true if state.message =~ /Oniguruma.*UTF-8/
+    elsif state.exception.is_a?(NoMethodError)
       skipped = true if state.message =~ /'allocate'/
       skipped = true if state.message =~ /'encoding'/
       skipped = true if state.message =~ /'private_instance_methods'/
@@ -79,7 +81,6 @@ class SpecCollector
       skipped = true if state.it =~ /is too big/ # mruby does not have Bignum
       skipped = true if state.it =~ /hexadecimal digits/
     elsif state.exception.is_a?(SyntaxError)
-      skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
       skipped = true if state.it =~ /hexadecimal digits/
       skipped = true if state.message =~ /Regexp pattern/

@@ -13,7 +13,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Box<dyn RubyEx
             "Unable to extract Rust MatchData from Ruby MatchData receiver",
         )
     })?;
-    let mut result = interp.convert(data.borrow().string.as_bytes());
+    let mut result = interp.convert(data.borrow().string.as_slice());
     result
         .freeze()
         .map_err(|_| Fatal::new(interp, "Unable to freeze MatchData#string result"))?;

@@ -158,6 +158,14 @@ array_to_ruby!(Vec<Int>);
 array_to_ruby!(Vec<Float>);
 array_to_ruby!(Vec<String>);
 array_to_ruby!(Vec<&'a str>);
+array_to_ruby!(&'a [Value]);
+array_to_ruby!(&'a [bool]);
+array_to_ruby!(&'a [Vec<u8>]);
+array_to_ruby!(&'a [&'a [u8]]);
+array_to_ruby!(&'a [Int]);
+array_to_ruby!(&'a [Float]);
+array_to_ruby!(&'a [String]);
+array_to_ruby!(&'a [&'a str]);
 
 // Array of optional primitives
 array_to_ruby!(Vec<Option<Value>>);
@@ -168,6 +176,14 @@ array_to_ruby!(Vec<Option<Int>>);
 array_to_ruby!(Vec<Option<Float>>);
 array_to_ruby!(Vec<Option<String>>);
 array_to_ruby!(Vec<Option<&'a str>>);
+array_to_ruby!(&'a [Option<Value>]);
+array_to_ruby!(&'a [Option<bool>]);
+array_to_ruby!(&'a [Option<Vec<u8>>]);
+array_to_ruby!(&'a [Option<&'a [u8]>]);
+array_to_ruby!(&'a [Option<Int>]);
+array_to_ruby!(&'a [Option<Float>]);
+array_to_ruby!(&'a [Option<String>]);
+array_to_ruby!(&'a [Option<&'a str>]);
 
 // Hash of primitive keys to values
 array_to_ruby!(HashMap<bool, Value>);

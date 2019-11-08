@@ -21,7 +21,7 @@ pub struct State {
     modules: HashMap<TypeId, Rc<RefCell<module::Spec>>>,
     pub vfs: Filesystem,
     pub(crate) context_stack: Vec<Context>,
-    pub num_set_regexp_capture_globals: usize,
+    pub active_regexp_globals: usize,
     symbol_cache: HashMap<String, sys::mrb_sym>,
     captured_output: Option<String>,
 }
@@ -38,7 +38,7 @@ impl State {
             modules: HashMap::default(),
             vfs,
             context_stack: vec![],
-            num_set_regexp_capture_globals: 0,
+            active_regexp_globals: 0,
             symbol_cache: HashMap::default(),
             captured_output: None,
         }
