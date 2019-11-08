@@ -22,6 +22,7 @@ use crate::value::{Block, Value};
 use crate::warn::Warn;
 use crate::Artichoke;
 
+#[allow(clippy::type_complexity)]
 pub mod backend;
 pub mod enc;
 pub mod mruby;
@@ -106,8 +107,7 @@ impl Regexp {
         } else {
             (None, None)
         };
-        let literal_config = if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) }
-        {
+        let literal_config = if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
             if options.is_some() || encoding.is_some() {
                 interp
                     .warn("flags ignored when initializing from Regexp")
@@ -168,9 +168,8 @@ impl Regexp {
                 "No implicit conversion into String",
             )));
         };
-        let pattern = str::from_utf8(pattern).map_err(|_| {
-            ArgumentError::new(interp, "Regexp::escape only supports UTF-8 patterns")
-        })?;
+        let pattern = str::from_utf8(pattern)
+            .map_err(|_| ArgumentError::new(interp, "Self::escape only supports UTF-8 patterns"))?;
 
         Ok(interp.convert(syntax::escape(pattern)))
     }
@@ -190,7 +189,7 @@ impl Regexp {
                     let ary = borrow.as_vec(interp);
                     let mut patterns = vec![];
                     for pattern in ary {
-                        if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
+                        if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                             patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                         } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
                             patterns.push(syntax::escape(pattern).into_bytes());
@@ -204,7 +203,7 @@ impl Regexp {
                     bstr::join(b"|", patterns)
                 } else {
                     let pattern = first;
-                    if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
+                    if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                         regexp.borrow().0.derived_config().pattern.clone()
                     } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
                         syntax::escape(pattern).into_bytes()
@@ -217,16 +216,16 @@ impl Regexp {
                 }
             } else {
                 let mut patterns = vec![];
-                if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &first) } {
+                if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &first) } {
                     patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                 } else if let Ok(bytes) = first.clone().try_into::<&[u8]>() {
                     let pattern = str::from_utf8(bytes).map_err(|_| {
-                        ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
+                        ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
                     })?;
                     patterns.push(syntax::escape(pattern).into_bytes());
                 } else if let Ok(bytes) = first.funcall::<&[u8]>("to_str", &[], None) {
                     let pattern = str::from_utf8(bytes).map_err(|_| {
-                        ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
+                        ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
                     })?;
                     patterns.push(syntax::escape(pattern).into_bytes());
                 } else {
@@ -236,16 +235,16 @@ impl Regexp {
                     )));
                 }
                 for pattern in iter {
-                    if let Ok(regexp) = unsafe { Regexp::try_from_ruby(&interp, &pattern) } {
+                    if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                         patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                     } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
                         let pattern = str::from_utf8(bytes).map_err(|_| {
-                            ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
+                            ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
                         })?;
                         patterns.push(syntax::escape(pattern).into_bytes());
                     } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
                         let pattern = str::from_utf8(bytes).map_err(|_| {
-                            ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
+                            ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
                         })?;
                         patterns.push(syntax::escape(pattern).into_bytes());
                     } else {
@@ -268,7 +267,7 @@ impl Regexp {
             pattern,
             options: Options::default(),
         };
-        let regexp = Regexp::new(interp, literal_config, derived_config, Encoding::default())?;
+        let regexp = Self::new(interp, literal_config, derived_config, Encoding::default())?;
         let regexp = unsafe { regexp.try_into_ruby(interp, None) }.map_err(|_| {
             Fatal::new(
                 interp,
@@ -279,8 +278,8 @@ impl Regexp {
     }
 
     #[inline]
-    pub fn inner(&self) -> &Box<dyn RegexpType> {
-        &self.0
+    pub fn inner(&self) -> &dyn RegexpType {
+        self.0.as_ref()
     }
 
     pub fn case_compare(
@@ -304,7 +303,7 @@ impl Regexp {
     }
 
     pub fn eql(&self, interp: &Artichoke, other: Value) -> Result<Value, Box<dyn RubyException>> {
-        if let Ok(other) = unsafe { Regexp::try_from_ruby(interp, &other) } {
+        if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             Ok(interp.convert(self.inner() == other.borrow().inner()))
         } else {
             Ok(interp.convert(false))
@@ -502,6 +501,7 @@ pub struct Config {
     options: opts::Options,
 }
 
+#[allow(clippy::module_name_repetitions, clippy::type_complexity)]
 pub trait RegexpType {
     fn box_clone(&self) -> Box<dyn RegexpType>;
     fn debug(&self) -> String;
@@ -616,3 +616,24 @@ impl PartialEq for Box<dyn RegexpType> {
 }
 
 impl Eq for Box<dyn RegexpType> {}
+
+impl fmt::Debug for &dyn RegexpType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.debug())
+    }
+}
+
+impl Hash for &dyn RegexpType {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.literal_config().hash(state);
+    }
+}
+
+impl PartialEq for &dyn RegexpType {
+    fn eq(&self, other: &Self) -> bool {
+        self.derived_config().pattern == other.derived_config().pattern
+            && self.encoding() == other.encoding()
+    }
+}
+
+impl Eq for &dyn RegexpType {}

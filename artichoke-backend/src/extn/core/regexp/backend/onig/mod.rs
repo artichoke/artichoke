@@ -261,9 +261,9 @@ impl RegexpType for Onig {
             let matchdata = unsafe { matchdata.try_into_ruby(&interp, None) }.map_err(|_| {
                 Fatal::new(interp, "Could not create Ruby Value from Rust MatchData")
             })?;
-            let sym = interp.0.borrow_mut().sym_intern("$~");
+            let matchdata_sym = interp.0.borrow_mut().sym_intern("$~");
             unsafe {
-                sys::mrb_gv_set(mrb, sym, matchdata.inner());
+                sys::mrb_gv_set(mrb, matchdata_sym, matchdata.inner());
             }
             Ok(true)
         } else {
@@ -389,9 +389,9 @@ impl RegexpType for Onig {
                     "Failed to initialize Ruby MatchData Value with Rust MatchData",
                 )
             })?;
-            let sym = interp.0.borrow_mut().sym_intern("$~");
+            let matchdata_sym = interp.0.borrow_mut().sym_intern("$~");
             unsafe {
-                sys::mrb_gv_set(mrb, sym, data.inner());
+                sys::mrb_gv_set(mrb, matchdata_sym, data.inner());
             }
             if let Some(block) = block {
                 let result = block.yield_arg(interp, &data).map_err(|_| {
@@ -457,9 +457,9 @@ impl RegexpType for Onig {
                     "Failed to initialize Ruby MatchData Value with Rust MatchData",
                 )
             })?;
-            let sym = interp.0.borrow_mut().sym_intern("$~");
+            let matchdata_sym = interp.0.borrow_mut().sym_intern("$~");
             unsafe {
-                sys::mrb_gv_set(mrb, sym, matchdata.inner());
+                sys::mrb_gv_set(mrb, matchdata_sym, matchdata.inner());
             }
             if let Some(match_pos) = captures.pos(0) {
                 let pre_match = interp.convert(&pattern[..match_pos.0]);
@@ -563,10 +563,10 @@ impl RegexpType for Onig {
             capture_names.push((group.as_bytes().to_owned(), group_indexes.to_vec()));
             true
         });
-        capture_names.sort_by(|a, b| {
-            let aidx = a.1.iter().copied().fold(u32::max_value(), u32::min);
-            let bidx = b.1.iter().copied().fold(u32::max_value(), u32::min);
-            aidx.partial_cmp(&bidx).unwrap_or(Ordering::Equal)
+        capture_names.sort_by(|left, right| {
+            let left = left.1.iter().copied().fold(u32::max_value(), u32::min);
+            let right = right.1.iter().copied().fold(u32::max_value(), u32::min);
+            left.partial_cmp(&right).unwrap_or(Ordering::Equal)
         });
         for (name, _) in capture_names {
             if !names.contains(&name) {
@@ -591,8 +591,7 @@ impl RegexpType for Onig {
         let pos = self
             .regex
             .captures(haystack)
-            .and_then(|captures| captures.pos(at))
-            .map(|(begin, end)| (usize::from(begin), usize::from(end)));
+            .and_then(|captures| captures.pos(at));
         Ok(pos)
     }
 
