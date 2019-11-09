@@ -14,7 +14,6 @@ use std::str;
 
 use crate::convert::Convert;
 use crate::convert::RustBackedValue;
-use crate::extn::core::array::Array;
 use crate::extn::core::exception::{ArgumentError, Fatal, RubyException, TypeError};
 use crate::sys;
 use crate::types::Int;
@@ -53,13 +52,20 @@ impl Regexp {
         derived_config: Config,
         encoding: Encoding,
     ) -> Result<Self, Box<dyn RubyException>> {
-        let backend = Box::new(backend::onig::Onig::new(
+        // Patterns must be parsable by Oniguruma.
+        let onig = backend::onig::Onig::new(
             interp,
-            literal_config,
-            derived_config,
+            literal_config.clone(),
+            derived_config.clone(),
             encoding,
-        )?);
-        Ok(Self(backend))
+        )?;
+        if let Ok(regex_utf8) =
+            backend::regex_utf8::RegexUtf8::new(interp, literal_config, derived_config, encoding)
+        {
+            Ok(Self(Box::new(regex_utf8)))
+        } else {
+            Ok(Self(Box::new(onig)))
+        }
     }
 
     pub fn lazy(pattern: &[u8]) -> Self {
@@ -179,7 +185,7 @@ impl Regexp {
         let pattern = if let Some(first) = iter.next() {
             if iter.peek().is_none() {
                 #[cfg(feature = "artichoke-array")]
-                let ary = unsafe { Array::try_from_ruby(interp, &first) };
+                let ary = unsafe { crate::extn::core::array::Array::try_from_ruby(interp, &first) };
                 #[cfg(not(feature = "artichoke-array"))]
                 let ary = first.clone().try_into::<Vec<Value>>();
                 if let Ok(ary) = ary {

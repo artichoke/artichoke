@@ -12,12 +12,22 @@
 /// This macro is `unsafe`.
 #[macro_export]
 macro_rules! unwrap_interpreter {
-    ($mrb:expr) => {
+    ($mrb:expr, or_else = ()) => {
         if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
             interp
         } else {
-            return $crate::sys::mrb_sys_nil_value();
+            return;
         }
+    };
+    ($mrb:expr, or_else = $default:expr) => {
+        if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
+            interp
+        } else {
+            return $default;
+        }
+    };
+    ($mrb:expr) => {
+        unwrap_interpreter!($mrb, or_else = $crate::sys::mrb_sys_nil_value())
     };
 }
 

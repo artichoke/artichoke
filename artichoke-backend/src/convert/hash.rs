@@ -46,7 +46,7 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
                     // Doing a `hash[key]` access is guaranteed to succeed since
                     // we're iterating over the keys in the hash.
                     #[cfg(feature = "artichoke-array")]
-                    let key = unsafe { array::mruby::artichoke_ary_ref(mrb, keys, idx) };
+                    let key = unsafe { array::ffi::artichoke_ary_ref(mrb, keys, idx) };
                     #[cfg(not(feature = "artichoke-array"))]
                     let key = unsafe { sys::mrb_ary_ref(mrb, keys, idx) };
                     let value = unsafe { sys::mrb_hash_get(mrb, hash, key) };
