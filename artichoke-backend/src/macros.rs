@@ -12,6 +12,13 @@
 /// This macro is `unsafe`.
 #[macro_export]
 macro_rules! unwrap_interpreter {
+    ($mrb:expr, or_else = ()) => {
+        if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
+            interp
+        } else {
+            return;
+        }
+    };
     ($mrb:expr, or_else = $default:expr) => {
         if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
             interp

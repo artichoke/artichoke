@@ -253,7 +253,7 @@ impl RegexpType for Onig {
                 }
             }
             let matchdata = MatchData::new(
-                pattern.to_owned().into_bytes(),
+                pattern.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
                 pattern.len(),
@@ -367,7 +367,7 @@ impl RegexpType for Onig {
             interp.0.borrow_mut().active_regexp_globals = captures.len();
 
             let mut matchdata = MatchData::new(
-                pattern.to_owned().into_bytes(),
+                pattern.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
                 pattern.len(),
@@ -446,7 +446,7 @@ impl RegexpType for Onig {
             interp.0.borrow_mut().active_regexp_globals = captures.len();
 
             let matchdata = MatchData::new(
-                pattern.to_owned().into_bytes(),
+                pattern.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
                 pattern.len(),
@@ -536,16 +536,14 @@ impl RegexpType for Onig {
         if let Some(captures) = self.regex.captures(haystack) {
             let mut map = HashMap::with_capacity(captures.len());
             self.regex.foreach_name(|group, group_indexes| {
-                'name: for index in group_indexes.iter().copied().rev() {
+                let capture = group_indexes.iter().rev().copied().find_map(|index| {
                     let index = usize::try_from(index).unwrap_or_default();
-                    if let Some(capture) = captures.at(index) {
-                        map.insert(
-                            group.to_owned().into_bytes(),
-                            Some(capture.to_owned().into_bytes()),
-                        );
-                        break 'name;
-                    }
-                    map.insert(group.to_owned().into_bytes(), None);
+                    captures.at(index)
+                });
+                if let Some(capture) = capture {
+                    map.insert(group.as_bytes().to_vec(), Some(capture.as_bytes().to_vec()));
+                } else {
+                    map.insert(group.as_bytes().to_vec(), None);
                 }
                 true
             });

@@ -274,7 +274,7 @@ impl RegexpType for RegexUtf8 {
                 }
             }
             let matchdata = MatchData::new(
-                pattern.to_owned().into_bytes(),
+                pattern.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
                 pattern.len(),
@@ -400,7 +400,7 @@ impl RegexpType for RegexUtf8 {
             interp.0.borrow_mut().active_regexp_globals = captures.len();
 
             let mut matchdata = MatchData::new(
-                pattern.to_owned().into_bytes(),
+                pattern.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
                 pattern.len(),
@@ -494,7 +494,7 @@ impl RegexpType for RegexUtf8 {
             interp.0.borrow_mut().active_regexp_globals = captures.len();
 
             let matchdata = MatchData::new(
-                pattern.to_owned().into_bytes(),
+                pattern.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
                 pattern.len(),
@@ -559,7 +559,7 @@ impl RegexpType for RegexUtf8 {
                         })?;
                         group_indexes.push(idx);
                     }
-                    map.push((group.to_owned().into_bytes(), group_indexes));
+                    map.push((group.as_bytes().to_vec(), group_indexes));
                 }
             }
         }
@@ -580,17 +580,12 @@ impl RegexpType for RegexUtf8 {
         if let Some(captures) = self.regex.captures(haystack) {
             let mut map = HashMap::with_capacity(captures.len());
             for (group, group_indexes) in self.named_captures(interp)? {
-                let capture = group_indexes
-                    .iter()
-                    .rev()
-                    .copied()
-                    .filter_map(|index| {
-                        let index = usize::try_from(index).unwrap_or_default();
-                        captures.get(index)
-                    })
-                    .next();
+                let capture = group_indexes.iter().rev().copied().find_map(|index| {
+                    let index = usize::try_from(index).unwrap_or_default();
+                    captures.get(index)
+                });
                 if let Some(capture) = capture {
-                    map.insert(group, Some(capture.as_str().to_owned().into_bytes()));
+                    map.insert(group, Some(capture.as_str().as_bytes().to_vec()));
                 } else {
                     map.insert(group, None);
                 }
