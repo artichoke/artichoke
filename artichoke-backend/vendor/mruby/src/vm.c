@@ -1716,6 +1716,7 @@ RETRY_TRY_BLOCK:
         if (ARY_CHECK(mrb, stack[m1])) {
           len = ARRAY_LEN(mrb, stack[m1]);
           pp = stack[m1];
+          mrb_gc_protect(mrb, pp);
         }
         regs[a] = ARY_NEW_CAPA(mrb, m1 + len + m2 + kd);
         mrb_gc_protect(mrb, regs[a]);
@@ -1824,6 +1825,7 @@ RETRY_TRY_BLOCK:
             kdict = mrb_hash_dup(mrb, kdict);
           }
         }
+        mrb_gc_protect(mrb, kdict);
       }
 
       /* no rest arguments */
@@ -2531,32 +2533,28 @@ RETRY_TRY_BLOCK:
       mrb_value v = regs[a];
       int pre  = b;
       int post = c;
-      struct RArray *ary;
       int len, idx;
 
       if (!ARY_CHECK(mrb, v)) {
         v = ARY_NEW_FROM_VALUES(mrb, 1, &regs[a]);
       }
+      mrb_gc_protect(mrb, v);
       len = ARRAY_LEN(mrb, v);
-      mrb_value v_mrb = mrb_ary_new_capa(mrb, len);
-      mrb_gc_protect(mrb, v_mrb);
-      ary = mrb_ary_ptr(v_mrb);
-      int i;
-      for (i = 0; i < len; i++) {
-        ARY_PTR(ary)[i] = ARY_REF(mrb, v, i);
-      }
       if (len > pre + post) {
-        v = ARY_NEW_FROM_VALUES(mrb, len - pre - post, ARY_PTR(ary)+pre);
-        regs[a++] = v;
+        mrb_value out = ARY_NEW_CAPA(mrb, len - pre - post);
+        for (idx = 0; idx < len - pre - post; idx++) {
+          ARY_SET(mrb, out, idx, ARY_REF(mrb, v, pre + idx));
+        }
+        regs[a++] = out;
         while (post--) {
-          regs[a++] = ARY_PTR(ary)[len-post-1];
+          regs[a++] = ARY_REF(mrb, v, len-post-1);
         }
       }
       else {
         v = ARY_NEW_CAPA(mrb, 0);
         regs[a++] = v;
         for (idx=0; idx+pre<len; idx++) {
-          regs[a+idx] = ARY_PTR(ary)[pre+idx];
+          regs[a+idx] = ARY_REF(mrb, v, pre + idx);
         }
         while (idx < post) {
           SET_NIL_VALUE(regs[a+idx]);

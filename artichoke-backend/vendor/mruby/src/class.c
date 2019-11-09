@@ -545,6 +545,7 @@ mrb_get_argv(mrb_state *mrb)
   mrb_value *array_argv;
   if (argc < 0) {
     mrb_int argc = ARRAY_LEN(mrb, mrb->c->stack[1]);
+    mrb_gc_protect(mrb, mrb->c->stack[1]);
     mrb_value argv_mrb = mrb_ary_new_capa(mrb, argc);
     mrb_gc_protect(mrb, argv_mrb);
     array_argv = RARRAY_PTR(argv_mrb);
