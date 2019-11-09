@@ -37,10 +37,14 @@ register_spec() {
 run_specs_artichoke() {
   bin="$(pwd)/target/debug/spec-runner"
   pushd "spec-runner/vendor/spec" >/dev/null
-  if command -v precise-time; then
-    precise-time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  if [[ $# -eq 1 && $1 -eq "--with-timings" ]]; then
+    if command -v precise-time; then
+      precise-time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+    else
+      time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+    fi
   else
-    time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+    "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
   fi
   popd >/dev/null
 }
@@ -48,10 +52,14 @@ run_specs_artichoke() {
 run_specs_ruby() {
   bin="$(pwd)/spec-runner/src/spec_runner.rb"
   pushd "spec-runner/vendor/spec" >/dev/null
-  if command -v precise-time; then
-    precise-time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+  if [[ $# -eq 1 && $1 -eq "--with-timings" ]]; then
+    if command -v precise-time; then
+      precise-time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+    else
+      time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+    fi
   else
-    time "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
+    "$bin" ./**/shared/**/*.rb ./**/fixtures/**/*.rb "${specs[@]}"
   fi
   popd >/dev/null
 }
@@ -164,13 +172,23 @@ if [[ $# -eq 1 ]]; then
   if [[ $1 == "--ruby" ]]; then
     run_specs_ruby
   elif [[ $1 == "--artichoke" ]]; then
-    cargo build -p spec-runner
+    cargo build
     run_specs_artichoke
   else
-    echo 1>&2 "Usage: $0 [ --artichoke | --ruby ]"
+    echo 1>&2 "Usage: $0 [ --artichoke | --ruby ] [ --with-timings ]"
+    exit 1
+  fi
+elif [[ $# -eq 2 ]]; then
+  if [[ $1 == "--ruby" && $2 == "--with-timings" ]]; then
+    run_specs_ruby --with-timings
+  elif [[ $1 == "--artichoke" ]]; then
+    cargo build
+    run_specs_artichoke --with-timings
+  else
+    echo 1>&2 "Usage: $0 [ --artichoke | --ruby ] [ --with-timings ]"
     exit 1
   fi
 else
-  echo 1>&2 "Usage: $0 [ --artichoke | --ruby ]"
+  echo 1>&2 "Usage: $0 [ --artichoke | --ruby ] [ --with-timings ]"
   exit 1
 fi
