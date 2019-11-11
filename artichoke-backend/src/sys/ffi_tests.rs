@@ -621,7 +621,7 @@ fn protect() {
 
         let mrb = mrb_open();
 
-        let mut state = <mem::MaybeUninit<mrb_bool>>::uninit();
+        let mut state = mem::MaybeUninit::<mrb_bool>::uninit();
         let nil = mrb_sys_nil_value();
 
         // `mrb_protect` calls the passed function with `data` as an argument.
@@ -673,8 +673,8 @@ pub fn args() {
     unsafe {
         extern "C" fn add(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
             unsafe {
-                let mut a = <mem::MaybeUninit<mrb_value>>::uninit();
-                let mut b = <mem::MaybeUninit<mrb_value>>::uninit();
+                let mut a = mem::MaybeUninit::<mrb_value>::uninit();
+                let mut b = mem::MaybeUninit::<mrb_value>::uninit();
 
                 let argspec = CString::new("oo").unwrap();
                 mrb_get_args(mrb, argspec.as_ptr(), a.as_mut_ptr(), b.as_mut_ptr());
@@ -731,8 +731,8 @@ pub fn str_args() {
     unsafe {
         extern "C" fn add(mrb: *mut mrb_state, _slf: mrb_value) -> mrb_value {
             unsafe {
-                let mut a = <mem::MaybeUninit<*const c_char>>::uninit();
-                let mut b = <mem::MaybeUninit<*const c_char>>::uninit();
+                let mut a = mem::MaybeUninit::<*const c_char>::uninit();
+                let mut b = mem::MaybeUninit::<*const c_char>::uninit();
 
                 let argspec = CString::new("zz").unwrap();
                 mrb_get_args(mrb, argspec.as_ptr(), a.as_mut_ptr(), b.as_mut_ptr());

@@ -221,7 +221,7 @@ impl ValueLike for Value {
         let value = unsafe {
             let data =
                 sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
-            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+            let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
 
             let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
             if state.assume_init() != 0 {
@@ -295,7 +295,7 @@ impl ValueLike for Value {
         let value = unsafe {
             let data =
                 sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
-            let mut state = <mem::MaybeUninit<sys::mrb_bool>>::uninit();
+            let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
 
             let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
             if state.assume_init() != 0 {

@@ -10,10 +10,10 @@ use artichoke_backend::eval::Eval;
 use artichoke_backend::file::File;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
+use artichoke_backend::types::Int;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
 use artichoke_core::value::Value as ValueLike;
-use std::mem;
 
 #[derive(Clone, Debug, Default)]
 struct Container {
@@ -31,30 +31,13 @@ impl Container {
         mrb: *mut sys::mrb_state,
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
-        struct Args {
-            inner: i64,
-        }
-
-        impl Args {
-            const ARGSPEC: &'static [u8] = b"o\0";
-
-            unsafe fn extract(interp: &Artichoke) -> Result<Self, ArtichokeError> {
-                let inner = <mem::MaybeUninit<sys::mrb_value>>::uninit();
-                sys::mrb_get_args(
-                    interp.0.borrow().mrb,
-                    Self::ARGSPEC.as_ptr() as *const i8,
-                    &inner,
-                );
-                let inner = Value::new(interp, inner.assume_init());
-                let inner = inner.try_into::<i64>()?;
-                Ok(Self { inner })
-            }
-        }
-
+        let inner = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
-        Args::extract(&interp)
-            .and_then(|args| {
-                let container = Box::new(Self { inner: args.inner });
+        let inner = Value::new(&interp, inner);
+        inner
+            .try_into::<Int>()
+            .and_then(|inner| {
+                let container = Box::new(Self { inner });
                 container.try_into_ruby(&interp, Some(slf))
             })
             .unwrap_or_else(|_| interp.convert(None::<Value>))
@@ -99,8 +82,8 @@ fn define_rust_backed_ruby_class() {
 
     interp.eval("require 'container'").expect("require");
     let result = interp.eval("Container.new(15).value").expect("eval");
-    assert_eq!(result.try_into::<i64>(), Ok(15));
+    assert_eq!(result.try_into::<Int>(), Ok(15));
     // Ensure Rc is cloned correctly and still points to valid memory.
     let result = interp.eval("Container.new(15).value").expect("eval");
-    assert_eq!(result.try_into::<i64>(), Ok(15));
+    assert_eq!(result.try_into::<Int>(), Ok(15));
 }
