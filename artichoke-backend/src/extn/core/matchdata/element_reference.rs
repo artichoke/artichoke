@@ -100,8 +100,8 @@ impl<'a> Args<'a> {
         first: &Value,
         length: Int,
     ) -> Result<Option<Self>, Box<dyn RubyException>> {
-        let mut start = <mem::MaybeUninit<sys::mrb_int>>::uninit();
-        let mut len = <mem::MaybeUninit<sys::mrb_int>>::uninit();
+        let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
+        let mut len = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let mrb = interp.0.borrow().mrb;
         // `mrb_range_beg_len` can raise.
         // TODO: Wrap this in a call to `mrb_protect`.
