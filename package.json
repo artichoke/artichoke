@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "Artichoke Ruby",
-  "keywords": ["programming language", "scripting", "ruby", "rust"],
+  "keywords": [
+    "programming language",
+    "scripting",
+    "ruby",
+    "rust"
+  ],
   "homepage": "https://github.com/artichoke/artichoke#readme",
   "bugs": "https://github.com/artichoke/artichoke/issues",
   "license": "MIT",
@@ -29,14 +34,15 @@
     "@babel/preset-env": "^7.5.5",
     "babel-eslint": "^10.0.1",
     "clang-format": "^1.2.4",
-    "eslint": "^5.11.1",
-    "eslint-config-airbnb": "^17.1.0",
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb": "^18.0.1",
     "eslint-config-prettier": "^6.0.0",
     "eslint-plugin-html": "^6.0.0",
-    "eslint-plugin-import": "^2.17.2",
-    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-prettier": "^3.0.1",
-    "eslint-plugin-react": "^7.12.0",
+    "eslint-plugin-react": "^7.14.3",
+    "eslint-plugin-react-hooks": "^1.7.0",
     "gh-pages": "^2.1.1",
     "package-json-validator": "^0.6.3",
     "path": "^0.12.7",
@@ -45,7 +51,9 @@
     "prettier-eslint": "^9.0.0"
   },
   "babel": {
-    "presets": ["@babel/preset-env"]
+    "presets": [
+      "@babel/preset-env"
+    ]
   },
   "eslintConfig": {
     "env": {
@@ -55,12 +63,20 @@
       "node": true
     },
     "parser": "babel-eslint",
-    "plugins": ["html", "import", "prettier"],
-    "extends": ["airbnb", "prettier"],
+    "plugins": [
+      "html",
+      "import",
+      "prettier"
+    ],
+    "extends": [
+      "airbnb",
+      "prettier"
+    ],
     "rules": {
       "prettier/prettier": "error",
       "react/jsx-closing-bracket-location": "off",
       "react/jsx-closing-tag-location": "off",
+      "react/jsx-curly-newline": "off",
       "react/jsx-curly-spacing": "off",
       "react/jsx-equals-spacing": "off",
       "react/jsx-first-prop-new-line": "off",
@@ -75,7 +91,7 @@
     }
   },
   "scripts": {
-    "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
+    "eslint-check": "eslint --print-config package.json | eslint-config-prettier-check",
     "lint": "./scripts/lint.sh",
     "loc": "loc --exclude target vendor fixtures",
     "spec": "./scripts/spec-compliance.sh --artichoke"
