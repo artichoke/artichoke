@@ -530,13 +530,13 @@ macro_rules! hash_impl {
     };
 }
 
-hash_impl!(Value);
-hash_impl!(bool);
+// hash_impl!(Value);
+// hash_impl!(bool);
 hash_impl!(Vec<u8>);
-hash_impl!(no_hash_map | Float);
-hash_impl!(Int);
-hash_impl!(String);
-hash_impl!(&'a str);
+// hash_impl!(no_hash_map | Float);
+// hash_impl!(Int);
+// hash_impl!(String);
+// hash_impl!(&'a str);
 
 #[cfg(test)]
 mod tests {
