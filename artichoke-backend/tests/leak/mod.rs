@@ -1,5 +1,4 @@
 use std::convert::AsRef;
-use std::mem;
 
 pub struct Detector {
     test: String,
@@ -45,9 +44,15 @@ impl Detector {
     }
 }
 
+#[cfg(target_os = "linux")]
 fn resident_memsize() -> i64 {
-    let mut out = mem::MaybeUninit::<libc::rusage>::uninit();
+    let mut out = std::mem::MaybeUninit::<libc::rusage>::uninit();
     assert!(unsafe { libc::getrusage(libc::RUSAGE_SELF, out.as_mut_ptr()) } == 0);
     let out = unsafe { out.assume_init() };
     out.ru_maxrss
+}
+
+#[cfg(not(target_os = "linux"))]
+fn resident_memsize() -> i64 {
+    0
 }
