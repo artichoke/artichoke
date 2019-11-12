@@ -34,13 +34,17 @@ You can [try Artichoke in your browser](https://artichoke.run). The
 [Artichoke Playground](https://github.com/artichoke/playground) runs a
 [WebAssembly](https://webassembly.org/) build of Artichoke.
 
-If you would prefer to run a local build, you can
-[set up a Rust toolchain](/CONTRIBUTING.md#rust-toolchain) and launch an
-interactive Artichoke shell with:
+You can launch an interactive `irb`-style shell locally. The following command
+launches the Artichoke `irb` shell using `cargo`. `cargo` is the Rust equivalent
+to Ruby `bundler` that also manages building Rust code.
 
 ```sh
-cargo run -p artichoke-frontend --bin airb
+cargo run --bin airb
 ```
+
+To build Artichoke, you'll need Rust, clang, and Ruby.
+[`CONTRIBUTING.md`](/CONTRIBUTING.md) has more detail on
+[how to set up the compiler toolchain](/CONTRIBUTING.md#setup).
 
 ## Design and Goals
 

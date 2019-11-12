@@ -134,7 +134,7 @@ mod libmruby {
         );
         if !Command::new(mruby_minirake())
             .arg("--jobs")
-            .arg("4")
+            .arg(num_cpus::get().to_string())
             .env("MRUBY_BUILD_DIR", mruby_build_dir())
             .env("MRUBY_CONFIG", build_config())
             .current_dir(mruby_source_dir())
