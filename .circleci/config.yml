@@ -30,12 +30,12 @@ commands:
 jobs:
   rust:
     docker:
-      - image: circleci/rust:1.38.0-buster
+      - image: circleci/rust:1.39.0-buster
     resource_class: large
     steps:
       - checkout
       - restore_cache:
-          key: rust-cargo-v3-{{ checksum "Cargo.lock" }}
+          key: rust-cargo-v4-{{ checksum "Cargo.lock" }}
       - run:
           name: Install Rust Toolchain
           command: |
@@ -98,7 +98,7 @@ jobs:
           command: |
             ./scripts/spec-compliance.sh --artichoke
       - save_cache:
-          key: rust-cargo-v3-{{ checksum "Cargo.lock" }}
+          key: rust-cargo-v4-{{ checksum "Cargo.lock" }}
           paths:
             - "~/.cargo"
             - "./target"
