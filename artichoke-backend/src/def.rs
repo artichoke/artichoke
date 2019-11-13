@@ -18,9 +18,17 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 /// [`mrb_value`](sys::mrb_value)s that store an owned copy of an [`Rc`] smart
 /// pointer.
 ///
-/// **Warning**: This free function assumes the `data` pointer is an
-/// `Rc<RefCell<T>>`. If that assumption does not hold, this function has
-/// undefined behavior and may result in a segfault.
+/// This function calls [`Rc::from_raw`] on the data pointer and drops the
+/// resulting [`Rc`].
+///
+/// # Safety
+///
+/// This function assumes that the data pointer is to an
+/// [`Rc`]`<`[`RefCell`]`<T>>` created by [`Rc::into_raw`]. This fuction bounds
+/// `T` by [`RustBackedValue`] which boxes `T` for the mruby VM like this.
+///
+/// This function assumes it is called by the mruby VM as a free function for
+/// an [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
 pub unsafe extern "C" fn rust_data_free<T: 'static + RustBackedValue>(
     _mrb: *mut sys::mrb_state,
     data: *mut c_void,

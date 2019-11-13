@@ -97,11 +97,15 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 
 /// Raise implementation for `RubyException` boxed trait objects.
 ///
-/// **Warning**: Calling [`raise`] on an interpreter from outside the mruby VM
-/// call stack will result in a segfault. Raise should only be called from Rust
-/// functions that are exposed on the mruby interpreter via
-/// [`class::Spec`](crate::class::Spec) and
-/// [`module::Spec`](crate::module::Spec).
+/// # Safety
+///
+/// This function unwinds the stack with `longjmp`, which will ignore all Rust
+/// landing pads for panics and exit routines for cleaning up borrows. Callers
+/// should ensure that only [`Copy`] items are alive in the current stack frame.
+///
+/// Because this precondition must hold for all frames between the caller and
+/// the closest [`sys::mrb_protect`] landing pad, this function should only be
+/// called in the entrypoint into Rust from mruby.
 pub unsafe fn raise(interp: Artichoke, exception: Box<dyn RubyException>) -> ! {
     // Ensure the borrow is out of scope by the time we eval code since
     // Rust-backed files and types may need to mutably borrow the `Artichoke` to

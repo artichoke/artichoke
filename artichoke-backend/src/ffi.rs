@@ -10,14 +10,17 @@ use crate::state::State;
 use crate::sys::{self, DescribeState};
 use crate::{Artichoke, ArtichokeError};
 
-/// Extract an [`Artichoke`] interpreter from the userdata pointer on a
+/// Extract an [`Artichoke`] interpreter from the user data pointer on a
 /// [`sys::mrb_state`].
 ///
-/// This function is unsafe! It manipulates a raw pointer stored as a
-/// [`c_void`](std::ffi::c_void) on `mrb->ud`. `from_user_data` assumes that
-/// this [`c_void`](std::ffi::c_void) was created with [`Rc::into_raw`], see
-/// calling this function, [`Rc::strong_count`] on the [`Artichoke`] instance will
-/// increase by one.
+/// Calling this function will increase the [`Rc::strong_count`] on the
+/// [`Artichoke`] interpreter by one.
+///
+/// # Safety
+///
+/// This function assumes that the user data pointer was created with
+/// [`Rc::into_raw`] and that the pointer is to a non-free'd
+/// [`Rc`]`<`[`RefCell`]`<`[`State`]`>>`.
 pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeError> {
     if mrb.is_null() {
         error!("Attempted to extract Artichoke from null mrb_state");
