@@ -377,14 +377,17 @@ mod tests {
             setup();
 
             // It's not likely this path would exist, but let's be sure.
-            let raw_path = path::Path::new(r"C:\does\not\exist", "");
+            let raw_path = path::Path::new(r"C:\does\not\exist");
             assert_eq!(
                 raw_path.metadata().unwrap_err().kind(),
                 io::ErrorKind::NotFound,
             );
 
             let path = PathAbs::new(raw_path, "").unwrap();
-            assert_eq!(path.as_os_str(), r"\\?\C:\does\not\exist");
+            assert_eq!(
+                path::Path::as_os_str(path.as_path()),
+                r"\\?\C:\does\not\exist"
+            );
         }
 
         #[test]
@@ -408,7 +411,7 @@ mod tests {
                 env::current_dir().unwrap().components().take(2), // the prefix (C:) and root (\) components
             );
 
-            let expected = PathAbs::new(current_drive_root.join("foo")).unwrap();
+            let expected = PathAbs::new(current_drive_root.join("foo"), "").unwrap();
 
             assert_eq!(actual, expected);
         }
@@ -418,8 +421,11 @@ mod tests {
             setup();
             let actual = PathAbs::new(r"C:foo", "").unwrap();
 
-            let expected =
-                PathAbs::new(path::Path::new(r"C:").canonicalize().unwrap().join("foo")).unwrap();
+            let expected = PathAbs::new(
+                path::Path::new(r"C:").canonicalize().unwrap().join("foo"),
+                "",
+            )
+            .unwrap();
 
             assert_eq!(actual, expected);
         }
@@ -429,7 +435,7 @@ mod tests {
             setup();
             let path = PathAbs::new(r"\\?\bogus\path\", "").unwrap();
 
-            assert_eq!(path.as_os_str(), r"\\?\bogus\path");
+            assert_eq!(path::Path::as_os_str(path.as_path()), r"\\?\bogus\path");
         }
     }
 
