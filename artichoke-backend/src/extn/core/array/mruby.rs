@@ -178,7 +178,10 @@ unsafe extern "C" fn ary_reverse_bang(
     }
 }
 
-unsafe extern "C" fn ary_shuffle_bang(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn ary_shuffle_bang(
+    mrb: *mut sys::mrb_state,
+    ary: sys::mrb_value,
+) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);

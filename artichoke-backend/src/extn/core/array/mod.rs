@@ -522,7 +522,10 @@ pub trait ArrayType: Any {
     // like `Array#reverse!` and implement Array#reverse` in Ruby.
     fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
 
-    fn shuffle_bang(&mut self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
+    fn shuffle_bang(
+        &mut self,
+        interp: &Artichoke,
+    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
 }
 
 downcast!(dyn ArrayType);

@@ -1,5 +1,5 @@
-use std::iter;
 use rand::seq::SliceRandom;
+use std::iter;
 
 use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
@@ -235,10 +235,13 @@ impl ArrayType for Buffer {
         Ok(Box::new(Self(buffer)))
     }
 
-    fn shuffle_bang(&mut self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    fn shuffle_bang(
+        &mut self,
+        interp: &Artichoke,
+    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
         let _ = interp;
         let mut rng = rand::thread_rng();
-        self.0.shuffle(&mut rng); 
+        self.0.shuffle(&mut rng);
         Ok(self.box_clone())
     }
 }
