@@ -1,3 +1,5 @@
+#![allow(clippy::too_many_lines)]
+
 use crate::eval::Eval;
 use crate::{Artichoke, ArtichokeError};
 
