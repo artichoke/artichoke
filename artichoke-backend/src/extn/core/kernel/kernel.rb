@@ -116,6 +116,14 @@ module Kernel
     !(self =~ other) # rubocop:disable Style/InverseMethods
   end
 
+  def singleton_method(name)
+    m = method(name)
+    sc = (class << self; self; end)
+    raise NameError, "undefined method '#{name}' for class '#{sc}'" if m.owner != sc
+
+    m
+  end
+
   # Throws an object, uncaught throws will bubble up through other catch blocks.
   #
   # @param [Symbol] tag  tag being thrown
