@@ -11,7 +11,7 @@ use crate::value::Value;
 
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let result = backend::fixed::empty();
     let result = Array(result);
@@ -29,7 +29,7 @@ pub unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb
 
 // MRB_API mrb_value mrb_ary_new_capa(mrb_state*, mrb_int);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_new_capa(
+unsafe extern "C" fn artichoke_ary_new_capa(
     mrb: *mut sys::mrb_state,
     capacity: sys::mrb_int,
 ) -> sys::mrb_value {
@@ -56,7 +56,7 @@ pub unsafe extern "C" fn artichoke_ary_new_capa(
 
 // MRB_API mrb_value mrb_ary_new_from_values(mrb_state *mrb, mrb_int size, const mrb_value *vals);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_new_from_values(
+unsafe extern "C" fn artichoke_ary_new_from_values(
     mrb: *mut sys::mrb_state,
     size: sys::mrb_int,
     vals: *const sys::mrb_value,
@@ -101,7 +101,7 @@ pub unsafe extern "C" fn artichoke_ary_new_from_values(
 
 // MRB_API mrb_value mrb_ary_splat(mrb_state *mrb, mrb_value value);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_splat(
+unsafe extern "C" fn artichoke_ary_splat(
     mrb: *mut sys::mrb_state,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -126,7 +126,7 @@ pub unsafe extern "C" fn artichoke_ary_splat(
 
 // MRB_API void mrb_ary_concat(mrb_state *mrb, mrb_value self, mrb_value other);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_concat(
+unsafe extern "C" fn artichoke_ary_concat(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     other: sys::mrb_value,
@@ -157,7 +157,7 @@ pub unsafe extern "C" fn artichoke_ary_concat(
 
 // MRB_API mrb_value mrb_ary_pop(mrb_state *mrb, mrb_value ary);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_pop(
+unsafe extern "C" fn artichoke_ary_pop(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -186,7 +186,7 @@ pub unsafe extern "C" fn artichoke_ary_pop(
 
 // MRB_API void mrb_ary_push(mrb_state *mrb, mrb_value array, mrb_value value);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_push(
+unsafe extern "C" fn artichoke_ary_push(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     value: sys::mrb_value,
@@ -218,7 +218,7 @@ pub unsafe extern "C" fn artichoke_ary_push(
 
 // MRB_API mrb_value mrb_ary_ref(mrb_state *mrb, mrb_value ary, mrb_int n);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_ref(
+unsafe extern "C" fn artichoke_ary_ref(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     offset: sys::mrb_int,
@@ -245,7 +245,7 @@ pub unsafe extern "C" fn artichoke_ary_ref(
 
 // MRB_API void mrb_ary_set(mrb_state *mrb, mrb_value ary, mrb_int n, mrb_value val);
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_set(
+unsafe extern "C" fn artichoke_ary_set(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     offset: sys::mrb_int,
@@ -293,7 +293,7 @@ pub unsafe extern "C" fn artichoke_ary_set(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_clone(
+unsafe extern "C" fn artichoke_ary_clone(
     mrb: *mut sys::mrb_state,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -318,7 +318,7 @@ pub unsafe extern "C" fn artichoke_ary_clone(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_value_to_ary(
+unsafe extern "C" fn artichoke_value_to_ary(
     mrb: *mut sys::mrb_state,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -343,7 +343,7 @@ pub unsafe extern "C" fn artichoke_value_to_ary(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_len(
+unsafe extern "C" fn artichoke_ary_len(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_int {
@@ -358,7 +358,7 @@ pub unsafe extern "C" fn artichoke_ary_len(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_check(
+unsafe extern "C" fn artichoke_ary_check(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_bool {
@@ -372,7 +372,7 @@ pub unsafe extern "C" fn artichoke_ary_check(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_shift(
+unsafe extern "C" fn artichoke_ary_shift(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -401,7 +401,7 @@ pub unsafe extern "C" fn artichoke_ary_shift(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_ary_unshift(
+unsafe extern "C" fn artichoke_ary_unshift(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     val: sys::mrb_value,
@@ -423,7 +423,7 @@ pub unsafe extern "C" fn artichoke_ary_unshift(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::mrb_value) {
+unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::mrb_value) {
     let interp = unwrap_interpreter!(mrb, or_else = ());
     let array = Value::new(&interp, ary);
     if let Ok(array) = Array::try_from_ruby(&interp, &array) {
@@ -433,7 +433,7 @@ pub unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sy
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn artichoke_gc_mark_ary_size(
+unsafe extern "C" fn artichoke_gc_mark_ary_size(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> usize {

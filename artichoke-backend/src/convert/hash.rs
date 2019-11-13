@@ -35,24 +35,43 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
         match value.ruby_type() {
             Ruby::Hash => {
                 let hash = value.inner();
-                let size = unsafe { sys::mrb_hash_size(mrb, hash) };
                 let keys = unsafe { sys::mrb_hash_keys(mrb, hash) };
-                let cap = usize::try_from(size).map_err(|_| ArtichokeError::ConvertToRust {
-                    from: Ruby::Hash,
-                    to: Rust::Map,
-                })?;
-                let mut pairs = <Vec<(Value, Value)>>::with_capacity(cap);
-                for idx in 0..size {
-                    // Doing a `hash[key]` access is guaranteed to succeed since
-                    // we're iterating over the keys in the hash.
-                    #[cfg(feature = "artichoke-array")]
-                    let key = unsafe { array::ffi::artichoke_ary_ref(mrb, keys, idx) };
-                    #[cfg(not(feature = "artichoke-array"))]
-                    let key = unsafe { sys::mrb_ary_ref(mrb, keys, idx) };
-                    let value = unsafe { sys::mrb_hash_get(mrb, hash, key) };
-                    pairs.push((Value::new(self, key), Value::new(self, value)));
+                #[cfg(feature = "artichoke-array")]
+                {
+                    use crate::convert::RustBackedValue;
+
+                    let keys = Value::new(self, keys);
+                    let ary = unsafe { array::Array::try_from_ruby(self, &keys) }?;
+                    let borrow = ary.borrow();
+
+                    let pairs = borrow
+                        .as_vec(self)
+                        .into_iter()
+                        .map(|key| {
+                            let value = unsafe { sys::mrb_hash_get(mrb, hash, key.inner()) };
+                            (key, Value::new(self, value))
+                        })
+                        .collect::<Vec<_>>();
+                    Ok(pairs)
                 }
-                Ok(pairs)
+                #[cfg(not(feature = "artichoke-array"))]
+                {
+                    let size = unsafe { sys::mrb_hash_size(mrb, hash) };
+                    let capacity =
+                        usize::try_from(size).map_err(|_| ArtichokeError::ConvertToRust {
+                            from: Ruby::Hash,
+                            to: Rust::Map,
+                        })?;
+                    let mut pairs = <Vec<(Value, Value)>>::with_capacity(capacity);
+                    for idx in 0..size {
+                        // Doing a `hash[key]` access is guaranteed to succeed since
+                        // we're iterating over the keys in the hash.
+                        let key = unsafe { sys::mrb_ary_ref(mrb, keys, idx) };
+                        let value = unsafe { sys::mrb_hash_get(mrb, hash, key) };
+                        pairs.push((Value::new(self, key), Value::new(self, value)));
+                    }
+                    Ok(pairs)
+                }
             }
             type_tag => Err(ArtichokeError::ConvertToRust {
                 from: type_tag,

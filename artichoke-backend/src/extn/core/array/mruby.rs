@@ -65,7 +65,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     Ok(())
 }
 
-pub unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let result = array::trampoline::pop(&interp, array);
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
     }
 }
 
-pub unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
@@ -91,10 +91,7 @@ pub unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
     }
 }
 
-pub unsafe extern "C" fn ary_concat(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, optional = 1);
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
@@ -110,7 +107,7 @@ pub unsafe extern "C" fn ary_concat(
     }
 }
 
-pub unsafe extern "C" fn ary_initialize(
+unsafe extern "C" fn ary_initialize(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -130,7 +127,7 @@ pub unsafe extern "C" fn ary_initialize(
     }
 }
 
-pub unsafe extern "C" fn ary_initialize_copy(
+unsafe extern "C" fn ary_initialize_copy(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -149,10 +146,7 @@ pub unsafe extern "C" fn ary_initialize_copy(
     }
 }
 
-pub unsafe extern "C" fn ary_reverse(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn ary_reverse(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
@@ -163,7 +157,7 @@ pub unsafe extern "C" fn ary_reverse(
     }
 }
 
-pub unsafe extern "C" fn ary_reverse_bang(
+unsafe extern "C" fn ary_reverse_bang(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -181,7 +175,7 @@ pub unsafe extern "C" fn ary_reverse_bang(
     }
 }
 
-pub unsafe extern "C" fn ary_element_reference(
+unsafe extern "C" fn ary_element_reference(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -197,7 +191,7 @@ pub unsafe extern "C" fn ary_element_reference(
     }
 }
 
-pub unsafe extern "C" fn ary_element_assignment(
+unsafe extern "C" fn ary_element_assignment(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
