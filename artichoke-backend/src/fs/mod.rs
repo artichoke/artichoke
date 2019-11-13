@@ -146,7 +146,7 @@ pub fn osstr_to_bytes<'a>(
 ) -> Result<&'a [u8], Box<dyn RubyException>> {
     use crate::extn::core::exception::Fatal;
 
-    if let Ok(converted) = value.as_ref().to_str() {
+    if let Some(converted) = value.to_str() {
         Ok(converted.as_bytes())
     } else {
         Err(Box::new(Fatal::new(
@@ -175,8 +175,8 @@ pub fn bytes_to_osstr<'a>(
 ) -> Result<&'a OsStr, Box<dyn RubyException>> {
     use crate::extn::core::exception::Fatal;
 
-    if let Ok(converted) = str::from_utf8(value) {
-        Ok(OsStr::from(converted))
+    if let Ok(converted) = std::str::from_utf8(value) {
+        Ok(OsStr::new(converted))
     } else {
         Err(Box::new(Fatal::new(
             interp,
