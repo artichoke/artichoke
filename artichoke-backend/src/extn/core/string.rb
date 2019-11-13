@@ -81,6 +81,14 @@ class String
     nil
   end
 
+  def %(other)
+    if other.is_a?(Array)
+      sprintf(self, *other) # rubocop:disable Style/FormatString
+    else
+      sprintf(self, other) # rubocop:disable Style/FormatString
+    end
+  end
+
   def +@
     return dup if frozen?
 
