@@ -14,7 +14,7 @@ use crate::Artichoke;
 
 pub mod args;
 pub mod backend;
-pub mod ffi;
+mod ffi;
 pub mod mruby;
 pub mod trampoline;
 
