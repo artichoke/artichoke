@@ -19,8 +19,8 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     <% end %>
     <% sources.each do |(file, source)| %>
     interp.def_rb_source_file(
-        "<%= file %>.rb",
-        include_str!(concat!(env!("OUT_DIR"), "/src/generated/<%= file %>.rb"))
+        "<%= file.gsub('\\', '/') %>.rb",
+        include_str!(concat!(env!("OUT_DIR"), "/src/generated/<%= file.gsub('\\', '/') %>.rb"))
     )?;
     <% end %>
     Ok(())
