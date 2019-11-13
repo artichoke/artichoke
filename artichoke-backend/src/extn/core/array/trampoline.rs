@@ -146,6 +146,28 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Box<d
     Ok(ary)
 }
 
+pub fn shuffle_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
+    if ary.is_frozen() {
+        return Err(Box::new(FrozenError::new(
+            interp,
+            "can't modify frozen Array",
+        )));
+    }
+    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
+        Fatal::new(
+            interp,
+            "Unable to extract Rust Array from Ruby Array receiver",
+        )
+    })?;
+    let mut borrow = array.borrow_mut();
+    let gc_was_enabled = interp.disable_gc();
+    borrow.shuffle_bang(interp)?;
+    if gc_was_enabled {
+        interp.enable_gc();
+    }
+    Ok(ary)
+}
+
 pub fn reverse(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
         Fatal::new(

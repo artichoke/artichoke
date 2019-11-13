@@ -142,7 +142,7 @@ register_spec core array reverse
 # register_spec core array sample
 # register_spec core array select
 register_spec core array shift
-# register_spec core array shuffle
+register_spec core array shuffle
 register_spec core array size
 # register_spec core array slice
 register_spec core array sort_by

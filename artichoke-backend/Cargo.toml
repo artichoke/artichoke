@@ -44,3 +44,6 @@ default-features = false
 default = ["artichoke-array", "artichoke-system-environ"]
 artichoke-array = []
 artichoke-system-environ = []
+
+[dependencies.rand]
+version = "0.7.2"

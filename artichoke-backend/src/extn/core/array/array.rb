@@ -1236,11 +1236,7 @@ class Array
   end
 
   def shuffle(_rng = (not_set = true)) # rubocop:disable Lint/UselessAssignment
-    raise NotImplementedError, 'TODO implement in Rust'
-  end
-
-  def shuffle!(_rng = (not_set = true)) # rubocop:disable Lint/UselessAssignment
-    raise NotImplementedError, 'TODO implement in Rust'
+    dup.shuffle!
   end
 
   def slice!(*args)

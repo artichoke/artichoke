@@ -1,3 +1,5 @@
+use rand::seq::SliceRandom;
+
 use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
 use crate::extn::core::exception::{RangeError, RubyException};
@@ -336,5 +338,12 @@ impl ArrayType for Aggregate {
             parts.push(self.0[idx].reverse(interp)?);
         }
         Ok(Box::new(Self::with_parts(parts)))
+    }
+
+    fn shuffle_bang(&mut self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+        let _ = interp;
+        let mut rng = rand::thread_rng();
+        self.0.shuffle(&mut rng); 
+        Ok(self.box_clone())
     }
 }

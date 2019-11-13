@@ -217,4 +217,12 @@ impl ArrayType for Two {
         let _ = interp;
         Ok(backend::fixed::two(self.1.clone(), self.0.clone()))
     }
+
+    fn shuffle_bang(&mut self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+        let _ = interp;
+        if rand::random() {
+            *self = Self(self.1.clone(), self.0.clone())
+        }
+        Ok(self.box_clone())
+    }
 }
