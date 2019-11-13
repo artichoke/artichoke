@@ -10,7 +10,7 @@ raise 'must provide an output directory' if ARGV[2].nil?
 base = ARGV[0]
 package = ARGV[1]
 out_file = ARGV[2]
-sources = ARGV[3].to_s.split(',').map { |source| source.gsub(%r{^.*#{base}/?}, '').gsub(/\.rb$/, '') }
+sources = ARGV[3].to_s.split(',').map { |source| source.gsub(%r{^.*#{Regexp.escape(base)}[/\\]?}, '').gsub(/\.rb$/, '') }
 auto_import_dir = File.dirname(__FILE__)
 # Import the Ruby 2.6.3 sources.
 constants = `ruby --disable-did_you_mean --disable-gems #{auto_import_dir}/get_constants_loaded.rb "#{base}" "#{package}"`.split("\n").map { |const| const.split(',') }
