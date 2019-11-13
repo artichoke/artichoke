@@ -7,6 +7,7 @@ pub mod array;
 pub mod artichoke;
 pub mod comparable;
 pub mod enumerable;
+pub mod enumerator;
 pub mod env;
 pub mod exception;
 pub mod float;
@@ -37,6 +38,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     exception::init(interp)?;
     artichoke::init(interp)?;
     comparable::init(interp)?;
+    enumerator::init(interp)?;
     env::mruby::init(interp)?;
     hash::init(interp)?;
     numeric::init(interp)?;

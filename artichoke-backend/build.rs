@@ -52,8 +52,6 @@ mod libmruby {
             "mruby-metaprog",     // APIs on Kernel and Module for accessing classes and variables
             "mruby-method",       // `Method`, `UnboundMethod`, and method APIs on Kernel and Module
             "mruby-toplevel-ext", // expose API for top self
-            "mruby-enumerator",   // Enumerator class from core
-            "mruby-enum-lazy",    // Enumerable#lazy
             "mruby-fiber",        // Fiber class from core, required by mruby-enumerator
             "mruby-pack",         // Array#pack and String#unpack
             "mruby-sprintf",      // Kernel#sprintf, Kernel#format, String#%
