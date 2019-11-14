@@ -13,6 +13,7 @@ memchr = "2"
 once_cell = "1"
 onig = "5"
 regex = "1"
+rand = "0.7"
 
 [dependencies.artichoke-core]
 path = "../artichoke-core"
@@ -44,6 +45,3 @@ default-features = false
 default = ["artichoke-array", "artichoke-system-environ"]
 artichoke-array = []
 artichoke-system-environ = []
-
-[dependencies.rand]
-version = "0.7.2"

@@ -185,7 +185,7 @@ unsafe extern "C" fn ary_shuffle_bang(
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
-    let result = array::trampoline::shuffle_bang(&interp, ary);
+    let result = array::trampoline::shuffle(&interp, ary);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

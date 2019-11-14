@@ -209,11 +209,11 @@ impl ArrayType for Value {
         Ok(self.box_clone())
     }
 
-    fn shuffle_bang(
+    fn shuffle(
         &mut self,
         interp: &Artichoke,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        Ok(self.box_clone())
+        Ok(())
     }
 }

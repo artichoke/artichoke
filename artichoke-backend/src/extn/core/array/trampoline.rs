@@ -146,7 +146,7 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Box<d
     Ok(ary)
 }
 
-pub fn shuffle_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn shuffle(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
     if ary.is_frozen() {
         return Err(Box::new(FrozenError::new(
             interp,
@@ -161,7 +161,7 @@ pub fn shuffle_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn Rub
     })?;
     let mut borrow = array.borrow_mut();
     let gc_was_enabled = interp.disable_gc();
-    borrow.shuffle_bang(interp)?;
+    borrow.shuffle(interp)?;
     if gc_was_enabled {
         interp.enable_gc();
     }

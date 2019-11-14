@@ -135,11 +135,11 @@ impl ArrayType for Empty {
         Ok(backend::fixed::empty())
     }
 
-    fn shuffle_bang(
+    fn shuffle(
         &mut self,
         interp: &Artichoke,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        Ok(backend::fixed::empty())
+        Ok(())
     }
 }

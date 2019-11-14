@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
 use crate::extn::core::exception::RubyException;
@@ -218,14 +220,14 @@ impl ArrayType for Two {
         Ok(backend::fixed::two(self.1.clone(), self.0.clone()))
     }
 
-    fn shuffle_bang(
+    fn shuffle(
         &mut self,
         interp: &Artichoke,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
         if rand::random() {
-            *self = Self(self.1.clone(), self.0.clone())
+            mem::swap(&mut self.0, &mut self.1);
         }
-        Ok(self.box_clone())
+        Ok(())
     }
 }

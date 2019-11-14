@@ -443,12 +443,9 @@ impl Array {
         Ok(())
     }
 
-    pub fn shuffle_bang(&mut self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
-        let result = self.0.shuffle_bang(interp)?;
-        let result = Self(result);
-        let result = unsafe { result.try_into_ruby(interp, None) }
-            .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array"))?;
-        Ok(result)
+    pub fn shuffle(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+        self.0.shuffle(interp)?;
+        Ok(())
     }
 }
 
@@ -522,10 +519,10 @@ pub trait ArrayType: Any {
     // like `Array#reverse!` and implement Array#reverse` in Ruby.
     fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
 
-    fn shuffle_bang(
+    fn shuffle(
         &mut self,
         interp: &Artichoke,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
+    ) -> Result<(), Box<dyn RubyException>>;
 }
 
 downcast!(dyn ArrayType);
