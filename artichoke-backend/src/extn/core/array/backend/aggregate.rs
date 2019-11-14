@@ -340,10 +340,7 @@ impl ArrayType for Aggregate {
         Ok(Box::new(Self::with_parts(parts)))
     }
 
-    fn shuffle(
-        &mut self,
-        interp: &Artichoke,
-    ) -> Result<(), Box<dyn RubyException>> {
+    fn shuffle(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
         let mut rng = rand::thread_rng();
         self.0.shuffle(&mut rng);

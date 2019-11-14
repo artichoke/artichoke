@@ -235,10 +235,7 @@ impl ArrayType for Buffer {
         Ok(Box::new(Self(buffer)))
     }
 
-    fn shuffle(
-        &mut self,
-        interp: &Artichoke,
-    ) -> Result<(), Box<dyn RubyException>> {
+    fn shuffle(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
         let mut rng = rand::thread_rng();
         self.0.shuffle(&mut rng);

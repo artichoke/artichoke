@@ -187,10 +187,7 @@ impl ArrayType for Hole {
         Ok(self.box_clone())
     }
 
-    fn shuffle(
-        &mut self,
-        interp: &Artichoke,
-    ) -> Result<(), Box<dyn RubyException>> {
+    fn shuffle(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
         Ok(())
     }

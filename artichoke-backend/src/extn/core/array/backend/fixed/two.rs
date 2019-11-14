@@ -220,10 +220,7 @@ impl ArrayType for Two {
         Ok(backend::fixed::two(self.1.clone(), self.0.clone()))
     }
 
-    fn shuffle(
-        &mut self,
-        interp: &Artichoke,
-    ) -> Result<(), Box<dyn RubyException>> {
+    fn shuffle(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
         if rand::random() {
             mem::swap(&mut self.0, &mut self.1);
