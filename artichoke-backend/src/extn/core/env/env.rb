@@ -113,11 +113,11 @@ class << ENV
     select! { |key, value| yield key, value }
   end
 
-  def has_key?(name) # rubocop:disable PredicateName
+  def has_key?(name) # rubocop:disable Naming/PredicateName
     to_h.key?(name)
   end
 
-  def has_value?(value) # rubocop:disable PredicateName
+  def has_value?(value) # rubocop:disable Naming/PredicateName
     to_h.value?(value)
   end
 
