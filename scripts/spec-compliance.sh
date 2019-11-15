@@ -9,7 +9,6 @@ if command -v yarn; then
   cd "$(pkg-dir)"
 fi
 
-set -x
 shopt -s globstar
 declare -a specs
 
@@ -35,6 +34,10 @@ register_spec() {
 }
 
 run_specs_artichoke() {
+  echo -e "\e[33mArtichoke specs are disabled due to lingering segfaults in the mruby VM.\e[39m" 1>&2
+  echo -e "\e[33mSee https://github.com/artichoke/artichoke/issues/359.\e[39m" 1>&2
+  return 0
+
   bin="$(pwd)/target/debug/spec-runner"
   pushd "spec-runner/vendor/spec" >/dev/null
   if [[ $# -eq 1 && $1 -eq "--with-timings" ]]; then
