@@ -28,7 +28,7 @@ mod buildpath {
 
         pub fn mruby_build_config(target: &Triple) -> PathBuf {
             let _ = target;
-            super::crate_root().join("build_config.rb")
+            super::crate_root().join("mruby_build_config_null.rb")
         }
 
         pub fn mruby_bootstrap_gembox() -> PathBuf {
