@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'rbconfig'
+
+def windows?
+  /mswin|msys|mingw|cygwin|bccwin|wince|emc/.match?(RbConfig::CONFIG['host_os'])
+end
 
 # mruby requires a "default" build. This default build bootstraps the
 # compilation of the "sys" build.
@@ -21,6 +26,8 @@ MRuby::Build.new do |conf|
   conf.linker.command = 'true'
   conf.archiver.command = 'true'
   conf.mrbc.command = 'true'
+
+  conf.yacc.command = 'win_bison' if windows?
 
   conf.bins = []
   conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'bootstrap')
@@ -43,6 +50,8 @@ MRuby::CrossBuild.new('sys') do |conf|
   conf.linker.command = 'true'
   conf.archiver.command = 'true'
   conf.mrbc.command = 'true'
+
+  conf.yacc.command = 'win_bison' if windows?
 
   # C compiler settings
   # https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
