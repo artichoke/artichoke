@@ -2,6 +2,10 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
 #![doc(deny(warnings))]
 
+use std::env;
+use std::str::FromStr;
+use target_lexicon::Triple;
+
 mod buildpath {
     use std::env;
     use std::path::PathBuf;
@@ -16,12 +20,14 @@ mod buildpath {
 
     pub mod source {
         use std::path::PathBuf;
+        use target_lexicon::Triple;
 
         pub fn ruby_vendored_lib_dir() -> PathBuf {
             super::crate_root().join("vendor").join("ruby").join("lib")
         }
 
-        pub fn mruby_build_config() -> PathBuf {
+        pub fn mruby_build_config(target: &Triple) -> PathBuf {
+            let _ = target;
             super::crate_root().join("build_config.rb")
         }
 
@@ -38,7 +44,6 @@ mod libmruby {
     use std::fs;
     use std::path::{Component, PathBuf};
     use std::process::Command;
-    use std::str::FromStr;
     use target_lexicon::{Architecture, OperatingSystem, Triple};
     use walkdir::WalkDir;
 
@@ -60,7 +65,7 @@ mod libmruby {
         ]
     }
 
-    pub fn build_config() -> PathBuf {
+    pub fn mruby_build_config() -> PathBuf {
         mruby_source_dir().join("build_config.rb")
     }
 
@@ -128,13 +133,14 @@ mod libmruby {
         // directly with the `cc` crate.
         println!(
             "cargo:rerun-if-changed={}",
-            build_config().to_str().unwrap()
+            mruby_build_config().to_str().unwrap()
         );
-        if !Command::new(mruby_minirake())
+        if !Command::new("ruby")
+            .arg(mruby_minirake())
             .arg("--jobs")
             .arg(num_cpus::get().to_string())
             .env("MRUBY_BUILD_DIR", mruby_build_dir())
-            .env("MRUBY_CONFIG", build_config())
+            .env("MRUBY_CONFIG", mruby_build_config())
             .current_dir(mruby_source_dir())
             .status()
             .unwrap()
@@ -277,9 +283,8 @@ mod libmruby {
             .unwrap();
     }
 
-    pub fn build() {
+    pub fn build(target: &Triple) {
         fs::create_dir_all(mruby_build_dir()).unwrap();
-        let target = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
         let mrb_int = if let Architecture::Wasm32 = target.architecture {
             "MRB_INT32"
         } else {
@@ -314,13 +319,14 @@ mod rubylib {
             let sources = package_files(package)
                 .trim()
                 .split("\n")
+                .map(str::trim)
                 .filter(|s| !s.is_empty())
                 .map(String::from)
                 .collect::<Vec<_>>();
             sources.par_iter().for_each(|source| {
-                let package_source = PathBuf::from(source.to_owned());
+                let source = PathBuf::from(source.to_owned());
                 let package_source =
-                    package_source.strip_prefix(buildpath::source::ruby_vendored_lib_dir());
+                    source.strip_prefix(buildpath::source::ruby_vendored_lib_dir());
                 let out = generated_package_dir().join(package_source.unwrap());
                 if let Some(parent) = out.parent() {
                     fs::create_dir_all(parent).unwrap();
@@ -403,7 +409,7 @@ mod rubylib {
             "English",
             "erb",
             "etc",
-            "expect",
+            // "expect", not available in CI for Windows
             // "extmk", this is part of ext for building native extensions
             "fcntl",
             "fiddle",
@@ -444,7 +450,7 @@ mod rubylib {
             "profiler",
             "pstore",
             "psych",
-            "pty",
+            // "pty", not available in CI for Windows
             // "racc", racc is a gem
             "racc/parser",
             // "rake", rake is a gem
@@ -468,7 +474,7 @@ mod rubylib {
             "stringio",
             "strscan",
             "sync",
-            "syslog",
+            // "syslog", not available in CI on Windows
             "tempfile",
             "thwait",
             "time",
@@ -493,16 +499,15 @@ mod release {
     use std::env;
     use std::fmt;
     use std::process::Command;
-    use std::str::FromStr;
     use target_lexicon::Triple;
 
-    pub fn build() {
+    pub fn build(target: &Triple) {
         let version = env::var("CARGO_PKG_VERSION").unwrap();
         let birth_date = birthdate();
         let build_date: DateTime<Utc> = Utc::now();
         let release_date = NaiveDateTime::from_timestamp(build_date.timestamp(), 0).date();
         let revision_count = revision_count();
-        let platform = platform();
+        let platform = platform(target);
         let copyright = copyright(birth_date, build_date);
         let description = description(
             version.as_str(),
@@ -577,12 +582,8 @@ mod release {
             .to_owned()
     }
 
-    fn platform() -> String {
-        let target_platform = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
-        format!(
-            "{}-{}",
-            target_platform.architecture, target_platform.operating_system
-        )
+    fn platform(target: &Triple) -> String {
+        format!("{}-{}", target.architecture, target.operating_system)
     }
 
     fn copyright(birth_date: DateTime<Utc>, build_date: DateTime<Utc>) -> String {
@@ -626,6 +627,7 @@ mod release {
 mod build {
     use fs_extra::{dir, file};
     use std::fs;
+    use target_lexicon::Triple;
 
     use super::{buildpath, libmruby, rubylib};
 
@@ -633,7 +635,7 @@ mod build {
         let _ = dir::remove(buildpath::build_root());
     }
 
-    pub fn setup_build_root() {
+    pub fn setup_build_root(target: &Triple) {
         fs::create_dir_all(buildpath::build_root()).unwrap();
 
         let opts = dir::CopyOptions::new();
@@ -653,10 +655,10 @@ mod build {
         fs::create_dir_all(rubylib::generated_package_dir()).unwrap();
 
         let opts = file::CopyOptions::new();
-        let _ = file::remove(libmruby::build_config());
+        let _ = file::remove(libmruby::mruby_build_config());
         file::copy(
-            buildpath::source::mruby_build_config(),
-            libmruby::build_config(),
+            buildpath::source::mruby_build_config(target),
+            libmruby::mruby_build_config(),
             &opts,
         )
         .unwrap();
@@ -670,9 +672,10 @@ mod build {
 }
 
 fn main() {
+    let target = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
     build::clean();
-    build::setup_build_root();
-    libmruby::build();
+    build::setup_build_root(&target);
+    libmruby::build(&target);
     rubylib::build();
-    release::build();
+    release::build(&target);
 }
