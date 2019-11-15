@@ -213,7 +213,11 @@ impl ValueLike for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = self.interp.0.borrow_mut().sym_intern(func.as_ref());
+        let func = self
+            .interp
+            .0
+            .borrow_mut()
+            .sym_intern(func.as_bytes().to_vec());
         let mut protect = Protect::new(self.inner(), func, args.as_ref());
         if let Some(block) = block {
             protect = protect.with_block(block.inner());
@@ -287,7 +291,11 @@ impl ValueLike for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = self.interp.0.borrow_mut().sym_intern(func.as_ref());
+        let func = self
+            .interp
+            .0
+            .borrow_mut()
+            .sym_intern(func.as_bytes().to_vec());
         let mut protect = Protect::new(self.inner(), func, args.as_ref());
         if let Some(block) = block {
             protect = protect.with_block(block.inner());

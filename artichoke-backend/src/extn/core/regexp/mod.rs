@@ -298,7 +298,7 @@ impl Regexp {
         } else if let Ok(pattern) = other.funcall::<&[u8]>("to_str", &[], None) {
             pattern
         } else {
-            let sym = interp.0.borrow_mut().sym_intern("$~");
+            let sym = interp.0.borrow_mut().sym_intern("$~".as_bytes());
             let mrb = interp.0.borrow().mrb;
             unsafe {
                 sys::mrb_gv_set(mrb, sym, interp.convert(None::<Value>).inner());
@@ -412,7 +412,7 @@ impl Regexp {
             pattern
         } else {
             let mrb = interp.0.borrow().mrb;
-            let sym = interp.0.borrow_mut().sym_intern("$~");
+            let sym = interp.0.borrow_mut().sym_intern("$~".as_bytes());
             let matchdata = interp.convert(None::<Value>);
             unsafe {
                 sys::mrb_gv_set(mrb, sym, matchdata.inner());

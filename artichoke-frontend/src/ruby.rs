@@ -96,7 +96,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
                 format!("No such file or directory -- {:?} (LoadError)", fixture)
             }
         })?;
-        let sym = interp.0.borrow_mut().sym_intern("$fixture");
+        let sym = interp.0.borrow_mut().sym_intern("$fixture".as_bytes());
         let mrb = interp.0.borrow().mrb;
         let value = interp.convert(data);
         unsafe {
@@ -129,7 +129,7 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
                 format!("No such file or directory -- {:?} (LoadError)", fixture)
             }
         })?;
-        let sym = interp.0.borrow_mut().sym_intern("$fixture");
+        let sym = interp.0.borrow_mut().sym_intern("$fixture".as_bytes());
         let mrb = interp.0.borrow().mrb;
         let value = interp.convert(data);
         unsafe {

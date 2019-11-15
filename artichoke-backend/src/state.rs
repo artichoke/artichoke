@@ -1,4 +1,5 @@
 use std::any::{Any, TypeId};
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
@@ -22,7 +23,7 @@ pub struct State {
     pub vfs: Filesystem,
     pub(crate) context_stack: Vec<Context>,
     pub active_regexp_globals: usize,
-    symbol_cache: HashMap<String, sys::mrb_sym>,
+    symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
     captured_output: Option<String>,
 }
 
@@ -245,14 +246,18 @@ impl State {
         self.modules.get(&TypeId::of::<T>()).map(Rc::clone)
     }
 
-    pub fn sym_intern(&mut self, sym: &str) -> sys::mrb_sym {
+    pub fn sym_intern<T>(&mut self, sym: T) -> sys::mrb_sym
+    where
+        T: Into<Cow<'static, [u8]>>,
+    {
         let mrb = self.mrb;
+        let sym = sym.into();
+        let ptr = sym.as_ref().as_ptr();
+        let len = sym.as_ref().len();
         let interned = self
             .symbol_cache
-            .entry(sym.to_owned())
-            .or_insert_with(|| unsafe {
-                sys::mrb_intern(mrb, sym.as_ptr() as *const i8, sym.len())
-            });
+            .entry(sym)
+            .or_insert_with(|| unsafe { sys::mrb_intern(mrb, ptr as *const i8, len) });
         *interned
     }
 }
