@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+
 # mruby requires a "default" build. This default build bootstraps the
 # compilation of the "sys" build.
 #
@@ -8,22 +10,8 @@
 #
 # This build can be nulled out once the Artichoke runtime is complete.
 MRuby::Build.new do |conf|
-  # Gets set by the VS command prompts.
-  if ENV['VisualStudioVersion'] || ENV['VSINSTALLDIR']
-    toolchain :visualcpp
-  else
-    toolchain :clang
-  end
-  conf.gperf.command = 'true'
-  conf.gperf.compile_options = ''
+  def build_mrbc_exec; end
 
-  conf.bins = ['mrbc']
-  conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'bootstrap')
-end
-
-# This cross-build generates C sources so `build.rs` can compile them into a
-# static lib.
-MRuby::CrossBuild.new('sys') do |conf|
   conf.cc.command = 'true'
   conf.cxx.command = 'true'
   conf.objc.command = 'true'
@@ -32,6 +20,29 @@ MRuby::CrossBuild.new('sys') do |conf|
   conf.gperf.compile_options = ''
   conf.linker.command = 'true'
   conf.archiver.command = 'true'
+  conf.mrbc.command = 'true'
+
+  conf.bins = []
+  conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'bootstrap')
+
+  FileUtils.mkdir_p("#{build_dir}/bin")
+  FileUtils.touch("#{build_dir}/bin/mrbc")
+end
+
+# This cross-build generates C sources so `build.rs` can compile them into a
+# static lib.
+MRuby::CrossBuild.new('sys') do |conf|
+  def build_mrbc_exec; end
+
+  conf.cc.command = 'true'
+  conf.cxx.command = 'true'
+  conf.objc.command = 'true'
+  conf.asm.command = 'true'
+  conf.gperf.command = 'true'
+  conf.gperf.compile_options = ''
+  conf.linker.command = 'true'
+  conf.archiver.command = 'true'
+  conf.mrbc.command = 'true'
 
   # C compiler settings
   # https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
@@ -41,4 +52,7 @@ MRuby::CrossBuild.new('sys') do |conf|
 
   # gemset for mruby artichoke static lib
   conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'sys')
+
+  FileUtils.mkdir_p("#{build_dir}/bin")
+  FileUtils.touch("#{build_dir}/bin/mrbc")
 end
