@@ -64,6 +64,10 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     interp.eval("").map_err(|_| ArtichokeError::New)?;
     arena.restore();
 
+    // Disabled due to lingering segfaults in the mruby VM introduced during the
+    // Array implementation.
+    // See https://github.com/artichoke/artichoke/pull/359
+    #[cfg(disabled_segfaults_GH_359)]
     interp.enable_gc();
     interp.full_gc();
 
