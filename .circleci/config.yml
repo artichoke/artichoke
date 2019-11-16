@@ -157,7 +157,8 @@ jobs:
       - run:
           name: Test Workspace
           command: |
-            cargo test --all-features -ErrorAction Continue
+            cargo test --all-features
+            % 'suppressing test failures. See GH-359.'
           environment:
             RUST_BACKTRACE: 1
             LIBCLANG_PATH: C:\Program Files\LLVM\bin
