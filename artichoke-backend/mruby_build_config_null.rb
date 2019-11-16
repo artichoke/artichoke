@@ -34,6 +34,7 @@ MRuby::Build.new do |conf|
 
   FileUtils.mkdir_p("#{build_dir}/bin")
   FileUtils.touch("#{build_dir}/bin/mrbc")
+  FileUtils.touch("#{build_dir}/bin/mrbc.exe")
 end
 
 # This cross-build generates C sources so `build.rs` can compile them into a
@@ -64,4 +65,5 @@ MRuby::CrossBuild.new('sys') do |conf|
 
   FileUtils.mkdir_p("#{build_dir}/bin")
   FileUtils.touch("#{build_dir}/bin/mrbc")
+  FileUtils.touch("#{build_dir}/bin/mrbc.exe")
 end
