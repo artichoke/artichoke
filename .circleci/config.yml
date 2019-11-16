@@ -157,7 +157,7 @@ jobs:
       - run:
           name: Test Workspace
           command: |
-            cargo test --all-features
+            cargo test --all-features -ErrorAction Continue
           environment:
             RUST_BACKTRACE: 1
             LIBCLANG_PATH: C:\Program Files\LLVM\bin
