@@ -30,9 +30,11 @@ commands:
             ruby-build "$(cat .ruby-version)" /usr/local
       - run:
           name: Install sccache
+          working_directory: "~"
           command: |
             apt-get install -y pkg-config libssl-dev
-            cargo install sccache
+            curl -o- -sSLf https://github.com/mozilla/sccache/releases/download/0.2.12/sccache-0.2.12-x86_64-unknown-linux-musl.tar.gz | tar xzf -
+            mv sccache-0.2.12-x86_64-unknown-linux-musl/sccache .cargo/bin/sccache
             echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
             echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
       - run:
@@ -68,7 +70,10 @@ commands:
       - run:
           name: Install sccache
           command: |
-            cargo install sccache
+            $client = new-object System.Net.WebClient
+            $client.DownloadFile('https://github.com/mozilla/sccache/releases/download/0.2.12/sccache-0.2.12-x86_64-pc-windows-msvc.tar.gz', "$pwd\sccache.tar.gz")
+            tar -xvzf .\sccache.tar.gz
+            Move-Item -Path .\sccache-0.2.12-x86_64-pc-windows-msvc\sccache.exe .\.cargo\bin\sccache.exe
       - run:
           name: Installed Toolchain Versions
           command: |
