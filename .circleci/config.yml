@@ -55,6 +55,7 @@ jobs:
       - run:
           name: Install Ruby
           command: |
+            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev
             ruby-build "$(cat .ruby-version)" /usr/local
       - run:
           name: Install sccache
@@ -157,6 +158,12 @@ jobs:
       - image: debian:buster-slim
     resource_class: large
     steps:
+    steps:
+      - run:
+          name: Setup Image
+          command: |
+            apt-get update
+            apt-get install -y curl git ssh
       - checkout
       - restore_cache:
           name: Restore sccache cache
@@ -164,7 +171,6 @@ jobs:
       - run:
           name: Install Rust Toolchain
           command: |
-            apt-get install -y curl
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
       - run:
           name: Install Toolchain
@@ -173,6 +179,10 @@ jobs:
             apt-get install -y clang bison
             git clone https://github.com/rbenv/ruby-build.git
             PREFIX=/usr/local ./ruby-build/install.sh
+      - run:
+          name: Install Ruby
+          command: |
+            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev
             ruby-build "$(cat .ruby-version)" /usr/local
       - run:
           name: Install sccache
@@ -202,6 +212,12 @@ jobs:
     docker:
       - image: debian:buster-slim
     steps:
+    steps:
+      - run:
+          name: Setup Image
+          command: |
+            apt-get update
+            apt-get install -y curl git ssh
       - checkout
       - restore_cache:
           key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
@@ -211,7 +227,6 @@ jobs:
       - run:
           name: Install Rust Toolchain
           command: |
-            apt-get install -y curl
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)" --component rustfmt clippy
       - run:
           name: Install Toolchain
@@ -219,8 +234,6 @@ jobs:
           command: |
             git clone https://github.com/rbenv/ruby-build.git
             PREFIX=/usr/local ./ruby-build/install.sh
-            ruby-build "$(cat .ruby-version)" /usr/local
-            gem install bundler
             curl -sSfL https://deb.nodesource.com/setup_13.x | bash -
             apt-get install -y nodejs
             curl -sSf https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
@@ -233,6 +246,12 @@ jobs:
             chmod +x /usr/local/bin/shellcheck
             curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
             chmod +x /usr/local/bin/shfmt
+      - run:
+          name: Install Ruby
+          command: |
+            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev
+            ruby-build "$(cat .ruby-version)" /usr/local
+            gem install bundler
       - run:
           name: Install sccache
           command: |
