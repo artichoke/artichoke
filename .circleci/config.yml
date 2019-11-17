@@ -70,6 +70,7 @@ commands:
       - run:
           name: Install sccache
           command: |
+            Set-Location "$env:USERPROFILE"
             $client = new-object System.Net.WebClient
             $client.DownloadFile('https://github.com/mozilla/sccache/releases/download/0.2.12/sccache-0.2.12-x86_64-pc-windows-msvc.tar.gz', "$pwd\sccache.tar.gz")
             tar -xvzf .\sccache.tar.gz
