@@ -45,7 +45,7 @@ jobs:
           name: Install Rust Toolchain
           command: |
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
-            echo export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
+            echo 'export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
       - run:
           name: Install Toolchain
           working_directory: "~"
@@ -172,7 +172,7 @@ jobs:
           name: Install Rust Toolchain
           command: |
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
-            echo export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
+            echo 'export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
       - run:
           name: Install Toolchain
           working_directory: "~"
@@ -228,7 +228,7 @@ jobs:
           name: Install Rust Toolchain
           command: |
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)" --component rustfmt clippy
-            echo export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
+            echo 'export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
       - run:
           name: Install Toolchain
           working_directory: "~"
