@@ -73,7 +73,7 @@ commands:
             $client = new-object System.Net.WebClient
             $client.DownloadFile('https://github.com/mozilla/sccache/releases/download/0.2.12/sccache-0.2.12-x86_64-pc-windows-msvc.tar.gz', "$pwd\sccache.tar.gz")
             tar -xvzf .\sccache.tar.gz
-            Move-Item -Path .\sccache-0.2.12-x86_64-pc-windows-msvc\sccache.exe .\.cargo\bin\sccache.exe
+            Move-Item -Path .\sccache-0.2.12-x86_64-pc-windows-msvc\sccache.exe -Destination .\.cargo\bin\sccache.exe
       - run:
           name: Installed Toolchain Versions
           command: |
