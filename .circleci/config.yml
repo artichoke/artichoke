@@ -143,7 +143,7 @@ jobs:
           name: Save sccache cache
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
-            - %LOCALAPPDATA%\Mozilla\sccache
+            - "%LOCALAPPDATA%\\Mozilla\\sccache"
   artichoke-ruby/spec:
     docker:
       - image: debian:buster-slim
