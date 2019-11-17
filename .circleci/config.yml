@@ -1,144 +1,80 @@
 version: 2.1
 orbs:
-  shellcheck: circleci/shellcheck@1
   win: circleci/windows@2.1.0
 commands:
-  rubocop:
-    description: Lint Ruby sources with RuboCop
-    parameters:
-      target:
-        type: string
+  setup-linux-builder:
+    description: Setup Artichoke Linux builder image
     steps:
-      - restore_cache:
-          keys:
-            - ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
       - run:
-          name: Bundle Install
-          working_directory: << parameters.target >>
-          command: bundle install --path "$HOME/vendor/$LOCKFILE_CHECKSUM"
-          environment:
-            LOCKFILE_CHECKSUM: "{{ checksum '<< parameters.target >>/Gemfile.lock' }}"
-      - run:
-          name: Lint Ruby With RuboCop
-          working_directory: << parameters.target >>
+          name: Setup Image
           command: |
-            bundle exec rubocop --version
-            bundle exec rubocop
-      - save_cache:
-          key: ruby-bundler-v2-extn-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
-          paths:
-            - ~/vendor/{{ checksum "<< parameters.target >>/Gemfile.lock" }}
-jobs:
-  rust:
-    docker:
-      - image: circleci/rust:1.39.0-buster
-    resource_class: large
-    steps:
+            apt-get update
+            apt-get install -y curl git ssh
       - checkout
-      - restore_cache:
-          key: rust-cargo-v4-{{ checksum "Cargo.lock" }}
       - run:
           name: Install Rust Toolchain
           command: |
-            rustup toolchain install "$(cat rust-toolchain)"
-            rustup component add rustfmt
-            rustup component add clippy
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
+            echo 'export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
+      - run:
+          name: Install Toolchain
+          working_directory: "~"
+          command: |
+            apt-get install -y clang bison
+            git clone https://github.com/rbenv/ruby-build.git
+            PREFIX=/usr/local ./ruby-build/install.sh
+      - run:
+          name: Install Ruby
+          command: |
+            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
+            ruby-build "$(cat .ruby-version)" /usr/local
+      - run:
+          name: Install sccache
+          working_directory: "~"
+          command: |
+            apt-get install -y pkg-config libssl-dev
+            curl -o- -sSLf https://github.com/mozilla/sccache/releases/download/0.2.12/sccache-0.2.12-x86_64-unknown-linux-musl.tar.gz | tar xzf -
+            mv sccache-0.2.12-x86_64-unknown-linux-musl/sccache .cargo/bin/sccache
+            echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
+            echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
+      - run:
+          name: Installed Toolchain Versions
+          command: |
             rustc --version --verbose
             cargo --version --verbose
-            rustfmt --version
-            cargo clippy -- --version
-      - run:
-          # Debian Buster includes ruby 2.5
-          # FIXME: we should really be installing 2.6.3 since that is our stdlib dep.
-          name: Install MRI Ruby
-          command: |
-            sudo apt-get install -y ruby-full
             ruby --version
-      - run:
-          # https://github.com/mruby/mruby/blob/master/doc/guides/compile.md#prerequisites
-          name: Install mruby Build Dependencies
-          command: |
-            sudo apt-get install -y bison
-            bison --version
-      - run:
-          # needed for cc crate in build.rs
-          name: Install clang
-          command: |
-            sudo apt-get install -y clang
             clang --version
-      - run:
-          name: Build workspace without default features
-          command: |
-            cargo build -p artichoke-backend --no-default-features
-            touch artichoke-backend/build.rs
-      - run:
-          name: Build Workspace
-          command: |
-            cargo build
-      - run:
-          name: Test Workspace
-          command: cargo test --all-features
-          environment:
-            RUST_BACKTRACE: 1
-      - run:
-          name: Format Rust Sources
-          command: |
-            rustfmt --version
-            cargo fmt -- --check --color=auto
-      - run:
-          name: Lint Rust With Clippy
-          command: |
-            cargo clippy -- --version
-            cargo clippy --all-targets --all-features
-      - run:
-          name: Check Docs
-          command: |
-            cargo doc --no-deps --all
-      - run:
-          name: ruby/spec Compliance Regression Test
-          command: |
-            ./scripts/spec-compliance.sh --artichoke
-      - save_cache:
-          key: rust-cargo-v4-{{ checksum "Cargo.lock" }}
-          paths:
-            - "~/.cargo"
-            - "./target"
-      - persist_to_workspace:
-          root: target
-          paths:
-            - doc
-  artichoke-x86_64-windows:
-    executor:
-      name: win/default
+            bison --version
+  setup-windows-builder:
+    description: Setup Artichoke Windows builder image
     steps:
       - checkout
       - restore_cache:
-          key: rust-win-cargo-v1-{{ checksum "Cargo.lock" }}
+          name: Restore sccache cache
+          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
-          name: Install Rust Toolchain
+          name: Install Toolchain
           command: |
+            $toolchain = Get-Content rust-toolchain | Select-Object -First 1
+            Set-Location "$env:USERPROFILE"
             # Install rustup
             $client = new-object System.Net.WebClient
             $client.DownloadFile('https://win.rustup.rs', "$pwd\rustup-init.exe")
-            $toolchain = Get-Content rust-toolchain | Select-Object -First 1
             .\rustup-init.exe -y --profile minimal --default-toolchain "$($toolchain)-msvc"
             # This is necessary because otherwise cargo fails when trying to use git?
-            mkdir .cargo
-            Add-Content .cargo\config "[net]`ngit-fetch-with-cli = true"
-      - run:
-          name: Install MRI Ruby
-          command: |
+            Add-Content "$env:USERPROFILE\.cargo\config" "[net]`ngit-fetch-with-cli = true"
             choco install ruby --no-progress --version=2.6.3.1
+            choco install visualstudio2019-workload-vctools --no-progress
+            choco install llvm --no-progress
+            choco install winflexbison3 --ignore-checksums --no-progress
       - run:
-          # needed for cc crate in build.rs
-          name: Install clang
+          name: Install sccache
           command: |
-            choco install visualstudio2019-workload-vctools
-            choco install llvm
-      - run:
-          name: Install bison
-          command: |
-            choco install winflexbison3 --ignore-checksums
+            Set-Location "$env:USERPROFILE"
+            $client = new-object System.Net.WebClient
+            $client.DownloadFile('https://github.com/mozilla/sccache/releases/download/0.2.12/sccache-0.2.12-x86_64-pc-windows-msvc.tar.gz', "$pwd\sccache.tar.gz")
+            tar -xvzf .\sccache.tar.gz
+            Move-Item -Path .\sccache-0.2.12-x86_64-pc-windows-msvc\sccache.exe -Destination .\.cargo\bin\sccache.exe
       - run:
           name: Installed Toolchain Versions
           command: |
@@ -147,12 +83,128 @@ jobs:
             ruby --version
             clang --version
             win_bison --version
+  setup-linux-linter:
+    description: Setup Artichoke Windows linter image
+    steps:
+      - setup-linux-builder
+      - run:
+          name: Install Rust Toolchain
+          command: |
+            rustup component add rustfmt
+            rustup component add clippy
+      - run:
+          name: Install JS Toolchain
+          working_directory: "~"
+          command: |
+            curl -sSfL https://deb.nodesource.com/setup_13.x | bash -
+            apt-get install -y nodejs
+            curl -sSf https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+            echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+            apt-get update
+            apt-get install --no-install-recommends -y yarn
+      - run:
+          name: Install Shell Toolchain
+          working_directory: "~"
+          command: |
+            curl -o- -sSfL https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz | tar xJf -
+            mv shellcheck-stable/shellcheck /usr/local/bin
+            chmod +x /usr/local/bin/shellcheck
+            curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
+            chmod +x /usr/local/bin/shfmt
+      - run:
+          name: Install JS Packages
+          command: |
+            yarn install
+      - run:
+          name: Install Bundler
+          command: |
+            gem install bundler
+      - run:
+          name: Installed Toolchain Versions
+          command: |
+            rustc --version --verbose
+            cargo --version --verbose
+            sccache --version
+            rustfmt --version
+            cargo clippy -- --version
+            ruby --version
+            node --version
+            yarn --version
+            yarn --silent clang-format --version
+            shellcheck --version
+            shfmt -version
+  rubocop:
+    description: Lint Ruby sources with RuboCop
+    parameters:
+      target:
+        type: string
+    steps:
+      - restore_cache:
+          keys:
+            - v1-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+      - run:
+          name: Bundle Install
+          working_directory: "<< parameters.target >>"
+          command: |
+            bundle install --path ~/vendor
+      - run:
+          name: Lint Ruby With RuboCop
+          working_directory: "<< parameters.target >>"
+          command: |
+            bundle exec rubocop --version
+            bundle exec rubocop
+      - save_cache:
+          key: v1-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+          paths:
+            - "~/vendor"
+jobs:
+  x86_64-linux:
+    docker:
+      - image: debian:buster-slim
+    resource_class: large
+    steps:
+      - setup-linux-builder
+      - restore_cache:
+          name: Restore sccache cache
+          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+      - run:
+          name: Build workspace without default features
+          command: |
+            cargo build -p artichoke-backend --no-default-features
+          environment:
+            RUST_BACKTRACE: 1
       - run:
           name: Build Workspace
           command: |
             cargo build
           environment:
             RUST_BACKTRACE: 1
+      - run:
+          name: Test Workspace
+          command: cargo test --all-features
+          environment:
+            RUST_BACKTRACE: 1
+      - save_cache:
+          name: Save sccache cache
+          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          paths:
+            - "~/.cache/sccache"
+  x86_64-windows:
+    executor:
+      name: win/default
+    steps:
+      - setup-windows-builder
+      - restore_cache:
+          name: Restore sccache cache
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+      - run:
+          name: Build Workspace
+          command: |
+            cargo build
+          environment:
+            RUST_BACKTRACE: 1
+            RUSTC_WRAPPER: sccache
+            SCCACHE_CACHE_SIZE: 1G
             LIBCLANG_PATH: C:\Program Files\LLVM\bin
       - run:
           name: Test Workspace
@@ -161,53 +213,70 @@ jobs:
             % 'suppressing test failures. See GH-359.'
           environment:
             RUST_BACKTRACE: 1
+            RUSTC_WRAPPER: sccache
+            SCCACHE_CACHE_SIZE: 1G
             LIBCLANG_PATH: C:\Program Files\LLVM\bin
       - save_cache:
-          key: rust-win-cargo-v1-{{ checksum "Cargo.lock" }}
+          name: Save sccache cache
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
-            - C:\Users\cicleci\.cargo
-            - target
-  c:
+            - "C:\\Users\\circleci\\AppData\\Local\\Mozilla\\sccache"
+  ruby-spec:
     docker:
-      - image: circleci/node:lts
+      - image: debian:buster-slim
+    resource_class: large
     steps:
-      - checkout
+      - setup-linux-builder
       - restore_cache:
-          key: c-yarn-v2-{{ checksum "yarn.lock" }}
+          name: Restore sccache cache
+          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
-          name: Yarn Install
-          command: yarn install
+          name: ruby/spec Compliance Regression Test
+          command: |
+            # Suppress failures from spec suite
+            ./scripts/spec-compliance.sh --artichoke || :
       - save_cache:
-          key: c-yarn-v2-{{ checksum "yarn.lock" }}
+          name: Save sccache cache
+          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
-            - ~/.cache/yarn
-            - node_modules
-      - run:
-          name: Format C Sources
-          command: ./scripts/format-c.sh --check
-  ruby:
+            - "~/.cache/sccache"
+  linter:
     docker:
-      - image: circleci/ruby:2.6.3
+      - image: debian:buster-slim
+    resource_class: large
     steps:
-      - checkout
+      - setup-linux-linter
+      - restore_cache:
+          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+      - restore_cache:
+          name: Restore sccache cache
+          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
-          name: Install bundler 2
-          command: sudo gem install bundler
+          name: Format Rust Sources
+          command: |
+            cargo fmt -- --check --color=auto
+      - run:
+          name: Lint Rust With Clippy
+          command: |
+            cargo clippy --all-targets --all-features
+      - run:
+          name: Check Rust Docs
+          command: |
+            cargo doc --no-deps --all
       - rubocop:
           target: .
-  js:
-    docker:
-      - image: circleci/node:lts
-    steps:
-      - checkout
-      - restore_cache:
-          key: js-yarn-v2-{{ checksum "yarn.lock" }}
-      - run: yarn install
-      - save_cache:
-          key: js-yarn-v2-{{ checksum "yarn.lock" }}
-          paths:
-            - ~/.cache/yarn
-            - node_modules
+      - run:
+          name: Format C Sources
+          command: |
+            ./scripts/format-c.sh --check
+      - run:
+          name: Format Shell Sources
+          command: |
+            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -d
+      - run:
+          name: Lint Shell Sources
+          command: |
+            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shellcheck
       - run:
           name: yarn check
           command: |
@@ -215,30 +284,8 @@ jobs:
             yarn check --verify-tree
       - run:
           name: Lint JavaScript with eslint
-          command: yarn run eslint --ext .html,.js .
-  shell-format:
-    docker:
-      - image: peterdavehello/shfmt:latest
-    steps:
-      - checkout
-      - run:
-          name: Format Shell Sources
           command: |
-            shfmt -version
-            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -w
-  text:
-    docker:
-      - image: circleci/node:lts
-    steps:
-      - checkout
-      - restore_cache:
-          key: text-yarn-v2-{{ checksum "yarn.lock" }}
-      - run: yarn install
-      - save_cache:
-          key: text-yarn-v2-{{ checksum "yarn.lock" }}
-          paths:
-            - ~/.cache/yarn
-            - node_modules
+            yarn run eslint --ext .html,.js .
       - run:
           name: Format Text Sources
           command: |
@@ -249,9 +296,23 @@ jobs:
             ./scripts/format-text.sh --check "yaml"
             ./scripts/format-text.sh --check "yml"
             ./scripts/format-text.sh --check "md"
-  gh-pages-deploy:
+      - save_cache:
+          name: Save sccache cache
+          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          paths:
+            - "~/.cache/sccache"
+      - save_cache:
+          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          paths:
+            - "~/.cache/yarn"
+            - "node_modules"
+      - persist_to_workspace:
+          root: target
+          paths:
+            - "doc"
+  deploy:
     docker:
-      - image: node:8.10.0
+      - image: node:lts
     steps:
       - checkout
       - add_ssh_keys:
@@ -260,15 +321,10 @@ jobs:
       - attach_workspace:
           at: target
       - restore_cache:
-          key: docs-yarn-v1-{{ checksum "yarn.lock" }}
+          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
       - run: yarn install
-      - save_cache:
-          key: docs-yarn-v1-{{ checksum "yarn.lock" }}
-          paths:
-            - ~/.cache/yarn
-            - node_modules
       - run:
-          name: Copy playground redirect
+          name: Copy doc asset overrides
           command: cp assets/* target/doc
       - run:
           name: Deploy docs to gh-pages branch
@@ -277,22 +333,24 @@ jobs:
               --user "ci-build <ci-build@hyperbo.la>" \
               --message "[skip ci] build docs" \
               --dist target/doc
+      - save_cache:
+          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          paths:
+            - "~/.cache/yarn"
+            - "node_modules"
 workflows:
   version: 2
   build:
     jobs:
-      - rust
-      - artichoke-x86_64-windows
-      - c
-      - ruby
-      - js
-      - shell-format
-      - shellcheck/check:
-          exclude: "*/vendor/*"
-      - text
-      - gh-pages-deploy:
+      - x86_64-linux
+      - x86_64-windows
+      - ruby-spec
+      - linter
+      - deploy:
           requires:
-            - rust
+            - x86_64-linux
+            - x86_64-windows
+            - linter
           filters:
             branches:
               only: master
