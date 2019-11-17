@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'rbconfig'
+
+def windows?
+  /mswin|msys|mingw|cygwin|bccwin|wince|emc/.match?(RbConfig::CONFIG['host_os'])
+end
 
 # mruby requires a "default" build. This default build bootstraps the
 # compilation of the "sys" build.
@@ -22,11 +27,14 @@ MRuby::Build.new do |conf|
   conf.archiver.command = 'true'
   conf.mrbc.command = 'true'
 
+  conf.yacc.command = 'win_bison' if windows?
+
   conf.bins = []
   conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'bootstrap')
 
   FileUtils.mkdir_p("#{build_dir}/bin")
   FileUtils.touch("#{build_dir}/bin/mrbc")
+  FileUtils.touch("#{build_dir}/bin/mrbc.exe")
 end
 
 # This cross-build generates C sources so `build.rs` can compile them into a
@@ -44,6 +52,8 @@ MRuby::CrossBuild.new('sys') do |conf|
   conf.archiver.command = 'true'
   conf.mrbc.command = 'true'
 
+  conf.yacc.command = 'win_bison' if windows?
+
   # C compiler settings
   # https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
   conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_UTF8_STRING]
@@ -55,4 +65,5 @@ MRuby::CrossBuild.new('sys') do |conf|
 
   FileUtils.mkdir_p("#{build_dir}/bin")
   FileUtils.touch("#{build_dir}/bin/mrbc")
+  FileUtils.touch("#{build_dir}/bin/mrbc.exe")
 end

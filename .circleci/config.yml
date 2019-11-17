@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   shellcheck: circleci/shellcheck@1
+  win: circleci/windows@2.1.0
 commands:
   rubocop:
     description: Lint Ruby sources with RuboCop
@@ -61,7 +62,7 @@ jobs:
             bison --version
       - run:
           # needed for cc crate in build.rs
-          name: Install mruby-sys Build Dependencies
+          name: Install clang
           command: |
             sudo apt-get install -y clang
             clang --version
@@ -106,6 +107,66 @@ jobs:
           root: target
           paths:
             - doc
+  artichoke-x86_64-windows:
+    executor:
+      name: win/default
+    steps:
+      - checkout
+      - restore_cache:
+          key: rust-win-cargo-v1-{{ checksum "Cargo.lock" }}
+      - run:
+          name: Install Rust Toolchain
+          command: |
+            # Install rustup
+            $client = new-object System.Net.WebClient
+            $client.DownloadFile('https://win.rustup.rs', "$pwd\rustup-init.exe")
+            $toolchain = Get-Content rust-toolchain | Select-Object -First 1
+            .\rustup-init.exe -y --profile minimal --default-toolchain "$($toolchain)-msvc"
+            # This is necessary because otherwise cargo fails when trying to use git?
+            mkdir .cargo
+            Add-Content .cargo\config "[net]`ngit-fetch-with-cli = true"
+      - run:
+          name: Install MRI Ruby
+          command: |
+            choco install ruby --no-progress --version=2.6.3.1
+      - run:
+          # needed for cc crate in build.rs
+          name: Install clang
+          command: |
+            choco install visualstudio2019-workload-vctools
+            choco install llvm
+      - run:
+          name: Install bison
+          command: |
+            choco install winflexbison3 --ignore-checksums
+      - run:
+          name: Installed Toolchain Versions
+          command: |
+            rustc --version --verbose
+            cargo --version --verbose
+            ruby --version
+            clang --version
+            win_bison --version
+      - run:
+          name: Build Workspace
+          command: |
+            cargo build
+          environment:
+            RUST_BACKTRACE: 1
+            LIBCLANG_PATH: C:\Program Files\LLVM\bin
+      - run:
+          name: Test Workspace
+          command: |
+            cargo test --all-features
+            % 'suppressing test failures. See GH-359.'
+          environment:
+            RUST_BACKTRACE: 1
+            LIBCLANG_PATH: C:\Program Files\LLVM\bin
+      - save_cache:
+          key: rust-win-cargo-v1-{{ checksum "Cargo.lock" }}
+          paths:
+            - C:\Users\cicleci\.cargo
+            - target
   c:
     docker:
       - image: circleci/node:lts
@@ -221,6 +282,7 @@ workflows:
   build:
     jobs:
       - rust
+      - artichoke-x86_64-windows
       - c
       - ruby
       - js
