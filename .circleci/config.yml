@@ -2,6 +2,125 @@ version: 2.1
 orbs:
   win: circleci/windows@2.1.0
 commands:
+  setup-linux-builder:
+    description: Setup Artichoke Linux builder image
+    steps:
+      - run:
+          name: Setup Image
+          command: |
+            apt-get update
+            apt-get install -y curl git ssh
+      - checkout
+      - run:
+          name: Install Rust Toolchain
+          command: |
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
+            echo 'export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
+      - run:
+          name: Install Toolchain
+          working_directory: "~"
+          command: |
+            apt-get install -y clang bison
+            git clone https://github.com/rbenv/ruby-build.git
+            PREFIX=/usr/local ./ruby-build/install.sh
+      - run:
+          name: Install Ruby
+          command: |
+            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
+            ruby-build "$(cat .ruby-version)" /usr/local
+      - run:
+          name: Install sccache
+          command: |
+            apt-get install -y pkg-config libssl-dev
+            cargo install sccache
+            echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
+            echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
+      - run:
+          name: Installed Toolchain Versions
+          command: |
+            rustc --version --verbose
+            cargo --version --verbose
+            ruby --version
+            clang --version
+            bison --version
+  setup-windows-builder:
+    description: Setup Artichoke Windows builder image
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore sccache cache
+          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+      - run:
+          name: Install Toolchain
+          command: |
+            # Install rustup
+            $client = new-object System.Net.WebClient
+            $client.DownloadFile('https://win.rustup.rs', "$env:USERPROFILE\rustup-init.exe")
+            $toolchain = Get-Content rust-toolchain | Select-Object -First 1
+            $env:USERPROFILE\rustup-init.exe -y --profile minimal --default-toolchain "$($toolchain)-msvc"
+            # This is necessary because otherwise cargo fails when trying to use git?
+            Add-Content "$env:USERPROFILE\.cargo\config" "[net]`ngit-fetch-with-cli = true"
+            choco install ruby --no-progress --version=2.6.3.1
+            choco install visualstudio2019-workload-vctools --no-progress
+            choco install llvm --no-progress
+            choco install winflexbison3 --ignore-checksums --no-progress
+      - run:
+          name: Install sccache
+          command: |
+            cargo install sccache
+      - run:
+          name: Installed Toolchain Versions
+          command: |
+            rustc --version --verbose
+            cargo --version --verbose
+            ruby --version
+            clang --version
+            win_bison --version
+  setup-linux-linter:
+    description: Setup Artichoke Windows linter image
+    steps:
+      - setup-linux-builder
+      - run:
+          name: Install JS Toolchain
+          working_directory: "~"
+          command: |
+            curl -sSfL https://deb.nodesource.com/setup_13.x | bash -
+            apt-get install -y nodejs
+            curl -sSf https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+            echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+            apt-get update
+            apt-get install --no-install-recommends -y yarn
+      - run:
+          name: Install Shell Toolchain
+          working_directory: "~"
+          command: |
+            curl -o- -sSfL https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz | tar xJf -
+            mv shellcheck-stable/shellcheck /usr/local/bin
+            chmod +x /usr/local/bin/shellcheck
+            curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
+            chmod +x /usr/local/bin/shfmt
+      - run:
+          name: Install JS Packages
+          command: |
+            yarn install
+      - run:
+          name: Install Bundler
+          command: |
+            gem install bundler
+      - run:
+          name: Installed Toolchain Versions
+          command: |
+            rustc --version --verbose
+            cargo --version --verbose
+            sccache --version
+            rustfmt --version
+            cargo clippy -- --version
+            ruby --version
+            node --version
+            yarn --version
+            yarn --silent clang-format --version
+            shellcheck --version
+            shfmt -version
   rubocop:
     description: Lint Ruby sources with RuboCop
     parameters:
@@ -27,57 +146,19 @@ commands:
           paths:
             - "~/vendor"
 jobs:
-  artichoke-x86_64-linux:
+  x86_64-linux:
     docker:
       - image: debian:buster-slim
     resource_class: large
     steps:
-      - run:
-          name: Setup Image
-          command: |
-            apt-get update
-            apt-get install -y curl git ssh
-      - checkout
+      - setup-linux-builder
       - restore_cache:
           name: Restore sccache cache
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
-          name: Install Rust Toolchain
-          command: |
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
-            echo 'export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
-      - run:
-          name: Install Toolchain
-          working_directory: "~"
-          command: |
-            apt-get install -y clang bison
-            git clone https://github.com/rbenv/ruby-build.git
-            PREFIX=/usr/local ./ruby-build/install.sh
-      - run:
-          name: Install Ruby
-          command: |
-            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
-            ruby-build "$(cat .ruby-version)" /usr/local
-      - run:
-          name: Install sccache
-          command: |
-            apt-get install -y pkg-config libssl-dev
-            cargo install sccache
-            echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
-            echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
-      - run:
-          name: Installed Toolchain Versions
-          command: |
-            rustc --version --verbose
-            cargo --version --verbose
-            ruby --version
-            clang --version
-            bison --version
-      - run:
           name: Build workspace without default features
           command: |
             cargo build -p artichoke-backend --no-default-features
-            touch artichoke-backend/build.rs
           environment:
             RUST_BACKTRACE: 1
       - run:
@@ -96,40 +177,14 @@ jobs:
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "~/.cache/sccache"
-  artichoke-x86_64-windows:
+  x86_64-windows:
     executor:
       name: win/default
     steps:
-      - checkout
+      - setup-windows-builder
       - restore_cache:
           name: Restore sccache cache
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
-      - run:
-          name: Install Toolchain
-          command: |
-            # Install rustup
-            $client = new-object System.Net.WebClient
-            $client.DownloadFile('https://win.rustup.rs', "$pwd\rustup-init.exe")
-            $toolchain = Get-Content rust-toolchain | Select-Object -First 1
-            .\rustup-init.exe -y --profile minimal --default-toolchain "$($toolchain)-msvc"
-            # This is necessary because otherwise cargo fails when trying to use git?
-            Add-Content "$env:USERPROFILE\.cargo\config" "[net]`ngit-fetch-with-cli = true"
-            choco install ruby --no-progress --version=2.6.3.1
-            choco install visualstudio2019-workload-vctools
-            choco install llvm
-            choco install winflexbison3 --ignore-checksums
-      - run:
-          name: Install sccache
-          command: |
-            cargo install sccache
-      - run:
-          name: Installed Toolchain Versions
-          command: |
-            rustc --version --verbose
-            cargo --version --verbose
-            ruby --version
-            clang --version
-            win_bison --version
       - run:
           name: Build Workspace
           command: |
@@ -154,52 +209,15 @@ jobs:
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "%LOCALAPPDATA%\\Mozilla\\sccache"
-  artichoke-ruby-spec:
+  ruby-spec:
     docker:
       - image: debian:buster-slim
     resource_class: large
     steps:
-      - run:
-          name: Setup Image
-          command: |
-            apt-get update
-            apt-get install -y curl git ssh
-      - checkout
+      - setup-linux-builder
       - restore_cache:
           name: Restore sccache cache
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
-      - run:
-          name: Install Rust Toolchain
-          command: |
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
-            echo 'export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
-      - run:
-          name: Install Toolchain
-          working_directory: "~"
-          command: |
-            apt-get install -y clang bison
-            git clone https://github.com/rbenv/ruby-build.git
-            PREFIX=/usr/local ./ruby-build/install.sh
-      - run:
-          name: Install Ruby
-          command: |
-            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
-            ruby-build "$(cat .ruby-version)" /usr/local
-      - run:
-          name: Install sccache
-          command: |
-            apt-get install -y pkg-config libssl-dev
-            cargo install sccache
-            echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
-            echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
-      - run:
-          name: Installed Toolchain Versions
-          command: |
-            rustc --version --verbose
-            cargo --version --verbose
-            ruby --version
-            clang --version
-            bison --version
       - run:
           name: ruby/spec Compliance Regression Test
           command: |
@@ -213,71 +231,14 @@ jobs:
   linter:
     docker:
       - image: debian:buster-slim
+    resource_class: large
     steps:
-      - run:
-          name: Setup Image
-          command: |
-            apt-get update
-            apt-get install -y curl git ssh
-      - checkout
+      - setup-linux-linter
       - restore_cache:
           key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
       - restore_cache:
           name: Restore sccache cache
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
-      - run:
-          name: Install Rust Toolchain
-          command: |
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)" --component rustfmt clippy
-            echo 'export "PATH"="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
-      - run:
-          name: Install Toolchain
-          working_directory: "~"
-          command: |
-            git clone https://github.com/rbenv/ruby-build.git
-            PREFIX=/usr/local ./ruby-build/install.sh
-            curl -sSfL https://deb.nodesource.com/setup_13.x | bash -
-            apt-get install -y nodejs
-            curl -sSf https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-            echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-            apt-get update
-            apt-get install --no-install-recommends -y yarn
-            curl -o- -sSfL https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz | tar xJf -
-            mv shellcheck-stable/shellcheck /usr/local/bin
-            chmod +x /usr/local/bin/shellcheck
-            curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
-            chmod +x /usr/local/bin/shfmt
-      - run:
-          name: Install JS Packages
-          command: |
-            yarn install
-      - run:
-          name: Install Ruby
-          command: |
-            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
-            ruby-build "$(cat .ruby-version)" /usr/local
-            gem install bundler
-      - run:
-          name: Install sccache
-          command: |
-            apt-get install -y pkg-config libssl-dev
-            cargo install sccache
-            echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
-            echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
-      - run:
-          name: Installed Toolchain Versions
-          command: |
-            rustc --version --verbose
-            cargo --version --verbose
-            sccache --version
-            rustfmt --version
-            cargo clippy -- --version
-            ruby --version
-            node --version
-            yarn --version
-            yarn --silent clang-format --version
-            shellcheck --version
-            shfmt -version
       - run:
           name: Format Rust Sources
           command: |
@@ -290,6 +251,29 @@ jobs:
           name: Check Rust Docs
           command: |
             cargo doc --no-deps --all
+      - rubocop:
+          target: .
+      - run:
+          name: Format C Sources
+          command: |
+            ./scripts/format-c.sh --check
+      - run:
+          name: Format Shell Sources
+          command: |
+            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -d
+      - run:
+          name: Lint Shell Sources
+          command: |
+            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shellcheck
+      - run:
+          name: yarn check
+          command: |
+            yarn check --integrity
+            yarn check --verify-tree
+      - run:
+          name: Lint JavaScript with eslint
+          command: |
+            yarn run eslint --ext .html,.js .
       - run:
           name: Format Text Sources
           command: |
@@ -300,29 +284,6 @@ jobs:
             ./scripts/format-text.sh --check "yaml"
             ./scripts/format-text.sh --check "yml"
             ./scripts/format-text.sh --check "md"
-      - run:
-          name: Format Shell Sources
-          command: |
-            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shfmt -i 2 -ci -s -d
-      - run:
-          name: Lint Shell Sources
-          command: |
-            shfmt -f . | grep -v target/ | grep -v node_modules/ | grep -v vendor/ | xargs shellcheck
-      - run:
-          name: Format C Sources
-          command: |
-            ./scripts/format-c.sh --check
-      - run:
-          name: yarn check
-          command: |
-            yarn check --integrity
-            yarn check --verify-tree
-      - run:
-          name: Lint JavaScript with eslint
-          command: |
-            yarn run eslint --ext .html,.js .
-      - rubocop:
-          target: .
       - save_cache:
           name: Save sccache cache
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
@@ -337,7 +298,7 @@ jobs:
           root: target
           paths:
             - "doc"
-  gh-pages-deploy:
+  deploy:
     docker:
       - image: node:lts
     steps:
@@ -369,12 +330,14 @@ workflows:
   version: 2
   build:
     jobs:
-      - artichoke-x86_64-linux
-      - artichoke-x86_64-windows
-      - artichoke-ruby-spec
+      - x86_64-linux
+      - x86_64-windows
+      - ruby-spec
       - linter
-      - gh-pages-deploy:
+      - deploy:
           requires:
+            - x86_64-linux
+            - x86_64-windows
             - linter
           filters:
             branches:
