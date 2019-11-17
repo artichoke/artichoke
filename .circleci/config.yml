@@ -55,7 +55,7 @@ jobs:
       - run:
           name: Install Ruby
           command: |
-            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev
+            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
             ruby-build "$(cat .ruby-version)" /usr/local
       - run:
           name: Install sccache
@@ -181,7 +181,7 @@ jobs:
       - run:
           name: Install Ruby
           command: |
-            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev
+            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
             ruby-build "$(cat .ruby-version)" /usr/local
       - run:
           name: Install sccache
@@ -247,7 +247,7 @@ jobs:
       - run:
           name: Install Ruby
           command: |
-            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev
+            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
             ruby-build "$(cat .ruby-version)" /usr/local
             gem install bundler
       - run:
