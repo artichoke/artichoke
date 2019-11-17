@@ -144,7 +144,7 @@ jobs:
           key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "%LOCALAPPDATA%\\Mozilla\\sccache"
-  artichoke-ruby/spec:
+  artichoke-ruby-spec:
     docker:
       - image: debian:buster-slim
     resource_class: large
@@ -336,7 +336,7 @@ workflows:
     jobs:
       - artichoke-x86_64-linux
       - artichoke-x86_64-windows
-      - artichoke-ruby/spec
+      - artichoke-ruby-spec
       - linter
       - gh-pages-deploy:
           requires:
