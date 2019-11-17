@@ -196,7 +196,7 @@ jobs:
       - setup-windows-builder
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: Build Workspace
           command: |
@@ -218,9 +218,9 @@ jobs:
             LIBCLANG_PATH: C:\Program Files\LLVM\bin
       - save_cache:
           name: Save sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
-            - "%LOCALAPPDATA%\\Mozilla\\sccache"
+            - "C:\\Users\\circleci\\AppData\\Local\\Mozilla\\sccache"
   ruby-spec:
     docker:
       - image: debian:buster-slim
