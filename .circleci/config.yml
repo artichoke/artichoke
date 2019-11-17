@@ -158,7 +158,6 @@ jobs:
       - image: debian:buster-slim
     resource_class: large
     steps:
-    steps:
       - run:
           name: Setup Image
           command: |
@@ -211,7 +210,6 @@ jobs:
   linter:
     docker:
       - image: debian:buster-slim
-    steps:
     steps:
       - run:
           name: Setup Image
