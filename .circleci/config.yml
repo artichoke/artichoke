@@ -113,7 +113,7 @@ jobs:
             $toolchain = Get-Content rust-toolchain | Select-Object -First 1
             .\rustup-init.exe -y --profile minimal --default-toolchain "$($toolchain)-msvc"
             # This is necessary because otherwise cargo fails when trying to use git?
-            Add-Content %USERPROFILE%\.cargo\config "[net]`ngit-fetch-with-cli = true"
+            Add-Content "$env:USERPROFILE\.cargo\config" "[net]`ngit-fetch-with-cli = true"
             choco install ruby --no-progress --version=2.6.3.1
             choco install visualstudio2019-workload-vctools
             choco install llvm
@@ -234,7 +234,6 @@ jobs:
           name: Install Toolchain
           working_directory: "~"
           command: |
-            apt-get install -y clang-format
             git clone https://github.com/rbenv/ruby-build.git
             PREFIX=/usr/local ./ruby-build/install.sh
             curl -sSfL https://deb.nodesource.com/setup_13.x | bash -
@@ -243,12 +242,15 @@ jobs:
             echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
             apt-get update
             apt-get install --no-install-recommends -y yarn
-            yarn install
             curl -o- -sSfL https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz | tar xJf -
             mv shellcheck-stable/shellcheck /usr/local/bin
             chmod +x /usr/local/bin/shellcheck
             curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
             chmod +x /usr/local/bin/shfmt
+      - run:
+          name: Install JS Packages
+          command: |
+            yarn install
       - run:
           name: Install Ruby
           command: |
