@@ -33,7 +33,7 @@ jobs:
     resource_class: large
     steps:
       - run:
-          name: Setup Imagr
+          name: Setup Image
           command: |
             apt-get update
             apt-get install -y curl git ssh
@@ -52,6 +52,9 @@ jobs:
             apt-get install -y clang bison
             git clone https://github.com/rbenv/ruby-build.git
             PREFIX=/usr/local ./ruby-build/install.sh
+      - run:
+          name: Install Ruby
+          command: |
             ruby-build "$(cat .ruby-version)" /usr/local
       - run:
           name: Install sccache
