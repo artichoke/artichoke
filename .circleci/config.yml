@@ -61,6 +61,7 @@ jobs:
       - run:
           name: Install sccache
           command: |
+            apt-get install -y pkg-config libssl-dev
             cargo install sccache
             echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
             echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
@@ -188,6 +189,7 @@ jobs:
       - run:
           name: Install sccache
           command: |
+            apt-get install -y pkg-config libssl-dev
             cargo install sccache
             echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
             echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
@@ -256,6 +258,7 @@ jobs:
       - run:
           name: Install sccache
           command: |
+            apt-get install -y pkg-config libssl-dev
             cargo install sccache
             echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
             echo 'export "SCCACHE_CACHE_SIZE"="1G"' >> $BASH_ENV
