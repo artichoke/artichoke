@@ -39,6 +39,7 @@ jobs:
       - run:
           name: Install Rust Toolchain
           command: |
+            apt-get install -y curl
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
       - run:
           name: Install Toolchain
@@ -156,6 +157,7 @@ jobs:
       - run:
           name: Install Rust Toolchain
           command: |
+            apt-get install -y curl
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)"
       - run:
           name: Install Toolchain
@@ -202,6 +204,7 @@ jobs:
       - run:
           name: Install Rust Toolchain
           command: |
+            apt-get install -y curl
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal --default-toolchain "$(cat rust-toolchain)" --component rustfmt clippy
       - run:
           name: Install Toolchain
