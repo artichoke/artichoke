@@ -342,8 +342,15 @@ impl ArrayType for Aggregate {
 
     fn shuffle(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
+
+        let mut buffer = Vec::with_capacity(self.0.len());
+        for idx in 0..self.0.len() {
+            buffer.push(self.0.get(idx).unwrap());
+        }
+    
         let mut rng = rand::thread_rng();
-        self.0.shuffle(&mut rng);
+        buffer.shuffle(&mut rng);
+        
         Ok(())
     }
 }

@@ -12,8 +12,8 @@ log = "0.4"
 memchr = "2"
 once_cell = "1"
 onig = "5"
-regex = "1"
 rand = "0.7"
+regex = "1"
 
 [dependencies.artichoke-core]
 path = "../artichoke-core"
