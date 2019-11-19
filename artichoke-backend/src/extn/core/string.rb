@@ -272,9 +272,11 @@ class String
   end
 
   def delete_prefix(prefix)
-    self[0...prefix.length] = '' if start_with?(prefix)
+    raise TypeError, "no implicit conversion of #{prefix.class} into String" unless prefix.is_a?(String)
 
-    self
+    return self[prefix.length..-1] if start_with?(prefix)
+
+    dup
   end
 
   def delete_prefix!(prefix)
@@ -283,9 +285,11 @@ class String
   end
 
   def delete_suffix(suffix)
-    self[-suffix.length..-1] = '' if end_with?(suffix)
+    raise TypeError, "no implicit conversion of #{suffix.class} into String" unless suffix.is_a?(String)
 
-    self
+    return self[0..-suffix.length] if end_with?(suffix)
+
+    dup
   end
 
   def delete_suffix!(prefix)
