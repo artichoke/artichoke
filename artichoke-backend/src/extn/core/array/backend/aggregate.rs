@@ -347,10 +347,10 @@ impl ArrayType for Aggregate {
         for idx in 0..self.0.len() {
             buffer.push(self.0.get(idx).unwrap());
         }
-    
+
         let mut rng = rand::thread_rng();
         buffer.shuffle(&mut rng);
-        
+
         Ok(())
     }
 }
