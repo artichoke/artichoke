@@ -429,15 +429,7 @@ impl Array {
         Ok(popped)
     }
 
-    pub fn reverse(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
-        let mut result = self.clone();
-        result.reverse_in_place(interp)?;
-        let result = unsafe { result.try_into_ruby(interp, None) }
-            .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array"))?;
-        Ok(result)
-    }
-
-    pub fn reverse_in_place(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+    pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         self.0.reverse(interp)?;
         Ok(())
     }

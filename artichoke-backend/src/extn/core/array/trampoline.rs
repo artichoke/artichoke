@@ -146,17 +146,6 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Box<d
     Ok(ary)
 }
 
-pub fn reverse(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Array from Ruby Array receiver",
-        )
-    })?;
-    let borrow = array.borrow();
-    borrow.reverse(interp)
-}
-
 pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
     if ary.is_frozen() {
         return Err(Box::new(FrozenError::new(
@@ -172,7 +161,7 @@ pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn Rub
     })?;
     let mut borrow = array.borrow_mut();
     let gc_was_enabled = interp.disable_gc();
-    borrow.reverse_in_place(interp)?;
+    borrow.reverse(interp)?;
     if gc_was_enabled {
         interp.enable_gc();
     }
