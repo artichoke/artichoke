@@ -5,11 +5,6 @@ commands:
   setup-linux-builder:
     description: Setup Artichoke Linux builder image
     steps:
-      - run:
-          name: Setup Image
-          command: |
-            apt-get update
-            apt-get install -y curl git ssh
       - checkout
       - run:
           name: Install Rust Toolchain
@@ -21,13 +16,6 @@ commands:
           working_directory: "~"
           command: |
             apt-get install -y clang bison
-            git clone https://github.com/rbenv/ruby-build.git
-            PREFIX=/usr/local ./ruby-build/install.sh
-      - run:
-          name: Install Ruby
-          command: |
-            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
-            ruby-build "$(cat .ruby-version)" /usr/local
       - run:
           name: Install sccache
           working_directory: "~"
@@ -93,16 +81,6 @@ commands:
             rustup component add rustfmt
             rustup component add clippy
       - run:
-          name: Install JS Toolchain
-          working_directory: "~"
-          command: |
-            curl -sSfL https://deb.nodesource.com/setup_13.x | bash -
-            apt-get install -y nodejs
-            curl -sSf https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-            echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-            apt-get update
-            apt-get install --no-install-recommends -y yarn
-      - run:
           name: Install Shell Toolchain
           working_directory: "~"
           command: |
@@ -160,7 +138,7 @@ commands:
 jobs:
   x86_64-linux:
     docker:
-      - image: debian:buster-slim
+      - image: circleci/ruby:2.6.3-buster
     resource_class: large
     steps:
       - setup-linux-builder
@@ -223,7 +201,7 @@ jobs:
             - "C:\\Users\\circleci\\AppData\\Local\\Mozilla\\sccache"
   ruby-spec:
     docker:
-      - image: debian:buster-slim
+      - image: circleci/ruby:2.6.3-buster
     resource_class: large
     steps:
       - setup-linux-builder
@@ -242,7 +220,7 @@ jobs:
             - "~/.cache/sccache"
   linter:
     docker:
-      - image: debian:buster-slim
+      - image: circleci/ruby:2.6.3-buster-node
     resource_class: large
     steps:
       - setup-linux-linter
