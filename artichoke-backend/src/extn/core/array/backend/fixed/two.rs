@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
 use crate::extn::core::exception::RubyException;
@@ -215,11 +217,7 @@ impl ArrayType for Two {
 
     fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        let mut realloc = None;
-        let pa = self.get(interp, 0)?;
-        let pb = self.get(interp, 1)?;
-        self.set(interp, 0, pb, &mut realloc)?;
-        self.set(interp, 1, pa, &mut realloc)?;
+        mem::swap(&mut self.0, &mut self.1);
         Ok(())
     }
 }
