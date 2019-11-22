@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  win: circleci/windows@2.1.0
+  win: circleci/windows@2.2.0
 commands:
   setup-linux-builder:
     description: Setup Artichoke Linux builder image
