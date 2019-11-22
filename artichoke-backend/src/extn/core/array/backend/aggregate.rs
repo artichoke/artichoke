@@ -330,11 +330,15 @@ impl ArrayType for Aggregate {
         }
     }
 
-    fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
-        let mut parts = Vec::with_capacity(self.0.len());
-        for idx in (0..self.0.len()).rev() {
-            parts.push(self.0[idx].reverse(interp)?);
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+        let ln = self.0.len();
+        let mut i = 0;
+        while i < ln / 2 {
+            self.0.swap(i, ln - i - 1);
+            self.0[i].reverse(interp)?;
+            self.0[ln - i - 1].reverse(interp)?;
+            i += 1;
         }
-        Ok(Box::new(Self::with_parts(parts)))
+        Ok(())
     }
 }

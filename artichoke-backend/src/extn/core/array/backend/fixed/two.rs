@@ -213,8 +213,13 @@ impl ArrayType for Two {
         Ok(self.1.clone())
     }
 
-    fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        Ok(backend::fixed::two(self.1.clone(), self.0.clone()))
+        let mut realloc = None;
+        let pa = self.get(interp, 0)?;
+        let pb = self.get(interp, 1)?;
+        self.set(interp, 0, pb, &mut realloc)?;
+        self.set(interp, 1, pa, &mut realloc)?;
+        Ok(())
     }
 }
