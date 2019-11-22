@@ -331,13 +331,14 @@ impl ArrayType for Aggregate {
     }
 
     fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
-        let ln = self.0.len();
         let mut i = 0;
-        while i < ln / 2 {
-            self.0.swap(i, ln - i - 1);
+        let mut j = self.0.len() - 1;
+        while i < j {
+            self.0.swap(i, j);
             self.0[i].reverse(interp)?;
-            self.0[ln - i - 1].reverse(interp)?;
+            self.0[j].reverse(interp)?;
             i += 1;
+            j -= 1;
         }
         Ok(())
     }
