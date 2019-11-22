@@ -85,10 +85,10 @@ commands:
           working_directory: "~"
           command: |
             curl -o- -sSfL https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz | tar xJf -
-            mv shellcheck-stable/shellcheck /usr/local/bin
-            chmod +x /usr/local/bin/shellcheck
-            curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
-            chmod +x /usr/local/bin/shfmt
+            sudo mv shellcheck-stable/shellcheck /usr/local/bin
+            sudo chmod +x /usr/local/bin/shellcheck
+            sudo curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
+            sudo chmod +x /usr/local/bin/shfmt
       - run:
           name: Install JS Packages
           command: |
