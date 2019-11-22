@@ -5,11 +5,6 @@ commands:
   setup-linux-builder:
     description: Setup Artichoke Linux builder image
     steps:
-      - run:
-          name: Setup Image
-          command: |
-            apt-get update
-            apt-get install -y curl git ssh
       - checkout
       - run:
           name: Install Rust Toolchain
@@ -20,19 +15,12 @@ commands:
           name: Install Toolchain
           working_directory: "~"
           command: |
-            apt-get install -y clang bison
-            git clone https://github.com/rbenv/ruby-build.git
-            PREFIX=/usr/local ./ruby-build/install.sh
-      - run:
-          name: Install Ruby
-          command: |
-            apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm6 libgdbm-dev
-            ruby-build "$(cat .ruby-version)" /usr/local
+            sudo apt-get install -y clang bison
       - run:
           name: Install sccache
           working_directory: "~"
           command: |
-            apt-get install -y pkg-config libssl-dev
+            sudo apt-get install -y pkg-config libssl-dev
             curl -o- -sSLf https://github.com/mozilla/sccache/releases/download/0.2.12/sccache-0.2.12-x86_64-unknown-linux-musl.tar.gz | tar xzf -
             mv sccache-0.2.12-x86_64-unknown-linux-musl/sccache .cargo/bin/sccache
             echo 'export "RUSTC_WRAPPER"="sccache"' >> $BASH_ENV
@@ -51,7 +39,7 @@ commands:
       - checkout
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: Install Toolchain
           command: |
@@ -93,24 +81,14 @@ commands:
             rustup component add rustfmt
             rustup component add clippy
       - run:
-          name: Install JS Toolchain
-          working_directory: "~"
-          command: |
-            curl -sSfL https://deb.nodesource.com/setup_13.x | bash -
-            apt-get install -y nodejs
-            curl -sSf https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-            echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-            apt-get update
-            apt-get install --no-install-recommends -y yarn
-      - run:
           name: Install Shell Toolchain
           working_directory: "~"
           command: |
             curl -o- -sSfL https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz | tar xJf -
-            mv shellcheck-stable/shellcheck /usr/local/bin
-            chmod +x /usr/local/bin/shellcheck
-            curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
-            chmod +x /usr/local/bin/shfmt
+            sudo mv shellcheck-stable/shellcheck /usr/local/bin
+            sudo chmod +x /usr/local/bin/shellcheck
+            sudo curl -o/usr/local/bin/shfmt -sSfL https://github.com/mvdan/sh/releases/download/v2.6.4/shfmt_v2.6.4_linux_amd64
+            sudo chmod +x /usr/local/bin/shfmt
       - run:
           name: Install JS Packages
           command: |
@@ -141,7 +119,7 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - v1-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+            - v2-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
       - run:
           name: Bundle Install
           working_directory: "<< parameters.target >>"
@@ -154,19 +132,19 @@ commands:
             bundle exec rubocop --version
             bundle exec rubocop
       - save_cache:
-          key: v1-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+          key: v2-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
           paths:
             - "~/vendor"
 jobs:
   x86_64-linux:
     docker:
-      - image: debian:buster-slim
+      - image: circleci/ruby:2.6.3-buster
     resource_class: large
     steps:
       - setup-linux-builder
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: Build workspace without default features
           command: |
@@ -186,7 +164,7 @@ jobs:
             RUST_BACKTRACE: 1
       - save_cache:
           name: Save sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "~/.cache/sccache"
   x86_64-windows:
@@ -223,13 +201,13 @@ jobs:
             - "C:\\Users\\circleci\\AppData\\Local\\Mozilla\\sccache"
   ruby-spec:
     docker:
-      - image: debian:buster-slim
+      - image: circleci/ruby:2.6.3-buster
     resource_class: large
     steps:
       - setup-linux-builder
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: ruby/spec Compliance Regression Test
           command: |
@@ -237,20 +215,20 @@ jobs:
             ./scripts/spec-compliance.sh --artichoke || :
       - save_cache:
           name: Save sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "~/.cache/sccache"
   linter:
     docker:
-      - image: debian:buster-slim
+      - image: circleci/ruby:2.6.3-buster-node
     resource_class: large
     steps:
       - setup-linux-linter
       - restore_cache:
-          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: Format Rust Sources
           command: |
@@ -298,11 +276,11 @@ jobs:
             ./scripts/format-text.sh --check "md"
       - save_cache:
           name: Save sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "~/.cache/sccache"
       - save_cache:
-          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
           paths:
             - "~/.cache/yarn"
             - "node_modules"
@@ -321,7 +299,7 @@ jobs:
       - attach_workspace:
           at: target
       - restore_cache:
-          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
       - run: yarn install
       - run:
           name: Copy doc asset overrides
@@ -334,7 +312,7 @@ jobs:
               --message "[skip ci] build docs" \
               --dist target/doc
       - save_cache:
-          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
           paths:
             - "~/.cache/yarn"
             - "node_modules"
