@@ -119,7 +119,7 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - v1-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+            - v2-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
       - run:
           name: Bundle Install
           working_directory: "<< parameters.target >>"
@@ -132,7 +132,7 @@ commands:
             bundle exec rubocop --version
             bundle exec rubocop
       - save_cache:
-          key: v1-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
+          key: v2-bundler-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "<< parameters.target >>/Gemfile.lock" }}
           paths:
             - "~/vendor"
 jobs:
@@ -225,7 +225,7 @@ jobs:
     steps:
       - setup-linux-linter
       - restore_cache:
-          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
       - restore_cache:
           name: Restore sccache cache
           key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
@@ -280,7 +280,7 @@ jobs:
           paths:
             - "~/.cache/sccache"
       - save_cache:
-          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
           paths:
             - "~/.cache/yarn"
             - "node_modules"
@@ -299,7 +299,7 @@ jobs:
       - attach_workspace:
           at: target
       - restore_cache:
-          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
       - run: yarn install
       - run:
           name: Copy doc asset overrides
@@ -312,7 +312,7 @@ jobs:
               --message "[skip ci] build docs" \
               --dist target/doc
       - save_cache:
-          key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
+          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
           paths:
             - "~/.cache/yarn"
             - "node_modules"
