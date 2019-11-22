@@ -39,7 +39,7 @@ commands:
       - checkout
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: Install Toolchain
           command: |
@@ -144,7 +144,7 @@ jobs:
       - setup-linux-builder
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: Build workspace without default features
           command: |
@@ -164,7 +164,7 @@ jobs:
             RUST_BACKTRACE: 1
       - save_cache:
           name: Save sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "~/.cache/sccache"
   x86_64-windows:
@@ -207,7 +207,7 @@ jobs:
       - setup-linux-builder
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: ruby/spec Compliance Regression Test
           command: |
@@ -215,7 +215,7 @@ jobs:
             ./scripts/spec-compliance.sh --artichoke || :
       - save_cache:
           name: Save sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "~/.cache/sccache"
   linter:
@@ -228,7 +228,7 @@ jobs:
           key: v1-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
       - restore_cache:
           name: Restore sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: Format Rust Sources
           command: |
@@ -276,7 +276,7 @@ jobs:
             ./scripts/format-text.sh --check "md"
       - save_cache:
           name: Save sccache cache
-          key: v1-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
           paths:
             - "~/.cache/sccache"
       - save_cache:
