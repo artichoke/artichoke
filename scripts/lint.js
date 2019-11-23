@@ -426,43 +426,48 @@ async function rubyLinter(files) {
 
 (async function runner() {
   const timer = setInterval(() => {}, 100);
-  const files = await walk(path.resolve(__dirname, ".."));
   let failed = false;
-  const jobs = [
-    prettierFormatter(files),
-    eslintLinter(files),
-    shellLinter(files),
-    rustFormatter(),
-    clippyLinter(),
-    rustDocBuilder(),
-    clangFormatter(files),
-    rubyLinter(files)
-  ].map(p =>
-    p.catch(err => {
-      console.error("Error: Unhandled exception");
-      if (err) {
-        console.error(err);
-      }
-      failed = true;
-      return err;
-    })
-  );
-  await Promise.all(jobs)
-    .then(returnCodes => {
-      const failures = returnCodes
-        .flat(Infinity)
-        .filter(status => status === false);
-      if (failures.length > 0) {
+  try {
+    const files = await walk(path.resolve(__dirname, ".."));
+    const jobs = [
+      prettierFormatter(files),
+      eslintLinter(files),
+      shellLinter(files),
+      rustFormatter(),
+      clippyLinter(),
+      rustDocBuilder(),
+      clangFormatter(files),
+      rubyLinter(files)
+    ].map(p =>
+      p.catch(err => {
+        console.error("Error: Unhandled exception");
+        if (err) {
+          console.error(err);
+        }
         failed = true;
-      }
-    })
-    .catch(err => {
-      console.error("Error: Unhandled exception");
-      if (err) {
-        console.error(err);
-      }
-      failed = true;
-    });
+        return err;
+      })
+    );
+    await Promise.all(jobs)
+      .then(returnCodes => {
+        const failures = returnCodes
+          .flat(Infinity)
+          .filter(status => status === false);
+        if (failures.length > 0) {
+          failed = true;
+        }
+      })
+      .catch(err => {
+        console.error("Error: Unhandled exception");
+        if (err) {
+          console.error(err);
+        }
+        failed = true;
+      });
+  } catch (err) {
+    console.error(err);
+    failed = true;
+  }
   timer.unref();
   if (failed) {
     process.exit(1);
