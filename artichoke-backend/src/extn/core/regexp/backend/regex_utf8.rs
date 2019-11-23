@@ -14,6 +14,7 @@ use crate::types::Int;
 use crate::value::{Block, Value};
 use crate::Artichoke;
 
+#[derive(Clone)]
 pub struct RegexUtf8 {
     literal: Config,
     derived: Config,
@@ -80,22 +81,7 @@ impl fmt::Display for RegexUtf8 {
 
 impl RegexpType for RegexUtf8 {
     fn box_clone(&self) -> Box<dyn RegexpType> {
-        let pattern = str::from_utf8(self.derived.pattern.as_slice())
-            .expect("Pattern previously parsed as a valid onig pattern");
-        let mut builder = regex::RegexBuilder::new(pattern);
-        builder.case_insensitive(self.derived.options.ignore_case);
-        builder.multi_line(self.derived.options.multiline);
-        builder.ignore_whitespace(self.derived.options.extended);
-        let regex = builder
-            .build()
-            .expect("Pattern previously parsed as a valid onig regex");
-        let regexp = Self {
-            literal: self.literal.clone(),
-            derived: self.derived.clone(),
-            encoding: self.encoding,
-            regex,
-        };
-        Box::new(regexp)
+        Box::new(self.clone())
     }
 
     fn captures(
