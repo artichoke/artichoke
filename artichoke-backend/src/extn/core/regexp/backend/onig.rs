@@ -3,6 +3,7 @@ use std::cmp::{self, Ordering};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
+use std::rc::Rc;
 use std::str;
 
 use crate::convert::{Convert, RustBackedValue};
@@ -14,11 +15,12 @@ use crate::types::Int;
 use crate::value::{Block, Value};
 use crate::Artichoke;
 
+#[derive(Clone)]
 pub struct Onig {
     literal: Config,
     derived: Config,
     encoding: Encoding,
-    regex: onig::Regex,
+    regex: Rc<onig::Regex>,
 }
 
 impl Onig {
@@ -48,7 +50,7 @@ impl Onig {
             literal,
             derived,
             encoding,
-            regex,
+            regex: Rc::new(regex),
         };
         Ok(regexp)
     }
@@ -78,18 +80,7 @@ impl fmt::Display for Onig {
 
 impl RegexpType for Onig {
     fn box_clone(&self) -> Box<dyn RegexpType> {
-        let pattern = str::from_utf8(self.derived.pattern.as_slice())
-            .expect("Pattern previously parsed as a valid onig pattern");
-        let regex =
-            onig::Regex::with_options(pattern, self.derived.options.flags(), onig::Syntax::ruby())
-                .expect("Pattern previously parsed as a valid onig regex");
-        let regexp = Self {
-            literal: self.literal.clone(),
-            derived: self.derived.clone(),
-            encoding: self.encoding,
-            regex,
-        };
-        Box::new(regexp)
+        Box::new(self.clone())
     }
 
     fn captures(
