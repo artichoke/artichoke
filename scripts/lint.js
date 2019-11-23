@@ -5,6 +5,7 @@ const child = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
+require("array-flat-polyfill");
 const prettier = require("prettier");
 const shebangCommand = require("shebang-command");
 const { spawnClangFormat } = require("clang-format");

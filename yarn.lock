@@ -804,6 +804,11 @@ array-find-index@^1.0.1:
   resolved "https://registry.yarnpkg.com/array-find-index/-/array-find-index-1.0.2.tgz#df010aa1287e164bbda6f9723b0a96a1ec4187a1"
   integrity sha1-3wEKoSh+Fku9pvlyOwqWoexBh6E=
 
+array-flat-polyfill@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/array-flat-polyfill/-/array-flat-polyfill-1.0.1.tgz#1e3a4255be619dfbffbfd1d635c1cf357cd034e7"
+  integrity sha512-hfJmKupmQN0lwi0xG6FQ5U8Rd97RnIERplymOv/qpq8AoNKPPAnxJadjFA23FNWm88wykh9HmpLJUUwUtNU/iw==
+
 array-includes@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/array-includes/-/array-includes-3.0.3.tgz#184b48f62d92d7452bb31b323165c7f8bd02266d"
