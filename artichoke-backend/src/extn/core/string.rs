@@ -42,15 +42,15 @@ impl RString {
                     value.inner()
                 } else {
                     let exception = ArgumentError::new(&interp, "Unicode out of range");
-                    exception::raise(interp, Box::new(exception))
+                    exception::raise(interp, exception)
                 }
             } else {
                 let exception = ArgumentError::new(&interp, "empty string");
-                exception::raise(interp, Box::new(exception))
+                exception::raise(interp, exception)
             }
         } else {
             let exception = Fatal::new(&interp, "failed to convert String receiver to Rust String");
-            exception::raise(interp, Box::new(exception))
+            exception::raise(interp, exception)
         }
     }
 
