@@ -4,7 +4,7 @@ use std::convert::TryFrom;
 use crate::convert::float::Float;
 use crate::convert::{Convert, TryConvert};
 #[cfg(feature = "artichoke-array")]
-use crate::extn::core::array::{backend, Array};
+use crate::extn::core::array::{Array, InlineBuffer};
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::{Value, ValueLike};
@@ -15,7 +15,7 @@ impl Convert<&[Value], Value> for Artichoke {
     #[cfg(feature = "artichoke-array")]
     fn convert(&self, value: &[Value]) -> Value {
         use crate::convert::RustBackedValue;
-        let ary = Array::new(Box::new(backend::buffer::Buffer::from(value)));
+        let ary = Array::new(InlineBuffer::from(value));
         unsafe { ary.try_into_ruby(self, None) }.expect("Array into Value")
     }
 
@@ -40,7 +40,7 @@ impl Convert<Vec<Value>, Value> for Artichoke {
     #[cfg(feature = "artichoke-array")]
     fn convert(&self, value: Vec<Value>) -> Value {
         use crate::convert::RustBackedValue;
-        let ary = Array::new(Box::new(backend::buffer::Buffer::from(value)));
+        let ary = Array::new(InlineBuffer::from(value));
         unsafe { ary.try_into_ruby(self, None) }.expect("Array into Value")
     }
 

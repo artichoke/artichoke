@@ -83,9 +83,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    // This test is no longer valid now that initializing the core creates
-    // `Array` objects which clone the interpreter.
     fn from_user_data_rc_refcount() {
         let interp = crate::interpreter().expect("init");
         assert_eq!(Rc::strong_count(&interp.0), 1);

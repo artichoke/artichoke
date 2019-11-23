@@ -1,7 +1,5 @@
 use artichoke_core::value::Value as _;
-use downcast::Any;
 use std::convert::TryFrom;
-use std::mem;
 
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::exception::{
@@ -15,28 +13,28 @@ use crate::Artichoke;
 pub mod args;
 pub mod backend;
 mod ffi;
+mod inline_buffer;
 pub mod mruby;
 pub mod trampoline;
 
-pub struct Array(Box<dyn ArrayType>);
+pub use backend::ArrayType;
+pub use inline_buffer::InlineBuffer;
+
+pub struct Array(InlineBuffer);
 
 impl Clone for Array {
     fn clone(&self) -> Self {
-        Self(self.0.box_clone())
+        Self(self.0.clone())
     }
 }
 
 impl Array {
-    pub fn new(ary: Box<dyn ArrayType>) -> Self {
+    pub fn new(ary: InlineBuffer) -> Self {
         Self(ary)
     }
 
     pub fn as_vec(&self, interp: &Artichoke) -> Vec<Value> {
-        let mut buffer = Vec::with_capacity(self.0.len());
-        for idx in 0..self.0.len() {
-            buffer.push(self.0.get(interp, idx).unwrap());
-        }
-        buffer
+        self.0.as_vec(interp)
     }
 
     fn gc_mark(&self, interp: &Artichoke) {
@@ -48,7 +46,7 @@ impl Array {
     }
 
     pub fn clear(&mut self) {
-        self.0 = backend::fixed::empty();
+        self.0.clear();
     }
 
     pub fn initialize(
@@ -60,29 +58,7 @@ impl Array {
     ) -> Result<Value, Box<dyn RubyException>> {
         let result = if let Some(first) = first {
             if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
-                ary.borrow().0.box_clone()
-            } else if let Ok(true) = first.respond_to("to_ary") {
-                let ruby_type = first.pretty_name();
-                if let Ok(other) = first.funcall("to_ary", &[], None) {
-                    if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                        other.borrow().0.box_clone()
-                    } else {
-                        return Err(Box::new(TypeError::new(
-                            interp,
-                            format!(
-                            "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
-                            classname = ruby_type,
-                            gives = other.pretty_name()
-                        ),
-                        )));
-                    }
-                } else {
-                    // TODO: propagate exceptions thrown by `value#to_a`.
-                    return Err(Box::new(Fatal::new(
-                        interp,
-                        "Error calling #to_a even though it exists",
-                    )));
-                }
+                ary.borrow().0.clone()
             } else if let Ok(len) = first.clone().try_into::<Int>() {
                 let len = usize::try_from(len)
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
@@ -104,11 +80,35 @@ impl Array {
                         })?;
                         buffer.push(elem);
                     }
-                    Box::new(backend::buffer::Buffer::from(buffer))
-                } else if let Some(default) = second {
-                    backend::repeated::value(default, len)
+                    InlineBuffer::from(buffer)
+                } else if let Some(_default) = second {
+                    // backend::repeated::value(default, len)
+                    panic!();
                 } else {
-                    backend::fixed::hole(len)
+                    // backend::fixed::hole(len)
+                    panic!();
+                }
+            } else if let Ok(true) = first.respond_to("to_ary") {
+                let ruby_type = first.pretty_name();
+                if let Ok(other) = first.funcall("to_ary", &[], None) {
+                    if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+                        other.borrow().0.clone()
+                    } else {
+                        return Err(Box::new(TypeError::new(
+                            interp,
+                            format!(
+                            "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
+                            classname = ruby_type,
+                            gives = other.pretty_name()
+                        ),
+                        )));
+                    }
+                } else {
+                    // TODO: propagate exceptions thrown by `value#to_a`.
+                    return Err(Box::new(Fatal::new(
+                        interp,
+                        "Error calling #to_a even though it exists",
+                    )));
                 }
             } else if let Ok(len) = first.funcall::<Int>("to_int", &[], None) {
                 let len = usize::try_from(len)
@@ -131,11 +131,13 @@ impl Array {
                         })?;
                         buffer.push(elem);
                     }
-                    Box::new(backend::buffer::Buffer::from(buffer))
-                } else if let Some(default) = second {
-                    backend::repeated::value(default, len)
+                    InlineBuffer::from(buffer)
+                } else if let Some(_default) = second {
+                    // backend::repeated::value(default, len)
+                    panic!();
                 } else {
-                    backend::fixed::hole(len)
+                    // backend::fixed::hole(len)
+                    panic!();
                 }
             } else {
                 return Err(Box::new(TypeError::new(
@@ -152,7 +154,7 @@ impl Array {
                 "default cannot be set if first arg is missing in Array#initialize",
             )));
         } else {
-            backend::fixed::empty()
+            InlineBuffer::default()
         };
         let result = Self(result);
         let result = unsafe { result.try_into_ruby(interp, Some(into.inner())) }
@@ -207,27 +209,14 @@ impl Array {
     ) -> Result<Value, Box<dyn RubyException>> {
         let (start, drain, elem) =
             args::element_assignment(interp, first, second, third, self.0.len())?;
-        let mut realloc = None;
         if let Some(drain) = drain {
             if let Ok(other) = unsafe { Self::try_from_ruby(interp, &elem) } {
-                self.0.set_slice(
-                    interp,
-                    start,
-                    drain,
-                    other.borrow().0.box_clone(),
-                    &mut realloc,
-                )?;
+                self.0.set_slice(interp, start, drain, &other.borrow().0)?;
             } else if let Ok(true) = elem.respond_to("to_ary") {
                 let ruby_type = elem.pretty_name();
                 if let Ok(other) = elem.funcall("to_ary", &[], None) {
                     if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                        self.0.set_slice(
-                            interp,
-                            start,
-                            drain,
-                            other.borrow().0.box_clone(),
-                            &mut realloc,
-                        )?;
+                        self.0.set_slice(interp, start, drain, &other.borrow().0)?;
                     } else {
                         return Err(Box::new(TypeError::new(
                             interp,
@@ -246,22 +235,10 @@ impl Array {
                     )));
                 }
             } else {
-                self.0
-                    .set_with_drain(interp, start, drain, elem.clone(), &mut realloc)?;
+                self.0.set_with_drain(interp, start, drain, elem.clone())?;
             }
         } else {
-            self.0.set(interp, start, elem.clone(), &mut realloc)?;
-        }
-        if let Some(mut realloc) = realloc {
-            match realloc.len() {
-                0 => self.clear(),
-                1 => mem::swap(&mut self.0, &mut realloc[0]),
-                _ => {
-                    let aggregate: Box<dyn ArrayType> =
-                        Box::new(backend::aggregate::Aggregate::with_parts(realloc));
-                    self.0 = aggregate;
-                }
-            }
+            self.0.set(interp, start, elem.clone())?;
         }
         Ok(elem)
     }
@@ -275,7 +252,7 @@ impl Array {
         interp: &Artichoke,
         start: usize,
         len: usize,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<InlineBuffer, Box<dyn RubyException>> {
         self.0.slice(interp, start, len)
     }
 
@@ -285,19 +262,7 @@ impl Array {
         index: usize,
         elem: Value,
     ) -> Result<(), Box<dyn RubyException>> {
-        let mut realloc = None;
-        self.0.set(interp, index, elem, &mut realloc)?;
-        if let Some(mut realloc) = realloc {
-            match realloc.len() {
-                0 => self.clear(),
-                1 => mem::swap(&mut self.0, &mut realloc[0]),
-                _ => {
-                    let aggregate: Box<dyn ArrayType> =
-                        Box::new(backend::aggregate::Aggregate::with_parts(realloc));
-                    self.0 = aggregate;
-                }
-            }
-        }
+        self.0.set(interp, index, elem)?;
         Ok(())
     }
 
@@ -308,20 +273,7 @@ impl Array {
         drain: usize,
         with: Value,
     ) -> Result<(), Box<dyn RubyException>> {
-        let mut realloc = None;
-        self.0
-            .set_with_drain(interp, start, drain, with, &mut realloc)?;
-        if let Some(mut realloc) = realloc {
-            match realloc.len() {
-                0 => self.clear(),
-                1 => mem::swap(&mut self.0, &mut realloc[0]),
-                _ => {
-                    let aggregate: Box<dyn ArrayType> =
-                        Box::new(backend::aggregate::Aggregate::with_parts(realloc));
-                    self.0 = aggregate;
-                }
-            }
-        }
+        self.0.set_with_drain(interp, start, drain, with)?;
         Ok(())
     }
 
@@ -330,21 +282,9 @@ impl Array {
         interp: &Artichoke,
         start: usize,
         drain: usize,
-        with: Box<dyn ArrayType>,
+        with: &InlineBuffer,
     ) -> Result<(), Box<dyn RubyException>> {
-        let mut realloc = None;
-        self.0.set_slice(interp, start, drain, with, &mut realloc)?;
-        if let Some(mut realloc) = realloc {
-            match realloc.len() {
-                0 => self.clear(),
-                1 => mem::swap(&mut self.0, &mut realloc[0]),
-                _ => {
-                    let aggregate: Box<dyn ArrayType> =
-                        Box::new(backend::aggregate::Aggregate::with_parts(realloc));
-                    self.0 = aggregate;
-                }
-            }
-        }
+        self.0.set_slice(interp, start, drain, with)?;
         Ok(())
     }
 
@@ -353,13 +293,13 @@ impl Array {
         interp: &Artichoke,
         other: Value,
     ) -> Result<(), Box<dyn RubyException>> {
-        let other = if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-            other.borrow().0.box_clone()
+        if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+            self.0.concat(interp, &other.borrow().0)?;
         } else if let Ok(true) = other.respond_to("to_ary") {
             let ruby_type = other.pretty_name();
             if let Ok(other) = other.funcall("to_ary", &[], None) {
                 if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                    other.borrow().0.box_clone()
+                    self.0.concat(interp, &other.borrow().0)?;
                 } else {
                     return Err(Box::new(TypeError::new(
                         interp,
@@ -386,19 +326,6 @@ impl Array {
                 ),
             )));
         };
-        let mut realloc = None;
-        self.0.concat(interp, other, &mut realloc)?;
-        if let Some(mut realloc) = realloc {
-            match realloc.len() {
-                0 => self.clear(),
-                1 => mem::swap(&mut self.0, &mut realloc[0]),
-                _ => {
-                    let aggregate: Box<dyn ArrayType> =
-                        Box::new(backend::aggregate::Aggregate::with_parts(realloc));
-                    self.0 = aggregate;
-                }
-            }
-        }
         Ok(())
     }
 
@@ -413,19 +340,7 @@ impl Array {
     }
 
     pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
-        let mut realloc = None;
-        let popped = self.0.pop(interp, &mut realloc)?;
-        if let Some(mut realloc) = realloc {
-            match realloc.len() {
-                0 => self.clear(),
-                1 => mem::swap(&mut self.0, &mut realloc[0]),
-                _ => {
-                    let aggregate: Box<dyn ArrayType> =
-                        Box::new(backend::aggregate::Aggregate::with_parts(realloc));
-                    self.0 = aggregate;
-                }
-            }
-        }
+        let popped = self.0.pop(interp)?;
         Ok(popped)
     }
 
@@ -440,68 +355,3 @@ impl RustBackedValue for Array {
         "Array"
     }
 }
-
-#[allow(clippy::module_name_repetitions)]
-pub trait ArrayType: Any {
-    fn box_clone(&self) -> Box<dyn ArrayType>;
-
-    fn gc_mark(&self, interp: &Artichoke);
-
-    fn real_children(&self) -> usize;
-
-    fn len(&self) -> usize;
-
-    fn is_empty(&self) -> bool;
-
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>>;
-
-    fn slice(
-        &self,
-        interp: &Artichoke,
-        start: usize,
-        len: usize,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
-
-    fn set(
-        &mut self,
-        interp: &Artichoke,
-        index: usize,
-        elem: Value,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>>;
-
-    fn set_with_drain(
-        &mut self,
-        interp: &Artichoke,
-        start: usize,
-        drain: usize,
-        with: Value,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>>;
-
-    fn set_slice(
-        &mut self,
-        interp: &Artichoke,
-        start: usize,
-        drain: usize,
-        with: Box<dyn ArrayType>,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>>;
-
-    fn concat(
-        &mut self,
-        interp: &Artichoke,
-        other: Box<dyn ArrayType>,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>>;
-
-    fn pop(
-        &mut self,
-        interp: &Artichoke,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<Value, Box<dyn RubyException>>;
-
-    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>>;
-}
-
-downcast!(dyn ArrayType);

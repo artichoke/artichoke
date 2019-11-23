@@ -35,13 +35,11 @@ const walk = dir => {
                 if (error) {
                   pathReject(error);
                 } else if (stats.isDirectory()) {
-                  if (!IGNORE_DIRECTORIES.includes(file)) {
-                    walk(filepath).then(pathResolve);
-                  } else {
-                    pathResolve(null);
-                  }
+                  walk(filepath).then(pathResolve);
                 } else if (stats.isFile()) {
                   pathResolve(filepath);
+                } else {
+                  pathReject(filepath);
                 }
               });
             });

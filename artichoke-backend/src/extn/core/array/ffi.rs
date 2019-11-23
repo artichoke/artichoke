@@ -1,8 +1,9 @@
 use std::convert::TryFrom;
+use std::ptr;
 use std::slice;
 
 use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::array::{backend, Array};
+use crate::extn::core::array::{Array, InlineBuffer};
 use crate::extn::core::exception::{self, Fatal};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
@@ -13,8 +14,7 @@ use crate::value::Value;
 #[no_mangle]
 unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let result = backend::fixed::empty();
-    let result = Array(result);
+    let result = Array(InlineBuffer::default());
     let result = result
         .try_into_ruby(&interp, None)
         .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
@@ -31,14 +31,9 @@ unsafe extern "C" fn artichoke_ary_new_capa(
     capacity: sys::mrb_int,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
-    let capacity = usize::try_from(capacity).unwrap_or_default();
-    let result = if capacity == 0 {
-        backend::fixed::empty()
-    } else {
-        let buffer = backend::buffer::Buffer::with_capacity(capacity);
-        Box::new(buffer)
-    };
-    let result = Array(result);
+    let result = Array(InlineBuffer::with_capacity(
+        usize::try_from(capacity).unwrap_or_default(),
+    ));
     let result = result
         .try_into_ruby(&interp, None)
         .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
@@ -58,24 +53,7 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
     let interp = unwrap_interpreter!(mrb);
     let size = usize::try_from(size).unwrap_or_default();
     let values = slice::from_raw_parts(vals, size);
-    let result = if values.is_empty() {
-        backend::fixed::empty()
-    } else if values.len() == 1 {
-        backend::fixed::one(Value::new(&interp, values[0]))
-    } else if values.len() == 2 {
-        backend::fixed::two(
-            Value::new(&interp, values[0]),
-            Value::new(&interp, values[1]),
-        )
-    } else {
-        let values = values
-            .iter()
-            .copied()
-            .map(|val| Value::new(&interp, val))
-            .collect::<Vec<_>>();
-        let buffer = backend::buffer::Buffer::from(values);
-        Box::new(buffer)
-    };
+    let result = InlineBuffer::from(values);
     let result = Array(result);
     let result = result
         .try_into_ruby(&interp, None)
@@ -101,7 +79,7 @@ unsafe extern "C" fn artichoke_ary_splat(
     if Array::try_from_ruby(&interp, &value).is_ok() {
         return value.inner();
     }
-    let result = backend::fixed::one(value);
+    let result = InlineBuffer::from(vec![value.inner()]);
     let result = Array(result);
     let result = result
         .try_into_ruby(&interp, None)
@@ -281,50 +259,6 @@ unsafe extern "C" fn artichoke_ary_set(
 }
 
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_clone(
-    mrb: *mut sys::mrb_state,
-    value: sys::mrb_value,
-) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, value);
-    let result = if let Ok(array) = Array::try_from_ruby(&interp, &ary) {
-        let borrow = array.borrow();
-        let result = borrow.clone();
-        result
-            .try_into_ruby(&interp, None)
-            .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"))
-    } else {
-        Ok(interp.convert(None::<Value>))
-    };
-    match result {
-        Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
-    }
-}
-
-#[no_mangle]
-unsafe extern "C" fn artichoke_value_to_ary(
-    mrb: *mut sys::mrb_state,
-    value: sys::mrb_value,
-) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, value);
-    if Array::try_from_ruby(&interp, &value).is_ok() {
-        value.inner()
-    } else {
-        let result = backend::fixed::one(value);
-        let result = Array(result);
-        let result = result
-            .try_into_ruby(&interp, None)
-            .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
-        match result {
-            Ok(value) => value.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
-    }
-}
-
-#[no_mangle]
 unsafe extern "C" fn artichoke_ary_len(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
@@ -336,6 +270,36 @@ unsafe extern "C" fn artichoke_ary_len(
         Int::try_from(borrow.0.len()).unwrap_or_default()
     } else {
         0
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_ary_set_len(
+    mrb: *mut sys::mrb_state,
+    ary: sys::mrb_value,
+    len: sys::mrb_int,
+) {
+    let interp = unwrap_interpreter!(mrb, or_else = ());
+    let ary = Value::new(&interp, ary);
+    if let Ok(array) = Array::try_from_ruby(&interp, &ary) {
+        let len = usize::try_from(len).unwrap_or_default();
+        let mut borrow = array.borrow_mut();
+        borrow.0.set_len(len);
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_ary_ptr(
+    mrb: *mut sys::mrb_state,
+    ary: sys::mrb_value,
+) -> *mut sys::mrb_value {
+    let interp = unwrap_interpreter!(mrb, or_else = ptr::null_mut());
+    let ary = Value::new(&interp, ary);
+    if let Ok(array) = Array::try_from_ruby(&interp, &ary) {
+        let mut borrow = array.borrow_mut();
+        borrow.0.as_mut_ptr()
+    } else {
+        ptr::null_mut()
     }
 }
 
@@ -364,7 +328,7 @@ unsafe extern "C" fn artichoke_ary_shift(
         let mut borrow = array.borrow_mut();
         let gc_was_enabled = interp.disable_gc();
         let result = borrow.get(&interp, 0);
-        let _ = borrow.set_slice(&interp, 0, 1, backend::fixed::empty());
+        let _ = borrow.set_slice(&interp, 0, 1, &InlineBuffer::default());
         if gc_was_enabled {
             interp.enable_gc();
         }

@@ -30,6 +30,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "artichoke-backend"
 version = "0.1.0"
 dependencies = [
+ "arrayvec 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "artichoke-core 0.1.0",
  "artichoke-vfs 0.5.0-alpha",
  "backtrace 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)",
