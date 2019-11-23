@@ -257,25 +257,3 @@ If after running `yarn upgrade` there are still outdated packages reported by
 would like to update the dependency and deal with any breakage, please do;
 otherwise, please
 [file an issue](https://github.com/artichoke/artichoke/issues/new).
-
-## Code Analysis
-
-### Source Code Statistics
-
-To view statistics about the source code in Artichoke, you can run `yarn loc`,
-which depends on [loc](https://github.com/cgag/loc). You can install loc by
-running:
-
-```sh
-cargo install loc
-```
-
-### Flamegraphs
-
-To generate flamegraphs with, you need the
-[inferno flamegraph implementation](https://github.com/jonhoo/inferno). You can
-install inferno by running:
-
-```sh
-cargo install inferno
-```
