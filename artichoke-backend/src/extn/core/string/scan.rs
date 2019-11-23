@@ -89,6 +89,8 @@ pub fn method(
             }
             Ok(interp.convert(result))
         }
+    } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
+        regexp.borrow().inner().scan(interp, value, block)
     } else {
         let pattern_type_name = pattern.pretty_name();
         let pattern_bytes = pattern.funcall::<&[u8]>("to_str", &[], None);
@@ -155,8 +157,6 @@ pub fn method(
                 }
                 Ok(interp.convert(result))
             }
-        } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
-            regexp.borrow().inner().scan(interp, value, block)
         } else {
             Err(Box::new(TypeError::new(
                 interp,
