@@ -104,8 +104,6 @@ impl LoadSources for Artichoke {
             api.vfs.create_dir_all(parent)?;
         }
         api.vfs.write_file(&path, contents.as_ref())?;
-        let metadata = api.vfs.metadata(&path).unwrap_or_default();
-        api.vfs.set_metadata(&path, metadata)?;
         trace!("Added pure ruby source file -- {:?}", &path);
         Ok(())
     }
