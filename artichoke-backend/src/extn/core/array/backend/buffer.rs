@@ -227,7 +227,7 @@ impl ArrayType for Buffer {
 
     fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        self.0.reverse(); 
+        self.0.reverse();
         Ok(())
     }
 }
