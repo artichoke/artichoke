@@ -227,13 +227,7 @@ impl ArrayType for Buffer {
 
     fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        let mut i = 0;
-        let mut j = self.0.len() - 1;
-        while i < j {
-            self.0.swap(i, j);
-            i += 1;
-            j -= 1;
-        }
+        self.0.reverse(); 
         Ok(())
     }
 }
