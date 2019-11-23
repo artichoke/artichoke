@@ -6,7 +6,6 @@ use artichoke_backend::{Artichoke, ArtichokeError};
 use artichoke_core::value::Value;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    interp.def_rb_source_file("mspec.rb", include_str!("mspec.rb"))?;
     for source in Sources::iter() {
         let content = Sources::get(&source).unwrap();
         interp.def_rb_source_file(source, content.as_ref())?;
