@@ -3,7 +3,7 @@ use bstr::ByteSlice;
 use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::exception::{Fatal, RubyException, TypeError};
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp::{self, Regexp};
 use crate::sys;
 use crate::types::Ruby;
 use crate::value::{Block, Value, ValueLike};
@@ -34,7 +34,7 @@ pub fn method(
         if let Some(ref block) = block {
             let mrb = interp.0.borrow().mrb;
             let regex = Regexp::lazy(pattern_bytes);
-            let last_match_sym = interp.0.borrow_mut().sym_intern("$~".as_bytes());
+            let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
             let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
             let patlen = pattern_bytes.len();
             let mut restore_nil = true;
@@ -72,7 +72,7 @@ pub fn method(
             if matches > 0 {
                 let regex = Regexp::lazy(pattern_bytes);
                 let mrb = interp.0.borrow().mrb;
-                let last_match_sym = interp.0.borrow_mut().sym_intern("$~".as_bytes());
+                let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
                 let data = unsafe { matchdata.clone().try_into_ruby(interp, None) }
@@ -82,9 +82,10 @@ pub fn method(
                 }
             } else {
                 let mrb = interp.0.borrow().mrb;
-                let last_match_sym = interp.0.borrow_mut().sym_intern("$~".as_bytes());
+                let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
+                let nil = interp.convert(None::<Value>).inner();
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
+                    sys::mrb_gv_set(mrb, last_match_sym, nil);
                 }
             }
             Ok(interp.convert(result))
@@ -98,7 +99,7 @@ pub fn method(
             if let Some(ref block) = block {
                 let regex = Regexp::lazy(pattern_bytes);
                 let mrb = interp.0.borrow().mrb;
-                let last_match_sym = interp.0.borrow_mut().sym_intern("$~".as_bytes());
+                let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 let patlen = pattern_bytes.len();
                 let mut restore_nil = true;
@@ -138,7 +139,7 @@ pub fn method(
                 if matches > 0 {
                     let regex = Regexp::lazy(pattern_bytes);
                     let mrb = interp.0.borrow().mrb;
-                    let last_match_sym = interp.0.borrow_mut().sym_intern("$~".as_bytes());
+                    let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
                     let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                     matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
                     let data =
@@ -150,7 +151,7 @@ pub fn method(
                     }
                 } else {
                     let mrb = interp.0.borrow().mrb;
-                    let last_match_sym = interp.0.borrow_mut().sym_intern("$~".as_bytes());
+                    let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                     }
