@@ -130,8 +130,8 @@ impl ArrayType for Empty {
         Ok(interp.convert(None::<Value>))
     }
 
-    fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        Ok(backend::fixed::empty())
+        Ok(())
     }
 }

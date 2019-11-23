@@ -46,9 +46,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("pop", ary_pop, sys::mrb_args_none());
     array
         .borrow_mut()
-        .add_method("reverse", ary_reverse, sys::mrb_args_none());
-    array
-        .borrow_mut()
         .add_method("reverse!", ary_reverse_bang, sys::mrb_args_none());
     array
         .borrow_mut()
@@ -142,17 +139,6 @@ unsafe extern "C" fn ary_initialize_copy(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp, exception),
-    }
-}
-
-unsafe extern "C" fn ary_reverse(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let result = array::trampoline::reverse(&interp, ary);
-    match result {
-        Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
     }
 }

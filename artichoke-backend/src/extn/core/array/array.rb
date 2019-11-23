@@ -1121,6 +1121,10 @@ class Array
     self
   end
 
+  def reverse
+    dup.reverse!
+  end
+
   def reverse_each(&block)
     return to_enum :reverse_each unless block
 

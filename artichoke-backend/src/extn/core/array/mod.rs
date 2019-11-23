@@ -429,17 +429,8 @@ impl Array {
         Ok(popped)
     }
 
-    pub fn reverse(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
-        let result = self.0.reverse(interp)?;
-        let result = Self(result);
-        let result = unsafe { result.try_into_ruby(interp, None) }
-            .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array"))?;
-        Ok(result)
-    }
-
-    pub fn reverse_in_place(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
-        let reversed = self.0.reverse(interp)?;
-        self.0 = reversed;
+    pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+        self.0.reverse(interp)?;
         Ok(())
     }
 }
@@ -510,9 +501,7 @@ pub trait ArrayType: Any {
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<Value, Box<dyn RubyException>>;
 
-    // TODO: Change the semantics of this function to do an in place reverse
-    // like `Array#reverse!` and implement Array#reverse` in Ruby.
-    fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>>;
 }
 
 downcast!(dyn ArrayType);

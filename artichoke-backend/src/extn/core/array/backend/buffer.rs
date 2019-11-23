@@ -225,12 +225,9 @@ impl ArrayType for Buffer {
         Ok(interp.convert(self.0.pop()))
     }
 
-    fn reverse(&self, interp: &Artichoke) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        let mut buffer = Vec::with_capacity(self.0.len());
-        for idx in (0..self.0.len()).rev() {
-            buffer.push(self.0[idx].clone());
-        }
-        Ok(Box::new(Self(buffer)))
+        self.0.reverse();
+        Ok(())
     }
 }
