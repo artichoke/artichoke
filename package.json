@@ -84,6 +84,6 @@
     "eslint-check": "eslint --print-config package.json | eslint-config-prettier-check",
     "lint": "node scripts/lint.js",
     "loc": "loc --exclude target vendor fixtures",
-    "spec": "./scripts/spec-compliance.sh --artichoke"
+    "spec": "ruby scripts/spec.rb artichoke passing"
   }
 }
