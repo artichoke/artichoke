@@ -38,6 +38,7 @@
 //! - `SystemStackError`
 //! - `fatal` -- impossible to rescue
 
+#[cfg(feature = "artichoke-debug")]
 use backtrace::Backtrace;
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -148,6 +149,7 @@ macro_rules! ruby_exception_impl {
         pub struct $exception {
             interp: Artichoke,
             message: Cow<'static, str>,
+            #[cfg(feature = "artichoke-debug")]
             backtrace: Backtrace,
         }
 
@@ -175,6 +177,7 @@ macro_rules! ruby_exception_impl {
                 Self {
                     interp: interp.clone(),
                     message: message.into(),
+                    #[cfg(feature = "artichoke-debug")]
                     backtrace: Backtrace::new(),
                 }
             }
@@ -218,12 +221,23 @@ macro_rules! ruby_exception_impl {
         where
             $exception: RubyException,
         {
+            #[cfg(feature = "artichoke-debug")]
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let class = self.class();
                 let borrow = class.borrow();
                 let classname = borrow.name();
-                write!(f, "{} ({})", classname, self.message)?;
+                let message = self.message();
+                write!(f, "{} ({})", classname, message)?;
                 write!(f, "\n{:?}", self.backtrace)
+            }
+
+            #[cfg(not(feature = "artichoke-debug"))]
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                let class = self.class();
+                let borrow = class.borrow();
+                let classname = borrow.name();
+                let message = self.message();
+                write!(f, "{} ({})", classname, message)
             }
         }
 

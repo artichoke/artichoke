@@ -5,7 +5,7 @@ authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 
 [dependencies]
-backtrace = "0.3"
+backtrace = { version = "0.3", optional = true }
 bstr = "0.2"
 downcast = "0.10"
 log = "0.4"
@@ -43,4 +43,5 @@ default-features = false
 [features]
 default = ["artichoke-array", "artichoke-system-environ"]
 artichoke-array = []
+artichoke-debug = ["backtrace"]
 artichoke-system-environ = []
