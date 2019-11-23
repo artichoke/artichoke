@@ -1,6 +1,7 @@
 use arrayvec::ArrayVec;
 
 use crate::convert::Convert;
+use crate::extn::core::array::ArrayType;
 use crate::extn::core::exception::RubyException;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
@@ -90,6 +91,130 @@ impl<'a> From<&'a [Value]> for InlineBuffer {
     }
 }
 
+impl ArrayType for InlineBuffer {
+    fn box_clone(&self) -> Box<dyn ArrayType> {
+        Box::new(self.clone())
+    }
+
+    fn gc_mark(&self, interp: &Artichoke) {
+        if let Some(ref buffer) = self.dynamic {
+            for element in buffer {
+                interp.mark_value(&Value::new(interp, *element));
+            }
+        } else {
+            for element in &self.inline {
+                interp.mark_value(&Value::new(interp, *element));
+            }
+        }
+    }
+
+    fn real_children(&self) -> usize {
+        if let Some(ref buffer) = self.dynamic {
+            buffer.len()
+        } else {
+            self.inline.len()
+        }
+    }
+
+    fn len(&self) -> usize {
+        if let Some(ref buffer) = self.dynamic {
+            buffer.len()
+        } else {
+            self.inline.len()
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        if let Some(ref buffer) = self.dynamic {
+            buffer.is_empty()
+        } else {
+            self.inline.is_empty()
+        }
+    }
+
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
+        Self::get(self, interp, index)
+    }
+
+    fn slice(
+        &self,
+        interp: &Artichoke,
+        start: usize,
+        len: usize,
+    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+        match Self::slice(self, interp, start, len) {
+            Ok(slice) => Ok(Box::new(slice)),
+            Err(err) => Err(err),
+        }
+    }
+
+    fn set(
+        &mut self,
+        interp: &Artichoke,
+        index: usize,
+        elem: Value,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<(), Box<dyn RubyException>> {
+        let _ = realloc;
+        Self::set(self, interp, index, elem)
+    }
+
+    fn set_with_drain(
+        &mut self,
+        interp: &Artichoke,
+        start: usize,
+        drain: usize,
+        with: Value,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<usize, Box<dyn RubyException>> {
+        let _ = realloc;
+        Self::set_with_drain(self, interp, start, drain, with)
+    }
+
+    fn set_slice(
+        &mut self,
+        interp: &Artichoke,
+        start: usize,
+        drain: usize,
+        with: Box<dyn ArrayType>,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<usize, Box<dyn RubyException>> {
+        let _ = realloc;
+        if let Ok(buffer) = with.downcast_ref::<Self>() {
+            Self::set_slice(self, interp, start, drain, buffer)
+        } else {
+            unimplemented!("Set slice on InlineBuffer with other ArrayType");
+        }
+    }
+
+    fn concat(
+        &mut self,
+        interp: &Artichoke,
+        other: Box<dyn ArrayType>,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<(), Box<dyn RubyException>> {
+        let _ = realloc;
+        if let Ok(buffer) = other.downcast_ref::<Self>() {
+            Self::concat(self, interp, buffer)
+        } else {
+            unimplemented!("Set slice on InlineBuffer with other ArrayType");
+        }
+    }
+
+    fn pop(
+        &mut self,
+        interp: &Artichoke,
+        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
+    ) -> Result<Value, Box<dyn RubyException>> {
+        let _ = realloc;
+        Self::pop(self, interp)
+    }
+
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+        Self::reverse(self, interp)
+    }
+}
+
 impl InlineBuffer {
     pub fn with_capacity(capacity: usize) -> Self {
         let mut buffer = Self::default();
@@ -141,42 +266,6 @@ impl InlineBuffer {
         self.inline.clear();
         if let Some(ref mut buffer) = self.dynamic {
             buffer.clear();
-        }
-    }
-
-    pub fn gc_mark(&self, interp: &Artichoke) {
-        if let Some(ref buffer) = self.dynamic {
-            for element in buffer {
-                interp.mark_value(&Value::new(interp, *element));
-            }
-        } else {
-            for element in &self.inline {
-                interp.mark_value(&Value::new(interp, *element));
-            }
-        }
-    }
-
-    pub fn real_children(&self) -> usize {
-        if let Some(ref buffer) = self.dynamic {
-            buffer.len()
-        } else {
-            self.inline.len()
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        if let Some(ref buffer) = self.dynamic {
-            buffer.len()
-        } else {
-            self.inline.len()
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        if let Some(ref buffer) = self.dynamic {
-            buffer.is_empty()
-        } else {
-            self.inline.is_empty()
         }
     }
 

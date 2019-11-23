@@ -3,7 +3,7 @@ use std::ptr;
 use std::slice;
 
 use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::array::{Array, InlineBuffer};
+use crate::extn::core::array::{Array, ArrayType, InlineBuffer};
 use crate::extn::core::exception::{self, Fatal};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
