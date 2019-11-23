@@ -114,12 +114,7 @@ impl Integer {
         let interp = unwrap_interpreter!(mrb);
         let result = Int::try_from(mem::size_of::<Int>())
             .map(|size| interp.convert(size))
-            .map_err(|_| {
-                Box::new(Fatal::new(
-                    &interp,
-                    "sizeof Integer does not fit in Integer max",
-                ))
-            });
+            .map_err(|_| Fatal::new(&interp, "sizeof Integer does not fit in Integer max"));
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),

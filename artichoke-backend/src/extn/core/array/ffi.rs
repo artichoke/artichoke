@@ -15,12 +15,9 @@ unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_val
     let interp = unwrap_interpreter!(mrb);
     let result = backend::fixed::empty();
     let result = Array(result);
-    let result = result.try_into_ruby(&interp, None).map_err(|_| {
-        Box::new(Fatal::new(
-            &interp,
-            "Unable to initialize Ruby Array from Rust Array",
-        ))
-    });
+    let result = result
+        .try_into_ruby(&interp, None)
+        .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -42,12 +39,9 @@ unsafe extern "C" fn artichoke_ary_new_capa(
         Box::new(buffer)
     };
     let result = Array(result);
-    let result = result.try_into_ruby(&interp, None).map_err(|_| {
-        Box::new(Fatal::new(
-            &interp,
-            "Unable to initialize Ruby Array from Rust Array",
-        ))
-    });
+    let result = result
+        .try_into_ruby(&interp, None)
+        .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -83,12 +77,9 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
         Box::new(buffer)
     };
     let result = Array(result);
-    let result = result.try_into_ruby(&interp, None).map_err(|_| {
-        Box::new(Fatal::new(
-            &interp,
-            "Unable to initialize Ruby Array from Rust Array",
-        ))
-    });
+    let result = result
+        .try_into_ruby(&interp, None)
+        .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(value.inner());
@@ -112,12 +103,9 @@ unsafe extern "C" fn artichoke_ary_splat(
     }
     let result = backend::fixed::one(value);
     let result = Array(result);
-    let result = result.try_into_ruby(&interp, None).map_err(|_| {
-        Box::new(Fatal::new(
-            &interp,
-            "Unable to initialize Ruby Array from Rust Array",
-        ))
-    });
+    let result = result
+        .try_into_ruby(&interp, None)
+        .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -302,12 +290,9 @@ unsafe extern "C" fn artichoke_ary_clone(
     let result = if let Ok(array) = Array::try_from_ruby(&interp, &ary) {
         let borrow = array.borrow();
         let result = borrow.clone();
-        result.try_into_ruby(&interp, None).map_err(|_| {
-            Box::new(Fatal::new(
-                &interp,
-                "Unable to initialize Ruby Array from Rust Array",
-            ))
-        })
+        result
+            .try_into_ruby(&interp, None)
+            .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"))
     } else {
         Ok(interp.convert(None::<Value>))
     };
@@ -329,12 +314,9 @@ unsafe extern "C" fn artichoke_value_to_ary(
     } else {
         let result = backend::fixed::one(value);
         let result = Array(result);
-        let result = result.try_into_ruby(&interp, None).map_err(|_| {
-            Box::new(Fatal::new(
-                &interp,
-                "Unable to initialize Ruby Array from Rust Array",
-            ))
-        });
+        let result = result
+            .try_into_ruby(&interp, None)
+            .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),

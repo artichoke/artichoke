@@ -106,7 +106,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 /// Because this precondition must hold for all frames between the caller and
 /// the closest [`sys::mrb_protect`] landing pad, this function should only be
 /// called in the entrypoint into Rust from mruby.
-pub unsafe fn raise(interp: Artichoke, exception: Box<dyn RubyException>) -> ! {
+pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
     // Ensure the borrow is out of scope by the time we eval code since
     // Rust-backed files and types may need to mutably borrow the `Artichoke` to
     // get access to the underlying `ArtichokeState`.
@@ -251,6 +251,16 @@ macro_rules! ruby_exception_impl {
     };
 }
 
+impl RubyException for Box<dyn RubyException> {
+    fn message(&self) -> &str {
+        self.as_ref().message()
+    }
+
+    fn class(&self) -> Rc<RefCell<class::Spec>> {
+        self.as_ref().class()
+    }
+}
+
 impl fmt::Debug for Box<dyn RubyException> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let class = self.class();
@@ -333,7 +343,7 @@ mod tests {
     impl Run {
         unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = unwrap_interpreter!(mrb);
-            let exc = Box::new(RuntimeError::new(&interp, "something went wrong"));
+            let exc = RuntimeError::new(&interp, "something went wrong");
             super::raise(interp, exc)
         }
     }
