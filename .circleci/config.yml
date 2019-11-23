@@ -206,7 +206,7 @@ jobs:
           name: ruby/spec Compliance Regression Test
           command: |
             # Suppress failures from spec suite
-            ./scripts/spec-compliance.sh --artichoke || :
+            ruby scripts/spec.rb artichoke passing || :
       - save_cache:
           name: Save sccache cache
           key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}

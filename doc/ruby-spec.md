@@ -6,32 +6,52 @@ packages.
 
 ## Running Specs
 
-You can run these specs for mruby crate with `spec-runner`. For example, to run
-the specs for the `uri` stdlib package:
+You can run these specs for Artichoke crate with the `spec-runner` crate.
+
+The commands exposed by this runner support running for `artichoke` or `ruby`.
+
+### Running the enforced specs
 
 ```shell
-./scripts/run-spec.sh library uri
+ruby scripts/spec.rb artichoke passing
 ```
 
-Or to run the specs for `Array#each`:
+### Running specific specs
+
+For the `uri` stdlib package:
 
 ```shell
-./scripts/run-spec.sh core array each
+ruby scripts/spec.rb artichoke library uri
+```
+
+For `Array#each`:
+
+```shell
+ruby scripts/spec.rb core array each
+```
+
+### Performance testing
+
+#### Timing
+
+```shell
+ruby scripts/spec.rb artichoke --timed 30 passing
+```
+
+#### Profiling
+
+```shell
+ruby scripts/spec.rb artichoke --profile passing
+```
+
+This script requires the `cargo-flamegraph` binary, which can be installed with:
+
+```shell
+cargo install flamegraph
 ```
 
 ## Regression Testing
 
-Once a spec suite passes, add it to
-[`scripts/spec-compliance.sh`](/scripts/spec-compliance.sh). This script is run
-as part of CI and will ensure that a suite that does pass continues to pass.
-
-### Currently Passing Specs
-
-| Type    | Suite           |
-| ------- | --------------- |
-| Core    | `Comparable`    |
-| Core    | `MatchData`     |
-| Core    | `Regexp`        |
-| Library | `Monitor`       |
-| Library | `StringScanner` |
-| Library | `URI`           |
+Once a spec suite passes, add it to [`scripts/spec.rb`](/scripts/spec.rb). This
+script is run as part of CI and will ensure that a suite that does pass
+continues to pass.
