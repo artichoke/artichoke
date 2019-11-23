@@ -221,25 +221,23 @@ impl InlineBuffer {
             } else {
                 self.inline[index] = elem.inner();
             }
-        } else {
-            if let Some(ref mut buffer) = self.dynamic {
-                buffer.extend(vec![unsafe { sys::mrb_sys_nil_value() }; index - buflen]);
-                buffer.push(elem.inner());
-            } else if index < self.inline.capacity() {
-                for _ in buflen..index {
-                    unsafe {
-                        self.inline.push_unchecked(sys::mrb_sys_nil_value());
-                    }
-                }
+        } else if let Some(ref mut buffer) = self.dynamic {
+            buffer.extend(vec![unsafe { sys::mrb_sys_nil_value() }; index - buflen]);
+            buffer.push(elem.inner());
+        } else if index < self.inline.capacity() {
+            for _ in buflen..index {
                 unsafe {
-                    self.inline.push_unchecked(elem.inner());
+                    self.inline.push_unchecked(sys::mrb_sys_nil_value());
                 }
-            } else {
-                let mut buffer = Vec::from(self.inline.as_slice());
-                buffer.extend(vec![unsafe { sys::mrb_sys_nil_value() }; index - buflen]);
-                buffer.push(elem.inner());
-                self.dynamic = Some(buffer);
             }
+            unsafe {
+                self.inline.push_unchecked(elem.inner());
+            }
+        } else {
+            let mut buffer = Vec::from(self.inline.as_slice());
+            buffer.extend(vec![unsafe { sys::mrb_sys_nil_value() }; index - buflen]);
+            buffer.push(elem.inner());
+            self.dynamic = Some(buffer);
         }
         Ok(())
     }
@@ -258,18 +256,16 @@ impl InlineBuffer {
             set_with_drain_sparse(self, start, with);
         } else if (buflen + 1).checked_sub(drain).unwrap_or_default() < self.inline.capacity() {
             set_with_drain_to_inline(self, start, drain, with);
+        } else if let Some(ref mut buffer) = self.dynamic {
+            buffer.push(with.inner());
         } else {
-            if let Some(ref mut buffer) = self.dynamic {
-                buffer.push(with.inner());
-            } else {
-                let mut buffer = self.inline.as_slice().to_vec();
-                let nil = unsafe { sys::mrb_sys_nil_value() };
-                for _ in buflen..start {
-                    buffer.push(nil);
-                }
-                buffer.push(with.inner());
-                self.dynamic = Some(buffer);
+            let mut buffer = self.inline.as_slice().to_vec();
+            let nil = unsafe { sys::mrb_sys_nil_value() };
+            for _ in buflen..start {
+                buffer.push(nil);
             }
+            buffer.push(with.inner());
+            self.dynamic = Some(buffer);
         }
         Ok(drained)
     }
@@ -362,23 +358,21 @@ fn set_with_drain_sparse(ary: &mut InlineBuffer, start: usize, elem: Value) {
         unsafe {
             ary.inline.set_len(start + 1);
         }
-    } else {
-        if let Some(ref mut buffer) = ary.dynamic {
-            for _ in buflen..start {
-                buffer.push(nil);
-            }
-            buffer.push(elem.inner());
-        } else {
-            let mut buffer = Vec::with_capacity(start + 1);
-            for elem in &ary.inline {
-                buffer.push(*elem);
-            }
-            for _ in buflen..start {
-                buffer.push(nil);
-            }
-            buffer.push(elem.inner());
-            ary.dynamic = Some(buffer);
+    } else if let Some(ref mut buffer) = ary.dynamic {
+        for _ in buflen..start {
+            buffer.push(nil);
         }
+        buffer.push(elem.inner());
+    } else {
+        let mut buffer = Vec::with_capacity(start + 1);
+        for elem in &ary.inline {
+            buffer.push(*elem);
+        }
+        for _ in buflen..start {
+            buffer.push(nil);
+        }
+        buffer.push(elem.inner());
+        ary.dynamic = Some(buffer);
     }
 }
 
@@ -488,57 +482,51 @@ fn set_slice_with_drain_to_inline(
             }
         }
         ary.dynamic = None;
-    } else {
-        if start + drain > ary.inline.len() {
-            unsafe {
-                ary.inline.set_len(start);
-            }
-            if let Some(ref buffer) = with.dynamic {
-                for elem in buffer {
-                    unsafe {
-                        ary.inline.push_unchecked(*elem);
-                    }
-                }
-            } else {
-                for elem in &with.inline {
-                    unsafe {
-                        ary.inline.push_unchecked(*elem);
-                    }
+    } else if start + drain > ary.inline.len() {
+        unsafe {
+            ary.inline.set_len(start);
+        }
+        if let Some(ref buffer) = with.dynamic {
+            for elem in buffer {
+                unsafe {
+                    ary.inline.push_unchecked(*elem);
                 }
             }
         } else {
-            if drain >= with.len() {
-                if let Some(ref buffer) = with.dynamic {
-                    for (idx, elem) in buffer.iter().enumerate() {
-                        ary.inline[start + idx] = *elem;
-                    }
-                } else {
-                    for (idx, elem) in with.inline.iter().enumerate() {
-                        ary.inline[start + idx] = *elem;
-                    }
-                }
-                for _ in with.len()..drain {
-                    ary.inline.remove(start + with.len());
-                }
-            } else {
-                if let Some(ref buffer) = with.dynamic {
-                    for idx in 0..drain {
-                        ary.inline[start + idx] = unsafe { *buffer.get_unchecked(idx) };
-                    }
-                    for idx in (drain..with.len()).rev() {
-                        ary.inline
-                            .insert(start + drain, unsafe { *buffer.get_unchecked(idx) });
-                    }
-                } else {
-                    for idx in 0..drain {
-                        ary.inline[start + idx] = unsafe { *with.inline.get_unchecked(idx) };
-                    }
-                    for idx in (drain..with.len()).rev() {
-                        ary.inline
-                            .insert(start + drain, unsafe { *with.inline.get_unchecked(idx) });
-                    }
+            for elem in &with.inline {
+                unsafe {
+                    ary.inline.push_unchecked(*elem);
                 }
             }
+        }
+    } else if drain >= with.len() {
+        if let Some(ref buffer) = with.dynamic {
+            for (idx, elem) in buffer.iter().enumerate() {
+                ary.inline[start + idx] = *elem;
+            }
+        } else {
+            for (idx, elem) in with.inline.iter().enumerate() {
+                ary.inline[start + idx] = *elem;
+            }
+        }
+        for _ in with.len()..drain {
+            ary.inline.remove(start + with.len());
+        }
+    } else if let Some(ref buffer) = with.dynamic {
+        for idx in 0..drain {
+            ary.inline[start + idx] = unsafe { *buffer.get_unchecked(idx) };
+        }
+        for idx in (drain..with.len()).rev() {
+            ary.inline
+                .insert(start + drain, unsafe { *buffer.get_unchecked(idx) });
+        }
+    } else {
+        for idx in 0..drain {
+            ary.inline[start + idx] = unsafe { *with.inline.get_unchecked(idx) };
+        }
+        for idx in (drain..with.len()).rev() {
+            ary.inline
+                .insert(start + drain, unsafe { *with.inline.get_unchecked(idx) });
         }
     }
 }
