@@ -23,13 +23,18 @@
     "type": "git",
     "url": "https://github.com/artichoke/artichoke.git"
   },
+  "dependencies": {
+    "array-flat-polyfill": "^1.0.1",
+    "clang-format": "^1.2.4",
+    "eslint": "^6.1.0",
+    "prettier": "^1.15.3",
+    "shebang-command": "^2.0.0"
+  },
   "devDependencies": {
     "@artichoke/logo": "git://github.com/artichoke/logo#master",
     "@babel/core": "^7.2.2",
     "@babel/preset-env": "^7.5.5",
     "babel-eslint": "^10.0.1",
-    "clang-format": "^1.2.4",
-    "eslint": "^6.1.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-config-prettier": "^6.0.0",
     "eslint-plugin-html": "^6.0.0",
@@ -42,7 +47,6 @@
     "package-json-validator": "^0.6.3",
     "path": "^0.12.7",
     "pkg-dir-cli": "^2.1.0",
-    "prettier": "^1.15.3",
     "prettier-eslint": "^9.0.0"
   },
   "babel": {
@@ -78,7 +82,7 @@
   },
   "scripts": {
     "eslint-check": "eslint --print-config package.json | eslint-config-prettier-check",
-    "lint": "./scripts/lint.sh",
+    "lint": "node scripts/lint.js",
     "loc": "loc --exclude target vendor fixtures",
     "spec": "./scripts/spec-compliance.sh --artichoke"
   }
