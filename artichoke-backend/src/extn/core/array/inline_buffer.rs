@@ -7,10 +7,12 @@ use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
+const INLINE_CAPACITY: usize = 8;
+
 #[derive(Clone)]
 pub struct InlineBuffer {
     dynamic: Option<Vec<sys::mrb_value>>,
-    inline: ArrayVec<[sys::mrb_value; 8]>,
+    inline: ArrayVec<[sys::mrb_value; INLINE_CAPACITY]>,
 }
 
 impl Default for InlineBuffer {
