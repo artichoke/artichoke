@@ -17,7 +17,7 @@ mrb_value artichoke_ary_shift(mrb_state *mrb, mrb_value self);
 mrb_value artichoke_ary_unshift(mrb_state *mrb, mrb_value self, mrb_value item);
 mrb_int artichoke_ary_len(mrb_state *mrb, mrb_value self);
 void artichoke_ary_set_len(mrb_state *mrb, mrb_value self, mrb_int len);
-mrb_value* artichoke_ary_ptr(mrb_state *mrb, mrb_value self);
+mrb_value *artichoke_ary_ptr(mrb_state *mrb, mrb_value self);
 mrb_bool artichoke_ary_check(mrb_state *mrb, mrb_value ary);
 
 // GC
