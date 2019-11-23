@@ -257,7 +257,7 @@ impl State {
         let interned = self
             .symbol_cache
             .entry(sym)
-            .or_insert_with(|| unsafe { sys::mrb_intern(mrb, ptr as *const i8, len) });
+            .or_insert_with(|| unsafe { sys::mrb_intern_static(mrb, ptr as *const i8, len) });
         *interned
     }
 }
