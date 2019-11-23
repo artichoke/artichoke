@@ -395,7 +395,7 @@ async function rubyLinter(files) {
   const sources = rubyFiles(files);
   return new Promise((resolve, reject) => {
     if (checkMode) {
-      execAsync("bundle", ["exec", "rubocop"], sources, (err, code) => {
+      execAsync("bundle", ["exec", "rubocop", ...sources], (err, code) => {
         if (err) {
           reject(err);
         } else if (code === 0) {
