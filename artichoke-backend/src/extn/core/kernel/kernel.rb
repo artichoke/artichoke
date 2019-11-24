@@ -111,6 +111,18 @@ module Kernel
     e.result
   end
 
+  def rand(max = 0)
+    if max == 0 # rubocop:disable Style/NumericPredicate
+      Random.rand
+    else
+      Random.rand(max)
+    end
+  end
+
+  def srand(number = Random.new_seed)
+    Random.srand(number)
+  end
+
   # 11.4.4 Step c)
   def !~(other)
     !(self =~ other) # rubocop:disable Style/InverseMethods

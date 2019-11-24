@@ -1,5 +1,7 @@
 use crate::sys;
 
+pub type Float = f64;
+
 // Parameterize Fixnum integer type based on architecture.
 #[cfg(not(target_arch = "wasm32"))]
 pub type Int = i64;
