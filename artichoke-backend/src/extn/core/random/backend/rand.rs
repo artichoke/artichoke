@@ -3,11 +3,11 @@ use rand::rngs::SmallRng;
 use rand::{self, Rng, SeedableRng};
 
 use crate::extn::core::exception::RubyException;
-use crate::extn::core::random;
+use crate::extn::core::random::backend;
 use crate::types::{Float, Int};
 use crate::Artichoke;
 
-pub fn new(seed: Option<u64>) -> Box<dyn random::Rand> {
+pub fn new(seed: Option<u64>) -> Box<dyn backend::Rand> {
     Box::new(Rand::<SmallRng>::new(seed))
 }
 
@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<T> random::Rand for Rand<T>
+impl<T> backend::Rand for Rand<T>
 where
     T: 'static + Rng,
 {
@@ -48,9 +48,11 @@ where
         Ok(self.seed)
     }
 
-    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn random::Rand) -> bool {
+    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn backend::Rand) -> bool {
         let _ = interp;
         if let Ok(other) = other.downcast_ref::<Self>() {
+            // This is not quite right. It needs to take into account bytes
+            // read from the PRNG.
             self.seed == other.seed
         } else {
             false

@@ -1,6 +1,5 @@
 use artichoke_core::value::Value as _;
 use rand::{self, Rng, RngCore};
-use std::any::Any;
 use std::convert::TryFrom;
 use std::ptr;
 
@@ -19,31 +18,17 @@ pub fn new(seed: Option<u64>) -> Random {
 }
 
 pub fn default() -> Random {
-    Random(Box::new(backend::default::Default::default()))
+    Random(backend::default::new())
 }
 
-pub trait Rand: Any {
-    fn bytes(&mut self, interp: &Artichoke, buf: &mut [u8]) -> Result<(), Box<dyn RubyException>>;
-    fn seed(&self, interp: &Artichoke) -> Result<u64, Box<dyn RubyException>>;
-    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn Rand) -> bool;
-    fn rand_int(&mut self, interp: &Artichoke, max: Int) -> Result<Int, Box<dyn RubyException>>;
-    fn rand_float(
-        &mut self,
-        interp: &Artichoke,
-        max: Option<Float>,
-    ) -> Result<Float, Box<dyn RubyException>>;
-}
-
-downcast!(dyn Rand);
-
-pub struct Random(Box<dyn Rand>);
+pub struct Random(Box<dyn backend::Rand>);
 
 impl Random {
-    fn inner(&self) -> &dyn Rand {
+    fn inner(&self) -> &dyn backend::Rand {
         self.0.as_ref()
     }
 
-    fn inner_mut(&mut self) -> &mut dyn Rand {
+    fn inner_mut(&mut self) -> &mut dyn backend::Rand {
         self.0.as_mut()
     }
 }

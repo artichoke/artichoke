@@ -1,12 +1,16 @@
 use crate::extn::core::exception::RubyException;
-use crate::extn::core::random;
+use crate::extn::core::random::backend;
 use crate::types::{Float, Int};
 use crate::Artichoke;
+
+pub fn new() -> Box<dyn backend::Rand> {
+    Box::new(Default::default())
+}
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct Default;
 
-impl random::Rand for Default {
+impl backend::Rand for Default {
     fn bytes(&mut self, interp: &Artichoke, buf: &mut [u8]) -> Result<(), Box<dyn RubyException>> {
         let mut borrow = interp.0.borrow_mut();
         let prng = borrow.prng_mut();
@@ -21,7 +25,7 @@ impl random::Rand for Default {
         Ok(seed)
     }
 
-    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn random::Rand) -> bool {
+    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn backend::Rand) -> bool {
         let borrow = interp.0.borrow_mut();
         let prng = borrow.prng();
         prng.inner().has_same_internal_state(interp, other)
