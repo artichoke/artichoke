@@ -1,12 +1,18 @@
+#[cfg(feature = "artichoke-array")]
 use std::convert::TryFrom;
 
+#[cfg(feature = "artichoke-array")]
 use crate::convert::Convert;
 #[cfg(feature = "artichoke-array")]
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::eval::Eval;
+#[cfg(feature = "artichoke-array")]
 use crate::extn::core::array;
+#[cfg(feature = "artichoke-array")]
 use crate::extn::core::exception;
+#[cfg(feature = "artichoke-array")]
 use crate::sys;
+#[cfg(feature = "artichoke-array")]
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
@@ -62,6 +68,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     Ok(())
 }
 
+#[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
@@ -76,6 +83,7 @@ unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
     }
 }
 
+#[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
@@ -88,7 +96,9 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
     }
 }
 
+#[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+    println!("ary concat C");
     let other = mrb_get_args!(mrb, optional = 1);
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
@@ -104,6 +114,7 @@ unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -
     }
 }
 
+#[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_initialize(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
@@ -124,6 +135,7 @@ unsafe extern "C" fn ary_initialize(
     }
 }
 
+#[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_initialize_copy(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
@@ -143,6 +155,7 @@ unsafe extern "C" fn ary_initialize_copy(
     }
 }
 
+#[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_reverse_bang(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
@@ -161,6 +174,7 @@ unsafe extern "C" fn ary_reverse_bang(
     }
 }
 
+#[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_element_reference(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
@@ -177,6 +191,7 @@ unsafe extern "C" fn ary_element_reference(
     }
 }
 
+#[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_element_assignment(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,

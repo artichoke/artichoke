@@ -35,13 +35,11 @@ const walk = dir => {
                 if (error) {
                   pathReject(error);
                 } else if (stats.isDirectory()) {
-                  if (!IGNORE_DIRECTORIES.includes(file)) {
-                    walk(filepath).then(pathResolve);
-                  } else {
-                    pathResolve(null);
-                  }
+                  walk(filepath).then(pathResolve);
                 } else if (stats.isFile()) {
                   pathResolve(filepath);
+                } else {
+                  pathReject(filepath);
                 }
               });
             });
@@ -304,29 +302,16 @@ async function rustFormatter() {
 
 async function clippyLinter() {
   return new Promise((resolve, reject) => {
-    if (checkMode) {
-      execAsync("cargo", ["clippy", "--", "-D", "warnings"], (err, code) => {
-        if (err) {
-          reject(err);
-        } else if (code === 0) {
-          resolve(true);
-        } else {
-          console.error("KO: cargo clippy");
-          resolve(false);
-        }
-      });
-    } else {
-      execAsync("cargo", ["clippy"], (err, code) => {
-        if (err) {
-          reject(err);
-        } else if (code === 0) {
-          resolve(true);
-        } else {
-          console.error("KO: cargo clippy");
-          resolve(false);
-        }
-      });
-    }
+    execAsync("cargo", ["clippy", "--", "-D", "warnings"], (err, code) => {
+      if (err) {
+        reject(err);
+      } else if (code === 0) {
+        resolve(true);
+      } else {
+        console.error("KO: cargo clippy");
+        resolve(false);
+      }
+    });
   });
 }
 

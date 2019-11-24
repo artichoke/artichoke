@@ -175,10 +175,12 @@ set_backtrace(mrb_state *mrb, mrb_value exc, mrb_value backtrace)
     mrb_raise(mrb, E_TYPE_ERROR, "backtrace must be Array of String");
   }
   else {
-    int i;
-    for (i = 0; i < ARRAY_LEN(mrb, backtrace); i++) {
-      mrb_value p = ARY_REF(mrb, backtrace, i);
-      if (!mrb_string_p(p)) goto type_err;
+    const mrb_value *p = ARRAY_PTR(mrb, backtrace);
+    const mrb_value *pend = p + ARRAY_LEN(mrb, backtrace);
+
+    while (p < pend) {
+      if (!mrb_string_p(*p)) goto type_err;
+      p++;
     }
   }
   mrb_iv_set(mrb, exc, mrb_intern_lit(mrb, "backtrace"), backtrace);

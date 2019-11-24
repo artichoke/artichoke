@@ -225,6 +225,8 @@
 #  define ARY_SHIFT(mrb, ary)                  artichoke_ary_shift(mrb, ary)
 #  define ARY_UNSHIFT(mrb, ary, val)           artichoke_ary_unshift(mrb, ary, val)
 #  define ARRAY_LEN(mrb, ary)                  artichoke_ary_len(mrb, ary)
+#  define ARRAY_SET_LEN(mrb, ary, len)         artichoke_ary_set_len(mrb, ary, len)
+#  define ARRAY_PTR(mrb, ary)                  artichoke_ary_ptr(mrb, ary)
 #  define ARY_CHECK(mrb, ary)                  artichoke_ary_check(mrb, ary)
 #else
 #  define ARY_NEW(mrb)                         mrb_ary_new(mrb)
@@ -239,6 +241,8 @@
 #  define ARY_SHIFT(mrb, ary)                  mrb_ary_shift(mrb, ary)
 #  define ARY_UNSHIFT(mrb, ary, val)           mrb_ary_unshift(mrb, ary, val)
 #  define ARRAY_LEN(mrb, ary)                  RARRAY_LEN(ary)
+#  define ARRAY_SET_LEN(mrb, ary, len)         ARY_SET_LEN(mrb_ary_ptr(ary), len)
+#  define ARRAY_PTR(mrb, ary)                  RARRAY_PTR(ary)
 #  define ARY_CHECK(mrb, ary)                  mrb_array_p(ary)
 #endif
 
