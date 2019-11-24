@@ -46,6 +46,7 @@ pub fn initialize(
 ) -> Result<Value, Box<dyn RubyException>> {
     let rand = if let Some(seed) = seed {
         let seed = seed.implicitly_convert_to_int()?;
+        #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         Random(backend::rand::new(Some(seed as u64)))
     } else {
         Random(backend::rand::new(None))
@@ -136,36 +137,36 @@ pub fn rand(
     match max {
         Max::Float(max) => {
             if max < 0.0 {
-                return Err(Box::new(ArgumentError::new(
+                Err(Box::new(ArgumentError::new(
                     interp,
                     format!("invalid argument - {}", max),
-                )));
+                )))
             } else if max == 0.0 {
                 let mut borrow = rand.borrow_mut();
-                let rand = borrow.inner_mut().rand_float(interp, None)?;
-                Ok(interp.convert(rand))
+                let number = borrow.inner_mut().rand_float(interp, None)?;
+                Ok(interp.convert(number))
             } else {
                 let mut borrow = rand.borrow_mut();
-                let rand = borrow.inner_mut().rand_float(interp, Some(max))?;
-                Ok(interp.convert(rand))
+                let number = borrow.inner_mut().rand_float(interp, Some(max))?;
+                Ok(interp.convert(number))
             }
         }
         Max::Int(max) => {
             if max < 1 {
-                return Err(Box::new(ArgumentError::new(
+                Err(Box::new(ArgumentError::new(
                     interp,
                     format!("invalid argument - {}", max),
-                )));
+                )))
             } else {
                 let mut borrow = rand.borrow_mut();
-                let rand = borrow.inner_mut().rand_int(interp, max)?;
-                Ok(interp.convert(rand))
+                let number = borrow.inner_mut().rand_int(interp, max)?;
+                Ok(interp.convert(number))
             }
         }
         Max::None => {
             let mut borrow = rand.borrow_mut();
-            let rand = borrow.inner_mut().rand_float(interp, None)?;
-            Ok(interp.convert(rand))
+            let number = borrow.inner_mut().rand_float(interp, None)?;
+            Ok(interp.convert(number))
         }
     }
 }
@@ -174,6 +175,7 @@ pub fn seed(interp: &Artichoke, rand: Value) -> Result<Value, Box<dyn RubyExcept
     if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         let borrow = rand.borrow();
         let seed = borrow.inner().seed(interp)?;
+        #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         Ok(interp.convert(seed as Int))
     } else {
         Err(Box::new(Fatal::new(
@@ -193,6 +195,7 @@ pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Box<dyn
     let _ = number;
     let new_seed = if let Some(number) = number {
         let new_seed = number.implicitly_convert_to_int()?;
+        #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         Some(new_seed as u64)
     } else {
         None
@@ -201,6 +204,7 @@ pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Box<dyn
     let prng = borrow.prng_mut();
     let old_seed = prng.inner().seed(interp)?;
     prng.0 = backend::rand::new(new_seed);
+    #[allow(clippy::cast_possible_wrap)]
     Ok(interp.convert(old_seed as Int))
 }
 

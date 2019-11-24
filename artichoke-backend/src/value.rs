@@ -166,7 +166,7 @@ impl Value {
             int
         } else {
             let pretty_name = self.pretty_name();
-            if let Ok(maybe_int) = self.funcall::<Value>("to_int", &[], None) {
+            if let Ok(maybe_int) = self.funcall::<Self>("to_int", &[], None) {
                 let gives_pretty_name = maybe_int.pretty_name();
                 if let Ok(int) = maybe_int.try_into::<Int>() {
                     int

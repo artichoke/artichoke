@@ -22,14 +22,9 @@ where
     T: SeedableRng,
 {
     pub fn new(seed: Option<u64>) -> Self {
-        if let Some(seed) = seed {
-            let rng = T::seed_from_u64(seed);
-            Self { rng, seed }
-        } else {
-            let seed = rand::random();
-            let rng = T::seed_from_u64(seed);
-            Self { rng, seed }
-        }
+        let seed = seed.unwrap_or_else(rand::random);
+        let rng = T::seed_from_u64(seed);
+        Self { rng, seed }
     }
 }
 
