@@ -142,7 +142,8 @@ rbenv rehash
 ```
 
 To lint Ruby sources, Artichoke uses
-[RuboCop](https://github.com/rubocop-hq/rubocop). You can install RuboCop and other ruby dependencies by running:
+[RuboCop](https://github.com/rubocop-hq/rubocop). You can install RuboCop and
+other Ruby dependencies by running:
 
 ```sh
 bundle install
