@@ -118,18 +118,6 @@ On macOS, you can install Node.js and Yarn with
 brew install node yarn
 ```
 
-### Node.js Packages
-
-Once you have Yarn installed, you can install the packages specified in
-[`package.json`](/package.json) by running:
-
-```sh
-yarn install
-```
-
-You can check to see that this worked by running `yarn lint` and observing no
-errors.
-
 ### Ruby
 
 Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
@@ -154,8 +142,24 @@ rbenv rehash
 ```
 
 To lint Ruby sources, Artichoke uses
-[RuboCop](https://github.com/rubocop-hq/rubocop). `yarn lint` installs RuboCop
-and all other gems automatically.
+[RuboCop](https://github.com/rubocop-hq/rubocop). You can install RuboCop and
+other Ruby dependencies by running:
+
+```sh
+bundle install
+```
+
+### Node.js Packages
+
+Once you have Yarn installed, you can install the packages specified in
+[`package.json`](/package.json) by running:
+
+```sh
+yarn install
+```
+
+You can check to see that this worked by running `yarn lint` and observing no
+errors.
 
 ### Shell
 
