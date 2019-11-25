@@ -139,7 +139,7 @@ pub trait RubyException
 where
     Self: 'static,
 {
-    fn message(&self) -> &str;
+    fn message(&self) -> &[u8];
 
     fn class(&self) -> Rc<RefCell<class::Spec>>;
 }
@@ -148,7 +148,7 @@ macro_rules! ruby_exception_impl {
     ($exception:ident) => {
         pub struct $exception {
             interp: Artichoke,
-            message: Cow<'static, str>,
+            message: Cow<'static, [u8]>,
             #[cfg(feature = "artichoke-debug")]
             backtrace: Backtrace,
         }
@@ -173,6 +173,22 @@ macro_rules! ruby_exception_impl {
             pub fn new<S>(interp: &Artichoke, message: S) -> Self
             where
                 S: Into<Cow<'static, str>>,
+            {
+                let message = match message.into() {
+                    Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes()),
+                    Cow::Owned(s) => Cow::Owned(s.into_bytes()),
+                };
+                Self {
+                    interp: interp.clone(),
+                    message,
+                    #[cfg(feature = "artichoke-debug")]
+                    backtrace: Backtrace::new(),
+                }
+            }
+
+            pub fn new_raw<S>(interp: &Artichoke, message: S) -> Self
+            where
+                S: Into<Cow<'static, [u8]>>,
             {
                 Self {
                     interp: interp.clone(),
@@ -204,7 +220,7 @@ macro_rules! ruby_exception_impl {
         }
 
         impl RubyException for $exception {
-            fn message(&self) -> &str {
+            fn message(&self) -> &[u8] {
                 self.message.as_ref()
             }
 
@@ -226,7 +242,7 @@ macro_rules! ruby_exception_impl {
                 let class = self.class();
                 let borrow = class.borrow();
                 let classname = borrow.name();
-                let message = self.message();
+                let message = String::from_utf8_lossy(self.message());
                 write!(f, "{} ({})", classname, message)?;
                 write!(f, "\n{:?}", self.backtrace)
             }
@@ -236,7 +252,7 @@ macro_rules! ruby_exception_impl {
                 let class = self.class();
                 let borrow = class.borrow();
                 let classname = borrow.name();
-                let message = self.message();
+                let message = String::from_utf8_lossy(self.message());
                 write!(f, "{} ({})", classname, message)
             }
         }
@@ -249,7 +265,8 @@ macro_rules! ruby_exception_impl {
                 let class = self.class();
                 let borrow = class.borrow();
                 let classname = borrow.name();
-                write!(f, "{} ({})", classname, self.message)
+                let message = String::from_utf8_lossy(self.message());
+                write!(f, "{} ({})", classname, message)
             }
         }
 
@@ -266,7 +283,7 @@ macro_rules! ruby_exception_impl {
 }
 
 impl RubyException for Box<dyn RubyException> {
-    fn message(&self) -> &str {
+    fn message(&self) -> &[u8] {
         self.as_ref().message()
     }
 
@@ -280,7 +297,8 @@ impl fmt::Debug for Box<dyn RubyException> {
         let class = self.class();
         let borrow = class.borrow();
         let classname = borrow.name();
-        write!(f, "{} ({})", classname, self.message())
+        let message = String::from_utf8_lossy(self.message());
+        write!(f, "{} ({})", classname, message)
     }
 }
 
@@ -289,7 +307,8 @@ impl fmt::Display for Box<dyn RubyException> {
         let class = self.class();
         let borrow = class.borrow();
         let classname = borrow.name();
-        write!(f, "{} ({})", classname, self.message())
+        let message = String::from_utf8_lossy(self.message());
+        write!(f, "{} ({})", classname, message)
     }
 }
 

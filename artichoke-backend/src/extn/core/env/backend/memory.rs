@@ -1,4 +1,3 @@
-use bstr::BStr;
 use std::collections::HashMap;
 
 use crate::convert::Convert;
@@ -27,19 +26,20 @@ impl Env for Memory {
         // This function may panic if key is empty, contains an ASCII equals
         // sign '=' or the NUL character '\0', or when the value contains the
         // NUL character.
-        if name.is_empty() || memchr::memchr(b'=', name).is_some() {
-            // This is a bit of a kludge, but MRI accepts these names on element
-            // reference and should always return `nil` since they are invalid
-            // at the OS level.
-            return Ok(interp.convert(None::<Value>));
-        }
-        if memchr::memchr(b'\0', name).is_some() {
-            return Err(Box::new(ArgumentError::new(
+        if name.is_empty() {
+            // MRI accepts empty names on get and should always return `nil`
+            // since empty names are invalid at the OS level.
+            Ok(interp.convert(None::<Value>))
+        } else if memchr::memchr(b'\0', name).is_some() {
+            Err(Box::new(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
-            )));
-        }
-        if let Some(value) = self.store.get(name) {
+            )))
+        } else if memchr::memchr(b'=', name).is_some() {
+            // MRI accepts names containing '=' on get and should always return
+            // `nil` since these names are invalid at the OS level.
+            Ok(interp.convert(None::<Value>))
+        } else if let Some(value) = self.store.get(name) {
             Ok(interp.convert(value.clone()))
         } else {
             Ok(interp.convert(None::<Value>))
@@ -59,20 +59,24 @@ impl Env for Memory {
         // This function may panic if key is empty, contains an ASCII equals
         // sign '=' or the NUL character '\0', or when the value contains the
         // NUL character.
-        if name.is_empty() || memchr::memchr(b'=', name).is_some() {
+        if name.is_empty() {
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Box::new(ArgumentError::new(
+            Err(Box::new(ArgumentError::new(
                 interp,
-                format!("Invalid argument - setenv({:?})", <&BStr>::from(name)),
-            )));
-        }
-        if memchr::memchr(b'\0', name).is_some() {
-            return Err(Box::new(ArgumentError::new(
+                "Invalid argument - setenv()",
+            )))
+        } else if memchr::memchr(b'\0', name).is_some() {
+            Err(Box::new(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
-            )));
-        }
-        if let Some(value) = value {
+            )))
+        } else if memchr::memchr(b'=', name).is_some() {
+            let mut message = b"Invalid argumen - setenv(".to_vec();
+            message.extend(name.to_vec());
+            message.push(b')');
+            // TODO: This should raise `Errno::EINVAL`.
+            Err(Box::new(ArgumentError::new_raw(interp, message)))
+        } else if let Some(value) = value {
             if memchr::memchr(b'\0', value).is_some() {
                 Err(Box::new(ArgumentError::new(
                     interp,
@@ -90,8 +94,9 @@ impl Env for Memory {
 
     fn as_map(
         &self,
-        _interp: &Artichoke,
+        interp: &Artichoke,
     ) -> Result<HashMap<Vec<u8>, Vec<u8>>, Box<dyn RubyException>> {
+        let _ = interp;
         Ok(self.store.clone())
     }
 }
