@@ -9,6 +9,6 @@ Library that pass ruby/spec if an interpreter implements all of the required
 traits.
 
 The evolution of artichoke-core can be tracked in
-[Milestone 2, ruby/spec: Core](https://github.com/artichoke/artichoke/milestone/2)
+[Milestone 2, ruby/spec: Core](https://github.com/artichoke/artichoke/milestones/2)
 and
-[Milestone 3, ruby/spec: Standard Library](https://github.com/artichoke/artichoke/milestone/3).
+[Milestone 3, ruby/spec: Standard Library](https://github.com/artichoke/artichoke/milestones/3).
