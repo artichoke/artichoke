@@ -3,10 +3,9 @@
 
 use std::collections::HashMap;
 
-use crate::convert::float::Float;
 use crate::convert::{Convert, TryConvert};
 use crate::sys;
-use crate::types::{Int, Ruby};
+use crate::types::{Float, Int, Ruby};
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 

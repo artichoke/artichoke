@@ -1,4 +1,5 @@
 use crate::eval::Eval;
+use crate::types;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -15,5 +16,5 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 pub struct Float;
 
 impl Float {
-    pub const EPSILON: f64 = std::f64::EPSILON;
+    pub const EPSILON: types::Float = std::f64::EPSILON;
 }

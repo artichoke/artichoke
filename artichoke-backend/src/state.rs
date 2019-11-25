@@ -25,6 +25,8 @@ pub struct State {
     pub active_regexp_globals: usize,
     symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
     captured_output: Option<String>,
+    #[cfg(feature = "artichoke-random")]
+    prng: crate::extn::core::random::Random,
 }
 
 impl State {
@@ -42,7 +44,19 @@ impl State {
             active_regexp_globals: 0,
             symbol_cache: HashMap::default(),
             captured_output: None,
+            #[cfg(feature = "artichoke-random")]
+            prng: crate::extn::core::random::new(None),
         }
+    }
+
+    #[cfg(feature = "artichoke-random")]
+    pub fn prng(&self) -> &crate::extn::core::random::Random {
+        &self.prng
+    }
+
+    #[cfg(feature = "artichoke-random")]
+    pub fn prng_mut(&mut self) -> &mut crate::extn::core::random::Random {
+        &mut self.prng
     }
 
     pub fn capture_output(&mut self) {

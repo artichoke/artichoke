@@ -5,8 +5,7 @@ use std::mem;
 
 use crate::convert::{Convert, TryConvert};
 use crate::exception::{ExceptionHandler, LastError};
-#[cfg(feature = "artichoke-array")]
-use crate::extn::core::array::Array;
+use crate::extn::core::exception::{RubyException, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::types::{self, Int, Ruby};
@@ -110,14 +109,7 @@ impl Value {
             "false"
         } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Self>>() {
             "nil"
-        } else if self.ruby_type() == Ruby::Data {
-            #[cfg(feature = "artichoke-array")]
-            {
-                use crate::convert::RustBackedValue;
-                if unsafe { Array::try_from_ruby(&self.interp, self) }.is_ok() {
-                    return "Array";
-                }
-            }
+        } else if let Ruby::Data | Ruby::Object = self.ruby_type() {
             self.funcall::<Self>("class", &[], None)
                 .and_then(|class| class.funcall::<&'a str>("name", &[], None))
                 .unwrap_or_default()
@@ -167,6 +159,34 @@ impl Value {
     /// This function can never fail.
     pub fn to_s_debug(&self) -> String {
         format!("{}<{}>", self.ruby_type().class_name(), self.inspect())
+    }
+
+    pub fn implicitly_convert_to_int(&self) -> Result<Int, Box<dyn RubyException>> {
+        let int = if let Ok(int) = self.clone().try_into::<Int>() {
+            int
+        } else {
+            let pretty_name = self.pretty_name();
+            if let Ok(maybe_int) = self.funcall::<Self>("to_int", &[], None) {
+                let gives_pretty_name = maybe_int.pretty_name();
+                if let Ok(int) = maybe_int.try_into::<Int>() {
+                    int
+                } else {
+                    return Err(Box::new(TypeError::new(
+                        &self.interp,
+                        format!(
+                            "can't convert {} to Integer ({}#to_int gives {})",
+                            pretty_name, pretty_name, gives_pretty_name
+                        ),
+                    )));
+                }
+            } else {
+                return Err(Box::new(TypeError::new(
+                    &self.interp,
+                    format!("no implicit conversion of {} into Integer", pretty_name),
+                )));
+            }
+        };
+        Ok(int)
     }
 }
 

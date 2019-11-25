@@ -1,12 +1,11 @@
 // use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::convert::float::Float;
 use crate::convert::{Convert, TryConvert};
 #[cfg(feature = "artichoke-array")]
 use crate::extn::core::array::{Array, InlineBuffer};
 use crate::sys;
-use crate::types::{Int, Ruby, Rust};
+use crate::types::{Float, Int, Ruby, Rust};
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 

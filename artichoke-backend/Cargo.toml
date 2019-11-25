@@ -21,6 +21,11 @@ path = "../artichoke-core"
 [dependencies.artichoke-vfs]
 path = "../artichoke-vfs"
 
+[dependencies.rand]
+version = "0.7"
+optional = true
+features = ["small_rng"]
+
 [dev-dependencies]
 env_logger = "0.7"
 libc = "0.2"
@@ -42,7 +47,8 @@ version = "0.51.1"
 default-features = false
 
 [features]
-default = ["artichoke-array", "artichoke-system-environ"]
+default = ["artichoke-array", "artichoke-random", "artichoke-system-environ"]
 artichoke-array = []
 artichoke-debug = ["backtrace"]
+artichoke-random = ["rand"]
 artichoke-system-environ = []

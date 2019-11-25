@@ -1,10 +1,8 @@
 use crate::convert::{Convert, TryConvert};
 use crate::sys;
-use crate::types::{Ruby, Rust};
+use crate::types::{Float, Ruby, Rust};
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
-
-pub type Float = f64;
 
 impl Convert<Float, Value> for Artichoke {
     fn convert(&self, value: Float) -> Value {
@@ -32,11 +30,10 @@ impl TryConvert<Value, Float> for Artichoke {
 mod tests {
     use quickcheck_macros::quickcheck;
 
-    use crate::convert::float::Float;
     use crate::convert::Convert;
     use crate::eval::Eval;
     use crate::sys;
-    use crate::types::{Ruby, Rust};
+    use crate::types::{Float, Ruby, Rust};
     use crate::value::ValueLike;
     use crate::ArtichokeError;
 

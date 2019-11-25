@@ -20,6 +20,8 @@ pub mod module;
 pub mod numeric;
 pub mod object;
 pub mod proc;
+#[cfg(feature = "artichoke-random")]
+pub mod random;
 pub mod range;
 pub mod regexp;
 pub mod string;
@@ -51,6 +53,8 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     module::init(interp)?;
     object::init(interp)?;
     proc::init(interp)?;
+    #[cfg(feature = "artichoke-random")]
+    random::mruby::init(interp)?;
     range::init(interp)?;
     regexp::mruby::init(interp)?;
     string::init(interp)?;
