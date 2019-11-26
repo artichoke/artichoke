@@ -1,5 +1,6 @@
 #![deny(warnings, intra_doc_link_resolution_failure)]
-#![deny(clippy::all, clippy::pedantic)]
+#![deny(clippy::all)]
+#![deny(clippy::pedantic)]
 
 use artichoke_frontend::repl;
 use std::io;
