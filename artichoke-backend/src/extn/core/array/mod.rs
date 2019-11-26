@@ -1,4 +1,5 @@
 use artichoke_core::value::Value as _;
+use artichoke_core::warn::Warn;
 use std::convert::TryFrom;
 
 use crate::convert::{Convert, RustBackedValue};
@@ -7,7 +8,6 @@ use crate::extn::core::exception::{
 };
 use crate::types::Int;
 use crate::value::{Block, Value};
-use crate::warn::Warn;
 use crate::Artichoke;
 
 pub mod args;
@@ -65,7 +65,7 @@ impl Array {
                 if let Some(block) = block {
                     if second.is_some() {
                         interp
-                            .warn("warning: block supersedes default value argument")
+                            .warn(&b"warning: block supersedes default value argument"[..])
                             .map_err(|_| Fatal::new(interp, "Could not emit warning"))?;
                     }
                     let mut buffer = Vec::with_capacity(len);
@@ -116,7 +116,7 @@ impl Array {
                 if let Some(block) = block {
                     if second.is_some() {
                         interp
-                            .warn("warning: block supersedes default value argument")
+                            .warn(&b"warning: block supersedes default value argument"[..])
                             .map_err(|_| Fatal::new(interp, "Could not emit warning"))?;
                     }
                     let mut buffer = Vec::with_capacity(len);

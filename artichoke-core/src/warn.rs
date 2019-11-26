@@ -11,8 +11,8 @@ use crate::ArtichokeError;
 /// [`Warning`](https://ruby-doc.org/core-2.6.3/Warning.html#method-i-warn)
 /// module from the standard library.
 pub trait Warn {
-    /// Emit a warning message using `Kernel#warn`.
+    /// Emit a warning message using `Warning#warn`.
     ///
     /// This method appends newlines to message if necessary.
-    fn warn(&self, message: &str) -> Result<(), ArtichokeError>;
+    fn warn(&self, message: &[u8]) -> Result<(), ArtichokeError>;
 }
