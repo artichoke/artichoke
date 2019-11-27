@@ -1,8 +1,8 @@
 use artichoke_backend::convert::Convert;
-use artichoke_backend::top_self::TopSelf;
 use artichoke_backend::{Artichoke, ArtichokeError};
 use artichoke_core::eval::Eval;
 use artichoke_core::load::LoadSources;
+use artichoke_core::top_self::TopSelf;
 use artichoke_core::value::Value;
 use std::borrow::Cow;
 

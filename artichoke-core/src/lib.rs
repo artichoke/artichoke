@@ -21,7 +21,6 @@ pub mod convert;
 pub mod eval;
 pub mod file;
 pub mod load;
-pub mod state;
 pub mod top_self;
 pub mod types;
 pub mod value;

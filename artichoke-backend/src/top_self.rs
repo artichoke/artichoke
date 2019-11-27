@@ -1,21 +1,12 @@
+use artichoke_core::top_self::TopSelf;
+
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
-/// Return a [`Value`]-wrapped reference to "top self".
-///
-/// Top self is the root object that evaled code is executed within. Global
-/// methods, classes, and modules are defined in top self.
-#[allow(clippy::module_name_repetitions)]
-pub trait TopSelf {
-    /// Return a [`Value`]-wrapped reference to "top self".
-    ///
-    /// Top self is the root object that evaled code is executed within. Global
-    /// methods, classes, and modules are defined in top self.
-    fn top_self(&self) -> Value;
-}
-
 impl TopSelf for Artichoke {
+    type Value = Value;
+
     fn top_self(&self) -> Value {
         let mrb = self.0.borrow().mrb;
         Value::new(self, unsafe { sys::mrb_top_self(mrb) })
