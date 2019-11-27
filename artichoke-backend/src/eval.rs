@@ -185,7 +185,7 @@ impl Eval for Artichoke {
             sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
         }
 
-        let protect = Protect::new(self, code.as_ref());
+        let protect = Protect::new(self, code);
         trace!("Evaling code on {}", mrb.debug());
         let value = unsafe {
             let data =
@@ -200,7 +200,6 @@ impl Eval for Artichoke {
                 // drop all bindings to heap-allocated objects because we are
                 // about to unwind with longjmp.
                 drop(filename);
-                drop(code);
                 (*mrb).exc = sys::mrb_sys_obj_ptr(value);
                 sys::mrb_sys_raise_current_exception(mrb);
                 unreachable!("mrb_raise will unwind the stack with longjmp");

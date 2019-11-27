@@ -8,7 +8,7 @@ use crate::fs::{self, RUBY_LOAD_PATH};
 use crate::{Artichoke, ArtichokeError};
 
 impl LoadSources for Artichoke {
-    type Artichoke = Artichoke;
+    type Artichoke = Self;
 
     fn def_file_for_type<T>(&self, filename: &[u8]) -> Result<(), ArtichokeError>
     where
