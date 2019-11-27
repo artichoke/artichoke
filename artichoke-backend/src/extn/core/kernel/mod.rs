@@ -1,7 +1,7 @@
+use artichoke_core::eval::Eval;
 use artichoke_core::value::Value as _;
 
 use crate::def::{ClassLike, Define, EnclosingRubyScope};
-use crate::eval::Eval;
 use crate::extn::core::artichoke::RArtichoke;
 use crate::extn::core::exception;
 use crate::sys;
@@ -52,7 +52,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .borrow_mut()
         .add_method("puts", Kernel::puts, sys::mrb_args_rest());
     kernel.borrow().define(interp)?;
-    interp.eval(include_str!("kernel.rb"))?;
+    interp.eval(&include_bytes!("kernel.rb")[..])?;
     trace!("Patched Kernel#require onto interpreter");
     Ok(())
 }
@@ -147,10 +147,11 @@ impl Kernel {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval::Eval;
-    use crate::file::File;
-    use crate::load::LoadSources;
-    use crate::value::ValueLike;
+    use artichoke_core::eval::Eval;
+    use artichoke_core::file::File;
+    use artichoke_core::load::LoadSources;
+    use artichoke_core::value::Value as _;
+
     use crate::{Artichoke, ArtichokeError};
 
     // Integration test for `Kernel::require`:
@@ -165,29 +166,31 @@ mod tests {
         struct TestFile;
 
         impl File for TestFile {
-            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
-                interp.eval("@i = 255")?;
+            type Artichoke = Artichoke;
+
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+                interp.eval(b"@i = 255")?;
                 Ok(())
             }
         }
 
         let interp = crate::interpreter().expect("init");
         interp
-            .def_file_for_type::<_, TestFile>("file.rb")
+            .def_file_for_type::<TestFile>(b"file.rb")
             .expect("def file");
-        let result = interp.eval("require 'file'").expect("eval");
+        let result = interp.eval(b"require 'file'").expect("eval");
         let require_result = result.try_into::<bool>();
         assert_eq!(require_result, Ok(true));
-        let result = interp.eval("@i").expect("eval");
+        let result = interp.eval(b"@i").expect("eval");
         let i_result = result.try_into::<i64>();
         assert_eq!(i_result, Ok(255));
-        let result = interp.eval("@i = 1000; require 'file'").expect("eval");
+        let result = interp.eval(b"@i = 1000; require 'file'").expect("eval");
         let second_require_result = result.try_into::<bool>();
         assert_eq!(second_require_result, Ok(false));
-        let result = interp.eval("@i").expect("eval");
+        let result = interp.eval(b"@i").expect("eval");
         let second_i_result = result.try_into::<i64>();
         assert_eq!(second_i_result, Ok(1000));
-        let result = interp.eval("require 'non-existent-source'").map(|_| ());
+        let result = interp.eval(b"require 'non-existent-source'").map(|_| ());
         let expected = r#"
 (eval):1: cannot load such file -- non-existent-source (LoadError)
 (eval):1
@@ -202,11 +205,11 @@ mod tests {
     fn require_absolute_path() {
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("/foo/bar/source.rb", "# a source file")
+            .def_rb_source_file(b"/foo/bar/source.rb", &b"# a source file"[..])
             .expect("def file");
-        let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
+        let result = interp.eval(b"require '/foo/bar/source.rb'").expect("value");
         assert!(result.try_into::<bool>().expect("convert"));
-        let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
+        let result = interp.eval(b"require '/foo/bar/source.rb'").expect("value");
         assert!(!result.try_into::<bool>().expect("convert"));
     }
 
@@ -214,19 +217,19 @@ mod tests {
     fn require_relative_with_dotted_path() {
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("/foo/bar/source.rb", "require_relative '../bar.rb'")
+            .def_rb_source_file(b"/foo/bar/source.rb", &b"require_relative '../bar.rb'"[..])
             .expect("def file");
         interp
-            .def_rb_source_file("/foo/bar.rb", "# a source file")
+            .def_rb_source_file(b"/foo/bar.rb", &b"# a source file"[..])
             .expect("def file");
-        let result = interp.eval("require '/foo/bar/source.rb'").expect("value");
+        let result = interp.eval(b"require '/foo/bar/source.rb'").expect("value");
         assert!(result.try_into::<bool>().expect("convert"));
     }
 
     #[test]
     fn require_directory() {
         let interp = crate::interpreter().expect("init");
-        let result = interp.eval("require '/src'").map(|_| ());
+        let result = interp.eval(b"require '/src'").map(|_| ());
         let expected = r#"
 (eval):1: cannot load such file -- /src (LoadError)
 (eval):1
@@ -240,21 +243,24 @@ mod tests {
     #[test]
     fn require_path_defined_as_source_then_mrbfile() {
         struct Foo;
+
         impl File for Foo {
-            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
-                interp.eval("module Foo; RUST = 7; end")?;
+            type Artichoke = Artichoke;
+
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+                interp.eval(b"module Foo; RUST = 7; end")?;
                 Ok(())
             }
         }
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
+            .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
             .expect("def");
-        interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
-        let result = interp.eval("require 'foo'").expect("eval");
+        interp.def_file_for_type::<Foo>(b"foo.rb").expect("def");
+        let result = interp.eval(b"require 'foo'").expect("eval");
         let result = result.try_into::<bool>().expect("convert");
         assert!(result, "successfully required foo.rb");
-        let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
+        let result = interp.eval(b"Foo::RUBY + Foo::RUST").expect("eval");
         let result = result.try_into::<i64>().expect("convert");
         assert_eq!(
             result, 10,
@@ -265,21 +271,24 @@ mod tests {
     #[test]
     fn require_path_defined_as_mrbfile_then_source() {
         struct Foo;
+
         impl File for Foo {
-            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
-                interp.eval("module Foo; RUST = 7; end")?;
+            type Artichoke = Artichoke;
+
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+                interp.eval(b"module Foo; RUST = 7; end")?;
                 Ok(())
             }
         }
         let interp = crate::interpreter().expect("init");
-        interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
+        interp.def_file_for_type::<Foo>(b"foo.rb").expect("def");
         interp
-            .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
+            .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
             .expect("def");
-        let result = interp.eval("require 'foo'").expect("eval");
+        let result = interp.eval(b"require 'foo'").expect("eval");
         let result = result.try_into::<bool>().expect("convert");
         assert!(result, "successfully required foo.rb");
-        let result = interp.eval("Foo::RUBY + Foo::RUST").expect("eval");
+        let result = interp.eval(b"Foo::RUBY + Foo::RUST").expect("eval");
         let result = result.try_into::<i64>().expect("convert");
         assert_eq!(
             result, 10,
@@ -293,25 +302,25 @@ mod tests {
         // https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-catch
         let interp = crate::interpreter().expect("init");
         let result = interp
-            .eval("catch(1) { 123 }")
+            .eval(b"catch(1) { 123 }")
             .unwrap()
             .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 123);
         let result = interp
-            .eval("catch(1) { throw(1, 456) }")
+            .eval(b"catch(1) { throw(1, 456) }")
             .unwrap()
             .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 456);
         let result = interp
-            .eval("catch(1) { throw(1) }")
+            .eval(b"catch(1) { throw(1) }")
             .unwrap()
             .try_into::<Option<i64>>()
             .unwrap();
         assert_eq!(result, None);
         let result = interp
-            .eval("catch(1) {|x| x + 2 }")
+            .eval(b"catch(1) {|x| x + 2 }")
             .unwrap()
             .try_into::<i64>()
             .unwrap();
@@ -319,7 +328,7 @@ mod tests {
 
         let result = interp
             .eval(
-                r#"
+                br#"
 catch do |obj_A|
   catch do |obj_B|
     throw(obj_B, 123)
@@ -337,7 +346,7 @@ end
         assert_eq!(result, 456);
         let result = interp
             .eval(
-                r#"
+                br#"
 catch do |obj_A|
   catch do |obj_B|
     throw(obj_A, 123)

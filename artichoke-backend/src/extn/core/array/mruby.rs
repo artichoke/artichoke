@@ -1,3 +1,4 @@
+use artichoke_core::eval::Eval;
 #[cfg(feature = "artichoke-array")]
 use std::convert::TryFrom;
 
@@ -5,7 +6,6 @@ use std::convert::TryFrom;
 use crate::convert::Convert;
 #[cfg(feature = "artichoke-array")]
 use crate::def::{rust_data_free, ClassLike, Define};
-use crate::eval::Eval;
 #[cfg(feature = "artichoke-array")]
 use crate::extn::core::array;
 #[cfg(feature = "artichoke-array")]

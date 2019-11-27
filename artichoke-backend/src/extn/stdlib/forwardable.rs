@@ -1,4 +1,5 @@
-use crate::load::LoadSources;
+use artichoke_core::load::LoadSources;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -6,8 +7,11 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_module::<Forwardable>("Forwardable", None);
-    interp.def_rb_source_file("forwardable.rb", include_str!("forwardable.rb"))?;
-    interp.def_rb_source_file("forwardable/impl.rb", include_str!("forwardable/impl.rb"))?;
+    interp.def_rb_source_file(b"forwardable.rb", &include_bytes!("forwardable.rb")[..])?;
+    interp.def_rb_source_file(
+        b"forwardable/impl.rb",
+        &include_bytes!("forwardable/impl.rb")[..],
+    )?;
     Ok(())
 }
 
@@ -17,8 +21,8 @@ pub struct Forwardable;
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/forwardable/rdoc/Forwardable.html
 #[cfg(test)]
 mod tests {
-    use crate::eval::Eval;
-    use crate::value::ValueLike;
+    use artichoke_core::eval::Eval;
+    use artichoke_core::value::Value as _;
 
     #[test]
     #[allow(clippy::shadow_unrelated)]
@@ -26,7 +30,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         interp
             .eval(
-                r#"
+                br#"
 require 'forwardable'
 
 class RecordCollection
@@ -39,7 +43,7 @@ end
             .unwrap();
         let result = interp
             .eval(
-                r#"
+                br#"
 r = RecordCollection.new
 r.records = [4,5,6]
 r.record_number(0)
@@ -51,7 +55,7 @@ r.record_number(0)
         assert_eq!(result, 4);
         interp
             .eval(
-                r#"
+                br#"
 class RecordCollection # re-open RecordCollection class
   def_delegators :@records, :size, :<<, :map
 end
@@ -60,7 +64,7 @@ end
             .unwrap();
         let result = interp
             .eval(
-                r#"
+                br#"
 r = RecordCollection.new
 r.records = [1,2,3]
 r.record_number(0)
@@ -70,16 +74,16 @@ r.record_number(0)
             .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 1);
-        let result = interp.eval("r.size").unwrap().try_into::<i64>().unwrap();
+        let result = interp.eval(b"r.size").unwrap().try_into::<i64>().unwrap();
         assert_eq!(result, 3);
         let result = interp
-            .eval("r << 4")
+            .eval(b"r << 4")
             .unwrap()
             .try_into::<Vec<i64>>()
             .unwrap();
         assert_eq!(result, vec![1, 2, 3, 4]);
         let result = interp
-            .eval("r.map { |x| x * 2 }")
+            .eval(b"r.map { |x| x * 2 }")
             .unwrap()
             .try_into::<Vec<i64>>()
             .unwrap();
@@ -91,7 +95,7 @@ r.record_number(0)
         let interp = crate::interpreter().expect("init");
         let result = interp
             .eval(
-                r#"
+                br#"
 require 'forwardable'
 
 class Queue
@@ -148,7 +152,7 @@ out << q.first
         let interp = crate::interpreter().expect("init");
         let result = interp
             .eval(
-                r#"
+                br#"
 require 'forwardable'
 
 class MyQueue

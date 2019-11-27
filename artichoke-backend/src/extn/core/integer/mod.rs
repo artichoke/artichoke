@@ -1,10 +1,10 @@
+use artichoke_core::eval::Eval;
 use artichoke_core::value::Value as _;
 use std::convert::TryFrom;
 use std::mem;
 
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
-use crate::eval::Eval;
 use crate::extn::core::exception::{self, Fatal, NotImplementedError, RangeError, RubyException};
 use crate::sys;
 use crate::types::Int;
@@ -31,7 +31,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 
     integer.borrow().define(interp)?;
 
-    interp.eval(include_str!("integer.rb"))?;
+    interp.eval(&include_bytes!("integer.rb")[..])?;
 
     trace!("Patched Integer onto interpreter");
 

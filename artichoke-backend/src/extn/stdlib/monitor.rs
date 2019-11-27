@@ -1,4 +1,5 @@
-use crate::load::LoadSources;
+use artichoke_core::load::LoadSources;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -6,7 +7,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_class::<Monitor>("Monitor", None, None);
-    interp.def_rb_source_file("monitor.rb", include_str!("monitor.rb"))?;
+    interp.def_rb_source_file(b"monitor.rb", &include_bytes!("monitor.rb")[..])?;
     Ok(())
 }
 
@@ -16,12 +17,12 @@ pub struct Monitor;
 // https://github.com/ruby/spec/tree/master/library/monitor
 #[cfg(test)]
 mod tests {
-    use crate::eval::Eval;
-    use crate::value::ValueLike;
+    use artichoke_core::eval::Eval;
+    use artichoke_core::value::Value as _;
 
     #[test]
     fn mon_initialize() {
-        let spec = r#"
+        let spec = br#"
 cls = Class.new do
   include MonitorMixin
 
@@ -51,7 +52,7 @@ copy != instance
 # copy.should_not equal(instance)
 "#;
         let interp = crate::interpreter().expect("init");
-        interp.eval("require 'monitor'").expect("require");
+        interp.eval(b"require 'monitor'").expect("require");
         let result = interp.eval(spec).expect("spec");
         assert!(result.try_into::<bool>().expect("convert"));
     }

@@ -28,10 +28,10 @@ impl TryConvert<Value, Float> for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    use artichoke_core::eval::Eval;
     use quickcheck_macros::quickcheck;
 
     use crate::convert::Convert;
-    use crate::eval::Eval;
     use crate::sys;
     use crate::types::{Float, Ruby, Rust};
     use crate::value::ValueLike;
@@ -41,7 +41,7 @@ mod tests {
     fn fail_convert() {
         let interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
-        let value = interp.eval("Object.new").expect("eval");
+        let value = interp.eval(b"Object.new").expect("eval");
         let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Object,
             to: Rust::Float,

@@ -1,6 +1,7 @@
+use artichoke_core::eval::Eval;
+
 use crate::convert::RustBackedValue;
 use crate::def::{rust_data_free, ClassLike, Define};
-use crate::eval::Eval;
 use crate::extn::core::exception;
 use crate::extn::core::random;
 use crate::sys;

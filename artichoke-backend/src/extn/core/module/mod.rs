@@ -1,4 +1,5 @@
-use crate::eval::Eval;
+use artichoke_core::eval::Eval;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {

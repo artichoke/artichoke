@@ -5,9 +5,10 @@
 //! multi-line Ruby expressions, CTRL-C to break out of an expression, and can
 //! inspect return values and exception backtraces.
 
-use artichoke_backend::eval::{Context, Eval};
+use artichoke_backend::eval::Context;
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_core::eval::Eval;
 use artichoke_core::value::Value;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
@@ -56,12 +57,12 @@ impl Default for PromptConfig {
 
 fn preamble(interp: &Artichoke) -> Result<String, Error> {
     let description = interp
-        .eval("RUBY_DESCRIPTION")
+        .eval(b"RUBY_DESCRIPTION")
         .map_err(Error::Ruby)?
         .try_into::<&str>()
         .map_err(Error::Ruby)?;
     let compiler = interp
-        .eval("ARTICHOKE_COMPILER_VERSION")
+        .eval(b"ARTICHOKE_COMPILER_VERSION")
         .map_err(Error::Ruby)?
         .try_into::<&str>()
         .map_err(Error::Ruby)?;
@@ -113,7 +114,7 @@ pub fn run(
                     buf.push('\n');
                     continue;
                 }
-                match interp.eval(buf.as_str()) {
+                match interp.eval(buf.as_bytes()) {
                     Ok(value) => writeln!(output, "{}{}", config.result_prefix, value.inspect())
                         .map_err(Error::Io)?,
                     Err(ArtichokeError::Exec(backtrace)) => {

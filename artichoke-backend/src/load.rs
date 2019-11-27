@@ -1,63 +1,24 @@
+use artichoke_core::file::File;
+use artichoke_core::load::LoadSources;
+use std::borrow::Cow;
+use std::io;
 use std::path::Path;
 
-use crate::file::File;
-use crate::fs::RUBY_LOAD_PATH;
+use crate::fs::{self, RUBY_LOAD_PATH};
 use crate::{Artichoke, ArtichokeError};
 
-#[allow(clippy::module_name_repetitions)]
-pub trait LoadSources {
-    /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
-    /// Ruby file is added to the filesystem and `require` will dynamically
-    /// define Ruby items when invoked via `Kernel#require`.
-    ///
-    /// If filename is a relative path, the Ruby source is added to the
-    /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
-    /// file is placed directly on the filesystem. Anscestor directories are
-    /// created automatically.
-    fn def_file<T>(
-        &self,
-        filename: T,
-        require: fn(Self) -> Result<(), ArtichokeError>,
-    ) -> Result<(), ArtichokeError>
-    where
-        T: AsRef<str>;
-
-    /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
-    /// Ruby file is added to the filesystem and [`File::require`] will
-    /// dynamically define Ruby items when invoked via `Kernel#require`.
-    ///
-    /// If filename is a relative path, the Ruby source is added to the
-    /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
-    /// file is placed directly on the filesystem. Anscestor directories are
-    /// created automatically.
-    fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), ArtichokeError>
-    where
-        T: AsRef<str>,
-        F: File;
-
-    /// Add a pure Ruby source file to the virtual filesystem.
-    ///
-    /// If filename is a relative path, the Ruby source is added to the
-    /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
-    /// file is placed directly on the filesystem. Anscestor directories are
-    /// created automatically.
-    fn def_rb_source_file<T, F>(&self, filename: T, contents: F) -> Result<(), ArtichokeError>
-    where
-        T: AsRef<str>,
-        F: AsRef<[u8]>;
-}
-
 impl LoadSources for Artichoke {
-    fn def_file<T>(
-        &self,
-        filename: T,
-        require: fn(Self) -> Result<(), ArtichokeError>,
-    ) -> Result<(), ArtichokeError>
+    type Artichoke = Self;
+
+    fn def_file_for_type<T>(&self, filename: &[u8]) -> Result<(), ArtichokeError>
     where
-        T: AsRef<str>,
+        T: File<Artichoke = Self>,
     {
         let api = self.0.borrow();
-        let path = Path::new(filename.as_ref());
+        let path = fs::bytes_to_osstr(self, filename).map_err(|err| {
+            ArtichokeError::Vfs(io::Error::new(io::ErrorKind::Other, err.to_string()))
+        })?;
+        let path = Path::new(path);
         let path = if path.is_relative() {
             Path::new(RUBY_LOAD_PATH).join(path)
         } else {
@@ -71,7 +32,7 @@ impl LoadSources for Artichoke {
             api.vfs.write_file(&path, contents)?;
         }
         let mut metadata = api.vfs.metadata(&path).unwrap_or_default();
-        metadata.require = Some(require);
+        metadata.require = Some(T::require);
         api.vfs.set_metadata(&path, metadata)?;
         trace!(
             "Added rust-backed ruby source file with require func -- {:?}",
@@ -80,21 +41,15 @@ impl LoadSources for Artichoke {
         Ok(())
     }
 
-    fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), ArtichokeError>
+    fn def_rb_source_file<T>(&self, filename: &[u8], contents: T) -> Result<(), ArtichokeError>
     where
-        T: AsRef<str>,
-        F: File,
-    {
-        self.def_file(filename.as_ref(), F::require)
-    }
-
-    fn def_rb_source_file<T, F>(&self, filename: T, contents: F) -> Result<(), ArtichokeError>
-    where
-        T: AsRef<str>,
-        F: AsRef<[u8]>,
+        T: Into<Cow<'static, [u8]>>,
     {
         let api = self.0.borrow();
-        let path = Path::new(filename.as_ref());
+        let path = fs::bytes_to_osstr(self, filename).map_err(|err| {
+            ArtichokeError::Vfs(io::Error::new(io::ErrorKind::Other, err.to_string()))
+        })?;
+        let path = Path::new(path);
         let path = if path.is_relative() {
             Path::new(RUBY_LOAD_PATH).join(path)
         } else {
@@ -103,7 +58,7 @@ impl LoadSources for Artichoke {
         if let Some(parent) = path.parent() {
             api.vfs.create_dir_all(parent)?;
         }
-        api.vfs.write_file(&path, contents.as_ref())?;
+        api.vfs.write_file(&path, contents.into().as_ref())?;
         trace!("Added pure ruby source file -- {:?}", &path);
         Ok(())
     }

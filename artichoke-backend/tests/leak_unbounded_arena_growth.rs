@@ -20,10 +20,10 @@
 //! This test fails before commit
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
-use artichoke_backend::eval::Eval;
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::ArtichokeError;
-use artichoke_core::value::Value as ValueLike;
+use artichoke_core::eval::Eval;
+use artichoke_core::value::Value as _;
 
 mod leak;
 
@@ -39,7 +39,7 @@ def bad_code
   raise ArgumentError.new("n" * 1024 * 1024)
 end
     "#;
-    interp.eval(code.trim()).expect("eval");
+    interp.eval(code.trim().as_bytes()).expect("eval");
     let expected = format!(
         r#"
 (eval):2: {} (ArgumentError)
@@ -50,7 +50,7 @@ end
     );
     leak::Detector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let interp = interp.clone();
-        let code = "bad_code";
+        let code = b"bad_code";
         let arena = interp.create_arena_savepoint();
         let result = interp.eval(code).map(|_| ());
         arena.restore();
@@ -69,7 +69,7 @@ end
         |_| {
             let interp = interp.clone();
             let arena = interp.create_arena_savepoint();
-            let result = interp.eval("'a' * 1024 * 1024").expect("eval");
+            let result = interp.eval(b"'a' * 1024 * 1024").expect("eval");
             arena.restore();
             assert_eq!(result.to_s(), expected);
             drop(result);
@@ -85,7 +85,7 @@ end
         |_| {
             let interp = interp.clone();
             let arena = interp.create_arena_savepoint();
-            let result = interp.eval("'a' * 1024 * 1024").expect("eval");
+            let result = interp.eval(b"'a' * 1024 * 1024").expect("eval");
             arena.restore();
             assert_eq!(result.to_s_debug(), expected);
             drop(result);

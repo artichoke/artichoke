@@ -1,7 +1,7 @@
+use artichoke_core::eval::Eval;
 use std::convert::TryFrom;
 
 use crate::def::{rust_data_free, ClassLike, Define};
-use crate::eval::Eval;
 use crate::extn::core::exception;
 use crate::extn::core::regexp;
 use crate::sys;
@@ -86,7 +86,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         regexp::MULTILINE,
         regexp::FIXEDENCODING,
         regexp::NOENCODING,
-    ))?;
+    ).as_bytes())?;
     Ok(())
 }
 

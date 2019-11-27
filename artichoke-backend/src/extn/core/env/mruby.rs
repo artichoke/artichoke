@@ -1,5 +1,6 @@
+use artichoke_core::eval::Eval;
+
 use crate::def::{rust_data_free, ClassLike, Define, EnclosingRubyScope};
-use crate::eval::Eval;
 use crate::extn::core::artichoke::RArtichoke;
 use crate::extn::core::env;
 use crate::extn::core::exception;
@@ -11,7 +12,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<env::Environ>().is_some() {
         return Ok(());
     }
-    interp.eval(include_str!("env.rb"))?;
+    interp.eval(&include_bytes!("env.rb")[..])?;
 
     let artichoke_environ = {
         let scope = interp

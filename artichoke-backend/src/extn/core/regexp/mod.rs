@@ -5,6 +5,7 @@
 //! the `Args` struct for invoking the function.
 
 use artichoke_core::value::Value as _;
+use artichoke_core::warn::Warn;
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
@@ -19,7 +20,6 @@ use crate::extn::core::exception::{ArgumentError, Fatal, RubyException, TypeErro
 use crate::sys;
 use crate::types::Int;
 use crate::value::{Block, Value};
-use crate::warn::Warn;
 use crate::Artichoke;
 
 #[allow(clippy::type_complexity)]
@@ -136,7 +136,7 @@ impl Regexp {
                 Err(enc::Error::InvalidEncoding) => {
                     let warning = format!("encoding option is ignored -- {}", encoding.to_s());
                     interp
-                        .warn(warning.as_str())
+                        .warn(warning.as_bytes())
                         .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
                     None
                 }
@@ -149,7 +149,7 @@ impl Regexp {
                 Err(enc::Error::InvalidEncoding) => {
                     let warning = format!("encoding option is ignored -- {}", options.to_s());
                     interp
-                        .warn(warning.as_str())
+                        .warn(warning.as_bytes())
                         .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
                     None
                 }
@@ -162,7 +162,7 @@ impl Regexp {
         let literal_config = if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
             if options.is_some() || encoding.is_some() {
                 interp
-                    .warn("flags ignored when initializing from Regexp")
+                    .warn(&b"flags ignored when initializing from Regexp"[..])
                     .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
             }
             let borrow = regexp.borrow();

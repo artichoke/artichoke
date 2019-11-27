@@ -1,4 +1,5 @@
-use crate::load::LoadSources;
+use artichoke_core::load::LoadSources;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -6,7 +7,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_class::<OpenStruct>("OpenStruct", None, None);
-    interp.def_rb_source_file("ostruct.rb", include_str!("ostruct.rb"))?;
+    interp.def_rb_source_file(b"ostruct.rb", &include_bytes!("ostruct.rb")[..])?;
     Ok(())
 }
 

@@ -1,12 +1,13 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
+use artichoke_core::eval::Eval;
 use artichoke_core::value::Value as _;
 use bstr::BStr;
 use std::ffi::OsStr;
 use std::path::Path;
 
 use crate::convert::Convert;
-use crate::eval::{Context, Eval};
+use crate::eval::Context;
 use crate::extn::core::exception::{ArgumentError, Fatal, LoadError, RubyException, TypeError};
 use crate::fs::{self, RUBY_LOAD_PATH};
 use crate::value::Value;
@@ -62,14 +63,14 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
     // arbitrary other files, including some child sources that may
     // depend on these module definitions.
     let context = Context::new(filename.to_vec());
-    interp.push_context(context.clone());
+    interp.push_context(context);
     // Require Rust File first because an File may define classes and
     // module with `LoadSources` and Ruby files can require arbitrary
     // other files, including some child sources that may depend on these
     // module definitions.
     if let Some(require) = metadata.require {
         // dynamic, Rust-backed `File` require
-        if require(interp.clone()).is_err() {
+        if require(interp).is_err() {
             interp.pop_context();
             let filestr = format!("{:?}", <&BStr>::from(filename));
             return Err(Box::new(LoadError::new(
@@ -89,9 +90,9 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
         // We need to be sure we don't leak anything by unwinding past
         // this point. This likely requires a significant refactor to
         // require_impl.
-        interp.pop_context();
-        interp.unchecked_eval_with_context(contents, context);
+        interp.unchecked_eval(contents.as_slice());
     }
+    interp.pop_context();
     trace!(
         r#"Successful load of "{:?}" at {:?}"#,
         <&BStr>::from(filename),
@@ -160,7 +161,7 @@ pub fn require(
             // module definitions.
             if let Some(require) = metadata.require {
                 // dynamic, Rust-backed `File` require
-                if require(interp.clone()).is_err() {
+                if require(interp).is_err() {
                     interp.pop_context();
                     let filestr = format!("{:?}", <&BStr>::from(filename));
                     return Err(Box::new(LoadError::new(
@@ -180,9 +181,9 @@ pub fn require(
                 // We need to be sure we don't leak anything by unwinding past
                 // this point. This likely requires a significant refactor to
                 // require_impl.
-                interp.pop_context();
-                interp.unchecked_eval_with_context(contents, context);
+                interp.unchecked_eval(contents.as_slice());
             }
+            interp.pop_context();
             let metadata = metadata.mark_required();
             let borrow = interp.0.borrow();
             borrow
@@ -220,14 +221,14 @@ pub fn require(
                 // arbitrary other files, including some child sources that may
                 // depend on these module definitions.
                 let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec());
-                interp.push_context(context.clone());
+                interp.push_context(context);
                 // Require Rust File first because an File may define classes and
                 // module with `LoadSources` and Ruby files can require arbitrary
                 // other files, including some child sources that may depend on these
                 // module definitions.
                 if let Some(require) = metadata.require {
                     // dynamic, Rust-backed `File` require
-                    if require(interp.clone()).is_err() {
+                    if require(interp).is_err() {
                         interp.pop_context();
                         let filestr = format!("{:?}", <&BStr>::from(filename));
                         return Err(Box::new(LoadError::new(
@@ -247,9 +248,9 @@ pub fn require(
                     // We need to be sure we don't leak anything by unwinding past
                     // this point. This likely requires a significant refactor to
                     // require_impl.
-                    interp.pop_context();
-                    interp.unchecked_eval_with_context(contents, context);
+                    interp.unchecked_eval(contents.as_slice());
                 }
+                interp.pop_context();
                 let metadata = metadata.mark_required();
                 let borrow = interp.0.borrow();
                 borrow
@@ -304,14 +305,14 @@ pub fn require(
     // arbitrary other files, including some child sources that may
     // depend on these module definitions.
     let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec());
-    interp.push_context(context.clone());
+    interp.push_context(context);
     // Require Rust File first because an File may define classes and
     // module with `LoadSources` and Ruby files can require arbitrary
     // other files, including some child sources that may depend on these
     // module definitions.
     if let Some(require) = metadata.require {
         // dynamic, Rust-backed `File` require
-        if require(interp.clone()).is_err() {
+        if require(interp).is_err() {
             interp.pop_context();
             let filestr = format!("{:?}", <&BStr>::from(filename));
             return Err(Box::new(LoadError::new(
@@ -331,9 +332,9 @@ pub fn require(
         // We need to be sure we don't leak anything by unwinding past
         // this point. This likely requires a significant refactor to
         // require_impl.
-        interp.pop_context();
-        interp.unchecked_eval_with_context(contents, context);
+        interp.unchecked_eval(contents.as_slice());
     }
+    interp.pop_context();
     let metadata = metadata.mark_required();
     let borrow = interp.0.borrow();
     borrow

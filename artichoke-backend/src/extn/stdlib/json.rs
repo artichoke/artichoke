@@ -1,19 +1,23 @@
-use crate::load::LoadSources;
+use artichoke_core::load::LoadSources;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    interp.def_rb_source_file("json.rb", include_str!("json.rb"))?;
-    interp.def_rb_source_file("json/common.rb", include_str!("json/common.rb"))?;
+    interp.def_rb_source_file(b"json.rb", &include_bytes!("json.rb")[..])?;
+    interp.def_rb_source_file(b"json/common.rb", &include_bytes!("json/common.rb")[..])?;
     interp.def_rb_source_file(
-        "json/generic_object.rb",
-        include_str!("json/generic_object.rb"),
+        b"json/generic_object.rb",
+        &include_bytes!("json/generic_object.rb")[..],
     )?;
-    interp.def_rb_source_file("json/version.rb", include_str!("json/version.rb"))?;
-    interp.def_rb_source_file("json/pure.rb", include_str!("json/pure.rb"))?;
+    interp.def_rb_source_file(b"json/version.rb", &include_bytes!("json/version.rb")[..])?;
+    interp.def_rb_source_file(b"json/pure.rb", &include_bytes!("json/pure.rb")[..])?;
     interp.def_rb_source_file(
-        "json/pure/generator.rb",
-        include_str!("json/pure/generator.rb"),
+        b"json/pure/generator.rb",
+        &include_bytes!("json/pure/generator.rb")[..],
     )?;
-    interp.def_rb_source_file("json/pure/parser.rb", include_str!("json/pure/parser.rb"))?;
+    interp.def_rb_source_file(
+        b"json/pure/parser.rb",
+        &include_bytes!("json/pure/parser.rb")[..],
+    )?;
     Ok(())
 }

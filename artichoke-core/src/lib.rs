@@ -2,28 +2,24 @@
 #![deny(clippy::pedantic)]
 #![deny(missing_docs, warnings, intra_doc_link_resolution_failure)]
 #![doc(deny(warnings))]
+#![forbid(unsafe_code)]
 
 //! # artichoke-core
 //!
-//! artichoke-core crate provides a set of traits that, when implemented, create
-//! a complete Ruby interpreter.
+//! `artichoke-core` crate provides a set of traits that, when implemented,
+//! create a complete Ruby interpreter.
 //!
-//! artichoke-core is a work in progress. When fully functioning, artichoke-core
-//! will provide interpreter-agnostic implementations of Ruby Core and Ruby
-//! Standard Library that pass ruby/spec if an interpreter implements all of the
-//! required traits.
+//! [`artichoke-backend`](https://artichoke.github.io/artichoke/artichoke_backend/)
+//! is one implementation of the `artichoke-core` traits.
 
 use std::error;
 use std::fmt;
 use std::io;
 
 pub mod convert;
-pub mod def;
 pub mod eval;
-pub mod exception;
 pub mod file;
 pub mod load;
-pub mod state;
 pub mod top_self;
 pub mod types;
 pub mod value;
