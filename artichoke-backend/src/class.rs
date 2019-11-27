@@ -290,7 +290,9 @@ mod tests {
     #[test]
     fn rclass_for_nested_class_under_class() {
         let interp = crate::interpreter().expect("init");
-        interp.eval(b"class Foo; class Bar; end; end").expect("eval");
+        interp
+            .eval(b"class Foo; class Bar; end; end")
+            .expect("eval");
         let spec = Spec::new("Foo", None, None);
         let spec = EnclosingRubyScope::class(Rc::new(RefCell::new(spec)));
         let spec = Spec::new("Bar", Some(spec), None);
