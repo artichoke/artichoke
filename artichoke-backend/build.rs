@@ -35,6 +35,10 @@ mod buildpath {
         pub fn mruby_bootstrap_gembox() -> PathBuf {
             super::crate_root().join("bootstrap.gembox")
         }
+
+        pub fn mruby_noop() -> PathBuf {
+            super::crate_root().join("scripts").join("noop.rb")
+        }
     }
 }
 
@@ -72,6 +76,10 @@ mod libmruby {
 
     pub fn bootstrap_gembox() -> PathBuf {
         mruby_source_dir().join("bootstrap.gembox")
+    }
+
+    pub fn builder_noop() -> PathBuf {
+        mruby_source_dir().join("noop.rb")
     }
 
     fn ext_source_dir() -> PathBuf {
@@ -666,6 +674,12 @@ mod build {
         file::copy(
             buildpath::source::mruby_bootstrap_gembox(),
             libmruby::bootstrap_gembox(),
+            &opts,
+        )
+        .unwrap();
+        file::copy(
+            buildpath::source::mruby_noop(),
+            libmruby::builder_noop(),
             &opts,
         )
         .unwrap();
