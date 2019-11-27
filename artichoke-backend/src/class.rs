@@ -199,21 +199,25 @@ impl Define for Spec {
 #[cfg(test)]
 mod tests {
     use artichoke_core::eval::Eval;
+    use artichoke_core::value::Value as _;
     use std::cell::RefCell;
     use std::rc::Rc;
 
     use crate::class::Spec;
     use crate::def::{ClassLike, Define, EnclosingRubyScope};
+    use crate::extn::core::exception::StandardError;
+    use crate::extn::core::kernel::Kernel;
     use crate::module;
-    use crate::value::ValueLike;
 
     #[test]
     fn super_class() {
+        struct RustError;
+
         let interp = crate::interpreter().expect("init");
-        let standard_error = Rc::new(RefCell::new(Spec::new("StandardError", None, None)));
+        let standard_error = interp.0.borrow().class_spec::<StandardError>().unwrap();
         let spec = {
             let mut api = interp.0.borrow_mut();
-            let spec = api.def_class::<()>("RustError", None, None);
+            let spec = api.def_class::<RustError>("RustError", None, None);
             spec.borrow_mut()
                 .with_super_class(Rc::clone(&standard_error));
             spec
@@ -234,6 +238,7 @@ mod tests {
     fn refcell_allows_mutable_class_specs_after_attached_as_enclosing_scope() {
         struct BaseClass;
         struct SubClass;
+
         let interp = crate::interpreter().expect("init");
         let (base, sub) = {
             let mut api = interp.0.borrow_mut();
@@ -262,8 +267,8 @@ mod tests {
     #[test]
     fn rclass_for_undef_nested_class() {
         let interp = crate::interpreter().expect("init");
-        let scope = module::Spec::new("Kernel", None);
-        let scope = EnclosingRubyScope::module(Rc::new(RefCell::new(scope)));
+        let scope = interp.0.borrow().module_spec::<Kernel>().unwrap();
+        let scope = EnclosingRubyScope::module(scope);
         let spec = Spec::new("Foo", Some(scope), None);
         assert!(spec.rclass(&interp).is_none());
     }
@@ -271,8 +276,8 @@ mod tests {
     #[test]
     fn rclass_for_root_class() {
         let interp = crate::interpreter().expect("init");
-        let spec = Spec::new("StandardError", None, None);
-        assert!(spec.rclass(&interp).is_some());
+        let spec = interp.0.borrow().class_spec::<StandardError>().unwrap();
+        assert!(spec.borrow().rclass(&interp).is_some());
     }
 
     #[test]
