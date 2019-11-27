@@ -2,6 +2,7 @@
 #![deny(clippy::pedantic)]
 #![deny(missing_docs, warnings, intra_doc_link_resolution_failure)]
 #![doc(deny(warnings))]
+#![forbid(unsafe_code)]
 
 //! # artichoke-core
 //!
