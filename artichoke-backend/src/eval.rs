@@ -230,11 +230,11 @@ impl Eval for Artichoke {
 mod tests {
     use artichoke_core::eval::Eval;
     use artichoke_core::file::File;
+    use artichoke_core::load::LoadSources;
 
     use crate::convert::Convert;
     use crate::def::{ClassLike, Define};
     use crate::eval::Context;
-    use crate::load::LoadSources;
     use crate::sys;
     use crate::value::{Value, ValueLike};
     use crate::{Artichoke, ArtichokeError};
@@ -302,7 +302,7 @@ mod tests {
         }
         let interp = crate::interpreter().expect("init");
         interp
-            .def_file_for_type::<_, NestedEval>("nested_eval.rb")
+            .def_file_for_type::<NestedEval>(b"nested_eval.rb")
             .expect("def file");
         let code = br#"
 require 'nested_eval'
@@ -364,7 +364,7 @@ NestedEval.file
     fn file_magic_constant() {
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("source.rb", "def file; __FILE__; end")
+            .def_rb_source_file(b"source.rb", &b"def file; __FILE__; end"[..])
             .expect("def file");
         let result = interp.eval(b"require 'source'; file").expect("eval");
         let result = result.try_into::<&str>().expect("convert");
@@ -375,7 +375,7 @@ NestedEval.file
     fn file_not_persistent() {
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("source.rb", "def file; __FILE__; end")
+            .def_rb_source_file(b"source.rb", &b"def file; __FILE__; end"[..])
             .expect("def file");
         let result = interp.eval(b"require 'source'; __FILE__").expect("eval");
         let result = result.try_into::<&str>().expect("convert");
@@ -386,7 +386,7 @@ NestedEval.file
     fn return_syntax_error() {
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("fail.rb", "def bad; 'as'.scan(; end")
+            .def_rb_source_file(b"fail.rb", &b"def bad; 'as'.scan(; end"[..])
             .expect("def file");
         let result = interp.eval(b"require 'fail'").map(|_| ());
         let expected = ArtichokeError::Exec("SyntaxError: syntax error".to_owned());

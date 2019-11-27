@@ -1,4 +1,5 @@
-use crate::load::LoadSources;
+use artichoke_core::load::LoadSources;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -6,7 +7,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_class::<Monitor>("Monitor", None, None);
-    interp.def_rb_source_file("monitor.rb", include_str!("monitor.rb"))?;
+    interp.def_rb_source_file(b"monitor.rb", &include_bytes!("monitor.rb")[..])?;
     Ok(())
 }
 

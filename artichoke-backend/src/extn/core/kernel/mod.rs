@@ -149,9 +149,9 @@ impl Kernel {
 mod tests {
     use artichoke_core::eval::Eval;
     use artichoke_core::file::File;
+    use artichoke_core::load::LoadSources;
     use artichoke_core::value::Value as _;
 
-    use crate::load::LoadSources;
     use crate::{Artichoke, ArtichokeError};
 
     // Integration test for `Kernel::require`:
@@ -176,7 +176,7 @@ mod tests {
 
         let interp = crate::interpreter().expect("init");
         interp
-            .def_file_for_type::<_, TestFile>("file.rb")
+            .def_file_for_type::<TestFile>(b"file.rb")
             .expect("def file");
         let result = interp.eval(b"require 'file'").expect("eval");
         let require_result = result.try_into::<bool>();
@@ -205,7 +205,7 @@ mod tests {
     fn require_absolute_path() {
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("/foo/bar/source.rb", "# a source file")
+            .def_rb_source_file(b"/foo/bar/source.rb", &b"# a source file"[..])
             .expect("def file");
         let result = interp.eval(b"require '/foo/bar/source.rb'").expect("value");
         assert!(result.try_into::<bool>().expect("convert"));
@@ -217,10 +217,10 @@ mod tests {
     fn require_relative_with_dotted_path() {
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("/foo/bar/source.rb", "require_relative '../bar.rb'")
+            .def_rb_source_file(b"/foo/bar/source.rb", &b"require_relative '../bar.rb'"[..])
             .expect("def file");
         interp
-            .def_rb_source_file("/foo/bar.rb", "# a source file")
+            .def_rb_source_file(b"/foo/bar.rb", &b"# a source file"[..])
             .expect("def file");
         let result = interp.eval(b"require '/foo/bar/source.rb'").expect("value");
         assert!(result.try_into::<bool>().expect("convert"));
@@ -254,9 +254,9 @@ mod tests {
         }
         let interp = crate::interpreter().expect("init");
         interp
-            .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
+            .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
             .expect("def");
-        interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
+        interp.def_file_for_type::<Foo>(b"foo.rb").expect("def");
         let result = interp.eval(b"require 'foo'").expect("eval");
         let result = result.try_into::<bool>().expect("convert");
         assert!(result, "successfully required foo.rb");
@@ -281,9 +281,9 @@ mod tests {
             }
         }
         let interp = crate::interpreter().expect("init");
-        interp.def_file_for_type::<_, Foo>("foo.rb").expect("def");
+        interp.def_file_for_type::<Foo>(b"foo.rb").expect("def");
         interp
-            .def_rb_source_file("foo.rb", "module Foo; RUBY = 3; end")
+            .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
             .expect("def");
         let result = interp.eval(b"require 'foo'").expect("eval");
         let result = result.try_into::<bool>().expect("convert");

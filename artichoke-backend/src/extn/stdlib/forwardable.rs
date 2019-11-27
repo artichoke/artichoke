@@ -1,4 +1,5 @@
-use crate::load::LoadSources;
+use artichoke_core::load::LoadSources;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -6,8 +7,11 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_module::<Forwardable>("Forwardable", None);
-    interp.def_rb_source_file("forwardable.rb", include_str!("forwardable.rb"))?;
-    interp.def_rb_source_file("forwardable/impl.rb", include_str!("forwardable/impl.rb"))?;
+    interp.def_rb_source_file(b"forwardable.rb", &include_bytes!("forwardable.rb")[..])?;
+    interp.def_rb_source_file(
+        b"forwardable/impl.rb",
+        &include_bytes!("forwardable/impl.rb")[..],
+    )?;
     Ok(())
 }
 

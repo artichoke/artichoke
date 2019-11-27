@@ -1,6 +1,6 @@
 use artichoke_core::eval::Eval;
+use artichoke_core::load::LoadSources;
 
-use crate::load::LoadSources;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -12,7 +12,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_class::<Mutex>("Mutex", None, None);
-    interp.def_rb_source_file("thread.rb", &include_bytes!("thread.rb")[..])?;
+    interp.def_rb_source_file(b"thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement
     interp.eval(&b"require 'thread'"[..])?;

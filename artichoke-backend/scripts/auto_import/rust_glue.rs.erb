@@ -1,4 +1,5 @@
-use crate::load::LoadSources;
+use artichoke_core::load::LoadSources;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -19,8 +20,8 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     <% end %>
     <% sources.each do |(file, source)| %>
     interp.def_rb_source_file(
-        "<%= file.gsub('\\', '/') %>.rb",
-        include_str!(concat!(env!("OUT_DIR"), "/src/generated/<%= file.gsub('\\', '/') %>.rb"))
+        b"<%= file.gsub('\\', '/') %>.rb",
+        &include_bytes!(concat!(env!("OUT_DIR"), "/src/generated/<%= file.gsub('\\', '/') %>.rb"))[..]
     )?;
     <% end %>
     Ok(())

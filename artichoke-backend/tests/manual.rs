@@ -7,13 +7,13 @@ extern crate artichoke_backend;
 
 use artichoke_backend::convert::{Convert, RustBackedValue};
 use artichoke_backend::def::{rust_data_free, ClassLike, Define};
-use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::types::Int;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
 use artichoke_core::eval::Eval;
 use artichoke_core::file::File;
+use artichoke_core::load::LoadSources;
 use artichoke_core::value::Value as ValueLike;
 
 #[derive(Clone, Debug, Default)]
@@ -80,7 +80,7 @@ impl File for Container {
 fn define_rust_backed_ruby_class() {
     let interp = artichoke_backend::interpreter().expect("init");
     interp
-        .def_file_for_type::<_, Container>("container.rb")
+        .def_file_for_type::<Container>(b"container.rb")
         .expect("def file");
 
     interp.eval(b"require 'container'").expect("require");
