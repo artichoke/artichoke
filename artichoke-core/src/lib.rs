@@ -18,7 +18,6 @@ use std::fmt;
 use std::io;
 
 pub mod convert;
-pub mod def;
 pub mod eval;
 pub mod exception;
 pub mod file;
