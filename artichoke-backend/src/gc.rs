@@ -126,7 +126,8 @@ impl MrbGarbageCollection for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use crate::eval::Eval;
+    use artichoke_core::eval::Eval;
+
     use crate::gc::MrbGarbageCollection;
     use crate::value::ValueLike;
 
@@ -136,7 +137,7 @@ mod tests {
         let baseline_object_count = interp.live_object_count();
         let arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
-            let value = interp.eval("'a'").expect("value");
+            let value = interp.eval(b"'a'").expect("value");
             let _ = value.to_s();
         }
         arena.restore();
@@ -157,7 +158,7 @@ mod tests {
         {
             let _arena = interp.create_arena_savepoint();
             for _ in 0..2000 {
-                let value = interp.eval("'a'").expect("value");
+                let value = interp.eval(b"'a'").expect("value");
                 let _ = value.to_s();
             }
         }
@@ -180,7 +181,7 @@ mod tests {
         // restore original before any objects have been allocated
         arena.restore();
         for _ in 0..2000 {
-            let value = interp.eval("'a'").expect("value");
+            let value = interp.eval(b"'a'").expect("value");
             let _ = value.to_s();
         }
         arena_clone.restore();
@@ -200,7 +201,7 @@ mod tests {
         let arena = interp.create_arena_savepoint();
         interp
             .eval(
-                r#"
+                br#"
                 # this value will be garbage collected because it is eventually
                 # shadowed and becomes unreachable
                 a = []
@@ -238,7 +239,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let arena = interp.create_arena_savepoint();
         let baseline_object_count = interp.live_object_count();
-        drop(interp.eval("").expect("eval"));
+        drop(interp.eval(b"").expect("eval"));
         arena.restore();
         interp.full_gc();
         assert_eq!(interp.live_object_count(), baseline_object_count);
@@ -251,7 +252,7 @@ mod tests {
         let initial_arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
             let arena = interp.create_arena_savepoint();
-            let result = interp.eval("'gc test'");
+            let result = interp.eval(b"'gc test'");
             let value = result.unwrap();
             assert!(!value.is_dead());
             arena.restore();

@@ -16,7 +16,8 @@ pub struct StringScanner;
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/strscan/rdoc/StringScanner.html
 #[cfg(test)]
 mod tests {
-    use crate::eval::Eval;
+    use artichoke_core::eval::Eval;
+
     use crate::load::LoadSources;
 
     #[test]
@@ -25,8 +26,10 @@ mod tests {
         interp
             .def_rb_source_file("/src/test/strscan_test.rb", include_str!("strscan_test.rb"))
             .unwrap();
-        interp.eval("require '/src/test/strscan_test.rb'").unwrap();
-        if let Err(err) = interp.eval("spec") {
+        interp
+            .eval(&b"require '/src/test/strscan_test.rb'"[..])
+            .unwrap();
+        if let Err(err) = interp.eval(b"spec") {
             panic!("{}", err);
         }
     }

@@ -1,8 +1,8 @@
+use artichoke_core::eval::Eval;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::rc::Rc;
 
-use crate::eval::Eval;
 use crate::extn;
 use crate::fs::Filesystem;
 use crate::gc::MrbGarbageCollection;
@@ -61,7 +61,7 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
     // predictable initialization behavior.
     let arena = interp.create_arena_savepoint();
-    interp.eval("").map_err(|_| ArtichokeError::New)?;
+    interp.eval(&[]).map_err(|_| ArtichokeError::New)?;
     arena.restore();
 
     interp.enable_gc();

@@ -17,44 +17,25 @@ pub trait Eval {
     type Context: Context;
 
     /// Concrete type for return values from eval.
-    type ReturnValue: Value;
+    type Value: Value;
 
     /// Filename of the top eval context.
-    const TOP_FILENAME: &'static str = "(eval)";
+    const TOP_FILENAME: &'static [u8] = b"(eval)";
 
     /// Eval code on the artichoke interpreter using the current `Context`.
-    fn eval(&self, code: &[u8]) -> Result<Self::ReturnValue, ArtichokeError>;
+    fn eval(&self, code: &[u8]) -> Result<Self::Value, ArtichokeError>;
 
     /// Eval code on the artichoke interpreter using the current `Context`.
     ///
     /// Exceptions will unwind past this call.
-    fn unchecked_eval(&self, code: &[u8]) -> Self::ReturnValue;
-
-    /// Eval code on the artichoke interpreter using a custom `Context`.
-    ///
-    /// `Context` allows manipulating interpreter state before eval, for
-    /// example, setting the `__FILE__` magic constant.
-    fn eval_with_context(
-        &self,
-        code: &[u8],
-        context: Self::Context,
-    ) -> Result<Self::ReturnValue, ArtichokeError>;
-
-    /// Eval code on the artichoke interpreter using a custom `Context`.
-    ///
-    /// `Context` allows manipulating interpreter state before eval, for
-    /// example, setting the `__FILE__` magic constant.
-    ///
-    /// Exceptions will unwind past this call.
-    fn unchecked_eval_with_context(&self, code: &[u8], context: Self::Context)
-        -> Self::ReturnValue;
+    fn unchecked_eval(&self, code: &[u8]) -> Self::Value;
 
     /// Peek at the top of the [`Context`] stack.
-    fn peek_context(&self) -> Option<&Self::Context>;
+    fn peek_context(&self) -> Option<Self::Context>;
 
     /// Push an `Context` onto the stack.
-    fn push_context(&mut self, context: Self::Context);
+    fn push_context(&self, context: Self::Context);
 
     /// Pop an `Context` from the stack.
-    fn pop_context(&mut self);
+    fn pop_context(&self);
 }

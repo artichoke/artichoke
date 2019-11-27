@@ -472,8 +472,9 @@ impl Block {
 
 #[cfg(test)]
 mod tests {
+    use artichoke_core::eval::Eval;
+
     use crate::convert::Convert;
-    use crate::eval::Eval;
     use crate::gc::MrbGarbageCollection;
     use crate::value::{Value, ValueLike};
     use crate::ArtichokeError;
@@ -644,10 +645,10 @@ mod tests {
     fn is_dead() {
         let interp = crate::interpreter().expect("init");
         let arena = interp.create_arena_savepoint();
-        let live = interp.eval("'dead'").expect("value");
+        let live = interp.eval(b"'dead'").expect("value");
         assert!(!live.is_dead());
         let dead = live;
-        let live = interp.eval("'live'").expect("value");
+        let live = interp.eval(b"'live'").expect("value");
         arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
@@ -661,10 +662,10 @@ mod tests {
     fn immediate_is_dead() {
         let interp = crate::interpreter().expect("init");
         let arena = interp.create_arena_savepoint();
-        let live = interp.eval("27").expect("value");
+        let live = interp.eval(b"27").expect("value");
         assert!(!live.is_dead());
         let immediate = live;
-        let live = interp.eval("64").expect("value");
+        let live = interp.eval(b"64").expect("value");
         arena.restore();
         interp.full_gc();
         // immediate objects are never dead

@@ -12,9 +12,10 @@
 //! are
 //! [implemented in Ruby](https://github.com/artichoke/artichoke/blob/master/artichoke-backend/src/extn/core/matchdata/matchdata.rb).
 
+use artichoke_core::eval::Eval;
+
 use crate::convert::RustBackedValue;
 use crate::def::{rust_data_free, ClassLike, Define};
-use crate::eval::Eval;
 use crate::extn::core::exception;
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
@@ -43,7 +44,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         Some(rust_data_free::<MatchData>),
     );
     match_data.borrow_mut().mrb_value_is_rust_backed(true);
-    interp.eval(include_str!("matchdata.rb"))?;
+    interp.eval(&include_bytes!("matchdata.rb")[..])?;
     match_data
         .borrow_mut()
         .add_method("begin", MatchData::begin, sys::mrb_args_req(1));

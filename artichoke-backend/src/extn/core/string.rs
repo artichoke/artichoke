@@ -1,6 +1,7 @@
+use artichoke_core::eval::Eval;
+
 use crate::convert::TryConvert;
 use crate::def::{ClassLike, Define};
-use crate::eval::Eval;
 use crate::extn::core::exception::{self, ArgumentError, Fatal};
 use crate::sys;
 use crate::value::{Value, ValueLike};
@@ -16,7 +17,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_class::<RString>("String", None, None);
-    interp.eval(include_str!("string.rb"))?;
+    interp.eval(&include_bytes!("string.rb")[..])?;
     string
         .borrow_mut()
         .add_method("ord", RString::ord, sys::mrb_args_none());
@@ -70,19 +71,20 @@ impl RString {
 // https://ruby-doc.org/core-2.6.3/String.html
 #[cfg(test)]
 mod tests {
+    use artichoke_core::eval::Eval;
+    use artichoke_core::value::Value as _;
+
     use crate::convert::Convert;
-    use crate::eval::Eval;
     use crate::extn::core::string;
-    use crate::value::ValueLike;
 
     #[test]
     fn string_equal_squiggle() {
         let interp = crate::interpreter().expect("init");
         string::init(&interp).expect("string init");
 
-        let value = interp.eval(r#""cat o' 9 tails" =~ /\d/"#).unwrap();
+        let value = interp.eval(br#""cat o' 9 tails" =~ /\d/"#).unwrap();
         assert_eq!(value.try_into::<Option<i64>>(), Ok(Some(7)));
-        let value = interp.eval(r#""cat o' 9 tails" =~ 9"#).unwrap();
+        let value = interp.eval(br#""cat o' 9 tails" =~ 9"#).unwrap();
         assert_eq!(value.try_into::<Option<i64>>(), Ok(None));
     }
 
@@ -93,7 +95,7 @@ mod tests {
 
         assert_eq!(
             &interp
-                .eval(r"'hello there'[/[aeiou](.)\1/]")
+                .eval(br"'hello there'[/[aeiou](.)\1/]")
                 .unwrap()
                 .try_into::<String>()
                 .unwrap(),
@@ -101,7 +103,7 @@ mod tests {
         );
         assert_eq!(
             &interp
-                .eval(r"'hello there'[/[aeiou](.)\1/, 0]")
+                .eval(br"'hello there'[/[aeiou](.)\1/, 0]")
                 .unwrap()
                 .try_into::<String>()
                 .unwrap(),
@@ -109,7 +111,7 @@ mod tests {
         );
         assert_eq!(
             &interp
-                .eval(r"'hello there'[/[aeiou](.)\1/, 1]")
+                .eval(br"'hello there'[/[aeiou](.)\1/, 1]")
                 .unwrap()
                 .try_into::<String>()
                 .unwrap(),
@@ -117,7 +119,7 @@ mod tests {
         );
         assert_eq!(
             interp
-                .eval(r"'hello there'[/[aeiou](.)\1/, 2]")
+                .eval(br"'hello there'[/[aeiou](.)\1/, 2]")
                 .unwrap()
                 .try_into::<Option<String>>()
                 .unwrap(),
@@ -125,7 +127,7 @@ mod tests {
         );
         assert_eq!(
             &interp
-                .eval(r"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'non_vowel']")
+                .eval(br"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'non_vowel']")
                 .unwrap()
                 .try_into::<String>()
                 .unwrap(),
@@ -133,7 +135,7 @@ mod tests {
         );
         assert_eq!(
             &interp
-                .eval(r"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'vowel']")
+                .eval(br"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'vowel']")
                 .unwrap()
                 .try_into::<String>()
                 .unwrap(),
@@ -148,19 +150,19 @@ mod tests {
 
         let s = interp.convert("abababa");
         let result = s
-            .funcall::<Vec<&str>>("scan", &[interp.eval("/./").expect("eval")], None)
+            .funcall::<Vec<&str>>("scan", &[interp.eval(b"/./").expect("eval")], None)
             .expect("funcall");
         assert_eq!(result, vec!["a", "b", "a", "b", "a", "b", "a"]);
         let result = s
-            .funcall::<Vec<&str>>("scan", &[interp.eval("/../").expect("eval")], None)
+            .funcall::<Vec<&str>>("scan", &[interp.eval(b"/../").expect("eval")], None)
             .expect("funcall");
         assert_eq!(result, vec!["ab", "ab", "ab"]);
         let result = s
-            .funcall::<Vec<&str>>("scan", &[interp.eval("'aba'").expect("eval")], None)
+            .funcall::<Vec<&str>>("scan", &[interp.eval(b"'aba'").expect("eval")], None)
             .expect("funcall");
         assert_eq!(result, vec!["aba", "aba"]);
         let result = s
-            .funcall::<Vec<&str>>("scan", &[interp.eval("'no no no'").expect("eval")], None)
+            .funcall::<Vec<&str>>("scan", &[interp.eval(b"'no no no'").expect("eval")], None)
             .expect("funcall");
         assert_eq!(result, <Vec<&str>>::new());
     }
@@ -170,7 +172,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         string::init(&interp).expect("string init");
 
-        let s = interp.eval("-'abababa'").expect("eval");
+        let s = interp.eval(b"-'abababa'").expect("eval");
         let result = s.funcall::<bool>("frozen?", &[], None);
         assert_eq!(result, Ok(true));
         let result = s.funcall::<&str>("itself", &[], None);

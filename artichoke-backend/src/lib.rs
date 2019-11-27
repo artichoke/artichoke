@@ -21,11 +21,11 @@
 //! across invocations.
 //!
 //! ```rust
-//! use artichoke_backend::eval::Eval;
-//! use artichoke_core::value::Value as ValueLike;
+//! use artichoke_core::eval::Eval;
+//! use artichoke_core::value::Value as _;
 //!
 //! let interp = artichoke_backend::interpreter().unwrap();
-//! let result = interp.eval("10 * 10").unwrap();
+//! let result = interp.eval(b"10 * 10").unwrap();
 //! let result = result.try_into::<i64>();
 //! assert_eq!(result, Ok(100));
 //! ```
@@ -57,9 +57,9 @@
 //! custom metadata on [`File`](artichoke_vfs::FakeFileSystem) nodes in the VFS.
 //!
 //! ```rust
-//! use artichoke_backend::eval::Eval;
 //! use artichoke_backend::load::LoadSources;
-//! use artichoke_core::value::Value as ValueLike;
+//! use artichoke_core::eval::Eval;
+//! use artichoke_core::value::Value as _;
 //!
 //! let mut interp = artichoke_backend::interpreter().unwrap();
 //! let code = "
@@ -68,8 +68,8 @@
 //! end
 //! ";
 //! interp.def_rb_source_file("source.rb", code).unwrap();
-//! interp.eval("require 'source'").unwrap();
-//! let result = interp.eval("source_location").unwrap();
+//! interp.eval(b"require 'source'").unwrap();
+//! let result = interp.eval(b"source_location").unwrap();
 //! let result = result.try_into::<&str>().unwrap();
 //! assert_eq!(result, "/src/lib/source.rb");
 //! ```
@@ -107,13 +107,13 @@
 //!
 //! use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
 //! use artichoke_backend::def::{rust_data_free, ClassLike, Define};
-//! use artichoke_backend::eval::Eval;
 //! use artichoke_backend::file::File;
 //! use artichoke_backend::load::LoadSources;
 //! use artichoke_backend::sys;
 //! use artichoke_backend::value::Value;
 //! use artichoke_backend::{Artichoke, ArtichokeError};
-//! use artichoke_core::value::Value as ValueLike;
+//! use artichoke_core::eval::Eval;
+//! use artichoke_core::value::Value as _;
 //! use std::io::Write;
 //! use std::mem;
 //!
@@ -164,8 +164,8 @@
 //! fn main() {
 //!     let interp = artichoke_backend::interpreter().unwrap();
 //!     interp.def_file_for_type::<_, Container>("container.rb").unwrap();
-//!     interp.eval("require 'container'").unwrap();
-//!     let result = interp.eval("Container.new(15).value * 24").unwrap();
+//!     interp.eval(b"require 'container'").unwrap();
+//!     let result = interp.eval(b"Container.new(15).value * 24").unwrap();
 //!     assert_eq!(result.try_into::<i64>(), Ok(360));
 //! }
 //! ```

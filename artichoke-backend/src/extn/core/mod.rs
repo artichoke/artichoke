@@ -1,6 +1,7 @@
 #![allow(clippy::too_many_lines)]
 
-use crate::eval::Eval;
+use artichoke_core::eval::Eval;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub mod array;
@@ -32,7 +33,7 @@ pub mod warning;
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     // These core classes are ordered according to the dependency DAG between
     // them.
-    interp.eval(include_str!("object.rb"))?;
+    interp.eval(&include_bytes!("object.rb")[..])?;
     enumerable::init(interp)?;
     // `Array` depends on: `Enumerable`
     array::mruby::init(interp)?;

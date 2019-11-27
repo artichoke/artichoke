@@ -159,12 +159,12 @@ impl Define for Spec {
 
 #[cfg(test)]
 mod tests {
+    use artichoke_core::eval::Eval;
     use std::cell::RefCell;
     use std::rc::Rc;
 
     use crate::class;
     use crate::def::{ClassLike, EnclosingRubyScope};
-    use crate::eval::Eval;
     use crate::module::Spec;
 
     #[test]
@@ -194,7 +194,7 @@ mod tests {
     fn rclass_for_nested_module() {
         let interp = crate::interpreter().expect("init");
         interp
-            .eval("module Foo; module Bar; end; end")
+            .eval(b"module Foo; module Bar; end; end")
             .expect("eval");
         let scope = Spec::new("Foo", None);
         let scope = EnclosingRubyScope::module(Rc::new(RefCell::new(scope)));
@@ -206,7 +206,7 @@ mod tests {
     fn rclass_for_nested_module_under_class() {
         let interp = crate::interpreter().expect("init");
         interp
-            .eval("class Foo; module Bar; end; end")
+            .eval(b"class Foo; module Bar; end; end")
             .expect("eval");
         let scope = class::Spec::new("Foo", None, None);
         let scope = EnclosingRubyScope::class(Rc::new(RefCell::new(scope)));

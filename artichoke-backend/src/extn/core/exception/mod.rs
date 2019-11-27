@@ -38,6 +38,7 @@
 //! - `SystemStackError`
 //! - `fatal` -- impossible to rescue
 
+use artichoke_core::eval::Eval;
 #[cfg(feature = "artichoke-debug")]
 use backtrace::Backtrace;
 use std::borrow::Cow;
@@ -49,7 +50,6 @@ use std::rc::Rc;
 use crate::class;
 use crate::convert::Convert;
 use crate::def::{ClassLike, Define};
-use crate::eval::Eval;
 use crate::sys;
 use crate::{Artichoke, ArtichokeError};
 
@@ -363,8 +363,9 @@ ruby_exception_impl!(Fatal);
 
 #[cfg(test)]
 mod tests {
+    use artichoke_core::eval::Eval;
+
     use crate::def::{ClassLike, Define};
-    use crate::eval::Eval;
     use crate::exception::Exception;
     use crate::extn::core::exception::RuntimeError;
     use crate::file::File;
@@ -395,7 +396,7 @@ mod tests {
     fn raise() {
         let interp = crate::interpreter().expect("init");
         Run::require(interp.clone()).unwrap();
-        let value = interp.eval("Run.run").map(|_| ());
+        let value = interp.eval(b"Run.run").map(|_| ());
         let expected = Exception::new(
             "RuntimeError",
             "something went wrong",

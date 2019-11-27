@@ -3,9 +3,10 @@
 //! Exported as `ruby` and `artichoke` binaries.
 
 use artichoke_backend::convert::Convert;
-use artichoke_backend::eval::{Context, Eval};
+use artichoke_backend::eval::Context;
 use artichoke_backend::fs;
 use artichoke_backend::sys;
+use artichoke_core::eval::Eval;
 use artichoke_core::ArtichokeError;
 use bstr::BStr;
 use std::ffi::OsString;
@@ -62,7 +63,7 @@ pub fn entrypoint() -> Result<(), Error> {
     let opt = Opt::from_args();
     if opt.copyright {
         let interp = artichoke_backend::interpreter()?;
-        interp.eval("puts RUBY_COPYRIGHT")?;
+        interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(())
     } else if !opt.commands.is_empty() {
         execute_inline_eval(opt.commands, opt.fixture.as_ref().map(Path::new))

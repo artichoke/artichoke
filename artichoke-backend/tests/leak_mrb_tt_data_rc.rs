@@ -21,13 +21,13 @@ extern crate artichoke_backend;
 
 use artichoke_backend::convert::RustBackedValue;
 use artichoke_backend::def::{rust_data_free, ClassLike, Define};
-use artichoke_backend::eval::Eval;
 use artichoke_backend::extn::core::exception::{self, Fatal, RubyException};
 use artichoke_backend::file::File;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_core::eval::Eval;
 use artichoke_core::value::Value as _;
 
 mod leak;
@@ -95,7 +95,7 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
             .def_file_for_type::<_, Container>("container")
             .expect("def file");
 
-        let code = "require 'container'; Container.new('a' * 1024 * 1024)";
+        let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
         let result = interp.eval(code);
         assert_eq!(true, result.is_ok());
         interp.close();

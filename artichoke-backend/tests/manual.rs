@@ -7,13 +7,13 @@ extern crate artichoke_backend;
 
 use artichoke_backend::convert::{Convert, RustBackedValue};
 use artichoke_backend::def::{rust_data_free, ClassLike, Define};
-use artichoke_backend::eval::Eval;
 use artichoke_backend::file::File;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::types::Int;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_core::eval::Eval;
 use artichoke_core::value::Value as ValueLike;
 
 #[derive(Clone, Debug, Default)]
@@ -81,10 +81,10 @@ fn define_rust_backed_ruby_class() {
         .def_file_for_type::<_, Container>("container.rb")
         .expect("def file");
 
-    interp.eval("require 'container'").expect("require");
-    let result = interp.eval("Container.new(15).value").expect("eval");
+    interp.eval(b"require 'container'").expect("require");
+    let result = interp.eval(b"Container.new(15).value").expect("eval");
     assert_eq!(result.try_into::<Int>(), Ok(15));
     // Ensure Rc is cloned correctly and still points to valid memory.
-    let result = interp.eval("Container.new(15).value").expect("eval");
+    let result = interp.eval(b"Container.new(15).value").expect("eval");
     assert_eq!(result.try_into::<Int>(), Ok(15));
 }

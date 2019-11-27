@@ -375,8 +375,9 @@ mod tests {
     }
 
     mod functional {
+        use artichoke_core::eval::Eval;
+
         use crate::def::{ClassLike, Define};
-        use crate::eval::Eval;
         use crate::sys;
         use crate::value::ValueLike;
 
@@ -417,7 +418,7 @@ mod tests {
 
             interp
                 .eval(
-                    r#"
+                    br#"
                     class DynamicTestClass
                         include DefineMethodTestModule
                         extend DefineMethodTestModule
@@ -431,23 +432,23 @@ mod tests {
                 .expect("eval");
 
             let result = interp
-                .eval("DefineMethodTestClass.new.value")
+                .eval(b"DefineMethodTestClass.new.value")
                 .expect("eval");
             let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 64);
-            let result = interp.eval("DefineMethodTestClass.value").expect("eval");
+            let result = interp.eval(b"DefineMethodTestClass.value").expect("eval");
             let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 8);
-            let result = interp.eval("DefineMethodTestModule.value").expect("eval");
+            let result = interp.eval(b"DefineMethodTestModule.value").expect("eval");
             let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 27);
-            let result = interp.eval("DynamicTestClass.new.value").expect("eval");
+            let result = interp.eval(b"DynamicTestClass.new.value").expect("eval");
             let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 64);
-            let result = interp.eval("DynamicTestClass.value").expect("eval");
+            let result = interp.eval(b"DynamicTestClass.value").expect("eval");
             let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 8);
-            let result = interp.eval("DynamicTestModule.value").expect("eval");
+            let result = interp.eval(b"DynamicTestModule.value").expect("eval");
             let result = result.try_into::<i64>().expect("convert");
             assert_eq!(result, 27);
         }

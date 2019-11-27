@@ -1,5 +1,6 @@
+use artichoke_core::eval::Eval;
+
 use crate::def::Define;
-use crate::eval::Eval;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -12,7 +13,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .borrow_mut()
         .def_module::<Comparable>("Comparable", None);
     comparable.borrow().define(interp)?;
-    interp.eval(include_str!("comparable.rb"))?;
+    interp.eval(&include_bytes!("comparable.rb")[..])?;
 
     trace!("Patched Comparable onto interpreter");
 

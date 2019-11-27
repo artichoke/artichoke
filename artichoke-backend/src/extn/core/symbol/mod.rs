@@ -1,4 +1,5 @@
-use crate::eval::Eval;
+use artichoke_core::eval::Eval;
+
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -6,7 +7,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .0
         .borrow_mut()
         .def_class::<Symbol>("Symbol", None, None);
-    interp.eval(include_str!("symbol.rb"))?;
+    interp.eval(&include_bytes!("symbol.rb")[..])?;
     Ok(())
 }
 

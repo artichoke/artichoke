@@ -1,8 +1,8 @@
 use artichoke_backend::convert::Convert;
-use artichoke_backend::eval::Eval;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::top_self::TopSelf;
 use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_core::eval::Eval;
 use artichoke_core::value::Value;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -51,7 +51,7 @@ impl Runner {
             .def_rb_source_file("/src/lib/spec_helper.rb", "")?;
         self.interp
             .def_rb_source_file("/src/test/spec_runner", include_str!("spec_runner.rb"))?;
-        if let Err(err) = self.interp.eval("require '/src/test/spec_runner'") {
+        if let Err(err) = self.interp.eval(b"require '/src/test/spec_runner'") {
             eprintln!("{}", err);
             assert!(!self.enforce);
         }

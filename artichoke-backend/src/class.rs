@@ -198,12 +198,12 @@ impl Define for Spec {
 
 #[cfg(test)]
 mod tests {
+    use artichoke_core::eval::Eval;
     use std::cell::RefCell;
     use std::rc::Rc;
 
     use crate::class::Spec;
     use crate::def::{ClassLike, Define, EnclosingRubyScope};
-    use crate::eval::Eval;
     use crate::module;
     use crate::value::ValueLike;
 
@@ -221,11 +221,11 @@ mod tests {
         spec.borrow().define(&interp).expect("class install");
 
         let result = interp
-            .eval("RustError.new.is_a?(StandardError)")
+            .eval(b"RustError.new.is_a?(StandardError)")
             .expect("eval");
         let result = result.try_into::<bool>().expect("convert");
         assert!(result, "RustError instances are instance of StandardError");
-        let result = interp.eval("RustError < StandardError").expect("eval");
+        let result = interp.eval(b"RustError < StandardError").expect("eval");
         let result = result.try_into::<bool>().expect("convert");
         assert!(result, "RustError inherits from StandardError");
     }
@@ -279,7 +279,7 @@ mod tests {
     fn rclass_for_nested_class() {
         let interp = crate::interpreter().expect("init");
         interp
-            .eval("module Foo; class Bar; end; end")
+            .eval(b"module Foo; class Bar; end; end")
             .expect("eval");
         let spec = module::Spec::new("Foo", None);
         let spec = EnclosingRubyScope::module(Rc::new(RefCell::new(spec)));
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_class_under_class() {
         let interp = crate::interpreter().expect("init");
-        interp.eval("class Foo; class Bar; end; end").expect("eval");
+        interp.eval(b"class Foo; class Bar; end; end").expect("eval");
         let spec = Spec::new("Foo", None, None);
         let spec = EnclosingRubyScope::class(Rc::new(RefCell::new(spec)));
         let spec = Spec::new("Bar", Some(spec), None);
