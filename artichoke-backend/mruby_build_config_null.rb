@@ -7,6 +7,8 @@ def windows?
   /mswin|msys|mingw|cygwin|bccwin|wince|emc/.match?(RbConfig::CONFIG['host_os'])
 end
 
+NOOP = File.join(File.dirname(File.absolute_path(__FILE__)), 'noop.rb')
+
 # mruby requires a "default" build. This default build bootstraps the
 # compilation of the "sys" build.
 #
@@ -17,15 +19,15 @@ end
 MRuby::Build.new do |conf|
   def build_mrbc_exec; end
 
-  conf.cc.command = 'true'
-  conf.cxx.command = 'true'
-  conf.objc.command = 'true'
-  conf.asm.command = 'true'
-  conf.gperf.command = 'true'
+  conf.cc.command = "ruby #{NOOP}"
+  conf.cxx.command = "ruby #{NOOP}"
+  conf.objc.command = "ruby #{NOOP}"
+  conf.asm.command = "ruby #{NOOP}"
+  conf.gperf.command = "ruby #{NOOP}"
   conf.gperf.compile_options = ''
-  conf.linker.command = 'true'
-  conf.archiver.command = 'true'
-  conf.mrbc.command = 'true'
+  conf.linker.command = "ruby #{NOOP}"
+  conf.archiver.command = "ruby #{NOOP}"
+  conf.mrbc.command = "ruby #{NOOP}"
 
   conf.yacc.command = 'win_bison' if windows?
 
@@ -42,15 +44,15 @@ end
 MRuby::CrossBuild.new('sys') do |conf|
   def build_mrbc_exec; end
 
-  conf.cc.command = 'true'
-  conf.cxx.command = 'true'
-  conf.objc.command = 'true'
-  conf.asm.command = 'true'
-  conf.gperf.command = 'true'
+  conf.cc.command = "ruby #{NOOP}"
+  conf.cxx.command = "ruby #{NOOP}"
+  conf.objc.command = "ruby #{NOOP}"
+  conf.asm.command = "ruby #{NOOP}"
+  conf.gperf.command = "ruby #{NOOP}"
   conf.gperf.compile_options = ''
-  conf.linker.command = 'true'
-  conf.archiver.command = 'true'
-  conf.mrbc.command = 'true'
+  conf.linker.command = "ruby #{NOOP}"
+  conf.archiver.command = "ruby #{NOOP}"
+  conf.mrbc.command = "ruby #{NOOP}"
 
   conf.yacc.command = 'win_bison' if windows?
 
