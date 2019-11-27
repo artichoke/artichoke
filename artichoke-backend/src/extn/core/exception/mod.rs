@@ -364,11 +364,11 @@ ruby_exception_impl!(Fatal);
 #[cfg(test)]
 mod tests {
     use artichoke_core::eval::Eval;
+    use artichoke_core::file::File;
 
     use crate::def::{ClassLike, Define};
     use crate::exception::Exception;
     use crate::extn::core::exception::RuntimeError;
-    use crate::file::File;
     use crate::sys;
     use crate::{Artichoke, ArtichokeError};
 
@@ -383,7 +383,9 @@ mod tests {
     }
 
     impl File for Run {
-        fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
+        type Artichoke = Artichoke;
+
+        fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
             let spec = interp.0.borrow_mut().def_class::<Self>("Run", None, None);
             spec.borrow_mut()
                 .add_self_method("run", Self::run, sys::mrb_args_none());
@@ -395,7 +397,7 @@ mod tests {
     #[test]
     fn raise() {
         let interp = crate::interpreter().expect("init");
-        Run::require(interp.clone()).unwrap();
+        Run::require(&interp).unwrap();
         let value = interp.eval(b"Run.run").map(|_| ());
         let expected = Exception::new(
             "RuntimeError",

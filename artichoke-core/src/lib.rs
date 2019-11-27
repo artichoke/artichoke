@@ -19,7 +19,6 @@ use std::io;
 
 pub mod convert;
 pub mod eval;
-pub mod exception;
 pub mod file;
 pub mod load;
 pub mod state;

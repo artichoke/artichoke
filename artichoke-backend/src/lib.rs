@@ -107,12 +107,12 @@
 //!
 //! use artichoke_backend::convert::{Convert, RustBackedValue, TryConvert};
 //! use artichoke_backend::def::{rust_data_free, ClassLike, Define};
-//! use artichoke_backend::file::File;
 //! use artichoke_backend::load::LoadSources;
 //! use artichoke_backend::sys;
 //! use artichoke_backend::value::Value;
 //! use artichoke_backend::{Artichoke, ArtichokeError};
 //! use artichoke_core::eval::Eval;
+//! use artichoke_core::file::File;
 //! use artichoke_core::value::Value as _;
 //! use std::io::Write;
 //! use std::mem;
@@ -151,7 +151,9 @@
 //! }
 //!
 //! impl File for Container {
-//!   fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
+//!     type Artichoke = Artichoke;
+//!
+//!     fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
 //!         let spec = interp.0.borrow_mut().def_class::<Self>("Container", None, Some(rust_data_free::<Self>));
 //!         spec.borrow_mut().add_method("initialize", Self::initialize, sys::mrb_args_req(1));
 //!         spec.borrow_mut().add_method("value", Self::value, sys::mrb_args_none());
@@ -230,7 +232,6 @@ pub mod eval;
 pub mod exception;
 pub mod extn;
 pub mod ffi;
-pub mod file;
 pub mod fs;
 pub mod gc;
 mod interpreter;

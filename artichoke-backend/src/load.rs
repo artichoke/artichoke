@@ -1,11 +1,14 @@
+use artichoke_core::file::File;
 use std::path::Path;
 
-use crate::file::File;
-use crate::fs::RUBY_LOAD_PATH;
+use crate::fs::{RequireFunc, RUBY_LOAD_PATH};
 use crate::{Artichoke, ArtichokeError};
 
 #[allow(clippy::module_name_repetitions)]
-pub trait LoadSources {
+pub trait LoadSources
+where
+    Self: Sized,
+{
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
     /// Ruby file is added to the filesystem and `require` will dynamically
     /// define Ruby items when invoked via `Kernel#require`.
@@ -14,11 +17,7 @@ pub trait LoadSources {
     /// filesystem relative to [`RUBY_LOAD_PATH`]. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_file<T>(
-        &self,
-        filename: T,
-        require: fn(Self) -> Result<(), ArtichokeError>,
-    ) -> Result<(), ArtichokeError>
+    fn def_file<T>(&self, filename: T, require: RequireFunc) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>;
 
@@ -33,7 +32,7 @@ pub trait LoadSources {
     fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
-        F: File;
+        F: File<Artichoke = Self>;
 
     /// Add a pure Ruby source file to the virtual filesystem.
     ///
@@ -48,11 +47,7 @@ pub trait LoadSources {
 }
 
 impl LoadSources for Artichoke {
-    fn def_file<T>(
-        &self,
-        filename: T,
-        require: fn(Self) -> Result<(), ArtichokeError>,
-    ) -> Result<(), ArtichokeError>
+    fn def_file<T>(&self, filename: T, require: RequireFunc) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
     {
@@ -83,7 +78,7 @@ impl LoadSources for Artichoke {
     fn def_file_for_type<T, F>(&self, filename: T) -> Result<(), ArtichokeError>
     where
         T: AsRef<str>,
-        F: File,
+        F: File<Artichoke = Self>,
     {
         self.def_file(filename.as_ref(), F::require)
     }

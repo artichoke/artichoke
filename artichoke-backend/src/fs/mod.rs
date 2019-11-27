@@ -12,7 +12,7 @@ pub mod abs;
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
-pub type RequireFunc = fn(Artichoke) -> Result<(), ArtichokeError>;
+pub type RequireFunc = fn(&Artichoke) -> Result<(), ArtichokeError>;
 
 /// Virtual filesystem that wraps a [`artichoke_vfs`] [`FakeFileSystem`].
 pub struct Filesystem {
@@ -96,7 +96,7 @@ impl Filesystem {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Metadata {
     pub require: Option<RequireFunc>,
     already_required: bool,

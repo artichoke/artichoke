@@ -229,11 +229,11 @@ impl Eval for Artichoke {
 #[cfg(test)]
 mod tests {
     use artichoke_core::eval::Eval;
+    use artichoke_core::file::File;
 
     use crate::convert::Convert;
     use crate::def::{ClassLike, Define};
     use crate::eval::Context;
-    use crate::file::File;
     use crate::load::LoadSources;
     use crate::sys;
     use crate::value::{Value, ValueLike};
@@ -284,10 +284,11 @@ mod tests {
         }
 
         impl File for NestedEval {
-            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
+            type Artichoke = Artichoke;
+
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
                 let spec = {
-                    let mut api = interp.0.borrow_mut();
-                    let spec = api.def_module::<Self>("NestedEval", None);
+                    let spec = interp.0.borrow_mut().def_module::<Self>("NestedEval", None);
                     spec.borrow_mut().add_self_method(
                         "file",
                         Self::nested_eval,

@@ -70,7 +70,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
     // module definitions.
     if let Some(require) = metadata.require {
         // dynamic, Rust-backed `File` require
-        if require(interp.clone()).is_err() {
+        if require(interp).is_err() {
             interp.pop_context();
             let filestr = format!("{:?}", <&BStr>::from(filename));
             return Err(Box::new(LoadError::new(
@@ -161,7 +161,7 @@ pub fn require(
             // module definitions.
             if let Some(require) = metadata.require {
                 // dynamic, Rust-backed `File` require
-                if require(interp.clone()).is_err() {
+                if require(interp).is_err() {
                     interp.pop_context();
                     let filestr = format!("{:?}", <&BStr>::from(filename));
                     return Err(Box::new(LoadError::new(
@@ -228,7 +228,7 @@ pub fn require(
                 // module definitions.
                 if let Some(require) = metadata.require {
                     // dynamic, Rust-backed `File` require
-                    if require(interp.clone()).is_err() {
+                    if require(interp).is_err() {
                         interp.pop_context();
                         let filestr = format!("{:?}", <&BStr>::from(filename));
                         return Err(Box::new(LoadError::new(
@@ -312,7 +312,7 @@ pub fn require(
     // module definitions.
     if let Some(require) = metadata.require {
         // dynamic, Rust-backed `File` require
-        if require(interp.clone()).is_err() {
+        if require(interp).is_err() {
             interp.pop_context();
             let filestr = format!("{:?}", <&BStr>::from(filename));
             return Err(Box::new(LoadError::new(

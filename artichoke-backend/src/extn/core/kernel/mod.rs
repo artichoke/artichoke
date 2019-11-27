@@ -148,9 +148,9 @@ impl Kernel {
 #[cfg(test)]
 mod tests {
     use artichoke_core::eval::Eval;
+    use artichoke_core::file::File;
     use artichoke_core::value::Value as _;
 
-    use crate::file::File;
     use crate::load::LoadSources;
     use crate::{Artichoke, ArtichokeError};
 
@@ -166,7 +166,9 @@ mod tests {
         struct TestFile;
 
         impl File for TestFile {
-            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
+            type Artichoke = Artichoke;
+
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
                 interp.eval(b"@i = 255")?;
                 Ok(())
             }
@@ -241,8 +243,11 @@ mod tests {
     #[test]
     fn require_path_defined_as_source_then_mrbfile() {
         struct Foo;
+
         impl File for Foo {
-            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
+            type Artichoke = Artichoke;
+
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
                 interp.eval(b"module Foo; RUST = 7; end")?;
                 Ok(())
             }
@@ -266,8 +271,11 @@ mod tests {
     #[test]
     fn require_path_defined_as_mrbfile_then_source() {
         struct Foo;
+
         impl File for Foo {
-            fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
+            type Artichoke = Artichoke;
+
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
                 interp.eval(b"module Foo; RUST = 7; end")?;
                 Ok(())
             }

@@ -7,13 +7,13 @@ extern crate artichoke_backend;
 
 use artichoke_backend::convert::{Convert, RustBackedValue};
 use artichoke_backend::def::{rust_data_free, ClassLike, Define};
-use artichoke_backend::file::File;
 use artichoke_backend::load::LoadSources;
 use artichoke_backend::sys;
 use artichoke_backend::types::Int;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, ArtichokeError};
 use artichoke_core::eval::Eval;
+use artichoke_core::file::File;
 use artichoke_core::value::Value as ValueLike;
 
 #[derive(Clone, Debug, Default)]
@@ -57,7 +57,9 @@ impl Container {
 }
 
 impl File for Container {
-    fn require(interp: Artichoke) -> Result<(), ArtichokeError> {
+    type Artichoke = Artichoke;
+
+    fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
         let spec = {
             let mut api = interp.0.borrow_mut();
             let spec =
