@@ -2,10 +2,6 @@
 # yarn lockfile v1
 
 
-"@artichoke/logo@git://github.com/artichoke/logo#master":
-  version "0.1.0"
-  resolved "git://github.com/artichoke/logo#3a4258be01381e77697194fa789d68e44d4b3b60"
-
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.5.5":
   version "7.5.5"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.5.5.tgz#bc0782f6d69f7b7d49531219699b988f669a8f9d"
