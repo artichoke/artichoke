@@ -1,10 +1,9 @@
-use std::cell::RefCell;
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ffi::CString;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
 
 use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
 use crate::method;
@@ -13,36 +12,36 @@ use crate::types::Int;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
+#[derive(Clone)]
 pub struct Spec {
-    name: String,
+    name: Cow<'static, str>,
     cstring: CString,
     data_type: sys::mrb_data_type,
     methods: HashSet<method::Spec>,
-    enclosing_scope: Option<EnclosingRubyScope>,
-    super_class: Option<Rc<RefCell<Spec>>>,
+    enclosing_scope: Option<Box<EnclosingRubyScope>>,
+    super_class: Option<Box<Spec>>,
     is_mrb_tt_data: bool,
-    memoized_rclass: RefCell<Option<*mut sys::RClass>>,
 }
 
 impl Spec {
     pub fn new<T>(name: T, enclosing_scope: Option<EnclosingRubyScope>, free: Option<Free>) -> Self
     where
-        T: AsRef<str>,
+        T: Into<Cow<'static, str>>,
     {
+        let name = name.into();
         let cstr = CString::new(name.as_ref()).expect("name for data type");
         let data_type = sys::mrb_data_type {
             struct_name: cstr.as_ptr(),
             dfree: free,
         };
         Self {
-            name: name.as_ref().to_owned(),
+            name,
             cstring: cstr,
             data_type,
-            methods: HashSet::new(),
-            enclosing_scope,
+            methods: HashSet::default(),
+            enclosing_scope: enclosing_scope.map(Box::new),
             super_class: None,
             is_mrb_tt_data: false,
-            memoized_rclass: RefCell::new(None),
         }
     }
 
@@ -71,8 +70,8 @@ impl Spec {
         self.is_mrb_tt_data = is_mrb_tt_data;
     }
 
-    pub fn with_super_class(&mut self, super_class: Rc<RefCell<Self>>) {
-        self.super_class = Some(super_class);
+    pub fn with_super_class(&mut self, super_class: Option<&Self>) {
+        self.super_class = super_class.cloned().map(Box::new);
     }
 }
 
@@ -95,35 +94,33 @@ impl ClassLike for Spec {
         &self.name
     }
 
-    fn enclosing_scope(&self) -> Option<EnclosingRubyScope> {
-        self.enclosing_scope.clone()
+    fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
+        self.enclosing_scope.as_ref().map(Box::as_ref)
     }
 
     fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
-        if let Some(rclass) = *self.memoized_rclass.borrow() {
-            return Some(rclass);
-        }
         let mrb = interp.0.borrow().mrb;
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(scope) = scope.rclass(interp) {
-                if unsafe { sys::mrb_class_defined_under(mrb, scope, self.cstring.as_ptr()) } != 0 {
-                    // Enclosing scope exists Class IS defined under the
-                    // enclosing scope.
-                    self.memoized_rclass.replace(Some(unsafe {
-                        sys::mrb_class_get_under(mrb, scope, self.cstring().as_ptr())
-                    }));
+                if unsafe { sys::mrb_class_defined_under(mrb, scope, self.cstring.as_ptr()) } == 0 {
+                    // Enclosing scope exists.
+                    // Class is not defined under the enclosing scope.
+                    None
+                } else {
+                    // Enclosing scope exists.
+                    // Class is defined under the enclosing scope.
+                    Some(unsafe { sys::mrb_class_get_under(mrb, scope, self.cstring().as_ptr()) })
                 }
+            } else {
+                // Enclosing scope does not exist.
+                None
             }
-        } else if unsafe { sys::mrb_class_defined(mrb, self.cstring.as_ptr()) } != 0 {
-            // Class exists in root scope.
-            self.memoized_rclass.replace(Some(unsafe {
-                sys::mrb_class_get(mrb, self.cstring().as_ptr())
-            }));
-        }
-        if let Some(rclass) = *self.memoized_rclass.borrow() {
-            Some(rclass)
-        } else {
+        } else if unsafe { sys::mrb_class_defined(mrb, self.cstring.as_ptr()) } == 0 {
+            // Class does not exist in root scope.
             None
+        } else {
+            // Class exists in root scope.
+            Some(unsafe { sys::mrb_class_get(mrb, self.cstring().as_ptr()) })
         }
     }
 }
@@ -163,9 +160,8 @@ impl Define for Spec {
     fn define(&self, interp: &Artichoke) -> Result<*mut sys::RClass, ArtichokeError> {
         let mrb = interp.0.borrow().mrb;
         let super_class = if let Some(ref spec) = self.super_class {
-            spec.borrow()
-                .rclass(interp)
-                .ok_or_else(|| ArtichokeError::NotDefined(spec.borrow().fqname()))?
+            spec.rclass(interp)
+                .ok_or_else(|| ArtichokeError::NotDefined(spec.fqname()))?
         } else {
             unsafe { (*mrb).object_class }
         };
@@ -191,7 +187,6 @@ impl Define for Spec {
                 sys::mrb_sys_set_instance_tt(rclass, sys::mrb_vtype::MRB_TT_DATA);
             }
         }
-        self.memoized_rclass.replace(Some(rclass));
         Ok(rclass)
     }
 }

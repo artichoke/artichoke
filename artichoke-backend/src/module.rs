@@ -10,11 +10,12 @@ use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
+#[derive(Clone)]
 pub struct Spec {
     name: String,
     cstring: CString,
     methods: HashSet<method::Spec>,
-    enclosing_scope: Option<EnclosingRubyScope>,
+    enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }
 
 impl Spec {
@@ -27,7 +28,7 @@ impl Spec {
             name: name.as_ref().to_owned(),
             cstring: cstr,
             methods: HashSet::new(),
-            enclosing_scope,
+            enclosing_scope: enclosing_scope.map(Box::new),
         }
     }
 
@@ -57,8 +58,8 @@ impl ClassLike for Spec {
         &self.name
     }
 
-    fn enclosing_scope(&self) -> Option<EnclosingRubyScope> {
-        self.enclosing_scope.clone()
+    fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
+        self.enclosing_scope.as_ref().map(Box::as_ref)
     }
 
     fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {

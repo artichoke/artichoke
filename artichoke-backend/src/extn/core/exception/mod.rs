@@ -42,10 +42,8 @@ use artichoke_core::eval::Eval;
 #[cfg(feature = "artichoke-debug")]
 use backtrace::Backtrace;
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::error;
 use std::fmt;
-use std::rc::Rc;
 
 use crate::class;
 use crate::convert::Convert;
@@ -55,44 +53,44 @@ use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let exception = Exception::init(interp, None)?;
-    NoMemoryError::init(interp, Some(Rc::clone(&exception)))?;
-    let script = ScriptError::init(interp, Some(Rc::clone(&exception)))?;
-    LoadError::init(interp, Some(Rc::clone(&script)))?;
-    NotImplementedError::init(interp, Some(Rc::clone(&script)))?;
-    SyntaxError::init(interp, Some(Rc::clone(&script)))?;
-    SecurityError::init(interp, Some(Rc::clone(&exception)))?;
-    let signal = SignalException::init(interp, Some(Rc::clone(&exception)))?;
-    Interrupt::init(interp, Some(Rc::clone(&signal)))?;
+    NoMemoryError::init(interp, Some(&exception))?;
+    let script = ScriptError::init(interp, Some(&exception))?;
+    LoadError::init(interp, Some(&script))?;
+    NotImplementedError::init(interp, Some(&script))?;
+    SyntaxError::init(interp, Some(&script))?;
+    SecurityError::init(interp, Some(&exception))?;
+    let signal = SignalException::init(interp, Some(&exception))?;
+    Interrupt::init(interp, Some(&signal))?;
     // Default for `rescue`.
-    let standard = StandardError::init(interp, Some(Rc::clone(&exception)))?;
-    let argument = ArgumentError::init(interp, Some(Rc::clone(&standard)))?;
-    UncaughtThrowError::init(interp, Some(Rc::clone(&argument)))?;
-    EncodingError::init(interp, Some(Rc::clone(&standard)))?;
-    FiberError::init(interp, Some(Rc::clone(&standard)))?;
-    let io = IOError::init(interp, Some(Rc::clone(&standard)))?;
-    EOFError::init(interp, Some(Rc::clone(&io)))?;
-    let index = IndexError::init(interp, Some(Rc::clone(&standard)))?;
-    KeyError::init(interp, Some(Rc::clone(&index)))?;
-    StopIteration::init(interp, Some(Rc::clone(&index)))?;
-    LocalJumpError::init(interp, Some(Rc::clone(&standard)))?;
-    let name = NameError::init(interp, Some(Rc::clone(&standard)))?;
-    NoMethodError::init(interp, Some(Rc::clone(&name)))?;
-    let range = RangeError::init(interp, Some(Rc::clone(&standard)))?;
-    FloatDomainError::init(interp, Some(Rc::clone(&range)))?;
-    RegexpError::init(interp, Some(Rc::clone(&standard)))?;
+    let standard = StandardError::init(interp, Some(&exception))?;
+    let argument = ArgumentError::init(interp, Some(&standard))?;
+    UncaughtThrowError::init(interp, Some(&argument))?;
+    EncodingError::init(interp, Some(&standard))?;
+    FiberError::init(interp, Some(&standard))?;
+    let io = IOError::init(interp, Some(&standard))?;
+    EOFError::init(interp, Some(&io))?;
+    let index = IndexError::init(interp, Some(&standard))?;
+    KeyError::init(interp, Some(&index))?;
+    StopIteration::init(interp, Some(&index))?;
+    LocalJumpError::init(interp, Some(&standard))?;
+    let name = NameError::init(interp, Some(&standard))?;
+    NoMethodError::init(interp, Some(&name))?;
+    let range = RangeError::init(interp, Some(&standard))?;
+    FloatDomainError::init(interp, Some(&range))?;
+    RegexpError::init(interp, Some(&standard))?;
     // Default `Exception` type for `raise`.
-    let runtime = RuntimeError::init(interp, Some(Rc::clone(&standard)))?;
-    FrozenError::init(interp, Some(Rc::clone(&runtime)))?;
-    let _syscall = SystemCallError::init(interp, Some(Rc::clone(&standard)))?;
-    ThreadError::init(interp, Some(Rc::clone(&standard)))?;
-    TypeError::init(interp, Some(Rc::clone(&standard)))?;
-    ZeroDivisionError::init(interp, Some(Rc::clone(&standard)))?;
-    SystemExit::init(interp, Some(Rc::clone(&exception)))?;
-    SystemStackError::init(interp, Some(Rc::clone(&exception)))?;
-    Fatal::init(interp, Some(Rc::clone(&exception)))?;
-
+    let runtime = RuntimeError::init(interp, Some(&standard))?;
+    FrozenError::init(interp, Some(&runtime))?;
+    let _syscall = SystemCallError::init(interp, Some(&standard))?;
+    ThreadError::init(interp, Some(&standard))?;
+    TypeError::init(interp, Some(&standard))?;
+    ZeroDivisionError::init(interp, Some(&standard))?;
+    SystemExit::init(interp, Some(&exception))?;
+    SystemStackError::init(interp, Some(&exception))?;
+    Fatal::init(interp, Some(&exception))?;
     interp.eval(&include_bytes!("exception.rb")[..])?;
-
+    trace!("Patched Exception onto interpreter");
+    trace!("Patched core exception hierarchy onto interpreter");
     Ok(())
 }
 
@@ -114,18 +112,16 @@ pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
     let mrb = interp.0.borrow().mrb;
 
     let spec = exception.class();
-    let borrow = spec.borrow();
-    let eclass = if let Some(rclass) = borrow.rclass(&interp) {
+    let eclass = if let Some(rclass) = spec.rclass(&interp) {
         rclass
     } else {
-        error!("unable to raise {}", borrow.name());
-        panic!("unable to raise {}", borrow.name());
+        error!("unable to raise {}", spec.name());
+        panic!("unable to raise {}", spec.name());
     };
     let formatargs = interp.convert(exception.message()).inner();
     // `mrb_sys_raise` will call longjmp which will unwind the stack.
     // Any non-`Copy` objects that we haven't cleaned up at this point will
     // leak, so drop everything.
-    drop(borrow);
     drop(spec);
     drop(interp);
     drop(exception);
@@ -141,7 +137,7 @@ where
 {
     fn message(&self) -> &[u8];
 
-    fn class(&self) -> Rc<RefCell<class::Spec>>;
+    fn class(&self) -> class::Spec;
 }
 
 macro_rules! ruby_exception_impl {
@@ -156,17 +152,12 @@ macro_rules! ruby_exception_impl {
         impl $exception {
             fn init(
                 interp: &Artichoke,
-                superclass: Option<Rc<RefCell<class::Spec>>>,
-            ) -> Result<Rc<RefCell<class::Spec>>, ArtichokeError> {
-                let class =
-                    interp
-                        .0
-                        .borrow_mut()
-                        .def_class::<Self>(stringify!($exception), None, None);
-                if let Some(superclass) = superclass {
-                    class.borrow_mut().with_super_class(superclass);
-                }
-                class.borrow().define(interp)?;
+                superclass: Option<&class::Spec>,
+            ) -> Result<class::Spec, ArtichokeError> {
+                let mut class = class::Spec::new(stringify!($exception), None, None);
+                interp.0.borrow_mut().def_class::<Self>(&class);
+                class.with_super_class(superclass);
+                class.define(interp)?;
                 Ok(class)
             }
 
@@ -224,9 +215,9 @@ macro_rules! ruby_exception_impl {
                 self.message.as_ref()
             }
 
-            fn class(&self) -> Rc<RefCell<class::Spec>> {
+            fn class(&self) -> class::Spec {
                 if let Some(spec) = self.interp.0.borrow().class_spec::<Self>() {
-                    spec
+                    spec.clone()
                 } else {
                     panic!("Unknown Exception class spec");
                 }
@@ -250,8 +241,7 @@ macro_rules! ruby_exception_impl {
             #[cfg(not(feature = "artichoke-debug"))]
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let class = self.class();
-                let borrow = class.borrow();
-                let classname = borrow.name();
+                let classname = class.name();
                 let message = String::from_utf8_lossy(self.message());
                 write!(f, "{} ({})", classname, message)
             }
@@ -263,8 +253,7 @@ macro_rules! ruby_exception_impl {
         {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let class = self.class();
-                let borrow = class.borrow();
-                let classname = borrow.name();
+                let classname = class.name();
                 let message = String::from_utf8_lossy(self.message());
                 write!(f, "{} ({})", classname, message)
             }
@@ -287,7 +276,7 @@ impl RubyException for Box<dyn RubyException> {
         self.as_ref().message()
     }
 
-    fn class(&self) -> Rc<RefCell<class::Spec>> {
+    fn class(&self) -> class::Spec {
         self.as_ref().class()
     }
 }
@@ -295,8 +284,7 @@ impl RubyException for Box<dyn RubyException> {
 impl fmt::Debug for Box<dyn RubyException> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let class = self.class();
-        let borrow = class.borrow();
-        let classname = borrow.name();
+        let classname = class.name();
         let message = String::from_utf8_lossy(self.message());
         write!(f, "{} ({})", classname, message)
     }
@@ -305,8 +293,7 @@ impl fmt::Debug for Box<dyn RubyException> {
 impl fmt::Display for Box<dyn RubyException> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let class = self.class();
-        let borrow = class.borrow();
-        let classname = borrow.name();
+        let classname = class.name();
         let message = String::from_utf8_lossy(self.message());
         write!(f, "{} ({})", classname, message)
     }

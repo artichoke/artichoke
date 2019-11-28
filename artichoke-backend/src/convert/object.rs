@@ -41,16 +41,17 @@ where
         interp: &Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, ArtichokeError> {
-        let mrb = interp.0.borrow().mrb;
-        let spec = interp.0.borrow().class_spec::<Self>().ok_or_else(|| {
-            ArtichokeError::ConvertToRuby {
+        let borrow = interp.0.borrow();
+        let mrb = borrow.mrb;
+        let spec = borrow
+            .class_spec::<Self>()
+            .ok_or_else(|| ArtichokeError::ConvertToRuby {
                 from: Rust::Object,
                 to: Ruby::Object,
-            }
-        })?;
+            })?;
         let rclass = slf
             .map(|obj| sys::mrb_sys_class_of_value(mrb, obj))
-            .or_else(|| spec.borrow().rclass(interp))
+            .or_else(|| spec.rclass(interp))
             .ok_or_else(|| ArtichokeError::ConvertToRuby {
                 from: Rust::Object,
                 to: Ruby::Object,
@@ -58,17 +59,13 @@ where
         let obj = if let Some(mut slf) = slf {
             let data = Rc::new(RefCell::new(self));
             let ptr = Rc::into_raw(data);
-            sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.borrow().data_type());
+            sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
             slf
         } else {
             let data = Rc::new(RefCell::new(self));
             let ptr = Rc::into_raw(data);
-            let data = sys::mrb_data_object_alloc(
-                mrb,
-                rclass,
-                ptr as *mut c_void,
-                spec.borrow().data_type(),
-            );
+            let data =
+                sys::mrb_data_object_alloc(mrb, rclass, ptr as *mut c_void, spec.data_type());
             sys::mrb_sys_obj_value(data as *mut c_void)
         };
 
@@ -96,14 +93,12 @@ where
                 to: Rust::Object,
             });
         }
-        let spec = interp
-            .0
-            .borrow()
+        let borrow = interp.0.borrow();
+        let spec = borrow
             .class_spec::<Self>()
             .ok_or_else(|| ArtichokeError::NotDefined("class".to_owned()))?;
         // Sanity check that the RClass matches.
-        let borrow = spec.borrow();
-        let rclass = borrow
+        let rclass = spec
             .rclass(interp)
             .ok_or_else(|| ArtichokeError::NotDefined("class".to_owned()))?;
         if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
@@ -112,7 +107,7 @@ where
                 to: Rust::Object,
             });
         }
-        let ptr = sys::mrb_data_get_ptr(mrb, slf.inner(), borrow.data_type());
+        let ptr = sys::mrb_data_get_ptr(mrb, slf.inner(), spec.data_type());
         if ptr.is_null() {
             panic!(
                 "got null pointer when extracting {}",

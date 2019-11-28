@@ -80,12 +80,12 @@ pub enum EnclosingRubyScope {
     /// Reference to a Ruby `Class` enclosing scope.
     Class {
         /// Shared copy of the underlying [class definition](class::Spec).
-        spec: Rc<RefCell<class::Spec>>,
+        spec: class::Spec,
     },
     /// Reference to a Ruby `Module` enclosing scope.
     Module {
         /// Shared copy of the underlying [module definition](module::Spec).
-        spec: Rc<RefCell<module::Spec>>,
+        spec: module::Spec,
     },
 }
 
@@ -94,68 +94,18 @@ impl EnclosingRubyScope {
     /// pointer wrapped [`class::Spec`].
     ///
     /// This function is useful when extracting an enclosing scope from the
-    /// class registry:
-    ///
-    /// ```rust
-    /// use artichoke_backend::def::EnclosingRubyScope;
-    ///
-    /// struct Fixnum;
-    /// struct Inner;
-    ///
-    /// let interp = artichoke_backend::interpreter().expect("init");
-    /// let mut api = interp.0.borrow_mut();
-    /// if let Some(scope) = api.class_spec::<Fixnum>().map(EnclosingRubyScope::class) {
-    ///     api.def_class::<Inner>("Inner", Some(scope), None);
-    /// }
-    /// ```
-    ///
-    /// Which defines this Ruby `Class`:
-    ///
-    /// ```ruby
-    /// class Fixnum
-    ///   class Inner
-    ///   end
-    /// end
-    /// ```
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn class(spec: Rc<RefCell<class::Spec>>) -> Self {
-        Self::Class {
-            spec: Rc::clone(&spec),
-        }
+    /// class registry.
+    pub fn class(spec: &class::Spec) -> Self {
+        Self::Class { spec: spec.clone() }
     }
 
     /// Factory for [`EnclosingRubyScope::Module`] that clones an `Rc` smart
     /// pointer wrapped [`module::Spec`].
     ///
     /// This function is useful when extracting an enclosing scope from the
-    /// module registry:
-    ///
-    /// ```rust
-    /// use artichoke_backend::def::EnclosingRubyScope;
-    ///
-    /// struct Kernel;
-    /// struct Inner;
-    ///
-    /// let interp = artichoke_backend::interpreter().expect("init");
-    /// let mut api = interp.0.borrow_mut();
-    /// if let Some(scope) = api.module_spec::<Kernel>().map(EnclosingRubyScope::module) {
-    ///     api.def_class::<Inner>("Inner", Some(scope), None);
-    /// }
-    /// ```
-    ///
-    /// Which defines this Ruby `Class`:
-    ///
-    /// ```ruby
-    /// module Kernel
-    ///   class Inner
-    ///   end
-    /// end
-    /// ```
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn module(spec: Rc<RefCell<module::Spec>>) -> Self {
-        Self::Module {
-            spec: Rc::clone(&spec),
-        }
+    /// module registry.
+    pub fn module(spec: &module::Spec) -> Self {
+        Self::Module { spec: spec.clone() }
     }
 
     /// Resolve the [`RClass *`](sys::RClass) of the wrapped [`ClassLike`].
@@ -166,8 +116,8 @@ impl EnclosingRubyScope {
     /// for each enclosing scope.
     pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
         match self {
-            Self::Class { spec } => spec.borrow().rclass(interp),
-            Self::Module { spec } => spec.borrow().rclass(interp),
+            Self::Class { spec } => spec.rclass(interp),
+            Self::Module { spec } => spec.rclass(interp),
         }
     }
 
@@ -189,8 +139,8 @@ impl EnclosingRubyScope {
     /// for each enclosing scope.
     pub fn fqname(&self) -> String {
         match self {
-            Self::Class { spec } => spec.borrow().fqname(),
-            Self::Module { spec } => spec.borrow().fqname(),
+            Self::Class { spec } => spec.fqname(),
+            Self::Module { spec } => spec.fqname(),
         }
     }
 }
@@ -210,8 +160,8 @@ impl PartialEq for EnclosingRubyScope {
 impl Hash for EnclosingRubyScope {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
-            Self::Class { spec } => spec.borrow().hash(state),
-            Self::Module { spec } => spec.borrow().hash(state),
+            Self::Class { spec } => spec.hash(state),
+            Self::Module { spec } => spec.hash(state),
         };
     }
 }
@@ -245,7 +195,7 @@ where
 
     fn name(&self) -> &str;
 
-    fn enclosing_scope(&self) -> Option<EnclosingRubyScope>;
+    fn enclosing_scope(&self) -> Option<&EnclosingRubyScope>;
 
     fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass>;
 

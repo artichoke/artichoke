@@ -14,6 +14,7 @@
 
 use artichoke_core::eval::Eval;
 
+use crate::class;
 use crate::convert::RustBackedValue;
 use crate::def::{rust_data_free, ClassLike, Define};
 use crate::extn::core::exception;
@@ -38,63 +39,38 @@ pub mod to_a;
 pub mod to_s;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let match_data = interp.0.borrow_mut().def_class::<MatchData>(
-        "MatchData",
-        None,
-        Some(rust_data_free::<MatchData>),
-    );
-    match_data.borrow_mut().mrb_value_is_rust_backed(true);
-    interp.eval(&include_bytes!("matchdata.rb")[..])?;
-    match_data
-        .borrow_mut()
-        .add_method("begin", MatchData::begin, sys::mrb_args_req(1));
-    match_data
-        .borrow_mut()
-        .add_method("captures", MatchData::captures, sys::mrb_args_none());
-    match_data.borrow_mut().add_method(
+    if interp.0.borrow().class_spec::<MatchData>().is_some() {
+        return Ok(());
+    }
+    let mut spec = class::Spec::new("MatchData", None, Some(rust_data_free::<MatchData>));
+    spec.mrb_value_is_rust_backed(true);
+    spec.add_method("begin", MatchData::begin, sys::mrb_args_req(1));
+    spec.add_method("captures", MatchData::captures, sys::mrb_args_none());
+    spec.add_method(
         "[]",
         MatchData::element_reference,
         sys::mrb_args_req_and_opt(1, 1),
     );
-    match_data
-        .borrow_mut()
-        .add_method("length", MatchData::length, sys::mrb_args_none());
-    match_data.borrow_mut().add_method(
+    spec.add_method("length", MatchData::length, sys::mrb_args_none());
+    spec.add_method(
         "named_captures",
         MatchData::named_captures,
         sys::mrb_args_none(),
     );
-    match_data
-        .borrow_mut()
-        .add_method("names", MatchData::names, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("offset", MatchData::offset, sys::mrb_args_req(1));
-    match_data
-        .borrow_mut()
-        .add_method("post_match", MatchData::post_match, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("pre_match", MatchData::pre_match, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("regexp", MatchData::regexp, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("size", MatchData::length, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("string", MatchData::string, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("to_a", MatchData::to_a, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("to_s", MatchData::to_s, sys::mrb_args_none());
-    match_data
-        .borrow_mut()
-        .add_method("end", MatchData::end, sys::mrb_args_req(1));
-    match_data.borrow().define(&interp)?;
+    spec.add_method("names", MatchData::names, sys::mrb_args_none());
+    spec.add_method("offset", MatchData::offset, sys::mrb_args_req(1));
+    spec.add_method("post_match", MatchData::post_match, sys::mrb_args_none());
+    spec.add_method("pre_match", MatchData::pre_match, sys::mrb_args_none());
+    spec.add_method("regexp", MatchData::regexp, sys::mrb_args_none());
+    spec.add_method("size", MatchData::length, sys::mrb_args_none());
+    spec.add_method("string", MatchData::string, sys::mrb_args_none());
+    spec.add_method("to_a", MatchData::to_a, sys::mrb_args_none());
+    spec.add_method("to_s", MatchData::to_s, sys::mrb_args_none());
+    spec.add_method("end", MatchData::end, sys::mrb_args_req(1));
+    spec.define(&interp)?;
+    interp.0.borrow_mut().def_class::<MatchData>(&spec);
+    interp.eval(&include_bytes!("matchdata.rb")[..])?;
+    trace!("Patched MatchData onto interpreter");
     Ok(())
 }
 

@@ -3,6 +3,8 @@ use artichoke_core::eval::Eval;
 use std::convert::TryFrom;
 
 #[cfg(feature = "artichoke-array")]
+use crate::class;
+#[cfg(feature = "artichoke-array")]
 use crate::convert::Convert;
 #[cfg(feature = "artichoke-array")]
 use crate::def::{rust_data_free, ClassLike, Define};
@@ -18,53 +20,39 @@ use crate::{Artichoke, ArtichokeError};
 
 #[cfg(feature = "artichoke-array")]
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let array = interp.0.borrow_mut().def_class::<array::Array>(
-        "Array",
-        None,
-        Some(rust_data_free::<array::Array>),
-    );
-    array.borrow_mut().mrb_value_is_rust_backed(true);
-
-    array
-        .borrow_mut()
-        .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1));
-    array.borrow_mut().add_method(
+    if interp.0.borrow().class_spec::<array::Array>().is_some() {
+        return Ok(());
+    }
+    let mut spec = class::Spec::new("Array", None, Some(rust_data_free::<array::Array>));
+    spec.mrb_value_is_rust_backed(true);
+    spec.add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1));
+    spec.add_method(
         "[]=",
         ary_element_assignment,
         sys::mrb_args_req_and_opt(2, 1),
     );
-    array
-        .borrow_mut()
-        .add_method("concat", ary_concat, sys::mrb_args_any());
-    array.borrow_mut().add_method(
+    spec.add_method("concat", ary_concat, sys::mrb_args_any());
+    spec.add_method(
         "initialize",
         ary_initialize,
         sys::mrb_args_opt(2) | sys::mrb_args_block(),
     );
-    array
-        .borrow_mut()
-        .add_method("initialize_copy", ary_initialize_copy, sys::mrb_args_req(1));
-    array
-        .borrow_mut()
-        .add_method("length", ary_len, sys::mrb_args_none());
-    array
-        .borrow_mut()
-        .add_method("pop", ary_pop, sys::mrb_args_none());
-    array
-        .borrow_mut()
-        .add_method("reverse!", ary_reverse_bang, sys::mrb_args_none());
-    array
-        .borrow_mut()
-        .add_method("size", ary_len, sys::mrb_args_none());
-    array.borrow().define(interp)?;
-
+    spec.add_method("initialize_copy", ary_initialize_copy, sys::mrb_args_req(1));
+    spec.add_method("length", ary_len, sys::mrb_args_none());
+    spec.add_method("pop", ary_pop, sys::mrb_args_none());
+    spec.add_method("reverse!", ary_reverse_bang, sys::mrb_args_none());
+    spec.add_method("size", ary_len, sys::mrb_args_none());
+    spec.define(interp)?;
+    interp.0.borrow_mut().def_class::<array::Array>(&spec);
     interp.eval(&include_bytes!("array.rb")[..])?;
+    trace!("Patched Array onto interpreter");
     Ok(())
 }
 
 #[cfg(not(feature = "artichoke-array"))]
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.eval(&include_bytes!("array.rb")[..])?;
+    trace!("Patched Array onto interpreter");
     Ok(())
 }
 
