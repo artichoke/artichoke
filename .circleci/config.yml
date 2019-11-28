@@ -251,27 +251,20 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - "ac:59:ea:b4:7f:14:dd:de:a7:50:3e:d0:35:c9:a5:a9"
+            - "55:f0:9b:74:3a:ff:3b:33:1e:bc:98:e7:63:6c:ed:bd"
       - attach_workspace:
           at: target
-      - restore_cache:
-          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
-      - run: yarn install
       - run:
           name: Copy doc asset overrides
           command: cp assets/* target/doc
+      - run: npm install -g gh-pages@2.1.1
       - run:
           name: Deploy docs to gh-pages branch
           command: |
-            yarn run gh-pages \
-              --user "ci-build <ci-build@hyperbo.la>" \
+            gh-pages \
+              --user "Artichoke CI <ci@artichokeruby.org>" \
               --message "[skip ci] build docs" \
               --dist target/doc
-      - save_cache:
-          key: v2-node-modules-cache-{{ .Environment.CIRCLE_JOB }}-{{ checksum "yarn.lock" }}
-          paths:
-            - "~/.cache/yarn"
-            - "node_modules"
 workflows:
   version: 2
   build:
