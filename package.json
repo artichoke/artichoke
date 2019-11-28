@@ -31,7 +31,6 @@
     "shebang-command": "^2.0.0"
   },
   "devDependencies": {
-    "@artichoke/logo": "git://github.com/artichoke/logo#master",
     "@babel/core": "^7.2.2",
     "@babel/preset-env": "^7.5.5",
     "babel-eslint": "^10.0.1",
@@ -42,11 +41,7 @@
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-prettier": "^3.0.1",
     "eslint-plugin-react": "^7.14.3",
-    "eslint-plugin-react-hooks": "^1.7.0",
-    "package-json-validator": "^0.6.3",
-    "path": "^0.12.7",
-    "pkg-dir-cli": "^2.1.0",
-    "prettier-eslint": "^9.0.0"
+    "eslint-plugin-react-hooks": "^1.7.0"
   },
   "babel": {
     "presets": ["@babel/preset-env"]
