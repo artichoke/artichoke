@@ -43,7 +43,6 @@
     "eslint-plugin-prettier": "^3.0.1",
     "eslint-plugin-react": "^7.14.3",
     "eslint-plugin-react-hooks": "^1.7.0",
-    "gh-pages": "^2.1.1",
     "package-json-validator": "^0.6.3",
     "path": "^0.12.7",
     "pkg-dir-cli": "^2.1.0",
