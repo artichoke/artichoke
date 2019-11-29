@@ -1,10 +1,10 @@
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
 use std::ptr;
 use std::rc::Rc;
 
-use crate::def::ClassLike;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
@@ -96,11 +96,11 @@ where
         let borrow = interp.0.borrow();
         let spec = borrow
             .class_spec::<Self>()
-            .ok_or_else(|| ArtichokeError::NotDefined("class".to_owned()))?;
+            .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
         // Sanity check that the RClass matches.
         let rclass = spec
             .rclass(interp)
-            .ok_or_else(|| ArtichokeError::NotDefined("class".to_owned()))?;
+            .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
         if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
             return Err(ArtichokeError::ConvertToRust {
                 from: slf.ruby_type(),

@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use crate::def::{ClassLike, Define, EnclosingRubyScope, Free, Method};
+use crate::def::{EnclosingRubyScope, Free, Method};
 use crate::method;
 use crate::sys;
 use crate::types::Int;
@@ -13,14 +13,94 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 #[derive(Clone)]
+pub struct Builder<'a> {
+    interp: &'a Artichoke,
+    spec: &'a Spec,
+    is_mrb_tt_data: bool,
+    super_class: Option<&'a Spec>,
+    methods: HashSet<method::Spec>,
+}
+
+impl<'a> Builder<'a> {
+    pub fn for_spec(interp: &'a Artichoke, spec: &'a Spec) -> Self {
+        Self {
+            interp,
+            spec,
+            is_mrb_tt_data: false,
+            super_class: None,
+            methods: HashSet::default(),
+        }
+    }
+
+    pub fn value_is_rust_object(mut self) -> Self {
+        self.is_mrb_tt_data = true;
+        self
+    }
+
+    pub fn with_super_class(mut self, super_class: Option<&'a Spec>) -> Self {
+        self.super_class = super_class;
+        self
+    }
+
+    pub fn add_method(mut self, name: &str, method: Method, args: sys::mrb_aspec) -> Self {
+        let spec = method::Spec::new(method::Type::Instance, name, method, args);
+        self.methods.insert(spec);
+        self
+    }
+
+    pub fn add_self_method(mut self, name: &str, method: Method, args: sys::mrb_aspec) -> Self {
+        let spec = method::Spec::new(method::Type::Class, name, method, args);
+        self.methods.insert(spec);
+        self
+    }
+
+    pub fn define(self) -> Result<(), ArtichokeError> {
+        let mrb = self.interp.0.borrow().mrb;
+        let super_class = if let Some(ref spec) = self.super_class {
+            spec.rclass(self.interp)
+                .ok_or_else(|| ArtichokeError::NotDefined(spec.fqname()))?
+        } else {
+            unsafe { (*mrb).object_class }
+        };
+        let rclass = if let Some(rclass) = self.spec.rclass(self.interp) {
+            rclass
+        } else if let Some(scope) = self.spec.enclosing_scope() {
+            let scope = scope
+                .rclass(self.interp)
+                .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname()))?;
+            unsafe {
+                sys::mrb_define_class_under(
+                    mrb,
+                    scope,
+                    self.spec.name_c_str().as_ptr(),
+                    super_class,
+                )
+            }
+        } else {
+            unsafe { sys::mrb_define_class(mrb, self.spec.name_c_str().as_ptr(), super_class) }
+        };
+        for method in &self.methods {
+            unsafe {
+                method.define(self.interp, rclass)?;
+            }
+        }
+        // If a `Spec` defines a `Class` whose isntances own a pointer to a
+        // Rust object, mark them as `MRB_TT_DATA`.
+        if self.is_mrb_tt_data {
+            unsafe {
+                sys::mrb_sys_set_instance_tt(rclass, sys::mrb_vtype::MRB_TT_DATA);
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
     cstring: CString,
     data_type: sys::mrb_data_type,
-    methods: HashSet<method::Spec>,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
-    super_class: Option<Box<Spec>>,
-    is_mrb_tt_data: bool,
 }
 
 impl Spec {
@@ -29,19 +109,16 @@ impl Spec {
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        let cstr = CString::new(name.as_ref()).expect("name for data type");
+        let cstring = CString::new(name.as_ref()).expect("name for data type");
         let data_type = sys::mrb_data_type {
-            struct_name: cstr.as_ptr(),
+            struct_name: cstring.as_ptr(),
             dfree: free,
         };
         Self {
             name,
-            cstring: cstr,
+            cstring,
             data_type,
-            methods: HashSet::default(),
             enclosing_scope: enclosing_scope.map(Box::new),
-            super_class: None,
-            is_mrb_tt_data: false,
         }
     }
 
@@ -66,50 +143,45 @@ impl Spec {
         &self.data_type
     }
 
-    pub fn mrb_value_is_rust_backed(&mut self, is_mrb_tt_data: bool) {
-        self.is_mrb_tt_data = is_mrb_tt_data;
+    pub fn name_c_str(&self) -> &CStr {
+        self.cstring.as_c_str()
     }
 
-    pub fn with_super_class(&mut self, super_class: Option<&Self>) {
-        self.super_class = super_class.cloned().map(Box::new);
-    }
-}
-
-impl ClassLike for Spec {
-    fn add_method(&mut self, name: &str, method: Method, args: sys::mrb_aspec) {
-        let spec = method::Spec::new(method::Type::Instance, name, method, args);
-        self.methods.insert(spec);
+    pub fn name(&self) -> &str {
+        self.name.as_ref()
     }
 
-    fn add_self_method(&mut self, name: &str, method: Method, args: sys::mrb_aspec) {
-        let spec = method::Spec::new(method::Type::Class, name, method, args);
-        self.methods.insert(spec);
-    }
-
-    fn cstring(&self) -> &CString {
-        &self.cstring
-    }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
+    pub fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
         self.enclosing_scope.as_ref().map(Box::as_ref)
     }
 
-    fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
+    pub fn fqname(&self) -> Cow<'static, str> {
+        if let Some(scope) = self.enclosing_scope() {
+            Cow::Owned(format!("{}::{}", scope.fqname(), self.name()))
+        } else {
+            match &self.name {
+                Cow::Borrowed(name) => Cow::Borrowed(name),
+                Cow::Owned(name) => Cow::Owned(name.clone()),
+            }
+        }
+    }
+
+    pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
         let mrb = interp.0.borrow().mrb;
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(scope) = scope.rclass(interp) {
-                if unsafe { sys::mrb_class_defined_under(mrb, scope, self.cstring.as_ptr()) } == 0 {
+                if unsafe { sys::mrb_class_defined_under(mrb, scope, self.name_c_str().as_ptr()) }
+                    == 0
+                {
                     // Enclosing scope exists.
                     // Class is not defined under the enclosing scope.
                     None
                 } else {
                     // Enclosing scope exists.
                     // Class is defined under the enclosing scope.
-                    Some(unsafe { sys::mrb_class_get_under(mrb, scope, self.cstring().as_ptr()) })
+                    Some(unsafe {
+                        sys::mrb_class_get_under(mrb, scope, self.name_c_str().as_ptr())
+                    })
                 }
             } else {
                 // Enclosing scope does not exist.
@@ -120,7 +192,7 @@ impl ClassLike for Spec {
             None
         } else {
             // Class exists in root scope.
-            Some(unsafe { sys::mrb_class_get(mrb, self.cstring().as_ptr()) })
+            Some(unsafe { sys::mrb_class_get(mrb, self.name_c_str().as_ptr()) })
         }
     }
 }
@@ -153,41 +225,6 @@ impl Eq for Spec {}
 impl PartialEq for Spec {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
-    }
-}
-
-impl Define for Spec {
-    fn define(&self, interp: &Artichoke) -> Result<*mut sys::RClass, ArtichokeError> {
-        let mrb = interp.0.borrow().mrb;
-        let super_class = if let Some(ref spec) = self.super_class {
-            spec.rclass(interp)
-                .ok_or_else(|| ArtichokeError::NotDefined(spec.fqname()))?
-        } else {
-            unsafe { (*mrb).object_class }
-        };
-        let rclass = if let Some(rclass) = self.rclass(interp) {
-            rclass
-        } else if let Some(ref scope) = self.enclosing_scope {
-            let scope = scope
-                .rclass(interp)
-                .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname()))?;
-            unsafe { sys::mrb_define_class_under(mrb, scope, self.cstring().as_ptr(), super_class) }
-        } else {
-            unsafe { sys::mrb_define_class(mrb, self.cstring().as_ptr(), super_class) }
-        };
-        for method in &self.methods {
-            unsafe {
-                method.define(&interp, rclass)?;
-            }
-        }
-        // If a `Spec` defines a `Class` whose isntances own a pointer to a
-        // Rust object, mark them as `MRB_TT_DATA`.
-        if self.is_mrb_tt_data {
-            unsafe {
-                sys::mrb_sys_set_instance_tt(rclass, sys::mrb_vtype::MRB_TT_DATA);
-            }
-        }
-        Ok(rclass)
     }
 }
 

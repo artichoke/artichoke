@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::ffi::{c_void, CString};
 use std::fmt;
@@ -137,7 +138,7 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
-    pub fn fqname(&self) -> String {
+    pub fn fqname(&self) -> Cow<'static, str> {
         match self {
             Self::Class { spec } => spec.fqname(),
             Self::Module { spec } => spec.fqname(),
@@ -198,16 +199,6 @@ where
     fn enclosing_scope(&self) -> Option<&EnclosingRubyScope>;
 
     fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass>;
-
-    /// Compute the fully qualified name of a Class or module. See
-    /// [`EnclosingRubyScope::fqname`].
-    fn fqname(&self) -> String {
-        if let Some(scope) = self.enclosing_scope() {
-            format!("{}::{}", scope.fqname(), self.name())
-        } else {
-            self.name().to_owned()
-        }
-    }
 }
 
 #[cfg(test)]

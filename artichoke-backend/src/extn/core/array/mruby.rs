@@ -7,7 +7,7 @@ use crate::class;
 #[cfg(feature = "artichoke-array")]
 use crate::convert::Convert;
 #[cfg(feature = "artichoke-array")]
-use crate::def::{rust_data_free, ClassLike, Define};
+use crate::def;
 #[cfg(feature = "artichoke-array")]
 use crate::extn::core::array;
 #[cfg(feature = "artichoke-array")]
@@ -23,26 +23,27 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<array::Array>().is_some() {
         return Ok(());
     }
-    let mut spec = class::Spec::new("Array", None, Some(rust_data_free::<array::Array>));
-    spec.mrb_value_is_rust_backed(true);
-    spec.add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1));
-    spec.add_method(
-        "[]=",
-        ary_element_assignment,
-        sys::mrb_args_req_and_opt(2, 1),
-    );
-    spec.add_method("concat", ary_concat, sys::mrb_args_any());
-    spec.add_method(
-        "initialize",
-        ary_initialize,
-        sys::mrb_args_opt(2) | sys::mrb_args_block(),
-    );
-    spec.add_method("initialize_copy", ary_initialize_copy, sys::mrb_args_req(1));
-    spec.add_method("length", ary_len, sys::mrb_args_none());
-    spec.add_method("pop", ary_pop, sys::mrb_args_none());
-    spec.add_method("reverse!", ary_reverse_bang, sys::mrb_args_none());
-    spec.add_method("size", ary_len, sys::mrb_args_none());
-    spec.define(interp)?;
+    let spec = class::Spec::new("Array", None, Some(def::rust_data_free::<array::Array>));
+    class::Builder::for_spec(interp, &spec)
+        .value_is_rust_object()
+        .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))
+        .add_method(
+            "[]=",
+            ary_element_assignment,
+            sys::mrb_args_req_and_opt(2, 1),
+        )
+        .add_method("concat", ary_concat, sys::mrb_args_any())
+        .add_method(
+            "initialize",
+            ary_initialize,
+            sys::mrb_args_opt(2) | sys::mrb_args_block(),
+        )
+        .add_method("initialize_copy", ary_initialize_copy, sys::mrb_args_req(1))
+        .add_method("length", ary_len, sys::mrb_args_none())
+        .add_method("pop", ary_pop, sys::mrb_args_none())
+        .add_method("reverse!", ary_reverse_bang, sys::mrb_args_none())
+        .add_method("size", ary_len, sys::mrb_args_none())
+        .define()?;
     interp.0.borrow_mut().def_class::<array::Array>(&spec);
     interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");

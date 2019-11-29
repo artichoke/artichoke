@@ -1,7 +1,7 @@
 use artichoke_core::eval::Eval;
 use artichoke_core::value::Value as _;
 
-use crate::def::{ClassLike, Define, EnclosingRubyScope};
+use crate::def::EnclosingRubyScope;
 use crate::extn::core::artichoke;
 use crate::extn::core::exception;
 use crate::module;
@@ -16,17 +16,18 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().module_spec::<Kernel>().is_some() {
         return Ok(());
     }
-    let mut spec = module::Spec::new("Kernel", None);
-    spec.add_method("require", Kernel::require, sys::mrb_args_rest());
-    spec.add_self_method(
-        "require_relative",
-        Kernel::require_relative,
-        sys::mrb_args_rest(),
-    );
-    spec.add_self_method("load", Kernel::load, sys::mrb_args_rest());
-    spec.add_method("print", Kernel::print, sys::mrb_args_rest());
-    spec.add_method("puts", Kernel::puts, sys::mrb_args_rest());
-    spec.define(interp)?;
+    let spec = module::Spec::new("Kernel", None);
+    module::Builder::for_spec(interp, &spec)
+        .add_method("require", Kernel::require, sys::mrb_args_rest())
+        .add_self_method(
+            "require_relative",
+            Kernel::require_relative,
+            sys::mrb_args_rest(),
+        )
+        .add_self_method("load", Kernel::load, sys::mrb_args_rest())
+        .add_method("print", Kernel::print, sys::mrb_args_rest())
+        .add_method("puts", Kernel::puts, sys::mrb_args_rest())
+        .define()?;
     interp.0.borrow_mut().def_module::<Kernel>(&spec);
     interp.eval(&include_bytes!("kernel.rb")[..])?;
     trace!("Patched Kernel onto interpreter");
@@ -36,10 +37,11 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .module_spec::<artichoke::Artichoke>()
         .map(EnclosingRubyScope::module)
         .ok_or(ArtichokeError::New)?;
-    let mut spec = module::Spec::new("Kernel", Some(scope));
-    spec.add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1));
-    spec.add_self_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1));
-    spec.define(interp)?;
+    let spec = module::Spec::new("Kernel", Some(scope));
+    module::Builder::for_spec(interp, &spec)
+        .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))
+        .add_self_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))
+        .define()?;
     interp.0.borrow_mut().def_module::<artichoke::Kernel>(&spec);
     trace!("Patched Artichoke::Kernel onto interpreter");
     Ok(())

@@ -2,7 +2,6 @@ use artichoke_core::eval::Eval;
 
 use crate::class;
 use crate::convert::TryConvert;
-use crate::def::{ClassLike, Define};
 use crate::extn::core::exception::{self, ArgumentError, Fatal};
 use crate::sys;
 use crate::value::{Value, ValueLike};
@@ -14,10 +13,11 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }
-    let mut spec = class::Spec::new("String", None, None);
-    spec.add_method("ord", RString::ord, sys::mrb_args_none());
-    spec.add_method("scan", RString::scan, sys::mrb_args_req(1));
-    spec.define(interp)?;
+    let spec = class::Spec::new("String", None, None);
+    class::Builder::for_spec(interp, &spec)
+        .add_method("ord", RString::ord, sys::mrb_args_none())
+        .add_method("scan", RString::scan, sys::mrb_args_req(1))
+        .define()?;
     interp.0.borrow_mut().def_class::<RString>(&spec);
     interp.eval(&include_bytes!("string.rb")[..])?;
     trace!("Patched String onto interpreter");

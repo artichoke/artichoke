@@ -2,7 +2,7 @@ use artichoke_core::eval::Eval;
 use std::convert::TryFrom;
 
 use crate::class;
-use crate::def::{rust_data_free, ClassLike, Define};
+use crate::def;
 use crate::extn::core::exception;
 use crate::extn::core::regexp;
 use crate::sys;
@@ -14,29 +14,30 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<regexp::Regexp>().is_some() {
         return Ok(());
     }
-    let mut spec = class::Spec::new("Regexp", None, Some(rust_data_free::<regexp::Regexp>));
-    spec.mrb_value_is_rust_backed(true);
-    spec.add_method("initialize", initialize, sys::mrb_args_req_and_opt(1, 2));
-    spec.add_self_method("compile", compile, sys::mrb_args_rest());
-    spec.add_self_method("escape", escape, sys::mrb_args_req(1));
-    spec.add_self_method("quote", escape, sys::mrb_args_req(1));
-    spec.add_self_method("union", union, sys::mrb_args_rest());
-    spec.add_method("==", eql, sys::mrb_args_req(1));
-    spec.add_method("===", case_compare, sys::mrb_args_req(1));
-    spec.add_method("=~", match_operator, sys::mrb_args_req(1));
-    spec.add_method("casefold?", casefold, sys::mrb_args_none());
-    spec.add_method("eql?", eql, sys::mrb_args_req(1));
-    spec.add_method("fixed_encoding?", fixed_encoding, sys::mrb_args_none());
-    spec.add_method("hash", hash, sys::mrb_args_none());
-    spec.add_method("inspect", inspect, sys::mrb_args_none());
-    spec.add_method("match?", match_q, sys::mrb_args_req_and_opt(1, 1));
-    spec.add_method("named_captures", named_captures, sys::mrb_args_none());
-    spec.add_method("match", match_, sys::mrb_args_req_and_opt(1, 1));
-    spec.add_method("names", names, sys::mrb_args_none());
-    spec.add_method("options", options, sys::mrb_args_none());
-    spec.add_method("source", source, sys::mrb_args_none());
-    spec.add_method("to_s", to_s, sys::mrb_args_none());
-    spec.define(&interp)?;
+    let spec = class::Spec::new("Regexp", None, Some(def::rust_data_free::<regexp::Regexp>));
+    class::Builder::for_spec(interp, &spec)
+        .value_is_rust_object()
+        .add_method("initialize", initialize, sys::mrb_args_req_and_opt(1, 2))
+        .add_self_method("compile", compile, sys::mrb_args_rest())
+        .add_self_method("escape", escape, sys::mrb_args_req(1))
+        .add_self_method("quote", escape, sys::mrb_args_req(1))
+        .add_self_method("union", union, sys::mrb_args_rest())
+        .add_method("==", eql, sys::mrb_args_req(1))
+        .add_method("===", case_compare, sys::mrb_args_req(1))
+        .add_method("=~", match_operator, sys::mrb_args_req(1))
+        .add_method("casefold?", casefold, sys::mrb_args_none())
+        .add_method("eql?", eql, sys::mrb_args_req(1))
+        .add_method("fixed_encoding?", fixed_encoding, sys::mrb_args_none())
+        .add_method("hash", hash, sys::mrb_args_none())
+        .add_method("inspect", inspect, sys::mrb_args_none())
+        .add_method("match?", match_q, sys::mrb_args_req_and_opt(1, 1))
+        .add_method("named_captures", named_captures, sys::mrb_args_none())
+        .add_method("match", match_, sys::mrb_args_req_and_opt(1, 1))
+        .add_method("names", names, sys::mrb_args_none())
+        .add_method("options", options, sys::mrb_args_none())
+        .add_method("source", source, sys::mrb_args_none())
+        .add_method("to_s", to_s, sys::mrb_args_none())
+        .define()?;
     interp.0.borrow_mut().def_class::<regexp::Regexp>(&spec);
     interp.eval(&include_bytes!("regexp.rb")[..])?;
     // TODO: Add proper constant defs to class::Spec, see GH-27.

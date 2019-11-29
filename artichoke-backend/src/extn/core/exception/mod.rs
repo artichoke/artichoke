@@ -47,7 +47,6 @@ use std::fmt;
 
 use crate::class;
 use crate::convert::Convert;
-use crate::def::{ClassLike, Define};
 use crate::sys;
 use crate::{Artichoke, ArtichokeError};
 
@@ -154,11 +153,12 @@ macro_rules! ruby_exception_impl {
                 interp: &Artichoke,
                 superclass: Option<&class::Spec>,
             ) -> Result<class::Spec, ArtichokeError> {
-                let mut class = class::Spec::new(stringify!($exception), None, None);
-                interp.0.borrow_mut().def_class::<Self>(&class);
-                class.with_super_class(superclass);
-                class.define(interp)?;
-                Ok(class)
+                let spec = class::Spec::new(stringify!($exception), None, None);
+                class::Builder::for_spec(interp, &spec)
+                    .with_super_class(superclass)
+                    .define()?;
+                interp.0.borrow_mut().def_class::<Self>(&spec);
+                Ok(spec)
             }
 
             pub fn new<S>(interp: &Artichoke, message: S) -> Self
