@@ -1,7 +1,3 @@
-#[cfg(feature = "artichoke-all-converters")]
-use std::collections::HashMap;
-use std::convert::TryFrom;
-
 use crate::convert::{Convert, TryConvert};
 #[cfg(feature = "artichoke-array")]
 use crate::extn::core::array::{Array, InlineBuffer};
@@ -9,6 +5,7 @@ use crate::sys;
 use crate::types::{Float, Int, Ruby, Rust};
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
+use std::convert::TryFrom;
 
 // bail out implementation for mixed-type collections
 impl Convert<&[Value], Value> for Artichoke {
@@ -186,7 +183,10 @@ array_to_ruby!(&'a [Option<String>]);
 array_to_ruby!(&'a [Option<&'a str>]);
 
 #[cfg(feature = "artichoke-all-converters")]
-mod hash_convertions {
+mod optional {
+    use super::*;
+    use std::collections::HashMap;
+
     // Hash of primitive keys to values
     array_to_ruby!(HashMap<bool, Value>);
     array_to_ruby!(HashMap<bool, bool>);
