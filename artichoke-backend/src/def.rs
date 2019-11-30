@@ -138,7 +138,7 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
-    pub fn fqname(&self) -> Cow<'static, str> {
+    pub fn fqname(&self) -> Cow<'_, str> {
         match self {
             Self::Class { spec } => spec.fqname(),
             Self::Module { spec } => spec.fqname(),
@@ -243,50 +243,57 @@ mod tests {
         class::Builder::for_spec(&interp, &cls_under_cls)
             .define()
             .unwrap();
-        interp.0.borrow_mut().def_module::<Root>(&root);
+        interp.0.borrow_mut().def_module::<Root>(root);
         interp
             .0
             .borrow_mut()
-            .def_module::<ModuleUnderRoot>(&mod_under_root);
+            .def_module::<ModuleUnderRoot>(mod_under_root);
         interp
             .0
             .borrow_mut()
-            .def_class::<ClassUnderRoot>(&cls_under_root);
+            .def_class::<ClassUnderRoot>(cls_under_root);
         interp
             .0
             .borrow_mut()
-            .def_class::<ClassUnderModule>(&cls_under_mod);
+            .def_class::<ClassUnderModule>(cls_under_mod);
         interp
             .0
             .borrow_mut()
-            .def_module::<ModuleUnderClass>(&mod_under_cls);
+            .def_module::<ModuleUnderClass>(mod_under_cls);
         interp
             .0
             .borrow_mut()
-            .def_class::<ClassUnderClass>(&cls_under_cls);
+            .def_class::<ClassUnderClass>(cls_under_cls);
 
+        let borrow = interp.0.borrow();
+        let root = borrow.module_spec::<Root>().unwrap();
         assert_eq!(root.fqname().as_ref(), "A");
         assert_eq!(&format!("{}", root), "artichoke module spec -- A");
+        let mod_under_root = borrow.module_spec::<ModuleUnderRoot>().unwrap();
         assert_eq!(mod_under_root.fqname().as_ref(), "A::B");
         assert_eq!(
             &format!("{}", mod_under_root),
             "artichoke module spec -- A::B"
         );
+        let cls_under_root = borrow.class_spec::<ClassUnderRoot>().unwrap();
         assert_eq!(cls_under_root.fqname().as_ref(), "A::C");
         assert_eq!(
             &format!("{}", cls_under_root),
             "artichoke class spec -- A::C"
         );
+        let cls_under_mod = borrow.class_spec::<ClassUnderModule>().unwrap();
         assert_eq!(cls_under_mod.fqname().as_ref(), "A::B::D");
         assert_eq!(
             &format!("{}", cls_under_mod),
             "artichoke class spec -- A::B::D"
         );
+        let mod_under_cls = borrow.module_spec::<ModuleUnderClass>().unwrap();
         assert_eq!(mod_under_cls.fqname().as_ref(), "A::C::E");
         assert_eq!(
             &format!("{}", mod_under_cls),
             "artichoke module spec -- A::C::E"
         );
+        let cls_under_cls = borrow.class_spec::<ClassUnderClass>().unwrap();
         assert_eq!(cls_under_cls.fqname().as_ref(), "A::C::F");
         assert_eq!(
             &format!("{}", cls_under_cls),
@@ -324,14 +331,14 @@ mod tests {
                 .add_self_method("value", value, sys::mrb_args_none())
                 .define()
                 .unwrap();
-            interp.0.borrow_mut().def_class::<Class>(&class);
+            interp.0.borrow_mut().def_class::<Class>(class);
             let module = module::Spec::new("DefineMethodTestModule", None);
             module::Builder::for_spec(&interp, &module)
                 .add_method("value", value, sys::mrb_args_none())
                 .add_self_method("value", value, sys::mrb_args_none())
                 .define()
                 .unwrap();
-            interp.0.borrow_mut().def_module::<Module>(&module);
+            interp.0.borrow_mut().def_module::<Module>(module);
 
             interp
                 .eval(

@@ -67,7 +67,7 @@ impl File for Container {
             .add_method("initialize", Self::initialize, sys::mrb_args_req(1))
             .add_method("value", Self::value, sys::mrb_args_none())
             .define()?;
-        interp.0.borrow_mut().def_class::<Box<Self>>(&spec);
+        interp.0.borrow_mut().def_class::<Box<Self>>(spec);
         Ok(())
     }
 }

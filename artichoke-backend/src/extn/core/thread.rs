@@ -12,9 +12,9 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         return Ok(());
     }
     let spec = class::Spec::new("Thread", None, None);
-    interp.0.borrow_mut().def_class::<Thread>(&spec);
+    interp.0.borrow_mut().def_class::<Thread>(spec);
     let spec = class::Spec::new("Mutex", None, None);
-    interp.0.borrow_mut().def_class::<Mutex>(&spec);
+    interp.0.borrow_mut().def_class::<Mutex>(spec);
     interp.def_rb_source_file(b"thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement

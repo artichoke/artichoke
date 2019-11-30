@@ -20,7 +20,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("chr", Integer::chr, sys::mrb_args_opt(1))
         .add_method("size", Integer::size, sys::mrb_args_none())
         .define()?;
-    interp.0.borrow_mut().def_class::<Integer>(&spec);
+    interp.0.borrow_mut().def_class::<Integer>(spec);
     interp.eval(&include_bytes!("integer.rb")[..])?;
     trace!("Patched Integer onto interpreter");
     Ok(())

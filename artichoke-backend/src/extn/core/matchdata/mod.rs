@@ -69,7 +69,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("to_s", MatchData::to_s, sys::mrb_args_none())
         .add_method("end", MatchData::end, sys::mrb_args_req(1))
         .define()?;
-    interp.0.borrow_mut().def_class::<MatchData>(&spec);
+    interp.0.borrow_mut().def_class::<MatchData>(spec);
     interp.eval(&include_bytes!("matchdata.rb")[..])?;
     trace!("Patched MatchData onto interpreter");
     Ok(())

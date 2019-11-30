@@ -44,7 +44,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("reverse!", ary_reverse_bang, sys::mrb_args_none())
         .add_method("size", ary_len, sys::mrb_args_none())
         .define()?;
-    interp.0.borrow_mut().def_class::<array::Array>(&spec);
+    interp.0.borrow_mut().def_class::<array::Array>(spec);
     interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");
     Ok(())

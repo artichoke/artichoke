@@ -290,7 +290,7 @@ mod tests {
                 module::Builder::for_spec(interp, &spec)
                     .add_self_method("file", Self::nested_eval, sys::mrb_args_none())
                     .define()?;
-                interp.0.borrow_mut().def_module::<Self>(&spec);
+                interp.0.borrow_mut().def_module::<Self>(spec);
                 Ok(())
             }
         }

@@ -38,7 +38,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("source", source, sys::mrb_args_none())
         .add_method("to_s", to_s, sys::mrb_args_none())
         .define()?;
-    interp.0.borrow_mut().def_class::<regexp::Regexp>(&spec);
+    interp.0.borrow_mut().def_class::<regexp::Regexp>(spec);
     interp.eval(&include_bytes!("regexp.rb")[..])?;
     // TODO: Add proper constant defs to class::Spec, see GH-27.
     interp.eval(format!(

@@ -8,7 +8,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         return Ok(());
     }
     let spec = class::Spec::new("Symbol", None, None);
-    interp.0.borrow_mut().def_class::<Symbol>(&spec);
+    interp.0.borrow_mut().def_class::<Symbol>(spec);
     interp.eval(&include_bytes!("symbol.rb")[..])?;
     trace!("Patched Symbol onto interpreter");
     Ok(())

@@ -37,12 +37,16 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))
         .add_method("seed", artichoke_random_seed, sys::mrb_args_none())
         .define()?;
-    interp.0.borrow_mut().def_class::<random::Random>(&spec);
+    interp.0.borrow_mut().def_class::<random::Random>(spec);
 
     let default = random::default();
     let default = unsafe { default.try_into_ruby(interp, None) }?;
-    let mrb = interp.0.borrow().mrb;
-    let rclass = spec.rclass(interp).ok_or(ArtichokeError::New)?;
+    let borrow = interp.0.borrow();
+    let rclass = borrow
+        .class_spec::<random::Random>()
+        .and_then(|spec| spec.rclass(interp))
+        .ok_or(ArtichokeError::New)?;
+    let mrb = borrow.mrb;
     unsafe {
         sys::mrb_define_const(
             mrb,

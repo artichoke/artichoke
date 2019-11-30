@@ -45,22 +45,26 @@ where
         let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
-            .ok_or_else(|| panic!("{}", Self::ruby_type_name()))?;
-        let rclass = slf
-            .map(|obj| sys::mrb_sys_class_of_value(mrb, obj))
-            .or_else(|| spec.rclass(interp))
-            .ok_or_else(|| panic!("{}", Self::ruby_type_name()))?;
+            .ok_or_else(|| ArtichokeError::ConvertToRuby {
+                from: Rust::Object,
+                to: Ruby::Object,
+            })?;
+        let data = Rc::new(RefCell::new(self));
+        let ptr = Rc::into_raw(data);
         let obj = if let Some(mut slf) = slf {
-            let data = Rc::new(RefCell::new(self));
-            let ptr = Rc::into_raw(data);
             sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
             slf
         } else {
-            let data = Rc::new(RefCell::new(self));
-            let ptr = Rc::into_raw(data);
-            let data =
+            let rclass = slf
+                .map(|obj| sys::mrb_sys_class_of_value(mrb, obj))
+                .or_else(|| spec.rclass(interp))
+                .ok_or_else(|| ArtichokeError::ConvertToRuby {
+                    from: Rust::Object,
+                    to: Ruby::Object,
+                })?;
+            let alloc =
                 sys::mrb_data_object_alloc(mrb, rclass, ptr as *mut c_void, spec.data_type());
-            sys::mrb_sys_obj_value(data as *mut c_void)
+            sys::mrb_sys_obj_value(alloc as *mut c_void)
         };
 
         Ok(Value::new(interp, obj))
@@ -79,7 +83,6 @@ where
         interp: &Artichoke,
         slf: &Value,
     ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
-        let mrb = interp.0.borrow().mrb;
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
             return Err(ArtichokeError::ConvertToRust {
@@ -88,6 +91,7 @@ where
             });
         }
         let borrow = interp.0.borrow();
+        let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
             .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
@@ -208,12 +212,13 @@ mod tests {
             .add_method("value", Container::value, sys::mrb_args_none())
             .define()
             .unwrap();
-        interp.0.borrow_mut().def_class::<Container>(&spec);
+        interp.0.borrow_mut().def_class::<Container>(spec);
         let spec = class::Spec::new("Other", None, Some(def::rust_data_free::<Container>));
         class::Builder::for_spec(&interp, &spec)
             .value_is_rust_object()
             .define()
             .unwrap();
+        interp.0.borrow_mut().def_class::<Box<Other>>(spec);
 
         let value = interp.convert("string");
         let class = value.funcall::<Value>("class", &[], None).expect("funcall");

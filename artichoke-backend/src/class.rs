@@ -56,18 +56,18 @@ impl<'a> Builder<'a> {
 
     pub fn define(self) -> Result<(), ArtichokeError> {
         let mrb = self.interp.0.borrow().mrb;
-        let super_class = if let Some(ref spec) = self.super_class {
+        let super_class = if let Some(spec) = self.super_class {
             spec.rclass(self.interp)
-                .ok_or_else(|| ArtichokeError::NotDefined(spec.fqname()))?
+                .ok_or_else(|| ArtichokeError::NotDefined(Cow::Owned(spec.fqname().into_owned())))?
         } else {
             unsafe { (*mrb).object_class }
         };
         let rclass = if let Some(rclass) = self.spec.rclass(self.interp) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
-            let scope = scope
-                .rclass(self.interp)
-                .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname()))?;
+            let scope = scope.rclass(self.interp).ok_or_else(|| {
+                ArtichokeError::NotDefined(Cow::Owned(scope.fqname().into_owned()))
+            })?;
             unsafe {
                 sys::mrb_define_class_under(
                     mrb,
@@ -155,13 +155,13 @@ impl Spec {
         self.enclosing_scope.as_ref().map(Box::as_ref)
     }
 
-    pub fn fqname(&self) -> Cow<'static, str> {
+    pub fn fqname(&self) -> Cow<'_, str> {
         if let Some(scope) = self.enclosing_scope() {
             Cow::Owned(format!("{}::{}", scope.fqname(), self.name()))
         } else {
             match &self.name {
                 Cow::Borrowed(name) => Cow::Borrowed(name),
-                Cow::Owned(name) => Cow::Owned(name.clone()),
+                Cow::Owned(name) => Cow::Borrowed(name.as_str()),
             }
         }
     }
@@ -251,7 +251,7 @@ mod tests {
             .with_super_class(Some(&standard_error))
             .define()
             .unwrap();
-        interp.0.borrow_mut().def_class::<RustError>(&spec);
+        interp.0.borrow_mut().def_class::<RustError>(spec);
 
         let result = interp
             .eval(b"RustError.new.is_a?(StandardError)")

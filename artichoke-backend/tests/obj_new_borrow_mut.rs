@@ -41,7 +41,7 @@ fn obj_new_borrow_mut() {
         .add_method("initialize", initialize, sys::mrb_args_none())
         .define()
         .unwrap();
-    interp.0.borrow_mut().def_class::<Obj>(&spec);
+    interp.0.borrow_mut().def_class::<Obj>(spec);
     unsafe {
         Obj.try_into_ruby(&interp, None).unwrap();
     }

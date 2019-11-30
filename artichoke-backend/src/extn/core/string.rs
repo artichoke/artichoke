@@ -18,7 +18,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("ord", RString::ord, sys::mrb_args_none())
         .add_method("scan", RString::scan, sys::mrb_args_req(1))
         .define()?;
-    interp.0.borrow_mut().def_class::<RString>(&spec);
+    interp.0.borrow_mut().def_class::<RString>(spec);
     interp.eval(&include_bytes!("string.rb")[..])?;
     trace!("Patched String onto interpreter");
     Ok(())

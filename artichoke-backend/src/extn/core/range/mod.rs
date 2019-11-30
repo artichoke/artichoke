@@ -8,7 +8,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         return Ok(());
     }
     let spec = class::Spec::new("Range", None, None);
-    interp.0.borrow_mut().def_class::<Range>(&spec);
+    interp.0.borrow_mut().def_class::<Range>(spec);
     interp.eval(&include_bytes!("range.rb")[..])?;
     trace!("Patched Range onto interpreter");
     Ok(())

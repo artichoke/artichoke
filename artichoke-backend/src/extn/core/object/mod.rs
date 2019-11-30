@@ -8,7 +8,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         return Ok(());
     }
     let spec = class::Spec::new("Object", None, None);
-    interp.0.borrow_mut().def_class::<Object>(&spec);
+    interp.0.borrow_mut().def_class::<Object>(spec);
     interp.eval(&include_bytes!("object.rb")[..])?;
     trace!("Patched Object onto interpreter");
     Ok(())

@@ -35,7 +35,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("initialize", artichoke_env_initialize, sys::mrb_args_none())
         .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none())
         .define()?;
-    interp.0.borrow_mut().def_class::<env::Environ>(&spec);
+    interp.0.borrow_mut().def_class::<env::Environ>(spec);
     interp.eval(&include_bytes!("env.rb")[..])?;
     trace!("Patched ENV onto interpreter");
     trace!("Patched Artichoke::Environ onto interpreter");

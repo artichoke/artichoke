@@ -9,7 +9,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     }
     let spec = module::Spec::new("Enumerable", None);
     module::Builder::for_spec(interp, &spec).define()?;
-    interp.0.borrow_mut().def_module::<Enumerable>(&spec);
+    interp.0.borrow_mut().def_module::<Enumerable>(spec);
     interp.eval(&include_bytes!("enumerable.rb")[..])?;
     trace!("Patched Enumerable onto interpreter");
     Ok(())

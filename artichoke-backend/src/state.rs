@@ -122,11 +122,11 @@ impl State {
     /// have the same lifetime as the [`State`] because the class def owns the
     /// `mrb_data_type` for the type, which must be long-lived. Class defs are
     /// stored by [`TypeId`] of `T`.
-    pub fn def_class<T>(&mut self, spec: &class::Spec)
+    pub fn def_class<T>(&mut self, spec: class::Spec)
     where
         T: Any,
     {
-        self.classes.insert(TypeId::of::<T>(), spec.clone());
+        self.classes.insert(TypeId::of::<T>(), spec);
     }
 
     /// Retrieve a class definition from the state bound to Rust type `T`.
@@ -143,11 +143,11 @@ impl State {
     /// Create a module definition bound to a Rust type `T`. Module definitions
     /// have the same lifetime as the [`State`]. Module defs are stored by
     /// [`TypeId`] of `T`.
-    pub fn def_module<T>(&mut self, spec: &module::Spec)
+    pub fn def_module<T>(&mut self, spec: module::Spec)
     where
         T: Any,
     {
-        self.modules.insert(TypeId::of::<T>(), spec.clone());
+        self.modules.insert(TypeId::of::<T>(), spec);
     }
 
     /// Retrieve a module definition from the state bound to Rust type `T`.

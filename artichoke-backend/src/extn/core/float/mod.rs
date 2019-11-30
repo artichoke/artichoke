@@ -9,7 +9,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         return Ok(());
     }
     let spec = class::Spec::new("Float", None, None);
-    interp.0.borrow_mut().def_class::<Float>(&spec);
+    interp.0.borrow_mut().def_class::<Float>(spec);
     interp.eval(&include_bytes!("float.rb")[..])?;
     // TODO: Add proper constant defs to class::Spec, see GH-158.
     interp.eval(format!("class Float; EPSILON={} end", Float::EPSILON).as_bytes())?;

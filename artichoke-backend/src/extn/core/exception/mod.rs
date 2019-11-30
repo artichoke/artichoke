@@ -51,42 +51,218 @@ use crate::sys;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let exception = Exception::init(interp, None)?;
-    NoMemoryError::init(interp, Some(&exception))?;
-    let script = ScriptError::init(interp, Some(&exception))?;
-    LoadError::init(interp, Some(&script))?;
-    NotImplementedError::init(interp, Some(&script))?;
-    SyntaxError::init(interp, Some(&script))?;
-    SecurityError::init(interp, Some(&exception))?;
-    let signal = SignalException::init(interp, Some(&exception))?;
-    Interrupt::init(interp, Some(&signal))?;
+    let borrow = interp.0.borrow();
+
+    let exception_spec = class::Spec::new("Exception", None, None);
+    class::Builder::for_spec(interp, &exception_spec)
+        .with_super_class(None)
+        .define()?;
+
+    let nomemory_spec = class::Spec::new("NoMemoryError", None, None);
+    class::Builder::for_spec(interp, &nomemory_spec)
+        .with_super_class(Some(&exception_spec))
+        .define()?;
+
+    let script_spec = class::Spec::new("ScriptError", None, None);
+    class::Builder::for_spec(interp, &script_spec)
+        .with_super_class(Some(&exception_spec))
+        .define()?;
+
+    let load_spec = class::Spec::new("LoadError", None, None);
+    class::Builder::for_spec(interp, &load_spec)
+        .with_super_class(Some(&script_spec))
+        .define()?;
+
+    let notimplemented_spec = class::Spec::new("NotImplementedError", None, None);
+    class::Builder::for_spec(interp, &notimplemented_spec)
+        .with_super_class(Some(&script_spec))
+        .define()?;
+
+    let syntax_spec = class::Spec::new("SyntaxError", None, None);
+    class::Builder::for_spec(interp, &syntax_spec)
+        .with_super_class(Some(&script_spec))
+        .define()?;
+
+    let security_spec = class::Spec::new("SecurityError", None, None);
+    class::Builder::for_spec(interp, &security_spec)
+        .with_super_class(Some(&exception_spec))
+        .define()?;
+
+    let signal_spec = class::Spec::new("SignalException", None, None);
+    class::Builder::for_spec(interp, &signal_spec)
+        .with_super_class(Some(&exception_spec))
+        .define()?;
+
+    let interrupt_spec = class::Spec::new("Interrupt", None, None);
+    class::Builder::for_spec(interp, &interrupt_spec)
+        .with_super_class(Some(&signal_spec))
+        .define()?;
+
     // Default for `rescue`.
-    let standard = StandardError::init(interp, Some(&exception))?;
-    let argument = ArgumentError::init(interp, Some(&standard))?;
-    UncaughtThrowError::init(interp, Some(&argument))?;
-    EncodingError::init(interp, Some(&standard))?;
-    FiberError::init(interp, Some(&standard))?;
-    let io = IOError::init(interp, Some(&standard))?;
-    EOFError::init(interp, Some(&io))?;
-    let index = IndexError::init(interp, Some(&standard))?;
-    KeyError::init(interp, Some(&index))?;
-    StopIteration::init(interp, Some(&index))?;
-    LocalJumpError::init(interp, Some(&standard))?;
-    let name = NameError::init(interp, Some(&standard))?;
-    NoMethodError::init(interp, Some(&name))?;
-    let range = RangeError::init(interp, Some(&standard))?;
-    FloatDomainError::init(interp, Some(&range))?;
-    RegexpError::init(interp, Some(&standard))?;
+    let standard_spec = class::Spec::new("StandardError", None, None);
+    class::Builder::for_spec(interp, &standard_spec)
+        .with_super_class(Some(&exception_spec))
+        .define()?;
+
+    let argument_spec = class::Spec::new("ArgumentError", None, None);
+    class::Builder::for_spec(interp, &argument_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let uncaughthrow_spec = class::Spec::new("UncaughtThrowError", None, None);
+    class::Builder::for_spec(interp, &uncaughthrow_spec)
+        .with_super_class(Some(&argument_spec))
+        .define()?;
+
+    let encoding_spec = class::Spec::new("EncodingError", None, None);
+    class::Builder::for_spec(interp, &encoding_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let fiber_spec = class::Spec::new("FiberError", None, None);
+    class::Builder::for_spec(interp, &fiber_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let io_spec = class::Spec::new("IOError", None, None);
+    class::Builder::for_spec(interp, &io_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let eof_spec = class::Spec::new("EOFError", None, None);
+    class::Builder::for_spec(interp, &eof_spec)
+        .with_super_class(Some(&io_spec))
+        .define()?;
+
+    let index_spec = class::Spec::new("IndexError", None, None);
+    class::Builder::for_spec(interp, &index_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let key_spec = class::Spec::new("KeyError", None, None);
+    class::Builder::for_spec(interp, &key_spec)
+        .with_super_class(Some(&index_spec))
+        .define()?;
+
+    let stopiteration_spec = class::Spec::new("StopIteration", None, None);
+    class::Builder::for_spec(interp, &stopiteration_spec)
+        .with_super_class(Some(&index_spec))
+        .define()?;
+
+    let localjump_spec = class::Spec::new("LocalJumpError", None, None);
+    class::Builder::for_spec(interp, &localjump_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let name_spec = class::Spec::new("NameError", None, None);
+    class::Builder::for_spec(interp, &name_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let nomethod_spec = class::Spec::new("NoMethodError", None, None);
+    class::Builder::for_spec(interp, &nomethod_spec)
+        .with_super_class(Some(&name_spec))
+        .define()?;
+
+    let range_spec = class::Spec::new("RangeError", None, None);
+    class::Builder::for_spec(interp, &range_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let floatdomain_spec = class::Spec::new("FloatDomainError", None, None);
+    class::Builder::for_spec(interp, &floatdomain_spec)
+        .with_super_class(Some(&range_spec))
+        .define()?;
+
+    let regexp_spec = class::Spec::new("RegexpError", None, None);
+    class::Builder::for_spec(interp, &regexp_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
     // Default `Exception` type for `raise`.
-    let runtime = RuntimeError::init(interp, Some(&standard))?;
-    FrozenError::init(interp, Some(&runtime))?;
-    let _syscall = SystemCallError::init(interp, Some(&standard))?;
-    ThreadError::init(interp, Some(&standard))?;
-    TypeError::init(interp, Some(&standard))?;
-    ZeroDivisionError::init(interp, Some(&standard))?;
-    SystemExit::init(interp, Some(&exception))?;
-    SystemStackError::init(interp, Some(&exception))?;
-    Fatal::init(interp, Some(&exception))?;
+    let runtime_spec = class::Spec::new("RuntimeError", None, None);
+    class::Builder::for_spec(interp, &runtime_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let frozen_spec = class::Spec::new("FrozenError", None, None);
+    class::Builder::for_spec(interp, &frozen_spec)
+        .with_super_class(Some(&runtime_spec))
+        .define()?;
+
+    let systemcall_spec = class::Spec::new("SystemCallError", None, None);
+    class::Builder::for_spec(interp, &systemcall_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let thread_spec = class::Spec::new("ThreadError", None, None);
+    class::Builder::for_spec(interp, &thread_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let type_spec = class::Spec::new("TypeError", None, None);
+    class::Builder::for_spec(interp, &type_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let zerodivision_spec = class::Spec::new("ZeroDivisionError", None, None);
+    class::Builder::for_spec(interp, &zerodivision_spec)
+        .with_super_class(Some(&standard_spec))
+        .define()?;
+
+    let systemexit_spec = class::Spec::new("SystemExit", None, None);
+    class::Builder::for_spec(interp, &systemexit_spec)
+        .with_super_class(Some(&exception_spec))
+        .define()?;
+
+    let systemstack_spec = class::Spec::new("SystemStackError", None, None);
+    class::Builder::for_spec(interp, &systemstack_spec)
+        .with_super_class(Some(&exception_spec))
+        .define()?;
+
+    let fatal_spec = class::Spec::new("fatal", None, None);
+    class::Builder::for_spec(interp, &fatal_spec)
+        .with_super_class(Some(&exception_spec))
+        .define()?;
+
+    drop(borrow);
+    let mut borrow = interp.0.borrow_mut();
+    borrow.def_class::<Exception>(exception_spec);
+    borrow.def_class::<NoMemoryError>(nomemory_spec);
+    borrow.def_class::<ScriptError>(script_spec);
+    borrow.def_class::<LoadError>(load_spec);
+    borrow.def_class::<NotImplementedError>(notimplemented_spec);
+    borrow.def_class::<SyntaxError>(syntax_spec);
+    borrow.def_class::<SecurityError>(security_spec);
+    borrow.def_class::<SignalException>(signal_spec);
+    borrow.def_class::<Interrupt>(interrupt_spec);
+    borrow.def_class::<StandardError>(standard_spec);
+    borrow.def_class::<ArgumentError>(argument_spec);
+    borrow.def_class::<UncaughtThrowError>(uncaughthrow_spec);
+    borrow.def_class::<EncodingError>(encoding_spec);
+    borrow.def_class::<FiberError>(fiber_spec);
+    borrow.def_class::<IOError>(io_spec);
+    borrow.def_class::<EOFError>(eof_spec);
+    borrow.def_class::<IndexError>(index_spec);
+    borrow.def_class::<KeyError>(key_spec);
+    borrow.def_class::<StopIteration>(stopiteration_spec);
+    borrow.def_class::<LocalJumpError>(localjump_spec);
+    borrow.def_class::<NameError>(name_spec);
+    borrow.def_class::<NoMethodError>(nomethod_spec);
+    borrow.def_class::<RangeError>(range_spec);
+    borrow.def_class::<FloatDomainError>(floatdomain_spec);
+    borrow.def_class::<RegexpError>(regexp_spec);
+    borrow.def_class::<RuntimeError>(runtime_spec);
+    borrow.def_class::<FrozenError>(frozen_spec);
+    borrow.def_class::<SystemCallError>(systemcall_spec);
+    borrow.def_class::<ThreadError>(thread_spec);
+    borrow.def_class::<TypeError>(type_spec);
+    borrow.def_class::<ZeroDivisionError>(zerodivision_spec);
+    borrow.def_class::<SystemExit>(systemexit_spec);
+    borrow.def_class::<SystemStackError>(systemstack_spec);
+    borrow.def_class::<Fatal>(fatal_spec);
+    drop(borrow);
+
     interp.eval(&include_bytes!("exception.rb")[..])?;
     trace!("Patched Exception onto interpreter");
     trace!("Patched core exception hierarchy onto interpreter");
@@ -149,18 +325,6 @@ macro_rules! ruby_exception_impl {
         }
 
         impl $exception {
-            fn init(
-                interp: &Artichoke,
-                superclass: Option<&class::Spec>,
-            ) -> Result<class::Spec, ArtichokeError> {
-                let spec = class::Spec::new(stringify!($exception), None, None);
-                class::Builder::for_spec(interp, &spec)
-                    .with_super_class(superclass)
-                    .define()?;
-                interp.0.borrow_mut().def_class::<Self>(&spec);
-                Ok(spec)
-            }
-
             pub fn new<S>(interp: &Artichoke, message: S) -> Self
             where
                 S: Into<Cow<'static, str>>,
@@ -377,7 +541,7 @@ mod tests {
             class::Builder::for_spec(interp, &spec)
                 .add_self_method("run", Self::run, sys::mrb_args_none())
                 .define()?;
-            interp.0.borrow_mut().def_class::<Self>(&spec);
+            interp.0.borrow_mut().def_class::<Self>(spec);
             Ok(())
         }
     }

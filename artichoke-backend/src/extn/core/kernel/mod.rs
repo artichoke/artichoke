@@ -28,7 +28,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("print", Kernel::print, sys::mrb_args_rest())
         .add_method("puts", Kernel::puts, sys::mrb_args_rest())
         .define()?;
-    interp.0.borrow_mut().def_module::<Kernel>(&spec);
+    interp.0.borrow_mut().def_module::<Kernel>(spec);
     interp.eval(&include_bytes!("kernel.rb")[..])?;
     trace!("Patched Kernel onto interpreter");
     let scope = interp
@@ -42,7 +42,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))
         .add_self_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))
         .define()?;
-    interp.0.borrow_mut().def_module::<artichoke::Kernel>(&spec);
+    interp.0.borrow_mut().def_module::<artichoke::Kernel>(spec);
     trace!("Patched Artichoke::Kernel onto interpreter");
     Ok(())
 }
