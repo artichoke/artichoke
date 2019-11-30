@@ -48,6 +48,7 @@ default-features = false
 
 [features]
 default = ["artichoke-array", "artichoke-random", "artichoke-system-environ"]
+artichoke-all-converters = []
 artichoke-array = []
 artichoke-debug = ["backtrace"]
 artichoke-random = ["rand"]
