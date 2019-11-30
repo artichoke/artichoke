@@ -188,6 +188,7 @@ mod tests {
             .add_method("value", Container::value, sys::mrb_args_none())
             .define()
             .unwrap();
+        interp.0.borrow_mut().def_class::<Container>(spec);
         let obj = Container {
             inner: "contained string contents".to_owned(),
         };

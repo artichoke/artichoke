@@ -19,12 +19,12 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let spec = module::Spec::new("Kernel", None);
     module::Builder::for_spec(interp, &spec)
         .add_method("require", Kernel::require, sys::mrb_args_rest())
-        .add_self_method(
+        .add_method(
             "require_relative",
             Kernel::require_relative,
             sys::mrb_args_rest(),
         )
-        .add_self_method("load", Kernel::load, sys::mrb_args_rest())
+        .add_method("load", Kernel::load, sys::mrb_args_rest())
         .add_method("print", Kernel::print, sys::mrb_args_rest())
         .add_method("puts", Kernel::puts, sys::mrb_args_rest())
         .define()?;

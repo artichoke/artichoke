@@ -251,6 +251,7 @@ mod tests {
             .with_super_class(Some(&standard_error))
             .define()
             .unwrap();
+        drop(borrow);
         interp.0.borrow_mut().def_class::<RustError>(spec);
 
         let result = interp
@@ -276,6 +277,7 @@ mod tests {
         let borrow = interp.0.borrow();
         let scope = borrow.module_spec::<Kernel>().unwrap();
         let spec = class::Spec::new("Foo", Some(EnclosingRubyScope::module(scope)), None);
+        drop(borrow);
         assert!(spec.rclass(&interp).is_none());
     }
 
