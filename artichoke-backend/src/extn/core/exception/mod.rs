@@ -286,18 +286,16 @@ pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
     // get access to the underlying `ArtichokeState`.
     let mrb = interp.0.borrow().mrb;
 
-    let spec = exception.class();
-    let eclass = if let Some(rclass) = spec.rclass(&interp) {
+    let eclass = if let Some(rclass) = exception.rclass() {
         rclass
     } else {
-        error!("unable to raise {}", spec.name());
-        panic!("unable to raise {}", spec.name());
+        error!("unable to raise {}", exception.name());
+        panic!("unable to raise {}", exception.name());
     };
     let formatargs = interp.convert(exception.message()).inner();
     // `mrb_sys_raise` will call longjmp which will unwind the stack.
     // Any non-`Copy` objects that we haven't cleaned up at this point will
     // leak, so drop everything.
-    drop(spec);
     drop(interp);
     drop(exception);
 
@@ -311,8 +309,8 @@ where
     Self: 'static,
 {
     fn message(&self) -> &[u8];
-
-    fn class(&self) -> class::Spec;
+    fn name(&self) -> String;
+    fn rclass(&self) -> Option<*mut sys::RClass>;
 }
 
 macro_rules! ruby_exception_impl {
@@ -379,12 +377,21 @@ macro_rules! ruby_exception_impl {
                 self.message.as_ref()
             }
 
-            fn class(&self) -> class::Spec {
-                if let Some(spec) = self.interp.0.borrow().class_spec::<Self>() {
-                    spec.clone()
-                } else {
-                    panic!("Unknown Exception class spec");
-                }
+            fn name(&self) -> String {
+                self.interp
+                    .0
+                    .borrow()
+                    .class_spec::<Self>()
+                    .map(|spec| spec.name().to_owned())
+                    .unwrap_or_default()
+            }
+
+            fn rclass(&self) -> Option<*mut sys::RClass> {
+                self.interp
+                    .0
+                    .borrow()
+                    .class_spec::<Self>()
+                    .and_then(|spec| spec.rclass(&self.interp))
             }
         }
 
@@ -394,9 +401,7 @@ macro_rules! ruby_exception_impl {
         {
             #[cfg(feature = "artichoke-debug")]
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                let class = self.class();
-                let borrow = class.borrow();
-                let classname = borrow.name();
+                let classname = self.name();
                 let message = String::from_utf8_lossy(self.message());
                 write!(f, "{} ({})", classname, message)?;
                 write!(f, "\n{:?}", self.backtrace)
@@ -404,8 +409,7 @@ macro_rules! ruby_exception_impl {
 
             #[cfg(not(feature = "artichoke-debug"))]
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                let class = self.class();
-                let classname = class.name();
+                let classname = self.name();
                 let message = String::from_utf8_lossy(self.message());
                 write!(f, "{} ({})", classname, message)
             }
@@ -416,8 +420,7 @@ macro_rules! ruby_exception_impl {
             $exception: RubyException,
         {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                let class = self.class();
-                let classname = class.name();
+                let classname = self.name();
                 let message = String::from_utf8_lossy(self.message());
                 write!(f, "{} ({})", classname, message)
             }
@@ -440,15 +443,18 @@ impl RubyException for Box<dyn RubyException> {
         self.as_ref().message()
     }
 
-    fn class(&self) -> class::Spec {
-        self.as_ref().class()
+    fn name(&self) -> String {
+        self.as_ref().name()
+    }
+
+    fn rclass(&self) -> Option<*mut sys::RClass> {
+        self.as_ref().rclass()
     }
 }
 
 impl fmt::Debug for Box<dyn RubyException> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let class = self.class();
-        let classname = class.name();
+        let classname = self.name();
         let message = String::from_utf8_lossy(self.message());
         write!(f, "{} ({})", classname, message)
     }
@@ -456,8 +462,7 @@ impl fmt::Debug for Box<dyn RubyException> {
 
 impl fmt::Display for Box<dyn RubyException> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let class = self.class();
-        let classname = class.name();
+        let classname = self.name();
         let message = String::from_utf8_lossy(self.message());
         write!(f, "{} ({})", classname, message)
     }
@@ -465,7 +470,7 @@ impl fmt::Display for Box<dyn RubyException> {
 
 impl error::Error for Box<dyn RubyException> {
     fn description(&self) -> &str {
-        "Ruby Exception: "
+        "RubyException"
     }
 
     fn cause(&self) -> Option<&dyn error::Error> {
