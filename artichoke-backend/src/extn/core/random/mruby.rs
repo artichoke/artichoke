@@ -37,6 +37,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))
         .add_method("seed", artichoke_random_seed, sys::mrb_args_none())
         .define()?;
+    interp.0.borrow_mut().def_class::<random::Random>(&spec);
 
     let default = random::default();
     let default = unsafe { default.try_into_ruby(interp, None) }?;
@@ -50,8 +51,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
             default.inner(),
         );
     }
-
-    interp.0.borrow_mut().def_class::<random::Random>(&spec);
     interp.eval(&include_bytes!("random.rb")[..])?;
     trace!("Patched Random onto interpreter");
     Ok(())

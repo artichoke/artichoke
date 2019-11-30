@@ -45,17 +45,11 @@ where
         let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
-            .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                from: Rust::Object,
-                to: Ruby::Object,
-            })?;
+            .ok_or_else(|| panic!("{}", Self::ruby_type_name()))?;
         let rclass = slf
             .map(|obj| sys::mrb_sys_class_of_value(mrb, obj))
             .or_else(|| spec.rclass(interp))
-            .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                from: Rust::Object,
-                to: Ruby::Object,
-            })?;
+            .ok_or_else(|| panic!("{}", Self::ruby_type_name()))?;
         let obj = if let Some(mut slf) = slf {
             let data = Rc::new(RefCell::new(self));
             let ptr = Rc::into_raw(data);
@@ -134,9 +128,10 @@ where
 mod tests {
     use std::rc::Rc;
 
+    use crate::class;
     use crate::convert::object::RustBackedValue;
     use crate::convert::Convert;
-    use crate::def::{rust_data_free, ClassLike, Define};
+    use crate::def;
     use crate::sys;
     use crate::value::{Value, ValueLike};
 
@@ -183,15 +178,12 @@ mod tests {
     #[test]
     fn convert_obj_roundtrip() {
         let interp = crate::interpreter().expect("init");
-        let spec = interp.0.borrow_mut().def_class::<Container>(
-            "Container",
-            None,
-            Some(rust_data_free::<Container>),
-        );
-        spec.borrow_mut().mrb_value_is_rust_backed(true);
-        spec.borrow_mut()
-            .add_method("value", Container::value, sys::mrb_args_none());
-        spec.borrow().define(&interp).expect("class install");
+        let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Container>));
+        class::Builder::for_spec(&interp, &spec)
+            .value_is_rust_object()
+            .add_method("value", Container::value, sys::mrb_args_none())
+            .define()
+            .unwrap();
         let obj = Container {
             inner: "contained string contents".to_owned(),
         };
@@ -210,22 +202,18 @@ mod tests {
     #[test]
     fn convert_obj_not_data() {
         let interp = crate::interpreter().expect("init");
-        let spec = interp.0.borrow_mut().def_class::<Container>(
-            "Container",
-            None,
-            Some(rust_data_free::<Container>),
-        );
-        spec.borrow_mut().mrb_value_is_rust_backed(true);
-        spec.borrow_mut()
-            .add_method("value", Container::value, sys::mrb_args_none());
-        spec.borrow().define(&interp).expect("class install");
-        let spec = interp.0.borrow_mut().def_class::<Box<Other>>(
-            "Other",
-            None,
-            Some(rust_data_free::<Container>),
-        );
-        spec.borrow_mut().mrb_value_is_rust_backed(true);
-        spec.borrow().define(&interp).expect("class install");
+        let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Container>));
+        class::Builder::for_spec(&interp, &spec)
+            .value_is_rust_object()
+            .add_method("value", Container::value, sys::mrb_args_none())
+            .define()
+            .unwrap();
+        interp.0.borrow_mut().def_class::<Container>(&spec);
+        let spec = class::Spec::new("Other", None, Some(def::rust_data_free::<Container>));
+        class::Builder::for_spec(&interp, &spec)
+            .value_is_rust_object()
+            .define()
+            .unwrap();
 
         let value = interp.convert("string");
         let class = value.funcall::<Value>("class", &[], None).expect("funcall");

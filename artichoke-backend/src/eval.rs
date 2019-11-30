@@ -232,8 +232,8 @@ mod tests {
     use artichoke_core::load::LoadSources;
 
     use crate::convert::Convert;
-    use crate::def::{ClassLike, Define};
     use crate::eval::Context;
+    use crate::module;
     use crate::sys;
     use crate::value::{Value, ValueLike};
     use crate::{Artichoke, ArtichokeError};
@@ -286,16 +286,11 @@ mod tests {
             type Artichoke = Artichoke;
 
             fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-                let spec = {
-                    let spec = interp.0.borrow_mut().def_module::<Self>("NestedEval", None);
-                    spec.borrow_mut().add_self_method(
-                        "file",
-                        Self::nested_eval,
-                        sys::mrb_args_none(),
-                    );
-                    spec
-                };
-                spec.borrow().define(&interp)?;
+                let spec = module::Spec::new("NestedEval", None);
+                module::Builder::for_spec(interp, &spec)
+                    .add_self_method("file", Self::nested_eval, sys::mrb_args_none())
+                    .define()?;
+                interp.0.borrow_mut().def_module::<Self>(&spec);
                 Ok(())
             }
         }

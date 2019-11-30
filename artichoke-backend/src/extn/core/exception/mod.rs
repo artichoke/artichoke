@@ -353,7 +353,7 @@ mod tests {
     use artichoke_core::eval::Eval;
     use artichoke_core::file::File;
 
-    use crate::def::{ClassLike, Define};
+    use crate::class;
     use crate::exception::Exception;
     use crate::extn::core::exception::RuntimeError;
     use crate::sys;
@@ -373,10 +373,11 @@ mod tests {
         type Artichoke = Artichoke;
 
         fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-            let spec = interp.0.borrow_mut().def_class::<Self>("Run", None, None);
-            spec.borrow_mut()
-                .add_self_method("run", Self::run, sys::mrb_args_none());
-            spec.borrow().define(&interp)?;
+            let spec = class::Spec::new("Run", None, None);
+            class::Builder::for_spec(interp, &spec)
+                .add_self_method("run", Self::run, sys::mrb_args_none())
+                .define()?;
+            interp.0.borrow_mut().def_class::<Self>(&spec);
             Ok(())
         }
     }

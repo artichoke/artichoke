@@ -232,11 +232,9 @@ impl PartialEq for Spec {
 mod tests {
     use artichoke_core::eval::Eval;
     use artichoke_core::value::Value as _;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::class::Spec;
-    use crate::def::{ClassLike, Define, EnclosingRubyScope};
+    use crate::class;
+    use crate::def::EnclosingRubyScope;
     use crate::extn::core::exception::StandardError;
     use crate::extn::core::kernel::Kernel;
     use crate::module;
@@ -246,15 +244,14 @@ mod tests {
         struct RustError;
 
         let interp = crate::interpreter().expect("init");
-        let standard_error = interp.0.borrow().class_spec::<StandardError>().unwrap();
-        let spec = {
-            let mut api = interp.0.borrow_mut();
-            let spec = api.def_class::<RustError>("RustError", None, None);
-            spec.borrow_mut()
-                .with_super_class(Rc::clone(&standard_error));
-            spec
-        };
-        spec.borrow().define(&interp).expect("class install");
+        let borrow = interp.0.borrow();
+        let standard_error = borrow.class_spec::<StandardError>().unwrap();
+        let spec = class::Spec::new("RustError", None, None);
+        class::Builder::for_spec(&interp, &spec)
+            .with_super_class(Some(&standard_error))
+            .define()
+            .unwrap();
+        interp.0.borrow_mut().def_class::<RustError>(&spec);
 
         let result = interp
             .eval(b"RustError.new.is_a?(StandardError)")
@@ -267,49 +264,27 @@ mod tests {
     }
 
     #[test]
-    fn refcell_allows_mutable_class_specs_after_attached_as_enclosing_scope() {
-        struct BaseClass;
-        struct SubClass;
-
-        let interp = crate::interpreter().expect("init");
-        let (base, sub) = {
-            let mut api = interp.0.borrow_mut();
-            let base = api.def_class::<BaseClass>("BaseClass", None, None);
-            let sub = api.def_class::<SubClass>("SubClass", None, None);
-            sub.borrow_mut().with_super_class(Rc::clone(&base));
-            (base, sub)
-        };
-        base.borrow().define(&interp).expect("def class");
-        sub.borrow().define(&interp).expect("def class");
-        {
-            let api = interp.0.borrow();
-            // this should not panic
-            let _ = api.class_spec::<BaseClass>().unwrap().borrow_mut();
-            let _ = api.class_spec::<SubClass>().unwrap().borrow_mut();
-        }
-    }
-
-    #[test]
     fn rclass_for_undef_root_class() {
         let interp = crate::interpreter().expect("init");
-        let spec = Spec::new("Foo", None, None);
+        let spec = class::Spec::new("Foo", None, None);
         assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_undef_nested_class() {
         let interp = crate::interpreter().expect("init");
-        let scope = interp.0.borrow().module_spec::<Kernel>().unwrap();
-        let scope = EnclosingRubyScope::module(scope);
-        let spec = Spec::new("Foo", Some(scope), None);
+        let borrow = interp.0.borrow();
+        let scope = borrow.module_spec::<Kernel>().unwrap();
+        let spec = class::Spec::new("Foo", Some(EnclosingRubyScope::module(scope)), None);
         assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_root_class() {
         let interp = crate::interpreter().expect("init");
-        let spec = interp.0.borrow().class_spec::<StandardError>().unwrap();
-        assert!(spec.borrow().rclass(&interp).is_some());
+        let borrow = interp.0.borrow();
+        let spec = borrow.class_spec::<StandardError>().unwrap();
+        assert!(spec.rclass(&interp).is_some());
     }
 
     #[test]
@@ -319,8 +294,7 @@ mod tests {
             .eval(b"module Foo; class Bar; end; end")
             .expect("eval");
         let spec = module::Spec::new("Foo", None);
-        let spec = EnclosingRubyScope::module(Rc::new(RefCell::new(spec)));
-        let spec = Spec::new("Bar", Some(spec), None);
+        let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::module(&spec)), None);
         assert!(spec.rclass(&interp).is_some());
     }
 
@@ -330,9 +304,8 @@ mod tests {
         interp
             .eval(b"class Foo; class Bar; end; end")
             .expect("eval");
-        let spec = Spec::new("Foo", None, None);
-        let spec = EnclosingRubyScope::class(Rc::new(RefCell::new(spec)));
-        let spec = Spec::new("Bar", Some(spec), None);
+        let spec = class::Spec::new("Foo", None, None);
+        let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::class(&spec)), None);
         assert!(spec.rclass(&interp).is_some());
     }
 }
