@@ -15,8 +15,8 @@ use crate::sys::{self, DescribeState};
 pub struct State {
     pub mrb: *mut sys::mrb_state,
     pub ctx: *mut sys::mrbc_context,
-    classes: HashMap<TypeId, class::Spec>,
-    modules: HashMap<TypeId, module::Spec>,
+    classes: HashMap<TypeId, Box<class::Spec>>,
+    modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: Filesystem,
     pub(crate) context_stack: Vec<Context>,
     pub active_regexp_globals: usize,
@@ -126,7 +126,7 @@ impl State {
     where
         T: Any,
     {
-        self.classes.insert(TypeId::of::<T>(), spec);
+        self.classes.insert(TypeId::of::<T>(), Box::new(spec));
     }
 
     /// Retrieve a class definition from the state bound to Rust type `T`.
@@ -137,7 +137,7 @@ impl State {
     where
         T: Any,
     {
-        self.classes.get(&TypeId::of::<T>())
+        self.classes.get(&TypeId::of::<T>()).map(Box::as_ref)
     }
 
     /// Create a module definition bound to a Rust type `T`. Module definitions
@@ -147,7 +147,7 @@ impl State {
     where
         T: Any,
     {
-        self.modules.insert(TypeId::of::<T>(), spec);
+        self.modules.insert(TypeId::of::<T>(), Box::new(spec));
     }
 
     /// Retrieve a module definition from the state bound to Rust type `T`.
@@ -158,7 +158,7 @@ impl State {
     where
         T: Any,
     {
-        self.modules.get(&TypeId::of::<T>())
+        self.modules.get(&TypeId::of::<T>()).map(Box::as_ref)
     }
 
     pub fn sym_intern<T>(&mut self, sym: T) -> sys::mrb_sym
