@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cell::Cell;
 use std::collections::HashSet;
 use std::convert::AsRef;
 use std::ffi::{c_void, CStr, CString};
@@ -69,6 +70,7 @@ impl<'a> Builder<'a> {
 #[derive(Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
+    sym: Cell<sys::mrb_sym>,
     cstring: CString,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }
@@ -83,6 +85,7 @@ impl Spec {
         Self {
             name,
             cstring,
+            sym: Cell::default(),
             enclosing_scope: enclosing_scope.map(Box::new),
         }
     }
@@ -118,17 +121,20 @@ impl Spec {
 
     pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
         let mrb = interp.0.borrow().mrb;
-        let sym = interp
-            .0
-            .borrow_mut()
-            .sym_intern(self.name.as_bytes().to_vec());
+        if self.sym.get() == 0 {
+            let sym = interp
+                .0
+                .borrow_mut()
+                .sym_intern(self.name.as_bytes().to_vec());
+            self.sym.set(sym);
+        }
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(scope) = scope.rclass(interp) {
                 let defined = unsafe {
                     sys::mrb_const_defined_at(
                         mrb,
                         sys::mrb_sys_obj_value(scope as *mut c_void),
-                        sym,
+                        self.sym.get(),
                     )
                 };
                 if defined == 0 {
@@ -151,7 +157,7 @@ impl Spec {
                 sys::mrb_const_defined_at(
                     mrb,
                     sys::mrb_sys_obj_value((*mrb).object_class as *mut c_void),
-                    sym,
+                    self.sym.get(),
                 )
             };
             if defined == 0 {
