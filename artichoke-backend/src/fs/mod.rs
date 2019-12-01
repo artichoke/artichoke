@@ -1,9 +1,10 @@
 //! [`Artichoke`] virtual filesystem used for storing Ruby sources.
 
 use artichoke_vfs::{FakeFileSystem, FileSystem};
+use path_dedot::ParseDot;
 use std::ffi::OsStr;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::extn::core::exception::RubyException;
 use crate::{Artichoke, ArtichokeError};
@@ -35,9 +36,7 @@ impl Filesystem {
 
     pub fn create_dir_all<P: AsRef<Path>>(&self, path: P) -> Result<(), ArtichokeError> {
         let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = abs::PathAbs::new(path.as_ref(), cwd)
-            .map_err(io::Error::from)
-            .map_err(ArtichokeError::Vfs)?;
+        let path = absolutize_relative_to(path.as_ref(), cwd.as_path())?;
         self.fs
             .create_dir_all(path.as_path())
             .map_err(ArtichokeError::Vfs)
@@ -46,16 +45,15 @@ impl Filesystem {
     pub fn is_file<P: AsRef<Path>>(&self, path: P) -> bool {
         self.fs
             .current_dir()
-            .and_then(|cwd| abs::PathAbs::new(path.as_ref(), cwd).map_err(io::Error::from))
+            .map_err(ArtichokeError::Vfs)
+            .and_then(|cwd| absolutize_relative_to(path.as_ref(), cwd.as_path()))
             .map(|path| self.fs.is_file(path.as_path()))
             .unwrap_or_default()
     }
 
     pub fn read_file<P: AsRef<Path>>(&self, path: P) -> Result<Vec<u8>, ArtichokeError> {
         let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = abs::PathAbs::new(path.as_ref(), cwd)
-            .map_err(io::Error::from)
-            .map_err(ArtichokeError::Vfs)?;
+        let path = absolutize_relative_to(path.as_ref(), cwd.as_path())?;
         self.fs
             .read_file(path.as_path())
             .map_err(ArtichokeError::Vfs)
@@ -67,9 +65,7 @@ impl Filesystem {
         B: AsRef<[u8]>,
     {
         let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = abs::PathAbs::new(path.as_ref(), cwd)
-            .map_err(io::Error::from)
-            .map_err(ArtichokeError::Vfs)?;
+        let path = absolutize_relative_to(path.as_ref(), cwd.as_path())?;
         self.fs
             .write_file(path.as_path(), buf.as_ref())
             .map_err(ArtichokeError::Vfs)
@@ -81,9 +77,7 @@ impl Filesystem {
         metadata: Metadata,
     ) -> Result<(), ArtichokeError> {
         let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = abs::PathAbs::new(path.as_ref(), cwd)
-            .map_err(io::Error::from)
-            .map_err(ArtichokeError::Vfs)?;
+        let path = absolutize_relative_to(path.as_ref(), cwd.as_path())?;
         self.fs
             .set_metadata(path.as_path(), metadata)
             .map_err(ArtichokeError::Vfs)
@@ -91,7 +85,7 @@ impl Filesystem {
 
     pub fn metadata<P: AsRef<Path>>(&self, path: P) -> Option<Metadata> {
         let cwd = self.fs.current_dir().ok()?;
-        let path = abs::PathAbs::new(path.as_ref(), cwd).ok()?;
+        let path = absolutize_relative_to(path.as_ref(), cwd.as_path()).ok()?;
         self.fs.metadata(path.as_path())
     }
 }
@@ -126,6 +120,19 @@ impl Default for Metadata {
             already_required: false,
         }
     }
+}
+
+fn absolutize_relative_to(path: &Path, cwd: &Path) -> Result<PathBuf, ArtichokeError> {
+    let path = path
+        .parse_dot()
+        .map_err(io::Error::from)
+        .map_err(ArtichokeError::Vfs)?;
+    let path = if path.is_relative() {
+        cwd.join(path)
+    } else {
+        path
+    };
+    Ok(path)
 }
 
 #[cfg(unix)]
