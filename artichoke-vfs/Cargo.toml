@@ -2,21 +2,16 @@
 name = "artichoke-vfs"
 version = "0.5.0-alpha"
 description = "Fake implementation of a unix file system for artichoke"
-authors = ["Isobel Redelmeier <iredelmeier@gmail.com>", "Ryan Lopopolo <rjl@hyperbo.la>"]
+authors = [
+  "Isobel Redelmeier <iredelmeier@gmail.com>",
+  "Ryan Lopopolo <rjl@hyperbo.la>"
+]
 edition = "2018"
 license = "MIT"
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
-categories = [
-  "development-tools::testing",
-  "filesystem"
-]
-keywords = [
-  "filesystem",
-  "testing",
-  "virtual",
-  "fake"
-]
+categories = ["development-tools::testing", "filesystem"]
+keywords = ["filesystem", "testing", "virtual", "fake"]
 
 [lib]
 bench = false
