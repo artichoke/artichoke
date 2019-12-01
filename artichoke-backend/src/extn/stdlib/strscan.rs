@@ -1,16 +1,13 @@
 use artichoke_core::load::LoadSources;
 
-use crate::class;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    if interp.0.borrow().class_spec::<StringScanner>().is_some() {
-        return Ok(());
-    }
-    let spec = class::Spec::new("StringScanner", None, None);
-    interp.0.borrow_mut().def_class::<StringScanner>(spec);
+    interp
+        .0
+        .borrow_mut()
+        .def_module::<StringScanner>("StringScanner", None);
     interp.def_rb_source_file(b"strscan.rb", &include_bytes!("strscan.rb")[..])?;
-    trace!("Patched StringScanner onto interpreter");
     Ok(())
 }
 
