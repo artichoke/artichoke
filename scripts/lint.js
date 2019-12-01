@@ -161,6 +161,7 @@ async function prettierFormatter(files) {
     ["html", "html"],
     ["json", "json"],
     ["md", "markdown"],
+    ["toml", "toml"],
     ["yaml", "yaml"],
     ["yml", "yaml"]
   ];
