@@ -6,6 +6,7 @@
 <br>
 [![Backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
 [![Core documentation](https://img.shields.io/badge/docs-artichoke--core-blue.svg)](https://artichoke.github.io/artichoke/artichoke_core/)
+[![Frontend documentation](https://img.shields.io/badge/docs-artichoke--frontend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_frontend/)
 [![Virtual filesystem documentation](https://img.shields.io/badge/docs-artichoke--vfs-blue.svg)](https://artichoke.github.io/artichoke/artichoke_vfs/)
 
 <p align="center">
