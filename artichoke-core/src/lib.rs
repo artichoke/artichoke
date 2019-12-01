@@ -29,8 +29,6 @@ pub mod warn;
 /// Errors returned by Artichoke interpreters.
 #[derive(Debug)]
 pub enum ArtichokeError {
-    /// Failed to create an argspec.
-    ArgSpec,
     /// Failed to convert from a Rust type to a [`Value`](value::Value).
     ConvertToRuby {
         /// Source type of conversion.
@@ -63,6 +61,8 @@ pub enum ArtichokeError {
     },
     /// Attempted to use an uninitialized interpreter.
     Uninitialized,
+    /// Attempted to extract Rust object from uninitialized `Value`.
+    UninitializedValue(&'static str),
     /// Eval or funcall returned an interpreter-internal value.
     UnreachableValue,
     /// [`io::Error`] when interacting with virtual filesystem.
@@ -84,23 +84,27 @@ impl PartialEq for ArtichokeError {
 impl fmt::Display for ArtichokeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::ArgSpec => write!(f, "could not generate argspec"),
             Self::ConvertToRuby { from, to } => {
-                write!(f, "failed to convert from {} to {}", from, to)
+                write!(f, "Failed to convert from {} to {}", from, to)
             }
             Self::ConvertToRust { from, to } => {
-                write!(f, "failed to convert from {} to {}", from, to)
+                write!(f, "Failed to convert from {} to {}", from, to)
             }
             Self::Exec(backtrace) => write!(f, "{}", backtrace),
-            Self::New => write!(f, "failed to create mrb interpreter"),
+            Self::New => write!(f, "Failed to create interpreter"),
             Self::NotDefined(fqname) => write!(f, "{} not defined", fqname),
             Self::TooManyArgs { given, max } => write!(
                 f,
                 "Too many args for funcall. Gave {}, but max is {}",
                 given, max
             ),
-            Self::Uninitialized => write!(f, "mrb interpreter not initialized"),
-            Self::UnreachableValue => write!(f, "extracted unreachable type from interpreter"),
+            Self::Uninitialized => write!(f, "Interpreter not initialized"),
+            Self::UninitializedValue(class) => write!(
+                f,
+                "Attempted to extract pointer from uninitialized Value iwth class {}",
+                class
+            ),
+            Self::UnreachableValue => write!(f, "Extracted unreachable type from interpreter"),
             Self::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
         }
     }
@@ -108,7 +112,7 @@ impl fmt::Display for ArtichokeError {
 
 impl error::Error for ArtichokeError {
     fn description(&self) -> &str {
-        "artichoke interpreter error"
+        "Artichoke interpreter error"
     }
 
     fn cause(&self) -> Option<&dyn error::Error> {
