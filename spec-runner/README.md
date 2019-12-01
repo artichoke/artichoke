@@ -8,9 +8,13 @@
 
 `spec-runner` is a binary crate that produces the `spec-runner` executable.
 
-`spec-runner` is a wrapper around MSpec and ruby/spec that works with the Artichoke [virtual filesystem](/artichoke-vfs).
+`spec-runner` is a wrapper around MSpec and ruby/spec that works with the
+Artichoke [virtual filesystem](/artichoke-vfs).
 
-`spec-runner` is invokable directly by passing paths to spec files as command line argumemts. `spec-runner` is sensitive to CWD relative to the specs it wraps, so in practice it is easier to invoke `spec-runner` via the `spec.rb` wrapper in `scripts`.
+`spec-runner` is invokable directly by passing paths to spec files as command
+line arguments. `spec-runner` is sensitive to CWD relative to the specs it
+wraps, so in practice it is easier to invoke `spec-runner` via the `spec.rb`
+wrapper in `scripts`.
 
 ```console
 $ ruby scripts/spec.rb --help
