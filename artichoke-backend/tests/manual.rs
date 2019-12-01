@@ -5,8 +5,9 @@
 #[macro_use]
 extern crate artichoke_backend;
 
+use artichoke_backend::class;
 use artichoke_backend::convert::{Convert, RustBackedValue};
-use artichoke_backend::def::{rust_data_free, ClassLike, Define};
+use artichoke_backend::def;
 use artichoke_backend::sys;
 use artichoke_backend::types::Int;
 use artichoke_backend::value::Value;
@@ -60,18 +61,13 @@ impl File for Container {
     type Artichoke = Artichoke;
 
     fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-        let spec = {
-            let mut api = interp.0.borrow_mut();
-            let spec =
-                api.def_class::<Box<Self>>("Container", None, Some(rust_data_free::<Box<Self>>));
-            spec.borrow_mut()
-                .add_method("initialize", Self::initialize, sys::mrb_args_req(1));
-            spec.borrow_mut()
-                .add_method("value", Self::value, sys::mrb_args_none());
-            spec.borrow_mut().mrb_value_is_rust_backed(true);
-            spec
-        };
-        spec.borrow().define(&interp)?;
+        let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Box<Self>>));
+        class::Builder::for_spec(interp, &spec)
+            .value_is_rust_object()
+            .add_method("initialize", Self::initialize, sys::mrb_args_req(1))
+            .add_method("value", Self::value, sys::mrb_args_none())
+            .define()?;
+        interp.0.borrow_mut().def_class::<Box<Self>>(spec);
         Ok(())
     }
 }

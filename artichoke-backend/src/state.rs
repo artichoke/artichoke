@@ -1,13 +1,10 @@
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io::{self, Write};
-use std::rc::Rc;
 
 use crate::class;
-use crate::def::{EnclosingRubyScope, Free};
 use crate::eval::Context;
 use crate::fs::Filesystem;
 use crate::module;
@@ -18,8 +15,8 @@ use crate::sys::{self, DescribeState};
 pub struct State {
     pub mrb: *mut sys::mrb_state,
     pub ctx: *mut sys::mrbc_context,
-    classes: HashMap<TypeId, Rc<RefCell<class::Spec>>>,
-    modules: HashMap<TypeId, Rc<RefCell<module::Spec>>>,
+    classes: HashMap<TypeId, Box<class::Spec>>,
+    modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: Filesystem,
     pub(crate) context_stack: Vec<Context>,
     pub active_regexp_globals: usize,
@@ -125,139 +122,43 @@ impl State {
     /// have the same lifetime as the [`State`] because the class def owns the
     /// `mrb_data_type` for the type, which must be long-lived. Class defs are
     /// stored by [`TypeId`] of `T`.
-    ///
-    /// Internally, [`class::Spec`]s are stored in an `Rc<RefCell<_>>` which
-    /// allows class specs to have multiple owners, such as being a super class
-    /// or an enclosing scope for a class or a module. To mutate the class spec,
-    /// call `borrow_mut` on the return value of this method to get a mutable
-    /// reference to the class spec.
-    ///
-    /// Class specs can also be retrieved from the state after creation with
-    /// [`State::class_spec`].
-    ///
-    /// The recommended pattern for using `def_class` looks like this:
-    ///
-    /// ```rust
-    /// #[macro_use]
-    /// extern crate artichoke_backend;
-    ///
-    /// use artichoke_backend::convert::Convert;
-    /// use artichoke_backend::def::{ClassLike, Define};
-    /// use artichoke_backend::sys;
-    /// use artichoke_backend::value::Value;
-    ///
-    /// extern "C" fn value(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value
-    /// {
-    ///     let interp = unsafe { unwrap_interpreter!(mrb) };
-    ///     let result: Value = interp.convert(29);
-    ///     result.inner()
-    /// }
-    ///
-    /// fn main() {
-    ///     let interp = artichoke_backend::interpreter().expect("init");
-    ///     let spec = {
-    ///         let mut api = interp.0.borrow_mut();
-    ///         let spec = api.def_class::<()>("Container", None, None);
-    ///         spec.borrow_mut().add_method("value", value, sys::mrb_args_none());
-    ///         spec.borrow_mut().add_self_method("value", value, sys::mrb_args_none());
-    ///         spec.borrow_mut().mrb_value_is_rust_backed(true);
-    ///         spec
-    ///     };
-    ///     spec.borrow().define(&interp).expect("class install");
-    /// }
-    /// ```
-    pub fn def_class<T: Any>(
-        &mut self,
-        name: &str,
-        enclosing_scope: Option<EnclosingRubyScope>,
-        free: Option<Free>,
-    ) -> Rc<RefCell<class::Spec>> {
-        let spec = class::Spec::new(name, enclosing_scope, free);
-        let spec = Rc::new(RefCell::new(spec));
-        self.classes.insert(TypeId::of::<T>(), Rc::clone(&spec));
-        spec
+    pub fn def_class<T>(&mut self, spec: class::Spec)
+    where
+        T: Any,
+    {
+        self.classes.insert(TypeId::of::<T>(), Box::new(spec));
     }
 
     /// Retrieve a class definition from the state bound to Rust type `T`.
     ///
     /// This function returns `None` if type `T` has not had a class spec
     /// registered for it using [`State::def_class`].
-    ///
-    /// Internally, [`class::Spec`]s are stored in an `Rc<RefCell<_>>` which
-    /// allows class specs to have multiple owners, such as being a super class
-    /// or an enclosing scope for a class or a module. To mutate the class spec,
-    /// call `borrow_mut` on the return value of this method to get a mutable
-    /// reference to the class spec.
-    pub fn class_spec<T: Any>(&self) -> Option<Rc<RefCell<class::Spec>>> {
-        self.classes.get(&TypeId::of::<T>()).map(Rc::clone)
+    pub fn class_spec<T>(&self) -> Option<&class::Spec>
+    where
+        T: Any,
+    {
+        self.classes.get(&TypeId::of::<T>()).map(Box::as_ref)
     }
 
     /// Create a module definition bound to a Rust type `T`. Module definitions
     /// have the same lifetime as the [`State`]. Module defs are stored by
     /// [`TypeId`] of `T`.
-    ///
-    /// Internally, [`module::Spec`]s are stored in an `Rc<RefCell<_>>` which
-    /// allows module specs to have multiple owners, such as being an enclosing
-    /// scope for a class or a module. To mutate the module spec, call
-    /// `borrow_mut` on the return value of this method to get a mutable
-    /// reference to the module spec.
-    ///
-    /// Module specs can also be retrieved from the state after creation with
-    /// [`State::module_spec`].
-    ///
-    /// The recommended pattern for using `def_module` looks like this:
-    ///
-    /// ```rust
-    /// #[macro_use]
-    /// extern crate artichoke_backend;
-    ///
-    /// use artichoke_backend::convert::Convert;
-    /// use artichoke_backend::def::{ClassLike, Define};
-    /// use artichoke_backend::sys;
-    /// use artichoke_backend::value::Value;
-    ///
-    /// extern "C" fn value(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value
-    /// {
-    ///     let interp = unsafe { unwrap_interpreter!(mrb) };
-    ///     let result: Value = interp.convert(29);
-    ///     result.inner()
-    /// }
-    ///
-    /// fn main() {
-    ///     let interp = artichoke_backend::interpreter().expect("init");
-    ///     let spec = {
-    ///         let mut api = interp.0.borrow_mut();
-    ///         let spec = api.def_module::<()>("Container", None);
-    ///         spec.borrow_mut().add_method("value", value, sys::mrb_args_none());
-    ///         spec.borrow_mut().add_self_method("value", value, sys::mrb_args_none());
-    ///         spec
-    ///     };
-    ///     spec.borrow().define(&interp).expect("class install");
-    /// }
-    /// ```
-    pub fn def_module<T: Any>(
-        &mut self,
-        name: &str,
-        enclosing_scope: Option<EnclosingRubyScope>,
-    ) -> Rc<RefCell<module::Spec>> {
-        let spec = module::Spec::new(name, enclosing_scope);
-        let spec = Rc::new(RefCell::new(spec));
-        self.modules.insert(TypeId::of::<T>(), Rc::clone(&spec));
-        spec
+    pub fn def_module<T>(&mut self, spec: module::Spec)
+    where
+        T: Any,
+    {
+        self.modules.insert(TypeId::of::<T>(), Box::new(spec));
     }
 
     /// Retrieve a module definition from the state bound to Rust type `T`.
     ///
     /// This function returns `None` if type `T` has not had a class spec
     /// registered for it using [`State::def_module`].
-    ///
-    /// Internally, [`module::Spec`]s are stored in an `Rc<RefCell<_>>` which
-    /// allows module specs to have multiple owners, such as being an enclosing
-    /// scope for a class or a module. To mutate the module spec, call
-    /// `borrow_mut` on the return value of this method to get a mutable
-    /// reference to the module spec.
-    pub fn module_spec<T: Any>(&self) -> Option<Rc<RefCell<module::Spec>>> {
-        self.modules.get(&TypeId::of::<T>()).map(Rc::clone)
+    pub fn module_spec<T>(&self) -> Option<&module::Spec>
+    where
+        T: Any,
+    {
+        self.modules.get(&TypeId::of::<T>()).map(Box::as_ref)
     }
 
     pub fn sym_intern<T>(&mut self, sym: T) -> sys::mrb_sym

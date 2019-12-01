@@ -15,6 +15,7 @@ pub enum Type {
     Module,
 }
 
+#[derive(Clone)]
 pub struct Spec {
     name: String,
     cstring: CString,

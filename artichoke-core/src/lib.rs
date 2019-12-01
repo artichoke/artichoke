@@ -12,6 +12,7 @@
 //! [`artichoke-backend`](https://artichoke.github.io/artichoke/artichoke_backend/)
 //! is one implementation of the `artichoke-core` traits.
 
+use std::borrow::Cow;
 use std::error;
 use std::fmt;
 use std::io;
@@ -52,7 +53,7 @@ pub enum ArtichokeError {
     /// Unable to initalize interpreter.
     New,
     /// Class or module with this name is not defined in the artichoke VM.
-    NotDefined(String),
+    NotDefined(Cow<'static, str>),
     /// Arg count exceeds maximum allowed by the VM.
     TooManyArgs {
         /// Number of arguments supplied.

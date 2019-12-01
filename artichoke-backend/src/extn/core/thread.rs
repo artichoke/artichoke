@@ -1,21 +1,26 @@
 use artichoke_core::eval::Eval;
 use artichoke_core::load::LoadSources;
 
+use crate::class;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    interp
-        .0
-        .borrow_mut()
-        .def_class::<Thread>("Thread", None, None);
-    interp
-        .0
-        .borrow_mut()
-        .def_class::<Mutex>("Mutex", None, None);
+    if interp.0.borrow().class_spec::<Thread>().is_some() {
+        return Ok(());
+    }
+    if interp.0.borrow().class_spec::<Mutex>().is_some() {
+        return Ok(());
+    }
+    let spec = class::Spec::new("Thread", None, None);
+    interp.0.borrow_mut().def_class::<Thread>(spec);
+    let spec = class::Spec::new("Mutex", None, None);
+    interp.0.borrow_mut().def_class::<Mutex>(spec);
     interp.def_rb_source_file(b"thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement
     interp.eval(&b"require 'thread'"[..])?;
+    trace!("Patched Thread onto interpreter");
+    trace!("Patched Mutex onto interpreter");
     Ok(())
 }
 

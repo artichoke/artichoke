@@ -93,6 +93,13 @@ impl ExceptionHandler for Artichoke {
         // backtrace = exception.backtrace
         // ```
         let exception = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
+        // Sometimes when hacking on extn/core it is possible to enter a crash
+        // loop where an exception is captured by this handler, but extracting
+        // the exception name or backtrace throws again. Uncommenting the
+        // folllowing print statement will at least get you the exception class
+        // and message, which should help debugging.
+        //
+        // println!("{:?}", exception);
         let class = exception
             .funcall::<Value>("class", &[], None)
             .and_then(|exception| exception.funcall::<&str>("name", &[], None));

@@ -15,8 +15,8 @@
 #[macro_use]
 extern crate artichoke_backend;
 
+use artichoke_backend::class;
 use artichoke_backend::convert::RustBackedValue;
-use artichoke_backend::def::{ClassLike, Define};
 use artichoke_backend::sys;
 
 struct Obj;
@@ -36,11 +36,12 @@ unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
 #[test]
 fn obj_new_borrow_mut() {
     let interp = artichoke_backend::interpreter().expect("init");
-    let class = interp.0.borrow_mut().def_class::<Obj>("Obj", None, None);
-    class
-        .borrow_mut()
-        .add_method("initialize", initialize, sys::mrb_args_none());
-    class.borrow().define(&interp).unwrap();
+    let spec = class::Spec::new("Obj", None, None);
+    class::Builder::for_spec(&interp, &spec)
+        .add_method("initialize", initialize, sys::mrb_args_none())
+        .define()
+        .unwrap();
+    interp.0.borrow_mut().def_class::<Obj>(spec);
     unsafe {
         Obj.try_into_ruby(&interp, None).unwrap();
     }

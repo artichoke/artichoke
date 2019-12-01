@@ -3,8 +3,8 @@ use artichoke_core::value::Value as _;
 use std::convert::TryFrom;
 use std::mem;
 
+use crate::class;
 use crate::convert::Convert;
-use crate::def::{ClassLike, Define};
 use crate::extn::core::exception::{self, Fatal, NotImplementedError, RangeError, RubyException};
 use crate::sys;
 use crate::types::Int;
@@ -15,26 +15,14 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<Integer>().is_some() {
         return Ok(());
     }
-
-    let integer = interp
-        .0
-        .borrow_mut()
-        .def_class::<Integer>("Integer", None, None);
-
-    integer
-        .borrow_mut()
-        .add_method("chr", Integer::chr, sys::mrb_args_opt(1));
-
-    integer
-        .borrow_mut()
-        .add_method("size", Integer::size, sys::mrb_args_none());
-
-    integer.borrow().define(interp)?;
-
+    let spec = class::Spec::new("Integer", None, None);
+    class::Builder::for_spec(interp, &spec)
+        .add_method("chr", Integer::chr, sys::mrb_args_opt(1))
+        .add_method("size", Integer::size, sys::mrb_args_none())
+        .define()?;
+    interp.0.borrow_mut().def_class::<Integer>(spec);
     interp.eval(&include_bytes!("integer.rb")[..])?;
-
     trace!("Patched Integer onto interpreter");
-
     Ok(())
 }
 

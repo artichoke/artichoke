@@ -1,7 +1,8 @@
 use artichoke_core::eval::Eval;
 
+use crate::class;
 use crate::convert::RustBackedValue;
-use crate::def::{rust_data_free, ClassLike, Define};
+use crate::def;
 use crate::extn::core::exception;
 use crate::extn::core::random;
 use crate::sys;
@@ -12,45 +13,40 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<random::Random>().is_some() {
         return Ok(());
     }
-
-    let spec = interp.0.borrow_mut().def_class::<random::Random>(
-        "Random",
-        None,
-        Some(rust_data_free::<random::Random>),
-    );
-    spec.borrow_mut().add_self_method(
-        "new_seed",
-        artichoke_random_self_new_seed,
-        sys::mrb_args_req(1),
-    );
-    spec.borrow_mut()
-        .add_self_method("srand", artichoke_random_self_srand, sys::mrb_args_opt(1));
-    spec.borrow_mut().add_self_method(
-        "urandom",
-        artichoke_random_self_urandom,
-        sys::mrb_args_req(1),
-    );
-    spec.borrow_mut().add_method(
-        "initialize",
-        artichoke_random_initialize,
-        sys::mrb_args_opt(1),
-    );
-
-    spec.borrow_mut()
-        .add_method("==", artichoke_random_eq, sys::mrb_args_opt(1));
-    spec.borrow_mut()
-        .add_method("bytes", artichoke_random_bytes, sys::mrb_args_req(1));
-    spec.borrow_mut()
-        .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1));
-    spec.borrow_mut()
-        .add_method("seed", artichoke_random_seed, sys::mrb_args_none());
-    spec.borrow_mut().mrb_value_is_rust_backed(true);
-    spec.borrow().define(interp)?;
+    let spec = class::Spec::new("Random", None, Some(def::rust_data_free::<random::Random>));
+    class::Builder::for_spec(interp, &spec)
+        .value_is_rust_object()
+        .add_self_method(
+            "new_seed",
+            artichoke_random_self_new_seed,
+            sys::mrb_args_req(1),
+        )
+        .add_self_method("srand", artichoke_random_self_srand, sys::mrb_args_opt(1))
+        .add_self_method(
+            "urandom",
+            artichoke_random_self_urandom,
+            sys::mrb_args_req(1),
+        )
+        .add_method(
+            "initialize",
+            artichoke_random_initialize,
+            sys::mrb_args_opt(1),
+        )
+        .add_method("==", artichoke_random_eq, sys::mrb_args_opt(1))
+        .add_method("bytes", artichoke_random_bytes, sys::mrb_args_req(1))
+        .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))
+        .add_method("seed", artichoke_random_seed, sys::mrb_args_none())
+        .define()?;
+    interp.0.borrow_mut().def_class::<random::Random>(spec);
 
     let default = random::default();
     let default = unsafe { default.try_into_ruby(interp, None) }?;
-    let mrb = interp.0.borrow().mrb;
-    let rclass = spec.borrow().rclass(interp).ok_or(ArtichokeError::New)?;
+    let borrow = interp.0.borrow();
+    let rclass = borrow
+        .class_spec::<random::Random>()
+        .and_then(|spec| spec.rclass(interp))
+        .ok_or(ArtichokeError::New)?;
+    let mrb = borrow.mrb;
     unsafe {
         sys::mrb_define_const(
             mrb,
@@ -59,9 +55,8 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
             default.inner(),
         );
     }
-
     interp.eval(&include_bytes!("random.rb")[..])?;
-    trace!("Patched ENV onto interpreter");
+    trace!("Patched Random onto interpreter");
     Ok(())
 }
 
