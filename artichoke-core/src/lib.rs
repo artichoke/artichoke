@@ -11,6 +11,10 @@
 //!
 //! [`artichoke-backend`](https://artichoke.github.io/artichoke/artichoke_backend/)
 //! is one implementation of the `artichoke-core` traits.
+//!
+//! ## License
+//!
+//! artichoke-core is licensed with the [MIT License](/LICENSE) (c) Ryan Lopopolo.
 
 use std::borrow::Cow;
 use std::error;

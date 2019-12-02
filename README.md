@@ -4,9 +4,10 @@
 [![Discord](https://img.shields.io/discord/607683947496734760)](https://discord.gg/QCe2tp2)
 [![Twitter](https://img.shields.io/twitter/follow/artichokeruby?label=Follow&style=social)](https://twitter.com/artichokeruby)
 <br>
+[![Backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
 [![Core documentation](https://img.shields.io/badge/docs-artichoke--core-blue.svg)](https://artichoke.github.io/artichoke/artichoke_core/)
+[![Frontend documentation](https://img.shields.io/badge/docs-artichoke--frontend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_frontend/)
 [![Virtual filesystem documentation](https://img.shields.io/badge/docs-artichoke--vfs-blue.svg)](https://artichoke.github.io/artichoke/artichoke_vfs/)
-[![mruby backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
 
 <p align="center">
   <a href="https://artichoke.run">
@@ -14,11 +15,9 @@
   </a>
 </p>
 
-Artichoke is a platform for building
-[MRI-compatible](https://github.com/ruby/spec) Ruby implementations. Artichoke
-provides a Ruby runtime implemented in Rust that can be loaded into many VM
-backends. Rubies implemented with Artichoke will be source and C API compatible
-with MRI Ruby 2.6.3.
+Artichoke is a Ruby implementation written in Rust and Ruby. Artichoke intends
+to be [MRI-compatible](https://github.com/ruby/spec) and targets Ruby 2.6.3.
+Artichoke provides a Ruby runtime implemented in Rust and Ruby.
 
 ## Try Artichoke
 
@@ -82,3 +81,11 @@ please file one before beginning to work on a PR.
 
 If you'd like to engage in a discussion outside of GitHub, you can
 [join Artichoke's public Discord server](https://discord.gg/QCe2tp2).
+
+## License
+
+artichoke is licensed with the [MIT License](/LICENSE) (c) Ryan Lopopolo.
+
+Some portions of Artichoke are derived from third party sources. The READMEs in
+each crate discusses which third party licenses are applicable to the sources
+and derived works in Artichoke.
