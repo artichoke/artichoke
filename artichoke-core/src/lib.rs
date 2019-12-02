@@ -101,7 +101,7 @@ impl fmt::Display for ArtichokeError {
             Self::Uninitialized => write!(f, "Interpreter not initialized"),
             Self::UninitializedValue(class) => write!(
                 f,
-                "Attempted to extract pointer from uninitialized Value iwth class {}",
+                "Attempted to extract pointer from uninitialized Value with class {}",
                 class
             ),
             Self::UnreachableValue => write!(f, "Extracted unreachable type from interpreter"),
