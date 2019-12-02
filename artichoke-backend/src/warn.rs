@@ -10,13 +10,15 @@ use crate::{Artichoke, ArtichokeError};
 impl Warn for Artichoke {
     fn warn(&self, message: &[u8]) -> Result<(), ArtichokeError> {
         warn!("rb warning: {}", String::from_utf8_lossy(message));
-        let borrow = self.0.borrow();
-        let warning = borrow.module_spec::<Warning>().ok_or_else(|| {
-            ArtichokeError::NotDefined(Cow::Borrowed("Warn with uninitialized Warning"))
-        })?;
-        let warning = warning.value(self).ok_or_else(|| {
-            ArtichokeError::NotDefined(Cow::Borrowed("Warn with uninitialized Warning"))
-        })?;
+        let warning = {
+            let borrow = self.0.borrow();
+            let spec = borrow.module_spec::<Warning>().ok_or_else(|| {
+                ArtichokeError::NotDefined(Cow::Borrowed("Warn with uninitialized Warning"))
+            })?;
+            spec.value(self).ok_or_else(|| {
+                ArtichokeError::NotDefined(Cow::Borrowed("Warn with uninitialized Warning"))
+            })?
+        };
         warning.funcall::<Value>("warn", &[self.convert(message)], None)?;
         Ok(())
     }

@@ -105,12 +105,11 @@ where
                 to: Rust::Object,
             });
         }
-        let ptr = sys::mrb_data_get_ptr(mrb, slf.inner(), spec.data_type());
+        let ptr = sys::mrb_data_check_get_ptr(mrb, slf.inner(), spec.data_type());
         if ptr.is_null() {
-            panic!(
-                "got null pointer when extracting {}",
-                Self::ruby_type_name()
-            );
+            // `Object#allocate` can be used to create `MRB_TT_DATA` without calling
+            // `#initialize`. These objects will return a NULL pointer.
+            return Err(ArtichokeError::UninitializedValue(Self::ruby_type_name()));
         }
         let data = Rc::from_raw(ptr as *const RefCell<Self>);
         let value = Rc::clone(&data);
