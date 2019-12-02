@@ -52,7 +52,7 @@ Examples of `RustBackedValues` include:
 
 - `Regexp` and `MatchData`, which are backed by regular expressions from the
   `onig` and `regex` crates.
-- `ENV` which glues Ruby to an environ backend.
+- `ENV`, which glues Ruby to an environ backend.
 
 ## Converters Between Ruby and Rust Types
 
