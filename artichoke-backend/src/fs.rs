@@ -121,16 +121,16 @@ impl Default for Metadata {
 }
 
 fn absolutize_relative_to(path: &Path, cwd: &Path) -> Result<PathBuf, ArtichokeError> {
-    let path = path
-        .parse_dot()
-        .map_err(io::Error::from)
-        .map_err(ArtichokeError::Vfs)?;
-    let path = if path.is_relative() {
+    if path.is_relative() {
         cwd.join(path)
+            .parse_dot()
+            .map_err(io::Error::from)
+            .map_err(ArtichokeError::Vfs)
     } else {
-        path
-    };
-    Ok(path)
+        path.parse_dot()
+            .map_err(io::Error::from)
+            .map_err(ArtichokeError::Vfs)
+    }
 }
 
 #[cfg(unix)]
