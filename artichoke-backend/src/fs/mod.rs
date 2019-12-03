@@ -9,8 +9,6 @@ use std::path::{Path, PathBuf};
 use crate::extn::core::exception::RubyException;
 use crate::{Artichoke, ArtichokeError};
 
-pub mod abs;
-
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
 pub type RequireFunc = fn(&Artichoke) -> Result<(), ArtichokeError>;
