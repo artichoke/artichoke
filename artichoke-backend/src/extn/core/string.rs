@@ -7,6 +7,7 @@ use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
+mod index;
 mod scan;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -15,6 +16,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     }
     let spec = class::Spec::new("String", None, None);
     class::Builder::for_spec(interp, &spec)
+        .add_method("index", RString::index, sys::mrb_args_req_and_opt(1, 1))
         .add_method("ord", RString::ord, sys::mrb_args_none())
         .add_method("scan", RString::scan, sys::mrb_args_req(1))
         .define()?;
@@ -28,6 +30,18 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 pub struct RString;
 
 impl RString {
+    unsafe extern "C" fn index(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let (pattern, offset) = mrb_get_args!(mrb, required = 1, optional = 1);
+        let interp = unwrap_interpreter!(mrb);
+        let value = Value::new(&interp, slf);
+        let offset = offset.map(|offset| Value::new(&interp, offset));
+        let result = index::method(&interp, value, Value::new(&interp, pattern), offset);
+        match result {
+            Ok(result) => result.inner(),
+            Err(exception) => exception::raise(interp, exception),
+        }
+    }
+
     unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
