@@ -73,8 +73,7 @@ pub fn method(
             pattern.clone().try_into::<&[u8]>(),
             pattern.funcall::<&[u8]>("to_str", &[], None),
         ) {
-            (Ok(a), Ok(_)) => a,
-            (Ok(a), Err(_)) => a,
+            (Ok(a), Ok(_)) | (Ok(a), Err(_)) => a,
             (Err(_), Ok(b)) => b,
             (Err(_), Err(_)) => {
                 return Err(Box::new(TypeError::new(
