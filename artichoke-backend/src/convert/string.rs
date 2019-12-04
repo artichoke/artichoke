@@ -25,8 +25,14 @@ impl Convert<&str, Value> for Artichoke {
 
 impl TryConvert<Value, String> for Artichoke {
     fn try_convert(&self, value: Value) -> Result<String, ArtichokeError> {
-        let result: Result<&str, _> = self.try_convert(value);
-        result.map(String::from)
+        let type_tag = value.ruby_type();
+        let bytes = value
+            .try_into::<&[u8]>()
+            .map_err(|_| ArtichokeError::ConvertToRust {
+                from: type_tag,
+                to: Rust::String,
+            })?;
+        Ok(String::from_utf8_lossy(bytes).to_string())
     }
 }
 
