@@ -12,7 +12,6 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 
 pub struct Abbrev;
 
-
 // Abbrev tests from Ruby stdlib docs
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/abbrev/rdoc/Abbrev.html
 #[cfg(test)]
