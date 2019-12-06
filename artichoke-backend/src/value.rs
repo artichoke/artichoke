@@ -158,7 +158,8 @@ impl Value {
     ///
     /// This function can never fail.
     pub fn to_s_debug(&self) -> String {
-        format!("{}<{}>", self.ruby_type().class_name(), self.inspect())
+        let inspected_str = String::from_utf8_lossy(&self.inspect()).to_string();
+        format!("{}<{}>", self.ruby_type().class_name(), inspected_str)
     }
 
     pub fn implicitly_convert_to_int(&self) -> Result<Int, Box<dyn RubyException>> {
@@ -367,9 +368,9 @@ impl ValueLike for Value {
         unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
     }
 
-    fn inspect(&self) -> String {
-        self.funcall::<String>("inspect", &[], None)
-            .unwrap_or_else(|_| "<unknown>".to_owned())
+    fn inspect(&self) -> Vec<u8> {
+        self.funcall::<Vec<u8>>("inspect", &[], None)
+            .unwrap_or_else(|_| Vec::new())
     }
 
     fn is_nil(&self) -> bool {
@@ -381,9 +382,9 @@ impl ValueLike for Value {
         self.funcall::<bool>("respond_to?", &[method], None)
     }
 
-    fn to_s(&self) -> String {
-        self.funcall::<String>("to_s", &[], None)
-            .unwrap_or_else(|_| "<unknown>".to_owned())
+    fn to_s(&self) -> Vec<u8> {
+        self.funcall::<Vec<u8>>("to_s", &[], None)
+            .unwrap_or_else(|_| Vec::new())
     }
 }
 
@@ -395,7 +396,8 @@ impl Convert<Value, Value> for Artichoke {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_s())
+        let string_repr = String::from_utf8_lossy(&self.to_s()).to_string();
+        write!(f, "{}", string_repr)
     }
 }
 

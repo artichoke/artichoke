@@ -50,7 +50,7 @@ impl Integer {
                 &interp,
                 format!(
                     "encoding parameter of Integer#chr (given {}) not supported",
-                    encoding.inspect()
+                    String::from_utf8_lossy(&encoding.inspect()).to_string()
                 ),
             )))
         } else {

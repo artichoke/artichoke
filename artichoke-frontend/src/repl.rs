@@ -115,8 +115,11 @@ pub fn run(
                     continue;
                 }
                 match interp.eval(buf.as_bytes()) {
-                    Ok(value) => writeln!(output, "{}{}", config.result_prefix, value.inspect())
-                        .map_err(Error::Io)?,
+                    Ok(value) => {
+                        let value_inspect = String::from_utf8_lossy(&value.inspect()).to_string();
+                        writeln!(output, "{}{}", config.result_prefix, value_inspect)
+                            .map_err(Error::Io)?
+                    }
                     Err(ArtichokeError::Exec(backtrace)) => {
                         writeln!(error, "Backtrace:").map_err(Error::Io)?;
                         for frame in backtrace.lines() {

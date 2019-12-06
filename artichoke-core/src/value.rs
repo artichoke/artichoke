@@ -67,10 +67,10 @@ where
     /// Call `#inspect` on this [`Value`].
     ///
     /// This function can never fail.
-    fn inspect(&self) -> String;
+    fn inspect(&self) -> Vec<u8>;
 
     /// Call `#to_s` on this [`Value`].
     ///
     /// This function can never fail.
-    fn to_s(&self) -> String;
+    fn to_s(&self) -> Vec<u8>;
 }

@@ -25,14 +25,8 @@ impl Convert<&str, Value> for Artichoke {
 
 impl TryConvert<Value, String> for Artichoke {
     fn try_convert(&self, value: Value) -> Result<String, ArtichokeError> {
-        let type_tag = value.ruby_type();
-        let bytes = value
-            .try_into::<&[u8]>()
-            .map_err(|_| ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::String,
-            })?;
-        Ok(String::from_utf8_lossy(bytes).to_string())
+        let result: Result<&str, _> = self.try_convert(value);
+        result.map(String::from)
     }
 }
 
@@ -99,7 +93,7 @@ mod tests {
     fn string_with_value(s: String) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(s.clone());
-        value.to_s() == s
+        value.to_s() == s.as_bytes()
     }
 
     #[allow(clippy::needless_pass_by_value)]
