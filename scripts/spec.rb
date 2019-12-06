@@ -217,6 +217,7 @@ elsif ARGV.first == 'passing'
   runner.register(Spec.new('library', 'monitor'))
   runner.register(Spec.new('library', 'stringscanner'))
   runner.register(Spec.new('library', 'uri'))
+  runner.register(Spec.new('library', 'abbrev'))
 else
   runner.register(Spec.new(*ARGV))
 end
