@@ -1,5 +1,6 @@
 use crate::{Artichoke, ArtichokeError};
 
+pub mod abbrev;
 pub mod delegate;
 pub mod forwardable;
 pub mod json;
@@ -9,6 +10,7 @@ pub mod set;
 pub mod strscan;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    abbrev::init(interp)?;
     delegate::init(interp)?;
     forwardable::init(interp)?;
     json::init(interp)?;
