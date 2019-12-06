@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #--
 # Copyright (c) 2001,2003 Akinori MUSHA <knu@iDaemons.org>
 #
@@ -47,7 +48,6 @@
 #     "w"       => "winter" }
 
 module Abbrev
-
   # Given a set of strings, calculate the set of unambiguous abbreviations for
   # those strings, and return a hash where the keys are all the possible
   # abbreviations and the values are the full strings.
@@ -75,12 +75,13 @@ module Abbrev
     seen = Hash.new(0)
 
     if pattern.is_a?(String)
-      pattern = /\A#{Regexp.quote(pattern)}/  # regard as a prefix
+      pattern = /\A#{Regexp.quote(pattern)}/ # regard as a prefix
     end
 
     words.each do |word|
       next if word.empty?
-      word.size.downto(1) { |len|
+
+      word.size.downto(1) do |len|
         abbrev = word[0...len]
 
         next if pattern && pattern !~ abbrev
@@ -93,7 +94,7 @@ module Abbrev
         else
           break
         end
-      }
+      end
     end
 
     words.each do |word|
@@ -105,7 +106,10 @@ module Abbrev
     table
   end
 
+  # TODO: Re-enable rule after `module_function` is fixed, see GH-408.
+  # rubocop:disable Style/AccessModifierDeclarations
   module_function :abbrev
+  # rubocop:enable Style/AccessModifierDeclarations
 end
 
 class Array
@@ -127,6 +131,6 @@ class Array
   #
   # See also Abbrev.abbrev
   def abbrev(pattern = nil)
-    Abbrev::abbrev(self, pattern)
+    Abbrev.abbrev(self, pattern)
   end
 end
