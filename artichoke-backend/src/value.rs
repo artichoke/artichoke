@@ -487,7 +487,7 @@ mod tests {
 
         let value = interp.convert(true);
         let string = value.to_s();
-        assert_eq!(string, "true");
+        assert_eq!(string, b"true");
     }
 
     #[test]
@@ -505,7 +505,7 @@ mod tests {
 
         let value = interp.convert(true);
         let debug = value.inspect();
-        assert_eq!(debug, "true");
+        assert_eq!(debug, b"true");
     }
 
     #[test]
@@ -514,7 +514,7 @@ mod tests {
 
         let value = interp.convert(false);
         let string = value.to_s();
-        assert_eq!(string, "false");
+        assert_eq!(string, b"false");
     }
 
     #[test]
@@ -532,7 +532,7 @@ mod tests {
 
         let value = interp.convert(false);
         let debug = value.inspect();
-        assert_eq!(debug, "false");
+        assert_eq!(debug, b"false");
     }
 
     #[test]
@@ -541,7 +541,7 @@ mod tests {
 
         let value = interp.convert(None::<Value>);
         let string = value.to_s();
-        assert_eq!(string, "");
+        assert_eq!(string, b"");
     }
 
     #[test]
@@ -559,7 +559,7 @@ mod tests {
 
         let value = interp.convert(None::<Value>);
         let debug = value.inspect();
-        assert_eq!(debug, "nil");
+        assert_eq!(debug, b"nil");
     }
 
     #[test]
@@ -568,7 +568,7 @@ mod tests {
 
         let value: Value = interp.convert(255);
         let string = value.to_s();
-        assert_eq!(string, "255");
+        assert_eq!(string, b"255");
     }
 
     #[test]
@@ -586,7 +586,7 @@ mod tests {
 
         let value: Value = interp.convert(255);
         let debug = value.inspect();
-        assert_eq!(debug, "255");
+        assert_eq!(debug, b"255");
     }
 
     #[test]
@@ -595,7 +595,7 @@ mod tests {
 
         let value = interp.convert("interstate");
         let string = value.to_s();
-        assert_eq!(string, "interstate");
+        assert_eq!(string, b"interstate");
     }
 
     #[test]
@@ -613,7 +613,7 @@ mod tests {
 
         let value = interp.convert("interstate");
         let debug = value.inspect();
-        assert_eq!(debug, r#""interstate""#);
+        assert_eq!(debug, br#""interstate""#);
     }
 
     #[test]
@@ -622,7 +622,7 @@ mod tests {
 
         let value = interp.convert("");
         let string = value.to_s();
-        assert_eq!(string, "");
+        assert_eq!(string, b"");
     }
 
     #[test]
@@ -640,7 +640,7 @@ mod tests {
 
         let value = interp.convert("");
         let debug = value.inspect();
-        assert_eq!(debug, r#""""#);
+        assert_eq!(debug, br#""""#);
     }
 
     #[test]

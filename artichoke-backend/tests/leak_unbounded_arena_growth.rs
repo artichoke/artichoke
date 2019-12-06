@@ -71,7 +71,7 @@ end
             let arena = interp.create_arena_savepoint();
             let result = interp.eval(b"'a' * 1024 * 1024").expect("eval");
             arena.restore();
-            assert_eq!(result.to_s(), expected);
+            assert_eq!(result.to_s(), expected.as_bytes());
             drop(result);
             interp.incremental_gc();
         },

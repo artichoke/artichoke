@@ -574,7 +574,7 @@ mod tests {
         ];
 
         let value: Value = interp.convert(map);
-        assert_eq!("{1=>2, 7=>8}", value.to_s());
+        assert_eq!(value.to_s(), b"{1=>2, 7=>8}");
 
         let pairs = value.try_into::<Vec<(Value, Value)>>().expect("convert");
         let map = pairs
