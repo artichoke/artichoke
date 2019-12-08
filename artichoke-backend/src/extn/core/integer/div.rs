@@ -80,4 +80,30 @@ mod tests {
         }
         result
     }
+
+    #[quickcheck]
+    fn integer_division_send(x: Int, y: Int) -> bool {
+        let interp = crate::interpreter().expect("init");
+        let mut result = true;
+        match (x, y) {
+            (0, 0) => result &= interp.eval(b"0.send('/', 0)").is_err(),
+            (x, 0) | (0, x) => {
+                let expr = format!("{}.send('/', 0)", x).into_bytes();
+                result &= interp.eval(expr.as_slice()).is_err();
+                let expr = format!("0.send('/', {})", x).into_bytes();
+                let division = interp
+                    .eval(expr.as_slice())
+                    .and_then(Value::try_into::<Int>);
+                result &= division == Ok(0)
+            }
+            (x, y) => {
+                let expr = format!("{}.send('/', {})", x, y).into_bytes();
+                let division = interp
+                    .eval(expr.as_slice())
+                    .and_then(Value::try_into::<Int>);
+                result &= division == Ok(x / y)
+            }
+        }
+        result
+    }
 }
