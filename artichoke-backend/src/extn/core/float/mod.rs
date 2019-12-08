@@ -21,4 +21,7 @@ pub struct Float;
 
 impl Float {
     pub const EPSILON: types::Float = std::f64::EPSILON;
+    pub const INFINITY: types::Float = std::f64::INFINITY;
+    pub const NEG_INFINITY: types::Float = std::f64::NEG_INFINITY;
+    pub const NAN: types::Float = std::f64::NAN;
 }

@@ -11,6 +11,8 @@ use crate::types::Int;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
+pub mod div;
+
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<Integer>().is_some() {
         return Ok(());
@@ -18,6 +20,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let spec = class::Spec::new("Integer", None, None);
     class::Builder::for_spec(interp, &spec)
         .add_method("chr", Integer::chr, sys::mrb_args_opt(1))
+        .add_method("/", Integer::div, sys::mrb_args_req(1))
         .add_method("size", Integer::size, sys::mrb_args_none())
         .define()?;
     interp.0.borrow_mut().def_class::<Integer>(spec);
@@ -88,6 +91,18 @@ impl Integer {
                 )))
             }
         };
+        match result {
+            Ok(value) => value.inner(),
+            Err(exception) => exception::raise(interp, exception),
+        }
+    }
+
+    pub unsafe extern "C" fn div(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        let other = mrb_get_args!(mrb, required = 1);
+        let interp = unwrap_interpreter!(mrb);
+        let value = Value::new(&interp, slf);
+        let other = Value::new(&interp, other);
+        let result = div::method(&interp, value, other);
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
