@@ -2261,35 +2261,80 @@ RETRY_TRY_BLOCK:
     }
 
     CASE(OP_DIV, B) {
-#ifndef MRB_WITHOUT_FLOAT
-      double x, y, f;
-#endif
-
       /* need to check if op is overridden */
       switch (TYPES2(mrb_type(regs[a]),mrb_type(regs[a+1]))) {
       case TYPES2(MRB_TT_FIXNUM,MRB_TT_FIXNUM):
-#ifdef MRB_WITHOUT_FLOAT
         {
           mrb_int x = mrb_fixnum(regs[a]);
           mrb_int y = mrb_fixnum(regs[a+1]);
+#ifdef ARTICHOKE
+          if (y == 0) {
+            mrb_raise(mrb, mrb_exc_get(mrb, "ZeroDivisionError"), "divided by 0");
+          }
+#endif
           SET_INT_VALUE(regs[a], y ? x / y : 0);
         }
         break;
-#else
-        x = (mrb_float)mrb_fixnum(regs[a]);
-        y = (mrb_float)mrb_fixnum(regs[a+1]);
-        break;
+#ifndef MRB_WITHOUT_FLOAT
       case TYPES2(MRB_TT_FIXNUM,MRB_TT_FLOAT):
-        x = (mrb_float)mrb_fixnum(regs[a]);
-        y = mrb_float(regs[a+1]);
+        {
+          mrb_float x = (mrb_float)mrb_fixnum(regs[a]);
+          mrb_float y = mrb_float(regs[a+1]);
+          mrb_float f;
+          if (y == 0) {
+            if (x > 0) {
+              f = INFINITY;
+            } else if (x < 0) {
+              f = -INFINITY;
+            } else /* if (x == 0) */ {
+              f = NAN;
+            }
+          }
+          else {
+            f = x / y;
+          }
+          SET_FLOAT_VALUE(mrb, regs[a], f);
+        }
         break;
       case TYPES2(MRB_TT_FLOAT,MRB_TT_FIXNUM):
-        x = mrb_float(regs[a]);
-        y = (mrb_float)mrb_fixnum(regs[a+1]);
+        {
+          mrb_float x = mrb_float(regs[a]);
+          mrb_float y = (mrb_float)mrb_fixnum(regs[a+1]);
+          mrb_float f;
+          if (y == 0) {
+            if (x > 0) {
+              f = INFINITY;
+            } else if (x < 0) {
+              f = -INFINITY;
+            } else /* if (x == 0) */ {
+              f = NAN;
+            }
+          }
+          else {
+            f = x / y;
+          }
+          SET_FLOAT_VALUE(mrb, regs[a], f);
+        }
         break;
       case TYPES2(MRB_TT_FLOAT,MRB_TT_FLOAT):
-        x = mrb_float(regs[a]);
-        y = mrb_float(regs[a+1]);
+        {
+          mrb_float x = mrb_float(regs[a]);
+          mrb_float y = mrb_float(regs[a+1]);
+          mrb_float f;
+          if (y == 0) {
+            if (x > 0) {
+              f = INFINITY;
+            } else if (x < 0) {
+              f = -INFINITY;
+            } else /* if (x == 0) */ {
+              f = NAN;
+            }
+          }
+          else {
+            f = x / y;
+          }
+          SET_FLOAT_VALUE(mrb, regs[a], f);
+        }
         break;
 #endif
       default:
@@ -2297,18 +2342,6 @@ RETRY_TRY_BLOCK:
         mid = mrb_intern_lit(mrb, "/");
         goto L_SEND_SYM;
       }
-
-#ifndef MRB_WITHOUT_FLOAT
-      if (y == 0) {
-        if (x > 0) f = INFINITY;
-        else if (x < 0) f = -INFINITY;
-        else /* if (x == 0) */ f = NAN;
-      }
-      else {
-        f = x / y;
-      }
-      SET_FLOAT_VALUE(mrb, regs[a], f);
-#endif
       NEXT;
     }
 
