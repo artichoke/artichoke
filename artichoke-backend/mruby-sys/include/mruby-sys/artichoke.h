@@ -12,7 +12,8 @@ mrb_value artichoke_ary_concat(mrb_state *mrb, mrb_value ary, mrb_value other);
 mrb_value artichoke_ary_pop(mrb_state *mrb, mrb_value ary);
 mrb_value artichoke_ary_push(mrb_state *mrb, mrb_value ary, mrb_value value);
 mrb_value artichoke_ary_ref(mrb_state *mrb, mrb_value ary, mrb_int offset);
-mrb_value artichoke_ary_set(mrb_state *mrb, mrb_value ary, mrb_int offset, mrb_value value);
+mrb_value artichoke_ary_set(mrb_state *mrb, mrb_value ary, mrb_int offset,
+                            mrb_value value);
 mrb_value artichoke_ary_shift(mrb_state *mrb, mrb_value ary);
 mrb_value artichoke_ary_unshift(mrb_state *mrb, mrb_value ary, mrb_value value);
 
