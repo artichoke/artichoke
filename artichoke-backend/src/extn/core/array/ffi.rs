@@ -28,11 +28,11 @@ unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_val
 #[no_mangle]
 unsafe extern "C" fn artichoke_ary_new_capa(
     mrb: *mut sys::mrb_state,
-    capacity: sys::mrb_int,
+    capa: sys::mrb_int,
 ) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let result = Array(InlineBuffer::with_capacity(
-        usize::try_from(capacity).unwrap_or_default(),
+        usize::try_from(capa).unwrap_or_default(),
     ));
     let result = result
         .try_into_ruby(&interp, None)
@@ -259,6 +259,57 @@ unsafe extern "C" fn artichoke_ary_set(
 }
 
 #[no_mangle]
+unsafe extern "C" fn artichoke_ary_shift(
+    mrb: *mut sys::mrb_state,
+    ary: sys::mrb_value,
+) -> sys::mrb_value {
+    let interp = unwrap_interpreter!(mrb);
+    let array = Value::new(&interp, ary);
+    let result = if let Ok(array) = Array::try_from_ruby(&interp, &array) {
+        let mut borrow = array.borrow_mut();
+        let gc_was_enabled = interp.disable_gc();
+        let result = borrow.get(&interp, 0);
+        let _ = borrow.set_slice(&interp, 0, 1, &InlineBuffer::default());
+        if gc_was_enabled {
+            interp.enable_gc();
+        }
+        result
+    } else {
+        Ok(interp.convert(None::<Value>))
+    };
+    match result {
+        Ok(value) => {
+            let basic = sys::mrb_sys_basic_ptr(ary);
+            sys::mrb_write_barrier(mrb, basic);
+            value.inner()
+        }
+        Err(exception) => exception::raise(interp, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_ary_unshift(
+    mrb: *mut sys::mrb_state,
+    ary: sys::mrb_value,
+    value: sys::mrb_value,
+) -> sys::mrb_value {
+    let interp = unwrap_interpreter!(mrb);
+    let array = Value::new(&interp, ary);
+    let value = Value::new(&interp, value);
+    if let Ok(array) = Array::try_from_ruby(&interp, &array) {
+        let mut borrow = array.borrow_mut();
+        let gc_was_enabled = interp.disable_gc();
+        let _ = borrow.set_with_drain(&interp, 0, 0, value.clone());
+        if gc_was_enabled {
+            interp.enable_gc();
+        }
+    }
+    let basic = sys::mrb_sys_basic_ptr(ary);
+    sys::mrb_write_barrier(mrb, basic);
+    value.inner()
+}
+
+#[no_mangle]
 unsafe extern "C" fn artichoke_ary_len(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
@@ -315,57 +366,6 @@ unsafe extern "C" fn artichoke_ary_check(
     } else {
         0
     }
-}
-
-#[no_mangle]
-unsafe extern "C" fn artichoke_ary_shift(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let result = if let Ok(array) = Array::try_from_ruby(&interp, &array) {
-        let mut borrow = array.borrow_mut();
-        let gc_was_enabled = interp.disable_gc();
-        let result = borrow.get(&interp, 0);
-        let _ = borrow.set_slice(&interp, 0, 1, &InlineBuffer::default());
-        if gc_was_enabled {
-            interp.enable_gc();
-        }
-        result
-    } else {
-        Ok(interp.convert(None::<Value>))
-    };
-    match result {
-        Ok(value) => {
-            let basic = sys::mrb_sys_basic_ptr(ary);
-            sys::mrb_write_barrier(mrb, basic);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
-    }
-}
-
-#[no_mangle]
-unsafe extern "C" fn artichoke_ary_unshift(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-    val: sys::mrb_value,
-) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let value = Value::new(&interp, val);
-    if let Ok(array) = Array::try_from_ruby(&interp, &array) {
-        let mut borrow = array.borrow_mut();
-        let gc_was_enabled = interp.disable_gc();
-        let _ = borrow.set_with_drain(&interp, 0, 0, value.clone());
-        if gc_was_enabled {
-            interp.enable_gc();
-        }
-    }
-    let basic = sys::mrb_sys_basic_ptr(ary);
-    sys::mrb_write_barrier(mrb, basic);
-    value.inner()
 }
 
 #[no_mangle]
