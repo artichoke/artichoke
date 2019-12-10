@@ -90,8 +90,9 @@ impl Kernel {
         let interp = unwrap_interpreter!(mrb);
 
         for value in args.iter() {
-            let s = String::from_utf8_lossy(&Value::new(&interp, *value).to_s()).to_string();
-            interp.0.borrow_mut().print(s.as_str());
+            let to_s = Value::new(&interp, *value).to_s();
+            let converted_s = String::from_utf8_lossy(to_s.as_slice());
+            interp.0.borrow_mut().print(converted_s.as_ref());
         }
         sys::mrb_sys_nil_value()
     }
@@ -103,9 +104,10 @@ impl Kernel {
                     do_puts(interp, &value);
                 }
             } else {
-                let s = String::from_utf8_lossy(&value.to_s()).to_string();
+                let to_s = value.to_s();
                 // TODO convert `puts` to take a Vec<u8>
-                interp.0.borrow_mut().puts(s.as_str());
+                let converted_s = String::from_utf8_lossy(to_s.as_slice());
+                interp.0.borrow_mut().puts(converted_s.as_ref());
             }
         }
 
