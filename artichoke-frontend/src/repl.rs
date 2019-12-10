@@ -121,7 +121,7 @@ pub fn run(
                             output,
                             "{}{}",
                             config.result_prefix,
-                            String::from_utf8_lossy(result)
+                            String::from_utf8_lossy(result.as_slice())
                         )
                         .map_err(Error::Io)?
                     }
