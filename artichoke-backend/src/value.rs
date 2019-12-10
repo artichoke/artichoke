@@ -159,7 +159,11 @@ impl Value {
     /// This function can never fail.
     pub fn to_s_debug(&self) -> String {
         let inspect = self.inspect();
-        format!("{}<{}>", self.ruby_type().class_name(), String::from_utf8_lossy(&inspect))
+        format!(
+            "{}<{}>",
+            self.ruby_type().class_name(),
+            String::from_utf8_lossy(&inspect)
+        )
     }
 
     pub fn implicitly_convert_to_int(&self) -> Result<Int, Box<dyn RubyException>> {

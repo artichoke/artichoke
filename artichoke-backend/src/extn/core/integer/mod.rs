@@ -49,10 +49,7 @@ impl Integer {
             let mut message = b"encoding parameter of Integer#chr (given".to_vec();
             message.extend(encoding.inspect());
             message.extend(b") not supported");
-            Err(Box::new(NotImplementedError::new_raw(
-                &interp,
-                message,
-            )))
+            Err(Box::new(NotImplementedError::new_raw(&interp, message)))
         } else {
             // When no encoding is supplied, MRI assumes the encoding is
             // either ASCII or ASCII-8BIT.
