@@ -158,7 +158,12 @@ impl Value {
     ///
     /// This function can never fail.
     pub fn to_s_debug(&self) -> String {
-        format!("{}<{}>", self.ruby_type().class_name(), self.inspect())
+        let inspect = self.inspect();
+        format!(
+            "{}<{}>",
+            self.ruby_type().class_name(),
+            String::from_utf8_lossy(&inspect)
+        )
     }
 
     pub fn implicitly_convert_to_int(&self) -> Result<Int, Box<dyn RubyException>> {
@@ -367,9 +372,9 @@ impl ValueLike for Value {
         unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
     }
 
-    fn inspect(&self) -> String {
-        self.funcall::<String>("inspect", &[], None)
-            .unwrap_or_else(|_| "<unknown>".to_owned())
+    fn inspect(&self) -> Vec<u8> {
+        self.funcall::<Vec<u8>>("inspect", &[], None)
+            .unwrap_or_default()
     }
 
     fn is_nil(&self) -> bool {
@@ -381,9 +386,9 @@ impl ValueLike for Value {
         self.funcall::<bool>("respond_to?", &[method], None)
     }
 
-    fn to_s(&self) -> String {
-        self.funcall::<String>("to_s", &[], None)
-            .unwrap_or_else(|_| "<unknown>".to_owned())
+    fn to_s(&self) -> Vec<u8> {
+        self.funcall::<Vec<u8>>("to_s", &[], None)
+            .unwrap_or_default()
     }
 }
 
@@ -395,7 +400,8 @@ impl Convert<Value, Value> for Artichoke {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_s())
+        let string_repr = &self.to_s();
+        write!(f, "{}", String::from_utf8_lossy(string_repr))
     }
 }
 
@@ -485,7 +491,7 @@ mod tests {
 
         let value = interp.convert(true);
         let string = value.to_s();
-        assert_eq!(string, "true");
+        assert_eq!(string, b"true");
     }
 
     #[test]
@@ -503,7 +509,7 @@ mod tests {
 
         let value = interp.convert(true);
         let debug = value.inspect();
-        assert_eq!(debug, "true");
+        assert_eq!(debug, b"true");
     }
 
     #[test]
@@ -512,7 +518,7 @@ mod tests {
 
         let value = interp.convert(false);
         let string = value.to_s();
-        assert_eq!(string, "false");
+        assert_eq!(string, b"false");
     }
 
     #[test]
@@ -530,7 +536,7 @@ mod tests {
 
         let value = interp.convert(false);
         let debug = value.inspect();
-        assert_eq!(debug, "false");
+        assert_eq!(debug, b"false");
     }
 
     #[test]
@@ -539,7 +545,7 @@ mod tests {
 
         let value = interp.convert(None::<Value>);
         let string = value.to_s();
-        assert_eq!(string, "");
+        assert_eq!(string, b"");
     }
 
     #[test]
@@ -557,7 +563,7 @@ mod tests {
 
         let value = interp.convert(None::<Value>);
         let debug = value.inspect();
-        assert_eq!(debug, "nil");
+        assert_eq!(debug, b"nil");
     }
 
     #[test]
@@ -566,7 +572,7 @@ mod tests {
 
         let value: Value = interp.convert(255);
         let string = value.to_s();
-        assert_eq!(string, "255");
+        assert_eq!(string, b"255");
     }
 
     #[test]
@@ -584,7 +590,7 @@ mod tests {
 
         let value: Value = interp.convert(255);
         let debug = value.inspect();
-        assert_eq!(debug, "255");
+        assert_eq!(debug, b"255");
     }
 
     #[test]
@@ -593,7 +599,7 @@ mod tests {
 
         let value = interp.convert("interstate");
         let string = value.to_s();
-        assert_eq!(string, "interstate");
+        assert_eq!(string, b"interstate");
     }
 
     #[test]
@@ -611,7 +617,7 @@ mod tests {
 
         let value = interp.convert("interstate");
         let debug = value.inspect();
-        assert_eq!(debug, r#""interstate""#);
+        assert_eq!(debug, br#""interstate""#);
     }
 
     #[test]
@@ -620,7 +626,7 @@ mod tests {
 
         let value = interp.convert("");
         let string = value.to_s();
-        assert_eq!(string, "");
+        assert_eq!(string, b"");
     }
 
     #[test]
@@ -638,7 +644,7 @@ mod tests {
 
         let value = interp.convert("");
         let debug = value.inspect();
-        assert_eq!(debug, r#""""#);
+        assert_eq!(debug, br#""""#);
     }
 
     #[test]

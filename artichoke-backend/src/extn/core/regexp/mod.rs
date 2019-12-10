@@ -134,7 +134,9 @@ impl Regexp {
             let encoding = match enc::parse(&encoding) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let warning = format!("encoding option is ignored -- {}", encoding.to_s());
+                    let encoding_bytes = encoding.to_s();
+                    let encoding_string = String::from_utf8_lossy(encoding_bytes.as_slice());
+                    let warning = format!("encoding option is ignored -- {}", encoding_string);
                     interp
                         .warn(warning.as_bytes())
                         .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
@@ -147,7 +149,9 @@ impl Regexp {
             let encoding = match enc::parse(&options) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let warning = format!("encoding option is ignored -- {}", options.to_s());
+                    let options_bytes = options.to_s();
+                    let options_string = String::from_utf8_lossy(options_bytes.as_slice());
+                    let warning = format!("encoding option is ignored -- {}", options_string);
                     interp
                         .warn(warning.as_bytes())
                         .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
