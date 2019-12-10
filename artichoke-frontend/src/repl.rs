@@ -116,9 +116,14 @@ pub fn run(
                 }
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
-                        let value_inspect = String::from_utf8_lossy(&value.inspect()).to_string();
-                        writeln!(output, "{}{}", config.result_prefix, value_inspect)
-                            .map_err(Error::Io)?
+                        let result = value.inspect();
+                        writeln!(
+                            output,
+                            "{}{}",
+                            config.result_prefix,
+                            String::from_utf8_lossy(result)
+                        )
+                        .map_err(Error::Io)?
                     }
                     Err(ArtichokeError::Exec(backtrace)) => {
                         writeln!(error, "Backtrace:").map_err(Error::Io)?;
