@@ -46,7 +46,7 @@ impl Integer {
         let interp = unwrap_interpreter!(mrb);
         let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
         let result: Result<Value, Box<dyn RubyException>> = if let Some(encoding) = encoding {
-            let mut message = b"encoding parameter of Integer#chr (given".to_vec();
+            let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
             message.extend(encoding.inspect());
             message.extend(b") not supported");
             Err(Box::new(NotImplementedError::new_raw(&interp, message)))
