@@ -158,8 +158,8 @@ impl Value {
     ///
     /// This function can never fail.
     pub fn to_s_debug(&self) -> String {
-        let inspected_str = String::from_utf8_lossy(&self.inspect()).to_string();
-        format!("{}<{}>", self.ruby_type().class_name(), inspected_str)
+        let inspect = self.inspect();
+        format!("{}<{}>", self.ruby_type().class_name(), String::from_utf8_lossy(&inspect))
     }
 
     pub fn implicitly_convert_to_int(&self) -> Result<Int, Box<dyn RubyException>> {
@@ -370,7 +370,7 @@ impl ValueLike for Value {
 
     fn inspect(&self) -> Vec<u8> {
         self.funcall::<Vec<u8>>("inspect", &[], None)
-            .unwrap_or_else(|_| Vec::new())
+            .unwrap_or_default()
     }
 
     fn is_nil(&self) -> bool {
@@ -384,7 +384,7 @@ impl ValueLike for Value {
 
     fn to_s(&self) -> Vec<u8> {
         self.funcall::<Vec<u8>>("to_s", &[], None)
-            .unwrap_or_else(|_| Vec::new())
+            .unwrap_or_default()
     }
 }
 
@@ -396,8 +396,8 @@ impl Convert<Value, Value> for Artichoke {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let string_repr = String::from_utf8_lossy(&self.to_s()).to_string();
-        write!(f, "{}", string_repr)
+        let string_repr = &self.to_s();
+        write!(f, "{}", String::from_utf8_lossy(string_repr))
     }
 }
 

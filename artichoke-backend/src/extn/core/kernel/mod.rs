@@ -104,6 +104,7 @@ impl Kernel {
                 }
             } else {
                 let s = String::from_utf8_lossy(&value.to_s()).to_string();
+                // TODO convert `puts` to take a Vec<u8>
                 interp.0.borrow_mut().puts(s.as_str());
             }
         }
