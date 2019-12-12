@@ -213,6 +213,7 @@ elsif ARGV.first == 'passing'
   runner.register(Spec.new('core', 'comparable'))
   runner.register(Spec.new('core', 'matchdata'))
   runner.register(Spec.new('core', 'regexp'))
+  runner.register(Spec.new('core', 'string', 'index'))
   runner.register(Spec.new('core', 'string', 'scan'))
   runner.register(Spec.new('library', 'monitor'))
   runner.register(Spec.new('library', 'stringscanner'))
