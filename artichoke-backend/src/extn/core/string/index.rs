@@ -14,25 +14,28 @@ fn start_index(
     interp: &Artichoke,
     string: &[u8],
     offset: Option<Value>,
-) -> Result<i64, Box<dyn RubyException>> {
+) -> Result<Option<usize>, Box<dyn RubyException>> {
     if let Some(offset) = offset {
-        let mut start = if let Ok(start) = offset.clone().try_into::<Int>() {
-            start
-        } else if let Ok(start) = offset.funcall::<Int>("to_int", &[], None) {
-            start
+        let index = offset.implicitly_convert_to_int()?;
+        let index = if index < 0 {
+            let idx = usize::try_from(-index).map_err(|_| {
+                Fatal::new(interp, "Expected positive position to convert to usize")
+            })?; 
+            string.len().checked_sub(idx)
         } else {
-            let offset_type_name = offset.pretty_name();
-            return Err(Box::new(TypeError::new(
-                interp,
-                format!("no implicit conversion {} into Integer", offset_type_name),
-            )));
+            let idx = usize::try_from(index).map_err(|_| {
+                Fatal::new(interp, "Expected positive position to convert to usize")
+            })?;
+            Some(idx)
         };
-        if start < 0 {
-            start += string.len() as i64;
+        if let Some(idx) = index  {
+            if idx > string.len() {
+                return Ok(None);
+            }
         }
-        Ok(start)
+        Ok(index)
     } else {
-        Ok(0)
+        Ok(Some(0_usize))
     }
 }
 
@@ -53,12 +56,42 @@ pub fn method(
             interp,
             format!("type mismatch: {} given", pattern.pretty_name()),
         )))
-    } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
-        let start = start_index(interp, string, offset)?;
-        if start < 0 || start > string.len() as i64 {
+    } else if let Ok(pattern_bytes) = pattern.clone().try_into::<&[u8]>() {
+        let start = if let Some(start) = start_index(interp, string, offset)? {
+            start
+        } else {
             return Ok(interp.convert(None::<Value>));
+        };
+        let string = &string[start..];
+        if let Some(result) = string.find(pattern_bytes) {
+            let result = result + start;
+            let result = Int::try_from(result)
+                .map_err(|_| Fatal::new(interp, "Index pos does not fit in Integer"))?;
+            Ok(interp.convert(result))
+        } else {
+            Ok(interp.convert(None::<Value>))
         }
-        let start = usize::try_from(start).unwrap();
+    } else if let Ok(pattern_bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+       let start = if let Some(start) = start_index(interp, string, offset)? {
+            start
+        } else {
+            return Ok(interp.convert(None::<Value>));
+        };
+        let string = &string[start..];
+        if let Some(result) = string.find(pattern_bytes) {
+            let result = result + start;
+            let result = Int::try_from(result)
+                .map_err(|_| Fatal::new(interp, "Index pos does not fit in Integer"))?;
+            Ok(interp.convert(result))
+        } else {
+            Ok(interp.convert(None::<Value>))
+        }
+    } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
+        let start = if let Some(start) = start_index(interp, string, offset)? {
+            start
+        } else {
+            return Ok(interp.convert(None::<Value>));
+        };
         if let Some((begin, _)) = regexp.borrow().inner().pos(interp, &string[start..], 0)? {
             let result = begin + start;
             let result = Int::try_from(result)
@@ -69,32 +102,9 @@ pub fn method(
         }
     } else {
         let pattern_type_name = pattern.pretty_name();
-        let pattern_bytes = match (
-            pattern.clone().try_into::<&[u8]>(),
-            pattern.funcall::<&[u8]>("to_str", &[], None),
-        ) {
-            (Ok(a), Ok(_)) | (Ok(a), Err(_)) => a,
-            (Err(_), Ok(b)) => b,
-            (Err(_), Err(_)) => {
-                return Err(Box::new(TypeError::new(
-                    interp,
-                    format!("type mismatch: {} given", pattern_type_name,),
-                )))
-            }
-        };
-        let start = start_index(interp, string, offset)?;
-        if start < 0 || start > string.len() as i64 {
-            return Ok(interp.convert(None::<Value>));
-        }
-        let start = usize::try_from(start).unwrap();
-        let string = &string[start..];
-        if let Some(result) = string.find(pattern_bytes) {
-            let result = result + start;
-            let result = Int::try_from(result)
-                .map_err(|_| Fatal::new(interp, "Index pos does not fit in Integer"))?;
-            Ok(interp.convert(result))
-        } else {
-            Ok(interp.convert(None::<Value>))
-        }
+        Err(Box::new(TypeError::new(
+            interp,
+            format!("type mismatch: {} given", pattern_type_name)
+        )))
     }
 }
