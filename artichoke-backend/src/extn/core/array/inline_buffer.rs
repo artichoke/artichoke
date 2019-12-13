@@ -456,22 +456,22 @@ fn set_with_drain_to_inline(ary: &mut InlineBuffer, start: usize, drain: usize, 
             let mut inline = ArrayVec::new();
             if start < buffer.len() {
                 inline.extend(buffer.drain(0..start));
+            } else {
+                inline.extend(buffer.drain(..));
             }
             inline.push(elem.inner());
-            if drain < buffer.len() {
-                inline.extend(buffer.drain(drain..));
-            }
+            inline.extend(buffer.drain(drain..));
             *ary = InlineBuffer::Inline(inline);
         }
         InlineBuffer::Inline(ref mut buffer) => {
             let mut inline = ArrayVec::new();
             if start < buffer.len() {
                 inline.extend(buffer.drain(0..start));
+            } else {
+                inline.extend(buffer.drain(..));
             }
             inline.push(elem.inner());
-            if drain < buffer.len() {
-                inline.extend(buffer.drain(drain..));
-            }
+            inline.extend(buffer.drain(drain..));
             *ary = InlineBuffer::Inline(inline);
         }
     }
@@ -550,7 +550,7 @@ fn set_slice_with_drain_to_inline(
             if drain < buffer.len() {
                 buffer.drain(0..drain);
             } else {
-                buffer.drain(..);
+                buffer.clear();
             }
             match with {
                 InlineBuffer::Dynamic(with) => {
@@ -587,7 +587,7 @@ fn set_slice_with_drain_to_inline(
             if drain < buffer.len() {
                 buffer.drain(0..drain);
             } else {
-                buffer.drain(..);
+                buffer.clear();
             }
             match with {
                 InlineBuffer::Dynamic(with) => {
