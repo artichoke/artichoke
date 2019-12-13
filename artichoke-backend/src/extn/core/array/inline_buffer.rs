@@ -322,7 +322,7 @@ impl InlineBuffer {
         let drained = std::cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
         if start > buflen {
             set_with_drain_sparse(self, start, with);
-        } else if (buflen + 1).checked_sub(drain).unwrap_or_default() < INLINE_CAPACITY {
+        } else if (buflen + 1).checked_sub(drain).unwrap_or_default() <= INLINE_CAPACITY {
             set_with_drain_to_inline(self, start, drain, with);
         } else {
             match self {
@@ -359,7 +359,7 @@ impl InlineBuffer {
             + with.len();
         if start > buflen {
             set_slice_with_drain_sparse(self, start, with);
-        } else if newlen < INLINE_CAPACITY {
+        } else if newlen <= INLINE_CAPACITY {
             set_slice_with_drain_to_inline(self, start, drain, with);
         } else {
             set_slice_with_drain_to_dynamic(self, start, drain, with);
@@ -373,7 +373,7 @@ impl InlineBuffer {
         other: &Self,
     ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        if self.len() + other.len() < INLINE_CAPACITY {
+        if self.len() + other.len() <= INLINE_CAPACITY {
             concat_to_inline(self, other);
         } else {
             concat_to_dynamic(self, other);
