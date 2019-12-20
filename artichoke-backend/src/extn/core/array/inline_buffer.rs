@@ -672,3 +672,20 @@ fn concat_to_dynamic(ary: &mut InlineBuffer, other: &InlineBuffer) {
     }
     *ary = InlineBuffer::Dynamic(dynamic);
 }
+
+#[cfg(test)]
+mod tests {
+    use artichoke_core::eval::Eval;
+    use artichoke_core::value::Value;
+
+    #[test]
+    fn integration_test() {
+        let interp = crate::interpreter().unwrap();
+        interp
+            .eval(&include_bytes!("inline_buffer_test.rb")[..])
+            .unwrap();
+        let result = interp.eval(b"spec");
+        let result = result.and_then(Value::try_into::<bool>);
+        assert_eq!(Ok(true), result);
+    }
+}
