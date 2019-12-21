@@ -281,6 +281,8 @@ impl InlineBuffer {
             Self::Dynamic(ref mut buffer) => {
                 if index < buflen {
                     buffer[index] = elem.inner();
+                } else if index == buflen {
+                    buffer.push(elem.inner());
                 } else {
                     buffer.reserve(index + 1 - buflen);
                     let nil = interp.convert(None::<Value>).inner();
@@ -293,6 +295,8 @@ impl InlineBuffer {
             Self::Inline(ref mut buffer) => {
                 if index < buflen {
                     buffer[index] = elem.inner();
+                } else if index == buflen {
+                    buffer.push(elem.inner());
                 } else if index < buffer.capacity() {
                     let nil = interp.convert(None::<Value>).inner();
                     for _ in buflen..index {
