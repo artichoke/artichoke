@@ -17,6 +17,8 @@ def spec
   inline_set_with_drain
   dynamic_set_with_drain
 
+  inline_set_slice
+
   true
 end
 
@@ -215,4 +217,66 @@ def dynamic_set_with_drain
   a = (1..25).map.to_a
   a[25, 100] = 'a'
   raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 'a']
+end
+
+def inline_set_slice
+  a = [1, 2, 3]
+  a[0, 0] = []
+  raise unless a == [1, 2, 3]
+
+  a = [1, 2, 3]
+  a[3, 0] = []
+  raise unless a == [1, 2, 3]
+
+  a = [1, 2, 3]
+  a[5, 0] = []
+  raise unless a == [1, 2, 3, nil, nil]
+
+  a = [1, 2, 3]
+  a[0, 1] = []
+  raise unless a == [2, 3]
+
+  a = [1, 2, 3]
+  a[0, 3] = []
+  raise unless a == []
+
+  a = [1, 2, 3]
+  a[0, 100] = []
+  raise unless a == []
+
+  a = [1, 2, 3]
+  a[0, 0] = %w[a b c]
+  raise unless a == ['a', 'b', 'c', 1, 2, 3]
+
+  a = [1, 2, 3]
+  a[0, 1] = %w[a b c]
+  raise unless a == ['a', 'b', 'c', 2, 3]
+
+  a = [1, 2, 3]
+  a[0, 100] = %w[a b c]
+  raise unless a == %w[a b c]
+
+  a = [1, 2, 3]
+  a[3, 100] = %w[a b c]
+  raise unless a == [1, 2, 3, 'a', 'b', 'c']
+
+  a = [1, 2, 3]
+  a[5, 10] = %w[a b c]
+  raise unless a == [1, 2, 3, nil, nil, 'a', 'b', 'c']
+
+  a = [1, 2, 3]
+  a[5, 10] = %w[a b c d e f g h]
+  raise unless a == [1, 2, 3, nil, nil, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+  a = [1, 2, 3]
+  a[0, 100] = (1..25).map.to_a
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+
+  a = [1, 2, 3]
+  a[0, 0] = %w[a b c d e]
+  raise unless a == ['a', 'b', 'c', 'd', 'e', 1, 2, 3]
+
+  a = [1, 2, 3]
+  a[0, 3] = %w[a b c d e f g h]
+  raise unless a == %w[a b c d e f g h]
 end
