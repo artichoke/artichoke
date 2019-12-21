@@ -40,7 +40,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.0.borrow_mut().def_class::<random::Random>(spec);
 
     let default = random::default();
-    let default = unsafe { default.try_into_ruby(interp, None) }?;
+    let default = default.try_into_ruby(interp, None)?;
     let borrow = interp.0.borrow();
     let rclass = borrow
         .class_spec::<random::Random>()
@@ -55,7 +55,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
             default.inner(),
         );
     }
-    interp.eval(&include_bytes!("random.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("random.rb")[..])?;
     trace!("Patched Random onto interpreter");
     Ok(())
 }

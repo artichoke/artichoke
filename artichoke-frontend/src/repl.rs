@@ -46,6 +46,7 @@ pub struct PromptConfig {
 }
 
 impl Default for PromptConfig {
+    #[must_use]
     fn default() -> Self {
         Self {
             simple: ">>> ".to_owned(),

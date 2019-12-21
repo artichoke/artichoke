@@ -17,6 +17,7 @@ use crate::Artichoke;
 /// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
 /// sufficient to ensure objects get collected eventually.
 #[derive(Debug, Clone)]
+#[must_use]
 pub struct ArenaIndex {
     index: i32,
     interp: Artichoke,
@@ -93,6 +94,7 @@ impl MrbGarbageCollection for Artichoke {
         }
     }
 
+    #[must_use]
     fn live_object_count(&self) -> i32 {
         let mrb = self.0.borrow().mrb;
         unsafe { sys::mrb_sys_gc_live_objects(mrb) }
@@ -113,11 +115,13 @@ impl MrbGarbageCollection for Artichoke {
         unsafe { sys::mrb_full_gc(mrb) };
     }
 
+    #[allow(clippy::must_use_candidate)]
     fn enable_gc(&self) -> bool {
         let mrb = self.0.borrow().mrb;
         unsafe { sys::mrb_sys_gc_enable(mrb) }
     }
 
+    #[allow(clippy::must_use_candidate)]
     fn disable_gc(&self) -> bool {
         let mrb = self.0.borrow().mrb;
         unsafe { sys::mrb_sys_gc_disable(mrb) }
@@ -199,7 +203,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         interp.disable_gc();
         let arena = interp.create_arena_savepoint();
-        interp
+        let _ = interp
             .eval(
                 br#"
                 # this value will be garbage collected because it is eventually

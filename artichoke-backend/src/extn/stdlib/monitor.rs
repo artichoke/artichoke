@@ -51,7 +51,7 @@ copy != instance
 # copy.should_not equal(instance)
 "#;
         let interp = crate::interpreter().expect("init");
-        interp.eval(b"require 'monitor'").expect("require");
+        let _ = interp.eval(b"require 'monitor'").expect("require");
         let result = interp.eval(spec).expect("spec");
         assert!(result.try_into::<bool>().expect("convert"));
     }

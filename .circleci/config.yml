@@ -140,8 +140,9 @@ jobs:
       - setup-linux-builder
       - run:
           name: Build workspace without default features
+          working_directory: "artichoke-backend"
           command: |
-            cargo build -p artichoke-backend --no-default-features
+            cargo build --no-default-features
           environment:
             RUST_BACKTRACE: 1
       - run:

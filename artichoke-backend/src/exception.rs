@@ -8,6 +8,7 @@ use crate::{Artichoke, ArtichokeError};
 
 /// Metadata about a Ruby exception.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[must_use]
 pub struct Exception {
     /// The result of calling `exception.class.name`.
     pub class: String,
@@ -46,6 +47,7 @@ impl fmt::Display for Exception {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+#[must_use]
 pub enum LastError {
     Some(Exception),
     None,

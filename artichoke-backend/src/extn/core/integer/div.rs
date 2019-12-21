@@ -27,13 +27,10 @@ pub fn method(
         }
     } else if let Ok(y) = other.try_into::<types::Float>() {
         if y == 0.0 {
-            if x > 0 {
-                Ok(interp.convert(Float::INFINITY))
-            } else if x < 0 {
-                Ok(interp.convert(Float::NEG_INFINITY))
-            } else {
-                // x == 0
-                Ok(interp.convert(Float::NAN))
+            match x {
+                x if x > 0 => Ok(interp.convert(Float::INFINITY)),
+                x if x < 0 => Ok(interp.convert(Float::NEG_INFINITY)),
+                _ => Ok(interp.convert(Float::NAN)),
             }
         } else {
             #[allow(clippy::cast_precision_loss)]

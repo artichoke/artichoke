@@ -12,6 +12,7 @@ pub enum Error {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[must_use]
 pub enum Encoding {
     Fixed,
     No,
@@ -19,6 +20,7 @@ pub enum Encoding {
 }
 
 impl Encoding {
+    #[must_use]
     pub fn flags(self) -> Int {
         match self {
             Self::Fixed => regexp::FIXEDENCODING,
@@ -27,6 +29,7 @@ impl Encoding {
         }
     }
 
+    #[must_use]
     pub fn string(self) -> &'static str {
         match self {
             Self::Fixed | Self::None => "",
@@ -48,6 +51,7 @@ impl Hash for Encoding {
 }
 
 impl PartialEq for Encoding {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::No, Self::No)

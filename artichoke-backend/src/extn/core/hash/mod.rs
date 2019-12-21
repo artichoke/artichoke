@@ -9,7 +9,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     }
     let spec = class::Spec::new("Hash", None, None);
     interp.0.borrow_mut().def_class::<Hash>(spec);
-    interp.eval(&include_bytes!("hash.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("hash.rb")[..])?;
     trace!("Patched Hash onto interpreter");
     Ok(())
 }

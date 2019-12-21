@@ -27,7 +27,7 @@ mod tests {
     #[allow(clippy::shadow_unrelated)]
     fn forwardable() {
         let interp = crate::interpreter().expect("init");
-        interp
+        let _ = interp
             .eval(
                 br#"
 require 'forwardable'
@@ -52,7 +52,7 @@ r.record_number(0)
             .try_into::<i64>()
             .unwrap();
         assert_eq!(result, 4);
-        interp
+        let _ = interp
             .eval(
                 br#"
 class RecordCollection # re-open RecordCollection class

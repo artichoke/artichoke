@@ -15,7 +15,7 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Box<dyn RubyEx
     })?;
     let borrow = data.borrow();
     let regexp = borrow.regexp.clone();
-    let regexp = unsafe { regexp.try_into_ruby(interp, None) }.map_err(|_| {
+    let regexp = regexp.try_into_ruby(interp, None).map_err(|_| {
         Fatal::new(
             interp,
             "Unable to initialize Ruby Regexp Value from Rust Regexp",

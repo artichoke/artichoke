@@ -7,6 +7,7 @@ use crate::extn::core::random::backend;
 use crate::types::{Float, Int};
 use crate::Artichoke;
 
+#[must_use]
 pub fn new(seed: Option<u64>) -> Box<dyn backend::Rand> {
     Box::new(Rand::<SmallRng>::new(seed))
 }

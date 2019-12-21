@@ -45,14 +45,14 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("size", ary_len, sys::mrb_args_none())
         .define()?;
     interp.0.borrow_mut().def_class::<array::Array>(spec);
-    interp.eval(&include_bytes!("array.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");
     Ok(())
 }
 
 #[cfg(not(feature = "artichoke-array"))]
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    interp.eval(&include_bytes!("array.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");
     Ok(())
 }

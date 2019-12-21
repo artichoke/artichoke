@@ -72,4 +72,7 @@ pub trait ArrayType: Any {
     fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>>;
 }
 
-downcast!(dyn ArrayType);
+#[allow(clippy::missing_safety_doc)]
+mod internal {
+    downcast!(dyn super::ArrayType);
+}

@@ -13,6 +13,7 @@ pub const BUFFER_INLINE_MAX: usize = 128;
 pub struct Buffer(Vec<Value>);
 
 impl Buffer {
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         let buffer = Vec::with_capacity(capacity);
         Self(buffer)
@@ -20,18 +21,21 @@ impl Buffer {
 }
 
 impl From<Vec<Value>> for Buffer {
+    #[must_use]
     fn from(values: Vec<Value>) -> Self {
         Self(values)
     }
 }
 
 impl<'a> From<&'a [Value]> for Buffer {
+    #[must_use]
     fn from(values: &'a [Value]) -> Self {
         Self(Vec::from(values))
     }
 }
 
 impl ArrayType for Buffer {
+    #[must_use]
     fn box_clone(&self) -> Box<dyn ArrayType> {
         Box::new(self.clone())
     }
@@ -42,14 +46,17 @@ impl ArrayType for Buffer {
         }
     }
 
+    #[must_use]
     fn real_children(&self) -> usize {
         self.0.len()
     }
 
+    #[must_use]
     fn len(&self) -> usize {
         self.0.len()
     }
 
+    #[must_use]
     fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

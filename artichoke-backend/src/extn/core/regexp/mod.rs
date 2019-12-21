@@ -57,6 +57,7 @@ pub const LAST_MATCH: &[u8] = b"$~";
 
 /// The Nth group of the last successful match. May be > 1.
 #[inline]
+#[must_use]
 pub fn nth_match_group(group: usize) -> Cow<'static, [u8]> {
     match group {
         0 => panic!("$0 is the name of the current script, not a capture group"),
@@ -114,6 +115,7 @@ impl Regexp {
         }
     }
 
+    #[must_use]
     pub fn lazy(pattern: &[u8]) -> Self {
         let literal_config = Config {
             pattern: pattern.to_vec(),
@@ -203,7 +205,8 @@ impl Regexp {
             derived_config,
             encoding.unwrap_or_default(),
         )?;
-        let regexp = unsafe { regexp.try_into_ruby(interp, into.as_ref().map(Value::inner)) }
+        let regexp = regexp
+            .try_into_ruby(interp, into.as_ref().map(Value::inner))
             .map_err(|_| {
                 Fatal::new(
                     interp,
@@ -324,7 +327,7 @@ impl Regexp {
             options: Options::default(),
         };
         let regexp = Self::new(interp, literal_config, derived_config, Encoding::default())?;
-        let regexp = unsafe { regexp.try_into_ruby(interp, None) }.map_err(|_| {
+        let regexp = regexp.try_into_ruby(interp, None).map_err(|_| {
             Fatal::new(
                 interp,
                 "Failed to initialize Regexp Ruby Value with Rust Regexp",
@@ -334,6 +337,7 @@ impl Regexp {
     }
 
     #[inline]
+    #[must_use]
     pub fn inner(&self) -> &dyn RegexpType {
         self.0.as_ref()
     }
@@ -540,12 +544,14 @@ impl Regexp {
 }
 
 impl RustBackedValue for Regexp {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Regexp"
     }
 }
 
 impl From<Box<dyn RegexpType>> for Regexp {
+    #[must_use]
     fn from(regexp: Box<dyn RegexpType>) -> Self {
         Self(regexp)
     }
@@ -647,6 +653,7 @@ pub trait RegexpType {
 }
 
 impl Clone for Box<dyn RegexpType> {
+    #[must_use]
     fn clone(&self) -> Self {
         self.box_clone()
     }
@@ -665,6 +672,7 @@ impl Hash for Box<dyn RegexpType> {
 }
 
 impl PartialEq for Box<dyn RegexpType> {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.derived_config().pattern == other.derived_config().pattern
             && self.encoding() == other.encoding()

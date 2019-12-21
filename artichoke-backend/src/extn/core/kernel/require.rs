@@ -90,7 +90,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
         // We need to be sure we don't leak anything by unwinding past
         // this point. This likely requires a significant refactor to
         // require_impl.
-        interp.unchecked_eval(contents.as_slice());
+        let _ = interp.unchecked_eval(contents.as_slice());
     }
     interp.pop_context();
     trace!(
@@ -154,7 +154,7 @@ pub fn require(
             // arbitrary other files, including some child sources that may
             // depend on these module definitions.
             let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec());
-            interp.push_context(context.clone());
+            interp.push_context(context);
             // Require Rust File first because an File may define classes and
             // module with `LoadSources` and Ruby files can require arbitrary
             // other files, including some child sources that may depend on these
@@ -181,7 +181,7 @@ pub fn require(
                 // We need to be sure we don't leak anything by unwinding past
                 // this point. This likely requires a significant refactor to
                 // require_impl.
-                interp.unchecked_eval(contents.as_slice());
+                let _ = interp.unchecked_eval(contents.as_slice());
             }
             interp.pop_context();
             let metadata = metadata.mark_required();
@@ -248,7 +248,7 @@ pub fn require(
                     // We need to be sure we don't leak anything by unwinding past
                     // this point. This likely requires a significant refactor to
                     // require_impl.
-                    interp.unchecked_eval(contents.as_slice());
+                    let _ = interp.unchecked_eval(contents.as_slice());
                 }
                 interp.pop_context();
                 let metadata = metadata.mark_required();
@@ -332,7 +332,7 @@ pub fn require(
         // We need to be sure we don't leak anything by unwinding past
         // this point. This likely requires a significant refactor to
         // require_impl.
-        interp.unchecked_eval(contents.as_slice());
+        let _ = interp.unchecked_eval(contents.as_slice());
     }
     interp.pop_context();
     let metadata = metadata.mark_required();

@@ -7,6 +7,7 @@ use crate::types::Int;
 use crate::value::{Value, ValueLike};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[must_use]
 pub struct Options {
     pub multiline: bool,
     pub ignore_case: bool,
@@ -21,6 +22,7 @@ impl Options {
         opts
     }
 
+    #[must_use]
     pub fn flags(self) -> RegexOptions {
         let mut bits = RegexOptions::REGEX_OPTION_NONE;
         if self.multiline {
@@ -38,6 +40,7 @@ impl Options {
     // This function should return a &'static str but linking fails under the
     // wasm32-unknown-emscripten build if this function does not return an owned
     // String.
+    #[must_use]
     pub fn modifier_string(self) -> String {
         match (self.multiline, self.ignore_case, self.extended) {
             (true, true, true) => "mix",
@@ -55,6 +58,7 @@ impl Options {
     // This function should return a &'static str but linking fails under the
     // wasm32-unknown-emscripten build if this function does not return an owned
     // String.
+    #[must_use]
     fn onig_string(self) -> String {
         match (self.multiline, self.ignore_case, self.extended) {
             (true, true, true) => "mix",

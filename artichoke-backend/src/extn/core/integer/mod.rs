@@ -24,7 +24,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("size", Integer::size, sys::mrb_args_none())
         .define()?;
     interp.0.borrow_mut().def_class::<Integer>(spec);
-    interp.eval(&include_bytes!("integer.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("integer.rb")[..])?;
     trace!("Patched Integer onto interpreter");
     Ok(())
 }
@@ -32,7 +32,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 pub struct Integer;
 
 impl Integer {
-    pub unsafe extern "C" fn chr(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C" fn chr(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let encoding = mrb_get_args!(mrb, optional = 1);
         let interp = unwrap_interpreter!(mrb);
         let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
@@ -94,7 +94,7 @@ impl Integer {
         }
     }
 
-    pub unsafe extern "C" fn div(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C" fn div(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let other = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
@@ -106,10 +106,7 @@ impl Integer {
         }
     }
 
-    pub unsafe extern "C" fn size(
-        mrb: *mut sys::mrb_state,
-        _slf: sys::mrb_value,
-    ) -> sys::mrb_value {
+    unsafe extern "C" fn size(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let result = Int::try_from(mem::size_of::<Int>())

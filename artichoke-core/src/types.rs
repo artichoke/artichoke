@@ -107,6 +107,7 @@ pub enum Ruby {
 
 impl Ruby {
     /// Ruby `Class` name for VM type.
+    #[must_use]
     pub fn class_name(self) -> &'static str {
         match self {
             Self::Array => "Array",

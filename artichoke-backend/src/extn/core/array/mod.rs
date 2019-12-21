@@ -23,16 +23,19 @@ pub use inline_buffer::InlineBuffer;
 pub struct Array(InlineBuffer);
 
 impl Clone for Array {
+    #[must_use]
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
 
 impl Array {
+    #[must_use]
     pub fn new(ary: InlineBuffer) -> Self {
         Self(ary)
     }
 
+    #[must_use]
     pub fn as_vec(&self, interp: &Artichoke) -> Vec<Value> {
         self.0.as_vec(interp)
     }
@@ -157,7 +160,8 @@ impl Array {
             InlineBuffer::default()
         };
         let result = Self(result);
-        let result = unsafe { result.try_into_ruby(interp, Some(into.inner())) }
+        let result = result
+            .try_into_ruby(interp, Some(into.inner()))
             .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array"))?;
         Ok(result)
     }
@@ -189,7 +193,7 @@ impl Array {
         if let Some(len) = len {
             let result = self.0.slice(interp, start, len)?;
             let result = Self(result);
-            let result = unsafe { result.try_into_ruby(interp, None) }.map_err(|_| {
+            let result = result.try_into_ruby(interp, None).map_err(|_| {
                 Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array")
             })?;
             Ok(result)
@@ -327,14 +331,14 @@ impl Array {
         Ok(())
     }
 
-    pub fn len(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
-        let len = Int::try_from(self.0.len())
-            .map_err(|_| Fatal::new(interp, "Array length does not fit in Integer max"))?;
-        Ok(interp.convert(len))
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 
-    pub fn len_usize(&self) -> usize {
-        self.0.len()
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
@@ -349,6 +353,7 @@ impl Array {
 }
 
 impl RustBackedValue for Array {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Array"
     }

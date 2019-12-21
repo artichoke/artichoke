@@ -29,7 +29,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("puts", Kernel::puts, sys::mrb_args_rest())
         .define()?;
     interp.0.borrow_mut().def_module::<Kernel>(spec);
-    interp.eval(&include_bytes!("kernel.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("kernel.rb")[..])?;
     trace!("Patched Kernel onto interpreter");
     let scope = interp
         .0
@@ -162,7 +162,7 @@ mod tests {
             type Artichoke = Artichoke;
 
             fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-                interp.eval(b"@i = 255")?;
+                let _ = interp.eval(b"@i = 255")?;
                 Ok(())
             }
         }
@@ -241,7 +241,7 @@ mod tests {
             type Artichoke = Artichoke;
 
             fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-                interp.eval(b"module Foo; RUST = 7; end")?;
+                let _ = interp.eval(b"module Foo; RUST = 7; end")?;
                 Ok(())
             }
         }
@@ -269,7 +269,7 @@ mod tests {
             type Artichoke = Artichoke;
 
             fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-                interp.eval(b"module Foo; RUST = 7; end")?;
+                let _ = interp.eval(b"module Foo; RUST = 7; end")?;
                 Ok(())
             }
         }

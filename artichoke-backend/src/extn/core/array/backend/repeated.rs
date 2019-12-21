@@ -6,6 +6,7 @@ use crate::value::Value;
 
 mod value;
 
+#[must_use]
 pub fn value(value: Value, count: usize) -> Box<dyn ArrayType> {
     if value.is_nil() {
         backend::fixed::hole(count)

@@ -39,7 +39,7 @@ def bad_code
   raise ArgumentError.new("n" * 1024 * 1024)
 end
     "#;
-    interp.eval(code.trim().as_bytes()).expect("eval");
+    let _ = interp.eval(code.trim().as_bytes()).expect("eval");
     let expected = format!(
         r#"
 (eval):2: {} (ArgumentError)

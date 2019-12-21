@@ -11,6 +11,7 @@ use crate::Artichoke;
 pub struct System;
 
 impl System {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -53,7 +54,7 @@ impl Env for System {
         interp: &Artichoke,
         name: &[u8],
         value: Option<&[u8]>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<(), Box<dyn RubyException>> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -89,18 +90,12 @@ impl Env for System {
                     fs::bytes_to_osstr(interp, name)?,
                     fs::bytes_to_osstr(interp, value)?,
                 );
-                Ok(interp.convert(value))
+                Ok(())
             }
         } else {
             let name = fs::bytes_to_osstr(interp, name)?;
-            let removed = std::env::var_os(name);
-            if let Some(removed) = removed {
-                let removed = fs::osstr_to_bytes(interp, removed.as_os_str())?;
-                std::env::remove_var(name);
-                Ok(interp.convert(removed))
-            } else {
-                Ok(interp.convert(None::<Value>))
-            }
+            std::env::remove_var(name);
+            Ok(())
         }
     }
 

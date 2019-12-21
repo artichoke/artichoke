@@ -17,7 +17,7 @@ pub trait Env {
         interp: &Artichoke,
         name: &[u8],
         value: Option<&[u8]>,
-    ) -> Result<Value, Box<dyn RubyException>>;
+    ) -> Result<(), Box<dyn RubyException>>;
     fn as_map(
         &self,
         interp: &Artichoke,
@@ -27,6 +27,7 @@ pub trait Env {
 pub struct Environ(Box<dyn Env>);
 
 impl RustBackedValue for Environ {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Artichoke::Environ"
     }
@@ -38,7 +39,8 @@ pub fn initialize(
     into: Option<sys::mrb_value>,
 ) -> Result<Value, Box<dyn RubyException>> {
     let obj = Environ(Box::new(backend::system::System::new()));
-    let result = unsafe { obj.try_into_ruby(&interp, into) }
+    let result = obj
+        .try_into_ruby(&interp, into)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby ENV with Rust ENV"))?;
     Ok(result)
 }
@@ -49,7 +51,8 @@ pub fn initialize(
     into: Option<sys::mrb_value>,
 ) -> Result<Value, Box<dyn RubyException>> {
     let obj = Environ(Box::new(backend::memory::Memory::new()));
-    let result = unsafe { obj.try_into_ruby(&interp, into) }
+    let result = obj
+        .try_into_ruby(&interp, into)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby ENV with Rust ENV"))?;
     Ok(result)
 }

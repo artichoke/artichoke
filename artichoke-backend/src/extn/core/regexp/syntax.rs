@@ -11,6 +11,7 @@
 ///
 /// The string returned may be safely used as a literal in a regular
 /// expression.
+#[must_use]
 pub fn escape(text: &str) -> String {
     let mut quoted = String::with_capacity(text.len());
     escape_into(text, &mut quoted);
@@ -50,6 +51,7 @@ pub fn escape_into(text: &str, buf: &mut String) {
 ///
 /// Note that the set of characters for which this function returns `true` or
 /// `false` is fixed and won't change in a semver compatible release.
+#[must_use]
 pub fn is_meta_character(c: char) -> bool {
     match c {
         '\\' | '/' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{' | '}' | '^'
@@ -59,6 +61,7 @@ pub fn is_meta_character(c: char) -> bool {
 }
 
 /// Returns true if the given character is non-printable and needs to be quoted.
+#[must_use]
 pub fn is_non_printable_character(c: char) -> bool {
     let form_feed = 0x0C as char; // "\f"
     match c {
@@ -70,6 +73,7 @@ pub fn is_non_printable_character(c: char) -> bool {
 
 /// Returns true if the given character is non-printable and Rust does not support
 /// the escape sequence.
+#[must_use]
 pub fn is_non_supported_non_printable_character(c: char) -> Option<String> {
     let form_feed = 0x0C as char; // "\f"
     match c {

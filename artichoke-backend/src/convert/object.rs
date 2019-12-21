@@ -30,13 +30,14 @@ where
 
     /// Try to convert a Rust object into a [`Value`].
     ///
-    /// Inject the data pointer into `slf` if it is provided, otherwise call
-    /// [`sys::mrb_obj_new`] to get a new instance of the class associated with
-    /// `Self`.
+    /// This method wraps `self` in an `Rc<RefCell<_>>` and turns it into a raw
+    /// pointer suitable for embedding in an [`sys::mrb_value`] of type
+    /// `MRB_TT_DATA`.
     ///
-    /// To store `self` in a [`sys::mrb_value`], this function wraps `self` in
-    /// an `Rc<RefCell<_>>`.
-    unsafe fn try_into_ruby(
+    /// If the `slf` parameter is `Some`, the serialized data pointer is used
+    /// to initialize the contained [`sys::mrb_value`]. Otherwise, a new
+    /// [`sys::mrb_value`] is allocated with [`sys::mrb_obj_new`].
+    fn try_into_ruby(
         self,
         interp: &Artichoke,
         slf: Option<sys::mrb_value>,
@@ -52,33 +53,44 @@ where
         let data = Rc::new(RefCell::new(self));
         let ptr = Rc::into_raw(data);
         let obj = if let Some(mut slf) = slf {
-            sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
+            unsafe {
+                sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
+            }
             slf
         } else {
             let rclass = slf
-                .map(|obj| sys::mrb_sys_class_of_value(mrb, obj))
+                .map(|obj| unsafe { sys::mrb_sys_class_of_value(mrb, obj) })
                 .or_else(|| spec.rclass(interp))
                 .ok_or_else(|| ArtichokeError::ConvertToRuby {
                     from: Rust::Object,
                     to: Ruby::Object,
                 })?;
-            let alloc =
-                sys::mrb_data_object_alloc(mrb, rclass, ptr as *mut c_void, spec.data_type());
-            sys::mrb_sys_obj_value(alloc as *mut c_void)
+            unsafe {
+                let alloc =
+                    sys::mrb_data_object_alloc(mrb, rclass, ptr as *mut c_void, spec.data_type());
+                sys::mrb_sys_obj_value(alloc as *mut c_void)
+            }
         };
 
         Ok(Value::new(interp, obj))
     }
 
-    /// Extract the Rust object from the [`Value`] if the [`Value`] is backed by
-    /// `Self`.
+    /// Try to extract a Rust object from the [`Value`].
     ///
     /// Extract the data pointer from `slf` and return an `Rc<RefCell<_>>`
     /// containing the Rust object.
     ///
-    /// This function sanity checks to make sure that [`Value`] is a
-    /// [`Ruby::Data`] and that the `RClass *` of the spec matches the
-    /// [`Value`].
+    /// # Safety
+    ///
+    /// This method performs some safety checks before calling [`Rc::from_raw`]:
+    ///
+    /// - Ensure `slf` is of type `MRB_TT_DATA`.
+    /// - Ensure `slf` has the same [`sys::RClass`] as the bound type.
+    /// - Ensure the data pointer is not `NULL`.
+    ///
+    /// This method assumes the [`Rc`] pointed to by the data pointer has not
+    /// been freed, which is built on the assumption that there are no garbage
+    /// collector bugs in the mruby VM for Artichoke custom types.
     unsafe fn try_from_ruby(
         interp: &Artichoke,
         slf: &Value,
@@ -122,6 +134,7 @@ impl<T> RustBackedValue for Box<T>
 where
     T: RustBackedValue,
 {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         T::ruby_type_name()
     }
@@ -192,7 +205,7 @@ mod tests {
             inner: "contained string contents".to_owned(),
         };
 
-        let value = unsafe { obj.try_into_ruby(&interp, None) }.expect("convert");
+        let value = obj.try_into_ruby(&interp, None).expect("convert");
         let class = value.funcall::<Value>("class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), b"Container");
         let data = unsafe { Container::try_from_ruby(&interp, &value) }.expect("convert");
@@ -225,8 +238,9 @@ mod tests {
         assert_eq!(class.to_s(), b"String");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };
         assert!(data.is_err());
-        let value =
-            unsafe { Box::new(Other::default()).try_into_ruby(&interp, None) }.expect("convert");
+        let value = Box::new(Other::default())
+            .try_into_ruby(&interp, None)
+            .expect("convert");
         let class = value.funcall::<Value>("class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), b"Other");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };

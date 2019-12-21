@@ -96,6 +96,7 @@ impl EnclosingRubyScope {
     ///
     /// This function is useful when extracting an enclosing scope from the
     /// class registry.
+    #[must_use]
     pub fn class(spec: &class::Spec) -> Self {
         Self::Class { spec: spec.clone() }
     }
@@ -105,6 +106,7 @@ impl EnclosingRubyScope {
     ///
     /// This function is useful when extracting an enclosing scope from the
     /// module registry.
+    #[must_use]
     pub fn module(spec: &module::Spec) -> Self {
         Self::Module { spec: spec.clone() }
     }
@@ -340,7 +342,7 @@ mod tests {
                 .unwrap();
             interp.0.borrow_mut().def_module::<Module>(module);
 
-            interp
+            let _ = interp
                 .eval(
                     br#"
                     class DynamicTestClass

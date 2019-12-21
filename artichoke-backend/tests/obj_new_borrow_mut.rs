@@ -42,7 +42,5 @@ fn obj_new_borrow_mut() {
         .define()
         .unwrap();
     interp.0.borrow_mut().def_class::<Obj>(spec);
-    unsafe {
-        Obj.try_into_ruby(&interp, None).unwrap();
-    }
+    let _ = Obj.try_into_ruby(&interp, None).unwrap();
 }

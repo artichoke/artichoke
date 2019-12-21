@@ -70,7 +70,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("end", MatchData::end, sys::mrb_args_req(1))
         .define()?;
     interp.0.borrow_mut().def_class::<MatchData>(spec);
-    interp.eval(&include_bytes!("matchdata.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("matchdata.rb")[..])?;
     trace!("Patched MatchData onto interpreter");
     Ok(())
 }
@@ -89,12 +89,14 @@ pub struct MatchData {
 }
 
 impl RustBackedValue for MatchData {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         "MatchData"
     }
 }
 
 impl MatchData {
+    #[must_use]
     pub fn new(string: Vec<u8>, regexp: Regexp, start: usize, end: usize) -> Self {
         let region = Region { start, end };
         Self {

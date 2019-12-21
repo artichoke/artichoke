@@ -13,7 +13,7 @@ impl Convert<&[Value], Value> for Artichoke {
     fn convert(&self, value: &[Value]) -> Value {
         use crate::convert::RustBackedValue;
         let ary = Array::new(InlineBuffer::from(value));
-        unsafe { ary.try_into_ruby(self, None) }.expect("Array into Value")
+        ary.try_into_ruby(self, None).expect("Array into Value")
     }
 
     #[cfg(not(feature = "artichoke-array"))]
@@ -38,7 +38,7 @@ impl Convert<Vec<Value>, Value> for Artichoke {
     fn convert(&self, value: Vec<Value>) -> Value {
         use crate::convert::RustBackedValue;
         let ary = Array::new(InlineBuffer::from(value));
-        unsafe { ary.try_into_ruby(self, None) }.expect("Array into Value")
+        ary.try_into_ruby(self, None).expect("Array into Value")
     }
 
     #[cfg(not(feature = "artichoke-array"))]

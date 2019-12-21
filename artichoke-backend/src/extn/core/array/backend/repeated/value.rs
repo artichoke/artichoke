@@ -114,29 +114,33 @@ impl ArrayType for Value {
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = interp;
-        let (alloc, drained) = if start < self.1.get() {
-            let before = start;
-            let remaining = self.1.get() - start;
-            let after = remaining.checked_sub(drain).unwrap_or_default();
-            let mut alloc = Vec::with_capacity(3);
-            if before > 0 {
-                alloc.push(backend::repeated::value(self.0.clone(), before));
+        let (alloc, drained) = match self.1.get() {
+            idx if start < idx => {
+                let before = start;
+                let remaining = idx - start;
+                let after = remaining.checked_sub(drain).unwrap_or_default();
+                let mut alloc = Vec::with_capacity(3);
+                if before > 0 {
+                    alloc.push(backend::repeated::value(self.0.clone(), before));
+                }
+                alloc.push(backend::fixed::one(with));
+                if after > 0 {
+                    alloc.push(backend::repeated::value(self.0.clone(), after));
+                }
+                (alloc, remaining - after)
             }
-            alloc.push(backend::fixed::one(with));
-            if after > 0 {
-                alloc.push(backend::repeated::value(self.0.clone(), after));
+            idx if start == idx => {
+                let alloc = vec![self.box_clone(), backend::fixed::one(with)];
+                (alloc, 0)
             }
-            (alloc, remaining - after)
-        } else if start == self.1.get() {
-            let alloc = vec![self.box_clone(), backend::fixed::one(with)];
-            (alloc, 0)
-        } else {
-            let alloc = vec![
-                self.box_clone(),
-                backend::fixed::hole(start - self.1.get()),
-                backend::fixed::one(with),
-            ];
-            (alloc, 0)
+            idx => {
+                let alloc = vec![
+                    self.box_clone(),
+                    backend::fixed::hole(start - idx),
+                    backend::fixed::one(with),
+                ];
+                (alloc, 0)
+            }
         };
         *realloc = Some(alloc);
         Ok(drained)
@@ -151,29 +155,29 @@ impl ArrayType for Value {
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = interp;
-        let (alloc, drained) = if start < self.1.get() {
-            let before = start;
-            let remaining = self.1.get() - start;
-            let after = remaining.checked_sub(drain).unwrap_or_default();
-            let mut alloc = Vec::with_capacity(3);
-            if before > 0 {
-                alloc.push(backend::repeated::value(self.0.clone(), before));
+        let (alloc, drained) = match self.1.get() {
+            idx if start < idx => {
+                let before = start;
+                let remaining = self.1.get() - start;
+                let after = remaining.checked_sub(drain).unwrap_or_default();
+                let mut alloc = Vec::with_capacity(3);
+                if before > 0 {
+                    alloc.push(backend::repeated::value(self.0.clone(), before));
+                }
+                alloc.push(with);
+                if after > 0 {
+                    alloc.push(backend::repeated::value(self.0.clone(), after));
+                }
+                (alloc, remaining - after)
             }
-            alloc.push(with);
-            if after > 0 {
-                alloc.push(backend::repeated::value(self.0.clone(), after));
+            idx if start == idx => {
+                let alloc = vec![self.box_clone(), with];
+                (alloc, 0)
             }
-            (alloc, remaining - after)
-        } else if start == self.1.get() {
-            let alloc = vec![self.box_clone(), with];
-            (alloc, 0)
-        } else {
-            let alloc = vec![
-                self.box_clone(),
-                backend::fixed::hole(start - self.1.get()),
-                with,
-            ];
-            (alloc, 0)
+            idx => {
+                let alloc = vec![self.box_clone(), backend::fixed::hole(start - idx), with];
+                (alloc, 0)
+            }
         };
         *realloc = Some(alloc);
         Ok(drained)

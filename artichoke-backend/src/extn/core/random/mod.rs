@@ -13,10 +13,12 @@ use crate::Artichoke;
 pub mod backend;
 pub mod mruby;
 
+#[must_use]
 pub fn new(seed: Option<u64>) -> Random {
     Random(backend::rand::new(seed))
 }
 
+#[must_use]
 pub fn default() -> Random {
     Random(backend::default::new())
 }
@@ -34,6 +36,7 @@ impl Random {
 }
 
 impl RustBackedValue for Random {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Random"
     }
@@ -51,7 +54,8 @@ pub fn initialize(
     } else {
         Random(backend::rand::new(None))
     };
-    let result = unsafe { rand.try_into_ruby(&interp, into) }
+    let result = rand
+        .try_into_ruby(&interp, into)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Random with Rust Random"))?;
     Ok(result)
 }
@@ -135,33 +139,28 @@ pub fn rand(
         Max::None
     };
     match max {
-        Max::Float(max) => {
-            if max < 0.0 {
-                Err(Box::new(ArgumentError::new(
-                    interp,
-                    format!("invalid argument - {}", max),
-                )))
-            } else if max == 0.0 {
-                let mut borrow = rand.borrow_mut();
-                let number = borrow.inner_mut().rand_float(interp, None)?;
-                Ok(interp.convert(number))
-            } else {
-                let mut borrow = rand.borrow_mut();
-                let number = borrow.inner_mut().rand_float(interp, Some(max))?;
-                Ok(interp.convert(number))
-            }
+        Max::Float(max) if max < 0.0 => Err(Box::new(ArgumentError::new(
+            interp,
+            format!("invalid argument - {}", max),
+        ))),
+        Max::Float(max) if max == 0.0 => {
+            let mut borrow = rand.borrow_mut();
+            let number = borrow.inner_mut().rand_float(interp, None)?;
+            Ok(interp.convert(number))
         }
+        Max::Float(max) => {
+            let mut borrow = rand.borrow_mut();
+            let number = borrow.inner_mut().rand_float(interp, Some(max))?;
+            Ok(interp.convert(number))
+        }
+        Max::Int(max) if max < 1 => Err(Box::new(ArgumentError::new(
+            interp,
+            format!("invalid argument - {}", max),
+        ))),
         Max::Int(max) => {
-            if max < 1 {
-                Err(Box::new(ArgumentError::new(
-                    interp,
-                    format!("invalid argument - {}", max),
-                )))
-            } else {
-                let mut borrow = rand.borrow_mut();
-                let number = borrow.inner_mut().rand_int(interp, max)?;
-                Ok(interp.convert(number))
-            }
+            let mut borrow = rand.borrow_mut();
+            let number = borrow.inner_mut().rand_int(interp, max)?;
+            Ok(interp.convert(number))
         }
         Max::None => {
             let mut borrow = rand.borrow_mut();

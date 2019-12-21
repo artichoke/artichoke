@@ -28,7 +28,7 @@ mod tests {
                 &include_bytes!("strscan_test.rb")[..],
             )
             .unwrap();
-        interp
+        let _ = interp
             .eval(&b"require '/src/test/strscan_test.rb'"[..])
             .unwrap();
         if let Err(err) = interp.eval(b"spec") {

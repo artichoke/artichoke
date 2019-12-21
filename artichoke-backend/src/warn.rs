@@ -19,7 +19,7 @@ impl Warn for Artichoke {
                 ArtichokeError::NotDefined(Cow::Borrowed("Warn with uninitialized Warning"))
             })?
         };
-        warning.funcall::<Value>("warn", &[self.convert(message)], None)?;
+        let _ = warning.funcall::<Value>("warn", &[self.convert(message)], None)?;
         Ok(())
     }
 }

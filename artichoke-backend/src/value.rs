@@ -76,6 +76,7 @@ impl<'a> Protect<'a> {
 }
 
 /// Wrapper around a [`sys::mrb_value`].
+#[must_use]
 pub struct Value {
     interp: Artichoke,
     value: sys::mrb_value,
@@ -93,15 +94,18 @@ impl Value {
     /// The [`sys::mrb_value`] that this [`Value`] wraps.
     // TODO: make Value::inner pub(crate), GH-251.
     #[inline]
+    #[must_use]
     pub fn inner(&self) -> sys::mrb_value {
         self.value
     }
 
     /// Return this values [Rust-mapped type tag](Ruby).
+    #[must_use]
     pub fn ruby_type(&self) -> Ruby {
         types::ruby_from_mrb_value(self.value)
     }
 
+    #[must_use]
     pub fn pretty_name<'a>(&self) -> &'a str {
         if let Ok(true) = Self::new(&self.interp, self.value).try_into::<bool>() {
             "true"
@@ -127,6 +131,7 @@ impl Value {
     /// [`ArtichokeError::UnreachableValue`](crate::ArtichokeError::UnreachableValue) error.
     ///
     /// See: <https://github.com/mruby/mruby/issues/4460>
+    #[must_use]
     pub fn is_unreachable(&self) -> bool {
         self.ruby_type() == Ruby::Unreachable
     }
@@ -143,6 +148,7 @@ impl Value {
     }
 
     /// Return whether this object is unreachable by any GC roots.
+    #[must_use]
     pub fn is_dead(&self) -> bool {
         let mrb = self.interp.0.borrow().mrb;
         unsafe { sys::mrb_sys_value_is_dead(mrb, self.value) }
@@ -157,6 +163,7 @@ impl Value {
     /// ```
     ///
     /// This function can never fail.
+    #[must_use]
     pub fn to_s_debug(&self) -> String {
         let inspect = self.inspect();
         format!(
@@ -362,21 +369,24 @@ impl ValueLike for Value {
     }
 
     fn freeze(&mut self) -> Result<(), ArtichokeError> {
-        self.funcall::<Self>("freeze", &[], None)?;
+        let _ = self.funcall::<Self>("freeze", &[], None)?;
         Ok(())
     }
 
+    #[must_use]
     fn is_frozen(&self) -> bool {
         let mrb = self.interp.0.borrow().mrb;
         let inner = self.inner();
         unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
     }
 
+    #[must_use]
     fn inspect(&self) -> Vec<u8> {
         self.funcall::<Vec<u8>>("inspect", &[], None)
             .unwrap_or_default()
     }
 
+    #[must_use]
     fn is_nil(&self) -> bool {
         unsafe { sys::mrb_sys_value_is_nil(self.inner()) }
     }
@@ -386,6 +396,7 @@ impl ValueLike for Value {
         self.funcall::<bool>("respond_to?", &[method], None)
     }
 
+    #[must_use]
     fn to_s(&self) -> Vec<u8> {
         self.funcall::<Vec<u8>>("to_s", &[], None)
             .unwrap_or_default()
@@ -421,6 +432,7 @@ impl Clone for Value {
 }
 
 impl PartialEq for Value {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(unsafe { sys::mrb_sys_basic_ptr(self.inner()) }, unsafe {
             sys::mrb_sys_basic_ptr(other.inner())
@@ -429,12 +441,14 @@ impl PartialEq for Value {
 }
 
 #[derive(Clone, Copy)]
+#[must_use]
 pub struct Block {
     value: sys::mrb_value,
 }
 
 impl Block {
     /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
+    #[must_use]
     pub fn new(block: sys::mrb_value) -> Option<Self> {
         if unsafe { sys::mrb_sys_value_is_nil(block) } {
             None

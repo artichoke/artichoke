@@ -161,7 +161,7 @@ unsafe extern "C" fn artichoke_ary_push(
     let ary = Value::new(&interp, ary);
     let value = Value::new(&interp, value);
     let result = if let Ok(array) = Array::try_from_ruby(&interp, &ary) {
-        let idx = array.borrow().len_usize();
+        let idx = array.borrow().len();
         let mut borrow = array.borrow_mut();
         let gc_was_enabled = interp.disable_gc();
         let result = borrow.set(&interp, idx, value);
@@ -224,7 +224,7 @@ unsafe extern "C" fn artichoke_ary_set(
         let offset = if offset >= 0 {
             usize::try_from(offset).unwrap_or_default()
         } else {
-            let len = array.borrow().len_usize();
+            let len = array.borrow().len();
             // Positive Int must be usize
             let idx = usize::try_from(-offset).unwrap_or_default();
             if let Some(offset) = len.checked_sub(idx) {

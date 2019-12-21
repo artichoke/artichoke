@@ -136,7 +136,7 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Box<d
             "Unable to extract Rust Array from Ruby Array receiver",
         )
     })?;
-    let idx = array.borrow().len_usize();
+    let idx = array.borrow().len();
     let mut borrow = array.borrow_mut();
     let gc_was_enabled = interp.disable_gc();
     borrow.set(interp, idx, value)?;
@@ -176,7 +176,7 @@ pub fn len(interp: &Artichoke, ary: Value) -> Result<usize, Box<dyn RubyExceptio
         )
     })?;
     let borrow = array.borrow();
-    Ok(borrow.len_usize())
+    Ok(borrow.len())
 }
 
 pub fn initialize(
@@ -202,7 +202,8 @@ pub fn initialize_copy(
     })?;
     let borrow = from.borrow();
     let result = borrow.clone();
-    let result = unsafe { result.try_into_ruby(interp, Some(ary.inner())) }
+    let result = result
+        .try_into_ruby(interp, Some(ary.inner()))
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array"))?;
     Ok(result)
 }

@@ -3,6 +3,7 @@ use crate::extn::core::random::backend;
 use crate::types::{Float, Int};
 use crate::Artichoke;
 
+#[must_use]
 pub fn new() -> Box<dyn backend::Rand> {
     Box::new(Default::default())
 }

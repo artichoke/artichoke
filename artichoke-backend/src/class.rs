@@ -13,6 +13,7 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 #[derive(Clone)]
+#[must_use]
 pub struct Builder<'a> {
     interp: &'a Artichoke,
     spec: &'a Spec,
@@ -122,6 +123,7 @@ impl Spec {
         }
     }
 
+    #[must_use]
     pub fn new_instance(&self, interp: &Artichoke, args: &[Value]) -> Option<Value> {
         let mrb = interp.0.borrow().mrb;
         let rclass = self.rclass(interp)?;
@@ -133,28 +135,34 @@ impl Spec {
         Some(Value::new(interp, value))
     }
 
+    #[must_use]
     pub fn value(&self, interp: &Artichoke) -> Option<Value> {
         let rclass = self.rclass(interp)?;
         let module = unsafe { sys::mrb_sys_class_value(rclass) };
         Some(Value::new(interp, module))
     }
 
+    #[must_use]
     pub fn data_type(&self) -> &sys::mrb_data_type {
         &self.data_type
     }
 
+    #[must_use]
     pub fn name_c_str(&self) -> &CStr {
         self.cstring.as_c_str()
     }
 
+    #[must_use]
     pub fn name(&self) -> &str {
         self.name.as_ref()
     }
 
+    #[must_use]
     pub fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
-        self.enclosing_scope.as_ref().map(Box::as_ref)
+        self.enclosing_scope.as_deref()
     }
 
+    #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {
         if let Some(scope) = self.enclosing_scope() {
             Cow::Owned(format!("{}::{}", scope.fqname(), self.name()))
@@ -166,6 +174,7 @@ impl Spec {
         }
     }
 
+    #[must_use]
     pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
         let mrb = interp.0.borrow().mrb;
         if let Some(ref scope) = self.enclosing_scope {
@@ -223,6 +232,7 @@ impl Hash for Spec {
 impl Eq for Spec {}
 
 impl PartialEq for Spec {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }
@@ -292,7 +302,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_class() {
         let interp = crate::interpreter().expect("init");
-        interp
+        let _ = interp
             .eval(b"module Foo; class Bar; end; end")
             .expect("eval");
         let spec = module::Spec::new("Foo", None);
@@ -303,7 +313,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_class_under_class() {
         let interp = crate::interpreter().expect("init");
-        interp
+        let _ = interp
             .eval(b"class Foo; class Bar; end; end")
             .expect("eval");
         let spec = class::Spec::new("Foo", None, None);
