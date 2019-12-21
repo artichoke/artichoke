@@ -794,7 +794,7 @@ impl RegexpType for Onig {
                     collected.push(groups);
                 }
                 matchdata.set_region(last_pos.0, last_pos.1);
-                let data = unsafe { matchdata.clone().try_into_ruby(interp, None) }
+                let data = unsafe { matchdata.try_into_ruby(interp, None) }
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
@@ -836,7 +836,7 @@ impl RegexpType for Onig {
                     collected.push(scanned);
                 }
                 matchdata.set_region(last_pos.0, last_pos.1);
-                let data = unsafe { matchdata.clone().try_into_ruby(interp, None) }
+                let data = unsafe { matchdata.try_into_ruby(interp, None) }
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());

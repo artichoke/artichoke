@@ -154,7 +154,7 @@ pub fn require(
             // arbitrary other files, including some child sources that may
             // depend on these module definitions.
             let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec());
-            interp.push_context(context.clone());
+            interp.push_context(context);
             // Require Rust File first because an File may define classes and
             // module with `LoadSources` and Ruby files can require arbitrary
             // other files, including some child sources that may depend on these

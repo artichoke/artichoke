@@ -75,7 +75,7 @@ pub fn method(
                 let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
-                let data = unsafe { matchdata.clone().try_into_ruby(interp, None) }
+                let data = unsafe { matchdata.try_into_ruby(interp, None) }
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
@@ -142,10 +142,9 @@ pub fn method(
                     let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
                     let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                     matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
-                    let data =
-                        unsafe { matchdata.clone().try_into_ruby(interp, None) }.map_err(|_| {
-                            Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
-                        })?;
+                    let data = unsafe { matchdata.try_into_ruby(interp, None) }.map_err(|_| {
+                        Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
+                    })?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
