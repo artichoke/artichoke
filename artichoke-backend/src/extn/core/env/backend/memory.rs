@@ -52,7 +52,7 @@ impl Env for Memory {
         interp: &Artichoke,
         name: &[u8],
         value: Option<&[u8]>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<(), Box<dyn RubyException>> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -85,11 +85,11 @@ impl Env for Memory {
                 )))
             } else {
                 self.store.insert(name.to_vec(), value.to_vec());
-                Ok(interp.convert(value))
+                Ok(())
             }
         } else {
-            let removed = self.store.remove(name);
-            Ok(interp.convert(removed))
+            self.store.remove(name);
+            Ok(())
         }
     }
 

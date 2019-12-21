@@ -17,7 +17,7 @@ pub trait Env {
         interp: &Artichoke,
         name: &[u8],
         value: Option<&[u8]>,
-    ) -> Result<Value, Box<dyn RubyException>>;
+    ) -> Result<(), Box<dyn RubyException>>;
     fn as_map(
         &self,
         interp: &Artichoke,
