@@ -1,5 +1,4 @@
-use std::convert::AsRef;
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
@@ -47,8 +46,8 @@ impl Spec {
         self.method
     }
 
-    pub fn cstring(&self) -> &CString {
-        &self.cstring
+    pub fn name_c_str(&self) -> &CStr {
+        self.cstring.as_c_str()
     }
 
     pub unsafe fn define(
@@ -58,47 +57,36 @@ impl Spec {
     ) -> Result<(), ArtichokeError> {
         let mrb = interp.0.borrow().mrb;
         match self.method_type {
-            Type::Class => {
-                sys::mrb_define_class_method(
-                    mrb,
-                    into,
-                    self.cstring().as_ptr(),
-                    Some(self.method),
-                    self.args,
-                );
-                Ok(())
-            }
-            Type::Global => {
-                sys::mrb_define_singleton_method(
-                    mrb,
-                    (*mrb).top_self,
-                    self.cstring().as_ptr(),
-                    Some(self.method),
-                    self.args,
-                );
-                Ok(())
-            }
-            Type::Instance => {
-                sys::mrb_define_method(
-                    mrb,
-                    into,
-                    self.cstring().as_ptr(),
-                    Some(self.method),
-                    self.args,
-                );
-                Ok(())
-            }
-            Type::Module => {
-                sys::mrb_define_module_function(
-                    mrb,
-                    into,
-                    self.cstring().as_ptr(),
-                    Some(self.method),
-                    self.args,
-                );
-                Ok(())
-            }
+            Type::Class => sys::mrb_define_class_method(
+                mrb,
+                into,
+                self.name_c_str().as_ptr(),
+                Some(self.method),
+                self.args,
+            ),
+            Type::Global => sys::mrb_define_singleton_method(
+                mrb,
+                (*mrb).top_self,
+                self.name_c_str().as_ptr(),
+                Some(self.method),
+                self.args,
+            ),
+            Type::Instance => sys::mrb_define_method(
+                mrb,
+                into,
+                self.name_c_str().as_ptr(),
+                Some(self.method),
+                self.args,
+            ),
+            Type::Module => sys::mrb_define_module_function(
+                mrb,
+                into,
+                self.name_c_str().as_ptr(),
+                Some(self.method),
+                self.args,
+            ),
         }
+        Ok(())
     }
 }
 
