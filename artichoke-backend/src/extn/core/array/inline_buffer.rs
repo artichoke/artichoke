@@ -333,12 +333,25 @@ impl InlineBuffer {
             set_with_drain_sparse(interp, self, start, with);
         } else if (buflen + 1).checked_sub(drained).unwrap_or_default() <= INLINE_CAPACITY {
             set_with_drain_to_inline(self, start, drain, with);
+        } else if start == buflen {
+            match self {
+                Self::Dynamic(ref mut buffer) => buffer.push(with.inner()),
+                Self::Inline(ref mut buffer) if buffer.len() < buffer.capacity() => {
+                    buffer.push(with.inner())
+                }
+                Self::Inline(ref mut buffer) => {
+                    let mut dynamic = Vec::with_capacity(INLINE_CAPACITY + 1);
+                    dynamic.extend(buffer.drain(..));
+                    dynamic.push(with.inner());
+                    *self = Self::Dynamic(dynamic);
+                }
+            }
         } else {
             match self {
                 Self::Dynamic(ref mut buffer) => {
-                    if start + drain < buflen {
-                        let end = start + drain;
-                        buffer.splice(start..end, iter::once(with.inner()));
+                    let tail_start_idx = start + drain;
+                    if tail_start_idx < buflen {
+                        buffer.splice(start..tail_start_idx, iter::once(with.inner()));
                     } else {
                         buffer.splice(start.., iter::once(with.inner()));
                     }
