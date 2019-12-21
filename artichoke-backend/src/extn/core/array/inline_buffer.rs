@@ -337,8 +337,6 @@ impl InlineBuffer {
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
         if start > buflen {
             set_with_drain_sparse(interp, self, start, with);
-        } else if (buflen + 1).checked_sub(drained).unwrap_or_default() <= INLINE_CAPACITY {
-            set_with_drain_to_inline(self, start, drain, with);
         } else if start == buflen {
             match self {
                 Self::Dynamic(ref mut buffer) => buffer.push(with.inner()),
@@ -353,16 +351,51 @@ impl InlineBuffer {
                 }
             }
         } else {
+            let newlen = (buflen + 1).checked_sub(drained).unwrap_or_default();
             let tail_start_idx = start + drain;
             match self {
+                Self::Dynamic(ref mut buffer) if newlen <= INLINE_CAPACITY => {
+                    let mut inline = ArrayVec::new();
+                    if start < buffer.len() {
+                        inline.extend(buffer.drain(..start));
+                    } else {
+                        inline.extend(buffer.drain(..));
+                    }
+                    inline.push(with.inner());
+                    if drain < buffer.len() {
+                        inline.extend(buffer.drain(drain..));
+                    }
+                    *self = Self::Inline(inline);
+                }
                 Self::Dynamic(ref mut buffer) => {
                     buffer.splice(
                         start..cmp::min(tail_start_idx, buflen),
                         iter::once(with.inner()),
                     );
                 }
-                Self::Inline(_) => {
-                    unreachable!("Handled by set_with_drain_to_inline branch");
+                Self::Inline(ref mut buffer) if newlen <= INLINE_CAPACITY => {
+                    let mut inline = ArrayVec::new();
+                    if start < buffer.len() {
+                        inline.extend(buffer.drain(..start));
+                    } else {
+                        inline.extend(buffer.drain(..));
+                    }
+                    inline.push(with.inner());
+                    if drain < buffer.len() {
+                        inline.extend(buffer.drain(drain..));
+                    }
+                    *self = Self::Inline(inline);
+                }
+                Self::Inline(ref mut buffer) => {
+                    let mut dynamic = Vec::with_capacity(newlen);
+                    dynamic.extend(buffer.drain(..start));
+                    if drain < buffer.len() {
+                        buffer.drain(..drain);
+                    } else {
+                        buffer.drain(..);
+                    }
+                    dynamic.extend(buffer.drain(..));
+                    *self = Self::Dynamic(dynamic);
                 }
             }
         }
@@ -477,37 +510,6 @@ fn set_with_drain_sparse(interp: &Artichoke, ary: &mut InlineBuffer, start: usiz
                 dynamic.push(elem.inner());
                 *ary = InlineBuffer::Dynamic(dynamic);
             }
-        }
-    }
-}
-
-fn set_with_drain_to_inline(ary: &mut InlineBuffer, start: usize, drain: usize, elem: Value) {
-    match ary {
-        InlineBuffer::Dynamic(ref mut buffer) => {
-            let mut inline = ArrayVec::new();
-            if start < buffer.len() {
-                inline.extend(buffer.drain(..start));
-            } else {
-                inline.extend(buffer.drain(..));
-            }
-            inline.push(elem.inner());
-            if drain < buffer.len() {
-                inline.extend(buffer.drain(drain..));
-            }
-            *ary = InlineBuffer::Inline(inline);
-        }
-        InlineBuffer::Inline(ref mut buffer) => {
-            let mut inline = ArrayVec::new();
-            if start < buffer.len() {
-                inline.extend(buffer.drain(..start));
-            } else {
-                inline.extend(buffer.drain(..));
-            }
-            inline.push(elem.inner());
-            if drain < buffer.len() {
-                inline.extend(buffer.drain(drain..));
-            }
-            *ary = InlineBuffer::Inline(inline);
         }
     }
 }
