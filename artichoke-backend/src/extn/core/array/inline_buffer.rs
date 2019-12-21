@@ -657,23 +657,24 @@ fn set_slice_with_drain_to_dynamic(
     drain: usize,
     with: &InlineBuffer,
 ) {
+    let tail_start_idx = start + drain;
     match ary {
         InlineBuffer::Dynamic(ref mut buffer) => match with {
             InlineBuffer::Dynamic(with) => {
-                buffer.splice(start..start + drain, with.iter().copied());
+                buffer.splice(start..tail_start_idx, with.iter().copied());
             }
             InlineBuffer::Inline(with) => {
-                buffer.splice(start..start + drain, with.as_slice().iter().copied());
+                buffer.splice(start..tail_start_idx, with.as_slice().iter().copied());
             }
         },
         InlineBuffer::Inline(buffer) => {
             let mut dynamic = buffer.as_slice().to_vec();
             match with {
                 InlineBuffer::Dynamic(with) => {
-                    dynamic.splice(start..start + drain, with.iter().copied());
+                    dynamic.splice(start..tail_start_idx, with.iter().copied());
                 }
                 InlineBuffer::Inline(with) => {
-                    dynamic.splice(start..start + drain, with.as_slice().iter().copied());
+                    dynamic.splice(start..tail_start_idx, with.as_slice().iter().copied());
                 }
             }
             *ary = InlineBuffer::Dynamic(dynamic);
