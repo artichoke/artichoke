@@ -347,33 +347,16 @@ impl InlineBuffer {
                 }
             }
         } else {
+            let tail_start_idx = start + drain;
             match self {
                 Self::Dynamic(ref mut buffer) => {
-                    let tail_start_idx = start + drain;
-                    if tail_start_idx < buflen {
-                        buffer.splice(start..tail_start_idx, iter::once(with.inner()));
-                    } else {
-                        buffer.splice(start.., iter::once(with.inner()));
-                    }
+                    buffer.splice(
+                        start..cmp::min(tail_start_idx, buflen),
+                        iter::once(with.inner()),
+                    );
                 }
-                Self::Inline(ref mut buffer) => {
-                    let mut dynamic =
-                        Vec::with_capacity((buflen + 1).checked_sub(drain).unwrap_or_default());
-                    if !buffer.is_empty() {
-                        if start < buffer.len() {
-                            dynamic.extend(buffer.drain(..start));
-                        } else {
-                            dynamic.extend(buffer.drain(..));
-                        }
-                    }
-                    if drain < buffer.len() {
-                        buffer.drain(..drain);
-                    } else {
-                        buffer.clear();
-                    }
-                    dynamic.push(with.inner());
-                    dynamic.extend(buffer.drain(..));
-                    *self = Self::Dynamic(dynamic);
+                Self::Inline(_) => {
+                    unreachable!("Handled by set_with_drain_to_inline branch");
                 }
             }
         }
