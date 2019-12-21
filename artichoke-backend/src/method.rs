@@ -53,6 +53,15 @@ impl Spec {
         self.cstring.as_c_str()
     }
 
+    /// Define this method on the class-like pointed to by `into`.
+    ///
+    /// # Safety
+    ///
+    /// This method requires that `into` is non-null and points to a valid
+    /// [`sys::RClass`].
+    ///
+    /// This method requires that the [`sys::mrb_state`] has a valid `top_self`
+    /// object.
     pub unsafe fn define(
         &self,
         interp: &Artichoke,
