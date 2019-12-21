@@ -13,6 +13,7 @@ use super::Registry;
 const SUFFIX_LENGTH: usize = 10;
 
 #[derive(Debug, Clone)]
+#[must_use]
 pub struct FakeTempDir<Metadata: Clone> {
     registry: Weak<Mutex<Registry<Metadata>>>,
     path: PathBuf,
@@ -33,6 +34,7 @@ impl<Metadata: Clone> FakeTempDir<Metadata> {
 }
 
 impl<Metadata: Clone> TempDir for FakeTempDir<Metadata> {
+    #[must_use]
     fn path(&self) -> &Path {
         self.path.as_ref()
     }
