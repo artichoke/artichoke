@@ -409,12 +409,7 @@ impl InlineBuffer {
         let _ = interp;
         let buflen = self.len();
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
-        let newlen = start
-            + buflen
-                .checked_sub(start)
-                .and_then(|tail| tail.checked_sub(drain))
-                .unwrap_or_default()
-            + with.len();
+        let newlen = buflen - drained + with.len();
         if start > buflen {
             set_slice_with_drain_sparse(interp, self, start, with);
         } else if newlen <= INLINE_CAPACITY {
