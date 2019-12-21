@@ -32,6 +32,7 @@ pub enum State {
 impl State {
     /// Does this state indicate a code block is open? Used by the REPL to know
     /// whether to buffer code before attempting to eval it on the interpreter.
+    #[must_use]
     pub fn is_code_block_open(&self) -> bool {
         match self {
             Self::Valid | Self::UnexpectedEnd | Self::UnexpectedRegexpBegin => false,
@@ -41,6 +42,7 @@ impl State {
 }
 
 impl Default for State {
+    #[must_use]
     fn default() -> Self {
         Self::Valid
     }
@@ -63,6 +65,7 @@ pub struct Parser {
 
 impl Parser {
     /// Create a new parser from an interpreter instance.
+    #[must_use]
     pub fn new(interp: &Artichoke) -> Option<Self> {
         let mrb = interp.0.borrow().mrb;
         let context = interp.0.borrow().ctx;

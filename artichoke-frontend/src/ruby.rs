@@ -41,18 +41,21 @@ pub enum Error {
 }
 
 impl From<ArtichokeError> for Error {
+    #[must_use]
     fn from(err: ArtichokeError) -> Self {
         Self::Artichoke(err)
     }
 }
 
 impl From<String> for Error {
+    #[must_use]
     fn from(err: String) -> Self {
         Self::Fail(err)
     }
 }
 
 impl From<&'static str> for Error {
+    #[must_use]
     fn from(err: &'static str) -> Self {
         Self::Fail(err.to_owned())
     }
@@ -63,7 +66,7 @@ pub fn entrypoint() -> Result<(), Error> {
     let opt = Opt::from_args();
     if opt.copyright {
         let interp = artichoke_backend::interpreter()?;
-        interp.eval(b"puts RUBY_COPYRIGHT")?;
+        let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(())
     } else if !opt.commands.is_empty() {
         execute_inline_eval(opt.commands, opt.fixture.as_ref().map(Path::new))
@@ -74,7 +77,7 @@ pub fn entrypoint() -> Result<(), Error> {
         let result = io::stdin().read_to_end(&mut program);
         if result.is_ok() {
             let interp = artichoke_backend::interpreter()?;
-            interp.eval(program.as_slice())?;
+            let _ = interp.eval(program.as_slice())?;
             Ok(())
         } else {
             Err(Error::from("Could not read program from STDIN"))
@@ -106,7 +109,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
     }
     for command in commands {
         if let Ok(command) = fs::osstr_to_bytes(&interp, command.as_os_str()) {
-            interp.eval(command)?;
+            let _ = interp.eval(command)?;
         } else {
             return Err(Error::from(
                 "Unable to parse non-UTF-8 command line arguments on this platform",
@@ -172,6 +175,6 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
             }
         }
     })?;
-    interp.eval(program.as_slice())?;
+    let _ = interp.eval(program.as_slice())?;
     Ok(())
 }
