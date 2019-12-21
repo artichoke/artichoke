@@ -326,7 +326,7 @@ impl InlineBuffer {
         let drained = std::cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
         if start > buflen {
             set_with_drain_sparse(interp, self, start, with);
-        } else if (buflen + 1).checked_sub(drain).unwrap_or_default() <= INLINE_CAPACITY {
+        } else if (buflen + 1).checked_sub(drained).unwrap_or_default() <= INLINE_CAPACITY {
             set_with_drain_to_inline(self, start, drain, with);
         } else {
             match self {

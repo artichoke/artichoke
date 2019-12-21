@@ -161,6 +161,10 @@ def inline_set_with_drain
   a = [1, 2, 3]
   a[3, 2] = 'a'
   raise unless a == [1, 2, 3, 'a']
+
+  a = [1, 2, 3, 4, 5, 6, 7, 8]
+  a[7, 100] = 'a'
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 'a']
 end
 
 def dynamic_set_with_drain
@@ -203,4 +207,8 @@ def dynamic_set_with_drain
   a = (1..25).map.to_a
   a[1, 100] = 'a'
   raise unless a == [1, 'a']
+
+  a = (1..25).map.to_a
+  a[20, 100] = 'a'
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 'a']
 end
