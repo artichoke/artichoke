@@ -258,15 +258,21 @@ impl InlineBuffer {
         len: usize,
     ) -> Result<Self, Box<dyn RubyException>> {
         let _ = interp;
-        match self {
-            Self::Dynamic(buffer) => {
-                let iter = buffer.iter().skip(start).take(len);
-                Ok(Self::from(iter.copied().collect::<Vec<_>>()))
+        if self.is_empty() {
+            return Ok(Self::default());
+        }
+        let buflen = self.len();
+        if start < buflen {
+            match self {
+                Self::Dynamic(buffer) => {
+                    Ok(Self::from(&buffer[start..cmp::min(start + len, buflen)]))
+                }
+                Self::Inline(buffer) => {
+                    Ok(Self::from(&buffer[start..cmp::min(start + len, buflen)]))
+                }
             }
-            Self::Inline(buffer) => {
-                let iter = buffer.iter().skip(start).take(len);
-                Ok(Self::from(iter.copied().collect::<Vec<_>>()))
-            }
+        } else {
+            Ok(Self::default())
         }
     }
 
