@@ -46,7 +46,7 @@ commands:
             # Install rustup
             $client = new-object System.Net.WebClient
             $client.DownloadFile('https://win.rustup.rs', "$pwd\rustup-init.exe")
-            .\rustup-init.exe -y --profile minimal --default-toolchain "$($toolchain)-x86_64-msvc"
+            .\rustup-init.exe -y --profile minimal --default-toolchain "$($toolchain)-msvc"
             # This is necessary because otherwise cargo fails when trying to use git?
             Add-Content "$env:USERPROFILE\.cargo\config" "[net]`ngit-fetch-with-cli = true"
             choco install ruby --no-progress --version=2.6.3.1
