@@ -57,7 +57,7 @@ pub enum Error {
     Fatal(String),
 }
 
-/// Wraps a [`artihcoke_backend`] mruby parser.
+/// Wraps a [`artichoke_backend`] mruby parser.
 pub struct Parser {
     parser: *mut sys::mrb_parser_state,
     context: *mut sys::mrbc_context,

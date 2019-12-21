@@ -105,7 +105,6 @@ pub mod load;
 pub mod method;
 pub mod module;
 pub mod state;
-/// C bindings for mruby, customized for Artichoke.
 pub mod sys;
 pub mod top_self;
 pub mod types;
@@ -134,7 +133,8 @@ pub struct Artichoke(pub Rc<RefCell<state::State>>); // TODO: this should not be
 
 impl Artichoke {
     /// Consume an interpreter and free all
-    /// [live](gc::MrbGarbageCollection::live_objects) [`Value`](value::Value)s.
+    /// [live](gc::MrbGarbageCollection::live_object_count)
+    /// [`Value`](value::Value)s.
     pub fn close(self) {
         self.0.borrow_mut().close();
     }
