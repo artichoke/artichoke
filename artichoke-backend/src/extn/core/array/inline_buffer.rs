@@ -352,7 +352,6 @@ impl InlineBuffer {
             }
         } else {
             let newlen = (buflen + 1).checked_sub(drained).unwrap_or_default();
-            let tail_start_idx = cmp::min(start + drain, buflen);
             match self {
                 Self::Dynamic(ref mut buffer) if newlen <= INLINE_CAPACITY => {
                     let mut inline = ArrayVec::new();
@@ -368,6 +367,7 @@ impl InlineBuffer {
                     *self = Self::Inline(inline);
                 }
                 Self::Dynamic(ref mut buffer) => {
+                    let tail_start_idx = cmp::min(start + drain, buflen);
                     buffer.splice(start..tail_start_idx, iter::once(with.inner()));
                 }
                 Self::Inline(ref mut buffer) if newlen <= INLINE_CAPACITY => {
