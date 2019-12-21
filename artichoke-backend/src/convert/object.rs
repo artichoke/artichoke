@@ -75,15 +75,22 @@ where
         Ok(Value::new(interp, obj))
     }
 
-    /// Extract the Rust object from the [`Value`] if the [`Value`] is backed by
-    /// `Self`.
+    /// Try to extract a Rust object from the [`Value`].
     ///
     /// Extract the data pointer from `slf` and return an `Rc<RefCell<_>>`
     /// containing the Rust object.
     ///
-    /// This function sanity checks to make sure that [`Value`] is a
-    /// [`Ruby::Data`] and that the `RClass *` of the spec matches the
-    /// [`Value`].
+    /// # Safety
+    ///
+    /// This method performs some safety checks before calling [`Rc::from_raw`]:
+    ///
+    /// - Ensure `slf` is of type `MRB_TT_DATA`.
+    /// - Ensure `slf` has the same [`sys::RClass`] as the bound type.
+    /// - Ensure the data pointer is not `NULL`.
+    ///
+    /// This method assumes the [`Rc`] pointed to by the data pointer has not
+    /// been freed, which is built on the assumption that there are no garbage
+    /// collector bugs in the mruby VM for Artichoke custom types.
     unsafe fn try_from_ruby(
         interp: &Artichoke,
         slf: &Value,
