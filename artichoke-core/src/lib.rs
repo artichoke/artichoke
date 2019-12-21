@@ -79,6 +79,7 @@ impl Eq for ArtichokeError {}
 
 // TODO: remove this impl. I think this is only a kludge for tests.
 impl PartialEq for ArtichokeError {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         // this is a hack because io::Error does not impl PartialEq
         format!("{}", self) == format!("{}", other)
@@ -115,10 +116,12 @@ impl fmt::Display for ArtichokeError {
 }
 
 impl error::Error for ArtichokeError {
+    #[must_use]
     fn description(&self) -> &str {
         "Artichoke interpreter error"
     }
 
+    #[must_use]
     fn cause(&self) -> Option<&dyn error::Error> {
         match self {
             Self::Vfs(inner) => Some(inner),
