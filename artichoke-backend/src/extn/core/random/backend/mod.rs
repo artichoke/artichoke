@@ -33,4 +33,7 @@ pub trait Rand: Any {
     ) -> Result<Float, Box<dyn RubyException>>;
 }
 
-downcast!(dyn Rand);
+#[allow(clippy::missing_safety_doc)]
+mod internal {
+    downcast!(dyn super::Rand);
+}
