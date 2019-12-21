@@ -1,4 +1,5 @@
 use arrayvec::ArrayVec;
+use std::cmp;
 use std::iter;
 
 use crate::convert::Convert;
@@ -327,7 +328,7 @@ impl InlineBuffer {
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = interp;
         let buflen = self.len();
-        let drained = std::cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
+        let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
         if start > buflen {
             set_with_drain_sparse(interp, self, start, with);
         } else if (buflen + 1).checked_sub(drained).unwrap_or_default() <= INLINE_CAPACITY {
@@ -375,7 +376,7 @@ impl InlineBuffer {
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = interp;
         let buflen = self.len();
-        let drained = std::cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
+        let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
         let newlen = start
             + buflen
                 .checked_sub(start)
