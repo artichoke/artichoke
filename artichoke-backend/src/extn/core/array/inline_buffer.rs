@@ -340,7 +340,7 @@ impl InlineBuffer {
         } else if start == buflen {
             match self {
                 Self::Dynamic(ref mut buffer) => buffer.push(with.inner()),
-                Self::Inline(ref mut buffer) if buffer.len() < buffer.capacity() => {
+                Self::Inline(ref mut buffer) if buffer.remaining_capacity() > 0 => {
                     buffer.push(with.inner())
                 }
                 Self::Inline(ref mut buffer) => {
