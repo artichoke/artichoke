@@ -657,7 +657,7 @@ fn set_slice_with_drain_to_dynamic(
     drain: usize,
     with: &InlineBuffer,
 ) {
-    let tail_start_idx = start + drain;
+    let tail_start_idx = cmp::min(start + drain, ary.len());
     match ary {
         InlineBuffer::Dynamic(ref mut buffer) => match with {
             InlineBuffer::Dynamic(with) => {
