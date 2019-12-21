@@ -105,7 +105,6 @@ pub mod load;
 pub mod method;
 pub mod module;
 pub mod state;
-/// C bindings for mruby, customized for Artichoke.
 pub mod sys;
 pub mod top_self;
 pub mod types;

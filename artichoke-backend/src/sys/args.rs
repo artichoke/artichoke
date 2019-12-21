@@ -111,19 +111,16 @@ pub fn mrb_args_none() -> mrb_aspec {
     0
 }
 
-/// Format specifiers for `mrb_get_args` function
+/// Format specifiers for [`mrb_get_args`](crate::sys::mrb_get_args) function.
 ///
-/// Must be a C string composed of the following format specifiers:
-///
-/// retrieve arguments from `mrb_state`.
+/// `mrb_get_args` has the following prototype and returns the number of
+/// arguments parsed.
 ///
 /// ```c
-/// mrb_get_args(mrb, format, ...)
+/// MRB_API mrb_int mrb_get_args(mrb_state *mrb, const char *format, ...)
 /// ```
 ///
-/// returns number of arguments parsed.
-///
-/// format specifiers:
+/// `format` must be a C string composed of the following format specifiers:
 ///
 /// ```text
 ///   string  mruby type     C type                 note
