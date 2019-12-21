@@ -13,10 +13,12 @@ use crate::Artichoke;
 pub mod backend;
 pub mod mruby;
 
+#[must_use]
 pub fn new(seed: Option<u64>) -> Random {
     Random(backend::rand::new(seed))
 }
 
+#[must_use]
 pub fn default() -> Random {
     Random(backend::default::new())
 }
@@ -34,6 +36,7 @@ impl Random {
 }
 
 impl RustBackedValue for Random {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Random"
     }

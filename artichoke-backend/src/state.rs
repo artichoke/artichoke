@@ -47,6 +47,7 @@ impl State {
     }
 
     #[cfg(feature = "artichoke-random")]
+    #[must_use]
     pub fn prng(&self) -> &crate::extn::core::random::Random {
         &self.prng
     }

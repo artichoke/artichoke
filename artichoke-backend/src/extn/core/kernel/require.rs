@@ -90,7 +90,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
         // We need to be sure we don't leak anything by unwinding past
         // this point. This likely requires a significant refactor to
         // require_impl.
-        interp.unchecked_eval(contents.as_slice());
+        let _ = interp.unchecked_eval(contents.as_slice());
     }
     interp.pop_context();
     trace!(
@@ -181,7 +181,7 @@ pub fn require(
                 // We need to be sure we don't leak anything by unwinding past
                 // this point. This likely requires a significant refactor to
                 // require_impl.
-                interp.unchecked_eval(contents.as_slice());
+                let _ = interp.unchecked_eval(contents.as_slice());
             }
             interp.pop_context();
             let metadata = metadata.mark_required();
@@ -248,7 +248,7 @@ pub fn require(
                     // We need to be sure we don't leak anything by unwinding past
                     // this point. This likely requires a significant refactor to
                     // require_impl.
-                    interp.unchecked_eval(contents.as_slice());
+                    let _ = interp.unchecked_eval(contents.as_slice());
                 }
                 interp.pop_context();
                 let metadata = metadata.mark_required();
@@ -332,7 +332,7 @@ pub fn require(
         // We need to be sure we don't leak anything by unwinding past
         // this point. This likely requires a significant refactor to
         // require_impl.
-        interp.unchecked_eval(contents.as_slice());
+        let _ = interp.unchecked_eval(contents.as_slice());
     }
     interp.pop_context();
     let metadata = metadata.mark_required();

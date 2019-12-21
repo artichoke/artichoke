@@ -61,7 +61,7 @@ pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
     // predictable initialization behavior.
     let arena = interp.create_arena_savepoint();
-    interp.eval(&[]).unwrap();
+    let _ = interp.eval(&[])?;
     arena.restore();
 
     interp.enable_gc();

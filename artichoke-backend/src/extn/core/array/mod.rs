@@ -23,16 +23,19 @@ pub use inline_buffer::InlineBuffer;
 pub struct Array(InlineBuffer);
 
 impl Clone for Array {
+    #[must_use]
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
 
 impl Array {
+    #[must_use]
     pub fn new(ary: InlineBuffer) -> Self {
         Self(ary)
     }
 
+    #[must_use]
     pub fn as_vec(&self, interp: &Artichoke) -> Vec<Value> {
         self.0.as_vec(interp)
     }
@@ -327,14 +330,14 @@ impl Array {
         Ok(())
     }
 
-    pub fn len(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
-        let len = Int::try_from(self.0.len())
-            .map_err(|_| Fatal::new(interp, "Array length does not fit in Integer max"))?;
-        Ok(interp.convert(len))
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 
-    pub fn len_usize(&self) -> usize {
-        self.0.len()
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
@@ -349,6 +352,7 @@ impl Array {
 }
 
 impl RustBackedValue for Array {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Array"
     }

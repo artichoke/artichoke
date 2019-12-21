@@ -7,6 +7,7 @@ use crate::sys::ffi::mrb_aspec;
 /// @param n
 ///     The number of required arguments.
 #[inline]
+#[must_use]
 pub fn mrb_args_req(n: u32) -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_REQ(n)     ((mrb_aspec)((n)&0x1f) << 18)
@@ -19,6 +20,7 @@ pub fn mrb_args_req(n: u32) -> mrb_aspec {
 /// @param n
 ///      The number of optional arguments.
 #[inline]
+#[must_use]
 pub fn mrb_args_opt(n: u32) -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_OPT(n)     ((mrb_aspec)((n)&0x1f) << 13)
@@ -33,6 +35,7 @@ pub fn mrb_args_opt(n: u32) -> mrb_aspec {
 /// @param n2
 ///      The number of optional arguments.
 #[inline]
+#[must_use]
 pub fn mrb_args_req_and_opt(n_req: u32, n_opt: u32) -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_ARG(n1,n2)   (MRB_ARGS_REQ(n1)|MRB_ARGS_OPT(n2))
@@ -46,6 +49,7 @@ pub fn mrb_args_req_and_opt(n_req: u32, n_opt: u32) -> mrb_aspec {
 /// def foo(n1, *rest); end
 /// ```
 #[inline]
+#[must_use]
 pub fn mrb_args_rest() -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_REST()     ((mrb_aspec)(1 << 12))
@@ -55,6 +59,7 @@ pub fn mrb_args_rest() -> mrb_aspec {
 
 /// required arguments after rest
 #[inline]
+#[must_use]
 pub fn mrb_args_post(n: u32) -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_POST(n)    ((mrb_aspec)((n)&0x1f) << 7)
@@ -64,6 +69,7 @@ pub fn mrb_args_post(n: u32) -> mrb_aspec {
 
 /// keyword arguments (n of keys, kdict)
 #[inline]
+#[must_use]
 pub fn mrb_args_key(n1: u32, n2: u32) -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_KEY(n1,n2) ((mrb_aspec)((((n1)&0x1f) << 2) | ((n2)?(1<<1):0)))
@@ -77,6 +83,7 @@ pub fn mrb_args_key(n1: u32, n2: u32) -> mrb_aspec {
 
 /// Function takes a block argument
 #[inline]
+#[must_use]
 pub fn mrb_args_block() -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_BLOCK()    ((mrb_aspec)1)
@@ -86,6 +93,7 @@ pub fn mrb_args_block() -> mrb_aspec {
 
 /// Function accepts any number of arguments
 #[inline]
+#[must_use]
 pub fn mrb_args_any() -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_ANY()      MRB_ARGS_REST()
@@ -95,6 +103,7 @@ pub fn mrb_args_any() -> mrb_aspec {
 
 /// Function accepts no arguments
 #[inline]
+#[must_use]
 pub fn mrb_args_none() -> mrb_aspec {
     // ```c
     // #define MRB_ARGS_NONE()     ((mrb_aspec)0)

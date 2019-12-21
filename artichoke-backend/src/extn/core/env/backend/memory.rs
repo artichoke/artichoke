@@ -12,6 +12,7 @@ pub struct Memory {
 }
 
 impl Memory {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

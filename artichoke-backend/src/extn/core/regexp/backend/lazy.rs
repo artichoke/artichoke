@@ -15,6 +15,7 @@ pub struct Lazy {
 }
 
 impl Lazy {
+    #[must_use]
     pub fn new(literal: Config) -> Self {
         Self {
             literal,

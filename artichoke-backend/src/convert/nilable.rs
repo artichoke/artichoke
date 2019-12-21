@@ -27,6 +27,7 @@ impl Convert<Option<&Value>, Value> for Artichoke {
 }
 
 impl Convert<Value, Option<Value>> for Artichoke {
+    #[must_use]
     fn convert(&self, value: Value) -> Option<Value> {
         if let Ruby::Nil = value.ruby_type() {
             None

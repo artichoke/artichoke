@@ -8,30 +8,36 @@ use crate::Artichoke;
 pub struct Aggregate(Vec<Box<dyn ArrayType>>);
 
 impl Aggregate {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn with_parts(parts: Vec<Box<dyn ArrayType>>) -> Self {
         Self(parts.into_iter().filter(|part| !part.is_empty()).collect())
     }
 
+    #[must_use]
     pub fn into_parts(self) -> Vec<Box<dyn ArrayType>> {
         self.0
     }
 
+    #[must_use]
     pub fn parts(&self) -> Vec<Box<dyn ArrayType>> {
         self.0.iter().map(|part| part.box_clone()).collect()
     }
 }
 
 impl Clone for Aggregate {
+    #[must_use]
     fn clone(&self) -> Self {
         Self(self.parts())
     }
 }
 
 impl ArrayType for Aggregate {
+    #[must_use]
     fn box_clone(&self) -> Box<dyn ArrayType> {
         Box::new(self.clone())
     }
@@ -42,6 +48,7 @@ impl ArrayType for Aggregate {
         }
     }
 
+    #[must_use]
     fn real_children(&self) -> usize {
         let mut real_children = 0_usize;
         for part in &self.0 {
@@ -55,6 +62,7 @@ impl ArrayType for Aggregate {
         real_children
     }
 
+    #[must_use]
     fn len(&self) -> usize {
         let mut len = 0_usize;
         for part in &self.0 {
@@ -67,6 +75,7 @@ impl ArrayType for Aggregate {
         len
     }
 
+    #[must_use]
     fn is_empty(&self) -> bool {
         false
     }

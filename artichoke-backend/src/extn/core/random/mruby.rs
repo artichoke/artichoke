@@ -55,7 +55,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
             default.inner(),
         );
     }
-    interp.eval(&include_bytes!("random.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("random.rb")[..])?;
     trace!("Patched Random onto interpreter");
     Ok(())
 }

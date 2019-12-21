@@ -18,7 +18,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     interp.def_rb_source_file(b"thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement
-    interp.eval(&b"require 'thread'"[..])?;
+    let _ = interp.eval(&b"require 'thread'"[..])?;
     trace!("Patched Thread onto interpreter");
     trace!("Patched Mutex onto interpreter");
     Ok(())

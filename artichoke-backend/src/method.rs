@@ -38,14 +38,17 @@ impl Spec {
         }
     }
 
+    #[must_use]
     pub fn method_type(&self) -> &Type {
         &self.method_type
     }
 
+    #[must_use]
     pub fn method(&self) -> Method {
         self.method
     }
 
+    #[must_use]
     pub fn name_c_str(&self) -> &CStr {
         self.cstring.as_c_str()
     }
@@ -110,6 +113,7 @@ impl fmt::Display for Spec {
 impl Eq for Spec {}
 
 impl PartialEq for Spec {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.method_type == other.method_type && self.name == other.name
     }

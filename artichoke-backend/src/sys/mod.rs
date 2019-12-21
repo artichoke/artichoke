@@ -25,6 +25,7 @@ pub use self::args::*;
 pub use self::ffi::*;
 
 /// Version metadata `String` for embedded mruby.
+#[must_use]
 pub fn mruby_version(verbose: bool) -> String {
     if verbose {
         // Using the unchecked function is safe because these values are C constants

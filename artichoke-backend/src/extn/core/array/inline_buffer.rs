@@ -19,12 +19,14 @@ pub enum InlineBuffer {
 }
 
 impl Default for InlineBuffer {
+    #[must_use]
     fn default() -> Self {
         Self::Inline(ArrayVec::new())
     }
 }
 
 impl From<Vec<sys::mrb_value>> for InlineBuffer {
+    #[must_use]
     fn from(values: Vec<sys::mrb_value>) -> Self {
         if values.len() <= INLINE_CAPACITY {
             let mut inline = ArrayVec::new();
@@ -37,12 +39,14 @@ impl From<Vec<sys::mrb_value>> for InlineBuffer {
 }
 
 impl From<Vec<Value>> for InlineBuffer {
+    #[must_use]
     fn from(values: Vec<Value>) -> Self {
         Self::from(values.as_slice())
     }
 }
 
 impl<'a> From<&'a [sys::mrb_value]> for InlineBuffer {
+    #[must_use]
     fn from(values: &'a [sys::mrb_value]) -> Self {
         if values.len() <= INLINE_CAPACITY {
             let mut inline = ArrayVec::new();
@@ -55,6 +59,7 @@ impl<'a> From<&'a [sys::mrb_value]> for InlineBuffer {
 }
 
 impl<'a> From<&'a [Value]> for InlineBuffer {
+    #[must_use]
     fn from(values: &'a [Value]) -> Self {
         if values.len() <= INLINE_CAPACITY {
             let mut inline = ArrayVec::new();
@@ -67,6 +72,7 @@ impl<'a> From<&'a [Value]> for InlineBuffer {
 }
 
 impl ArrayType for InlineBuffer {
+    #[must_use]
     fn box_clone(&self) -> Box<dyn ArrayType> {
         Box::new(self.clone())
     }
@@ -86,6 +92,7 @@ impl ArrayType for InlineBuffer {
         }
     }
 
+    #[must_use]
     fn real_children(&self) -> usize {
         match self {
             Self::Dynamic(buffer) => buffer.len(),
@@ -93,6 +100,7 @@ impl ArrayType for InlineBuffer {
         }
     }
 
+    #[must_use]
     fn len(&self) -> usize {
         match self {
             Self::Dynamic(buffer) => buffer.len(),
@@ -100,6 +108,7 @@ impl ArrayType for InlineBuffer {
         }
     }
 
+    #[must_use]
     fn is_empty(&self) -> bool {
         match self {
             Self::Dynamic(buffer) => buffer.is_empty(),
@@ -191,6 +200,7 @@ impl ArrayType for InlineBuffer {
 }
 
 impl InlineBuffer {
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         if capacity <= INLINE_CAPACITY {
             Self::Inline(ArrayVec::new())
@@ -199,6 +209,7 @@ impl InlineBuffer {
         }
     }
 
+    #[must_use]
     pub fn as_vec(&self, interp: &Artichoke) -> Vec<Value> {
         match self {
             Self::Dynamic(buffer) => buffer
@@ -214,6 +225,7 @@ impl InlineBuffer {
         }
     }
 
+    #[must_use]
     pub fn as_ptr(&self) -> *const sys::mrb_value {
         match self {
             Self::Dynamic(buffer) => buffer.as_ptr(),

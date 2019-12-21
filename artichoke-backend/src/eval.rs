@@ -55,6 +55,7 @@ impl<'a> Protect<'a> {
 /// [`Eval::eval`] uses the current context to set the `__FILE__` magic
 /// constant on the [`sys::mrbc_context`].
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[must_use]
 pub struct Context {
     /// Value of the `__FILE__` magic constant that also appears in stack
     /// frames.
@@ -161,6 +162,7 @@ impl Eval for Artichoke {
         }
     }
 
+    #[must_use]
     fn unchecked_eval(&self, code: &[u8]) -> Self::Value {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
@@ -209,6 +211,7 @@ impl Eval for Artichoke {
         Value::new(self, value)
     }
 
+    #[must_use]
     fn peek_context(&self) -> Option<Self::Context> {
         let api = self.0.borrow();
         api.context_stack.last().cloned()

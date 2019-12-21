@@ -89,6 +89,7 @@ impl Filesystem {
 }
 
 #[derive(Clone)]
+#[must_use]
 pub struct Metadata {
     pub require: Option<RequireFunc>,
     already_required: bool,
@@ -106,6 +107,7 @@ impl Metadata {
         }
     }
 
+    #[must_use]
     pub fn is_already_required(&self) -> bool {
         self.already_required
     }

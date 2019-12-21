@@ -29,7 +29,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .add_method("puts", Kernel::puts, sys::mrb_args_rest())
         .define()?;
     interp.0.borrow_mut().def_module::<Kernel>(spec);
-    interp.eval(&include_bytes!("kernel.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("kernel.rb")[..])?;
     trace!("Patched Kernel onto interpreter");
     let scope = interp
         .0

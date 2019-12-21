@@ -263,7 +263,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     borrow.def_class::<Fatal>(fatal_spec);
     drop(borrow);
 
-    interp.eval(&include_bytes!("exception.rb")[..])?;
+    let _ = interp.eval(&include_bytes!("exception.rb")[..])?;
     trace!("Patched Exception onto interpreter");
     trace!("Patched core exception hierarchy onto interpreter");
     Ok(())
@@ -304,6 +304,7 @@ pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
 }
 
 #[allow(clippy::module_name_repetitions)]
+#[must_use]
 pub trait RubyException
 where
     Self: 'static,
@@ -315,6 +316,7 @@ where
 
 macro_rules! ruby_exception_impl {
     ($exception:ident) => {
+        #[must_use]
         pub struct $exception {
             interp: Artichoke,
             message: Cow<'static, [u8]>,
@@ -357,6 +359,7 @@ macro_rules! ruby_exception_impl {
         where
             $exception: RubyException,
         {
+            #[must_use]
             fn from(exception: $exception) -> Box<dyn RubyException> {
                 Box::new(exception)
             }
@@ -367,16 +370,19 @@ macro_rules! ruby_exception_impl {
         where
             $exception: RubyException,
         {
+            #[must_use]
             fn from(exception: Box<$exception>) -> Box<dyn RubyException> {
                 exception
             }
         }
 
         impl RubyException for $exception {
+            #[must_use]
             fn message(&self) -> &[u8] {
                 self.message.as_ref()
             }
 
+            #[must_use]
             fn name(&self) -> String {
                 self.interp
                     .0
@@ -386,6 +392,7 @@ macro_rules! ruby_exception_impl {
                     .unwrap_or_default()
             }
 
+            #[must_use]
             fn rclass(&self) -> Option<*mut sys::RClass> {
                 self.interp
                     .0
@@ -427,10 +434,12 @@ macro_rules! ruby_exception_impl {
         }
 
         impl error::Error for $exception {
+            #[must_use]
             fn description(&self) -> &str {
                 concat!("Ruby Exception: ", stringify!($exception))
             }
 
+            #[must_use]
             fn cause(&self) -> Option<&dyn error::Error> {
                 None
             }
@@ -439,14 +448,17 @@ macro_rules! ruby_exception_impl {
 }
 
 impl RubyException for Box<dyn RubyException> {
+    #[must_use]
     fn message(&self) -> &[u8] {
         self.as_ref().message()
     }
 
+    #[must_use]
     fn name(&self) -> String {
         self.as_ref().name()
     }
 
+    #[must_use]
     fn rclass(&self) -> Option<*mut sys::RClass> {
         self.as_ref().rclass()
     }
@@ -469,10 +481,12 @@ impl fmt::Display for Box<dyn RubyException> {
 }
 
 impl error::Error for Box<dyn RubyException> {
+    #[must_use]
     fn description(&self) -> &str {
         "RubyException"
     }
 
+    #[must_use]
     fn cause(&self) -> Option<&dyn error::Error> {
         None
     }

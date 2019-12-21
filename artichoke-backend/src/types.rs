@@ -14,6 +14,7 @@ pub use artichoke_core::types::{Ruby, Rust};
 // This conversion has to be from mrb_value instead of mrb_vtype to disambiguate
 // between `Ruby::Nil` and a false `Ruby::Bool`.
 #[allow(non_upper_case_globals)]
+#[must_use]
 pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
     // `nil` is implemented with the `MRB_TT_FALSE` type tag in mruby
     // (since both values are falsy). The difference is that booleans are

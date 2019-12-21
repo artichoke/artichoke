@@ -27,6 +27,7 @@ pub trait Env {
 pub struct Environ(Box<dyn Env>);
 
 impl RustBackedValue for Environ {
+    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Artichoke::Environ"
     }
