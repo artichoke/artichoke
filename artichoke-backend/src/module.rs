@@ -105,7 +105,7 @@ impl Spec {
     }
 
     pub fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
-        self.enclosing_scope.as_ref().map(Box::as_ref)
+        self.enclosing_scope.as_deref()
     }
 
     pub fn fqname(&self) -> Cow<'_, str> {
