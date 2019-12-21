@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_class() {
         let interp = crate::interpreter().expect("init");
-        interp
+        let _ = interp
             .eval(b"module Foo; class Bar; end; end")
             .expect("eval");
         let spec = module::Spec::new("Foo", None);
@@ -313,7 +313,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_class_under_class() {
         let interp = crate::interpreter().expect("init");
-        interp
+        let _ = interp
             .eval(b"class Foo; class Bar; end; end")
             .expect("eval");
         let spec = class::Spec::new("Foo", None, None);

@@ -254,14 +254,14 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let context = Context::new(b"context.rb".as_ref());
         interp.push_context(context);
-        interp.eval(b"15").expect("eval");
+        let _ = interp.eval(b"15").expect("eval");
         assert_eq!(interp.0.borrow().context_stack.len(), 1);
     }
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
         let interp = crate::interpreter().expect("init");
-        interp.eval(b"15").expect("eval");
+        let _ = interp.eval(b"15").expect("eval");
         assert_eq!(interp.0.borrow().context_stack.len(), 0);
     }
 

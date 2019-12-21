@@ -203,7 +203,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         interp.disable_gc();
         let arena = interp.create_arena_savepoint();
-        interp
+        let _ = interp
             .eval(
                 br#"
                 # this value will be garbage collected because it is eventually

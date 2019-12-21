@@ -743,7 +743,7 @@ mod tests {
     #[test]
     fn integration_test() {
         let interp = crate::interpreter().unwrap();
-        interp
+        let _ = interp
             .eval(&include_bytes!("inline_buffer_test.rb")[..])
             .unwrap();
         let result = interp.eval(b"spec");

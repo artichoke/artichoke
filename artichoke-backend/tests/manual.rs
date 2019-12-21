@@ -79,7 +79,7 @@ fn define_rust_backed_ruby_class() {
         .def_file_for_type::<Container>(b"container.rb")
         .expect("def file");
 
-    interp.eval(b"require 'container'").expect("require");
+    let _ = interp.eval(b"require 'container'").expect("require");
     let result = interp.eval(b"Container.new(15).value").expect("eval");
     assert_eq!(result.try_into::<Int>(), Ok(15));
     // Ensure Rc is cloned correctly and still points to valid memory.

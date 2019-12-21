@@ -342,7 +342,7 @@ mod tests {
                 .unwrap();
             interp.0.borrow_mut().def_module::<Module>(module);
 
-            interp
+            let _ = interp
                 .eval(
                     br#"
                     class DynamicTestClass
