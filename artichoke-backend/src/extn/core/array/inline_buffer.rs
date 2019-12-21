@@ -436,6 +436,8 @@ impl InlineBuffer {
 
     pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
         let value = match self {
+            // The `Dynamic` variant does NOT realloc into an `Inline` if len
+            // can fit within `INLINE_CAPACITY`.
             Self::Dynamic(buffer) => buffer.pop(),
             Self::Inline(buffer) => buffer.pop(),
         };

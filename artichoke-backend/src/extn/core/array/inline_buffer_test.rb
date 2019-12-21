@@ -19,6 +19,9 @@ def spec
 
   inline_set_slice
 
+  inline_pop
+  dynamic_pop
+
   true
 end
 
@@ -279,4 +282,38 @@ def inline_set_slice
   a = [1, 2, 3]
   a[0, 3] = %w[a b c d e f g h]
   raise unless a == %w[a b c d e f g h]
+end
+
+def inline_pop
+  a = []
+  r = a.pop
+  raise unless r.nil?
+  raise unless a == []
+
+  a = [1]
+  r = a.pop
+  raise unless r == 1
+  raise unless a == []
+
+  a = [1, 2, 3]
+  r = a.pop
+  raise unless r == 3
+  raise unless a == [1, 2]
+
+  a = [1, 2, 3, 4, 5, 6, 7, 8]
+  r = a.pop
+  raise unless r == 8
+  raise unless a == [1, 2, 3, 4, 5, 6, 7]
+end
+
+def dynamic_pop
+  a = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  r = a.pop
+  raise unless r == 9
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8]
+
+  a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  r = a.pop
+  raise unless r == 17
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 end
