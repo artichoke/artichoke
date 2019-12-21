@@ -24,6 +24,8 @@ def spec
   inline_pop
   dynamic_pop
 
+  reverse
+
   true
 end
 
@@ -374,4 +376,22 @@ def dynamic_pop
   r = a.pop
   raise unless r == 17
   raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+end
+
+def reverse
+  a = []
+  a.reverse!
+  raise unless a == []
+
+  a = [1]
+  a.reverse!
+  raise unless a == [1]
+
+  a = [1, 2]
+  a.reverse!
+  raise unless a == [2, 1]
+
+  a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  a.reverse!
+  raise unless a == [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 end
