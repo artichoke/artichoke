@@ -240,10 +240,26 @@ impl InlineBuffer {
         }
     }
 
-    pub unsafe fn set_len(&mut self, len: usize) {
+    /// Set the vector's length without dropping or moving out elements
+    ///
+    /// This method is unsafe because it changes the notion of the number of
+    /// "valid" elements in the vector. Use with care.
+    ///
+    /// # Safety
+    ///
+    /// - `new_len` must be less than or equal to capacity().
+    /// - The elements at `old_len..new_len` must be initialized.
+    ///
+    /// # Examples
+    ///
+    /// This method is primarily used when mutating an `InlineBuffer` via a raw
+    /// pointer passed via FFI into the mruby VM.
+    ///
+    /// See the `ARRAY_PTR` macro in C.
+    pub unsafe fn set_len(&mut self, new_len: usize) {
         match self {
-            Self::Dynamic(buffer) => buffer.set_len(len),
-            Self::Inline(buffer) => buffer.set_len(len),
+            Self::Dynamic(buffer) => buffer.set_len(new_len),
+            Self::Inline(buffer) => buffer.set_len(new_len),
         }
     }
 
