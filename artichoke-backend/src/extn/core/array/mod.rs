@@ -186,9 +186,7 @@ impl Array {
             usize::try_from(index)
                 .map_err(|_| Fatal::new(interp, "Expected positive index to convert to usize"))?
         };
-        if start >= self.0.len() {
-            Ok(interp.convert(None::<Value>))
-        } else if let Some(len) = len {
+        if let Some(len) = len {
             let result = self.0.slice(interp, start, len)?;
             let result = Self(result);
             let result = unsafe { result.try_into_ruby(interp, None) }.map_err(|_| {

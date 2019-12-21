@@ -128,19 +128,31 @@ pub fn element_assignment(
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
-            Err(Box::new(IndexError::new(
-                interp,
-                format!("index {} too small for array; minimum: 0", index),
-            )))
+            let index = usize::try_from(-index)
+                .map_err(|_| Fatal::new(interp, "Positive Int must be usize"))?;
+            if index < len {
+                Ok((len - index, None, second))
+            } else {
+                Err(Box::new(IndexError::new(
+                    interp,
+                    format!("index {} too small for array; minimum: -{}", index, len),
+                )))
+            }
         }
     } else if let Ok(index) = first.funcall::<Int>("to_int", &[], None) {
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
-            Err(Box::new(IndexError::new(
-                interp,
-                format!("index {} too small for array; minimum: 0", index),
-            )))
+            let index = usize::try_from(-index)
+                .map_err(|_| Fatal::new(interp, "Positive Int must be usize"))?;
+            if index < len {
+                Ok((len - index, None, second))
+            } else {
+                Err(Box::new(IndexError::new(
+                    interp,
+                    format!("index {} too small for array; minimum: -{}", index, len),
+                )))
+            }
         }
     } else {
         let rangelen = Int::try_from(len)
