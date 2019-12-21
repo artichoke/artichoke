@@ -386,16 +386,13 @@ impl InlineBuffer {
                     }
                     *self = Self::Inline(inline);
                 }
-                Self::Inline(ref mut buffer) => {
-                    let mut dynamic = Vec::with_capacity(newlen);
-                    dynamic.extend(buffer.drain(..start));
-                    if drain < buffer.len() {
-                        buffer.drain(..drain);
-                    } else {
-                        buffer.drain(..);
-                    }
-                    dynamic.extend(buffer.drain(..));
-                    *self = Self::Dynamic(dynamic);
+                Self::Inline(_) => {
+                    // This branch is unreachable because an inline can only be
+                    // promoted to a dynamic if:
+                    //
+                    // - start == INLINE_CAPACITY, handled by above branch
+                    // - start > INLINE_CAPACITY, handled by the sparse branch
+                    unreachable!("Inline variant promoted to Dynamic");
                 }
             }
         }
