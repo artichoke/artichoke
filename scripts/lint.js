@@ -333,7 +333,7 @@ async function rustDocBuilder() {
               } else if (toolchainCode === 0) {
                 execAsync(
                   "cargo",
-                  [`+${toolchain}`,"doc", "--no-deps", "--all"],
+                  [`+${toolchain}`, "doc", "--no-deps", "--all"],
                   (err, code) => {
                     if (err) {
                       reject(err);
