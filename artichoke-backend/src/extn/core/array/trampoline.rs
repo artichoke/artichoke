@@ -202,7 +202,8 @@ pub fn initialize_copy(
     })?;
     let borrow = from.borrow();
     let result = borrow.clone();
-    let result = unsafe { result.try_into_ruby(interp, Some(ary.inner())) }
+    let result = result
+        .try_into_ruby(interp, Some(ary.inner()))
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array"))?;
     Ok(result)
 }

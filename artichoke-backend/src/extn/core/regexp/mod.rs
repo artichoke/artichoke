@@ -205,7 +205,8 @@ impl Regexp {
             derived_config,
             encoding.unwrap_or_default(),
         )?;
-        let regexp = unsafe { regexp.try_into_ruby(interp, into.as_ref().map(Value::inner)) }
+        let regexp = regexp
+            .try_into_ruby(interp, into.as_ref().map(Value::inner))
             .map_err(|_| {
                 Fatal::new(
                     interp,
@@ -326,7 +327,7 @@ impl Regexp {
             options: Options::default(),
         };
         let regexp = Self::new(interp, literal_config, derived_config, Encoding::default())?;
-        let regexp = unsafe { regexp.try_into_ruby(interp, None) }.map_err(|_| {
+        let regexp = regexp.try_into_ruby(interp, None).map_err(|_| {
             Fatal::new(
                 interp,
                 "Failed to initialize Regexp Ruby Value with Rust Regexp",

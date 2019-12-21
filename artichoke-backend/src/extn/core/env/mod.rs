@@ -39,7 +39,8 @@ pub fn initialize(
     into: Option<sys::mrb_value>,
 ) -> Result<Value, Box<dyn RubyException>> {
     let obj = Environ(Box::new(backend::system::System::new()));
-    let result = unsafe { obj.try_into_ruby(&interp, into) }
+    let result = obj
+        .try_into_ruby(&interp, into)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby ENV with Rust ENV"))?;
     Ok(result)
 }

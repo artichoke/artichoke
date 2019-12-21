@@ -30,13 +30,14 @@ where
 
     /// Try to convert a Rust object into a [`Value`].
     ///
-    /// Inject the data pointer into `slf` if it is provided, otherwise call
-    /// [`sys::mrb_obj_new`] to get a new instance of the class associated with
-    /// `Self`.
+    /// This method wraps `self` in an `Rc<RefCell<_>>` and turns it into a raw
+    /// pointer suitable for embedding in an [`sys::mrb_value`] of type
+    /// `MRB_TT_DATA`.
     ///
-    /// To store `self` in a [`sys::mrb_value`], this function wraps `self` in
-    /// an `Rc<RefCell<_>>`.
-    unsafe fn try_into_ruby(
+    /// If the `slf` parameter is `Some`, the serialized data pointer is used
+    /// to initialize the contained [`sys::mrb_value`]. Otherwise, a new
+    /// [`sys::mrb_value`] is allocated with [`sys::mrb_obj_new`].
+    fn try_into_ruby(
         self,
         interp: &Artichoke,
         slf: Option<sys::mrb_value>,
@@ -52,19 +53,23 @@ where
         let data = Rc::new(RefCell::new(self));
         let ptr = Rc::into_raw(data);
         let obj = if let Some(mut slf) = slf {
-            sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
+            unsafe {
+                sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
+            }
             slf
         } else {
             let rclass = slf
-                .map(|obj| sys::mrb_sys_class_of_value(mrb, obj))
+                .map(|obj| unsafe { sys::mrb_sys_class_of_value(mrb, obj) })
                 .or_else(|| spec.rclass(interp))
                 .ok_or_else(|| ArtichokeError::ConvertToRuby {
                     from: Rust::Object,
                     to: Ruby::Object,
                 })?;
-            let alloc =
-                sys::mrb_data_object_alloc(mrb, rclass, ptr as *mut c_void, spec.data_type());
-            sys::mrb_sys_obj_value(alloc as *mut c_void)
+            unsafe {
+                let alloc =
+                    sys::mrb_data_object_alloc(mrb, rclass, ptr as *mut c_void, spec.data_type());
+                sys::mrb_sys_obj_value(alloc as *mut c_void)
+            }
         };
 
         Ok(Value::new(interp, obj))

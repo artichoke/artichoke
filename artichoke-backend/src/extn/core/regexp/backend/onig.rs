@@ -267,7 +267,7 @@ impl RegexpType for Onig {
                 0,
                 pattern.len(),
             );
-            let matchdata = unsafe { matchdata.try_into_ruby(&interp, None) }.map_err(|_| {
+            let matchdata = matchdata.try_into_ruby(&interp, None).map_err(|_| {
                 Fatal::new(interp, "Could not create Ruby Value from Rust MatchData")
             })?;
             let matchdata_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
@@ -411,7 +411,7 @@ impl RegexpType for Onig {
                 }
                 matchdata.set_region(byte_offset + match_pos.0, byte_offset + match_pos.1);
             }
-            let data = unsafe { matchdata.try_into_ruby(interp, None) }.map_err(|_| {
+            let data = matchdata.try_into_ruby(interp, None).map_err(|_| {
                 Fatal::new(
                     interp,
                     "Failed to initialize Ruby MatchData Value with Rust MatchData",
@@ -492,7 +492,7 @@ impl RegexpType for Onig {
                 0,
                 pattern.len(),
             );
-            let matchdata = unsafe { matchdata.try_into_ruby(interp, None) }.map_err(|_| {
+            let matchdata = matchdata.try_into_ruby(interp, None).map_err(|_| {
                 Fatal::new(
                     interp,
                     "Failed to initialize Ruby MatchData Value with Rust MatchData",
@@ -725,10 +725,9 @@ impl RegexpType for Onig {
                     if let Some(pos) = captures.pos(0) {
                         matchdata.set_region(pos.0, pos.1);
                     }
-                    let data =
-                        unsafe { matchdata.clone().try_into_ruby(interp, None) }.map_err(|_| {
-                            Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
-                        })?;
+                    let data = matchdata.clone().try_into_ruby(interp, None).map_err(|_| {
+                        Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
+                    })?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
@@ -750,10 +749,9 @@ impl RegexpType for Onig {
                     let scanned = &haystack[pos.0..pos.1];
                     let matched = interp.convert(scanned);
                     matchdata.set_region(pos.0, pos.1);
-                    let data =
-                        unsafe { matchdata.clone().try_into_ruby(interp, None) }.map_err(|_| {
-                            Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
-                        })?;
+                    let data = matchdata.clone().try_into_ruby(interp, None).map_err(|_| {
+                        Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
+                    })?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
@@ -801,7 +799,8 @@ impl RegexpType for Onig {
                     collected.push(groups);
                 }
                 matchdata.set_region(last_pos.0, last_pos.1);
-                let data = unsafe { matchdata.try_into_ruby(interp, None) }
+                let data = matchdata
+                    .try_into_ruby(interp, None)
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
@@ -843,7 +842,8 @@ impl RegexpType for Onig {
                     collected.push(scanned);
                 }
                 matchdata.set_region(last_pos.0, last_pos.1);
-                let data = unsafe { matchdata.try_into_ruby(interp, None) }
+                let data = matchdata
+                    .try_into_ruby(interp, None)
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());

@@ -54,7 +54,8 @@ pub fn initialize(
     } else {
         Random(backend::rand::new(None))
     };
-    let result = unsafe { rand.try_into_ruby(&interp, into) }
+    let result = rand
+        .try_into_ruby(&interp, into)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Random with Rust Random"))?;
     Ok(result)
 }
