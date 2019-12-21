@@ -18,6 +18,7 @@ def spec
   dynamic_set_with_drain
 
   inline_set_slice
+  dynamic_set_slice
 
   concat
 
@@ -286,6 +287,24 @@ def inline_set_slice
   a = [1, 2, 3]
   a[0, 3] = %w[a b c d e f g h]
   raise unless a == %w[a b c d e f g h]
+end
+
+def dynamic_set_slice
+  a = (1..25).map.to_a
+  a[0, 0] = []
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+
+  a = (1..25).map.to_a
+  a[0, 0] = %w[a]
+  raise unless a == ['a', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+
+  a = (1..25).map.to_a
+  a[0, 0] = %w[a]
+  raise unless a == ['a', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+
+  a = (1..25).map.to_a
+  a[0, 25] = %w[a]
+  raise unless a == ['a']
 end
 
 def concat
