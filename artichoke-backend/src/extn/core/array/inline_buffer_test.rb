@@ -19,6 +19,8 @@ def spec
 
   inline_set_slice
 
+  concat
+
   inline_pop
   dynamic_pop
 
@@ -282,6 +284,62 @@ def inline_set_slice
   a = [1, 2, 3]
   a[0, 3] = %w[a b c d e f g h]
   raise unless a == %w[a b c d e f g h]
+end
+
+def concat
+  a = []
+  b = []
+  a.concat(b)
+  raise unless a == []
+  raise unless b == []
+
+  a = [1]
+  b = []
+  a.concat(b)
+  raise unless a == [1]
+  raise unless b == []
+
+  a = []
+  b = %w[a]
+  a.concat(b)
+  raise unless a == %w[a]
+  raise unless b == %w[a]
+
+  a = [1]
+  b = %w[a]
+  a.concat(b)
+  raise unless a == [1, 'a']
+  raise unless b == %w[a]
+
+  a = [1, 2, 3, 4, 5, 6, 7, 8]
+  b = %w[a]
+  a.concat(b)
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 'a']
+  raise unless b == %w[a]
+
+  a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  b = %w[a]
+  a.concat(b)
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'a']
+  raise unless b == %w[a]
+
+  a = [1]
+  b = %w[a b c d e f g h]
+  a.concat(b)
+  raise unless a == [1, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  raise unless b == %w[a b c d e f g h]
+
+  a = [1]
+  b = %w[a b c d e f g h i j]
+  a.concat(b)
+  raise unless a == [1, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+  raise unless b == %w[a b c d e f g h i j]
+
+  a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  b = %w[a b c d e f g h i j]
+  a.concat(b)
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
+  raise unless b == %w[a b c d e f g h i j]
 end
 
 def inline_pop
