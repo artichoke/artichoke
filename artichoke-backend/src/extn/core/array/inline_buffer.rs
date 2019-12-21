@@ -313,41 +313,34 @@ impl InlineBuffer {
         let _ = interp;
         let buflen = self.len();
         match self {
+            Self::Dynamic(ref mut buffer) if index < buflen => buffer[index] = elem.inner(),
+            Self::Dynamic(ref mut buffer) if index == buflen => buffer.push(elem.inner()),
             Self::Dynamic(ref mut buffer) => {
-                if index < buflen {
-                    buffer[index] = elem.inner();
-                } else if index == buflen {
-                    buffer.push(elem.inner());
-                } else {
-                    buffer.reserve(index + 1 - buflen);
-                    let nil = interp.convert(None::<Value>).inner();
-                    for _ in buflen..index {
-                        buffer.push(nil);
-                    }
-                    buffer.push(elem.inner());
+                buffer.reserve(index + 1 - buflen);
+                let nil = interp.convert(None::<Value>).inner();
+                for _ in buflen..index {
+                    buffer.push(nil);
                 }
+                buffer.push(elem.inner());
+            }
+            Self::Inline(ref mut buffer) if index < buflen => buffer[index] = elem.inner(),
+            Self::Inline(ref mut buffer) if index == buflen => buffer.push(elem.inner()),
+            Self::Inline(ref mut buffer) if index < buffer.capacity() => {
+                let nil = interp.convert(None::<Value>).inner();
+                for _ in buflen..index {
+                    buffer.push(nil);
+                }
+                buffer.push(elem.inner());
             }
             Self::Inline(ref mut buffer) => {
-                if index < buflen {
-                    buffer[index] = elem.inner();
-                } else if index == buflen {
-                    buffer.push(elem.inner());
-                } else if index < buffer.capacity() {
-                    let nil = interp.convert(None::<Value>).inner();
-                    for _ in buflen..index {
-                        buffer.push(nil);
-                    }
-                    buffer.push(elem.inner());
-                } else {
-                    let mut dynamic = Vec::with_capacity(index + 1);
-                    let nil = interp.convert(None::<Value>).inner();
-                    dynamic.extend(buffer.drain(..));
-                    for _ in buflen..index {
-                        dynamic.push(nil);
-                    }
-                    dynamic.push(elem.inner());
-                    *self = Self::Dynamic(dynamic);
+                let mut dynamic = Vec::with_capacity(index + 1);
+                let nil = interp.convert(None::<Value>).inner();
+                dynamic.extend(buffer.drain(..));
+                for _ in buflen..index {
+                    dynamic.push(nil);
                 }
+                dynamic.push(elem.inner());
+                *self = Self::Dynamic(dynamic);
             }
         }
         Ok(())
@@ -363,10 +356,9 @@ impl InlineBuffer {
         let _ = interp;
         let buflen = self.len();
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
-        if start > buflen {
-            set_with_drain_sparse(interp, self, start, with);
-        } else if start == buflen {
-            match self {
+        match start {
+            idx if idx > buflen => set_with_drain_sparse(interp, self, start, with),
+            idx if idx == buflen => match self {
                 Self::Dynamic(ref mut buffer) => buffer.push(with.inner()),
                 Self::Inline(ref mut buffer) if buffer.remaining_capacity() > 0 => {
                     buffer.push(with.inner())
@@ -377,47 +369,48 @@ impl InlineBuffer {
                     dynamic.push(with.inner());
                     *self = Self::Dynamic(dynamic);
                 }
-            }
-        } else {
-            let newlen = (buflen + 1).checked_sub(drained).unwrap_or_default();
-            match self {
-                Self::Dynamic(ref mut buffer) if newlen <= INLINE_CAPACITY => {
-                    let mut inline = ArrayVec::new();
-                    if start < buffer.len() {
-                        inline.extend(buffer.drain(..start));
-                    } else {
-                        inline.extend(buffer.drain(..));
+            },
+            _ => {
+                let newlen = (buflen + 1).checked_sub(drained).unwrap_or_default();
+                match self {
+                    Self::Dynamic(ref mut buffer) if newlen <= INLINE_CAPACITY => {
+                        let mut inline = ArrayVec::new();
+                        if start < buffer.len() {
+                            inline.extend(buffer.drain(..start));
+                        } else {
+                            inline.extend(buffer.drain(..));
+                        }
+                        inline.push(with.inner());
+                        if drain < buffer.len() {
+                            inline.extend(buffer.drain(drain..));
+                        }
+                        *self = Self::Inline(inline);
                     }
-                    inline.push(with.inner());
-                    if drain < buffer.len() {
-                        inline.extend(buffer.drain(drain..));
+                    Self::Dynamic(ref mut buffer) => {
+                        let tail_start_idx = cmp::min(start + drain, buflen);
+                        buffer.splice(start..tail_start_idx, iter::once(with.inner()));
                     }
-                    *self = Self::Inline(inline);
-                }
-                Self::Dynamic(ref mut buffer) => {
-                    let tail_start_idx = cmp::min(start + drain, buflen);
-                    buffer.splice(start..tail_start_idx, iter::once(with.inner()));
-                }
-                Self::Inline(ref mut buffer) if newlen <= INLINE_CAPACITY => {
-                    let mut inline = ArrayVec::new();
-                    if start < buffer.len() {
-                        inline.extend(buffer.drain(..start));
-                    } else {
-                        inline.extend(buffer.drain(..));
+                    Self::Inline(ref mut buffer) if newlen <= INLINE_CAPACITY => {
+                        let mut inline = ArrayVec::new();
+                        if start < buffer.len() {
+                            inline.extend(buffer.drain(..start));
+                        } else {
+                            inline.extend(buffer.drain(..));
+                        }
+                        inline.push(with.inner());
+                        if drain < buffer.len() {
+                            inline.extend(buffer.drain(drain..));
+                        }
+                        *self = Self::Inline(inline);
                     }
-                    inline.push(with.inner());
-                    if drain < buffer.len() {
-                        inline.extend(buffer.drain(drain..));
+                    Self::Inline(_) => {
+                        // This branch is unreachable because an inline can only be
+                        // promoted to a dynamic if:
+                        //
+                        // - start == INLINE_CAPACITY, handled by above branch
+                        // - start > INLINE_CAPACITY, handled by the sparse branch
+                        unreachable!("Inline variant promoted to Dynamic");
                     }
-                    *self = Self::Inline(inline);
-                }
-                Self::Inline(_) => {
-                    // This branch is unreachable because an inline can only be
-                    // promoted to a dynamic if:
-                    //
-                    // - start == INLINE_CAPACITY, handled by above branch
-                    // - start > INLINE_CAPACITY, handled by the sparse branch
-                    unreachable!("Inline variant promoted to Dynamic");
                 }
             }
         }
