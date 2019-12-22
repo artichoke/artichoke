@@ -17,14 +17,15 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "artichoke", about = "Artichoke is a Ruby made with Rust.")]
 struct Opt {
-    #[structopt(long)]
     /// print the copyright
+    #[structopt(long)]
     copyright: bool,
 
-    #[structopt(short = "e", parse(from_os_str))]
     /// one line of script. Several -e's allowed. Omit [programfile]
+    #[structopt(short = "e", parse(from_os_str))]
     commands: Vec<OsString>,
 
+    /// file whose contents will be read into the `$fixture` global
     #[structopt(long = "with-fixture", parse(from_os_str))]
     fixture: Option<PathBuf>,
 
