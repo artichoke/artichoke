@@ -49,7 +49,7 @@ FLAGS:
 
 OPTIONS:
     -e <commands>...                one line of script. Several -e's allowed. Omit [programfile]
-        --with-fixture <fixture>
+        --with-fixture <fixture>    file whose contents will be read into the `$fixture` global
 
 ARGS:
     <programfile>
