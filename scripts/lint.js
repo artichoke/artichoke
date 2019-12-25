@@ -52,16 +52,18 @@ const walk = dir => {
   });
 };
 
-const execAsync = (cmd, spawnArgs, callback) => {
-  const opts = {
-    encoding: "utf8",
-    stdio: "inherit"
-  };
+const execAsync = (cmd, spawnArgs) => {
+  const promise = new Promise((resolve, reject) => {
+    const opts = {
+      encoding: "utf8",
+      stdio: "inherit"
+    };
 
-  const subprocess = child.spawn(cmd, spawnArgs, opts);
-  subprocess.on("close", code => callback(null, code));
-  subprocess.on("error", callback);
-  return subprocess;
+    const subprocess = child.spawn(cmd, spawnArgs, opts);
+    subprocess.on("close", code => resolve(code));
+    subprocess.on("error", reject);
+  });
+  return promise;
 };
 
 const filesWithExtension = (files, ext) =>
@@ -143,7 +145,7 @@ const checkWithPrettier = (files, parser) => {
           } else {
             const formatted = prettier.check(contents.toString(), opts);
             if (!formatted) {
-              console.error(`KO: ${file}`);
+              console.error(`KO: prettier [${file}]`);
               resolve(false);
             } else {
               resolve(true);
@@ -213,146 +215,113 @@ async function eslintLinter(files) {
 async function shellLinter(files) {
   const sources = shellFiles(files);
   const shfmt = Promise.all(
-    sources.map(file => {
+    sources.map(async file => {
       if (checkMode) {
-        return new Promise((resolve, reject) => {
-          execAsync(
-            "shfmt",
-            ["-i", "2", "-ci", "-s", "-d", file],
-            (err, code) => {
-              if (err) {
-                reject(err);
-              } else if (code === 0) {
-                resolve(true);
-              } else {
-                console.error(`KO: ${file}`);
-                resolve(false);
-              }
-            }
-          );
-        });
+        const code = await execAsync("shfmt", [
+          "-i",
+          "2",
+          "-ci",
+          "-s",
+          "-d",
+          file
+        ]);
+        if (code === 0) {
+          return Promise.resolve(true);
+        }
+        console.error(`KO: shfmt [${file}]`);
+        return Promise.resolve(false);
       }
-      return new Promise((resolve, reject) => {
-        execAsync(
-          "shfmt",
-          ["-i", "2", "-ci", "-s", "-w", file],
-          (err, code) => {
-            if (err) {
-              reject(err);
-            } else if (code === 0) {
-              resolve(true);
-            } else {
-              console.error(`KO: ${file}`);
-              resolve(false);
-            }
-          }
-        );
-      });
+      const code = await execAsync("shfmt", [
+        "-i",
+        "2",
+        "-ci",
+        "-s",
+        "-w",
+        file
+      ]);
+      if (code === 0) {
+        return Promise.resolve(true);
+      }
+      console.error(`KO: shfmt [${file}]`);
+      return Promise.resolve(false);
     })
   );
   const shellcheck = Promise.all(
-    sources.map(file => {
-      return new Promise((resolve, reject) => {
-        execAsync("shellcheck", [file], (err, code) => {
-          if (err) {
-            reject(err);
-          } else if (code === 0) {
-            resolve(true);
-          } else {
-            console.error(`KO: ${file}`);
-            resolve(false);
-          }
-        });
-      });
+    sources.map(async file => {
+      const code = await execAsync("shellcheck", [file]);
+      if (code === 0) {
+        return Promise.resolve(true);
+      }
+      console.error(`KO: shellcheck [${file}]`);
+      return Promise.resolve(false);
     })
   );
   return Promise.all([shfmt, shellcheck]);
 }
 
 async function rustFormatter() {
-  return new Promise((resolve, reject) => {
-    if (checkMode) {
-      execAsync(
-        "cargo",
-        ["fmt", "--", "--check", "--color=auto"],
-        (err, code) => {
-          if (err) {
-            reject(err);
-          } else if (code === 0) {
-            resolve(true);
-          } else {
-            console.error("KO: cargo fmt");
-            resolve(false);
-          }
-        }
-      );
-    } else {
-      execAsync("cargo", ["fmt"], (err, code) => {
-        if (err) {
-          reject(err);
-        } else if (code === 0) {
-          resolve(true);
-        } else {
-          console.error("KO: cargo fmt");
-          resolve(false);
-        }
-      });
+  if (checkMode) {
+    const code = await execAsync("cargo", [
+      "fmt",
+      "--",
+      "--check",
+      "--color=auto"
+    ]);
+    if (code === 0) {
+      return Promise.resolve(true);
     }
-  });
+    console.error("KO: rustfmt");
+    return Promise.resolve(false);
+  }
+  const code = await execAsync("cargo", ["fmt"]);
+  if (code === 0) {
+    return Promise.resolve(true);
+  }
+  console.error("KO: rustfmt");
+  return Promise.resolve(false);
 }
 
 async function clippyLinter() {
-  return new Promise((resolve, reject) => {
-    execAsync("cargo", ["clippy", "--", "-D", "warnings"], (err, code) => {
-      if (err) {
-        reject(err);
-      } else if (code === 0) {
-        resolve(true);
-      } else {
-        console.error("KO: cargo clippy");
-        resolve(false);
-      }
-    });
-  });
+  const code = await execAsync("cargo", ["clippy", "--", "-D", "warnings"]);
+  if (code === 0) {
+    return Promise.resolve(true);
+  }
+  console.error("KO: clippy");
+  return Promise.resolve(false);
 }
 
 async function rustDocBuilder() {
   return new Promise((resolve, reject) => {
     try {
-      fs.readFile("rustdoc-toolchain", (readErr, contents) => {
+      fs.readFile("rustdoc-toolchain", async (readErr, contents) => {
         if (readErr) {
           reject(readErr);
         } else {
           const toolchain = contents.toString().trim();
-          execAsync(
-            "rustup",
-            ["toolchain", "install", toolchain],
-            (toolchainErr, toolchainCode) => {
-              if (toolchainErr) {
-                reject(toolchainErr);
-              } else if (toolchainCode === 0) {
-                execAsync(
-                  "cargo",
-                  [`+${toolchain}`, "doc", "--no-deps", "--all"],
-                  (err, code) => {
-                    if (err) {
-                      reject(err);
-                    } else if (code === 0) {
-                      resolve(true);
-                    } else {
-                      console.error("KO: cargo doc");
-                      resolve(false);
-                    }
-                  }
-                );
-              } else {
-                console.error(
-                  `KO: unable to install rustdoc toolchain ${toolchain}`
-                );
-                reject(toolchainCode);
-              }
+          const toolchainCode = await execAsync("rustup", [
+            "toolchain",
+            "install",
+            toolchain
+          ]);
+          if (toolchainCode === 0) {
+            const code = await execAsync("cargo", [
+              `+${toolchain}`,
+              "doc",
+              "--no-deps",
+              "--all"
+            ]);
+            if (code === 0) {
+              resolve(true);
+            } else {
+              console.error("KO: cargo doc");
+              resolve(false);
             }
-          );
+          } else {
+            console.error(
+              `KO: cargo doc [unable to install rustdoc toolchain ${toolchain}]`
+            );
+            reject(toolchainCode);
+          }
         }
       });
     } catch (err) {
@@ -379,7 +348,7 @@ async function clangFormatter(files) {
                 if (formattedContents === contents.toString()) {
                   resolve(true);
                 } else if (checkMode) {
-                  console.error(`KO: ${source}`);
+                  console.error(`KO: clang-format [${source}]`);
                   resolve(false);
                 } else {
                   fs.writeFile(source, formatted.toString(), writeErr => {
@@ -409,35 +378,20 @@ async function clangFormatter(files) {
 
 async function rubyLinter(files) {
   const sources = rubyFiles(files);
-  return new Promise((resolve, reject) => {
-    if (checkMode) {
-      execAsync("bundle", ["exec", "rubocop", ...sources], (err, code) => {
-        if (err) {
-          reject(err);
-        } else if (code === 0) {
-          resolve(true);
-        } else {
-          console.error("KO: Ruby");
-          resolve(false);
-        }
-      });
-    } else {
-      execAsync(
-        "bundle",
-        ["exec", "rubocop", "-a", ...sources],
-        (err, code) => {
-          if (err) {
-            reject(err);
-          } else if (code === 0) {
-            resolve(true);
-          } else {
-            console.error("KO: Ruby");
-            resolve(false);
-          }
-        }
-      );
+  if (checkMode) {
+    const code = await execAsync("bundle", ["exec", "rubocop", ...sources]);
+    if (code === 0) {
+      return Promise.resolve(true);
     }
-  });
+    console.error("KO: rubocop");
+    return Promise.resolve(false);
+  }
+  const code = await execAsync("bundle", ["exec", "rubocop", "-a", ...sources]);
+  if (code === 0) {
+    return Promise.resolve(true);
+  }
+  console.error("KO: rubocop");
+  return Promise.resolve(false);
 }
 
 (async function runner() {
