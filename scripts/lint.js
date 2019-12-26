@@ -195,7 +195,11 @@ async function eslintLinter(files) {
     if (output) {
       console.log(output);
     }
-    resolve(STATUS.ok);
+    if (report.errorCount === 0 && report.warningCount === 0) {
+      resolve(STATUS.ok);
+    } else {
+      resolve(STATUS.failed);
+    }
   });
 }
 
@@ -367,10 +371,9 @@ async function rubyLinter(files) {
 
 (async function runner() {
   const timer = setInterval(() => {}, 100);
-  let failed = false;
   try {
     const files = await walk(path.resolve(__dirname, ".."));
-    const jobs = [
+    const lintState = await Promise.all([
       prettierFormatter(files),
       eslintLinter(files),
       shellLinter(files),
@@ -379,38 +382,18 @@ async function rubyLinter(files) {
       rustDocBuilder(),
       clangFormatter(files),
       rubyLinter(files)
-    ].map(p =>
-      p.catch(err => {
-        console.error("Error: Unhandled exception");
-        if (err) {
-          console.error(err);
-        }
-        failed = true;
-        return err;
-      })
-    );
-    await Promise.all(jobs)
-      .then(returnCodes => {
-        const failures = returnCodes
-          .flat(Infinity)
-          .filter(status => status === STATUS.failed);
-        if (failures.length > 0) {
-          failed = true;
-        }
-      })
-      .catch(err => {
-        console.error("Error: Unhandled exception");
-        if (err) {
-          console.error(err);
-        }
-        failed = true;
-      });
+    ]);
+    const failures = lintState
+      .flat(Infinity)
+      .filter(status => status === STATUS.failed);
+    if (failures.length > 0) {
+      process.exit(1);
+    }
   } catch (err) {
+    console.error("Error: Unhandled exception");
     console.error(err);
-    failed = true;
-  }
-  timer.unref();
-  if (failed) {
     process.exit(1);
+  } finally {
+    timer.unref();
   }
 })();
