@@ -207,13 +207,28 @@ async function shellLinter(files) {
   const sources = shellFiles(files);
   const shfmt = Promise.all(
     sources.map(async file => {
-      if (checkMode) {
+      try {
+        if (checkMode) {
+          const code = await execAsync("shfmt", [
+            "-i",
+            "2",
+            "-ci",
+            "-s",
+            "-d",
+            file
+          ]);
+          if (code === 0) {
+            return Promise.resolve(STATUS.ok);
+          }
+          console.error(`KO: shfmt [${file}]`);
+          return Promise.resolve(STATUS.failed);
+        }
         const code = await execAsync("shfmt", [
           "-i",
           "2",
           "-ci",
           "-s",
-          "-d",
+          "-w",
           file
         ]);
         if (code === 0) {
@@ -221,64 +236,65 @@ async function shellLinter(files) {
         }
         console.error(`KO: shfmt [${file}]`);
         return Promise.resolve(STATUS.failed);
+      } catch (err) {
+        return Promise.reject(err);
       }
-      const code = await execAsync("shfmt", [
-        "-i",
-        "2",
-        "-ci",
-        "-s",
-        "-w",
-        file
-      ]);
-      if (code === 0) {
-        return Promise.resolve(STATUS.ok);
-      }
-      console.error(`KO: shfmt [${file}]`);
-      return Promise.resolve(STATUS.failed);
     })
   );
   const shellcheck = Promise.all(
     sources.map(async file => {
-      const code = await execAsync("shellcheck", [file]);
-      if (code === 0) {
-        return Promise.resolve(STATUS.ok);
+      try {
+        const code = await execAsync("shellcheck", [file]);
+        if (code === 0) {
+          return Promise.resolve(STATUS.ok);
+        }
+        console.error(`KO: shellcheck [${file}]`);
+        return Promise.resolve(STATUS.failed);
+      } catch (err) {
+        return Promise.reject(err);
       }
-      console.error(`KO: shellcheck [${file}]`);
-      return Promise.resolve(STATUS.failed);
     })
   );
   return Promise.all([shfmt, shellcheck]);
 }
 
 async function rustFormatter() {
-  if (checkMode) {
-    const code = await execAsync("cargo", [
-      "fmt",
-      "--",
-      "--check",
-      "--color=auto"
-    ]);
+  try {
+    if (checkMode) {
+      const code = await execAsync("cargo", [
+        "fmt",
+        "--",
+        "--check",
+        "--color=auto"
+      ]);
+      if (code === 0) {
+        return Promise.resolve(STATUS.ok);
+      }
+      console.error("KO: rustfmt");
+      return Promise.resolve(STATUS.failed);
+    }
+    const code = await execAsync("cargo", ["fmt"]);
     if (code === 0) {
       return Promise.resolve(STATUS.ok);
     }
     console.error("KO: rustfmt");
     return Promise.resolve(STATUS.failed);
+  } catch (err) {
+    return Promise.reject(err);
   }
-  const code = await execAsync("cargo", ["fmt"]);
-  if (code === 0) {
-    return Promise.resolve(STATUS.ok);
-  }
-  console.error("KO: rustfmt");
-  return Promise.resolve(STATUS.failed);
 }
 
 async function clippyLinter() {
-  const code = await execAsync("cargo", ["clippy", "--", "-D", "warnings"]);
-  if (code === 0) {
-    return Promise.resolve(STATUS.ok);
+  try {
+    const code = await execAsync("cargo", ["clippy", "--", "-D", "warnings"]);
+    if (code === 0) {
+      return Promise.resolve(STATUS.ok);
+    }
+    console.error("KO: clippy");
+    return Promise.resolve(STATUS.failed);
+  } catch (err) {
+    return Promise.reject(err);
   }
-  console.error("KO: clippy");
-  return Promise.resolve(STATUS.failed);
 }
 
 async function rustDocBuilder() {
@@ -324,8 +340,7 @@ async function clangFormatter(files) {
           } else {
             try {
               const contents = await fs.readFile(source);
-              const formattedContents = formatted.toString();
-              if (formattedContents === contents.toString()) {
+              if (formatted.toString() === contents.toString()) {
                 resolve(STATUS.ok);
               } else if (checkMode) {
                 console.error(`KO: clang-format [${source}]`);
@@ -352,21 +367,30 @@ async function clangFormatter(files) {
 }
 
 async function rubyLinter(files) {
-  const sources = rubyFiles(files);
-  if (checkMode) {
-    const code = await execAsync("bundle", ["exec", "rubocop", ...sources]);
+  try {
+    const sources = rubyFiles(files);
+    if (checkMode) {
+      const code = await execAsync("bundle", ["exec", "rubocop", ...sources]);
+      if (code === 0) {
+        return Promise.resolve(STATUS.ok);
+      }
+      console.error("KO: rubocop");
+      return Promise.resolve(STATUS.failed);
+    }
+    const code = await execAsync("bundle", [
+      "exec",
+      "rubocop",
+      "-a",
+      ...sources
+    ]);
     if (code === 0) {
       return Promise.resolve(STATUS.ok);
     }
     console.error("KO: rubocop");
     return Promise.resolve(STATUS.failed);
+  } catch (err) {
+    return Promise.reject(err);
   }
-  const code = await execAsync("bundle", ["exec", "rubocop", "-a", ...sources]);
-  if (code === 0) {
-    return Promise.resolve(STATUS.ok);
-  }
-  console.error("KO: rubocop");
-  return Promise.resolve(STATUS.failed);
 }
 
 (async function runner() {
