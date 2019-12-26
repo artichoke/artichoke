@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 
 const child = require("child_process");
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
 
 require("array-flat-polyfill");
@@ -10,6 +10,11 @@ const prettier = require("prettier");
 const shebangCommand = require("shebang-command");
 const { spawnClangFormat } = require("clang-format");
 const { CLIEngine } = require("eslint");
+
+const STATUS = Object.freeze({
+  ok: "ok",
+  failed: "failed"
+});
 
 const IGNORE_DIRECTORIES = Object.freeze([
   ".git",
@@ -20,48 +25,46 @@ const IGNORE_DIRECTORIES = Object.freeze([
 const args = process.argv.slice(2);
 const checkMode = args.includes("--check");
 
-const walk = dir => {
-  return new Promise((resolve, reject) => {
-    fs.readdir(dir, (error, files) => {
-      if (error) {
-        reject(error);
-      } else {
-        const children = files
-          .filter(file => !IGNORE_DIRECTORIES.includes(file))
-          .map(file => {
-            return new Promise((pathResolve, pathReject) => {
-              const filepath = path.join(dir, file);
-              fs.stat(filepath, (statError, stats) => {
-                if (error) {
-                  pathReject(error);
-                } else if (stats.isDirectory()) {
-                  walk(filepath).then(pathResolve);
-                } else if (stats.isFile()) {
-                  pathResolve(filepath);
-                } else {
-                  pathReject(filepath);
-                }
-              });
-            });
-          });
-        Promise.all(children).then(dirEntries =>
-          resolve(dirEntries.flat(Infinity).filter(entry => entry != null))
-        );
-      }
-    });
+async function walk(dir) {
+  try {
+    const files = await fs.readdir(dir);
+    const children = files
+      .filter(file => !IGNORE_DIRECTORIES.includes(file))
+      .map(async file => {
+        try {
+          const filepath = path.join(dir, file);
+          const stats = await fs.stat(filepath);
+          if (stats.isDirectory()) {
+            return walk(filepath);
+          }
+          if (stats.isFile()) {
+            return Promise.resolve(filepath);
+          }
+          return Promise.reject(filepath);
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      });
+    return Promise.all(children).then(dirEntries =>
+      dirEntries.flat(Infinity).filter(entry => entry != null)
+    );
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
+const execAsync = (cmd, spawnArgs) => {
+  const promise = new Promise((resolve, reject) => {
+    const opts = {
+      encoding: "utf8",
+      stdio: "inherit"
+    };
+
+    const subprocess = child.spawn(cmd, spawnArgs, opts);
+    subprocess.on("close", code => resolve(code));
+    subprocess.on("error", reject);
   });
-};
-
-const execAsync = (cmd, spawnArgs, callback) => {
-  const opts = {
-    encoding: "utf8",
-    stdio: "inherit"
-  };
-
-  const subprocess = child.spawn(cmd, spawnArgs, opts);
-  subprocess.on("close", code => callback(null, code));
-  subprocess.on("error", callback);
-  return subprocess;
+  return promise;
 };
 
 const filesWithExtension = (files, ext) =>
@@ -104,27 +107,17 @@ const formatWithPrettier = (files, parser) => {
     opts.proseWrap = "always";
   }
   return Promise.all(
-    files.map(file => {
-      return new Promise((resolve, reject) => {
-        fs.readFile(file, (readErr, contents) => {
-          if (readErr) {
-            reject(readErr);
-          } else {
-            const formatted = prettier.format(contents.toString(), opts);
-            if (formatted === contents.toString()) {
-              resolve(true);
-            } else {
-              fs.writeFile(file, formatted, writeErr => {
-                if (writeErr) {
-                  reject(writeErr);
-                } else {
-                  resolve(true);
-                }
-              });
-            }
-          }
-        });
-      });
+    files.map(async file => {
+      try {
+        const contents = await fs.readFile(file);
+        const formatted = prettier.format(contents.toString(), opts);
+        if (formatted !== contents.toString()) {
+          await fs.writeFile(file, formatted);
+        }
+        return Promise.resolve(STATUS.ok);
+      } catch (err) {
+        return Promise.reject(err);
+      }
     })
   );
 };
@@ -135,22 +128,18 @@ const checkWithPrettier = (files, parser) => {
     opts.proseWrap = "always";
   }
   return Promise.all(
-    files.map(file => {
-      return new Promise((resolve, reject) => {
-        fs.readFile(file, (readErr, contents) => {
-          if (readErr) {
-            reject(readErr);
-          } else {
-            const formatted = prettier.check(contents.toString(), opts);
-            if (!formatted) {
-              console.error(`KO: ${file}`);
-              resolve(false);
-            } else {
-              resolve(true);
-            }
-          }
-        });
-      });
+    files.map(async file => {
+      try {
+        const contents = await fs.readFile(file);
+        const formatted = prettier.check(contents.toString(), opts);
+        if (!formatted) {
+          console.error(`KO: prettier [${file}]`);
+          return Promise.resolve(STATUS.failed);
+        }
+        return Promise.resolve(STATUS.ok);
+      } catch (err) {
+        return Promise.reject(err);
+      }
     })
   );
 };
@@ -206,159 +195,137 @@ async function eslintLinter(files) {
     if (output) {
       console.log(output);
     }
-    resolve(true);
+    if (report.errorCount === 0 && report.warningCount === 0) {
+      resolve(STATUS.ok);
+    } else {
+      resolve(STATUS.failed);
+    }
   });
 }
 
 async function shellLinter(files) {
   const sources = shellFiles(files);
   const shfmt = Promise.all(
-    sources.map(file => {
-      if (checkMode) {
-        return new Promise((resolve, reject) => {
-          execAsync(
-            "shfmt",
-            ["-i", "2", "-ci", "-s", "-d", file],
-            (err, code) => {
-              if (err) {
-                reject(err);
-              } else if (code === 0) {
-                resolve(true);
-              } else {
-                console.error(`KO: ${file}`);
-                resolve(false);
-              }
-            }
-          );
-        });
-      }
-      return new Promise((resolve, reject) => {
-        execAsync(
-          "shfmt",
-          ["-i", "2", "-ci", "-s", "-w", file],
-          (err, code) => {
-            if (err) {
-              reject(err);
-            } else if (code === 0) {
-              resolve(true);
-            } else {
-              console.error(`KO: ${file}`);
-              resolve(false);
-            }
+    sources.map(async file => {
+      try {
+        if (checkMode) {
+          const code = await execAsync("shfmt", [
+            "-i",
+            "2",
+            "-ci",
+            "-s",
+            "-d",
+            file
+          ]);
+          if (code === 0) {
+            return Promise.resolve(STATUS.ok);
           }
-        );
-      });
+          console.error(`KO: shfmt [${file}]`);
+          return Promise.resolve(STATUS.failed);
+        }
+        const code = await execAsync("shfmt", [
+          "-i",
+          "2",
+          "-ci",
+          "-s",
+          "-w",
+          file
+        ]);
+        if (code === 0) {
+          return Promise.resolve(STATUS.ok);
+        }
+        console.error(`KO: shfmt [${file}]`);
+        return Promise.resolve(STATUS.failed);
+      } catch (err) {
+        return Promise.reject(err);
+      }
     })
   );
   const shellcheck = Promise.all(
-    sources.map(file => {
-      return new Promise((resolve, reject) => {
-        execAsync("shellcheck", [file], (err, code) => {
-          if (err) {
-            reject(err);
-          } else if (code === 0) {
-            resolve(true);
-          } else {
-            console.error(`KO: ${file}`);
-            resolve(false);
-          }
-        });
-      });
+    sources.map(async file => {
+      try {
+        const code = await execAsync("shellcheck", [file]);
+        if (code === 0) {
+          return Promise.resolve(STATUS.ok);
+        }
+        console.error(`KO: shellcheck [${file}]`);
+        return Promise.resolve(STATUS.failed);
+      } catch (err) {
+        return Promise.reject(err);
+      }
     })
   );
   return Promise.all([shfmt, shellcheck]);
 }
 
 async function rustFormatter() {
-  return new Promise((resolve, reject) => {
+  try {
     if (checkMode) {
-      execAsync(
-        "cargo",
-        ["fmt", "--", "--check", "--color=auto"],
-        (err, code) => {
-          if (err) {
-            reject(err);
-          } else if (code === 0) {
-            resolve(true);
-          } else {
-            console.error("KO: cargo fmt");
-            resolve(false);
-          }
-        }
-      );
-    } else {
-      execAsync("cargo", ["fmt"], (err, code) => {
-        if (err) {
-          reject(err);
-        } else if (code === 0) {
-          resolve(true);
-        } else {
-          console.error("KO: cargo fmt");
-          resolve(false);
-        }
-      });
+      const code = await execAsync("cargo", [
+        "fmt",
+        "--",
+        "--check",
+        "--color=auto"
+      ]);
+      if (code === 0) {
+        return Promise.resolve(STATUS.ok);
+      }
+      console.error("KO: rustfmt");
+      return Promise.resolve(STATUS.failed);
     }
-  });
+    const code = await execAsync("cargo", ["fmt"]);
+    if (code === 0) {
+      return Promise.resolve(STATUS.ok);
+    }
+    console.error("KO: rustfmt");
+    return Promise.resolve(STATUS.failed);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 }
 
 async function clippyLinter() {
-  return new Promise((resolve, reject) => {
-    execAsync("cargo", ["clippy", "--", "-D", "warnings"], (err, code) => {
-      if (err) {
-        reject(err);
-      } else if (code === 0) {
-        resolve(true);
-      } else {
-        console.error("KO: cargo clippy");
-        resolve(false);
-      }
-    });
-  });
+  try {
+    const code = await execAsync("cargo", ["clippy", "--", "-D", "warnings"]);
+    if (code === 0) {
+      return Promise.resolve(STATUS.ok);
+    }
+    console.error("KO: clippy");
+    return Promise.resolve(STATUS.failed);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 }
 
 async function rustDocBuilder() {
-  return new Promise((resolve, reject) => {
-    try {
-      fs.readFile("rustdoc-toolchain", (readErr, contents) => {
-        if (readErr) {
-          reject(readErr);
-        } else {
-          const toolchain = contents.toString().trim();
-          execAsync(
-            "rustup",
-            ["toolchain", "install", toolchain],
-            (toolchainErr, toolchainCode) => {
-              if (toolchainErr) {
-                reject(toolchainErr);
-              } else if (toolchainCode === 0) {
-                execAsync(
-                  "cargo",
-                  [`+${toolchain}`, "doc", "--no-deps", "--all"],
-                  (err, code) => {
-                    if (err) {
-                      reject(err);
-                    } else if (code === 0) {
-                      resolve(true);
-                    } else {
-                      console.error("KO: cargo doc");
-                      resolve(false);
-                    }
-                  }
-                );
-              } else {
-                console.error(
-                  `KO: unable to install rustdoc toolchain ${toolchain}`
-                );
-                reject(toolchainCode);
-              }
-            }
-          );
-        }
-      });
-    } catch (err) {
-      reject(err);
+  try {
+    const toolchainContents = await fs.readFile("rustdoc-toolchain");
+    const toolchain = toolchainContents.toString().trim();
+    const toolchainCode = await execAsync("rustup", [
+      "toolchain",
+      "install",
+      toolchain
+    ]);
+    if (toolchainCode === 0) {
+      const code = await execAsync("cargo", [
+        `+${toolchain}`,
+        "doc",
+        "--no-deps",
+        "--all"
+      ]);
+      if (code === 0) {
+        return Promise.resolve(STATUS.ok);
+      }
+      console.error("KO: cargo doc");
+      return Promise.resolve(STATUS.failed);
     }
-  });
+    console.error(
+      `KO: cargo doc [unable to install rustdoc toolchain ${toolchain}]`
+    );
+    return Promise.reject(toolchainCode);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 }
 
 async function clangFormatter(files) {
@@ -367,31 +334,23 @@ async function clangFormatter(files) {
     sources.map(source => {
       return new Promise((resolve, reject) => {
         let formatted = "";
-        const done = err => {
+        const done = async err => {
           if (err) {
             reject(err);
           } else {
-            fs.readFile(source, (readErr, contents) => {
-              if (readErr) {
-                reject(readErr);
+            try {
+              const contents = await fs.readFile(source);
+              if (formatted.toString() === contents.toString()) {
+                resolve(STATUS.ok);
+              } else if (checkMode) {
+                console.error(`KO: clang-format [${source}]`);
+                resolve(STATUS.failed);
               } else {
-                const formattedContents = formatted.toString();
-                if (formattedContents === contents.toString()) {
-                  resolve(true);
-                } else if (checkMode) {
-                  console.error(`KO: ${source}`);
-                  resolve(false);
-                } else {
-                  fs.writeFile(source, formatted.toString(), writeErr => {
-                    if (writeErr) {
-                      reject(writeErr);
-                    } else {
-                      resolve(true);
-                    }
-                  });
-                }
+                await fs.writeFile(source, formatted.toString());
               }
-            });
+            } catch (error) {
+              reject(error);
+            }
           }
         };
         const formatter = spawnClangFormat([source], done, [
@@ -408,44 +367,37 @@ async function clangFormatter(files) {
 }
 
 async function rubyLinter(files) {
-  const sources = rubyFiles(files);
-  return new Promise((resolve, reject) => {
+  try {
+    const sources = rubyFiles(files);
     if (checkMode) {
-      execAsync("bundle", ["exec", "rubocop", ...sources], (err, code) => {
-        if (err) {
-          reject(err);
-        } else if (code === 0) {
-          resolve(true);
-        } else {
-          console.error("KO: Ruby");
-          resolve(false);
-        }
-      });
-    } else {
-      execAsync(
-        "bundle",
-        ["exec", "rubocop", "-a", ...sources],
-        (err, code) => {
-          if (err) {
-            reject(err);
-          } else if (code === 0) {
-            resolve(true);
-          } else {
-            console.error("KO: Ruby");
-            resolve(false);
-          }
-        }
-      );
+      const code = await execAsync("bundle", ["exec", "rubocop", ...sources]);
+      if (code === 0) {
+        return Promise.resolve(STATUS.ok);
+      }
+      console.error("KO: rubocop");
+      return Promise.resolve(STATUS.failed);
     }
-  });
+    const code = await execAsync("bundle", [
+      "exec",
+      "rubocop",
+      "-a",
+      ...sources
+    ]);
+    if (code === 0) {
+      return Promise.resolve(STATUS.ok);
+    }
+    console.error("KO: rubocop");
+    return Promise.resolve(STATUS.failed);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 }
 
 (async function runner() {
   const timer = setInterval(() => {}, 100);
-  let failed = false;
   try {
     const files = await walk(path.resolve(__dirname, ".."));
-    const jobs = [
+    const lintState = await Promise.all([
       prettierFormatter(files),
       eslintLinter(files),
       shellLinter(files),
@@ -454,38 +406,18 @@ async function rubyLinter(files) {
       rustDocBuilder(),
       clangFormatter(files),
       rubyLinter(files)
-    ].map(p =>
-      p.catch(err => {
-        console.error("Error: Unhandled exception");
-        if (err) {
-          console.error(err);
-        }
-        failed = true;
-        return err;
-      })
-    );
-    await Promise.all(jobs)
-      .then(returnCodes => {
-        const failures = returnCodes
-          .flat(Infinity)
-          .filter(status => status === false);
-        if (failures.length > 0) {
-          failed = true;
-        }
-      })
-      .catch(err => {
-        console.error("Error: Unhandled exception");
-        if (err) {
-          console.error(err);
-        }
-        failed = true;
-      });
+    ]);
+    const failures = lintState
+      .flat(Infinity)
+      .filter(status => status === STATUS.failed);
+    if (failures.length > 0) {
+      process.exit(1);
+    }
   } catch (err) {
+    console.error("Error: Unhandled exception");
     console.error(err);
-    failed = true;
-  }
-  timer.unref();
-  if (failed) {
     process.exit(1);
+  } finally {
+    timer.unref();
   }
 })();
