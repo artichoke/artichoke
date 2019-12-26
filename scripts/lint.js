@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 
 const child = require("child_process");
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
 
 require("array-flat-polyfill");
@@ -20,37 +20,33 @@ const IGNORE_DIRECTORIES = Object.freeze([
 const args = process.argv.slice(2);
 const checkMode = args.includes("--check");
 
-const walk = dir => {
-  return new Promise((resolve, reject) => {
-    fs.readdir(dir, (error, files) => {
-      if (error) {
-        reject(error);
-      } else {
-        const children = files
-          .filter(file => !IGNORE_DIRECTORIES.includes(file))
-          .map(file => {
-            return new Promise((pathResolve, pathReject) => {
-              const filepath = path.join(dir, file);
-              fs.stat(filepath, (statError, stats) => {
-                if (error) {
-                  pathReject(error);
-                } else if (stats.isDirectory()) {
-                  walk(filepath).then(pathResolve);
-                } else if (stats.isFile()) {
-                  pathResolve(filepath);
-                } else {
-                  pathReject(filepath);
-                }
-              });
-            });
-          });
-        Promise.all(children).then(dirEntries =>
-          resolve(dirEntries.flat(Infinity).filter(entry => entry != null))
-        );
-      }
-    });
-  });
-};
+async function walk(dir) {
+  try {
+    const files = await fs.readdir(dir);
+    const children = files
+      .filter(file => !IGNORE_DIRECTORIES.includes(file))
+      .map(async file => {
+        try {
+          const filepath = path.join(dir, file);
+          const stats = await fs.stat(filepath);
+          if (stats.isDirectory()) {
+            return walk(filepath);
+          }
+          if (stats.isFile()) {
+            return Promise.resolve(filepath);
+          }
+          return Promise.reject(filepath);
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      });
+    return Promise.all(children).then(dirEntries =>
+      dirEntries.flat(Infinity).filter(entry => entry != null)
+    );
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
 
 const execAsync = (cmd, spawnArgs) => {
   const promise = new Promise((resolve, reject) => {
@@ -106,27 +102,17 @@ const formatWithPrettier = (files, parser) => {
     opts.proseWrap = "always";
   }
   return Promise.all(
-    files.map(file => {
-      return new Promise((resolve, reject) => {
-        fs.readFile(file, (readErr, contents) => {
-          if (readErr) {
-            reject(readErr);
-          } else {
-            const formatted = prettier.format(contents.toString(), opts);
-            if (formatted === contents.toString()) {
-              resolve(true);
-            } else {
-              fs.writeFile(file, formatted, writeErr => {
-                if (writeErr) {
-                  reject(writeErr);
-                } else {
-                  resolve(true);
-                }
-              });
-            }
-          }
-        });
-      });
+    files.map(async file => {
+      try {
+        const contents = await fs.readFile(file);
+        const formatted = prettier.format(contents.toString(), opts);
+        if (formatted !== contents.toString()) {
+          await fs.writeFile(file, formatted);
+        }
+        return Promise.resolve(true);
+      } catch (err) {
+        return Promise.reject(err);
+      }
     })
   );
 };
@@ -137,22 +123,18 @@ const checkWithPrettier = (files, parser) => {
     opts.proseWrap = "always";
   }
   return Promise.all(
-    files.map(file => {
-      return new Promise((resolve, reject) => {
-        fs.readFile(file, (readErr, contents) => {
-          if (readErr) {
-            reject(readErr);
-          } else {
-            const formatted = prettier.check(contents.toString(), opts);
-            if (!formatted) {
-              console.error(`KO: prettier [${file}]`);
-              resolve(false);
-            } else {
-              resolve(true);
-            }
-          }
-        });
-      });
+    files.map(async file => {
+      try {
+        const contents = await fs.readFile(file);
+        const formatted = prettier.check(contents.toString(), opts);
+        if (!formatted) {
+          console.error(`KO: prettier [${file}]`);
+          return Promise.resolve(false);
+        }
+        return Promise.resolve(true);
+      } catch (err) {
+        return Promise.reject(err);
+      }
     })
   );
 };
@@ -291,43 +273,34 @@ async function clippyLinter() {
 }
 
 async function rustDocBuilder() {
-  return new Promise((resolve, reject) => {
-    try {
-      fs.readFile("rustdoc-toolchain", async (readErr, contents) => {
-        if (readErr) {
-          reject(readErr);
-        } else {
-          const toolchain = contents.toString().trim();
-          const toolchainCode = await execAsync("rustup", [
-            "toolchain",
-            "install",
-            toolchain
-          ]);
-          if (toolchainCode === 0) {
-            const code = await execAsync("cargo", [
-              `+${toolchain}`,
-              "doc",
-              "--no-deps",
-              "--all"
-            ]);
-            if (code === 0) {
-              resolve(true);
-            } else {
-              console.error("KO: cargo doc");
-              resolve(false);
-            }
-          } else {
-            console.error(
-              `KO: cargo doc [unable to install rustdoc toolchain ${toolchain}]`
-            );
-            reject(toolchainCode);
-          }
-        }
-      });
-    } catch (err) {
-      reject(err);
+  try {
+    const toolchainContents = await fs.readFile("rustdoc-toolchain");
+    const toolchain = toolchainContents.toString().trim();
+    const toolchainCode = await execAsync("rustup", [
+      "toolchain",
+      "install",
+      toolchain
+    ]);
+    if (toolchainCode === 0) {
+      const code = await execAsync("cargo", [
+        `+${toolchain}`,
+        "doc",
+        "--no-deps",
+        "--all"
+      ]);
+      if (code === 0) {
+        return Promise.resolve(true);
+      }
+      console.error("KO: cargo doc");
+      return Promise.resolve(false);
     }
-  });
+    console.error(
+      `KO: cargo doc [unable to install rustdoc toolchain ${toolchain}]`
+    );
+    return Promise.reject(toolchainCode);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 }
 
 async function clangFormatter(files) {
@@ -336,31 +309,24 @@ async function clangFormatter(files) {
     sources.map(source => {
       return new Promise((resolve, reject) => {
         let formatted = "";
-        const done = err => {
+        const done = async err => {
           if (err) {
             reject(err);
           } else {
-            fs.readFile(source, (readErr, contents) => {
-              if (readErr) {
-                reject(readErr);
+            try {
+              const contents = await fs.readFile(source);
+              const formattedContents = formatted.toString();
+              if (formattedContents === contents.toString()) {
+                resolve(true);
+              } else if (checkMode) {
+                console.error(`KO: clang-format [${source}]`);
+                resolve(false);
               } else {
-                const formattedContents = formatted.toString();
-                if (formattedContents === contents.toString()) {
-                  resolve(true);
-                } else if (checkMode) {
-                  console.error(`KO: clang-format [${source}]`);
-                  resolve(false);
-                } else {
-                  fs.writeFile(source, formatted.toString(), writeErr => {
-                    if (writeErr) {
-                      reject(writeErr);
-                    } else {
-                      resolve(true);
-                    }
-                  });
-                }
+                await fs.writeFile(source, formatted.toString());
               }
-            });
+            } catch (error) {
+              reject(error);
+            }
           }
         };
         const formatter = spawnClangFormat([source], done, [
