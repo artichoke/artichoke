@@ -11,6 +11,11 @@ const shebangCommand = require("shebang-command");
 const { spawnClangFormat } = require("clang-format");
 const { CLIEngine } = require("eslint");
 
+const STATUS = Object.freeze({
+  ok: "ok",
+  failed: "failed"
+});
+
 const IGNORE_DIRECTORIES = Object.freeze([
   ".git",
   "node_modules",
@@ -109,7 +114,7 @@ const formatWithPrettier = (files, parser) => {
         if (formatted !== contents.toString()) {
           await fs.writeFile(file, formatted);
         }
-        return Promise.resolve(true);
+        return Promise.resolve(STATUS.ok);
       } catch (err) {
         return Promise.reject(err);
       }
@@ -129,9 +134,9 @@ const checkWithPrettier = (files, parser) => {
         const formatted = prettier.check(contents.toString(), opts);
         if (!formatted) {
           console.error(`KO: prettier [${file}]`);
-          return Promise.resolve(false);
+          return Promise.resolve(STATUS.failed);
         }
-        return Promise.resolve(true);
+        return Promise.resolve(STATUS.ok);
       } catch (err) {
         return Promise.reject(err);
       }
@@ -190,7 +195,7 @@ async function eslintLinter(files) {
     if (output) {
       console.log(output);
     }
-    resolve(true);
+    resolve(STATUS.ok);
   });
 }
 
@@ -208,10 +213,10 @@ async function shellLinter(files) {
           file
         ]);
         if (code === 0) {
-          return Promise.resolve(true);
+          return Promise.resolve(STATUS.ok);
         }
         console.error(`KO: shfmt [${file}]`);
-        return Promise.resolve(false);
+        return Promise.resolve(STATUS.failed);
       }
       const code = await execAsync("shfmt", [
         "-i",
@@ -222,20 +227,20 @@ async function shellLinter(files) {
         file
       ]);
       if (code === 0) {
-        return Promise.resolve(true);
+        return Promise.resolve(STATUS.ok);
       }
       console.error(`KO: shfmt [${file}]`);
-      return Promise.resolve(false);
+      return Promise.resolve(STATUS.failed);
     })
   );
   const shellcheck = Promise.all(
     sources.map(async file => {
       const code = await execAsync("shellcheck", [file]);
       if (code === 0) {
-        return Promise.resolve(true);
+        return Promise.resolve(STATUS.ok);
       }
       console.error(`KO: shellcheck [${file}]`);
-      return Promise.resolve(false);
+      return Promise.resolve(STATUS.failed);
     })
   );
   return Promise.all([shfmt, shellcheck]);
@@ -250,26 +255,26 @@ async function rustFormatter() {
       "--color=auto"
     ]);
     if (code === 0) {
-      return Promise.resolve(true);
+      return Promise.resolve(STATUS.ok);
     }
     console.error("KO: rustfmt");
-    return Promise.resolve(false);
+    return Promise.resolve(STATUS.failed);
   }
   const code = await execAsync("cargo", ["fmt"]);
   if (code === 0) {
-    return Promise.resolve(true);
+    return Promise.resolve(STATUS.ok);
   }
   console.error("KO: rustfmt");
-  return Promise.resolve(false);
+  return Promise.resolve(STATUS.failed);
 }
 
 async function clippyLinter() {
   const code = await execAsync("cargo", ["clippy", "--", "-D", "warnings"]);
   if (code === 0) {
-    return Promise.resolve(true);
+    return Promise.resolve(STATUS.ok);
   }
   console.error("KO: clippy");
-  return Promise.resolve(false);
+  return Promise.resolve(STATUS.failed);
 }
 
 async function rustDocBuilder() {
@@ -289,10 +294,10 @@ async function rustDocBuilder() {
         "--all"
       ]);
       if (code === 0) {
-        return Promise.resolve(true);
+        return Promise.resolve(STATUS.ok);
       }
       console.error("KO: cargo doc");
-      return Promise.resolve(false);
+      return Promise.resolve(STATUS.failed);
     }
     console.error(
       `KO: cargo doc [unable to install rustdoc toolchain ${toolchain}]`
@@ -317,10 +322,10 @@ async function clangFormatter(files) {
               const contents = await fs.readFile(source);
               const formattedContents = formatted.toString();
               if (formattedContents === contents.toString()) {
-                resolve(true);
+                resolve(STATUS.ok);
               } else if (checkMode) {
                 console.error(`KO: clang-format [${source}]`);
-                resolve(false);
+                resolve(STATUS.failed);
               } else {
                 await fs.writeFile(source, formatted.toString());
               }
@@ -347,17 +352,17 @@ async function rubyLinter(files) {
   if (checkMode) {
     const code = await execAsync("bundle", ["exec", "rubocop", ...sources]);
     if (code === 0) {
-      return Promise.resolve(true);
+      return Promise.resolve(STATUS.ok);
     }
     console.error("KO: rubocop");
-    return Promise.resolve(false);
+    return Promise.resolve(STATUS.failed);
   }
   const code = await execAsync("bundle", ["exec", "rubocop", "-a", ...sources]);
   if (code === 0) {
-    return Promise.resolve(true);
+    return Promise.resolve(STATUS.ok);
   }
   console.error("KO: rubocop");
-  return Promise.resolve(false);
+  return Promise.resolve(STATUS.failed);
 }
 
 (async function runner() {
@@ -388,7 +393,7 @@ async function rubyLinter(files) {
       .then(returnCodes => {
         const failures = returnCodes
           .flat(Infinity)
-          .filter(status => status === false);
+          .filter(status => status === STATUS.failed);
         if (failures.length > 0) {
           failed = true;
         }
