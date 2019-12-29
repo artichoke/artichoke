@@ -50,8 +50,9 @@ impl ArrayType for InlineBuffer {
     }
 
     fn gc_mark(&self, interp: &Artichoke) {
-        for element in &self.0 {
-            interp.mark_value(&Value::new(interp, *element));
+        for elem in self.0.iter().copied() {
+            let value = Value::new(interp, elem);
+            interp.mark_value(&value);
         }
     }
 
