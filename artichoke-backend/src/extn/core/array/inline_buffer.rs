@@ -238,8 +238,8 @@ impl InlineBuffer {
             idx if idx < buflen => self.0[index] = elem.inner(),
             idx if idx == buflen => self.0.push(elem.inner()),
             idx => {
-                self.0.reserve(idx + 1 - buflen);
                 let nil = interp.convert(None::<Value>).inner();
+                self.0.reserve(idx + 1 - buflen);
                 for _ in buflen..idx {
                     self.0.push(nil);
                 }
