@@ -41,7 +41,7 @@ fs_extra = "1.1.0"
 num_cpus = "1"
 rayon = "1.2"
 rustc_version = "0.2.3"
-target-lexicon = "0.8.1"
+target-lexicon = "0.10.0"
 walkdir = "2"
 
 [build-dependencies.bindgen]
