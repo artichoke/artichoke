@@ -300,16 +300,24 @@ impl InlineBuffer {
         } else if drain == 0 {
             self.0.insert_from_slice(start, with.0.as_slice());
         } else {
-            let split_at = cmp::min(cmp::min(buflen - start, drain), with.0.len());
-            let overwrite = &with.0[..split_at];
-            let insert = &with.0[split_at..];
-            let drain = drain.checked_sub(with.0.len());
-            self.0[start..start + split_at].copy_from_slice(overwrite);
-            self.0.insert_from_slice(start + split_at, insert);
-            if let Some(drain) = drain {
-                let end_of_insert = start + with.0.len();
-                let end_of_drain = cmp::min(end_of_insert + drain, self.0.len());
-                self.0.drain(end_of_insert..end_of_drain);
+            let to_drain = cmp::min(buflen - start, drain);
+            match with.len() {
+                withlen if withlen == to_drain => {
+                    let end = start + withlen;
+                    self.0[start..end].copy_from_slice(with.0.as_slice());
+                }
+                withlen if to_drain > withlen => {
+                    let end = start + with.len();
+                    let remaining_drain = to_drain - with.len();
+                    self.0[start..end].copy_from_slice(with.0.as_slice());
+                    self.0.drain(end..end + remaining_drain);
+                }
+                _ => {
+                    let (overwrite, insert) = with.0.split_at(to_drain);
+                    let overwrite_until = start + overwrite.len();
+                    self.0[start..overwrite_until].copy_from_slice(overwrite);
+                    self.0.insert_from_slice(overwrite_until, insert);
+                }
             }
         }
         Ok(drained)
