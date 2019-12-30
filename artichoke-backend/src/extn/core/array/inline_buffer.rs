@@ -332,14 +332,7 @@ impl InlineBuffer {
 
     pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        if let Some(mut right) = self.0.len().checked_sub(1) {
-            let mut left = 0;
-            while left < right {
-                self.0.swap(left, right);
-                left += 1;
-                right -= 1;
-            }
-        }
+        self.0.reverse();
         Ok(())
     }
 }
