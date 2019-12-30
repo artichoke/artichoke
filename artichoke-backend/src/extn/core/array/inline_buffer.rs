@@ -288,37 +288,36 @@ impl InlineBuffer {
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = interp;
         let buflen = self.len();
+        let withlen = with.len();
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
-        if start > buflen {
-            let nil = interp.convert(None::<Value>).inner();
-            for _ in buflen..start {
-                self.0.push(nil);
+        match start {
+            idx if idx > buflen => {
+                let nil = interp.convert(None::<Value>).inner();
+                for _ in buflen..idx {
+                    self.0.push(nil);
+                }
+                self.0.extend_from_slice(with.0.as_slice());
             }
-            self.0.extend_from_slice(with.0.as_slice());
-        } else if start == buflen {
-            self.0.extend_from_slice(with.0.as_slice());
-        } else if drain == 0 {
-            self.0.insert_from_slice(start, with.0.as_slice());
-        } else {
-            let to_drain = cmp::min(buflen - start, drain);
-            match with.len() {
-                withlen if withlen == to_drain => {
+            idx if idx == buflen => self.0.extend_from_slice(with.0.as_slice()),
+            idx => match cmp::min(buflen - idx, drain) {
+                0 => self.0.insert_from_slice(start, with.0.as_slice()),
+                to_drain if to_drain == withlen => {
                     let end = start + withlen;
                     self.0[start..end].copy_from_slice(with.0.as_slice());
                 }
-                withlen if to_drain > withlen => {
+                to_drain if to_drain > withlen => {
                     let end = start + with.len();
                     let remaining_drain = to_drain - with.len();
                     self.0[start..end].copy_from_slice(with.0.as_slice());
                     self.0.drain(end..end + remaining_drain);
                 }
-                _ => {
+                to_drain => {
                     let (overwrite, insert) = with.0.split_at(to_drain);
                     let overwrite_until = start + overwrite.len();
                     self.0[start..overwrite_until].copy_from_slice(overwrite);
                     self.0.insert_from_slice(overwrite_until, insert);
                 }
-            }
+            },
         }
         Ok(drained)
     }
