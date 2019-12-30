@@ -1,6 +1,6 @@
-use arrayvec::ArrayVec;
+use smallvec::SmallVec;
 use std::cmp;
-use std::iter;
+use std::iter::FromIterator;
 
 use crate::convert::Convert;
 use crate::extn::core::array::ArrayType;
@@ -12,29 +12,13 @@ use crate::Artichoke;
 
 const INLINE_CAPACITY: usize = 8;
 
-#[derive(Clone)]
-pub enum InlineBuffer {
-    Dynamic(Vec<sys::mrb_value>),
-    Inline(ArrayVec<[sys::mrb_value; INLINE_CAPACITY]>),
-}
-
-impl Default for InlineBuffer {
-    #[must_use]
-    fn default() -> Self {
-        Self::Inline(ArrayVec::new())
-    }
-}
+#[derive(Clone, Default)]
+pub struct InlineBuffer(SmallVec<[sys::mrb_value; INLINE_CAPACITY]>);
 
 impl From<Vec<sys::mrb_value>> for InlineBuffer {
     #[must_use]
     fn from(values: Vec<sys::mrb_value>) -> Self {
-        if values.len() <= INLINE_CAPACITY {
-            let mut inline = ArrayVec::new();
-            inline.extend(values);
-            Self::Inline(inline)
-        } else {
-            Self::Dynamic(values)
-        }
+        Self(SmallVec::from_vec(values))
     }
 }
 
@@ -48,26 +32,14 @@ impl From<Vec<Value>> for InlineBuffer {
 impl<'a> From<&'a [sys::mrb_value]> for InlineBuffer {
     #[must_use]
     fn from(values: &'a [sys::mrb_value]) -> Self {
-        if values.len() <= INLINE_CAPACITY {
-            let mut inline = ArrayVec::new();
-            inline.extend(values.iter().copied());
-            Self::Inline(inline)
-        } else {
-            Self::Dynamic(values.to_vec())
-        }
+        Self(SmallVec::from_slice(values))
     }
 }
 
 impl<'a> From<&'a [Value]> for InlineBuffer {
     #[must_use]
     fn from(values: &'a [Value]) -> Self {
-        if values.len() <= INLINE_CAPACITY {
-            let mut inline = ArrayVec::new();
-            inline.extend(values.iter().map(Value::inner));
-            Self::Inline(inline)
-        } else {
-            Self::Dynamic(values.iter().map(Value::inner).collect())
-        }
+        Self(SmallVec::from_iter(values.iter().map(Value::inner)))
     }
 }
 
@@ -78,42 +50,25 @@ impl ArrayType for InlineBuffer {
     }
 
     fn gc_mark(&self, interp: &Artichoke) {
-        match self {
-            Self::Dynamic(buffer) => {
-                for element in buffer {
-                    interp.mark_value(&Value::new(interp, *element));
-                }
-            }
-            Self::Inline(buffer) => {
-                for element in buffer {
-                    interp.mark_value(&Value::new(interp, *element));
-                }
-            }
+        for elem in self.0.iter().copied() {
+            let value = Value::new(interp, elem);
+            interp.mark_value(&value);
         }
     }
 
     #[must_use]
     fn real_children(&self) -> usize {
-        match self {
-            Self::Dynamic(buffer) => buffer.len(),
-            Self::Inline(buffer) => buffer.len(),
-        }
+        self.0.len()
     }
 
     #[must_use]
     fn len(&self) -> usize {
-        match self {
-            Self::Dynamic(buffer) => buffer.len(),
-            Self::Inline(buffer) => buffer.len(),
-        }
+        self.0.len()
     }
 
     #[must_use]
     fn is_empty(&self) -> bool {
-        match self {
-            Self::Dynamic(buffer) => buffer.is_empty(),
-            Self::Inline(buffer) => buffer.is_empty(),
-        }
+        self.0.is_empty()
     }
 
     fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
@@ -202,42 +157,25 @@ impl ArrayType for InlineBuffer {
 impl InlineBuffer {
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
-        if capacity <= INLINE_CAPACITY {
-            Self::Inline(ArrayVec::new())
-        } else {
-            Self::Dynamic(Vec::with_capacity(capacity))
-        }
+        Self(SmallVec::with_capacity(capacity))
     }
 
     #[must_use]
     pub fn as_vec(&self, interp: &Artichoke) -> Vec<Value> {
-        match self {
-            Self::Dynamic(buffer) => buffer
-                .iter()
-                .copied()
-                .map(|value| Value::new(interp, value))
-                .collect(),
-            Self::Inline(buffer) => buffer
-                .iter()
-                .copied()
-                .map(|value| Value::new(interp, value))
-                .collect(),
-        }
+        self.0
+            .iter()
+            .copied()
+            .map(|value| Value::new(interp, value))
+            .collect()
     }
 
     #[must_use]
     pub fn as_ptr(&self) -> *const sys::mrb_value {
-        match self {
-            Self::Dynamic(buffer) => buffer.as_ptr(),
-            Self::Inline(buffer) => buffer.as_ptr(),
-        }
+        self.0.as_ptr()
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut sys::mrb_value {
-        match self {
-            Self::Dynamic(buffer) => buffer.as_mut_ptr(),
-            Self::Inline(buffer) => buffer.as_mut_ptr(),
-        }
+        self.0.as_mut_ptr()
     }
 
     /// Set the vector's length without dropping or moving out elements
@@ -257,24 +195,15 @@ impl InlineBuffer {
     ///
     /// See the `ARRAY_PTR` macro in C.
     pub unsafe fn set_len(&mut self, new_len: usize) {
-        match self {
-            Self::Dynamic(buffer) => buffer.set_len(new_len),
-            Self::Inline(buffer) => buffer.set_len(new_len),
-        }
+        self.0.set_len(new_len);
     }
 
     pub fn clear(&mut self) {
-        match self {
-            Self::Dynamic(buffer) => buffer.clear(),
-            Self::Inline(buffer) => buffer.clear(),
-        }
+        self.0.clear();
     }
 
     pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
-        let elem = match self {
-            Self::Dynamic(buffer) => buffer.get(index),
-            Self::Inline(buffer) => buffer.get(index),
-        };
+        let elem = self.0.get(index);
         let elem = elem.copied().map(|elem| Value::new(interp, elem));
         Ok(interp.convert(elem))
     }
@@ -291,14 +220,7 @@ impl InlineBuffer {
         }
         let buflen = self.len();
         if start < buflen {
-            match self {
-                Self::Dynamic(buffer) => {
-                    Ok(Self::from(&buffer[start..cmp::min(start + len, buflen)]))
-                }
-                Self::Inline(buffer) => {
-                    Ok(Self::from(&buffer[start..cmp::min(start + len, buflen)]))
-                }
-            }
+            Ok(Self::from(&self.0[start..cmp::min(start + len, buflen)]))
         } else {
             Ok(Self::default())
         }
@@ -312,35 +234,16 @@ impl InlineBuffer {
     ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
         let buflen = self.len();
-        match self {
-            Self::Dynamic(ref mut buffer) if index < buflen => buffer[index] = elem.inner(),
-            Self::Dynamic(ref mut buffer) if index == buflen => buffer.push(elem.inner()),
-            Self::Dynamic(ref mut buffer) => {
-                buffer.reserve(index + 1 - buflen);
+        match index {
+            idx if idx < buflen => self.0[index] = elem.inner(),
+            idx if idx == buflen => self.0.push(elem.inner()),
+            idx => {
                 let nil = interp.convert(None::<Value>).inner();
-                for _ in buflen..index {
-                    buffer.push(nil);
+                self.0.reserve(idx + 1 - buflen);
+                for _ in buflen..idx {
+                    self.0.push(nil);
                 }
-                buffer.push(elem.inner());
-            }
-            Self::Inline(ref mut buffer) if index < buflen => buffer[index] = elem.inner(),
-            Self::Inline(ref mut buffer) if index == buflen => buffer.push(elem.inner()),
-            Self::Inline(ref mut buffer) if index < buffer.capacity() => {
-                let nil = interp.convert(None::<Value>).inner();
-                for _ in buflen..index {
-                    buffer.push(nil);
-                }
-                buffer.push(elem.inner());
-            }
-            Self::Inline(ref mut buffer) => {
-                let mut dynamic = Vec::with_capacity(index + 1);
-                let nil = interp.convert(None::<Value>).inner();
-                dynamic.extend(buffer.drain(..));
-                for _ in buflen..index {
-                    dynamic.push(nil);
-                }
-                dynamic.push(elem.inner());
-                *self = Self::Dynamic(dynamic);
+                self.0.push(elem.inner());
             }
         }
         Ok(())
@@ -357,61 +260,20 @@ impl InlineBuffer {
         let buflen = self.len();
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
         match start {
-            idx if idx > buflen => set_with_drain_sparse(interp, self, start, with),
-            idx if idx == buflen => match self {
-                Self::Dynamic(ref mut buffer) => buffer.push(with.inner()),
-                Self::Inline(ref mut buffer) if buffer.remaining_capacity() > 0 => {
-                    buffer.push(with.inner())
+            idx if idx > buflen => {
+                let nil = interp.convert(None::<Value>).inner();
+                self.0.reserve(start + 1 - buflen);
+                for _ in buflen..start {
+                    self.0.push(nil);
                 }
-                Self::Inline(ref mut buffer) => {
-                    let mut dynamic = Vec::with_capacity(INLINE_CAPACITY + 1);
-                    dynamic.extend(buffer.drain(..));
-                    dynamic.push(with.inner());
-                    *self = Self::Dynamic(dynamic);
-                }
-            },
-            _ => {
-                let newlen = (buflen + 1).checked_sub(drained).unwrap_or_default();
-                match self {
-                    Self::Dynamic(ref mut buffer) if newlen <= INLINE_CAPACITY => {
-                        let mut inline = ArrayVec::new();
-                        if start < buffer.len() {
-                            inline.extend(buffer.drain(..start));
-                        } else {
-                            inline.extend(buffer.drain(..));
-                        }
-                        inline.push(with.inner());
-                        if drain < buffer.len() {
-                            inline.extend(buffer.drain(drain..));
-                        }
-                        *self = Self::Inline(inline);
-                    }
-                    Self::Dynamic(ref mut buffer) => {
-                        let tail_start_idx = cmp::min(start + drain, buflen);
-                        buffer.splice(start..tail_start_idx, iter::once(with.inner()));
-                    }
-                    Self::Inline(ref mut buffer) if newlen <= INLINE_CAPACITY => {
-                        let mut inline = ArrayVec::new();
-                        if start < buffer.len() {
-                            inline.extend(buffer.drain(..start));
-                        } else {
-                            inline.extend(buffer.drain(..));
-                        }
-                        inline.push(with.inner());
-                        if drain < buffer.len() {
-                            inline.extend(buffer.drain(drain..));
-                        }
-                        *self = Self::Inline(inline);
-                    }
-                    Self::Inline(_) => {
-                        // This branch is unreachable because an inline can only be
-                        // promoted to a dynamic if:
-                        //
-                        // - start == INLINE_CAPACITY, handled by above branch
-                        // - start > INLINE_CAPACITY, handled by the sparse branch
-                        unreachable!("Inline variant promoted to Dynamic");
-                    }
-                }
+                self.0.push(with.inner());
+            }
+            idx if idx == buflen => self.0.push(with.inner()),
+            idx if drain == 0 => self.0.insert(idx, with.inner()),
+            idx if drain == 1 => self.0[idx] = with.inner(),
+            idx => {
+                self.0[idx] = with.inner();
+                self.0.drain(idx + 1..cmp::min(idx + drain, buflen));
             }
         }
         Ok(drained)
@@ -426,14 +288,36 @@ impl InlineBuffer {
     ) -> Result<usize, Box<dyn RubyException>> {
         let _ = interp;
         let buflen = self.len();
+        let withlen = with.len();
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
-        let newlen = buflen - drained + with.len();
-        if start > buflen {
-            set_slice_with_drain_sparse(interp, self, start, with);
-        } else if newlen <= INLINE_CAPACITY {
-            set_slice_with_drain_to_inline(self, start, drain, with);
-        } else {
-            set_slice_with_drain_to_dynamic(self, start, drain, with);
+        match start {
+            idx if idx > buflen => {
+                let nil = interp.convert(None::<Value>).inner();
+                for _ in buflen..idx {
+                    self.0.push(nil);
+                }
+                self.0.extend_from_slice(with.0.as_slice());
+            }
+            idx if idx == buflen => self.0.extend_from_slice(with.0.as_slice()),
+            idx => match cmp::min(buflen - idx, drain) {
+                0 => self.0.insert_from_slice(start, with.0.as_slice()),
+                to_drain if to_drain == withlen => {
+                    let end = start + withlen;
+                    self.0[start..end].copy_from_slice(with.0.as_slice());
+                }
+                to_drain if to_drain > withlen => {
+                    let end = start + with.len();
+                    let remaining_drain = to_drain - with.len();
+                    self.0[start..end].copy_from_slice(with.0.as_slice());
+                    self.0.drain(end..end + remaining_drain);
+                }
+                to_drain => {
+                    let (overwrite, insert) = with.0.split_at(to_drain);
+                    let overwrite_until = start + overwrite.len();
+                    self.0[start..overwrite_until].copy_from_slice(overwrite);
+                    self.0.insert_from_slice(overwrite_until, insert);
+                }
+            },
         }
         Ok(drained)
     }
@@ -444,288 +328,20 @@ impl InlineBuffer {
         other: &Self,
     ) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        if self.len() + other.len() <= INLINE_CAPACITY {
-            concat_to_inline(self, other);
-        } else {
-            concat_to_dynamic(self, other);
-        }
+        self.0.extend_from_slice(other.0.as_slice());
         Ok(())
     }
 
     pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
-        let value = match self {
-            // The `Dynamic` variant does NOT realloc into an `Inline` if len
-            // can fit within `INLINE_CAPACITY`.
-            Self::Dynamic(buffer) => buffer.pop(),
-            Self::Inline(buffer) => buffer.pop(),
-        };
+        let value = self.0.pop();
         Ok(interp.convert(value.map(|value| Value::new(interp, value))))
     }
 
     pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
         let _ = interp;
-        match self {
-            Self::Dynamic(ref mut buffer) => {
-                buffer.reverse();
-            }
-            Self::Inline(ref mut buffer) if buffer.is_empty() => {}
-            Self::Inline(ref mut buffer) => {
-                let mut left = 0;
-                let mut right = buffer.len() - 1;
-                while left < right {
-                    buffer.swap(left, right);
-                    left += 1;
-                    right -= 1;
-                }
-            }
-        }
+        self.0.reverse();
         Ok(())
     }
-}
-
-fn set_with_drain_sparse(interp: &Artichoke, ary: &mut InlineBuffer, start: usize, elem: Value) {
-    let nil = interp.convert(None::<Value>).inner();
-    let buflen = ary.len();
-    if start < INLINE_CAPACITY {
-        match ary {
-            InlineBuffer::Dynamic(buffer) => {
-                let mut inline = ArrayVec::new();
-                inline.extend(buffer.drain(..));
-                for _ in buflen..start {
-                    inline.push(nil);
-                }
-                inline.push(elem.inner());
-                *ary = InlineBuffer::Inline(inline);
-            }
-            InlineBuffer::Inline(ref mut buffer) => {
-                for _ in buflen..start {
-                    buffer.push(nil);
-                }
-                buffer.push(elem.inner());
-            }
-        }
-    } else {
-        match ary {
-            InlineBuffer::Dynamic(ref mut buffer) => {
-                buffer.reserve(start + 1 - buflen);
-                for _ in buflen..start {
-                    buffer.push(nil);
-                }
-                buffer.push(elem.inner());
-            }
-            InlineBuffer::Inline(buffer) => {
-                let mut dynamic = Vec::with_capacity(start + 1);
-                dynamic.extend(buffer.drain(..));
-                for _ in buflen..start {
-                    dynamic.push(nil);
-                }
-                dynamic.push(elem.inner());
-                *ary = InlineBuffer::Dynamic(dynamic);
-            }
-        }
-    }
-}
-
-fn set_slice_with_drain_sparse(
-    interp: &Artichoke,
-    ary: &mut InlineBuffer,
-    start: usize,
-    with: &InlineBuffer,
-) {
-    let buflen = ary.len();
-    let nil = interp.convert(None::<Value>).inner();
-    match ary {
-        InlineBuffer::Dynamic(ref mut buffer) => {
-            for _ in buflen..start {
-                buffer.push(nil);
-            }
-            match with {
-                InlineBuffer::Dynamic(with) => {
-                    buffer.extend_from_slice(with.as_slice());
-                }
-                InlineBuffer::Inline(with) => {
-                    buffer.extend_from_slice(with.as_slice());
-                }
-            }
-        }
-        InlineBuffer::Inline(ref mut buffer) if start < INLINE_CAPACITY => {
-            for _ in buflen..start {
-                buffer.push(nil);
-            }
-            match with {
-                InlineBuffer::Dynamic(with) => {
-                    if buffer.try_extend_from_slice(with.as_slice()).is_err() {
-                        let mut dynamic = buffer.as_slice().to_vec();
-                        dynamic.extend_from_slice(with.as_slice());
-                        *ary = InlineBuffer::Dynamic(dynamic);
-                    }
-                }
-                InlineBuffer::Inline(with) => {
-                    if buffer.try_extend_from_slice(with.as_slice()).is_err() {
-                        let mut dynamic = buffer.as_slice().to_vec();
-                        dynamic.extend_from_slice(with.as_slice());
-                        *ary = InlineBuffer::Dynamic(dynamic);
-                    }
-                }
-            }
-        }
-        InlineBuffer::Inline(ref buffer) => {
-            let mut dynamic = buffer.as_slice().to_vec();
-            for _ in buflen..start {
-                dynamic.push(nil);
-            }
-            match with {
-                InlineBuffer::Dynamic(with) => {
-                    dynamic.extend_from_slice(with.as_slice());
-                }
-                InlineBuffer::Inline(with) => {
-                    dynamic.extend_from_slice(with.as_slice());
-                }
-            }
-            *ary = InlineBuffer::Dynamic(dynamic);
-        }
-    }
-}
-
-fn set_slice_with_drain_to_inline(
-    ary: &mut InlineBuffer,
-    start: usize,
-    drain: usize,
-    with: &InlineBuffer,
-) {
-    match ary {
-        InlineBuffer::Dynamic(ref mut buffer) => {
-            let mut inline = ArrayVec::new();
-            if start < buffer.len() {
-                inline.extend(buffer.drain(..start));
-            } else {
-                inline.extend(buffer.drain(..));
-            }
-            if drain < buffer.len() {
-                buffer.drain(..drain);
-            } else {
-                buffer.clear();
-            }
-            match with {
-                InlineBuffer::Dynamic(with) => {
-                    if inline.try_extend_from_slice(with.as_slice()).is_err() {
-                        let mut dynamic = inline.as_slice().to_vec();
-                        dynamic.extend_from_slice(with.as_slice());
-                        dynamic.append(buffer);
-                        *ary = InlineBuffer::Dynamic(dynamic);
-                    } else {
-                        inline.extend(buffer.iter().copied());
-                        *ary = InlineBuffer::Inline(inline);
-                    }
-                }
-                InlineBuffer::Inline(with) => {
-                    if inline.try_extend_from_slice(with.as_slice()).is_err() {
-                        let mut dynamic = inline.as_slice().to_vec();
-                        dynamic.extend_from_slice(with.as_slice());
-                        dynamic.append(buffer);
-                        *ary = InlineBuffer::Dynamic(dynamic);
-                    } else {
-                        inline.extend(buffer.iter().copied());
-                        *ary = InlineBuffer::Inline(inline);
-                    }
-                }
-            }
-        }
-        InlineBuffer::Inline(ref mut buffer) => {
-            let mut inline = ArrayVec::new();
-            if start < buffer.len() {
-                inline.extend(buffer.drain(..start));
-            } else {
-                inline.extend(buffer.drain(..));
-            }
-            if drain < buffer.len() {
-                buffer.drain(..drain);
-            } else {
-                buffer.clear();
-            }
-            match with {
-                InlineBuffer::Dynamic(with) => {
-                    if inline.try_extend_from_slice(with.as_slice()).is_err() {
-                        let mut dynamic = inline.as_slice().to_vec();
-                        dynamic.extend_from_slice(with.as_slice());
-                        dynamic.extend_from_slice(buffer.as_slice());
-                        *ary = InlineBuffer::Dynamic(dynamic);
-                    } else {
-                        inline.extend(buffer.iter().copied());
-                        *ary = InlineBuffer::Inline(inline);
-                    }
-                }
-                InlineBuffer::Inline(with) => {
-                    if inline.try_extend_from_slice(with.as_slice()).is_err() {
-                        let mut dynamic = inline.as_slice().to_vec();
-                        dynamic.extend_from_slice(with.as_slice());
-                        dynamic.extend_from_slice(buffer.as_slice());
-                        *ary = InlineBuffer::Dynamic(dynamic);
-                    } else {
-                        inline.extend(buffer.iter().copied());
-                        *ary = InlineBuffer::Inline(inline);
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn set_slice_with_drain_to_dynamic(
-    ary: &mut InlineBuffer,
-    start: usize,
-    drain: usize,
-    with: &InlineBuffer,
-) {
-    let tail_start_idx = cmp::min(start + drain, ary.len());
-    match ary {
-        InlineBuffer::Dynamic(ref mut buffer) => match with {
-            InlineBuffer::Dynamic(with) => {
-                buffer.splice(start..tail_start_idx, with.iter().copied());
-            }
-            InlineBuffer::Inline(with) => {
-                buffer.splice(start..tail_start_idx, with.as_slice().iter().copied());
-            }
-        },
-        InlineBuffer::Inline(buffer) => {
-            let mut dynamic = buffer.as_slice().to_vec();
-            match with {
-                InlineBuffer::Dynamic(with) => {
-                    dynamic.splice(start..tail_start_idx, with.iter().copied());
-                }
-                InlineBuffer::Inline(with) => {
-                    dynamic.splice(start..tail_start_idx, with.as_slice().iter().copied());
-                }
-            }
-            *ary = InlineBuffer::Dynamic(dynamic);
-        }
-    }
-}
-
-fn concat_to_inline(ary: &mut InlineBuffer, other: &InlineBuffer) {
-    let mut inline = ArrayVec::new();
-    match ary {
-        InlineBuffer::Dynamic(buffer) => inline.extend(buffer.drain(..)),
-        InlineBuffer::Inline(buffer) => inline.extend(buffer.drain(..)),
-    }
-    match other {
-        InlineBuffer::Dynamic(buffer) => inline.extend(buffer.as_slice().iter().copied()),
-        InlineBuffer::Inline(buffer) => inline.extend(buffer.as_slice().iter().copied()),
-    }
-    *ary = InlineBuffer::Inline(inline);
-}
-
-fn concat_to_dynamic(ary: &mut InlineBuffer, other: &InlineBuffer) {
-    let mut dynamic = Vec::with_capacity(ary.len() + other.len());
-    match ary {
-        InlineBuffer::Dynamic(buffer) => dynamic.extend_from_slice(buffer.as_slice()),
-        InlineBuffer::Inline(buffer) => dynamic.extend_from_slice(buffer.as_slice()),
-    }
-    match other {
-        InlineBuffer::Dynamic(buffer) => dynamic.extend_from_slice(buffer.as_slice()),
-        InlineBuffer::Inline(buffer) => dynamic.extend_from_slice(buffer.as_slice()),
-    }
-    *ary = InlineBuffer::Dynamic(dynamic);
 }
 
 #[cfg(test)]
