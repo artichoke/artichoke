@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 bstr = "0.2"
-rustyline = "5.0.3"
+rustyline = "5.0.5"
 structopt = "0.3"
 
 [dependencies.artichoke-backend]
