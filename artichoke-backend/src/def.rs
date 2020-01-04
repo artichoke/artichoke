@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::ffi::{c_void, CString};
-use std::fmt;
+use std::ffi::c_void;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
@@ -9,7 +8,7 @@ use crate::class;
 use crate::convert::RustBackedValue;
 use crate::module;
 use crate::sys;
-use crate::{Artichoke, ArtichokeError};
+use crate::Artichoke;
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
@@ -89,12 +88,12 @@ pub type Method =
 /// module. mruby only supports resolving [`RClass`](sys::RClass) pointers
 /// relative to an enclosing scope. This can be the top level with
 /// [`mrb_class_get`](sys::mrb_class_get) and
-/// [`mrb_module_get`](sys::mrb_module_get) or it can be under another
-/// [`ClassLike`] with [`mrb_class_get_under`](sys::mrb_class_get_under) and
+/// [`mrb_module_get`](sys::mrb_module_get) or it can be under another class
+/// with [`mrb_class_get_under`](sys::mrb_class_get_under) or module with
 /// [`mrb_module_get_under`](sys::mrb_module_get_under).
 ///
 /// Because there is no C API to resolve class and module names directly, each
-/// [`ClassLike`] holds a reference to its enclosing scope so it can recursively
+/// class-like holds a reference to its enclosing scope so it can recursively
 /// resolve its enclosing [`RClass *`](sys::RClass).
 #[derive(Clone, Debug)]
 pub enum EnclosingRubyScope {
@@ -131,9 +130,9 @@ impl EnclosingRubyScope {
         Self::Module { spec: spec.clone() }
     }
 
-    /// Resolve the [`RClass *`](sys::RClass) of the wrapped [`ClassLike`].
+    /// Resolve the [`RClass *`](sys::RClass) of the wrapped class or module.
     ///
-    /// Return [`None`] if the `ClassLike` has no [`EnclosingRubyScope`].
+    /// Return [`None`] if the class-like has no [`EnclosingRubyScope`].
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
@@ -144,7 +143,7 @@ impl EnclosingRubyScope {
         }
     }
 
-    /// Get the fully qualified name of the wrapped [`ClassLike`].
+    /// Get the fully qualified name of the wrapped class or module.
     ///
     /// For example, in the following Ruby code, `C` has an fqname of `A::B::C`.
     ///
@@ -187,40 +186,6 @@ impl Hash for EnclosingRubyScope {
             Self::Module { spec } => spec.hash(state),
         };
     }
-}
-
-/// `Define` trait allows a type to install classes, modules, and
-/// methods into an mruby interpreter.
-pub trait Define
-where
-    Self: ClassLike,
-{
-    /// Define the class or module and all of its methods into the interpreter.
-    ///
-    /// Returns the [`RClass *`](sys::RClass) of the newly defined item.
-    ///
-    /// This function takes a mutable borrow on the [`Artichoke`] interpreter. Ensure
-    /// that there are no outstanding borrows on the interpreter or else Rust
-    /// will panic.
-    fn define(&self, interp: &Artichoke) -> Result<*mut sys::RClass, ArtichokeError>;
-}
-
-/// `ClassLike` trait unifies `class::Spec` and `module::Spec`.
-pub trait ClassLike
-where
-    Self: fmt::Debug + fmt::Display,
-{
-    fn add_method(&mut self, name: &str, method: Method, args: sys::mrb_aspec);
-
-    fn add_self_method(&mut self, name: &str, method: Method, args: sys::mrb_aspec);
-
-    fn cstring(&self) -> &CString;
-
-    fn name(&self) -> &str;
-
-    fn enclosing_scope(&self) -> Option<&EnclosingRubyScope>;
-
-    fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass>;
 }
 
 #[cfg(test)]
