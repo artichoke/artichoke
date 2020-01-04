@@ -77,7 +77,7 @@ mod free_test {
 /// s.start_with?('artichoke')
 /// ```
 ///
-/// To extract method arguments, use [`sys::mrb_get_args`] and the suppilied
+/// To extract method arguments, use [`mrb_get_args!`] and the suppilied
 /// interpreter.
 pub type Method =
     unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
