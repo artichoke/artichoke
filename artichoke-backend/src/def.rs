@@ -44,6 +44,26 @@ pub unsafe extern "C" fn rust_data_free<T: 'static + RustBackedValue>(
     drop(data);
 }
 
+#[cfg(test)]
+mod free_test {
+    use crate::convert::RustBackedValue;
+
+    fn prototype(_func: super::Free) {}
+
+    struct Data(String);
+
+    impl RustBackedValue for Data {
+        fn ruby_type_name() -> &'static str {
+            "Data"
+        }
+    }
+
+    #[test]
+    fn free_prototype() {
+        prototype(super::rust_data_free::<Data>);
+    }
+}
+
 /// Typedef for a method exposed in the mruby interpreter.
 ///
 /// This function signature is used for all types of mruby methods, including
