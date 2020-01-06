@@ -28,6 +28,7 @@ pub mod regexp;
 pub mod string;
 pub mod symbol;
 pub mod thread;
+pub mod time;
 pub mod warning;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
@@ -61,6 +62,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     string::init(interp)?;
     symbol::init(interp)?;
     thread::init(interp)?;
+    time::mruby::init(interp)?;
     warning::init(interp)?;
     Ok(())
 }
