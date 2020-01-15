@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "Artichoke Ruby",
-  "keywords": ["programming language", "scripting", "ruby", "rust"],
+  "keywords": [
+    "programming language",
+    "scripting",
+    "ruby",
+    "rust"
+  ],
   "homepage": "https://github.com/artichoke/artichoke#readme",
   "bugs": "https://github.com/artichoke/artichoke/issues",
   "license": "MIT",
@@ -45,7 +50,9 @@
     "prettier-plugin-toml": "^0.3.1"
   },
   "babel": {
-    "presets": ["@babel/preset-env"]
+    "presets": [
+      "@babel/preset-env"
+    ]
   },
   "eslintConfig": {
     "env": {
@@ -55,8 +62,15 @@
       "node": true
     },
     "parser": "babel-eslint",
-    "plugins": ["html", "import", "prettier"],
-    "extends": ["airbnb", "prettier"],
+    "plugins": [
+      "html",
+      "import",
+      "prettier"
+    ],
+    "extends": [
+      "airbnb",
+      "prettier"
+    ],
     "rules": {
       "prettier/prettier": "error",
       "react/jsx-closing-bracket-location": "off",
