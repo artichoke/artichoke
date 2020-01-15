@@ -36,8 +36,8 @@ pub fn mruby_version(verbose: bool) -> String {
         let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
         format!(
             "{} {} [{}]",
-            engine.to_str().expect("mruby engine name"),
-            version.to_str().expect("mruby engine version"),
+            engine.to_string_lossy(),
+            version.to_string_lossy(),
             env!("CARGO_PKG_VERSION")
         )
     } else {
@@ -95,7 +95,7 @@ impl DescribeState for *mut mrb_state {
         let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
         format!(
             "{} (v{}.{}.{})",
-            version.to_str().expect("mruby engine version"),
+            version.to_string_lossy(),
             MRUBY_RELEASE_MAJOR,
             MRUBY_RELEASE_MINOR,
             MRUBY_RELEASE_TEENY,
@@ -111,8 +111,8 @@ impl fmt::Debug for mrb_state {
         write!(
             f,
             "{} {} (v{}.{}.{}) interpreter at {:p}",
-            engine.to_str().expect("mruby engine name"),
-            version.to_str().expect("mruby engine version"),
+            engine.to_string_lossy(),
+            version.to_string_lossy(),
             MRUBY_RELEASE_MAJOR,
             MRUBY_RELEASE_MINOR,
             MRUBY_RELEASE_TEENY,
@@ -129,8 +129,8 @@ impl fmt::Display for mrb_state {
         write!(
             f,
             "{} {}",
-            engine.to_str().expect("mruby engine name"),
-            version.to_str().expect("mruby engine version"),
+            engine.to_string_lossy(),
+            version.to_string_lossy(),
         )
     }
 }
