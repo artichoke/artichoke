@@ -8,6 +8,7 @@ edition = "2018"
 arrayvec = "0.5"
 backtrace = { version = "0.3", optional = true }
 bstr = "0.2"
+chrono = "0.4"
 downcast = "0.10"
 log = "0.4"
 memchr = "2"
