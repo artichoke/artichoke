@@ -110,7 +110,9 @@ impl Spec {
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        let cstring = CString::new(name.as_ref()).expect("name for data type");
+        let cstring = CString::new(name.as_ref()).unwrap_or_else(|_| unsafe {
+            CString::from_vec_unchecked(String::from("UnknownClass").into_bytes())
+        });
         let data_type = sys::mrb_data_type {
             struct_name: cstring.as_ptr(),
             dfree: free,
