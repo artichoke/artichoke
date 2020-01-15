@@ -309,6 +309,7 @@ pub trait RubyException
 where
     Self: 'static,
 {
+    fn box_clone(&self) -> Box<dyn RubyException>;
     fn message(&self) -> &[u8];
     fn name(&self) -> String;
     fn rclass(&self) -> Option<*mut sys::RClass>;
@@ -316,6 +317,7 @@ where
 
 macro_rules! ruby_exception_impl {
     ($exception:ident) => {
+        #[derive(Clone)]
         #[must_use]
         pub struct $exception {
             interp: Artichoke,
@@ -377,6 +379,11 @@ macro_rules! ruby_exception_impl {
         }
 
         impl RubyException for $exception {
+            #[must_use]
+            fn box_clone(&self) -> Box<dyn RubyException> {
+                Box::new(self.clone())
+            }
+
             #[must_use]
             fn message(&self) -> &[u8] {
                 self.message.as_ref()
@@ -448,6 +455,11 @@ macro_rules! ruby_exception_impl {
 }
 
 impl RubyException for Box<dyn RubyException> {
+    #[must_use]
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        self.as_ref().box_clone()
+    }
+
     #[must_use]
     fn message(&self) -> &[u8] {
         self.as_ref().message()
