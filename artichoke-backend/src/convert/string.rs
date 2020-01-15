@@ -26,7 +26,10 @@ impl ConvertMut<&str, Value> for Artichoke {
 
 impl<'a> ConvertMut<Cow<'a, str>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Cow<'a, str>) -> Value {
-        self.convert_mut(value.as_ref())
+        match value {
+            Cow::Borrowed(string) => self.convert_mut(string),
+            Cow::Owned(string) => self.convert_mut(string),
+        }
     }
 }
 
@@ -42,11 +45,11 @@ impl<'a> TryConvertMut<Value, &'a str> for Artichoke {
     type Error = Exception;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<&'a str, Self::Error> {
-        let err = UnboxRubyError::new(&value, Rust::String);
         let bytes = self.try_convert_mut(value)?;
         // This converter requires that the bytes be valid UTF-8 data. If the
         // `Value` contains binary data, use the `Vec<u8>` or `&[u8]` converter.
-        let string = str::from_utf8(bytes).map_err(|_| err)?;
+        let string =
+            str::from_utf8(bytes).map_err(|_| UnboxRubyError::new(&value, Rust::String))?;
         Ok(string)
     }
 }
@@ -173,13 +176,5 @@ mod tests {
         let value = interp.convert(b);
         let result = value.try_into_mut::<String>(&mut interp);
         result.is_err()
-    }
-
-    #[test]
-    fn symbol_to_string() {
-        let mut interp = crate::interpreter().unwrap();
-        let value = interp.eval(b":sym").unwrap();
-        let value = value.try_into_mut::<String>(&mut interp).unwrap();
-        assert_eq!(&value, "sym");
     }
 }

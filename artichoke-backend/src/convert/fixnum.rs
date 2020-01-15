@@ -45,6 +45,22 @@ impl TryConvert<u64, Value> for Artichoke {
     }
 }
 
+impl TryConvert<usize, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert(&self, value: usize) -> Result<Value, Self::Error> {
+        if let Ok(value) = Int::try_from(value) {
+            let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
+            Ok(Value::from(fixnum))
+        } else {
+            Err(Exception::from(BoxIntoRubyError::new(
+                Rust::UnsignedInt,
+                Ruby::Fixnum,
+            )))
+        }
+    }
+}
+
 impl Convert<i8, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: i8) -> Value {
@@ -63,6 +79,22 @@ impl Convert<i32, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: i32) -> Value {
         self.convert(Int::from(value))
+    }
+}
+
+impl TryConvert<isize, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert(&self, value: isize) -> Result<Value, Self::Error> {
+        if let Ok(value) = Int::try_from(value) {
+            let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
+            Ok(Value::from(fixnum))
+        } else {
+            Err(Exception::from(BoxIntoRubyError::new(
+                Rust::SignedInt,
+                Ruby::Fixnum,
+            )))
+        }
     }
 }
 

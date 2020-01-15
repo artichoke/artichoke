@@ -77,17 +77,17 @@ impl ClassRegistry for Artichoke {
         } else {
             return Ok(None);
         };
-        let class = unsafe {
+        let value_class = unsafe {
             self.with_ffi_boundary(|mrb| {
                 if let Some(mut rclass) = rclass.resolve(mrb) {
-                    let class = sys::mrb_sys_class_value(rclass.as_mut());
-                    Some(Value::from(class))
+                    let value_class = sys::mrb_sys_class_value(rclass.as_mut());
+                    Some(Value::from(value_class))
                 } else {
                     None
                 }
             })?
         };
-        Ok(class)
+        Ok(value_class)
     }
 
     fn new_instance<T>(&mut self, args: &[Value]) -> Result<Option<Value>, Exception>

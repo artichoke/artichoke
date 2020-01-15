@@ -133,8 +133,19 @@ pub struct Context {
     /// Value of the `__FILE__` magic constant that also appears in stack
     /// frames.
     filename: Cow<'static, [u8]>,
-    /// FFI variant of `filename` field.
-    filename_cstring: CString,
+    /// FFI NUL-terminated C string variant of `filename` field.
+    filename_cstr: Box<CStr>,
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        // Safety:
+        //
+        // - The `TOP_FILENAME` constant is controlled by this module.
+        // - The `TOP_FILENAME` constant does not contain NUL bytes.
+        // - This behavior is enforced by a test in this module.
+        unsafe { Self::new_unchecked(TOP_FILENAME) }
+    }
 }
 
 impl Context {
@@ -147,7 +158,7 @@ impl Context {
         let cstring = CString::new(filename.as_ref()).ok()?;
         Some(Self {
             filename,
-            filename_cstring: cstring,
+            filename_cstr: cstring.into_boxed_c_str(),
         })
     }
 
@@ -165,7 +176,7 @@ impl Context {
         let cstring = CString::from_vec_unchecked(filename.clone().into_owned());
         Self {
             filename,
-            filename_cstring: cstring,
+            filename_cstr: cstring.into_boxed_c_str(),
         }
     }
 
@@ -188,18 +199,7 @@ impl Context {
     /// This [`CStr`] is valid as long as this `Context` is not dropped.
     #[must_use]
     pub fn filename_as_c_str(&self) -> &CStr {
-        self.filename_cstring.as_c_str()
-    }
-}
-
-impl Default for Context {
-    fn default() -> Self {
-        // Safety:
-        //
-        // - The `TOP_FILENAME` constant is controlled by this module.
-        // - The `TOP_FILENAME` constant does not contain NUL bytes.
-        // - This behavior is enforced by a test in this module.
-        unsafe { Self::new_unchecked(TOP_FILENAME) }
+        self.filename_cstr.as_ref()
     }
 }
 

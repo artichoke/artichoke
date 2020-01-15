@@ -3,22 +3,36 @@
 class Symbol
   include Comparable
 
+  # Implemented in native code.
+  # def self.all_symbols; end
+
   def <=>(other)
     return nil unless other.is_a?(Symbol)
 
     to_s <=> other.to_s
   end
 
+  # Implemented in native code.
+  # def ==; end
+
+  def ===(other)
+    self == other
+  end
+
   def =~(other)
     to_s =~ other
   end
 
-  def [](*args)
-    to_s[*args]
+  def [](idx, len = (not_set = true))
+    return to_s[idx] if not_set
+
+    to_s[idx, len]
   end
 
-  def capitalize
-    to_s.capitalize.intern
+  def capitalize(options = (not_set = true))
+    return to_s.capitalize.intern if not_set
+
+    to_s.capitalize(options).intern
   end
 
   def casecmp(other)
@@ -40,21 +54,21 @@ class Symbol
     to_s.casecmp?(other.to_s)
   end
 
-  def downcase
-    to_s.downcase.intern
+  def downcase(options = (not_set = true))
+    return to_s.downcase.intern if not_set
+
+    to_s.downcase(options).intern
   end
 
-  def empty?
-    self == :''
-  end
+  # Implemented in native code.
+  # def empty?; end
 
   def encoding
     raise NotImplementedError, 'Artichoke does not have Encoding support'
   end
 
-  def length
-    to_s.length
-  end
+  # Implemented in native code.
+  # def length; end
 
   def match(*args)
     to_s.match(*args)
@@ -76,14 +90,20 @@ class Symbol
     ->(obj, *args, &block) { obj.__send__(self, *args, &block) }
   end
 
+  # Implemented in native code.
+  # def to_s; end
+
   def to_sym
     self
   end
 
-  def upcase
-    to_s.upcase.intern
+  def upcase(options = (not_set = true))
+    return to_s.upcase.intern if not_set
+
+    to_s.upcase(options).intern
   end
 
+  alias id2name to_s
   alias intern to_sym
   alias next succ
   alias size length

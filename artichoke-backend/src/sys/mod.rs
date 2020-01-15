@@ -26,9 +26,6 @@ mod ffi {
 }
 pub(crate) mod protect;
 
-#[cfg(test)]
-mod ffi_tests;
-
 pub use self::args::*;
 pub use self::ffi::*;
 
@@ -118,14 +115,17 @@ mod tests {
 
     #[test]
     fn interpreter_debug() {
+        // Since the introduction of Rust symbol table, `mrb_open` cannot be
+        // called without an Artichoke `State`.
+        let mut interp = crate::interpreter().unwrap();
         unsafe {
-            let mrb = sys::mrb_open();
+            let mrb = interp.mrb.as_mut();
             let debug = sys::mrb_sys_state_debug(mrb);
             assert_eq!(
                 debug,
                 format!("mruby 2.0 (v2.0.1) interpreter at {:p}", &*mrb)
             );
-            sys::mrb_close(mrb);
-        }
+        };
+        interp.close();
     }
 }

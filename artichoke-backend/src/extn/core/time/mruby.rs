@@ -27,7 +27,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.def_class::<time::Time>(spec)?;
 
     let _ = interp.eval(&include_bytes!("time.rb")[..])?;
-    trace!("Patched Random onto interpreter");
+    trace!("Patched Time onto interpreter");
     Ok(())
 }
 

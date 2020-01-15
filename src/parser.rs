@@ -95,7 +95,7 @@ impl Parser {
     #[must_use]
     pub fn new(interp: &mut Artichoke) -> Option<Self> {
         let state = interp.state.as_mut()?;
-        let context = state.parser.context_mut();
+        let context = state.parser.as_mut()?.context_mut();
         let context = NonNull::new(context)?;
         let parser = unsafe {
             interp

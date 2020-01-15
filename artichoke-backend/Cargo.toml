@@ -16,6 +16,7 @@ bstr = { version = "0.2", default-features = false, features = ["std"] }
 chrono = "0.4"
 dtoa = "0.4"
 hex = { version = "0.4", optional = true }
+intaglio = "1.0"
 itoa = "0.4"
 libm = { version = "0.2", optional = true }
 log = "0.4"

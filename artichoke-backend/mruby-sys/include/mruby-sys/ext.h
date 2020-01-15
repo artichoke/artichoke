@@ -90,10 +90,7 @@ MRB_API mrb_value mrb_sys_proc_value(struct mrb_state *mrb, struct RProc *proc);
 
 // Manipulate `Symbol`s
 
-MRB_API const char *mrb_sys_symbol_name(struct mrb_state *mrb, mrb_value value);
-
-MRB_API mrb_value mrb_sys_new_symbol(struct mrb_state *mrb, const char *string,
-                                     size_t len);
+MRB_API mrb_value mrb_sys_new_symbol(mrb_sym id);
 
 // Manage Rust-backed `mrb_value`s
 
@@ -108,9 +105,6 @@ MRB_API mrb_noreturn void mrb_sys_raise(struct mrb_state *mrb,
                                         const char *eclass, const char *msg);
 
 MRB_API void mrb_sys_raise_current_exception(struct mrb_state *mrb);
-
-MRB_API mrb_value mrb_sys_value_debug_str(struct mrb_state *mrb,
-                                          mrb_value value);
 
 // Manipulate Array `mrb_value`s
 

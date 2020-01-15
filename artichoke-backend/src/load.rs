@@ -56,12 +56,8 @@ impl LoadSources for Artichoke {
     where
         P: AsRef<Path>,
     {
-        let is_file = self
-            .state
-            .as_ref()
-            .ok_or(InterpreterExtractError)?
-            .vfs
-            .is_file(path.as_ref());
+        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let is_file = state.vfs.is_file(path.as_ref());
         Ok(is_file)
     }
 

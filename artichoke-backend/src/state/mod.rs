@@ -1,3 +1,5 @@
+use intaglio::bytes::SymbolTable;
+
 use crate::class;
 use crate::fs::{self, Filesystem};
 use crate::module;
@@ -13,20 +15,21 @@ pub mod regexp;
 use prng::Prng;
 
 /// Container for domain-specific interpreter state.
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct State {
-    pub parser: parser::State,
+    pub parser: Option<parser::State>,
     pub classes: class::Registry,
     pub modules: module::Registry,
     pub vfs: Box<dyn Filesystem>,
     pub regexp: regexp::State,
+    pub symbols: SymbolTable,
     pub output: output::Strategy,
     #[cfg(feature = "core-random")]
     pub prng: Prng,
 }
 
 impl State {
-    /// Create a new [`State`] from a [`sys::mrb_state`].
+    /// Create a new `State`.
     ///
     /// The state is comprised of several components:
     ///
@@ -37,18 +40,27 @@ impl State {
     /// - [Ruby parser and file context](parser::State).
     /// - [Intepreter-level PRNG](Prng) (behind the `core-random` feature).
     /// - [IO capturing](output::Strategy) strategy.
-    pub fn new(mrb: &mut sys::mrb_state) -> Option<Self> {
-        let parser = parser::State::new(mrb)?;
-        let state = Self {
-            parser,
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            parser: None,
             classes: class::Registry::new(),
             modules: module::Registry::new(),
             vfs: fs::filesystem(),
             regexp: regexp::State::new(),
+            symbols: SymbolTable::new(),
             output: output::Strategy::new(),
             #[cfg(feature = "core-random")]
             prng: Prng::new(),
-        };
-        Some(state)
+        }
+    }
+
+    /// Create a new [`parser::State`] from a [`sys::mrb_state`].
+    pub fn try_init_parser(&mut self, mrb: &mut sys::mrb_state) {
+        if let Some(parser) = parser::State::new(mrb) {
+            if let Some(old_parser) = self.parser.replace(parser) {
+                old_parser.close(mrb);
+            }
+        }
     }
 }
