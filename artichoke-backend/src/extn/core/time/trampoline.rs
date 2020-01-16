@@ -1,5 +1,5 @@
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{Fatal, RubyException};
+use crate::convert::{RustBackedValue, TryConvert};
+use crate::extn::core::exception::{Fatal, RubyException, RuntimeError};
 use crate::extn::core::time::backend::MakeTime;
 use crate::extn::core::time::{self, Time};
 use crate::value::Value;
@@ -21,7 +21,10 @@ pub fn day(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExcepti
         )
     })?;
     let day = time.borrow().inner().day();
-    Ok(interp.convert(day))
+    let result = interp
+        .try_convert(day)
+        .map_err(|_| RuntimeError::new(interp, "Time day component too large"))?;
+    Ok(result)
 }
 
 pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -32,7 +35,10 @@ pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExcept
         )
     })?;
     let hour = time.borrow().inner().hour();
-    Ok(interp.convert(hour))
+    let result = interp
+        .try_convert(hour)
+        .map_err(|_| RuntimeError::new(interp, "Time hour component too large"))?;
+    Ok(result)
 }
 
 pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -43,7 +49,10 @@ pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExce
         )
     })?;
     let minute = time.borrow().inner().minute();
-    Ok(interp.convert(minute))
+    let result = interp
+        .try_convert(minute)
+        .map_err(|_| RuntimeError::new(interp, "Time minute component too large"))?;
+    Ok(result)
 }
 
 pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -54,7 +63,10 @@ pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExcep
         )
     })?;
     let month = time.borrow().inner().month();
-    Ok(interp.convert(month))
+    let result = interp
+        .try_convert(month)
+        .map_err(|_| RuntimeError::new(interp, "Time month component too large"))?;
+    Ok(result)
 }
 
 pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -65,7 +77,10 @@ pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn Ruby
         )
     })?;
     let nanosecond = time.borrow().inner().nanosecond();
-    Ok(interp.convert(nanosecond))
+    let result = interp
+        .try_convert(nanosecond)
+        .map_err(|_| RuntimeError::new(interp, "Time nanosecond component too large"))?;
+    Ok(result)
 }
 
 pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -76,7 +91,10 @@ pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExce
         )
     })?;
     let second = time.borrow().inner().second();
-    Ok(interp.convert(second))
+    let result = interp
+        .try_convert(second)
+        .map_err(|_| RuntimeError::new(interp, "Time second component too large"))?;
+    Ok(result)
 }
 
 pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -87,7 +105,10 @@ pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn Rub
         )
     })?;
     let microsecond = time.borrow().inner().microsecond();
-    Ok(interp.convert(microsecond))
+    let result = interp
+        .try_convert(microsecond)
+        .map_err(|_| RuntimeError::new(interp, "Time microsecond component too large"))?;
+    Ok(result)
 }
 
 pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -98,7 +119,10 @@ pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExc
         )
     })?;
     let weekday = time.borrow().inner().weekday();
-    Ok(interp.convert(weekday))
+    let result = interp
+        .try_convert(weekday)
+        .map_err(|_| RuntimeError::new(interp, "Time weekday component too large"))?;
+    Ok(result)
 }
 
 pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -109,7 +133,10 @@ pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyEx
         )
     })?;
     let year_day = time.borrow().inner().year_day();
-    Ok(interp.convert(year_day))
+    let result = interp
+        .try_convert(year_day)
+        .map_err(|_| RuntimeError::new(interp, "Time year_day component too large"))?;
+    Ok(result)
 }
 
 pub fn year(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
@@ -120,5 +147,8 @@ pub fn year(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExcept
         )
     })?;
     let year = time.borrow().inner().year();
-    Ok(interp.convert(year))
+    let result = interp
+        .try_convert(year)
+        .map_err(|_| RuntimeError::new(interp, "Time year component too large"))?;
+    Ok(result)
 }
