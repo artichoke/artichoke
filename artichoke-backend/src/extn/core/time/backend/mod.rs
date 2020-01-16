@@ -9,6 +9,9 @@ pub trait TimeType: Any {
     /// Returns the day of the month (1..n) for time.
     fn day(&self) -> u32;
 
+    /// Returns the hour of the day (0..23) for time.
+    fn hour(&self) -> u32;
+
     /// Returns the minute of the hour (0..59) for time.
     fn minute(&self) -> u32;
 

@@ -13,6 +13,17 @@ pub fn now(interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
     Ok(result)
 }
 
+pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
+        Fatal::new(
+            interp,
+            "Unable to extract Rust Time from Ruby Time receiver",
+        )
+    })?;
+    let hour = time.borrow().inner().hour();
+    Ok(interp.convert(hour))
+}
+
 pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
