@@ -20,6 +20,10 @@ impl<T: TimeZone> TimeType for Chrono<T> {
         self.0.day()
     }
 
+    fn hour(&self) -> u32 {
+        self.0.hour()
+    }
+
     fn minute(&self) -> u32 {
         self.0.minute()
     }
