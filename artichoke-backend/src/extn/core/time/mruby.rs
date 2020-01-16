@@ -16,6 +16,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_self_method("now", artichoke_time_self_now, sys::mrb_args_none())
+        .add_method("day", artichoke_time_day, sys::mrb_args_none())
         .add_method("hour", artichoke_time_hour, sys::mrb_args_none())
         .add_method("min", artichoke_time_minute, sys::mrb_args_none())
         .add_method("mon", artichoke_time_month, sys::mrb_args_none())
@@ -41,6 +42,21 @@ unsafe extern "C" fn artichoke_time_self_now(
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let result = trampoline::now(&interp);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(interp, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_time_day(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let interp = unwrap_interpreter!(mrb);
+    let time = Value::new(&interp, slf);
+    let result = trampoline::day(&interp, time);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
