@@ -79,10 +79,9 @@ impl Kernel {
         let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
 
-        for value in args.iter() {
-            let to_s = Value::new(&interp, *value).to_s();
-            let converted_s = String::from_utf8_lossy(to_s.as_slice());
-            interp.0.borrow_mut().print(converted_s.as_ref());
+        for value in args.iter().copied() {
+            let to_s = Value::new(&interp, value).to_s();
+            interp.0.borrow_mut().print(to_s.as_slice());
         }
         sys::mrb_sys_nil_value()
     }
@@ -95,16 +94,14 @@ impl Kernel {
                 }
             } else {
                 let to_s = value.to_s();
-                // TODO convert `puts` to take a Vec<u8>
-                let converted_s = String::from_utf8_lossy(to_s.as_slice());
-                interp.0.borrow_mut().puts(converted_s.as_ref());
+                interp.0.borrow_mut().puts(to_s.as_slice());
             }
         }
 
         let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
         if args.is_empty() {
-            interp.0.borrow_mut().puts("");
+            interp.0.borrow_mut().puts(&[]);
         }
         for value in args.iter() {
             do_puts(&interp, &Value::new(&interp, *value));
