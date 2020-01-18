@@ -62,7 +62,8 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
     // and module with `LoadSources` and Ruby files can require
     // arbitrary other files, including some child sources that may
     // depend on these module definitions.
-    let context = Context::new(filename.to_vec());
+    let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
+        .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
     // Require Rust File first because an File may define classes and
     // module with `LoadSources` and Ruby files can require arbitrary
@@ -153,7 +154,8 @@ pub fn require(
             // and module with `LoadSources` and Ruby files can require
             // arbitrary other files, including some child sources that may
             // depend on these module definitions.
-            let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec());
+            let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
+                .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
             interp.push_context(context);
             // Require Rust File first because an File may define classes and
             // module with `LoadSources` and Ruby files can require arbitrary
@@ -220,7 +222,8 @@ pub fn require(
                 // and module with `LoadSources` and Ruby files can require
                 // arbitrary other files, including some child sources that may
                 // depend on these module definitions.
-                let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec());
+                let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
+                    .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
                 interp.push_context(context);
                 // Require Rust File first because an File may define classes and
                 // module with `LoadSources` and Ruby files can require arbitrary
@@ -304,7 +307,8 @@ pub fn require(
     // and module with `LoadSources` and Ruby files can require
     // arbitrary other files, including some child sources that may
     // depend on these module definitions.
-    let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec());
+    let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
+        .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
     // Require Rust File first because an File may define classes and
     // module with `LoadSources` and Ruby files can require arbitrary
@@ -359,7 +363,7 @@ pub fn require_relative(interp: &Artichoke, file: Value) -> Result<Value, Box<dy
     let context = interp
         .peek_context()
         .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
-    let current = fs::bytes_to_osstr(interp, context.filename.as_ref())?;
+    let current = fs::bytes_to_osstr(interp, context.filename())?;
     let base = if let Some(base) = Path::new(current).parent() {
         base
     } else {
