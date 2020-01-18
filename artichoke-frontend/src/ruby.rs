@@ -14,6 +14,22 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
+const INLINE_EVAL_SWITCH_FILENAME: &[u8] = b"-e";
+
+#[cfg(test)]
+mod filename_test {
+    #[test]
+    fn inline_eval_switch_filename_has_no_nul_bytes() {
+        assert_eq!(
+            None,
+            super::INLINE_EVAL_SWITCH_FILENAME
+                .iter()
+                .copied()
+                .position(|b| b == b'\0')
+        );
+    }
+}
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "artichoke", about = "Artichoke is a Ruby made with Rust.")]
 struct Opt {
@@ -88,7 +104,12 @@ pub fn entrypoint() -> Result<(), Error> {
 
 fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Result<(), Error> {
     let interp = artichoke_backend::interpreter()?;
-    interp.push_context(Context::new(b"-e".as_ref()));
+    // safety:
+    // Context::new_unchecked requires that INLINE_EVAL_SWITCH_FILENAME have no
+    // NUL bytes.
+    // INLINE_EVAL_SWITCH_FILENAME is controlled by this crate and asserts this
+    // invariant with a test.
+    interp.push_context(unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH_FILENAME) });
     if let Some(ref fixture) = fixture {
         let data = std::fs::read(fixture).map_err(|_| {
             if let Ok(file) = fs::osstr_to_bytes(&interp, fixture.as_os_str()) {

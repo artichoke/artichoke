@@ -16,7 +16,21 @@ use std::io::{self, Write};
 
 use crate::parser::{self, Parser, State};
 
-const REPL_FILENAME: &str = "(airb)";
+const REPL_FILENAME: &[u8] = b"(airb)";
+
+#[cfg(test)]
+mod filename_test {
+    #[test]
+    fn repl_filename_has_no_nul_bytes() {
+        assert_eq!(
+            None,
+            super::REPL_FILENAME
+                .iter()
+                .copied()
+                .position(|b| b == b'\0')
+        );
+    }
+}
 
 /// REPL errors.
 #[derive(Debug)]
@@ -87,7 +101,11 @@ pub fn run(
     writeln!(output, "{}", preamble(&interp)?).map_err(Error::Io)?;
 
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
-    interp.push_context(Context::new(REPL_FILENAME.as_bytes()));
+    // safety:
+    // Context::new_unchecked requires that REPL_FILENAME have no NUL bytes.
+    // REPL_FILENAME is controlled by this crate and asserts this invariant
+    // with a test.
+    interp.push_context(unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) });
     unsafe {
         let api = interp.0.borrow();
         (*api.ctx).lineno = 1;

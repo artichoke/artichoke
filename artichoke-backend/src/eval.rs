@@ -1,7 +1,6 @@
 use artichoke_core::eval::{self, Eval};
 use std::borrow::Cow;
-use std::ffi::{c_void, CString};
-use std::io;
+use std::ffi::{c_void, CStr, CString};
 use std::mem;
 
 use crate::exception::{ExceptionHandler, LastError};
@@ -59,17 +58,40 @@ impl<'a> Protect<'a> {
 pub struct Context {
     /// Value of the `__FILE__` magic constant that also appears in stack
     /// frames.
-    pub filename: Cow<'static, [u8]>,
+    filename: Cow<'static, [u8]>,
+    /// FFI variant of `filename` field.
+    filename_cstring: CString,
 }
 
 impl Context {
     /// Create a new [`Context`].
-    pub fn new<T>(filename: T) -> Self
+    pub fn new<T>(filename: T) -> Option<Self>
     where
         T: Into<Cow<'static, [u8]>>,
     {
+        let filename = filename.into();
+        let cstring = CString::new(filename.as_ref()).ok()?;
+        Some(Self {
+            filename,
+            filename_cstring: cstring,
+        })
+    }
+
+    /// Create a new [`Context`] without checking for NUL bytes in the filename.
+    ///
+    /// # Safety
+    ///
+    /// `filename` must not contain any NUL bytes. `filename` must not contain a
+    /// trailing `NUL`.
+    pub unsafe fn new_unchecked<T>(filename: T) -> Self
+    where
+        T: Into<Cow<'static, [u8]>>,
+    {
+        let filename = filename.into();
+        let cstring = CString::from_vec_unchecked(filename.clone().into_owned());
         Self {
-            filename: filename.into(),
+            filename,
+            filename_cstring: cstring,
         }
     }
 
@@ -79,19 +101,44 @@ impl Context {
         Self::default()
     }
 
-    pub fn filename_as_cstring(&self) -> Result<CString, ArtichokeError> {
-        CString::new(self.filename.as_ref()).map_err(|_| {
-            ArtichokeError::Vfs(io::Error::new(
-                io::ErrorKind::Other,
-                "failed to convert context filename to CString",
-            ))
-        })
+    /// Filename of this `Context`.
+    #[must_use]
+    pub fn filename(&self) -> &[u8] {
+        self.filename.as_ref()
+    }
+
+    /// FFI-safe NUL-terminated C String of this `Context`.
+    ///
+    /// This [`CStr`] is valid as long as this `Context` is not dropped.
+    #[must_use]
+    pub fn filename_as_c_str(&self) -> &CStr {
+        self.filename_cstring.as_c_str()
     }
 }
 
 impl Default for Context {
     fn default() -> Self {
-        Self::new(Artichoke::TOP_FILENAME)
+        // safety: the `TOP_FILENAME` is controlled by this crate and does
+        // not contain NUL bytes, enforced with a test.
+        unsafe { Self::new_unchecked(Artichoke::TOP_FILENAME) }
+    }
+}
+
+#[cfg(test)]
+mod context_test {
+    use artichoke_core::eval::Eval;
+
+    use crate::Artichoke;
+
+    #[test]
+    fn top_filename_does_not_contain_nul_byte() {
+        assert_eq!(
+            None,
+            Artichoke::TOP_FILENAME
+                .iter()
+                .copied()
+                .position(|b| b == b'\0')
+        );
     }
 }
 
@@ -113,14 +160,16 @@ impl Eval for Artichoke {
 
         // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
-        let filename = {
-            let api = self.0.borrow();
-            if let Some(context) = api.context_stack.last() {
-                context.filename_as_cstring()?
-            } else {
-                Context::root().filename_as_cstring()?
-            }
-        };
+        let filename = self
+            .0
+            .borrow()
+            .context_stack
+            .last()
+            .map(Context::filename_as_c_str)
+            .map_or_else(
+                || Context::default().filename_as_c_str().to_owned(),
+                CStr::to_owned,
+            );
 
         unsafe {
             sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
@@ -174,14 +223,16 @@ impl Eval for Artichoke {
 
         // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
-        let filename = {
-            let api = self.0.borrow();
-            if let Some(context) = api.context_stack.last() {
-                context.filename_as_cstring().unwrap()
-            } else {
-                Context::root().filename_as_cstring().unwrap()
-            }
-        };
+        let filename = self
+            .0
+            .borrow()
+            .context_stack
+            .last()
+            .map(Context::filename_as_c_str)
+            .map_or_else(
+                || Context::default().filename_as_c_str().to_owned(),
+                CStr::to_owned,
+            );
 
         unsafe {
             sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
@@ -252,7 +303,7 @@ mod tests {
     #[test]
     fn context_is_restored_after_eval() {
         let interp = crate::interpreter().expect("init");
-        let context = Context::new(b"context.rb".as_ref());
+        let context = Context::new(b"context.rb".as_ref()).unwrap();
         interp.push_context(context);
         let _ = interp.eval(b"15").expect("eval");
         assert_eq!(interp.0.borrow().context_stack.len(), 1);
@@ -314,19 +365,19 @@ NestedEval.file
     fn eval_with_context() {
         let interp = crate::interpreter().expect("init");
 
-        interp.push_context(Context::new(b"source.rb".as_ref()));
+        interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
         let result = interp.eval(b"__FILE__").expect("eval");
         let result = result.try_into::<&str>().expect("convert");
         assert_eq!(result, "source.rb");
         interp.pop_context();
 
-        interp.push_context(Context::new(b"source.rb".as_ref()));
+        interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
         let result = interp.eval(b"__FILE__").expect("eval");
         let result = result.try_into::<&str>().expect("convert");
         assert_eq!(result, "source.rb");
         interp.pop_context();
 
-        interp.push_context(Context::new(b"main.rb".as_ref()));
+        interp.push_context(Context::new(b"main.rb".as_ref()).unwrap());
         let result = interp.eval(b"__FILE__").expect("eval");
         let result = result.try_into::<&str>().expect("convert");
         assert_eq!(result, "main.rb");
