@@ -21,7 +21,7 @@ pub struct State {
     pub(crate) context_stack: Vec<Context>,
     pub active_regexp_globals: usize,
     symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
-    captured_output: Option<String>,
+    captured_output: Option<Vec<u8>>,
     #[cfg(feature = "artichoke-random")]
     prng: crate::extn::core::random::Random,
 }
@@ -58,30 +58,32 @@ impl State {
     }
 
     pub fn capture_output(&mut self) {
-        self.captured_output = Some(String::default());
+        self.captured_output = Some(Vec::default());
     }
 
-    pub fn get_and_clear_captured_output(&mut self) -> String {
+    pub fn get_and_clear_captured_output(&mut self) -> Vec<u8> {
         self.captured_output
-            .replace(String::default())
+            .replace(Vec::default())
             .unwrap_or_default()
     }
 
-    pub fn print(&mut self, s: &str) {
+    pub fn print(&mut self, s: &[u8]) {
         if let Some(ref mut captured_output) = self.captured_output {
-            captured_output.push_str(s);
+            captured_output.extend_from_slice(s);
         } else {
-            print!("{}", s);
+            let _ = io::stdout().write_all(s);
             let _ = io::stdout().flush();
         }
     }
 
-    pub fn puts(&mut self, s: &str) {
+    pub fn puts(&mut self, s: &[u8]) {
         if let Some(ref mut captured_output) = self.captured_output {
-            captured_output.push_str(s);
-            captured_output.push('\n');
+            captured_output.extend_from_slice(s);
+            captured_output.push(b'\n');
         } else {
-            println!("{}", s);
+            let _ = io::stdout().write_all(s);
+            let _ = io::stdout().write_all(&[b'\n']);
+            let _ = io::stdout().flush();
         }
     }
 

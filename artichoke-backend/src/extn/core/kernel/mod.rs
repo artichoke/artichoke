@@ -79,35 +79,37 @@ impl Kernel {
         let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
 
-        for value in args.iter() {
-            let to_s = Value::new(&interp, *value).to_s();
-            let converted_s = String::from_utf8_lossy(to_s.as_slice());
-            interp.0.borrow_mut().print(converted_s.as_ref());
+        let mut buf = vec![];
+        for value in args.iter().copied() {
+            let to_s = Value::new(&interp, value).to_s();
+            buf.extend(to_s);
         }
+        interp.0.borrow_mut().print(buf.as_slice());
         sys::mrb_sys_nil_value()
     }
 
     unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        fn do_puts(interp: &Artichoke, value: &Value) {
+        fn do_puts(interp: &Artichoke, value: &Value, buf: &mut Vec<u8>) {
             if let Ok(array) = value.clone().try_into::<Vec<Value>>() {
                 for value in array {
-                    do_puts(interp, &value);
+                    do_puts(interp, &value, buf);
                 }
             } else {
-                let to_s = value.to_s();
-                // TODO convert `puts` to take a Vec<u8>
-                let converted_s = String::from_utf8_lossy(to_s.as_slice());
-                interp.0.borrow_mut().puts(converted_s.as_ref());
+                buf.extend(value.to_s());
+                buf.push(b'\n');
             }
         }
 
         let args = mrb_get_args!(mrb, *args);
         let interp = unwrap_interpreter!(mrb);
         if args.is_empty() {
-            interp.0.borrow_mut().puts("");
-        }
-        for value in args.iter() {
-            do_puts(&interp, &Value::new(&interp, *value));
+            interp.0.borrow_mut().puts(&[]);
+        } else {
+            let mut buf = vec![];
+            for value in args.iter().copied() {
+                do_puts(&interp, &Value::new(&interp, value), &mut buf);
+            }
+            interp.0.borrow_mut().print(buf.as_slice());
         }
         sys::mrb_sys_nil_value()
     }
