@@ -6,8 +6,9 @@
 //! inspect return values and exception backtraces.
 
 use artichoke_backend::eval::Context;
+use artichoke_backend::extn::core::exception::RubyException;
 use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_backend::{Artichoke, BootError};
 use artichoke_core::eval::Eval;
 use artichoke_core::value::Value;
 use rustyline::error::ReadlineError;
@@ -41,9 +42,10 @@ pub enum Error {
     ReplInit,
     /// Unrecoverable [`Parser`] error.
     ReplParse(parser::Error),
-    /// Unrecoverable [`ArtichokeError`]. [`ArtichokeError::Exec`] are handled gracefully
-    /// by the REPL. All other `ArtichokeError`s are fatal.
-    Ruby(ArtichokeError),
+    /// Error during Artichoke interpreter initialization.
+    Artichoke(BootError),
+    /// Exception thrown by eval.
+    Ruby(Box<dyn RubyException>),
     /// IO error when writing to output or error streams.
     Io(io::Error),
 }
@@ -75,12 +77,14 @@ fn preamble(interp: &Artichoke) -> Result<String, Error> {
         .eval(b"RUBY_DESCRIPTION")
         .map_err(Error::Ruby)?
         .try_into::<&str>()
-        .map_err(Error::Ruby)?;
+        .map_err(BootError::from)
+        .map_err(Error::Artichoke)?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")
         .map_err(Error::Ruby)?
         .try_into::<&str>()
-        .map_err(Error::Ruby)?;
+        .map_err(BootError::from)
+        .map_err(Error::Artichoke)?;
     let mut buf = String::new();
     buf.push_str(description);
     buf.push('\n');
@@ -97,7 +101,7 @@ pub fn run(
     config: Option<PromptConfig>,
 ) -> Result<(), Error> {
     let config = config.unwrap_or_else(Default::default);
-    let interp = artichoke_backend::interpreter().map_err(Error::Ruby)?;
+    let interp = artichoke_backend::interpreter().map_err(Error::Artichoke)?;
     writeln!(output, "{}", preamble(&interp)?).map_err(Error::Io)?;
 
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
@@ -136,20 +140,17 @@ pub fn run(
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
                         let result = value.inspect();
-                        io::stdout()
+                        output
                             .write_all(config.result_prefix.as_bytes())
                             .map_err(Error::Io)?;
-                        io::stdout()
-                            .write_all(result.as_slice())
-                            .map_err(Error::Io)?;
+                        output.write_all(result.as_slice()).map_err(Error::Io)?;
                     }
-                    Err(ArtichokeError::Exec(backtrace)) => {
+                    Err(exc) => {
+                        write!(error, "{} (", exc.name()).map_err(Error::Io)?;
+                        error.write_all(exc.message()).map_err(Error::Io)?;
+                        writeln!(error, ")").map_err(Error::Io)?;
                         writeln!(error, "Backtrace:").map_err(Error::Io)?;
-                        for frame in backtrace.lines() {
-                            writeln!(error, "    {}", frame).map_err(Error::Io)?;
-                        }
                     }
-                    Err(err) => return Err(Error::Ruby(err)),
                 }
                 for line in buf.lines() {
                     rl.add_history_entry(line);

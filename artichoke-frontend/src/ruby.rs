@@ -4,10 +4,11 @@
 
 use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::Context;
+use artichoke_backend::extn::core::exception::RubyException;
 use artichoke_backend::fs;
 use artichoke_backend::sys;
+use artichoke_backend::BootError;
 use artichoke_core::eval::Eval;
-use artichoke_core::ArtichokeError;
 use bstr::BStr;
 use std::ffi::OsString;
 use std::io::{self, Read};
@@ -51,16 +52,25 @@ struct Opt {
 
 /// Error from Ruby CLI frontend
 pub enum Error {
-    /// Error from Artichoke interpreter.
-    Artichoke(ArtichokeError),
+    /// Error from Artichoke interpreter initialization.
+    Artichoke(BootError),
+    /// Ruby `Exception` thrown during eval.
+    Ruby(Box<dyn RubyException>),
     /// Fatal error from CLI internals.
     Fail(String),
 }
 
-impl From<ArtichokeError> for Error {
+impl From<BootError> for Error {
     #[must_use]
-    fn from(err: ArtichokeError) -> Self {
+    fn from(err: BootError) -> Self {
         Self::Artichoke(err)
+    }
+}
+
+impl From<Box<dyn RubyException>> for Error {
+    #[must_use]
+    fn from(err: Box<dyn RubyException>) -> Self {
+        Self::Ruby(err)
     }
 }
 
