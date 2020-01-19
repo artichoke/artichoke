@@ -8,7 +8,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<Float>().is_some() {
         return Ok(());
     }
-    let spec = class::Spec::new("Float", None, None);
+    let spec = class::Spec::new("Float", None, None)?;
     interp.0.borrow_mut().def_class::<Float>(spec);
     let _ = interp.eval(&include_bytes!("float.rb")[..])?;
     // TODO: Add proper constant defs to class::Spec, see GH-158.

@@ -42,32 +42,32 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<MatchData>().is_some() {
         return Ok(());
     }
-    let spec = class::Spec::new("MatchData", None, Some(def::rust_data_free::<MatchData>));
+    let spec = class::Spec::new("MatchData", None, Some(def::rust_data_free::<MatchData>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
-        .add_method("begin", MatchData::begin, sys::mrb_args_req(1))
-        .add_method("captures", MatchData::captures, sys::mrb_args_none())
+        .add_method("begin", MatchData::begin, sys::mrb_args_req(1))?
+        .add_method("captures", MatchData::captures, sys::mrb_args_none())?
         .add_method(
             "[]",
             MatchData::element_reference,
             sys::mrb_args_req_and_opt(1, 1),
-        )
-        .add_method("length", MatchData::length, sys::mrb_args_none())
+        )?
+        .add_method("length", MatchData::length, sys::mrb_args_none())?
         .add_method(
             "named_captures",
             MatchData::named_captures,
             sys::mrb_args_none(),
-        )
-        .add_method("names", MatchData::names, sys::mrb_args_none())
-        .add_method("offset", MatchData::offset, sys::mrb_args_req(1))
-        .add_method("post_match", MatchData::post_match, sys::mrb_args_none())
-        .add_method("pre_match", MatchData::pre_match, sys::mrb_args_none())
-        .add_method("regexp", MatchData::regexp, sys::mrb_args_none())
-        .add_method("size", MatchData::length, sys::mrb_args_none())
-        .add_method("string", MatchData::string, sys::mrb_args_none())
-        .add_method("to_a", MatchData::to_a, sys::mrb_args_none())
-        .add_method("to_s", MatchData::to_s, sys::mrb_args_none())
-        .add_method("end", MatchData::end, sys::mrb_args_req(1))
+        )?
+        .add_method("names", MatchData::names, sys::mrb_args_none())?
+        .add_method("offset", MatchData::offset, sys::mrb_args_req(1))?
+        .add_method("post_match", MatchData::post_match, sys::mrb_args_none())?
+        .add_method("pre_match", MatchData::pre_match, sys::mrb_args_none())?
+        .add_method("regexp", MatchData::regexp, sys::mrb_args_none())?
+        .add_method("size", MatchData::length, sys::mrb_args_none())?
+        .add_method("string", MatchData::string, sys::mrb_args_none())?
+        .add_method("to_a", MatchData::to_a, sys::mrb_args_none())?
+        .add_method("to_s", MatchData::to_s, sys::mrb_args_none())?
+        .add_method("end", MatchData::end, sys::mrb_args_req(1))?
         .define()?;
     interp.0.borrow_mut().def_class::<MatchData>(spec);
     let _ = interp.eval(&include_bytes!("matchdata.rb")[..])?;

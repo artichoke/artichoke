@@ -4,7 +4,7 @@ use crate::module;
 use crate::{Artichoke, ArtichokeError};
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
-    let spec = module::Spec::new("Forwardable", None);
+    let spec = module::Spec::new("Forwardable", None)?;
     interp.0.borrow_mut().def_module::<Forwardable>(spec);
     interp.def_rb_source_file(b"forwardable.rb", &include_bytes!("forwardable.rb")[..])?;
     interp.def_rb_source_file(

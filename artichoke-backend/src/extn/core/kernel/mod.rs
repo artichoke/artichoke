@@ -16,17 +16,17 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().module_spec::<Kernel>().is_some() {
         return Ok(());
     }
-    let spec = module::Spec::new("Kernel", None);
+    let spec = module::Spec::new("Kernel", None)?;
     module::Builder::for_spec(interp, &spec)
-        .add_method("require", Kernel::require, sys::mrb_args_rest())
+        .add_method("require", Kernel::require, sys::mrb_args_rest())?
         .add_method(
             "require_relative",
             Kernel::require_relative,
             sys::mrb_args_rest(),
-        )
-        .add_method("load", Kernel::load, sys::mrb_args_rest())
-        .add_method("print", Kernel::print, sys::mrb_args_rest())
-        .add_method("puts", Kernel::puts, sys::mrb_args_rest())
+        )?
+        .add_method("load", Kernel::load, sys::mrb_args_rest())?
+        .add_method("print", Kernel::print, sys::mrb_args_rest())?
+        .add_method("puts", Kernel::puts, sys::mrb_args_rest())?
         .define()?;
     interp.0.borrow_mut().def_module::<Kernel>(spec);
     let _ = interp.eval(&include_bytes!("kernel.rb")[..])?;
@@ -37,10 +37,10 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .module_spec::<artichoke::Artichoke>()
         .map(EnclosingRubyScope::module)
         .ok_or(ArtichokeError::New)?;
-    let spec = module::Spec::new("Kernel", Some(scope));
+    let spec = module::Spec::new("Kernel", Some(scope))?;
     module::Builder::for_spec(interp, &spec)
-        .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))
-        .add_self_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))
+        .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))?
+        .add_self_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))?
         .define()?;
     interp.0.borrow_mut().def_module::<artichoke::Kernel>(spec);
     trace!("Patched Artichoke::Kernel onto interpreter");

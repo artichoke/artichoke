@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -16,7 +17,7 @@ pub enum Type {
 
 #[derive(Clone)]
 pub struct Spec {
-    name: String,
+    name: Cow<'static, str>,
     cstring: CString,
     method_type: Type,
     method: Method,
@@ -24,18 +25,25 @@ pub struct Spec {
 }
 
 impl Spec {
-    pub fn new<T>(method_type: Type, method_name: T, method: Method, args: sys::mrb_aspec) -> Self
+    pub fn new<T>(
+        method_type: Type,
+        method_name: T,
+        method: Method,
+        args: sys::mrb_aspec,
+    ) -> Result<Self, ArtichokeError>
     where
-        T: AsRef<str>,
+        T: Into<Cow<'static, str>>,
     {
-        let method_cstr = CString::new(method_name.as_ref()).expect("method name");
-        Self {
-            name: method_name.as_ref().to_owned(),
+        let name = method_name.into();
+        let method_cstr =
+            CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
+        Ok(Self {
+            name,
             cstring: method_cstr,
             method_type,
             method,
             args,
-        }
+        })
     }
 
     #[must_use]

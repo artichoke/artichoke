@@ -23,17 +23,17 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         "Environ",
         Some(scope),
         Some(def::rust_data_free::<env::Environ>),
-    );
+    )?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
-        .add_method("[]", artichoke_env_element_reference, sys::mrb_args_req(1))
+        .add_method("[]", artichoke_env_element_reference, sys::mrb_args_req(1))?
         .add_method(
             "[]=",
             artichoke_env_element_assignment,
             sys::mrb_args_req(2),
-        )
-        .add_method("initialize", artichoke_env_initialize, sys::mrb_args_none())
-        .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none())
+        )?
+        .add_method("initialize", artichoke_env_initialize, sys::mrb_args_none())?
+        .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none())?
         .define()?;
     interp.0.borrow_mut().def_class::<env::Environ>(spec);
     let _ = interp.eval(&include_bytes!("env.rb")[..])?;

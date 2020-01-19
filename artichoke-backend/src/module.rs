@@ -28,22 +28,46 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add_method(mut self, name: &str, method: Method, args: sys::mrb_aspec) -> Self {
-        let spec = method::Spec::new(method::Type::Instance, name, method, args);
+    pub fn add_method<T>(
+        mut self,
+        name: T,
+        method: Method,
+        args: sys::mrb_aspec,
+    ) -> Result<Self, ArtichokeError>
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        let spec = method::Spec::new(method::Type::Instance, name, method, args)?;
         self.methods.insert(spec);
-        self
+        Ok(self)
     }
 
-    pub fn add_self_method(mut self, name: &str, method: Method, args: sys::mrb_aspec) -> Self {
-        let spec = method::Spec::new(method::Type::Class, name, method, args);
+    pub fn add_self_method<T>(
+        mut self,
+        name: T,
+        method: Method,
+        args: sys::mrb_aspec,
+    ) -> Result<Self, ArtichokeError>
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        let spec = method::Spec::new(method::Type::Class, name, method, args)?;
         self.methods.insert(spec);
-        self
+        Ok(self)
     }
 
-    pub fn add_module_method(mut self, name: &str, method: Method, args: sys::mrb_aspec) -> Self {
-        let spec = method::Spec::new(method::Type::Module, name, method, args);
+    pub fn add_module_method<T>(
+        mut self,
+        name: T,
+        method: Method,
+        args: sys::mrb_aspec,
+    ) -> Result<Self, ArtichokeError>
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        let spec = method::Spec::new(method::Type::Module, name, method, args)?;
         self.methods.insert(spec);
-        self
+        Ok(self)
     }
 
     pub fn define(self) -> Result<(), ArtichokeError> {
@@ -76,20 +100,22 @@ pub struct Spec {
 }
 
 impl Spec {
-    pub fn new<T>(name: T, enclosing_scope: Option<EnclosingRubyScope>) -> Self
+    pub fn new<T>(
+        name: T,
+        enclosing_scope: Option<EnclosingRubyScope>,
+    ) -> Result<Self, ArtichokeError>
     where
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        let cstring = CString::new(name.as_ref()).unwrap_or_else(|_| unsafe {
-            CString::from_vec_unchecked(String::from("UnknownModule").into_bytes())
-        });
-        Self {
+        let cstring =
+            CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
+        Ok(Self {
             name,
             cstring,
             sym: Cell::default(),
             enclosing_scope: enclosing_scope.map(Box::new),
-        }
+        })
     }
 
     pub fn value(&self, interp: &Artichoke) -> Option<Value> {
@@ -211,23 +237,23 @@ mod tests {
     #[test]
     fn rclass_for_undef_root_module() {
         let interp = crate::interpreter().expect("init");
-        let spec = Spec::new("Foo", None);
+        let spec = Spec::new("Foo", None).unwrap();
         assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_undef_nested_module() {
         let interp = crate::interpreter().expect("init");
-        let scope = Spec::new("Kernel", None);
+        let scope = Spec::new("Kernel", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
-        let spec = Spec::new("Foo", Some(scope));
+        let spec = Spec::new("Foo", Some(scope)).unwrap();
         assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_root_module() {
         let interp = crate::interpreter().expect("init");
-        let spec = Spec::new("Kernel", None);
+        let spec = Spec::new("Kernel", None).unwrap();
         assert!(spec.rclass(&interp).is_some());
     }
 
@@ -237,9 +263,9 @@ mod tests {
         let _ = interp
             .eval(b"module Foo; module Bar; end; end")
             .expect("eval");
-        let scope = Spec::new("Foo", None);
+        let scope = Spec::new("Foo", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
-        let spec = Spec::new("Bar", Some(scope));
+        let spec = Spec::new("Bar", Some(scope)).unwrap();
         assert!(spec.rclass(&interp).is_some());
     }
 
@@ -249,9 +275,9 @@ mod tests {
         let _ = interp
             .eval(b"class Foo; module Bar; end; end")
             .expect("eval");
-        let scope = class::Spec::new("Foo", None, None);
+        let scope = class::Spec::new("Foo", None, None).unwrap();
         let scope = EnclosingRubyScope::class(&scope);
-        let spec = Spec::new("Bar", Some(scope));
+        let spec = Spec::new("Bar", Some(scope)).unwrap();
         assert!(spec.rclass(&interp).is_some());
     }
 }
