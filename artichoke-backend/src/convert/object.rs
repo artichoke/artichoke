@@ -194,10 +194,12 @@ mod tests {
     #[test]
     fn convert_obj_roundtrip() {
         let interp = crate::interpreter().expect("init");
-        let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Container>));
+        let spec =
+            class::Spec::new("Container", None, Some(def::rust_data_free::<Container>)).unwrap();
         class::Builder::for_spec(&interp, &spec)
             .value_is_rust_object()
             .add_method("value", Container::value, sys::mrb_args_none())
+            .unwrap()
             .define()
             .unwrap();
         interp.0.borrow_mut().def_class::<Container>(spec);
@@ -219,14 +221,16 @@ mod tests {
     #[test]
     fn convert_obj_not_data() {
         let interp = crate::interpreter().expect("init");
-        let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Container>));
+        let spec =
+            class::Spec::new("Container", None, Some(def::rust_data_free::<Container>)).unwrap();
         class::Builder::for_spec(&interp, &spec)
             .value_is_rust_object()
             .add_method("value", Container::value, sys::mrb_args_none())
+            .unwrap()
             .define()
             .unwrap();
         interp.0.borrow_mut().def_class::<Container>(spec);
-        let spec = class::Spec::new("Other", None, Some(def::rust_data_free::<Container>));
+        let spec = class::Spec::new("Other", None, Some(def::rust_data_free::<Container>)).unwrap();
         class::Builder::for_spec(&interp, &spec)
             .value_is_rust_object()
             .define()

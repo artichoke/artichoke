@@ -205,15 +205,17 @@ mod tests {
 
         // Setup: define module and class hierarchy
         let interp = crate::interpreter().expect("init");
-        let root = module::Spec::new("A", None);
-        let mod_under_root = module::Spec::new("B", Some(EnclosingRubyScope::module(&root)));
-        let cls_under_root = class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None);
+        let root = module::Spec::new("A", None).unwrap();
+        let mod_under_root =
+            module::Spec::new("B", Some(EnclosingRubyScope::module(&root))).unwrap();
+        let cls_under_root =
+            class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None).unwrap();
         let cls_under_mod =
-            class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None);
+            class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None).unwrap();
         let mod_under_cls =
-            module::Spec::new("E", Some(EnclosingRubyScope::class(&cls_under_root)));
+            module::Spec::new("E", Some(EnclosingRubyScope::class(&cls_under_root))).unwrap();
         let cls_under_cls =
-            class::Spec::new("F", Some(EnclosingRubyScope::class(&cls_under_root)), None);
+            class::Spec::new("F", Some(EnclosingRubyScope::class(&cls_under_root)), None).unwrap();
         module::Builder::for_spec(&interp, &root).define().unwrap();
         module::Builder::for_spec(&interp, &mod_under_root)
             .define()
@@ -312,17 +314,21 @@ mod tests {
                 }
             }
             let interp = crate::interpreter().expect("init");
-            let class = class::Spec::new("DefineMethodTestClass", None, None);
+            let class = class::Spec::new("DefineMethodTestClass", None, None).unwrap();
             class::Builder::for_spec(&interp, &class)
                 .add_method("value", value, sys::mrb_args_none())
+                .unwrap()
                 .add_self_method("value", value, sys::mrb_args_none())
+                .unwrap()
                 .define()
                 .unwrap();
             interp.0.borrow_mut().def_class::<Class>(class);
-            let module = module::Spec::new("DefineMethodTestModule", None);
+            let module = module::Spec::new("DefineMethodTestModule", None).unwrap();
             module::Builder::for_spec(&interp, &module)
                 .add_method("value", value, sys::mrb_args_none())
+                .unwrap()
                 .add_self_method("value", value, sys::mrb_args_none())
+                .unwrap()
                 .define()
                 .unwrap();
             interp.0.borrow_mut().def_module::<Module>(module);

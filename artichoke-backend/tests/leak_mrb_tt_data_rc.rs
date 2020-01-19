@@ -77,10 +77,10 @@ impl File for Container {
     type Artichoke = Artichoke;
 
     fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-        let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Self>));
+        let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Self>))?;
         class::Builder::for_spec(interp, &spec)
             .value_is_rust_object()
-            .add_method("initialize", Self::initialize, sys::mrb_args_req(1))
+            .add_method("initialize", Self::initialize, sys::mrb_args_req(1))?
             .define()?;
         interp.0.borrow_mut().def_class::<Self>(spec);
         Ok(())

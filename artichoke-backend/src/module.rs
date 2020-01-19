@@ -237,23 +237,23 @@ mod tests {
     #[test]
     fn rclass_for_undef_root_module() {
         let interp = crate::interpreter().expect("init");
-        let spec = Spec::new("Foo", None);
+        let spec = Spec::new("Foo", None).unwrap();
         assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_undef_nested_module() {
         let interp = crate::interpreter().expect("init");
-        let scope = Spec::new("Kernel", None);
+        let scope = Spec::new("Kernel", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
-        let spec = Spec::new("Foo", Some(scope));
+        let spec = Spec::new("Foo", Some(scope)).unwrap();
         assert!(spec.rclass(&interp).is_none());
     }
 
     #[test]
     fn rclass_for_root_module() {
         let interp = crate::interpreter().expect("init");
-        let spec = Spec::new("Kernel", None);
+        let spec = Spec::new("Kernel", None).unwrap();
         assert!(spec.rclass(&interp).is_some());
     }
 
@@ -263,9 +263,9 @@ mod tests {
         let _ = interp
             .eval(b"module Foo; module Bar; end; end")
             .expect("eval");
-        let scope = Spec::new("Foo", None);
+        let scope = Spec::new("Foo", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
-        let spec = Spec::new("Bar", Some(scope));
+        let spec = Spec::new("Bar", Some(scope)).unwrap();
         assert!(spec.rclass(&interp).is_some());
     }
 
@@ -275,9 +275,9 @@ mod tests {
         let _ = interp
             .eval(b"class Foo; module Bar; end; end")
             .expect("eval");
-        let scope = class::Spec::new("Foo", None, None);
+        let scope = class::Spec::new("Foo", None, None).unwrap();
         let scope = EnclosingRubyScope::class(&scope);
-        let spec = Spec::new("Bar", Some(scope));
+        let spec = Spec::new("Bar", Some(scope)).unwrap();
         assert!(spec.rclass(&interp).is_some());
     }
 }

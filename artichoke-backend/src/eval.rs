@@ -340,9 +340,9 @@ mod tests {
             type Artichoke = Artichoke;
 
             fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-                let spec = module::Spec::new("NestedEval", None);
+                let spec = module::Spec::new("NestedEval", None)?;
                 module::Builder::for_spec(interp, &spec)
-                    .add_self_method("file", Self::nested_eval, sys::mrb_args_none())
+                    .add_self_method("file", Self::nested_eval, sys::mrb_args_none())?
                     .define()?;
                 interp.0.borrow_mut().def_module::<Self>(spec);
                 Ok(())

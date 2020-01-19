@@ -568,9 +568,9 @@ mod tests {
         type Artichoke = Artichoke;
 
         fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
-            let spec = class::Spec::new("Run", None, None);
+            let spec = class::Spec::new("Run", None, None).unwrap();
             class::Builder::for_spec(interp, &spec)
-                .add_self_method("run", Self::run, sys::mrb_args_none())
+                .add_self_method("run", Self::run, sys::mrb_args_none())?
                 .define()?;
             interp.0.borrow_mut().def_class::<Self>(spec);
             Ok(())

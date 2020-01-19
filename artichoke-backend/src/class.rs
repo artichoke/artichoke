@@ -277,7 +277,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let borrow = interp.0.borrow();
         let standard_error = borrow.class_spec::<StandardError>().unwrap();
-        let spec = class::Spec::new("RustError", None, None);
+        let spec = class::Spec::new("RustError", None, None).unwrap();
         class::Builder::for_spec(&interp, &spec)
             .with_super_class(Some(&standard_error))
             .define()
@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn rclass_for_undef_root_class() {
         let interp = crate::interpreter().expect("init");
-        let spec = class::Spec::new("Foo", None, None);
+        let spec = class::Spec::new("Foo", None, None).unwrap();
         assert!(spec.rclass(&interp).is_none());
     }
 
@@ -307,7 +307,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let borrow = interp.0.borrow();
         let scope = borrow.module_spec::<Kernel>().unwrap();
-        let spec = class::Spec::new("Foo", Some(EnclosingRubyScope::module(scope)), None);
+        let spec = class::Spec::new("Foo", Some(EnclosingRubyScope::module(scope)), None).unwrap();
         drop(borrow);
         assert!(spec.rclass(&interp).is_none());
     }
@@ -326,8 +326,8 @@ mod tests {
         let _ = interp
             .eval(b"module Foo; class Bar; end; end")
             .expect("eval");
-        let spec = module::Spec::new("Foo", None);
-        let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::module(&spec)), None);
+        let spec = module::Spec::new("Foo", None).unwrap();
+        let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::module(&spec)), None).unwrap();
         assert!(spec.rclass(&interp).is_some());
     }
 
@@ -337,8 +337,8 @@ mod tests {
         let _ = interp
             .eval(b"class Foo; class Bar; end; end")
             .expect("eval");
-        let spec = class::Spec::new("Foo", None, None);
-        let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::class(&spec)), None);
+        let spec = class::Spec::new("Foo", None, None).unwrap();
+        let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::class(&spec)), None).unwrap();
         assert!(spec.rclass(&interp).is_some());
     }
 }

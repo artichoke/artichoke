@@ -36,9 +36,10 @@ unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
 #[test]
 fn obj_new_borrow_mut() {
     let interp = artichoke_backend::interpreter().expect("init");
-    let spec = class::Spec::new("Obj", None, None);
+    let spec = class::Spec::new("Obj", None, None).unwrap();
     class::Builder::for_spec(&interp, &spec)
         .add_method("initialize", initialize, sys::mrb_args_none())
+        .unwrap()
         .define()
         .unwrap();
     interp.0.borrow_mut().def_class::<Obj>(spec);
