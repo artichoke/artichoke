@@ -5,7 +5,7 @@ use crate::extn::core::exception::RubyException;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};
-use crate::{Artichoke, ArtichokeError};
+use crate::Artichoke;
 
 /// Metadata about a Ruby exception.
 #[derive(Debug, Clone)]
@@ -68,11 +68,11 @@ pub trait ExceptionHandler {
     ///
     /// If there is an error, return [`LastError::Some`], which contains the
     /// exception class name, message, and optional backtrace.
-    fn last_error(&self) -> Result<Option<Exception>, ArtichokeError>;
+    fn last_error(&self) -> Result<Option<Exception>, Box<dyn RubyException>>;
 }
 
 impl ExceptionHandler for Artichoke {
-    fn last_error(&self) -> Result<Option<Exception>, ArtichokeError> {
+    fn last_error(&self) -> Result<Option<Exception>, Box<dyn RubyException>> {
         let _arena = self.create_arena_savepoint();
         let mrb = self.0.borrow().mrb;
         let exc = unsafe {

@@ -192,10 +192,7 @@ impl Eval for Artichoke {
             value
         };
 
-        if let Some(exc) = self
-            .last_error()
-            .map_err(|err| Fatal::new(self, format!("Unable to extract Exception: {}", err)))?
-        {
+        if let Some(exc) = self.last_error()? {
             Err(Box::new(exc))
         } else {
             let value = Value::new(self, value);

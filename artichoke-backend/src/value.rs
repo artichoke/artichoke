@@ -273,12 +273,7 @@ impl ValueLike for Value {
             value
         };
 
-        if let Some(exc) = self.interp.last_error().map_err(|err| {
-            Fatal::new(
-                &self.interp,
-                format!("Unable to extract Exception: {}", err),
-            )
-        })? {
+        if let Some(exc) = self.interp.last_error()? {
             Err(Box::new(exc))
         } else {
             let value = Self::new(&self.interp, value);
@@ -417,10 +412,7 @@ impl Block {
         // TODO: does this need to be wrapped in `mrb_protect`.
         let value = unsafe { sys::mrb_yield(mrb, self.value, arg.inner()) };
 
-        if let Some(exc) = interp
-            .last_error()
-            .map_err(|err| Fatal::new(interp, format!("Unable to extract Exception: {}", err)))?
-        {
+        if let Some(exc) = interp.last_error()? {
             Err(Box::new(exc))
         } else {
             let value = Value::new(interp, value);
