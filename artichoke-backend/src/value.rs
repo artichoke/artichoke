@@ -403,7 +403,10 @@ impl Block {
         }
     }
 
-    pub fn yield_arg(&self, interp: &Artichoke, arg: &Value) -> Result<Value, ArtichokeError> {
+    pub fn yield_arg<T>(&self, interp: &Artichoke, arg: &Value) -> Result<T, Box<dyn RubyException>>
+    where
+        Artichoke: TryConvert<Value, T>,
+    {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
@@ -411,27 +414,29 @@ impl Block {
 
         let _arena = interp.create_arena_savepoint();
 
+        // TODO: does this need to be wrapped in `mrb_protect`.
         let value = unsafe { sys::mrb_yield(mrb, self.value, arg.inner()) };
-        let value = Value::new(interp, value);
 
-        match interp.last_error() {
-            LastError::Some(exception) => {
-                warn!("runtime error with exception backtrace: {}", exception);
-                Err(ArtichokeError::Exec(exception.to_string()))
-            }
-            LastError::UnableToExtract(err) => {
-                error!("failed to extract exception after runtime error: {}", err);
-                Err(err)
-            }
-            LastError::None if value.is_unreachable() => {
+        if let Some(exc) = interp
+            .last_error()
+            .map_err(|err| Fatal::new(interp, format!("Unable to extract Exception: {}", err)))?
+        {
+            Err(Box::new(exc))
+        } else {
+            let value = Value::new(interp, value);
+            if value.is_unreachable() {
                 // Unreachable values are internal to the mruby interpreter and
                 // interacting with them via the C API is unspecified and may
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue)
+                Err(Box::new(Fatal::new(interp, "Unreachable Ruby value")))
+            } else {
+                let value = value.try_into::<T>().map_err(|err| {
+                    TypeError::new(interp, format!("Type conversion failed: {}", err))
+                })?;
+                Ok(value)
             }
-            LastError::None => Ok(value),
         }
     }
 }
