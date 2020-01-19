@@ -1,7 +1,5 @@
 //! Emit warnings during VM execution.
 
-use crate::ArtichokeError;
-
 /// Interpreters that implement [`Warn`] expose methods for emitting warnings
 /// during execution.
 ///
@@ -11,8 +9,11 @@ use crate::ArtichokeError;
 /// [`Warning`](https://ruby-doc.org/core-2.6.3/Warning.html#method-i-warn)
 /// module from the standard library.
 pub trait Warn {
+    /// Concrete error type for errors encountered when outputting warnings.
+    type Error: std::error::Error;
+
     /// Emit a warning message using `Warning#warn`.
     ///
     /// This method appends newlines to message if necessary.
-    fn warn(&self, message: &[u8]) -> Result<(), ArtichokeError>;
+    fn warn(&self, message: &[u8]) -> Result<(), Self::Error>;
 }
