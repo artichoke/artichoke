@@ -28,22 +28,46 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add_method(mut self, name: &str, method: Method, args: sys::mrb_aspec) -> Self {
-        let spec = method::Spec::new(method::Type::Instance, name, method, args);
+    pub fn add_method<T>(
+        mut self,
+        name: T,
+        method: Method,
+        args: sys::mrb_aspec,
+    ) -> Result<Self, ArtichokeError>
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        let spec = method::Spec::new(method::Type::Instance, name, method, args)?;
         self.methods.insert(spec);
-        self
+        Ok(self)
     }
 
-    pub fn add_self_method(mut self, name: &str, method: Method, args: sys::mrb_aspec) -> Self {
-        let spec = method::Spec::new(method::Type::Class, name, method, args);
+    pub fn add_self_method<T>(
+        mut self,
+        name: T,
+        method: Method,
+        args: sys::mrb_aspec,
+    ) -> Result<Self, ArtichokeError>
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        let spec = method::Spec::new(method::Type::Class, name, method, args)?;
         self.methods.insert(spec);
-        self
+        Ok(self)
     }
 
-    pub fn add_module_method(mut self, name: &str, method: Method, args: sys::mrb_aspec) -> Self {
-        let spec = method::Spec::new(method::Type::Module, name, method, args);
+    pub fn add_module_method<T>(
+        mut self,
+        name: T,
+        method: Method,
+        args: sys::mrb_aspec,
+    ) -> Result<Self, ArtichokeError>
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        let spec = method::Spec::new(method::Type::Module, name, method, args)?;
         self.methods.insert(spec);
-        self
+        Ok(self)
     }
 
     pub fn define(self) -> Result<(), ArtichokeError> {

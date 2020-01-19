@@ -20,22 +20,22 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
             "new_seed",
             artichoke_random_self_new_seed,
             sys::mrb_args_req(1),
-        )
-        .add_self_method("srand", artichoke_random_self_srand, sys::mrb_args_opt(1))
+        )?
+        .add_self_method("srand", artichoke_random_self_srand, sys::mrb_args_opt(1))?
         .add_self_method(
             "urandom",
             artichoke_random_self_urandom,
             sys::mrb_args_req(1),
-        )
+        )?
         .add_method(
             "initialize",
             artichoke_random_initialize,
             sys::mrb_args_opt(1),
-        )
-        .add_method("==", artichoke_random_eq, sys::mrb_args_opt(1))
-        .add_method("bytes", artichoke_random_bytes, sys::mrb_args_req(1))
-        .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))
-        .add_method("seed", artichoke_random_seed, sys::mrb_args_none())
+        )?
+        .add_method("==", artichoke_random_eq, sys::mrb_args_opt(1))?
+        .add_method("bytes", artichoke_random_bytes, sys::mrb_args_req(1))?
+        .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))?
+        .add_method("seed", artichoke_random_seed, sys::mrb_args_none())?
         .define()?;
     interp.0.borrow_mut().def_class::<random::Random>(spec);
 
