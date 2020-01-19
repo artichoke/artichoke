@@ -88,10 +88,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
         api.vfs.read_file(path.as_path())
     };
     if let Ok(contents) = contents {
-        // We need to be sure we don't leak anything by unwinding past
-        // this point. This likely requires a significant refactor to
-        // require_impl.
-        let _ = interp.unchecked_eval(contents.as_slice());
+        let _ = interp.eval(contents.as_slice())?;
     }
     interp.pop_context();
     trace!(
@@ -180,10 +177,7 @@ pub fn require(
                 api.vfs.read_file(path.as_path())
             };
             if let Ok(contents) = contents {
-                // We need to be sure we don't leak anything by unwinding past
-                // this point. This likely requires a significant refactor to
-                // require_impl.
-                let _ = interp.unchecked_eval(contents.as_slice());
+                let _ = interp.eval(contents.as_slice())?;
             }
             interp.pop_context();
             let metadata = metadata.mark_required();
@@ -248,10 +242,7 @@ pub fn require(
                     api.vfs.read_file(path.as_path())
                 };
                 if let Ok(contents) = contents {
-                    // We need to be sure we don't leak anything by unwinding past
-                    // this point. This likely requires a significant refactor to
-                    // require_impl.
-                    let _ = interp.unchecked_eval(contents.as_slice());
+                    let _ = interp.eval(contents.as_slice())?;
                 }
                 interp.pop_context();
                 let metadata = metadata.mark_required();
@@ -333,10 +324,7 @@ pub fn require(
         api.vfs.read_file(path.as_path())
     };
     if let Ok(contents) = contents {
-        // We need to be sure we don't leak anything by unwinding past
-        // this point. This likely requires a significant refactor to
-        // require_impl.
-        let _ = interp.unchecked_eval(contents.as_slice());
+        let _ = interp.eval(contents.as_slice())?;
     }
     interp.pop_context();
     let metadata = metadata.mark_required();
