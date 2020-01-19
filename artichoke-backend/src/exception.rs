@@ -1,57 +1,63 @@
 use std::ffi::c_void;
 use std::fmt;
 
+use crate::extn::core::exception::RubyException;
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::{Value, ValueLike};
 use crate::{Artichoke, ArtichokeError};
 
 /// Metadata about a Ruby exception.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 #[must_use]
 pub struct Exception {
-    /// The result of calling `exception.class.name`.
-    pub class: String,
-    /// The result of calling `exception.message`.
-    pub message: String,
-    /// The result of calling `exception.backtrace`.
-    ///
-    /// Some exceptions, like `SyntaxError` which is thrown directly by the
-    /// artichoke VM, do not have backtraces, so this field is optional.
-    pub backtrace: Option<Vec<String>>,
-    /// The result of calling `exception.inspect`.
-    pub inspect: String,
+    value: Value,
+    name: String,
+    message: Vec<u8>,
 }
 
 impl Exception {
-    pub fn new(class: &str, message: &str, backtrace: Option<Vec<String>>, inspect: &str) -> Self {
+    pub fn new(value: Value, name: &str, message: &[u8]) -> Self {
         Self {
-            class: class.to_owned(),
-            message: message.to_owned(),
-            backtrace,
-            inspect: inspect.to_owned(),
+            value,
+            name: name.to_owned(),
+            message: message.to_vec(),
         }
+    }
+}
+
+impl RubyException for Exception {
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        Box::new(self.clone())
+    }
+
+    fn message(&self) -> &[u8] {
+        self.message.as_slice()
+    }
+
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn rclass(&self) -> Option<*mut sys::RClass> {
+        let inner = self.value.inner();
+        let rclass = unsafe { sys::mrb_sys_class_ptr(inner) };
+        Some(rclass)
+    }
+}
+
+impl From<Exception> for Box<dyn RubyException> {
+    fn from(exc: Exception) -> Self {
+        Box::new(exc)
     }
 }
 
 impl fmt::Display for Exception {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.inspect)?;
-        if let Some(ref backtrace) = self.backtrace {
-            for frame in backtrace {
-                write!(f, "\n{}", frame)?;
-            }
-        }
-        Ok(())
+        let classname = self.name();
+        let message = String::from_utf8_lossy(self.message());
+        write!(f, "{} ({})", classname, message)
     }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-#[must_use]
-pub enum LastError {
-    Some(Exception),
-    None,
-    UnableToExtract(ArtichokeError),
 }
 
 /// Extract the last exception thrown on the interpreter.
@@ -62,13 +68,13 @@ pub trait ExceptionHandler {
     ///
     /// If there is an error, return [`LastError::Some`], which contains the
     /// exception class name, message, and optional backtrace.
-    fn last_error(&self) -> LastError;
+    fn last_error(&self) -> Result<Option<Exception>, ArtichokeError>;
 }
 
 impl ExceptionHandler for Artichoke {
-    fn last_error(&self) -> LastError {
+    fn last_error(&self) -> Result<Option<Exception>, ArtichokeError> {
         let _arena = self.create_arena_savepoint();
-        let mrb = { self.0.borrow().mrb };
+        let mrb = self.0.borrow().mrb;
         let exc = unsafe {
             let exc = (*mrb).exc;
             // Clear the current exception from the mruby interpreter so
@@ -85,14 +91,13 @@ impl ExceptionHandler for Artichoke {
         };
         if exc.is_null() {
             trace!("No last error present");
-            return LastError::None;
+            return Ok(None);
         }
         // Generate exception metadata in by executing the following Ruby code:
         //
         // ```ruby
         // clazz = exception.class.name
         // message = exception.message
-        // backtrace = exception.backtrace
         // ```
         let exception = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
         // Sometimes when hacking on extn/core it is possible to enter a crash
@@ -102,34 +107,13 @@ impl ExceptionHandler for Artichoke {
         // and message, which should help debugging.
         //
         // println!("{:?}", exception);
-        let class = exception
+        let classname = exception
             .funcall::<Value>("class", &[], None)
-            .and_then(|exception| exception.funcall::<&str>("name", &[], None));
-        let class = match class {
-            Ok(class) => class,
-            Err(err) => return LastError::UnableToExtract(err),
-        };
-        let message = match exception.funcall::<&str>("message", &[], None) {
-            Ok(message) => message,
-            Err(err) => return LastError::UnableToExtract(err),
-        };
-        let backtrace = match exception.funcall::<Option<Vec<&str>>>("backtrace", &[], None) {
-            Ok(backtrace) => backtrace,
-            Err(err) => return LastError::UnableToExtract(err),
-        };
-        let inspect = match exception.funcall::<&str>("inspect", &[], None) {
-            Ok(inspect) => inspect,
-            Err(err) => return LastError::UnableToExtract(err),
-        };
-        let exception = Exception {
-            class: class.to_owned(),
-            message: message.to_owned(),
-            backtrace: backtrace
-                .map(|backtrace| backtrace.into_iter().map(String::from).collect::<Vec<_>>()),
-            inspect: inspect.to_owned(),
-        };
+            .and_then(|exception| exception.funcall::<&str>("name", &[], None))?;
+        let message = exception.funcall::<&[u8]>("message", &[], None)?;
+        let exception = Exception::new(exception, classname, message);
         debug!("Extracted exception from interpreter: {}", exception);
-        LastError::Some(exception)
+        Ok(Some(exception))
     }
 }
 

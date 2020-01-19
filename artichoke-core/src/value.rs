@@ -17,23 +17,18 @@ where
     /// Concrete type for blocks passed to [`funcall`](Value::funcall).
     type Block;
 
+    /// Concrete error type for funcall errors.
+    type Error: std::error::Error;
+
     /// Call a method on this [`Value`] with arguments and an optional block.
     fn funcall<T>(
         &self,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
-    ) -> Result<T, ArtichokeError>
+    ) -> Result<T, Self::Error>
     where
         Self::Artichoke: TryConvert<Self, T>;
-
-    /// Call a method on this [`Value`] with arguments and an optional block.
-    fn unchecked_funcall(
-        &self,
-        func: &str,
-        args: &[Self::Arg],
-        block: Option<Self::Block>,
-    ) -> Result<Self, ArtichokeError>;
 
     /// Consume `self` and try to convert `self` to type `T`.
     ///
@@ -51,7 +46,7 @@ where
         Self::Artichoke: TryConvert<Self, T>;
 
     /// Call `#freeze` on this [`Value`].
-    fn freeze(&mut self) -> Result<(), ArtichokeError>;
+    fn freeze(&mut self) -> Result<(), Self::Error>;
 
     /// Call `#frozen?` on this [`Value`].
     fn is_frozen(&self) -> bool;
@@ -62,7 +57,7 @@ where
     /// Whether `self` responds to a method.
     ///
     /// Equivalent to invoking `#respond_to?` on this [`Value`].
-    fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError>;
+    fn respond_to(&self, method: &str) -> Result<bool, Self::Error>;
 
     /// Call `#inspect` on this [`Value`].
     ///

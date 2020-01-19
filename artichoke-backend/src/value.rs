@@ -4,8 +4,8 @@ use std::fmt;
 use std::mem;
 
 use crate::convert::{Convert, TryConvert};
-use crate::exception::{ExceptionHandler, LastError};
-use crate::extn::core::exception::{RubyException, TypeError};
+use crate::exception::ExceptionHandler;
+use crate::extn::core::exception::{Fatal, RubyException, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::types::{self, Int, Ruby};
@@ -206,13 +206,14 @@ impl ValueLike for Value {
     type Artichoke = Artichoke;
     type Arg = Self;
     type Block = Self;
+    type Error = Box<dyn RubyException>;
 
     fn funcall<T>(
         &self,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
-    ) -> Result<T, ArtichokeError>
+    ) -> Result<T, Self::Error>
     where
         Self::Artichoke: TryConvert<Self, T>,
     {
@@ -233,10 +234,16 @@ impl ValueLike for Value {
                 args.len(),
                 MRB_FUNCALL_ARGC_MAX
             );
-            return Err(ArtichokeError::TooManyArgs {
-                given: args.len(),
-                max: MRB_FUNCALL_ARGC_MAX,
-            });
+            return Err(Box::new(Fatal::new(
+                &self.interp,
+                format!(
+                    "{}",
+                    ArtichokeError::TooManyArgs {
+                        given: args.len(),
+                        max: MRB_FUNCALL_ARGC_MAX,
+                    }
+                ),
+            )));
         }
         trace!(
             "Calling {}#{} with {} args{}",
@@ -265,91 +272,30 @@ impl ValueLike for Value {
             }
             value
         };
-        let value = Self::new(&self.interp, value);
 
-        match self.interp.last_error() {
-            LastError::Some(exception) => {
-                warn!("runtime error with exception backtrace: {}", exception);
-                Err(ArtichokeError::Exec(exception.to_string()))
-            }
-            LastError::UnableToExtract(err) => {
-                error!("failed to extract exception after runtime error: {}", err);
-                Err(err)
-            }
-            LastError::None if value.is_unreachable() => {
+        if let Some(exc) = self.interp.last_error().map_err(|err| {
+            Fatal::new(
+                &self.interp,
+                format!("Unable to extract Exception: {}", err),
+            )
+        })? {
+            Err(Box::new(exc))
+        } else {
+            let value = Self::new(&self.interp, value);
+            if value.is_unreachable() {
                 // Unreachable values are internal to the mruby interpreter and
                 // interacting with them via the C API is unspecified and may
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue)
+                Err(Box::new(Fatal::new(&self.interp, "Unreachable Ruby value")))
+            } else {
+                let value = value.try_into::<T>().map_err(|err| {
+                    TypeError::new(&self.interp, format!("Type conversion failed: {}", err))
+                })?;
+                Ok(value)
             }
-            LastError::None => self.interp.try_convert(value),
         }
-    }
-
-    fn unchecked_funcall(
-        &self,
-        func: &str,
-        args: &[Self::Arg],
-        block: Option<Self::Block>,
-    ) -> Result<Self, ArtichokeError> {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let (mrb, _ctx) = {
-            let borrow = self.interp.0.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
-
-        let arena = self.interp.create_arena_savepoint();
-
-        let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
-        if args.len() > MRB_FUNCALL_ARGC_MAX {
-            warn!(
-                "Too many args supplied to funcall: given {}, max {}.",
-                args.len(),
-                MRB_FUNCALL_ARGC_MAX
-            );
-            return Err(ArtichokeError::TooManyArgs {
-                given: args.len(),
-                max: MRB_FUNCALL_ARGC_MAX,
-            });
-        }
-        trace!(
-            "Calling {}#{} with {} args{}",
-            types::ruby_from_mrb_value(self.inner()),
-            func,
-            args.len(),
-            if block.is_some() { " and block" } else { "" }
-        );
-        let func = self
-            .interp
-            .0
-            .borrow_mut()
-            .sym_intern(func.as_bytes().to_vec());
-        let mut protect = Protect::new(self.inner(), func, args.as_ref());
-        if let Some(block) = block {
-            protect = protect.with_block(block.inner());
-        }
-        let value = unsafe {
-            let data =
-                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
-            let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
-
-            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
-            if state.assume_init() != 0 {
-                // drop all bindings to heap-allocated objects because we are
-                // about to unwind with longjmp.
-                drop(arena);
-                drop(args);
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-                sys::mrb_sys_raise_current_exception(mrb);
-                unreachable!("mrb_raise will unwind the stack with longjmp");
-            }
-            value
-        };
-        Ok(Self::new(&self.interp, value))
     }
 
     fn try_into<T>(self) -> Result<T, ArtichokeError>
@@ -368,7 +314,7 @@ impl ValueLike for Value {
         self.clone().try_into::<T>()
     }
 
-    fn freeze(&mut self) -> Result<(), ArtichokeError> {
+    fn freeze(&mut self) -> Result<(), Self::Error> {
         let _ = self.funcall::<Self>("freeze", &[], None)?;
         Ok(())
     }
@@ -391,7 +337,7 @@ impl ValueLike for Value {
         unsafe { sys::mrb_sys_value_is_nil(self.inner()) }
     }
 
-    fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError> {
+    fn respond_to(&self, method: &str) -> Result<bool, Self::Error> {
         let method = self.interp.convert(method);
         self.funcall::<bool>("respond_to?", &[method], None)
     }
