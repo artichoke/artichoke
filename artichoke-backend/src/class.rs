@@ -121,24 +121,27 @@ pub struct Spec {
 }
 
 impl Spec {
-    pub fn new<T>(name: T, enclosing_scope: Option<EnclosingRubyScope>, free: Option<Free>) -> Self
+    pub fn new<T>(
+        name: T,
+        enclosing_scope: Option<EnclosingRubyScope>,
+        free: Option<Free>,
+    ) -> Result<Self, ArtichokeError>
     where
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        let cstring = CString::new(name.as_ref()).unwrap_or_else(|_| unsafe {
-            CString::from_vec_unchecked(String::from("UnknownClass").into_bytes())
-        });
+        let cstring =
+            CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
         let data_type = sys::mrb_data_type {
             struct_name: cstring.as_ptr(),
             dfree: free,
         };
-        Self {
+        Ok(Self {
             name,
             cstring,
             data_type,
             enclosing_scope: enclosing_scope.map(Box::new),
-        }
+        })
     }
 
     #[must_use]

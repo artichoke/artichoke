@@ -14,7 +14,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<regexp::Regexp>().is_some() {
         return Ok(());
     }
-    let spec = class::Spec::new("Regexp", None, Some(def::rust_data_free::<regexp::Regexp>));
+    let spec = class::Spec::new("Regexp", None, Some(def::rust_data_free::<regexp::Regexp>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("initialize", initialize, sys::mrb_args_req_and_opt(1, 2))?

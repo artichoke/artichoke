@@ -23,7 +23,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         "Environ",
         Some(scope),
         Some(def::rust_data_free::<env::Environ>),
-    );
+    )?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("[]", artichoke_env_element_reference, sys::mrb_args_req(1))?

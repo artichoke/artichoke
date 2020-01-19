@@ -100,20 +100,22 @@ pub struct Spec {
 }
 
 impl Spec {
-    pub fn new<T>(name: T, enclosing_scope: Option<EnclosingRubyScope>) -> Self
+    pub fn new<T>(
+        name: T,
+        enclosing_scope: Option<EnclosingRubyScope>,
+    ) -> Result<Self, ArtichokeError>
     where
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        let cstring = CString::new(name.as_ref()).unwrap_or_else(|_| unsafe {
-            CString::from_vec_unchecked(String::from("UnknownModule").into_bytes())
-        });
-        Self {
+        let cstring =
+            CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
+        Ok(Self {
             name,
             cstring,
             sym: Cell::default(),
             enclosing_scope: enclosing_scope.map(Box::new),
-        }
+        })
     }
 
     pub fn value(&self, interp: &Artichoke) -> Option<Value> {

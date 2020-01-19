@@ -13,7 +13,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<random::Random>().is_some() {
         return Ok(());
     }
-    let spec = class::Spec::new("Random", None, Some(def::rust_data_free::<random::Random>));
+    let spec = class::Spec::new("Random", None, Some(def::rust_data_free::<random::Random>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_self_method(

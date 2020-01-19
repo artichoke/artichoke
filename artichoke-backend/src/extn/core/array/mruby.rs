@@ -23,7 +23,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<array::Array>().is_some() {
         return Ok(());
     }
-    let spec = class::Spec::new("Array", None, Some(def::rust_data_free::<array::Array>));
+    let spec = class::Spec::new("Array", None, Some(def::rust_data_free::<array::Array>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))?

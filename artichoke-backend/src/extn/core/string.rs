@@ -13,7 +13,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }
-    let spec = class::Spec::new("String", None, None);
+    let spec = class::Spec::new("String", None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_method("ord", RString::ord, sys::mrb_args_none())?
         .add_method("scan", RString::scan, sys::mrb_args_req(1))?

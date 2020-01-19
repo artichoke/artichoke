@@ -5,10 +5,10 @@ use crate::{Artichoke, ArtichokeError};
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     <% constants.each do |(constant, klass)| %>
     <% if klass == "Class" %>
-    let spec = crate::class::Spec::new("<%= constant %>", None, None);
+    let spec = crate::class::Spec::new("<%= constant %>", None, None)?;
     interp.0.borrow_mut().def_class::<<%= constant %>>(spec);
     <% elsif klass == "Module" %>
-    let spec = crate::module::Spec::new("<%= constant %>", None);
+    let spec = crate::module::Spec::new("<%= constant %>", None)?;
     interp.0.borrow_mut().def_module::<<%= constant %>>(spec);
     <% else %>
     // Skipping constant <%= constant %> with class <%= klass %>

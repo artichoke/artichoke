@@ -42,7 +42,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<MatchData>().is_some() {
         return Ok(());
     }
-    let spec = class::Spec::new("MatchData", None, Some(def::rust_data_free::<MatchData>));
+    let spec = class::Spec::new("MatchData", None, Some(def::rust_data_free::<MatchData>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("begin", MatchData::begin, sys::mrb_args_req(1))?

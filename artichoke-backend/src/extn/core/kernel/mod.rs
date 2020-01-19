@@ -16,7 +16,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().module_spec::<Kernel>().is_some() {
         return Ok(());
     }
-    let spec = module::Spec::new("Kernel", None);
+    let spec = module::Spec::new("Kernel", None)?;
     module::Builder::for_spec(interp, &spec)
         .add_method("require", Kernel::require, sys::mrb_args_rest())?
         .add_method(
@@ -37,7 +37,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .module_spec::<artichoke::Artichoke>()
         .map(EnclosingRubyScope::module)
         .ok_or(ArtichokeError::New)?;
-    let spec = module::Spec::new("Kernel", Some(scope));
+    let spec = module::Spec::new("Kernel", Some(scope))?;
     module::Builder::for_spec(interp, &spec)
         .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))?
         .add_self_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))?

@@ -17,7 +17,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     if interp.0.borrow().class_spec::<Integer>().is_some() {
         return Ok(());
     }
-    let spec = class::Spec::new("Integer", None, None);
+    let spec = class::Spec::new("Integer", None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_method("chr", Integer::chr, sys::mrb_args_opt(1))?
         .add_method("/", Integer::div, sys::mrb_args_req(1))?
