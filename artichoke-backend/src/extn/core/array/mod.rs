@@ -3,9 +3,7 @@ use artichoke_core::warn::Warn;
 use std::convert::TryFrom;
 
 use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{
-    ArgumentError, Fatal, RangeError, RubyException, RuntimeError, TypeError,
-};
+use crate::extn::core::exception::{ArgumentError, Fatal, RangeError, RubyException, TypeError};
 use crate::types::Int;
 use crate::value::{Block, Value};
 use crate::Artichoke;
@@ -77,19 +75,16 @@ impl Array {
                             RangeError::new(interp, "bignum too big to convert into `long'")
                         })?;
                         let idx = interp.convert(idx);
-                        // TODO: propagate exceptions from block call.
-                        let elem = block.yield_arg(interp, &idx).map_err(|_| {
-                            RuntimeError::new(interp, "exception during Array#initialize block")
-                        })?;
+                        let elem = block.yield_arg::<Value>(interp, &idx)?;
                         buffer.push(elem);
                     }
                     InlineBuffer::from(buffer)
                 } else if let Some(_default) = second {
                     // backend::repeated::value(default, len)
-                    panic!();
+                    unimplemented!();
                 } else {
                     // backend::fixed::hole(len)
-                    panic!();
+                    unimplemented!();
                 }
             } else if let Ok(true) = first.respond_to("to_ary") {
                 let ruby_type = first.pretty_name();
@@ -129,18 +124,16 @@ impl Array {
                         })?;
                         let idx = interp.convert(idx);
                         // TODO: propagate exceptions from block call.
-                        let elem = block.yield_arg(interp, &idx).map_err(|_| {
-                            RuntimeError::new(interp, "exception during Array#initialize block")
-                        })?;
+                        let elem = block.yield_arg::<Value>(interp, &idx)?;
                         buffer.push(elem);
                     }
                     InlineBuffer::from(buffer)
                 } else if let Some(_default) = second {
                     // backend::repeated::value(default, len)
-                    panic!();
+                    unimplemented!();
                 } else {
                     // backend::fixed::hole(len)
-                    panic!();
+                    unimplemented!();
                 }
             } else {
                 return Err(Box::new(TypeError::new(

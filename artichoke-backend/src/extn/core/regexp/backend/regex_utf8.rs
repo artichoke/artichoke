@@ -447,12 +447,7 @@ impl RegexpType for RegexUtf8 {
                 sys::mrb_gv_set(mrb, matchdata_sym, data.inner());
             }
             if let Some(block) = block {
-                let result = block.yield_arg(interp, &data).map_err(|_| {
-                    Fatal::new(
-                        interp,
-                        "Failed to initialize Ruby MatchData Value with Rust MatchData",
-                    )
-                })?;
+                let result = block.yield_arg(interp, &data)?;
                 Ok(result)
             } else {
                 Ok(data)
@@ -768,8 +763,7 @@ impl RegexpType for RegexUtf8 {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
-                    // TODO: Propagate exceptions from yield.
-                    let _ = block.yield_arg(interp, &matched);
+                    let _ = block.yield_arg::<Value>(interp, &matched)?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
@@ -792,8 +786,7 @@ impl RegexpType for RegexUtf8 {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
-                    // TODO: Propagate exceptions from yield.
-                    let _ = block.yield_arg(interp, &matched);
+                    let _ = block.yield_arg::<Value>(interp, &matched)?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
