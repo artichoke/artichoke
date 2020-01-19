@@ -1,9 +1,9 @@
 use artichoke_core::eval::Eval;
 
 use crate::class;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, BootError};
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<Enumerator>().is_some() {
         return Ok(());
     }

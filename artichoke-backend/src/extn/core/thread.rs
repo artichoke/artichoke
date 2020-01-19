@@ -2,9 +2,9 @@ use artichoke_core::eval::Eval;
 use artichoke_core::load::LoadSources;
 
 use crate::class;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, BootError};
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<Thread>().is_some() {
         return Ok(());
     }
@@ -34,7 +34,7 @@ mod tests {
     use artichoke_core::eval::Eval;
     use artichoke_core::value::Value as _;
 
-    use crate::ArtichokeError;
+    use crate::BootError;
 
     #[test]
     fn thread_required_by_default() {
@@ -197,7 +197,7 @@ end.join
         "#;
         assert_eq!(
             result,
-            Err(ArtichokeError::Exec(expected_backtrace.trim().to_owned()))
+            Err(BootError::Exec(expected_backtrace.trim().to_owned()))
         );
     }
 }

@@ -48,9 +48,9 @@ use std::fmt;
 use crate::class;
 use crate::convert::Convert;
 use crate::sys;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, BootError};
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     let borrow = interp.0.borrow();
 
     let exception_spec = class::Spec::new("Exception", None, None)?;

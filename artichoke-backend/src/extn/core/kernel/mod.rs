@@ -7,12 +7,12 @@ use crate::extn::core::exception;
 use crate::module;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, BootError};
 
 pub mod integer;
 pub mod require;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().module_spec::<Kernel>().is_some() {
         return Ok(());
     }

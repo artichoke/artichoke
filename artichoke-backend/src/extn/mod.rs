@@ -3,7 +3,7 @@
 use crate::convert::Convert;
 use crate::sys;
 use crate::types::Int;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, BootError};
 
 pub mod core;
 pub mod stdlib;
@@ -56,7 +56,7 @@ macro_rules! global_const {
     }};
 }
 
-pub fn init(interp: &Artichoke, backend_name: &str) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke, backend_name: &str) -> Result<(), BootError> {
     let engine_name = format!("{}-{}", interp.convert(RUBY_ENGINE), backend_name);
     global_const!(interp, RUBY_COPYRIGHT);
     global_const!(interp, RUBY_DESCRIPTION);

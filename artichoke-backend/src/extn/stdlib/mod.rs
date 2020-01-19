@@ -1,4 +1,4 @@
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, BootError};
 
 pub mod abbrev;
 pub mod delegate;
@@ -9,7 +9,7 @@ pub mod ostruct;
 pub mod set;
 pub mod strscan;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     abbrev::init(interp)?;
     delegate::init(interp)?;
     forwardable::init(interp)?;

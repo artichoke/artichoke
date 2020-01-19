@@ -7,9 +7,9 @@ use crate::extn::core::env;
 use crate::extn::core::exception;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, BootError};
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<env::Environ>().is_some() {
         return Ok(());
     }
@@ -18,7 +18,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
         .borrow_mut()
         .module_spec::<artichoke::Artichoke>()
         .map(EnclosingRubyScope::module)
-        .ok_or(ArtichokeError::New)?;
+        .ok_or(BootError::from(ArtichokeError::New))?;
     let spec = class::Spec::new(
         "Environ",
         Some(scope),

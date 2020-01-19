@@ -9,11 +9,11 @@ use crate::extn::core::exception::{self, Fatal, NotImplementedError, RangeError,
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, BootError};
 
 pub mod div;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<Integer>().is_some() {
         return Ok(());
     }

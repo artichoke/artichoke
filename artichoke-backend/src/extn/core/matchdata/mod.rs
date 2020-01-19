@@ -21,7 +21,7 @@ use crate::extn::core::exception;
 use crate::extn::core::regexp::Regexp;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, BootError};
 
 pub mod begin;
 pub mod captures;
@@ -38,7 +38,7 @@ pub mod string;
 pub mod to_a;
 pub mod to_s;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<MatchData>().is_some() {
         return Ok(());
     }

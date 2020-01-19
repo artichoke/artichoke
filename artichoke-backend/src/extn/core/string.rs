@@ -5,11 +5,11 @@ use crate::convert::TryConvert;
 use crate::extn::core::exception::{self, ArgumentError, Fatal};
 use crate::sys;
 use crate::value::{Value, ValueLike};
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, BootError};
 
 mod scan;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }

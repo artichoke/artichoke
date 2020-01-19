@@ -16,10 +16,10 @@ use crate::extn::core::exception;
 use crate::sys;
 #[cfg(feature = "artichoke-array")]
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, BootError};
 
 #[cfg(feature = "artichoke-array")]
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<array::Array>().is_some() {
         return Ok(());
     }
@@ -51,7 +51,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 }
 
 #[cfg(not(feature = "artichoke-array"))]
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     let _ = interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");
     Ok(())
