@@ -47,11 +47,6 @@ pub enum ArtichokeError {
         /// Destination type of conversion.
         to: types::Rust,
     },
-    /// Exception raised during eval.
-    ///
-    /// See [`Eval`](eval::Eval).
-    // TODO: disabled for migration Exec(exception::Exception),
-    Exec(String),
     /// Constant name is invalid for the VM backend.
     ///
     /// For example, if the name contains a NUL byte, or is invalid UTF-8.
@@ -99,7 +94,6 @@ impl fmt::Display for ArtichokeError {
             Self::ConvertToRust { from, to } => {
                 write!(f, "Failed to convert from {} to {}", from, to)
             }
-            Self::Exec(backtrace) => write!(f, "{}", backtrace),
             Self::InvalidConstantName => write!(f, "Invalid constant name"),
             Self::New => write!(f, "Failed to create interpreter"),
             Self::NotDefined(fqname) => write!(f, "{} not defined", fqname),
