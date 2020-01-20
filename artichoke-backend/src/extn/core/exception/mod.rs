@@ -375,6 +375,12 @@ macro_rules! ruby_exception_impl {
             }
 
             #[must_use]
+            fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+                let _ = interp;
+                None
+            }
+
+            #[must_use]
             fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
                 interp
                     .0

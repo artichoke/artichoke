@@ -1,3 +1,4 @@
+use artichoke_core::value::Value as _;
 use std::error;
 use std::fmt;
 
@@ -20,6 +21,10 @@ impl RubyException for Exception {
     /// Class name of the `Exception`.
     fn name(&self) -> String {
         self.0.name()
+    }
+
+    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        self.0.backtrace(interp)
     }
 
     fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
@@ -107,6 +112,9 @@ where
     /// Class name of the `Exception`.
     fn name(&self) -> String;
 
+    /// Optional backtrace specified by a `Vec` of frames.
+    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>>;
+
     /// Return a raiseable [`sys::mrb_value`].
     fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value>;
 }
@@ -125,6 +133,11 @@ impl RubyException for Box<dyn RubyException> {
     #[must_use]
     fn name(&self) -> String {
         self.as_ref().name()
+    }
+
+    #[must_use]
+    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        self.as_ref().backtrace(interp)
     }
 
     #[must_use]
@@ -223,6 +236,13 @@ impl RubyException for CaughtException {
 
     fn name(&self) -> String {
         self.name.clone()
+    }
+
+    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        self.value
+            .funcall("backtrace", &[], None)
+            .unwrap_or_default()
     }
 
     fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {

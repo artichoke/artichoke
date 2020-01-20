@@ -5,6 +5,7 @@
 //! multi-line Ruby expressions, CTRL-C to break out of an expression, and can
 //! inspect return values and exception backtraces.
 
+use ansi_term::Style;
 use artichoke_backend::eval::Context;
 use artichoke_backend::exception::{Exception, RubyException};
 use artichoke_backend::gc::MrbGarbageCollection;
@@ -146,10 +147,33 @@ pub fn run(
                         output.write_all(result.as_slice()).map_err(Error::Io)?;
                     }
                     Err(exc) => {
-                        write!(error, "{} (", exc.name()).map_err(Error::Io)?;
-                        error.write_all(exc.message()).map_err(Error::Io)?;
-                        writeln!(error, ")").map_err(Error::Io)?;
-                        writeln!(error, "Backtrace:").map_err(Error::Io)?;
+                        if let Some(backtrace) = exc.backtrace(&interp) {
+                            writeln!(
+                                error,
+                                "{} (most recent call last)",
+                                Style::new().bold().paint("Traceback")
+                            )
+                            .map_err(Error::Io)?;
+                            for (num, frame) in backtrace.into_iter().enumerate().rev() {
+                                write!(error, "\t{}: from ", num + 1).map_err(Error::Io)?;
+                                error.write_all(frame.as_slice()).map_err(Error::Io)?;
+                                writeln!(error, "").map_err(Error::Io)?;
+                            }
+                        }
+                        write!(
+                            error,
+                            "{} {}",
+                            Style::new().bold().paint(exc.name()),
+                            Style::new().bold().paint("(")
+                        )
+                        .map_err(Error::Io)?;
+                        Style::new()
+                            .bold()
+                            .underline()
+                            .paint(exc.message())
+                            .write_to(&mut error)
+                            .map_err(Error::Io)?;
+                        writeln!(error, "{}", Style::new().bold().paint(")")).map_err(Error::Io)?;
                     }
                 }
                 for line in buf.lines() {
