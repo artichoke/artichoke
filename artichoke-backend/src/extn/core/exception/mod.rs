@@ -49,7 +49,7 @@ use crate::extn::prelude::*;
 // TODO: remove.
 pub use crate::exception::raise;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let borrow = interp.0.borrow();
 
     let exception_spec = class::Spec::new("Exception", None, None)?;
@@ -494,7 +494,7 @@ mod tests {
     impl File for Run {
         type Artichoke = Artichoke;
 
-        fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+        fn require(interp: &Artichoke) -> InitializeResult<()> {
             let spec = class::Spec::new("Run", None, None).unwrap();
             class::Builder::for_spec(interp, &spec)
                 .add_self_method("run", Self::run, sys::mrb_args_none())?

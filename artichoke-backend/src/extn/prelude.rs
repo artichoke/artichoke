@@ -21,3 +21,7 @@ pub use crate::sys;
 pub use crate::types::{Float, Int, Ruby};
 pub use crate::value::{Block, Value};
 pub use crate::{Artichoke, ArtichokeError, BootError};
+
+/// Type alias for errors returned from `init` functions in
+/// [`extn`](crate::extn).
+pub type InitializeResult<T> = Result<T, BootError>;

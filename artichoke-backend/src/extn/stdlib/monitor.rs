@@ -2,7 +2,7 @@ use artichoke_core::load::LoadSources;
 
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Monitor", None, None)?;
     interp.0.borrow_mut().def_class::<Monitor>(spec);
     interp.def_rb_source_file(b"monitor.rb", &include_bytes!("monitor.rb")[..])?;

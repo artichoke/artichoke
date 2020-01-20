@@ -2,7 +2,7 @@ use artichoke_core::load::LoadSources;
 
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     interp.def_rb_source_file(b"json.rb", &include_bytes!("json.rb")[..])?;
     interp.def_rb_source_file(b"json/common.rb", &include_bytes!("json/common.rb")[..])?;
     interp.def_rb_source_file(

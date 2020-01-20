@@ -3,7 +3,7 @@ use artichoke_core::eval::Eval;
 use crate::extn::core::time::{self, trampoline};
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<time::Time>().is_some() {
         return Ok(());
     }

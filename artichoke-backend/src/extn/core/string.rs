@@ -2,7 +2,7 @@ use crate::extn::prelude::*;
 
 mod scan;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }

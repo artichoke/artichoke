@@ -30,7 +30,7 @@ pub mod string;
 pub mod to_a;
 pub mod to_s;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<MatchData>().is_some() {
         return Ok(());
     }

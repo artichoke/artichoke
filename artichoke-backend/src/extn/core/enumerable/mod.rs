@@ -2,7 +2,7 @@ use artichoke_core::eval::Eval;
 
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().module_spec::<Enumerable>().is_some() {
         return Ok(());
     }

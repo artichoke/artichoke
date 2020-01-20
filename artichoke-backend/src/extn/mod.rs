@@ -54,7 +54,7 @@ macro_rules! global_const {
     }};
 }
 
-pub fn init(interp: &Artichoke, backend_name: &str) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke, backend_name: &str) -> InitializeResult<()> {
     let engine_name = format!("{}-{}", interp.convert(RUBY_ENGINE), backend_name);
     global_const!(interp, RUBY_COPYRIGHT);
     global_const!(interp, RUBY_DESCRIPTION);

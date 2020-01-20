@@ -1,7 +1,7 @@
 use crate::extn::prelude::*;
 use crate::types;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<Float>().is_some() {
         return Ok(());
     }

@@ -7,7 +7,7 @@ use crate::extn::core::array;
 use crate::extn::prelude::*;
 
 #[cfg(feature = "artichoke-array")]
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<array::Array>().is_some() {
         return Ok(());
     }
@@ -39,7 +39,7 @@ pub fn init(interp: &Artichoke) -> Result<(), BootError> {
 }
 
 #[cfg(not(feature = "artichoke-array"))]
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let _ = interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");
     Ok(())

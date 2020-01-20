@@ -4,7 +4,7 @@ use crate::extn::prelude::*;
 pub mod integer;
 pub mod require;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().module_spec::<Kernel>().is_some() {
         return Ok(());
     }
@@ -155,7 +155,7 @@ mod tests {
         impl File for TestFile {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+            fn require(interp: &Artichoke) -> InitializeResult<()> {
                 let _ = interp.eval(b"@i = 255")?;
                 Ok(())
             }
@@ -234,7 +234,7 @@ mod tests {
         impl File for Foo {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+            fn require(interp: &Artichoke) -> InitializeResult<()> {
                 let _ = interp.eval(b"module Foo; RUST = 7; end")?;
                 Ok(())
             }
@@ -262,7 +262,7 @@ mod tests {
         impl File for Foo {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+            fn require(interp: &Artichoke) -> InitializeResult<()> {
                 let _ = interp.eval(b"module Foo; RUST = 7; end")?;
                 Ok(())
             }

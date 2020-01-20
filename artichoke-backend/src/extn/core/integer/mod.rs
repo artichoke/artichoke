@@ -7,7 +7,7 @@ use crate::extn::prelude::*;
 
 pub mod div;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<Integer>().is_some() {
         return Ok(());
     }
