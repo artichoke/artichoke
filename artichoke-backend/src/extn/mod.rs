@@ -1,12 +1,10 @@
 #![allow(clippy::needless_pass_by_value)]
 
-use crate::convert::Convert;
-use crate::sys;
-use crate::types::Int;
-use crate::{Artichoke, ArtichokeError, BootError};
-
 pub mod core;
+pub mod prelude;
 pub mod stdlib;
+
+use prelude::*;
 
 pub const RUBY_COPYRIGHT: &str = env!("RUBY_COPYRIGHT");
 pub const RUBY_DESCRIPTION: &str = env!("RUBY_DESCRIPTION");

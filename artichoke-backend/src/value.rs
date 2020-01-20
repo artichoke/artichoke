@@ -4,8 +4,9 @@ use std::fmt;
 use std::mem;
 
 use crate::convert::{Convert, TryConvert};
-use crate::exception::ExceptionHandler;
-use crate::extn::core::exception::{Fatal, RubyException, TypeError};
+use crate::exception::Exception;
+use crate::exception_handler::ExceptionHandler;
+use crate::extn::core::exception::{Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::types::{self, Int, Ruby};
@@ -173,7 +174,7 @@ impl Value {
         )
     }
 
-    pub fn implicitly_convert_to_int(&self) -> Result<Int, Box<dyn RubyException>> {
+    pub fn implicitly_convert_to_int(&self) -> Result<Int, Exception> {
         let int = if let Ok(int) = self.clone().try_into::<Int>() {
             int
         } else {
@@ -183,7 +184,7 @@ impl Value {
                 if let Ok(int) = maybe_int.try_into::<Int>() {
                     int
                 } else {
-                    return Err(Box::new(TypeError::new(
+                    return Err(Exception::from(TypeError::new(
                         &self.interp,
                         format!(
                             "can't convert {} to Integer ({}#to_int gives {})",
@@ -192,7 +193,7 @@ impl Value {
                     )));
                 }
             } else {
-                return Err(Box::new(TypeError::new(
+                return Err(Exception::from(TypeError::new(
                     &self.interp,
                     format!("no implicit conversion of {} into Integer", pretty_name),
                 )));
@@ -206,7 +207,7 @@ impl ValueLike for Value {
     type Artichoke = Artichoke;
     type Arg = Self;
     type Block = Self;
-    type Error = Box<dyn RubyException>;
+    type Error = Exception;
 
     fn funcall<T>(
         &self,
@@ -234,7 +235,7 @@ impl ValueLike for Value {
                 args.len(),
                 MRB_FUNCALL_ARGC_MAX
             );
-            return Err(Box::new(Fatal::new(
+            return Err(Exception::from(Fatal::new(
                 &self.interp,
                 format!(
                     "{}",
@@ -274,7 +275,7 @@ impl ValueLike for Value {
         };
 
         if let Some(exc) = self.interp.last_error()? {
-            Err(Box::new(exc))
+            Err(exc)
         } else {
             let value = Self::new(&self.interp, value);
             if value.is_unreachable() {
@@ -283,10 +284,16 @@ impl ValueLike for Value {
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(Box::new(Fatal::new(&self.interp, "Unreachable Ruby value")))
+                Err(Exception::from(Fatal::new(
+                    &self.interp,
+                    "Unreachable Ruby value",
+                )))
             } else {
                 let value = value.try_into::<T>().map_err(|err| {
-                    TypeError::new(&self.interp, format!("Type conversion failed: {}", err))
+                    Exception::from(TypeError::new(
+                        &self.interp,
+                        format!("Type conversion failed: {}", err),
+                    ))
                 })?;
                 Ok(value)
             }
@@ -398,7 +405,7 @@ impl Block {
         }
     }
 
-    pub fn yield_arg<T>(&self, interp: &Artichoke, arg: &Value) -> Result<T, Box<dyn RubyException>>
+    pub fn yield_arg<T>(&self, interp: &Artichoke, arg: &Value) -> Result<T, Exception>
     where
         Artichoke: TryConvert<Value, T>,
     {
@@ -413,7 +420,7 @@ impl Block {
         let value = unsafe { sys::mrb_yield(mrb, self.value, arg.inner()) };
 
         if let Some(exc) = interp.last_error()? {
-            Err(Box::new(exc))
+            Err(Exception::from(exc))
         } else {
             let value = Value::new(interp, value);
             if value.is_unreachable() {
@@ -422,7 +429,10 @@ impl Block {
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(Box::new(Fatal::new(interp, "Unreachable Ruby value")))
+                Err(Exception::from(Fatal::new(
+                    interp,
+                    "Unreachable Ruby value",
+                )))
             } else {
                 let value = value.try_into::<T>().map_err(|err| {
                     TypeError::new(interp, format!("Type conversion failed: {}", err))

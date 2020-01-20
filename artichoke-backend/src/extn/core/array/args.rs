@@ -2,11 +2,7 @@ use artichoke_core::value::Value as _;
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::extn::core::exception::{Fatal, IndexError, RangeError, RubyException, TypeError};
-use crate::sys;
-use crate::types::Int;
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ElementReference {
@@ -20,7 +16,7 @@ pub fn element_reference(
     elem: Value,
     len: Option<Value>,
     ary_len: usize,
-) -> Result<ElementReference, Box<dyn RubyException>> {
+) -> Result<ElementReference, Exception> {
     if let Some(len) = len {
         let start = if let Ok(start) = elem.clone().try_into::<Int>() {
             start
@@ -28,7 +24,7 @@ pub fn element_reference(
             start
         } else {
             let elem_type_name = elem.pretty_name();
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!("no implicit conversion of {} into Integer", elem_type_name),
             )));
@@ -39,7 +35,7 @@ pub fn element_reference(
             len
         } else {
             let len_type_name = len.pretty_name();
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!("no implicit conversion of {} into Integer", len_type_name),
             )));
@@ -61,7 +57,7 @@ pub fn element_reference(
             match unsafe { is_range(interp, &elem, rangelen) } {
                 Ok(Some((start, len))) => Ok(ElementReference::StartLen(start, len)),
                 Ok(None) => Ok(ElementReference::Empty),
-                Err(_) => Err(Box::new(TypeError::new(
+                Err(_) => Err(Exception::from(TypeError::new(
                     interp,
                     format!("no implicit conversion of {} into Integer", name),
                 ))),
@@ -76,7 +72,7 @@ pub fn element_assignment(
     second: Value,
     third: Option<Value>,
     len: usize,
-) -> Result<(usize, Option<usize>, Value), Box<dyn RubyException>> {
+) -> Result<(usize, Option<usize>, Value), Exception> {
     if let Some(elem) = third {
         let start = first;
         let start_type_name = start.pretty_name();
@@ -85,7 +81,7 @@ pub fn element_assignment(
         } else if let Ok(start) = start.funcall::<Int>("to_int", &[], None) {
             start
         } else {
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!("no implicit conversion of {} into Integer", start_type_name),
             )));
@@ -98,7 +94,7 @@ pub fn element_assignment(
             if start < len {
                 len - start
             } else {
-                return Err(Box::new(IndexError::new(
+                return Err(Exception::from(IndexError::new(
                     interp,
                     format!("index {} too small for array; minimum: -{}", start, len),
                 )));
@@ -111,7 +107,7 @@ pub fn element_assignment(
         } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
             len
         } else {
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!("no implicit conversion of {} into Integer", len_type_name),
             )));
@@ -119,7 +115,7 @@ pub fn element_assignment(
         if let Ok(len) = usize::try_from(len) {
             Ok((start, Some(len), elem))
         } else {
-            Err(Box::new(IndexError::new(
+            Err(Exception::from(IndexError::new(
                 interp,
                 format!("negative length ({})", len),
             )))
@@ -133,7 +129,7 @@ pub fn element_assignment(
             if index < len {
                 Ok((len - index, None, second))
             } else {
-                Err(Box::new(IndexError::new(
+                Err(Exception::from(IndexError::new(
                     interp,
                     format!("index {} too small for array; minimum: -{}", index, len),
                 )))
@@ -148,7 +144,7 @@ pub fn element_assignment(
             if index < len {
                 Ok((len - index, None, second))
             } else {
-                Err(Box::new(IndexError::new(
+                Err(Exception::from(IndexError::new(
                     interp,
                     format!("index {} too small for array; minimum: -{}", index, len),
                 )))
@@ -169,7 +165,7 @@ pub fn element_assignment(
                 let start = if let Ok(start) = first.funcall::<Value>("begin", &[], None) {
                     start
                 } else {
-                    return Err(Box::new(Fatal::new(
+                    return Err(Exception::from(Fatal::new(
                         interp,
                         "Unable to extract first from Range",
                     )));
@@ -179,7 +175,7 @@ pub fn element_assignment(
                 } else if let Ok(start) = start.funcall::<Int>("to_int", &[], None) {
                     start
                 } else {
-                    return Err(Box::new(TypeError::new(
+                    return Err(Exception::from(TypeError::new(
                         interp,
                         format!(
                             "no implicit conversion of {} into Integer",
@@ -190,7 +186,7 @@ pub fn element_assignment(
                 let end = if let Ok(end) = first.funcall::<Value>("last", &[], None) {
                     end
                 } else {
-                    return Err(Box::new(Fatal::new(
+                    return Err(Exception::from(Fatal::new(
                         interp,
                         "Unable to extract first from Range",
                     )));
@@ -200,7 +196,7 @@ pub fn element_assignment(
                 } else if let Ok(end) = end.funcall::<Int>("to_int", &[], None) {
                     end
                 } else {
-                    return Err(Box::new(TypeError::new(
+                    return Err(Exception::from(TypeError::new(
                         interp,
                         format!(
                             "no implicit conversion of {} into Integer",
@@ -209,7 +205,7 @@ pub fn element_assignment(
                     )));
                 };
                 if start + (end - start) < 0 {
-                    return Err(Box::new(RangeError::new(
+                    return Err(Exception::from(RangeError::new(
                         interp,
                         format!("{}..{} out of range", start, end),
                     )));
@@ -233,14 +229,14 @@ pub fn element_assignment(
                                 Ok((start, None, second))
                             }
                         } else {
-                            Err(Box::new(IndexError::new(
+                            Err(Exception::from(IndexError::new(
                                 interp,
                                 format!("index {} too small for array; minimum: -{}", start, len),
                             )))
                         }
                     }
                     (Ok(start), Err(_)) => Ok((start, None, second)),
-                    (Err(_), Err(_)) => Err(Box::new(IndexError::new(
+                    (Err(_), Err(_)) => Err(Exception::from(IndexError::new(
                         interp,
                         format!("index {} too small for array; minimum: -{}", start, len),
                     ))),
@@ -248,7 +244,7 @@ pub fn element_assignment(
             }
             Err(_) => {
                 let index_type_name = first.pretty_name();
-                Err(Box::new(TypeError::new(
+                Err(Exception::from(TypeError::new(
                     interp,
                     format!("no implicit conversion of {} into Integer", index_type_name),
                 )))
@@ -261,7 +257,7 @@ unsafe fn is_range(
     interp: &Artichoke,
     range: &Value,
     length: Int,
-) -> Result<Option<(Int, usize)>, Box<dyn RubyException>> {
+) -> Result<Option<(Int, usize)>, Exception> {
     let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
     let mut len = mem::MaybeUninit::<sys::mrb_int>::uninit();
     let mrb = interp.0.borrow().mrb;

@@ -1,22 +1,208 @@
-use std::ffi::c_void;
+use std::error;
 use std::fmt;
 
-use crate::extn::core::exception::RubyException;
-use crate::gc::MrbGarbageCollection;
 use crate::sys;
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::Artichoke;
 
-/// Metadata about a Ruby exception.
+#[derive(Debug)]
+pub struct Exception(Box<dyn RubyException>);
+
+impl RubyException for Exception {
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        self.0.box_clone()
+    }
+
+    fn message(&self) -> &[u8] {
+        self.0.message()
+    }
+
+    /// Class name of the `Exception`.
+    fn name(&self) -> String {
+        self.0.name()
+    }
+
+    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+        self.0.as_mrb_value(interp)
+    }
+}
+
+impl fmt::Display for Exception {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl error::Error for Exception {
+    #[must_use]
+    fn description(&self) -> &str {
+        "Ruby Exception thrown on Artichoke VM"
+    }
+
+    #[must_use]
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
+    }
+}
+
+impl From<Box<dyn RubyException>> for Exception {
+    fn from(exc: Box<dyn RubyException>) -> Self {
+        Self(exc)
+    }
+}
+
+/// Raise implementation for `RubyException` boxed trait objects.
+///
+/// # Safety
+///
+/// This function unwinds the stack with `longjmp`, which will ignore all Rust
+/// landing pads for panics and exit routines for cleaning up borrows. Callers
+/// should ensure that only [`Copy`] items are alive in the current stack frame.
+///
+/// Because this precondition must hold for all frames between the caller and
+/// the closest [`sys::mrb_protect`] landing pad, this function should only be
+/// called in the entrypoint into Rust from mruby.
+pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
+    // Ensure the borrow is out of scope by the time we eval code since
+    // Rust-backed files and types may need to mutably borrow the `Artichoke` to
+    // get access to the underlying `ArtichokeState`.
+    let mrb = interp.0.borrow().mrb;
+
+    let exc = if let Some(exc) = exception.as_mrb_value(&interp) {
+        exc
+    } else {
+        error!("unable to raise {}", exception.name());
+        panic!("unable to raise {}", exception.name());
+    };
+    // `mrb_sys_raise` will call longjmp which will unwind the stack.
+    // Any non-`Copy` objects that we haven't cleaned up at this point will
+    // leak, so drop everything.
+    drop(interp);
+    drop(exception);
+
+    sys::mrb_exc_raise(mrb, exc);
+    unreachable!("mrb_exc_raise will unwind the stack with longjmp");
+}
+
+/// Polymorphic exception type that corresponds to Ruby's `Exception`.
+///
+/// All types that implement `RubyException` can be raised with
+/// [`exception::raise`](raise). Rust code can re-raise a trait object to
+/// propagate exceptions from native code back into the interpreter.
+#[allow(clippy::module_name_repetitions)]
+#[must_use]
+pub trait RubyException
+where
+    Self: 'static,
+{
+    /// Clone `self` and return a new boxed trait object.
+    fn box_clone(&self) -> Box<dyn RubyException>;
+
+    /// Message of the `Exception`.
+    ///
+    /// This value is a byte slice since Ruby `String`s are equivalent to
+    /// `Vec<u8>`.
+    fn message(&self) -> &[u8];
+
+    /// Class name of the `Exception`.
+    fn name(&self) -> String;
+
+    /// Return a raiseable [`sys::mrb_value`].
+    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value>;
+}
+
+impl RubyException for Box<dyn RubyException> {
+    #[must_use]
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        self.as_ref().box_clone()
+    }
+
+    #[must_use]
+    fn message(&self) -> &[u8] {
+        self.as_ref().message()
+    }
+
+    #[must_use]
+    fn name(&self) -> String {
+        self.as_ref().name()
+    }
+
+    #[must_use]
+    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+        self.as_ref().as_mrb_value(interp)
+    }
+}
+
+impl fmt::Debug for Box<dyn RubyException> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let classname = self.name();
+        let message = String::from_utf8_lossy(self.message());
+        write!(f, "{} ({})", classname, message)
+    }
+}
+
+impl fmt::Display for Box<dyn RubyException> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let classname = self.name();
+        let message = String::from_utf8_lossy(self.message());
+        write!(f, "{} ({})", classname, message)
+    }
+}
+
+impl error::Error for Box<dyn RubyException> {
+    #[must_use]
+    fn description(&self) -> &str {
+        "Ruby Exception thrown on Artichoke VM"
+    }
+
+    #[must_use]
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
+    }
+}
+
+impl fmt::Debug for &dyn RubyException {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let classname = self.name();
+        let message = String::from_utf8_lossy(self.message());
+        write!(f, "{} ({})", classname, message)
+    }
+}
+
+impl fmt::Display for &dyn RubyException {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let classname = self.name();
+        let message = String::from_utf8_lossy(self.message());
+        write!(f, "{} ({})", classname, message)
+    }
+}
+
+impl error::Error for &dyn RubyException {
+    #[must_use]
+    fn description(&self) -> &str {
+        "Ruby Exception thrown on Artichoke VM"
+    }
+
+    #[must_use]
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
+    }
+}
+
+/// An `Exception` rescued with [`sys::mrb_protect`].
+///
+/// `CaughtException` is re-raiseable because it implements [`RubyException`].
+#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
 #[must_use]
-pub struct Exception {
+pub(crate) struct CaughtException {
     value: Value,
     name: String,
     message: Vec<u8>,
 }
 
-impl Exception {
+impl CaughtException {
+    /// Construct a new `CaughtException`.
     pub fn new(value: Value, name: &str, message: &[u8]) -> Self {
         Self {
             value,
@@ -26,7 +212,7 @@ impl Exception {
     }
 }
 
-impl RubyException for Exception {
+impl RubyException for CaughtException {
     fn box_clone(&self) -> Box<dyn RubyException> {
         Box::new(self.clone())
     }
@@ -39,145 +225,28 @@ impl RubyException for Exception {
         self.name.clone()
     }
 
-    fn rclass(&self) -> Option<*mut sys::RClass> {
-        let inner = self.value.inner();
-        let rclass = unsafe { sys::mrb_sys_class_ptr(inner) };
-        Some(rclass)
+    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+        let _ = interp;
+        Some(self.value.inner())
     }
 }
 
-impl From<Exception> for Box<dyn RubyException> {
-    fn from(exc: Exception) -> Self {
+impl From<CaughtException> for Box<dyn RubyException> {
+    fn from(exc: CaughtException) -> Self {
         Box::new(exc)
     }
 }
 
-impl fmt::Display for Exception {
+impl From<CaughtException> for Exception {
+    fn from(exc: CaughtException) -> Self {
+        Self(Box::new(exc))
+    }
+}
+
+impl fmt::Display for CaughtException {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let classname = self.name();
         let message = String::from_utf8_lossy(self.message());
         write!(f, "{} ({})", classname, message)
-    }
-}
-
-/// Extract the last exception thrown on the interpreter.
-#[allow(clippy::module_name_repetitions)]
-pub trait ExceptionHandler {
-    /// Extract the last thrown exception on the artichoke interpreter if there
-    /// is one.
-    ///
-    /// If there is an error, return [`LastError::Some`], which contains the
-    /// exception class name, message, and optional backtrace.
-    fn last_error(&self) -> Result<Option<Exception>, Box<dyn RubyException>>;
-}
-
-impl ExceptionHandler for Artichoke {
-    fn last_error(&self) -> Result<Option<Exception>, Box<dyn RubyException>> {
-        let _arena = self.create_arena_savepoint();
-        let mrb = self.0.borrow().mrb;
-        let exc = unsafe {
-            let exc = (*mrb).exc;
-            // Clear the current exception from the mruby interpreter so
-            // subsequent calls to the mruby VM are not tainted by an error they
-            // did not generate.
-            //
-            // We must do this at the beginning of `current_exception` so we can
-            // use the mruby VM to inspect the exception once we turn it into an
-            // `mrb_value`. `ValueLike::funcall` handles errors by calling this
-            // function, so not clearing the exception results in a stack
-            // overflow.
-            (*mrb).exc = std::ptr::null_mut();
-            exc
-        };
-        if exc.is_null() {
-            trace!("No last error present");
-            return Ok(None);
-        }
-        // Generate exception metadata in by executing the following Ruby code:
-        //
-        // ```ruby
-        // clazz = exception.class.name
-        // message = exception.message
-        // ```
-        let exception = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
-        // Sometimes when hacking on extn/core it is possible to enter a crash
-        // loop where an exception is captured by this handler, but extracting
-        // the exception name or backtrace throws again. Uncommenting the
-        // folllowing print statement will at least get you the exception class
-        // and message, which should help debugging.
-        //
-        // println!("{:?}", exception);
-        let classname = exception
-            .funcall::<Value>("class", &[], None)
-            .and_then(|exception| exception.funcall::<&str>("name", &[], None))?;
-        let message = exception.funcall::<&[u8]>("message", &[], None)?;
-        let exception = Exception::new(exception, classname, message);
-        debug!("Extracted exception from interpreter: {}", exception);
-        Ok(Some(exception))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use artichoke_core::eval::Eval;
-
-    use crate::exception::Exception;
-    use crate::value::{Value, ValueLike};
-    use crate::ArtichokeError;
-
-    #[test]
-    fn return_exception() {
-        let interp = crate::interpreter().expect("init");
-        let result = interp
-            .eval(b"raise ArgumentError.new('waffles')")
-            .map(|_| ());
-        let expected = Exception::new(
-            "ArgumentError",
-            "waffles",
-            Some(vec!["(eval):1".to_owned()]),
-            "(eval):1: waffles (ArgumentError)",
-        );
-        assert_eq!(result, Err(ArtichokeError::Exec(expected.to_string())));
-    }
-
-    #[test]
-    fn return_exception_with_no_backtrace() {
-        let interp = crate::interpreter().expect("init");
-        let result = interp.eval(b"def bad; (; end").map(|_| ());
-        let expected = Exception::new("SyntaxError", "waffles", None, "SyntaxError: syntax error");
-        assert_eq!(result, Err(ArtichokeError::Exec(expected.to_string())));
-    }
-
-    #[test]
-    fn raise_does_not_panic_or_segfault() {
-        let interp = crate::interpreter().expect("init");
-        let _ = interp.eval(br#"raise 'foo'"#);
-        let _ = interp.eval(br#"raise 'foo'"#);
-        let _ = interp.eval(br#"eval(b"raise 'foo'""#);
-        let _ = interp.eval(br#"eval(b"raise 'foo'""#);
-        let _ = interp.eval(br#"require 'foo'"#);
-        let _ = interp.eval(br#"require 'foo'"#);
-        let _ = interp.eval(br#"eval(b"require 'foo'""#);
-        let _ = interp.eval(br#"eval(b"require 'foo'""#);
-        let _ = interp.eval(br#"Regexp.compile(2)"#);
-        let _ = interp.eval(br#"Regexp.compile(2)"#);
-        let _ = interp.eval(br#"eval(b"Regexp.compile(2)""#);
-        let _ = interp.eval(br#"eval(b"Regexp.compile(2)""#);
-        let _ = interp.eval(
-            br#"
-def fail
-  begin
-    require 'foo'
-  rescue LoadError
-    require 'forwardable'
-  end
-end
-
-fail
-            "#,
-        );
-        let kernel = interp.eval(br#"Kernel"#).unwrap();
-        let _ = kernel.funcall::<Value>("raise", &[], None);
-        let _ = kernel.funcall::<Value>("raise", &[], None);
     }
 }

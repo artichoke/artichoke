@@ -1,20 +1,11 @@
-use artichoke_core::value::Value as _;
 use bstr::BStr;
 use std::convert::TryFrom;
 use std::iter::Iterator;
 use std::str::{self, FromStr};
 
-use crate::convert::Convert;
-use crate::extn::core::exception::{ArgumentError, RubyException, TypeError};
-use crate::types::Int;
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
-pub fn method(
-    interp: &Artichoke,
-    arg: Value,
-    radix: Option<Value>,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Value, Exception> {
     #[derive(Debug, Clone, Copy)]
     enum Sign {
         Pos,
@@ -40,13 +31,13 @@ pub fn method(
     let radix = match radix.map(u32::try_from) {
         Some(Ok(radix)) if radix >= 2 && radix <= 36 => Some(radix),
         Some(Ok(radix)) => {
-            return Err(Box::new(ArgumentError::new(
+            return Err(Exception::from(ArgumentError::new(
                 interp,
                 format!("invalid radix {}", radix),
             )))
         }
         Some(Err(_)) => {
-            return Err(Box::new(ArgumentError::new(
+            return Err(Exception::from(ArgumentError::new(
                 interp,
                 format!("invalid radix {}", radix.unwrap_or_default()),
             )))
@@ -59,13 +50,13 @@ pub fn method(
     } else if let Ok(arg) = arg.funcall::<&[u8]>("to_str", &[], None) {
         arg
     } else {
-        return Err(Box::new(TypeError::new(
+        return Err(Exception::from(TypeError::new(
             interp,
             format!("can't convert {} into Integer", ruby_type),
         )));
     };
     if memchr::memchr(b'\0', arg).is_some() {
-        return Err(Box::new(ArgumentError::new(
+        return Err(Exception::from(ArgumentError::new(
             interp,
             format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
         )));
@@ -73,7 +64,7 @@ pub fn method(
     let arg = if let Ok(arg) = str::from_utf8(arg) {
         arg
     } else {
-        return Err(Box::new(ArgumentError::new(
+        return Err(Exception::from(ArgumentError::new(
             interp,
             format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
         )));
@@ -100,7 +91,7 @@ pub fn method(
         }
         if current.is_whitespace() {
             if let Some('+') | Some('-') = prev {
-                return Err(Box::new(ArgumentError::new(
+                return Err(Exception::from(ArgumentError::new(
                     interp,
                     format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
                 )));
@@ -114,7 +105,7 @@ pub fn method(
         state = match current {
             '+' => {
                 if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
-                    return Err(Box::new(ArgumentError::new(
+                    return Err(Exception::from(ArgumentError::new(
                         interp,
                         format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
                     )));
@@ -123,7 +114,7 @@ pub fn method(
             }
             '-' => {
                 if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
-                    return Err(Box::new(ArgumentError::new(
+                    return Err(Exception::from(ArgumentError::new(
                         interp,
                         format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
                     )));
@@ -174,7 +165,7 @@ pub fn method(
                 let next = chars.next();
                 if let Some(next) = next {
                     if !next.is_numeric() && !next.is_alphabetic() {
-                        return Err(Box::new(ArgumentError::new(
+                        return Err(Exception::from(ArgumentError::new(
                             interp,
                             format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
                         )));
@@ -195,7 +186,7 @@ pub fn method(
         }
         (digits, parsed_radix)
     } else {
-        return Err(Box::new(ArgumentError::new(
+        return Err(Exception::from(ArgumentError::new(
             interp,
             format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
         )));
@@ -206,7 +197,7 @@ pub fn method(
             if let Ok(integer) = Int::from_str_radix(candidate.as_str(), radix) {
                 Ok(interp.convert(integer))
             } else {
-                Err(Box::new(ArgumentError::new(
+                Err(Exception::from(ArgumentError::new(
                     interp,
                     format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
                 )))
@@ -216,7 +207,7 @@ pub fn method(
             if let Ok(integer) = Int::from_str_radix(candidate.as_str(), radix) {
                 Ok(interp.convert(integer))
             } else {
-                Err(Box::new(ArgumentError::new(
+                Err(Exception::from(ArgumentError::new(
                     interp,
                     format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
                 )))
@@ -226,17 +217,17 @@ pub fn method(
             if let Ok(integer) = Int::from_str(candidate.as_str()) {
                 Ok(interp.convert(integer))
             } else {
-                Err(Box::new(ArgumentError::new(
+                Err(Exception::from(ArgumentError::new(
                     interp,
                     format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
                 )))
             }
         }
-        (Some(_), Some(_)) => Err(Box::new(ArgumentError::new(
+        (Some(_), Some(_)) => Err(Exception::from(ArgumentError::new(
             interp,
             format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
         ))),
-        (Some(radix), None) | (None, Some(radix)) => Err(Box::new(ArgumentError::new(
+        (Some(radix), None) | (None, Some(radix)) => Err(Exception::from(ArgumentError::new(
             interp,
             format!("invalid radix {}", radix),
         ))),

@@ -1,7 +1,6 @@
 use artichoke_core::load::LoadSources;
 
-use crate::module;
-use crate::{Artichoke, ArtichokeError};
+use crate::extn::prelude::*;
 
 pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     let spec = module::Spec::new("Abbrev", None)?;

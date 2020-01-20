@@ -3,20 +3,8 @@ use artichoke_core::eval::Eval;
 use std::convert::TryFrom;
 
 #[cfg(feature = "artichoke-array")]
-use crate::class;
-#[cfg(feature = "artichoke-array")]
-use crate::convert::Convert;
-#[cfg(feature = "artichoke-array")]
-use crate::def;
-#[cfg(feature = "artichoke-array")]
 use crate::extn::core::array;
-#[cfg(feature = "artichoke-array")]
-use crate::extn::core::exception;
-#[cfg(feature = "artichoke-array")]
-use crate::sys;
-#[cfg(feature = "artichoke-array")]
-use crate::value::Value;
-use crate::{Artichoke, BootError};
+use crate::extn::prelude::*;
 
 #[cfg(feature = "artichoke-array")]
 pub fn init(interp: &Artichoke) -> Result<(), BootError> {

@@ -1,11 +1,8 @@
-use crate::convert::{RustBackedValue, TryConvert};
-use crate::extn::core::exception::{Fatal, RubyException, RuntimeError};
 use crate::extn::core::time::backend::MakeTime;
 use crate::extn::core::time::{self, Time};
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
-pub fn now(interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+pub fn now(interp: &Artichoke) -> Result<Value, Exception> {
     let now = Time(time::factory().now(interp));
     let result = now
         .try_into_ruby(&interp, None)
@@ -13,7 +10,7 @@ pub fn now(interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
     Ok(result)
 }
 
-pub fn day(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -27,7 +24,7 @@ pub fn day(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExcepti
     Ok(result)
 }
 
-pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -41,7 +38,7 @@ pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExcept
     Ok(result)
 }
 
-pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -55,7 +52,7 @@ pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExce
     Ok(result)
 }
 
-pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -69,7 +66,7 @@ pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExcep
     Ok(result)
 }
 
-pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -83,7 +80,7 @@ pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn Ruby
     Ok(result)
 }
 
-pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -97,7 +94,7 @@ pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExce
     Ok(result)
 }
 
-pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -111,7 +108,7 @@ pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn Rub
     Ok(result)
 }
 
-pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -125,7 +122,7 @@ pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyExc
     Ok(result)
 }
 
-pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -139,7 +136,7 @@ pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyEx
     Ok(result)
 }
 
-pub fn year(interp: &Artichoke, time: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn year(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,

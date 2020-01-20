@@ -1,10 +1,7 @@
 use std::num::NonZeroUsize;
 
-use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
-use crate::extn::core::exception::RubyException;
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Hole(NonZeroUsize);
@@ -36,7 +33,7 @@ impl ArrayType for Hole {
         false
     }
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
         let _ = index;
         Ok(interp.convert(None::<Value>))
     }
@@ -46,7 +43,7 @@ impl ArrayType for Hole {
         interp: &Artichoke,
         start: usize,
         len: usize,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<Box<dyn ArrayType>, Exception> {
         let _ = interp;
         if start < self.0.get() {
             if start + len < self.0.get() {
@@ -65,7 +62,7 @@ impl ArrayType for Hole {
         index: usize,
         elem: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let _ = interp;
         let len = self.0.get();
         // TODO: optimize for setting `nil`.
@@ -103,7 +100,7 @@ impl ArrayType for Hole {
         drain: usize,
         with: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = interp;
         // TODO: optimize for setting `nil`.
         let (alloc, drained) = if start < self.0.get() {
@@ -134,7 +131,7 @@ impl ArrayType for Hole {
         drain: usize,
         with: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = interp;
         // TODO: optimize for setting a `Hole` slice.
         let (alloc, drained) = if start < self.0.get() {
@@ -163,7 +160,7 @@ impl ArrayType for Hole {
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let _ = interp;
         *realloc = Some(vec![self.box_clone(), other]);
         Ok(())
@@ -173,7 +170,7 @@ impl ArrayType for Hole {
         &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         if let Some(len) = NonZeroUsize::new(self.0.get() - 1) {
             self.0 = len;
         } else {
@@ -182,7 +179,7 @@ impl ArrayType for Hole {
         Ok(interp.convert(None::<Value>))
     }
 
-    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
         let _ = interp;
         Ok(())
     }

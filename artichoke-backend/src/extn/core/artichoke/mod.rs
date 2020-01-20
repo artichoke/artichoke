@@ -1,5 +1,4 @@
-use crate::module;
-use crate::BootError;
+use crate::extn::prelude::*;
 
 pub fn init(interp: &crate::Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().module_spec::<Artichoke>().is_some() {

@@ -98,6 +98,7 @@ pub mod convert;
 pub mod def;
 pub mod eval;
 pub mod exception;
+pub mod exception_handler;
 pub mod extn;
 pub mod ffi;
 pub mod fs;
@@ -116,7 +117,7 @@ pub mod warn;
 pub use artichoke_core::ArtichokeError;
 pub use interpreter::interpreter;
 
-use crate::extn::core::exception::RubyException;
+use crate::exception::Exception;
 
 /// Interpreter instance.
 ///
@@ -154,7 +155,7 @@ pub struct BootError(BootErrorType);
 #[derive(Debug)]
 enum BootErrorType {
     Artichoke(ArtichokeError),
-    Ruby(Box<dyn RubyException>),
+    Ruby(Exception),
 }
 
 impl fmt::Display for BootError {
@@ -187,11 +188,8 @@ impl From<ArtichokeError> for BootError {
     }
 }
 
-impl<T> From<T> for BootError
-where
-    T: RubyException,
-{
-    fn from(err: T) -> Self {
-        Self(BootErrorType::Ruby(err.box_clone()))
+impl From<Exception> for BootError {
+    fn from(err: Exception) -> Self {
+        Self(BootErrorType::Ruby(err))
     }
 }

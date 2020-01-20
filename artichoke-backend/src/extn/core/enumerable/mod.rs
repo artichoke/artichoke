@@ -1,7 +1,6 @@
 use artichoke_core::eval::Eval;
 
-use crate::module;
-use crate::{Artichoke, BootError};
+use crate::extn::prelude::*;
 
 pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().module_spec::<Enumerable>().is_some() {

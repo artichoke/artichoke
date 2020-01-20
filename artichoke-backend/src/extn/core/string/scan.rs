@@ -1,13 +1,8 @@
 use bstr::ByteSlice;
 
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{Fatal, RubyException, TypeError};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Regexp};
-use crate::sys;
-use crate::types::Ruby;
-use crate::value::{Block, Value, ValueLike};
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[allow(clippy::cognitive_complexity)]
 pub fn method(
@@ -15,7 +10,7 @@ pub fn method(
     value: Value,
     pattern: Value,
     block: Option<Block>,
-) -> Result<Value, Box<dyn RubyException>> {
+) -> Result<Value, Exception> {
     let string = value.clone().try_into::<&[u8]>().map_err(|_| {
         Fatal::new(
             interp,
@@ -23,7 +18,7 @@ pub fn method(
         )
     })?;
     if let Ruby::Symbol = pattern.ruby_type() {
-        Err(Box::new(TypeError::new(
+        Err(Exception::from(TypeError::new(
             interp,
             format!(
                 "wrong argument type {} (expected Regexp)",
@@ -158,7 +153,7 @@ pub fn method(
                 Ok(interp.convert(result))
             }
         } else {
-            Err(Box::new(TypeError::new(
+            Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "wrong argument type {} (expected Regexp)",

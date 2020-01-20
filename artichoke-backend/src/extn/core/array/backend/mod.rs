@@ -1,8 +1,6 @@
 use std::any::Any;
 
-use crate::extn::core::exception::RubyException;
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 pub mod aggregate;
 pub mod buffer;
@@ -21,14 +19,14 @@ pub trait ArrayType: Any {
 
     fn is_empty(&self) -> bool;
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>>;
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception>;
 
     fn slice(
         &self,
         interp: &Artichoke,
         start: usize,
         len: usize,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>>;
+    ) -> Result<Box<dyn ArrayType>, Exception>;
 
     fn set(
         &mut self,
@@ -36,7 +34,7 @@ pub trait ArrayType: Any {
         index: usize,
         elem: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>>;
+    ) -> Result<(), Exception>;
 
     fn set_with_drain(
         &mut self,
@@ -45,7 +43,7 @@ pub trait ArrayType: Any {
         drain: usize,
         with: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>>;
+    ) -> Result<usize, Exception>;
 
     fn set_slice(
         &mut self,
@@ -54,22 +52,22 @@ pub trait ArrayType: Any {
         drain: usize,
         with: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>>;
+    ) -> Result<usize, Exception>;
 
     fn concat(
         &mut self,
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>>;
+    ) -> Result<(), Exception>;
 
     fn pop(
         &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<Value, Box<dyn RubyException>>;
+    ) -> Result<Value, Exception>;
 
-    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>>;
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception>;
 }
 
 #[allow(clippy::missing_safety_doc)]

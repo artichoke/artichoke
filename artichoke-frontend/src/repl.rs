@@ -6,7 +6,7 @@
 //! inspect return values and exception backtraces.
 
 use artichoke_backend::eval::Context;
-use artichoke_backend::extn::core::exception::RubyException;
+use artichoke_backend::exception::{Exception, RubyException};
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::{Artichoke, BootError};
 use artichoke_core::eval::Eval;
@@ -45,7 +45,7 @@ pub enum Error {
     /// Error during Artichoke interpreter initialization.
     Artichoke(BootError),
     /// Exception thrown by eval.
-    Ruby(Box<dyn RubyException>),
+    Ruby(Exception),
     /// IO error when writing to output or error streams.
     Io(io::Error),
 }

@@ -3,13 +3,14 @@ use artichoke_core::warn::Warn;
 use std::borrow::Cow;
 
 use crate::convert::Convert;
-use crate::extn::core::exception::{RubyException, RuntimeError};
+use crate::exception::Exception;
+use crate::extn::core::exception::RuntimeError;
 use crate::extn::core::warning::Warning;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 impl Warn for Artichoke {
-    type Error = Box<dyn RubyException>;
+    type Error = Exception;
 
     fn warn(&self, message: &[u8]) -> Result<(), Self::Error> {
         warn!("rb warning: {}", String::from_utf8_lossy(message));

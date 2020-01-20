@@ -1,13 +1,5 @@
-use artichoke_core::eval::Eval;
-
-use crate::class;
-use crate::convert::RustBackedValue;
-use crate::def;
-use crate::extn::core::exception;
 use crate::extn::core::random;
-use crate::sys;
-use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, BootError};
+use crate::extn::prelude::*;
 
 pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<random::Random>().is_some() {

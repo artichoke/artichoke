@@ -1,27 +1,19 @@
-use artichoke_core::value::Value as _;
 use std::collections::HashMap;
 
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{Fatal, RubyException, TypeError};
-use crate::sys;
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 pub mod backend;
 pub mod mruby;
 
 pub trait Env {
-    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Box<dyn RubyException>>;
+    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Exception>;
     fn put(
         &mut self,
         interp: &Artichoke,
         name: &[u8],
         value: Option<&[u8]>,
-    ) -> Result<(), Box<dyn RubyException>>;
-    fn as_map(
-        &self,
-        interp: &Artichoke,
-    ) -> Result<HashMap<Vec<u8>, Vec<u8>>, Box<dyn RubyException>>;
+    ) -> Result<(), Exception>;
+    fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception>;
 }
 
 pub struct Environ(Box<dyn Env>);
@@ -34,10 +26,7 @@ impl RustBackedValue for Environ {
 }
 
 #[cfg(feature = "artichoke-system-environ")]
-pub fn initialize(
-    interp: &Artichoke,
-    into: Option<sys::mrb_value>,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
     let obj = Environ(Box::new(backend::system::System::new()));
     let result = obj
         .try_into_ruby(&interp, into)
@@ -46,10 +35,7 @@ pub fn initialize(
 }
 
 #[cfg(not(feature = "artichoke-system-environ"))]
-pub fn initialize(
-    interp: &Artichoke,
-    into: Option<sys::mrb_value>,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
     let obj = Environ(Box::new(backend::memory::Memory::new()));
     let result = obj
         .try_into_ruby(&interp, into)
@@ -57,11 +43,7 @@ pub fn initialize(
     Ok(result)
 }
 
-pub fn element_reference(
-    interp: &Artichoke,
-    obj: Value,
-    name: &Value,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn element_reference(interp: &Artichoke, obj: Value, name: &Value) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
     let ruby_type = name.pretty_name();
@@ -70,7 +52,7 @@ pub fn element_reference(
     } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
         name
     } else {
-        return Err(Box::new(TypeError::new(
+        return Err(Exception::from(TypeError::new(
             interp,
             format!("no implicit conversion of {} into String", ruby_type),
         )));
@@ -84,7 +66,7 @@ pub fn element_assignment(
     obj: Value,
     name: &Value,
     value: Value,
-) -> Result<Value, Box<dyn RubyException>> {
+) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
     let name_type_name = name.pretty_name();
@@ -93,7 +75,7 @@ pub fn element_assignment(
     } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
         name
     } else {
-        return Err(Box::new(TypeError::new(
+        return Err(Exception::from(TypeError::new(
             interp,
             format!("no implicit conversion of {} into String", name_type_name),
         )));
@@ -104,7 +86,7 @@ pub fn element_assignment(
     } else if let Ok(value) = value.clone().funcall::<&[u8]>("to_str", &[], None) {
         Some(value)
     } else {
-        return Err(Box::new(TypeError::new(
+        return Err(Exception::from(TypeError::new(
             interp,
             format!("no implicit conversion of {} into String", value_type_name),
         )));
@@ -114,7 +96,7 @@ pub fn element_assignment(
     Ok(interp.convert(value))
 }
 
-pub fn to_h(interp: &Artichoke, obj: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn to_h(interp: &Artichoke, obj: Value) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
     let result = obj.borrow().0.as_map(interp)?;

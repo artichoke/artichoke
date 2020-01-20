@@ -12,16 +12,8 @@
 //! are
 //! [implemented in Ruby](https://github.com/artichoke/artichoke/blob/master/artichoke-backend/src/extn/core/matchdata/matchdata.rb).
 
-use artichoke_core::eval::Eval;
-
-use crate::class;
-use crate::convert::RustBackedValue;
-use crate::def;
-use crate::extn::core::exception;
 use crate::extn::core::regexp::Regexp;
-use crate::sys;
-use crate::value::Value;
-use crate::{Artichoke, BootError};
+use crate::extn::prelude::*;
 
 pub mod begin;
 pub mod captures;

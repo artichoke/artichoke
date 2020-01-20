@@ -1,15 +1,10 @@
-use artichoke_core::value::Value as _;
-
-use crate::convert::{Convert, RustBackedValue};
 use crate::extn::core::array::Array;
-use crate::extn::core::exception::{Fatal, FrozenError, RubyException};
+use crate::extn::prelude::*;
 use crate::gc::MrbGarbageCollection;
-use crate::value::{Block, Value};
-use crate::Artichoke;
 
-pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen() {
-        return Err(Box::new(FrozenError::new(
+        return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
@@ -30,7 +25,7 @@ pub fn element_reference(
     ary: Value,
     first: Value,
     second: Option<Value>,
-) -> Result<Value, Box<dyn RubyException>> {
+) -> Result<Value, Exception> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -47,9 +42,9 @@ pub fn element_assignment(
     first: Value,
     second: Value,
     third: Option<Value>,
-) -> Result<Value, Box<dyn RubyException>> {
+) -> Result<Value, Exception> {
     if ary.is_frozen() {
-        return Err(Box::new(FrozenError::new(
+        return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
@@ -73,9 +68,9 @@ pub fn element_assignment(
     result
 }
 
-pub fn pop(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn pop(interp: &Artichoke, ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen() {
-        return Err(Box::new(FrozenError::new(
+        return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
@@ -95,13 +90,9 @@ pub fn pop(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyExceptio
     result
 }
 
-pub fn concat(
-    interp: &Artichoke,
-    ary: Value,
-    other: Option<Value>,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn concat(interp: &Artichoke, ary: Value, other: Option<Value>) -> Result<Value, Exception> {
     if ary.is_frozen() {
-        return Err(Box::new(FrozenError::new(
+        return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
@@ -123,9 +114,9 @@ pub fn concat(
     Ok(ary)
 }
 
-pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Exception> {
     if ary.is_frozen() {
-        return Err(Box::new(FrozenError::new(
+        return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
@@ -146,9 +137,9 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Box<d
     Ok(ary)
 }
 
-pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen() {
-        return Err(Box::new(FrozenError::new(
+        return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
@@ -168,7 +159,7 @@ pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Box<dyn Rub
     Ok(ary)
 }
 
-pub fn len(interp: &Artichoke, ary: Value) -> Result<usize, Box<dyn RubyException>> {
+pub fn len(interp: &Artichoke, ary: Value) -> Result<usize, Exception> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -185,15 +176,11 @@ pub fn initialize(
     first: Option<Value>,
     second: Option<Value>,
     block: Option<Block>,
-) -> Result<Value, Box<dyn RubyException>> {
+) -> Result<Value, Exception> {
     Array::initialize(interp, first, second, block, ary)
 }
 
-pub fn initialize_copy(
-    interp: &Artichoke,
-    ary: Value,
-    from: Value,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn initialize_copy(interp: &Artichoke, ary: Value, from: Value) -> Result<Value, Exception> {
     let from = unsafe { Array::try_from_ruby(interp, &from) }.map_err(|_| {
         Fatal::new(
             interp,

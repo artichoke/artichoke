@@ -3,8 +3,9 @@ use std::borrow::Cow;
 use std::ffi::{c_void, CStr, CString};
 use std::mem;
 
-use crate::exception::ExceptionHandler;
-use crate::extn::core::exception::{Fatal, RubyException};
+use crate::exception::Exception;
+use crate::exception_handler::ExceptionHandler;
+use crate::extn::core::exception::Fatal;
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
 use crate::Artichoke;
@@ -150,7 +151,7 @@ impl Eval for Artichoke {
 
     type Value = Value;
 
-    type Error = Box<dyn RubyException>;
+    type Error = Exception;
 
     fn eval(&self, code: &[u8]) -> Result<Self::Value, Self::Error> {
         // Ensure the borrow is out of scope by the time we eval code since
@@ -193,7 +194,7 @@ impl Eval for Artichoke {
         };
 
         if let Some(exc) = self.last_error()? {
-            Err(Box::new(exc))
+            Err(exc)
         } else {
             let value = Value::new(self, value);
             if value.is_unreachable() {
@@ -202,7 +203,7 @@ impl Eval for Artichoke {
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(Box::new(Fatal::new(self, "Unreachable Ruby value")))
+                Err(Exception::from(Fatal::new(self, "Unreachable Ruby value")))
             } else {
                 Ok(value)
             }

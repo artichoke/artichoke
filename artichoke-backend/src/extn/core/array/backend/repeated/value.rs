@@ -1,12 +1,10 @@
 use std::cmp;
 use std::num::NonZeroUsize;
 
-use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
-use crate::extn::core::exception::RubyException;
+use crate::extn::prelude::*;
 use crate::gc::MrbGarbageCollection;
 use crate::value;
-use crate::Artichoke;
 
 #[derive(Debug, Clone)]
 pub struct Value(value::Value, NonZeroUsize);
@@ -38,11 +36,7 @@ impl ArrayType for Value {
         false
     }
 
-    fn get(
-        &self,
-        interp: &Artichoke,
-        index: usize,
-    ) -> Result<value::Value, Box<dyn RubyException>> {
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<value::Value, Exception> {
         if index < self.1.get() {
             Ok(self.0.clone())
         } else {
@@ -55,7 +49,7 @@ impl ArrayType for Value {
         interp: &Artichoke,
         start: usize,
         len: usize,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<Box<dyn ArrayType>, Exception> {
         let _ = interp;
         if start < self.1.get() {
             let remaining = self.1.get() - start;
@@ -72,7 +66,7 @@ impl ArrayType for Value {
         index: usize,
         elem: value::Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let _ = interp;
         let alloc = if index == 0 {
             vec![
@@ -112,7 +106,7 @@ impl ArrayType for Value {
         drain: usize,
         with: value::Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = interp;
         let (alloc, drained) = match self.1.get() {
             idx if start < idx => {
@@ -153,7 +147,7 @@ impl ArrayType for Value {
         drain: usize,
         with: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = interp;
         let (alloc, drained) = match self.1.get() {
             idx if start < idx => {
@@ -188,7 +182,7 @@ impl ArrayType for Value {
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let _ = interp;
         *realloc = Some(vec![self.box_clone(), other]);
         Ok(())
@@ -198,7 +192,7 @@ impl ArrayType for Value {
         &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<value::Value, Box<dyn RubyException>> {
+    ) -> Result<value::Value, Exception> {
         let _ = interp;
         if let Some(len) = NonZeroUsize::new(self.1.get() - 1) {
             self.1 = len;
@@ -208,7 +202,7 @@ impl ArrayType for Value {
         Ok(self.0.clone())
     }
 
-    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
         let _ = interp;
         Ok(())
     }

@@ -4,12 +4,8 @@ use artichoke_core::value::Value as ValueLike;
 use std::convert::TryFrom;
 use std::str;
 
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{Fatal, IndexError, RubyException, TypeError};
 use crate::extn::core::matchdata::MatchData;
-use crate::types::Int;
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Args<'a> {
@@ -18,7 +14,7 @@ pub enum Args<'a> {
 }
 
 impl<'a> Args<'a> {
-    pub fn extract(interp: &Artichoke, at: Value) -> Result<Self, Box<dyn RubyException>> {
+    pub fn extract(interp: &Artichoke, at: Value) -> Result<Self, Exception> {
         let name = at.pretty_name();
         if let Ok(index) = at.clone().try_into::<Int>() {
             Ok(Self::Index(index))
@@ -27,7 +23,7 @@ impl<'a> Args<'a> {
         } else if let Ok(index) = at.funcall::<Int>("to_int", &[], None) {
             Ok(Self::Index(index))
         } else {
-            Err(Box::new(TypeError::new(
+            Err(Exception::from(TypeError::new(
                 interp,
                 format!("no implicit conversion of {} into Integer", name),
             )))
@@ -35,11 +31,7 @@ impl<'a> Args<'a> {
     }
 }
 
-pub fn method(
-    interp: &Artichoke,
-    args: Args,
-    value: &Value,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -64,7 +56,7 @@ pub fn method(
                     Fatal::new(interp, "Expected positive position to convert to usize")
                 })?;
                 if idx > captures_len {
-                    return Err(Box::new(IndexError::new(
+                    return Err(Exception::from(IndexError::new(
                         interp,
                         format!("index {} out of matches", index),
                     )));

@@ -1,7 +1,4 @@
-use artichoke_core::eval::Eval;
-
-use crate::class;
-use crate::{Artichoke, BootError};
+use crate::extn::prelude::*;
 
 pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     if interp.0.borrow().class_spec::<Hash>().is_some() {

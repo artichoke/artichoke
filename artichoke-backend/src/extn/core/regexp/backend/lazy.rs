@@ -2,16 +2,13 @@ use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::extn::core::exception::RubyException;
 use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType};
-use crate::types::Int;
-use crate::value::{Block, Value};
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 pub struct Lazy {
     literal: Config,
     encoding: Encoding,
-    regexp: OnceCell<Result<Regexp, Box<dyn RubyException>>>,
+    regexp: OnceCell<Regexp>,
 }
 
 impl Lazy {
@@ -24,18 +21,15 @@ impl Lazy {
         }
     }
 
-    pub fn regexp(&self, interp: &Artichoke) -> Result<&Regexp, Box<dyn RubyException>> {
-        self.regexp
-            .get_or_init(|| {
-                Regexp::new(
-                    interp,
-                    self.literal.clone(),
-                    self.literal.clone(),
-                    Encoding::default(),
-                )
-            })
-            .as_ref()
-            .map_err(RubyException::box_clone)
+    pub fn regexp(&self, interp: &Artichoke) -> Result<&Regexp, Exception> {
+        self.regexp.get_or_try_init(|| {
+            Regexp::new(
+                interp,
+                self.literal.clone(),
+                self.literal.clone(),
+                Encoding::default(),
+            )
+        })
     }
 }
 
@@ -76,7 +70,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Box<dyn RubyException>> {
+    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception> {
         self.regexp(interp)?.inner().captures(interp, haystack)
     }
 
@@ -84,7 +78,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &Artichoke,
         name: &[u8],
-    ) -> Result<Option<Vec<usize>>, Box<dyn RubyException>> {
+    ) -> Result<Option<Vec<usize>>, Exception> {
         self.regexp(interp)?
             .inner()
             .capture_indexes_for_name(interp, name)
@@ -94,7 +88,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &Artichoke,
         haystack: Option<&[u8]>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         self.regexp(interp)?.inner().captures_len(interp, haystack)
     }
 
@@ -102,7 +96,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &Artichoke,
         haystack: &'a [u8],
-    ) -> Result<Option<&'a [u8]>, Box<dyn RubyException>> {
+    ) -> Result<Option<&'a [u8]>, Exception> {
         self.regexp(interp)?.inner().capture0(interp, haystack)
     }
 
@@ -134,11 +128,7 @@ impl RegexpType for Lazy {
             .unwrap_or_default()
     }
 
-    fn case_match(
-        &self,
-        interp: &Artichoke,
-        pattern: &[u8],
-    ) -> Result<bool, Box<dyn RubyException>> {
+    fn case_match(&self, interp: &Artichoke, pattern: &[u8]) -> Result<bool, Exception> {
         self.regexp(interp)?.inner().case_match(interp, pattern)
     }
 
@@ -147,7 +137,7 @@ impl RegexpType for Lazy {
         interp: &Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
-    ) -> Result<bool, Box<dyn RubyException>> {
+    ) -> Result<bool, Exception> {
         self.regexp(interp)?.inner().is_match(interp, pattern, pos)
     }
 
@@ -157,24 +147,17 @@ impl RegexpType for Lazy {
         pattern: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         self.regexp(interp)?
             .inner()
             .match_(interp, pattern, pos, block)
     }
 
-    fn match_operator(
-        &self,
-        interp: &Artichoke,
-        pattern: &[u8],
-    ) -> Result<Option<Int>, Box<dyn RubyException>> {
+    fn match_operator(&self, interp: &Artichoke, pattern: &[u8]) -> Result<Option<Int>, Exception> {
         self.regexp(interp)?.inner().match_operator(interp, pattern)
     }
 
-    fn named_captures(
-        &self,
-        interp: &Artichoke,
-    ) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Box<dyn RubyException>> {
+    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception> {
         self.regexp(interp)?.inner().named_captures(interp)
     }
 
@@ -182,7 +165,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Box<dyn RubyException>> {
+    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception> {
         self.regexp(interp)?
             .inner()
             .named_captures_for_haystack(interp, haystack)
@@ -199,7 +182,7 @@ impl RegexpType for Lazy {
         interp: &Artichoke,
         haystack: &[u8],
         at: usize,
-    ) -> Result<Option<(usize, usize)>, Box<dyn RubyException>> {
+    ) -> Result<Option<(usize, usize)>, Exception> {
         self.regexp(interp)?.inner().pos(interp, haystack, at)
     }
 
@@ -208,7 +191,7 @@ impl RegexpType for Lazy {
         interp: &Artichoke,
         haystack: Value,
         block: Option<Block>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         self.regexp(interp)?.inner().scan(interp, haystack, block)
     }
 }

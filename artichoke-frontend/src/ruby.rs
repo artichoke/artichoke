@@ -4,7 +4,7 @@
 
 use artichoke_backend::convert::Convert;
 use artichoke_backend::eval::Context;
-use artichoke_backend::extn::core::exception::RubyException;
+use artichoke_backend::exception::Exception;
 use artichoke_backend::fs;
 use artichoke_backend::sys;
 use artichoke_backend::BootError;
@@ -55,7 +55,7 @@ pub enum Error {
     /// Error from Artichoke interpreter initialization.
     Artichoke(BootError),
     /// Ruby `Exception` thrown during eval.
-    Ruby(Box<dyn RubyException>),
+    Ruby(Exception),
     /// Fatal error from CLI internals.
     Fail(String),
 }
@@ -67,9 +67,9 @@ impl From<BootError> for Error {
     }
 }
 
-impl From<Box<dyn RubyException>> for Error {
+impl From<Exception> for Error {
     #[must_use]
-    fn from(err: Box<dyn RubyException>) -> Self {
+    fn from(err: Exception) -> Self {
         Self::Ruby(err)
     }
 }

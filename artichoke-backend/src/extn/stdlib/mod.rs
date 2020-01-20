@@ -1,4 +1,4 @@
-use crate::{Artichoke, BootError};
+use crate::extn::prelude::*;
 
 pub mod abbrev;
 pub mod delegate;
