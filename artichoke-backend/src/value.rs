@@ -1,3 +1,4 @@
+use artichoke_core::value::Value as ValueLike;
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::fmt;
@@ -11,8 +12,6 @@ use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::types::{self, Int, Ruby};
 use crate::{Artichoke, ArtichokeError};
-
-pub(crate) use artichoke_core::value::Value as ValueLike;
 
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;

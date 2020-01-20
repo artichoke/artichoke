@@ -1,3 +1,4 @@
+use artichoke_core::value::Value as _;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::hash::BuildHasher;
@@ -7,7 +8,7 @@ use crate::convert::{Convert, TryConvert};
 use crate::extn::core::array;
 use crate::sys;
 use crate::types::{Float, Int, Ruby, Rust};
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 // TODO: implement `PartialEq`, `Eq`, and `Hash` on `Value`, see GH-159.

@@ -46,9 +46,6 @@ use std::fmt;
 
 use crate::extn::prelude::*;
 
-// TODO: remove.
-pub use crate::exception::raise;
-
 pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let borrow = interp.0.borrow();
 

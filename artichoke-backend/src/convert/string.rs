@@ -1,8 +1,9 @@
+use artichoke_core::value::Value as _;
 use std::str;
 
 use crate::convert::{Convert, TryConvert};
 use crate::types::{Ruby, Rust};
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 impl Convert<String, Value> for Artichoke {
