@@ -1,4 +1,3 @@
-use artichoke_core::eval::Eval;
 #[cfg(feature = "artichoke-array")]
 use std::convert::TryFrom;
 

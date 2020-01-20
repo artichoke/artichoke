@@ -1,8 +1,6 @@
-use artichoke_core::load::LoadSources;
+use crate::extn::prelude::*;
 
-use crate::{Artichoke, ArtichokeError};
-
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     <% constants.each do |(constant, klass)| %>
     <% if klass == "Class" %>
     let spec = crate::class::Spec::new("<%= constant %>", None, None)?;

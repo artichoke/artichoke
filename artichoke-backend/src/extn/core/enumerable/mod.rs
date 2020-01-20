@@ -1,5 +1,3 @@
-use artichoke_core::eval::Eval;
-
 use crate::extn::prelude::*;
 
 pub fn init(interp: &Artichoke) -> InitializeResult<()> {

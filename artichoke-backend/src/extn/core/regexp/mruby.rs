@@ -1,4 +1,3 @@
-use artichoke_core::eval::Eval;
 use std::convert::TryFrom;
 
 use crate::extn::core::regexp;

@@ -1,5 +1,3 @@
-use artichoke_core::eval::Eval;
-
 use crate::extn::core::time::{self, trampoline};
 use crate::extn::prelude::*;
 
