@@ -419,7 +419,7 @@ impl Block {
         let value = unsafe { sys::mrb_yield(mrb, self.value, arg.inner()) };
 
         if let Some(exc) = interp.last_error()? {
-            Err(Exception::from(exc))
+            Err(exc)
         } else {
             let value = Value::new(interp, value);
             if value.is_unreachable() {

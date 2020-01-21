@@ -10,23 +10,28 @@ use crate::Artichoke;
 pub struct Exception(Box<dyn RubyException>);
 
 impl RubyException for Exception {
+    #[must_use]
     fn box_clone(&self) -> Box<dyn RubyException> {
         self.0.box_clone()
     }
 
+    #[must_use]
     fn message(&self) -> &[u8] {
         self.0.message()
     }
 
     /// Class name of the `Exception`.
+    #[must_use]
     fn name(&self) -> String {
         self.0.name()
     }
 
+    #[must_use]
     fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         self.0.backtrace(interp)
     }
 
+    #[must_use]
     fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
         self.0.as_mrb_value(interp)
     }
@@ -51,6 +56,7 @@ impl error::Error for Exception {
 }
 
 impl From<Box<dyn RubyException>> for Exception {
+    #[must_use]
     fn from(exc: Box<dyn RubyException>) -> Self {
         Self(exc)
     }
@@ -251,13 +257,16 @@ impl RubyException for CaughtException {
     }
 }
 
+#[allow(clippy::use_self)]
 impl From<CaughtException> for Box<dyn RubyException> {
+    #[must_use]
     fn from(exc: CaughtException) -> Self {
         Box::new(exc)
     }
 }
 
 impl From<CaughtException> for Exception {
+    #[must_use]
     fn from(exc: CaughtException) -> Self {
         Self(Box::new(exc))
     }

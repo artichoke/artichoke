@@ -186,12 +186,14 @@ impl error::Error for BootError {
 }
 
 impl From<ArtichokeError> for BootError {
+    #[must_use]
     fn from(err: ArtichokeError) -> Self {
         Self(BootErrorType::Artichoke(err))
     }
 }
 
 impl From<Exception> for BootError {
+    #[must_use]
     fn from(err: Exception) -> Self {
         Self(BootErrorType::Ruby(err))
     }

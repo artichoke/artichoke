@@ -157,7 +157,7 @@ pub fn run(
                             for (num, frame) in backtrace.into_iter().enumerate().rev() {
                                 write!(error, "\t{}: from ", num + 1).map_err(Error::Io)?;
                                 error.write_all(frame.as_slice()).map_err(Error::Io)?;
-                                writeln!(error, "").map_err(Error::Io)?;
+                                writeln!(error).map_err(Error::Io)?;
                             }
                         }
                         write!(

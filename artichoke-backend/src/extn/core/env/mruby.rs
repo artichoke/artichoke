@@ -11,7 +11,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .borrow_mut()
         .module_spec::<artichoke::Artichoke>()
         .map(EnclosingRubyScope::module)
-        .ok_or(BootError::from(ArtichokeError::New))?;
+        .ok_or(ArtichokeError::New)?;
     let spec = class::Spec::new(
         "Environ",
         Some(scope),

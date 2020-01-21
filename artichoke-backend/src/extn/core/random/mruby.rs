@@ -37,7 +37,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let rclass = borrow
         .class_spec::<random::Random>()
         .and_then(|spec| spec.rclass(interp))
-        .ok_or(BootError::from(ArtichokeError::New))?;
+        .ok_or(ArtichokeError::New)?;
     let mrb = borrow.mrb;
     unsafe {
         sys::mrb_define_const(
