@@ -53,15 +53,10 @@ impl<'a> TryConvert<Value, &'a str> for Artichoke {
 // Convert<String> is implemented in terms of Convert<&str> so only implement
 // the tests for String to exercise both code paths.
 mod tests {
-    use artichoke_core::eval::Eval;
     use quickcheck_macros::quickcheck;
     use std::convert::TryFrom;
 
-    use crate::convert::Convert;
-    use crate::sys;
-    use crate::types::{Ruby, Rust};
-    use crate::value::ValueLike;
-    use crate::ArtichokeError;
+    use crate::test::prelude::*;
 
     #[test]
     fn fail_convert() {

@@ -475,14 +475,7 @@ ruby_exception_impl!(Fatal);
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::file::File;
-
-    use crate::class;
-    use crate::exception::Exception;
-    use crate::extn::core::exception::RuntimeError;
-    use crate::sys;
-    use crate::{Artichoke, ArtichokeError};
+    use crate::test::prelude::*;
 
     struct Run;
 
@@ -490,14 +483,14 @@ mod tests {
         unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = unwrap_interpreter!(mrb);
             let exc = RuntimeError::new(&interp, "something went wrong");
-            super::raise(interp, exc)
+            exception::raise(interp, exc)
         }
     }
 
     impl File for Run {
         type Artichoke = Artichoke;
 
-        fn require(interp: &Artichoke) -> InitializeResult<()> {
+        fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
             let spec = class::Spec::new("Run", None, None).unwrap();
             class::Builder::for_spec(interp, &spec)
                 .add_self_method("run", Self::run, sys::mrb_args_none())?
@@ -511,13 +504,12 @@ mod tests {
     fn raise() {
         let interp = crate::interpreter().expect("init");
         Run::require(&interp).unwrap();
-        let value = interp.eval(b"Run.run").map(|_| ());
-        let expected = Exception::new(
-            "RuntimeError",
-            "something went wrong",
-            Some(vec!["(eval):1".to_owned()]),
-            "(eval):1: something went wrong (RuntimeError)",
+        let err = interp.eval(b"Run.run").unwrap_err();
+        assert_eq!("RuntimeError", err.name().as_str());
+        assert_eq!(Vec::from(&b"something went wrong"[..]), err.message());
+        assert_eq!(
+            Some(vec![Vec::from(&b"(eval):1"[..])]),
+            err.backtrace(&interp)
         );
-        assert_eq!(value, Err(ArtichokeError::Exec(expected.to_string())));
     }
 }

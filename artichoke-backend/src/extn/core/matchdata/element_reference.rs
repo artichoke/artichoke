@@ -1,6 +1,5 @@
 //! [`MatchData#[]`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-5B-5D)
 
-use artichoke_core::value::Value as ValueLike;
 use bstr::BStr;
 use std::convert::TryFrom;
 use std::mem;

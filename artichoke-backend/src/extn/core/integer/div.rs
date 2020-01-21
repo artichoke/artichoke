@@ -40,11 +40,9 @@ pub fn method(interp: &Artichoke, value: Value, other: Value) -> Result<Value, E
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value;
     use quickcheck_macros::quickcheck;
 
-    use crate::types::Int;
+    use crate::test::prelude::*;
 
     #[quickcheck]
     fn integer_division_vm_opcode(x: Int, y: Int) -> bool {
@@ -58,15 +56,19 @@ mod tests {
                 let expr = format!("0 / {}", x).into_bytes();
                 let division = interp
                     .eval(expr.as_slice())
-                    .and_then(Value::try_into::<Int>);
-                result &= division == Ok(0)
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                result &= division == 0
             }
             (x, y) => {
                 let expr = format!("{} / {}", x, y).into_bytes();
                 let division = interp
                     .eval(expr.as_slice())
-                    .and_then(Value::try_into::<Int>);
-                result &= division == Ok(x / y)
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                result &= division == x / y
             }
         }
         result
@@ -84,15 +86,19 @@ mod tests {
                 let expr = format!("0.send('/', {})", x).into_bytes();
                 let division = interp
                     .eval(expr.as_slice())
-                    .and_then(Value::try_into::<Int>);
-                result &= division == Ok(0)
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                result &= division == 0
             }
             (x, y) => {
                 let expr = format!("{}.send('/', {})", x, y).into_bytes();
                 let division = interp
                     .eval(expr.as_slice())
-                    .and_then(Value::try_into::<Int>);
-                result &= division == Ok(x / y)
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                result &= division == x / y
             }
         }
         result

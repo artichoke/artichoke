@@ -328,8 +328,7 @@ impl InlineBuffer {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value;
+    use crate::test::prelude::*;
 
     #[test]
     fn integration_test() {
@@ -338,7 +337,7 @@ mod tests {
             .eval(&include_bytes!("inline_buffer_test.rb")[..])
             .unwrap();
         let result = interp.eval(b"spec");
-        let result = result.and_then(Value::try_into::<bool>);
-        assert_eq!(Ok(true), result);
+        let result = result.unwrap().try_into::<bool>().unwrap();
+        assert!(result);
     }
 }

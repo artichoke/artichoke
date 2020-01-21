@@ -114,6 +114,9 @@ pub mod types;
 pub mod value;
 pub mod warn;
 
+#[cfg(test)]
+mod test;
+
 pub use artichoke_core::ArtichokeError;
 pub use interpreter::interpreter;
 

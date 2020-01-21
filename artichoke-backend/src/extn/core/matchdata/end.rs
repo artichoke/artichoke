@@ -1,6 +1,5 @@
 //! [`MatchData#end`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-end)
 
-use artichoke_core::value::Value as ValueLike;
 use std::convert::TryFrom;
 use std::str;
 

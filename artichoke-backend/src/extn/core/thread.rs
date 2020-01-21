@@ -26,11 +26,7 @@ pub struct Mutex;
 #[cfg(test)]
 mod tests {
     #![allow(clippy::shadow_unrelated)]
-
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value as _;
-
-    use crate::BootError;
+    use crate::test::prelude::*;
 
     #[test]
     fn thread_required_by_default() {
@@ -180,20 +176,17 @@ Thread.new do
   end
 end.join
         "#;
-        let result = interp.eval(spec.trim().as_bytes()).map(|_| ());
-        let expected_backtrace = r#"
-(eval):8: inner (RuntimeError)
-(eval):8:in call
-/src/lib/thread.rb:122:in initialize
-(eval):6:in call
-/src/lib/thread.rb:122:in initialize
-(eval):4:in call
-/src/lib/thread.rb:122:in initialize
-(eval):2
-        "#;
-        assert_eq!(
-            result,
-            Err(BootError::Exec(expected_backtrace.trim().to_owned()))
-        );
+        let err = interp.eval(spec.trim().as_bytes()).map(|_| ()).unwrap_err();
+        assert_eq!(&b"inner"[..], err.message());
+        let expected_backtrace = vec![
+            Vec::from(&b"(eval):8:in call"[..]),
+            Vec::from(&b"/src/lib/thread.rb:122:in initialize"[..]),
+            Vec::from(&b"(eval):6:in call"[..]),
+            Vec::from(&b"/src/lib/thread.rb:122:in initialize"[..]),
+            Vec::from(&b"(eval):4:in call"[..]),
+            Vec::from(&b"/src/lib/thread.rb:122:in initialize"[..]),
+            Vec::from(&b"(eval):2"[..]),
+        ];
+        assert_eq!(Some(expected_backtrace), err.backtrace(&interp));
     }
 }

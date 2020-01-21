@@ -29,7 +29,7 @@ impl ExceptionHandler for Artichoke {
             //
             // We must do this at the beginning of `current_exception` so we can
             // use the mruby VM to inspect the exception once we turn it into an
-            // `mrb_value`. `ValueLike::funcall` handles errors by calling this
+            // `mrb_value`. `Value::funcall` handles errors by calling this
             // function, so not clearing the exception results in a stack
             // overflow.
             (*mrb).exc = std::ptr::null_mut();
@@ -65,33 +65,29 @@ impl ExceptionHandler for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-
-    use crate::exception::Exception;
-    use crate::value::{Value, ValueLike};
-    use crate::ArtichokeError;
+    use crate::test::prelude::*;
 
     #[test]
     fn return_exception() {
         let interp = crate::interpreter().expect("init");
-        let result = interp
+        let err = interp
             .eval(b"raise ArgumentError.new('waffles')")
-            .map(|_| ());
-        let expected = Exception::new(
-            "ArgumentError",
-            "waffles",
-            Some(vec!["(eval):1".to_owned()]),
-            "(eval):1: waffles (ArgumentError)",
+            .unwrap_err();
+        assert_eq!("ArgumentError", err.name().as_str());
+        assert_eq!(&b"waffles"[..], err.message());
+        assert_eq!(
+            Some(vec![Vec::from(&b"(eval):1"[..])]),
+            err.backtrace(&interp)
         );
-        assert_eq!(result, Err(ArtichokeError::Exec(expected.to_string())));
     }
 
     #[test]
     fn return_exception_with_no_backtrace() {
         let interp = crate::interpreter().expect("init");
-        let result = interp.eval(b"def bad; (; end").map(|_| ());
-        let expected = Exception::new("SyntaxError", "waffles", None, "SyntaxError: syntax error");
-        assert_eq!(result, Err(ArtichokeError::Exec(expected.to_string())));
+        let err = interp.eval(b"def bad; (; end").unwrap_err();
+        assert_eq!("SyntaxError", err.name().as_str());
+        assert_eq!(&b"syntax error"[..], err.message());
+        assert_eq!(None, err.backtrace(&interp));
     }
 
     #[test]

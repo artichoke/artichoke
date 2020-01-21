@@ -567,9 +567,7 @@ mod optional {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::convert::Convert;
-    use crate::types::Int;
-    use crate::value::{Value, ValueLike};
+    use crate::test::prelude::*;
 
     #[test]
     fn roundtrip_kv() {

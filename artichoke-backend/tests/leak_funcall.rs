@@ -17,7 +17,7 @@
 use artichoke_backend::convert::Convert;
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::value::Value;
-use artichoke_core::value::Value as ValueLike;
+use artichoke_core::value::Value as _;
 
 mod leak;
 
@@ -33,8 +33,8 @@ fn funcall_arena() {
         let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
         // we have to call a function that calls into the Ruby VM, so we can't
         // just use `to_s`.
-        let inspect = s.funcall::<String>("inspect", &[], None);
-        assert_eq!(inspect, Ok(expected));
+        let inspect = s.funcall::<String>("inspect", &[], None).unwrap();
+        assert_eq!(inspect, expected);
         interp.incremental_gc();
     });
 }

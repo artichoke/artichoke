@@ -229,16 +229,7 @@ impl Eval for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::file::File;
-    use artichoke_core::load::LoadSources;
-
-    use crate::convert::Convert;
-    use crate::eval::Context;
-    use crate::module;
-    use crate::sys;
-    use crate::value::{Value, ValueLike};
-    use crate::{Artichoke, ArtichokeError};
+    use crate::test::prelude::*;
 
     #[test]
     fn root_eval_context() {
@@ -335,21 +326,15 @@ NestedEval.file
     #[test]
     fn unparseable_code_returns_err_syntax_error() {
         let interp = crate::interpreter().expect("init");
-        let result = interp.eval(b"'a").map(|_| ());
-        assert_eq!(
-            result,
-            Err(ArtichokeError::Exec("SyntaxError: syntax error".to_owned()))
-        );
+        let err = interp.eval(b"'a").unwrap_err();
+        assert_eq!("SyntaxError", err.name().as_str());
     }
 
     #[test]
     fn interpreter_is_usable_after_syntax_error() {
         let interp = crate::interpreter().expect("init");
-        let result = interp.eval(b"'a").map(|_| ());
-        assert_eq!(
-            result,
-            Err(ArtichokeError::Exec("SyntaxError: syntax error".to_owned()))
-        );
+        let err = interp.eval(b"'a").unwrap_err();
+        assert_eq!("SyntaxError", err.name().as_str());
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval(b"'a' * 10 ").expect("eval");
         let result = result.try_into::<&str>().expect("convert");
@@ -384,8 +369,7 @@ NestedEval.file
         interp
             .def_rb_source_file(b"fail.rb", &b"def bad; 'as'.scan(; end"[..])
             .expect("def file");
-        let result = interp.eval(b"require 'fail'").map(|_| ());
-        let expected = ArtichokeError::Exec("SyntaxError: syntax error".to_owned());
-        assert_eq!(result, Err(expected));
+        let err = interp.eval(b"require 'fail'").unwrap_err();
+        assert_eq!("SyntaxError", err.name().as_str());
     }
 }

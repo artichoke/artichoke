@@ -190,9 +190,7 @@ impl Hash for EnclosingRubyScope {
 
 #[cfg(test)]
 mod tests {
-    use crate::class;
-    use crate::def::EnclosingRubyScope;
-    use crate::module;
+    use crate::test::prelude::*;
 
     #[test]
     fn fqname() {
@@ -291,12 +289,7 @@ mod tests {
     }
 
     mod functional {
-        use artichoke_core::eval::Eval;
-
-        use crate::class;
-        use crate::module;
-        use crate::sys;
-        use crate::value::ValueLike;
+        use crate::test::prelude::*;
 
         #[test]
         fn define_method() {

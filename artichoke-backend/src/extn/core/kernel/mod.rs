@@ -134,12 +134,7 @@ impl Kernel {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::file::File;
-    use artichoke_core::load::LoadSources;
-    use artichoke_core::value::Value as _;
-
-    use crate::{Artichoke, ArtichokeError};
+    use crate::test::prelude::*;
 
     // Integration test for `Kernel::require`:
     //
@@ -155,8 +150,8 @@ mod tests {
         impl File for TestFile {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> InitializeResult<()> {
-                let _ = interp.eval(b"@i = 255")?;
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+                let _ = interp.eval(b"@i = 255").unwrap();
                 Ok(())
             }
         }
@@ -177,15 +172,13 @@ mod tests {
         let result = interp.eval(b"@i").expect("eval");
         let second_i_result = result.try_into::<i64>();
         assert_eq!(second_i_result, Ok(1000));
-        let result = interp.eval(b"require 'non-existent-source'").map(|_| ());
-        let expected = r#"
-(eval):1: cannot load such file -- non-existent-source (LoadError)
-(eval):1
-            "#;
+        let err = interp.eval(b"require 'non-existent-source'").unwrap_err();
         assert_eq!(
-            result,
-            Err(ArtichokeError::Exec(expected.trim().to_owned()))
+            &b"cannot load such file -- non-existent-source"[..],
+            err.message()
         );
+        let expected = vec![Vec::from(&b"(eval):1"[..])];
+        assert_eq!(Some(expected), err.backtrace(&interp),);
     }
 
     #[test]
@@ -216,15 +209,10 @@ mod tests {
     #[test]
     fn require_directory() {
         let interp = crate::interpreter().expect("init");
-        let result = interp.eval(b"require '/src'").map(|_| ());
-        let expected = r#"
-(eval):1: cannot load such file -- /src (LoadError)
-(eval):1
-        "#;
-        assert_eq!(
-            result,
-            Err(ArtichokeError::Exec(expected.trim().to_owned()))
-        );
+        let err = interp.eval(b"require '/src'").unwrap_err();
+        assert_eq!(&b"cannot load such file -- /src"[..], err.message());
+        let expected = vec![Vec::from(&b"(eval):1"[..])];
+        assert_eq!(Some(expected), err.backtrace(&interp),);
     }
 
     #[test]
@@ -234,8 +222,8 @@ mod tests {
         impl File for Foo {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> InitializeResult<()> {
-                let _ = interp.eval(b"module Foo; RUST = 7; end")?;
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+                let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();
                 Ok(())
             }
         }
@@ -262,8 +250,8 @@ mod tests {
         impl File for Foo {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> InitializeResult<()> {
-                let _ = interp.eval(b"module Foo; RUST = 7; end")?;
+            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+                let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();
                 Ok(())
             }
         }

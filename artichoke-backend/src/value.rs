@@ -444,12 +444,8 @@ impl Block {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-
-    use crate::convert::Convert;
     use crate::gc::MrbGarbageCollection;
-    use crate::value::{Value, ValueLike};
-    use crate::ArtichokeError;
+    use crate::test::prelude::*;
 
     #[test]
     fn to_s_true() {
@@ -670,8 +666,8 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let eql = nil.funcall::<bool>("==", &[s], None);
-        assert_eq!(eql, Ok(false));
+        let eql = nil.funcall::<bool>("==", &[s], None).unwrap();
+        assert!(!eql);
     }
 
     #[test]
@@ -679,13 +675,9 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let result = s.funcall::<String>("+", &[nil], None);
-        assert_eq!(
-            result,
-            Err(ArtichokeError::Exec(
-                "TypeError: nil cannot be converted to String".to_owned()
-            ))
-        );
+        let err = s.funcall::<String>("+", &[nil], None).unwrap_err();
+        assert_eq!("TypeError", err.name().as_str());
+        assert_eq!(&b"nil cannot be converted to String"[..], err.message());
     }
 
     #[test]
@@ -693,12 +685,13 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let result = nil.funcall::<bool>("garbage_method_name", &[s], None);
+        let err = nil
+            .funcall::<bool>("garbage_method_name", &[s], None)
+            .unwrap_err();
+        assert_eq!("NoMethodError", err.name().as_str());
         assert_eq!(
-            result,
-            Err(ArtichokeError::Exec(
-                "NoMethodError: undefined method 'garbage_method_name'".to_owned()
-            ))
+            &b"undefined method 'garbage_method_name'"[..],
+            err.message()
         );
     }
 }
