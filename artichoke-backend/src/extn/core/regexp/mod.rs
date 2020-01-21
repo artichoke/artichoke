@@ -27,6 +27,9 @@ pub mod trampoline;
 pub use enc::Encoding;
 pub use opts::Options;
 
+use backend::onig::Onig;
+use backend::regex_utf8::RegexUtf8;
+
 pub const IGNORECASE: Int = 1;
 pub const EXTENDED: Int = 2;
 pub const MULTILINE: Int = 4;
@@ -88,21 +91,19 @@ pub struct Regexp(Box<dyn RegexpType>);
 
 impl Regexp {
     pub fn new(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         literal_config: Config,
         derived_config: Config,
         encoding: Encoding,
     ) -> Result<Self, Exception> {
         // Patterns must be parsable by Oniguruma.
-        let onig = backend::onig::Onig::new(
+        let onig = Onig::new(
             interp,
             literal_config.clone(),
             derived_config.clone(),
             encoding,
         )?;
-        if let Ok(regex_utf8) =
-            backend::regex_utf8::RegexUtf8::new(interp, literal_config, derived_config, encoding)
-        {
+        if let Ok(regex_utf8) = RegexUtf8::new(interp, literal_config, derived_config, encoding) {
             Ok(Self(Box::new(regex_utf8)))
         } else {
             Ok(Self(Box::new(onig)))
@@ -120,41 +121,41 @@ impl Regexp {
     }
 
     pub fn initialize(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: Value,
         options: Option<Value>,
         encoding: Option<Value>,
         into: Option<Value>,
     ) -> Result<Value, Exception> {
         let (options, encoding) = if let Some(encoding) = encoding {
-            let encoding = match enc::parse(&encoding) {
+            let encoding = match enc::parse(interp, &encoding) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let encoding_bytes = encoding.to_s();
-                    let encoding_string = String::from_utf8_lossy(encoding_bytes.as_slice());
-                    let warning = format!("encoding option is ignored -- {}", encoding_string);
+                    let encoding_bytes = encoding.to_s(interp);
+                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
+                    warning.extend(encoding_bytes);
                     interp
-                        .warn(warning.as_bytes())
+                        .warn(warning.as_slice())
                         .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
                     None
                 }
             };
-            let options = options.as_ref().map(opts::parse);
+            let options = options.map(|opts| opts::parse(interp, &opts));
             (options, encoding)
         } else if let Some(options) = options {
-            let encoding = match enc::parse(&options) {
+            let encoding = match enc::parse(interp, &options) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let options_bytes = options.to_s();
-                    let options_string = String::from_utf8_lossy(options_bytes.as_slice());
-                    let warning = format!("encoding option is ignored -- {}", options_string);
+                    let options_bytes = options.to_s(interp);
+                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
+                    warning.extend(options_bytes);
                     interp
-                        .warn(warning.as_bytes())
+                        .warn(warning.as_slice())
                         .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
                     None
                 }
             };
-            let options = opts::parse(&options);
+            let options = opts::parse(interp, &options);
             (Some(options), encoding)
         } else {
             (None, None)
@@ -171,12 +172,12 @@ impl Regexp {
                 pattern: borrow.0.literal_config().pattern.clone(),
                 options,
             }
-        } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
+        } else if let Ok(bytes) = pattern.try_into::<&[u8]>(interp) {
             Config {
                 pattern: bytes.to_vec(),
                 options: options.unwrap_or_default(),
             }
-        } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+        } else if let Ok(bytes) = pattern.funcall::<&[u8]>(interp, "to_str", &[], None) {
             Config {
                 pattern: bytes.to_vec(),
                 options: options.unwrap_or_default(),
@@ -186,7 +187,7 @@ impl Regexp {
                 interp,
                 format!(
                     "no implicit conversion of {} into String",
-                    pattern.pretty_name()
+                    pattern.pretty_name(interp)
                 ),
             )));
         };
@@ -210,10 +211,10 @@ impl Regexp {
         Ok(regexp)
     }
 
-    pub fn escape(interp: &Artichoke, pattern: Value) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<&[u8]>() {
+    pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
+        let pattern = if let Ok(pattern) = pattern.try_into::<&[u8]>(interp) {
             pattern
-        } else if let Ok(pattern) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+        } else if let Ok(pattern) = pattern.funcall::<&[u8]>(interp, "to_str", &[], None) {
             pattern
         } else {
             return Err(Exception::from(TypeError::new(
@@ -227,7 +228,7 @@ impl Regexp {
         Ok(interp.convert(syntax::escape(pattern)))
     }
 
-    pub fn union(interp: &Artichoke, patterns: &[Value]) -> Result<Value, Exception> {
+    pub fn union(interp: &mut Artichoke, patterns: &[Value]) -> Result<Value, Exception> {
         let mut iter = patterns.iter().peekable();
         let pattern = if let Some(first) = iter.next() {
             if iter.peek().is_none() {
@@ -244,7 +245,9 @@ impl Regexp {
                     for pattern in ary {
                         if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                             patterns.push(regexp.borrow().0.derived_config().pattern.clone());
-                        } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                        } else if let Ok(pattern) =
+                            pattern.funcall::<&str>(interp, "to_str", &[], None)
+                        {
                             patterns.push(syntax::escape(pattern).into_bytes());
                         } else {
                             return Err(Exception::from(TypeError::new(
@@ -258,7 +261,8 @@ impl Regexp {
                     let pattern = first;
                     if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                         regexp.borrow().0.derived_config().pattern.clone()
-                    } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
+                    } else if let Ok(pattern) = pattern.funcall::<&str>(interp, "to_str", &[], None)
+                    {
                         syntax::escape(pattern).into_bytes()
                     } else {
                         return Err(Exception::from(TypeError::new(
@@ -271,12 +275,12 @@ impl Regexp {
                 let mut patterns = vec![];
                 if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &first) } {
                     patterns.push(regexp.borrow().0.derived_config().pattern.clone());
-                } else if let Ok(bytes) = first.clone().try_into::<&[u8]>() {
+                } else if let Ok(bytes) = first.try_into::<&[u8]>(interp) {
                     let pattern = str::from_utf8(bytes).map_err(|_| {
                         ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
                     })?;
                     patterns.push(syntax::escape(pattern).into_bytes());
-                } else if let Ok(bytes) = first.funcall::<&[u8]>("to_str", &[], None) {
+                } else if let Ok(bytes) = first.funcall::<&[u8]>(interp, "to_str", &[], None) {
                     let pattern = str::from_utf8(bytes).map_err(|_| {
                         ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
                     })?;
@@ -290,12 +294,13 @@ impl Regexp {
                 for pattern in iter {
                     if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                         patterns.push(regexp.borrow().0.derived_config().pattern.clone());
-                    } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
+                    } else if let Ok(bytes) = pattern.try_into::<&[u8]>(interp) {
                         let pattern = str::from_utf8(bytes).map_err(|_| {
                             ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
                         })?;
                         patterns.push(syntax::escape(pattern).into_bytes());
-                    } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
+                    } else if let Ok(bytes) = pattern.funcall::<&[u8]>(interp, "to_str", &[], None)
+                    {
                         let pattern = str::from_utf8(bytes).map_err(|_| {
                             ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
                         })?;
@@ -336,10 +341,10 @@ impl Regexp {
         self.0.as_ref()
     }
 
-    pub fn case_compare(&self, interp: &Artichoke, other: Value) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = other.clone().try_into::<&[u8]>() {
+    pub fn case_compare(&self, interp: &mut Artichoke, other: Value) -> Result<Value, Exception> {
+        let pattern = if let Ok(pattern) = other.try_into::<&[u8]>(interp) {
             pattern
-        } else if let Ok(pattern) = other.funcall::<&[u8]>("to_str", &[], None) {
+        } else if let Ok(pattern) = other.funcall::<&[u8]>(interp, "to_str", &[], None) {
             pattern
         } else {
             let sym = interp.sym_intern(LAST_MATCH);
@@ -352,7 +357,7 @@ impl Regexp {
         Ok(interp.convert(self.0.case_match(interp, pattern)?))
     }
 
-    pub fn eql(&self, interp: &Artichoke, other: Value) -> Result<Value, Exception> {
+    pub fn eql(&self, interp: &mut Artichoke, other: Value) -> Result<Value, Exception> {
         if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             Ok(interp.convert(self.inner() == other.borrow().inner()))
         } else {
@@ -360,7 +365,7 @@ impl Regexp {
         }
     }
 
-    pub fn hash(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn hash(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         let mut s = DefaultHasher::new();
         self.0.hash(&mut s);
         let hash = s.finish();
@@ -368,15 +373,15 @@ impl Regexp {
         Ok(interp.convert(hash as Int))
     }
 
-    pub fn inspect(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn inspect(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.inspect(interp)))
     }
 
-    pub fn is_casefold(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn is_casefold(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.literal_config().options.ignore_case))
     }
 
-    pub fn is_fixed_encoding(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn is_fixed_encoding(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         match self.0.encoding() {
             Encoding::No => {
                 let opts = Int::try_from(self.0.literal_config().options.flags().bits())
@@ -390,20 +395,20 @@ impl Regexp {
 
     pub fn is_match(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: Value,
         pos: Option<Value>,
     ) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
+        let pattern = if let Ok(pattern) = pattern.try_into::<Option<&[u8]>>(interp) {
             pattern
-        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
+        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>(interp, "to_str", &[], None) {
             pattern
         } else {
             return Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "no implicit conversion of {} into String",
-                    pattern.pretty_name()
+                    pattern.pretty_name(interp)
                 ),
             )));
         };
@@ -413,16 +418,16 @@ impl Regexp {
             return Ok(interp.convert(false));
         };
         let pos = if let Some(pos) = pos {
-            if let Ok(pos) = pos.clone().try_into::<Int>() {
+            if let Ok(pos) = pos.try_into::<Int>(interp) {
                 Some(pos)
-            } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
+            } else if let Ok(pos) = pos.funcall::<Int>(interp, "to_int", &[], None) {
                 Some(pos)
             } else {
                 return Err(Exception::from(TypeError::new(
                     interp,
                     format!(
                         "no implicit conversion of {} into Integer",
-                        pos.pretty_name()
+                        pos.pretty_name(interp)
                     ),
                 )));
             }
@@ -434,21 +439,21 @@ impl Regexp {
 
     pub fn match_(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: Value,
         pos: Option<Value>,
         block: Option<Block>,
     ) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
+        let pattern = if let Ok(pattern) = pattern.try_into::<Option<&[u8]>>(interp) {
             pattern
-        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
+        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>(interp, "to_str", &[], None) {
             pattern
         } else {
             return Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "no implicit conversion of {} into String",
-                    pattern.pretty_name()
+                    pattern.pretty_name(interp)
                 ),
             )));
         };
@@ -464,16 +469,16 @@ impl Regexp {
             return Ok(matchdata);
         };
         let pos = if let Some(pos) = pos {
-            if let Ok(pos) = pos.clone().try_into::<Int>() {
+            if let Ok(pos) = pos.try_into::<Int>(interp) {
                 Some(pos)
-            } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
+            } else if let Ok(pos) = pos.funcall::<Int>(interp, "to_int", &[], None) {
                 Some(pos)
             } else {
                 return Err(Exception::from(TypeError::new(
                     interp,
                     format!(
                         "no implicit conversion of {} into Integer",
-                        pos.pretty_name()
+                        pos.pretty_name(interp)
                     ),
                 )));
             }
@@ -483,17 +488,21 @@ impl Regexp {
         Ok(interp.convert(self.0.match_(interp, pattern, pos, block)?))
     }
 
-    pub fn match_operator(&self, interp: &Artichoke, pattern: Value) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
+    pub fn match_operator(
+        &self,
+        interp: &mut Artichoke,
+        pattern: Value,
+    ) -> Result<Value, Exception> {
+        let pattern = if let Ok(pattern) = pattern.try_into::<Option<&[u8]>>(interp) {
             pattern
-        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
+        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>(interp, "to_str", &[], None) {
             pattern
         } else {
             return Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "no implicit conversion of {} into String",
-                    pattern.pretty_name()
+                    pattern.pretty_name(interp)
                 ),
             )));
         };
@@ -505,26 +514,26 @@ impl Regexp {
         Ok(interp.convert(self.0.match_operator(interp, pattern)?))
     }
 
-    pub fn named_captures(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn named_captures(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.named_captures(interp)?))
     }
 
-    pub fn names(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn names(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.names(interp)))
     }
 
-    pub fn options(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn options(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         let opts = Int::try_from(self.0.literal_config().options.flags().bits())
             .map_err(|_| Fatal::new(interp, "Regexp options do not fit in Integer"))?;
         let opts = opts | self.0.encoding().flags();
         Ok(interp.convert(opts))
     }
 
-    pub fn source(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn source(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.literal_config().pattern.as_slice()))
     }
 
-    pub fn string(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn string(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.string(interp)))
     }
 }
@@ -556,69 +565,77 @@ pub trait RegexpType {
     fn literal_config(&self) -> &Config;
     fn derived_config(&self) -> &Config;
     fn encoding(&self) -> &Encoding;
-    fn inspect(&self, interp: &Artichoke) -> Vec<u8>;
-    fn string(&self, interp: &Artichoke) -> &[u8];
+    fn inspect(&self, interp: &mut Artichoke) -> Vec<u8>;
+    fn string(&self, interp: &mut Artichoke) -> &[u8];
 
     fn captures(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception>;
 
     fn capture_indexes_for_name(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         name: &[u8],
     ) -> Result<Option<Vec<usize>>, Exception>;
 
-    fn captures_len(&self, interp: &Artichoke, haystack: Option<&[u8]>)
-        -> Result<usize, Exception>;
+    fn captures_len(
+        &self,
+        interp: &mut Artichoke,
+        haystack: Option<&[u8]>,
+    ) -> Result<usize, Exception>;
 
     fn capture0<'a>(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &'a [u8],
     ) -> Result<Option<&'a [u8]>, Exception>;
 
-    fn case_match(&self, interp: &Artichoke, pattern: &[u8]) -> Result<bool, Exception>;
+    fn case_match(&self, interp: &mut Artichoke, pattern: &[u8]) -> Result<bool, Exception>;
 
     fn is_match(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
     ) -> Result<bool, Exception>;
 
     fn match_(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
     ) -> Result<Value, Exception>;
 
-    fn match_operator(&self, interp: &Artichoke, pattern: &[u8]) -> Result<Option<Int>, Exception>;
+    fn match_operator(
+        &self,
+        interp: &mut Artichoke,
+        pattern: &[u8],
+    ) -> Result<Option<Int>, Exception>;
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception>;
+    fn named_captures(&self, interp: &mut Artichoke)
+        -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception>;
 
     fn named_captures_for_haystack(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception>;
 
-    fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>>;
+    fn names(&self, interp: &mut Artichoke) -> Vec<Vec<u8>>;
 
     fn pos(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
         at: usize,
     ) -> Result<Option<(usize, usize)>, Exception>;
 
     fn scan(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: Value,
         block: Option<Block>,
     ) -> Result<Value, Exception>;

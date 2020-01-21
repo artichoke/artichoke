@@ -2,7 +2,7 @@ use crate::extn::core::regexp::Regexp;
 use crate::extn::prelude::*;
 
 pub fn initialize(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     pattern: Value,
     options: Option<Value>,
     encoding: Option<Value>,
@@ -11,16 +11,16 @@ pub fn initialize(
     Regexp::initialize(interp, pattern, options, encoding, into)
 }
 
-pub fn escape(interp: &Artichoke, pattern: Value) -> Result<Value, Exception> {
+pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
     Regexp::escape(interp, pattern)
 }
 
-pub fn union(interp: &Artichoke, patterns: &[Value]) -> Result<Value, Exception> {
+pub fn union(interp: &mut Artichoke, patterns: &[Value]) -> Result<Value, Exception> {
     Regexp::union(interp, patterns)
 }
 
 pub fn is_match(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     regexp: Value,
     pattern: Value,
     pos: Option<Value>,
@@ -40,7 +40,7 @@ pub fn is_match(
 }
 
 pub fn match_(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     regexp: Value,
     pattern: Value,
     pos: Option<Value>,
@@ -60,7 +60,7 @@ pub fn match_(
     borrow.match_(interp, pattern, pos, block)
 }
 
-pub fn eql(interp: &Artichoke, regexp: Value, other: Value) -> Result<Value, Exception> {
+pub fn eql(interp: &mut Artichoke, regexp: Value, other: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -75,7 +75,11 @@ pub fn eql(interp: &Artichoke, regexp: Value, other: Value) -> Result<Value, Exc
     borrow.eql(interp, other)
 }
 
-pub fn case_compare(interp: &Artichoke, regexp: Value, other: Value) -> Result<Value, Exception> {
+pub fn case_compare(
+    interp: &mut Artichoke,
+    regexp: Value,
+    other: Value,
+) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -91,7 +95,7 @@ pub fn case_compare(interp: &Artichoke, regexp: Value, other: Value) -> Result<V
 }
 
 pub fn match_operator(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     regexp: Value,
     pattern: Value,
 ) -> Result<Value, Exception> {
@@ -109,7 +113,7 @@ pub fn match_operator(
     borrow.match_operator(interp, pattern)
 }
 
-pub fn is_casefold(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn is_casefold(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -124,7 +128,7 @@ pub fn is_casefold(interp: &Artichoke, regexp: Value) -> Result<Value, Exception
     borrow.is_casefold(interp)
 }
 
-pub fn is_fixed_encoding(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn is_fixed_encoding(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -139,7 +143,7 @@ pub fn is_fixed_encoding(interp: &Artichoke, regexp: Value) -> Result<Value, Exc
     borrow.is_fixed_encoding(interp)
 }
 
-pub fn hash(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn hash(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -154,7 +158,7 @@ pub fn hash(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
     borrow.hash(interp)
 }
 
-pub fn inspect(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn inspect(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -169,7 +173,7 @@ pub fn inspect(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
     borrow.inspect(interp)
 }
 
-pub fn named_captures(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn named_captures(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -184,7 +188,7 @@ pub fn named_captures(interp: &Artichoke, regexp: Value) -> Result<Value, Except
     borrow.named_captures(interp)
 }
 
-pub fn names(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn names(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -199,7 +203,7 @@ pub fn names(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
     borrow.names(interp)
 }
 
-pub fn options(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn options(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -214,7 +218,7 @@ pub fn options(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
     borrow.options(interp)
 }
 
-pub fn source(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn source(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -229,7 +233,7 @@ pub fn source(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
     borrow.source(interp)
 }
 
-pub fn to_s(interp: &Artichoke, regexp: Value) -> Result<Value, Exception> {
+pub fn to_s(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))

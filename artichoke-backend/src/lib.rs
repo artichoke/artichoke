@@ -171,6 +171,10 @@ impl Artichoke {
         self.state.vfs_mut()
     }
 
+    pub fn regexp_last_evaluation_captures_mut(&mut self) -> &mut usize {
+        self.state.regexp_last_evaluation_captures_mut()
+    }
+
     pub fn mrb_mut(&mut self) -> &mut sys::mrb_state {
         self.mrb.as_mut()
     }

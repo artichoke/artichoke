@@ -17,8 +17,8 @@ pub struct State {
     classes: HashMap<TypeId, Box<class::Spec>>,
     modules: HashMap<TypeId, Box<module::Spec>>,
     vfs: Filesystem,
+    regexp_last_evaluation_captures: usize,
     pub(crate) context_stack: Vec<Context>,
-    pub active_regexp_globals: usize,
     symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
     captured_output: Option<Vec<u8>>,
     #[cfg(feature = "artichoke-random")]
@@ -35,8 +35,8 @@ impl State {
             classes: HashMap::default(),
             modules: HashMap::default(),
             vfs,
+            regexp_last_evaluation_captures: 0,
             context_stack: vec![],
-            active_regexp_globals: 0,
             symbol_cache: HashMap::default(),
             captured_output: None,
             #[cfg(feature = "artichoke-random")]
@@ -61,6 +61,10 @@ impl State {
 
     pub fn vfs_mut(&mut self) -> &mut Filesystem {
         &mut self.vfs
+    }
+
+    pub fn regexp_last_evaluation_captures_mut(&mut self) -> &mut usize {
+        &mut self.regexp_last_evaluation_captures
     }
 
     pub fn capture_output(&mut self) {
