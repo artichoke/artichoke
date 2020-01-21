@@ -12,7 +12,7 @@ use crate::{Artichoke, ArtichokeError};
 
 // bail out implementation for mixed-type collections
 impl Convert<Option<Value>, Value> for Artichoke {
-    fn convert(&self, value: Option<Value>) -> Value {
+    fn convert(&mut self, value: Option<Value>) -> Value {
         if let Some(value) = value {
             value
         } else {
@@ -22,14 +22,14 @@ impl Convert<Option<Value>, Value> for Artichoke {
 }
 
 impl Convert<Option<&Value>, Value> for Artichoke {
-    fn convert(&self, value: Option<&Value>) -> Value {
-        self.convert(value.cloned())
+    fn convert(&mut self, value: Option<&Value>) -> Value {
+        self.convert(value.copied())
     }
 }
 
 impl Convert<Value, Option<Value>> for Artichoke {
     #[must_use]
-    fn convert(&self, value: Value) -> Option<Value> {
+    fn convert(&mut self, value: Value) -> Option<Value> {
         if let Ruby::Nil = value.ruby_type() {
             None
         } else {
@@ -41,7 +41,7 @@ impl Convert<Value, Option<Value>> for Artichoke {
 macro_rules! option_to_ruby {
     ($elem:ty) => {
         impl<'a> Convert<Option<$elem>, Value> for Artichoke {
-            fn convert(&self, value: Option<$elem>) -> Value {
+            fn convert(&mut self, value: Option<$elem>) -> Value {
                 if let Some(value) = value {
                     self.convert(value)
                 } else {
@@ -55,9 +55,9 @@ macro_rules! option_to_ruby {
 macro_rules! ruby_to_option {
     ($elem:ty) => {
         impl<'a> TryConvert<Value, Option<$elem>> for Artichoke {
-            fn try_convert(&self, value: Value) -> Result<Option<$elem>, ArtichokeError> {
+            fn try_convert(&mut self, value: Value) -> Result<Option<$elem>, ArtichokeError> {
                 if let Some(value) = self.convert(value) {
-                    value.try_into::<$elem>().map(Some)
+                    value.try_into::<$elem>(self).map(Some)
                 } else {
                     Ok(None)
                 }

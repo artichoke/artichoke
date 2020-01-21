@@ -6,12 +6,12 @@ use crate::extn::prelude::*;
 
 #[allow(clippy::cognitive_complexity)]
 pub fn method(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     value: Value,
     pattern: Value,
     block: Option<Block>,
 ) -> Result<Value, Exception> {
-    let string = value.clone().try_into::<&[u8]>().map_err(|_| {
+    let string = value.try_into::<&[u8]>(interp).map_err(|_| {
         Fatal::new(
             interp,
             "Unable to convert Ruby String Receiver to Rust byte slice",
@@ -22,14 +22,14 @@ pub fn method(
             interp,
             format!(
                 "wrong argument type {} (expected Regexp)",
-                pattern.pretty_name()
+                pattern.pretty_name(interp)
             ),
         )))
-    } else if let Ok(pattern_bytes) = pattern.clone().try_into::<&[u8]>() {
+    } else if let Ok(pattern_bytes) = pattern.try_into::<&[u8]>(interp) {
         if let Some(ref block) = block {
-            let mrb = interp.0.borrow().mrb;
+            let mrb = interp.mrb_mut();
             let regex = Regexp::lazy(pattern_bytes);
-            let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
+            let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
             let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
             let patlen = pattern_bytes.len();
             let mut restore_nil = true;
@@ -67,8 +67,8 @@ pub fn method(
             }
             if matches > 0 {
                 let regex = Regexp::lazy(pattern_bytes);
-                let mrb = interp.0.borrow().mrb;
-                let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
+                let mrb = interp.mrb_mut();
+                let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
                 let data = matchdata
@@ -78,8 +78,8 @@ pub fn method(
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
             } else {
-                let mrb = interp.0.borrow().mrb;
-                let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
+                let mrb = interp.mrb_mut();
+                let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                 let nil = interp.convert(None::<Value>).inner();
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, nil);
@@ -90,13 +90,13 @@ pub fn method(
     } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
         regexp.borrow().inner().scan(interp, value, block)
     } else {
-        let pattern_type_name = pattern.pretty_name();
-        let pattern_bytes = pattern.funcall::<&[u8]>("to_str", &[], None);
+        let pattern_type_name = pattern.pretty_name(interp);
+        let pattern_bytes = pattern.funcall::<&[u8]>(interp, "to_str", &[], None);
         if let Ok(pattern_bytes) = pattern_bytes {
             if let Some(ref block) = block {
                 let regex = Regexp::lazy(pattern_bytes);
-                let mrb = interp.0.borrow().mrb;
-                let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
+                let mrb = interp.mrb_mut();
+                let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 let patlen = pattern_bytes.len();
                 let mut restore_nil = true;
@@ -133,8 +133,8 @@ pub fn method(
                 }
                 if matches > 0 {
                     let regex = Regexp::lazy(pattern_bytes);
-                    let mrb = interp.0.borrow().mrb;
-                    let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
+                    let mrb = interp.mrb_mut();
+                    let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                     let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                     matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
                     let data = matchdata.try_into_ruby(interp, None).map_err(|_| {
@@ -144,8 +144,8 @@ pub fn method(
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
                 } else {
-                    let mrb = interp.0.borrow().mrb;
-                    let last_match_sym = interp.0.borrow_mut().sym_intern(regexp::LAST_MATCH);
+                    let mrb = interp.mrb_mut();
+                    let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                     }

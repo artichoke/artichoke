@@ -5,14 +5,14 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 impl Convert<Float, Value> for Artichoke {
-    fn convert(&self, value: Float) -> Value {
-        let mrb = self.0.borrow().mrb;
+    fn convert(&mut self, value: Float) -> Value {
+        let mrb = self.mrb_mut();
         Value::new(self, unsafe { sys::mrb_sys_float_value(mrb, value) })
     }
 }
 
 impl TryConvert<Value, Float> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Float, ArtichokeError> {
+    fn try_convert(&mut self, value: Value) -> Result<Float, ArtichokeError> {
         match value.ruby_type() {
             Ruby::Float => {
                 let value = value.inner();

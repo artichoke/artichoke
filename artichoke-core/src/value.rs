@@ -23,6 +23,7 @@ where
     /// Call a method on this [`Value`] with arguments and an optional block.
     fn funcall<T>(
         &self,
+        interp: &mut Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
@@ -33,7 +34,7 @@ where
     /// Consume `self` and try to convert `self` to type `T`.
     ///
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
-    fn try_into<T>(self) -> Result<T, ArtichokeError>
+    fn try_into<T>(self, interp: &mut Self::Artichoke) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>;
 
@@ -41,15 +42,15 @@ where
     /// `T`.
     ///
     /// If you want to consume this [`Value`], use [`Value::try_into`].
-    fn itself<T>(&self) -> Result<T, ArtichokeError>
+    fn itself<T>(&self, interp: &mut Self::Artichoke) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>;
 
     /// Call `#freeze` on this [`Value`].
-    fn freeze(&mut self) -> Result<(), Self::Error>;
+    fn freeze(&mut self, interp: &mut Self::Artichoke) -> Result<(), Self::Error>;
 
     /// Call `#frozen?` on this [`Value`].
-    fn is_frozen(&self) -> bool;
+    fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool;
 
     /// Whether `self` is `nil`
     fn is_nil(&self) -> bool;
@@ -57,15 +58,15 @@ where
     /// Whether `self` responds to a method.
     ///
     /// Equivalent to invoking `#respond_to?` on this [`Value`].
-    fn respond_to(&self, method: &str) -> Result<bool, Self::Error>;
+    fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error>;
 
     /// Call `#inspect` on this [`Value`].
     ///
     /// This function can never fail.
-    fn inspect(&self) -> Vec<u8>;
+    fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8>;
 
     /// Call `#to_s` on this [`Value`].
     ///
     /// This function can never fail.
-    fn to_s(&self) -> Vec<u8>;
+    fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8>;
 }

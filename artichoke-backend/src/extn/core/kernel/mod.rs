@@ -4,8 +4,8 @@ use crate::extn::prelude::*;
 pub mod integer;
 pub mod require;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().module_spec::<Kernel>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().module_spec::<Kernel>().is_some() {
         return Ok(());
     }
     let spec = module::Spec::new("Kernel", None)?;
@@ -20,7 +20,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .add_method("print", Kernel::print, sys::mrb_args_rest())?
         .add_method("puts", Kernel::puts, sys::mrb_args_rest())?
         .define()?;
-    interp.0.borrow_mut().def_module::<Kernel>(spec);
+    interp.state_mut().def_module::<Kernel>(spec);
     let _ = interp.eval(&include_bytes!("kernel.rb")[..])?;
     trace!("Patched Kernel onto interpreter");
     let scope = interp
@@ -34,7 +34,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))?
         .add_self_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))?
         .define()?;
-    interp.0.borrow_mut().def_module::<artichoke::Kernel>(spec);
+    interp.state_mut().def_module::<artichoke::Kernel>(spec);
     trace!("Patched Artichoke::Kernel onto interpreter");
     Ok(())
 }

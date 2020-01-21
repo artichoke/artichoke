@@ -7,14 +7,14 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 impl Convert<u8, Value> for Artichoke {
-    fn convert(&self, value: u8) -> Value {
+    fn convert(&mut self, value: u8) -> Value {
         let value = Int::from(value);
         Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
 impl Convert<u16, Value> for Artichoke {
-    fn convert(&self, value: u16) -> Value {
+    fn convert(&mut self, value: u16) -> Value {
         let value = Int::from(value);
         Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
@@ -22,7 +22,7 @@ impl Convert<u16, Value> for Artichoke {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl Convert<u32, Value> for Artichoke {
-    fn convert(&self, value: u32) -> Value {
+    fn convert(&mut self, value: u32) -> Value {
         let value = Int::from(value);
         Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
@@ -30,7 +30,7 @@ impl Convert<u32, Value> for Artichoke {
 
 #[cfg(target_arch = "wasm32")]
 impl TryConvert<u32, Value> for Artichoke {
-    fn try_convert(&self, value: u32) -> Result<Value, ArtichokeError> {
+    fn try_convert(&mut self, value: u32) -> Result<Value, ArtichokeError> {
         let value = Int::try_from(value).map_err(|_| ArtichokeError::ConvertToRuby {
             from: Rust::UnsignedInt,
             to: Ruby::Fixnum,
@@ -42,7 +42,7 @@ impl TryConvert<u32, Value> for Artichoke {
 }
 
 impl TryConvert<u64, Value> for Artichoke {
-    fn try_convert(&self, value: u64) -> Result<Value, ArtichokeError> {
+    fn try_convert(&mut self, value: u64) -> Result<Value, ArtichokeError> {
         let value = Int::try_from(value).map_err(|_| ArtichokeError::ConvertToRuby {
             from: Rust::UnsignedInt,
             to: Ruby::Fixnum,
@@ -54,21 +54,21 @@ impl TryConvert<u64, Value> for Artichoke {
 }
 
 impl Convert<i8, Value> for Artichoke {
-    fn convert(&self, value: i8) -> Value {
+    fn convert(&mut self, value: i8) -> Value {
         let value = Int::from(value);
         Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
 impl Convert<i16, Value> for Artichoke {
-    fn convert(&self, value: i16) -> Value {
+    fn convert(&mut self, value: i16) -> Value {
         let value = Int::from(value);
         Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
 impl Convert<i32, Value> for Artichoke {
-    fn convert(&self, value: i32) -> Value {
+    fn convert(&mut self, value: i32) -> Value {
         let value = Int::from(value);
         Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
@@ -76,14 +76,14 @@ impl Convert<i32, Value> for Artichoke {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl Convert<i64, Value> for Artichoke {
-    fn convert(&self, value: i64) -> Value {
+    fn convert(&mut self, value: i64) -> Value {
         Value::new(self, unsafe { sys::mrb_sys_fixnum_value(value) })
     }
 }
 
 #[cfg(target_arch = "wasm32")]
 impl TryConvert<i64, Value> for Artichoke {
-    fn try_convert(&self, value: i64) -> Result<Value, ArtichokeError> {
+    fn try_convert(&mut self, value: i64) -> Result<Value, ArtichokeError> {
         let value = Int::try_from(value).map_err(|_| ArtichokeError::ConvertToRuby {
             from: Rust::UnsignedInt,
             to: Ruby::Fixnum,
@@ -95,7 +95,7 @@ impl TryConvert<i64, Value> for Artichoke {
 }
 
 impl TryConvert<Value, Int> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Int, ArtichokeError> {
+    fn try_convert(&mut self, value: Value) -> Result<Int, ArtichokeError> {
         match value.ruby_type() {
             Ruby::Fixnum => {
                 let value = value.inner();
@@ -110,7 +110,7 @@ impl TryConvert<Value, Int> for Artichoke {
 }
 
 impl TryConvert<Value, usize> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<usize, ArtichokeError> {
+    fn try_convert(&mut self, value: Value) -> Result<usize, ArtichokeError> {
         let value: Int = self
             .try_convert(value)
             .map_err(|_| ArtichokeError::ConvertToRust {

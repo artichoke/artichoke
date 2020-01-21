@@ -1,8 +1,8 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("StringScanner", None, None)?;
-    interp.0.borrow_mut().def_class::<StringScanner>(spec);
+    interp.state_mut().def_class::<StringScanner>(spec);
     interp.def_rb_source_file(b"strscan.rb", &include_bytes!("strscan.rb")[..])?;
     Ok(())
 }

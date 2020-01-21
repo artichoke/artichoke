@@ -17,5 +17,5 @@ pub trait TopSelf {
     ///
     /// Top self is the root object that evaled code is executed within. Global
     /// methods, classes, and modules are defined in top self.
-    fn top_self(&self) -> Self::Value;
+    fn top_self(&mut self) -> Self::Value;
 }

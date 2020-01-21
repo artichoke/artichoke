@@ -1,8 +1,8 @@
 use crate::extn::core::random;
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<random::Random>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().class_spec::<random::Random>().is_some() {
         return Ok(());
     }
     let spec = class::Spec::new("Random", None, Some(def::rust_data_free::<random::Random>))?;
@@ -29,7 +29,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))?
         .add_method("seed", artichoke_random_seed, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<random::Random>(spec);
+    interp.state_mut().def_class::<random::Random>(spec);
 
     let default = random::default();
     let default = default.try_into_ruby(interp, None)?;

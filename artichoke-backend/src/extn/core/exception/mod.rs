@@ -46,9 +46,7 @@ use std::fmt;
 
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    let borrow = interp.0.borrow();
-
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let exception_spec = class::Spec::new("Exception", None, None)?;
     class::Builder::for_spec(interp, &exception_spec)
         .with_super_class(None)
@@ -221,43 +219,56 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .with_super_class(Some(&exception_spec))
         .define()?;
 
-    drop(borrow);
-    let mut borrow = interp.0.borrow_mut();
-    borrow.def_class::<Exception>(exception_spec);
-    borrow.def_class::<NoMemoryError>(nomemory_spec);
-    borrow.def_class::<ScriptError>(script_spec);
-    borrow.def_class::<LoadError>(load_spec);
-    borrow.def_class::<NotImplementedError>(notimplemented_spec);
-    borrow.def_class::<SyntaxError>(syntax_spec);
-    borrow.def_class::<SecurityError>(security_spec);
-    borrow.def_class::<SignalException>(signal_spec);
-    borrow.def_class::<Interrupt>(interrupt_spec);
-    borrow.def_class::<StandardError>(standard_spec);
-    borrow.def_class::<ArgumentError>(argument_spec);
-    borrow.def_class::<UncaughtThrowError>(uncaughthrow_spec);
-    borrow.def_class::<EncodingError>(encoding_spec);
-    borrow.def_class::<FiberError>(fiber_spec);
-    borrow.def_class::<IOError>(io_spec);
-    borrow.def_class::<EOFError>(eof_spec);
-    borrow.def_class::<IndexError>(index_spec);
-    borrow.def_class::<KeyError>(key_spec);
-    borrow.def_class::<StopIteration>(stopiteration_spec);
-    borrow.def_class::<LocalJumpError>(localjump_spec);
-    borrow.def_class::<NameError>(name_spec);
-    borrow.def_class::<NoMethodError>(nomethod_spec);
-    borrow.def_class::<RangeError>(range_spec);
-    borrow.def_class::<FloatDomainError>(floatdomain_spec);
-    borrow.def_class::<RegexpError>(regexp_spec);
-    borrow.def_class::<RuntimeError>(runtime_spec);
-    borrow.def_class::<FrozenError>(frozen_spec);
-    borrow.def_class::<SystemCallError>(systemcall_spec);
-    borrow.def_class::<ThreadError>(thread_spec);
-    borrow.def_class::<TypeError>(type_spec);
-    borrow.def_class::<ZeroDivisionError>(zerodivision_spec);
-    borrow.def_class::<SystemExit>(systemexit_spec);
-    borrow.def_class::<SystemStackError>(systemstack_spec);
-    borrow.def_class::<Fatal>(fatal_spec);
-    drop(borrow);
+    interp.state_mut().def_class::<Exception>(exception_spec);
+    interp.state_mut().def_class::<NoMemoryError>(nomemory_spec);
+    interp.state_mut().def_class::<ScriptError>(script_spec);
+    interp.state_mut().def_class::<LoadError>(load_spec);
+    interp
+        .state_mut()
+        .def_class::<NotImplementedError>(notimplemented_spec);
+    interp.state_mut().def_class::<SyntaxError>(syntax_spec);
+    interp.state_mut().def_class::<SecurityError>(security_spec);
+    interp.state_mut().def_class::<SignalException>(signal_spec);
+    interp.state_mut().def_class::<Interrupt>(interrupt_spec);
+    interp.state_mut().def_class::<StandardError>(standard_spec);
+    interp.state_mut().def_class::<ArgumentError>(argument_spec);
+    interp
+        .state_mut()
+        .def_class::<UncaughtThrowError>(uncaughthrow_spec);
+    interp.state_mut().def_class::<EncodingError>(encoding_spec);
+    interp.state_mut().def_class::<FiberError>(fiber_spec);
+    interp.state_mut().def_class::<IOError>(io_spec);
+    interp.state_mut().def_class::<EOFError>(eof_spec);
+    interp.state_mut().def_class::<IndexError>(index_spec);
+    interp.state_mut().def_class::<KeyError>(key_spec);
+    interp
+        .state_mut()
+        .def_class::<StopIteration>(stopiteration_spec);
+    interp
+        .state_mut()
+        .def_class::<LocalJumpError>(localjump_spec);
+    interp.state_mut().def_class::<NameError>(name_spec);
+    interp.state_mut().def_class::<NoMethodError>(nomethod_spec);
+    interp.state_mut().def_class::<RangeError>(range_spec);
+    interp
+        .state_mut()
+        .def_class::<FloatDomainError>(floatdomain_spec);
+    interp.state_mut().def_class::<RegexpError>(regexp_spec);
+    interp.state_mut().def_class::<RuntimeError>(runtime_spec);
+    interp.state_mut().def_class::<FrozenError>(frozen_spec);
+    interp
+        .state_mut()
+        .def_class::<SystemCallError>(systemcall_spec);
+    interp.state_mut().def_class::<ThreadError>(thread_spec);
+    interp.state_mut().def_class::<TypeError>(type_spec);
+    interp
+        .state_mut()
+        .def_class::<ZeroDivisionError>(zerodivision_spec);
+    interp.state_mut().def_class::<SystemExit>(systemexit_spec);
+    interp
+        .state_mut()
+        .def_class::<SystemStackError>(systemstack_spec);
+    interp.state_mut().def_class::<Fatal>(fatal_spec);
 
     let _ = interp.eval(&include_bytes!("exception.rb")[..])?;
     trace!("Patched Exception onto interpreter");
@@ -366,16 +377,15 @@ macro_rules! ruby_exception_impl {
             }
 
             #[must_use]
-            fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+            fn backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
                 let _ = interp;
                 None
             }
 
             #[must_use]
-            fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+            fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
                 interp
-                    .0
-                    .borrow()
+                    .state()
                     .class_spec::<Self>()
                     .and_then(|spec| spec.new_instance(interp, &[interp.convert(self.message())]))
                     .as_ref()
@@ -489,7 +499,7 @@ mod tests {
             class::Builder::for_spec(interp, &spec)
                 .add_self_method("run", Self::run, sys::mrb_args_none())?
                 .define()?;
-            interp.0.borrow_mut().def_class::<Self>(spec);
+            interp.state_mut().def_class::<Self>(spec);
             Ok(())
         }
     }

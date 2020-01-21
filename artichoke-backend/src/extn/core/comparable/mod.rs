@@ -1,12 +1,12 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().module_spec::<Comparable>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().module_spec::<Comparable>().is_some() {
         return Ok(());
     }
     let spec = module::Spec::new("Comparable", None)?;
     module::Builder::for_spec(interp, &spec).define()?;
-    interp.0.borrow_mut().def_module::<Comparable>(spec);
+    interp.state_mut().def_module::<Comparable>(spec);
     let _ = interp.eval(&include_bytes!("comparable.rb")[..])?;
     trace!("Patched Comparable onto interpreter");
     Ok(())

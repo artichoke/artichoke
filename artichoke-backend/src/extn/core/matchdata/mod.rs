@@ -30,8 +30,8 @@ pub mod string;
 pub mod to_a;
 pub mod to_s;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<MatchData>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().class_spec::<MatchData>().is_some() {
         return Ok(());
     }
     let spec = class::Spec::new("MatchData", None, Some(def::rust_data_free::<MatchData>))?;
@@ -61,7 +61,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .add_method("to_s", MatchData::to_s, sys::mrb_args_none())?
         .add_method("end", MatchData::end, sys::mrb_args_req(1))?
         .define()?;
-    interp.0.borrow_mut().def_class::<MatchData>(spec);
+    interp.state_mut().def_class::<MatchData>(spec);
     let _ = interp.eval(&include_bytes!("matchdata.rb")[..])?;
     trace!("Patched MatchData onto interpreter");
     Ok(())

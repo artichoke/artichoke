@@ -1,12 +1,12 @@
 use crate::extn::prelude::*;
 use crate::types;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<Float>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().class_spec::<Float>().is_some() {
         return Ok(());
     }
     let spec = class::Spec::new("Float", None, None)?;
-    interp.0.borrow_mut().def_class::<Float>(spec);
+    interp.state_mut().def_class::<Float>(spec);
     let _ = interp.eval(&include_bytes!("float.rb")[..])?;
     // TODO: Add proper constant defs to class::Spec, see GH-158.
     let _ = interp.eval(format!("class Float; EPSILON={} end", Float::EPSILON).as_bytes())?;

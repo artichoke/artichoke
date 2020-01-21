@@ -3,8 +3,8 @@ use std::convert::TryFrom;
 use crate::extn::core::regexp;
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<regexp::Regexp>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().class_spec::<regexp::Regexp>().is_some() {
         return Ok(());
     }
     let spec = class::Spec::new("Regexp", None, Some(def::rust_data_free::<regexp::Regexp>))?;
@@ -31,7 +31,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .add_method("source", source, sys::mrb_args_none())?
         .add_method("to_s", to_s, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<regexp::Regexp>(spec);
+    interp.state_mut().def_class::<regexp::Regexp>(spec);
     let _ = interp.eval(&include_bytes!("regexp.rb")[..])?;
     // TODO: Add proper constant defs to class::Spec, see GH-27.
     let _ = interp.eval(format!(

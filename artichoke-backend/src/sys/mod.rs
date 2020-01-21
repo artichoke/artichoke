@@ -103,6 +103,50 @@ impl DescribeState for *mut mrb_state {
     }
 }
 
+impl DescribeState for &mrb_state {
+    fn info(&self) -> String {
+        format!("{}", unsafe { &**self })
+    }
+
+    fn debug(&self) -> String {
+        format!("{:?}", unsafe { &**self })
+    }
+
+    fn version(&self) -> String {
+        // Using the unchecked function is safe because these values are C constants
+        let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
+        format!(
+            "{} (v{}.{}.{})",
+            version.to_string_lossy(),
+            MRUBY_RELEASE_MAJOR,
+            MRUBY_RELEASE_MINOR,
+            MRUBY_RELEASE_TEENY,
+        )
+    }
+}
+
+impl DescribeState for &mut mrb_state {
+    fn info(&self) -> String {
+        format!("{}", unsafe { &**self })
+    }
+
+    fn debug(&self) -> String {
+        format!("{:?}", unsafe { &**self })
+    }
+
+    fn version(&self) -> String {
+        // Using the unchecked function is safe because these values are C constants
+        let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
+        format!(
+            "{} (v{}.{}.{})",
+            version.to_string_lossy(),
+            MRUBY_RELEASE_MAJOR,
+            MRUBY_RELEASE_MINOR,
+            MRUBY_RELEASE_TEENY,
+        )
+    }
+}
+
 impl fmt::Debug for mrb_state {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Using the unchecked function is safe because these values are C constants

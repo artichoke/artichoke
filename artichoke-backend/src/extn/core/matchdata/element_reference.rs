@@ -93,7 +93,7 @@ impl<'a> Args<'a> {
     ) -> Result<Option<Self>, Exception> {
         let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let mut len = mem::MaybeUninit::<sys::mrb_int>::uninit();
-        let mrb = interp.0.borrow().mrb;
+        let mrb = interp.mrb_mut();
         // `mrb_range_beg_len` can raise.
         // TODO: Wrap this in a call to `mrb_protect`.
         let check_range = sys::mrb_range_beg_len(

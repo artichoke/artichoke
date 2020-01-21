@@ -5,8 +5,8 @@ use crate::extn::prelude::*;
 
 pub mod div;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<Integer>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().class_spec::<Integer>().is_some() {
         return Ok(());
     }
     let spec = class::Spec::new("Integer", None, None)?;
@@ -15,7 +15,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .add_method("/", Integer::div, sys::mrb_args_req(1))?
         .add_method("size", Integer::size, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<Integer>(spec);
+    interp.state_mut().def_class::<Integer>(spec);
     let _ = interp.eval(&include_bytes!("integer.rb")[..])?;
     trace!("Patched Integer onto interpreter");
     Ok(())

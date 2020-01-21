@@ -15,5 +15,5 @@ pub trait Warn {
     /// Emit a warning message using `Warning#warn`.
     ///
     /// This method appends newlines to message if necessary.
-    fn warn(&self, message: &[u8]) -> Result<(), Self::Error>;
+    fn warn(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 }

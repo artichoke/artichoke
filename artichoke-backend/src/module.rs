@@ -70,9 +70,9 @@ impl<'a> Builder<'a> {
         Ok(self)
     }
 
-    pub fn define(self) -> Result<(), ArtichokeError> {
-        let mrb = self.interp.0.borrow().mrb;
-        let rclass = if let Some(rclass) = self.spec.rclass(self.interp) {
+    pub fn define(mut self) -> Result<(), ArtichokeError> {
+        let mrb = self.interp.mrb_mut();
+        let rclass = if let Some(rclass) = self.spec.rclass(&mut self.interp) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
             let scope = scope.rclass(self.interp).ok_or_else(|| {
@@ -84,7 +84,7 @@ impl<'a> Builder<'a> {
         };
         for method in self.methods {
             unsafe {
-                method.define(self.interp, rclass)?;
+                method.define(&mut self.interp, rclass)?;
             }
         }
         Ok(())
@@ -118,7 +118,7 @@ impl Spec {
         })
     }
 
-    pub fn value(&self, interp: &Artichoke) -> Option<Value> {
+    pub fn value(&self, interp: &mut Artichoke) -> Option<Value> {
         let rclass = self.rclass(interp)?;
         let module = unsafe { sys::mrb_sys_module_value(rclass) };
         Some(Value::new(interp, module))
@@ -147,13 +147,10 @@ impl Spec {
         }
     }
 
-    pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
-        let mrb = interp.0.borrow().mrb;
+    pub fn rclass(&self, interp: &mut Artichoke) -> Option<*mut sys::RClass> {
+        let mrb = interp.mrb_mut();
         if self.sym.get() == 0 {
-            let sym = interp
-                .0
-                .borrow_mut()
-                .sym_intern(self.name.as_bytes().to_vec());
+            let sym = interp.sym_intern(self.name.as_bytes().to_vec());
             self.sym.set(sym);
         }
         if let Some(ref scope) = self.enclosing_scope {

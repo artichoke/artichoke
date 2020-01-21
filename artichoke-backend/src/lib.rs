@@ -84,10 +84,11 @@ extern crate downcast;
 #[macro_use]
 extern crate log;
 
-use std::cell::RefCell;
+use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::error;
 use std::fmt;
-use std::rc::Rc;
+use std::ptr::NonNull;
 
 #[macro_use]
 #[doc(hidden)]
@@ -119,6 +120,7 @@ mod test;
 
 pub use artichoke_core::ArtichokeError;
 pub use interpreter::interpreter;
+pub use state::State;
 
 use crate::exception::Exception;
 
@@ -137,14 +139,67 @@ use crate::exception::Exception;
 /// Functionality is added to the interpreter via traits, for example,
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
 #[derive(Debug, Clone)]
-pub struct Artichoke(pub Rc<RefCell<state::State>>); // TODO: this should not be pub
+pub struct Artichoke {
+    state: Box<State>,
+    mrb: NonNull<sys::mrb_state>,
+}
 
 impl Artichoke {
     /// Consume an interpreter and free all
     /// [live](gc::MrbGarbageCollection::live_object_count)
     /// [`Value`](value::Value)s.
-    pub fn close(self) {
-        self.0.borrow_mut().close();
+    pub fn close(mut self) {
+        self.state.close(&mut self.mrb);
+        unsafe {
+            sys::mrb_close(self.mrb.as_mut());
+        }
+    }
+
+    pub fn state(&self) -> &State {
+        self.state.as_ref()
+    }
+
+    pub fn state_mut(&mut self) -> &mut State {
+        self.state.as_mut()
+    }
+
+    pub fn vfs(&self) -> &fs::Filesystem {
+        self.state.vfs()
+    }
+
+    pub fn vfs_mut(&mut self) -> &mut fs::Filesystem {
+        self.state.vfs_mut()
+    }
+
+    pub fn mrb_mut(&mut self) -> &mut sys::mrb_state {
+        self.mrb.as_mut()
+    }
+
+    pub fn sym_intern<T>(&mut self, sym: T) -> sys::mrb_sym
+    where
+        T: Into<Cow<'static, [u8]>>,
+    {
+        self.state.sym_intern(self.mrb_mut(), sym)
+    }
+
+    pub unsafe fn into_user_data(mut self) -> *mut sys::mrb_state {
+        let state = Box::into_raw(self.state);
+        self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
+        self.mrb.as_ptr()
+    }
+}
+
+impl Drop for Artichoke {
+    fn drop(&mut self) {
+        self.close();
+    }
+}
+
+impl TryFrom<*mut sys::mrb_state> for Artichoke {
+    type Error = ArtichokeError;
+
+    fn try_from(mrb: *mut sys::mrb_state) -> Result<Self, Self::Error> {
+        unsafe { ffi::from_user_data(mrb) }
     }
 }
 

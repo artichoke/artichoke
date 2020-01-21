@@ -1,13 +1,13 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     <% constants.each do |(constant, klass)| %>
     <% if klass == "Class" %>
     let spec = crate::class::Spec::new("<%= constant %>", None, None)?;
-    interp.0.borrow_mut().def_class::<<%= constant %>>(spec);
+    interp.state_mut().def_class::<<%= constant %>>(spec);
     <% elsif klass == "Module" %>
     let spec = crate::module::Spec::new("<%= constant %>", None)?;
-    interp.0.borrow_mut().def_module::<<%= constant %>>(spec);
+    interp.state_mut().def_module::<<%= constant %>>(spec);
     <% else %>
     // Skipping constant <%= constant %> with class <%= klass %>
     <% end %>

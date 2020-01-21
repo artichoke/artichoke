@@ -2,9 +2,7 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
-use std::cell::RefCell;
-use std::mem;
-use std::rc::Rc;
+use std::ptr::{self, NonNull};
 
 use crate::state::State;
 use crate::sys::{self, DescribeState};
@@ -22,32 +20,28 @@ use crate::{Artichoke, ArtichokeError};
 /// [`Rc::into_raw`] and that the pointer is to a non-free'd
 /// [`Rc`]`<`[`RefCell`]`<`[`State`]`>>`.
 pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeError> {
-    if mrb.is_null() {
+    let mrb = if let Some(mrb) = NonNull::new(mrb) {
+        mrb
+    } else {
         error!("Attempted to extract Artichoke from null mrb_state");
         return Err(ArtichokeError::Uninitialized);
-    }
-    let ptr = (*mrb).ud;
+    };
+    let ptr = mrb.as_mut().ud;
     if ptr.is_null() {
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
         return Err(ArtichokeError::Uninitialized);
     }
     // Extract the smart pointer that wraps the API from the user data on
-    // the mrb interpreter. The `mrb_state` should retain ownership of its
+    // the mrb interpreter. This moves ownership of the user data pointer out of
+    // the `mrb_state`.
     // copy of the smart pointer.
-    let ud = Rc::from_raw(ptr as *const RefCell<State>);
-    // Clone the API smart pointer and increase its ref count to return a
-    // reference to the caller.
-    let api = Rc::clone(&ud);
-    // Forget the transmuted API extracted from the user data to make sure
-    // the `mrb_state` maintains ownership and the smart pointer does not
-    // get deallocated before `mrb_close` is called.
-    mem::forget(ud);
-    // At this point, `Rc::strong_count` will be increased by 1.
+    let state = Box::from_raw(ptr as *mut State);
+    mrb.as_mut().ud = ptr::null_mut();
     trace!(
-        "Extracted Artichoke from user data pointer on {}",
-        mrb.debug()
+        "Extracted Artichoke State from user data pointer on {}",
+        mrb.as_mut().debug()
     );
-    Ok(Artichoke(api))
+    Ok(Artichoke { state, mrb })
 }
 
 #[cfg(test)]

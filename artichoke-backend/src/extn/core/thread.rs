@@ -1,16 +1,16 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<Thread>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().class_spec::<Thread>().is_some() {
         return Ok(());
     }
-    if interp.0.borrow().class_spec::<Mutex>().is_some() {
+    if interp.state().class_spec::<Mutex>().is_some() {
         return Ok(());
     }
     let spec = class::Spec::new("Thread", None, None)?;
-    interp.0.borrow_mut().def_class::<Thread>(spec);
+    interp.state_mut().def_class::<Thread>(spec);
     let spec = class::Spec::new("Mutex", None, None)?;
-    interp.0.borrow_mut().def_class::<Mutex>(spec);
+    interp.state_mut().def_class::<Mutex>(spec);
     interp.def_rb_source_file(b"thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement

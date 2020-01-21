@@ -77,18 +77,16 @@ impl<'a> Protect<'a> {
 
 /// Wrapper around a [`sys::mrb_value`].
 #[must_use]
+#[derive(Clone, Copy)]
 pub struct Value {
-    interp: Artichoke,
     value: sys::mrb_value,
 }
 
 impl Value {
     /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
     pub fn new(interp: &Artichoke, value: sys::mrb_value) -> Self {
-        Self {
-            interp: interp.clone(),
-            value,
-        }
+        let _ = interp;
+        Self { value }
     }
 
     /// The [`sys::mrb_value`] that this [`Value`] wraps.
@@ -106,16 +104,16 @@ impl Value {
     }
 
     #[must_use]
-    pub fn pretty_name<'a>(&self) -> &'a str {
-        if let Ok(true) = Self::new(&self.interp, self.value).try_into::<bool>() {
+    pub fn pretty_name<'a>(&self, interp: &'a mut Artichoke) -> &'a str {
+        if let Ok(true) = self.try_into::<bool>(interp) {
             "true"
-        } else if let Ok(false) = Self::new(&self.interp, self.value).try_into::<bool>() {
+        } else if let Ok(false) = self.try_into::<bool>(interp) {
             "false"
-        } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Self>>() {
+        } else if let Ok(None) = self.try_into::<Option<Self>>(interp) {
             "nil"
         } else if let Ruby::Data | Ruby::Object = self.ruby_type() {
-            self.funcall::<Self>("class", &[], None)
-                .and_then(|class| class.funcall::<&'a str>("name", &[], None))
+            self.funcall::<Self>(interp, "class", &[], None)
+                .and_then(|class| class.funcall::<&'a str>(interp, "name", &[], None))
                 .unwrap_or_default()
         } else {
             self.ruby_type().class_name()
@@ -142,15 +140,15 @@ impl Value {
     /// arena. This object will remain in the arena until
     /// [`ArenaIndex::restore`](crate::gc::ArenaIndex::restore) restores the
     /// arena to an index before this call to protect.
-    pub fn protect(&self) {
-        let mrb = self.interp.0.borrow().mrb;
+    pub fn protect(&self, interp: &mut Artichoke) {
+        let mrb = interp.mrb_mut();
         unsafe { sys::mrb_gc_protect(mrb, self.value) }
     }
 
     /// Return whether this object is unreachable by any GC roots.
     #[must_use]
-    pub fn is_dead(&self) -> bool {
-        let mrb = self.interp.0.borrow().mrb;
+    pub fn is_dead(&self, interp: &mut Artichoke) -> bool {
+        let mrb = interp.mrb_mut();
         unsafe { sys::mrb_sys_value_is_dead(mrb, self.value) }
     }
 
@@ -164,8 +162,8 @@ impl Value {
     ///
     /// This function can never fail.
     #[must_use]
-    pub fn to_s_debug(&self) -> String {
-        let inspect = self.inspect();
+    pub fn to_s_debug(&self, interp: &mut Artichoke) -> String {
+        let inspect = self.inspect(interp);
         format!(
             "{}<{}>",
             self.ruby_type().class_name(),
@@ -173,18 +171,18 @@ impl Value {
         )
     }
 
-    pub fn implicitly_convert_to_int(&self) -> Result<Int, Exception> {
-        let int = if let Ok(int) = self.clone().try_into::<Int>() {
+    pub fn implicitly_convert_to_int(&self, interp: &mut Artichoke) -> Result<Int, Exception> {
+        let int = if let Ok(int) = self.try_into::<Int>(interp) {
             int
         } else {
-            let pretty_name = self.pretty_name();
-            if let Ok(maybe_int) = self.funcall::<Self>("to_int", &[], None) {
-                let gives_pretty_name = maybe_int.pretty_name();
-                if let Ok(int) = maybe_int.try_into::<Int>() {
+            let pretty_name = self.pretty_name(interp);
+            if let Ok(maybe_int) = self.funcall::<Self>(interp, "to_int", &[], None) {
+                let gives_pretty_name = maybe_int.pretty_name(interp);
+                if let Ok(int) = maybe_int.try_into::<Int>(interp) {
                     int
                 } else {
                     return Err(Exception::from(TypeError::new(
-                        &self.interp,
+                        interp,
                         format!(
                             "can't convert {} to Integer ({}#to_int gives {})",
                             pretty_name, pretty_name, gives_pretty_name
@@ -193,7 +191,7 @@ impl Value {
                 }
             } else {
                 return Err(Exception::from(TypeError::new(
-                    &self.interp,
+                    interp,
                     format!("no implicit conversion of {} into Integer", pretty_name),
                 )));
             }
@@ -210,6 +208,7 @@ impl ValueLike for Value {
 
     fn funcall<T>(
         &self,
+        interp: &mut Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
@@ -220,12 +219,9 @@ impl ValueLike for Value {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
-        let (mrb, _ctx) = {
-            let borrow = self.interp.0.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
+        let mrb = interp.mrb_mut();
 
-        let _arena = self.interp.create_arena_savepoint();
+        let _arena = interp.create_arena_savepoint();
 
         let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
@@ -235,7 +231,7 @@ impl ValueLike for Value {
                 MRB_FUNCALL_ARGC_MAX
             );
             return Err(Exception::from(Fatal::new(
-                &self.interp,
+                interp,
                 format!(
                     "{}",
                     ArtichokeError::TooManyArgs {
@@ -252,11 +248,7 @@ impl ValueLike for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = self
-            .interp
-            .0
-            .borrow_mut()
-            .sym_intern(func.as_bytes().to_vec());
+        let func = interp.sym_intern(func.as_bytes().to_vec());
         let mut protect = Protect::new(self.inner(), func, args.as_ref());
         if let Some(block) = block {
             protect = protect.with_block(block.inner());
@@ -273,10 +265,10 @@ impl ValueLike for Value {
             value
         };
 
-        if let Some(exc) = self.interp.last_error()? {
+        if let Some(exc) = interp.last_error()? {
             Err(exc)
         } else {
-            let value = Self::new(&self.interp, value);
+            let value = Self::new(interp, value);
             if value.is_unreachable() {
                 // Unreachable values are internal to the mruby interpreter and
                 // interacting with them via the C API is unspecified and may
@@ -284,13 +276,13 @@ impl ValueLike for Value {
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
                 Err(Exception::from(Fatal::new(
-                    &self.interp,
+                    interp,
                     "Unreachable Ruby value",
                 )))
             } else {
-                let value = value.try_into::<T>().map_err(|err| {
+                let value = value.try_into::<T>(interp).map_err(|err| {
                     Exception::from(TypeError::new(
-                        &self.interp,
+                        interp,
                         format!("Type conversion failed: {}", err),
                     ))
                 })?;
@@ -299,37 +291,35 @@ impl ValueLike for Value {
         }
     }
 
-    fn try_into<T>(self) -> Result<T, ArtichokeError>
+    fn try_into<T>(self, interp: &mut Self::Artichoke) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>,
     {
-        // We must clone interp out of self because try_convert consumes self.
-        let interp = self.interp.clone();
         interp.try_convert(self)
     }
 
-    fn itself<T>(&self) -> Result<T, ArtichokeError>
+    fn itself<T>(&self, interp: &mut Self::Artichoke) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>,
     {
-        self.clone().try_into::<T>()
+        self.clone().try_into::<T>(interp)
     }
 
-    fn freeze(&mut self) -> Result<(), Self::Error> {
-        let _ = self.funcall::<Self>("freeze", &[], None)?;
+    fn freeze(&mut self, interp: &mut Self::Artichoke) -> Result<(), Self::Error> {
+        let _ = self.funcall::<Self>(interp, "freeze", &[], None)?;
         Ok(())
     }
 
     #[must_use]
-    fn is_frozen(&self) -> bool {
-        let mrb = self.interp.0.borrow().mrb;
+    fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool {
+        let mrb = interp.mrb_mut();
         let inner = self.inner();
         unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
     }
 
     #[must_use]
-    fn inspect(&self) -> Vec<u8> {
-        self.funcall::<Vec<u8>>("inspect", &[], None)
+    fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
+        self.funcall::<Vec<u8>>(interp, "inspect", &[], None)
             .unwrap_or_default()
     }
 
@@ -338,14 +328,14 @@ impl ValueLike for Value {
         unsafe { sys::mrb_sys_value_is_nil(self.inner()) }
     }
 
-    fn respond_to(&self, method: &str) -> Result<bool, Self::Error> {
-        let method = self.interp.convert(method);
-        self.funcall::<bool>("respond_to?", &[method], None)
+    fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error> {
+        let method = interp.convert(method);
+        self.funcall::<bool>(interp, "respond_to?", &[method], None)
     }
 
     #[must_use]
-    fn to_s(&self) -> Vec<u8> {
-        self.funcall::<Vec<u8>>("to_s", &[], None)
+    fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
+        self.funcall::<Vec<u8>>(interp, "to_s", &[], None)
             .unwrap_or_default()
     }
 }
@@ -356,25 +346,9 @@ impl Convert<Value, Value> for Artichoke {
     }
 }
 
-impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let string_repr = &self.to_s();
-        write!(f, "{}", String::from_utf8_lossy(string_repr))
-    }
-}
-
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_s_debug())
-    }
-}
-
-impl Clone for Value {
-    fn clone(&self) -> Self {
-        Self {
-            interp: self.interp.clone(),
-            value: self.value,
-        }
+        write!(f, "Value<{}>", self.ruby_type())
     }
 }
 
@@ -404,14 +378,14 @@ impl Block {
         }
     }
 
-    pub fn yield_arg<T>(&self, interp: &Artichoke, arg: &Value) -> Result<T, Exception>
+    pub fn yield_arg<T>(&mut self, interp: &mut Artichoke, arg: &Value) -> Result<T, Exception>
     where
         Artichoke: TryConvert<Value, T>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
-        let mrb = interp.0.borrow().mrb;
+        let mrb = interp.mrb_mut();
 
         let _arena = interp.create_arena_savepoint();
 
@@ -433,7 +407,7 @@ impl Block {
                     "Unreachable Ruby value",
                 )))
             } else {
-                let value = value.try_into::<T>().map_err(|err| {
+                let value = value.try_into::<T>(interp).map_err(|err| {
                     TypeError::new(interp, format!("Type conversion failed: {}", err))
                 })?;
                 Ok(value)

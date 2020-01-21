@@ -12,15 +12,15 @@ use crate::{Artichoke, ArtichokeError};
 // bail out implementation for mixed-type collections
 impl Convert<&[Value], Value> for Artichoke {
     #[cfg(feature = "artichoke-array")]
-    fn convert(&self, value: &[Value]) -> Value {
+    fn convert(&mut self, value: &[Value]) -> Value {
         use crate::convert::RustBackedValue;
         let ary = Array::new(InlineBuffer::from(value));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 
     #[cfg(not(feature = "artichoke-array"))]
-    fn convert(&self, value: &[Value]) -> Value {
-        let mrb = self.0.borrow().mrb;
+    fn convert(&mut self, value: &[Value]) -> Value {
+        let mrb = self.mrb_mut();
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let array = unsafe { sys::mrb_ary_new_capa(mrb, capa) };
 
@@ -37,15 +37,15 @@ impl Convert<&[Value], Value> for Artichoke {
 
 impl Convert<Vec<Value>, Value> for Artichoke {
     #[cfg(feature = "artichoke-array")]
-    fn convert(&self, value: Vec<Value>) -> Value {
+    fn convert(&mut self, value: Vec<Value>) -> Value {
         use crate::convert::RustBackedValue;
         let ary = Array::new(InlineBuffer::from(value));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 
     #[cfg(not(feature = "artichoke-array"))]
-    fn convert(&self, value: Vec<Value>) -> Value {
-        let mrb = self.0.borrow().mrb;
+    fn convert(&mut self, value: Vec<Value>) -> Value {
+        let mrb = self.mrb_mut();
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let array = unsafe { sys::mrb_ary_new_capa(mrb, capa) };
 
@@ -61,8 +61,8 @@ impl Convert<Vec<Value>, Value> for Artichoke {
 }
 
 impl TryConvert<Value, Vec<Value>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<Value>, ArtichokeError> {
-        let mrb = self.0.borrow().mrb;
+    fn try_convert(&mut self, value: Value) -> Result<Vec<Value>, ArtichokeError> {
+        let mrb = self.mrb_mut();
         match value.ruby_type() {
             Ruby::Array => {
                 let array = value.inner();
@@ -96,13 +96,13 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
 macro_rules! array_to_ruby {
     ($elem:ty) => {
         impl<'a> Convert<&[$elem], Value> for Artichoke {
-            fn convert(&self, value: &[$elem]) -> Value {
+            fn convert(&mut self, value: &[$elem]) -> Value {
                 self.convert(value.to_vec())
             }
         }
 
         impl<'a> Convert<Vec<$elem>, Value> for Artichoke {
-            fn convert(&self, value: Vec<$elem>) -> Value {
+            fn convert(&mut self, value: Vec<$elem>) -> Value {
                 let elems = value
                     .into_iter()
                     .map(|elem| self.convert(elem))
@@ -116,11 +116,11 @@ macro_rules! array_to_ruby {
 macro_rules! ruby_to_array {
     ($elem:ty) => {
         impl<'a> TryConvert<Value, Vec<$elem>> for Artichoke {
-            fn try_convert(&self, value: Value) -> Result<Vec<$elem>, ArtichokeError> {
+            fn try_convert(&mut self, value: Value) -> Result<Vec<$elem>, ArtichokeError> {
                 let elems: Vec<Value> = self.try_convert(value)?;
-                let mut vec = <Vec<$elem>>::with_capacity(elems.len());
+                let mut vec = Vec::<$elem>::with_capacity(elems.len());
                 for elem in elems.into_iter() {
-                    let elem = elem.try_into::<$elem>()?;
+                    let elem = elem.try_into::<$elem>(self)?;
                     vec.push(elem);
                 }
                 Ok(vec)

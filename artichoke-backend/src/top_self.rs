@@ -7,8 +7,8 @@ use crate::Artichoke;
 impl TopSelf for Artichoke {
     type Value = Value;
 
-    fn top_self(&self) -> Value {
-        let mrb = self.0.borrow().mrb;
+    fn top_self(&mut self) -> Value {
+        let mrb = self.mrb_mut();
         Value::new(self, unsafe { sys::mrb_top_self(mrb) })
     }
 }

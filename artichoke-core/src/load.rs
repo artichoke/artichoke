@@ -20,7 +20,7 @@ pub trait LoadSources {
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_file_for_type<T>(&self, filename: &[u8]) -> Result<(), ArtichokeError>
+    fn def_file_for_type<T>(&mut self, filename: &[u8]) -> Result<(), ArtichokeError>
     where
         T: File<Artichoke = Self::Artichoke>;
 
@@ -30,7 +30,7 @@ pub trait LoadSources {
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
-    fn def_rb_source_file<T>(&self, filename: &[u8], contents: T) -> Result<(), ArtichokeError>
+    fn def_rb_source_file<T>(&mut self, filename: &[u8], contents: T) -> Result<(), ArtichokeError>
     where
         T: Into<Cow<'static, [u8]>>;
 }

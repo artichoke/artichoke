@@ -22,7 +22,7 @@ pub const INPUT_RECORD_SEPARATOR: &str = "\n";
 
 macro_rules! global_const {
     ($interp:expr, $constant:ident) => {{
-        let mrb = $interp.0.borrow().mrb;
+        let mrb = $interp.mrb_mut();
         unsafe {
             sys::mrb_define_global_const(
                 mrb,
@@ -32,7 +32,7 @@ macro_rules! global_const {
         }
     }};
     ($interp:expr, $constant:ident, $value:expr) => {{
-        let mrb = $interp.0.borrow().mrb;
+        let mrb = $interp.mrb_mut();
         unsafe {
             sys::mrb_define_global_const(
                 mrb,
@@ -42,7 +42,7 @@ macro_rules! global_const {
         }
     }};
     ($interp:expr, $constant:ident as Int) => {{
-        let mrb = $interp.0.borrow().mrb;
+        let mrb = $interp.mrb_mut();
         let constant = $constant.parse::<Int>().map_err(|_| ArtichokeError::New)?;
         unsafe {
             sys::mrb_define_global_const(
@@ -54,7 +54,7 @@ macro_rules! global_const {
     }};
 }
 
-pub fn init(interp: &Artichoke, backend_name: &str) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke, backend_name: &str) -> InitializeResult<()> {
     let engine_name = format!("{}-{}", interp.convert(RUBY_ENGINE), backend_name);
     global_const!(interp, RUBY_COPYRIGHT);
     global_const!(interp, RUBY_DESCRIPTION);

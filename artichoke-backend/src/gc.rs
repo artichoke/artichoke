@@ -16,24 +16,23 @@ use crate::Artichoke;
 ///
 /// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
 /// sufficient to ensure objects get collected eventually.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[must_use]
-pub struct ArenaIndex {
+pub struct ArenaIndex<'a> {
     index: i32,
-    interp: Artichoke,
+    mrb: &'a mut sys::mrb_state,
 }
 
-impl ArenaIndex {
+impl<'a> ArenaIndex<'a> {
     /// Restore the arena stack pointer to its prior index.
     pub fn restore(self) {
         drop(self);
     }
 }
 
-impl Drop for ArenaIndex {
+impl<'a> Drop for ArenaIndex<'a> {
     fn drop(&mut self) {
-        let mrb = self.interp.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_arena_restore(mrb, self.index) };
+        unsafe { sys::mrb_sys_gc_arena_restore(self.mrb, self.index) };
     }
 }
 
@@ -48,15 +47,15 @@ pub trait MrbGarbageCollection {
     ///
     /// The returned [`ArenaIndex`] implements [`Drop`], so it is sufficient to
     /// let it go out of scope to ensure objects are eventually collected.
-    fn create_arena_savepoint(&self) -> ArenaIndex;
+    fn create_arena_savepoint(&mut self) -> ArenaIndex;
 
     /// Retrieve the number of live objects on the interpreter heap.
     ///
     /// A live object is reachable via top self, the stack, or the arena.
-    fn live_object_count(&self) -> i32;
+    fn live_object_count(&mut self) -> i32;
 
     /// Mark a [`Value`] as reachable in the mruby garbage collector.
-    fn mark_value(&self, value: &Value);
+    fn mark_value(&mut self, value: &Value);
 
     /// Perform an incremental garbage collection.
     ///
@@ -64,7 +63,7 @@ pub trait MrbGarbageCollection {
     /// [full GC](MrbGarbageCollection::full_gc), but does not guarantee that
     /// all dead objects will be reaped. You may wish to use an incremental GC
     /// if you are operating with an interpreter in a loop.
-    fn incremental_gc(&self);
+    fn incremental_gc(&mut self);
 
     /// Perform a full garbage collection.
     ///
@@ -72,58 +71,57 @@ pub trait MrbGarbageCollection {
     /// expensive than an
     /// [incremental GC](MrbGarbageCollection::incremental_gc). You may wish to
     /// use a full GC if you are memory constrained.
-    fn full_gc(&self);
+    fn full_gc(&mut self);
 
     /// Enable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn enable_gc(&self) -> bool;
+    fn enable_gc(&mut self) -> bool;
 
     /// Disable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn disable_gc(&self) -> bool;
+    fn disable_gc(&mut self) -> bool;
 }
 
 impl MrbGarbageCollection for Artichoke {
-    fn create_arena_savepoint(&self) -> ArenaIndex {
-        let mrb = self.0.borrow().mrb;
+    fn create_arena_savepoint(&mut self) -> ArenaIndex {
         ArenaIndex {
-            index: unsafe { sys::mrb_sys_gc_arena_save(mrb) },
-            interp: self.clone(),
+            index: unsafe { sys::mrb_sys_gc_arena_save(self.mrb_mut()) },
+            mrb: self.mrb_mut(),
         }
     }
 
     #[must_use]
-    fn live_object_count(&self) -> i32 {
-        let mrb = self.0.borrow().mrb;
+    fn live_object_count(&mut self) -> i32 {
+        let mrb = self.mrb_mut();
         unsafe { sys::mrb_sys_gc_live_objects(mrb) }
     }
 
-    fn mark_value(&self, value: &Value) {
-        let mrb = self.0.borrow().mrb;
+    fn mark_value(&mut self, value: &Value) {
+        let mrb = self.mrb_mut();
         unsafe { sys::mrb_sys_safe_gc_mark(mrb, value.inner()) }
     }
 
-    fn incremental_gc(&self) {
-        let mrb = self.0.borrow().mrb;
+    fn incremental_gc(&mut self) {
+        let mrb = self.mrb_mut();
         unsafe { sys::mrb_incremental_gc(mrb) };
     }
 
-    fn full_gc(&self) {
-        let mrb = self.0.borrow().mrb;
+    fn full_gc(&mut self) {
+        let mrb = self.mrb_mut();
         unsafe { sys::mrb_full_gc(mrb) };
     }
 
     #[allow(clippy::must_use_candidate)]
-    fn enable_gc(&self) -> bool {
-        let mrb = self.0.borrow().mrb;
+    fn enable_gc(&mut self) -> bool {
+        let mrb = self.mrb_mut();
         unsafe { sys::mrb_sys_gc_enable(mrb) }
     }
 
     #[allow(clippy::must_use_candidate)]
-    fn disable_gc(&self) -> bool {
-        let mrb = self.0.borrow().mrb;
+    fn disable_gc(&mut self) -> bool {
+        let mrb = self.mrb_mut();
         unsafe { sys::mrb_sys_gc_disable(mrb) }
     }
 }

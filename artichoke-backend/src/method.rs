@@ -72,10 +72,10 @@ impl Spec {
     /// object.
     pub unsafe fn define(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         into: *mut sys::RClass,
     ) -> Result<(), ArtichokeError> {
-        let mrb = interp.0.borrow().mrb;
+        let mrb = interp.mrb_mut();
         match self.method_type {
             Type::Class => sys::mrb_define_class_method(
                 mrb,

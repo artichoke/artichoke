@@ -2,8 +2,8 @@ use crate::extn::prelude::*;
 
 mod scan;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<RString>().is_some() {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
+    if interp.state().class_spec::<RString>().is_some() {
         return Ok(());
     }
     let spec = class::Spec::new("String", None, None)?;
@@ -11,7 +11,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .add_method("ord", RString::ord, sys::mrb_args_none())?
         .add_method("scan", RString::scan, sys::mrb_args_req(1))?
         .define()?;
-    interp.0.borrow_mut().def_class::<RString>(spec);
+    interp.state_mut().def_class::<RString>(spec);
     let _ = interp.eval(&include_bytes!("string.rb")[..])?;
     trace!("Patched String onto interpreter");
     Ok(())
@@ -22,9 +22,10 @@ pub struct RString;
 
 impl RString {
     unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        mrb_get_args!(mrb, none);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        if let Ok(s) = value.try_into::<&str>() {
+        if let Ok(s) = value.try_into::<&str>(&mut interp) {
             if let Some(first) = s.chars().next() {
                 // One UTF-8 character, which are at most 32 bits.
                 if let Ok(value) = interp.try_convert(first as u32) {
@@ -47,7 +48,7 @@ impl RString {
         let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = scan::method(&interp, value, Value::new(&interp, pattern), block);
+        let result = scan::method(&mut interp, value, Value::new(&interp, pattern), block);
         match result {
             Ok(result) => result.inner(),
             Err(exception) => exception::raise(interp, exception),

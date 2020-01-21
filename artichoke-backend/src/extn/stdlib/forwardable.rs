@@ -1,8 +1,8 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = module::Spec::new("Forwardable", None)?;
-    interp.0.borrow_mut().def_module::<Forwardable>(spec);
+    interp.state_mut().def_module::<Forwardable>(spec);
     interp.def_rb_source_file(b"forwardable.rb", &include_bytes!("forwardable.rb")[..])?;
     interp.def_rb_source_file(
         b"forwardable/impl.rb",

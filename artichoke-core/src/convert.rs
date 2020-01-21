@@ -7,7 +7,7 @@ use crate::ArtichokeError;
 /// See [`std::convert::From`].
 pub trait Convert<T, U> {
     /// Performs the infallible conversion.
-    fn convert(&self, from: T) -> U;
+    fn convert(&mut self, from: T) -> U;
 }
 
 /// Fallible conversions between two types.
@@ -16,7 +16,7 @@ pub trait Convert<T, U> {
 #[allow(clippy::module_name_repetitions)]
 pub trait TryConvert<T, U> {
     /// Performs the fallible conversion.
-    fn try_convert(&self, value: T) -> Result<U, ArtichokeError>;
+    fn try_convert(&mut self, value: T) -> Result<U, ArtichokeError>;
 }
 
 /// Provide a fallible converter for types that implement an infallible
@@ -25,7 +25,7 @@ impl<T, U, V> TryConvert<T, U> for V
 where
     V: Convert<T, U>,
 {
-    fn try_convert(&self, value: T) -> Result<U, ArtichokeError> {
+    fn try_convert(&mut self, value: T) -> Result<U, ArtichokeError> {
         Ok(Convert::convert(self, value))
     }
 }

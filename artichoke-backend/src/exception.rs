@@ -27,12 +27,12 @@ impl RubyException for Exception {
     }
 
     #[must_use]
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         self.0.backtrace(interp)
     }
 
     #[must_use]
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         self.0.as_mrb_value(interp)
     }
 }
@@ -74,21 +74,17 @@ impl From<Box<dyn RubyException>> for Exception {
 /// the closest [`sys::mrb_protect`] landing pad, this function should only be
 /// called in the entrypoint into Rust from mruby.
 pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
-    // Ensure the borrow is out of scope by the time we eval code since
-    // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-    // get access to the underlying `ArtichokeState`.
-    let mrb = interp.0.borrow().mrb;
-
-    let exc = if let Some(exc) = exception.as_mrb_value(&interp) {
+    let exc = if let Some(exc) = exception.as_mrb_value(&mut interp) {
         exc
     } else {
         error!("unable to raise {}", exception.name());
         panic!("unable to raise {}", exception.name());
     };
+    let mrb = interp.mrb_mut() as *mut _;
     // `mrb_sys_raise` will call longjmp which will unwind the stack.
     // Any non-`Copy` objects that we haven't cleaned up at this point will
     // leak, so drop everything.
-    drop(interp);
+    interp.into_user_data();
     drop(exception);
 
     sys::mrb_exc_raise(mrb, exc);
@@ -119,10 +115,10 @@ where
     fn name(&self) -> String;
 
     /// Optional backtrace specified by a `Vec` of frames.
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>>;
+    fn backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>>;
 
     /// Return a raiseable [`sys::mrb_value`].
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value>;
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value>;
 }
 
 impl RubyException for Box<dyn RubyException> {
@@ -142,12 +138,12 @@ impl RubyException for Box<dyn RubyException> {
     }
 
     #[must_use]
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         self.as_ref().backtrace(interp)
     }
 
     #[must_use]
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         self.as_ref().as_mrb_value(interp)
     }
 }
@@ -244,14 +240,14 @@ impl RubyException for CaughtException {
         self.name.clone()
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         self.value
-            .funcall("backtrace", &[], None)
+            .funcall(interp, "backtrace", &[], None)
             .unwrap_or_default()
     }
 
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let _ = interp;
         Some(self.value.inner())
     }
