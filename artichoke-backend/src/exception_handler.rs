@@ -12,7 +12,7 @@ pub trait ExceptionHandler {
     /// Extract the last thrown exception on the artichoke interpreter if there
     /// is one.
     ///
-    /// If there is an error, return [`LastError::Some`], which contains the
+    /// If there is an error, return an [`Exception`], which contains the
     /// exception class name, message, and optional backtrace.
     fn last_error(&self) -> Result<Option<Exception>, Exception>;
 }
