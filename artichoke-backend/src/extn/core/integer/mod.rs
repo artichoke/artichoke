@@ -12,6 +12,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Integer", None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_method("chr", Integer::chr, sys::mrb_args_opt(1))?
+        .add_method("[]", Integer::element_reference, sys::mrb_args_req(1))?
         .add_method("/", Integer::div, sys::mrb_args_req(1))?
         .add_method("size", Integer::size, sys::mrb_args_none())?
         .define()?;
@@ -85,6 +86,45 @@ impl Integer {
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
+        }
+    }
+
+    unsafe extern "C" fn element_reference(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        fn method(interp: &Artichoke, value: Value, other: Value) -> Result<Value, Exception> {
+            if let Ok(value) = value.try_into::<Int>() {
+                let other = u32::try_from(other.implicitly_convert_to_int()?);
+                let result = if let Ok(other) = other {
+                    value.checked_shr(other).map_or(0, |v| v & 1)
+                } else {
+                    0
+                };
+                Ok(interp.convert(result))
+            } else {
+                Err(Exception::from(Fatal::new(
+                    &interp,
+                    "Failed to convert Ruby Integer receiver into Rust Int",
+                )))
+            }
+        }
+
+        let index = mrb_get_args!(mrb, required = 1);
+        let interp = unwrap_interpreter!(mrb);
+        let value = Value::new(&interp, slf);
+        let index = Value::new(&interp, index);
+
+        let pretty_name = index.pretty_name();
+
+        if let Ok(value) = method(&interp, value, index) {
+            value.inner()
+        } else {
+            let err = Exception::from(TypeError::new(
+                &interp,
+                format!("{} can't be coerced into Integer", pretty_name),
+            ));
+            exception::raise(interp, err)
         }
     }
 
