@@ -27,7 +27,7 @@ ruby scripts/spec.rb artichoke library uri
 For `Array#each`:
 
 ```shell
-ruby scripts/spec.rb core array each
+ruby scripts/spec.rb artichoke core array each
 ```
 
 ### Performance testing
