@@ -1,15 +1,8 @@
-use artichoke_core::eval::Eval;
-
-use crate::class;
-use crate::convert::TryConvert;
-use crate::extn::core::exception::{self, ArgumentError, Fatal};
-use crate::sys;
-use crate::value::{Value, ValueLike};
-use crate::{Artichoke, ArtichokeError};
+use crate::extn::prelude::*;
 
 mod scan;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<RString>().is_some() {
         return Ok(());
     }
@@ -66,11 +59,8 @@ impl RString {
 // https://ruby-doc.org/core-2.6.3/String.html
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value as _;
-
-    use crate::convert::Convert;
     use crate::extn::core::string;
+    use crate::test::prelude::*;
 
     #[test]
     fn string_equal_squiggle() {
@@ -168,9 +158,9 @@ mod tests {
         string::init(&interp).expect("string init");
 
         let s = interp.eval(b"-'abababa'").expect("eval");
-        let result = s.funcall::<bool>("frozen?", &[], None);
-        assert_eq!(result, Ok(true));
-        let result = s.funcall::<&str>("itself", &[], None);
-        assert_eq!(result, Ok("abababa"));
+        let result = s.funcall::<bool>("frozen?", &[], None).unwrap();
+        assert!(result);
+        let result = s.funcall::<&str>("itself", &[], None).unwrap();
+        assert_eq!(result, "abababa");
     }
 }

@@ -1,19 +1,11 @@
-use artichoke_core::eval::Eval;
-use artichoke_core::value::Value as _;
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::class;
-use crate::convert::Convert;
-use crate::extn::core::exception::{self, Fatal, NotImplementedError, RangeError, RubyException};
-use crate::sys;
-use crate::types::Int;
-use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::extn::prelude::*;
 
 pub mod div;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<Integer>().is_some() {
         return Ok(());
     }
@@ -36,11 +28,13 @@ impl Integer {
         let encoding = mrb_get_args!(mrb, optional = 1);
         let interp = unwrap_interpreter!(mrb);
         let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
-        let result: Result<Value, Box<dyn RubyException>> = if let Some(encoding) = encoding {
+        let result: Result<Value, Exception> = if let Some(encoding) = encoding {
             let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
             message.extend(encoding.inspect());
             message.extend(b") not supported");
-            Err(Box::new(NotImplementedError::new_raw(&interp, message)))
+            Err(Exception::from(NotImplementedError::new_raw(
+                &interp, message,
+            )))
         } else {
             // When no encoding is supplied, MRI assumes the encoding is
             // either ASCII or ASCII-8BIT.
@@ -76,13 +70,13 @@ impl Integer {
                         // Without `Encoding` support, these two arms are the same
                         Ok(interp.convert([chr].as_ref()))
                     }
-                    _ => Err(Box::new(RangeError::new(
+                    _ => Err(Exception::from(RangeError::new(
                         &interp,
                         format!("{} out of char range", chr),
                     ))),
                 }
             } else {
-                Err(Box::new(Fatal::new(
+                Err(Exception::from(Fatal::new(
                     &interp,
                     "Failed to convert Ruby Integer receiver into Rust Int",
                 )))

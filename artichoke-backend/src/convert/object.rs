@@ -144,12 +144,7 @@ where
 mod tests {
     use std::rc::Rc;
 
-    use crate::class;
-    use crate::convert::object::RustBackedValue;
-    use crate::convert::Convert;
-    use crate::def;
-    use crate::sys;
-    use crate::value::{Value, ValueLike};
+    use crate::test::prelude::*;
 
     #[derive(Debug, Default, Clone)]
     struct Container {

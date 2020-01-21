@@ -1,16 +1,9 @@
-use artichoke_core::eval::Eval;
 use std::convert::TryFrom;
 
-use crate::class;
-use crate::def;
-use crate::extn::core::exception;
 use crate::extn::core::regexp;
-use crate::sys;
-use crate::types::Int;
-use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<regexp::Regexp>().is_some() {
         return Ok(());
     }

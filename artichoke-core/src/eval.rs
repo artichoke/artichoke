@@ -1,7 +1,6 @@
 //! Run code on an Artichoke interpreter.
 
 use crate::value::Value;
-use crate::ArtichokeError;
 
 /// Marker trait for a context used by [`Eval`].
 pub trait Context {}
@@ -19,16 +18,14 @@ pub trait Eval {
     /// Concrete type for return values from eval.
     type Value: Value;
 
+    /// Concrete error type for eval functions.
+    type Error: std::error::Error;
+
     /// Filename of the top eval context.
     const TOP_FILENAME: &'static [u8] = b"(eval)";
 
     /// Eval code on the artichoke interpreter using the current `Context`.
-    fn eval(&self, code: &[u8]) -> Result<Self::Value, ArtichokeError>;
-
-    /// Eval code on the artichoke interpreter using the current `Context`.
-    ///
-    /// Exceptions will unwind past this call.
-    fn unchecked_eval(&self, code: &[u8]) -> Self::Value;
+    fn eval(&self, code: &[u8]) -> Result<Self::Value, Self::Error>;
 
     /// Peek at the top of the [`Context`] stack.
     fn peek_context(&self) -> Option<Self::Context>;

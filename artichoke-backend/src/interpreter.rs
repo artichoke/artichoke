@@ -8,19 +8,19 @@ use crate::fs::Filesystem;
 use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, BootError};
 
 /// Create and initialize an [`Artichoke`] interpreter.
 ///
 /// This function creates a new [`State`], embeds it in the [`sys::mrb_state`],
 /// initializes an [in memory virtual filesystem](Filesystem), and loads the
 /// [`extn`] extensions to Ruby Core and Stdlib.
-pub fn interpreter() -> Result<Artichoke, ArtichokeError> {
+pub fn interpreter() -> Result<Artichoke, BootError> {
     let vfs = Filesystem::new()?;
     let mrb = unsafe { sys::mrb_open() };
     if mrb.is_null() {
         error!("Failed to allocate mrb interprter");
-        return Err(ArtichokeError::New);
+        return Err(BootError::from(ArtichokeError::New));
     }
 
     let context = unsafe { sys::mrbc_context_new(mrb) };

@@ -1,25 +1,12 @@
-use artichoke_core::eval::Eval;
 #[cfg(feature = "artichoke-array")]
 use std::convert::TryFrom;
 
 #[cfg(feature = "artichoke-array")]
-use crate::class;
-#[cfg(feature = "artichoke-array")]
-use crate::convert::Convert;
-#[cfg(feature = "artichoke-array")]
-use crate::def;
-#[cfg(feature = "artichoke-array")]
 use crate::extn::core::array;
-#[cfg(feature = "artichoke-array")]
-use crate::extn::core::exception;
-#[cfg(feature = "artichoke-array")]
-use crate::sys;
-#[cfg(feature = "artichoke-array")]
-use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::extn::prelude::*;
 
 #[cfg(feature = "artichoke-array")]
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<array::Array>().is_some() {
         return Ok(());
     }
@@ -51,7 +38,7 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
 }
 
 #[cfg(not(feature = "artichoke-array"))]
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let _ = interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");
     Ok(())

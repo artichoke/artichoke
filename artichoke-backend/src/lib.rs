@@ -85,6 +85,8 @@ extern crate downcast;
 extern crate log;
 
 use std::cell::RefCell;
+use std::error;
+use std::fmt;
 use std::rc::Rc;
 
 #[macro_use]
@@ -96,6 +98,7 @@ pub mod convert;
 pub mod def;
 pub mod eval;
 pub mod exception;
+pub mod exception_handler;
 pub mod extn;
 pub mod ffi;
 pub mod fs;
@@ -111,8 +114,13 @@ pub mod types;
 pub mod value;
 pub mod warn;
 
+#[cfg(test)]
+mod test;
+
 pub use artichoke_core::ArtichokeError;
 pub use interpreter::interpreter;
+
+use crate::exception::Exception;
 
 /// Interpreter instance.
 ///
@@ -137,5 +145,56 @@ impl Artichoke {
     /// [`Value`](value::Value)s.
     pub fn close(self) {
         self.0.borrow_mut().close();
+    }
+}
+
+/// Error returned when initializing an [`Artichoke`] interpreter.
+///
+/// This error type allows static errors as well as dynamic errors raised on the
+/// Ruby interpreter.
+#[derive(Debug)]
+pub struct BootError(BootErrorType);
+
+#[derive(Debug)]
+enum BootErrorType {
+    Artichoke(ArtichokeError),
+    Ruby(Exception),
+}
+
+impl fmt::Display for BootError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.0 {
+            BootErrorType::Artichoke(ref err) => write!(f, "{}", err),
+            BootErrorType::Ruby(ref exc) => write!(f, "{}", exc),
+        }
+    }
+}
+
+impl error::Error for BootError {
+    #[must_use]
+    fn description(&self) -> &str {
+        "Artichoke interpreter boot error"
+    }
+
+    #[must_use]
+    fn cause(&self) -> Option<&dyn error::Error> {
+        match self.0 {
+            BootErrorType::Artichoke(ref err) => Some(err),
+            BootErrorType::Ruby(ref exc) => Some(exc),
+        }
+    }
+}
+
+impl From<ArtichokeError> for BootError {
+    #[must_use]
+    fn from(err: ArtichokeError) -> Self {
+        Self(BootErrorType::Artichoke(err))
+    }
+}
+
+impl From<Exception> for BootError {
+    #[must_use]
+    fn from(err: Exception) -> Self {
+        Self(BootErrorType::Ruby(err))
     }
 }

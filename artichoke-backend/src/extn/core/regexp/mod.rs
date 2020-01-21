@@ -14,13 +14,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str;
 
-use crate::convert::Convert;
-use crate::convert::RustBackedValue;
-use crate::extn::core::exception::{ArgumentError, Fatal, RubyException, TypeError};
-use crate::sys;
-use crate::types::Int;
-use crate::value::{Block, Value};
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[allow(clippy::type_complexity)]
 pub mod backend;
@@ -98,7 +92,7 @@ impl Regexp {
         literal_config: Config,
         derived_config: Config,
         encoding: Encoding,
-    ) -> Result<Self, Box<dyn RubyException>> {
+    ) -> Result<Self, Exception> {
         // Patterns must be parsable by Oniguruma.
         let onig = backend::onig::Onig::new(
             interp,
@@ -131,7 +125,7 @@ impl Regexp {
         options: Option<Value>,
         encoding: Option<Value>,
         into: Option<Value>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let (options, encoding) = if let Some(encoding) = encoding {
             let encoding = match enc::parse(&encoding) {
                 Ok(encoding) => Some(encoding),
@@ -188,7 +182,7 @@ impl Regexp {
                 options: options.unwrap_or_default(),
             }
         } else {
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "no implicit conversion of {} into String",
@@ -216,13 +210,13 @@ impl Regexp {
         Ok(regexp)
     }
 
-    pub fn escape(interp: &Artichoke, pattern: Value) -> Result<Value, Box<dyn RubyException>> {
+    pub fn escape(interp: &Artichoke, pattern: Value) -> Result<Value, Exception> {
         let pattern = if let Ok(pattern) = pattern.clone().try_into::<&[u8]>() {
             pattern
         } else if let Ok(pattern) = pattern.funcall::<&[u8]>("to_str", &[], None) {
             pattern
         } else {
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 "No implicit conversion into String",
             )));
@@ -233,7 +227,7 @@ impl Regexp {
         Ok(interp.convert(syntax::escape(pattern)))
     }
 
-    pub fn union(interp: &Artichoke, patterns: &[Value]) -> Result<Value, Box<dyn RubyException>> {
+    pub fn union(interp: &Artichoke, patterns: &[Value]) -> Result<Value, Exception> {
         let mut iter = patterns.iter().peekable();
         let pattern = if let Some(first) = iter.next() {
             if iter.peek().is_none() {
@@ -253,7 +247,7 @@ impl Regexp {
                         } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
                             patterns.push(syntax::escape(pattern).into_bytes());
                         } else {
-                            return Err(Box::new(TypeError::new(
+                            return Err(Exception::from(TypeError::new(
                                 interp,
                                 "No implicit conversion into String",
                             )));
@@ -267,7 +261,7 @@ impl Regexp {
                     } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
                         syntax::escape(pattern).into_bytes()
                     } else {
-                        return Err(Box::new(TypeError::new(
+                        return Err(Exception::from(TypeError::new(
                             interp,
                             "No implicit conversion into String",
                         )));
@@ -288,7 +282,7 @@ impl Regexp {
                     })?;
                     patterns.push(syntax::escape(pattern).into_bytes());
                 } else {
-                    return Err(Box::new(TypeError::new(
+                    return Err(Exception::from(TypeError::new(
                         interp,
                         "no implicit conversion into String",
                     )));
@@ -307,7 +301,7 @@ impl Regexp {
                         })?;
                         patterns.push(syntax::escape(pattern).into_bytes());
                     } else {
-                        return Err(Box::new(TypeError::new(
+                        return Err(Exception::from(TypeError::new(
                             interp,
                             "no implicit conversion into String",
                         )));
@@ -342,11 +336,7 @@ impl Regexp {
         self.0.as_ref()
     }
 
-    pub fn case_compare(
-        &self,
-        interp: &Artichoke,
-        other: Value,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    pub fn case_compare(&self, interp: &Artichoke, other: Value) -> Result<Value, Exception> {
         let pattern = if let Ok(pattern) = other.clone().try_into::<&[u8]>() {
             pattern
         } else if let Ok(pattern) = other.funcall::<&[u8]>("to_str", &[], None) {
@@ -362,7 +352,7 @@ impl Regexp {
         Ok(interp.convert(self.0.case_match(interp, pattern)?))
     }
 
-    pub fn eql(&self, interp: &Artichoke, other: Value) -> Result<Value, Box<dyn RubyException>> {
+    pub fn eql(&self, interp: &Artichoke, other: Value) -> Result<Value, Exception> {
         if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             Ok(interp.convert(self.inner() == other.borrow().inner()))
         } else {
@@ -370,7 +360,7 @@ impl Regexp {
         }
     }
 
-    pub fn hash(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn hash(&self, interp: &Artichoke) -> Result<Value, Exception> {
         let mut s = DefaultHasher::new();
         self.0.hash(&mut s);
         let hash = s.finish();
@@ -378,15 +368,15 @@ impl Regexp {
         Ok(interp.convert(hash as Int))
     }
 
-    pub fn inspect(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn inspect(&self, interp: &Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.inspect(interp)))
     }
 
-    pub fn is_casefold(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn is_casefold(&self, interp: &Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.literal_config().options.ignore_case))
     }
 
-    pub fn is_fixed_encoding(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn is_fixed_encoding(&self, interp: &Artichoke) -> Result<Value, Exception> {
         match self.0.encoding() {
             Encoding::No => {
                 let opts = Int::try_from(self.0.literal_config().options.flags().bits())
@@ -403,13 +393,13 @@ impl Regexp {
         interp: &Artichoke,
         pattern: Value,
         pos: Option<Value>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
             pattern
         } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
             pattern
         } else {
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "no implicit conversion of {} into String",
@@ -428,7 +418,7 @@ impl Regexp {
             } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
                 Some(pos)
             } else {
-                return Err(Box::new(TypeError::new(
+                return Err(Exception::from(TypeError::new(
                     interp,
                     format!(
                         "no implicit conversion of {} into Integer",
@@ -448,13 +438,13 @@ impl Regexp {
         pattern: Value,
         pos: Option<Value>,
         block: Option<Block>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
             pattern
         } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
             pattern
         } else {
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "no implicit conversion of {} into String",
@@ -479,7 +469,7 @@ impl Regexp {
             } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
                 Some(pos)
             } else {
-                return Err(Box::new(TypeError::new(
+                return Err(Exception::from(TypeError::new(
                     interp,
                     format!(
                         "no implicit conversion of {} into Integer",
@@ -493,17 +483,13 @@ impl Regexp {
         Ok(interp.convert(self.0.match_(interp, pattern, pos, block)?))
     }
 
-    pub fn match_operator(
-        &self,
-        interp: &Artichoke,
-        pattern: Value,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    pub fn match_operator(&self, interp: &Artichoke, pattern: Value) -> Result<Value, Exception> {
         let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
             pattern
         } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
             pattern
         } else {
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "no implicit conversion of {} into String",
@@ -519,26 +505,26 @@ impl Regexp {
         Ok(interp.convert(self.0.match_operator(interp, pattern)?))
     }
 
-    pub fn named_captures(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn named_captures(&self, interp: &Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.named_captures(interp)?))
     }
 
-    pub fn names(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn names(&self, interp: &Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.names(interp)))
     }
 
-    pub fn options(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn options(&self, interp: &Artichoke) -> Result<Value, Exception> {
         let opts = Int::try_from(self.0.literal_config().options.flags().bits())
             .map_err(|_| Fatal::new(interp, "Regexp options do not fit in Integer"))?;
         let opts = opts | self.0.encoding().flags();
         Ok(interp.convert(opts))
     }
 
-    pub fn source(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn source(&self, interp: &Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.literal_config().pattern.as_slice()))
     }
 
-    pub fn string(&self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn string(&self, interp: &Artichoke) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.string(interp)))
     }
 }
@@ -577,38 +563,31 @@ pub trait RegexpType {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Box<dyn RubyException>>;
+    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception>;
 
     fn capture_indexes_for_name(
         &self,
         interp: &Artichoke,
         name: &[u8],
-    ) -> Result<Option<Vec<usize>>, Box<dyn RubyException>>;
+    ) -> Result<Option<Vec<usize>>, Exception>;
 
-    fn captures_len(
-        &self,
-        interp: &Artichoke,
-        haystack: Option<&[u8]>,
-    ) -> Result<usize, Box<dyn RubyException>>;
+    fn captures_len(&self, interp: &Artichoke, haystack: Option<&[u8]>)
+        -> Result<usize, Exception>;
 
     fn capture0<'a>(
         &self,
         interp: &Artichoke,
         haystack: &'a [u8],
-    ) -> Result<Option<&'a [u8]>, Box<dyn RubyException>>;
+    ) -> Result<Option<&'a [u8]>, Exception>;
 
-    fn case_match(
-        &self,
-        interp: &Artichoke,
-        pattern: &[u8],
-    ) -> Result<bool, Box<dyn RubyException>>;
+    fn case_match(&self, interp: &Artichoke, pattern: &[u8]) -> Result<bool, Exception>;
 
     fn is_match(
         &self,
         interp: &Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
-    ) -> Result<bool, Box<dyn RubyException>>;
+    ) -> Result<bool, Exception>;
 
     fn match_(
         &self,
@@ -616,24 +595,17 @@ pub trait RegexpType {
         pattern: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
-    ) -> Result<Value, Box<dyn RubyException>>;
+    ) -> Result<Value, Exception>;
 
-    fn match_operator(
-        &self,
-        interp: &Artichoke,
-        pattern: &[u8],
-    ) -> Result<Option<Int>, Box<dyn RubyException>>;
+    fn match_operator(&self, interp: &Artichoke, pattern: &[u8]) -> Result<Option<Int>, Exception>;
 
-    fn named_captures(
-        &self,
-        interp: &Artichoke,
-    ) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Box<dyn RubyException>>;
+    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception>;
 
     fn named_captures_for_haystack(
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Box<dyn RubyException>>;
+    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception>;
 
     fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>>;
 
@@ -642,14 +614,14 @@ pub trait RegexpType {
         interp: &Artichoke,
         haystack: &[u8],
         at: usize,
-    ) -> Result<Option<(usize, usize)>, Box<dyn RubyException>>;
+    ) -> Result<Option<(usize, usize)>, Exception>;
 
     fn scan(
         &self,
         interp: &Artichoke,
         haystack: Value,
         block: Option<Block>,
-    ) -> Result<Value, Box<dyn RubyException>>;
+    ) -> Result<Value, Exception>;
 }
 
 impl Clone for Box<dyn RegexpType> {

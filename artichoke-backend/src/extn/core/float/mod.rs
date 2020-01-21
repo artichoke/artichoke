@@ -1,10 +1,7 @@
-use artichoke_core::eval::Eval;
-
-use crate::class;
+use crate::extn::prelude::*;
 use crate::types;
-use crate::{Artichoke, ArtichokeError};
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<Float>().is_some() {
         return Ok(());
     }

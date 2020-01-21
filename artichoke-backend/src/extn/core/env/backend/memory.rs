@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 
-use crate::convert::Convert;
 use crate::extn::core::env::Env;
-use crate::extn::core::exception::{ArgumentError, RubyException};
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[derive(Debug, Default, Clone)]
 pub struct Memory {
@@ -19,7 +16,7 @@ impl Memory {
 }
 
 impl Env for Memory {
-    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Box<dyn RubyException>> {
+    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -32,7 +29,7 @@ impl Env for Memory {
             // since empty names are invalid at the OS level.
             Ok(interp.convert(None::<Value>))
         } else if memchr::memchr(b'\0', name).is_some() {
-            Err(Box::new(ArgumentError::new(
+            Err(Exception::from(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
             )))
@@ -52,7 +49,7 @@ impl Env for Memory {
         interp: &Artichoke,
         name: &[u8],
         value: Option<&[u8]>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -62,12 +59,12 @@ impl Env for Memory {
         // NUL character.
         if name.is_empty() {
             // TODO: This should raise `Errno::EINVAL`.
-            Err(Box::new(ArgumentError::new(
+            Err(Exception::from(ArgumentError::new(
                 interp,
                 "Invalid argument - setenv()",
             )))
         } else if memchr::memchr(b'\0', name).is_some() {
-            Err(Box::new(ArgumentError::new(
+            Err(Exception::from(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
             )))
@@ -76,10 +73,10 @@ impl Env for Memory {
             message.extend(name.to_vec());
             message.push(b')');
             // TODO: This should raise `Errno::EINVAL`.
-            Err(Box::new(ArgumentError::new_raw(interp, message)))
+            Err(Exception::from(ArgumentError::new_raw(interp, message)))
         } else if let Some(value) = value {
             if memchr::memchr(b'\0', value).is_some() {
-                Err(Box::new(ArgumentError::new(
+                Err(Exception::from(ArgumentError::new(
                     interp,
                     "bad environment variable value: contains null byte",
                 )))
@@ -93,10 +90,7 @@ impl Env for Memory {
         }
     }
 
-    fn as_map(
-        &self,
-        interp: &Artichoke,
-    ) -> Result<HashMap<Vec<u8>, Vec<u8>>, Box<dyn RubyException>> {
+    fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
         let _ = interp;
         Ok(self.store.clone())
     }

@@ -1,7 +1,6 @@
-use crate::module;
-use crate::ArtichokeError;
+use crate::extn::prelude::*;
 
-pub fn init(interp: &crate::Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &crate::Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().module_spec::<Artichoke>().is_some() {
         return Ok(());
     }

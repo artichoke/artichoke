@@ -1,15 +1,8 @@
-use artichoke_core::eval::Eval;
-
-use crate::class;
-use crate::def::{self, EnclosingRubyScope};
 use crate::extn::core::artichoke;
 use crate::extn::core::env;
-use crate::extn::core::exception;
-use crate::sys;
-use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<env::Environ>().is_some() {
         return Ok(());
     }

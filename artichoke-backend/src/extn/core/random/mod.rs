@@ -3,12 +3,7 @@ use rand::{self, Rng, RngCore};
 use std::convert::TryFrom;
 use std::ptr;
 
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{ArgumentError, Fatal, RubyException};
-use crate::sys;
-use crate::types::{Float, Int};
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 pub mod backend;
 pub mod mruby;
@@ -46,7 +41,7 @@ pub fn initialize(
     interp: &Artichoke,
     seed: Option<Value>,
     into: Option<sys::mrb_value>,
-) -> Result<Value, Box<dyn RubyException>> {
+) -> Result<Value, Exception> {
     let rand = if let Some(seed) = seed {
         let seed = seed.implicitly_convert_to_int()?;
         #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
@@ -60,7 +55,7 @@ pub fn initialize(
     Ok(result)
 }
 
-pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Exception> {
     if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         if let Ok(other) = unsafe { Random::try_from_ruby(interp, &other) } {
             if ptr::eq(rand.as_ref(), other.as_ref()) {
@@ -74,22 +69,18 @@ pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Box<d
             Ok(interp.convert(false))
         }
     } else {
-        Err(Box::new(Fatal::new(
+        Err(Exception::from(Fatal::new(
             interp,
             "Failed to extract Rust Random from Ruby Random receiver",
         )))
     }
 }
 
-pub fn bytes(
-    interp: &Artichoke,
-    rand: Value,
-    size: Value,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn bytes(interp: &Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
     let rand = if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         rand
     } else {
-        return Err(Box::new(Fatal::new(
+        return Err(Exception::from(Fatal::new(
             interp,
             "Failed to extract Rust Random from Ruby Random receiver",
         )));
@@ -101,18 +92,14 @@ pub fn bytes(
         borrow.inner_mut().bytes(interp, buf.as_mut_slice())?;
         Ok(interp.convert(buf))
     } else {
-        Err(Box::new(ArgumentError::new(
+        Err(Exception::from(ArgumentError::new(
             interp,
             "negative string size (or size too big)",
         )))
     }
 }
 
-pub fn rand(
-    interp: &Artichoke,
-    rand: Value,
-    max: Option<Value>,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn rand(interp: &Artichoke, rand: Value, max: Option<Value>) -> Result<Value, Exception> {
     #[derive(Debug, Clone, Copy)]
     enum Max {
         Float(Float),
@@ -122,7 +109,7 @@ pub fn rand(
     let rand = if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         rand
     } else {
-        return Err(Box::new(Fatal::new(
+        return Err(Exception::from(Fatal::new(
             interp,
             "Failed to extract Rust Random from Ruby Random receiver",
         )));
@@ -139,7 +126,7 @@ pub fn rand(
         Max::None
     };
     match max {
-        Max::Float(max) if max < 0.0 => Err(Box::new(ArgumentError::new(
+        Max::Float(max) if max < 0.0 => Err(Exception::from(ArgumentError::new(
             interp,
             format!("invalid argument - {}", max),
         ))),
@@ -153,7 +140,7 @@ pub fn rand(
             let number = borrow.inner_mut().rand_float(interp, Some(max))?;
             Ok(interp.convert(number))
         }
-        Max::Int(max) if max < 1 => Err(Box::new(ArgumentError::new(
+        Max::Int(max) if max < 1 => Err(Exception::from(ArgumentError::new(
             interp,
             format!("invalid argument - {}", max),
         ))),
@@ -170,27 +157,27 @@ pub fn rand(
     }
 }
 
-pub fn seed(interp: &Artichoke, rand: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn seed(interp: &Artichoke, rand: Value) -> Result<Value, Exception> {
     if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         let borrow = rand.borrow();
         let seed = borrow.inner().seed(interp)?;
         #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         Ok(interp.convert(seed as Int))
     } else {
-        Err(Box::new(Fatal::new(
+        Err(Exception::from(Fatal::new(
             interp,
             "Failed to extract Rust Random from Ruby Random receiver",
         )))
     }
 }
 
-pub fn new_seed(interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+pub fn new_seed(interp: &Artichoke) -> Result<Value, Exception> {
     let mut rng = rand::thread_rng();
     let result = rng.gen::<Int>();
     Ok(interp.convert(result))
 }
 
-pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Box<dyn RubyException>> {
+pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Exception> {
     let _ = number;
     let new_seed = if let Some(number) = number {
         let new_seed = number.implicitly_convert_to_int()?;
@@ -207,7 +194,7 @@ pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Box<dyn
     Ok(interp.convert(old_seed as Int))
 }
 
-pub fn urandom(interp: &Artichoke, size: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn urandom(interp: &Artichoke, size: Value) -> Result<Value, Exception> {
     let size = size.implicitly_convert_to_int()?;
     let size = usize::try_from(size)
         .map_err(|_| ArgumentError::new(interp, "negative string size (or size too big)"))?;

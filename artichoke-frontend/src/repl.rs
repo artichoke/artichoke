@@ -5,9 +5,11 @@
 //! multi-line Ruby expressions, CTRL-C to break out of an expression, and can
 //! inspect return values and exception backtraces.
 
+use ansi_term::Style;
 use artichoke_backend::eval::Context;
+use artichoke_backend::exception::{Exception, RubyException};
 use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_backend::{Artichoke, BootError};
 use artichoke_core::eval::Eval;
 use artichoke_core::value::Value;
 use rustyline::error::ReadlineError;
@@ -41,9 +43,10 @@ pub enum Error {
     ReplInit,
     /// Unrecoverable [`Parser`] error.
     ReplParse(parser::Error),
-    /// Unrecoverable [`ArtichokeError`]. [`ArtichokeError::Exec`] are handled gracefully
-    /// by the REPL. All other `ArtichokeError`s are fatal.
-    Ruby(ArtichokeError),
+    /// Error during Artichoke interpreter initialization.
+    Artichoke(BootError),
+    /// Exception thrown by eval.
+    Ruby(Exception),
     /// IO error when writing to output or error streams.
     Io(io::Error),
 }
@@ -75,12 +78,14 @@ fn preamble(interp: &Artichoke) -> Result<String, Error> {
         .eval(b"RUBY_DESCRIPTION")
         .map_err(Error::Ruby)?
         .try_into::<&str>()
-        .map_err(Error::Ruby)?;
+        .map_err(BootError::from)
+        .map_err(Error::Artichoke)?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")
         .map_err(Error::Ruby)?
         .try_into::<&str>()
-        .map_err(Error::Ruby)?;
+        .map_err(BootError::from)
+        .map_err(Error::Artichoke)?;
     let mut buf = String::new();
     buf.push_str(description);
     buf.push('\n');
@@ -97,7 +102,7 @@ pub fn run(
     config: Option<PromptConfig>,
 ) -> Result<(), Error> {
     let config = config.unwrap_or_else(Default::default);
-    let interp = artichoke_backend::interpreter().map_err(Error::Ruby)?;
+    let interp = artichoke_backend::interpreter().map_err(Error::Artichoke)?;
     writeln!(output, "{}", preamble(&interp)?).map_err(Error::Io)?;
 
     let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
@@ -136,20 +141,40 @@ pub fn run(
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
                         let result = value.inspect();
-                        io::stdout()
+                        output
                             .write_all(config.result_prefix.as_bytes())
                             .map_err(Error::Io)?;
-                        io::stdout()
-                            .write_all(result.as_slice())
+                        output.write_all(result.as_slice()).map_err(Error::Io)?;
+                    }
+                    Err(exc) => {
+                        if let Some(backtrace) = exc.backtrace(&interp) {
+                            writeln!(
+                                error,
+                                "{} (most recent call last)",
+                                Style::new().bold().paint("Traceback")
+                            )
                             .map_err(Error::Io)?;
-                    }
-                    Err(ArtichokeError::Exec(backtrace)) => {
-                        writeln!(error, "Backtrace:").map_err(Error::Io)?;
-                        for frame in backtrace.lines() {
-                            writeln!(error, "    {}", frame).map_err(Error::Io)?;
+                            for (num, frame) in backtrace.into_iter().enumerate().rev() {
+                                write!(error, "\t{}: from ", num + 1).map_err(Error::Io)?;
+                                error.write_all(frame.as_slice()).map_err(Error::Io)?;
+                                writeln!(error).map_err(Error::Io)?;
+                            }
                         }
+                        write!(
+                            error,
+                            "{} {}",
+                            Style::new().bold().paint(exc.name()),
+                            Style::new().bold().paint("(")
+                        )
+                        .map_err(Error::Io)?;
+                        Style::new()
+                            .bold()
+                            .underline()
+                            .paint(exc.message())
+                            .write_to(&mut error)
+                            .map_err(Error::Io)?;
+                        writeln!(error, "{}", Style::new().bold().paint(")")).map_err(Error::Io)?;
                     }
-                    Err(err) => return Err(Error::Ruby(err)),
                 }
                 for line in buf.lines() {
                     rl.add_history_entry(line);

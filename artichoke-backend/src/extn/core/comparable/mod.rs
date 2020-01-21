@@ -1,9 +1,6 @@
-use artichoke_core::eval::Eval;
+use crate::extn::prelude::*;
 
-use crate::module;
-use crate::{Artichoke, ArtichokeError};
-
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().module_spec::<Comparable>().is_some() {
         return Ok(());
     }

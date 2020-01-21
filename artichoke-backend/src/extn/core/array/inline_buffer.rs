@@ -2,13 +2,9 @@ use smallvec::SmallVec;
 use std::cmp;
 use std::iter::FromIterator;
 
-use crate::convert::Convert;
 use crate::extn::core::array::ArrayType;
-use crate::extn::core::exception::RubyException;
+use crate::extn::prelude::*;
 use crate::gc::MrbGarbageCollection;
-use crate::sys;
-use crate::value::Value;
-use crate::Artichoke;
 
 const INLINE_CAPACITY: usize = 8;
 
@@ -71,7 +67,7 @@ impl ArrayType for InlineBuffer {
         self.0.is_empty()
     }
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
         Self::get(self, interp, index)
     }
 
@@ -80,7 +76,7 @@ impl ArrayType for InlineBuffer {
         interp: &Artichoke,
         start: usize,
         len: usize,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<Box<dyn ArrayType>, Exception> {
         match Self::slice(self, interp, start, len) {
             Ok(slice) => Ok(Box::new(slice)),
             Err(err) => Err(err),
@@ -93,7 +89,7 @@ impl ArrayType for InlineBuffer {
         index: usize,
         elem: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let _ = realloc;
         Self::set(self, interp, index, elem)
     }
@@ -105,7 +101,7 @@ impl ArrayType for InlineBuffer {
         drain: usize,
         with: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = realloc;
         Self::set_with_drain(self, interp, start, drain, with)
     }
@@ -117,7 +113,7 @@ impl ArrayType for InlineBuffer {
         drain: usize,
         with: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = realloc;
         if let Ok(buffer) = with.downcast_ref::<Self>() {
             Self::set_slice(self, interp, start, drain, buffer)
@@ -131,7 +127,7 @@ impl ArrayType for InlineBuffer {
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let _ = realloc;
         if let Ok(buffer) = other.downcast_ref::<Self>() {
             Self::concat(self, interp, buffer)
@@ -144,12 +140,12 @@ impl ArrayType for InlineBuffer {
         &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let _ = realloc;
         Self::pop(self, interp)
     }
 
-    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
         Self::reverse(self, interp)
     }
 }
@@ -202,18 +198,13 @@ impl InlineBuffer {
         self.0.clear();
     }
 
-    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
+    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
         let elem = self.0.get(index);
         let elem = elem.copied().map(|elem| Value::new(interp, elem));
         Ok(interp.convert(elem))
     }
 
-    pub fn slice(
-        &self,
-        interp: &Artichoke,
-        start: usize,
-        len: usize,
-    ) -> Result<Self, Box<dyn RubyException>> {
+    pub fn slice(&self, interp: &Artichoke, start: usize, len: usize) -> Result<Self, Exception> {
         let _ = interp;
         if self.is_empty() {
             return Ok(Self::default());
@@ -226,12 +217,7 @@ impl InlineBuffer {
         }
     }
 
-    pub fn set(
-        &mut self,
-        interp: &Artichoke,
-        index: usize,
-        elem: Value,
-    ) -> Result<(), Box<dyn RubyException>> {
+    pub fn set(&mut self, interp: &Artichoke, index: usize, elem: Value) -> Result<(), Exception> {
         let _ = interp;
         let buflen = self.len();
         match index {
@@ -255,7 +241,7 @@ impl InlineBuffer {
         start: usize,
         drain: usize,
         with: Value,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = interp;
         let buflen = self.len();
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
@@ -285,7 +271,7 @@ impl InlineBuffer {
         start: usize,
         drain: usize,
         with: &Self,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = interp;
         let buflen = self.len();
         let withlen = with.len();
@@ -322,22 +308,18 @@ impl InlineBuffer {
         Ok(drained)
     }
 
-    pub fn concat(
-        &mut self,
-        interp: &Artichoke,
-        other: &Self,
-    ) -> Result<(), Box<dyn RubyException>> {
+    pub fn concat(&mut self, interp: &Artichoke, other: &Self) -> Result<(), Exception> {
         let _ = interp;
         self.0.extend_from_slice(other.0.as_slice());
         Ok(())
     }
 
-    pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Exception> {
         let value = self.0.pop();
         Ok(interp.convert(value.map(|value| Value::new(interp, value))))
     }
 
-    pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+    pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
         let _ = interp;
         self.0.reverse();
         Ok(())
@@ -346,8 +328,7 @@ impl InlineBuffer {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value;
+    use crate::test::prelude::*;
 
     #[test]
     fn integration_test() {
@@ -356,7 +337,7 @@ mod tests {
             .eval(&include_bytes!("inline_buffer_test.rb")[..])
             .unwrap();
         let result = interp.eval(b"spec");
-        let result = result.and_then(Value::try_into::<bool>);
-        assert_eq!(Ok(true), result);
+        let result = result.unwrap().try_into::<bool>().unwrap();
+        assert!(result);
     }
 }

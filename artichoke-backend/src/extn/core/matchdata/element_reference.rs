@@ -1,17 +1,11 @@
 //! [`MatchData#[]`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-5B-5D)
 
-use artichoke_core::value::Value as ValueLike;
 use bstr::BStr;
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{Fatal, IndexError, RubyException, TypeError};
 use crate::extn::core::matchdata::MatchData;
-use crate::sys;
-use crate::types::Int;
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Args<'a> {
@@ -22,10 +16,7 @@ pub enum Args<'a> {
 }
 
 impl<'a> Args<'a> {
-    pub fn num_captures(
-        interp: &Artichoke,
-        value: &Value,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    pub fn num_captures(interp: &Artichoke, value: &Value) -> Result<usize, Exception> {
         let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
             Fatal::new(
                 interp,
@@ -41,7 +32,7 @@ impl<'a> Args<'a> {
         elem: Value,
         len: Option<Value>,
         num_captures: usize,
-    ) -> Result<Self, Box<dyn RubyException>> {
+    ) -> Result<Self, Exception> {
         if let Some(len) = len {
             let elem_type_name = elem.pretty_name();
             let start = if let Ok(start) = elem.clone().try_into::<Int>() {
@@ -49,7 +40,7 @@ impl<'a> Args<'a> {
             } else if let Ok(start) = elem.funcall::<Int>("to_int", &[], None) {
                 start
             } else {
-                return Err(Box::new(TypeError::new(
+                return Err(Exception::from(TypeError::new(
                     interp,
                     format!("no implicit conversion of {} into Integer", elem_type_name),
                 )));
@@ -60,7 +51,7 @@ impl<'a> Args<'a> {
             } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
                 len
             } else {
-                return Err(Box::new(TypeError::new(
+                return Err(Exception::from(TypeError::new(
                     interp,
                     format!("no implicit conversion of {} into Integer", len_type_name),
                 )));
@@ -86,7 +77,7 @@ impl<'a> Args<'a> {
                 match unsafe { Self::is_range(interp, &elem, rangelen) } {
                     Ok(Some(args)) => Ok(args),
                     Ok(None) => Ok(Self::Empty),
-                    Err(_) => Err(Box::new(TypeError::new(
+                    Err(_) => Err(Exception::from(TypeError::new(
                         interp,
                         format!("no implicit conversion of {} into Integer", name),
                     ))),
@@ -99,7 +90,7 @@ impl<'a> Args<'a> {
         interp: &Artichoke,
         first: &Value,
         length: Int,
-    ) -> Result<Option<Self>, Box<dyn RubyException>> {
+    ) -> Result<Option<Self>, Exception> {
         let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let mut len = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let mrb = interp.0.borrow().mrb;
@@ -125,11 +116,7 @@ impl<'a> Args<'a> {
     }
 }
 
-pub fn method(
-    interp: &Artichoke,
-    args: Args,
-    value: &Value,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -180,7 +167,7 @@ pub fn method(
                 Ok(interp.convert(group))
             } else {
                 let groupstr = format!("{:?}", <&BStr>::from(name));
-                Err(Box::new(IndexError::new(
+                Err(Exception::from(IndexError::new(
                     interp,
                     format!(
                         "undefined group name reference: {}",

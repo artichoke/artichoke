@@ -1,9 +1,6 @@
-use artichoke_core::load::LoadSources;
+use crate::extn::prelude::*;
 
-use crate::class;
-use crate::{Artichoke, ArtichokeError};
-
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Set", None, None)?;
     interp.0.borrow_mut().def_class::<Set>(spec);
     let spec = class::Spec::new("SortedSet", None, None)?;

@@ -20,10 +20,10 @@
 //! This test fails before commit
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
+use artichoke_backend::exception::RubyException;
 use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_backend::ArtichokeError;
 use artichoke_core::eval::Eval;
-use artichoke_core::value::Value as _;
+use artichoke_core::value::Value;
 
 mod leak;
 
@@ -40,24 +40,17 @@ def bad_code
 end
     "#;
     let _ = interp.eval(code.trim().as_bytes()).expect("eval");
-    let expected = format!(
-        r#"
-(eval):2: {} (ArgumentError)
-(eval):2:in bad_code
-(eval):1
-        "#,
-        "n".repeat(1024 * 1024)
-    );
+    let expected = Some(vec![
+        Vec::from(&b"(eval):2:in bad_code"[..]),
+        Vec::from(&b"(eval):1"[..]),
+    ]);
     leak::Detector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let interp = interp.clone();
         let code = b"bad_code";
         let arena = interp.create_arena_savepoint();
-        let result = interp.eval(code).map(|_| ());
+        let result = interp.eval(code).unwrap_err();
         arena.restore();
-        assert_eq!(
-            result,
-            Err(ArtichokeError::Exec(expected.trim().to_owned()))
-        );
+        assert_eq!(expected, result.backtrace(&interp));
         drop(result);
         interp.incremental_gc();
     });

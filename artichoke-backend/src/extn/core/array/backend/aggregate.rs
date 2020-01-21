@@ -1,8 +1,5 @@
-use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
-use crate::extn::core::exception::{RangeError, RubyException};
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[derive(Default)]
 pub struct Aggregate(Vec<Box<dyn ArrayType>>);
@@ -80,7 +77,7 @@ impl ArrayType for Aggregate {
         false
     }
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
         let mut base = 0;
         for part in &self.0 {
             let idx = index - base;
@@ -99,7 +96,7 @@ impl ArrayType for Aggregate {
         interp: &Artichoke,
         start: usize,
         len: usize,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<Box<dyn ArrayType>, Exception> {
         let mut base = 0;
         let mut iter = self.0.iter();
         while let Some(part) = iter.next() {
@@ -134,7 +131,7 @@ impl ArrayType for Aggregate {
         index: usize,
         elem: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let _ = realloc;
         let mut base = 0;
         for (chunk, part) in self.0.iter_mut().enumerate() {
@@ -168,7 +165,7 @@ impl ArrayType for Aggregate {
         drain: usize,
         with: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = realloc;
         let mut base = 0;
         let mut iter = self.0.iter_mut().enumerate();
@@ -239,7 +236,7 @@ impl ArrayType for Aggregate {
         drain: usize,
         with: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let _ = realloc;
         let mut base = 0;
         let mut iter = self.0.iter_mut().enumerate();
@@ -308,7 +305,7 @@ impl ArrayType for Aggregate {
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let _ = interp;
         let _ = realloc;
         if let Ok(other) = other.downcast_ref::<Self>() {
@@ -323,7 +320,7 @@ impl ArrayType for Aggregate {
         &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let _ = realloc;
         if let Some(last) = self.0.last_mut() {
             let mut realloc = None;
@@ -339,7 +336,7 @@ impl ArrayType for Aggregate {
         }
     }
 
-    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
         self.0.reverse();
         for part in &mut self.0 {
             part.reverse(interp)?;

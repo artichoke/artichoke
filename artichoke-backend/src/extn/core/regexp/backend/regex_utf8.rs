@@ -5,14 +5,9 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::str;
 
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{ArgumentError, Fatal, RegexpError, RubyException, SyntaxError};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType};
-use crate::sys;
-use crate::types::Int;
-use crate::value::{Block, Value};
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[derive(Clone)]
 pub struct RegexUtf8 {
@@ -28,7 +23,7 @@ impl RegexUtf8 {
         literal: Config,
         derived: Config,
         encoding: Encoding,
-    ) -> Result<Self, Box<dyn RubyException>> {
+    ) -> Result<Self, Exception> {
         let pattern = str::from_utf8(derived.pattern.as_slice()).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -40,12 +35,11 @@ impl RegexUtf8 {
         builder.multi_line(derived.options.multiline);
         builder.ignore_whitespace(derived.options.extended);
         let regex = builder.build().map_err(|err| {
-            let err: Box<dyn RubyException> = if literal.options.literal {
-                Box::new(SyntaxError::new(interp, err.to_string()))
+            if literal.options.literal {
+                Exception::from(SyntaxError::new(interp, err.to_string()))
             } else {
-                Box::new(RegexpError::new(interp, err.to_string()))
-            };
-            err
+                Exception::from(RegexpError::new(interp, err.to_string()))
+            }
         })?;
         let regexp = Self {
             literal,
@@ -88,7 +82,7 @@ impl RegexpType for RegexUtf8 {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Box<dyn RubyException>> {
+    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -114,7 +108,7 @@ impl RegexpType for RegexUtf8 {
         &self,
         interp: &Artichoke,
         name: &[u8],
-    ) -> Result<Option<Vec<usize>>, Box<dyn RubyException>> {
+    ) -> Result<Option<Vec<usize>>, Exception> {
         let _ = interp;
         let mut result = vec![];
         for (index, group) in self.regex.capture_names().enumerate() {
@@ -133,7 +127,7 @@ impl RegexpType for RegexUtf8 {
         &self,
         interp: &Artichoke,
         haystack: Option<&[u8]>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let result = if let Some(haystack) = haystack {
             let haystack = str::from_utf8(haystack).map_err(|_| {
                 ArgumentError::new(
@@ -155,7 +149,7 @@ impl RegexpType for RegexUtf8 {
         &self,
         interp: &Artichoke,
         haystack: &'a [u8],
-    ) -> Result<Option<&'a [u8]>, Box<dyn RubyException>> {
+    ) -> Result<Option<&'a [u8]>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -209,11 +203,7 @@ impl RegexpType for RegexUtf8 {
         self.derived.pattern.as_slice()
     }
 
-    fn case_match(
-        &self,
-        interp: &Artichoke,
-        pattern: &[u8],
-    ) -> Result<bool, Box<dyn RubyException>> {
+    fn case_match(&self, interp: &Artichoke, pattern: &[u8]) -> Result<bool, Exception> {
         let pattern = str::from_utf8(pattern).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -308,7 +298,7 @@ impl RegexpType for RegexUtf8 {
         interp: &Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
-    ) -> Result<bool, Box<dyn RubyException>> {
+    ) -> Result<bool, Exception> {
         let pattern = str::from_utf8(pattern).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -346,7 +336,7 @@ impl RegexpType for RegexUtf8 {
         pattern: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let mrb = interp.0.borrow().mrb;
         let pattern = str::from_utf8(pattern).map_err(|_| {
             ArgumentError::new(
@@ -447,12 +437,7 @@ impl RegexpType for RegexUtf8 {
                 sys::mrb_gv_set(mrb, matchdata_sym, data.inner());
             }
             if let Some(block) = block {
-                let result = block.yield_arg(interp, &data).map_err(|_| {
-                    Fatal::new(
-                        interp,
-                        "Failed to initialize Ruby MatchData Value with Rust MatchData",
-                    )
-                })?;
+                let result = block.yield_arg(interp, &data)?;
                 Ok(result)
             } else {
                 Ok(data)
@@ -477,11 +462,7 @@ impl RegexpType for RegexUtf8 {
         }
     }
 
-    fn match_operator(
-        &self,
-        interp: &Artichoke,
-        pattern: &[u8],
-    ) -> Result<Option<Int>, Box<dyn RubyException>> {
+    fn match_operator(&self, interp: &Artichoke, pattern: &[u8]) -> Result<Option<Int>, Exception> {
         let mrb = interp.0.borrow().mrb;
         let pattern = str::from_utf8(pattern).map_err(|_| {
             ArgumentError::new(
@@ -581,10 +562,7 @@ impl RegexpType for RegexUtf8 {
         }
     }
 
-    fn named_captures(
-        &self,
-        interp: &Artichoke,
-    ) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Box<dyn RubyException>> {
+    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception> {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
@@ -612,7 +590,7 @@ impl RegexpType for RegexUtf8 {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Box<dyn RubyException>> {
+    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -659,7 +637,7 @@ impl RegexpType for RegexUtf8 {
         interp: &Artichoke,
         haystack: &[u8],
         at: usize,
-    ) -> Result<Option<(usize, usize)>, Box<dyn RubyException>> {
+    ) -> Result<Option<(usize, usize)>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -679,11 +657,11 @@ impl RegexpType for RegexUtf8 {
         interp: &Artichoke,
         value: Value,
         block: Option<Block>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let haystack = if let Ok(haystack) = value.clone().try_into::<&[u8]>() {
             haystack
         } else {
-            return Err(Box::new(ArgumentError::new(
+            return Err(Exception::from(ArgumentError::new(
                 interp,
                 "Regexp scan expected String haystack",
             )));
@@ -768,8 +746,7 @@ impl RegexpType for RegexUtf8 {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
-                    // TODO: Propagate exceptions from yield.
-                    let _ = block.yield_arg(interp, &matched);
+                    let _ = block.yield_arg::<Value>(interp, &matched)?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
@@ -792,8 +769,7 @@ impl RegexpType for RegexUtf8 {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
-                    // TODO: Propagate exceptions from yield.
-                    let _ = block.yield_arg(interp, &matched);
+                    let _ = block.yield_arg::<Value>(interp, &matched)?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }

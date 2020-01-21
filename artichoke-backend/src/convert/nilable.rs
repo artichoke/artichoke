@@ -1,12 +1,13 @@
 //! Converters for nilable primitive Ruby types. Excludes collection types
 //! Array and Hash.
 
+use artichoke_core::value::Value as _;
 use std::collections::HashMap;
 
 use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Float, Int, Ruby};
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 // bail out implementation for mixed-type collections

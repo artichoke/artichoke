@@ -1,8 +1,6 @@
 #![allow(clippy::too_many_lines)]
 
-use artichoke_core::eval::Eval;
-
-use crate::{Artichoke, ArtichokeError};
+use crate::extn::prelude::*;
 
 pub mod array;
 pub mod artichoke;
@@ -31,7 +29,7 @@ pub mod thread;
 pub mod time;
 pub mod warning;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     // These core classes are ordered according to the dependency DAG between
     // them.
     let _ = interp.eval(&include_bytes!("object.rb")[..])?;

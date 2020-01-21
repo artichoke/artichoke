@@ -1,14 +1,6 @@
-use artichoke_core::value::Value as _;
-use artichoke_core::warn::Warn;
 use std::convert::TryFrom;
 
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{
-    ArgumentError, Fatal, RangeError, RubyException, RuntimeError, TypeError,
-};
-use crate::types::Int;
-use crate::value::{Block, Value};
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 pub mod args;
 pub mod backend;
@@ -58,7 +50,7 @@ impl Array {
         second: Option<Value>,
         block: Option<Block>,
         into: Value,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let result = if let Some(first) = first {
             if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
                 ary.borrow().0.clone()
@@ -77,19 +69,16 @@ impl Array {
                             RangeError::new(interp, "bignum too big to convert into `long'")
                         })?;
                         let idx = interp.convert(idx);
-                        // TODO: propagate exceptions from block call.
-                        let elem = block.yield_arg(interp, &idx).map_err(|_| {
-                            RuntimeError::new(interp, "exception during Array#initialize block")
-                        })?;
+                        let elem = block.yield_arg::<Value>(interp, &idx)?;
                         buffer.push(elem);
                     }
                     InlineBuffer::from(buffer)
                 } else if let Some(_default) = second {
                     // backend::repeated::value(default, len)
-                    panic!();
+                    unimplemented!();
                 } else {
                     // backend::fixed::hole(len)
-                    panic!();
+                    unimplemented!();
                 }
             } else if let Ok(true) = first.respond_to("to_ary") {
                 let ruby_type = first.pretty_name();
@@ -97,7 +86,7 @@ impl Array {
                     if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                         other.borrow().0.clone()
                     } else {
-                        return Err(Box::new(TypeError::new(
+                        return Err(Exception::from(TypeError::new(
                             interp,
                             format!(
                             "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
@@ -108,7 +97,7 @@ impl Array {
                     }
                 } else {
                     // TODO: propagate exceptions thrown by `value#to_a`.
-                    return Err(Box::new(Fatal::new(
+                    return Err(Exception::from(Fatal::new(
                         interp,
                         "Error calling #to_a even though it exists",
                     )));
@@ -129,21 +118,19 @@ impl Array {
                         })?;
                         let idx = interp.convert(idx);
                         // TODO: propagate exceptions from block call.
-                        let elem = block.yield_arg(interp, &idx).map_err(|_| {
-                            RuntimeError::new(interp, "exception during Array#initialize block")
-                        })?;
+                        let elem = block.yield_arg::<Value>(interp, &idx)?;
                         buffer.push(elem);
                     }
                     InlineBuffer::from(buffer)
                 } else if let Some(_default) = second {
                     // backend::repeated::value(default, len)
-                    panic!();
+                    unimplemented!();
                 } else {
                     // backend::fixed::hole(len)
-                    panic!();
+                    unimplemented!();
                 }
             } else {
-                return Err(Box::new(TypeError::new(
+                return Err(Exception::from(TypeError::new(
                     interp,
                     format!(
                         "no implicit conversion of {} into Integer",
@@ -152,7 +139,7 @@ impl Array {
                 )));
             }
         } else if second.is_some() {
-            return Err(Box::new(Fatal::new(
+            return Err(Exception::from(Fatal::new(
                 interp,
                 "default cannot be set if first arg is missing in Array#initialize",
             )));
@@ -171,7 +158,7 @@ impl Array {
         interp: &Artichoke,
         index: Value,
         len: Option<Value>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let (index, len) = match args::element_reference(interp, index, len, self.0.len())? {
             args::ElementReference::Empty => return Ok(interp.convert(None::<Value>)),
             args::ElementReference::Index(index) => (index, None),
@@ -208,7 +195,7 @@ impl Array {
         first: Value,
         second: Value,
         third: Option<Value>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let (start, drain, elem) =
             args::element_assignment(interp, first, second, third, self.0.len())?;
         if let Some(drain) = drain {
@@ -220,7 +207,7 @@ impl Array {
                     if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                         self.0.set_slice(interp, start, drain, &other.borrow().0)?;
                     } else {
-                        return Err(Box::new(TypeError::new(
+                        return Err(Exception::from(TypeError::new(
                             interp,
                             format!(
                             "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
@@ -231,7 +218,7 @@ impl Array {
                     }
                 } else {
                     // TODO: propagate exceptions thrown by `value#to_a`.
-                    return Err(Box::new(Fatal::new(
+                    return Err(Exception::from(Fatal::new(
                         interp,
                         "Error calling #to_a even though it exists",
                     )));
@@ -245,7 +232,7 @@ impl Array {
         Ok(elem)
     }
 
-    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
+    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
         self.0.get(interp, index)
     }
 
@@ -254,16 +241,11 @@ impl Array {
         interp: &Artichoke,
         start: usize,
         len: usize,
-    ) -> Result<InlineBuffer, Box<dyn RubyException>> {
+    ) -> Result<InlineBuffer, Exception> {
         self.0.slice(interp, start, len)
     }
 
-    pub fn set(
-        &mut self,
-        interp: &Artichoke,
-        index: usize,
-        elem: Value,
-    ) -> Result<(), Box<dyn RubyException>> {
+    pub fn set(&mut self, interp: &Artichoke, index: usize, elem: Value) -> Result<(), Exception> {
         self.0.set(interp, index, elem)?;
         Ok(())
     }
@@ -274,7 +256,7 @@ impl Array {
         start: usize,
         drain: usize,
         with: Value,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         self.0.set_with_drain(interp, start, drain, with)?;
         Ok(())
     }
@@ -285,16 +267,12 @@ impl Array {
         start: usize,
         drain: usize,
         with: &InlineBuffer,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         self.0.set_slice(interp, start, drain, with)?;
         Ok(())
     }
 
-    pub fn concat(
-        &mut self,
-        interp: &Artichoke,
-        other: Value,
-    ) -> Result<(), Box<dyn RubyException>> {
+    pub fn concat(&mut self, interp: &Artichoke, other: Value) -> Result<(), Exception> {
         if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             self.0.concat(interp, &other.borrow().0)?;
         } else if let Ok(true) = other.respond_to("to_ary") {
@@ -303,7 +281,7 @@ impl Array {
                 if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                     self.0.concat(interp, &other.borrow().0)?;
                 } else {
-                    return Err(Box::new(TypeError::new(
+                    return Err(Exception::from(TypeError::new(
                         interp,
                         format!(
                             "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
@@ -314,13 +292,13 @@ impl Array {
                 }
             } else {
                 // TODO: propagate exceptions thrown by `value#to_a`.
-                return Err(Box::new(Fatal::new(
+                return Err(Exception::from(Fatal::new(
                     interp,
                     "Error calling #to_a even though it exists",
                 )));
             }
         } else {
-            return Err(Box::new(TypeError::new(
+            return Err(Exception::from(TypeError::new(
                 interp,
                 format!(
                     "no implicit conversion of {classname} into Array",
@@ -341,12 +319,12 @@ impl Array {
         self.0.is_empty()
     }
 
-    pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Box<dyn RubyException>> {
+    pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Exception> {
         let popped = self.0.pop(interp)?;
         Ok(popped)
     }
 
-    pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+    pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
         self.0.reverse(interp)?;
         Ok(())
     }

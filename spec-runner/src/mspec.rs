@@ -1,12 +1,12 @@
 use artichoke_backend::convert::Convert;
-use artichoke_backend::{Artichoke, ArtichokeError};
+use artichoke_backend::{Artichoke, BootError};
 use artichoke_core::eval::Eval;
 use artichoke_core::load::LoadSources;
 use artichoke_core::top_self::TopSelf;
 use artichoke_core::value::Value;
 use std::borrow::Cow;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> Result<(), BootError> {
     for source in Sources::iter() {
         let content = Sources::get(&source).unwrap();
         interp.def_rb_source_file(source.as_bytes(), content)?;
@@ -34,17 +34,19 @@ impl Runner {
         }
     }
 
-    pub fn add_spec<T>(&mut self, source: &str, contents: T) -> Result<(), ArtichokeError>
+    pub fn add_spec<T>(&mut self, source: &str, contents: T) -> Result<(), BootError>
     where
         T: Into<Cow<'static, [u8]>>,
     {
         if !source.contains("/fixtures/") && !source.contains("/shared/") {
             self.specs.push(source.to_owned());
         }
-        self.interp.def_rb_source_file(source.as_bytes(), contents)
+        self.interp
+            .def_rb_source_file(source.as_bytes(), contents)?;
+        Ok(())
     }
 
-    pub fn run(self) -> Result<bool, ArtichokeError> {
+    pub fn run(self) -> Result<bool, BootError> {
         init(&self.interp).unwrap();
         self.interp
             .def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;
@@ -59,9 +61,11 @@ impl Runner {
             assert!(!self.enforce);
         }
         let specs = self.interp.convert(self.specs);
-        self.interp
+        let result = self
+            .interp
             .top_self()
-            .funcall::<bool>("run_specs", &[specs], None)
+            .funcall::<bool>("run_specs", &[specs], None)?;
+        Ok(result)
     }
 }
 
@@ -73,6 +77,6 @@ mod tests {
     fn mspec_framework_loads() {
         let interp = artichoke_backend::interpreter().expect("init");
         // should not panic
-        assert_eq!(Runner::new(interp).run(), Ok(true));
+        assert!(Runner::new(interp).run().unwrap());
     }
 }

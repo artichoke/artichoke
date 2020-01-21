@@ -38,19 +38,15 @@
 //! - `SystemStackError`
 //! - `fatal` -- impossible to rescue
 
-use artichoke_core::eval::Eval;
 #[cfg(feature = "artichoke-debug")]
 use backtrace::Backtrace;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
-use crate::class;
-use crate::convert::Convert;
-use crate::sys;
-use crate::{Artichoke, ArtichokeError};
+use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let borrow = interp.0.borrow();
 
     let exception_spec = class::Spec::new("Exception", None, None)?;
@@ -269,58 +265,11 @@ pub fn init(interp: &Artichoke) -> Result<(), ArtichokeError> {
     Ok(())
 }
 
-/// Raise implementation for `RubyException` boxed trait objects.
-///
-/// # Safety
-///
-/// This function unwinds the stack with `longjmp`, which will ignore all Rust
-/// landing pads for panics and exit routines for cleaning up borrows. Callers
-/// should ensure that only [`Copy`] items are alive in the current stack frame.
-///
-/// Because this precondition must hold for all frames between the caller and
-/// the closest [`sys::mrb_protect`] landing pad, this function should only be
-/// called in the entrypoint into Rust from mruby.
-pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
-    // Ensure the borrow is out of scope by the time we eval code since
-    // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-    // get access to the underlying `ArtichokeState`.
-    let mrb = interp.0.borrow().mrb;
-
-    let eclass = if let Some(rclass) = exception.rclass() {
-        rclass
-    } else {
-        error!("unable to raise {}", exception.name());
-        panic!("unable to raise {}", exception.name());
-    };
-    let formatargs = interp.convert(exception.message()).inner();
-    // `mrb_sys_raise` will call longjmp which will unwind the stack.
-    // Any non-`Copy` objects that we haven't cleaned up at this point will
-    // leak, so drop everything.
-    drop(interp);
-    drop(exception);
-
-    sys::mrb_raisef(mrb, eclass, b"%S\0".as_ptr() as *const i8, formatargs);
-    unreachable!("mrb_raisef will unwind the stack with longjmp");
-}
-
-#[allow(clippy::module_name_repetitions)]
-#[must_use]
-pub trait RubyException
-where
-    Self: 'static,
-{
-    fn box_clone(&self) -> Box<dyn RubyException>;
-    fn message(&self) -> &[u8];
-    fn name(&self) -> String;
-    fn rclass(&self) -> Option<*mut sys::RClass>;
-}
-
 macro_rules! ruby_exception_impl {
     ($exception:ident) => {
         #[derive(Clone)]
         #[must_use]
         pub struct $exception {
-            interp: Artichoke,
             message: Cow<'static, [u8]>,
             #[cfg(feature = "artichoke-debug")]
             backtrace: Backtrace,
@@ -331,12 +280,12 @@ macro_rules! ruby_exception_impl {
             where
                 S: Into<Cow<'static, str>>,
             {
+                let _ = interp;
                 let message = match message.into() {
                     Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes()),
                     Cow::Owned(s) => Cow::Owned(s.into_bytes()),
                 };
                 Self {
-                    interp: interp.clone(),
                     message,
                     #[cfg(feature = "artichoke-debug")]
                     backtrace: Backtrace::new(),
@@ -347,12 +296,34 @@ macro_rules! ruby_exception_impl {
             where
                 S: Into<Cow<'static, [u8]>>,
             {
+                let _ = interp;
                 Self {
-                    interp: interp.clone(),
                     message: message.into(),
                     #[cfg(feature = "artichoke-debug")]
                     backtrace: Backtrace::new(),
                 }
+            }
+        }
+
+        #[allow(clippy::use_self)]
+        impl From<$exception> for exception::Exception
+        where
+            $exception: RubyException,
+        {
+            #[must_use]
+            fn from(exception: $exception) -> exception::Exception {
+                exception::Exception::from(Box::<dyn RubyException>::from(exception))
+            }
+        }
+
+        #[allow(clippy::use_self)]
+        impl From<Box<$exception>> for exception::Exception
+        where
+            $exception: RubyException,
+        {
+            #[must_use]
+            fn from(exception: Box<$exception>) -> exception::Exception {
+                exception::Exception::from(Box::<dyn RubyException>::from(exception))
             }
         }
 
@@ -391,21 +362,24 @@ macro_rules! ruby_exception_impl {
 
             #[must_use]
             fn name(&self) -> String {
-                self.interp
-                    .0
-                    .borrow()
-                    .class_spec::<Self>()
-                    .map(|spec| spec.name().to_owned())
-                    .unwrap_or_default()
+                String::from(stringify!($exception))
             }
 
             #[must_use]
-            fn rclass(&self) -> Option<*mut sys::RClass> {
-                self.interp
+            fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+                let _ = interp;
+                None
+            }
+
+            #[must_use]
+            fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+                interp
                     .0
                     .borrow()
                     .class_spec::<Self>()
-                    .and_then(|spec| spec.rclass(&self.interp))
+                    .and_then(|spec| spec.new_instance(interp, &[interp.convert(self.message())]))
+                    .as_ref()
+                    .map(Value::inner)
             }
         }
 
@@ -454,56 +428,6 @@ macro_rules! ruby_exception_impl {
     };
 }
 
-impl RubyException for Box<dyn RubyException> {
-    #[must_use]
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        self.as_ref().box_clone()
-    }
-
-    #[must_use]
-    fn message(&self) -> &[u8] {
-        self.as_ref().message()
-    }
-
-    #[must_use]
-    fn name(&self) -> String {
-        self.as_ref().name()
-    }
-
-    #[must_use]
-    fn rclass(&self) -> Option<*mut sys::RClass> {
-        self.as_ref().rclass()
-    }
-}
-
-impl fmt::Debug for Box<dyn RubyException> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let classname = self.name();
-        let message = String::from_utf8_lossy(self.message());
-        write!(f, "{} ({})", classname, message)
-    }
-}
-
-impl fmt::Display for Box<dyn RubyException> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let classname = self.name();
-        let message = String::from_utf8_lossy(self.message());
-        write!(f, "{} ({})", classname, message)
-    }
-}
-
-impl error::Error for Box<dyn RubyException> {
-    #[must_use]
-    fn description(&self) -> &str {
-        "RubyException"
-    }
-
-    #[must_use]
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
-
 ruby_exception_impl!(Exception);
 ruby_exception_impl!(NoMemoryError);
 ruby_exception_impl!(ScriptError);
@@ -545,14 +469,7 @@ ruby_exception_impl!(Fatal);
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::file::File;
-
-    use crate::class;
-    use crate::exception::Exception;
-    use crate::extn::core::exception::RuntimeError;
-    use crate::sys;
-    use crate::{Artichoke, ArtichokeError};
+    use crate::test::prelude::*;
 
     struct Run;
 
@@ -560,7 +477,7 @@ mod tests {
         unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = unwrap_interpreter!(mrb);
             let exc = RuntimeError::new(&interp, "something went wrong");
-            super::raise(interp, exc)
+            exception::raise(interp, exc)
         }
     }
 
@@ -581,13 +498,12 @@ mod tests {
     fn raise() {
         let interp = crate::interpreter().expect("init");
         Run::require(&interp).unwrap();
-        let value = interp.eval(b"Run.run").map(|_| ());
-        let expected = Exception::new(
-            "RuntimeError",
-            "something went wrong",
-            Some(vec!["(eval):1".to_owned()]),
-            "(eval):1: something went wrong (RuntimeError)",
+        let err = interp.eval(b"Run.run").unwrap_err();
+        assert_eq!("RuntimeError", err.name().as_str());
+        assert_eq!(Vec::from(&b"something went wrong"[..]), err.message());
+        assert_eq!(
+            Some(vec![Vec::from(&b"(eval):1"[..])]),
+            err.backtrace(&interp)
         );
-        assert_eq!(value, Err(ArtichokeError::Exec(expected.to_string())));
     }
 }

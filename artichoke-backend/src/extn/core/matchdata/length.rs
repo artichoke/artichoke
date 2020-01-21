@@ -2,14 +2,10 @@
 
 use std::convert::TryFrom;
 
-use crate::convert::{Convert, RustBackedValue};
-use crate::extn::core::exception::{Fatal, RubyException};
 use crate::extn::core::matchdata::MatchData;
-use crate::types::Int;
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
-pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
         Fatal::new(
             interp,

@@ -75,15 +75,10 @@ impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
 // Convert<Vec<u8>> is implemented in terms of Convert<&[u8]> so only implement
 // the tests for Vec<u8> to exercise both code paths.
 mod tests {
-    use artichoke_core::eval::Eval;
     use quickcheck_macros::quickcheck;
     use std::convert::TryFrom;
 
-    use crate::convert::Convert;
-    use crate::sys;
-    use crate::types::{Ruby, Rust};
-    use crate::value::ValueLike;
-    use crate::ArtichokeError;
+    use crate::test::prelude::*;
 
     #[test]
     fn fail_convert() {

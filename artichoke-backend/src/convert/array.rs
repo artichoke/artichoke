@@ -1,11 +1,13 @@
+use artichoke_core::value::Value as _;
+use std::convert::TryFrom;
+
 use crate::convert::{Convert, TryConvert};
 #[cfg(feature = "artichoke-array")]
 use crate::extn::core::array::{Array, InlineBuffer};
 use crate::sys;
 use crate::types::{Float, Int, Ruby, Rust};
-use crate::value::{Value, ValueLike};
+use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
-use std::convert::TryFrom;
 
 // bail out implementation for mixed-type collections
 impl Convert<&[Value], Value> for Artichoke {

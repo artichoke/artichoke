@@ -2,10 +2,8 @@ use rand::distributions::{Distribution, Uniform};
 use rand::rngs::SmallRng;
 use rand::{self, Rng, SeedableRng};
 
-use crate::extn::core::exception::RubyException;
 use crate::extn::core::random::backend;
-use crate::types::{Float, Int};
-use crate::Artichoke;
+use crate::extn::prelude::*;
 
 #[must_use]
 pub fn new(seed: Option<u64>) -> Box<dyn backend::Rand> {
@@ -33,13 +31,13 @@ impl<T> backend::Rand for Rand<T>
 where
     T: 'static + Rng,
 {
-    fn bytes(&mut self, interp: &Artichoke, buf: &mut [u8]) -> Result<(), Box<dyn RubyException>> {
+    fn bytes(&mut self, interp: &Artichoke, buf: &mut [u8]) -> Result<(), Exception> {
         let _ = interp;
         self.rng.fill_bytes(buf);
         Ok(())
     }
 
-    fn seed(&self, interp: &Artichoke) -> Result<u64, Box<dyn RubyException>> {
+    fn seed(&self, interp: &Artichoke) -> Result<u64, Exception> {
         let _ = interp;
         Ok(self.seed)
     }
@@ -55,17 +53,13 @@ where
         }
     }
 
-    fn rand_int(&mut self, interp: &Artichoke, max: Int) -> Result<Int, Box<dyn RubyException>> {
+    fn rand_int(&mut self, interp: &Artichoke, max: Int) -> Result<Int, Exception> {
         let _ = interp;
         let between = Uniform::from(0..max);
         Ok(between.sample(&mut self.rng))
     }
 
-    fn rand_float(
-        &mut self,
-        interp: &Artichoke,
-        max: Option<Float>,
-    ) -> Result<Float, Box<dyn RubyException>> {
+    fn rand_float(&mut self, interp: &Artichoke, max: Option<Float>) -> Result<Float, Exception> {
         let _ = interp;
         let max = max.unwrap_or(1.0);
         let between = Uniform::from(0.0..max);

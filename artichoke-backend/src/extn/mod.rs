@@ -1,12 +1,10 @@
 #![allow(clippy::needless_pass_by_value)]
 
-use crate::convert::Convert;
-use crate::sys;
-use crate::types::Int;
-use crate::{Artichoke, ArtichokeError};
-
 pub mod core;
+pub mod prelude;
 pub mod stdlib;
+
+use prelude::*;
 
 pub const RUBY_COPYRIGHT: &str = env!("RUBY_COPYRIGHT");
 pub const RUBY_DESCRIPTION: &str = env!("RUBY_DESCRIPTION");
@@ -56,7 +54,7 @@ macro_rules! global_const {
     }};
 }
 
-pub fn init(interp: &Artichoke, backend_name: &str) -> Result<(), ArtichokeError> {
+pub fn init(interp: &Artichoke, backend_name: &str) -> InitializeResult<()> {
     let engine_name = format!("{}-{}", interp.convert(RUBY_ENGINE), backend_name);
     global_const!(interp, RUBY_COPYRIGHT);
     global_const!(interp, RUBY_DESCRIPTION);

@@ -1,17 +1,17 @@
+use artichoke_core::value::Value as ValueLike;
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::fmt;
 use std::mem;
 
 use crate::convert::{Convert, TryConvert};
-use crate::exception::{ExceptionHandler, LastError};
-use crate::extn::core::exception::{RubyException, TypeError};
+use crate::exception::Exception;
+use crate::exception_handler::ExceptionHandler;
+use crate::extn::core::exception::{Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::types::{self, Int, Ruby};
 use crate::{Artichoke, ArtichokeError};
-
-pub(crate) use artichoke_core::value::Value as ValueLike;
 
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
@@ -173,7 +173,7 @@ impl Value {
         )
     }
 
-    pub fn implicitly_convert_to_int(&self) -> Result<Int, Box<dyn RubyException>> {
+    pub fn implicitly_convert_to_int(&self) -> Result<Int, Exception> {
         let int = if let Ok(int) = self.clone().try_into::<Int>() {
             int
         } else {
@@ -183,7 +183,7 @@ impl Value {
                 if let Ok(int) = maybe_int.try_into::<Int>() {
                     int
                 } else {
-                    return Err(Box::new(TypeError::new(
+                    return Err(Exception::from(TypeError::new(
                         &self.interp,
                         format!(
                             "can't convert {} to Integer ({}#to_int gives {})",
@@ -192,7 +192,7 @@ impl Value {
                     )));
                 }
             } else {
-                return Err(Box::new(TypeError::new(
+                return Err(Exception::from(TypeError::new(
                     &self.interp,
                     format!("no implicit conversion of {} into Integer", pretty_name),
                 )));
@@ -206,13 +206,14 @@ impl ValueLike for Value {
     type Artichoke = Artichoke;
     type Arg = Self;
     type Block = Self;
+    type Error = Exception;
 
     fn funcall<T>(
         &self,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
-    ) -> Result<T, ArtichokeError>
+    ) -> Result<T, Self::Error>
     where
         Self::Artichoke: TryConvert<Self, T>,
     {
@@ -233,10 +234,16 @@ impl ValueLike for Value {
                 args.len(),
                 MRB_FUNCALL_ARGC_MAX
             );
-            return Err(ArtichokeError::TooManyArgs {
-                given: args.len(),
-                max: MRB_FUNCALL_ARGC_MAX,
-            });
+            return Err(Exception::from(Fatal::new(
+                &self.interp,
+                format!(
+                    "{}",
+                    ArtichokeError::TooManyArgs {
+                        given: args.len(),
+                        max: MRB_FUNCALL_ARGC_MAX,
+                    }
+                ),
+            )));
         }
         trace!(
             "Calling {}#{} with {} args{}",
@@ -265,91 +272,31 @@ impl ValueLike for Value {
             }
             value
         };
-        let value = Self::new(&self.interp, value);
 
-        match self.interp.last_error() {
-            LastError::Some(exception) => {
-                warn!("runtime error with exception backtrace: {}", exception);
-                Err(ArtichokeError::Exec(exception.to_string()))
-            }
-            LastError::UnableToExtract(err) => {
-                error!("failed to extract exception after runtime error: {}", err);
-                Err(err)
-            }
-            LastError::None if value.is_unreachable() => {
+        if let Some(exc) = self.interp.last_error()? {
+            Err(exc)
+        } else {
+            let value = Self::new(&self.interp, value);
+            if value.is_unreachable() {
                 // Unreachable values are internal to the mruby interpreter and
                 // interacting with them via the C API is unspecified and may
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue)
+                Err(Exception::from(Fatal::new(
+                    &self.interp,
+                    "Unreachable Ruby value",
+                )))
+            } else {
+                let value = value.try_into::<T>().map_err(|err| {
+                    Exception::from(TypeError::new(
+                        &self.interp,
+                        format!("Type conversion failed: {}", err),
+                    ))
+                })?;
+                Ok(value)
             }
-            LastError::None => self.interp.try_convert(value),
         }
-    }
-
-    fn unchecked_funcall(
-        &self,
-        func: &str,
-        args: &[Self::Arg],
-        block: Option<Self::Block>,
-    ) -> Result<Self, ArtichokeError> {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let (mrb, _ctx) = {
-            let borrow = self.interp.0.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
-
-        let arena = self.interp.create_arena_savepoint();
-
-        let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
-        if args.len() > MRB_FUNCALL_ARGC_MAX {
-            warn!(
-                "Too many args supplied to funcall: given {}, max {}.",
-                args.len(),
-                MRB_FUNCALL_ARGC_MAX
-            );
-            return Err(ArtichokeError::TooManyArgs {
-                given: args.len(),
-                max: MRB_FUNCALL_ARGC_MAX,
-            });
-        }
-        trace!(
-            "Calling {}#{} with {} args{}",
-            types::ruby_from_mrb_value(self.inner()),
-            func,
-            args.len(),
-            if block.is_some() { " and block" } else { "" }
-        );
-        let func = self
-            .interp
-            .0
-            .borrow_mut()
-            .sym_intern(func.as_bytes().to_vec());
-        let mut protect = Protect::new(self.inner(), func, args.as_ref());
-        if let Some(block) = block {
-            protect = protect.with_block(block.inner());
-        }
-        let value = unsafe {
-            let data =
-                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
-            let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
-
-            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
-            if state.assume_init() != 0 {
-                // drop all bindings to heap-allocated objects because we are
-                // about to unwind with longjmp.
-                drop(arena);
-                drop(args);
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-                sys::mrb_sys_raise_current_exception(mrb);
-                unreachable!("mrb_raise will unwind the stack with longjmp");
-            }
-            value
-        };
-        Ok(Self::new(&self.interp, value))
     }
 
     fn try_into<T>(self) -> Result<T, ArtichokeError>
@@ -368,7 +315,7 @@ impl ValueLike for Value {
         self.clone().try_into::<T>()
     }
 
-    fn freeze(&mut self) -> Result<(), ArtichokeError> {
+    fn freeze(&mut self) -> Result<(), Self::Error> {
         let _ = self.funcall::<Self>("freeze", &[], None)?;
         Ok(())
     }
@@ -391,7 +338,7 @@ impl ValueLike for Value {
         unsafe { sys::mrb_sys_value_is_nil(self.inner()) }
     }
 
-    fn respond_to(&self, method: &str) -> Result<bool, ArtichokeError> {
+    fn respond_to(&self, method: &str) -> Result<bool, Self::Error> {
         let method = self.interp.convert(method);
         self.funcall::<bool>("respond_to?", &[method], None)
     }
@@ -457,7 +404,10 @@ impl Block {
         }
     }
 
-    pub fn yield_arg(&self, interp: &Artichoke, arg: &Value) -> Result<Value, ArtichokeError> {
+    pub fn yield_arg<T>(&self, interp: &Artichoke, arg: &Value) -> Result<T, Exception>
+    where
+        Artichoke: TryConvert<Value, T>,
+    {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
@@ -465,39 +415,37 @@ impl Block {
 
         let _arena = interp.create_arena_savepoint();
 
+        // TODO: does this need to be wrapped in `mrb_protect`.
         let value = unsafe { sys::mrb_yield(mrb, self.value, arg.inner()) };
-        let value = Value::new(interp, value);
 
-        match interp.last_error() {
-            LastError::Some(exception) => {
-                warn!("runtime error with exception backtrace: {}", exception);
-                Err(ArtichokeError::Exec(exception.to_string()))
-            }
-            LastError::UnableToExtract(err) => {
-                error!("failed to extract exception after runtime error: {}", err);
-                Err(err)
-            }
-            LastError::None if value.is_unreachable() => {
+        if let Some(exc) = interp.last_error()? {
+            Err(exc)
+        } else {
+            let value = Value::new(interp, value);
+            if value.is_unreachable() {
                 // Unreachable values are internal to the mruby interpreter and
                 // interacting with them via the C API is unspecified and may
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue)
+                Err(Exception::from(Fatal::new(
+                    interp,
+                    "Unreachable Ruby value",
+                )))
+            } else {
+                let value = value.try_into::<T>().map_err(|err| {
+                    TypeError::new(interp, format!("Type conversion failed: {}", err))
+                })?;
+                Ok(value)
             }
-            LastError::None => Ok(value),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-
-    use crate::convert::Convert;
     use crate::gc::MrbGarbageCollection;
-    use crate::value::{Value, ValueLike};
-    use crate::ArtichokeError;
+    use crate::test::prelude::*;
 
     #[test]
     fn to_s_true() {
@@ -718,8 +666,8 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let eql = nil.funcall::<bool>("==", &[s], None);
-        assert_eq!(eql, Ok(false));
+        let eql = nil.funcall::<bool>("==", &[s], None).unwrap();
+        assert!(!eql);
     }
 
     #[test]
@@ -727,13 +675,9 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let result = s.funcall::<String>("+", &[nil], None);
-        assert_eq!(
-            result,
-            Err(ArtichokeError::Exec(
-                "TypeError: nil cannot be converted to String".to_owned()
-            ))
-        );
+        let err = s.funcall::<String>("+", &[nil], None).unwrap_err();
+        assert_eq!("TypeError", err.name().as_str());
+        assert_eq!(&b"nil cannot be converted to String"[..], err.message());
     }
 
     #[test]
@@ -741,12 +685,13 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         let s = interp.convert("foo");
-        let result = nil.funcall::<bool>("garbage_method_name", &[s], None);
+        let err = nil
+            .funcall::<bool>("garbage_method_name", &[s], None)
+            .unwrap_err();
+        assert_eq!("NoMethodError", err.name().as_str());
         assert_eq!(
-            result,
-            Err(ArtichokeError::Exec(
-                "NoMethodError: undefined method 'garbage_method_name'".to_owned()
-            ))
+            &b"undefined method 'garbage_method_name'"[..],
+            err.message()
         );
     }
 }

@@ -1,17 +1,8 @@
-use artichoke_core::value::Value as _;
-
-use crate::convert::Convert;
-use crate::extn::core::exception::{Fatal, RubyException, TypeError, ZeroDivisionError};
 use crate::extn::core::float::Float;
-use crate::types::{self, Int};
-use crate::value::Value;
-use crate::Artichoke;
+use crate::extn::prelude::*;
+use crate::types;
 
-pub fn method(
-    interp: &Artichoke,
-    value: Value,
-    other: Value,
-) -> Result<Value, Box<dyn RubyException>> {
+pub fn method(interp: &Artichoke, value: Value, other: Value) -> Result<Value, Exception> {
     let x = value.try_into::<Int>().map_err(|_| {
         Fatal::new(
             interp,
@@ -21,7 +12,10 @@ pub fn method(
     let pretty_name = other.pretty_name();
     if let Ok(y) = other.clone().try_into::<Int>() {
         if y == 0 {
-            Err(Box::new(ZeroDivisionError::new(interp, "divided by 0")))
+            Err(Exception::from(ZeroDivisionError::new(
+                interp,
+                "divided by 0",
+            )))
         } else {
             Ok(interp.convert(x / y))
         }
@@ -37,7 +31,7 @@ pub fn method(
             Ok(interp.convert(x as types::Float / y))
         }
     } else {
-        Err(Box::new(TypeError::new(
+        Err(Exception::from(TypeError::new(
             interp,
             format!("{} can't be coerced into Integer", pretty_name),
         )))
@@ -46,11 +40,9 @@ pub fn method(
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value;
     use quickcheck_macros::quickcheck;
 
-    use crate::types::Int;
+    use crate::test::prelude::*;
 
     #[quickcheck]
     fn integer_division_vm_opcode(x: Int, y: Int) -> bool {
@@ -64,15 +56,19 @@ mod tests {
                 let expr = format!("0 / {}", x).into_bytes();
                 let division = interp
                     .eval(expr.as_slice())
-                    .and_then(Value::try_into::<Int>);
-                result &= division == Ok(0)
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                result &= division == 0
             }
             (x, y) => {
                 let expr = format!("{} / {}", x, y).into_bytes();
                 let division = interp
                     .eval(expr.as_slice())
-                    .and_then(Value::try_into::<Int>);
-                result &= division == Ok(x / y)
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                result &= division == x / y
             }
         }
         result
@@ -90,15 +86,19 @@ mod tests {
                 let expr = format!("0.send('/', {})", x).into_bytes();
                 let division = interp
                     .eval(expr.as_slice())
-                    .and_then(Value::try_into::<Int>);
-                result &= division == Ok(0)
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                result &= division == 0
             }
             (x, y) => {
                 let expr = format!("{}.send('/', {})", x, y).into_bytes();
                 let division = interp
                     .eval(expr.as_slice())
-                    .and_then(Value::try_into::<Int>);
-                result &= division == Ok(x / y)
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                result &= division == x / y
             }
         }
         result

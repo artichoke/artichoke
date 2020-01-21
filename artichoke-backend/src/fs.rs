@@ -6,7 +6,7 @@ use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::extn::core::exception::RubyException;
+use crate::exception::Exception;
 use crate::{Artichoke, ArtichokeError};
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
@@ -136,10 +136,7 @@ fn absolutize_relative_to(path: &Path, cwd: &Path) -> Result<PathBuf, ArtichokeE
 }
 
 #[cfg(unix)]
-pub fn osstr_to_bytes<'a>(
-    interp: &Artichoke,
-    value: &'a OsStr,
-) -> Result<&'a [u8], Box<dyn RubyException>> {
+pub fn osstr_to_bytes<'a>(interp: &Artichoke, value: &'a OsStr) -> Result<&'a [u8], Exception> {
     use std::os::unix::ffi::OsStrExt;
 
     let _ = interp;
@@ -147,16 +144,13 @@ pub fn osstr_to_bytes<'a>(
 }
 
 #[cfg(not(unix))]
-pub fn osstr_to_bytes<'a>(
-    interp: &Artichoke,
-    value: &'a OsStr,
-) -> Result<&'a [u8], Box<dyn RubyException>> {
+pub fn osstr_to_bytes<'a>(interp: &Artichoke, value: &'a OsStr) -> Result<&'a [u8], Exception> {
     use crate::extn::core::exception::Fatal;
 
     if let Some(converted) = value.to_str() {
         Ok(converted.as_bytes())
     } else {
-        Err(Box::new(Fatal::new(
+        Err(Exception::from(Fatal::new(
             interp,
             // TODO: Add a ticket number to this message.
             "non UTF-8 ENV keys and values are not yet supported on this Artichoke platform",
@@ -165,10 +159,7 @@ pub fn osstr_to_bytes<'a>(
 }
 
 #[cfg(unix)]
-pub fn bytes_to_osstr<'a>(
-    interp: &Artichoke,
-    value: &'a [u8],
-) -> Result<&'a OsStr, Box<dyn RubyException>> {
+pub fn bytes_to_osstr<'a>(interp: &Artichoke, value: &'a [u8]) -> Result<&'a OsStr, Exception> {
     use std::os::unix::ffi::OsStrExt;
 
     let _ = interp;
@@ -176,16 +167,13 @@ pub fn bytes_to_osstr<'a>(
 }
 
 #[cfg(not(unix))]
-pub fn bytes_to_osstr<'a>(
-    interp: &Artichoke,
-    value: &'a [u8],
-) -> Result<&'a OsStr, Box<dyn RubyException>> {
+pub fn bytes_to_osstr<'a>(interp: &Artichoke, value: &'a [u8]) -> Result<&'a OsStr, Exception> {
     use crate::extn::core::exception::Fatal;
 
     if let Ok(converted) = std::str::from_utf8(value) {
         Ok(OsStr::new(converted))
     } else {
-        Err(Box::new(Fatal::new(
+        Err(Exception::from(Fatal::new(
             interp,
             // TODO: Add a ticket number to this message.
             "non UTF-8 ENV keys and values are not yet supported on this Artichoke platform",

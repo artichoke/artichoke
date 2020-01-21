@@ -3,8 +3,7 @@
 use std::hash::{Hash, Hasher};
 
 use crate::extn::core::regexp;
-use crate::types::Int;
-use crate::value::{Value, ValueLike};
+use crate::extn::prelude::*;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Error {

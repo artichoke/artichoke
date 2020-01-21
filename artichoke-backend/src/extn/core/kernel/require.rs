@@ -1,34 +1,29 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
-use artichoke_core::eval::Eval;
-use artichoke_core::value::Value as _;
 use bstr::BStr;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use crate::convert::Convert;
 use crate::eval::Context;
-use crate::extn::core::exception::{ArgumentError, Fatal, LoadError, RubyException, TypeError};
+use crate::extn::prelude::*;
 use crate::fs::{self, RUBY_LOAD_PATH};
-use crate::value::Value;
-use crate::Artichoke;
 
 const RUBY_EXTENSION: &str = "rb";
 
-pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
     let ruby_type = filename.pretty_name();
     let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
         filename
     } else if let Ok(filename) = filename.funcall::<&[u8]>("to_str", &[], None) {
         filename
     } else {
-        return Err(Box::new(TypeError::new(
+        return Err(Exception::from(TypeError::new(
             interp,
             format!("no implicit conversion of {} into String", ruby_type),
         )));
     };
     if memchr::memchr(b'\0', filename).is_some() {
-        return Err(Box::new(ArgumentError::new(
+        return Err(Exception::from(ArgumentError::new(
             interp,
             "path name contains null byte",
         )));
@@ -46,7 +41,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
     };
     if !is_file {
         let filestr = format!("{:?}", <&BStr>::from(filename));
-        return Err(Box::new(LoadError::new(
+        return Err(Exception::from(LoadError::new(
             interp,
             format!(
                 "cannot load such file -- {:?}",
@@ -74,7 +69,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
         if require(interp).is_err() {
             interp.pop_context();
             let filestr = format!("{:?}", <&BStr>::from(filename));
-            return Err(Box::new(LoadError::new(
+            return Err(Exception::from(LoadError::new(
                 interp,
                 format!(
                     "cannot load such file -- {:?}",
@@ -88,10 +83,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Box<dyn RubyEx
         api.vfs.read_file(path.as_path())
     };
     if let Ok(contents) = contents {
-        // We need to be sure we don't leak anything by unwinding past
-        // this point. This likely requires a significant refactor to
-        // require_impl.
-        let _ = interp.unchecked_eval(contents.as_slice());
+        let _ = interp.eval(contents.as_slice())?;
     }
     interp.pop_context();
     trace!(
@@ -106,20 +98,20 @@ pub fn require(
     interp: &Artichoke,
     filename: Value,
     base: Option<&Path>,
-) -> Result<Value, Box<dyn RubyException>> {
+) -> Result<Value, Exception> {
     let ruby_type = filename.pretty_name();
     let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
         filename
     } else if let Ok(filename) = filename.funcall::<&[u8]>("to_str", &[], None) {
         filename
     } else {
-        return Err(Box::new(TypeError::new(
+        return Err(Exception::from(TypeError::new(
             interp,
             format!("no implicit conversion of {} into String", ruby_type),
         )));
     };
     if memchr::memchr(b'\0', filename).is_some() {
-        return Err(Box::new(ArgumentError::new(
+        return Err(Exception::from(ArgumentError::new(
             interp,
             "path name contains null byte",
         )));
@@ -166,7 +158,7 @@ pub fn require(
                 if require(interp).is_err() {
                     interp.pop_context();
                     let filestr = format!("{:?}", <&BStr>::from(filename));
-                    return Err(Box::new(LoadError::new(
+                    return Err(Exception::from(LoadError::new(
                         interp,
                         format!(
                             "cannot load such file -- {:?}",
@@ -180,10 +172,7 @@ pub fn require(
                 api.vfs.read_file(path.as_path())
             };
             if let Ok(contents) = contents {
-                // We need to be sure we don't leak anything by unwinding past
-                // this point. This likely requires a significant refactor to
-                // require_impl.
-                let _ = interp.unchecked_eval(contents.as_slice());
+                let _ = interp.eval(contents.as_slice())?;
             }
             interp.pop_context();
             let metadata = metadata.mark_required();
@@ -234,7 +223,7 @@ pub fn require(
                     if require(interp).is_err() {
                         interp.pop_context();
                         let filestr = format!("{:?}", <&BStr>::from(filename));
-                        return Err(Box::new(LoadError::new(
+                        return Err(Exception::from(LoadError::new(
                             interp,
                             format!(
                                 "cannot load such file -- {:?}",
@@ -248,10 +237,7 @@ pub fn require(
                     api.vfs.read_file(path.as_path())
                 };
                 if let Ok(contents) = contents {
-                    // We need to be sure we don't leak anything by unwinding past
-                    // this point. This likely requires a significant refactor to
-                    // require_impl.
-                    let _ = interp.unchecked_eval(contents.as_slice());
+                    let _ = interp.eval(contents.as_slice())?;
                 }
                 interp.pop_context();
                 let metadata = metadata.mark_required();
@@ -287,7 +273,7 @@ pub fn require(
     };
     if !is_file {
         let filestr = format!("{:?}", <&BStr>::from(filename));
-        return Err(Box::new(LoadError::new(
+        return Err(Exception::from(LoadError::new(
             interp,
             format!(
                 "cannot load such file -- {}",
@@ -319,7 +305,7 @@ pub fn require(
         if require(interp).is_err() {
             interp.pop_context();
             let filestr = format!("{:?}", <&BStr>::from(filename));
-            return Err(Box::new(LoadError::new(
+            return Err(Exception::from(LoadError::new(
                 interp,
                 format!(
                     "cannot load such file -- {}",
@@ -333,10 +319,7 @@ pub fn require(
         api.vfs.read_file(path.as_path())
     };
     if let Ok(contents) = contents {
-        // We need to be sure we don't leak anything by unwinding past
-        // this point. This likely requires a significant refactor to
-        // require_impl.
-        let _ = interp.unchecked_eval(contents.as_slice());
+        let _ = interp.eval(contents.as_slice())?;
     }
     interp.pop_context();
     let metadata = metadata.mark_required();
@@ -359,7 +342,7 @@ pub fn require(
 }
 
 #[allow(clippy::module_name_repetitions)]
-pub fn require_relative(interp: &Artichoke, file: Value) -> Result<Value, Box<dyn RubyException>> {
+pub fn require_relative(interp: &Artichoke, file: Value) -> Result<Value, Exception> {
     let context = interp
         .peek_context()
         .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;

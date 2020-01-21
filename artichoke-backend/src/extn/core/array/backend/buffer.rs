@@ -1,11 +1,8 @@
 use std::iter;
 
-use crate::convert::Convert;
 use crate::extn::core::array::{backend, ArrayType};
-use crate::extn::core::exception::RubyException;
+use crate::extn::prelude::*;
 use crate::gc::MrbGarbageCollection;
-use crate::value::Value;
-use crate::Artichoke;
 
 pub const BUFFER_INLINE_MAX: usize = 128;
 
@@ -61,7 +58,7 @@ impl ArrayType for Buffer {
         self.0.is_empty()
     }
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Box<dyn RubyException>> {
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
         Ok(interp.convert(self.0.get(index)))
     }
 
@@ -70,7 +67,7 @@ impl ArrayType for Buffer {
         interp: &Artichoke,
         start: usize,
         len: usize,
-    ) -> Result<Box<dyn ArrayType>, Box<dyn RubyException>> {
+    ) -> Result<Box<dyn ArrayType>, Exception> {
         let _ = interp;
         if start < self.0.len() {
             let iter = self.0.iter().skip(start).take(len);
@@ -86,7 +83,7 @@ impl ArrayType for Buffer {
         index: usize,
         elem: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         let buflen = self.0.len();
         if index < buflen {
             self.0[index] = elem;
@@ -114,7 +111,7 @@ impl ArrayType for Buffer {
         drain: usize,
         with: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let buflen = self.0.len();
         if start < buflen {
             let remaining = buflen - start;
@@ -146,7 +143,7 @@ impl ArrayType for Buffer {
         drain: usize,
         with: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Box<dyn RubyException>> {
+    ) -> Result<usize, Exception> {
         let buflen = self.0.len();
         if start < buflen {
             let remaining = buflen - start;
@@ -206,7 +203,7 @@ impl ArrayType for Buffer {
         interp: &Artichoke,
         other: Box<dyn ArrayType>,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Box<dyn RubyException>> {
+    ) -> Result<(), Exception> {
         if self.len() + other.len() <= BUFFER_INLINE_MAX {
             if let Ok(buffer) = other.downcast_ref::<Self>() {
                 self.0.extend(buffer.0.clone());
@@ -227,12 +224,12 @@ impl ArrayType for Buffer {
         &mut self,
         interp: &Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<Value, Box<dyn RubyException>> {
+    ) -> Result<Value, Exception> {
         let _ = realloc;
         Ok(interp.convert(self.0.pop()))
     }
 
-    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Box<dyn RubyException>> {
+    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
         let _ = interp;
         self.0.reverse();
         Ok(())

@@ -3,10 +3,12 @@ use std::borrow::Cow;
 use std::ffi::{c_void, CStr, CString};
 use std::mem;
 
-use crate::exception::{ExceptionHandler, LastError};
+use crate::exception::Exception;
+use crate::exception_handler::ExceptionHandler;
+use crate::extn::core::exception::Fatal;
 use crate::sys::{self, DescribeState};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::Artichoke;
 
 // `Protect` must be `Copy` because the call to `mrb_load_nstring_cxt` can
 // unwind with `longjmp` which does not allow Rust to run destructors.
@@ -149,7 +151,9 @@ impl Eval for Artichoke {
 
     type Value = Value;
 
-    fn eval(&self, code: &[u8]) -> Result<Self::Value, ArtichokeError> {
+    type Error = Exception;
+
+    fn eval(&self, code: &[u8]) -> Result<Self::Value, Self::Error> {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
@@ -188,78 +192,22 @@ impl Eval for Artichoke {
             }
             value
         };
-        let value = Value::new(self, value);
 
-        match self.last_error() {
-            LastError::Some(exception) => {
-                warn!("runtime error with exception backtrace: {}", exception);
-                Err(ArtichokeError::Exec(exception.to_string()))
-            }
-            LastError::UnableToExtract(err) => {
-                error!("failed to extract exception after runtime error: {}", err);
-                Err(err)
-            }
-            LastError::None if value.is_unreachable() => {
+        if let Some(exc) = self.last_error()? {
+            Err(exc)
+        } else {
+            let value = Value::new(self, value);
+            if value.is_unreachable() {
                 // Unreachable values are internal to the mruby interpreter and
                 // interacting with them via the C API is unspecified and may
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                Err(ArtichokeError::UnreachableValue)
+                Err(Exception::from(Fatal::new(self, "Unreachable Ruby value")))
+            } else {
+                Ok(value)
             }
-            LastError::None => Ok(value),
         }
-    }
-
-    #[must_use]
-    fn unchecked_eval(&self, code: &[u8]) -> Self::Value {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let (mrb, ctx) = {
-            let borrow = self.0.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
-
-        // Grab the persistent `Context` from the context on the `State` or
-        // the root context if the stack is empty.
-        let filename = self
-            .0
-            .borrow()
-            .context_stack
-            .last()
-            .map(Context::filename_as_c_str)
-            .map_or_else(
-                || Context::default().filename_as_c_str().to_owned(),
-                CStr::to_owned,
-            );
-
-        unsafe {
-            sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
-        }
-
-        let protect = Protect::new(self, code);
-        trace!("Evaling code on {}", mrb.debug());
-        let value = unsafe {
-            let data =
-                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
-            let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
-
-            // We call `mrb_protect` even though we are doing an unchecked eval
-            // because we need to provide a landing pad to deallocate the
-            // heap-allocated objects that we've passed as borrows to `protect`.
-            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
-            if state.assume_init() != 0 {
-                // drop all bindings to heap-allocated objects because we are
-                // about to unwind with longjmp.
-                drop(filename);
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-                sys::mrb_sys_raise_current_exception(mrb);
-                unreachable!("mrb_raise will unwind the stack with longjmp");
-            }
-            value
-        };
-        Value::new(self, value)
     }
 
     #[must_use]
@@ -281,16 +229,7 @@ impl Eval for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::file::File;
-    use artichoke_core::load::LoadSources;
-
-    use crate::convert::Convert;
-    use crate::eval::Context;
-    use crate::module;
-    use crate::sys;
-    use crate::value::{Value, ValueLike};
-    use crate::{Artichoke, ArtichokeError};
+    use crate::test::prelude::*;
 
     #[test]
     fn root_eval_context() {
@@ -387,21 +326,15 @@ NestedEval.file
     #[test]
     fn unparseable_code_returns_err_syntax_error() {
         let interp = crate::interpreter().expect("init");
-        let result = interp.eval(b"'a").map(|_| ());
-        assert_eq!(
-            result,
-            Err(ArtichokeError::Exec("SyntaxError: syntax error".to_owned()))
-        );
+        let err = interp.eval(b"'a").unwrap_err();
+        assert_eq!("SyntaxError", err.name().as_str());
     }
 
     #[test]
     fn interpreter_is_usable_after_syntax_error() {
         let interp = crate::interpreter().expect("init");
-        let result = interp.eval(b"'a").map(|_| ());
-        assert_eq!(
-            result,
-            Err(ArtichokeError::Exec("SyntaxError: syntax error".to_owned()))
-        );
+        let err = interp.eval(b"'a").unwrap_err();
+        assert_eq!("SyntaxError", err.name().as_str());
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval(b"'a' * 10 ").expect("eval");
         let result = result.try_into::<&str>().expect("convert");
@@ -436,8 +369,7 @@ NestedEval.file
         interp
             .def_rb_source_file(b"fail.rb", &b"def bad; 'as'.scan(; end"[..])
             .expect("def file");
-        let result = interp.eval(b"require 'fail'").map(|_| ());
-        let expected = ArtichokeError::Exec("SyntaxError: syntax error".to_owned());
-        assert_eq!(result, Err(expected));
+        let err = interp.eval(b"require 'fail'").unwrap_err();
+        assert_eq!("SyntaxError", err.name().as_str());
     }
 }
