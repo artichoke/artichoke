@@ -25,14 +25,14 @@ pub trait Eval {
     const TOP_FILENAME: &'static [u8] = b"(eval)";
 
     /// Eval code on the artichoke interpreter using the current `Context`.
-    fn eval(&self, code: &[u8]) -> Result<Self::Value, Self::Error>;
+    fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error>;
 
     /// Peek at the top of the [`Context`] stack.
-    fn peek_context(&self) -> Option<Self::Context>;
+    fn peek_context(&self) -> Option<&Self::Context>;
 
     /// Push an `Context` onto the stack.
-    fn push_context(&self, context: Self::Context);
+    fn push_context(&mut self, context: Self::Context);
 
     /// Pop an `Context` from the stack.
-    fn pop_context(&self);
+    fn pop_context(&mut self);
 }

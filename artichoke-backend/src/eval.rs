@@ -21,7 +21,7 @@ struct Protect<'a> {
 impl<'a> Protect<'a> {
     fn new(interp: &Artichoke, code: &'a [u8]) -> Self {
         Self {
-            ctx: interp.0.borrow().ctx,
+            ctx: interp.state().ctx,
             code,
         }
     }
@@ -153,20 +153,14 @@ impl Eval for Artichoke {
 
     type Error = Exception;
 
-    fn eval(&self, code: &[u8]) -> Result<Self::Value, Self::Error> {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let (mrb, ctx) = {
-            let borrow = self.0.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
+    fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
+        let mrb = self.mrb_mut();
+        let ctx = self.state().ctx;
 
         // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
         let filename = self
-            .0
-            .borrow()
+            .state()
             .context_stack
             .last()
             .map(Context::filename_as_c_str)
@@ -211,19 +205,16 @@ impl Eval for Artichoke {
     }
 
     #[must_use]
-    fn peek_context(&self) -> Option<Self::Context> {
-        let api = self.0.borrow();
-        api.context_stack.last().cloned()
+    fn peek_context(&self) -> Option<&Self::Context> {
+        self.state().context_stack.last()
     }
 
-    fn push_context(&self, context: Self::Context) {
-        let mut api = self.0.borrow_mut();
-        api.context_stack.push(context);
+    fn push_context(&mut self, context: Self::Context) {
+        self.state_mut().context_stack.push(context);
     }
 
-    fn pop_context(&self) {
-        let mut api = self.0.borrow_mut();
-        api.context_stack.pop();
+    fn pop_context(&mut self) {
+        self.state_mut().context_stack.pop();
     }
 }
 

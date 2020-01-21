@@ -1,5 +1,7 @@
 use artichoke_core::value::Value as _;
 use std::ffi::c_void;
+use std::mem;
+use std::ptr;
 
 use crate::exception::{CaughtException, Exception};
 use crate::gc::MrbGarbageCollection;
@@ -14,27 +16,20 @@ pub trait ExceptionHandler {
     ///
     /// If there is an error, return an [`Exception`], which contains the
     /// exception class name, message, and optional backtrace.
-    fn last_error(&self) -> Result<Option<Exception>, Exception>;
+    fn last_error(&mut self) -> Result<Option<Exception>, Exception>;
 }
 
 impl ExceptionHandler for Artichoke {
-    fn last_error(&self) -> Result<Option<Exception>, Exception> {
+    fn last_error(&mut self) -> Result<Option<Exception>, Exception> {
         let _arena = self.create_arena_savepoint();
-        let mrb = self.0.borrow().mrb;
-        let exc = unsafe {
-            let exc = (*mrb).exc;
-            // Clear the current exception from the mruby interpreter so
-            // subsequent calls to the mruby VM are not tainted by an error they
-            // did not generate.
-            //
-            // We must do this at the beginning of `current_exception` so we can
-            // use the mruby VM to inspect the exception once we turn it into an
-            // `mrb_value`. `Value::funcall` handles errors by calling this
-            // function, so not clearing the exception results in a stack
-            // overflow.
-            (*mrb).exc = std::ptr::null_mut();
-            exc
-        };
+        let mrb = self.mrb_mut();
+        // Clear the current exception from the mruby interpreter so subsequent
+        // calls to the mruby VM are not tainted by an error they did not
+        // generate. We must do this at the beginning of `current_exception` so
+        // we can use the mruby VM to inspect the exception once we turn it into
+        // an `mrb_value`. `Value::funcall` handles errors by calling this
+        // function, so not clearing the exception results in a stack overflow.
+        let exc = mem::replace(&mut mrb.exc, ptr::null_mut());
         if exc.is_null() {
             trace!("No last error present");
             return Ok(None);
@@ -48,15 +43,16 @@ impl ExceptionHandler for Artichoke {
         let exception = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
         // Sometimes when hacking on extn/core it is possible to enter a crash
         // loop where an exception is captured by this handler, but extracting
-        // the exception name or backtrace throws again. Uncommenting the
+        // the exception name or backtrace throws again.
+        // Uncommenting the
         // folllowing print statement will at least get you the exception class
         // and message, which should help debugging.
         //
-        // println!("{:?}", exception);
+        // println!("{}", exception.to_s_debug(self));
         let classname = exception
-            .funcall::<Value>("class", &[], None)
-            .and_then(|exception| exception.funcall::<&str>("name", &[], None))?;
-        let message = exception.funcall::<&[u8]>("message", &[], None)?;
+            .funcall::<Value>(self, "class", &[], None)
+            .and_then(|exception| exception.funcall::<&str>(self, "name", &[], None))?;
+        let message = exception.funcall::<&[u8]>(self, "message", &[], None)?;
         let exception = CaughtException::new(exception, classname, message);
         debug!("Extracted exception from interpreter: {}", exception);
         Ok(Some(Exception::from(exception)))
