@@ -270,7 +270,6 @@ macro_rules! ruby_exception_impl {
         #[derive(Clone)]
         #[must_use]
         pub struct $exception {
-            interp: Artichoke,
             message: Cow<'static, [u8]>,
             #[cfg(feature = "artichoke-debug")]
             backtrace: Backtrace,
@@ -281,12 +280,12 @@ macro_rules! ruby_exception_impl {
             where
                 S: Into<Cow<'static, str>>,
             {
+                let _ = interp;
                 let message = match message.into() {
                     Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes()),
                     Cow::Owned(s) => Cow::Owned(s.into_bytes()),
                 };
                 Self {
-                    interp: interp.clone(),
                     message,
                     #[cfg(feature = "artichoke-debug")]
                     backtrace: Backtrace::new(),
@@ -297,8 +296,8 @@ macro_rules! ruby_exception_impl {
             where
                 S: Into<Cow<'static, [u8]>>,
             {
+                let _ = interp;
                 Self {
-                    interp: interp.clone(),
                     message: message.into(),
                     #[cfg(feature = "artichoke-debug")]
                     backtrace: Backtrace::new(),
@@ -363,12 +362,7 @@ macro_rules! ruby_exception_impl {
 
             #[must_use]
             fn name(&self) -> String {
-                self.interp
-                    .0
-                    .borrow()
-                    .class_spec::<Self>()
-                    .map(|spec| spec.name().to_owned())
-                    .unwrap_or_default()
+                String::from(stringify!($exception))
             }
 
             #[must_use]
