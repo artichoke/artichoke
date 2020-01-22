@@ -10,7 +10,7 @@ pub fn method(interp: &Artichoke, value: Value, other: Value) -> Result<Value, E
         )
     })?;
     let pretty_name = other.pretty_name();
-    if let Ok(y) = other.clone().try_into::<Int>() {
+    if let Ok(y) = other.try_into::<Int>(interp) {
         if y == 0 {
             Err(Exception::from(ZeroDivisionError::new(
                 interp,

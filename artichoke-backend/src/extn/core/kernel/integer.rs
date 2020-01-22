@@ -18,7 +18,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         Accumulate(Sign, String),
     }
     let radix = if let Some(radix) = radix {
-        if let Ok(radix) = radix.clone().try_into::<Int>() {
+        if let Ok(radix) = radix.try_into::<Int>(interp) {
             Some(radix)
         } else if let Ok(radix) = radix.funcall::<Int>("to_int", &[], None) {
             Some(radix)
@@ -45,7 +45,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         None => None,
     };
     let ruby_type = arg.pretty_name();
-    let arg = if let Ok(arg) = arg.clone().try_into::<&[u8]>() {
+    let arg = if let Ok(arg) = arg.try_into::<&[u8]>(interp) {
         arg
     } else if let Ok(arg) = arg.funcall::<&[u8]>("to_str", &[], None) {
         arg

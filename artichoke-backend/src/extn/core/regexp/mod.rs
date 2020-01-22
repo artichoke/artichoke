@@ -236,7 +236,7 @@ impl Regexp {
                 #[cfg(feature = "artichoke-array")]
                 let ary = unsafe { crate::extn::core::array::Array::try_from_ruby(interp, &first) };
                 #[cfg(not(feature = "artichoke-array"))]
-                let ary = first.clone().try_into::<Vec<Value>>();
+                let ary = first.try_into::<Vec<Value>>(interp);
                 if let Ok(ary) = ary {
                     #[cfg(feature = "artichoke-array")]
                     let borrow = ary.borrow();

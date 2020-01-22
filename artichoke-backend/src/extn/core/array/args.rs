@@ -18,7 +18,7 @@ pub fn element_reference(
     ary_len: usize,
 ) -> Result<ElementReference, Exception> {
     if let Some(len) = len {
-        let start = if let Ok(start) = elem.clone().try_into::<Int>() {
+        let start = if let Ok(start) = elem.try_into::<Int>(interp) {
             start
         } else if let Ok(start) = elem.funcall::<Int>("to_int", &[], None) {
             start
@@ -29,7 +29,7 @@ pub fn element_reference(
                 format!("no implicit conversion of {} into Integer", elem_type_name),
             )));
         };
-        let len = if let Ok(len) = len.clone().try_into::<Int>() {
+        let len = if let Ok(len) = len.try_into::<Int>(interp) {
             len
         } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
             len
@@ -47,7 +47,7 @@ pub fn element_reference(
         }
     } else {
         let name = elem.pretty_name();
-        if let Ok(index) = elem.clone().try_into::<Int>() {
+        if let Ok(index) = elem.try_into::<Int>(interp) {
             Ok(ElementReference::Index(index))
         } else if let Ok(index) = elem.funcall::<Int>("to_int", &[], None) {
             Ok(ElementReference::Index(index))
@@ -76,7 +76,7 @@ pub fn element_assignment(
     if let Some(elem) = third {
         let start = first;
         let start_type_name = start.pretty_name();
-        let start = if let Ok(start) = start.clone().try_into::<Int>() {
+        let start = if let Ok(start) = start.try_into::<Int>(interp) {
             start
         } else if let Ok(start) = start.funcall::<Int>("to_int", &[], None) {
             start
@@ -102,7 +102,7 @@ pub fn element_assignment(
         };
         let len = second;
         let len_type_name = len.pretty_name();
-        let len = if let Ok(len) = len.clone().try_into::<Int>() {
+        let len = if let Ok(len) = len.try_into::<Int>(interp) {
             len
         } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
             len
@@ -120,7 +120,7 @@ pub fn element_assignment(
                 format!("negative length ({})", len),
             )))
         }
-    } else if let Ok(index) = first.clone().try_into::<Int>() {
+    } else if let Ok(index) = first.try_into::<Int>(interp) {
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
@@ -170,7 +170,7 @@ pub fn element_assignment(
                         "Unable to extract first from Range",
                     )));
                 };
-                let start = if let Ok(start) = start.clone().try_into::<Int>() {
+                let start = if let Ok(start) = start.try_into::<Int>(interp) {
                     start
                 } else if let Ok(start) = start.funcall::<Int>("to_int", &[], None) {
                     start
@@ -191,7 +191,7 @@ pub fn element_assignment(
                         "Unable to extract first from Range",
                     )));
                 };
-                let end = if let Ok(end) = end.clone().try_into::<Int>() {
+                let end = if let Ok(end) = end.try_into::<Int>(interp) {
                     end
                 } else if let Ok(end) = end.funcall::<Int>("to_int", &[], None) {
                     end

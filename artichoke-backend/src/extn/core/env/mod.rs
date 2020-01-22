@@ -47,7 +47,7 @@ pub fn element_reference(interp: &Artichoke, obj: Value, name: &Value) -> Result
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
     let ruby_type = name.pretty_name();
-    let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
+    let name = if let Ok(name) = name.try_into::<&[u8]>(interp) {
         name
     } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
         name
@@ -70,7 +70,7 @@ pub fn element_assignment(
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
     let name_type_name = name.pretty_name();
-    let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
+    let name = if let Ok(name) = name.try_into::<&[u8]>(interp) {
         name
     } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
         name
@@ -81,7 +81,7 @@ pub fn element_assignment(
         )));
     };
     let value_type_name = value.pretty_name();
-    let value = if let Ok(value) = value.clone().try_into::<Option<&[u8]>>() {
+    let value = if let Ok(value) = value.try_into::<Option<&[u8]>>(interp) {
         value
     } else if let Ok(value) = value.clone().funcall::<&[u8]>("to_str", &[], None) {
         Some(value)

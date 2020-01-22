@@ -10,11 +10,11 @@ use crate::fs::{self, RUBY_LOAD_PATH};
 
 const RUBY_EXTENSION: &str = "rb";
 
-pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
-    let ruby_type = filename.pretty_name();
-    let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
+pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception> {
+    let ruby_type = filename.pretty_name(interp);
+    let filename = if let Ok(filename) = filename.try_into::<&[u8]>(interp) {
         filename
-    } else if let Ok(filename) = filename.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(filename) = filename.funcall::<&[u8]>(interp, "to_str", &[], None) {
         filename
     } else {
         return Err(Exception::from(TypeError::new(
@@ -35,10 +35,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
     } else {
         file.to_path_buf()
     };
-    let is_file = {
-        let api = interp.0.borrow();
-        api.vfs.is_file(path.as_path())
-    };
+    let is_file = interp.vfs().is_file(path.as_path());
     if !is_file {
         let filestr = format!("{:?}", <&BStr>::from(filename));
         return Err(Exception::from(LoadError::new(
@@ -49,10 +46,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
             ),
         )));
     }
-    let metadata = {
-        let api = interp.0.borrow();
-        api.vfs.metadata(path.as_path()).unwrap_or_default()
-    };
+    let metadata = interp.vfs().metadata(path.as_path()).unwrap_or_default();
     // Require Rust File first because an File may define classes
     // and module with `LoadSources` and Ruby files can require
     // arbitrary other files, including some child sources that may
@@ -78,10 +72,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
             )));
         }
     }
-    let contents = {
-        let api = interp.0.borrow();
-        api.vfs.read_file(path.as_path())
-    };
+    let contents = interp.vfs().read_file(path.as_path());
     if let Ok(contents) = contents {
         let _ = interp.eval(contents.as_slice())?;
     }
@@ -95,14 +86,14 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
 }
 
 pub fn require(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     filename: Value,
     base: Option<&Path>,
 ) -> Result<Value, Exception> {
-    let ruby_type = filename.pretty_name();
-    let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
+    let ruby_type = filename.pretty_name(interp);
+    let filename = if let Ok(filename) = filename.try_into::<&[u8]>(interp) {
         filename
-    } else if let Ok(filename) = filename.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(filename) = filename.funcall::<&[u8]>(interp, "to_str", &[], None) {
         filename
     } else {
         return Err(Exception::from(TypeError::new(
@@ -129,15 +120,9 @@ pub fn require(
         with_rb_ext.extend(b".rb".iter());
         let rb_ext = fs::bytes_to_osstr(interp, with_rb_ext.as_slice())?;
         let path = relative_base.join(rb_ext);
-        let is_file = {
-            let api = interp.0.borrow();
-            api.vfs.is_file(path.as_path())
-        };
+        let is_file = interp.vfs().is_file(path.as_path());
         if is_file {
-            let metadata = {
-                let api = interp.0.borrow();
-                api.vfs.metadata(path.as_path()).unwrap_or_default()
-            };
+            let metadata = interp.vfs().metadata(path.as_path()).unwrap_or_default();
             // If a file is already required, short circuit.
             if metadata.is_already_required() {
                 return Ok(interp.convert(false));
@@ -167,18 +152,14 @@ pub fn require(
                     )));
                 }
             }
-            let contents = {
-                let api = interp.0.borrow();
-                api.vfs.read_file(path.as_path())
-            };
+            let contents = interp.vfs().read_file(path.as_path());
             if let Ok(contents) = contents {
                 let _ = interp.eval(contents.as_slice())?;
             }
             interp.pop_context();
             let metadata = metadata.mark_required();
-            let borrow = interp.0.borrow();
-            borrow
-                .vfs
+            interp
+                .vfs_mut()
                 .set_metadata(path.as_path(), metadata)
                 .map_err(|_| {
                     Fatal::new(
@@ -194,15 +175,9 @@ pub fn require(
             return Ok(interp.convert(true));
         } else {
             let path = relative_base.join(file);
-            let is_file = {
-                let api = interp.0.borrow();
-                api.vfs.is_file(path.as_path())
-            };
+            let is_file = interp.vfs().is_file(path.as_path());
             if is_file {
-                let metadata = {
-                    let api = interp.0.borrow();
-                    api.vfs.metadata(path.as_path()).unwrap_or_default()
-                };
+                let metadata = interp.vfs().metadata(path.as_path()).unwrap_or_default();
                 // If a file is already required, short circuit.
                 if metadata.is_already_required() {
                     return Ok(interp.convert(false));
@@ -232,18 +207,14 @@ pub fn require(
                         )));
                     }
                 }
-                let contents = {
-                    let api = interp.0.borrow();
-                    api.vfs.read_file(path.as_path())
-                };
+                let contents = interp.vfs().read_file(path.as_path());
                 if let Ok(contents) = contents {
                     let _ = interp.eval(contents.as_slice())?;
                 }
                 interp.pop_context();
                 let metadata = metadata.mark_required();
-                let borrow = interp.0.borrow();
-                borrow
-                    .vfs
+                interp
+                    .vfs_mut()
                     .set_metadata(path.as_path(), metadata)
                     .map_err(|_| {
                         Fatal::new(
@@ -267,10 +238,7 @@ pub fn require(
         Path::new(path)
     };
     let path = relative_base.join(file);
-    let is_file = {
-        let api = interp.0.borrow();
-        api.vfs.is_file(path.as_path())
-    };
+    let is_file = interp.vfs().is_file(path.as_path());
     if !is_file {
         let filestr = format!("{:?}", <&BStr>::from(filename));
         return Err(Exception::from(LoadError::new(
@@ -281,10 +249,7 @@ pub fn require(
             ),
         )));
     }
-    let metadata = {
-        let api = interp.0.borrow();
-        api.vfs.metadata(path.as_path()).unwrap_or_default()
-    };
+    let metadata = interp.vfs().metadata(path.as_path()).unwrap_or_default();
     // If a file is already required, short circuit.
     if metadata.is_already_required() {
         return Ok(interp.convert(false));
@@ -314,18 +279,14 @@ pub fn require(
             )));
         }
     }
-    let contents = {
-        let api = interp.0.borrow();
-        api.vfs.read_file(path.as_path())
-    };
+    let contents = interp.vfs().read_file(path.as_path());
     if let Ok(contents) = contents {
         let _ = interp.eval(contents.as_slice())?;
     }
     interp.pop_context();
     let metadata = metadata.mark_required();
-    let borrow = interp.0.borrow();
-    borrow
-        .vfs
+    interp
+        .vfs_mut()
         .set_metadata(path.as_path(), metadata)
         .map_err(|_| {
             Fatal::new(
@@ -342,7 +303,7 @@ pub fn require(
 }
 
 #[allow(clippy::module_name_repetitions)]
-pub fn require_relative(interp: &Artichoke, file: Value) -> Result<Value, Exception> {
+pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Exception> {
     let context = interp
         .peek_context()
         .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;

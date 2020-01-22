@@ -54,7 +54,7 @@ impl Array {
         let result = if let Some(first) = first {
             if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
                 ary.borrow().0.clone()
-            } else if let Ok(len) = first.clone().try_into::<Int>() {
+            } else if let Ok(len) = first.try_into::<Int>(interp) {
                 let len = usize::try_from(len)
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
                 if let Some(block) = block {
