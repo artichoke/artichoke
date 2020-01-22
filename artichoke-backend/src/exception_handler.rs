@@ -1,7 +1,7 @@
 use artichoke_core::value::Value as _;
 use std::ffi::c_void;
 use std::mem;
-use std::ptr;
+use std::ptr::{self, NonNull};
 
 use crate::exception::{CaughtException, Exception};
 use crate::gc::MrbGarbageCollection;
@@ -30,17 +30,21 @@ impl ExceptionHandler for Artichoke {
         // an `mrb_value`. `Value::funcall` handles errors by calling this
         // function, so not clearing the exception results in a stack overflow.
         let exc = mem::replace(&mut mrb.exc, ptr::null_mut());
-        if exc.is_null() {
+        let exc = if let Some(exc) = NonNull::new(exc) {
+            exc
+        } else {
             trace!("No last error present");
             return Ok(None);
-        }
+        };
         // Generate exception metadata in by executing the following Ruby code:
         //
         // ```ruby
         // clazz = exception.class.name
         // message = exception.message
         // ```
-        let exception = Value::new(self, unsafe { sys::mrb_sys_obj_value(exc as *mut c_void) });
+        let exception = Value::new(self, unsafe {
+            sys::mrb_sys_obj_value(exc.as_ptr() as *mut c_void)
+        });
         // Sometimes when hacking on extn/core it is possible to enter a crash
         // loop where an exception is captured by this handler, but extracting
         // the exception name or backtrace throws again.

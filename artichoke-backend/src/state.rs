@@ -6,6 +6,8 @@ use std::ptr::NonNull;
 
 use crate::class;
 use crate::eval::Context;
+#[cfg(feature = "artichoke-random")]
+use crate::extn::core::random::Random;
 use crate::fs::Filesystem;
 use crate::module;
 use crate::sys;
@@ -22,7 +24,7 @@ pub struct State {
     symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
     captured_output: Option<Vec<u8>>,
     #[cfg(feature = "artichoke-random")]
-    prng: crate::extn::core::random::Random,
+    prng: Random,
 }
 
 impl State {
@@ -40,18 +42,18 @@ impl State {
             symbol_cache: HashMap::default(),
             captured_output: None,
             #[cfg(feature = "artichoke-random")]
-            prng: crate::extn::core::random::new(None),
+            prng: Random::default(),
         }
     }
 
     #[cfg(feature = "artichoke-random")]
     #[must_use]
-    pub fn prng(&self) -> &crate::extn::core::random::Random {
+    pub fn prng(&self) -> &Random {
         &self.prng
     }
 
     #[cfg(feature = "artichoke-random")]
-    pub fn prng_mut(&mut self) -> &mut crate::extn::core::random::Random {
+    pub fn prng_mut(&mut self) -> &mut Random {
         &mut self.prng
     }
 

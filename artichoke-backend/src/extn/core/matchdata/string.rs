@@ -3,7 +3,7 @@
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::prelude::*;
 
-pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Exception> {
+pub fn method(interp: &mut Artichoke, value: &Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -11,8 +11,6 @@ pub fn method(interp: &Artichoke, value: &Value) -> Result<Value, Exception> {
         )
     })?;
     let mut result = interp.convert(data.borrow().string.as_slice());
-    result
-        .freeze()
-        .map_err(|_| Fatal::new(interp, "Unable to freeze MatchData#string result"))?;
+    result.freeze(interp)?;
     Ok(result)
 }

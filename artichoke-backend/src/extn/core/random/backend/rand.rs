@@ -31,7 +31,7 @@ impl<T> backend::Rand for Rand<T>
 where
     T: 'static + Rng,
 {
-    fn bytes(&mut self, interp: &Artichoke, buf: &mut [u8]) -> Result<(), Exception> {
+    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) -> Result<(), Exception> {
         let _ = interp;
         self.rng.fill_bytes(buf);
         Ok(())
@@ -53,13 +53,17 @@ where
         }
     }
 
-    fn rand_int(&mut self, interp: &Artichoke, max: Int) -> Result<Int, Exception> {
+    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Result<Int, Exception> {
         let _ = interp;
         let between = Uniform::from(0..max);
         Ok(between.sample(&mut self.rng))
     }
 
-    fn rand_float(&mut self, interp: &Artichoke, max: Option<Float>) -> Result<Float, Exception> {
+    fn rand_float(
+        &mut self,
+        interp: &mut Artichoke,
+        max: Option<Float>,
+    ) -> Result<Float, Exception> {
         let _ = interp;
         let max = max.unwrap_or(1.0);
         let between = Uniform::from(0.0..max);

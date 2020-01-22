@@ -28,16 +28,16 @@ impl<'a> Args<'a> {
     }
 
     pub fn extract(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         elem: Value,
         len: Option<Value>,
         num_captures: usize,
     ) -> Result<Self, Exception> {
         if let Some(len) = len {
-            let elem_type_name = elem.pretty_name();
-            let start = if let Ok(start) = elem.clone().try_into::<Int>() {
+            let elem_type_name = elem.pretty_name(interp);
+            let start = if let Ok(start) = elem.try_into::<Int>(interp) {
                 start
-            } else if let Ok(start) = elem.funcall::<Int>("to_int", &[], None) {
+            } else if let Ok(start) = elem.funcall::<Int>(interp, "to_int", &[], None) {
                 start
             } else {
                 return Err(Exception::from(TypeError::new(
@@ -45,10 +45,10 @@ impl<'a> Args<'a> {
                     format!("no implicit conversion of {} into Integer", elem_type_name),
                 )));
             };
-            let len_type_name = len.pretty_name();
-            let len = if let Ok(len) = len.clone().try_into::<Int>() {
+            let len_type_name = len.pretty_name(interp);
+            let len = if let Ok(len) = len.try_into::<Int>(interp) {
                 len
-            } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
+            } else if let Ok(len) = len.funcall::<Int>(interp, "to_int", &[], None) {
                 len
             } else {
                 return Err(Exception::from(TypeError::new(
@@ -62,14 +62,14 @@ impl<'a> Args<'a> {
                 Ok(Self::Empty)
             }
         } else {
-            let name = elem.pretty_name();
-            if let Ok(index) = elem.clone().try_into::<Int>() {
+            let name = elem.pretty_name(interp);
+            if let Ok(index) = elem.try_into::<Int>(interp) {
                 Ok(Self::Index(index))
-            } else if let Ok(name) = elem.clone().try_into::<&[u8]>() {
+            } else if let Ok(name) = elem.try_into::<&[u8]>(interp) {
                 Ok(Self::Name(name))
-            } else if let Ok(name) = elem.funcall::<&[u8]>("to_str", &[], None) {
+            } else if let Ok(name) = elem.funcall::<&[u8]>(interp, "to_str", &[], None) {
                 Ok(Self::Name(name))
-            } else if let Ok(index) = elem.funcall::<Int>("to_int", &[], None) {
+            } else if let Ok(index) = elem.funcall::<Int>(interp, "to_int", &[], None) {
                 Ok(Self::Index(index))
             } else {
                 let rangelen = Int::try_from(num_captures)

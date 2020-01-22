@@ -27,6 +27,7 @@ pub mod trampoline;
 pub use enc::Encoding;
 pub use opts::Options;
 
+use backend::lazy::Lazy;
 use backend::onig::Onig;
 use backend::regex_utf8::RegexUtf8;
 
@@ -91,7 +92,7 @@ pub struct Regexp(Box<dyn RegexpType>);
 
 impl Regexp {
     pub fn new(
-        interp: &mut Artichoke,
+        interp: &Artichoke,
         literal_config: Config,
         derived_config: Config,
         encoding: Encoding,
@@ -116,7 +117,7 @@ impl Regexp {
             pattern: pattern.to_vec(),
             options: Options::default(),
         };
-        let backend = Box::new(backend::lazy::Lazy::new(literal_config));
+        let backend = Box::new(Lazy::new(literal_config));
         Self(backend)
     }
 
@@ -243,7 +244,7 @@ impl Regexp {
                     let ary = borrow.as_vec(interp);
                     let mut patterns = vec![];
                     for pattern in ary {
-                        if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
+                        if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
                             patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                         } else if let Ok(pattern) =
                             pattern.funcall::<&str>(interp, "to_str", &[], None)
@@ -259,7 +260,7 @@ impl Regexp {
                     bstr::join(b"|", patterns)
                 } else {
                     let pattern = first;
-                    if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
+                    if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
                         regexp.borrow().0.derived_config().pattern.clone()
                     } else if let Ok(pattern) = pattern.funcall::<&str>(interp, "to_str", &[], None)
                     {
@@ -273,7 +274,7 @@ impl Regexp {
                 }
             } else {
                 let mut patterns = vec![];
-                if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &first) } {
+                if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &first) } {
                     patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                 } else if let Ok(bytes) = first.try_into::<&[u8]>(interp) {
                     let pattern = str::from_utf8(bytes).map_err(|_| {
@@ -292,7 +293,7 @@ impl Regexp {
                     )));
                 }
                 for pattern in iter {
-                    if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
+                    if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
                         patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                     } else if let Ok(bytes) = pattern.try_into::<&[u8]>(interp) {
                         let pattern = str::from_utf8(bytes).map_err(|_| {
@@ -315,7 +316,7 @@ impl Regexp {
                 bstr::join(b"|", patterns)
             }
         } else {
-            Vec::from(b"(?!)".as_ref())
+            Vec::from(&b"(?!)"[..])
         };
         let derived_config = {
             let (pattern, options) = opts::parse_pattern(pattern.as_slice(), Options::default());
@@ -565,30 +566,27 @@ pub trait RegexpType {
     fn literal_config(&self) -> &Config;
     fn derived_config(&self) -> &Config;
     fn encoding(&self) -> &Encoding;
-    fn inspect(&self, interp: &mut Artichoke) -> Vec<u8>;
-    fn string(&self, interp: &mut Artichoke) -> &[u8];
+    fn inspect(&self, interp: &Artichoke) -> Vec<u8>;
+    fn string(&self, interp: &Artichoke) -> &[u8];
 
     fn captures(
         &self,
-        interp: &mut Artichoke,
+        interp: &Artichoke,
         haystack: &[u8],
     ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception>;
 
     fn capture_indexes_for_name(
         &self,
-        interp: &mut Artichoke,
+        interp: &Artichoke,
         name: &[u8],
     ) -> Result<Option<Vec<usize>>, Exception>;
 
-    fn captures_len(
-        &self,
-        interp: &mut Artichoke,
-        haystack: Option<&[u8]>,
-    ) -> Result<usize, Exception>;
+    fn captures_len(&self, interp: &Artichoke, haystack: Option<&[u8]>)
+        -> Result<usize, Exception>;
 
     fn capture0<'a>(
         &self,
-        interp: &mut Artichoke,
+        interp: &Artichoke,
         haystack: &'a [u8],
     ) -> Result<Option<&'a [u8]>, Exception>;
 
@@ -596,7 +594,7 @@ pub trait RegexpType {
 
     fn is_match(
         &self,
-        interp: &mut Artichoke,
+        interp: &Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
     ) -> Result<bool, Exception>;
@@ -615,20 +613,19 @@ pub trait RegexpType {
         pattern: &[u8],
     ) -> Result<Option<Int>, Exception>;
 
-    fn named_captures(&self, interp: &mut Artichoke)
-        -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception>;
+    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception>;
 
     fn named_captures_for_haystack(
         &self,
-        interp: &mut Artichoke,
+        interp: &Artichoke,
         haystack: &[u8],
     ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception>;
 
-    fn names(&self, interp: &mut Artichoke) -> Vec<Vec<u8>>;
+    fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>>;
 
     fn pos(
         &self,
-        interp: &mut Artichoke,
+        interp: &Artichoke,
         haystack: &[u8],
         at: usize,
     ) -> Result<Option<(usize, usize)>, Exception>;

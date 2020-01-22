@@ -11,35 +11,37 @@ use crate::{Artichoke, ArtichokeError};
 /// Extract an [`Artichoke`] interpreter from the user data pointer on a
 /// [`sys::mrb_state`].
 ///
-/// Calling this function will increase the [`Rc::strong_count`] on the
-/// [`Artichoke`] interpreter by one.
+/// Calling this function will move ownership of the wrapped [`State`] out of
+/// the [`sys::mrb_state`] into the returned `Artichoke`.
 ///
 /// # Safety
 ///
 /// This function assumes that the user data pointer was created with
-/// [`Rc::into_raw`] and that the pointer is to a non-free'd
-/// [`Rc`]`<`[`RefCell`]`<`[`State`]`>>`.
-pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeError> {
+/// [`Box::into_raw`] and that the pointer is to a non-free'd
+/// [`Box`]`<`[`State`]`>`.
+pub fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeError> {
     let mrb = if let Some(mrb) = NonNull::new(mrb) {
         mrb
     } else {
         error!("Attempted to extract Artichoke from null mrb_state");
         return Err(ArtichokeError::Uninitialized);
     };
-    let ptr = mrb.as_mut().ud;
-    if ptr.is_null() {
-        info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
+
+    let userdata = if let Some(userdata) = NonNull::new(mrb.as_mut().ud as *mut State) {
+        userdata
+    } else {
+        error!("Attempted to extract State from null mrb_state->ud pointer");
         return Err(ArtichokeError::Uninitialized);
-    }
-    // Extract the smart pointer that wraps the API from the user data on
-    // the mrb interpreter. This moves ownership of the user data pointer out of
-    // the `mrb_state`.
-    // copy of the smart pointer.
-    let state = Box::from_raw(ptr as *mut State);
+    };
+
+    // Extract the boxed `State` that wraps the API from the user data on the
+    // `mrb_state`. This moves ownership of the user data pointer out of the
+    // `mrb_state` into the returned `Artichoke`.
+    let state = Box::from_raw(userdata.as_ptr());
     mrb.as_mut().ud = ptr::null_mut();
     trace!(
         "Extracted Artichoke State from user data pointer on {}",
-        mrb.as_mut().debug()
+        mrb.as_ref().debug()
     );
     Ok(Artichoke { state, mrb })
 }

@@ -13,18 +13,22 @@ pub fn new(seed: Option<u64>) -> Random {
     Random(backend::rand::new(seed))
 }
 
-#[must_use]
-pub fn default() -> Random {
-    Random(backend::default::new())
-}
-
 pub struct Random(Box<dyn backend::Rand>);
 
+impl Default for Random {
+    #[must_use]
+    fn default() -> Self {
+        Self(backend::default::new())
+    }
+}
+
 impl Random {
+    #[inline]
     fn inner(&self) -> &dyn backend::Rand {
         self.0.as_ref()
     }
 
+    #[inline]
     fn inner_mut(&mut self) -> &mut dyn backend::Rand {
         self.0.as_mut()
     }
@@ -38,19 +42,19 @@ impl RustBackedValue for Random {
 }
 
 pub fn initialize(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     seed: Option<Value>,
     into: Option<sys::mrb_value>,
 ) -> Result<Value, Exception> {
     let rand = if let Some(seed) = seed {
-        let seed = seed.implicitly_convert_to_int()?;
+        let seed = seed.implicitly_convert_to_int(interp)?;
         #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         Random(backend::rand::new(Some(seed as u64)))
     } else {
         Random(backend::rand::new(None))
     };
     let result = rand
-        .try_into_ruby(&interp, into)
+        .try_into_ruby(interp, into)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Random with Rust Random"))?;
     Ok(result)
 }
@@ -76,7 +80,7 @@ pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Excep
     }
 }
 
-pub fn bytes(interp: &Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
+pub fn bytes(interp: &mut Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
     let rand = if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         rand
     } else {
@@ -85,7 +89,7 @@ pub fn bytes(interp: &Artichoke, rand: Value, size: Value) -> Result<Value, Exce
             "Failed to extract Rust Random from Ruby Random receiver",
         )));
     };
-    let size = size.implicitly_convert_to_int()?;
+    let size = size.implicitly_convert_to_int(interp)?;
     if let Ok(size) = usize::try_from(size) {
         let mut buf = vec![0; size];
         let mut borrow = rand.borrow_mut();
@@ -99,7 +103,7 @@ pub fn bytes(interp: &Artichoke, rand: Value, size: Value) -> Result<Value, Exce
     }
 }
 
-pub fn rand(interp: &Artichoke, rand: Value, max: Option<Value>) -> Result<Value, Exception> {
+pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<Value, Exception> {
     #[derive(Debug, Clone, Copy)]
     enum Max {
         Float(Float),
@@ -115,12 +119,12 @@ pub fn rand(interp: &Artichoke, rand: Value, max: Option<Value>) -> Result<Value
         )));
     };
     let max = if let Some(max) = max {
-        if let Ok(max) = max.clone().try_into::<Int>() {
+        if let Ok(max) = max.try_into::<Int>(interp) {
             Max::Int(max)
-        } else if let Ok(max) = max.clone().try_into::<Float>() {
+        } else if let Ok(max) = max.try_into::<Float>(interp) {
             Max::Float(max)
         } else {
-            Max::Int(max.implicitly_convert_to_int()?)
+            Max::Int(max.implicitly_convert_to_int(interp)?)
         }
     } else {
         Max::None
@@ -177,25 +181,24 @@ pub fn new_seed(interp: &Artichoke) -> Result<Value, Exception> {
     Ok(interp.convert(result))
 }
 
-pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Exception> {
+pub fn srand(interp: &mut Artichoke, number: Option<Value>) -> Result<Value, Exception> {
     let _ = number;
     let new_seed = if let Some(number) = number {
-        let new_seed = number.implicitly_convert_to_int()?;
+        let new_seed = number.implicitly_convert_to_int(interp)?;
         #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         Some(new_seed as u64)
     } else {
         None
     };
-    let mut borrow = interp.0.borrow_mut();
-    let prng = borrow.prng_mut();
+    let prng = interp.state_mut().prng_mut();
     let old_seed = prng.inner().seed(interp)?;
     prng.0 = backend::rand::new(new_seed);
     #[allow(clippy::cast_possible_wrap)]
     Ok(interp.convert(old_seed as Int))
 }
 
-pub fn urandom(interp: &Artichoke, size: Value) -> Result<Value, Exception> {
-    let size = size.implicitly_convert_to_int()?;
+pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Exception> {
+    let size = size.implicitly_convert_to_int(interp)?;
     let size = usize::try_from(size)
         .map_err(|_| ArgumentError::new(interp, "negative string size (or size too big)"))?;
     let mut bytes = vec![0; size];

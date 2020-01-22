@@ -19,7 +19,7 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
         mrb
     } else {
         error!("Failed to allocate mrb interprter");
-        return Err(BootError::from(ArtichokeError::New));
+        return Err(BootError::from(ArtichokeError::Uninitialized));
     };
 
     let context = unsafe { sys::mrbc_context_new(mrb.as_mut()) };
@@ -33,14 +33,16 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
     interp.disable_gc();
 
     // Initialize Artichoke Core and Standard Library runtime
+    let arena = interp.create_arena_savepoint();
     extn::init(&mut interp, "mruby")?;
+    arena.restore();
 
     // Load mrbgems
+    let arena = interp.create_arena_savepoint();
     unsafe {
-        let arena = interp.create_arena_savepoint();
         sys::mrb_init_mrbgems(mrb.as_mut());
-        arena.restore();
     }
+    arena.restore();
 
     debug!("Allocated {}", mrb.as_ref().debug());
 
