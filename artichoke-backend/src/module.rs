@@ -12,15 +12,14 @@ use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
-#[derive(Clone)]
 pub struct Builder<'a> {
-    interp: &'a Artichoke,
+    interp: &'a mut Artichoke,
     spec: &'a Spec,
     methods: HashSet<method::Spec>,
 }
 
 impl<'a> Builder<'a> {
-    pub fn for_spec(interp: &'a Artichoke, spec: &'a Spec) -> Self {
+    pub fn for_spec(interp: &'a mut Artichoke, spec: &'a Spec) -> Self {
         Self {
             interp,
             spec,

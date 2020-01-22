@@ -16,7 +16,7 @@ pub enum Args<'a> {
 }
 
 impl<'a> Args<'a> {
-    pub fn num_captures(interp: &Artichoke, value: &Value) -> Result<usize, Exception> {
+    pub fn num_captures(interp: &mut Artichoke, value: &Value) -> Result<usize, Exception> {
         let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
             Fatal::new(
                 interp,
@@ -116,7 +116,7 @@ impl<'a> Args<'a> {
     }
 }
 
-pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
+pub fn method(interp: &mut Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
         Fatal::new(
             interp,

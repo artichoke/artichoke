@@ -26,19 +26,25 @@ impl RustBackedValue for Environ {
 }
 
 #[cfg(feature = "artichoke-system-environ")]
-pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
+pub fn initialize(
+    interp: &mut Artichoke,
+    into: Option<sys::mrb_value>,
+) -> Result<Value, Exception> {
     let obj = Environ(Box::new(backend::system::System::new()));
     let result = obj
-        .try_into_ruby(&interp, into)
+        .try_into_ruby(interp, into)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby ENV with Rust ENV"))?;
     Ok(result)
 }
 
 #[cfg(not(feature = "artichoke-system-environ"))]
-pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
+pub fn initialize(
+    interp: &mut Artichoke,
+    into: Option<sys::mrb_value>,
+) -> Result<Value, Exception> {
     let obj = Environ(Box::new(backend::memory::Memory::new()));
     let result = obj
-        .try_into_ruby(&interp, into)
+        .try_into_ruby(interp, into)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby ENV with Rust ENV"))?;
     Ok(result)
 }
@@ -100,7 +106,7 @@ pub fn element_assignment(
     Ok(interp.convert(value))
 }
 
-pub fn to_h(interp: &Artichoke, obj: Value) -> Result<Value, Exception> {
+pub fn to_h(interp: &mut Artichoke, obj: Value) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
     let result = obj.borrow().0.as_map(interp)?;

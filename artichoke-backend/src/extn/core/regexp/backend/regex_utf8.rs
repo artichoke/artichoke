@@ -258,7 +258,7 @@ impl RegexpType for RegexUtf8 {
                 0,
                 pattern.len(),
             );
-            let matchdata = matchdata.try_into_ruby(&interp, None).map_err(|_| {
+            let matchdata = matchdata.try_into_ruby(interp, None).map_err(|_| {
                 Fatal::new(interp, "Could not create Ruby Value from Rust MatchData")
             })?;
             let matchdata_sym = interp.sym_intern(regexp::LAST_MATCH);

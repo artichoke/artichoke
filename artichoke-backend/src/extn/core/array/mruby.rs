@@ -64,7 +64,7 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
-    let result = array::trampoline::len(&interp, ary)
+    let result = array::trampoline::len(&mut interp, ary)
         .map(|len| sys::mrb_int::try_from(len).unwrap_or_default());
     match result {
         Ok(len) => interp.convert(len).inner(),
@@ -120,7 +120,7 @@ unsafe extern "C" fn ary_initialize_copy(
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::trampoline::initialize_copy(&interp, array, other);
+    let result = array::trampoline::initialize_copy(&mut interp, array, other);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

@@ -78,7 +78,7 @@ unsafe extern "C" fn artichoke_random_eq(
     let interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let other = Value::new(&interp, other);
-    let result = random::eql(&interp, rand, other);
+    let result = random::eql(&mut interp, rand, other);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -125,7 +125,7 @@ unsafe extern "C" fn artichoke_random_seed(
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
-    let result = random::seed(&interp, rand);
+    let result = random::seed(&mut interp, rand);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

@@ -5,7 +5,7 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 impl Convert<bool, Value> for Artichoke {
-    fn convert(&self, value: bool) -> Value {
+    fn convert(&mut self, value: bool) -> Value {
         if value {
             Value::new(self, unsafe { sys::mrb_sys_true_value() })
         } else {
@@ -15,7 +15,7 @@ impl Convert<bool, Value> for Artichoke {
 }
 
 impl TryConvert<Value, bool> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<bool, ArtichokeError> {
+    fn try_convert(&mut self, value: Value) -> Result<bool, ArtichokeError> {
         match value.ruby_type() {
             Ruby::Bool => {
                 let value = value.inner();

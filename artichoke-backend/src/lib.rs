@@ -176,26 +176,25 @@ impl Artichoke {
     }
 
     pub fn mrb_mut(&mut self) -> &mut sys::mrb_state {
-        self.mrb.as_mut()
+        unsafe { self.mrb.as_mut() }
     }
 
     pub fn sym_intern<T>(&mut self, sym: T) -> sys::mrb_sym
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        self.state.sym_intern(self.mrb_mut(), sym)
+        self.state.sym_intern(self, sym)
     }
 
     pub unsafe fn into_user_data(mut self) -> *mut sys::mrb_state {
-        let state = Box::into_raw(self.state);
-        self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
         self.mrb.as_ptr()
     }
 }
 
 impl Drop for Artichoke {
     fn drop(&mut self) {
-        self.close();
+        let state = Box::into_raw(self.state);
+        self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
     }
 }
 
@@ -203,7 +202,7 @@ impl TryFrom<*mut sys::mrb_state> for Artichoke {
     type Error = ArtichokeError;
 
     fn try_from(mrb: *mut sys::mrb_state) -> Result<Self, Self::Error> {
-        unsafe { ffi::from_user_data(mrb) }
+        ffi::from_user_data(mrb)
     }
 }
 

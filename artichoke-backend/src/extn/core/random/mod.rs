@@ -59,7 +59,7 @@ pub fn initialize(
     Ok(result)
 }
 
-pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Exception> {
+pub fn eql(interp: &mut Artichoke, rand: Value, other: Value) -> Result<Value, Exception> {
     if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         if let Ok(other) = unsafe { Random::try_from_ruby(interp, &other) } {
             if ptr::eq(rand.as_ref(), other.as_ref()) {
@@ -161,7 +161,7 @@ pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<V
     }
 }
 
-pub fn seed(interp: &Artichoke, rand: Value) -> Result<Value, Exception> {
+pub fn seed(interp: &mut Artichoke, rand: Value) -> Result<Value, Exception> {
     if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         let borrow = rand.borrow();
         let seed = borrow.inner().seed(interp)?;

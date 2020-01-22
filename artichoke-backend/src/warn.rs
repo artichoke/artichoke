@@ -28,7 +28,8 @@ impl Warn for Artichoke {
                 })
                 .map_err(|err| RuntimeError::new(self, format!("{}", err)))?
         };
-        let _ = warning.funcall::<Value>(self, "warn", &[self.convert(message)], None)?;
+        let funargs = &[self.convert(message)];
+        let _ = warning.funcall::<Value>(self, "warn", funargs, None)?;
         Ok(())
     }
 }

@@ -11,6 +11,7 @@ use crate::extn::core::random::Random;
 use crate::fs::Filesystem;
 use crate::module;
 use crate::sys;
+use crate::Artichoke;
 
 // NOTE: ArtichokeState assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
@@ -150,17 +151,16 @@ impl State {
         self.modules.get(&TypeId::of::<T>()).map(Box::as_ref)
     }
 
-    pub fn sym_intern<T>(&mut self, mrb: &mut sys::mrb_state, sym: T) -> sys::mrb_sym
+    pub fn sym_intern<T>(&mut self, interp: &mut Artichoke, sym: T) -> sys::mrb_sym
     where
         T: Into<Cow<'static, [u8]>>,
     {
         let sym = sym.into();
         let ptr = sym.as_ref().as_ptr();
         let len = sym.as_ref().len();
-        let interned = self
-            .symbol_cache
-            .entry(sym)
-            .or_insert_with(|| unsafe { sys::mrb_intern_static(mrb, ptr as *const i8, len) });
+        let interned = self.symbol_cache.entry(sym).or_insert_with(|| unsafe {
+            sys::mrb_intern_static(interp.mrb_mut(), ptr as *const i8, len)
+        });
         *interned
     }
 }

@@ -2,15 +2,15 @@ use crate::extn::core::time::backend::MakeTime;
 use crate::extn::core::time::{self, Time};
 use crate::extn::prelude::*;
 
-pub fn now(interp: &Artichoke) -> Result<Value, Exception> {
+pub fn now(interp: &mut Artichoke) -> Result<Value, Exception> {
     let now = Time(time::factory().now(interp));
     let result = now
-        .try_into_ruby(&interp, None)
+        .try_into_ruby(interp, None)
         .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Time with Rust Time"))?;
     Ok(result)
 }
 
-pub fn day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn day(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -24,7 +24,7 @@ pub fn day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     Ok(result)
 }
 
-pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn hour(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -38,7 +38,7 @@ pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     Ok(result)
 }
 
-pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn minute(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -52,7 +52,7 @@ pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     Ok(result)
 }
 
-pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn month(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -66,7 +66,7 @@ pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     Ok(result)
 }
 
-pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn nanosecond(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -80,7 +80,7 @@ pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     Ok(result)
 }
 
-pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn second(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -94,7 +94,7 @@ pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     Ok(result)
 }
 
-pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn microsecond(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -108,7 +108,7 @@ pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> 
     Ok(result)
 }
 
-pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn weekday(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -122,7 +122,7 @@ pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     Ok(result)
 }
 
-pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn year_day(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -136,7 +136,7 @@ pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
     Ok(result)
 }
 
-pub fn year(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
+pub fn year(interp: &mut Artichoke, time: Value) -> Result<Value, Exception> {
     let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
         Fatal::new(
             interp,
