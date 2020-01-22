@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
-use std::ptr;
+use std::ptr::{self, NonNull};
 use std::rc::Rc;
 
 use crate::sys;
@@ -39,20 +39,21 @@ where
     /// [`sys::mrb_value`] is allocated with [`sys::mrb_obj_new`].
     fn try_into_ruby(
         self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, ArtichokeError> {
-        let borrow = interp.0.borrow();
-        let mrb = borrow.mrb;
-        let spec = borrow
-            .class_spec::<Self>()
-            .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                from: Rust::Object,
-                to: Ruby::Object,
-            })?;
+        let mrb = interp.mrb_mut();
+        let spec =
+            interp
+                .state()
+                .class_spec::<Self>()
+                .ok_or_else(|| ArtichokeError::ConvertToRuby {
+                    from: Rust::Object,
+                    to: Ruby::Object,
+                })?;
         let data = Rc::new(RefCell::new(self));
         let ptr = Rc::into_raw(data);
-        let obj = if let Some(mut slf) = slf {
+        let obj = if let Some(slf) = slf {
             unsafe {
                 sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
             }
@@ -91,8 +92,9 @@ where
     /// This method assumes the [`Rc`] pointed to by the data pointer has not
     /// been freed, which is built on the assumption that there are no garbage
     /// collector bugs in the mruby VM for Artichoke custom types.
+    // TODO: I don't think this function needs to be unsafe
     unsafe fn try_from_ruby(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         slf: &Value,
     ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
         // Make sure we have a Data otherwise extraction will fail.
@@ -102,9 +104,9 @@ where
                 to: Rust::Object,
             });
         }
-        let borrow = interp.0.borrow();
-        let mrb = borrow.mrb;
-        let spec = borrow
+        let mrb = interp.mrb_mut();
+        let spec = interp
+            .state()
             .class_spec::<Self>()
             .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
         // Sanity check that the RClass matches.
@@ -117,16 +119,17 @@ where
                 to: Rust::Object,
             });
         }
-        let ptr = sys::mrb_data_check_get_ptr(mrb, slf.inner(), spec.data_type());
-        if ptr.is_null() {
+        let value = sys::mrb_data_check_get_ptr(mrb, slf.inner(), spec.data_type());
+        if let Some(value) = NonNull::new(value as *mut RefCell<Self>) {
+            let data = Rc::from_raw(value.as_ref());
+            let value = Rc::clone(&data);
+            mem::forget(data);
+            Ok(value)
+        } else {
             // `Object#allocate` can be used to create `MRB_TT_DATA` without calling
             // `#initialize`. These objects will return a NULL pointer.
-            return Err(ArtichokeError::UninitializedValue(Self::ruby_type_name()));
+            Err(ArtichokeError::UninitializedValue(Self::ruby_type_name()))
         }
-        let data = Rc::from_raw(ptr as *const RefCell<Self>);
-        let value = Rc::clone(&data);
-        mem::forget(data);
-        Ok(value)
     }
 }
 

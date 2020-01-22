@@ -145,19 +145,17 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn new_instance(&self, interp: &Artichoke, args: &[Value]) -> Option<Value> {
-        let mrb = interp.0.borrow().mrb;
+    pub fn new_instance(&self, interp: &mut Artichoke, args: &[Value]) -> Option<Value> {
+        let mrb = interp.mrb_mut();
         let rclass = self.rclass(interp)?;
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
         let arglen = Int::try_from(args.len()).unwrap_or_default();
-        let value = unsafe {
-            sys::mrb_obj_new(mrb, rclass, arglen, args.as_ptr() as *const sys::mrb_value)
-        };
+        let value = unsafe { sys::mrb_obj_new(mrb, rclass, arglen, args.as_ptr()) };
         Some(Value::new(interp, value))
     }
 
     #[must_use]
-    pub fn value(&self, interp: &Artichoke) -> Option<Value> {
+    pub fn value(&self, interp: &mut Artichoke) -> Option<Value> {
         let rclass = self.rclass(interp)?;
         let module = unsafe { sys::mrb_sys_class_value(rclass) };
         Some(Value::new(interp, module))
@@ -196,8 +194,8 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
-        let mrb = interp.0.borrow().mrb;
+    pub fn rclass(&self, interp: &mut Artichoke) -> Option<*mut sys::RClass> {
+        let mrb = interp.mrb_mut();
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(scope) = scope.rclass(interp) {
                 if unsafe { sys::mrb_class_defined_under(mrb, scope, self.name_c_str().as_ptr()) }

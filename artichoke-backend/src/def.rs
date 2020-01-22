@@ -136,7 +136,7 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
-    pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
+    pub fn rclass(&self, interp: &mut Artichoke) -> Option<*mut sys::RClass> {
         match self {
             Self::Class { spec } => spec.rclass(interp),
             Self::Module { spec } => spec.rclass(interp),

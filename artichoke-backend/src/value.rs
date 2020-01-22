@@ -341,7 +341,7 @@ impl ValueLike for Value {
 }
 
 impl Convert<Value, Value> for Artichoke {
-    fn convert(&self, value: Value) -> Value {
+    fn convert(&mut self, value: Value) -> Value {
         value
     }
 }

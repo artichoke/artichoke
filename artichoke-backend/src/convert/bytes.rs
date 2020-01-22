@@ -9,14 +9,14 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 impl Convert<Vec<u8>, Value> for Artichoke {
-    fn convert(&self, value: Vec<u8>) -> Value {
+    fn convert(&mut self, value: Vec<u8>) -> Value {
         self.convert(value.as_slice())
     }
 }
 
 impl Convert<&[u8], Value> for Artichoke {
-    fn convert(&self, value: &[u8]) -> Value {
-        let mrb = self.0.borrow().mrb;
+    fn convert(&mut self, value: &[u8]) -> Value {
+        let mrb = self.mrb_mut();
         // Ruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
         let raw = value.as_ptr() as *const i8;
@@ -28,18 +28,16 @@ impl Convert<&[u8], Value> for Artichoke {
 }
 
 impl TryConvert<Value, Vec<u8>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<u8>, ArtichokeError> {
-        let result: &[u8] = self.try_convert(value)?;
-        Ok(result.to_vec())
+    fn try_convert(&mut self, value: Value) -> Result<Vec<u8>, ArtichokeError> {
+        TryConvert::<_, &[u8]>::try_convert(self, value).map(<[_]>::to_vec)
     }
 }
 
 impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<&'a [u8], ArtichokeError> {
-        let mrb = self.0.borrow().mrb;
+    fn try_convert(&mut self, value: Value) -> Result<&'a [u8], ArtichokeError> {
+        let mrb = self.mrb_mut();
         match value.ruby_type() {
             Ruby::Symbol => {
-                let mrb = self.0.borrow().mrb;
                 // mruby does not expose an API to get the raw byte contents of a
                 // `Symbol`. For non-literal symbols and non-ASCII symbols,
                 // `sys::mrb_sys_symbol_name` round trips through a `String`

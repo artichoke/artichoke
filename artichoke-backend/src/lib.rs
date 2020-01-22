@@ -138,7 +138,7 @@ use crate::exception::Exception;
 ///
 /// Functionality is added to the interpreter via traits, for example,
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
-#[derive(Debug, Clone)]
+// TODO: impl Debug
 pub struct Artichoke {
     state: Box<State>,
     mrb: NonNull<sys::mrb_state>,
