@@ -45,7 +45,7 @@ impl Kernel {
         let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
         let interp = unwrap_interpreter!(mrb);
         let result = integer::method(
-            &interp,
+            &mut interp,
             Value::new(&interp, arg),
             base.map(|base| Value::new(&interp, base)),
         );

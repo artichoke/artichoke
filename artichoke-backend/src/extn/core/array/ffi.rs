@@ -99,7 +99,7 @@ unsafe extern "C" fn artichoke_ary_concat(
     let result = if let Ok(array) = Array::try_from_ruby(&interp, &ary) {
         let mut borrow = array.borrow_mut();
         let gc_was_enabled = interp.disable_gc();
-        let result = borrow.concat(&interp, other);
+        let result = borrow.concat(&mut interp, other);
         if gc_was_enabled {
             interp.enable_gc();
         }

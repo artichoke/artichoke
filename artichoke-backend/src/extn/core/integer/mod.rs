@@ -30,7 +30,7 @@ impl Integer {
         let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
         let result: Result<Value, Exception> = if let Some(encoding) = encoding {
             let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
-            message.extend(encoding.inspect());
+            message.extend(encoding.inspect(&mut interp));
             message.extend(b") not supported");
             Err(Exception::from(NotImplementedError::new_raw(
                 &interp, message,
@@ -63,7 +63,7 @@ impl Integer {
             //         1: from (irb):9:in `chr'
             // RangeError (256 out of char range)
             // ```
-            if let Ok(chr) = Value::new(&interp, slf).try_into::<Int>() {
+            if let Ok(chr) = Value::new(&interp, slf).try_into::<Int>(&mut interp) {
                 match u8::try_from(chr) {
                     Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
                         // ASCII encoding | Binary/ASCII-8BIT encoding
@@ -93,7 +93,7 @@ impl Integer {
         let interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
         let other = Value::new(&interp, other);
-        let result = div::method(&interp, value, other);
+        let result = div::method(&mut interp, value, other);
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),

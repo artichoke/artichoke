@@ -2,14 +2,14 @@ use crate::extn::core::float::Float;
 use crate::extn::prelude::*;
 use crate::types;
 
-pub fn method(interp: &Artichoke, value: Value, other: Value) -> Result<Value, Exception> {
-    let x = value.try_into::<Int>().map_err(|_| {
+pub fn method(interp: &mut Artichoke, value: Value, other: Value) -> Result<Value, Exception> {
+    let x = value.try_into::<Int>(interp).map_err(|_| {
         Fatal::new(
             interp,
             "Unable to extract Rust Integer from Ruby Integer receiver",
         )
     })?;
-    let pretty_name = other.pretty_name();
+    let pretty_name = other.pretty_name(interp);
     if let Ok(y) = other.try_into::<Int>(interp) {
         if y == 0 {
             Err(Exception::from(ZeroDivisionError::new(
@@ -19,7 +19,7 @@ pub fn method(interp: &Artichoke, value: Value, other: Value) -> Result<Value, E
         } else {
             Ok(interp.convert(x / y))
         }
-    } else if let Ok(y) = other.try_into::<types::Float>() {
+    } else if let Ok(y) = other.try_into::<types::Float>(interp) {
         if y == 0.0 {
             match x {
                 x if x > 0 => Ok(interp.convert(Float::INFINITY)),

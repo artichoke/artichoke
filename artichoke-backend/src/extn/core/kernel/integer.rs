@@ -5,7 +5,11 @@ use std::str::{self, FromStr};
 
 use crate::extn::prelude::*;
 
-pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Value, Exception> {
+pub fn method(
+    interp: &mut Artichoke,
+    arg: Value,
+    radix: Option<Value>,
+) -> Result<Value, Exception> {
     #[derive(Debug, Clone, Copy)]
     enum Sign {
         Pos,
@@ -20,7 +24,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
     let radix = if let Some(radix) = radix {
         if let Ok(radix) = radix.try_into::<Int>(interp) {
             Some(radix)
-        } else if let Ok(radix) = radix.funcall::<Int>("to_int", &[], None) {
+        } else if let Ok(radix) = radix.funcall::<Int>(interp, "to_int", &[], None) {
             Some(radix)
         } else {
             None
@@ -44,10 +48,10 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         }
         None => None,
     };
-    let ruby_type = arg.pretty_name();
+    let ruby_type = arg.pretty_name(interp);
     let arg = if let Ok(arg) = arg.try_into::<&[u8]>(interp) {
         arg
-    } else if let Ok(arg) = arg.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(arg) = arg.funcall::<&[u8]>(interp, "to_str", &[], None) {
         arg
     } else {
         return Err(Exception::from(TypeError::new(

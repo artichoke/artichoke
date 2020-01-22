@@ -48,7 +48,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::pop(&interp, array);
+    let result = array::trampoline::pop(&mut interp, array);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -79,7 +79,7 @@ unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let other = other.map(|other| Value::new(&interp, other));
-    let result = array::trampoline::concat(&interp, array, other);
+    let result = array::trampoline::concat(&mut interp, array, other);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -100,7 +100,7 @@ unsafe extern "C" fn ary_initialize(
     let array = Value::new(&interp, ary);
     let first = first.map(|first| Value::new(&interp, first));
     let second = second.map(|second| Value::new(&interp, second));
-    let result = array::trampoline::initialize(&interp, array, first, second, block);
+    let result = array::trampoline::initialize(&mut interp, array, first, second, block);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -139,7 +139,7 @@ unsafe extern "C" fn ary_reverse_bang(
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::reverse_bang(&interp, array);
+    let result = array::trampoline::reverse_bang(&mut interp, array);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -160,7 +160,7 @@ unsafe extern "C" fn ary_element_reference(
     let elem = Value::new(&interp, elem);
     let len = len.map(|len| Value::new(&interp, len));
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::element_reference(&interp, array, elem, len);
+    let result = array::trampoline::element_reference(&mut interp, array, elem, len);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -178,7 +178,7 @@ unsafe extern "C" fn ary_element_assignment(
     let second = Value::new(&interp, second);
     let third = third.map(|third| Value::new(&interp, third));
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::element_assignment(&interp, array, first, second, third);
+    let result = array::trampoline::element_assignment(&mut interp, array, first, second, third);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

@@ -7,8 +7,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         return Ok(());
     }
     let scope = interp
-        .0
-        .borrow_mut()
+        .state()
         .module_spec::<artichoke::Artichoke>()
         .map(EnclosingRubyScope::module)
         .ok_or(ArtichokeError::New)?;
@@ -58,7 +57,7 @@ unsafe extern "C" fn artichoke_env_element_reference(
     let interp = unwrap_interpreter!(mrb);
     let obj = Value::new(&interp, slf);
     let name = Value::new(&interp, name);
-    let result = env::element_reference(&interp, obj, &name);
+    let result = env::element_reference(&mut interp, obj, &name);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -75,7 +74,7 @@ unsafe extern "C" fn artichoke_env_element_assignment(
     let obj = Value::new(&interp, slf);
     let name = Value::new(&interp, name);
     let value = Value::new(&interp, value);
-    let result = env::element_assignment(&interp, obj, &name, value);
+    let result = env::element_assignment(&mut interp, obj, &name, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

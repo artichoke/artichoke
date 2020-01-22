@@ -43,13 +43,17 @@ pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Va
     Ok(result)
 }
 
-pub fn element_reference(interp: &Artichoke, obj: Value, name: &Value) -> Result<Value, Exception> {
+pub fn element_reference(
+    interp: &mut Artichoke,
+    obj: Value,
+    name: &Value,
+) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
-    let ruby_type = name.pretty_name();
+    let ruby_type = name.pretty_name(interp);
     let name = if let Ok(name) = name.try_into::<&[u8]>(interp) {
         name
-    } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(name) = name.funcall::<&[u8]>(interp, "to_str", &[], None) {
         name
     } else {
         return Err(Exception::from(TypeError::new(
@@ -62,17 +66,17 @@ pub fn element_reference(interp: &Artichoke, obj: Value, name: &Value) -> Result
 }
 
 pub fn element_assignment(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     obj: Value,
     name: &Value,
     value: Value,
 ) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
-    let name_type_name = name.pretty_name();
+    let name_type_name = name.pretty_name(interp);
     let name = if let Ok(name) = name.try_into::<&[u8]>(interp) {
         name
-    } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(name) = name.funcall::<&[u8]>(interp, "to_str", &[], None) {
         name
     } else {
         return Err(Exception::from(TypeError::new(
@@ -80,10 +84,10 @@ pub fn element_assignment(
             format!("no implicit conversion of {} into String", name_type_name),
         )));
     };
-    let value_type_name = value.pretty_name();
+    let value_type_name = value.pretty_name(interp);
     let value = if let Ok(value) = value.try_into::<Option<&[u8]>>(interp) {
         value
-    } else if let Ok(value) = value.clone().funcall::<&[u8]>("to_str", &[], None) {
+    } else if let Ok(value) = value.clone().funcall::<&[u8]>(interp, "to_str", &[], None) {
         Some(value)
     } else {
         return Err(Exception::from(TypeError::new(
