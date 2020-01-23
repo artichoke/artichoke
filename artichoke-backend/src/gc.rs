@@ -1,3 +1,7 @@
+use artichoke_core::eval::Eval;
+
+use crate::eval::Context;
+use crate::exception::Exception;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -16,23 +20,75 @@ use crate::Artichoke;
 ///
 /// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
 /// sufficient to ensure objects get collected eventually.
-#[derive(Debug)]
 #[must_use]
-pub struct ArenaIndex<'a> {
+pub struct ArenaIndex {
     index: i32,
-    mrb: &'a mut sys::mrb_state,
+    interp: Artichoke,
 }
 
-impl<'a> ArenaIndex<'a> {
+impl ArenaIndex {
     /// Restore the arena stack pointer to its prior index.
-    pub fn restore(self) {
-        drop(self);
+    pub fn restore(mut self) -> Artichoke {
+        unsafe { sys::mrb_sys_gc_arena_restore(self.interp.mrb_mut(), self.index) };
+        self.interp
     }
 }
 
-impl<'a> Drop for ArenaIndex<'a> {
-    fn drop(&mut self) {
-        unsafe { sys::mrb_sys_gc_arena_restore(self.mrb, self.index) };
+impl Eval for ArenaIndex {
+    type Context = Context;
+
+    type Value = Value;
+
+    type Error = Exception;
+
+    fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
+        self.interp.eval(code)
+    }
+
+    #[must_use]
+    fn peek_context(&self) -> Option<&Self::Context> {
+        self.interp.peek_context()
+    }
+
+    fn push_context(&mut self, context: Self::Context) {
+        self.interp.push_context(context);
+    }
+
+    fn pop_context(&mut self) {
+        self.interp.pop_context();
+    }
+}
+
+impl MrbGarbageCollection for ArenaIndex {
+    fn create_arena_savepoint(self) -> ArenaIndex {
+        self.interp.create_arena_savepoint()
+    }
+
+    #[must_use]
+    fn live_object_count(&mut self) -> i32 {
+        self.interp.live_object_count()
+    }
+
+    fn mark_value(&mut self, value: &Value) {
+        self.interp.mark_value(value);
+    }
+
+    fn incremental_gc(&mut self) {
+        self.interp.incremental_gc();
+    }
+
+    fn full_gc(&mut self) {
+        self.interp.full_gc();
+    }
+
+    #[allow(clippy::must_use_candidate)]
+    fn enable_gc(&mut self) -> bool {
+        self.interp.enable_gc()
+    }
+
+    #[allow(clippy::must_use_candidate)]
+    fn disable_gc(&mut self) -> bool {
+        self.interp.disable_gc()
     }
 }
 
@@ -47,7 +103,7 @@ pub trait MrbGarbageCollection {
     ///
     /// The returned [`ArenaIndex`] implements [`Drop`], so it is sufficient to
     /// let it go out of scope to ensure objects are eventually collected.
-    fn create_arena_savepoint(&mut self) -> ArenaIndex;
+    fn create_arena_savepoint(self) -> ArenaIndex;
 
     /// Retrieve the number of live objects on the interpreter heap.
     ///
@@ -85,10 +141,10 @@ pub trait MrbGarbageCollection {
 }
 
 impl MrbGarbageCollection for Artichoke {
-    fn create_arena_savepoint(&mut self) -> ArenaIndex {
+    fn create_arena_savepoint(mut self) -> ArenaIndex {
         ArenaIndex {
             index: unsafe { sys::mrb_sys_gc_arena_save(self.mrb_mut()) },
-            mrb: self.mrb_mut(),
+            interp: self,
         }
     }
 
@@ -100,17 +156,23 @@ impl MrbGarbageCollection for Artichoke {
 
     fn mark_value(&mut self, value: &Value) {
         let mrb = self.mrb_mut();
-        unsafe { sys::mrb_sys_safe_gc_mark(mrb, value.inner()) }
+        unsafe {
+            sys::mrb_sys_safe_gc_mark(mrb, value.inner());
+        }
     }
 
     fn incremental_gc(&mut self) {
         let mrb = self.mrb_mut();
-        unsafe { sys::mrb_incremental_gc(mrb) };
+        unsafe {
+            sys::mrb_incremental_gc(mrb);
+        }
     }
 
     fn full_gc(&mut self) {
         let mrb = self.mrb_mut();
-        unsafe { sys::mrb_full_gc(mrb) };
+        unsafe {
+            sys::mrb_full_gc(mrb);
+        }
     }
 
     #[allow(clippy::must_use_candidate)]

@@ -9,7 +9,7 @@ use crate::gc::MrbGarbageCollection;
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 #[no_mangle]
 unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let result = Array(InlineBuffer::default());
     let result = result
         .try_into_ruby(&mut interp, None)
@@ -26,7 +26,7 @@ unsafe extern "C" fn artichoke_ary_new_capa(
     mrb: *mut sys::mrb_state,
     capa: sys::mrb_int,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let result = Array(InlineBuffer::with_capacity(
         usize::try_from(capa).unwrap_or_default(),
     ));
@@ -46,7 +46,7 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
     size: sys::mrb_int,
     vals: *const sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let size = usize::try_from(size).unwrap_or_default();
     let values = slice::from_raw_parts(vals, size);
     let result = InlineBuffer::from(values);
@@ -70,7 +70,7 @@ unsafe extern "C" fn artichoke_ary_splat(
     mrb: *mut sys::mrb_state,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, value);
     if Array::try_from_ruby(&mut interp, &value).is_ok() {
         return value.inner();
@@ -93,7 +93,7 @@ unsafe extern "C" fn artichoke_ary_concat(
     ary: sys::mrb_value,
     other: sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
@@ -123,7 +123,7 @@ unsafe extern "C" fn artichoke_ary_pop(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
         let mut borrow = array.borrow_mut();
@@ -153,7 +153,7 @@ unsafe extern "C" fn artichoke_ary_push(
     ary: sys::mrb_value,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let value = Value::new(&interp, value);
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
@@ -185,7 +185,7 @@ unsafe extern "C" fn artichoke_ary_ref(
     ary: sys::mrb_value,
     offset: sys::mrb_int,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let offset = usize::try_from(offset).unwrap_or_default();
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
@@ -213,7 +213,7 @@ unsafe extern "C" fn artichoke_ary_set(
     offset: sys::mrb_int,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let value = Value::new(&interp, value);
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
@@ -259,7 +259,7 @@ unsafe extern "C" fn artichoke_ary_shift(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
         let mut borrow = array.borrow_mut();
@@ -289,7 +289,7 @@ unsafe extern "C" fn artichoke_ary_unshift(
     ary: sys::mrb_value,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let value = Value::new(&interp, value);
     if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {

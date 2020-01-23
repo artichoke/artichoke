@@ -105,11 +105,11 @@ impl DescribeState for *mut mrb_state {
 
 impl DescribeState for &mrb_state {
     fn info(&self) -> String {
-        format!("{}", unsafe { &**self })
+        format!("{}", &**self)
     }
 
     fn debug(&self) -> String {
-        format!("{:?}", unsafe { &**self })
+        format!("{:?}", &**self)
     }
 
     fn version(&self) -> String {
@@ -127,11 +127,11 @@ impl DescribeState for &mrb_state {
 
 impl DescribeState for &mut mrb_state {
     fn info(&self) -> String {
-        format!("{}", unsafe { &**self })
+        format!("{}", &**self)
     }
 
     fn debug(&self) -> String {
-        format!("{:?}", unsafe { &**self })
+        format!("{:?}", &**self)
     }
 
     fn version(&self) -> String {

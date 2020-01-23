@@ -57,7 +57,7 @@ unsafe extern "C" fn artichoke_random_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let seed = mrb_get_args!(mrb, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let result = random::initialize(
         &mut interp,
         seed.map(|seed| Value::new(&interp, seed)),
@@ -75,7 +75,7 @@ unsafe extern "C" fn artichoke_random_eq(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let other = Value::new(&interp, other);
     let result = random::eql(&mut interp, rand, other);
@@ -91,7 +91,7 @@ unsafe extern "C" fn artichoke_random_bytes(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let size = Value::new(&interp, size);
     let result = random::bytes(&mut interp, rand, size);
@@ -107,7 +107,7 @@ unsafe extern "C" fn artichoke_random_rand(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let max = mrb_get_args!(mrb, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let max = max.map(|max| Value::new(&interp, max));
     let result = random::rand(&mut interp, rand, max);
@@ -123,7 +123,7 @@ unsafe extern "C" fn artichoke_random_seed(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let result = random::seed(&mut interp, rand);
     match result {
@@ -138,7 +138,7 @@ unsafe extern "C" fn artichoke_random_self_new_seed(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let result = random::new_seed(&interp);
     match result {
         Ok(value) => value.inner(),
@@ -152,7 +152,7 @@ unsafe extern "C" fn artichoke_random_self_srand(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let number = mrb_get_args!(mrb, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let number = number.map(|number| Value::new(&interp, number));
     let result = random::srand(&mut interp, number);
     match result {
@@ -167,7 +167,7 @@ unsafe extern "C" fn artichoke_random_self_urandom(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let size = Value::new(&interp, size);
     let result = random::urandom(&mut interp, size);
     match result {

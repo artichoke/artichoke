@@ -1,4 +1,5 @@
 use artichoke_core::eval::Eval;
+use std::mem::ManuallyDrop;
 use std::ptr::NonNull;
 
 use crate::extn;
@@ -15,7 +16,7 @@ use crate::{Artichoke, ArtichokeError, BootError};
 /// [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, BootError> {
     let vfs = Filesystem::new()?;
-    let mrb = if let Some(mrb) = NonNull::new(unsafe { sys::mrb_open() }) {
+    let mut mrb = if let Some(mrb) = NonNull::new(unsafe { sys::mrb_open() }) {
         mrb
     } else {
         error!("Failed to allocate mrb interprter");
@@ -23,9 +24,9 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
     };
 
     let context = unsafe { sys::mrbc_context_new(mrb.as_mut()) };
-    let state = Box::new(State::new(context, vfs));
+    let state = ManuallyDrop::new(Box::new(State::new(context, vfs)));
 
-    let interp = Artichoke { state, mrb };
+    let mut interp = Artichoke { state, mrb };
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before
@@ -33,25 +34,28 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
     interp.disable_gc();
 
     // Initialize Artichoke Core and Standard Library runtime
-    let arena = interp.create_arena_savepoint();
+    // let arena = interp.create_arena_savepoint();
+    // TODO: fix arena
     extn::init(&mut interp, "mruby")?;
-    arena.restore();
+    // arena.restore();
 
     // Load mrbgems
-    let arena = interp.create_arena_savepoint();
+    // let arena = interp.create_arena_savepoint();
+    // TODO: fix arena
     unsafe {
         sys::mrb_init_mrbgems(mrb.as_mut());
     }
-    arena.restore();
+    // arena.restore();
 
-    debug!("Allocated {}", mrb.as_ref().debug());
+    debug!("Allocated {}", unsafe { mrb.as_ref().debug() });
 
     // mruby lazily initializes some core objects like top_self and generates a
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
     // predictable initialization behavior.
-    let arena = interp.create_arena_savepoint();
+    // TODO: fix arena
+    // let arena = interp.create_arena_savepoint();
     let _ = interp.eval(&[])?;
-    arena.restore();
+    // arena.restore();
 
     interp.enable_gc();
     interp.full_gc();

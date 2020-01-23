@@ -88,6 +88,7 @@ use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::error;
 use std::fmt;
+use std::mem::ManuallyDrop;
 use std::ptr::NonNull;
 
 #[macro_use]
@@ -140,7 +141,7 @@ use crate::exception::Exception;
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
 // TODO: impl Debug
 pub struct Artichoke {
-    state: Box<State>,
+    state: ManuallyDrop<Box<State>>,
     mrb: NonNull<sys::mrb_state>,
 }
 
@@ -193,8 +194,10 @@ impl Artichoke {
 
 impl Drop for Artichoke {
     fn drop(&mut self) {
-        let state = Box::into_raw(self.state);
-        self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
+        let state = Box::into_raw(*self.state);
+        unsafe {
+            self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
+        }
     }
 }
 

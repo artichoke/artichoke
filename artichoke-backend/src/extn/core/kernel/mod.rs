@@ -43,7 +43,7 @@ pub struct Kernel;
 impl Kernel {
     unsafe extern "C" fn integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let result = integer::method(
             &mut interp,
             Value::new(&interp, arg),
@@ -57,7 +57,7 @@ impl Kernel {
 
     unsafe extern "C" fn load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let file = Value::new(&interp, file);
         let result = require::load(&mut interp, file);
         match result {
@@ -68,7 +68,7 @@ impl Kernel {
 
     unsafe extern "C" fn print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let args = mrb_get_args!(mrb, *args);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
 
         let mut buf = vec![];
         for value in args.iter().copied() {
@@ -92,7 +92,7 @@ impl Kernel {
         }
 
         let args = mrb_get_args!(mrb, *args);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         if args.is_empty() {
             interp.state_mut().puts(&[]);
         } else {
@@ -107,7 +107,7 @@ impl Kernel {
 
     unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let file = Value::new(&interp, file);
         let result = require::require(&mut interp, file, None);
         match result {
@@ -121,7 +121,7 @@ impl Kernel {
         _slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let file = Value::new(&interp, file);
         let result = require::require_relative(&mut interp, file);
         match result {

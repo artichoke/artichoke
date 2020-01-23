@@ -1,4 +1,5 @@
 use artichoke_core::value::Value as ValueLike;
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::fmt;
@@ -8,7 +9,7 @@ use crate::convert::{Convert, TryConvert};
 use crate::exception::Exception;
 use crate::exception_handler::ExceptionHandler;
 use crate::extn::core::exception::{Fatal, TypeError};
-use crate::gc::MrbGarbageCollection;
+// use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::types::{self, Int, Ruby};
 use crate::{Artichoke, ArtichokeError};
@@ -104,19 +105,20 @@ impl Value {
     }
 
     #[must_use]
-    pub fn pretty_name<'a>(&self, interp: &'a mut Artichoke) -> &'a str {
+    pub fn pretty_name(&self, interp: &mut Artichoke) -> Cow<'static, str> {
         if let Ok(true) = self.try_into::<bool>(interp) {
-            "true"
+            "true".into()
         } else if let Ok(false) = self.try_into::<bool>(interp) {
-            "false"
+            "false".into()
         } else if let Ok(None) = self.try_into::<Option<Self>>(interp) {
-            "nil"
+            "nil".into()
         } else if let Ruby::Data | Ruby::Object = self.ruby_type() {
             self.funcall::<Self>(interp, "class", &[], None)
-                .and_then(|class| class.funcall::<&'a str>(interp, "name", &[], None))
+                .and_then(|class| class.funcall::<String>(interp, "name", &[], None))
                 .unwrap_or_default()
+                .into()
         } else {
-            self.ruby_type().class_name()
+            self.ruby_type().class_name().into()
         }
     }
 
@@ -216,12 +218,8 @@ impl ValueLike for Value {
     where
         Self::Artichoke: TryConvert<Self, T>,
     {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let mrb = interp.mrb_mut();
-
-        let _arena = interp.create_arena_savepoint();
+        // TODO: fix arena
+        // let _arena = interp.create_arena_savepoint();
 
         let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
@@ -254,13 +252,20 @@ impl ValueLike for Value {
             protect = protect.with_block(block.inner());
         }
         let value = unsafe {
-            let data =
-                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
+            let data = sys::mrb_sys_cptr_value(
+                interp.mrb_mut(),
+                Box::into_raw(Box::new(protect)) as *mut c_void,
+            );
             let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
 
-            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
+            let value = sys::mrb_protect(
+                interp.mrb_mut(),
+                Some(Protect::run),
+                data,
+                state.as_mut_ptr(),
+            );
             if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+                interp.mrb_mut().exc = sys::mrb_sys_obj_ptr(value);
             }
             value
         };
@@ -387,7 +392,8 @@ impl Block {
         // get access to the underlying `ArtichokeState`.
         let mrb = interp.mrb_mut();
 
-        let _arena = interp.create_arena_savepoint();
+        // TODO: fix arena
+        //let _arena = interp.create_arena_savepoint();
 
         // TODO: does this need to be wrapped in `mrb_protect`.
         let value = unsafe { sys::mrb_yield(mrb, self.value, arg.inner()) };

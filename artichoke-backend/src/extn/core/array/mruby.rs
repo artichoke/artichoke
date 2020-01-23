@@ -46,7 +46,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 #[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let result = array::trampoline::pop(&mut interp, array);
     match result {
@@ -62,7 +62,7 @@ unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 #[cfg(feature = "artichoke-array")]
 unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let result = array::trampoline::len(&mut interp, ary)
         .map(|len| sys::mrb_int::try_from(len).unwrap_or_default());
@@ -76,7 +76,7 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     println!("ary concat C");
     let other = mrb_get_args!(mrb, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let other = other.map(|other| Value::new(&interp, other));
     let result = array::trampoline::concat(&mut interp, array, other);
@@ -96,7 +96,7 @@ unsafe extern "C" fn ary_initialize(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (first, second, block) = mrb_get_args!(mrb, optional = 2, &block);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let first = first.map(|first| Value::new(&interp, first));
     let second = second.map(|second| Value::new(&interp, second));
@@ -117,7 +117,7 @@ unsafe extern "C" fn ary_initialize_copy(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
     let result = array::trampoline::initialize_copy(&mut interp, array, other);
@@ -137,7 +137,7 @@ unsafe extern "C" fn ary_reverse_bang(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let result = array::trampoline::reverse_bang(&mut interp, array);
     match result {
@@ -156,7 +156,7 @@ unsafe extern "C" fn ary_element_reference(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let elem = Value::new(&interp, elem);
     let len = len.map(|len| Value::new(&interp, len));
     let array = Value::new(&interp, ary);
@@ -173,7 +173,7 @@ unsafe extern "C" fn ary_element_assignment(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (first, second, third) = mrb_get_args!(mrb, required = 2, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let first = Value::new(&interp, first);
     let second = Value::new(&interp, second);
     let third = third.map(|third| Value::new(&interp, third));

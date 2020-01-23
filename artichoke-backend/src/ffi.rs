@@ -2,6 +2,7 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
+use std::mem::{self, ManuallyDrop};
 use std::ptr::{self, NonNull};
 
 use crate::state::State;
@@ -20,15 +21,16 @@ use crate::{Artichoke, ArtichokeError};
 /// [`Box::into_raw`] and that the pointer is to a non-free'd
 /// [`Box`]`<`[`State`]`>`.
 pub fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeError> {
-    let mrb = if let Some(mrb) = NonNull::new(mrb) {
+    let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
         mrb
     } else {
         error!("Attempted to extract Artichoke from null mrb_state");
         return Err(ArtichokeError::Uninitialized);
     };
 
-    let userdata = if let Some(userdata) = NonNull::new(mrb.as_mut().ud as *mut State) {
-        userdata
+    let userdata = mem::replace(unsafe { &mut mrb.as_mut().ud }, ptr::null_mut());
+    let userdata = if let Some(userdata) = NonNull::new(userdata) {
+        userdata.cast::<State>()
     } else {
         error!("Attempted to extract State from null mrb_state->ud pointer");
         return Err(ArtichokeError::Uninitialized);
@@ -37,11 +39,10 @@ pub fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeEr
     // Extract the boxed `State` that wraps the API from the user data on the
     // `mrb_state`. This moves ownership of the user data pointer out of the
     // `mrb_state` into the returned `Artichoke`.
-    let state = Box::from_raw(userdata.as_ptr());
-    mrb.as_mut().ud = ptr::null_mut();
+    let state = ManuallyDrop::new(unsafe { Box::from_raw(userdata.as_ptr()) });
     trace!(
         "Extracted Artichoke State from user data pointer on {}",
-        mrb.as_ref().debug()
+        unsafe { mrb.as_ref().debug() }
     );
     Ok(Artichoke { state, mrb })
 }

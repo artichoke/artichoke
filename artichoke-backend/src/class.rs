@@ -150,11 +150,10 @@ impl Spec {
 
     #[must_use]
     pub fn new_instance(&self, interp: &mut Artichoke, args: &[Value]) -> Option<Value> {
-        let mrb = interp.mrb_mut();
         let rclass = self.rclass(interp)?;
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
-        let arglen = Int::try_from(args.len()).unwrap_or_default();
-        let value = unsafe { sys::mrb_obj_new(mrb, rclass, arglen, args.as_ptr()) };
+        let arglen = Int::try_from(args.len()).ok()?;
+        let value = unsafe { sys::mrb_obj_new(interp.mrb_mut(), rclass, arglen, args.as_ptr()) };
         Some(Value::new(interp, value))
     }
 

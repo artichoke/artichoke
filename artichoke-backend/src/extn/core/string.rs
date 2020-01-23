@@ -23,7 +23,7 @@ pub struct RString;
 impl RString {
     unsafe extern "C" fn ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
         if let Ok(s) = value.try_into::<&str>(&mut interp) {
             if let Some(first) = s.chars().next() {
@@ -46,7 +46,7 @@ impl RString {
 
     unsafe extern "C" fn scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
         let result = scan::method(&mut interp, value, Value::new(&interp, pattern), block);
         match result {

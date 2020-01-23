@@ -26,7 +26,7 @@ pub struct Integer;
 impl Integer {
     unsafe extern "C" fn chr(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let encoding = mrb_get_args!(mrb, optional = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
         let result: Result<Value, Exception> = if let Some(encoding) = encoding {
             let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
@@ -90,7 +90,7 @@ impl Integer {
 
     unsafe extern "C" fn div(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let other = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
         let other = Value::new(&interp, other);
         let result = div::method(&mut interp, value, other);
@@ -102,7 +102,7 @@ impl Integer {
 
     unsafe extern "C" fn size(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         mrb_get_args!(mrb, none);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let result = Int::try_from(mem::size_of::<Int>())
             .map(|size| interp.convert(size))
             .map_err(|_| Fatal::new(&interp, "sizeof Integer does not fit in Integer max"));
