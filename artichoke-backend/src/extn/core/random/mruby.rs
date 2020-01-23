@@ -33,11 +33,12 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
     let default = random::Random::default();
     let default = default.try_into_ruby(interp, None)?;
-    let rclass = interp
+    let spec = interp
         .state()
         .class_spec::<random::Random>()
-        .and_then(|spec| spec.rclass(interp))
-        .ok_or(ArtichokeError::New)?;
+        .ok_or(ArtichokeError::New)?
+        .clone();
+    let rclass = spec.rclass(interp).ok_or(ArtichokeError::New)?;
     unsafe {
         sys::mrb_define_const(
             interp.mrb_mut(),
@@ -58,11 +59,8 @@ unsafe extern "C" fn artichoke_random_initialize(
 ) -> sys::mrb_value {
     let seed = mrb_get_args!(mrb, optional = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let result = random::initialize(
-        &mut interp,
-        seed.map(|seed| Value::new(&interp, seed)),
-        Some(slf),
-    );
+    let seed = seed.map(|seed| Value::new(&interp, seed));
+    let result = random::initialize(&mut interp, seed, Some(slf));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -139,7 +137,7 @@ unsafe extern "C" fn artichoke_random_self_new_seed(
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
-    let result = random::new_seed(&interp);
+    let result = random::new_seed(&mut interp);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

@@ -9,7 +9,7 @@ pub fn method(
     interp: &mut Artichoke,
     value: Value,
     pattern: Value,
-    block: Option<Block>,
+    mut block: Option<Block>,
 ) -> Result<Value, Exception> {
     let string = value.try_into::<&[u8]>(interp).map_err(|_| {
         Fatal::new(
@@ -18,16 +18,13 @@ pub fn method(
         )
     })?;
     if let Ruby::Symbol = pattern.ruby_type() {
-        Err(Exception::from(TypeError::new(
-            interp,
-            format!(
-                "wrong argument type {} (expected Regexp)",
-                pattern.pretty_name(interp)
-            ),
-        )))
+        let message = format!(
+            "wrong argument type {} (expected Regexp)",
+            pattern.pretty_name(interp)
+        );
+        Err(Exception::from(TypeError::new(interp, message)))
     } else if let Ok(pattern_bytes) = pattern.try_into::<&[u8]>(interp) {
-        if let Some(ref block) = block {
-            let mrb = interp.mrb_mut();
+        if let Some(ref mut block) = block {
             let regex = Regexp::lazy(pattern_bytes);
             let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
             let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
@@ -41,16 +38,17 @@ pub fn method(
                     .try_into_ruby(interp, None)
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+                    sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, data.inner());
                 }
-                let _ = block.yield_arg::<Value>(interp, &interp.convert(pattern_bytes))?;
+                let block_arg = interp.convert(pattern_bytes);
+                let _ = block.yield_arg::<Value>(interp, &block_arg)?;
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+                    sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, data.inner());
                 }
             }
             if restore_nil {
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
+                    sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, sys::mrb_sys_nil_value());
                 }
             }
             Ok(value)
@@ -67,7 +65,6 @@ pub fn method(
             }
             if matches > 0 {
                 let regex = Regexp::lazy(pattern_bytes);
-                let mrb = interp.mrb_mut();
                 let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
@@ -75,14 +72,13 @@ pub fn method(
                     .try_into_ruby(interp, None)
                     .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+                    sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, data.inner());
                 }
             } else {
-                let mrb = interp.mrb_mut();
                 let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                 let nil = interp.convert(None::<Value>).inner();
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, nil);
+                    sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, nil);
                 }
             }
             Ok(interp.convert(result))
@@ -93,9 +89,8 @@ pub fn method(
         let pattern_type_name = pattern.pretty_name(interp);
         let pattern_bytes = pattern.funcall::<&[u8]>(interp, "to_str", &[], None);
         if let Ok(pattern_bytes) = pattern_bytes {
-            if let Some(ref block) = block {
+            if let Some(ref mut block) = block {
                 let regex = Regexp::lazy(pattern_bytes);
-                let mrb = interp.mrb_mut();
                 let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 let patlen = pattern_bytes.len();
@@ -107,16 +102,18 @@ pub fn method(
                         Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
                     })?;
                     unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+                        sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, data.inner());
                     }
-                    let _ = block.yield_arg::<Value>(interp, &interp.convert(pattern_bytes))?;
+                    let block_arg = interp.convert(pattern_bytes);
+                    let _ = block.yield_arg::<Value>(interp, &block_arg)?;
                     unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+                        sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, data.inner());
                     }
                 }
                 if restore_nil {
+                    let nil = interp.convert(None::<Value>).inner();
                     unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
+                        sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, nil);
                     }
                 }
                 Ok(value)
@@ -133,7 +130,6 @@ pub fn method(
                 }
                 if matches > 0 {
                     let regex = Regexp::lazy(pattern_bytes);
-                    let mrb = interp.mrb_mut();
                     let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                     let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                     matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
@@ -141,13 +137,12 @@ pub fn method(
                         Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
                     })?;
                     unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
+                        sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, data.inner());
                     }
                 } else {
-                    let mrb = interp.mrb_mut();
                     let last_match_sym = interp.sym_intern(regexp::LAST_MATCH);
                     unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
+                        sys::mrb_gv_set(interp.mrb_mut(), last_match_sym, sys::mrb_sys_nil_value());
                     }
                 }
                 Ok(interp.convert(result))

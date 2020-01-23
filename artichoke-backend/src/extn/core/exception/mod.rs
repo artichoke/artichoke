@@ -384,12 +384,10 @@ macro_rules! ruby_exception_impl {
 
             #[must_use]
             fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-                interp
-                    .state()
-                    .class_spec::<Self>()
-                    .and_then(|spec| spec.new_instance(interp, &[interp.convert(self.message())]))
-                    .as_ref()
-                    .map(Value::inner)
+                let spec = interp.state().class_spec::<Self>()?.clone();
+                let message = interp.convert(self.message());
+                let value = spec.new_instance(interp, &[message])?;
+                Some(value.inner())
             }
         }
 

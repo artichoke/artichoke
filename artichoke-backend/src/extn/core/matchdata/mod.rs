@@ -106,7 +106,8 @@ impl MatchData {
         let begin = mrb_get_args!(mrb, required = 1);
         let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = begin::Args::extract(&mut interp, Value::new(&interp, begin))
+        let begin = Value::new(&interp, begin);
+        let result = begin::Args::extract(&mut interp, begin)
             .and_then(|args| begin::method(&mut interp, args, &value));
         match result {
             Ok(result) => result.inner(),
@@ -132,14 +133,11 @@ impl MatchData {
         let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
         let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
+        let elem = Value::new(&interp, elem);
+        let len = len.map(|len| Value::new(&interp, len));
         let result = element_reference::Args::num_captures(&mut interp, &value)
             .and_then(|num_captures| {
-                element_reference::Args::extract(
-                    &mut interp,
-                    Value::new(&interp, elem),
-                    len.map(|len| Value::new(&interp, len)),
-                    num_captures,
-                )
+                element_reference::Args::extract(&mut interp, elem, len, num_captures)
             })
             .and_then(|args| element_reference::method(&mut interp, args, &value));
         match result {
@@ -153,7 +151,8 @@ impl MatchData {
         let mut interp = unwrap_interpreter!(mrb);
         // TODO: Value should be consumed before the call to `exception::raise`.
         let value = Value::new(&interp, slf);
-        let result = end::Args::extract(&mut interp, Value::new(&interp, end))
+        let end = Value::new(&interp, end);
+        let result = end::Args::extract(&mut interp, end)
             .and_then(|args| end::method(&mut interp, args, &value));
         match result {
             Ok(result) => result.inner(),
@@ -201,7 +200,8 @@ impl MatchData {
         let elem = mrb_get_args!(mrb, required = 1);
         let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = offset::Args::extract(&mut interp, Value::new(&interp, elem))
+        let elem = Value::new(&interp, elem);
+        let result = offset::Args::extract(&mut interp, elem)
             .and_then(|args| offset::method(&mut interp, args, &value));
         match result {
             Ok(result) => result.inner(),

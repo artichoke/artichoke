@@ -184,13 +184,11 @@ impl Regexp {
                 options: options.unwrap_or_default(),
             }
         } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {} into String",
-                    pattern.pretty_name(interp)
-                ),
-            )));
+            let message = format!(
+                "no implicit conversion of {} into String",
+                pattern.pretty_name(interp)
+            );
+            return Err(Exception::from(TypeError::new(interp, message)));
         };
         let (pattern, options) =
             opts::parse_pattern(literal_config.pattern.as_slice(), literal_config.options);
@@ -355,7 +353,8 @@ impl Regexp {
             }
             return Ok(interp.convert(false));
         };
-        Ok(interp.convert(self.0.case_match(interp, pattern)?))
+        let result = self.0.case_match(interp, pattern)?;
+        Ok(interp.convert(result))
     }
 
     pub fn eql(&self, interp: &mut Artichoke, other: Value) -> Result<Value, Exception> {
@@ -405,13 +404,11 @@ impl Regexp {
         } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>(interp, "to_str", &[], None) {
             pattern
         } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {} into String",
-                    pattern.pretty_name(interp)
-                ),
-            )));
+            let message = format!(
+                "no implicit conversion of {} into String",
+                pattern.pretty_name(interp)
+            );
+            return Err(Exception::from(TypeError::new(interp, message)));
         };
         let pattern = if let Some(pattern) = pattern {
             pattern
@@ -419,19 +416,7 @@ impl Regexp {
             return Ok(interp.convert(false));
         };
         let pos = if let Some(pos) = pos {
-            if let Ok(pos) = pos.try_into::<Int>(interp) {
-                Some(pos)
-            } else if let Ok(pos) = pos.funcall::<Int>(interp, "to_int", &[], None) {
-                Some(pos)
-            } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!(
-                        "no implicit conversion of {} into Integer",
-                        pos.pretty_name(interp)
-                    ),
-                )));
-            }
+            Some(pos.implicitly_convert_to_int(interp)?)
         } else {
             None
         };
@@ -450,43 +435,29 @@ impl Regexp {
         } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>(interp, "to_str", &[], None) {
             pattern
         } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {} into String",
-                    pattern.pretty_name(interp)
-                ),
-            )));
+            let message = format!(
+                "no implicit conversion of {} into String",
+                pattern.pretty_name(interp)
+            );
+            return Err(Exception::from(TypeError::new(interp, message)));
         };
         let pattern = if let Some(pattern) = pattern {
             pattern
         } else {
-            let mrb = interp.mrb_mut();
             let sym = interp.sym_intern(LAST_MATCH);
             let matchdata = interp.convert(None::<Value>);
             unsafe {
-                sys::mrb_gv_set(mrb, sym, matchdata.inner());
+                sys::mrb_gv_set(interp.mrb_mut(), sym, matchdata.inner());
             }
             return Ok(matchdata);
         };
         let pos = if let Some(pos) = pos {
-            if let Ok(pos) = pos.try_into::<Int>(interp) {
-                Some(pos)
-            } else if let Ok(pos) = pos.funcall::<Int>(interp, "to_int", &[], None) {
-                Some(pos)
-            } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!(
-                        "no implicit conversion of {} into Integer",
-                        pos.pretty_name(interp)
-                    ),
-                )));
-            }
+            Some(pos.implicitly_convert_to_int(interp)?)
         } else {
             None
         };
-        Ok(interp.convert(self.0.match_(interp, pattern, pos, block)?))
+        let result = self.0.match_(interp, pattern, pos, block)?;
+        Ok(interp.convert(result))
     }
 
     pub fn match_operator(
@@ -499,24 +470,24 @@ impl Regexp {
         } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>(interp, "to_str", &[], None) {
             pattern
         } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {} into String",
-                    pattern.pretty_name(interp)
-                ),
-            )));
+            let message = format!(
+                "no implicit conversion of {} into String",
+                pattern.pretty_name(interp)
+            );
+            return Err(Exception::from(TypeError::new(interp, message)));
         };
         let pattern = if let Some(pattern) = pattern {
             pattern
         } else {
             return Ok(interp.convert(None::<Value>));
         };
-        Ok(interp.convert(self.0.match_operator(interp, pattern)?))
+        let result = self.0.match_operator(interp, pattern)?;
+        Ok(interp.convert(result))
     }
 
     pub fn named_captures(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
-        Ok(interp.convert(self.0.named_captures(interp)?))
+        let result = self.0.named_captures(interp)?;
+        Ok(interp.convert(result))
     }
 
     pub fn names(&self, interp: &mut Artichoke) -> Result<Value, Exception> {

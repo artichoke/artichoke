@@ -44,11 +44,9 @@ impl Kernel {
     unsafe extern "C" fn integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
         let mut interp = unwrap_interpreter!(mrb);
-        let result = integer::method(
-            &mut interp,
-            Value::new(&interp, arg),
-            base.map(|base| Value::new(&interp, base)),
-        );
+        let arg = Value::new(&interp, arg);
+        let base = base.map(|base| Value::new(&interp, base));
+        let result = integer::method(&mut interp, arg, base);
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
@@ -72,8 +70,8 @@ impl Kernel {
 
         let mut buf = vec![];
         for value in args.iter().copied() {
-            let to_s = Value::new(&interp, value).to_s(&mut interp);
-            buf.extend(to_s);
+            let value = Value::new(&interp, value);
+            buf.extend(value.to_s(&mut interp));
         }
         interp.state_mut().print(buf.as_slice());
         sys::mrb_sys_nil_value()
@@ -98,7 +96,8 @@ impl Kernel {
         } else {
             let mut buf = vec![];
             for value in args.iter().copied() {
-                do_puts(&mut interp, &Value::new(&interp, value), &mut buf);
+                let value = Value::new(&interp, value);
+                do_puts(&mut interp, &value, &mut buf);
             }
             interp.state_mut().print(buf.as_slice());
         }

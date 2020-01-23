@@ -21,7 +21,8 @@ impl Warn for Artichoke {
                 .ok_or_else(|| {
                     ArtichokeError::NotDefined(Cow::Borrowed("Warn with uninitialized Warning"))
                 })
-                .map_err(|err| RuntimeError::new(self, format!("{}", err)))?;
+                .map_err(|err| RuntimeError::new(self, format!("{}", err)))?
+                .clone();
             spec.value(self)
                 .ok_or_else(|| {
                     ArtichokeError::NotDefined(Cow::Borrowed("Warn with uninitialized Warning"))

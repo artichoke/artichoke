@@ -2,7 +2,7 @@
 
 use bstr::BStr;
 use std::ffi::OsStr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::eval::Context;
 use crate::extn::prelude::*;
@@ -309,9 +309,9 @@ pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Ex
         .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
     let current = fs::bytes_to_osstr(interp, context.filename())?;
     let base = if let Some(base) = Path::new(current).parent() {
-        base
+        base.to_path_buf()
     } else {
-        Path::new("/")
+        PathBuf::from("/")
     };
-    require(interp, file, Some(base))
+    require(interp, file, Some(base.as_path()))
 }

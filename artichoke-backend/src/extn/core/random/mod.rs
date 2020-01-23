@@ -175,7 +175,7 @@ pub fn seed(interp: &mut Artichoke, rand: Value) -> Result<Value, Exception> {
     }
 }
 
-pub fn new_seed(interp: &Artichoke) -> Result<Value, Exception> {
+pub fn new_seed(interp: &mut Artichoke) -> Result<Value, Exception> {
     let mut rng = rand::thread_rng();
     let result = rng.gen::<Int>();
     Ok(interp.convert(result))
