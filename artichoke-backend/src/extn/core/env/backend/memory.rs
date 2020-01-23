@@ -16,7 +16,7 @@ impl Memory {
 }
 
 impl Env for Memory {
-    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Exception> {
+    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Option<Vec<u8>>, Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -27,7 +27,7 @@ impl Env for Memory {
         if name.is_empty() {
             // MRI accepts empty names on get and should always return `nil`
             // since empty names are invalid at the OS level.
-            Ok(interp.convert(None::<Value>))
+            Ok(None)
         } else if memchr::memchr(b'\0', name).is_some() {
             Err(Exception::from(ArgumentError::new(
                 interp,
@@ -36,11 +36,11 @@ impl Env for Memory {
         } else if memchr::memchr(b'=', name).is_some() {
             // MRI accepts names containing '=' on get and should always return
             // `nil` since these names are invalid at the OS level.
-            Ok(interp.convert(None::<Value>))
+            Ok(None)
         } else if let Some(value) = self.store.get(name) {
-            Ok(interp.convert(value.clone()))
+            Ok(Some(value.clone()))
         } else {
-            Ok(interp.convert(None::<Value>))
+            Ok(None)
         }
     }
 

@@ -6,13 +6,15 @@ pub mod backend;
 pub mod mruby;
 
 pub trait Env {
-    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Exception>;
+    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Option<Vec<u8>>, Exception>;
+
     fn put(
         &mut self,
         interp: &Artichoke,
         name: &[u8],
         value: Option<&[u8]>,
     ) -> Result<(), Exception>;
+
     fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception>;
 }
 
@@ -68,7 +70,7 @@ pub fn element_reference(
         )));
     };
     let result = obj.borrow().0.get(interp, name)?;
-    Ok(result)
+    Ok(interp.convert(result))
 }
 
 pub fn element_assignment(

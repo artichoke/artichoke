@@ -128,7 +128,7 @@ unsafe extern "C" fn artichoke_ary_pop(
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
         let mut borrow = array.borrow_mut();
         let gc_was_enabled = interp.disable_gc();
-        let result = borrow.pop(&interp);
+        let result = borrow.pop(&mut interp);
         if gc_was_enabled {
             interp.enable_gc();
         }
@@ -160,7 +160,7 @@ unsafe extern "C" fn artichoke_ary_push(
         let idx = array.borrow().len();
         let mut borrow = array.borrow_mut();
         let gc_was_enabled = interp.disable_gc();
-        let result = borrow.set(&interp, idx, value);
+        let result = borrow.set(&mut interp, idx, value);
         if gc_was_enabled {
             interp.enable_gc();
         }
@@ -191,7 +191,7 @@ unsafe extern "C" fn artichoke_ary_ref(
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
         let borrow = array.borrow();
         let gc_was_enabled = interp.disable_gc();
-        let result = borrow.0.get(&interp, offset);
+        let result = borrow.0.get(&mut interp, offset);
         if gc_was_enabled {
             interp.enable_gc();
         }
@@ -235,7 +235,7 @@ unsafe extern "C" fn artichoke_ary_set(
         } else {
             let mut borrow = array.borrow_mut();
             let gc_was_enabled = interp.disable_gc();
-            let result = borrow.set(&interp, offset, value.clone());
+            let result = borrow.set(&mut interp, offset, value.clone());
             if gc_was_enabled {
                 interp.enable_gc();
             }
@@ -264,8 +264,8 @@ unsafe extern "C" fn artichoke_ary_shift(
     let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
         let mut borrow = array.borrow_mut();
         let gc_was_enabled = interp.disable_gc();
-        let result = borrow.get(&interp, 0);
-        let _ = borrow.set_slice(&interp, 0, 1, &InlineBuffer::default());
+        let result = borrow.get(&mut interp, 0);
+        let _ = borrow.set_slice(&mut interp, 0, 1, &InlineBuffer::default());
         if gc_was_enabled {
             interp.enable_gc();
         }
@@ -295,7 +295,7 @@ unsafe extern "C" fn artichoke_ary_unshift(
     if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
         let mut borrow = array.borrow_mut();
         let gc_was_enabled = interp.disable_gc();
-        let _ = borrow.set_with_drain(&interp, 0, 0, value.clone());
+        let _ = borrow.set_with_drain(&mut interp, 0, 0, value.clone());
         if gc_was_enabled {
             interp.enable_gc();
         }
@@ -366,11 +366,11 @@ unsafe extern "C" fn artichoke_ary_check(
 
 #[no_mangle]
 unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::mrb_value) {
-    let interp = unwrap_interpreter!(mrb, or_else = ());
+    let mut interp = unwrap_interpreter!(mrb, or_else = ());
     let array = Value::new(&interp, ary);
     if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
         let borrow = array.borrow();
-        borrow.gc_mark(&interp);
+        borrow.gc_mark(&mut interp);
     }
 }
 
@@ -379,7 +379,7 @@ unsafe extern "C" fn artichoke_gc_mark_ary_size(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> usize {
-    let interp = unwrap_interpreter!(mrb, or_else = 0);
+    let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let array = Value::new(&interp, ary);
     if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
         let borrow = array.borrow();

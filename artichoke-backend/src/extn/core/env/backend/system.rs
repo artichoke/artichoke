@@ -15,7 +15,7 @@ impl System {
 }
 
 impl Env for System {
-    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Exception> {
+    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Option<Vec<u8>>, Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -26,7 +26,7 @@ impl Env for System {
         if name.is_empty() {
             // MRI accepts empty names on get and should always return `nil`
             // since empty names are invalid at the OS level.
-            Ok(interp.convert(None::<Value>))
+            Ok(None)
         } else if memchr::memchr(b'\0', name).is_some() {
             Err(Exception::from(ArgumentError::new(
                 interp,
@@ -35,13 +35,13 @@ impl Env for System {
         } else if memchr::memchr(b'=', name).is_some() {
             // MRI accepts names containing '=' on get and should always return
             // `nil` since these names are invalid at the OS level.
-            Ok(interp.convert(None::<Value>))
+            Ok(None)
         } else {
             let name = fs::bytes_to_osstr(interp, name)?;
             if let Some(value) = std::env::var_os(name) {
-                fs::osstr_to_bytes(interp, value.as_os_str()).map(|bytes| interp.convert(bytes))
+                fs::osstr_to_bytes(interp, value.as_os_str()).map(|bytes| Some(bytes.to_vec()))
             } else {
-                Ok(interp.convert(None::<Value>))
+                Ok(None)
             }
         }
     }

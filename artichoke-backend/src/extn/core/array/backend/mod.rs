@@ -11,7 +11,7 @@ use crate::extn::prelude::*;
 pub trait ArrayType: Any {
     fn box_clone(&self) -> Box<dyn ArrayType>;
 
-    fn gc_mark(&self, interp: &Artichoke);
+    fn gc_mark(&self, interp: &mut Artichoke);
 
     fn real_children(&self) -> usize;
 
@@ -19,7 +19,7 @@ pub trait ArrayType: Any {
 
     fn is_empty(&self) -> bool;
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception>;
+    fn get(&self, interp: &mut Artichoke, index: usize) -> Result<Value, Exception>;
 
     fn slice(
         &self,
@@ -30,7 +30,7 @@ pub trait ArrayType: Any {
 
     fn set(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         index: usize,
         elem: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
@@ -38,7 +38,7 @@ pub trait ArrayType: Any {
 
     fn set_with_drain(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         start: usize,
         drain: usize,
         with: Value,
@@ -47,7 +47,7 @@ pub trait ArrayType: Any {
 
     fn set_slice(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         start: usize,
         drain: usize,
         with: Box<dyn ArrayType>,
@@ -63,7 +63,7 @@ pub trait ArrayType: Any {
 
     fn pop(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<Value, Exception>;
 

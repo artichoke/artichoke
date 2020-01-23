@@ -32,7 +32,7 @@ impl Array {
         self.0.as_vec(interp)
     }
 
-    fn gc_mark(&self, interp: &Artichoke) {
+    fn gc_mark(&self, interp: &mut Artichoke) {
         self.0.gc_mark(interp)
     }
 
@@ -232,7 +232,7 @@ impl Array {
         Ok(elem)
     }
 
-    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
+    pub fn get(&self, interp: &mut Artichoke, index: usize) -> Result<Value, Exception> {
         self.0.get(interp, index)
     }
 
@@ -245,14 +245,19 @@ impl Array {
         self.0.slice(interp, start, len)
     }
 
-    pub fn set(&mut self, interp: &Artichoke, index: usize, elem: Value) -> Result<(), Exception> {
+    pub fn set(
+        &mut self,
+        interp: &mut Artichoke,
+        index: usize,
+        elem: Value,
+    ) -> Result<(), Exception> {
         self.0.set(interp, index, elem)?;
         Ok(())
     }
 
     fn set_with_drain(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         start: usize,
         drain: usize,
         with: Value,
@@ -263,7 +268,7 @@ impl Array {
 
     fn set_slice(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         start: usize,
         drain: usize,
         with: &InlineBuffer,
@@ -319,7 +324,7 @@ impl Array {
         self.0.is_empty()
     }
 
-    pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Exception> {
+    pub fn pop(&mut self, interp: &mut Artichoke) -> Result<Value, Exception> {
         let popped = self.0.pop(interp)?;
         Ok(popped)
     }

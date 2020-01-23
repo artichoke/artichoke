@@ -45,7 +45,7 @@ impl ArrayType for InlineBuffer {
         Box::new(self.clone())
     }
 
-    fn gc_mark(&self, interp: &Artichoke) {
+    fn gc_mark(&self, interp: &mut Artichoke) {
         for elem in self.0.iter().copied() {
             let value = Value::new(interp, elem);
             interp.mark_value(&value);
@@ -67,7 +67,7 @@ impl ArrayType for InlineBuffer {
         self.0.is_empty()
     }
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
+    fn get(&self, interp: &mut Artichoke, index: usize) -> Result<Value, Exception> {
         Self::get(self, interp, index)
     }
 
@@ -85,7 +85,7 @@ impl ArrayType for InlineBuffer {
 
     fn set(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         index: usize,
         elem: Value,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
@@ -96,7 +96,7 @@ impl ArrayType for InlineBuffer {
 
     fn set_with_drain(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         start: usize,
         drain: usize,
         with: Value,
@@ -108,7 +108,7 @@ impl ArrayType for InlineBuffer {
 
     fn set_slice(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         start: usize,
         drain: usize,
         with: Box<dyn ArrayType>,
@@ -138,7 +138,7 @@ impl ArrayType for InlineBuffer {
 
     fn pop(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<Value, Exception> {
         let _ = realloc;
@@ -198,7 +198,7 @@ impl InlineBuffer {
         self.0.clear();
     }
 
-    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
+    pub fn get(&self, interp: &mut Artichoke, index: usize) -> Result<Value, Exception> {
         let elem = self.0.get(index);
         let elem = elem.copied().map(|elem| Value::new(interp, elem));
         Ok(interp.convert(elem))
@@ -217,7 +217,12 @@ impl InlineBuffer {
         }
     }
 
-    pub fn set(&mut self, interp: &Artichoke, index: usize, elem: Value) -> Result<(), Exception> {
+    pub fn set(
+        &mut self,
+        interp: &mut Artichoke,
+        index: usize,
+        elem: Value,
+    ) -> Result<(), Exception> {
         let _ = interp;
         let buflen = self.len();
         match index {
@@ -237,7 +242,7 @@ impl InlineBuffer {
 
     pub fn set_with_drain(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         start: usize,
         drain: usize,
         with: Value,
@@ -267,7 +272,7 @@ impl InlineBuffer {
 
     pub fn set_slice(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         start: usize,
         drain: usize,
         with: &Self,
@@ -314,9 +319,9 @@ impl InlineBuffer {
         Ok(())
     }
 
-    pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Exception> {
-        let value = self.0.pop();
-        Ok(interp.convert(value.map(|value| Value::new(interp, value))))
+    pub fn pop(&mut self, interp: &mut Artichoke) -> Result<Value, Exception> {
+        let value = self.0.pop().map(|value| Value::new(interp, value));
+        Ok(interp.convert(value))
     }
 
     pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
