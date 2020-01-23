@@ -92,7 +92,7 @@ impl From<&'static str> for Error {
 pub fn entrypoint() -> Result<(), Error> {
     let opt = Opt::from_args();
     if opt.copyright {
-        let interp = artichoke_backend::interpreter()?;
+        let mut interp = artichoke_backend::interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(())
     } else if !opt.commands.is_empty() {
@@ -103,7 +103,7 @@ pub fn entrypoint() -> Result<(), Error> {
         let mut program = Vec::new();
         let result = io::stdin().read_to_end(&mut program);
         if result.is_ok() {
-            let interp = artichoke_backend::interpreter()?;
+            let mut interp = artichoke_backend::interpreter()?;
             let _ = interp.eval(program.as_slice())?;
             Ok(())
         } else {
@@ -113,7 +113,7 @@ pub fn entrypoint() -> Result<(), Error> {
 }
 
 fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Result<(), Error> {
-    let interp = artichoke_backend::interpreter()?;
+    let mut interp = artichoke_backend::interpreter()?;
     // safety:
     // Context::new_unchecked requires that INLINE_EVAL_SWITCH_FILENAME have no
     // NUL bytes.
@@ -132,11 +132,10 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
                 format!("No such file or directory -- {:?} (LoadError)", fixture)
             }
         })?;
-        let sym = interp.0.borrow_mut().sym_intern(b"$fixture".as_ref());
-        let mrb = interp.0.borrow().mrb;
+        let sym = interp.sym_intern(b"$fixture".as_ref());
         let value = interp.convert(data);
         unsafe {
-            sys::mrb_gv_set(mrb, sym, value.inner());
+            sys::mrb_gv_set(interp.mrb_mut(), sym, value.inner());
         }
     }
     for command in commands {
@@ -152,7 +151,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
 }
 
 fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<(), Error> {
-    let interp = artichoke_backend::interpreter()?;
+    let mut interp = artichoke_backend::interpreter()?;
     if let Some(ref fixture) = fixture {
         let data = std::fs::read(fixture).map_err(|_| {
             if let Ok(file) = fs::osstr_to_bytes(&interp, fixture.as_os_str()) {
@@ -165,11 +164,10 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
                 format!("No such file or directory -- {:?} (LoadError)", fixture)
             }
         })?;
-        let sym = interp.0.borrow_mut().sym_intern(b"$fixture".as_ref());
-        let mrb = interp.0.borrow().mrb;
+        let sym = interp.sym_intern(b"$fixture".as_ref());
         let value = interp.convert(data);
         unsafe {
-            sys::mrb_gv_set(mrb, sym, value.inner());
+            sys::mrb_gv_set(interp.mrb_mut(), sym, value.inner());
         }
     }
     let program = std::fs::read(programfile).map_err(|err| match err.kind() {

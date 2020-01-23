@@ -73,17 +73,17 @@ impl Default for PromptConfig {
     }
 }
 
-fn preamble(interp: &Artichoke) -> Result<String, Error> {
+fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
     let description = interp
         .eval(b"RUBY_DESCRIPTION")
         .map_err(Error::Ruby)?
-        .try_into::<&str>()
+        .try_into::<&str>(interp)
         .map_err(BootError::from)
         .map_err(Error::Artichoke)?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")
         .map_err(Error::Ruby)?
-        .try_into::<&str>()
+        .try_into::<&str>(interp)
         .map_err(BootError::from)
         .map_err(Error::Artichoke)?;
     let mut buf = String::new();
@@ -102,19 +102,20 @@ pub fn run(
     config: Option<PromptConfig>,
 ) -> Result<(), Error> {
     let config = config.unwrap_or_else(Default::default);
-    let interp = artichoke_backend::interpreter().map_err(Error::Artichoke)?;
-    writeln!(output, "{}", preamble(&interp)?).map_err(Error::Io)?;
+    let mut interp = artichoke_backend::interpreter().map_err(Error::Artichoke)?;
+    writeln!(output, "{}", preamble(&mut interp)?).map_err(Error::Io)?;
 
-    let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
+    let parser = Parser::new(&mut interp).ok_or(Error::ReplInit)?;
     // safety:
     // Context::new_unchecked requires that REPL_FILENAME have no NUL bytes.
     // REPL_FILENAME is controlled by this crate and asserts this invariant
     // with a test.
     interp.push_context(unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) });
-    unsafe {
-        let api = interp.0.borrow();
-        (*api.ctx).lineno = 1;
-    }
+    // TODO expose a lineno API
+    // unsafe {
+    //     let api = interp.0.borrow();
+    //     (*api.ctx).lineno = 1;
+    // }
 
     let mut rl = Editor::<()>::new();
     // If a code block is open, accumulate code from multiple readlines in this
@@ -140,14 +141,14 @@ pub fn run(
                 }
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
-                        let result = value.inspect();
+                        let result = value.inspect(&mut interp);
                         output
                             .write_all(config.result_prefix.as_bytes())
                             .map_err(Error::Io)?;
                         output.write_all(result.as_slice()).map_err(Error::Io)?;
                     }
                     Err(exc) => {
-                        if let Some(backtrace) = exc.backtrace(&interp) {
+                        if let Some(backtrace) = exc.backtrace(&mut interp) {
                             writeln!(
                                 error,
                                 "{} (most recent call last)",
@@ -178,10 +179,11 @@ pub fn run(
                 }
                 for line in buf.lines() {
                     rl.add_history_entry(line);
-                    unsafe {
-                        let api = interp.0.borrow();
-                        (*api.ctx).lineno += 1;
-                    }
+                    // TODO: expose lineno API
+                    // unsafe {
+                    //     let api = interp.0.borrow();
+                    //     (*api.ctx).lineno += 1;
+                    // }
                 }
                 // mruby eval successful, so reset the REPL state for the
                 // next expression.

@@ -38,14 +38,14 @@ use std::process;
 mod mspec;
 
 pub fn main() {
-    let interp = match artichoke_backend::interpreter() {
+    let mut interp = match artichoke_backend::interpreter() {
         Ok(interp) => interp,
         Err(err) => {
             eprintln!("{}", err);
             process::exit(1);
         }
     };
-    if let Err(err) = mspec::init(&interp) {
+    if let Err(err) = mspec::init(&mut interp) {
         eprintln!("{}", err);
         process::exit(1);
     };

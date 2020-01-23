@@ -58,6 +58,7 @@ pub enum Error {
 }
 
 /// Wraps a [`artichoke_backend`] mruby parser.
+// TODO: this struct should hold references and be parameterized on a lifetime.
 pub struct Parser {
     parser: *mut sys::mrb_parser_state,
     context: *mut sys::mrbc_context,
@@ -66,10 +67,9 @@ pub struct Parser {
 impl Parser {
     /// Create a new parser from an interpreter instance.
     #[must_use]
-    pub fn new(interp: &Artichoke) -> Option<Self> {
-        let mrb = interp.0.borrow().mrb;
-        let context = interp.0.borrow().ctx;
-        let parser = unsafe { sys::mrb_parser_new(mrb) };
+    pub fn new(interp: &mut Artichoke) -> Option<Self> {
+        let context = interp.state().ctx;
+        let parser = unsafe { sys::mrb_parser_new(interp.mrb_mut()) };
         if parser.is_null() {
             None
         } else {

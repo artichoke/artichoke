@@ -6,7 +6,7 @@ use artichoke_core::top_self::TopSelf;
 use artichoke_core::value::Value;
 use std::borrow::Cow;
 
-pub fn init(interp: &Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &mut Artichoke) -> Result<(), BootError> {
     for source in Sources::iter() {
         let content = Sources::get(&source).unwrap();
         interp.def_rb_source_file(source.as_bytes(), content)?;
@@ -18,7 +18,6 @@ pub fn init(interp: &Artichoke) -> Result<(), BootError> {
 #[folder = "$OUT_DIR/mspec/lib"]
 struct Sources;
 
-#[derive(Debug)]
 pub struct Runner {
     specs: Vec<String>,
     interp: Artichoke,
@@ -46,8 +45,8 @@ impl Runner {
         Ok(())
     }
 
-    pub fn run(self) -> Result<bool, BootError> {
-        init(&self.interp).unwrap();
+    pub fn run(mut self) -> Result<bool, BootError> {
+        init(&mut self.interp).unwrap();
         self.interp
             .def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;
         self.interp
@@ -61,10 +60,12 @@ impl Runner {
             assert!(!self.enforce);
         }
         let specs = self.interp.convert(self.specs);
-        let result = self
-            .interp
-            .top_self()
-            .funcall::<bool>("run_specs", &[specs], None)?;
+        let result = self.interp.top_self().funcall::<bool>(
+            &mut self.interp,
+            "run_specs",
+            &[specs],
+            None,
+        )?;
         Ok(result)
     }
 }
