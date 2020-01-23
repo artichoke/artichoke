@@ -1,3 +1,5 @@
+#[cfg(feature = "artichoke-random")]
+use rand::rngs::SmallRng;
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -7,7 +9,7 @@ use std::ptr::NonNull;
 use crate::class;
 use crate::eval::Context;
 #[cfg(feature = "artichoke-random")]
-use crate::extn::core::random::Random;
+use crate::extn::core::random::backend::rand::Rand;
 use crate::fs::Filesystem;
 use crate::module;
 use crate::sys;
@@ -24,7 +26,7 @@ pub struct State {
     symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
     captured_output: Option<Vec<u8>>,
     #[cfg(feature = "artichoke-random")]
-    prng: Random,
+    prng: Rand<SmallRng>,
 }
 
 impl State {
@@ -42,18 +44,18 @@ impl State {
             symbol_cache: HashMap::default(),
             captured_output: None,
             #[cfg(feature = "artichoke-random")]
-            prng: Random::default(),
+            prng: Rand::new(None),
         }
     }
 
     #[cfg(feature = "artichoke-random")]
     #[must_use]
-    pub fn prng(&self) -> &Random {
+    pub fn prng(&self) -> &Rand<SmallRng> {
         &self.prng
     }
 
     #[cfg(feature = "artichoke-random")]
-    pub fn prng_mut(&mut self) -> &mut Random {
+    pub fn prng_mut(&mut self) -> &mut Rand<SmallRng> {
         &mut self.prng
     }
 

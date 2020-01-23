@@ -27,23 +27,17 @@ where
     }
 }
 
-impl<T> backend::Rand for Rand<T>
+impl<T> Rand<T> {
+    pub fn seed(&self) -> u64 {
+        self.seed
+    }
+}
+
+impl<T> Rand<T>
 where
-    T: 'static + Rng,
+    T: 'static,
 {
-    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) -> Result<(), Exception> {
-        let _ = interp;
-        self.rng.fill_bytes(buf);
-        Ok(())
-    }
-
-    fn seed(&self, interp: &Artichoke) -> Result<u64, Exception> {
-        let _ = interp;
-        Ok(self.seed)
-    }
-
-    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn backend::Rand) -> bool {
-        let _ = interp;
+    pub fn has_same_internal_state(&self, other: &dyn backend::Rand) -> bool {
         if let Ok(other) = other.downcast_ref::<Self>() {
             // This is not quite right. It needs to take into account bytes
             // read from the PRNG.
@@ -52,21 +46,54 @@ where
             false
         }
     }
+}
 
-    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Result<Int, Exception> {
-        let _ = interp;
-        let between = Uniform::from(0..max);
-        Ok(between.sample(&mut self.rng))
+impl<T> Rand<T>
+where
+    T: Rng,
+{
+    pub fn bytes(&mut self, buf: &mut [u8]) {
+        self.rng.fill_bytes(buf);
     }
 
-    fn rand_float(
-        &mut self,
-        interp: &mut Artichoke,
-        max: Option<Float>,
-    ) -> Result<Float, Exception> {
-        let _ = interp;
+    pub fn rand_int(&mut self, max: Int) -> Int {
+        let between = Uniform::from(0..max);
+        between.sample(&mut self.rng)
+    }
+
+    pub fn rand_float(&mut self, max: Option<Float>) -> Float {
         let max = max.unwrap_or(1.0);
         let between = Uniform::from(0.0..max);
-        Ok(between.sample(&mut self.rng))
+        between.sample(&mut self.rng)
+    }
+}
+
+impl<T> backend::Rand for Rand<T>
+where
+    T: 'static + Rng,
+{
+    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) {
+        let _ = interp;
+        self.bytes(buf);
+    }
+
+    fn seed(&self, interp: &Artichoke) -> u64 {
+        let _ = interp;
+        self.seed()
+    }
+
+    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn backend::Rand) -> bool {
+        let _ = interp;
+        self.has_same_internal_state(other)
+    }
+
+    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Int {
+        let _ = interp;
+        self.rand_int(max)
+    }
+
+    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Float>) -> Float {
+        let _ = interp;
+        self.rand_float(max)
     }
 }
