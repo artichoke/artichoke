@@ -198,11 +198,15 @@ impl Spec {
 
     #[must_use]
     pub fn rclass(&self, interp: &mut Artichoke) -> Option<*mut sys::RClass> {
-        let mrb = interp.mrb_mut();
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(scope) = scope.rclass(interp) {
-                if unsafe { sys::mrb_class_defined_under(mrb, scope, self.name_c_str().as_ptr()) }
-                    == 0
+                if unsafe {
+                    sys::mrb_class_defined_under(
+                        interp.mrb_mut(),
+                        scope,
+                        self.name_c_str().as_ptr(),
+                    )
+                } == 0
                 {
                     // Enclosing scope exists.
                     // Class is not defined under the enclosing scope.
@@ -211,19 +215,23 @@ impl Spec {
                     // Enclosing scope exists.
                     // Class is defined under the enclosing scope.
                     Some(unsafe {
-                        sys::mrb_class_get_under(mrb, scope, self.name_c_str().as_ptr())
+                        sys::mrb_class_get_under(
+                            interp.mrb_mut(),
+                            scope,
+                            self.name_c_str().as_ptr(),
+                        )
                     })
                 }
             } else {
                 // Enclosing scope does not exist.
                 None
             }
-        } else if unsafe { sys::mrb_class_defined(mrb, self.cstring.as_ptr()) } == 0 {
+        } else if unsafe { sys::mrb_class_defined(interp.mrb_mut(), self.cstring.as_ptr()) } == 0 {
             // Class does not exist in root scope.
             None
         } else {
             // Class exists in root scope.
-            Some(unsafe { sys::mrb_class_get(mrb, self.name_c_str().as_ptr()) })
+            Some(unsafe { sys::mrb_class_get(interp.mrb_mut(), self.name_c_str().as_ptr()) })
         }
     }
 }

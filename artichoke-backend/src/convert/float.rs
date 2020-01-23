@@ -6,8 +6,8 @@ use crate::{Artichoke, ArtichokeError};
 
 impl Convert<Float, Value> for Artichoke {
     fn convert(&mut self, value: Float) -> Value {
-        let mrb = self.mrb_mut();
-        Value::new(self, unsafe { sys::mrb_sys_float_value(mrb, value) })
+        let value = unsafe { sys::mrb_sys_float_value(self.mrb_mut(), value) };
+        Value::new(self, value)
     }
 }
 

@@ -154,9 +154,6 @@ impl Eval for Artichoke {
     type Error = Exception;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
-        let mrb = self.mrb_mut();
-        let ctx = self.state().ctx;
-
         // Grab the persistent `Context` from the context on the `State` or
         // the root context if the stack is empty.
         let filename = self
@@ -170,19 +167,23 @@ impl Eval for Artichoke {
             );
 
         unsafe {
-            sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
+            let ctx = self.state().ctx;
+            sys::mrbc_filename(self.mrb_mut(), ctx, filename.as_ptr() as *const i8);
         }
 
         let protect = Protect::new(self, code);
-        trace!("Evaling code on {}", mrb.debug());
+        trace!("Evaling code on {}", self.mrb_mut().debug());
         let value = unsafe {
-            let data =
-                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
+            let data = sys::mrb_sys_cptr_value(
+                self.mrb_mut(),
+                Box::into_raw(Box::new(protect)) as *mut c_void,
+            );
             let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
 
-            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
+            let value =
+                sys::mrb_protect(self.mrb_mut(), Some(Protect::run), data, state.as_mut_ptr());
             if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+                self.mrb_mut().exc = sys::mrb_sys_obj_ptr(value);
             }
             value
         };

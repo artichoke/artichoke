@@ -4,7 +4,7 @@ use std::mem;
 use std::ptr::{self, NonNull};
 
 use crate::exception::{CaughtException, Exception};
-use crate::gc::MrbGarbageCollection;
+// use crate::gc::MrbGarbageCollection;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -21,15 +21,15 @@ pub trait ExceptionHandler {
 
 impl ExceptionHandler for Artichoke {
     fn last_error(&mut self) -> Result<Option<Exception>, Exception> {
-        let _arena = self.create_arena_savepoint();
-        let mrb = self.mrb_mut();
+        // TODO: fix arena
+        // let _arena = self.create_arena_savepoint();
         // Clear the current exception from the mruby interpreter so subsequent
         // calls to the mruby VM are not tainted by an error they did not
         // generate. We must do this at the beginning of `current_exception` so
         // we can use the mruby VM to inspect the exception once we turn it into
         // an `mrb_value`. `Value::funcall` handles errors by calling this
         // function, so not clearing the exception results in a stack overflow.
-        let exc = mem::replace(&mut mrb.exc, ptr::null_mut());
+        let exc = mem::replace(&mut self.mrb_mut().exc, ptr::null_mut());
         let exc = if let Some(exc) = NonNull::new(exc) {
             exc
         } else {

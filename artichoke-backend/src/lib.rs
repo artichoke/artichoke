@@ -184,20 +184,14 @@ impl Artichoke {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        self.state.sym_intern(self, sym)
+        let mrb = unsafe { self.mrb.as_mut() };
+        self.state.sym_intern(mrb, sym)
     }
 
     pub unsafe fn into_user_data(mut self) -> *mut sys::mrb_state {
+        let state = Box::into_raw(ManuallyDrop::into_inner(self.state));
+        self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
         self.mrb.as_ptr()
-    }
-}
-
-impl Drop for Artichoke {
-    fn drop(&mut self) {
-        let state = Box::into_raw(*self.state);
-        unsafe {
-            self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
-        }
     }
 }
 

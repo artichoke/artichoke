@@ -20,15 +20,14 @@ impl Convert<&[Value], Value> for Artichoke {
 
     #[cfg(not(feature = "artichoke-array"))]
     fn convert(&mut self, value: &[Value]) -> Value {
-        let mrb = self.mrb_mut();
         let capa = Int::try_from(value.len()).unwrap_or_default();
-        let array = unsafe { sys::mrb_ary_new_capa(mrb, capa) };
+        let array = unsafe { sys::mrb_ary_new_capa(self.mrb_mut(), capa) };
 
         for (idx, item) in value.iter().enumerate() {
             let idx = Int::try_from(idx).unwrap_or_default();
             let item = item.inner();
             unsafe {
-                sys::mrb_ary_set(mrb, array, idx, item);
+                sys::mrb_ary_set(self.mrb_mut(), array, idx, item);
             }
         }
         Value::new(self, array)
@@ -45,15 +44,14 @@ impl Convert<Vec<Value>, Value> for Artichoke {
 
     #[cfg(not(feature = "artichoke-array"))]
     fn convert(&mut self, value: Vec<Value>) -> Value {
-        let mrb = self.mrb_mut();
         let capa = Int::try_from(value.len()).unwrap_or_default();
-        let array = unsafe { sys::mrb_ary_new_capa(mrb, capa) };
+        let array = unsafe { sys::mrb_ary_new_capa(self.mrb_mut(), capa) };
 
         for (idx, item) in value.iter().enumerate() {
             let idx = Int::try_from(idx).unwrap_or_default();
             let item = item.inner();
             unsafe {
-                sys::mrb_ary_set(mrb, array, idx, item);
+                sys::mrb_ary_set(self.mrb_mut(), array, idx, item);
             }
         }
         Value::new(self, array)
@@ -62,7 +60,6 @@ impl Convert<Vec<Value>, Value> for Artichoke {
 
 impl TryConvert<Value, Vec<Value>> for Artichoke {
     fn try_convert(&mut self, value: Value) -> Result<Vec<Value>, ArtichokeError> {
-        let mrb = self.mrb_mut();
         match value.ruby_type() {
             Ruby::Array => {
                 let array = value.inner();
@@ -71,9 +68,10 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
                     from: Ruby::Array,
                     to: Rust::Vec,
                 })?;
-                let mut elems = <Vec<Value>>::with_capacity(capa);
+                let mut elems = Vec::<Value>::with_capacity(capa);
                 for idx in 0..size {
-                    let elem = Value::new(self, unsafe { sys::mrb_ary_ref(mrb, array, idx) });
+                    let elem = unsafe { sys::mrb_ary_ref(self.mrb_mut(), array, idx) };
+                    let elem = Value::new(self, elem);
                     elems.push(elem);
                 }
                 Ok(elems)

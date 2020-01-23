@@ -31,11 +31,10 @@ impl Convert<Vec<(Value, Value)>, Value> for Artichoke {
 
 impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
     fn try_convert(&mut self, value: Value) -> Result<Vec<(Value, Value)>, ArtichokeError> {
-        let mrb = self.mrb_mut();
         match value.ruby_type() {
             Ruby::Hash => {
                 let hash = value.inner();
-                let keys = unsafe { sys::mrb_hash_keys(mrb, hash) };
+                let keys = unsafe { sys::mrb_hash_keys(self.mrb_mut(), hash) };
                 #[cfg(feature = "artichoke-array")]
                 {
                     use crate::convert::RustBackedValue;
@@ -48,7 +47,8 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
                         .as_vec(self)
                         .into_iter()
                         .map(|key| {
-                            let value = unsafe { sys::mrb_hash_get(mrb, hash, key.inner()) };
+                            let value =
+                                unsafe { sys::mrb_hash_get(self.mrb_mut(), hash, key.inner()) };
                             (key, Value::new(self, value))
                         })
                         .collect::<Vec<_>>();
@@ -56,7 +56,7 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
                 }
                 #[cfg(not(feature = "artichoke-array"))]
                 {
-                    let size = unsafe { sys::mrb_hash_size(mrb, hash) };
+                    let size = unsafe { sys::mrb_hash_size(self.mrb_mut(), hash) };
                     let capacity =
                         usize::try_from(size).map_err(|_| ArtichokeError::ConvertToRust {
                             from: Ruby::Hash,
@@ -66,8 +66,8 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
                     for idx in 0..size {
                         // Doing a `hash[key]` access is guaranteed to succeed since
                         // we're iterating over the keys in the hash.
-                        let key = unsafe { sys::mrb_ary_ref(mrb, keys, idx) };
-                        let value = unsafe { sys::mrb_hash_get(mrb, hash, key) };
+                        let key = unsafe { sys::mrb_ary_ref(self.mrb_mut(), keys, idx) };
+                        let value = unsafe { sys::mrb_hash_get(self.mrb_mut(), hash, key) };
                         pairs.push((Value::new(self, key), Value::new(self, value)));
                     }
                     Ok(pairs)

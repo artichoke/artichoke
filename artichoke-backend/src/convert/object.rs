@@ -42,33 +42,36 @@ where
         interp: &mut Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, ArtichokeError> {
-        let mrb = interp.mrb_mut();
-        let spec =
-            interp
-                .state()
-                .class_spec::<Self>()
-                .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                    from: Rust::Object,
-                    to: Ruby::Object,
-                })?;
+        let spec = interp
+            .state()
+            .class_spec::<Self>()
+            .ok_or_else(|| ArtichokeError::ConvertToRuby {
+                from: Rust::Object,
+                to: Ruby::Object,
+            })?
+            .clone();
         let data = Rc::new(RefCell::new(self));
         let ptr = Rc::into_raw(data);
-        let obj = if let Some(slf) = slf {
+        let obj = if let Some(mut slf) = slf {
             unsafe {
                 sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
             }
             slf
         } else {
             let rclass = slf
-                .map(|obj| unsafe { sys::mrb_sys_class_of_value(mrb, obj) })
+                .map(|obj| unsafe { sys::mrb_sys_class_of_value(interp.mrb_mut(), obj) })
                 .or_else(|| spec.rclass(interp))
                 .ok_or_else(|| ArtichokeError::ConvertToRuby {
                     from: Rust::Object,
                     to: Ruby::Object,
                 })?;
             unsafe {
-                let alloc =
-                    sys::mrb_data_object_alloc(mrb, rclass, ptr as *mut c_void, spec.data_type());
+                let alloc = sys::mrb_data_object_alloc(
+                    interp.mrb_mut(),
+                    rclass,
+                    ptr as *mut c_void,
+                    spec.data_type(),
+                );
                 sys::mrb_sys_obj_value(alloc as *mut c_void)
             }
         };
@@ -104,22 +107,25 @@ where
                 to: Rust::Object,
             });
         }
-        let mrb = interp.mrb_mut();
         let spec = interp
             .state()
             .class_spec::<Self>()
-            .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
+            .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?
+            .clone();
         // Sanity check that the RClass matches.
         let rclass = spec
             .rclass(interp)
             .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
-        if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
+        if !ptr::eq(
+            sys::mrb_sys_class_of_value(interp.mrb_mut(), slf.inner()),
+            rclass,
+        ) {
             return Err(ArtichokeError::ConvertToRust {
                 from: slf.ruby_type(),
                 to: Rust::Object,
             });
         }
-        let value = sys::mrb_data_check_get_ptr(mrb, slf.inner(), spec.data_type());
+        let value = sys::mrb_data_check_get_ptr(interp.mrb_mut(), slf.inner(), spec.data_type());
         if let Some(value) = NonNull::new(value as *mut RefCell<Self>) {
             let data = Rc::from_raw(value.as_ref());
             let value = Rc::clone(&data);

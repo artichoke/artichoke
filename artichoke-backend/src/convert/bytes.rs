@@ -16,14 +16,14 @@ impl Convert<Vec<u8>, Value> for Artichoke {
 
 impl Convert<&[u8], Value> for Artichoke {
     fn convert(&mut self, value: &[u8]) -> Value {
-        let mrb = self.mrb_mut();
         // Ruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
         let raw = value.as_ptr() as *const i8;
         let len = value.len();
         // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
         // to worry about the lifetime of the slice passed into this converter.
-        Value::new(self, unsafe { sys::mrb_str_new(mrb, raw, len) })
+        let value = unsafe { sys::mrb_str_new(self.mrb_mut(), raw, len) };
+        Value::new(self, value)
     }
 }
 

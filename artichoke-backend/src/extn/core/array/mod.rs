@@ -57,7 +57,7 @@ impl Array {
             } else if let Ok(len) = first.try_into::<Int>(interp) {
                 let len = usize::try_from(len)
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
-                if let Some(block) = block {
+                if let Some(mut block) = block {
                     if second.is_some() {
                         interp
                             .warn(&b"warning: block supersedes default value argument"[..])
@@ -80,32 +80,11 @@ impl Array {
                     // backend::fixed::hole(len)
                     unimplemented!();
                 }
-            } else if let Ok(true) = first.respond_to(interp, "to_ary") {
-                let ruby_type = first.pretty_name(interp);
-                if let Ok(other) = first.funcall(interp, "to_ary", &[], None) {
-                    if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                        other.borrow().0.clone()
-                    } else {
-                        return Err(Exception::from(TypeError::new(
-                            interp,
-                            format!(
-                            "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
-                            classname = ruby_type,
-                            gives = other.pretty_name(interp)
-                        ),
-                        )));
-                    }
-                } else {
-                    // TODO: propagate exceptions thrown by `value#to_a`.
-                    return Err(Exception::from(Fatal::new(
-                        interp,
-                        "Error calling #to_a even though it exists",
-                    )));
-                }
-            } else if let Ok(len) = first.funcall::<Int>(interp, "to_int", &[], None) {
+            } else {
+                let len = first.implicitly_convert_to_int(interp)?;
                 let len = usize::try_from(len)
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
-                if let Some(block) = block {
+                if let Some(mut block) = block {
                     if second.is_some() {
                         interp
                             .warn(&b"warning: block supersedes default value argument"[..])
@@ -129,14 +108,6 @@ impl Array {
                     // backend::fixed::hole(len)
                     unimplemented!();
                 }
-            } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!(
-                        "no implicit conversion of {} into Integer",
-                        first.pretty_name(interp)
-                    ),
-                )));
             }
         } else if second.is_some() {
             return Err(Exception::from(Fatal::new(
@@ -203,25 +174,16 @@ impl Array {
                 self.0.set_slice(interp, start, drain, &other.borrow().0)?;
             } else if let Ok(true) = elem.respond_to(interp, "to_ary") {
                 let ruby_type = elem.pretty_name(interp);
-                if let Ok(other) = elem.funcall(interp, "to_ary", &[], None) {
-                    if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                        self.0.set_slice(interp, start, drain, &other.borrow().0)?;
-                    } else {
-                        return Err(Exception::from(TypeError::new(
-                            interp,
-                            format!(
-                            "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
-                            classname = ruby_type,
-                            gives = other.pretty_name(interp)
-                        ),
-                        )));
-                    }
+                let other = elem.funcall(interp, "to_ary", &[], None)?;
+                if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+                    self.0.set_slice(interp, start, drain, &other.borrow().0)?;
                 } else {
-                    // TODO: propagate exceptions thrown by `value#to_a`.
-                    return Err(Exception::from(Fatal::new(
-                        interp,
-                        "Error calling #to_a even though it exists",
-                    )));
+                    let message = format!(
+                        "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
+                        classname = ruby_type,
+                        gives = other.pretty_name(interp)
+                    );
+                    return Err(Exception::from(TypeError::new(interp, message)));
                 }
             } else {
                 self.0.set_with_drain(interp, start, drain, elem.clone())?;
@@ -282,34 +244,23 @@ impl Array {
             self.0.concat(interp, &other.borrow().0)?;
         } else if let Ok(true) = other.respond_to(interp, "to_ary") {
             let ruby_type = other.pretty_name(interp);
-            if let Ok(other) = other.funcall(interp, "to_ary", &[], None) {
-                if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                    self.0.concat(interp, &other.borrow().0)?;
-                } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        format!(
-                            "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
-                            classname = ruby_type,
-                            gives = other.pretty_name(interp)
-                        ),
-                    )));
-                }
+            let other = other.funcall(interp, "to_ary", &[], None)?;
+            if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+                self.0.concat(interp, &other.borrow().0)?;
             } else {
-                // TODO: propagate exceptions thrown by `value#to_a`.
-                return Err(Exception::from(Fatal::new(
-                    interp,
-                    "Error calling #to_a even though it exists",
-                )));
+                let message = format!(
+                    "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
+                    classname = ruby_type,
+                    gives = other.pretty_name(interp)
+                );
+                return Err(Exception::from(TypeError::new(interp, message)));
             }
         } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {classname} into Array",
-                    classname = other.pretty_name(interp),
-                ),
-            )));
+            let message = format!(
+                "no implicit conversion of {classname} into Array",
+                classname = other.pretty_name(interp),
+            );
+            return Err(Exception::from(TypeError::new(interp, message)));
         };
         Ok(())
     }
