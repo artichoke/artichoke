@@ -16,6 +16,7 @@ pub use crate::convert::{Convert, RustBackedValue, TryConvert};
 pub use crate::def::{self, EnclosingRubyScope};
 pub use crate::exception::{self, Exception, RubyException};
 pub use crate::extn::core::exception::*;
+pub use crate::ffi;
 pub use crate::module;
 pub use crate::sys;
 pub use crate::types::{Float, Int, Ruby};

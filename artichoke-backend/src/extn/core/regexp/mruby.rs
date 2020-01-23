@@ -55,7 +55,7 @@ unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
     let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
     let result = regexp::trampoline::initialize(&mut interp, pattern, options, encoding, Some(slf));
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -78,7 +78,7 @@ unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> s
     let pattern = Value::new(&interp, pattern);
     let result = regexp::trampoline::escape(&mut interp, pattern);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -94,7 +94,7 @@ unsafe extern "C" fn union(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sy
     let result = regexp::trampoline::union(&mut interp, args.as_slice());
     drop(args);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -107,7 +107,7 @@ unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
     let pos = pos.map(|pos| Value::new(&interp, pos));
     let result = regexp::trampoline::is_match(&mut interp, value, pattern, pos);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -120,7 +120,7 @@ unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sy
     let pos = pos.map(|pos| Value::new(&interp, pos));
     let result = regexp::trampoline::match_(&mut interp, value, pattern, pos, block);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -132,7 +132,7 @@ unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::
     let other = Value::new(&interp, other);
     let result = regexp::trampoline::eql(&mut interp, value, other);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -144,7 +144,7 @@ unsafe extern "C" fn case_compare(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     let pattern = Value::new(&interp, pattern);
     let result = regexp::trampoline::case_compare(&mut interp, value, pattern);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -159,7 +159,7 @@ unsafe extern "C" fn match_operator(
     let pattern = Value::new(&interp, pattern);
     let result = regexp::trampoline::match_operator(&mut interp, value, pattern);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -170,7 +170,7 @@ unsafe extern "C" fn casefold(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> 
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::is_casefold(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -184,7 +184,7 @@ unsafe extern "C" fn fixed_encoding(
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::is_fixed_encoding(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -195,7 +195,7 @@ unsafe extern "C" fn hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys:
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::hash(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -206,7 +206,7 @@ unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::inspect(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -220,7 +220,7 @@ unsafe extern "C" fn named_captures(
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::named_captures(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -231,7 +231,7 @@ unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::names(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -242,7 +242,7 @@ unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::options(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -253,7 +253,7 @@ unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sy
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::source(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -264,7 +264,7 @@ unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys:
     let value = Value::new(&interp, slf);
     let result = regexp::trampoline::to_s(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => ffi::return_into_vm(interp, result),
         Err(exception) => exception::raise(interp, exception),
     }
 }

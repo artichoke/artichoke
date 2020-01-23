@@ -51,7 +51,7 @@ impl RString {
         let pattern = Value::new(&interp, pattern);
         let result = scan::method(&mut interp, value, pattern, block);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }

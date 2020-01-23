@@ -53,7 +53,7 @@ unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
-            value.inner()
+            ffi::return_into_vm(interp, value)
         }
         Err(exception) => exception::raise(interp, exception),
     }
@@ -65,9 +65,10 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
     let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let result = array::trampoline::len(&mut interp, ary)
-        .map(|len| sys::mrb_int::try_from(len).unwrap_or_default());
+        .map(|len| sys::mrb_int::try_from(len).unwrap_or_default())
+        .map(|len| interp.convert(len));
     match result {
-        Ok(len) => interp.convert(len).inner(),
+        Ok(len) => ffi::return_into_vm(interp, len),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -84,7 +85,7 @@ unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
-            value.inner()
+            ffi::return_into_vm(interp, value)
         }
         Err(exception) => exception::raise(interp, exception),
     }
@@ -105,7 +106,7 @@ unsafe extern "C" fn ary_initialize(
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
-            value.inner()
+            ffi::return_into_vm(interp, value)
         }
         Err(exception) => exception::raise(interp, exception),
     }
@@ -125,7 +126,7 @@ unsafe extern "C" fn ary_initialize_copy(
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
-            value.inner()
+            ffi::return_into_vm(interp, value)
         }
         Err(exception) => exception::raise(interp, exception),
     }
@@ -144,7 +145,7 @@ unsafe extern "C" fn ary_reverse_bang(
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
-            value.inner()
+            ffi::return_into_vm(interp, value)
         }
         Err(exception) => exception::raise(interp, exception),
     }
@@ -162,7 +163,7 @@ unsafe extern "C" fn ary_element_reference(
     let array = Value::new(&interp, ary);
     let result = array::trampoline::element_reference(&mut interp, array, elem, len);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -183,7 +184,7 @@ unsafe extern "C" fn ary_element_assignment(
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
-            value.inner()
+            ffi::return_into_vm(interp, value)
         }
         Err(exception) => exception::raise(interp, exception),
     }

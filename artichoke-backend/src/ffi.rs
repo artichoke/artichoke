@@ -7,6 +7,7 @@ use std::ptr::{self, NonNull};
 
 use crate::state::State;
 use crate::sys::{self, DescribeState};
+use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 /// Extract an [`Artichoke`] interpreter from the user data pointer on a
@@ -45,6 +46,11 @@ pub fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeEr
         unsafe { mrb.as_ref().debug() }
     );
     Ok(Artichoke { state, mrb })
+}
+
+pub unsafe fn return_into_vm(interp: Artichoke, value: Value) -> sys::mrb_value {
+    interp.into_user_data();
+    value.inner()
 }
 
 #[cfg(test)]

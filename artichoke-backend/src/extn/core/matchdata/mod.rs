@@ -110,7 +110,7 @@ impl MatchData {
         let result = begin::Args::extract(&mut interp, begin)
             .and_then(|args| begin::method(&mut interp, args, &value));
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -121,7 +121,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = captures::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -141,7 +141,7 @@ impl MatchData {
             })
             .and_then(|args| element_reference::method(&mut interp, args, &value));
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -155,7 +155,7 @@ impl MatchData {
         let result = end::Args::extract(&mut interp, end)
             .and_then(|args| end::method(&mut interp, args, &value));
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -166,7 +166,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = length::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -180,7 +180,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = named_captures::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -191,7 +191,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = names::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -204,7 +204,7 @@ impl MatchData {
         let result = offset::Args::extract(&mut interp, elem)
             .and_then(|args| offset::method(&mut interp, args, &value));
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -218,7 +218,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = post_match::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -232,7 +232,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = pre_match::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -243,7 +243,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = regexp::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -254,7 +254,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = string::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -266,7 +266,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = to_a::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -278,7 +278,7 @@ impl MatchData {
         let value = Value::new(&interp, slf);
         let result = to_s::method(&mut interp, &value);
         match result {
-            Ok(result) => result.inner(),
+            Ok(result) => ffi::return_into_vm(interp, result),
             Err(exception) => exception::raise(interp, exception),
         }
     }

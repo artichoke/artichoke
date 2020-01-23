@@ -48,7 +48,7 @@ impl Kernel {
         let base = base.map(|base| Value::new(&interp, base));
         let result = integer::method(&mut interp, arg, base);
         match result {
-            Ok(value) => value.inner(),
+            Ok(value) => ffi::return_into_vm(interp, value),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -59,7 +59,7 @@ impl Kernel {
         let file = Value::new(&interp, file);
         let result = require::load(&mut interp, file);
         match result {
-            Ok(value) => value.inner(),
+            Ok(value) => ffi::return_into_vm(interp, value),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -110,7 +110,7 @@ impl Kernel {
         let file = Value::new(&interp, file);
         let result = require::require(&mut interp, file, None);
         match result {
-            Ok(value) => value.inner(),
+            Ok(value) => ffi::return_into_vm(interp, value),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -124,7 +124,7 @@ impl Kernel {
         let file = Value::new(&interp, file);
         let result = require::require_relative(&mut interp, file);
         match result {
-            Ok(value) => value.inner(),
+            Ok(value) => ffi::return_into_vm(interp, value),
             Err(exception) => exception::raise(interp, exception),
         }
     }

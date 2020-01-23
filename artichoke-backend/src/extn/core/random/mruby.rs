@@ -62,7 +62,7 @@ unsafe extern "C" fn artichoke_random_initialize(
     let seed = seed.map(|seed| Value::new(&interp, seed));
     let result = random::initialize(&mut interp, seed, Some(slf));
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -78,7 +78,7 @@ unsafe extern "C" fn artichoke_random_eq(
     let other = Value::new(&interp, other);
     let result = random::eql(&mut interp, rand, other);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -94,7 +94,7 @@ unsafe extern "C" fn artichoke_random_bytes(
     let size = Value::new(&interp, size);
     let result = random::bytes(&mut interp, rand, size);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -110,7 +110,7 @@ unsafe extern "C" fn artichoke_random_rand(
     let max = max.map(|max| Value::new(&interp, max));
     let result = random::rand(&mut interp, rand, max);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -125,7 +125,7 @@ unsafe extern "C" fn artichoke_random_seed(
     let rand = Value::new(&interp, slf);
     let result = random::seed(&mut interp, rand);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -139,7 +139,7 @@ unsafe extern "C" fn artichoke_random_self_new_seed(
     let mut interp = unwrap_interpreter!(mrb);
     let result = random::new_seed(&mut interp);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -154,7 +154,7 @@ unsafe extern "C" fn artichoke_random_self_srand(
     let number = number.map(|number| Value::new(&interp, number));
     let result = random::srand(&mut interp, number);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -169,7 +169,7 @@ unsafe extern "C" fn artichoke_random_self_urandom(
     let size = Value::new(&interp, size);
     let result = random::urandom(&mut interp, size);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }

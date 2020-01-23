@@ -83,7 +83,7 @@ impl Integer {
             }
         };
         match result {
-            Ok(value) => value.inner(),
+            Ok(value) => ffi::return_into_vm(interp, value),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -95,7 +95,7 @@ impl Integer {
         let other = Value::new(&interp, other);
         let result = div::method(&mut interp, value, other);
         match result {
-            Ok(value) => value.inner(),
+            Ok(value) => ffi::return_into_vm(interp, value),
             Err(exception) => exception::raise(interp, exception),
         }
     }
@@ -107,7 +107,7 @@ impl Integer {
             .map(|size| interp.convert(size))
             .map_err(|_| Fatal::new(&interp, "sizeof Integer does not fit in Integer max"));
         match result {
-            Ok(value) => value.inner(),
+            Ok(value) => ffi::return_into_vm(interp, value),
             Err(exception) => exception::raise(interp, exception),
         }
     }

@@ -15,7 +15,7 @@ unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_val
         .try_into_ruby(&mut interp, None)
         .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -34,7 +34,7 @@ unsafe extern "C" fn artichoke_ary_new_capa(
         .try_into_ruby(&mut interp, None)
         .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -81,7 +81,7 @@ unsafe extern "C" fn artichoke_ary_splat(
         .try_into_ruby(&mut interp, None)
         .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -200,7 +200,7 @@ unsafe extern "C" fn artichoke_ary_ref(
         Ok(interp.convert(None::<Value>))
     };
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => ffi::return_into_vm(interp, value),
         Err(exception) => exception::raise(interp, exception),
     }
 }
