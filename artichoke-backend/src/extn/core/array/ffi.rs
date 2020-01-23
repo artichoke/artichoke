@@ -310,7 +310,7 @@ unsafe extern "C" fn artichoke_ary_len(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_int {
-    let interp = unwrap_interpreter!(mrb, or_else = 0);
+    let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let ary = Value::new(&interp, ary);
     if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
         let borrow = array.borrow();
@@ -326,7 +326,7 @@ unsafe extern "C" fn artichoke_ary_set_len(
     ary: sys::mrb_value,
     len: sys::mrb_int,
 ) {
-    let interp = unwrap_interpreter!(mrb, or_else = ());
+    let mut interp = unwrap_interpreter!(mrb, or_else = ());
     let ary = Value::new(&interp, ary);
     if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
         let len = usize::try_from(len).unwrap_or_default();
@@ -340,7 +340,7 @@ unsafe extern "C" fn artichoke_ary_ptr(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> *mut sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb, or_else = ptr::null_mut());
+    let mut interp = unwrap_interpreter!(mrb, or_else = ptr::null_mut());
     let ary = Value::new(&interp, ary);
     if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
         let mut borrow = array.borrow_mut();
@@ -355,7 +355,7 @@ unsafe extern "C" fn artichoke_ary_check(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_bool {
-    let interp = unwrap_interpreter!(mrb, or_else = 0);
+    let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let ary = Value::new(&interp, ary);
     if Array::try_from_ruby(&mut interp, &ary).is_ok() {
         1

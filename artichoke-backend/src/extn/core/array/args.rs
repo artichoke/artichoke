@@ -74,18 +74,7 @@ pub fn element_assignment(
     len: usize,
 ) -> Result<(usize, Option<usize>, Value), Exception> {
     if let Some(elem) = third {
-        let start = first;
-        let start_type_name = start.pretty_name(interp);
-        let start = if let Ok(start) = start.try_into::<Int>(interp) {
-            start
-        } else if let Ok(start) = start.funcall::<Int>(interp, "to_int", &[], None) {
-            start
-        } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("no implicit conversion of {} into Integer", start_type_name),
-            )));
-        };
+        let start = first.implicitly_convert_to_int(interp)?;
         let start = if let Ok(start) = usize::try_from(start) {
             start
         } else {
@@ -100,18 +89,7 @@ pub fn element_assignment(
                 )));
             }
         };
-        let len = second;
-        let len_type_name = len.pretty_name(interp);
-        let len = if let Ok(len) = len.try_into::<Int>(interp) {
-            len
-        } else if let Ok(len) = len.funcall::<Int>(interp, "to_int", &[], None) {
-            len
-        } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("no implicit conversion of {} into Integer", len_type_name),
-            )));
-        };
+        let len = second.implicitly_convert_to_int(interp)?;
         if let Ok(len) = usize::try_from(len) {
             Ok((start, Some(len), elem))
         } else {
@@ -120,22 +98,7 @@ pub fn element_assignment(
                 format!("negative length ({})", len),
             )))
         }
-    } else if let Ok(index) = first.try_into::<Int>(interp) {
-        if let Ok(index) = usize::try_from(index) {
-            Ok((index, None, second))
-        } else {
-            let index = usize::try_from(-index)
-                .map_err(|_| Fatal::new(interp, "Positive Int must be usize"))?;
-            if index < len {
-                Ok((len - index, None, second))
-            } else {
-                Err(Exception::from(IndexError::new(
-                    interp,
-                    format!("index {} too small for array; minimum: -{}", index, len),
-                )))
-            }
-        }
-    } else if let Ok(index) = first.funcall::<Int>(interp, "to_int", &[], None) {
+    } else if let Ok(index) = first.implicitly_convert_to_int(interp) {
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
@@ -170,19 +133,7 @@ pub fn element_assignment(
                         "Unable to extract first from Range",
                     )));
                 };
-                let start = if let Ok(start) = start.try_into::<Int>(interp) {
-                    start
-                } else if let Ok(start) = start.funcall::<Int>(interp, "to_int", &[], None) {
-                    start
-                } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        format!(
-                            "no implicit conversion of {} into Integer",
-                            start.pretty_name(interp)
-                        ),
-                    )));
-                };
+                let start = start.implicitly_convert_to_int(interp)?;
                 let end = if let Ok(end) = first.funcall::<Value>(interp, "last", &[], None) {
                     end
                 } else {
@@ -191,19 +142,7 @@ pub fn element_assignment(
                         "Unable to extract first from Range",
                     )));
                 };
-                let end = if let Ok(end) = end.try_into::<Int>(interp) {
-                    end
-                } else if let Ok(end) = end.funcall::<Int>(interp, "to_int", &[], None) {
-                    end
-                } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        format!(
-                            "no implicit conversion of {} into Integer",
-                            end.pretty_name(interp)
-                        ),
-                    )));
-                };
+                let end = end.implicitly_convert_to_int(interp)?;
                 if start + (end - start) < 0 {
                     return Err(Exception::from(RangeError::new(
                         interp,
@@ -254,17 +193,16 @@ pub fn element_assignment(
 }
 
 unsafe fn is_range(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     range: &Value,
     length: Int,
 ) -> Result<Option<(Int, usize)>, Exception> {
     let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
     let mut len = mem::MaybeUninit::<sys::mrb_int>::uninit();
-    let mrb = interp.mrb_mut();
     // `mrb_range_beg_len` can raise.
     // TODO: Wrap this in a call to `mrb_protect`.
     let check_range = sys::mrb_range_beg_len(
-        mrb,
+        interp.mrb_mut(),
         range.inner(),
         start.as_mut_ptr(),
         len.as_mut_ptr(),
