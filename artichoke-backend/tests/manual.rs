@@ -48,7 +48,7 @@ impl Container {
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        if let Ok(data) = <Box<Self>>::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+        if let Ok(data) = Box::<Self>::try_from_ruby(&interp, &Value::new(&interp, slf)) {
             let borrow = data.borrow();
             interp.convert(borrow.inner).inner()
         } else {

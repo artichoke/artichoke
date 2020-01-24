@@ -569,7 +569,7 @@ mod release {
             );
         }
         let birth_date = String::from_utf8(birth_date.stdout).unwrap();
-        <DateTime<Utc>>::from(DateTime::parse_from_rfc2822(birth_date.trim()).expect("birth"))
+        DateTime::<Utc>::from(DateTime::parse_from_rfc2822(birth_date.trim()).expect("birth"))
     }
 
     fn revision_count() -> String {

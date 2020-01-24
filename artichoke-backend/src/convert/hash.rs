@@ -62,7 +62,7 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
                             from: Ruby::Hash,
                             to: Rust::Map,
                         })?;
-                    let mut pairs = <Vec<(Value, Value)>>::with_capacity(capacity);
+                    let mut pairs = Vec::<(Value, Value)>::with_capacity(capacity);
                     for idx in 0..size {
                         // Doing a `hash[key]` access is guaranteed to succeed since
                         // we're iterating over the keys in the hash.
