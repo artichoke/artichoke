@@ -5,6 +5,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ffi::c_void;
 use std::io::{self, Write};
+use std::ptr;
 
 use crate::class;
 use crate::convert::RustBackedValue;
@@ -14,6 +15,7 @@ use crate::extn::core::random::backend::rand::Rand;
 use crate::fs::Filesystem;
 use crate::module;
 use crate::sys;
+use crate::types::{Ruby, Rust};
 use crate::ArtichokeError;
 
 // NOTE: ArtichokeState assumes that it it is stored in `mrb_state->ud` wrapped in a
@@ -78,6 +80,37 @@ impl State {
                 sys::mrb_sys_obj_value(alloc as *mut c_void)
             };
             Ok(value)
+        }
+    }
+
+    pub fn try_get_value_from_data<T, R>(
+        &mut self,
+        mrb: &mut sys::mrb_state,
+        value: sys::mrb_value,
+    ) -> Result<*const R, ArtichokeError>
+    where
+        T: RustBackedValue,
+    {
+        let spec = self
+            .classes
+            .get(&TypeId::of::<T>())
+            .map(Box::as_ref)
+            .ok_or_else(|| ArtichokeError::NotDefined(T::ruby_type_name().into()))?;
+        let rclass = spec
+            .rclass(mrb)
+            .ok_or_else(|| ArtichokeError::NotDefined(T::ruby_type_name().into()))?;
+        // Sanity check that the RClass matches.
+        let is_value_with_matching_rclass =
+            ptr::eq(unsafe { sys::mrb_sys_class_of_value(mrb, value) }, rclass);
+        // Sanity check that the RClass matches.
+        if is_value_with_matching_rclass {
+            Err(ArtichokeError::ConvertToRust {
+                from: Ruby::Object,
+                to: Rust::Object,
+            })
+        } else {
+            let ptr = unsafe { sys::mrb_data_check_get_ptr(mrb, value, spec.data_type()) };
+            Ok(ptr as *const R)
         }
     }
 

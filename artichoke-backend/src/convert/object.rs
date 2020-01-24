@@ -1,8 +1,7 @@
-use std::borrow::Cow;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
-use std::ptr::{self, NonNull};
+use std::ptr::NonNull;
 use std::rc::Rc;
 
 use crate::sys;
@@ -76,25 +75,7 @@ where
                 to: Rust::Object,
             });
         }
-        let spec = interp
-            .state()
-            .class_spec::<Self>()
-            .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?
-            .clone();
-        // Sanity check that the RClass matches.
-        let rclass = spec
-            .rclass(interp.mrb_mut())
-            .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
-        if !ptr::eq(
-            sys::mrb_sys_class_of_value(interp.mrb_mut(), slf.inner()),
-            rclass,
-        ) {
-            return Err(ArtichokeError::ConvertToRust {
-                from: slf.ruby_type(),
-                to: Rust::Object,
-            });
-        }
-        let value = sys::mrb_data_check_get_ptr(interp.mrb_mut(), slf.inner(), spec.data_type());
+        let value = interp.try_get_value_from_data::<Self, RefCell<Self>>(slf.inner())?;
         if let Some(value) = NonNull::new(value as *mut RefCell<Self>) {
             let data = Rc::from_raw(value.as_ref());
             let value = Rc::clone(&data);

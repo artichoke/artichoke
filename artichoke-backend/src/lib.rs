@@ -184,6 +184,21 @@ impl Artichoke {
         }
     }
 
+    pub fn try_get_value_from_data<T, R>(
+        &mut self,
+        value: sys::mrb_value,
+    ) -> Result<*const R, ArtichokeError>
+    where
+        T: RustBackedValue,
+    {
+        if let Some(ref mut state) = self.state {
+            let mrb = unsafe { self.mrb.as_mut() };
+            state.try_get_value_from_data::<T, R>(mrb, value)
+        } else {
+            panic!("Artichoke::alloc called with uninitialized State");
+        }
+    }
+
     pub fn state(&self) -> &State {
         if let Some(ref state) = self.state {
             state.as_ref()
