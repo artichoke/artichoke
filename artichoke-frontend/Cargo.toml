@@ -3,6 +3,12 @@ name = "artichoke-frontend"
 version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
+description = "Binary packages for Artichoke Ruby CLI and REPL"
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["artichoke", "artichoke-ruby", "ruby"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 ansi_term = "0.12"
