@@ -797,7 +797,7 @@ impl RegexpType for RegexUtf8 {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                     }
-                    return Ok(interp.convert(<Vec<Value>>::new()));
+                    return Ok(interp.convert(Vec::<Value>::new()));
                 }
                 for captures in iter {
                     let mut groups = vec![];
@@ -851,7 +851,7 @@ impl RegexpType for RegexUtf8 {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                     }
-                    return Ok(interp.convert(<Vec<Value>>::new()));
+                    return Ok(interp.convert(Vec::<Value>::new()));
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.start()..pos.end()];

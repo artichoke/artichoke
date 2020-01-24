@@ -71,7 +71,7 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
                     from: Ruby::Array,
                     to: Rust::Vec,
                 })?;
-                let mut elems = <Vec<Value>>::with_capacity(capa);
+                let mut elems = Vec::<Value>::with_capacity(capa);
                 for idx in 0..size {
                     let elem = Value::new(self, unsafe { sys::mrb_ary_ref(mrb, array, idx) });
                     elems.push(elem);
@@ -118,7 +118,7 @@ macro_rules! ruby_to_array {
         impl<'a> TryConvert<Value, Vec<$elem>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Vec<$elem>, ArtichokeError> {
                 let elems: Vec<Value> = self.try_convert(value)?;
-                let mut vec = <Vec<$elem>>::with_capacity(elems.len());
+                let mut vec = Vec::<$elem>::with_capacity(elems.len());
                 for elem in elems.into_iter() {
                     let elem = elem.try_into::<$elem>()?;
                     vec.push(elem);

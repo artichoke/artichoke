@@ -149,7 +149,7 @@ mod tests {
         let result = s
             .funcall::<Vec<&str>>("scan", &[interp.eval(b"'no no no'").expect("eval")], None)
             .expect("funcall");
-        assert_eq!(result, <Vec<&str>>::new());
+        assert_eq!(result, Vec::<&str>::new());
     }
 
     #[test]

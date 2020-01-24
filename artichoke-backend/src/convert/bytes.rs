@@ -29,8 +29,7 @@ impl Convert<&[u8], Value> for Artichoke {
 
 impl TryConvert<Value, Vec<u8>> for Artichoke {
     fn try_convert(&self, value: Value) -> Result<Vec<u8>, ArtichokeError> {
-        let result: &[u8] = self.try_convert(value)?;
-        Ok(result.to_vec())
+        TryConvert::<_, &[u8]>::try_convert(self, value).map(<[_]>::to_vec)
     }
 }
 
