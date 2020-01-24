@@ -1,10 +1,8 @@
 //! [`Artichoke`] virtual filesystem used for storing Ruby sources.
 
 use artichoke_vfs::{FakeFileSystem, FileSystem};
-use path_dedot::ParseDot;
 use std::ffi::OsStr;
-use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use crate::exception::Exception;
 use crate::{Artichoke, ArtichokeError};
@@ -123,16 +121,29 @@ impl Default for Metadata {
 }
 
 fn absolutize_relative_to(path: &Path, cwd: &Path) -> Result<PathBuf, ArtichokeError> {
-    if path.is_relative() {
-        cwd.join(path)
-            .parse_dot()
-            .map_err(io::Error::from)
-            .map_err(ArtichokeError::Vfs)
+    let mut iter = path.components().peekable();
+    let hint = iter.size_hint();
+    let mut components = if let Some(Component::RootDir) = iter.peek() {
+        Vec::with_capacity(hint.1.unwrap_or(hint.0))
     } else {
-        path.parse_dot()
-            .map_err(io::Error::from)
-            .map_err(ArtichokeError::Vfs)
+        let mut components = cwd
+            .components()
+            .map(Component::as_os_str)
+            .map(Path::new)
+            .collect::<Vec<_>>();
+        components.reserve(hint.1.unwrap_or(hint.0));
+        components
+    };
+    for component in iter {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                components.pop();
+            }
+            c => components.push(Path::new(c.as_os_str())),
+        }
     }
+    Ok(components.into_iter().collect())
 }
 
 #[cfg(unix)]
