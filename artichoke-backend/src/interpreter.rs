@@ -1,5 +1,4 @@
 use artichoke_core::eval::Eval;
-use std::mem::ManuallyDrop;
 use std::ptr::NonNull;
 
 use crate::extn;
@@ -24,9 +23,9 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
     };
 
     let context = unsafe { sys::mrbc_context_new(mrb.as_mut()) };
-    let state = ManuallyDrop::new(Box::new(State::new(context, vfs)));
+    let state = Box::new(State::new(context, vfs));
 
-    let mut interp = Artichoke { state, mrb };
+    let mut interp = Artichoke::new(mrb, state);
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before

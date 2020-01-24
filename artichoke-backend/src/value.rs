@@ -258,12 +258,14 @@ impl ValueLike for Value {
             );
             let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
 
+            interp.deinitialize_to_cross_into_ffi_boundary();
             let value = sys::mrb_protect(
                 interp.mrb_mut(),
                 Some(Protect::run),
                 data,
                 state.as_mut_ptr(),
             );
+            interp.reinitialize_to_return_from_ffi_boundary();
             if state.assume_init() != 0 {
                 interp.mrb_mut().exc = sys::mrb_sys_obj_ptr(value);
             }

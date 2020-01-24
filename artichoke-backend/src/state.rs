@@ -3,16 +3,18 @@ use rand::rngs::SmallRng;
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::ffi::c_void;
 use std::io::{self, Write};
-use std::ptr::NonNull;
 
 use crate::class;
+use crate::convert::RustBackedValue;
 use crate::eval::Context;
 #[cfg(feature = "artichoke-random")]
 use crate::extn::core::random::backend::rand::Rand;
 use crate::fs::Filesystem;
 use crate::module;
 use crate::sys;
+use crate::ArtichokeError;
 
 // NOTE: ArtichokeState assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
@@ -45,6 +47,37 @@ impl State {
             captured_output: None,
             #[cfg(feature = "artichoke-random")]
             prng: Rand::new(None),
+        }
+    }
+
+    pub fn alloc<T>(
+        &mut self,
+        mrb: &mut sys::mrb_state,
+        ptr: *mut c_void,
+        into: Option<sys::mrb_value>,
+    ) -> Result<sys::mrb_value, ArtichokeError>
+    where
+        T: RustBackedValue,
+    {
+        let spec = self
+            .classes
+            .get(&TypeId::of::<T>())
+            .map(Box::as_ref)
+            .ok_or_else(|| ArtichokeError::NotDefined(T::ruby_type_name().into()))?;
+        if let Some(mut value) = into {
+            unsafe {
+                sys::mrb_sys_data_init(&mut value, ptr, spec.data_type());
+            }
+            Ok(value)
+        } else {
+            let rclass = spec
+                .rclass(mrb)
+                .ok_or_else(|| ArtichokeError::NotDefined(T::ruby_type_name().into()))?;
+            let value = unsafe {
+                let alloc = sys::mrb_data_object_alloc(mrb, rclass, ptr, spec.data_type());
+                sys::mrb_sys_obj_value(alloc as *mut c_void)
+            };
+            Ok(value)
         }
     }
 
@@ -102,10 +135,10 @@ impl State {
     }
 
     /// Close a [`State`] and free underlying mruby structs and memory.
-    pub fn close(&mut self, mrb: &mut NonNull<sys::mrb_state>) {
+    pub fn close(&mut self, mrb: &mut sys::mrb_state) {
         unsafe {
             // Free mrb data structures
-            sys::mrbc_context_free(mrb.as_mut(), self.ctx);
+            sys::mrbc_context_free(mrb, self.ctx);
         };
     }
 

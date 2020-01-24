@@ -52,7 +52,7 @@ impl ExceptionHandler for Artichoke {
         // folllowing print statement will at least get you the exception class
         // and message, which should help debugging.
         //
-        // println!("{}", exception.to_s_debug(self));
+        println!("{}", exception.to_s_debug(self));
         let classname = exception
             .funcall::<Value>(self, "class", &[], None)
             .and_then(|exception| exception.funcall::<&str>(self, "name", &[], None))?;

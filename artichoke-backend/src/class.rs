@@ -72,15 +72,15 @@ impl<'a> Builder<'a> {
 
     pub fn define(self) -> Result<(), ArtichokeError> {
         let super_class = if let Some(spec) = self.super_class {
-            spec.rclass(self.interp)
+            spec.rclass(self.interp.mrb_mut())
                 .ok_or_else(|| ArtichokeError::NotDefined(Cow::Owned(spec.fqname().into_owned())))?
         } else {
             self.interp.mrb_mut().object_class
         };
-        let rclass = if let Some(rclass) = self.spec.rclass(self.interp) {
+        let rclass = if let Some(rclass) = self.spec.rclass(self.interp.mrb_mut()) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
-            let scope = scope.rclass(self.interp).ok_or_else(|| {
+            let scope = scope.rclass(self.interp.mrb_mut()).ok_or_else(|| {
                 ArtichokeError::NotDefined(Cow::Owned(scope.fqname().into_owned()))
             })?;
             unsafe {
@@ -150,7 +150,7 @@ impl Spec {
 
     #[must_use]
     pub fn new_instance(&self, interp: &mut Artichoke, args: &[Value]) -> Option<Value> {
-        let rclass = self.rclass(interp)?;
+        let rclass = self.rclass(interp.mrb_mut())?;
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
         let arglen = Int::try_from(args.len()).ok()?;
         let value = unsafe { sys::mrb_obj_new(interp.mrb_mut(), rclass, arglen, args.as_ptr()) };
@@ -159,7 +159,7 @@ impl Spec {
 
     #[must_use]
     pub fn value(&self, interp: &mut Artichoke) -> Option<Value> {
-        let rclass = self.rclass(interp)?;
+        let rclass = self.rclass(interp.mrb_mut())?;
         let module = unsafe { sys::mrb_sys_class_value(rclass) };
         Some(Value::new(interp, module))
     }
@@ -197,16 +197,11 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn rclass(&self, interp: &mut Artichoke) -> Option<*mut sys::RClass> {
+    pub fn rclass(&self, mrb: &mut sys::mrb_state) -> Option<*mut sys::RClass> {
         if let Some(ref scope) = self.enclosing_scope {
-            if let Some(scope) = scope.rclass(interp) {
-                if unsafe {
-                    sys::mrb_class_defined_under(
-                        interp.mrb_mut(),
-                        scope,
-                        self.name_c_str().as_ptr(),
-                    )
-                } == 0
+            if let Some(scope) = scope.rclass(mrb) {
+                if unsafe { sys::mrb_class_defined_under(mrb, scope, self.name_c_str().as_ptr()) }
+                    == 0
                 {
                     // Enclosing scope exists.
                     // Class is not defined under the enclosing scope.
@@ -215,23 +210,19 @@ impl Spec {
                     // Enclosing scope exists.
                     // Class is defined under the enclosing scope.
                     Some(unsafe {
-                        sys::mrb_class_get_under(
-                            interp.mrb_mut(),
-                            scope,
-                            self.name_c_str().as_ptr(),
-                        )
+                        sys::mrb_class_get_under(mrb, scope, self.name_c_str().as_ptr())
                     })
                 }
             } else {
                 // Enclosing scope does not exist.
                 None
             }
-        } else if unsafe { sys::mrb_class_defined(interp.mrb_mut(), self.cstring.as_ptr()) } == 0 {
+        } else if unsafe { sys::mrb_class_defined(mrb, self.cstring.as_ptr()) } == 0 {
             // Class does not exist in root scope.
             None
         } else {
             // Class exists in root scope.
-            Some(unsafe { sys::mrb_class_get(interp.mrb_mut(), self.name_c_str().as_ptr()) })
+            Some(unsafe { sys::mrb_class_get(mrb, self.name_c_str().as_ptr()) })
         }
     }
 }

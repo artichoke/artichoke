@@ -2,7 +2,7 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
-use std::mem::{self, ManuallyDrop};
+use std::mem;
 use std::ptr::{self, NonNull};
 
 use crate::state::State;
@@ -40,12 +40,12 @@ pub fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeEr
     // Extract the boxed `State` that wraps the API from the user data on the
     // `mrb_state`. This moves ownership of the user data pointer out of the
     // `mrb_state` into the returned `Artichoke`.
-    let state = ManuallyDrop::new(unsafe { Box::from_raw(userdata.as_ptr()) });
+    let state = unsafe { Box::from_raw(userdata.as_ptr()) };
     trace!(
         "Extracted Artichoke State from user data pointer on {}",
         unsafe { mrb.as_ref().debug() }
     );
-    Ok(Artichoke { state, mrb })
+    Ok(Artichoke::new(mrb, state))
 }
 
 pub unsafe fn return_into_vm(interp: Artichoke, value: Value) -> sys::mrb_value {

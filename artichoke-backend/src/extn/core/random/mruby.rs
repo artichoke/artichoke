@@ -38,7 +38,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .class_spec::<random::Random>()
         .ok_or(ArtichokeError::New)?
         .clone();
-    let rclass = spec.rclass(interp).ok_or(ArtichokeError::New)?;
+    let rclass = spec.rclass(interp.mrb_mut()).ok_or(ArtichokeError::New)?;
     unsafe {
         sys::mrb_define_const(
             interp.mrb_mut(),

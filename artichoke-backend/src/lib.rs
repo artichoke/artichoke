@@ -87,9 +87,10 @@ extern crate log;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::error;
+use std::ffi::c_void;
 use std::fmt;
-use std::mem::ManuallyDrop;
-use std::ptr::NonNull;
+use std::mem::{self, ManuallyDrop};
+use std::ptr::{self, NonNull};
 
 #[macro_use]
 #[doc(hidden)]
@@ -123,6 +124,7 @@ pub use artichoke_core::ArtichokeError;
 pub use interpreter::interpreter;
 pub use state::State;
 
+use crate::convert::RustBackedValue;
 use crate::exception::Exception;
 
 /// Interpreter instance.
@@ -141,39 +143,87 @@ use crate::exception::Exception;
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
 // TODO: impl Debug
 pub struct Artichoke {
-    state: ManuallyDrop<Box<State>>,
+    state: Option<ManuallyDrop<Box<State>>>,
     mrb: NonNull<sys::mrb_state>,
 }
 
 impl Artichoke {
+    pub(crate) fn new(mrb: NonNull<sys::mrb_state>, state: Box<State>) -> Self {
+        Self {
+            state: Some(ManuallyDrop::new(state)),
+            mrb,
+        }
+    }
+
     /// Consume an interpreter and free all
     /// [live](gc::MrbGarbageCollection::live_object_count)
     /// [`Value`](value::Value)s.
     pub fn close(mut self) {
-        self.state.close(&mut self.mrb);
         unsafe {
+            if let Some(mut state) = self.state {
+                state.close(self.mrb.as_mut());
+                ManuallyDrop::drop(&mut state);
+            }
             sys::mrb_close(self.mrb.as_mut());
         }
     }
 
+    pub fn alloc<T>(
+        &mut self,
+        ptr: *mut c_void,
+        into: Option<sys::mrb_value>,
+    ) -> Result<sys::mrb_value, ArtichokeError>
+    where
+        T: RustBackedValue,
+    {
+        if let Some(ref mut state) = self.state {
+            let mrb = unsafe { self.mrb.as_mut() };
+            state.alloc::<T>(mrb, ptr, into)
+        } else {
+            panic!("Artichoke::alloc called with uninitialized State");
+        }
+    }
+
     pub fn state(&self) -> &State {
-        self.state.as_ref()
+        if let Some(ref state) = self.state {
+            state.as_ref()
+        } else {
+            panic!("Artichoke::state called with uninitialized State");
+        }
     }
 
     pub fn state_mut(&mut self) -> &mut State {
-        self.state.as_mut()
+        if let Some(ref mut state) = self.state {
+            state.as_mut()
+        } else {
+            panic!("Artichoke::state_mut called with uninitialized State");
+        }
     }
 
     pub fn vfs(&self) -> &fs::Filesystem {
-        self.state.vfs()
+        if let Some(ref state) = self.state {
+            state.vfs()
+        } else {
+            panic!("Artichoke::vfs called with uninitialized State");
+        }
     }
 
     pub fn vfs_mut(&mut self) -> &mut fs::Filesystem {
-        self.state.vfs_mut()
+        if let Some(ref mut state) = self.state {
+            state.vfs_mut()
+        } else {
+            panic!("Artichoke::vfs_mut called with uninitialized State");
+        }
     }
 
     pub fn regexp_last_evaluation_captures_mut(&mut self) -> &mut usize {
-        self.state.regexp_last_evaluation_captures_mut()
+        if let Some(ref mut state) = self.state {
+            state.regexp_last_evaluation_captures_mut()
+        } else {
+            panic!(
+                "Artichoke::regexp_last_evaluation_captures_mut called with uninitialized State"
+            );
+        }
     }
 
     pub fn mrb_mut(&mut self) -> &mut sys::mrb_state {
@@ -184,14 +234,42 @@ impl Artichoke {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        let mrb = unsafe { self.mrb.as_mut() };
-        self.state.sym_intern(mrb, sym)
+        if let Some(ref mut state) = self.state {
+            let mrb = unsafe { self.mrb.as_mut() };
+            state.sym_intern(mrb, sym)
+        } else {
+            panic!("Artichoke::sym_intern called with uninitialized State");
+        }
     }
 
     pub unsafe fn into_user_data(mut self) -> *mut sys::mrb_state {
-        let state = Box::into_raw(ManuallyDrop::into_inner(self.state));
-        self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
-        self.mrb.as_ptr()
+        if let Some(state) = self.state {
+            let state = Box::into_raw(ManuallyDrop::into_inner(state));
+            self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
+            self.mrb.as_ptr()
+        } else {
+            panic!("Artichoke::into_user_data called with uninitialized State");
+        }
+    }
+
+    pub unsafe fn deinitialize_to_cross_into_ffi_boundary(&mut self) {
+        if let Some(state) = self.state.take() {
+            let state = Box::into_raw(ManuallyDrop::into_inner(state));
+            self.mrb.as_mut().ud = state as *mut std::ffi::c_void;
+        } else {
+            panic!("deinit failed");
+        }
+    }
+
+    pub unsafe fn reinitialize_to_return_from_ffi_boundary(&mut self) {
+        let state = mem::replace(&mut self.mrb.as_mut().ud, ptr::null_mut());
+        if let Some(state) = NonNull::new(state) {
+            let state = state.cast::<State>();
+            let state = ManuallyDrop::new(Box::from_raw(state.as_ptr()));
+            self.state.replace(state);
+        } else {
+            panic!("reinit failed");
+        }
     }
 }
 

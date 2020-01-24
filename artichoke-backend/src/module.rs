@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::cell::Cell;
 use std::collections::HashSet;
 use std::convert::AsRef;
 use std::ffi::{c_void, CStr, CString};
@@ -70,10 +69,10 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), ArtichokeError> {
-        let rclass = if let Some(rclass) = self.spec.rclass(self.interp) {
+        let rclass = if let Some(rclass) = self.spec.rclass(self.interp.mrb_mut()) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
-            let scope = scope.rclass(self.interp).ok_or_else(|| {
+            let scope = scope.rclass(self.interp.mrb_mut()).ok_or_else(|| {
                 ArtichokeError::NotDefined(Cow::Owned(scope.fqname().into_owned()))
             })?;
             unsafe {
@@ -100,13 +99,14 @@ impl<'a> Builder<'a> {
 #[derive(Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
-    sym: Cell<sys::mrb_sym>,
+    sym: sys::mrb_sym,
     cstring: CString,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }
 
 impl Spec {
     pub fn new<T>(
+        interp: &mut Artichoke,
         name: T,
         enclosing_scope: Option<EnclosingRubyScope>,
     ) -> Result<Self, ArtichokeError>
@@ -116,16 +116,17 @@ impl Spec {
         let name = name.into();
         let cstring =
             CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
+        let sym = interp.sym_intern(name.as_bytes().to_vec());
         Ok(Self {
             name,
             cstring,
-            sym: Cell::default(),
+            sym,
             enclosing_scope: enclosing_scope.map(Box::new),
         })
     }
 
     pub fn value(&self, interp: &mut Artichoke) -> Option<Value> {
-        let rclass = self.rclass(interp)?;
+        let rclass = self.rclass(interp.mrb_mut())?;
         let module = unsafe { sys::mrb_sys_module_value(rclass) };
         Some(Value::new(interp, module))
     }
@@ -153,18 +154,14 @@ impl Spec {
         }
     }
 
-    pub fn rclass(&self, interp: &mut Artichoke) -> Option<*mut sys::RClass> {
-        if self.sym.get() == 0 {
-            let sym = interp.sym_intern(self.name.as_bytes().to_vec());
-            self.sym.set(sym);
-        }
+    pub fn rclass(&self, mrb: &mut sys::mrb_state) -> Option<*mut sys::RClass> {
         if let Some(ref scope) = self.enclosing_scope {
-            if let Some(scope) = scope.rclass(interp) {
+            if let Some(scope) = scope.rclass(mrb) {
                 let defined = unsafe {
                     sys::mrb_const_defined_at(
-                        interp.mrb_mut(),
+                        mrb,
                         sys::mrb_sys_obj_value(scope as *mut c_void),
-                        self.sym.get(),
+                        self.sym,
                     )
                 };
                 if defined == 0 {
@@ -175,11 +172,7 @@ impl Spec {
                     // Enclosing scope exists module IS defined under the
                     // enclosing scope.
                     Some(unsafe {
-                        sys::mrb_module_get_under(
-                            interp.mrb_mut(),
-                            scope,
-                            self.name_c_str().as_ptr(),
-                        )
+                        sys::mrb_module_get_under(mrb, scope, self.name_c_str().as_ptr())
                     })
                 }
             } else {
@@ -188,15 +181,15 @@ impl Spec {
             }
         } else {
             let defined = unsafe {
-                let objclass = sys::mrb_sys_obj_value(interp.mrb_mut().object_class as *mut c_void);
-                sys::mrb_const_defined_at(interp.mrb_mut(), objclass, self.sym.get())
+                let objclass = sys::mrb_sys_obj_value(mrb.object_class as *mut c_void);
+                sys::mrb_const_defined_at(mrb, objclass, self.sym)
             };
             if defined == 0 {
                 // Module does NOT exist in root scop.
                 None
             } else {
                 // Module exists in root scope.
-                Some(unsafe { sys::mrb_module_get(interp.mrb_mut(), self.name_c_str().as_ptr()) })
+                Some(unsafe { sys::mrb_module_get(mrb, self.name_c_str().as_ptr()) })
             }
         }
     }

@@ -36,6 +36,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     enumerable::init(interp)?;
     // `Array` depends on: `Enumerable`
     array::mruby::init(interp)?;
+    let _ = interp.eval(&b"[].reverse!"[..])?;
     module::init(interp)?;
     // Some `Exception`s depend on: `attr_accessor` (defined in `Module`)
     exception::init(interp)?;

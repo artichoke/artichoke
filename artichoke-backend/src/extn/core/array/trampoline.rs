@@ -148,7 +148,8 @@ pub fn reverse_bang(interp: &mut Artichoke, ary: Value) -> Result<Value, Excepti
             "can't modify frozen Array",
         )));
     }
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|_| {
+    let array = unsafe { Array::try_from_ruby(interp, &ary) }.map_err(|err| {
+        println!("{:?}", err);
         Fatal::new(
             interp,
             "Unable to extract Rust Array from Ruby Array receiver",

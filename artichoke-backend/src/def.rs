@@ -8,7 +8,6 @@ use crate::class;
 use crate::convert::RustBackedValue;
 use crate::module;
 use crate::sys;
-use crate::Artichoke;
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
@@ -136,10 +135,10 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
-    pub fn rclass(&self, interp: &mut Artichoke) -> Option<*mut sys::RClass> {
+    pub fn rclass(&self, mrb: &mut sys::mrb_state) -> Option<*mut sys::RClass> {
         match self {
-            Self::Class { spec } => spec.rclass(interp),
-            Self::Module { spec } => spec.rclass(interp),
+            Self::Class { spec } => spec.rclass(mrb),
+            Self::Module { spec } => spec.rclass(mrb),
         }
     }
 

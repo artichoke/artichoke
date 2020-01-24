@@ -180,8 +180,10 @@ impl Eval for Artichoke {
             );
             let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
 
+            self.deinitialize_to_cross_into_ffi_boundary();
             let value =
                 sys::mrb_protect(self.mrb_mut(), Some(Protect::run), data, state.as_mut_ptr());
+            self.reinitialize_to_return_from_ffi_boundary();
             if state.assume_init() != 0 {
                 self.mrb_mut().exc = sys::mrb_sys_obj_ptr(value);
             }
