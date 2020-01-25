@@ -4,6 +4,7 @@ use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::ptr::NonNull;
 
 use crate::def::{EnclosingRubyScope, Free, Method};
 use crate::method;
@@ -73,39 +74,48 @@ impl<'a> Builder<'a> {
 
     pub fn define(self) -> Result<(), ArtichokeError> {
         let mrb = self.interp.0.borrow().mrb;
-        let super_class = if let Some(spec) = self.super_class {
-            spec.rclass(self.interp)
-                .ok_or_else(|| ArtichokeError::NotDefined(Cow::Owned(spec.fqname().into_owned())))?
+        let mut super_class = if let Some(spec) = self.super_class {
+            spec.rclass(mrb)
+                .ok_or_else(|| ArtichokeError::NotDefined(spec.fqname().into_owned().into()))?
         } else {
-            unsafe { (*mrb).object_class }
+            let rclass = unsafe { (*mrb).object_class };
+            NonNull::new(rclass).ok_or_else(|| ArtichokeError::NotDefined("Object".into()))?
         };
-        let rclass = if let Some(rclass) = self.spec.rclass(self.interp) {
+        let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
-            let scope = scope.rclass(self.interp).ok_or_else(|| {
-                ArtichokeError::NotDefined(Cow::Owned(scope.fqname().into_owned()))
-            })?;
-            unsafe {
+            let mut scope_rclass = scope
+                .rclass(mrb)
+                .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname().into_owned().into()))?;
+            let rclass = unsafe {
                 sys::mrb_define_class_under(
                     mrb,
-                    scope,
+                    scope_rclass.as_mut(),
                     self.spec.name_c_str().as_ptr(),
-                    super_class,
+                    super_class.as_mut(),
                 )
-            }
+            };
+            NonNull::new(rclass).ok_or_else(|| {
+                ArtichokeError::NotDefined(self.spec.name.as_ref().to_owned().into())
+            })?
         } else {
-            unsafe { sys::mrb_define_class(mrb, self.spec.name_c_str().as_ptr(), super_class) }
+            let rclass = unsafe {
+                sys::mrb_define_class(mrb, self.spec.name_c_str().as_ptr(), super_class.as_mut())
+            };
+            NonNull::new(rclass).ok_or_else(|| {
+                ArtichokeError::NotDefined(self.spec.name.as_ref().to_owned().into())
+            })?
         };
         for method in &self.methods {
             unsafe {
-                method.define(self.interp, rclass)?;
+                method.define(self.interp, rclass.as_mut())?;
             }
         }
         // If a `Spec` defines a `Class` whose isntances own a pointer to a
         // Rust object, mark them as `MRB_TT_DATA`.
         if self.is_mrb_tt_data {
             unsafe {
-                sys::mrb_sys_set_instance_tt(rclass, sys::mrb_vtype::MRB_TT_DATA);
+                sys::mrb_sys_set_instance_tt(rclass.as_mut(), sys::mrb_vtype::MRB_TT_DATA);
             }
         }
         Ok(())
@@ -147,19 +157,17 @@ impl Spec {
     #[must_use]
     pub fn new_instance(&self, interp: &Artichoke, args: &[Value]) -> Option<Value> {
         let mrb = interp.0.borrow().mrb;
-        let rclass = self.rclass(interp)?;
+        let mut rclass = self.rclass(mrb)?;
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
         let arglen = Int::try_from(args.len()).unwrap_or_default();
-        let value = unsafe {
-            sys::mrb_obj_new(mrb, rclass, arglen, args.as_ptr() as *const sys::mrb_value)
-        };
+        let value = unsafe { sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr()) };
         Some(Value::new(interp, value))
     }
 
     #[must_use]
     pub fn value(&self, interp: &Artichoke) -> Option<Value> {
-        let rclass = self.rclass(interp)?;
-        let module = unsafe { sys::mrb_sys_class_value(rclass) };
+        let mut rclass = self.rclass(interp.0.borrow().mrb)?;
+        let module = unsafe { sys::mrb_sys_class_value(rclass.as_mut()) };
         Some(Value::new(interp, module))
     }
 
@@ -195,22 +203,23 @@ impl Spec {
         }
     }
 
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[must_use]
-    pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
-        let mrb = interp.0.borrow().mrb;
+    pub fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         if let Some(ref scope) = self.enclosing_scope {
-            if let Some(scope) = scope.rclass(interp) {
-                if unsafe { sys::mrb_class_defined_under(mrb, scope, self.name_c_str().as_ptr()) }
-                    == 0
-                {
+            if let Some(mut scope) = scope.rclass(mrb) {
+                let defined_under = unsafe {
+                    sys::mrb_class_defined_under(mrb, scope.as_mut(), self.name_c_str().as_ptr())
+                };
+                if defined_under == 0 {
                     // Enclosing scope exists.
                     // Class is not defined under the enclosing scope.
                     None
                 } else {
                     // Enclosing scope exists.
                     // Class is defined under the enclosing scope.
-                    Some(unsafe {
-                        sys::mrb_class_get_under(mrb, scope, self.name_c_str().as_ptr())
+                    NonNull::new(unsafe {
+                        sys::mrb_class_get_under(mrb, scope.as_mut(), self.name_c_str().as_ptr())
                     })
                 }
             } else {
@@ -222,7 +231,7 @@ impl Spec {
             None
         } else {
             // Class exists in root scope.
-            Some(unsafe { sys::mrb_class_get(mrb, self.name_c_str().as_ptr()) })
+            NonNull::new(unsafe { sys::mrb_class_get(mrb, self.name_c_str().as_ptr()) })
         }
     }
 }
@@ -299,7 +308,7 @@ mod tests {
     fn rclass_for_undef_root_class() {
         let interp = crate::interpreter().expect("init");
         let spec = class::Spec::new("Foo", None, None).unwrap();
-        assert!(spec.rclass(&interp).is_none());
+        assert!(spec.rclass(interp.0.borrow().mrb).is_none());
     }
 
     #[test]
@@ -309,7 +318,7 @@ mod tests {
         let scope = borrow.module_spec::<Kernel>().unwrap();
         let spec = class::Spec::new("Foo", Some(EnclosingRubyScope::module(scope)), None).unwrap();
         drop(borrow);
-        assert!(spec.rclass(&interp).is_none());
+        assert!(spec.rclass(interp.0.borrow().mrb).is_none());
     }
 
     #[test]
@@ -317,7 +326,7 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let borrow = interp.0.borrow();
         let spec = borrow.class_spec::<StandardError>().unwrap();
-        assert!(spec.rclass(&interp).is_some());
+        assert!(spec.rclass(interp.0.borrow().mrb).is_some());
     }
 
     #[test]
@@ -326,9 +335,9 @@ mod tests {
         let _ = interp
             .eval(b"module Foo; class Bar; end; end")
             .expect("eval");
-        let spec = module::Spec::new("Foo", None).unwrap();
+        let spec = module::Spec::new(&interp, "Foo", None).unwrap();
         let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::module(&spec)), None).unwrap();
-        assert!(spec.rclass(&interp).is_some());
+        assert!(spec.rclass(interp.0.borrow().mrb).is_some());
     }
 
     #[test]
@@ -339,6 +348,6 @@ mod tests {
             .expect("eval");
         let spec = class::Spec::new("Foo", None, None).unwrap();
         let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::class(&spec)), None).unwrap();
-        assert!(spec.rclass(&interp).is_some());
+        assert!(spec.rclass(interp.0.borrow().mrb).is_some());
     }
 }

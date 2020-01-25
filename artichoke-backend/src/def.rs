@@ -2,13 +2,13 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::hash::{Hash, Hasher};
+use std::ptr::NonNull;
 use std::rc::Rc;
 
 use crate::class;
 use crate::convert::RustBackedValue;
 use crate::module;
 use crate::sys;
-use crate::Artichoke;
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
@@ -136,10 +136,10 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
-    pub fn rclass(&self, interp: &Artichoke) -> Option<*mut sys::RClass> {
+    pub fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         match self {
-            Self::Class { spec } => spec.rclass(interp),
-            Self::Module { spec } => spec.rclass(interp),
+            Self::Class { spec } => spec.rclass(mrb),
+            Self::Module { spec } => spec.rclass(mrb),
         }
     }
 
@@ -159,6 +159,7 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
+    #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {
         match self {
             Self::Class { spec } => spec.fqname(),
@@ -170,6 +171,7 @@ impl EnclosingRubyScope {
 impl Eq for EnclosingRubyScope {}
 
 impl PartialEq for EnclosingRubyScope {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Class { spec: this }, Self::Class { spec: other }) => this == other,
@@ -203,15 +205,19 @@ mod tests {
 
         // Setup: define module and class hierarchy
         let interp = crate::interpreter().expect("init");
-        let root = module::Spec::new("A", None).unwrap();
+        let root = module::Spec::new(&interp, "A", None).unwrap();
         let mod_under_root =
-            module::Spec::new("B", Some(EnclosingRubyScope::module(&root))).unwrap();
+            module::Spec::new(&interp, "B", Some(EnclosingRubyScope::module(&root))).unwrap();
         let cls_under_root =
             class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None).unwrap();
         let cls_under_mod =
             class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None).unwrap();
-        let mod_under_cls =
-            module::Spec::new("E", Some(EnclosingRubyScope::class(&cls_under_root))).unwrap();
+        let mod_under_cls = module::Spec::new(
+            &interp,
+            "E",
+            Some(EnclosingRubyScope::class(&cls_under_root)),
+        )
+        .unwrap();
         let cls_under_cls =
             class::Spec::new("F", Some(EnclosingRubyScope::class(&cls_under_root)), None).unwrap();
         module::Builder::for_spec(&interp, &root).define().unwrap();
@@ -316,7 +322,7 @@ mod tests {
                 .define()
                 .unwrap();
             interp.0.borrow_mut().def_class::<Class>(class);
-            let module = module::Spec::new("DefineMethodTestModule", None).unwrap();
+            let module = module::Spec::new(&interp, "DefineMethodTestModule", None).unwrap();
             module::Builder::for_spec(&interp, &module)
                 .add_method("value", value, sys::mrb_args_none())
                 .unwrap()

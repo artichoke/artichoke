@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::mem;
@@ -58,16 +57,19 @@ where
             }
             slf
         } else {
-            let rclass = slf
-                .map(|obj| unsafe { sys::mrb_sys_class_of_value(mrb, obj) })
-                .or_else(|| spec.rclass(interp))
+            let mut rclass = spec
+                .rclass(mrb)
                 .ok_or_else(|| ArtichokeError::ConvertToRuby {
                     from: Rust::Object,
                     to: Ruby::Object,
                 })?;
             unsafe {
-                let alloc =
-                    sys::mrb_data_object_alloc(mrb, rclass, ptr as *mut c_void, spec.data_type());
+                let alloc = sys::mrb_data_object_alloc(
+                    mrb,
+                    rclass.as_mut(),
+                    ptr as *mut c_void,
+                    spec.data_type(),
+                );
                 sys::mrb_sys_obj_value(alloc as *mut c_void)
             }
         };
@@ -106,12 +108,15 @@ where
         let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
-            .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
+            .ok_or_else(|| ArtichokeError::NotDefined(Self::ruby_type_name().into()))?;
         // Sanity check that the RClass matches.
-        let rclass = spec
-            .rclass(interp)
-            .ok_or_else(|| ArtichokeError::NotDefined(Cow::Borrowed(Self::ruby_type_name())))?;
-        if !ptr::eq(sys::mrb_sys_class_of_value(mrb, slf.inner()), rclass) {
+        let mut rclass = spec
+            .rclass(mrb)
+            .ok_or_else(|| ArtichokeError::NotDefined(Self::ruby_type_name().into()))?;
+        if !ptr::eq(
+            sys::mrb_sys_class_of_value(mrb, slf.inner()),
+            rclass.as_mut(),
+        ) {
             return Err(ArtichokeError::ConvertToRust {
                 from: slf.ruby_type(),
                 to: Rust::Object,
