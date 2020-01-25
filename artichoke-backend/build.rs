@@ -4,8 +4,21 @@
 #![doc(deny(warnings))]
 
 use std::env;
+use std::path::Path;
 use std::str::FromStr;
 use target_lexicon::Triple;
+use walkdir::WalkDir;
+
+fn enumerate_sources(path: &Path, into: &mut Vec<String>) {
+    into.push(path.to_str().unwrap().to_owned());
+    let walker = WalkDir::new(path).into_iter();
+    for entry in walker {
+        if let Ok(entry) = entry {
+            let source = entry.path();
+            into.push(source.to_str().unwrap().to_owned());
+        }
+    }
+}
 
 mod buildpath {
     use std::env;
@@ -23,8 +36,30 @@ mod buildpath {
         use std::path::PathBuf;
         use target_lexicon::Triple;
 
+        pub fn rerun_if_changed(target: &Triple, into: &mut Vec<String>) {
+            into.push(mruby_build_config(target).to_str().unwrap().into());
+            into.push(mruby_bootstrap_gembox().to_str().unwrap().into());
+            into.push(mruby_bootstrap_gembox().to_str().unwrap().into());
+            into.push(mruby_noop().to_str().unwrap().into());
+
+            crate::enumerate_sources(mruby_vendored_include_dir().as_path(), into);
+            crate::enumerate_sources(mruby_vendored_source_dir().as_path(), into);
+            crate::enumerate_sources(ruby_vendored_lib_dir().as_path(), into);
+        }
+
         pub fn ruby_vendored_lib_dir() -> PathBuf {
             super::crate_root().join("vendor").join("ruby").join("lib")
+        }
+
+        pub fn mruby_vendored_include_dir() -> PathBuf {
+            super::crate_root()
+                .join("vendor")
+                .join("mruby")
+                .join("include")
+        }
+
+        pub fn mruby_vendored_source_dir() -> PathBuf {
+            super::crate_root().join("vendor").join("mruby").join("src")
         }
 
         pub fn mruby_build_config(target: &Triple) -> PathBuf {
@@ -82,7 +117,7 @@ mod libmruby {
         mruby_source_dir().join("noop.rb")
     }
 
-    fn ext_source_dir() -> PathBuf {
+    pub fn ext_source_dir() -> PathBuf {
         buildpath::crate_root().join("mruby-sys")
     }
 
@@ -123,11 +158,15 @@ mod libmruby {
         mruby_build_dir().join("sys")
     }
 
+    fn mruby_generated_gembox() -> PathBuf {
+        mruby_source_dir().join("sys.gembox")
+    }
+
     fn bindgen_source_header() -> PathBuf {
         ext_include_dir().join("mruby-sys.h")
     }
 
-    fn staticlib(target: &Triple, mrb_int: &str) {
+    fn generate_mrbgem_config() {
         let mut gembox = String::from("MRuby::GemBox.new { |conf| ");
         for gem in gems() {
             gembox.push_str("conf.gem core: '");
@@ -135,27 +174,29 @@ mod libmruby {
             gembox.push_str("';");
         }
         gembox.push('}');
-        fs::write(mruby_source_dir().join("sys.gembox"), gembox).unwrap();
+        fs::write(mruby_generated_gembox(), gembox).unwrap();
+    }
 
-        // Build the mruby static library with its built in minirake build system.
+    /// Build the mruby static library with its built in minirake build system.
+    fn staticlib(target: &Triple, mrb_int: &str) {
         // minirake dynamically generates some c source files so we can't build
-        // directly with the `cc` crate.
-        println!(
-            "cargo:rerun-if-changed={}",
-            mruby_build_config().to_str().unwrap()
-        );
-        if !Command::new("ruby")
+        // directly with the `cc` crate. We must first hijack the mruby build
+        // system to do the codegen for us.
+        generate_mrbgem_config();
+        let output = Command::new("ruby")
             .arg(mruby_minirake())
             .arg("--jobs")
             .arg(num_cpus::get().to_string())
             .env("MRUBY_BUILD_DIR", mruby_build_dir())
             .env("MRUBY_CONFIG", mruby_build_config())
             .current_dir(mruby_source_dir())
-            .status()
-            .unwrap()
-            .success()
-        {
-            panic!("Failed to build generate mruby C sources");
+            .output()
+            .unwrap();
+        if !output.status.success() {
+            panic!(
+                "minirake executed with failing error: {}",
+                String::from_utf8(output.stderr).unwrap()
+            );
         }
 
         let mut sources = HashMap::new();
@@ -165,30 +206,25 @@ mod libmruby {
             if let Ok(entry) = entry {
                 let source = entry.path();
                 let relative_source = source.strip_prefix(mruby_source_dir()).unwrap();
-                let mut is_buildable = source.strip_prefix(mruby_source_dir().join("src")).is_ok();
-                for gem in gems() {
-                    is_buildable |= source
+                let is_core_source = source.strip_prefix(mruby_source_dir().join("src")).is_ok();
+                let is_required_gem_source = gems().iter().any(|gem| {
+                    source
                         .components()
-                        .any(|component| component == Component::Normal(OsStr::new(gem)));
-                }
-                if relative_source
-                    .components()
-                    .any(|component| component == Component::Normal(OsStr::new("build")))
-                {
-                    // Skip build artifacts generated by minirake invocation that we
-                    // do not intend to build.
-                    is_buildable = false;
-                }
-                if relative_source
-                    .components()
-                    .any(|component| component == Component::Normal(OsStr::new("test")))
-                {
-                    // Skip build artifacts generated by minirake invocation that we
-                    // do not intend to build.
-                    is_buildable = false;
-                }
-                if is_buildable && source.extension().and_then(OsStr::to_str) == Some("c") {
-                    sources.insert(relative_source.to_owned(), source.to_owned());
+                        .any(|component| component == Component::Normal(OsStr::new(gem)))
+                });
+                if is_core_source || is_required_gem_source {
+                    let is_build_source = relative_source
+                        .components()
+                        .any(|component| component == Component::Normal(OsStr::new("build")));
+                    let is_test_source = relative_source
+                        .components()
+                        .any(|component| component == Component::Normal(OsStr::new("test")));
+                    if is_build_source || is_test_source {
+                        continue;
+                    }
+                    if source.extension().and_then(OsStr::to_str) == Some("c") {
+                        sources.insert(relative_source.to_owned(), source.to_owned());
+                    }
                 }
             }
         }
@@ -196,17 +232,14 @@ mod libmruby {
         for entry in walker {
             if let Ok(entry) = entry {
                 let source = entry.path();
-                let mut is_buildable = true;
                 let relative_source = source.strip_prefix(mruby_generated_source_dir()).unwrap();
-                if relative_source
+                let is_test_source = relative_source
                     .components()
-                    .any(|component| component == Component::Normal(OsStr::new("test")))
-                {
-                    // Skip build artifacts generated by minirake invocation that we
-                    // do not intend to build.
-                    is_buildable = false;
+                    .any(|component| component == Component::Normal(OsStr::new("test")));
+                if is_test_source {
+                    continue;
                 }
-                if is_buildable && source.extension().and_then(OsStr::to_str) == Some("c") {
+                if source.extension().and_then(OsStr::to_str) == Some("c") {
                     sources.insert(relative_source.to_owned(), source.to_owned());
                 }
             }
@@ -223,15 +256,17 @@ mod libmruby {
             .define(mrb_int, None)
             .define("DISABLE_GEMS", None);
 
+        // Detect crate feature: artichoke-array
         if env::var("CARGO_FEATURE_ARTICHOKE_ARRAY").is_ok() {
             build.define("ARTICHOKE", None);
         }
 
         for gem in gems() {
-            let mut dir = "include";
-            if gem == "mruby-compiler" {
-                dir = "core";
-            }
+            let dir = if gem == "mruby-compiler" {
+                "core"
+            } else {
+                "include"
+            };
             let gem_include_dir = mruby_source_dir().join("mrbgems").join(gem).join(dir);
             build.include(gem_include_dir);
         }
@@ -250,10 +285,6 @@ mod libmruby {
     }
 
     fn bindgen(target: &Triple, mrb_int: &str) {
-        println!(
-            "cargo:rerun-if-changed={}",
-            bindgen_source_header().to_str().unwrap()
-        );
         let bindings_out_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("ffi.rs");
         let mut bindgen = bindgen::Builder::default()
             .header(bindgen_source_header().to_str().unwrap())
@@ -299,8 +330,8 @@ mod libmruby {
         } else {
             "MRB_INT64"
         };
-        staticlib(&target, mrb_int);
-        bindgen(&target, mrb_int);
+        staticlib(target, mrb_int);
+        bindgen(target, mrb_int);
     }
 }
 
@@ -312,6 +343,10 @@ mod rubylib {
     use std::process::Command;
 
     use super::buildpath;
+
+    pub fn auto_import_root() -> PathBuf {
+        buildpath::crate_root().join("scripts").join("auto_import")
+    }
 
     pub fn generated_package_dir() -> PathBuf {
         PathBuf::from(env::var_os("OUT_DIR").unwrap())
@@ -327,10 +362,15 @@ mod rubylib {
         packages().par_iter().for_each(|package| {
             let sources = package_files(package)
                 .trim()
-                .split("\n")
+                .split('\n')
                 .map(str::trim)
-                .filter(|s| !s.is_empty())
-                .map(String::from)
+                .filter_map(|s| {
+                    if s.is_empty() {
+                        None
+                    } else {
+                        Some(String::from(s))
+                    }
+                })
                 .collect::<Vec<_>>();
             sources.par_iter().for_each(|source| {
                 let source = PathBuf::from(source.to_owned());
@@ -342,15 +382,12 @@ mod rubylib {
                 }
                 fs::copy(source, &out).unwrap();
             });
-            generate_rust_glue(package, sources);
+            generate_rust_glue(package, sources.as_slice());
         });
     }
 
     fn package_files(package: &str) -> String {
-        let script = buildpath::crate_root()
-            .join("scripts")
-            .join("auto_import")
-            .join("get_package_files.rb");
+        let script = auto_import_root().join("get_package_files.rb");
         let output = Command::new("ruby")
             .arg("--disable-did_you_mean")
             .arg("--disable-gems")
@@ -370,15 +407,12 @@ mod rubylib {
     }
 
     // The invoked Ruby script handles writing the output to disk
-    fn generate_rust_glue(package: &str, sources: Vec<String>) {
+    fn generate_rust_glue(package: &str, sources: &[String]) {
         let pkg_dest = generated_package(&package);
         if let Some(parent) = pkg_dest.parent() {
             fs::create_dir_all(parent).unwrap();
         }
-        let script = buildpath::crate_root()
-            .join("scripts")
-            .join("auto_import")
-            .join("auto_import.rb");
+        let script = auto_import_root().join("auto_import.rb");
         let output = Command::new("ruby")
             .arg("--disable-did_you_mean")
             .arg("--disable-gems")
@@ -684,11 +718,23 @@ mod build {
         )
         .unwrap();
     }
+
+    pub fn rerun_if_changed(target: &Triple) {
+        let mut paths = vec![];
+        buildpath::source::rerun_if_changed(target, &mut paths);
+        crate::enumerate_sources(libmruby::ext_source_dir().as_path(), &mut paths);
+        crate::enumerate_sources(rubylib::auto_import_root().as_path(), &mut paths);
+
+        for path in paths {
+            println!("cargo:rerun-if-changed={}", path);
+        }
+    }
 }
 
 fn main() {
     let target = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
     build::clean();
+    build::rerun_if_changed(&target);
     build::setup_build_root(&target);
     libmruby::build(&target);
     rubylib::build();
