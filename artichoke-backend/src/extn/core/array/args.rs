@@ -52,8 +52,7 @@ pub fn element_assignment(
     len: usize,
 ) -> Result<(usize, Option<usize>, Value), Exception> {
     if let Some(elem) = third {
-        let start = first;
-        let start = start.implicitly_convert_to_int()?;
+        let start = first.implicitly_convert_to_int()?;
         let start = if let Ok(start) = usize::try_from(start) {
             start
         } else {
@@ -68,8 +67,7 @@ pub fn element_assignment(
                 )));
             }
         };
-        let len = second;
-        let len = len.implicitly_convert_to_int()?;
+        let len = second.implicitly_convert_to_int()?;
         if let Ok(len) = usize::try_from(len) {
             Ok((start, Some(len), elem))
         } else {
