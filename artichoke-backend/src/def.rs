@@ -159,6 +159,7 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
+    #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {
         match self {
             Self::Class { spec } => spec.fqname(),
@@ -170,6 +171,7 @@ impl EnclosingRubyScope {
 impl Eq for EnclosingRubyScope {}
 
 impl PartialEq for EnclosingRubyScope {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Class { spec: this }, Self::Class { spec: other }) => this == other,

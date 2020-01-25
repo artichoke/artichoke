@@ -20,6 +20,7 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
+    #[must_use]
     pub fn for_spec(interp: &'a Artichoke, spec: &'a Spec) -> Self {
         Self {
             interp,
@@ -135,24 +136,29 @@ impl Spec {
         })
     }
 
+    #[must_use]
     pub fn value(&self, interp: &Artichoke) -> Option<Value> {
         let mut rclass = self.rclass(interp.0.borrow().mrb)?;
         let module = unsafe { sys::mrb_sys_module_value(rclass.as_mut()) };
         Some(Value::new(interp, module))
     }
 
+    #[must_use]
     pub fn name(&self) -> &str {
         self.name.as_ref()
     }
 
+    #[must_use]
     pub fn name_c_str(&self) -> &CStr {
         self.cstring.as_c_str()
     }
 
+    #[must_use]
     pub fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
         self.enclosing_scope.as_deref()
     }
 
+    #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {
         if let Some(scope) = self.enclosing_scope() {
             Cow::Owned(format!("{}::{}", scope.fqname(), self.name()))
@@ -164,6 +170,7 @@ impl Spec {
         }
     }
 
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(mut scope) = scope.rclass(mrb) {
@@ -230,6 +237,7 @@ impl Hash for Spec {
 impl Eq for Spec {}
 
 impl PartialEq for Spec {
+    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }

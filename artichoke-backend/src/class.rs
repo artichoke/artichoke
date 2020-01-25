@@ -203,6 +203,7 @@ impl Spec {
         }
     }
 
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     #[must_use]
     pub fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         if let Some(ref scope) = self.enclosing_scope {
