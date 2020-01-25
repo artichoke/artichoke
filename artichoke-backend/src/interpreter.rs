@@ -1,6 +1,7 @@
 use artichoke_core::eval::Eval;
 use std::cell::RefCell;
 use std::ffi::c_void;
+use std::ptr::NonNull;
 use std::rc::Rc;
 
 use crate::extn;
@@ -17,28 +18,33 @@ use crate::{Artichoke, ArtichokeError, BootError};
 /// [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, BootError> {
     let vfs = Filesystem::new()?;
-    let mrb = unsafe { sys::mrb_open() };
-    if mrb.is_null() {
+    let mut mrb = if let Some(mrb) = NonNull::new(unsafe { sys::mrb_open() }) {
+        mrb
+    } else {
         error!("Failed to allocate mrb interprter");
         return Err(BootError::from(ArtichokeError::New));
-    }
+    };
 
-    let context = unsafe { sys::mrbc_context_new(mrb) };
-    let api = Rc::new(RefCell::new(State::new(mrb, context, vfs)));
+    let context = unsafe { sys::mrbc_context_new(mrb.as_mut()) };
+    let api = Rc::new(RefCell::new(State::new(
+        unsafe { mrb.as_mut() },
+        context,
+        vfs,
+    )));
 
     // Transmute the smart pointer that wraps the API and store it in the user
     // data of the mrb interpreter. After this operation, `Rc::strong_count`
     // will still be 1.
-    let ptr = Rc::into_raw(api);
+    let userdata = Rc::into_raw(api);
     unsafe {
-        (*mrb).ud = ptr as *mut c_void;
+        mrb.as_mut().ud = userdata as *mut c_void;
     }
 
     // Transmute the void * pointer to the Rc back into the Artichoke type. After this
     // operation `Rc::strong_count` will still be 1. This dance is required to
     // avoid leaking Artichoke objects, which will let the `Drop` impl close the mrb
     // context and interpreter.
-    let interp = Artichoke(unsafe { Rc::from_raw(ptr) });
+    let interp = Artichoke(unsafe { Rc::from_raw(userdata) });
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before
@@ -49,11 +55,11 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
     extn::init(&interp, "mruby")?;
 
     // Load mrbgems
+    let arena = interp.create_arena_savepoint();
     unsafe {
-        let arena = interp.create_arena_savepoint();
-        sys::mrb_init_mrbgems(mrb);
-        arena.restore();
+        sys::mrb_init_mrbgems(mrb.as_mut());
     }
+    arena.restore();
 
     debug!("Allocated {}", mrb.debug());
 

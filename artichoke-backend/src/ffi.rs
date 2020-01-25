@@ -4,6 +4,7 @@
 
 use std::cell::RefCell;
 use std::mem;
+use std::ptr::NonNull;
 use std::rc::Rc;
 
 use crate::state::State;
@@ -22,26 +23,29 @@ use crate::{Artichoke, ArtichokeError};
 /// [`Rc::into_raw`] and that the pointer is to a non-free'd
 /// [`Rc`]`<`[`RefCell`]`<`[`State`]`>>`.
 pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeError> {
-    if mrb.is_null() {
+    let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
+        mrb
+    } else {
         error!("Attempted to extract Artichoke from null mrb_state");
         return Err(ArtichokeError::Uninitialized);
-    }
-    let ptr = (*mrb).ud;
-    if ptr.is_null() {
+    };
+    let state = if let Some(state) = NonNull::new(mrb.as_mut().ud) {
+        state.cast::<RefCell<State>>()
+    } else {
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
         return Err(ArtichokeError::Uninitialized);
-    }
+    };
     // Extract the smart pointer that wraps the API from the user data on
     // the mrb interpreter. The `mrb_state` should retain ownership of its
     // copy of the smart pointer.
-    let ud = Rc::from_raw(ptr as *const RefCell<State>);
+    let state = Rc::from_raw(state.as_ref());
     // Clone the API smart pointer and increase its ref count to return a
     // reference to the caller.
-    let api = Rc::clone(&ud);
+    let api = Rc::clone(&state);
     // Forget the transmuted API extracted from the user data to make sure
     // the `mrb_state` maintains ownership and the smart pointer does not
     // get deallocated before `mrb_close` is called.
-    mem::forget(ud);
+    mem::forget(state);
     // At this point, `Rc::strong_count` will be increased by 1.
     trace!(
         "Extracted Artichoke from user data pointer on {}",
@@ -52,13 +56,14 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, Arti
 
 #[cfg(test)]
 mod tests {
+    use std::ptr;
     use std::rc::Rc;
 
     use crate::ArtichokeError;
 
     #[test]
     fn from_user_data_null_pointer() {
-        let err = unsafe { super::from_user_data(std::ptr::null_mut()) };
+        let err = unsafe { super::from_user_data(ptr::null_mut()) };
         assert_eq!(err.err(), Some(ArtichokeError::Uninitialized));
     }
 
@@ -68,7 +73,7 @@ mod tests {
         let mrb = interp.0.borrow().mrb;
         unsafe {
             // fake null user data
-            (*mrb).ud = std::ptr::null_mut();
+            (*mrb).ud = ptr::null_mut();
         }
         let err = unsafe { super::from_user_data(mrb) };
         assert_eq!(err.err(), Some(ArtichokeError::Uninitialized));

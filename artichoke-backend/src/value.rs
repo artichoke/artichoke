@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::fmt;
 use std::mem;
+use std::ptr;
 
 use crate::convert::{Convert, TryConvert};
 use crate::exception::Exception;
@@ -381,9 +382,9 @@ impl Clone for Value {
 impl PartialEq for Value {
     #[must_use]
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(unsafe { sys::mrb_sys_basic_ptr(self.inner()) }, unsafe {
-            sys::mrb_sys_basic_ptr(other.inner())
-        })
+        let this = unsafe { sys::mrb_sys_basic_ptr(self.inner()) };
+        let other = unsafe { sys::mrb_sys_basic_ptr(other.inner()) };
+        ptr::eq(this, other)
     }
 }
 

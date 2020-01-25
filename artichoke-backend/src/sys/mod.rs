@@ -8,6 +8,7 @@
 
 use std::ffi::CStr;
 use std::fmt;
+use std::ptr::NonNull;
 
 mod args;
 #[allow(missing_docs)]
@@ -31,7 +32,10 @@ pub use self::ffi::*;
 #[must_use]
 pub fn mruby_version(verbose: bool) -> String {
     if verbose {
-        // Using the unchecked function is safe because these values are C constants
+        // Safety:
+        //
+        // - `MRUBY_RUBY_ENGINE` is already a `CString` pulled from bindgen.
+        // - `MRUBY_RUBY_VERSION` is already a `CString` pulled from bindgen.
         let engine = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_ENGINE) };
         let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
         format!(
@@ -73,25 +77,22 @@ pub trait DescribeState {
     fn version(&self) -> String;
 }
 
-impl DescribeState for *mut mrb_state {
+impl DescribeState for mrb_state {
+    #[must_use]
     fn info(&self) -> String {
-        if self.is_null() {
-            "".to_owned()
-        } else {
-            format!("{}", unsafe { &**self })
-        }
+        format!("{}", self)
     }
 
+    #[must_use]
     fn debug(&self) -> String {
-        if self.is_null() {
-            "".to_owned()
-        } else {
-            format!("{:?}", unsafe { &**self })
-        }
+        format!("{:?}", self)
     }
 
+    #[must_use]
     fn version(&self) -> String {
-        // Using the unchecked function is safe because these values are C constants
+        // Safety:
+        //
+        // - `MRUBY_RUBY_VERSION` is already a `CString` pulled from bindgen.
         let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
         format!(
             "{} (v{}.{}.{})",
@@ -132,6 +133,83 @@ impl fmt::Display for mrb_state {
             engine.to_string_lossy(),
             version.to_string_lossy(),
         )
+    }
+}
+
+impl DescribeState for &mut mrb_state {
+    #[must_use]
+    fn info(&self) -> String {
+        format!("{}", **self)
+    }
+
+    #[must_use]
+    fn debug(&self) -> String {
+        format!("{:?}", **self)
+    }
+
+    #[must_use]
+    fn version(&self) -> String {
+        (**self).version()
+    }
+}
+
+impl DescribeState for &mrb_state {
+    #[must_use]
+    fn info(&self) -> String {
+        format!("{}", **self)
+    }
+
+    #[must_use]
+    fn debug(&self) -> String {
+        format!("{:?}", **self)
+    }
+
+    #[must_use]
+    fn version(&self) -> String {
+        (**self).version()
+    }
+}
+
+impl DescribeState for NonNull<mrb_state> {
+    #[must_use]
+    fn info(&self) -> String {
+        format!("{}", unsafe { self.as_ref() })
+    }
+
+    #[must_use]
+    fn debug(&self) -> String {
+        format!("{:?}", unsafe { self.as_ref() })
+    }
+
+    #[must_use]
+    fn version(&self) -> String {
+        unsafe { self.as_ref() }.version()
+    }
+}
+
+impl DescribeState for *mut mrb_state {
+    #[must_use]
+    fn info(&self) -> String {
+        NonNull::new(unsafe { &mut **self })
+            .as_ref()
+            .map(DescribeState::info)
+            .unwrap_or_default()
+    }
+
+    #[must_use]
+    fn debug(&self) -> String {
+        NonNull::new(unsafe { &mut **self })
+            .as_ref()
+            .map(DescribeState::debug)
+            .unwrap_or_default()
+    }
+
+    #[must_use]
+    fn version(&self) -> String {
+        NonNull::new(unsafe { &mut **self })
+            .as_ref()
+            .map(DescribeState::version)
+            .unwrap_or_default()
     }
 }
 
