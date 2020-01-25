@@ -18,13 +18,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         Accumulate(Sign, String),
     }
     let radix = if let Some(radix) = radix {
-        if let Ok(radix) = radix.clone().try_into::<Int>() {
-            Some(radix)
-        } else if let Ok(radix) = radix.funcall::<Int>("to_int", &[], None) {
-            Some(radix)
-        } else {
-            None
-        }
+        radix.implicitly_convert_to_int().ok()
     } else {
         None
     };

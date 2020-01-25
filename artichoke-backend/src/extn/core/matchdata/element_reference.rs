@@ -34,28 +34,8 @@ impl<'a> Args<'a> {
         num_captures: usize,
     ) -> Result<Self, Exception> {
         if let Some(len) = len {
-            let elem_type_name = elem.pretty_name();
-            let start = if let Ok(start) = elem.clone().try_into::<Int>() {
-                start
-            } else if let Ok(start) = elem.funcall::<Int>("to_int", &[], None) {
-                start
-            } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!("no implicit conversion of {} into Integer", elem_type_name),
-                )));
-            };
-            let len_type_name = len.pretty_name();
-            let len = if let Ok(len) = len.clone().try_into::<Int>() {
-                len
-            } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
-                len
-            } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!("no implicit conversion of {} into Integer", len_type_name),
-                )));
-            };
+            let start = elem.implicitly_convert_to_int()?;
+            let len = len.implicitly_convert_to_int()?;
             if let Ok(len) = usize::try_from(len) {
                 Ok(Self::StartLen(start, len))
             } else {
@@ -63,14 +43,12 @@ impl<'a> Args<'a> {
             }
         } else {
             let name = elem.pretty_name();
-            if let Ok(index) = elem.clone().try_into::<Int>() {
+            if let Ok(index) = elem.implicitly_convert_to_int() {
                 Ok(Self::Index(index))
             } else if let Ok(name) = elem.clone().try_into::<&[u8]>() {
                 Ok(Self::Name(name))
             } else if let Ok(name) = elem.funcall::<&[u8]>("to_str", &[], None) {
                 Ok(Self::Name(name))
-            } else if let Ok(index) = elem.funcall::<Int>("to_int", &[], None) {
-                Ok(Self::Index(index))
             } else {
                 let rangelen = Int::try_from(num_captures)
                     .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;

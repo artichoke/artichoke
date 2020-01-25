@@ -54,32 +54,6 @@ impl Array {
         let result = if let Some(first) = first {
             if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
                 ary.borrow().0.clone()
-            } else if let Ok(len) = first.clone().try_into::<Int>() {
-                let len = usize::try_from(len)
-                    .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
-                if let Some(block) = block {
-                    if second.is_some() {
-                        interp
-                            .warn(&b"warning: block supersedes default value argument"[..])
-                            .map_err(|_| Fatal::new(interp, "Could not emit warning"))?;
-                    }
-                    let mut buffer = Vec::with_capacity(len);
-                    for idx in 0..len {
-                        let idx = Int::try_from(idx).map_err(|_| {
-                            RangeError::new(interp, "bignum too big to convert into `long'")
-                        })?;
-                        let idx = interp.convert(idx);
-                        let elem = block.yield_arg::<Value>(interp, &idx)?;
-                        buffer.push(elem);
-                    }
-                    InlineBuffer::from(buffer)
-                } else if let Some(_default) = second {
-                    // backend::repeated::value(default, len)
-                    unimplemented!();
-                } else {
-                    // backend::fixed::hole(len)
-                    unimplemented!();
-                }
             } else if let Ok(true) = first.respond_to("to_ary") {
                 let ruby_type = first.pretty_name();
                 if let Ok(other) = first.funcall("to_ary", &[], None) {
@@ -102,7 +76,8 @@ impl Array {
                         "Error calling #to_a even though it exists",
                     )));
                 }
-            } else if let Ok(len) = first.funcall::<Int>("to_int", &[], None) {
+            } else {
+                let len = first.implicitly_convert_to_int()?;
                 let len = usize::try_from(len)
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
                 if let Some(block) = block {
@@ -129,14 +104,6 @@ impl Array {
                     // backend::fixed::hole(len)
                     unimplemented!();
                 }
-            } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!(
-                        "no implicit conversion of {} into Integer",
-                        first.pretty_name()
-                    ),
-                )));
             }
         } else if second.is_some() {
             return Err(Exception::from(Fatal::new(

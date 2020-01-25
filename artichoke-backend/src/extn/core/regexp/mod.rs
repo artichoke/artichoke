@@ -413,19 +413,7 @@ impl Regexp {
             return Ok(interp.convert(false));
         };
         let pos = if let Some(pos) = pos {
-            if let Ok(pos) = pos.clone().try_into::<Int>() {
-                Some(pos)
-            } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
-                Some(pos)
-            } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!(
-                        "no implicit conversion of {} into Integer",
-                        pos.pretty_name()
-                    ),
-                )));
-            }
+            Some(pos.implicitly_convert_to_int()?)
         } else {
             None
         };
@@ -464,19 +452,7 @@ impl Regexp {
             return Ok(matchdata);
         };
         let pos = if let Some(pos) = pos {
-            if let Ok(pos) = pos.clone().try_into::<Int>() {
-                Some(pos)
-            } else if let Ok(pos) = pos.funcall::<Int>("to_int", &[], None) {
-                Some(pos)
-            } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!(
-                        "no implicit conversion of {} into Integer",
-                        pos.pretty_name()
-                    ),
-                )));
-            }
+            Some(pos.implicitly_convert_to_int()?)
         } else {
             None
         };
