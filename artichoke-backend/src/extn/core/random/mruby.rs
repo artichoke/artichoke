@@ -34,15 +34,15 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
     let default = random::default();
     let default = default.try_into_ruby(interp, None)?;
     let borrow = interp.0.borrow();
-    let rclass = borrow
+    let mut rclass = borrow
         .class_spec::<random::Random>()
-        .and_then(|spec| spec.rclass(interp))
+        .and_then(|spec| spec.rclass(interp.0.borrow().mrb))
         .ok_or(ArtichokeError::New)?;
     let mrb = borrow.mrb;
     unsafe {
         sys::mrb_define_const(
             mrb,
-            rclass,
+            rclass.as_mut(),
             b"DEFAULT\0".as_ptr() as *const i8,
             default.inner(),
         );
