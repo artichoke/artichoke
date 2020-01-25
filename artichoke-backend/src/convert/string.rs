@@ -10,8 +10,7 @@ impl Convert<String, Value> for Artichoke {
     fn convert(&self, value: String) -> Value {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        let result: Value = self.convert(value.as_bytes());
-        result
+        self.convert(value.as_bytes())
     }
 }
 
@@ -19,8 +18,7 @@ impl Convert<&str, Value> for Artichoke {
     fn convert(&self, value: &str) -> Value {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        let result: Value = self.convert(value.as_bytes());
-        result
+        self.convert(value.as_bytes())
     }
 }
 

@@ -88,21 +88,19 @@ macro_rules! hash_to_ruby {
                 let pairs = value
                     .into_iter()
                     .map(|(key, value)| {
-                        let key: Value = self.convert(key);
-                        let value: Value = self.convert(value);
+                        let key = self.convert(key);
+                        let value = self.convert(value);
                         (key, value)
                     })
-                    .collect::<Vec<_>>();
-                let result: Value = self.convert(pairs);
-                result
+                    .collect::<Vec<(Value, Value)>>();
+                self.convert(pairs)
             }
         }
 
         impl<'a> Convert<HashMap<$key, $value>, Value> for Artichoke {
             fn convert(&self, value: HashMap<$key, $value>) -> Value {
                 let pairs = value.into_iter().collect::<Vec<($key, $value)>>();
-                let result: Value = self.convert(pairs);
-                result
+                self.convert(pairs)
             }
         }
     };
@@ -112,13 +110,12 @@ macro_rules! hash_to_ruby {
                 let pairs = value
                     .into_iter()
                     .map(|(key, value)| {
-                        let key: Value = self.convert(key);
-                        let value: Value = self.convert(value);
+                        let key = self.convert(key);
+                        let value = self.convert(value);
                         (key, value)
                     })
-                    .collect::<Vec<_>>();
-                let result: Value = self.convert(pairs);
-                result
+                    .collect::<Vec<(Value, Value)>>();
+                self.convert(pairs)
             }
         }
     };
@@ -578,7 +575,7 @@ mod tests {
             (interp.convert(7), interp.convert(8)),
         ];
 
-        let value: Value = interp.convert(map);
+        let value = Convert::<_, Value>::convert(&interp, map);
         assert_eq!(value.to_s(), b"{1=>2, 7=>8}");
 
         let pairs = value.try_into::<Vec<(Value, Value)>>().expect("convert");

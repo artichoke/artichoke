@@ -182,11 +182,11 @@ mod tests {
     #[test]
     fn fixnum_to_usize() {
         let interp = crate::interpreter().expect("init");
-        let value: Value = interp.convert(100);
+        let value = Convert::<_, Value>::convert(&interp, 100);
         let value = value.try_into::<usize>();
         let expected = Ok(100);
         assert_eq!(value, expected);
-        let value: Value = interp.convert(-100);
+        let value = Convert::<_, Value>::convert(&interp, -100);
         let value = value.try_into::<usize>();
         let expected = Err(ArtichokeError::ConvertToRust {
             from: Ruby::Fixnum,
