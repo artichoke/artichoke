@@ -126,10 +126,10 @@ macro_rules! ruby_to_hash {
         impl<'a> TryConvert<Value, Vec<($key, $value)>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Vec<($key, $value)>, ArtichokeError> {
                 let pairs = value.try_into::<Vec<(Value, Value)>>()?;
-                let mut vec = vec![];
+                let mut vec = Vec::with_capacity(pairs.len());
                 for (key, value) in pairs.into_iter() {
-                    let key = key.try_into::<$key>()?;
-                    let value = value.try_into::<$value>()?;
+                    let key = self.try_convert(key)?;
+                    let value = self.try_convert(value)?;
                     vec.push((key, value));
                 }
                 Ok(vec)
@@ -143,7 +143,7 @@ macro_rules! ruby_to_hash {
                 &self,
                 value: Value,
             ) -> Result<HashMap<$key, $value, S>, ArtichokeError> {
-                let pairs = value.try_into::<Vec<($key, $value)>>()?;
+                let pairs = TryConvert::<_, Vec<($key, $value)>>::try_convert(self, value)?;
                 let mut hash = HashMap::default();
                 for (key, value) in pairs {
                     hash.insert(key, value);
@@ -155,11 +155,11 @@ macro_rules! ruby_to_hash {
     (no_hash_map | $key:ty => $value:ty) => {
         impl<'a> TryConvert<Value, Vec<($key, $value)>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Vec<($key, $value)>, ArtichokeError> {
-                let pairs = value.try_into::<Vec<(Value, Value)>>()?;
-                let mut vec = vec![];
+                let pairs = TryConvert::<_, Vec<(Value, Value)>>::try_convert(self, value)?;
+                let mut vec = Vec::<($key, $value)>::with_capacity(pairs.len());
                 for (key, value) in pairs.into_iter() {
-                    let key = key.try_into::<$key>()?;
-                    let value = value.try_into::<$value>()?;
+                    let key = self.try_convert(key)?;
+                    let value = self.try_convert(value)?;
                     vec.push((key, value));
                 }
                 Ok(vec)
