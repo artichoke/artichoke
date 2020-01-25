@@ -16,7 +16,6 @@
 
 use artichoke_backend::convert::Convert;
 use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_backend::value::Value;
 use artichoke_core::value::Value as _;
 
 mod leak;
@@ -27,7 +26,7 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 30;
 #[test]
 fn funcall_arena() {
     let interp = artichoke_backend::interpreter().expect("init");
-    let s: Value = interp.convert("a".repeat(1024 * 1024));
+    let s = interp.convert("a".repeat(1024 * 1024));
 
     leak::Detector::new("ValueLike::funcall", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));

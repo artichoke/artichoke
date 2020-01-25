@@ -532,7 +532,7 @@ mod tests {
     fn to_s_fixnum() {
         let interp = crate::interpreter().expect("init");
 
-        let value: Value = interp.convert(255);
+        let value = Convert::<_, Value>::convert(&interp, 255);
         let string = value.to_s();
         assert_eq!(string, b"255");
     }
@@ -541,7 +541,7 @@ mod tests {
     fn debug_fixnum() {
         let interp = crate::interpreter().expect("init");
 
-        let value: Value = interp.convert(255);
+        let value = Convert::<_, Value>::convert(&interp, 255);
         let debug = value.to_s_debug();
         assert_eq!(debug, "Fixnum<255>");
     }
@@ -550,7 +550,7 @@ mod tests {
     fn inspect_fixnum() {
         let interp = crate::interpreter().expect("init");
 
-        let value: Value = interp.convert(255);
+        let value = Convert::<_, Value>::convert(&interp, 255);
         let debug = value.inspect();
         assert_eq!(debug, b"255");
     }
@@ -643,7 +643,7 @@ mod tests {
         assert!(!live.is_dead());
         // Fixnums are immediate even if they are created directly without an
         // interpreter.
-        let fixnum: Value = interp.convert(99);
+        let fixnum = Convert::<_, Value>::convert(&interp, 99);
         assert!(!fixnum.is_dead());
     }
 
