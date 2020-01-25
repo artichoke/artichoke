@@ -18,28 +18,8 @@ pub fn element_reference(
     ary_len: usize,
 ) -> Result<ElementReference, Exception> {
     if let Some(len) = len {
-        let start = if let Ok(start) = elem.clone().try_into::<Int>() {
-            start
-        } else if let Ok(start) = elem.funcall::<Int>("to_int", &[], None) {
-            start
-        } else {
-            let elem_type_name = elem.pretty_name();
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("no implicit conversion of {} into Integer", elem_type_name),
-            )));
-        };
-        let len = if let Ok(len) = len.clone().try_into::<Int>() {
-            len
-        } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
-            len
-        } else {
-            let len_type_name = len.pretty_name();
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("no implicit conversion of {} into Integer", len_type_name),
-            )));
-        };
+        let start = elem.implicitly_convert_to_int()?;
+        let len = len.implicitly_convert_to_int()?;
         if let Ok(len) = usize::try_from(len) {
             Ok(ElementReference::StartLen(start, len))
         } else {
@@ -47,9 +27,7 @@ pub fn element_reference(
         }
     } else {
         let name = elem.pretty_name();
-        if let Ok(index) = elem.clone().try_into::<Int>() {
-            Ok(ElementReference::Index(index))
-        } else if let Ok(index) = elem.funcall::<Int>("to_int", &[], None) {
+        if let Ok(index) = elem.implicitly_convert_to_int() {
             Ok(ElementReference::Index(index))
         } else {
             let rangelen = Int::try_from(ary_len)
@@ -74,18 +52,7 @@ pub fn element_assignment(
     len: usize,
 ) -> Result<(usize, Option<usize>, Value), Exception> {
     if let Some(elem) = third {
-        let start = first;
-        let start_type_name = start.pretty_name();
-        let start = if let Ok(start) = start.clone().try_into::<Int>() {
-            start
-        } else if let Ok(start) = start.funcall::<Int>("to_int", &[], None) {
-            start
-        } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("no implicit conversion of {} into Integer", start_type_name),
-            )));
-        };
+        let start = first.implicitly_convert_to_int()?;
         let start = if let Ok(start) = usize::try_from(start) {
             start
         } else {
@@ -100,42 +67,16 @@ pub fn element_assignment(
                 )));
             }
         };
-        let len = second;
-        let len_type_name = len.pretty_name();
-        let len = if let Ok(len) = len.clone().try_into::<Int>() {
-            len
-        } else if let Ok(len) = len.funcall::<Int>("to_int", &[], None) {
-            len
-        } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("no implicit conversion of {} into Integer", len_type_name),
-            )));
-        };
-        if let Ok(len) = usize::try_from(len) {
-            Ok((start, Some(len), elem))
+        let slice_len = second.implicitly_convert_to_int()?;
+        if let Ok(slice_len) = usize::try_from(slice_len) {
+            Ok((start, Some(slice_len), elem))
         } else {
             Err(Exception::from(IndexError::new(
                 interp,
-                format!("negative length ({})", len),
+                format!("negative length ({})", slice_len),
             )))
         }
-    } else if let Ok(index) = first.clone().try_into::<Int>() {
-        if let Ok(index) = usize::try_from(index) {
-            Ok((index, None, second))
-        } else {
-            let index = usize::try_from(-index)
-                .map_err(|_| Fatal::new(interp, "Positive Int must be usize"))?;
-            if index < len {
-                Ok((len - index, None, second))
-            } else {
-                Err(Exception::from(IndexError::new(
-                    interp,
-                    format!("index {} too small for array; minimum: -{}", index, len),
-                )))
-            }
-        }
-    } else if let Ok(index) = first.funcall::<Int>("to_int", &[], None) {
+    } else if let Ok(index) = first.implicitly_convert_to_int() {
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
@@ -170,19 +111,7 @@ pub fn element_assignment(
                         "Unable to extract first from Range",
                     )));
                 };
-                let start = if let Ok(start) = start.clone().try_into::<Int>() {
-                    start
-                } else if let Ok(start) = start.funcall::<Int>("to_int", &[], None) {
-                    start
-                } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        format!(
-                            "no implicit conversion of {} into Integer",
-                            start.pretty_name()
-                        ),
-                    )));
-                };
+                let start = start.implicitly_convert_to_int()?;
                 let end = if let Ok(end) = first.funcall::<Value>("last", &[], None) {
                     end
                 } else {
@@ -191,19 +120,7 @@ pub fn element_assignment(
                         "Unable to extract first from Range",
                     )));
                 };
-                let end = if let Ok(end) = end.clone().try_into::<Int>() {
-                    end
-                } else if let Ok(end) = end.funcall::<Int>("to_int", &[], None) {
-                    end
-                } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        format!(
-                            "no implicit conversion of {} into Integer",
-                            end.pretty_name()
-                        ),
-                    )));
-                };
+                let end = end.implicitly_convert_to_int()?;
                 if start + (end - start) < 0 {
                     return Err(Exception::from(RangeError::new(
                         interp,

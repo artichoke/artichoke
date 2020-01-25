@@ -14,18 +14,12 @@ pub enum Args<'a> {
 
 impl<'a> Args<'a> {
     pub fn extract(interp: &Artichoke, elem: Value) -> Result<Self, Exception> {
-        let name = elem.pretty_name();
-        if let Ok(index) = elem.clone().try_into::<Int>() {
-            Ok(Self::Index(index))
-        } else if let Ok(name) = elem.funcall::<&str>("to_str", &[], None) {
+        let _ = interp;
+        if let Ok(name) = elem.funcall::<&str>("to_str", &[], None) {
             Ok(Self::Name(name))
-        } else if let Ok(index) = elem.funcall::<Int>("to_int", &[], None) {
-            Ok(Self::Index(index))
         } else {
-            Err(Exception::from(TypeError::new(
-                interp,
-                format!("no implicit conversion of {} into Integer", name),
-            )))
+            let index = elem.implicitly_convert_to_int()?;
+            Ok(Self::Index(index))
         }
     }
 }
