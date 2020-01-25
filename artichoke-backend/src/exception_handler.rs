@@ -35,7 +35,7 @@ impl ExceptionHandler for Artichoke {
         //
         // - Artichoke is guaranteed to be constructed with a non-null `mrb`
         //   pointer by `ffi::from_user_data` and `interpreter::interpreter`.
-        let exc = mem::replace(&mut unsafe { (*self.0.borrow().mrb).exc }, ptr::null_mut());
+        let exc = mem::replace(unsafe { &mut (*self.0.borrow().mrb).exc }, ptr::null_mut());
         if let Some(exc) = NonNull::new(exc) {
             // Generate exception metadata in by executing the Ruby code:
             //
