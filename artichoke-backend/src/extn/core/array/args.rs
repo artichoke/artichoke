@@ -67,13 +67,13 @@ pub fn element_assignment(
                 )));
             }
         };
-        let len = second.implicitly_convert_to_int()?;
-        if let Ok(len) = usize::try_from(len) {
-            Ok((start, Some(len), elem))
+        let slice_len = second.implicitly_convert_to_int()?;
+        if let Ok(slice_len) = usize::try_from(slice_len) {
+            Ok((start, Some(slice_len), elem))
         } else {
             Err(Exception::from(IndexError::new(
                 interp,
-                format!("negative length ({})", len),
+                format!("negative length ({})", slice_len),
             )))
         }
     } else if let Ok(index) = first.implicitly_convert_to_int() {
