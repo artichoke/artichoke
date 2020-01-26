@@ -2,12 +2,6 @@ use std::any::Any;
 
 use crate::extn::prelude::*;
 
-pub mod aggregate;
-pub mod buffer;
-pub mod fixed;
-pub mod integer_range;
-pub mod repeated;
-
 pub trait ArrayType: Any {
     fn box_clone(&self) -> Box<dyn ArrayType>;
 
