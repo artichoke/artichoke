@@ -1,22 +1,13 @@
-use std::collections::HashMap;
+use std::borrow::Cow;
 
 use crate::extn::prelude::*;
 
 pub mod backend;
 pub mod mruby;
 
-pub trait Env {
-    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Exception>;
-    fn put(
-        &mut self,
-        interp: &Artichoke,
-        name: &[u8],
-        value: Option<&[u8]>,
-    ) -> Result<(), Exception>;
-    fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception>;
-}
+use backend::EnvType;
 
-pub struct Environ(Box<dyn Env>);
+pub struct Environ(Box<dyn EnvType>);
 
 impl RustBackedValue for Environ {
     #[must_use]
@@ -57,8 +48,9 @@ pub fn element_reference(interp: &Artichoke, obj: Value, name: &Value) -> Result
             format!("no implicit conversion of {} into String", ruby_type),
         )));
     };
-    let result = obj.borrow().0.get(interp, name)?;
-    Ok(result)
+    let env = obj.borrow();
+    let result = env.0.get(interp, name)?;
+    Ok(interp.convert(result.as_ref().map(Cow::as_ref)))
 }
 
 pub fn element_assignment(
