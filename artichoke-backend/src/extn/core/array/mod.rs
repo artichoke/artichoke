@@ -75,9 +75,7 @@ impl Array {
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
                 if let Some(block) = block {
                     if second.is_some() {
-                        interp
-                            .warn(&b"warning: block supersedes default value argument"[..])
-                            .map_err(|_| Fatal::new(interp, "Could not emit warning"))?;
+                        interp.warn(&b"warning: block supersedes default value argument"[..])?;
                     }
                     let mut buffer = Vec::with_capacity(len);
                     for idx in 0..len {
