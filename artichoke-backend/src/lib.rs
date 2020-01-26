@@ -140,6 +140,18 @@ use crate::exception::Exception;
 pub struct Artichoke(pub Rc<RefCell<state::State>>); // TODO: this should not be pub
 
 impl Artichoke {
+    /// Consume an interpreter and return the pointer to the underlying
+    /// [`sys::mrb_state`].
+    ///
+    /// This function does not free any interpreter resources. Its intended use
+    /// is to prepare the interpreter to cross over an FFI boundary.
+    ///
+    /// This is an associated function and must be called as
+    /// `Artichoke::into_raw(interp)`.
+    pub unsafe fn into_raw(interp: Self) -> *mut sys::mrb_state {
+        interp.0.borrow_mut().mrb
+    }
+
     /// Consume an interpreter and free all
     /// [live](gc::MrbGarbageCollection::live_object_count)
     /// [`Value`](value::Value)s.
