@@ -55,10 +55,13 @@ macro_rules! global_const {
 }
 
 pub fn init(interp: &Artichoke, backend_name: &str) -> InitializeResult<()> {
-    let engine_name = format!("{}-{}", interp.convert(RUBY_ENGINE), backend_name);
+    let mut engine = String::from(RUBY_ENGINE);
+    engine.push('-');
+    engine.push_str(backend_name);
+
     global_const!(interp, RUBY_COPYRIGHT);
     global_const!(interp, RUBY_DESCRIPTION);
-    global_const!(interp, RUBY_ENGINE, engine_name);
+    global_const!(interp, RUBY_ENGINE, engine);
     global_const!(interp, RUBY_ENGINE_VERSION);
     global_const!(interp, RUBY_PATCHLEVEL as Int);
     global_const!(interp, RUBY_PLATFORM);
