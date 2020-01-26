@@ -74,11 +74,6 @@ impl From<Box<dyn RubyException>> for Exception {
 /// the closest [`sys::mrb_protect`] landing pad, this function should only be
 /// called in the entrypoint into Rust from mruby.
 pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
-    // Ensure the borrow is out of scope by the time we eval code since
-    // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-    // get access to the underlying `ArtichokeState`.
-    let mrb = interp.0.borrow().mrb;
-
     let exc = if let Some(exc) = exception.as_mrb_value(&interp) {
         exc
     } else {
@@ -88,7 +83,7 @@ pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
     // `mrb_sys_raise` will call longjmp which will unwind the stack.
     // Any non-`Copy` objects that we haven't cleaned up at this point will
     // leak, so drop everything.
-    drop(interp);
+    let mrb = Artichoke::into_raw(interp);
     drop(exception);
 
     sys::mrb_exc_raise(mrb, exc);
