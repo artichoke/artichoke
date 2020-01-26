@@ -1,6 +1,7 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 
-use crate::extn::core::env::Env;
+use crate::extn::core::env::backend::EnvType;
 use crate::extn::prelude::*;
 
 #[derive(Debug, Default, Clone)]
@@ -15,8 +16,12 @@ impl Memory {
     }
 }
 
-impl Env for Memory {
-    fn get(&self, interp: &Artichoke, name: &[u8]) -> Result<Value, Exception> {
+impl EnvType for Memory {
+    fn get<'a>(
+        &'a self,
+        interp: &Artichoke,
+        name: &[u8],
+    ) -> Result<Option<Cow<'a, [u8]>>, Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -27,20 +32,20 @@ impl Env for Memory {
         if name.is_empty() {
             // MRI accepts empty names on get and should always return `nil`
             // since empty names are invalid at the OS level.
-            Ok(interp.convert(None::<Value>))
-        } else if memchr::memchr(b'\0', name).is_some() {
-            Err(Exception::from(ArgumentError::new(
+            return Ok(None);
+        }
+        if memchr::memchr(b'\0', name).is_some() {
+            Err(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
-            )))
-        } else if memchr::memchr(b'=', name).is_some() {
+            ))?
+        }
+        if memchr::memchr(b'=', name).is_some() {
             // MRI accepts names containing '=' on get and should always return
             // `nil` since these names are invalid at the OS level.
-            Ok(interp.convert(None::<Value>))
-        } else if let Some(value) = self.store.get(name) {
-            Ok(interp.convert(value.clone()))
+            Ok(None)
         } else {
-            Ok(interp.convert(None::<Value>))
+            Ok(self.store.get(name).map(Cow::from))
         }
     }
 
@@ -59,31 +64,30 @@ impl Env for Memory {
         // NUL character.
         if name.is_empty() {
             // TODO: This should raise `Errno::EINVAL`.
-            Err(Exception::from(ArgumentError::new(
-                interp,
-                "Invalid argument - setenv()",
-            )))
-        } else if memchr::memchr(b'\0', name).is_some() {
-            Err(Exception::from(ArgumentError::new(
+            Err(ArgumentError::new(interp, "Invalid argument - setenv()"))?
+        }
+        if memchr::memchr(b'\0', name).is_some() {
+            Err(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
-            )))
-        } else if memchr::memchr(b'=', name).is_some() {
+            ))?
+        }
+        if memchr::memchr(b'=', name).is_some() {
             let mut message = b"Invalid argumen - setenv(".to_vec();
             message.extend(name.to_vec());
             message.push(b')');
             // TODO: This should raise `Errno::EINVAL`.
-            Err(Exception::from(ArgumentError::new_raw(interp, message)))
-        } else if let Some(value) = value {
+            Err(ArgumentError::new_raw(interp, message))?
+        }
+        if let Some(value) = value {
             if memchr::memchr(b'\0', value).is_some() {
-                Err(Exception::from(ArgumentError::new(
+                Err(ArgumentError::new(
                     interp,
                     "bad environment variable value: contains null byte",
-                )))
-            } else {
-                self.store.insert(name.to_vec(), value.to_vec());
-                Ok(())
+                ))?
             }
+            self.store.insert(name.to_vec(), value.to_vec());
+            Ok(())
         } else {
             self.store.remove(name);
             Ok(())
@@ -98,10 +102,8 @@ impl Env for Memory {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::value::Value as _;
-
     use crate::extn::core::env::backend::memory::Memory;
-    use crate::extn::core::env::Env;
+    use crate::extn::core::env::backend::EnvType;
 
     #[test]
     fn test_hashmap_backend_set_get() {
@@ -120,7 +122,7 @@ mod tests {
         // then
         assert_eq!(
             Some(env_value.as_bytes()),
-            value.unwrap().try_into::<Option<&[u8]>>().unwrap()
+            value.unwrap().map(|value| value.into_owned()).as_deref()
         );
     }
 
@@ -140,7 +142,7 @@ mod tests {
         let value = backend.get(&interp, env_name.as_bytes());
 
         // then
-        assert_eq!(None, value.unwrap().try_into::<Option<&[u8]>>().unwrap());
+        assert!(value.unwrap().is_none());
     }
 
     #[test]
