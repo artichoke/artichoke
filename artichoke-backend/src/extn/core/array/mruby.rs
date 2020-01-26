@@ -64,8 +64,14 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
-    let result = array::trampoline::len(&interp, ary)
-        .map(|len| sys::mrb_int::try_from(len).unwrap_or_default());
+    let result = array::trampoline::len(&interp, ary).and_then(|len| {
+        sys::mrb_int::try_from(len).map_err(|_| {
+            Exception::from(Fatal::new(
+                &interp,
+                "Array length does not fit in mruby Integer max",
+            ))
+        })
+    });
     match result {
         Ok(len) => interp.convert(len).inner(),
         Err(exception) => exception::raise(interp, exception),
