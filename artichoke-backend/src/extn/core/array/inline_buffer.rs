@@ -118,7 +118,10 @@ impl ArrayType for InlineBuffer {
         if let Ok(buffer) = with.downcast_ref::<Self>() {
             Self::set_slice(self, interp, start, drain, buffer)
         } else {
-            unimplemented!("Set slice on InlineBuffer with other ArrayType");
+            Err(Exception::from(Fatal::new(
+                interp,
+                "set slice on InlineBuffer with unknown ArrayType",
+            )))
         }
     }
 
@@ -132,7 +135,10 @@ impl ArrayType for InlineBuffer {
         if let Ok(buffer) = other.downcast_ref::<Self>() {
             Self::concat(self, interp, buffer)
         } else {
-            unimplemented!("Set slice on InlineBuffer with other ArrayType");
+            Err(Exception::from(Fatal::new(
+                interp,
+                "concat on InlineBuffer with unknown ArrayType",
+            )))
         }
     }
 
