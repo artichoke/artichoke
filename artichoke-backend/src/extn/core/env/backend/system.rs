@@ -34,10 +34,10 @@ impl EnvType for System {
             return Ok(None);
         }
         if memchr::memchr(b'\0', name).is_some() {
-            Err(ArgumentError::new(
+            return Err(Exception::from(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
-            ))?
+            )));
         }
         if memchr::memchr(b'=', name).is_some() {
             // MRI accepts names containing '=' on get and should always return
@@ -71,27 +71,30 @@ impl EnvType for System {
         // NUL character.
         if name.is_empty() {
             // TODO: This should raise `Errno::EINVAL`.
-            Err(ArgumentError::new(interp, "Invalid argument - setenv()"))?
+            return Err(Exception::from(ArgumentError::new(
+                interp,
+                "Invalid argument - setenv()",
+            )));
         }
         if memchr::memchr(b'\0', name).is_some() {
-            Err(ArgumentError::new(
+            return Err(Exception::from(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
-            ))?
+            )));
         }
         if memchr::memchr(b'=', name).is_some() {
             let mut message = b"Invalid argumen - setenv(".to_vec();
             message.extend(name.to_vec());
             message.push(b')');
             // TODO: This should raise `Errno::EINVAL`.
-            Err(ArgumentError::new_raw(interp, message))?
+            return Err(Exception::from(ArgumentError::new_raw(interp, message)));
         }
         if let Some(value) = value {
             if memchr::memchr(b'\0', value).is_some() {
-                Err(ArgumentError::new(
+                return Err(Exception::from(ArgumentError::new(
                     interp,
                     "bad environment variable value: contains null byte",
-                ))?
+                )));
             }
             std::env::set_var(
                 fs::bytes_to_osstr(interp, name)?,
