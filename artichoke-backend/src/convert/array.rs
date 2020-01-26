@@ -1,4 +1,3 @@
-use artichoke_core::value::Value as _;
 use std::convert::TryFrom;
 
 use crate::convert::{Convert, TryConvert};
@@ -117,11 +116,10 @@ macro_rules! ruby_to_array {
     ($elem:ty) => {
         impl<'a> TryConvert<Value, Vec<$elem>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Vec<$elem>, ArtichokeError> {
-                let elems: Vec<Value> = self.try_convert(value)?;
+                let elems = TryConvert::<_, Vec<Value>>::try_convert(self, value)?;
                 let mut vec = Vec::<$elem>::with_capacity(elems.len());
                 for elem in elems.into_iter() {
-                    let elem = elem.try_into::<$elem>()?;
-                    vec.push(elem);
+                    vec.push(self.try_convert(elem)?);
                 }
                 Ok(vec)
             }

@@ -38,7 +38,6 @@ impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
         let mrb = self.0.borrow().mrb;
         match value.ruby_type() {
             Ruby::Symbol => {
-                let mrb = self.0.borrow().mrb;
                 // mruby does not expose an API to get the raw byte contents of a
                 // `Symbol`. For non-literal symbols and non-ASCII symbols,
                 // `sys::mrb_sys_symbol_name` round trips through a `String`

@@ -1,4 +1,3 @@
-use artichoke_core::value::Value as _;
 use std::str;
 
 use crate::convert::{Convert, TryConvert};
@@ -31,8 +30,8 @@ impl TryConvert<Value, String> for Artichoke {
 impl<'a> TryConvert<Value, &'a str> for Artichoke {
     fn try_convert(&self, value: Value) -> Result<&'a str, ArtichokeError> {
         let type_tag = value.ruby_type();
-        let bytes = value
-            .try_into::<&[u8]>()
+        let bytes = self
+            .try_convert(value)
             .map_err(|_| ArtichokeError::ConvertToRust {
                 from: type_tag,
                 to: Rust::String,

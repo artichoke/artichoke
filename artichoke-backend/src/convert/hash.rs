@@ -1,4 +1,3 @@
-use artichoke_core::value::Value as _;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::hash::BuildHasher;
@@ -125,7 +124,7 @@ macro_rules! ruby_to_hash {
     ($key:ty => $value:ty) => {
         impl<'a> TryConvert<Value, Vec<($key, $value)>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Vec<($key, $value)>, ArtichokeError> {
-                let pairs = value.try_into::<Vec<(Value, Value)>>()?;
+                let pairs = TryConvert::<_, Vec<(Value, Value)>>::try_convert(self, value)?;
                 let mut vec = Vec::with_capacity(pairs.len());
                 for (key, value) in pairs.into_iter() {
                     let key = self.try_convert(key)?;
@@ -144,6 +143,7 @@ macro_rules! ruby_to_hash {
                 value: Value,
             ) -> Result<HashMap<$key, $value, S>, ArtichokeError> {
                 let pairs = TryConvert::<_, Vec<($key, $value)>>::try_convert(self, value)?;
+                // we can't set capacity since we are paratemterized on hasher.
                 let mut hash = HashMap::default();
                 for (key, value) in pairs {
                     hash.insert(key, value);
