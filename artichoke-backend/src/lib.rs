@@ -148,8 +148,18 @@ impl Artichoke {
     ///
     /// This is an associated function and must be called as
     /// `Artichoke::into_raw(interp)`.
+    ///
+    /// # Safety
+    ///
+    /// After calling this function, the caller is responsible for properly
+    /// freeing the memory occupied by the interpreter heap. The easiest way to
+    /// do this is to call `ffi::from_user_data` with the returned pointer and
+    /// then call `Artichoke::close`.
+    #[must_use]
     pub unsafe fn into_raw(interp: Self) -> *mut sys::mrb_state {
-        interp.0.borrow_mut().mrb
+        let mrb = interp.0.borrow_mut().mrb;
+        drop(interp);
+        mrb
     }
 
     /// Consume an interpreter and free all
