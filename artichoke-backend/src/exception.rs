@@ -73,12 +73,12 @@ impl From<Box<dyn RubyException>> for Exception {
 /// Because this precondition must hold for all frames between the caller and
 /// the closest [`sys::mrb_protect`] landing pad, this function should only be
 /// called in the entrypoint into Rust from mruby.
-pub unsafe fn raise(interp: Artichoke, exception: impl RubyException) -> ! {
+pub unsafe fn raise(interp: Artichoke, exception: impl RubyException + fmt::Debug) -> ! {
     let exc = if let Some(exc) = exception.as_mrb_value(&interp) {
         exc
     } else {
-        error!("unable to raise {}", exception.name());
-        panic!("unable to raise {}", exception.name());
+        error!("unable to raise {:?}", exception);
+        panic!("unable to raise {:?}", exception);
     };
     // `mrb_sys_raise` will call longjmp which will unwind the stack.
     // Any non-`Copy` objects that we haven't cleaned up at this point will
