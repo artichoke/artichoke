@@ -133,9 +133,7 @@ impl Regexp {
                     let encoding_bytes = encoding.to_s();
                     let encoding_string = String::from_utf8_lossy(encoding_bytes.as_slice());
                     let warning = format!("encoding option is ignored -- {}", encoding_string);
-                    interp
-                        .warn(warning.as_bytes())
-                        .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
+                    interp.warn(warning.as_bytes())?;
                     None
                 }
             };
@@ -148,9 +146,7 @@ impl Regexp {
                     let options_bytes = options.to_s();
                     let options_string = String::from_utf8_lossy(options_bytes.as_slice());
                     let warning = format!("encoding option is ignored -- {}", options_string);
-                    interp
-                        .warn(warning.as_bytes())
-                        .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
+                    interp.warn(warning.as_bytes())?;
                     None
                 }
             };
@@ -161,9 +157,7 @@ impl Regexp {
         };
         let literal_config = if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
             if options.is_some() || encoding.is_some() {
-                interp
-                    .warn(&b"flags ignored when initializing from Regexp"[..])
-                    .map_err(|_| Fatal::new(interp, "Warn for ignored encoding failed"))?;
+                interp.warn(&b"flags ignored when initializing from Regexp"[..])?;
             }
             let borrow = regexp.borrow();
             let options = borrow.0.literal_config().options;
