@@ -1,7 +1,6 @@
 //! Converters for nilable primitive Ruby types. Excludes collection types
 //! Array and Hash.
 
-use artichoke_core::value::Value as _;
 use std::collections::HashMap;
 
 use crate::convert::{Convert, TryConvert};
@@ -57,7 +56,7 @@ macro_rules! ruby_to_option {
         impl<'a> TryConvert<Value, Option<$elem>> for Artichoke {
             fn try_convert(&self, value: Value) -> Result<Option<$elem>, ArtichokeError> {
                 if let Some(value) = self.convert(value) {
-                    value.try_into::<$elem>().map(Some)
+                    self.try_convert(value).map(Some)
                 } else {
                     Ok(None)
                 }
