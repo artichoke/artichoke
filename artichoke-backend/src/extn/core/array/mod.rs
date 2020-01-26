@@ -92,17 +92,17 @@ impl Array {
                             RangeError::new(interp, "bignum too big to convert into `long'")
                         })?;
                         let idx = interp.convert(idx);
-                        // TODO: propagate exceptions from block call.
                         let elem = block.yield_arg::<Value>(interp, &idx)?;
-                        buffer.push(elem);
+                        buffer.push(elem.inner());
                     }
                     InlineBuffer::from(buffer)
-                } else if let Some(_default) = second {
-                    // backend::repeated::value(default, len)
-                    unimplemented!();
                 } else {
-                    // backend::fixed::hole(len)
-                    unimplemented!();
+                    let default = second.unwrap_or_else(|| interp.convert(None::<Value>));
+                    let mut buffer = Vec::with_capacity(len);
+                    for _ in 0..len {
+                        buffer.push(default.inner());
+                    }
+                    InlineBuffer::from(buffer)
                 }
             }
         } else if second.is_some() {
