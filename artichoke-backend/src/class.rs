@@ -159,7 +159,7 @@ impl Spec {
         let mrb = interp.0.borrow().mrb;
         let mut rclass = self.rclass(mrb)?;
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
-        let arglen = Int::try_from(args.len()).unwrap_or_default();
+        let arglen = Int::try_from(args.len()).ok()?;
         let value = unsafe { sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr()) };
         Some(Value::new(interp, value))
     }

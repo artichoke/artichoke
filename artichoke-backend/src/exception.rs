@@ -246,9 +246,7 @@ impl RubyException for CaughtException {
 
     fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
-        self.value
-            .funcall("backtrace", &[], None)
-            .unwrap_or_default()
+        self.value.funcall("backtrace", &[], None).ok()
     }
 
     fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {

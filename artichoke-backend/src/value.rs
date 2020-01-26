@@ -62,7 +62,11 @@ impl<'a> Protect<'a> {
         // This will always unwrap because we've already checked that we
         // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
         // i64 max value.
-        let argslen = Int::try_from(args.len()).unwrap_or_default();
+        let argslen = if let Ok(argslen) = Int::try_from(args.len()) {
+            argslen
+        } else {
+            return sys::mrb_sys_nil_value();
+        };
         let block = protect.block;
 
         // Drop the `Box` to ensure it is freed.
