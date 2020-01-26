@@ -152,7 +152,8 @@ impl Array {
             })?;
             Ok(result)
         } else {
-            self.0.get(interp, start)
+            let result = self.0.get(interp, start)?;
+            Ok(interp.convert(result))
         }
     }
 
@@ -200,7 +201,8 @@ impl Array {
     }
 
     pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
-        self.0.get(interp, index)
+        let result = self.0.get(interp, index)?;
+        Ok(interp.convert(result))
     }
 
     pub fn slice(
