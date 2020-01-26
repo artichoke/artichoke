@@ -54,26 +54,19 @@ impl Array {
         let result = if let Some(first) = first {
             if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
                 ary.borrow().0.clone()
-            } else if let Ok(true) = first.respond_to("to_ary") {
+            } else if first.respond_to("to_ary")? {
                 let ruby_type = first.pretty_name();
-                if let Ok(other) = first.funcall("to_ary", &[], None) {
-                    if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                        other.borrow().0.clone()
-                    } else {
-                        return Err(Exception::from(TypeError::new(
-                            interp,
-                            format!(
+                let other = first.funcall("to_ary", &[], None)?;
+                if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+                    other.borrow().0.clone()
+                } else {
+                    return Err(Exception::from(TypeError::new(
+                        interp,
+                        format!(
                             "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
                             classname = ruby_type,
                             gives = other.pretty_name()
                         ),
-                        )));
-                    }
-                } else {
-                    // TODO: propagate exceptions thrown by `value#to_a`.
-                    return Err(Exception::from(Fatal::new(
-                        interp,
-                        "Error calling #to_a even though it exists",
                     )));
                 }
             } else {
@@ -169,26 +162,19 @@ impl Array {
         if let Some(drain) = drain {
             if let Ok(other) = unsafe { Self::try_from_ruby(interp, &elem) } {
                 self.0.set_slice(interp, start, drain, &other.borrow().0)?;
-            } else if let Ok(true) = elem.respond_to("to_ary") {
+            } else if elem.respond_to("to_ary")? {
                 let ruby_type = elem.pretty_name();
-                if let Ok(other) = elem.funcall("to_ary", &[], None) {
-                    if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                        self.0.set_slice(interp, start, drain, &other.borrow().0)?;
-                    } else {
-                        return Err(Exception::from(TypeError::new(
-                            interp,
-                            format!(
+                let other = elem.funcall("to_ary", &[], None)?;
+                if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+                    self.0.set_slice(interp, start, drain, &other.borrow().0)?;
+                } else {
+                    return Err(Exception::from(TypeError::new(
+                        interp,
+                        format!(
                             "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
                             classname = ruby_type,
                             gives = other.pretty_name()
                         ),
-                        )));
-                    }
-                } else {
-                    // TODO: propagate exceptions thrown by `value#to_a`.
-                    return Err(Exception::from(Fatal::new(
-                        interp,
-                        "Error calling #to_a even though it exists",
                     )));
                 }
             } else {
@@ -244,26 +230,19 @@ impl Array {
     pub fn concat(&mut self, interp: &Artichoke, other: Value) -> Result<(), Exception> {
         if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             self.0.concat(interp, &other.borrow().0)?;
-        } else if let Ok(true) = other.respond_to("to_ary") {
+        } else if other.respond_to("to_ary")? {
             let ruby_type = other.pretty_name();
-            if let Ok(other) = other.funcall("to_ary", &[], None) {
-                if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                    self.0.concat(interp, &other.borrow().0)?;
-                } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        format!(
-                            "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
-                            classname = ruby_type,
-                            gives = other.pretty_name()
-                        ),
-                    )));
-                }
+            let other = other.funcall("to_ary", &[], None)?;
+            if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+                self.0.concat(interp, &other.borrow().0)?;
             } else {
-                // TODO: propagate exceptions thrown by `value#to_a`.
-                return Err(Exception::from(Fatal::new(
+                return Err(Exception::from(TypeError::new(
                     interp,
-                    "Error calling #to_a even though it exists",
+                    format!(
+                        "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
+                        classname = ruby_type,
+                        gives = other.pretty_name()
+                    ),
                 )));
             }
         } else {
