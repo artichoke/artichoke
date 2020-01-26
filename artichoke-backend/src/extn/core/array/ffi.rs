@@ -191,7 +191,7 @@ unsafe extern "C" fn artichoke_ary_ref(
     let result = if let Ok(array) = Array::try_from_ruby(&interp, &ary) {
         let borrow = array.borrow();
         let gc_was_enabled = interp.disable_gc();
-        let result = borrow.0.get(&interp, offset);
+        let result = borrow.get(&interp, offset);
         if gc_was_enabled {
             interp.enable_gc();
         }

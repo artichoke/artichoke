@@ -13,7 +13,7 @@ pub trait ArrayType: Any {
 
     fn is_empty(&self) -> bool;
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception>;
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Option<Value>, Exception>;
 
     fn slice(
         &self,

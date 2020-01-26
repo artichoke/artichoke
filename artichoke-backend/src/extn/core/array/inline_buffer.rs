@@ -67,7 +67,7 @@ impl ArrayType for InlineBuffer {
         self.0.is_empty()
     }
 
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
+    fn get(&self, interp: &Artichoke, index: usize) -> Result<Option<Value>, Exception> {
         Self::get(self, interp, index)
     }
 
@@ -204,10 +204,9 @@ impl InlineBuffer {
         self.0.clear();
     }
 
-    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Value, Exception> {
+    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Option<Value>, Exception> {
         let elem = self.0.get(index);
-        let elem = elem.copied().map(|elem| Value::new(interp, elem));
-        Ok(interp.convert(elem))
+        Ok(elem.copied().map(|elem| Value::new(interp, elem)))
     }
 
     pub fn slice(&self, interp: &Artichoke, start: usize, len: usize) -> Result<Self, Exception> {
