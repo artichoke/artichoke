@@ -53,6 +53,8 @@ impl Default for State {
 pub enum Error {
     /// Code must be fewer than `isize::max_value` bytes.
     CodeTooLong,
+    /// Too many lines parsed.
+    TooManyLines,
     /// Fatal error with message.
     Fatal(String),
 }
@@ -67,8 +69,9 @@ impl Parser {
     /// Create a new parser from an interpreter instance.
     #[must_use]
     pub fn new(interp: &Artichoke) -> Option<Self> {
-        let mrb = interp.0.borrow().mrb;
-        let context = interp.0.borrow().ctx;
+        let mut borrow = interp.0.borrow_mut();
+        let mrb = borrow.mrb;
+        let context = borrow.parser.context_mut();
         let parser = unsafe { sys::mrb_parser_new(mrb) };
         if parser.is_null() {
             None

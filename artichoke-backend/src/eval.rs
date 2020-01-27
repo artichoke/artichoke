@@ -1,6 +1,5 @@
-use artichoke_core::eval::{self, Eval};
-use std::borrow::Cow;
-use std::ffi::{c_void, CStr, CString};
+use artichoke_core::eval::Eval;
+use std::ffi::c_void;
 use std::mem;
 
 use crate::exception::Exception;
@@ -21,7 +20,7 @@ struct Protect<'a> {
 impl<'a> Protect<'a> {
     fn new(interp: &Artichoke, code: &'a [u8]) -> Self {
         Self {
-            ctx: interp.0.borrow().ctx,
+            ctx: interp.0.borrow_mut().parser.context_mut(),
             code,
         }
     }
@@ -51,104 +50,7 @@ impl<'a> Protect<'a> {
     }
 }
 
-/// `Context` is used to manipulate the state of a wrapped
-/// [`sys::mrb_state`]. [`Artichoke`] maintains a stack of `Context`s and
-/// [`Eval::eval`] uses the current context to set the `__FILE__` magic
-/// constant on the [`sys::mrbc_context`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[must_use]
-pub struct Context {
-    /// Value of the `__FILE__` magic constant that also appears in stack
-    /// frames.
-    filename: Cow<'static, [u8]>,
-    /// FFI variant of `filename` field.
-    filename_cstring: CString,
-}
-
-impl Context {
-    /// Create a new [`Context`].
-    pub fn new<T>(filename: T) -> Option<Self>
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        let filename = filename.into();
-        let cstring = CString::new(filename.as_ref()).ok()?;
-        Some(Self {
-            filename,
-            filename_cstring: cstring,
-        })
-    }
-
-    /// Create a new [`Context`] without checking for NUL bytes in the filename.
-    ///
-    /// # Safety
-    ///
-    /// `filename` must not contain any NUL bytes. `filename` must not contain a
-    /// trailing `NUL`.
-    pub unsafe fn new_unchecked<T>(filename: T) -> Self
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        let filename = filename.into();
-        let cstring = CString::from_vec_unchecked(filename.clone().into_owned());
-        Self {
-            filename,
-            filename_cstring: cstring,
-        }
-    }
-
-    /// Create a root, or default, [`Context`]. The root context sets the
-    /// `__FILE__` magic constant to "(eval)".
-    pub fn root() -> Self {
-        Self::default()
-    }
-
-    /// Filename of this `Context`.
-    #[must_use]
-    pub fn filename(&self) -> &[u8] {
-        self.filename.as_ref()
-    }
-
-    /// FFI-safe NUL-terminated C String of this `Context`.
-    ///
-    /// This [`CStr`] is valid as long as this `Context` is not dropped.
-    #[must_use]
-    pub fn filename_as_c_str(&self) -> &CStr {
-        self.filename_cstring.as_c_str()
-    }
-}
-
-impl Default for Context {
-    fn default() -> Self {
-        // safety: the `TOP_FILENAME` is controlled by this crate and does
-        // not contain NUL bytes, enforced with a test.
-        unsafe { Self::new_unchecked(Artichoke::TOP_FILENAME) }
-    }
-}
-
-#[cfg(test)]
-mod context_test {
-    use artichoke_core::eval::Eval;
-
-    use crate::Artichoke;
-
-    #[test]
-    fn top_filename_does_not_contain_nul_byte() {
-        assert_eq!(
-            None,
-            Artichoke::TOP_FILENAME
-                .iter()
-                .copied()
-                .position(|b| b == b'\0')
-        );
-    }
-}
-
-impl eval::Context for Context {}
-
 impl Eval for Artichoke {
-    type Context = Context;
-
     type Value = Value;
 
     type Error = Exception;
@@ -157,27 +59,7 @@ impl Eval for Artichoke {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
-        let (mrb, ctx) = {
-            let borrow = self.0.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
-
-        // Grab the persistent `Context` from the context on the `State` or
-        // the root context if the stack is empty.
-        let filename = self
-            .0
-            .borrow()
-            .context_stack
-            .last()
-            .map(Context::filename_as_c_str)
-            .map_or_else(
-                || Context::default().filename_as_c_str().to_owned(),
-                CStr::to_owned,
-            );
-
-        unsafe {
-            sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
-        }
+        let mrb = self.0.borrow().mrb;
 
         let protect = Protect::new(self, code);
         trace!("Evaling code on {}", mrb.debug());
@@ -208,22 +90,6 @@ impl Eval for Artichoke {
                 Ok(value)
             }
         }
-    }
-
-    #[must_use]
-    fn peek_context(&self) -> Option<Self::Context> {
-        let api = self.0.borrow();
-        api.context_stack.last().cloned()
-    }
-
-    fn push_context(&self, context: Self::Context) {
-        let mut api = self.0.borrow_mut();
-        api.context_stack.push(context);
-    }
-
-    fn pop_context(&self) {
-        let mut api = self.0.borrow_mut();
-        api.context_stack.pop();
     }
 }
 

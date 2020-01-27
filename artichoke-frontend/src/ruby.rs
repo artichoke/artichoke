@@ -3,12 +3,13 @@
 //! Exported as `ruby` and `artichoke` binaries.
 
 use artichoke_backend::convert::Convert;
-use artichoke_backend::eval::Context;
 use artichoke_backend::exception::Exception;
 use artichoke_backend::fs;
+use artichoke_backend::state::parser::Context;
 use artichoke_backend::sys;
 use artichoke_backend::BootError;
-use artichoke_core::eval::Eval;
+use artichoke_core::eval::Eval as _;
+use artichoke_core::parser::Parser as _;
 use bstr::BStr;
 use std::ffi::OsString;
 use std::io::{self, Read};
@@ -113,7 +114,7 @@ pub fn entrypoint() -> Result<(), Error> {
 }
 
 fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Result<(), Error> {
-    let interp = artichoke_backend::interpreter()?;
+    let mut interp = artichoke_backend::interpreter()?;
     // safety:
     // Context::new_unchecked requires that INLINE_EVAL_SWITCH_FILENAME have no
     // NUL bytes.
