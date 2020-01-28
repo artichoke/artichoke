@@ -42,6 +42,7 @@ impl Parser for Artichoke {
     }
 
     fn peek_context(&self) -> Option<&Self::Context> {
-        unimplemented!("cannot implement this function due to borrowing restrictions of RefCell");
+        // TODO: GH-468 - Implement `Parser::peek_context`.
+        unimplemented!("GH-468: cannot implement Parser::peek_context due to internal RefCell");
     }
 }

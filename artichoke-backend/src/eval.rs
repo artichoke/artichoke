@@ -107,18 +107,23 @@ mod tests {
 
     #[test]
     fn context_is_restored_after_eval() {
-        let interp = crate::interpreter().expect("init");
-        let context = Context::new(b"context.rb".as_ref()).unwrap();
+        let mut interp = crate::interpreter().expect("init");
+        let context = Context::new(&b"context.rb"[..]).unwrap();
         interp.push_context(context);
         let _ = interp.eval(b"15").expect("eval");
-        assert_eq!(interp.0.borrow().context_stack.len(), 1);
+        assert_eq!(
+            // TODO: GH-468 - Use `Parser::peek_context`.
+            interp.0.borrow().parser.peek_context().unwrap().filename(),
+            &b"context.rb"[..]
+        );
     }
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
         let interp = crate::interpreter().expect("init");
         let _ = interp.eval(b"15").expect("eval");
-        assert_eq!(interp.0.borrow().context_stack.len(), 0);
+        // TODO: GH-468 - Use `Parser::peek_context`.
+        assert!(interp.0.borrow().parser.peek_context().is_none());
     }
 
     #[test]
@@ -168,7 +173,7 @@ NestedEval.file
 
     #[test]
     fn eval_with_context() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
         interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
         let result = interp.eval(b"__FILE__").expect("eval");
