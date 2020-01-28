@@ -31,7 +31,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
         .define()?;
     interp.0.borrow_mut().def_class::<random::Random>(spec);
 
-    let default = random::default();
+    let default = random::Random::interpreter_prng_delegate();
     let default = default.try_into_ruby(interp, None)?;
     let borrow = interp.0.borrow();
     let mut rclass = borrow
@@ -93,10 +93,10 @@ unsafe extern "C" fn artichoke_random_bytes(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let size = Value::new(&interp, size);
-    let result = random::bytes(&interp, rand, size);
+    let result = random::bytes(&mut interp, rand, size);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -109,10 +109,10 @@ unsafe extern "C" fn artichoke_random_rand(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let max = mrb_get_args!(mrb, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let max = max.map(|max| Value::new(&interp, max));
-    let result = random::rand(&interp, rand, max);
+    let result = random::rand(&mut interp, rand, max);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

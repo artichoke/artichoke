@@ -12,6 +12,8 @@ use crate::module;
 use crate::sys::{self, DescribeState};
 
 pub mod parser;
+#[cfg(feature = "artichoke-random")]
+pub mod prng;
 
 // NOTE: ArtichokeState assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
@@ -25,7 +27,7 @@ pub struct State {
     symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
     captured_output: Option<Vec<u8>>,
     #[cfg(feature = "artichoke-random")]
-    prng: crate::extn::core::random::Random,
+    pub prng: prng::Prng,
 }
 
 impl State {
@@ -44,20 +46,9 @@ impl State {
             symbol_cache: HashMap::default(),
             captured_output: None,
             #[cfg(feature = "artichoke-random")]
-            prng: crate::extn::core::random::new(None),
+            prng: prng::Prng::default(),
         };
         Some(state)
-    }
-
-    #[cfg(feature = "artichoke-random")]
-    #[must_use]
-    pub fn prng(&self) -> &crate::extn::core::random::Random {
-        &self.prng
-    }
-
-    #[cfg(feature = "artichoke-random")]
-    pub fn prng_mut(&mut self) -> &mut crate::extn::core::random::Random {
-        &mut self.prng
     }
 
     pub fn capture_output(&mut self) {
