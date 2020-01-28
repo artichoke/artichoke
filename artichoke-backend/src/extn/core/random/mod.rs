@@ -4,7 +4,6 @@ use std::convert::TryFrom;
 use std::ptr;
 
 use crate::extn::prelude::*;
-use crate::state::prng::Prng;
 
 pub mod backend;
 pub mod mruby;
@@ -189,7 +188,7 @@ pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Excepti
     };
     let mut borrow = interp.0.borrow_mut();
     let old_seed = borrow.prng.seed();
-    borrow.prng = Prng::new(new_seed);
+    borrow.prng.reseed(new_seed);
     #[allow(clippy::cast_possible_wrap)]
     Ok(interp.convert(old_seed as Int))
 }

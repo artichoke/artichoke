@@ -19,6 +19,10 @@ impl Prng {
         self.random.seed()
     }
 
+    pub fn reseed(&mut self, new_seed: Option<u64>) {
+        self.random = Rand::new(new_seed);
+    }
+
     pub fn has_same_internal_state(&self, other: &dyn RandType) -> bool {
         self.random.has_same_internal_state(other)
     }
