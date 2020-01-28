@@ -7,7 +7,7 @@ use std::ptr::NonNull;
 use crate::sys;
 
 /// Filename of the top eval context.
-pub const TOP_FILENAME: &'static [u8] = b"(eval)";
+pub const TOP_FILENAME: &[u8] = b"(eval)";
 
 pub struct State {
     context: NonNull<sys::mrbc_context>,
