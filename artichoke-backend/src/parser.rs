@@ -8,7 +8,10 @@ impl Parser for Artichoke {
     type Context = Context;
 
     fn reset_parser(&mut self) {
-        self.0.borrow_mut().parser.reset();
+        let mrb = self.0.borrow().mrb;
+        if let Some(mut mrb) = NonNull::new(mrb) {
+            self.0.borrow_mut().parser.reset(unsafe { mrb.as_mut() });
+        }
     }
 
     fn fetch_lineno(&self) -> usize {

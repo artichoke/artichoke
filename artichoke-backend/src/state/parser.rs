@@ -17,7 +17,8 @@ pub struct State {
 impl State {
     pub fn new(mrb: &mut sys::mrb_state) -> Option<Self> {
         let context = unsafe { sys::mrbc_context_new(mrb) };
-        let context = NonNull::new(context)?;
+        let mut context = NonNull::new(context)?;
+        reset_context_filename(mrb, unsafe { context.as_mut() });
         Some(Self {
             context,
             stack: vec![],
@@ -49,10 +50,12 @@ impl State {
     }
 
     /// Reset line number to `1`.
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, mrb: &mut sys::mrb_state) {
         unsafe {
             self.context.as_mut().lineno = 1;
         }
+        self.stack.clear();
+        reset_context_filename(mrb, unsafe { self.context.as_mut() });
     }
 
     /// Fetch the current line number from the parser state.
@@ -86,24 +89,28 @@ impl State {
     }
 
     pub fn pop_context(&mut self, mrb: &mut sys::mrb_state) -> Option<Context> {
-        if let Some(context) = self.stack.pop() {
-            let filename = context.filename_as_c_str();
+        let context = self.stack.pop();
+        if let Some(current) = self.stack.last() {
+            let filename = current.filename_as_c_str();
             unsafe {
                 sys::mrbc_filename(mrb, self.context.as_mut(), filename.as_ptr() as *const i8);
             }
-            Some(context)
         } else {
-            let context = Context::root();
-            let filename = context.filename_as_c_str();
-            unsafe {
-                sys::mrbc_filename(mrb, self.context.as_mut(), filename.as_ptr() as *const i8);
-            }
-            None
+            reset_context_filename(mrb, unsafe { self.context.as_mut() });
         }
+        context
     }
 
     pub fn peek_context(&self) -> Option<&Context> {
         self.stack.last()
+    }
+}
+
+fn reset_context_filename(mrb: &mut sys::mrb_state, context: &mut sys::mrbc_context) {
+    let frame = Context::root();
+    let filename = frame.filename_as_c_str();
+    unsafe {
+        sys::mrbc_filename(mrb, context, filename.as_ptr() as *const i8);
     }
 }
 
