@@ -66,6 +66,7 @@ impl From<BootError> for Error {
 }
 
 impl From<Exception> for Error {
+    #[must_use]
     fn from(err: Exception) -> Self {
         Self::Ruby(err)
     }

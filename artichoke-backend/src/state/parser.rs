@@ -26,7 +26,7 @@ impl State {
     }
 
     /// Used for moving a `State` out of the larger Artichoke State to
-    /// work around Artichoke State being stored in a RefCell.
+    /// work around Artichoke State being stored in a [`RefCell`].
     ///
     /// # Safety
     ///
@@ -59,6 +59,7 @@ impl State {
     }
 
     /// Fetch the current line number from the parser state.
+    #[must_use]
     pub fn fetch_lineno(&self) -> usize {
         usize::from(unsafe { self.context.as_ref() }.lineno)
     }
@@ -76,10 +77,17 @@ impl State {
             .ok_or_else(|| IncrementLinenoError::Overflow(usize::from(u16::max_value())))?;
         let store = u16::try_from(new)
             .map_err(|_| IncrementLinenoError::Overflow(usize::from(u16::max_value())))?;
-        unsafe { &mut self.context.as_mut() }.lineno = store;
+        unsafe {
+            self.context.as_mut().lineno = store;
+        }
         Ok(new)
     }
 
+    /// Push a [`Context`] onto the stack.
+    ///
+    /// The supplied [`Context`] becomes the currently active context. This
+    /// function modifies the parser state so subsequently `eval`ed code will
+    /// use the current active `Context`.
     pub fn push_context(&mut self, mrb: &mut sys::mrb_state, context: Context) {
         let filename = context.filename_as_c_str();
         unsafe {
@@ -88,6 +96,11 @@ impl State {
         self.stack.push(context);
     }
 
+    /// Removes the last element from the context stack and returns it, or
+    /// `None` if the stack is empty.
+    ///
+    /// Calls to this function modify the parser state so subsequently `eval`ed
+    /// code will use the current active [`Context`].
     pub fn pop_context(&mut self, mrb: &mut sys::mrb_state) -> Option<Context> {
         let context = self.stack.pop();
         if let Some(current) = self.stack.last() {
@@ -101,6 +114,8 @@ impl State {
         context
     }
 
+    /// Returns the last [`Context`], or `None` if the context stack is empty.
+    #[must_use]
     pub fn peek_context(&self) -> Option<&Context> {
         self.stack.last()
     }

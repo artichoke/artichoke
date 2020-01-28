@@ -14,6 +14,7 @@ impl Parser for Artichoke {
         }
     }
 
+    #[must_use]
     fn fetch_lineno(&self) -> usize {
         self.0.borrow().parser.fetch_lineno()
     }
@@ -44,6 +45,7 @@ impl Parser for Artichoke {
         }
     }
 
+    #[must_use]
     fn peek_context(&self) -> Option<&Self::Context> {
         // TODO: GH-468 - Implement `Parser::peek_context`.
         unimplemented!("GH-468: cannot implement Parser::peek_context due to internal RefCell");
