@@ -25,12 +25,8 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
         return Err(BootError::from(ArtichokeError::New));
     };
 
-    let context = unsafe { sys::mrbc_context_new(mrb.as_mut()) };
-    let api = Rc::new(RefCell::new(State::new(
-        unsafe { mrb.as_mut() },
-        context,
-        vfs,
-    )));
+    let state = State::new(unsafe { mrb.as_mut() }, vfs).ok_or(ArtichokeError::New)?;
+    let api = Rc::new(RefCell::new(state));
 
     // Transmute the smart pointer that wraps the API and store it in the user
     // data of the mrb interpreter. After this operation, `Rc::strong_count`

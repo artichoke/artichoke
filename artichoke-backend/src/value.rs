@@ -225,10 +225,7 @@ impl ValueLike for Value {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
-        let (mrb, _ctx) = {
-            let borrow = self.interp.0.borrow();
-            (borrow.mrb, borrow.ctx)
-        };
+        let mrb = self.interp.0.borrow().mrb;
 
         let _arena = self.interp.create_arena_savepoint();
 
@@ -239,16 +236,11 @@ impl ValueLike for Value {
                 args.len(),
                 MRB_FUNCALL_ARGC_MAX
             );
-            return Err(Exception::from(Fatal::new(
-                &self.interp,
-                format!(
-                    "{}",
-                    ArtichokeError::TooManyArgs {
-                        given: args.len(),
-                        max: MRB_FUNCALL_ARGC_MAX,
-                    }
-                ),
-            )));
+            let err = ArtichokeError::TooManyArgs {
+                given: args.len(),
+                max: MRB_FUNCALL_ARGC_MAX,
+            };
+            return Err(Exception::from(Fatal::new(&self.interp, err.to_string())));
         }
         trace!(
             "Calling {}#{} with {} args{}",
@@ -294,10 +286,7 @@ impl ValueLike for Value {
                 )))
             } else {
                 let value = value.try_into::<T>().map_err(|err| {
-                    Exception::from(TypeError::new(
-                        &self.interp,
-                        format!("Type conversion failed: {}", err),
-                    ))
+                    TypeError::new(&self.interp, format!("Type conversion failed: {}", err))
                 })?;
                 Ok(value)
             }
@@ -363,8 +352,8 @@ impl Convert<Value, Value> for Artichoke {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let string_repr = &self.to_s();
-        write!(f, "{}", String::from_utf8_lossy(string_repr))
+        let string_repr = self.to_s();
+        write!(f, "{}", String::from_utf8_lossy(string_repr.as_slice()))
     }
 }
 

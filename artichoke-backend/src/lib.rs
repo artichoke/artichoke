@@ -107,6 +107,7 @@ mod interpreter;
 pub mod load;
 pub mod method;
 pub mod module;
+pub mod parser;
 pub mod state;
 pub mod sys;
 pub mod top_self;

@@ -1,16 +1,17 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
+use artichoke_core::parser::Parser as _;
 use bstr::BStr;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use crate::eval::Context;
 use crate::extn::prelude::*;
 use crate::fs::{self, RUBY_LOAD_PATH};
+use crate::state::parser::Context;
 
 const RUBY_EXTENSION: &str = "rb";
 
-pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
+pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception> {
     let ruby_type = filename.pretty_name();
     let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
         filename
@@ -60,6 +61,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
     let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
+
     // Require Rust File first because an File may define classes and
     // module with `LoadSources` and Ruby files can require arbitrary
     // other files, including some child sources that may depend on these
@@ -67,7 +69,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
     if let Some(require) = metadata.require {
         // dynamic, Rust-backed `File` require
         if require(interp).is_err() {
-            interp.pop_context();
+            let _ = interp.pop_context();
             let filestr = format!("{:?}", <&BStr>::from(filename));
             return Err(Exception::from(LoadError::new(
                 interp,
@@ -85,7 +87,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
     if let Ok(contents) = contents {
         let _ = interp.eval(contents.as_slice())?;
     }
-    interp.pop_context();
+    let _ = interp.pop_context();
     trace!(
         r#"Successful load of "{:?}" at {:?}"#,
         <&BStr>::from(filename),
@@ -95,7 +97,7 @@ pub fn load(interp: &Artichoke, filename: Value) -> Result<Value, Exception> {
 }
 
 pub fn require(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     filename: Value,
     base: Option<&Path>,
 ) -> Result<Value, Exception> {
@@ -156,7 +158,7 @@ pub fn require(
             if let Some(require) = metadata.require {
                 // dynamic, Rust-backed `File` require
                 if require(interp).is_err() {
-                    interp.pop_context();
+                    let _ = interp.pop_context();
                     let filestr = format!("{:?}", <&BStr>::from(filename));
                     return Err(Exception::from(LoadError::new(
                         interp,
@@ -174,7 +176,7 @@ pub fn require(
             if let Ok(contents) = contents {
                 let _ = interp.eval(contents.as_slice())?;
             }
-            interp.pop_context();
+            let _ = interp.pop_context();
             let metadata = metadata.mark_required();
             let borrow = interp.0.borrow();
             borrow
@@ -221,7 +223,7 @@ pub fn require(
                 if let Some(require) = metadata.require {
                     // dynamic, Rust-backed `File` require
                     if require(interp).is_err() {
-                        interp.pop_context();
+                        let _ = interp.pop_context();
                         let filestr = format!("{:?}", <&BStr>::from(filename));
                         return Err(Exception::from(LoadError::new(
                             interp,
@@ -239,7 +241,7 @@ pub fn require(
                 if let Ok(contents) = contents {
                     let _ = interp.eval(contents.as_slice())?;
                 }
-                interp.pop_context();
+                let _ = interp.pop_context();
                 let metadata = metadata.mark_required();
                 let borrow = interp.0.borrow();
                 borrow
@@ -303,7 +305,7 @@ pub fn require(
     if let Some(require) = metadata.require {
         // dynamic, Rust-backed `File` require
         if require(interp).is_err() {
-            interp.pop_context();
+            let _ = interp.pop_context();
             let filestr = format!("{:?}", <&BStr>::from(filename));
             return Err(Exception::from(LoadError::new(
                 interp,
@@ -321,18 +323,20 @@ pub fn require(
     if let Ok(contents) = contents {
         let _ = interp.eval(contents.as_slice())?;
     }
-    interp.pop_context();
-    let metadata = metadata.mark_required();
-    let borrow = interp.0.borrow();
-    borrow
-        .vfs
-        .set_metadata(path.as_path(), metadata)
-        .map_err(|_| {
-            Fatal::new(
-                interp,
-                "Unable to set require metadata in the Artichoke virtual filesystem",
-            )
-        })?;
+    let _ = interp.pop_context();
+    {
+        let metadata = metadata.mark_required();
+        let borrow = interp.0.borrow();
+        borrow
+            .vfs
+            .set_metadata(path.as_path(), metadata)
+            .map_err(|_| {
+                Fatal::new(
+                    interp,
+                    "Unable to set require metadata in the Artichoke virtual filesystem",
+                )
+            })?;
+    }
     trace!(
         r#"Successful require of "{:?}" at {:?}"#,
         <&BStr>::from(filename),
@@ -342,12 +346,17 @@ pub fn require(
 }
 
 #[allow(clippy::module_name_repetitions)]
-pub fn require_relative(interp: &Artichoke, file: Value) -> Result<Value, Exception> {
-    let context = interp
-        .peek_context()
-        .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
-    let current = fs::bytes_to_osstr(interp, context.filename())?;
-    let base = if let Some(base) = Path::new(current).parent() {
+pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Exception> {
+    let current = {
+        let borrow = interp.0.borrow();
+        // TODO: GH-468 - Use `Parser::peek_context`.
+        let context = borrow
+            .parser
+            .peek_context()
+            .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
+        fs::bytes_to_osstr(interp, context.filename())?.to_owned()
+    };
+    let base = if let Some(base) = Path::new(current.as_os_str()).parent() {
         base
     } else {
         Path::new("/")

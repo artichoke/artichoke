@@ -3,23 +3,24 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::io::{self, Write};
+use std::mem;
 use std::ptr::{self, NonNull};
 
 use crate::class;
-use crate::eval::Context;
 use crate::fs::Filesystem;
 use crate::module;
 use crate::sys::{self, DescribeState};
+
+pub mod parser;
 
 // NOTE: ArtichokeState assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
 pub struct State {
     pub mrb: *mut sys::mrb_state,
-    pub ctx: *mut sys::mrbc_context,
+    pub parser: parser::State,
     classes: HashMap<TypeId, Box<class::Spec>>,
     modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: Filesystem,
-    pub(crate) context_stack: Vec<Context>,
     pub active_regexp_globals: usize,
     symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
     captured_output: Option<Vec<u8>>,
@@ -31,20 +32,21 @@ impl State {
     /// Create a new [`State`] from a [`sys::mrb_state`] and
     /// [`sys::mrbc_context`] with an
     /// [in memory virtual filesystem](Filesystem).
-    pub fn new(mrb: *mut sys::mrb_state, ctx: *mut sys::mrbc_context, vfs: Filesystem) -> Self {
-        Self {
+    pub fn new(mrb: &mut sys::mrb_state, vfs: Filesystem) -> Option<Self> {
+        let parser = parser::State::new(mrb)?;
+        let state = Self {
             mrb,
-            ctx,
+            parser,
             classes: HashMap::default(),
             modules: HashMap::default(),
             vfs,
-            context_stack: vec![],
             active_regexp_globals: 0,
             symbol_cache: HashMap::default(),
             captured_output: None,
             #[cfg(feature = "artichoke-random")]
             prng: crate::extn::core::random::new(None),
-        }
+        };
+        Some(state)
     }
 
     #[cfg(feature = "artichoke-random")]
@@ -89,6 +91,8 @@ impl State {
     }
 
     /// Close a [`State`] and free underlying mruby structs and memory.
+    // TODO: this should take self by value but can't because self is stored in
+    // a `RefCell`.
     pub fn close(&mut self) {
         // At this point, the only refs to the smart poitner wrapping the state
         // are stored in the `mrb_state->ud` pointer and any `MRB_TT_DATA`
@@ -106,16 +110,15 @@ impl State {
         // - Set the userdata pointer to null.
         // - Set context and mrb properties to null.
         if let Some(mut mrb) = NonNull::new(self.mrb) {
+            let parser = mem::replace(&mut self.parser, unsafe { parser::State::uninit() });
+            parser.close(unsafe { mrb.as_mut() });
             if let Some(_userdata) = NonNull::new(unsafe { mrb.as_ref().ud }) {
                 unsafe {
-                    // Free mrb data structures
-                    sys::mrbc_context_free(mrb.as_mut(), self.ctx);
                     sys::mrb_close(mrb.as_mut());
                 }
             }
         }
         // Cleanup dangling pointers
-        self.ctx = ptr::null_mut();
         self.mrb = ptr::null_mut();
     }
 

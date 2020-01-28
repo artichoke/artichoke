@@ -47,6 +47,7 @@ pub fn init(interp: &Artichoke) -> InitializeResult<()> {
             default.inner(),
         );
     }
+    drop(borrow);
     let _ = interp.eval(&include_bytes!("random.rb")[..])?;
     trace!("Patched Random onto interpreter");
     Ok(())

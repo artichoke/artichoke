@@ -58,9 +58,9 @@ impl Kernel {
 
     unsafe extern "C" fn load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let file = Value::new(&interp, file);
-        let result = require::load(&interp, file);
+        let result = require::load(&mut interp, file);
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
@@ -108,9 +108,9 @@ impl Kernel {
 
     unsafe extern "C" fn require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let file = Value::new(&interp, file);
-        let result = require::require(&interp, file, None);
+        let result = require::require(&mut interp, file, None);
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
@@ -122,9 +122,9 @@ impl Kernel {
         _slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let file = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let file = Value::new(&interp, file);
-        let result = require::require_relative(&interp, file);
+        let result = require::require_relative(&mut interp, file);
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
