@@ -52,12 +52,14 @@ pub enum Error {
 }
 
 impl From<parser::Error> for Error {
+    #[must_use]
     fn from(err: parser::Error) -> Self {
         Self::ReplParse(err)
     }
 }
 
 impl From<BootError> for Error {
+    #[must_use]
     fn from(err: BootError) -> Self {
         Self::Artichoke(err)
     }
@@ -70,6 +72,7 @@ impl From<Exception> for Error {
 }
 
 impl From<io::Error> for Error {
+    #[must_use]
     fn from(err: io::Error) -> Self {
         Self::Io(err)
     }
