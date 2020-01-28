@@ -9,12 +9,14 @@ pub struct Prng {
 }
 
 impl Prng {
+    #[must_use]
     pub fn new(seed: Option<u64>) -> Self {
         Self {
             random: Rand::new(seed),
         }
     }
 
+    #[must_use]
     pub fn seed(&self) -> u64 {
         self.random.seed()
     }
@@ -41,6 +43,7 @@ impl Prng {
 }
 
 impl Default for Prng {
+    #[must_use]
     fn default() -> Self {
         Self::new(None)
     }
