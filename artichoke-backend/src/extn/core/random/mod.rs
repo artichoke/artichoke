@@ -4,28 +4,29 @@ use std::convert::TryFrom;
 use std::ptr;
 
 use crate::extn::prelude::*;
+use crate::state::prng::Prng;
 
 pub mod backend;
 pub mod mruby;
 
-#[must_use]
-pub fn new(seed: Option<u64>) -> Random {
-    Random(backend::rand::new(seed))
-}
-
-#[must_use]
-pub fn default() -> Random {
-    Random(backend::default::new())
-}
-
-pub struct Random(Box<dyn backend::Rand>);
+pub struct Random(Box<dyn backend::RandType>);
 
 impl Random {
-    fn inner(&self) -> &dyn backend::Rand {
+    #[must_use]
+    pub fn new(seed: Option<u64>) -> Self {
+        Self(backend::rand::new(seed))
+    }
+
+    #[must_use]
+    pub fn interpreter_prng_delegate() -> Self {
+        Self(Box::new(backend::default::Default::default()))
+    }
+
+    fn inner(&self) -> &dyn backend::RandType {
         self.0.as_ref()
     }
 
-    fn inner_mut(&mut self) -> &mut dyn backend::Rand {
+    fn inner_mut(&mut self) -> &mut dyn backend::RandType {
         self.0.as_mut()
     }
 }
@@ -61,8 +62,8 @@ pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Excep
             if ptr::eq(rand.as_ref(), other.as_ref()) {
                 Ok(interp.convert(true))
             } else {
-                let this_seed = rand.borrow().inner().seed(interp)?;
-                let other_seed = other.borrow().inner().seed(interp)?;
+                let this_seed = rand.borrow().inner().seed(interp);
+                let other_seed = other.borrow().inner().seed(interp);
                 Ok(interp.convert(this_seed == other_seed))
             }
         } else {
@@ -76,7 +77,7 @@ pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Excep
     }
 }
 
-pub fn bytes(interp: &Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
+pub fn bytes(interp: &mut Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
     let rand = if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         rand
     } else {
@@ -89,7 +90,7 @@ pub fn bytes(interp: &Artichoke, rand: Value, size: Value) -> Result<Value, Exce
     if let Ok(size) = usize::try_from(size) {
         let mut buf = vec![0; size];
         let mut borrow = rand.borrow_mut();
-        borrow.inner_mut().bytes(interp, buf.as_mut_slice())?;
+        borrow.inner_mut().bytes(interp, buf.as_mut_slice());
         Ok(interp.convert(buf))
     } else {
         Err(Exception::from(ArgumentError::new(
@@ -99,7 +100,7 @@ pub fn bytes(interp: &Artichoke, rand: Value, size: Value) -> Result<Value, Exce
     }
 }
 
-pub fn rand(interp: &Artichoke, rand: Value, max: Option<Value>) -> Result<Value, Exception> {
+pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<Value, Exception> {
     #[derive(Debug, Clone, Copy)]
     enum Max {
         Float(Float),
@@ -132,12 +133,12 @@ pub fn rand(interp: &Artichoke, rand: Value, max: Option<Value>) -> Result<Value
         ))),
         Max::Float(max) if max == 0.0 => {
             let mut borrow = rand.borrow_mut();
-            let number = borrow.inner_mut().rand_float(interp, None)?;
+            let number = borrow.inner_mut().rand_float(interp, None);
             Ok(interp.convert(number))
         }
         Max::Float(max) => {
             let mut borrow = rand.borrow_mut();
-            let number = borrow.inner_mut().rand_float(interp, Some(max))?;
+            let number = borrow.inner_mut().rand_float(interp, Some(max));
             Ok(interp.convert(number))
         }
         Max::Int(max) if max < 1 => Err(Exception::from(ArgumentError::new(
@@ -146,12 +147,12 @@ pub fn rand(interp: &Artichoke, rand: Value, max: Option<Value>) -> Result<Value
         ))),
         Max::Int(max) => {
             let mut borrow = rand.borrow_mut();
-            let number = borrow.inner_mut().rand_int(interp, max)?;
+            let number = borrow.inner_mut().rand_int(interp, max);
             Ok(interp.convert(number))
         }
         Max::None => {
             let mut borrow = rand.borrow_mut();
-            let number = borrow.inner_mut().rand_float(interp, None)?;
+            let number = borrow.inner_mut().rand_float(interp, None);
             Ok(interp.convert(number))
         }
     }
@@ -160,7 +161,7 @@ pub fn rand(interp: &Artichoke, rand: Value, max: Option<Value>) -> Result<Value
 pub fn seed(interp: &Artichoke, rand: Value) -> Result<Value, Exception> {
     if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
         let borrow = rand.borrow();
-        let seed = borrow.inner().seed(interp)?;
+        let seed = borrow.inner().seed(interp);
         #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         Ok(interp.convert(seed as Int))
     } else {
@@ -187,9 +188,8 @@ pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Excepti
         None
     };
     let mut borrow = interp.0.borrow_mut();
-    let prng = borrow.prng_mut();
-    let old_seed = prng.inner().seed(interp)?;
-    prng.0 = backend::rand::new(new_seed);
+    let old_seed = borrow.prng.seed();
+    borrow.prng = Prng::new(new_seed);
     #[allow(clippy::cast_possible_wrap)]
     Ok(interp.convert(old_seed as Int))
 }
