@@ -1,54 +1,11 @@
 use artichoke_core::eval::Eval;
-use std::ffi::c_void;
-use std::mem;
 
 use crate::exception::Exception;
-use crate::exception_handler::ExceptionHandler;
+use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
-use crate::sys::{self, DescribeState};
+use crate::sys::{protect, DescribeState};
 use crate::value::Value;
 use crate::Artichoke;
-
-// `Protect` must be `Copy` because the call to `mrb_load_nstring_cxt` can
-// unwind with `longjmp` which does not allow Rust to run destructors.
-#[derive(Clone, Copy)]
-struct Protect<'a> {
-    ctx: *mut sys::mrbc_context,
-    code: &'a [u8],
-}
-
-impl<'a> Protect<'a> {
-    fn new(interp: &Artichoke, code: &'a [u8]) -> Self {
-        Self {
-            ctx: interp.0.borrow_mut().parser.context_mut(),
-            code,
-        }
-    }
-
-    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
-        let ptr = sys::mrb_sys_cptr_ptr(data);
-        // `Protect` must be `Copy` because the call to `mrb_load_nstring_cxt`
-        // can unwind with `longjmp` which does not allow Rust to run
-        // destructors.
-        let protect = Box::from_raw(ptr as *mut Self);
-
-        // Pull all of the args out of the `Box` so we can free the
-        // heap-allocated `Box`.
-        let ctx = protect.ctx;
-        let code = protect.code;
-
-        // Drop the `Box` to ensure it is freed.
-        drop(protect);
-
-        // Execute arbitrary ruby code, which may generate objects with C APIs
-        // if backed by Rust functions.
-        //
-        // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
-        // which means the most recent value returned by eval will always be
-        // considered live by the GC.
-        sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), ctx)
-    }
-}
 
 impl Eval for Artichoke {
     type Value = Value;
@@ -60,34 +17,26 @@ impl Eval for Artichoke {
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
         let mrb = self.0.borrow().mrb;
+        let context = self.0.borrow_mut().parser.context_mut() as *mut _;
 
-        let protect = Protect::new(self, code);
         trace!("Evaling code on {}", mrb.debug());
-        let value = unsafe {
-            let data =
-                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
-            let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
-
-            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
-            if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
+        match unsafe { protect::eval(mrb, context, code) } {
+            Ok(value) => {
+                let value = Value::new(self, value);
+                if value.is_unreachable() {
+                    // Unreachable values are internal to the mruby interpreter
+                    // and interacting with them via the C API is unspecified
+                    // and may result in a segfault.
+                    //
+                    // See: https://github.com/mruby/mruby/issues/4460
+                    Err(Exception::from(Fatal::new(self, "Unreachable Ruby value")))
+                } else {
+                    Ok(value)
+                }
             }
-            value
-        };
-
-        if let Some(exc) = self.last_error()? {
-            Err(exc)
-        } else {
-            let value = Value::new(self, value);
-            if value.is_unreachable() {
-                // Unreachable values are internal to the mruby interpreter and
-                // interacting with them via the C API is unspecified and may
-                // result in a segfault.
-                //
-                // See: https://github.com/mruby/mruby/issues/4460
-                Err(Exception::from(Fatal::new(self, "Unreachable Ruby value")))
-            } else {
-                Ok(value)
+            Err(exception) => {
+                let exception = Value::new(self, exception);
+                Err(exception_handler::last_error(self, exception)?)
             }
         }
     }
