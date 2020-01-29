@@ -5,29 +5,29 @@ use std::ptr::NonNull;
 use crate::sys;
 use crate::types::Int;
 
-pub unsafe fn funcall<'a>(
+pub unsafe fn funcall(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
     func: sys::mrb_sym,
-    args: &'a [sys::mrb_value],
+    args: &[sys::mrb_value],
     block: Option<sys::mrb_value>,
 ) -> Result<sys::mrb_value, sys::mrb_value> {
-    let cdata = Funcall {
+    let data = Funcall {
         slf,
         func,
         args,
         block,
     };
-    protect(mrb, cdata)
+    protect(mrb, data)
 }
 
-pub unsafe fn eval<'a>(
+pub unsafe fn eval(
     mrb: *mut sys::mrb_state,
     context: *mut sys::mrbc_context,
-    code: &'a [u8],
+    code: &[u8],
 ) -> Result<sys::mrb_value, sys::mrb_value> {
-    let cdata = Eval { context, code };
-    protect(mrb, cdata)
+    let data = Eval { context, code };
+    protect(mrb, data)
 }
 
 pub unsafe fn block_yield(
@@ -35,17 +35,17 @@ pub unsafe fn block_yield(
     block: sys::mrb_value,
     arg: sys::mrb_value,
 ) -> Result<sys::mrb_value, sys::mrb_value> {
-    let cdata = BlockYield { block, arg };
-    protect(mrb, cdata)
+    let data = BlockYield { block, arg };
+    protect(mrb, data)
 }
 
 unsafe fn protect<T: Protect>(
     mrb: *mut sys::mrb_state,
-    cdata: T,
+    data: T,
 ) -> Result<sys::mrb_value, sys::mrb_value> {
-    let cdata = Box::new(cdata);
-    let cdata = Box::into_raw(cdata);
-    let data = sys::mrb_sys_cptr_value(mrb, cdata as *mut c_void);
+    let data = Box::new(data);
+    let data = Box::into_raw(data);
+    let data = sys::mrb_sys_cptr_value(mrb, data as *mut c_void);
     let mut state = 0;
 
     let value = sys::mrb_protect(mrb, Some(T::run), data, &mut state);
