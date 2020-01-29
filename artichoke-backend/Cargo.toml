@@ -10,7 +10,6 @@ license = "MIT"
 keywords = ["artichoke", "artichoke-ruby", "ruby"]
 
 [dependencies]
-backtrace = { version = "0.3", optional = true }
 bstr = "0.2"
 chrono = "0.4"
 downcast = "0.10"
@@ -55,6 +54,5 @@ default-features = false
 default = ["artichoke-array", "artichoke-random", "artichoke-system-environ"]
 artichoke-all-converters = []
 artichoke-array = []
-artichoke-debug = ["backtrace"]
 artichoke-random = ["rand"]
 artichoke-system-environ = []

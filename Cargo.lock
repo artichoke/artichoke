@@ -40,7 +40,6 @@ version = "0.1.0"
 dependencies = [
  "artichoke-core 0.1.0",
  "artichoke-vfs 0.5.0-alpha",
- "backtrace 0.3.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "bindgen 0.51.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bstr 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.50 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -38,8 +38,6 @@
 //! - `SystemStackError`
 //! - `fatal` -- impossible to rescue
 
-#[cfg(feature = "artichoke-debug")]
-use backtrace::Backtrace;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
@@ -271,8 +269,6 @@ macro_rules! ruby_exception_impl {
         #[must_use]
         pub struct $exception {
             message: Cow<'static, [u8]>,
-            #[cfg(feature = "artichoke-debug")]
-            backtrace: Backtrace,
         }
 
         impl $exception {
@@ -285,11 +281,7 @@ macro_rules! ruby_exception_impl {
                     Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes()),
                     Cow::Owned(s) => Cow::Owned(s.into_bytes()),
                 };
-                Self {
-                    message,
-                    #[cfg(feature = "artichoke-debug")]
-                    backtrace: Backtrace::new(),
-                }
+                Self { message }
             }
 
             pub fn new_raw<S>(interp: &Artichoke, message: S) -> Self
@@ -299,8 +291,6 @@ macro_rules! ruby_exception_impl {
                 let _ = interp;
                 Self {
                     message: message.into(),
-                    #[cfg(feature = "artichoke-debug")]
-                    backtrace: Backtrace::new(),
                 }
             }
         }
@@ -384,15 +374,6 @@ macro_rules! ruby_exception_impl {
         where
             $exception: RubyException,
         {
-            #[cfg(feature = "artichoke-debug")]
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                let classname = self.name();
-                let message = String::from_utf8_lossy(self.message());
-                write!(f, "{} ({})", classname, message)?;
-                write!(f, "\n{:?}", self.backtrace)
-            }
-
-            #[cfg(not(feature = "artichoke-debug"))]
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let classname = self.name();
                 let message = String::from_utf8_lossy(self.message());
