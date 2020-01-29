@@ -20,6 +20,7 @@ mod args;
 mod ffi {
     include!(concat!(env!("OUT_DIR"), "/ffi.rs"));
 }
+pub(crate) mod protect;
 
 #[path = "ffi_tests.rs"]
 #[cfg(test)]

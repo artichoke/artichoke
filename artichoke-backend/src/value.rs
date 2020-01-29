@@ -1,84 +1,18 @@
 use artichoke_core::value::Value as ValueLike;
-use std::convert::TryFrom;
-use std::ffi::c_void;
 use std::fmt;
-use std::mem;
 use std::ptr;
 
 use crate::convert::{Convert, TryConvert};
 use crate::exception::Exception;
-use crate::exception_handler::ExceptionHandler;
+use crate::exception_handler;
 use crate::extn::core::exception::{Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
-use crate::sys;
+use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
 use crate::{Artichoke, ArtichokeError};
 
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
-
-// `Protect` must be `Copy` because the call to a function in the
-// `mrb_funcall...` family can unwind with `longjmp` which does not allow Rust
-// to run destructors.
-#[derive(Clone, Copy)]
-struct Protect<'a> {
-    slf: sys::mrb_value,
-    func_sym: u32,
-    args: &'a [sys::mrb_value],
-    block: Option<sys::mrb_value>,
-}
-
-impl<'a> Protect<'a> {
-    fn new(slf: sys::mrb_value, func_sym: u32, args: &'a [sys::mrb_value]) -> Self {
-        Self {
-            slf,
-            func_sym,
-            args,
-            block: None,
-        }
-    }
-
-    fn with_block(self, block: sys::mrb_value) -> Self {
-        Self {
-            slf: self.slf,
-            func_sym: self.func_sym,
-            args: self.args,
-            block: Some(block),
-        }
-    }
-
-    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
-        let ptr = sys::mrb_sys_cptr_ptr(data);
-        // `protect` must be `Copy` because the call to a function in the
-        // `mrb_funcall...` family can unwind with `longjmp` which does not
-        // allow Rust to run destructors.
-        let protect = Box::from_raw(ptr as *mut Self);
-
-        // Pull all of the args out of the `Box` so we can free the
-        // heap-allocated `Box`.
-        let slf = protect.slf;
-        let func_sym = protect.func_sym;
-        let args = protect.args;
-        // This will always unwrap because we've already checked that we
-        // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
-        // i64 max value.
-        let argslen = if let Ok(argslen) = Int::try_from(args.len()) {
-            argslen
-        } else {
-            return sys::mrb_sys_nil_value();
-        };
-        let block = protect.block;
-
-        // Drop the `Box` to ensure it is freed.
-        drop(protect);
-
-        if let Some(block) = block {
-            sys::mrb_funcall_with_block(mrb, slf, func_sym, argslen, args.as_ptr(), block)
-        } else {
-            sys::mrb_funcall_argv(mrb, slf, func_sym, argslen, args.as_ptr())
-        }
-    }
-}
 
 /// Wrapper around a [`sys::mrb_value`].
 #[must_use]
@@ -229,7 +163,7 @@ impl ValueLike for Value {
 
         let _arena = self.interp.create_arena_savepoint();
 
-        let args = args.as_ref().iter().map(Self::inner).collect::<Vec<_>>();
+        let args = args.iter().map(Self::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
             warn!(
                 "Too many args supplied to funcall: given {}, max {}.",
@@ -254,41 +188,38 @@ impl ValueLike for Value {
             .0
             .borrow_mut()
             .sym_intern(func.as_bytes().to_vec());
-        let mut protect = Protect::new(self.inner(), func, args.as_ref());
-        if let Some(block) = block {
-            protect = protect.with_block(block.inner());
-        }
-        let value = unsafe {
-            let data =
-                sys::mrb_sys_cptr_value(mrb, Box::into_raw(Box::new(protect)) as *mut c_void);
-            let mut state = mem::MaybeUninit::<sys::mrb_bool>::uninit();
-
-            let value = sys::mrb_protect(mrb, Some(Protect::run), data, state.as_mut_ptr());
-            if state.assume_init() != 0 {
-                (*mrb).exc = sys::mrb_sys_obj_ptr(value);
-            }
-            value
+        let result = unsafe {
+            protect::funcall(
+                mrb,
+                self.inner(),
+                func,
+                args.as_slice(),
+                block.as_ref().map(Self::inner),
+            )
         };
-
-        if let Some(exc) = self.interp.last_error()? {
-            Err(exc)
-        } else {
-            let value = Self::new(&self.interp, value);
-            if value.is_unreachable() {
-                // Unreachable values are internal to the mruby interpreter and
-                // interacting with them via the C API is unspecified and may
-                // result in a segfault.
-                //
-                // See: https://github.com/mruby/mruby/issues/4460
-                Err(Exception::from(Fatal::new(
-                    &self.interp,
-                    "Unreachable Ruby value",
-                )))
-            } else {
-                let value = value.try_into::<T>().map_err(|err| {
-                    TypeError::new(&self.interp, format!("Type conversion failed: {}", err))
-                })?;
-                Ok(value)
+        match result {
+            Ok(value) => {
+                let value = Self::new(&self.interp, value);
+                if value.is_unreachable() {
+                    // Unreachable values are internal to the mruby interpreter
+                    // and interacting with them via the C API is unspecified
+                    // and may result in a segfault.
+                    //
+                    // See: https://github.com/mruby/mruby/issues/4460
+                    Err(Exception::from(Fatal::new(
+                        &self.interp,
+                        "Unreachable Ruby value",
+                    )))
+                } else {
+                    let value = value.try_into::<T>().map_err(|err| {
+                        TypeError::new(&self.interp, format!("Type conversion failed: {}", err))
+                    })?;
+                    Ok(value)
+                }
+            }
+            Err(exception) => {
+                let exception = Self::new(&self.interp, exception);
+                Err(exception_handler::last_error(&self.interp, exception)?)
             }
         }
     }
@@ -409,28 +340,30 @@ impl Block {
 
         let _arena = interp.create_arena_savepoint();
 
-        // TODO: does this need to be wrapped in `mrb_protect`.
-        let value = unsafe { sys::mrb_yield(mrb, self.value, arg.inner()) };
-
-        if let Some(exc) = interp.last_error()? {
-            Err(exc)
-        } else {
-            let value = Value::new(interp, value);
-            if value.is_unreachable() {
-                // Unreachable values are internal to the mruby interpreter and
-                // interacting with them via the C API is unspecified and may
-                // result in a segfault.
-                //
-                // See: https://github.com/mruby/mruby/issues/4460
-                Err(Exception::from(Fatal::new(
-                    interp,
-                    "Unreachable Ruby value",
-                )))
-            } else {
-                let value = value.try_into::<T>().map_err(|err| {
-                    TypeError::new(interp, format!("Type conversion failed: {}", err))
-                })?;
-                Ok(value)
+        let result = unsafe { protect::block_yield(mrb, self.value, arg.inner()) };
+        match result {
+            Ok(value) => {
+                let value = Value::new(interp, value);
+                if value.is_unreachable() {
+                    // Unreachable values are internal to the mruby interpreter
+                    // and interacting with them via the C API is unspecified
+                    // and may result in a segfault.
+                    //
+                    // See: https://github.com/mruby/mruby/issues/4460
+                    Err(Exception::from(Fatal::new(
+                        interp,
+                        "Unreachable Ruby value",
+                    )))
+                } else {
+                    let value = value.try_into::<T>().map_err(|err| {
+                        TypeError::new(interp, format!("Type conversion failed: {}", err))
+                    })?;
+                    Ok(value)
+                }
+            }
+            Err(exception) => {
+                let exception = Value::new(interp, exception);
+                Err(exception_handler::last_error(interp, exception)?)
             }
         }
     }
