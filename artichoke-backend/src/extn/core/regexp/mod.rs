@@ -130,10 +130,9 @@ impl Regexp {
             let encoding = match enc::parse(&encoding) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let encoding_bytes = encoding.to_s();
-                    let encoding_string = String::from_utf8_lossy(encoding_bytes.as_slice());
-                    let warning = format!("encoding option is ignored -- {}", encoding_string);
-                    interp.warn(warning.as_bytes())?;
+                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
+                    warning.extend(encoding.to_s());
+                    interp.warn(warning.as_slice())?;
                     None
                 }
             };
@@ -143,10 +142,9 @@ impl Regexp {
             let encoding = match enc::parse(&options) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
-                    let options_bytes = options.to_s();
-                    let options_string = String::from_utf8_lossy(options_bytes.as_slice());
-                    let warning = format!("encoding option is ignored -- {}", options_string);
-                    interp.warn(warning.as_bytes())?;
+                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
+                    warning.extend(options.to_s());
+                    interp.warn(warning.as_slice())?;
                     None
                 }
             };
