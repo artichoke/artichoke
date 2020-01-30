@@ -10,7 +10,7 @@ use crate::def::{EnclosingRubyScope, Method};
 use crate::method;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, Intern};
 
 #[derive(Clone)]
 pub struct Builder<'a> {
@@ -124,10 +124,10 @@ impl Spec {
         let name = name.into();
         let cstring =
             CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
-        let sym = interp
-            .0
-            .borrow_mut()
-            .sym_intern(name.as_ref().to_owned().into_bytes());
+        let sym = match name {
+            Cow::Borrowed(name) => interp.intern_symbol(name.as_bytes()),
+            Cow::Owned(ref name) => interp.intern_symbol(name.clone().into_bytes()),
+        };
         Ok(Self {
             name,
             cstring,

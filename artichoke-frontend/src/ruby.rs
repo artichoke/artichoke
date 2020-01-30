@@ -8,7 +8,7 @@ use artichoke_backend::fs;
 use artichoke_backend::state::parser::Context;
 use artichoke_backend::string;
 use artichoke_backend::sys;
-use artichoke_backend::{Artichoke, BootError, Eval, Parser as _};
+use artichoke_backend::{Artichoke, BootError, Eval, Intern, Parser as _};
 use std::ffi::{OsStr, OsString};
 use std::fmt::Write;
 use std::io::{self, Read};
@@ -128,7 +128,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
                 "No such file or directory",
             )?));
         };
-        let sym = interp.0.borrow_mut().sym_intern(b"$fixture".as_ref());
+        let sym = interp.intern_symbol(&b"$fixture"[..]);
         let mrb = interp.0.borrow().mrb;
         let value = interp.convert(data);
         unsafe {
@@ -159,7 +159,7 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
                 "No such file or directory",
             )?));
         };
-        let sym = interp.0.borrow_mut().sym_intern(b"$fixture".as_ref());
+        let sym = interp.intern_symbol(&b"$fixture"[..]);
         let mrb = interp.0.borrow().mrb;
         let value = interp.convert(data);
         unsafe {
