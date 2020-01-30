@@ -1,6 +1,5 @@
 //! [`MatchData#[]`](https://ruby-doc.org/core-2.6.3/MatchData.html#method-i-5B-5D)
 
-use bstr::BStr;
 use std::convert::TryFrom;
 use std::mem;
 
@@ -144,14 +143,10 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Ex
                     .last();
                 Ok(interp.convert(group))
             } else {
-                let groupstr = format!("{:?}", <&BStr>::from(name));
-                Err(Exception::from(IndexError::new(
-                    interp,
-                    format!(
-                        "undefined group name reference: {}",
-                        &groupstr[1..groupstr.len() - 1]
-                    ),
-                )))
+                let mut message = String::from("undefined group name reference: \"");
+                string::escape_unicode(&mut message, name)?;
+                message.push('"');
+                Err(Exception::from(IndexError::new(interp, message)))
             }
         }
         Args::StartLen(start, len) => {

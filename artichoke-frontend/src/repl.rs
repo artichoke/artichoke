@@ -24,7 +24,7 @@ const REPL_FILENAME: &[u8] = b"(airb)";
 #[cfg(test)]
 mod filename_test {
     #[test]
-    fn repl_filename_has_no_nul_bytes() {
+    fn repl_filename_does_not_contain_nul_byte() {
         let contains_nul_byte = super::REPL_FILENAME
             .iter()
             .copied()

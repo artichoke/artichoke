@@ -109,6 +109,7 @@ pub mod method;
 pub mod module;
 pub mod parser;
 pub mod state;
+pub mod string;
 pub mod sys;
 pub mod top_self;
 pub mod types;

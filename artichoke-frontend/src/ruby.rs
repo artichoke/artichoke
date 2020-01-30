@@ -6,12 +6,14 @@ use artichoke_backend::convert::Convert;
 use artichoke_backend::exception::Exception;
 use artichoke_backend::fs;
 use artichoke_backend::state::parser::Context;
+use artichoke_backend::string;
 use artichoke_backend::sys;
+use artichoke_backend::Artichoke;
 use artichoke_backend::BootError;
 use artichoke_core::eval::Eval as _;
 use artichoke_core::parser::Parser as _;
-use bstr::BStr;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
+use std::fmt::Write;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
@@ -21,14 +23,13 @@ const INLINE_EVAL_SWITCH_FILENAME: &[u8] = b"-e";
 #[cfg(test)]
 mod filename_test {
     #[test]
-    fn inline_eval_switch_filename_has_no_nul_bytes() {
-        assert_eq!(
-            None,
-            super::INLINE_EVAL_SWITCH_FILENAME
-                .iter()
-                .copied()
-                .position(|b| b == b'\0')
-        );
+    fn inline_eval_switch_filename_does_not_contain_nul_byte() {
+        let contains_nul_byte = super::INLINE_EVAL_SWITCH_FILENAME
+            .iter()
+            .copied()
+            .position(|b| b == b'\0')
+            .is_some();
+        assert!(!contains_nul_byte);
     }
 }
 
@@ -52,6 +53,7 @@ struct Opt {
 }
 
 /// Error from Ruby CLI frontend
+#[derive(Debug)]
 pub enum Error {
     /// Error from Artichoke interpreter initialization.
     Artichoke(BootError),
@@ -101,38 +103,34 @@ pub fn entrypoint() -> Result<(), Error> {
     } else if let Some(programfile) = opt.programfile {
         execute_program_file(programfile.as_path(), opt.fixture.as_ref().map(Path::new))
     } else {
-        let mut program = Vec::new();
-        let result = io::stdin().read_to_end(&mut program);
-        if result.is_ok() {
-            let interp = artichoke_backend::interpreter()?;
-            let _ = interp.eval(program.as_slice())?;
-            Ok(())
-        } else {
-            Err(Error::from("Could not read program from STDIN"))
-        }
+        let mut program = vec![];
+        io::stdin()
+            .read_to_end(&mut program)
+            .map_err(|_| "Could not read program from STDIN")?;
+        let interp = artichoke_backend::interpreter()?;
+        let _ = interp.eval(program.as_slice())?;
+        Ok(())
     }
 }
 
 fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Result<(), Error> {
     let mut interp = artichoke_backend::interpreter()?;
     // safety:
-    // Context::new_unchecked requires that INLINE_EVAL_SWITCH_FILENAME have no
-    // NUL bytes.
-    // INLINE_EVAL_SWITCH_FILENAME is controlled by this crate and asserts this
-    // invariant with a test.
+    //
+    // - `Context::new_unchecked` requires that its argument has no NUL bytes.
+    // - `INLINE_EVAL_SWITCH_FILENAME` is controlled by this crate.
+    // - A test asserts that `INLINE_EVAL_SWITCH_FILENAME` has no NUL bytes.
     interp.push_context(unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH_FILENAME) });
     if let Some(ref fixture) = fixture {
-        let data = std::fs::read(fixture).map_err(|_| {
-            if let Ok(file) = fs::osstr_to_bytes(&interp, fixture.as_os_str()) {
-                let file = format!("{:?}", <&BStr>::from(file));
-                format!(
-                    "No such file or directory -- {} (LoadError)",
-                    &file[1..file.len() - 1]
-                )
-            } else {
-                format!("No such file or directory -- {:?} (LoadError)", fixture)
-            }
-        })?;
+        let data = if let Ok(data) = std::fs::read(fixture) {
+            data
+        } else {
+            return Err(Error::from(load_error(
+                &interp,
+                fixture.as_os_str(),
+                "No such file or directory",
+            )?));
+        };
         let sym = interp.0.borrow_mut().sym_intern(b"$fixture".as_ref());
         let mrb = interp.0.borrow().mrb;
         let value = interp.convert(data);
@@ -155,17 +153,15 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
 fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<(), Error> {
     let interp = artichoke_backend::interpreter()?;
     if let Some(ref fixture) = fixture {
-        let data = std::fs::read(fixture).map_err(|_| {
-            if let Ok(file) = fs::osstr_to_bytes(&interp, fixture.as_os_str()) {
-                let file = format!("{:?}", <&BStr>::from(file));
-                format!(
-                    "No such file or directory -- {} (LoadError)",
-                    &file[1..file.len() - 1]
-                )
-            } else {
-                format!("No such file or directory -- {:?} (LoadError)", fixture)
-            }
-        })?;
+        let data = if let Ok(data) = std::fs::read(fixture) {
+            data
+        } else {
+            return Err(Error::from(load_error(
+                &interp,
+                fixture.as_os_str(),
+                "No such file or directory",
+            )?));
+        };
         let sym = interp.0.borrow_mut().sym_intern(b"$fixture".as_ref());
         let mrb = interp.0.borrow().mrb;
         let value = interp.convert(data);
@@ -173,41 +169,40 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
             sys::mrb_gv_set(mrb, sym, value.inner());
         }
     }
-    let program = std::fs::read(programfile).map_err(|err| match err.kind() {
-        io::ErrorKind::NotFound => {
-            if let Ok(file) = fs::osstr_to_bytes(&interp, programfile.as_os_str()) {
-                let file = format!("{:?}", <&BStr>::from(file));
-                format!(
-                    "No such file or directory -- {} (LoadError)",
-                    &file[1..file.len() - 1]
-                )
-            } else {
-                format!("No such file or directory -- {:?} (LoadError)", programfile)
+    let program = match std::fs::read(programfile) {
+        Ok(programfile) => programfile,
+        Err(err) => {
+            return match err.kind() {
+                io::ErrorKind::NotFound => Err(Error::from(load_error(
+                    &interp,
+                    programfile.as_os_str(),
+                    "No such file or directory",
+                )?)),
+                io::ErrorKind::PermissionDenied => Err(Error::from(load_error(
+                    &interp,
+                    programfile.as_os_str(),
+                    "Permission denied",
+                )?)),
+                _ => Err(Error::from(load_error(
+                    &interp,
+                    programfile.as_os_str(),
+                    "Could not read file",
+                )?)),
             }
         }
-        io::ErrorKind::PermissionDenied => {
-            if let Ok(file) = fs::osstr_to_bytes(&interp, programfile.as_os_str()) {
-                let file = format!("{:?}", <&BStr>::from(file));
-                format!(
-                    "Permission denied -- {} (LoadError)",
-                    &file[1..file.len() - 1]
-                )
-            } else {
-                format!("Permission denied -- {:?} (LoadError)", programfile)
-            }
-        }
-        _ => {
-            if let Ok(file) = fs::osstr_to_bytes(&interp, programfile.as_os_str()) {
-                let file = format!("{:?}", <&BStr>::from(file));
-                format!(
-                    "Could not read file -- {} (LoadError)",
-                    &file[1..file.len() - 1]
-                )
-            } else {
-                format!("Could not read file -- {:?} (LoadError)", programfile)
-            }
-        }
-    })?;
+    };
     let _ = interp.eval(program.as_slice())?;
     Ok(())
+}
+
+fn load_error(interp: &Artichoke, file: &OsStr, message: &str) -> Result<String, Error> {
+    let mut buf = String::from(message);
+    buf.push_str(" -- ");
+    if let Ok(file) = fs::osstr_to_bytes(interp, file) {
+        string::escape_unicode(&mut buf, file).map_err(Exception::from)?;
+    } else {
+        write!(&mut buf, "{:?}", file).map_err(|err| err.to_string())?;
+    }
+    buf.push_str(" (LoadError)");
+    Ok(buf)
 }

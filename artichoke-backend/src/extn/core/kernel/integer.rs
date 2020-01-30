@@ -1,4 +1,3 @@
-use bstr::BStr;
 use std::convert::TryFrom;
 use std::iter::Iterator;
 use std::str::{self, FromStr};
@@ -24,18 +23,8 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
     };
     let radix = match radix.map(u32::try_from) {
         Some(Ok(radix)) if radix >= 2 && radix <= 36 => Some(radix),
-        Some(Ok(radix)) => {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                format!("invalid radix {}", radix),
-            )))
-        }
-        Some(Err(_)) => {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                format!("invalid radix {}", radix.unwrap_or_default()),
-            )))
-        }
+        Some(Ok(radix)) => return Err(Exception::from(invalid_radix_error(interp, radix))),
+        Some(Err(_)) => return Err(Exception::from(ArgumentError::new(interp, "invalid radix"))),
         None => None,
     };
     let ruby_type = arg.pretty_name();
@@ -50,18 +39,12 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         )));
     };
     if memchr::memchr(b'\0', arg).is_some() {
-        return Err(Exception::from(ArgumentError::new(
-            interp,
-            format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-        )));
+        return Err(Exception::from(invalid_value_err(interp, arg)?));
     }
     let arg = if let Ok(arg) = str::from_utf8(arg) {
         arg
     } else {
-        return Err(Exception::from(ArgumentError::new(
-            interp,
-            format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-        )));
+        return Err(Exception::from(invalid_value_err(interp, arg)?));
     };
 
     let mut state = ParseState::Initial;
@@ -85,10 +68,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         }
         if current.is_whitespace() {
             if let Some('+') | Some('-') = prev {
-                return Err(Exception::from(ArgumentError::new(
-                    interp,
-                    format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-                )));
+                return Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?));
             } else {
                 prev = Some(current);
 
@@ -99,19 +79,13 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         state = match current {
             '+' => {
                 if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
-                    return Err(Exception::from(ArgumentError::new(
-                        interp,
-                        format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-                    )));
+                    return Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?));
                 }
                 ParseState::Sign(Sign::Pos)
             }
             '-' => {
                 if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
-                    return Err(Exception::from(ArgumentError::new(
-                        interp,
-                        format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-                    )));
+                    return Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?));
                 }
                 ParseState::Sign(Sign::Neg)
             }
@@ -159,10 +133,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
                 let next = chars.next();
                 if let Some(next) = next {
                     if !next.is_numeric() && !next.is_alphabetic() {
-                        return Err(Exception::from(ArgumentError::new(
-                            interp,
-                            format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-                        )));
+                        return Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?));
                     } else if let Some('0') = first {
                         digits.drain(..1);
                         Some(8)
@@ -180,10 +151,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         }
         (digits, parsed_radix)
     } else {
-        return Err(Exception::from(ArgumentError::new(
-            interp,
-            format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-        )));
+        return Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?));
     };
 
     match (radix, parsed_radix) {
@@ -191,39 +159,37 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
             if let Ok(integer) = Int::from_str_radix(candidate.as_str(), radix) {
                 Ok(interp.convert(integer))
             } else {
-                Err(Exception::from(ArgumentError::new(
-                    interp,
-                    format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-                )))
+                Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?))
             }
         }
         (Some(radix), None) | (None, Some(radix)) if radix >= 2 && radix <= 36 => {
             if let Ok(integer) = Int::from_str_radix(candidate.as_str(), radix) {
                 Ok(interp.convert(integer))
             } else {
-                Err(Exception::from(ArgumentError::new(
-                    interp,
-                    format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-                )))
+                Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?))
             }
         }
         (None, None) => {
             if let Ok(integer) = Int::from_str(candidate.as_str()) {
                 Ok(interp.convert(integer))
             } else {
-                Err(Exception::from(ArgumentError::new(
-                    interp,
-                    format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-                )))
+                Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?))
             }
         }
-        (Some(_), Some(_)) => Err(Exception::from(ArgumentError::new(
-            interp,
-            format!(r#"invalid value for Integer(): "{}"#, <&BStr>::from(arg)),
-        ))),
-        (Some(radix), None) | (None, Some(radix)) => Err(Exception::from(ArgumentError::new(
-            interp,
-            format!("invalid radix {}", radix),
-        ))),
+        (Some(_), Some(_)) => Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?)),
+        (Some(radix), None) | (None, Some(radix)) => {
+            Err(Exception::from(invalid_radix_error(interp, radix)))
+        }
     }
+}
+
+fn invalid_value_err(interp: &Artichoke, arg: &[u8]) -> Result<ArgumentError, Exception> {
+    let mut message = String::from(r#"invalid value for Integer(): ""#);
+    string::escape_unicode(&mut message, arg)?;
+    message.push('"');
+    Ok(ArgumentError::new(interp, message))
+}
+
+fn invalid_radix_error(interp: &Artichoke, radix: u32) -> ArgumentError {
+    ArgumentError::new(interp, format!("invalid radix {}", radix))
 }
