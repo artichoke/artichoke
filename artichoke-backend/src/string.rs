@@ -57,6 +57,7 @@ where
 pub struct WriteError(fmt::Error);
 
 impl From<fmt::Error> for WriteError {
+    #[must_use]
     fn from(err: fmt::Error) -> Self {
         Self(err)
     }
@@ -69,33 +70,40 @@ impl fmt::Display for WriteError {
 }
 
 impl error::Error for WriteError {
+    #[must_use]
     fn description(&self) -> &str {
         "Write error"
     }
 
+    #[must_use]
     fn cause(&self) -> Option<&dyn error::Error> {
         Some(&self.0)
     }
 }
 
 impl RubyException for WriteError {
+    #[must_use]
     fn box_clone(&self) -> Box<dyn RubyException> {
         Box::new(self.clone())
     }
 
+    #[must_use]
     fn message(&self) -> &[u8] {
         &b"Unable to escape Unicode message"[..]
     }
 
+    #[must_use]
     fn name(&self) -> String {
         String::from("fatal")
     }
 
+    #[must_use]
     fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
 
+    #[must_use]
     fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
         let borrow = interp.0.borrow();
         let spec = borrow.class_spec::<Fatal>()?;
@@ -106,18 +114,19 @@ impl RubyException for WriteError {
 
 impl From<WriteError> for Exception {
     #[must_use]
-    fn from(exception: WriteError) -> Exception {
-        Exception::from(Box::<dyn RubyException>::from(exception))
+    fn from(exception: WriteError) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
 impl From<Box<WriteError>> for Exception {
     #[must_use]
-    fn from(exception: Box<WriteError>) -> Exception {
-        Exception::from(Box::<dyn RubyException>::from(exception))
+    fn from(exception: Box<WriteError>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
+#[allow(clippy::use_self)]
 impl From<WriteError> for Box<dyn RubyException> {
     #[must_use]
     fn from(exception: WriteError) -> Box<dyn RubyException> {
@@ -125,6 +134,7 @@ impl From<WriteError> for Box<dyn RubyException> {
     }
 }
 
+#[allow(clippy::use_self)]
 impl From<Box<WriteError>> for Box<dyn RubyException> {
     #[must_use]
     fn from(exception: Box<WriteError>) -> Box<dyn RubyException> {
