@@ -1,7 +1,6 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
 use artichoke_core::parser::Parser as _;
-use bstr::BStr;
 use std::ffi::OsStr;
 use std::path::Path;
 
@@ -41,14 +40,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
         api.vfs.is_file(path.as_path())
     };
     if !is_file {
-        let filestr = format!("{:?}", <&BStr>::from(filename));
-        return Err(Exception::from(LoadError::new(
-            interp,
-            format!(
-                "cannot load such file -- {:?}",
-                &filestr[1..filestr.len() - 1]
-            ),
-        )));
+        return Err(Exception::from(load_error(interp, filename)?));
     }
     let metadata = {
         let api = interp.0.borrow();
@@ -70,14 +62,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
         // dynamic, Rust-backed `File` require
         if require(interp).is_err() {
             let _ = interp.pop_context();
-            let filestr = format!("{:?}", <&BStr>::from(filename));
-            return Err(Exception::from(LoadError::new(
-                interp,
-                format!(
-                    "cannot load such file -- {:?}",
-                    &filestr[1..filestr.len() - 1]
-                ),
-            )));
+            return Err(Exception::from(load_error(interp, filename)?));
         }
     }
     let contents = {
@@ -88,9 +73,11 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
         let _ = interp.eval(contents.as_slice())?;
     }
     let _ = interp.pop_context();
+    let mut logged_filename = String::new();
+    let _ = string::escape_unicode(&mut logged_filename, filename);
     trace!(
-        r#"Successful load of "{:?}" at {:?}"#,
-        <&BStr>::from(filename),
+        r#"Successful require of "{}" at {:?}"#,
+        logged_filename,
         path,
     );
     Ok(interp.convert(true))
@@ -159,14 +146,7 @@ pub fn require(
                 // dynamic, Rust-backed `File` require
                 if require(interp).is_err() {
                     let _ = interp.pop_context();
-                    let filestr = format!("{:?}", <&BStr>::from(filename));
-                    return Err(Exception::from(LoadError::new(
-                        interp,
-                        format!(
-                            "cannot load such file -- {:?}",
-                            &filestr[1..filestr.len() - 1]
-                        ),
-                    )));
+                    return Err(Exception::from(load_error(interp, filename)?));
                 }
             }
             let contents = {
@@ -188,9 +168,11 @@ pub fn require(
                         "Unable to set require metadata in the Artichoke virtual filesystem",
                     )
                 })?;
+            let mut logged_filename = String::new();
+            let _ = string::escape_unicode(&mut logged_filename, filename);
             trace!(
-                r#"Successful require of {:?} at {:?}"#,
-                <&BStr>::from(filename),
+                r#"Successful require of "{}" at {:?}"#,
+                logged_filename,
                 path,
             );
             return Ok(interp.convert(true));
@@ -224,14 +206,7 @@ pub fn require(
                     // dynamic, Rust-backed `File` require
                     if require(interp).is_err() {
                         let _ = interp.pop_context();
-                        let filestr = format!("{:?}", <&BStr>::from(filename));
-                        return Err(Exception::from(LoadError::new(
-                            interp,
-                            format!(
-                                "cannot load such file -- {:?}",
-                                &filestr[1..filestr.len() - 1]
-                            ),
-                        )));
+                        return Err(Exception::from(load_error(interp, filename)?));
                     }
                 }
                 let contents = {
@@ -253,9 +228,11 @@ pub fn require(
                             "Unable to set require metadata in the Artichoke virtual filesystem",
                         )
                     })?;
+                let mut logged_filename = String::new();
+                let _ = string::escape_unicode(&mut logged_filename, filename);
                 trace!(
-                    r#"Successful require of {:?} at {:?}"#,
-                    <&BStr>::from(filename),
+                    r#"Successful require of "{}" at {:?}"#,
+                    logged_filename,
                     path,
                 );
                 return Ok(interp.convert(true));
@@ -274,14 +251,7 @@ pub fn require(
         api.vfs.is_file(path.as_path())
     };
     if !is_file {
-        let filestr = format!("{:?}", <&BStr>::from(filename));
-        return Err(Exception::from(LoadError::new(
-            interp,
-            format!(
-                "cannot load such file -- {}",
-                &filestr[1..filestr.len() - 1]
-            ),
-        )));
+        return Err(Exception::from(load_error(interp, filename)?));
     }
     let metadata = {
         let api = interp.0.borrow();
@@ -306,14 +276,7 @@ pub fn require(
         // dynamic, Rust-backed `File` require
         if require(interp).is_err() {
             let _ = interp.pop_context();
-            let filestr = format!("{:?}", <&BStr>::from(filename));
-            return Err(Exception::from(LoadError::new(
-                interp,
-                format!(
-                    "cannot load such file -- {}",
-                    &filestr[1..filestr.len() - 1]
-                ),
-            )));
+            return Err(Exception::from(load_error(interp, filename)?));
         }
     }
     let contents = {
@@ -337,9 +300,11 @@ pub fn require(
                 )
             })?;
     }
+    let mut logged_filename = String::new();
+    let _ = string::escape_unicode(&mut logged_filename, filename);
     trace!(
-        r#"Successful require of "{:?}" at {:?}"#,
-        <&BStr>::from(filename),
+        r#"Successful require of "{}" at {:?}"#,
+        logged_filename,
         path,
     );
     Ok(interp.convert(true))
@@ -362,4 +327,11 @@ pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Ex
         Path::new("/")
     };
     require(interp, file, Some(base))
+}
+
+fn load_error(interp: &Artichoke, filename: &[u8]) -> Result<LoadError, Fatal> {
+    let mut message = String::from("cannot load such file -- ");
+    string::escape_unicode(&mut message, filename)
+        .map_err(|_| Fatal::new(interp, "Unable to generate LoadError"))?;
+    Ok(LoadError::new(interp, message))
 }
