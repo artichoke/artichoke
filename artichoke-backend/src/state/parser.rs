@@ -1,9 +1,9 @@
-use artichoke_core::parser::IncrementLinenoError;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
 use std::ptr::NonNull;
 
+use crate::core::parser::IncrementLinenoError;
 use crate::sys;
 
 /// Filename of the top eval context.

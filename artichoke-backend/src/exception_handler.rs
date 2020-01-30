@@ -1,10 +1,9 @@
-use artichoke_core::value::Value as _;
 use std::ptr;
 
 use crate::exception::{CaughtException, Exception};
 use crate::gc::MrbGarbageCollection;
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, ValueLike};
 
 /// Transform a `Exception` Ruby `Value` into an [`Exception`].
 ///

@@ -1,4 +1,3 @@
-use artichoke_core::value::Value as _;
 use std::convert::TryFrom;
 use std::mem;
 

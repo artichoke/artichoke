@@ -13,8 +13,7 @@ pub struct Abbrev;
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/abbrev/rdoc/Abbrev.html
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value as _;
+    use crate::test::prelude::*;
 
     #[test]
     fn abbrev() {

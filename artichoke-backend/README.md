@@ -21,8 +21,7 @@ artichoke-backend crate exposes eval on the `State` with the `Eval` trait. Side
 effects from eval are persisted across invocations.
 
 ```rust
-use artichoke_core::eval::Eval;
-use artichoke_core::value::Value as _;
+use artichoke_backend::{Eval, ValueLike};
 
 let interp = artichoke_backend::interpreter().unwrap();
 let result = interp.eval(b"10 * 10").unwrap();

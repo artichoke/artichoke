@@ -1,5 +1,3 @@
-use artichoke_core::value::Value as _;
-use artichoke_core::warn::Warn;
 use std::borrow::Cow;
 use std::io::{self, Write};
 
@@ -8,7 +6,7 @@ use crate::exception::Exception;
 use crate::extn::core::exception::RuntimeError;
 use crate::extn::core::warning::Warning;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, ValueLike, Warn};
 
 impl Warn for Artichoke {
     type Error = Exception;

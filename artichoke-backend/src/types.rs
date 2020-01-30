@@ -9,7 +9,7 @@ pub type Int = i64;
 #[cfg(target_arch = "wasm32")]
 pub type Int = i32;
 
-pub use artichoke_core::types::{Ruby, Rust};
+pub use crate::core::types::{Ruby, Rust};
 
 // This conversion has to be from mrb_value instead of mrb_vtype to disambiguate
 // between `Ruby::Nil` and a false `Ruby::Bool`.

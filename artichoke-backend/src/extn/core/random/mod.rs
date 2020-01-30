@@ -1,4 +1,3 @@
-use artichoke_core::value::Value as _;
 use rand::{self, Rng, RngCore};
 use std::convert::TryFrom;
 use std::ptr;

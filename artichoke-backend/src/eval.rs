@@ -1,11 +1,9 @@
-use artichoke_core::eval::Eval;
-
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
 use crate::sys::{protect, DescribeState};
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, Eval};
 
 impl Eval for Artichoke {
     type Value = Value;

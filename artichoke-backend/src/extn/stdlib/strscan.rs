@@ -13,8 +13,7 @@ pub struct StringScanner;
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/strscan/rdoc/StringScanner.html
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::load::LoadSources;
+    use crate::test::prelude::*;
 
     #[test]
     fn strscan_spec() {

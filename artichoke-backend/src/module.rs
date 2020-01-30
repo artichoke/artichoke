@@ -245,11 +245,8 @@ impl PartialEq for Spec {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-
-    use crate::class;
-    use crate::def::EnclosingRubyScope;
     use crate::module::Spec;
+    use crate::test::prelude::*;
 
     #[test]
     fn rclass_for_undef_root_module() {

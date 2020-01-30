@@ -20,8 +20,7 @@
 //! effects from eval are persisted across invocations.
 //!
 //! ```rust
-//! use artichoke_core::eval::Eval;
-//! use artichoke_core::value::Value as _;
+//! use artichoke_backend::{Eval, ValueLike};
 //!
 //! let interp = artichoke_backend::interpreter().unwrap();
 //! let result = interp.eval(b"10 * 10").unwrap();
@@ -119,7 +118,17 @@ pub mod warn;
 #[cfg(test)]
 mod test;
 
+pub use artichoke_core as core;
+pub use artichoke_core::convert::{Convert, TryConvert};
+pub use artichoke_core::eval::Eval;
+pub use artichoke_core::file::File;
+pub use artichoke_core::load::LoadSources;
+pub use artichoke_core::parser::Parser;
+pub use artichoke_core::top_self::TopSelf;
+pub use artichoke_core::value::Value as ValueLike;
+pub use artichoke_core::warn::Warn;
 pub use artichoke_core::ArtichokeError;
+
 pub use interpreter::interpreter;
 
 use crate::exception::Exception;

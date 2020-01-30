@@ -1,9 +1,4 @@
-use artichoke_backend::convert::Convert;
-use artichoke_backend::{Artichoke, BootError};
-use artichoke_core::eval::Eval;
-use artichoke_core::load::LoadSources;
-use artichoke_core::top_self::TopSelf;
-use artichoke_core::value::Value;
+use artichoke_backend::{Artichoke, BootError, Convert, Eval, LoadSources, TopSelf, ValueLike};
 use std::borrow::Cow;
 
 pub fn init(interp: &Artichoke) -> Result<(), BootError> {

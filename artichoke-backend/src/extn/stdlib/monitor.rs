@@ -13,8 +13,7 @@ pub struct Monitor;
 // https://github.com/ruby/spec/tree/master/library/monitor
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value as _;
+    use crate::test::prelude::*;
 
     #[test]
     fn mon_initialize() {

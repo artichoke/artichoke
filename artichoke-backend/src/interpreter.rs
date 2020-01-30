@@ -1,4 +1,3 @@
-use artichoke_core::eval::Eval;
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::ptr::NonNull;
@@ -9,7 +8,7 @@ use crate::fs::Filesystem;
 use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::{Artichoke, ArtichokeError, BootError};
+use crate::{Artichoke, ArtichokeError, BootError, Eval};
 
 /// Create and initialize an [`Artichoke`] interpreter.
 ///

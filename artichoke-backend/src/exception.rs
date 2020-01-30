@@ -1,10 +1,9 @@
-use artichoke_core::value::Value as _;
 use std::error;
 use std::fmt;
 
 use crate::sys;
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, ValueLike};
 
 #[derive(Debug)]
 pub struct Exception(Box<dyn RubyException>);
