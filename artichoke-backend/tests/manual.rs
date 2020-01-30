@@ -56,7 +56,7 @@ impl Container {
 impl File for Container {
     type Artichoke = Artichoke;
 
-    fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+    fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
         let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Box<Self>>))?;
         class::Builder::for_spec(interp, &spec)
             .value_is_rust_object()

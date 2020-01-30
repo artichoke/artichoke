@@ -150,7 +150,7 @@ mod tests {
         impl File for TestFile {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+            fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
                 let _ = interp.eval(b"@i = 255").unwrap();
                 Ok(())
             }
@@ -222,7 +222,7 @@ mod tests {
         impl File for Foo {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+            fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
                 let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();
                 Ok(())
             }
@@ -250,7 +250,7 @@ mod tests {
         impl File for Foo {
             type Artichoke = Artichoke;
 
-            fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+            fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
                 let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();
                 Ok(())
             }
