@@ -14,6 +14,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str;
 
+use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 
 #[allow(clippy::type_complexity)]
@@ -223,16 +224,10 @@ impl Regexp {
         let mut iter = patterns.iter().peekable();
         let pattern = if let Some(first) = iter.next() {
             if iter.peek().is_none() {
-                #[cfg(feature = "artichoke-array")]
-                let ary = unsafe { crate::extn::core::array::Array::try_from_ruby(interp, &first) };
-                #[cfg(not(feature = "artichoke-array"))]
-                let ary = first.clone().try_into::<Vec<Value>>();
-                if let Ok(ary) = ary {
-                    #[cfg(feature = "artichoke-array")]
+                if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &first) } {
                     let borrow = ary.borrow();
-                    #[cfg(feature = "artichoke-array")]
                     let ary = borrow.as_vec(interp);
-                    let mut patterns = vec![];
+                    let mut patterns = Vec::with_capacity(ary.len());
                     for pattern in ary {
                         if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                             patterns.push(regexp.borrow().0.derived_config().pattern.clone());
