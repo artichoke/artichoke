@@ -1,18 +1,135 @@
+//! Utilities for working with Ruby `String`s.
+//!
+//! In Ruby, `String` is a `Vec<u8>` with an optional encoding. `String`s
+//! default to UTF-8 encoding but this does not require the byte vector to
+//! contain valid UTF-8.
+//!
+//! Artichoke aims to support ASCII, UTF-8, maybe UTF-8, and binary encodings.
+
 use bstr::ByteSlice;
+use std::error;
 use std::fmt;
 
-pub fn escape_unicode(mut f: impl fmt::Write, string: &[u8]) -> fmt::Result {
+use crate::convert::Convert;
+use crate::exception::{Exception, RubyException};
+use crate::extn::core::exception::Fatal;
+use crate::sys;
+use crate::Artichoke;
+
+/// Write a UTF-8 representation of a (potentially) binary `String`.
+///
+/// This function encodes a bytes slice into a UTF-8 valid representation by
+/// writing invalid sequences as `\xXX` escape codes.
+///
+/// This function uses `char::escape_debug` which means UTF-8 valid characters
+/// like `\n` and `\t` are also escaped.
+///
+/// # Examples
+///
+/// ```
+/// # use artichoke_backend::string::escape_unicode;
+/// let mut message = String::from("cannot load such file -- ");
+/// let filename = b"oh-no-\xFF";
+/// escape_unicode(&mut message, &filename[..]);
+/// assert_eq!(r"cannot load such file -- oh-no-\xFF", message);
+/// ```
+pub fn escape_unicode<T>(mut f: T, string: &[u8]) -> Result<(), WriteError>
+where
+    T: fmt::Write,
+{
     let buf = bstr::B(string);
-    for (s, e, ch) in buf.char_indices() {
+    for (start, end, ch) in buf.char_indices() {
         if ch == '\u{FFFD}' {
-            for &b in buf[s..e].as_bytes() {
-                write!(f, r"\x{:X}", b)?;
+            for byte in buf[start..end].as_bytes() {
+                write!(f, r"\x{:X}", byte)?;
             }
         } else {
             write!(f, "{}", ch.escape_debug())?;
         }
     }
     Ok(())
+}
+
+/// Error type for [`escape_unicode`].
+///
+/// This error type wraps a [`fmt::Error`].
+#[derive(Debug, Clone)]
+pub struct WriteError(fmt::Error);
+
+impl From<fmt::Error> for WriteError {
+    fn from(err: fmt::Error) -> Self {
+        Self(err)
+    }
+}
+
+impl fmt::Display for WriteError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Unable to write escaped Unicode into destination")
+    }
+}
+
+impl error::Error for WriteError {
+    fn description(&self) -> &str {
+        "Write error"
+    }
+
+    fn cause(&self) -> Option<&dyn error::Error> {
+        Some(&self.0)
+    }
+}
+
+impl RubyException for WriteError {
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        Box::new(self.clone())
+    }
+
+    fn message(&self) -> &[u8] {
+        &b"Unable to escape Unicode message"[..]
+    }
+
+    fn name(&self) -> String {
+        String::from("fatal")
+    }
+
+    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+        let borrow = interp.0.borrow();
+        let spec = borrow.class_spec::<Fatal>()?;
+        let value = spec.new_instance(interp, &[interp.convert(self.message())])?;
+        Some(value.inner())
+    }
+}
+
+impl From<WriteError> for Exception {
+    #[must_use]
+    fn from(exception: WriteError) -> Exception {
+        Exception::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<Box<WriteError>> for Exception {
+    #[must_use]
+    fn from(exception: Box<WriteError>) -> Exception {
+        Exception::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<WriteError> for Box<dyn RubyException> {
+    #[must_use]
+    fn from(exception: WriteError) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+impl From<Box<WriteError>> for Box<dyn RubyException> {
+    #[must_use]
+    fn from(exception: Box<WriteError>) -> Box<dyn RubyException> {
+        exception
+    }
 }
 
 #[cfg(test)]
