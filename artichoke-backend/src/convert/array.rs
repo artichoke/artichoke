@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
-use crate::convert::{Convert, TryConvert};
-#[cfg(feature = "artichoke-array")]
+use crate::convert::{Convert, RustBackedValue, TryConvert};
 use crate::extn::core::array::{Array, InlineBuffer};
 use crate::sys;
 use crate::types::{Float, Int, Ruby, Rust};
@@ -10,52 +9,16 @@ use crate::{Artichoke, ArtichokeError};
 
 // bail out implementation for mixed-type collections
 impl Convert<&[Value], Value> for Artichoke {
-    #[cfg(feature = "artichoke-array")]
     fn convert(&self, value: &[Value]) -> Value {
-        use crate::convert::RustBackedValue;
         let ary = Array::new(InlineBuffer::from(value));
         ary.try_into_ruby(self, None).expect("Array into Value")
-    }
-
-    #[cfg(not(feature = "artichoke-array"))]
-    fn convert(&self, value: &[Value]) -> Value {
-        let mrb = self.0.borrow().mrb;
-        let capa = Int::try_from(value.len()).unwrap_or_default();
-        let array = unsafe { sys::mrb_ary_new_capa(mrb, capa) };
-
-        for (idx, item) in value.iter().enumerate() {
-            let idx = Int::try_from(idx).unwrap_or_default();
-            let item = item.inner();
-            unsafe {
-                sys::mrb_ary_set(mrb, array, idx, item);
-            }
-        }
-        Value::new(self, array)
     }
 }
 
 impl Convert<Vec<Value>, Value> for Artichoke {
-    #[cfg(feature = "artichoke-array")]
     fn convert(&self, value: Vec<Value>) -> Value {
-        use crate::convert::RustBackedValue;
         let ary = Array::new(InlineBuffer::from(value));
         ary.try_into_ruby(self, None).expect("Array into Value")
-    }
-
-    #[cfg(not(feature = "artichoke-array"))]
-    fn convert(&self, value: Vec<Value>) -> Value {
-        let mrb = self.0.borrow().mrb;
-        let capa = Int::try_from(value.len()).unwrap_or_default();
-        let array = unsafe { sys::mrb_ary_new_capa(mrb, capa) };
-
-        for (idx, item) in value.iter().enumerate() {
-            let idx = Int::try_from(idx).unwrap_or_default();
-            let item = item.inner();
-            unsafe {
-                sys::mrb_ary_set(mrb, array, idx, item);
-            }
-        }
-        Value::new(self, array)
     }
 }
 
@@ -77,9 +40,7 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
                 }
                 Ok(elems)
             }
-            #[cfg(feature = "artichoke-array")]
             Ruby::Data => {
-                use crate::convert::RustBackedValue;
                 let array = unsafe { Array::try_from_ruby(self, &value)? };
                 let borrow = array.borrow();
                 Ok(borrow.as_vec(self))

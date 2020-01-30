@@ -254,12 +254,8 @@ mod libmruby {
             .define("MRB_DISABLE_STDIO", None)
             .define("MRB_UTF8_STRING", None)
             .define(mrb_int, None)
-            .define("DISABLE_GEMS", None);
-
-        // Detect crate feature: artichoke-array
-        if env::var("CARGO_FEATURE_ARTICHOKE_ARRAY").is_ok() {
-            build.define("ARTICHOKE", None);
-        }
+            .define("DISABLE_GEMS", None)
+            .define("ARTICHOKE", None);
 
         for gem in gems() {
             let dir = if gem == "mruby-compiler" {
