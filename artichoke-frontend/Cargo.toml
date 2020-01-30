@@ -18,6 +18,3 @@ structopt = "0.3"
 
 [dependencies.artichoke-backend]
 path = "../artichoke-backend"
-
-[dependencies.artichoke-core]
-path = "../artichoke-core"

@@ -73,7 +73,6 @@ version = "0.1.0"
 dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "artichoke-backend 0.1.0",
- "artichoke-core 0.1.0",
  "bstr 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustyline 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -884,7 +883,6 @@ name = "spec-runner"
 version = "0.1.0"
 dependencies = [
  "artichoke-backend 0.1.0",
- "artichoke-core 0.1.0",
  "fs_extra 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-embed 5.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
