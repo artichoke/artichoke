@@ -46,7 +46,7 @@ mod tests {
 
     #[quickcheck]
     fn integer_division_vm_opcode(x: Int, y: Int) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let mut result = true;
         match (x, y) {
             (0, 0) => result &= interp.eval(b"0 / 0").is_err(),
@@ -76,7 +76,7 @@ mod tests {
 
     #[quickcheck]
     fn integer_division_send(x: Int, y: Int) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let mut result = true;
         match (x, y) {
             (0, 0) => result &= interp.eval(b"0.send('/', 0)").is_err(),

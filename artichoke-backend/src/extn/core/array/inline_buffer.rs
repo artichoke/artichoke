@@ -337,7 +337,7 @@ mod tests {
 
     #[test]
     fn integration_test() {
-        let interp = crate::interpreter().unwrap();
+        let mut interp = crate::interpreter().unwrap();
         let _ = interp
             .eval(&include_bytes!("inline_buffer_test.rb")[..])
             .unwrap();

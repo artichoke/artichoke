@@ -1,7 +1,7 @@
 use crate::extn::prelude::*;
 use crate::types;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<Float>().is_some() {
         return Ok(());
     }

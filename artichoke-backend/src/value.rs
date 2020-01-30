@@ -537,7 +537,7 @@ mod tests {
 
     #[test]
     fn is_dead() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let arena = interp.create_arena_savepoint();
         let live = interp.eval(b"'dead'").expect("value");
         assert!(!live.is_dead());
@@ -554,7 +554,7 @@ mod tests {
 
     #[test]
     fn immediate_is_dead() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let arena = interp.create_arena_savepoint();
         let live = interp.eval(b"27").expect("value");
         assert!(!live.is_dead());

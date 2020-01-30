@@ -10,7 +10,7 @@ impl Eval for Artichoke {
 
     type Error = Exception;
 
-    fn eval(&self, code: &[u8]) -> Result<Self::Value, Self::Error> {
+    fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
         // get access to the underlying `ArtichokeState`.
@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn root_eval_context() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let result = interp.eval(b"__FILE__").expect("eval");
         let result = result.try_into::<&str>().expect("convert");
         assert_eq!(result, "(eval)");
@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let _ = interp.eval(b"15").expect("eval");
         // TODO: GH-468 - Use `Parser::peek_context`.
         assert!(interp.0.borrow().parser.peek_context().is_none());
@@ -84,7 +84,7 @@ mod tests {
                 mrb: *mut sys::mrb_state,
                 _slf: sys::mrb_value,
             ) -> sys::mrb_value {
-                let interp = unwrap_interpreter!(mrb);
+                let mut interp = unwrap_interpreter!(mrb);
                 if let Ok(value) = interp.eval(b"__FILE__") {
                     value.inner()
                 } else {
@@ -105,7 +105,7 @@ mod tests {
                 Ok(())
             }
         }
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_file_for_type::<NestedEval>(b"nested_eval.rb")
             .expect("def file");
@@ -143,14 +143,14 @@ NestedEval.file
 
     #[test]
     fn unparseable_code_returns_err_syntax_error() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let err = interp.eval(b"'a").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_str());
     }
 
     #[test]
     fn interpreter_is_usable_after_syntax_error() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let err = interp.eval(b"'a").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_str());
         // Ensure interpreter is usable after evaling unparseable code
@@ -161,7 +161,7 @@ NestedEval.file
 
     #[test]
     fn file_magic_constant() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_rb_source_file(b"source.rb", &b"def file; __FILE__; end"[..])
             .expect("def file");
@@ -172,7 +172,7 @@ NestedEval.file
 
     #[test]
     fn file_not_persistent() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_rb_source_file(b"source.rb", &b"def file; __FILE__; end"[..])
             .expect("def file");
@@ -183,7 +183,7 @@ NestedEval.file
 
     #[test]
     fn return_syntax_error() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_rb_source_file(b"fail.rb", &b"def bad; 'as'.scan(; end"[..])
             .expect("def file");

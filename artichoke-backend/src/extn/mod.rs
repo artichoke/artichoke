@@ -54,7 +54,7 @@ macro_rules! global_const {
     }};
 }
 
-pub fn init(interp: &Artichoke, backend_name: &str) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke, backend_name: &str) -> InitializeResult<()> {
     let mut engine = String::from(RUBY_ENGINE);
     engine.push('-');
     engine.push_str(backend_name);

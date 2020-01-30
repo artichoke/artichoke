@@ -4,7 +4,7 @@ use crate::extn::prelude::*;
 pub mod integer;
 pub mod require;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().module_spec::<Kernel>().is_some() {
         return Ok(());
     }
@@ -156,7 +156,7 @@ mod tests {
             }
         }
 
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_file_for_type::<TestFile>(b"file.rb")
             .expect("def file");
@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn require_absolute_path() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_rb_source_file(b"/foo/bar/source.rb", &b"# a source file"[..])
             .expect("def file");
@@ -195,7 +195,7 @@ mod tests {
 
     #[test]
     fn require_relative_with_dotted_path() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_rb_source_file(b"/foo/bar/source.rb", &b"require_relative '../bar.rb'"[..])
             .expect("def file");
@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn require_directory() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let err = interp.eval(b"require '/src'").unwrap_err();
         assert_eq!(&b"cannot load such file -- /src"[..], err.message());
         let expected = vec![Vec::from(&b"(eval):1"[..])];
@@ -227,7 +227,7 @@ mod tests {
                 Ok(())
             }
         }
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
             .expect("def");
@@ -255,7 +255,7 @@ mod tests {
                 Ok(())
             }
         }
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp.def_file_for_type::<Foo>(b"foo.rb").expect("def");
         interp
             .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
@@ -275,7 +275,7 @@ mod tests {
     #[allow(clippy::shadow_unrelated)]
     fn kernel_throw_catch() {
         // https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-catch
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let result = interp
             .eval(b"catch(1) { 123 }")
             .unwrap()

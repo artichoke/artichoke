@@ -32,7 +32,7 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 #[test]
 fn unbounded_arena_growth() {
     // ArtichokeApi::current_exception
-    let interp = artichoke_backend::interpreter().expect("init");
+    let mut interp = artichoke_backend::interpreter().expect("init");
     let code = r#"
 def bad_code
   raise ArgumentError.new("n" * 1024 * 1024)
@@ -44,7 +44,7 @@ end
         Vec::from(&b"(eval):1"[..]),
     ]);
     leak::Detector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
-        let interp = interp.clone();
+        let mut interp = interp.clone();
         let code = b"bad_code";
         let arena = interp.create_arena_savepoint();
         let result = interp.eval(code).unwrap_err();
@@ -59,7 +59,7 @@ end
     let expected = "a".repeat(1024 * 1024);
     leak::Detector::new("to_s", ITERATIONS, LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
-            let interp = interp.clone();
+            let mut interp = interp.clone();
             let arena = interp.create_arena_savepoint();
             let result = interp.eval(b"'a' * 1024 * 1024").expect("eval");
             arena.restore();
@@ -75,7 +75,7 @@ end
     let expected = format!(r#"String<"{}">"#, "a".repeat(1024 * 1024));
     leak::Detector::new("to_s_debug", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
-            let interp = interp.clone();
+            let mut interp = interp.clone();
             let arena = interp.create_arena_savepoint();
             let result = interp.eval(b"'a' * 1024 * 1024").expect("eval");
             arena.restore();

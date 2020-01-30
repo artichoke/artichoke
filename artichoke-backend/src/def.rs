@@ -312,7 +312,7 @@ mod tests {
                     }
                 }
             }
-            let interp = crate::interpreter().expect("init");
+            let mut interp = crate::interpreter().expect("init");
             let class = class::Spec::new("DefineMethodTestClass", None, None).unwrap();
             class::Builder::for_spec(&interp, &class)
                 .add_method("value", value, sys::mrb_args_none())

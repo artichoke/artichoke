@@ -44,7 +44,7 @@ use std::fmt;
 
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let borrow = interp.0.borrow();
 
     let exception_spec = class::Spec::new("Exception", None, None)?;
@@ -474,7 +474,7 @@ mod tests {
 
     #[test]
     fn raise() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         Run::require(&interp).unwrap();
         let err = interp.eval(b"Run.run").unwrap_err();
         assert_eq!("RuntimeError", err.name().as_str());

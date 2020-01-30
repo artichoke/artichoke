@@ -70,7 +70,7 @@ impl File for Container {
 
 #[test]
 fn define_rust_backed_ruby_class() {
-    let interp = artichoke_backend::interpreter().expect("init");
+    let mut interp = artichoke_backend::interpreter().expect("init");
     interp
         .def_file_for_type::<Container>(b"container.rb")
         .expect("def file");

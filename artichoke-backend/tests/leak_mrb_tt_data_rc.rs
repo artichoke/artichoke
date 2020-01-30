@@ -87,7 +87,7 @@ impl File for Container {
 #[test]
 fn rust_backed_mrb_value_smart_pointer_leak() {
     leak::Detector::new("smart pointer", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
-        let interp = artichoke_backend::interpreter().expect("init");
+        let mut interp = artichoke_backend::interpreter().expect("init");
         interp
             .def_file_for_type::<Container>(b"container")
             .expect("def file");

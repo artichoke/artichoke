@@ -17,7 +17,7 @@ mod tests {
 
     #[test]
     fn strscan_spec() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         interp
             .def_rb_source_file(
                 b"/src/test/strscan_test.rb",

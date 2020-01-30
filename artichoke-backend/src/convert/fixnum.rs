@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").expect("eval");
         let expected = Err(ArtichokeError::ConvertToRust {

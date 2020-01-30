@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use crate::extn::core::array;
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<array::Array>().is_some() {
         return Ok(());
     }
