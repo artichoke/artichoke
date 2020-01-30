@@ -103,13 +103,11 @@ impl Default for PromptConfig {
 
 fn preamble(interp: &Artichoke) -> Result<String, Error> {
     let description = interp
-        .eval(b"RUBY_DESCRIPTION")
-        .map_err(Error::Ruby)?
+        .eval(b"RUBY_DESCRIPTION")?
         .try_into::<&str>()
         .map_err(BootError::from)?;
     let compiler = interp
-        .eval(b"ARTICHOKE_COMPILER_VERSION")
-        .map_err(Error::Ruby)?
+        .eval(b"ARTICHOKE_COMPILER_VERSION")?
         .try_into::<&str>()
         .map_err(BootError::from)?;
     let mut buf = String::new();
@@ -156,7 +154,7 @@ pub fn run(
         match readline {
             Ok(line) => {
                 buf.push_str(line.as_str());
-                parser_state = parser.parse(buf.as_str()).map_err(Error::ReplParse)?;
+                parser_state = parser.parse(buf.as_str())?;
                 if parser_state.is_code_block_open() {
                     buf.push('\n');
                     continue;
@@ -164,9 +162,7 @@ pub fn run(
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
                         let result = value.inspect();
-                        output
-                            .write_all(config.result_prefix.as_bytes())
-                            .map_err(Error::Io)?;
+                        output.write_all(config.result_prefix.as_bytes())?;
                         output.write_all(result.as_slice())?;
                     }
                     Err(exc) => {
@@ -175,8 +171,7 @@ pub fn run(
                                 error,
                                 "{} (most recent call last)",
                                 Style::new().bold().paint("Traceback")
-                            )
-                            .map_err(Error::Io)?;
+                            )?;
                             for (num, frame) in backtrace.into_iter().enumerate().rev() {
                                 write!(error, "\t{}: from ", num + 1)?;
                                 error.write_all(frame.as_slice())?;
