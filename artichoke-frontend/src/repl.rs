@@ -98,7 +98,7 @@ impl Default for PromptConfig {
     }
 }
 
-fn preamble(interp: &Artichoke) -> Result<String, Error> {
+fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
     let description = interp
         .eval(b"RUBY_DESCRIPTION")?
         .try_into::<&str>()
@@ -124,7 +124,7 @@ pub fn run(
 ) -> Result<(), Error> {
     let config = config.unwrap_or_default();
     let mut interp = artichoke_backend::interpreter()?;
-    writeln!(output, "{}", preamble(&interp)?)?;
+    writeln!(output, "{}", preamble(&mut interp)?)?;
 
     interp.reset_parser();
     // safety:

@@ -5,7 +5,7 @@ use crate::extn::prelude::*;
 
 pub mod div;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<Integer>().is_some() {
         return Ok(());
     }

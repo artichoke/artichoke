@@ -39,7 +39,7 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
     // operation `Rc::strong_count` will still be 1. This dance is required to
     // avoid leaking Artichoke objects, which will let the `Drop` impl close the mrb
     // context and interpreter.
-    let interp = Artichoke(unsafe { Rc::from_raw(userdata) });
+    let mut interp = Artichoke(unsafe { Rc::from_raw(userdata) });
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before
@@ -47,7 +47,7 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
     interp.disable_gc();
 
     // Initialize Artichoke Core and Standard Library runtime
-    extn::init(&interp, "mruby")?;
+    extn::init(&mut interp, "mruby")?;
 
     // Load mrbgems
     let arena = interp.create_arena_savepoint();

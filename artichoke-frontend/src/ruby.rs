@@ -92,7 +92,7 @@ impl From<&'static str> for Error {
 pub fn entrypoint() -> Result<(), Error> {
     let opt = Opt::from_args();
     if opt.copyright {
-        let interp = artichoke_backend::interpreter()?;
+        let mut interp = artichoke_backend::interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(())
     } else if !opt.commands.is_empty() {
@@ -104,7 +104,7 @@ pub fn entrypoint() -> Result<(), Error> {
         io::stdin()
             .read_to_end(&mut program)
             .map_err(|_| "Could not read program from STDIN")?;
-        let interp = artichoke_backend::interpreter()?;
+        let mut interp = artichoke_backend::interpreter()?;
         let _ = interp.eval(program.as_slice())?;
         Ok(())
     }
@@ -148,7 +148,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
 }
 
 fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<(), Error> {
-    let interp = artichoke_backend::interpreter()?;
+    let mut interp = artichoke_backend::interpreter()?;
     if let Some(ref fixture) = fixture {
         let data = if let Ok(data) = std::fs::read(fixture) {
             data

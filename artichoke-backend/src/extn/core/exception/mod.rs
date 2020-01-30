@@ -44,7 +44,7 @@ use std::fmt;
 
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let borrow = interp.0.borrow();
 
     let exception_spec = class::Spec::new("Exception", None, None)?;
@@ -462,7 +462,7 @@ mod tests {
     impl File for Run {
         type Artichoke = Artichoke;
 
-        fn require(interp: &Artichoke) -> Result<(), ArtichokeError> {
+        fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
             let spec = class::Spec::new("Run", None, None).unwrap();
             class::Builder::for_spec(interp, &spec)
                 .add_self_method("run", Self::run, sys::mrb_args_none())?
@@ -474,8 +474,8 @@ mod tests {
 
     #[test]
     fn raise() {
-        let interp = crate::interpreter().expect("init");
-        Run::require(&interp).unwrap();
+        let mut interp = crate::interpreter().expect("init");
+        Run::require(&mut interp).unwrap();
         let err = interp.eval(b"Run.run").unwrap_err();
         assert_eq!("RuntimeError", err.name().as_str());
         assert_eq!(Vec::from(&b"something went wrong"[..]), err.message());

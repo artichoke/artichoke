@@ -23,7 +23,7 @@ effects from eval are persisted across invocations.
 ```rust
 use artichoke_backend::{Eval, ValueLike};
 
-let interp = artichoke_backend::interpreter().unwrap();
+let mut interp = artichoke_backend::interpreter().unwrap();
 let result = interp.eval(b"10 * 10").unwrap();
 let result = result.try_into::<i64>();
 assert_eq!(result, Ok(100));

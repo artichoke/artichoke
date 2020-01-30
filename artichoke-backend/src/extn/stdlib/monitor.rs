@@ -46,7 +46,7 @@ copy != instance
 # The below requires mspec
 # copy.should_not equal(instance)
 "#;
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let _ = interp.eval(b"require 'monitor'").expect("require");
         let result = interp.eval(spec).expect("spec");
         assert!(result.try_into::<bool>().expect("convert"));

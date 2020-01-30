@@ -29,7 +29,7 @@ pub mod thread;
 pub mod time;
 pub mod warning;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // These core classes are ordered according to the dependency DAG between
     // them.
     let _ = interp.eval(&include_bytes!("object.rb")[..])?;

@@ -2,7 +2,7 @@ use crate::extn::core::artichoke;
 use crate::extn::core::env;
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<env::Environ>().is_some() {
         return Ok(());
     }

@@ -27,7 +27,7 @@ expect = {
 result = Abbrev.abbrev(['ruby'])
 expect == result
 "#;
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let _ = interp.eval(b"require 'abbrev'").expect("require");
         let result = interp.eval(spec).expect("spec");
         assert!(result.try_into::<bool>().expect("convert"));
@@ -46,7 +46,7 @@ expect = {
 result = Abbrev.abbrev(%w{ ruby rules })
 expect == result
 "#;
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let _ = interp.eval(b"require 'abbrev'").expect("require");
         let result = interp.eval(spec).expect("spec");
         assert!(result.try_into::<bool>().expect("convert"));
@@ -72,7 +72,7 @@ expect = {
 result = %w{ summer winter }.abbrev
 expect == result
 "#;
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let _ = interp.eval(b"require 'abbrev'").expect("require");
         let result = interp.eval(spec).expect("spec");
         assert!(result.try_into::<bool>().expect("convert"));

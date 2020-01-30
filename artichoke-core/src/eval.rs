@@ -16,5 +16,5 @@ pub trait Eval {
     type Error: std::error::Error;
 
     /// Eval code on the artichoke interpreter using the current `Context`.
-    fn eval(&self, code: &[u8]) -> Result<Self::Value, Self::Error>;
+    fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error>;
 }

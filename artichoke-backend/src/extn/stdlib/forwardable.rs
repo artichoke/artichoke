@@ -22,7 +22,7 @@ mod tests {
     #[test]
     #[allow(clippy::shadow_unrelated)]
     fn forwardable() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let _ = interp
             .eval(
                 br#"
@@ -87,7 +87,7 @@ r.record_number(0)
 
     #[test]
     fn forwardable_another_example() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let result = interp
             .eval(
                 br#"
@@ -144,7 +144,7 @@ out << q.first
 
     #[test]
     fn forwardable_def_instance_delegator() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let result = interp
             .eval(
                 br#"

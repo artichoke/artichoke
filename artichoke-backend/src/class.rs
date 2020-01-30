@@ -278,7 +278,7 @@ mod tests {
     fn super_class() {
         struct RustError;
 
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let borrow = interp.0.borrow();
         let standard_error = borrow.class_spec::<StandardError>().unwrap();
         let spec = class::Spec::new("RustError", None, None).unwrap();
@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn rclass_for_nested_class() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let _ = interp
             .eval(b"module Foo; class Bar; end; end")
             .expect("eval");
@@ -337,7 +337,7 @@ mod tests {
 
     #[test]
     fn rclass_for_nested_class_under_class() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let _ = interp
             .eval(b"class Foo; class Bar; end; end")
             .expect("eval");

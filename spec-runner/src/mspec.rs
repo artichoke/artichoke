@@ -41,7 +41,7 @@ impl Runner {
         Ok(())
     }
 
-    pub fn run(self) -> Result<bool, BootError> {
+    pub fn run(mut self) -> Result<bool, BootError> {
         init(&self.interp).unwrap();
         self.interp
             .def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;
