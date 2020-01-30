@@ -75,11 +75,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     let _ = interp.pop_context();
     let mut logged_filename = String::new();
     string::escape_unicode(&mut logged_filename, filename)?;
-    trace!(
-        r#"Successful require of "{}" at {:?}"#,
-        logged_filename,
-        path,
-    );
+    trace!(r#"Successful load of "{}" at {:?}"#, logged_filename, path,);
     Ok(interp.convert(true))
 }
 
