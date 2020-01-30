@@ -143,9 +143,10 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Ex
                     .last();
                 Ok(interp.convert(group))
             } else {
-                let mut message = String::from("undefined group name reference: ");
+                let mut message = String::from("undefined group name reference: \"");
                 string::escape_unicode(&mut message, name)
                     .map_err(|_| Fatal::new(interp, "Unable to generate IndexError"))?;
+                message.push('"');
                 Err(Exception::from(IndexError::new(interp, message)))
             }
         }
