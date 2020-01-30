@@ -182,7 +182,12 @@ impl ValueLike for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = self.interp.intern_symbol(func.as_bytes().to_vec());
+        let func = {
+            // This is a hack until Value properly supports interpreter
+            // mutability.
+            let mut interp = self.interp.clone();
+            interp.intern_symbol(func.as_bytes().to_vec())
+        };
         let result = unsafe {
             protect::funcall(
                 mrb,

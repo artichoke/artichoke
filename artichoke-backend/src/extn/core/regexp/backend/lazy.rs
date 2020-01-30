@@ -128,7 +128,7 @@ impl RegexpType for Lazy {
             .unwrap_or_default()
     }
 
-    fn case_match(&self, interp: &Artichoke, pattern: &[u8]) -> Result<bool, Exception> {
+    fn case_match(&self, interp: &mut Artichoke, pattern: &[u8]) -> Result<bool, Exception> {
         self.regexp(interp)?.inner().case_match(interp, pattern)
     }
 
@@ -143,7 +143,7 @@ impl RegexpType for Lazy {
 
     fn match_(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
@@ -153,7 +153,11 @@ impl RegexpType for Lazy {
             .match_(interp, pattern, pos, block)
     }
 
-    fn match_operator(&self, interp: &Artichoke, pattern: &[u8]) -> Result<Option<Int>, Exception> {
+    fn match_operator(
+        &self,
+        interp: &mut Artichoke,
+        pattern: &[u8],
+    ) -> Result<Option<Int>, Exception> {
         self.regexp(interp)?.inner().match_operator(interp, pattern)
     }
 
@@ -188,7 +192,7 @@ impl RegexpType for Lazy {
 
     fn scan(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: Value,
         block: Option<Block>,
     ) -> Result<Value, Exception> {

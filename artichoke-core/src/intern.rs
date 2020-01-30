@@ -20,7 +20,7 @@ pub trait Intern {
     /// Store an immutable byte vector for the life of the interpreter.
     ///
     /// Returns an identifier that enables retrieving the original bytes.
-    fn intern_symbol<T>(&self, symbol: T) -> Self::Symbol
+    fn intern_symbol<T>(&mut self, symbol: T) -> Self::Symbol
     where
         T: Into<Cow<'static, [u8]>>;
 

@@ -6,7 +6,7 @@ use crate::{Artichoke, Intern};
 impl Intern for Artichoke {
     type Symbol = sys::mrb_sym;
 
-    fn intern_symbol<T>(&self, symbol: T) -> Self::Symbol
+    fn intern_symbol<T>(&mut self, symbol: T) -> Self::Symbol
     where
         T: Into<Cow<'static, [u8]>>,
     {

@@ -330,7 +330,7 @@ mod tests {
         let _ = interp
             .eval(b"module Foo; class Bar; end; end")
             .expect("eval");
-        let spec = module::Spec::new(&interp, "Foo", None).unwrap();
+        let spec = module::Spec::new(&mut interp, "Foo", None).unwrap();
         let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::module(&spec)), None).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_some());
     }

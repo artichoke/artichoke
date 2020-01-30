@@ -6,7 +6,7 @@ use crate::extn::prelude::*;
 
 #[allow(clippy::cognitive_complexity)]
 pub fn method(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     value: Value,
     pattern: Value,
     block: Option<Block>,

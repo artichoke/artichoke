@@ -117,15 +117,11 @@ unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
 
 unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, pos, block) = mrb_get_args!(mrb, required = 1, optional = 1, &block);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::match_(
-        &interp,
-        value,
-        Value::new(&interp, pattern),
-        pos.map(|pos| Value::new(&interp, pos)),
-        block,
-    );
+    let pattern = Value::new(&interp, pattern);
+    let pos = pos.map(|pos| Value::new(&interp, pos));
+    let result = regexp::trampoline::match_(&mut interp, value, pattern, pos, block);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -146,9 +142,10 @@ unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::
 
 unsafe extern "C" fn case_compare(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let pattern = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::case_compare(&interp, value, Value::new(&interp, pattern));
+    let pattern = Value::new(&interp, pattern);
+    let result = regexp::trampoline::case_compare(&mut interp, value, pattern);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -160,9 +157,10 @@ unsafe extern "C" fn match_operator(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let pattern = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::match_operator(&interp, value, Value::new(&interp, pattern));
+    let pattern = Value::new(&interp, pattern);
+    let result = regexp::trampoline::match_operator(&mut interp, value, pattern);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(interp, exception),

@@ -202,7 +202,7 @@ impl RegexpType for RegexUtf8 {
         self.derived.pattern.as_slice()
     }
 
-    fn case_match(&self, interp: &Artichoke, pattern: &[u8]) -> Result<bool, Exception> {
+    fn case_match(&self, interp: &mut Artichoke, pattern: &[u8]) -> Result<bool, Exception> {
         let pattern = str::from_utf8(pattern).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -313,7 +313,7 @@ impl RegexpType for RegexUtf8 {
 
     fn match_(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
@@ -425,7 +425,11 @@ impl RegexpType for RegexUtf8 {
         }
     }
 
-    fn match_operator(&self, interp: &Artichoke, pattern: &[u8]) -> Result<Option<Int>, Exception> {
+    fn match_operator(
+        &self,
+        interp: &mut Artichoke,
+        pattern: &[u8],
+    ) -> Result<Option<Int>, Exception> {
         let mrb = interp.0.borrow().mrb;
         let pattern = str::from_utf8(pattern).map_err(|_| {
             ArgumentError::new(
@@ -599,7 +603,7 @@ impl RegexpType for RegexUtf8 {
 
     fn scan(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         value: Value,
         block: Option<Block>,
     ) -> Result<Value, Exception> {
