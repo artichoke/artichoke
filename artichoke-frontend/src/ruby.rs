@@ -13,6 +13,7 @@ use artichoke_backend::BootError;
 use artichoke_core::eval::Eval as _;
 use artichoke_core::parser::Parser as _;
 use std::ffi::{OsStr, OsString};
+use std::fmt::Write;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
