@@ -198,9 +198,9 @@ fn load_error(interp: &Artichoke, file: &OsStr, message: &str) -> Result<String,
     let mut buf = String::from(message);
     buf.push_str(" -- ");
     if let Ok(file) = fs::osstr_to_bytes(interp, file) {
-        string::escape_unicode(&mut buf, file).map_err(|err| err.to_string())?;
+        string::escape_unicode(&mut buf, file).map_err(Exception::from)?;
     } else {
-        buf.push_str(format!("{:?}", file).as_str());
+        write!(&mut buf, "{:?}", file).map_err(|err| err.to_string())?;
     }
     buf.push_str(" (LoadError)");
     Ok(buf)

@@ -183,10 +183,9 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
     }
 }
 
-fn invalid_value_err(interp: &Artichoke, arg: &[u8]) -> Result<ArgumentError, Fatal> {
+fn invalid_value_err(interp: &Artichoke, arg: &[u8]) -> Result<ArgumentError, Exception> {
     let mut message = String::from(r#"invalid value for Integer(): ""#);
-    string::escape_unicode(&mut message, arg)
-        .map_err(|_| Fatal::new(interp, "Unable to generate ArgumentError"))?;
+    string::escape_unicode(&mut message, arg)?;
     message.push('"');
     Ok(ArgumentError::new(interp, message))
 }

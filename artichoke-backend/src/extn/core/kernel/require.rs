@@ -74,7 +74,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     }
     let _ = interp.pop_context();
     let mut logged_filename = String::new();
-    let _ = string::escape_unicode(&mut logged_filename, filename);
+    string::escape_unicode(&mut logged_filename, filename)?;
     trace!(
         r#"Successful require of "{}" at {:?}"#,
         logged_filename,
@@ -169,7 +169,7 @@ pub fn require(
                     )
                 })?;
             let mut logged_filename = String::new();
-            let _ = string::escape_unicode(&mut logged_filename, filename);
+            string::escape_unicode(&mut logged_filename, filename)?;
             trace!(
                 r#"Successful require of "{}" at {:?}"#,
                 logged_filename,
@@ -229,7 +229,7 @@ pub fn require(
                         )
                     })?;
                 let mut logged_filename = String::new();
-                let _ = string::escape_unicode(&mut logged_filename, filename);
+                string::escape_unicode(&mut logged_filename, filename)?;
                 trace!(
                     r#"Successful require of "{}" at {:?}"#,
                     logged_filename,
@@ -301,7 +301,7 @@ pub fn require(
             })?;
     }
     let mut logged_filename = String::new();
-    let _ = string::escape_unicode(&mut logged_filename, filename);
+    string::escape_unicode(&mut logged_filename, filename)?;
     trace!(
         r#"Successful require of "{}" at {:?}"#,
         logged_filename,
@@ -329,9 +329,8 @@ pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Ex
     require(interp, file, Some(base))
 }
 
-fn load_error(interp: &Artichoke, filename: &[u8]) -> Result<LoadError, Fatal> {
+fn load_error(interp: &Artichoke, filename: &[u8]) -> Result<LoadError, Exception> {
     let mut message = String::from("cannot load such file -- ");
-    string::escape_unicode(&mut message, filename)
-        .map_err(|_| Fatal::new(interp, "Unable to generate LoadError"))?;
+    string::escape_unicode(&mut message, filename)?;
     Ok(LoadError::new(interp, message))
 }
