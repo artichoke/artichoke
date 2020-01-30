@@ -1,8 +1,6 @@
-use artichoke_core::top_self::TopSelf;
-
 use crate::sys;
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, TopSelf};
 
 impl TopSelf for Artichoke {
     type Value = Value;

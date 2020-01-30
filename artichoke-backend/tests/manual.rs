@@ -11,11 +11,7 @@ use artichoke_backend::def;
 use artichoke_backend::sys;
 use artichoke_backend::types::Int;
 use artichoke_backend::value::Value;
-use artichoke_backend::{Artichoke, ArtichokeError};
-use artichoke_core::eval::Eval;
-use artichoke_core::file::File;
-use artichoke_core::load::LoadSources;
-use artichoke_core::value::Value as ValueLike;
+use artichoke_backend::{Artichoke, ArtichokeError, Eval, File, LoadSources, ValueLike};
 
 #[derive(Clone, Debug, Default)]
 struct Container {

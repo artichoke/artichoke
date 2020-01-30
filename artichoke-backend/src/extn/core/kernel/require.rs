@@ -1,12 +1,12 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
-use artichoke_core::parser::Parser as _;
 use std::ffi::OsStr;
 use std::path::Path;
 
 use crate::extn::prelude::*;
 use crate::fs::{self, RUBY_LOAD_PATH};
 use crate::state::parser::Context;
+use crate::Parser;
 
 const RUBY_EXTENSION: &str = "rb";
 

@@ -1,11 +1,9 @@
-use artichoke_core::file::File;
-use artichoke_core::load::LoadSources;
 use std::borrow::Cow;
 use std::io;
 use std::path::Path;
 
 use crate::fs::{self, RUBY_LOAD_PATH};
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, File, LoadSources};
 
 impl LoadSources for Artichoke {
     type Artichoke = Self;

@@ -16,7 +16,7 @@
 
 use artichoke_backend::convert::Convert;
 use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_core::value::Value as _;
+use artichoke_backend::ValueLike as _;
 
 mod leak;
 

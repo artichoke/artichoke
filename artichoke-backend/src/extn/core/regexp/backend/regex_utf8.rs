@@ -1,4 +1,3 @@
-use artichoke_core::value::Value as _;
 use std::cmp::{self, Ordering};
 use std::collections::HashMap;
 use std::convert::TryFrom;

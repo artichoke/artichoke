@@ -17,8 +17,7 @@ pub struct Forwardable;
 // https://ruby-doc.org/stdlib-2.6.3/libdoc/forwardable/rdoc/Forwardable.html
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value as _;
+    use crate::test::prelude::*;
 
     #[test]
     #[allow(clippy::shadow_unrelated)]

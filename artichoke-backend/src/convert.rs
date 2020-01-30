@@ -1,4 +1,4 @@
-pub use artichoke_core::convert::{Convert, TryConvert};
+pub use crate::core::convert::{Convert, TryConvert};
 
 mod array;
 mod boolean;

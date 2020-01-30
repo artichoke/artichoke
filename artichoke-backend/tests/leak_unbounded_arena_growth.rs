@@ -22,8 +22,7 @@
 
 use artichoke_backend::exception::RubyException;
 use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_core::eval::Eval;
-use artichoke_core::value::Value;
+use artichoke_backend::{Eval, ValueLike};
 
 mod leak;
 

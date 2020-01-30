@@ -4,8 +4,6 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
-use artichoke_core::value::Value as _;
-use artichoke_core::warn::Warn;
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;

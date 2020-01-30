@@ -270,14 +270,9 @@ impl PartialEq for Spec {
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::eval::Eval;
-    use artichoke_core::value::Value as _;
-
-    use crate::class;
-    use crate::def::EnclosingRubyScope;
     use crate::extn::core::exception::StandardError;
     use crate::extn::core::kernel::Kernel;
-    use crate::module;
+    use crate::test::prelude::*;
 
     #[test]
     fn super_class() {
