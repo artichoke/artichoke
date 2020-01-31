@@ -121,7 +121,10 @@ mod warn;
 mod test;
 
 pub use artichoke_core as core;
-pub use artichoke_core::convert::{Convert, TryConvert};
+/// Re-export from [`artichoke_core`](artichoke_core::convert::Convert).
+pub use artichoke_core::convert::Convert;
+/// Re-export from [`artichoke_core`](artichoke_core::convert::TryConvert).
+pub use artichoke_core::convert::TryConvert;
 pub use artichoke_core::eval::Eval;
 pub use artichoke_core::file::File;
 pub use artichoke_core::intern::Intern;
