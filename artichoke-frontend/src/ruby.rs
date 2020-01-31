@@ -89,6 +89,10 @@ impl From<&'static str> for Error {
 }
 
 /// Main entrypoint for Artichoke's version of the `ruby` CLI.
+///
+/// # Errors
+///
+/// If an exception is raised on the interpreter, then an error is returned.
 pub fn entrypoint() -> Result<(), Error> {
     let opt = Opt::from_args();
     if opt.copyright {

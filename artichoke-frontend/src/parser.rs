@@ -83,6 +83,14 @@ impl Parser {
     /// Parse the code buffer to determine if the code is a complete expression
     /// that could be evaluated even though it may not be syntactically or
     /// semantically valid.
+    ///
+    /// # Errors
+    ///
+    /// If the supplied code is more than `isize::MAX` bytes long, an error is
+    /// returned,
+    ///
+    /// If the underlying parser returns a UTF-8 invalid error message, an error
+    /// is returned.
     pub fn parse<T>(&self, code: T) -> Result<State, Error>
     where
         T: AsRef<[u8]>,
