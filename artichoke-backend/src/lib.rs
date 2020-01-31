@@ -96,32 +96,35 @@ pub mod macros;
 pub mod class;
 pub mod convert;
 pub mod def;
-pub mod eval;
+mod eval;
 pub mod exception;
 pub mod exception_handler;
 pub mod extn;
 pub mod ffi;
 pub mod fs;
 pub mod gc;
-pub mod intern;
+mod intern;
 mod interpreter;
-pub mod load;
+mod load;
 pub mod method;
 pub mod module;
-pub mod parser;
+mod parser;
 pub mod state;
 pub mod string;
 pub mod sys;
-pub mod top_self;
+mod top_self;
 pub mod types;
 pub mod value;
-pub mod warn;
+mod warn;
 
 #[cfg(test)]
 mod test;
 
 pub use artichoke_core as core;
-pub use artichoke_core::convert::{Convert, TryConvert};
+/// Re-export from [`artichoke_core`](artichoke_core::convert::Convert).
+pub use artichoke_core::convert::Convert;
+/// Re-export from [`artichoke_core`](artichoke_core::convert::TryConvert).
+pub use artichoke_core::convert::TryConvert;
 pub use artichoke_core::eval::Eval;
 pub use artichoke_core::file::File;
 pub use artichoke_core::intern::Intern;
