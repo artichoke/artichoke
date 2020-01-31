@@ -152,7 +152,7 @@ dependencies = [
  "cfg-if",
  "clang-sys",
  "clap",
- "env_logger 0.6.2",
+ "env_logger",
  "fxhash",
  "lazy_static",
  "log",
@@ -383,16 +383,6 @@ dependencies = [
  "log",
  "regex",
  "termcolor",
-]
-
-[[package]]
-name = "env_logger"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
-dependencies = [
- "log",
- "regex",
 ]
 
 [[package]]
@@ -673,8 +663,6 @@ version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a44883e74aa97ad63db83c4bf8ca490f02b2fc02f92575e720c8551e843c945f"
 dependencies = [
- "env_logger 0.7.1",
- "log",
  "rand",
  "rand_core",
 ]
