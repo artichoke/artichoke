@@ -19,12 +19,8 @@ pub trait TryConvert<T, U> {
     ///
     /// # Errors
     ///
-    /// Ruby `Value`s are polymorphic boxes so converting from a Ruby `Value` to
-    /// a concrete Rust type may not always succeed.
-    ///
-    /// Implementations should return [`ArtichokeError::ConvertToRuby`] or
-    /// [`ArtichokeError::ConvertToRust`] depending on which direction the
-    /// conversion attempted.
+    /// If boxing or unboxing a value into the specified type fails, an error is
+    /// returned.
     fn try_convert(&self, value: T) -> Result<U, ArtichokeError>;
 }
 

@@ -24,9 +24,9 @@ where
     ///
     /// # Errors
     ///
-    /// All Ruby expressions are fallible because they may raise exceptions.
-    /// `funcall` should return raised exceptions that reach the top level as
-    /// errors.
+    /// If an exception is raised on the interpreter, then an error is returned.
+    ///
+    /// If a [`TryConvert`] conversion fails, then an error is returned.
     fn funcall<T>(
         &self,
         func: &str,
@@ -42,8 +42,7 @@ where
     ///
     /// # Errors
     ///
-    /// This method will attempt a fallible conversion by invoking
-    /// [`TryConvert::try_convert`]. Implementors should propagate these errors.
+    /// If a [`TryConvert`] conversion fails, then an error is returned.
     fn try_into<T>(self) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>;
@@ -55,8 +54,7 @@ where
     ///
     /// # Errors
     ///
-    /// This method will attempt a fallible conversion by invoking
-    /// [`TryConvert::try_convert`]. Implementors should propagate these errors.
+    /// If a [`TryConvert`] conversion fails, then an error is returned.
     fn itself<T>(&self) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>;
@@ -65,11 +63,7 @@ where
     ///
     /// # Errors
     ///
-    /// This method may delegate to the underlying VM by calling
-    /// `self.freeze`. In Ruby all methods are overrideable, so calling
-    /// `freeze` may be fallible and raise an exception.
-    ///
-    /// Implementors should propagate these exceptions.
+    /// If an exception is raised on the interpreter, then an error is returned.
     fn freeze(&mut self) -> Result<(), Self::Error>;
 
     /// Call `#frozen?` on this [`Value`].
@@ -84,11 +78,7 @@ where
     ///
     /// # Errors
     ///
-    /// This method may delegate to the underlying VM by calling
-    /// `self.respond_to?`. In Ruby all methods are overrideable, so calling
-    /// `respond_to?` may be fallible and raise an exception.
-    ///
-    /// Implementors should propagate these exceptions.
+    /// If an exception is raised on the interpreter, then an error is returned.
     fn respond_to(&self, method: &str) -> Result<bool, Self::Error>;
 
     /// Call `#inspect` on this [`Value`].

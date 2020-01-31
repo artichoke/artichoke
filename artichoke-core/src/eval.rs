@@ -19,8 +19,6 @@ pub trait Eval {
     ///
     /// # Errors
     ///
-    /// All Ruby expressions are fallible because they may raise exceptions.
-    /// `eval` should return raised exceptions that reach the top level as
-    /// errors.
+    /// If an exception is raised on the interpreter, then an error is returned.
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error>;
 }

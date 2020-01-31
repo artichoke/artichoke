@@ -16,12 +16,9 @@ pub trait File {
     ///
     /// # Errors
     ///
-    /// When required, a `File` can mutate the interpreter arbitrarily and many
-    /// of these APIs, like [`Eval::eval`](crate::eval::Eval::eval) and
-    /// [`LoadSources::def_rb_source_file`](crate::load::LoadSources::def_rb_source_file),
-    /// are fallible.
-    ///
-    /// Implementators should propagate these errors back to the interpreter if
-    /// they cannot locally recover.
+    /// If a fallible API on the interpreter returns an error, implementors
+    /// should return an error. Example fallible APIs that might be called on
+    /// require include [`Eval::eval`](crate::eval::Eval::eval) and
+    /// [`LoadSources::def_rb_source_file`](crate::load::LoadSources::def_rb_source_file).
     fn require(interp: &mut Self::Artichoke) -> Result<(), ArtichokeError>;
 }

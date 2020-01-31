@@ -19,9 +19,8 @@ pub trait Warn {
     /// # Errors
     ///
     /// Interpreters should issue warnings by calling the `warn` method on the
-    /// `Warning` module. In Ruby, all method calls are fallible because they
-    /// may raise exceptions.
+    /// `Warning` module.
     ///
-    /// Implementors should propagate these exceptions.
+    /// If an exception is raised on the interpreter, then an error is returned.
     fn warn(&self, message: &[u8]) -> Result<(), Self::Error>;
 }

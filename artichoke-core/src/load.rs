@@ -23,9 +23,7 @@ pub trait LoadSources {
     ///
     /// # Errors
     ///
-    /// This method manipulates a filesystem-like interface, which may fail on
-    /// write. Implementations should return [`ArtichokeError::Vfs`] to wrap any
-    /// [`io::Error`](std::io::Error).
+    /// If writes to the underlying filesystem fail, an error is returned.
     fn def_file_for_type<T>(&self, filename: &[u8]) -> Result<(), ArtichokeError>
     where
         T: File<Artichoke = Self::Artichoke>;
@@ -39,9 +37,7 @@ pub trait LoadSources {
     ///
     /// # Errors
     ///
-    /// This method manipulates a filesystem-like interface, which may fail on
-    /// write. Implementations should return [`ArtichokeError::Vfs`] to wrap any
-    /// [`io::Error`](std::io::Error).
+    /// If writes to the underlying filesystem fail, an error is returned.
     fn def_rb_source_file<T>(&self, filename: &[u8], contents: T) -> Result<(), ArtichokeError>
     where
         T: Into<Cow<'static, [u8]>>;
