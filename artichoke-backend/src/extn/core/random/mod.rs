@@ -30,7 +30,6 @@ impl Random {
 }
 
 impl RustBackedValue for Random {
-    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Random"
     }

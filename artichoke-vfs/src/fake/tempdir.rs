@@ -13,13 +13,13 @@ use super::Registry;
 const SUFFIX_LENGTH: usize = 10;
 
 #[derive(Debug, Clone)]
-#[must_use]
 pub struct FakeTempDir<Metadata: Clone> {
     registry: Weak<Mutex<Registry<Metadata>>>,
     path: PathBuf,
 }
 
 impl<Metadata: Clone> FakeTempDir<Metadata> {
+    #[must_use]
     pub fn new(registry: Weak<Mutex<Registry<Metadata>>>, base: &Path, prefix: &str) -> Self {
         let mut rng = rand::thread_rng();
         let suffix: String = iter::repeat(())
@@ -34,7 +34,6 @@ impl<Metadata: Clone> FakeTempDir<Metadata> {
 }
 
 impl<Metadata: Clone> TempDir for FakeTempDir<Metadata> {
-    #[must_use]
     fn path(&self) -> &Path {
         self.path.as_ref()
     }

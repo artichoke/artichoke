@@ -14,7 +14,6 @@ use crate::{Artichoke, ArtichokeError, Intern, ValueLike};
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 
 /// Wrapper around a [`sys::mrb_value`].
-#[must_use]
 pub struct Value {
     interp: Artichoke,
     value: sys::mrb_value,
@@ -22,6 +21,7 @@ pub struct Value {
 
 impl Value {
     /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
+    #[must_use]
     pub fn new(interp: &Artichoke, value: sys::mrb_value) -> Self {
         Self {
             interp: interp.clone(),
@@ -245,20 +245,17 @@ impl ValueLike for Value {
         Ok(())
     }
 
-    #[must_use]
     fn is_frozen(&self) -> bool {
         let mrb = self.interp.0.borrow().mrb;
         let inner = self.inner();
         unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
     }
 
-    #[must_use]
     fn inspect(&self) -> Vec<u8> {
         self.funcall::<Vec<u8>>("inspect", &[], None)
             .unwrap_or_default()
     }
 
-    #[must_use]
     fn is_nil(&self) -> bool {
         unsafe { sys::mrb_sys_value_is_nil(self.inner()) }
     }
@@ -268,7 +265,6 @@ impl ValueLike for Value {
         self.funcall::<bool>("respond_to?", &[method], None)
     }
 
-    #[must_use]
     fn to_s(&self) -> Vec<u8> {
         self.funcall::<Vec<u8>>("to_s", &[], None)
             .unwrap_or_default()
@@ -304,7 +300,6 @@ impl Clone for Value {
 }
 
 impl PartialEq for Value {
-    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         let this = unsafe { sys::mrb_sys_basic_ptr(self.inner()) };
         let other = unsafe { sys::mrb_sys_basic_ptr(other.inner()) };
@@ -313,7 +308,6 @@ impl PartialEq for Value {
 }
 
 #[derive(Clone, Copy)]
-#[must_use]
 pub struct Block {
     value: sys::mrb_value,
 }

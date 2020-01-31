@@ -15,7 +15,6 @@ pub use inline_buffer::InlineBuffer;
 pub struct Array(InlineBuffer);
 
 impl Clone for Array {
-    #[must_use]
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
@@ -277,7 +276,6 @@ impl Array {
 }
 
 impl RustBackedValue for Array {
-    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Array"
     }

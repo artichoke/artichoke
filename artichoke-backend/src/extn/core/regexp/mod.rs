@@ -498,14 +498,12 @@ impl Regexp {
 }
 
 impl RustBackedValue for Regexp {
-    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Regexp"
     }
 }
 
 impl From<Box<dyn RegexpType>> for Regexp {
-    #[must_use]
     fn from(regexp: Box<dyn RegexpType>) -> Self {
         Self(regexp)
     }
@@ -597,7 +595,6 @@ pub trait RegexpType {
 }
 
 impl Clone for Box<dyn RegexpType> {
-    #[must_use]
     fn clone(&self) -> Self {
         self.box_clone()
     }
@@ -616,7 +613,6 @@ impl Hash for Box<dyn RegexpType> {
 }
 
 impl PartialEq for Box<dyn RegexpType> {
-    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.derived_config().pattern == other.derived_config().pattern
             && self.encoding() == other.encoding()

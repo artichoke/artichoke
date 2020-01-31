@@ -42,7 +42,6 @@ impl State {
 }
 
 impl Default for State {
-    #[must_use]
     fn default() -> Self {
         Self::Valid
     }

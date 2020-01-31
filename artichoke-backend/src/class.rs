@@ -14,7 +14,6 @@ use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
 #[derive(Clone)]
-#[must_use]
 pub struct Builder<'a> {
     interp: &'a Artichoke,
     spec: &'a Spec,
@@ -24,6 +23,7 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
+    #[must_use]
     pub fn for_spec(interp: &'a Artichoke, spec: &'a Spec) -> Self {
         Self {
             interp,
@@ -34,11 +34,13 @@ impl<'a> Builder<'a> {
         }
     }
 
+    #[must_use]
     pub fn value_is_rust_object(mut self) -> Self {
         self.is_mrb_tt_data = true;
         self
     }
 
+    #[must_use]
     pub fn with_super_class(mut self, super_class: Option<&'a Spec>) -> Self {
         self.super_class = super_class;
         self
@@ -192,7 +194,7 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn fqname(&self) -> Cow<'_, str> {
+    pub fn fqname(&self) -> Cow<str> {
         if let Some(scope) = self.enclosing_scope() {
             Cow::Owned(format!("{}::{}", scope.fqname(), self.name()))
         } else {
@@ -204,7 +206,6 @@ impl Spec {
     }
 
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
-    #[must_use]
     pub fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         if let Some(ref scope) = self.enclosing_scope {
             if let Some(mut scope) = scope.rclass(mrb) {
@@ -262,7 +263,6 @@ impl Hash for Spec {
 impl Eq for Spec {}
 
 impl PartialEq for Spec {
-    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }

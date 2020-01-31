@@ -6,7 +6,6 @@ use crate::extn::core::regexp;
 use crate::extn::prelude::*;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-#[must_use]
 pub struct Options {
     pub multiline: bool,
     pub ignore_case: bool,
@@ -15,6 +14,7 @@ pub struct Options {
 }
 
 impl Options {
+    #[must_use]
     pub fn ignore_case() -> Self {
         let mut opts = Self::default();
         opts.ignore_case = true;
@@ -36,9 +36,9 @@ impl Options {
         bits
     }
 
-    // This function should return a &'static str but linking fails under the
-    // wasm32-unknown-emscripten build if this function does not return an owned
-    // String.
+    // TODO: This function should return a &'static str but linking fails under
+    // the wasm32-unknown-emscripten build if this function does not return an
+    // owned String.
     #[must_use]
     pub fn modifier_string(self) -> String {
         match (self.multiline, self.ignore_case, self.extended) {
@@ -54,9 +54,9 @@ impl Options {
         .to_owned()
     }
 
-    // This function should return a &'static str but linking fails under the
-    // wasm32-unknown-emscripten build if this function does not return an owned
-    // String.
+    // TODO: This function should return a &'static str but linking fails under
+    // the wasm32-unknown-emscripten build if this function does not return an
+    // owned String.
     #[must_use]
     fn onig_string(self) -> String {
         match (self.multiline, self.ignore_case, self.extended) {
@@ -73,6 +73,7 @@ impl Options {
     }
 }
 
+#[must_use]
 pub fn parse(value: &Value) -> Options {
     // If options is an Integer, it should be one or more of the constants
     // Regexp::EXTENDED, Regexp::IGNORECASE, and Regexp::MULTILINE, logically
@@ -107,6 +108,7 @@ pub fn parse(value: &Value) -> Options {
 }
 
 // TODO: Add tests for this parse_pattern, see GH-157.
+#[must_use]
 pub fn parse_pattern(pattern: &[u8], mut opts: Options) -> (Vec<u8>, Options) {
     let orig_opts = opts;
     let mut chars = pattern.iter().copied();

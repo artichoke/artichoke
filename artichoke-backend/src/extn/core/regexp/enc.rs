@@ -11,7 +11,6 @@ pub enum Error {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[must_use]
 pub enum Encoding {
     Fixed,
     No,
@@ -50,7 +49,6 @@ impl Hash for Encoding {
 }
 
 impl PartialEq for Encoding {
-    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::No, Self::No)

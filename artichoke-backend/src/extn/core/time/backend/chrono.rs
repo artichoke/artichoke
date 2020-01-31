@@ -97,7 +97,6 @@ impl<T: TimeZone> TimeType for Chrono<T> {
 }
 
 impl MakeTime for Factory {
-    #[must_use]
     fn now(&self, interp: &Artichoke) -> Box<dyn TimeType> {
         let _ = interp;
         Box::new(Chrono::new(Local::now()))

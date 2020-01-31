@@ -207,12 +207,10 @@ impl fmt::Display for BootError {
 }
 
 impl error::Error for BootError {
-    #[must_use]
     fn description(&self) -> &str {
         "Artichoke interpreter boot error"
     }
 
-    #[must_use]
     fn cause(&self) -> Option<&dyn error::Error> {
         match self.0 {
             BootErrorType::Artichoke(ref err) => Some(err),
@@ -222,14 +220,12 @@ impl error::Error for BootError {
 }
 
 impl From<ArtichokeError> for BootError {
-    #[must_use]
     fn from(err: ArtichokeError) -> Self {
         Self(BootErrorType::Artichoke(err))
     }
 }
 
 impl From<Exception> for BootError {
-    #[must_use]
     fn from(err: Exception) -> Self {
         Self(BootErrorType::Ruby(err))
     }

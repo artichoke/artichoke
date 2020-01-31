@@ -61,28 +61,24 @@ pub enum Error {
 }
 
 impl From<BootError> for Error {
-    #[must_use]
     fn from(err: BootError) -> Self {
         Self::Artichoke(err)
     }
 }
 
 impl From<Exception> for Error {
-    #[must_use]
     fn from(err: Exception) -> Self {
         Self::Ruby(err)
     }
 }
 
 impl From<String> for Error {
-    #[must_use]
     fn from(err: String) -> Self {
         Self::Fail(err)
     }
 }
 
 impl From<&'static str> for Error {
-    #[must_use]
     fn from(err: &'static str) -> Self {
         Self::Fail(err.to_owned())
     }

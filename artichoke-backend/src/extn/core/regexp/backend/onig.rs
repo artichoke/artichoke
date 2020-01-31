@@ -72,7 +72,6 @@ impl fmt::Display for Onig {
 }
 
 impl RegexpType for Onig {
-    #[must_use]
     fn box_clone(&self) -> Box<dyn RegexpType> {
         Box::new(self.clone())
     }
@@ -162,17 +161,14 @@ impl RegexpType for Onig {
         Ok(result)
     }
 
-    #[must_use]
     fn debug(&self) -> String {
         format!("{:?}", self)
     }
 
-    #[must_use]
     fn literal_config(&self) -> &Config {
         &self.literal
     }
 
-    #[must_use]
     fn derived_config(&self) -> &Config {
         &self.derived
     }
@@ -181,7 +177,6 @@ impl RegexpType for Onig {
         &self.encoding
     }
 
-    #[must_use]
     fn inspect(&self, interp: &Artichoke) -> Vec<u8> {
         let _ = interp;
         // pattern length + 2x '/' + mix + encoding
@@ -198,7 +193,6 @@ impl RegexpType for Onig {
         inspect
     }
 
-    #[must_use]
     fn string(&self, interp: &Artichoke) -> &[u8] {
         let _ = interp;
         self.derived.pattern.as_slice()
@@ -533,7 +527,6 @@ impl RegexpType for Onig {
         }
     }
 
-    #[must_use]
     fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>> {
         let _ = interp;
         let mut names = vec![];
