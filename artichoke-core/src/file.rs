@@ -13,5 +13,15 @@ pub trait File {
     /// This function can mutate interpreter state, such as defining classes and
     /// modules. This function is equivalent to the "init" methods of
     /// C-implemented Rubygems.
+    ///
+    /// # Errors
+    ///
+    /// When required, a `File` can mutate the interpreter arbitrarily and many
+    /// of these APIs, like [`Eval::eval`](crate::eval::Eval::eval) and
+    /// [`LoadSources::def_rb_source_file`](crate::load::LoadSources::def_rb_source_file),
+    /// are fallible.
+    ///
+    /// Implementators should propagate these errors back to the interpreter if
+    /// they cannot locally recover.
     fn require(interp: &mut Self::Artichoke) -> Result<(), ArtichokeError>;
 }

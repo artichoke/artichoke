@@ -16,5 +16,11 @@ pub trait Eval {
     type Error: std::error::Error;
 
     /// Eval code on the Artichoke interpreter using the current `Context`.
+    ///
+    /// # Errors
+    ///
+    /// All Ruby expressions are fallible because they may raise exceptions.
+    /// `eval` should return raised exceptions that reach the top level as
+    /// errors.
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error>;
 }
