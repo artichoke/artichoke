@@ -1,6 +1,7 @@
-#![deny(warnings, intra_doc_link_resolution_failure)]
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
+#![allow(clippy::missing_errors_doc)]
+#![deny(warnings, intra_doc_link_resolution_failure)]
 
 use std::ffi::OsString;
 use std::io::Result;
