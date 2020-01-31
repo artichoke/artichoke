@@ -21,6 +21,12 @@ where
     type Error: std::error::Error;
 
     /// Call a method on this [`Value`] with arguments and an optional block.
+    ///
+    /// # Errors
+    ///
+    /// If an exception is raised on the interpreter, then an error is returned.
+    ///
+    /// If a [`TryConvert`] conversion fails, then an error is returned.
     fn funcall<T>(
         &self,
         func: &str,
@@ -33,6 +39,10 @@ where
     /// Consume `self` and try to convert `self` to type `T`.
     ///
     /// If you do not want to consume this [`Value`], use [`Value::itself`].
+    ///
+    /// # Errors
+    ///
+    /// If a [`TryConvert`] conversion fails, then an error is returned.
     fn try_into<T>(self) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>;
@@ -41,11 +51,19 @@ where
     /// `T`.
     ///
     /// If you want to consume this [`Value`], use [`Value::try_into`].
+    ///
+    /// # Errors
+    ///
+    /// If a [`TryConvert`] conversion fails, then an error is returned.
     fn itself<T>(&self) -> Result<T, ArtichokeError>
     where
         Self::Artichoke: TryConvert<Self, T>;
 
     /// Call `#freeze` on this [`Value`].
+    ///
+    /// # Errors
+    ///
+    /// If an exception is raised on the interpreter, then an error is returned.
     fn freeze(&mut self) -> Result<(), Self::Error>;
 
     /// Call `#frozen?` on this [`Value`].
@@ -57,6 +75,10 @@ where
     /// Whether `self` responds to a method.
     ///
     /// Equivalent to invoking `#respond_to?` on this [`Value`].
+    ///
+    /// # Errors
+    ///
+    /// If an exception is raised on the interpreter, then an error is returned.
     fn respond_to(&self, method: &str) -> Result<bool, Self::Error>;
 
     /// Call `#inspect` on this [`Value`].

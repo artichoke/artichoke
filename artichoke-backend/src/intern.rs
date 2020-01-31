@@ -28,7 +28,6 @@ impl Intern for Artichoke {
         }
     }
 
-    #[must_use]
     fn lookup_symbol(&self, symbol: Self::Symbol) -> Option<&[u8]> {
         let _ = symbol;
         todo!("Implement Intern::lookup_symbol");

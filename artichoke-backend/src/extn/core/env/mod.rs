@@ -10,7 +10,6 @@ use backend::EnvType;
 pub struct Environ(Box<dyn EnvType>);
 
 impl RustBackedValue for Environ {
-    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Artichoke::Environ"
     }

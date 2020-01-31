@@ -134,7 +134,6 @@ fn reset_context_filename(mrb: &mut sys::mrb_state, context: &mut sys::mrbc_cont
 /// Parser [`State`] maintains a stack of `Context`s and
 /// [`eval`](crate::eval::Eval) calls XXX to set the `__FILE__` magic constant.
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[must_use]
 pub struct Context {
     /// Value of the `__FILE__` magic constant that also appears in stack
     /// frames.
@@ -178,6 +177,7 @@ impl Context {
     /// Create a root, or default, [`Context`].
     ///
     /// The root context sets the `__FILE__` magic constant to "(eval)".
+    #[must_use]
     pub fn root() -> Self {
         Self::default()
     }

@@ -130,7 +130,6 @@ impl fmt::Display for Spec {
 impl Eq for Spec {}
 
 impl PartialEq for Spec {
-    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.method_type == other.method_type && self.name == other.name
     }

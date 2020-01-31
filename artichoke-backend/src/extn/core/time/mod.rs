@@ -20,7 +20,6 @@ impl Time {
 }
 
 impl RustBackedValue for Time {
-    #[must_use]
     fn ruby_type_name() -> &'static str {
         "Time"
     }

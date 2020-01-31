@@ -9,28 +9,23 @@ use crate::{Artichoke, ValueLike};
 pub struct Exception(Box<dyn RubyException>);
 
 impl RubyException for Exception {
-    #[must_use]
     fn box_clone(&self) -> Box<dyn RubyException> {
         self.0.box_clone()
     }
 
-    #[must_use]
     fn message(&self) -> &[u8] {
         self.0.message()
     }
 
     /// Class name of the `Exception`.
-    #[must_use]
     fn name(&self) -> String {
         self.0.name()
     }
 
-    #[must_use]
     fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         self.0.backtrace(interp)
     }
 
-    #[must_use]
     fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
         self.0.as_mrb_value(interp)
     }
@@ -43,19 +38,16 @@ impl fmt::Display for Exception {
 }
 
 impl error::Error for Exception {
-    #[must_use]
     fn description(&self) -> &str {
         "Ruby Exception thrown on Artichoke VM"
     }
 
-    #[must_use]
     fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
 }
 
 impl From<Box<dyn RubyException>> for Exception {
-    #[must_use]
     fn from(exc: Box<dyn RubyException>) -> Self {
         Self(exc)
     }
@@ -95,7 +87,6 @@ pub unsafe fn raise(interp: Artichoke, exception: impl RubyException + fmt::Debu
 /// [`exception::raise`](raise). Rust code can re-raise a trait object to
 /// propagate exceptions from native code back into the interpreter.
 #[allow(clippy::module_name_repetitions)]
-#[must_use]
 pub trait RubyException
 where
     Self: 'static,
@@ -120,27 +111,22 @@ where
 }
 
 impl RubyException for Box<dyn RubyException> {
-    #[must_use]
     fn box_clone(&self) -> Box<dyn RubyException> {
         self.as_ref().box_clone()
     }
 
-    #[must_use]
     fn message(&self) -> &[u8] {
         self.as_ref().message()
     }
 
-    #[must_use]
     fn name(&self) -> String {
         self.as_ref().name()
     }
 
-    #[must_use]
     fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         self.as_ref().backtrace(interp)
     }
 
-    #[must_use]
     fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
         self.as_ref().as_mrb_value(interp)
     }
@@ -163,12 +149,10 @@ impl fmt::Display for Box<dyn RubyException> {
 }
 
 impl error::Error for Box<dyn RubyException> {
-    #[must_use]
     fn description(&self) -> &str {
         "Ruby Exception thrown on Artichoke VM"
     }
 
-    #[must_use]
     fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
@@ -191,12 +175,10 @@ impl fmt::Display for &dyn RubyException {
 }
 
 impl error::Error for &dyn RubyException {
-    #[must_use]
     fn description(&self) -> &str {
         "Ruby Exception thrown on Artichoke VM"
     }
 
-    #[must_use]
     fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
@@ -207,7 +189,6 @@ impl error::Error for &dyn RubyException {
 /// `CaughtException` is re-raiseable because it implements [`RubyException`].
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
-#[must_use]
 pub(crate) struct CaughtException {
     value: Value,
     name: String,
@@ -251,14 +232,12 @@ impl RubyException for CaughtException {
 
 #[allow(clippy::use_self)]
 impl From<CaughtException> for Box<dyn RubyException> {
-    #[must_use]
     fn from(exc: CaughtException) -> Self {
         Box::new(exc)
     }
 }
 
 impl From<CaughtException> for Exception {
-    #[must_use]
     fn from(exc: CaughtException) -> Self {
         Self(Box::new(exc))
     }

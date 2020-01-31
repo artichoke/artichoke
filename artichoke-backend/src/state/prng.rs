@@ -43,7 +43,6 @@ impl Prng {
 }
 
 impl Default for Prng {
-    #[must_use]
     fn default() -> Self {
         Self::new(None)
     }

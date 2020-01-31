@@ -10,7 +10,6 @@ impl RandType for Default {
         borrow.prng.bytes(buf);
     }
 
-    #[must_use]
     fn seed(&self, interp: &Artichoke) -> u64 {
         let borrow = interp.0.borrow();
         borrow.prng.seed()

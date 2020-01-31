@@ -67,12 +67,12 @@ impl crate::ReadDir<DirEntry> for ReadDir {}
 
 /// An in-memory file system.
 #[derive(Clone, Debug, Default)]
-#[must_use]
 pub struct FileSystem<Metadata: Clone> {
     registry: Arc<Mutex<Registry<Metadata>>>,
 }
 
 impl<Metadata: Clone> FileSystem<Metadata> {
+    #[must_use]
     pub fn new() -> Self {
         let registry = Registry::new();
 

@@ -49,28 +49,24 @@ pub enum Error {
 }
 
 impl From<parser::Error> for Error {
-    #[must_use]
     fn from(err: parser::Error) -> Self {
         Self::ReplParse(err)
     }
 }
 
 impl From<BootError> for Error {
-    #[must_use]
     fn from(err: BootError) -> Self {
         Self::Artichoke(err)
     }
 }
 
 impl From<Exception> for Error {
-    #[must_use]
     fn from(err: Exception) -> Self {
         Self::Ruby(err)
     }
 }
 
 impl From<io::Error> for Error {
-    #[must_use]
     fn from(err: io::Error) -> Self {
         Self::Io(err)
     }
@@ -88,7 +84,6 @@ pub struct PromptConfig {
 }
 
 impl Default for PromptConfig {
-    #[must_use]
     fn default() -> Self {
         Self {
             simple: ">>> ".to_owned(),
@@ -117,6 +112,20 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
 }
 
 /// Run a REPL for the mruby interpreter exposed by the `mruby` crate.
+///
+/// # Errors
+///
+/// If printing the interpreter copyright or compiler metadata fails, an error
+/// is returned.
+///
+/// If initializing the Ruby parser fails, an error is returned.
+///
+/// If an exception is raised on the interpreter, then an error is returned.
+///
+/// If writing expression results or exception backtraces to stdout and stderr
+/// fails, an error is returned.
+///
+/// If an unhandled readline state is encountered, a fatal error is returned.
 pub fn run(
     mut output: impl Write,
     mut error: impl Write,

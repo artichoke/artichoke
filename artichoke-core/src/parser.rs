@@ -66,12 +66,10 @@ impl fmt::Display for IncrementLinenoError {
 }
 
 impl error::Error for IncrementLinenoError {
-    #[must_use]
     fn description(&self) -> &str {
         "Error manipulating line number in parser state"
     }
 
-    #[must_use]
     fn cause(&self) -> Option<&dyn error::Error> {
         None
     }

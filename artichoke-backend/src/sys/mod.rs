@@ -79,17 +79,14 @@ pub trait DescribeState {
 }
 
 impl DescribeState for mrb_state {
-    #[must_use]
     fn info(&self) -> String {
         format!("{}", self)
     }
 
-    #[must_use]
     fn debug(&self) -> String {
         format!("{:?}", self)
     }
 
-    #[must_use]
     fn version(&self) -> String {
         // Safety:
         //
@@ -138,58 +135,48 @@ impl fmt::Display for mrb_state {
 }
 
 impl DescribeState for &mut mrb_state {
-    #[must_use]
     fn info(&self) -> String {
         format!("{}", **self)
     }
 
-    #[must_use]
     fn debug(&self) -> String {
         format!("{:?}", **self)
     }
 
-    #[must_use]
     fn version(&self) -> String {
         (**self).version()
     }
 }
 
 impl DescribeState for &mrb_state {
-    #[must_use]
     fn info(&self) -> String {
         format!("{}", **self)
     }
 
-    #[must_use]
     fn debug(&self) -> String {
         format!("{:?}", **self)
     }
 
-    #[must_use]
     fn version(&self) -> String {
         (**self).version()
     }
 }
 
 impl DescribeState for NonNull<mrb_state> {
-    #[must_use]
     fn info(&self) -> String {
         format!("{}", unsafe { self.as_ref() })
     }
 
-    #[must_use]
     fn debug(&self) -> String {
         format!("{:?}", unsafe { self.as_ref() })
     }
 
-    #[must_use]
     fn version(&self) -> String {
         unsafe { self.as_ref() }.version()
     }
 }
 
 impl DescribeState for *mut mrb_state {
-    #[must_use]
     fn info(&self) -> String {
         NonNull::new(unsafe { &mut **self })
             .as_ref()
@@ -197,7 +184,6 @@ impl DescribeState for *mut mrb_state {
             .unwrap_or_default()
     }
 
-    #[must_use]
     fn debug(&self) -> String {
         NonNull::new(unsafe { &mut **self })
             .as_ref()
@@ -205,7 +191,6 @@ impl DescribeState for *mut mrb_state {
             .unwrap_or_default()
     }
 
-    #[must_use]
     fn version(&self) -> String {
         NonNull::new(unsafe { &mut **self })
             .as_ref()

@@ -15,5 +15,12 @@ pub trait Warn {
     /// Emit a warning message using `Warning#warn`.
     ///
     /// This method appends newlines to message if necessary.
+    ///
+    /// # Errors
+    ///
+    /// Interpreters should issue warnings by calling the `warn` method on the
+    /// `Warning` module.
+    ///
+    /// If an exception is raised on the interpreter, then an error is returned.
     fn warn(&self, message: &[u8]) -> Result<(), Self::Error>;
 }

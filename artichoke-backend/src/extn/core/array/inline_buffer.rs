@@ -12,35 +12,30 @@ const INLINE_CAPACITY: usize = 8;
 pub struct InlineBuffer(SmallVec<[sys::mrb_value; INLINE_CAPACITY]>);
 
 impl From<Vec<sys::mrb_value>> for InlineBuffer {
-    #[must_use]
     fn from(values: Vec<sys::mrb_value>) -> Self {
         Self(SmallVec::from_vec(values))
     }
 }
 
 impl From<Vec<Value>> for InlineBuffer {
-    #[must_use]
     fn from(values: Vec<Value>) -> Self {
         Self::from(values.as_slice())
     }
 }
 
 impl<'a> From<&'a [sys::mrb_value]> for InlineBuffer {
-    #[must_use]
     fn from(values: &'a [sys::mrb_value]) -> Self {
         Self(SmallVec::from_slice(values))
     }
 }
 
 impl<'a> From<&'a [Value]> for InlineBuffer {
-    #[must_use]
     fn from(values: &'a [Value]) -> Self {
         Self(SmallVec::from_iter(values.iter().map(Value::inner)))
     }
 }
 
 impl ArrayType for InlineBuffer {
-    #[must_use]
     fn box_clone(&self) -> Box<dyn ArrayType> {
         Box::new(self.clone())
     }
@@ -52,17 +47,14 @@ impl ArrayType for InlineBuffer {
         }
     }
 
-    #[must_use]
     fn real_children(&self) -> usize {
         self.0.len()
     }
 
-    #[must_use]
     fn len(&self) -> usize {
         self.0.len()
     }
 
-    #[must_use]
     fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

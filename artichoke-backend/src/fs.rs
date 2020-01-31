@@ -87,17 +87,18 @@ impl Filesystem {
 }
 
 #[derive(Clone)]
-#[must_use]
 pub struct Metadata {
     pub require: Option<RequireFunc>,
     already_required: bool,
 }
 
 impl Metadata {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn mark_required(self) -> Self {
         Self {
             require: self.require,

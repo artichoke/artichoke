@@ -139,7 +139,6 @@ impl<T> RustBackedValue for Box<T>
 where
     T: RustBackedValue,
 {
-    #[must_use]
     fn ruby_type_name() -> &'static str {
         T::ruby_type_name()
     }

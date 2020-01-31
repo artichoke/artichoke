@@ -266,7 +266,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 macro_rules! ruby_exception_impl {
     ($exception:ident) => {
         #[derive(Clone)]
-        #[must_use]
         pub struct $exception {
             message: Cow<'static, [u8]>,
         }
@@ -300,7 +299,6 @@ macro_rules! ruby_exception_impl {
         where
             $exception: RubyException,
         {
-            #[must_use]
             fn from(exception: $exception) -> exception::Exception {
                 exception::Exception::from(Box::<dyn RubyException>::from(exception))
             }
@@ -311,7 +309,6 @@ macro_rules! ruby_exception_impl {
         where
             $exception: RubyException,
         {
-            #[must_use]
             fn from(exception: Box<$exception>) -> exception::Exception {
                 exception::Exception::from(Box::<dyn RubyException>::from(exception))
             }
@@ -322,7 +319,6 @@ macro_rules! ruby_exception_impl {
         where
             $exception: RubyException,
         {
-            #[must_use]
             fn from(exception: $exception) -> Box<dyn RubyException> {
                 Box::new(exception)
             }
@@ -333,35 +329,29 @@ macro_rules! ruby_exception_impl {
         where
             $exception: RubyException,
         {
-            #[must_use]
             fn from(exception: Box<$exception>) -> Box<dyn RubyException> {
                 exception
             }
         }
 
         impl RubyException for $exception {
-            #[must_use]
             fn box_clone(&self) -> Box<dyn RubyException> {
                 Box::new(self.clone())
             }
 
-            #[must_use]
             fn message(&self) -> &[u8] {
                 self.message.as_ref()
             }
 
-            #[must_use]
             fn name(&self) -> String {
                 String::from(stringify!($exception))
             }
 
-            #[must_use]
             fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
                 let _ = interp;
                 None
             }
 
-            #[must_use]
             fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
                 let borrow = interp.0.borrow();
                 let spec = borrow.class_spec::<Self>()?;
@@ -393,12 +383,10 @@ macro_rules! ruby_exception_impl {
         }
 
         impl error::Error for $exception {
-            #[must_use]
             fn description(&self) -> &str {
                 concat!("Ruby Exception: ", stringify!($exception))
             }
 
-            #[must_use]
             fn cause(&self) -> Option<&dyn error::Error> {
                 None
             }

@@ -159,7 +159,7 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn fqname(&self) -> Cow<'_, str> {
+    pub fn fqname(&self) -> Cow<str> {
         if let Some(scope) = self.enclosing_scope() {
             Cow::Owned(format!("{}::{}", scope.fqname(), self.name()))
         } else {
@@ -237,7 +237,6 @@ impl Hash for Spec {
 impl Eq for Spec {}
 
 impl PartialEq for Spec {
-    #[must_use]
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }

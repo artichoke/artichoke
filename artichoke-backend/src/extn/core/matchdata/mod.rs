@@ -81,7 +81,6 @@ pub struct MatchData {
 }
 
 impl RustBackedValue for MatchData {
-    #[must_use]
     fn ruby_type_name() -> &'static str {
         "MatchData"
     }

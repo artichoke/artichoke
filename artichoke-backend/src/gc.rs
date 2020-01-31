@@ -17,7 +17,6 @@ use crate::Artichoke;
 /// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
 /// sufficient to ensure objects get collected eventually.
 #[derive(Debug, Clone)]
-#[must_use]
 pub struct ArenaIndex {
     index: i32,
     interp: Artichoke,
@@ -94,7 +93,6 @@ impl MrbGarbageCollection for Artichoke {
         }
     }
 
-    #[must_use]
     fn live_object_count(&self) -> i32 {
         let mrb = self.0.borrow().mrb;
         unsafe { sys::mrb_sys_gc_live_objects(mrb) }
