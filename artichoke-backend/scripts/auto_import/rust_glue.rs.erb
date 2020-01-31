@@ -1,6 +1,6 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     <% constants.each do |(constant, klass)| %>
     <% if klass == "Class" %>
     let spec = crate::class::Spec::new("<%= constant %>", None, None)?;

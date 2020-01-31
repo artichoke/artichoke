@@ -10,7 +10,7 @@ use crate::def::{EnclosingRubyScope, Method};
 use crate::method;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, Intern};
 
 #[derive(Clone)]
 pub struct Builder<'a> {
@@ -114,7 +114,7 @@ pub struct Spec {
 
 impl Spec {
     pub fn new<T>(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         name: T,
         enclosing_scope: Option<EnclosingRubyScope>,
     ) -> Result<Self, ArtichokeError>
@@ -124,10 +124,10 @@ impl Spec {
         let name = name.into();
         let cstring =
             CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
-        let sym = interp
-            .0
-            .borrow_mut()
-            .sym_intern(name.as_ref().to_owned().into_bytes());
+        let sym = match name {
+            Cow::Borrowed(name) => interp.intern_symbol(name.as_bytes()),
+            Cow::Owned(ref name) => interp.intern_symbol(name.clone().into_bytes()),
+        };
         Ok(Self {
             name,
             cstring,
@@ -250,24 +250,24 @@ mod tests {
 
     #[test]
     fn rclass_for_undef_root_module() {
-        let interp = crate::interpreter().expect("init");
-        let spec = Spec::new(&interp, "Foo", None).unwrap();
+        let mut interp = crate::interpreter().expect("init");
+        let spec = Spec::new(&mut interp, "Foo", None).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_none());
     }
 
     #[test]
     fn rclass_for_undef_nested_module() {
-        let interp = crate::interpreter().expect("init");
-        let scope = Spec::new(&interp, "Kernel", None).unwrap();
+        let mut interp = crate::interpreter().expect("init");
+        let scope = Spec::new(&mut interp, "Kernel", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
-        let spec = Spec::new(&interp, "Foo", Some(scope)).unwrap();
+        let spec = Spec::new(&mut interp, "Foo", Some(scope)).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_none());
     }
 
     #[test]
     fn rclass_for_root_module() {
-        let interp = crate::interpreter().expect("init");
-        let spec = Spec::new(&interp, "Kernel", None).unwrap();
+        let mut interp = crate::interpreter().expect("init");
+        let spec = Spec::new(&mut interp, "Kernel", None).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_some());
     }
 
@@ -277,9 +277,9 @@ mod tests {
         let _ = interp
             .eval(b"module Foo; module Bar; end; end")
             .expect("eval");
-        let scope = Spec::new(&interp, "Foo", None).unwrap();
+        let scope = Spec::new(&mut interp, "Foo", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
-        let spec = Spec::new(&interp, "Bar", Some(scope)).unwrap();
+        let spec = Spec::new(&mut interp, "Bar", Some(scope)).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_some());
     }
 
@@ -291,7 +291,7 @@ mod tests {
             .expect("eval");
         let scope = class::Spec::new("Foo", None, None).unwrap();
         let scope = EnclosingRubyScope::class(&scope);
-        let spec = Spec::new(&interp, "Bar", Some(scope)).unwrap();
+        let spec = Spec::new(&mut interp, "Bar", Some(scope)).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_some());
     }
 }

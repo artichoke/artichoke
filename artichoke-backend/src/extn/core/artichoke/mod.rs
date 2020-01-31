@@ -1,6 +1,6 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &crate::Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut crate::Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().module_spec::<Artichoke>().is_some() {
         return Ok(());
     }

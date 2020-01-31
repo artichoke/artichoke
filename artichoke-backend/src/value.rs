@@ -8,7 +8,7 @@ use crate::extn::core::exception::{Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
-use crate::{Artichoke, ArtichokeError, ValueLike};
+use crate::{Artichoke, ArtichokeError, Intern, ValueLike};
 
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
@@ -182,11 +182,12 @@ impl ValueLike for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = self
-            .interp
-            .0
-            .borrow_mut()
-            .sym_intern(func.as_bytes().to_vec());
+        let func = {
+            // This is a hack until Value properly supports interpreter
+            // mutability.
+            let mut interp = self.interp.clone();
+            interp.intern_symbol(func.as_bytes().to_vec())
+        };
         let result = unsafe {
             protect::funcall(
                 mrb,

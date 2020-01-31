@@ -321,20 +321,21 @@ impl Regexp {
         self.0.as_ref()
     }
 
-    pub fn case_compare(&self, interp: &Artichoke, other: Value) -> Result<Value, Exception> {
+    pub fn case_compare(&self, interp: &mut Artichoke, other: Value) -> Result<Value, Exception> {
         let pattern = if let Ok(pattern) = other.clone().try_into::<&[u8]>() {
             pattern
         } else if let Ok(pattern) = other.funcall::<&[u8]>("to_str", &[], None) {
             pattern
         } else {
-            let sym = interp.0.borrow_mut().sym_intern(LAST_MATCH);
+            let sym = interp.intern_symbol(LAST_MATCH);
             let mrb = interp.0.borrow().mrb;
             unsafe {
                 sys::mrb_gv_set(mrb, sym, interp.convert(None::<Value>).inner());
             }
             return Ok(interp.convert(false));
         };
-        Ok(interp.convert(self.0.case_match(interp, pattern)?))
+        let result = self.0.case_match(interp, pattern)?;
+        Ok(interp.convert(result))
     }
 
     pub fn eql(&self, interp: &Artichoke, other: Value) -> Result<Value, Exception> {
@@ -407,7 +408,7 @@ impl Regexp {
 
     pub fn match_(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: Value,
         pos: Option<Value>,
         block: Option<Block>,
@@ -429,7 +430,7 @@ impl Regexp {
             pattern
         } else {
             let mrb = interp.0.borrow().mrb;
-            let sym = interp.0.borrow_mut().sym_intern(LAST_MATCH);
+            let sym = interp.intern_symbol(LAST_MATCH);
             let matchdata = interp.convert(None::<Value>);
             unsafe {
                 sys::mrb_gv_set(mrb, sym, matchdata.inner());
@@ -441,10 +442,15 @@ impl Regexp {
         } else {
             None
         };
-        Ok(interp.convert(self.0.match_(interp, pattern, pos, block)?))
+        let result = self.0.match_(interp, pattern, pos, block)?;
+        Ok(interp.convert(result))
     }
 
-    pub fn match_operator(&self, interp: &Artichoke, pattern: Value) -> Result<Value, Exception> {
+    pub fn match_operator(
+        &self,
+        interp: &mut Artichoke,
+        pattern: Value,
+    ) -> Result<Value, Exception> {
         let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
             pattern
         } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
@@ -463,7 +469,8 @@ impl Regexp {
         } else {
             return Ok(interp.convert(None::<Value>));
         };
-        Ok(interp.convert(self.0.match_operator(interp, pattern)?))
+        let result = self.0.match_operator(interp, pattern)?;
+        Ok(interp.convert(result))
     }
 
     pub fn named_captures(&self, interp: &Artichoke) -> Result<Value, Exception> {
@@ -541,7 +548,7 @@ pub trait RegexpType {
         haystack: &'a [u8],
     ) -> Result<Option<&'a [u8]>, Exception>;
 
-    fn case_match(&self, interp: &Artichoke, pattern: &[u8]) -> Result<bool, Exception>;
+    fn case_match(&self, interp: &mut Artichoke, pattern: &[u8]) -> Result<bool, Exception>;
 
     fn is_match(
         &self,
@@ -552,13 +559,17 @@ pub trait RegexpType {
 
     fn match_(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
     ) -> Result<Value, Exception>;
 
-    fn match_operator(&self, interp: &Artichoke, pattern: &[u8]) -> Result<Option<Int>, Exception>;
+    fn match_operator(
+        &self,
+        interp: &mut Artichoke,
+        pattern: &[u8],
+    ) -> Result<Option<Int>, Exception>;
 
     fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception>;
 
@@ -579,7 +590,7 @@ pub trait RegexpType {
 
     fn scan(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: Value,
         block: Option<Block>,
     ) -> Result<Value, Exception>;

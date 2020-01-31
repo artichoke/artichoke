@@ -16,7 +16,7 @@ pub use crate::string;
 pub use crate::sys;
 pub use crate::types::{Float, Int, Ruby};
 pub use crate::value::{Block, Value};
-pub use crate::{Artichoke, ArtichokeError, BootError, Eval, LoadSources, ValueLike, Warn};
+pub use crate::{Artichoke, ArtichokeError, BootError, Eval, Intern, LoadSources, ValueLike, Warn};
 
 /// Type alias for errors returned from `init` functions in
 /// [`extn`](crate::extn).

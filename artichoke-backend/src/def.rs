@@ -204,16 +204,16 @@ mod tests {
         struct ClassUnderClass; // A::C::F
 
         // Setup: define module and class hierarchy
-        let interp = crate::interpreter().expect("init");
-        let root = module::Spec::new(&interp, "A", None).unwrap();
+        let mut interp = crate::interpreter().expect("init");
+        let root = module::Spec::new(&mut interp, "A", None).unwrap();
         let mod_under_root =
-            module::Spec::new(&interp, "B", Some(EnclosingRubyScope::module(&root))).unwrap();
+            module::Spec::new(&mut interp, "B", Some(EnclosingRubyScope::module(&root))).unwrap();
         let cls_under_root =
             class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None).unwrap();
         let cls_under_mod =
             class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None).unwrap();
         let mod_under_cls = module::Spec::new(
-            &interp,
+            &mut interp,
             "E",
             Some(EnclosingRubyScope::class(&cls_under_root)),
         )
@@ -322,7 +322,7 @@ mod tests {
                 .define()
                 .unwrap();
             interp.0.borrow_mut().def_class::<Class>(class);
-            let module = module::Spec::new(&interp, "DefineMethodTestModule", None).unwrap();
+            let module = module::Spec::new(&mut interp, "DefineMethodTestModule", None).unwrap();
             module::Builder::for_spec(&interp, &module)
                 .add_method("value", value, sys::mrb_args_none())
                 .unwrap()

@@ -40,7 +40,7 @@ pub fn is_match(
 }
 
 pub fn match_(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     regexp: Value,
     pattern: Value,
     pos: Option<Value>,
@@ -75,7 +75,11 @@ pub fn eql(interp: &Artichoke, regexp: Value, other: Value) -> Result<Value, Exc
     borrow.eql(interp, other)
 }
 
-pub fn case_compare(interp: &Artichoke, regexp: Value, other: Value) -> Result<Value, Exception> {
+pub fn case_compare(
+    interp: &mut Artichoke,
+    regexp: Value,
+    other: Value,
+) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }.map_err(|err| {
         if let ArtichokeError::UninitializedValue("Regexp") = err {
             Exception::from(TypeError::new(interp, "uninitialized Regexp"))
@@ -91,7 +95,7 @@ pub fn case_compare(interp: &Artichoke, regexp: Value, other: Value) -> Result<V
 }
 
 pub fn match_operator(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     regexp: Value,
     pattern: Value,
 ) -> Result<Value, Exception> {

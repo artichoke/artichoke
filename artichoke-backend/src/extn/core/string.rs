@@ -45,9 +45,10 @@ impl RString {
 
     unsafe extern "C" fn scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = scan::method(&interp, value, Value::new(&interp, pattern), block);
+        let pattern = Value::new(&interp, pattern);
+        let result = scan::method(&mut interp, value, pattern, block);
         match result {
             Ok(result) => result.inner(),
             Err(exception) => exception::raise(interp, exception),

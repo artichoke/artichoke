@@ -1,5 +1,4 @@
 use std::any::{Any, TypeId};
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::io::{self, Write};
@@ -24,7 +23,6 @@ pub struct State {
     modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: Filesystem,
     pub active_regexp_globals: usize,
-    symbol_cache: HashMap<Cow<'static, [u8]>, sys::mrb_sym>,
     captured_output: Option<Vec<u8>>,
     #[cfg(feature = "artichoke-random")]
     pub prng: prng::Prng,
@@ -43,7 +41,6 @@ impl State {
             modules: HashMap::default(),
             vfs,
             active_regexp_globals: 0,
-            symbol_cache: HashMap::default(),
             captured_output: None,
             #[cfg(feature = "artichoke-random")]
             prng: prng::Prng::default(),
@@ -154,21 +151,6 @@ impl State {
         T: Any,
     {
         self.modules.get(&TypeId::of::<T>()).map(Box::as_ref)
-    }
-
-    pub fn sym_intern<T>(&mut self, sym: T) -> sys::mrb_sym
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        let mrb = self.mrb;
-        let sym = sym.into();
-        let ptr = sym.as_ref().as_ptr();
-        let len = sym.as_ref().len();
-        let interned = self
-            .symbol_cache
-            .entry(sym)
-            .or_insert_with(|| unsafe { sys::mrb_intern_static(mrb, ptr as *const i8, len) });
-        *interned
     }
 }
 

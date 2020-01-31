@@ -24,6 +24,7 @@ use std::io;
 pub mod convert;
 pub mod eval;
 pub mod file;
+pub mod intern;
 pub mod load;
 pub mod parser;
 pub mod top_self;

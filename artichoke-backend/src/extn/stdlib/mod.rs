@@ -9,7 +9,7 @@ pub mod ostruct;
 pub mod set;
 pub mod strscan;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     abbrev::init(interp)?;
     delegate::init(interp)?;
     forwardable::init(interp)?;
