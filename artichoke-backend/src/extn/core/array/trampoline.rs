@@ -171,7 +171,7 @@ pub fn len(interp: &Artichoke, ary: Value) -> Result<usize, Exception> {
 }
 
 pub fn initialize(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     ary: Value,
     first: Option<Value>,
     second: Option<Value>,

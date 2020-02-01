@@ -2,7 +2,7 @@ use crate::extn::core::regexp::Regexp;
 use crate::extn::prelude::*;
 
 pub fn initialize(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     pattern: Value,
     options: Option<Value>,
     encoding: Option<Value>,
