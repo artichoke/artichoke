@@ -77,26 +77,26 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
 
         assert_eq!(
-            &interp
+            interp
                 .eval(br"'hello there'[/[aeiou](.)\1/]")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<&str>()
                 .unwrap(),
             "ell"
         );
         assert_eq!(
-            &interp
+            interp
                 .eval(br"'hello there'[/[aeiou](.)\1/, 0]")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<&str>()
                 .unwrap(),
             "ell"
         );
         assert_eq!(
-            &interp
+            interp
                 .eval(br"'hello there'[/[aeiou](.)\1/, 1]")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<&str>()
                 .unwrap(),
             "l"
         );
@@ -104,23 +104,23 @@ mod tests {
             interp
                 .eval(br"'hello there'[/[aeiou](.)\1/, 2]")
                 .unwrap()
-                .try_into::<Option<String>>()
+                .try_into::<Option<&str>>()
                 .unwrap(),
             None
         );
         assert_eq!(
-            &interp
+            interp
                 .eval(br"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'non_vowel']")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<&str>()
                 .unwrap(),
             "l"
         );
         assert_eq!(
-            &interp
+            interp
                 .eval(br"'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'vowel']")
                 .unwrap()
-                .try_into::<String>()
+                .try_into::<&str>()
                 .unwrap(),
             "e"
         );

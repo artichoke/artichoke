@@ -126,17 +126,17 @@ out << q.first
                 "#,
             )
             .unwrap()
-            .try_into::<Vec<Option<String>>>()
+            .try_into::<Vec<Option<&str>>>()
             .unwrap();
         assert_eq!(
             result,
             vec![
-                Some("2".to_owned()),
-                Some("3".to_owned()),
-                Some("4".to_owned()),
-                Some("5".to_owned()),
-                Some("6".to_owned()),
-                Some("Ruby".to_owned()),
+                Some("2"),
+                Some("3"),
+                Some("4"),
+                Some("5"),
+                Some("6"),
+                Some("Ruby"),
                 None
             ]
         );
