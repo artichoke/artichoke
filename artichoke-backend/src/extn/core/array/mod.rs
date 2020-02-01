@@ -44,7 +44,7 @@ impl Array {
     }
 
     pub fn initialize(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         first: Option<Value>,
         second: Option<Value>,
         block: Option<Block>,

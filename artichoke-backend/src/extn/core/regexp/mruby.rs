@@ -48,14 +48,13 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, options, encoding) = mrb_get_args!(mrb, required = 1, optional = 2);
-    let interp = unwrap_interpreter!(mrb);
-    let result = regexp::trampoline::initialize(
-        &interp,
-        Value::new(&interp, pattern),
-        options.map(|options| Value::new(&interp, options)),
-        encoding.map(|encoding| Value::new(&interp, encoding)),
-        Some(Value::new(&interp, slf)),
-    );
+    let mut interp = unwrap_interpreter!(mrb);
+    let into = Value::new(&interp, slf);
+    let pattern = Value::new(&interp, pattern);
+    let options = options.map(|options| Value::new(&interp, options));
+    let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
+    let result =
+        regexp::trampoline::initialize(&mut interp, pattern, options, encoding, Some(into));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

@@ -119,7 +119,7 @@ impl Regexp {
     }
 
     pub fn initialize(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         pattern: Value,
         options: Option<Value>,
         encoding: Option<Value>,

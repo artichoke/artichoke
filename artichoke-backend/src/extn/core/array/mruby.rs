@@ -88,11 +88,11 @@ unsafe extern "C" fn ary_initialize(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (first, second, block) = mrb_get_args!(mrb, optional = 2, &block);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let first = first.map(|first| Value::new(&interp, first));
     let second = second.map(|second| Value::new(&interp, second));
-    let result = array::trampoline::initialize(&interp, array, first, second, block);
+    let result = array::trampoline::initialize(&mut interp, array, first, second, block);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

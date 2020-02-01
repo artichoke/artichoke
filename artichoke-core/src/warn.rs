@@ -22,5 +22,5 @@ pub trait Warn {
     /// `Warning` module.
     ///
     /// If an exception is raised on the interpreter, then an error is returned.
-    fn warn(&self, message: &[u8]) -> Result<(), Self::Error>;
+    fn warn(&mut self, message: &[u8]) -> Result<(), Self::Error>;
 }
