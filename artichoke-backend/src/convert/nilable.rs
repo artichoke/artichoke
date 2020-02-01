@@ -17,16 +17,6 @@ impl Convert<Option<Value>, Value> for Artichoke {
     }
 }
 
-impl Convert<&Option<Value>, Value> for Artichoke {
-    fn convert(&self, value: &Option<Value>) -> Value {
-        if let Some(value) = value {
-            value.clone()
-        } else {
-            Value::new(self, unsafe { sys::mrb_sys_nil_value() })
-        }
-    }
-}
-
 impl Convert<Option<Int>, Value> for Artichoke {
     fn convert(&self, value: Option<Int>) -> Value {
         if let Some(value) = value {
