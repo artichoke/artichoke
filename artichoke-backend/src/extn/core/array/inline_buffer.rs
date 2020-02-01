@@ -35,6 +35,34 @@ impl<'a> From<&'a [Value]> for InlineBuffer {
     }
 }
 
+impl FromIterator<Value> for InlineBuffer {
+    fn from_iter<I: IntoIterator<Item = Value>>(iter: I) -> Self {
+        Self(SmallVec::from_iter(
+            iter.into_iter().map(|elem| elem.inner()),
+        ))
+    }
+}
+
+impl FromIterator<Option<Value>> for InlineBuffer {
+    fn from_iter<I: IntoIterator<Item = Option<Value>>>(iter: I) -> Self {
+        Self(SmallVec::from_iter(iter.into_iter().map(|elem| {
+            elem.map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, |elem| elem.inner())
+        })))
+    }
+}
+
+impl<'a> FromIterator<&'a Option<Value>> for InlineBuffer {
+    fn from_iter<I: IntoIterator<Item = &'a Option<Value>>>(iter: I) -> Self {
+        Self(SmallVec::from_iter(iter.into_iter().map(|elem| {
+            if let Some(elem) = elem {
+                elem.inner()
+            } else {
+                unsafe { sys::mrb_sys_nil_value() }
+            }
+        })))
+    }
+}
+
 impl ArrayType for InlineBuffer {
     fn box_clone(&self) -> Box<dyn ArrayType> {
         Box::new(self.clone())
