@@ -25,8 +25,7 @@ impl Convert<&[Option<Value>], Value> for Artichoke {
             .iter()
             .map(|item| {
                 item.as_ref()
-                    .map(Value::inner)
-                    .unwrap_or_else(|| unsafe { sys::mrb_sys_nil_value() })
+                    .map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, Value::inner)
             })
             .collect::<Vec<_>>();
         let ary = Array::new(InlineBuffer::from(buf));

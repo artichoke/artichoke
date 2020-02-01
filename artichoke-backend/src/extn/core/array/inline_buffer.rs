@@ -19,7 +19,7 @@ impl From<Vec<sys::mrb_value>> for InlineBuffer {
 
 impl From<Vec<Value>> for InlineBuffer {
     fn from(values: Vec<Value>) -> Self {
-        Self::from(values.as_slice())
+        Self(SmallVec::from_iter(values.iter().map(Value::inner)))
     }
 }
 
