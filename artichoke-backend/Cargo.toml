@@ -55,6 +55,5 @@ default-features = false
 
 [features]
 default = ["artichoke-random", "artichoke-system-environ"]
-artichoke-all-converters = []
 artichoke-random = ["rand"]
 artichoke-system-environ = []
