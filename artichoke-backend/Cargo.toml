@@ -16,7 +16,6 @@ downcast = "0.10"
 log = "0.4"
 memchr = "2"
 once_cell = "1"
-onig = "5"
 regex = "1"
 smallvec = "1"
 
@@ -25,6 +24,10 @@ path = "../artichoke-core"
 
 [dependencies.artichoke-vfs]
 path = "../artichoke-vfs"
+
+[dependencies.onig]
+git = "https://github.com/artichoke/rust-onig"
+rev = "952305049073f37ada5543536c4c58540ea3642b"
 
 [dependencies.rand]
 version = "0.7"
