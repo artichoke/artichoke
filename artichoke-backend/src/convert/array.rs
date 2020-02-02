@@ -77,9 +77,7 @@ impl ConvertMut<&[Int], Value> for Artichoke {
 
 impl ConvertMut<&[Option<Vec<u8>>], Value> for Artichoke {
     fn convert_mut(&mut self, value: &[Option<Vec<u8>>]) -> Value {
-        let iter = value
-            .into_iter()
-            .map(|item| self.convert_mut(item.as_deref()));
+        let iter = value.iter().map(|item| self.convert_mut(item.as_deref()));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
