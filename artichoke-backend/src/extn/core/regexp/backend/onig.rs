@@ -1,3 +1,4 @@
+use onig::{Regex, Syntax};
 use std::cmp::{self, Ordering};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -9,12 +10,14 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType};
 use crate::extn::prelude::*;
 
+use super::{HashOfStringToArrayOfInt, NilableString};
+
 #[derive(Clone)]
 pub struct Onig {
     literal: Config,
     derived: Config,
     encoding: Encoding,
-    regex: Rc<onig::Regex>,
+    regex: Rc<Regex>,
 }
 
 impl Onig {
@@ -30,15 +33,15 @@ impl Onig {
                 "Oniguruma-backed Regexp only supports UTF-8 patterns",
             )
         })?;
-        let regex =
-            onig::Regex::with_options(pattern, derived.options.flags(), onig::Syntax::ruby())
-                .map_err(|err| {
-                    if literal.options.literal {
-                        Exception::from(SyntaxError::new(interp, err.description().to_owned()))
-                    } else {
-                        Exception::from(RegexpError::new(interp, err.description().to_owned()))
-                    }
-                })?;
+        let regex = Regex::with_options(pattern, derived.options.flags(), Syntax::ruby()).map_err(
+            |err| {
+                if literal.options.literal {
+                    Exception::from(SyntaxError::new(interp, err.description().to_owned()))
+                } else {
+                    Exception::from(RegexpError::new(interp, err.description().to_owned()))
+                }
+            },
+        )?;
         let regexp = Self {
             literal,
             derived,
@@ -80,7 +83,7 @@ impl RegexpType for Onig {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception> {
+    ) -> Result<Option<Vec<NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -468,7 +471,7 @@ impl RegexpType for Onig {
         }
     }
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception> {
+    fn named_captures(&self, interp: &Artichoke) -> Result<HashOfStringToArrayOfInt, Exception> {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
@@ -500,7 +503,7 @@ impl RegexpType for Onig {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception> {
+    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
