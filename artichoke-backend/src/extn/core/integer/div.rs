@@ -2,7 +2,7 @@ use crate::extn::core::float::Float;
 use crate::extn::prelude::*;
 use crate::types;
 
-pub fn method(interp: &Artichoke, value: Value, other: Value) -> Result<Value, Exception> {
+pub fn method(interp: &mut Artichoke, value: Value, other: Value) -> Result<Value, Exception> {
     let x = value.try_into::<Int>().map_err(|_| {
         Fatal::new(
             interp,
@@ -22,13 +22,13 @@ pub fn method(interp: &Artichoke, value: Value, other: Value) -> Result<Value, E
     } else if let Ok(y) = other.try_into::<types::Float>() {
         if y == 0.0 {
             match x {
-                x if x > 0 => Ok(interp.convert(Float::INFINITY)),
-                x if x < 0 => Ok(interp.convert(Float::NEG_INFINITY)),
-                _ => Ok(interp.convert(Float::NAN)),
+                x if x > 0 => Ok(interp.convert_mut(Float::INFINITY)),
+                x if x < 0 => Ok(interp.convert_mut(Float::NEG_INFINITY)),
+                _ => Ok(interp.convert_mut(Float::NAN)),
             }
         } else {
             #[allow(clippy::cast_precision_loss)]
-            Ok(interp.convert(x as types::Float / y))
+            Ok(interp.convert_mut(x as types::Float / y))
         }
     } else {
         Err(Exception::from(TypeError::new(

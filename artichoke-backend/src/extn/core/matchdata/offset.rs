@@ -24,7 +24,7 @@ impl<'a> Args<'a> {
     }
 }
 
-pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
+pub fn method(interp: &mut Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -44,14 +44,14 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Ex
                 if let Some(idx) = captures_len.checked_sub(idx) {
                     idx
                 } else {
-                    return Ok(interp.convert([None::<Value>, None::<Value>].as_ref()));
+                    return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
                 }
             } else {
                 let idx = usize::try_from(index).map_err(|_| {
                     Fatal::new(interp, "Expected positive position to convert to usize")
                 })?;
                 if idx > captures_len {
-                    return Ok(interp.convert([None::<Value>, None::<Value>].as_ref()));
+                    return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
                 }
                 idx
             }
@@ -64,12 +64,12 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Ex
             let indexes = if let Some(indexes) = indexes {
                 indexes
             } else {
-                return Ok(interp.convert([None::<Value>, None::<Value>].as_ref()));
+                return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
             };
             if let Some(Ok(index)) = indexes.last().copied().map(usize::try_from) {
                 index
             } else {
-                return Ok(interp.convert([None::<Value>, None::<Value>].as_ref()));
+                return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
             }
         }
     };
@@ -92,8 +92,8 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Ex
         let end = Int::try_from(end)
             .map_err(|_| Fatal::new(interp, "MatchData end pos does not fit in Integer"))?;
 
-        Ok(interp.convert([begin, end].as_ref()))
+        Ok(interp.convert_mut(&[begin, end][..]))
     } else {
-        Ok(interp.convert([None::<Value>, None::<Value>].as_ref()))
+        Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]))
     }
 }

@@ -10,7 +10,7 @@ use bstr::ByteSlice;
 use std::error;
 use std::fmt;
 
-use crate::convert::Convert;
+use crate::convert::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::sys;
@@ -96,10 +96,11 @@ impl RubyException for WriteError {
         None
     }
 
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.message());
         let borrow = interp.0.borrow();
         let spec = borrow.class_spec::<Fatal>()?;
-        let value = spec.new_instance(interp, &[interp.convert(self.message())])?;
+        let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }
 }

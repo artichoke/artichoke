@@ -43,7 +43,8 @@ pub fn method(
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
-                let _ = block.yield_arg::<Value>(interp, &interp.convert(pattern_bytes))?;
+                let block_arg = interp.convert_mut(pattern_bytes);
+                let _ = block.yield_arg::<Value>(interp, &block_arg)?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
@@ -63,7 +64,7 @@ pub fn method(
                 .unwrap_or_default();
             let mut result = Vec::with_capacity(matches);
             for _ in 0..matches {
-                result.push(interp.convert(pattern_bytes));
+                result.push(interp.convert_mut(pattern_bytes));
             }
             if matches > 0 {
                 let regex = Regexp::lazy(pattern_bytes);
@@ -85,7 +86,7 @@ pub fn method(
                     sys::mrb_gv_set(mrb, last_match_sym, nil);
                 }
             }
-            Ok(interp.convert(result))
+            Ok(interp.convert_mut(result))
         }
     } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
         regexp.borrow().inner().scan(interp, value, block)
@@ -109,7 +110,8 @@ pub fn method(
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
-                    let _ = block.yield_arg::<Value>(interp, &interp.convert(pattern_bytes))?;
+                    let block_arg = interp.convert_mut(pattern_bytes);
+                    let _ = block.yield_arg::<Value>(interp, &block_arg)?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
@@ -129,7 +131,7 @@ pub fn method(
                     .unwrap_or_default();
                 let mut result = Vec::with_capacity(matches);
                 for _ in 0..matches {
-                    result.push(interp.convert(pattern_bytes));
+                    result.push(interp.convert_mut(pattern_bytes));
                 }
                 if matches > 0 {
                     let regex = Regexp::lazy(pattern_bytes);
@@ -150,7 +152,7 @@ pub fn method(
                         sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                     }
                 }
-                Ok(interp.convert(result))
+                Ok(interp.convert_mut(result))
             }
         } else {
             Err(Exception::from(TypeError::new(

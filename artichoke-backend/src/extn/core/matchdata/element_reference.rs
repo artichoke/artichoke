@@ -93,7 +93,7 @@ impl<'a> Args<'a> {
     }
 }
 
-pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
+pub fn method(interp: &mut Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
         Fatal::new(
             interp,
@@ -117,14 +117,14 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Ex
                 })?;
                 match captures.len().checked_sub(idx) {
                     Some(0) | None => Ok(interp.convert(None::<Value>)),
-                    Some(index) => Ok(interp.convert(captures.remove(index))),
+                    Some(index) => Ok(interp.convert_mut(captures.remove(index))),
                 }
             } else {
                 let idx = usize::try_from(index).map_err(|_| {
                     Fatal::new(interp, "Expected positive position to convert to usize")
                 })?;
                 if idx < captures.len() {
-                    Ok(interp.convert(captures.remove(idx)))
+                    Ok(interp.convert_mut(captures.remove(idx)))
                 } else {
                     Ok(interp.convert(None::<Value>))
                 }
@@ -141,7 +141,7 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Ex
                     .copied()
                     .filter_map(|index| captures.get(index).and_then(Clone::clone))
                     .last();
-                Ok(interp.convert(group))
+                Ok(interp.convert_mut(group))
             } else {
                 let mut message = String::from("undefined group name reference: \"");
                 string::escape_unicode(&mut message, name)?;
@@ -165,12 +165,13 @@ pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Ex
                     Fatal::new(interp, "Expected positive position to convert to usize")
                 })?
             };
+            // TODO: construct an Array from iterator directly.
             let matches = captures
                 .into_iter()
                 .skip(start)
                 .take(len)
                 .collect::<Vec<_>>();
-            Ok(interp.convert(matches))
+            Ok(interp.convert_mut(matches))
         }
     }
 }

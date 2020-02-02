@@ -88,7 +88,7 @@ pub fn bytes(interp: &mut Artichoke, rand: Value, size: Value) -> Result<Value, 
         let mut buf = vec![0; size];
         let mut borrow = rand.borrow_mut();
         borrow.inner_mut().bytes(interp, buf.as_mut_slice());
-        Ok(interp.convert(buf))
+        Ok(interp.convert_mut(buf))
     } else {
         Err(Exception::from(ArgumentError::new(
             interp,
@@ -131,12 +131,12 @@ pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<V
         Max::Float(max) if max == 0.0 => {
             let mut borrow = rand.borrow_mut();
             let number = borrow.inner_mut().rand_float(interp, None);
-            Ok(interp.convert(number))
+            Ok(interp.convert_mut(number))
         }
         Max::Float(max) => {
             let mut borrow = rand.borrow_mut();
             let number = borrow.inner_mut().rand_float(interp, Some(max));
-            Ok(interp.convert(number))
+            Ok(interp.convert_mut(number))
         }
         Max::Int(max) if max < 1 => Err(Exception::from(ArgumentError::new(
             interp,
@@ -150,7 +150,7 @@ pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<V
         Max::None => {
             let mut borrow = rand.borrow_mut();
             let number = borrow.inner_mut().rand_float(interp, None);
-            Ok(interp.convert(number))
+            Ok(interp.convert_mut(number))
         }
     }
 }
@@ -191,12 +191,12 @@ pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Excepti
     Ok(interp.convert(old_seed as Int))
 }
 
-pub fn urandom(interp: &Artichoke, size: Value) -> Result<Value, Exception> {
+pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Exception> {
     let size = size.implicitly_convert_to_int()?;
     let size = usize::try_from(size)
         .map_err(|_| ArgumentError::new(interp, "negative string size (or size too big)"))?;
     let mut bytes = vec![0; size];
     let mut rng = rand::thread_rng();
     rng.fill_bytes(bytes.as_mut_slice());
-    Ok(interp.convert(bytes))
+    Ok(interp.convert_mut(bytes))
 }

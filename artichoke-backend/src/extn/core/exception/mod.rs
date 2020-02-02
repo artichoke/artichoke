@@ -352,10 +352,11 @@ macro_rules! ruby_exception_impl {
                 None
             }
 
-            fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+            fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+                let message = interp.convert_mut(self.message());
                 let borrow = interp.0.borrow();
                 let spec = borrow.class_spec::<Self>()?;
-                let value = spec.new_instance(interp, &[interp.convert(self.message())])?;
+                let value = spec.new_instance(interp, &[message])?;
                 Some(value.inner())
             }
         }

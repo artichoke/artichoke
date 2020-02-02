@@ -1,7 +1,7 @@
 use std::fmt;
 use std::ptr;
 
-use crate::convert::{Convert, TryConvert};
+use crate::convert::{Convert, ConvertMut, TryConvert};
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::{Fatal, TypeError};
@@ -261,7 +261,9 @@ impl ValueLike for Value {
     }
 
     fn respond_to(&self, method: &str) -> Result<bool, Self::Error> {
-        let method = self.interp.convert(method);
+        // This is a hack until Value properly supports interpreter mutability.
+        let mut interp = self.interp.clone();
+        let method = interp.convert_mut(method);
         self.funcall::<bool>("respond_to?", &[method], None)
     }
 

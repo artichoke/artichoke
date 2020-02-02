@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::convert::Convert;
+use crate::convert::ConvertMut;
 use crate::exception::Exception;
 use crate::extn::core::exception::RuntimeError;
 use crate::extn::core::warning::Warning;
@@ -24,7 +24,7 @@ impl Warn for Artichoke {
                 .ok_or_else(|| ArtichokeError::NotDefined("Warn with uninitialized Warning".into()))
                 .map_err(|err| RuntimeError::new(self, err.to_string()))?
         };
-        let message = self.convert(message);
+        let message = self.convert_mut(message);
         let _ = warning.funcall::<Value>("warn", &[message], None)?;
         Ok(())
     }

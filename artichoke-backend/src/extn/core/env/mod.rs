@@ -33,7 +33,11 @@ pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Va
     Ok(result)
 }
 
-pub fn element_reference(interp: &Artichoke, obj: Value, name: &Value) -> Result<Value, Exception> {
+pub fn element_reference(
+    interp: &mut Artichoke,
+    obj: Value,
+    name: &Value,
+) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
     let ruby_type = name.pretty_name();
@@ -49,11 +53,11 @@ pub fn element_reference(interp: &Artichoke, obj: Value, name: &Value) -> Result
     };
     let env = obj.borrow();
     let result = env.0.get(interp, name)?;
-    Ok(interp.convert(result.as_ref().map(Cow::as_ref)))
+    Ok(interp.convert_mut(result.as_ref().map(Cow::as_ref)))
 }
 
 pub fn element_assignment(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     obj: Value,
     name: &Value,
     value: Value,
@@ -84,12 +88,12 @@ pub fn element_assignment(
     };
     obj.borrow_mut().0.put(interp, name, value)?;
     // Return original object, even if we converted it to a `String`.
-    Ok(interp.convert(value))
+    Ok(interp.convert_mut(value))
 }
 
-pub fn to_h(interp: &Artichoke, obj: Value) -> Result<Value, Exception> {
+pub fn to_h(interp: &mut Artichoke, obj: Value) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
         .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
     let result = obj.borrow().0.as_map(interp)?;
-    Ok(interp.convert(result))
+    Ok(interp.convert_mut(result))
 }

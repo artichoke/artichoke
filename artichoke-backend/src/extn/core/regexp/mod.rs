@@ -48,6 +48,10 @@ pub const HIGHEST_MATCH_GROUP: &[u8] = b"$+";
 /// The information about the last match in the current scope.
 pub const LAST_MATCH: &[u8] = b"$~";
 
+use backend::lazy::Lazy;
+use backend::onig::Onig;
+use backend::regex_utf8::RegexUtf8;
+
 /// The Nth group of the last successful match. May be > 1.
 #[inline]
 #[must_use]
@@ -93,15 +97,13 @@ impl Regexp {
         encoding: Encoding,
     ) -> Result<Self, Exception> {
         // Patterns must be parsable by Oniguruma.
-        let onig = backend::onig::Onig::new(
+        let onig = Onig::new(
             interp,
             literal_config.clone(),
             derived_config.clone(),
             encoding,
         )?;
-        if let Ok(regex_utf8) =
-            backend::regex_utf8::RegexUtf8::new(interp, literal_config, derived_config, encoding)
-        {
+        if let Ok(regex_utf8) = RegexUtf8::new(interp, literal_config, derived_config, encoding) {
             Ok(Self(Box::new(regex_utf8)))
         } else {
             Ok(Self(Box::new(onig)))
@@ -114,7 +116,7 @@ impl Regexp {
             pattern: pattern.to_vec(),
             options: Options::default(),
         };
-        let backend = Box::new(backend::lazy::Lazy::new(literal_config));
+        let backend = Box::new(Lazy::new(literal_config));
         Self(backend)
     }
 
@@ -201,7 +203,7 @@ impl Regexp {
         Ok(regexp)
     }
 
-    pub fn escape(interp: &Artichoke, pattern: Value) -> Result<Value, Exception> {
+    pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
         let pattern = if let Ok(pattern) = pattern.clone().try_into::<&[u8]>() {
             pattern
         } else if let Ok(pattern) = pattern.funcall::<&[u8]>("to_str", &[], None) {
@@ -215,7 +217,7 @@ impl Regexp {
         let pattern = str::from_utf8(pattern)
             .map_err(|_| ArgumentError::new(interp, "Self::escape only supports UTF-8 patterns"))?;
 
-        Ok(interp.convert(syntax::escape(pattern)))
+        Ok(interp.convert_mut(syntax::escape(pattern)))
     }
 
     pub fn union(interp: &Artichoke, patterns: &[Value]) -> Result<Value, Exception> {
@@ -354,8 +356,9 @@ impl Regexp {
         Ok(interp.convert(hash as Int))
     }
 
-    pub fn inspect(&self, interp: &Artichoke) -> Result<Value, Exception> {
-        Ok(interp.convert(self.0.inspect(interp)))
+    pub fn inspect(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
+        let debug = self.0.inspect(interp);
+        Ok(interp.convert_mut(debug))
     }
 
     pub fn is_casefold(&self, interp: &Artichoke) -> Result<Value, Exception> {
@@ -473,12 +476,14 @@ impl Regexp {
         Ok(interp.convert(result))
     }
 
-    pub fn named_captures(&self, interp: &Artichoke) -> Result<Value, Exception> {
-        Ok(interp.convert(self.0.named_captures(interp)?))
+    pub fn named_captures(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
+        let captures = self.0.named_captures(interp)?;
+        Ok(interp.convert_mut(captures))
     }
 
-    pub fn names(&self, interp: &Artichoke) -> Result<Value, Exception> {
-        Ok(interp.convert(self.0.names(interp)))
+    pub fn names(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
+        let names = self.0.names(interp);
+        Ok(interp.convert_mut(names))
     }
 
     pub fn options(&self, interp: &Artichoke) -> Result<Value, Exception> {
@@ -488,12 +493,13 @@ impl Regexp {
         Ok(interp.convert(opts))
     }
 
-    pub fn source(&self, interp: &Artichoke) -> Result<Value, Exception> {
-        Ok(interp.convert(self.0.literal_config().pattern.as_slice()))
+    pub fn source(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
+        Ok(interp.convert_mut(self.0.literal_config().pattern.as_slice()))
     }
 
-    pub fn string(&self, interp: &Artichoke) -> Result<Value, Exception> {
-        Ok(interp.convert(self.0.string(interp)))
+    pub fn string(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
+        let string = self.0.string(interp);
+        Ok(interp.convert_mut(string))
     }
 }
 

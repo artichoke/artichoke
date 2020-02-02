@@ -2,20 +2,20 @@ use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::slice;
 
-use crate::convert::{Convert, TryConvert};
+use crate::convert::{ConvertMut, TryConvert};
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
-impl Convert<Vec<u8>, Value> for Artichoke {
-    fn convert(&self, value: Vec<u8>) -> Value {
-        self.convert(value.as_slice())
+impl ConvertMut<Vec<u8>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<u8>) -> Value {
+        self.convert_mut(value.as_slice())
     }
 }
 
-impl Convert<&[u8], Value> for Artichoke {
-    fn convert(&self, value: &[u8]) -> Value {
+impl ConvertMut<&[u8], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[u8]) -> Value {
         let mrb = self.0.borrow().mrb;
         // Ruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
@@ -23,7 +23,8 @@ impl Convert<&[u8], Value> for Artichoke {
         let len = value.len();
         // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
         // to worry about the lifetime of the slice passed into this converter.
-        Value::new(self, unsafe { sys::mrb_str_new(mrb, raw, len) })
+        let string = unsafe { sys::mrb_str_new(mrb, raw, len) };
+        Value::new(self, string)
     }
 }
 
