@@ -1,4 +1,4 @@
-use artichoke_backend::{Artichoke, BootError, Convert, Eval, LoadSources, TopSelf, ValueLike};
+use artichoke_backend::{Artichoke, BootError, ConvertMut, Eval, LoadSources, TopSelf, ValueLike};
 use std::borrow::Cow;
 
 pub fn init(interp: &Artichoke) -> Result<(), BootError> {
@@ -55,7 +55,7 @@ impl Runner {
             eprintln!("{}", err);
             assert!(!self.enforce);
         }
-        let specs = self.interp.convert(self.specs);
+        let specs = self.interp.convert_mut(self.specs);
         let result = self
             .interp
             .top_self()

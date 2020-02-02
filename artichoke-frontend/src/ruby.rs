@@ -2,7 +2,7 @@
 //!
 //! Exported as `ruby` and `artichoke` binaries.
 
-use artichoke_backend::convert::Convert;
+use artichoke_backend::convert::ConvertMut;
 use artichoke_backend::exception::Exception;
 use artichoke_backend::fs;
 use artichoke_backend::state::parser::Context;
@@ -130,7 +130,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
         };
         let sym = interp.intern_symbol(&b"$fixture"[..]);
         let mrb = interp.0.borrow().mrb;
-        let value = interp.convert(data);
+        let value = interp.convert_mut(data);
         unsafe {
             sys::mrb_gv_set(mrb, sym, value.inner());
         }
@@ -161,7 +161,7 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
         };
         let sym = interp.intern_symbol(&b"$fixture"[..]);
         let mrb = interp.0.borrow().mrb;
-        let value = interp.convert(data);
+        let value = interp.convert_mut(data);
         unsafe {
             sys::mrb_gv_set(mrb, sym, value.inner());
         }

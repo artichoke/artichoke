@@ -1,131 +1,139 @@
 use std::iter::FromIterator;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{Convert, ConvertMut, RustBackedValue, TryConvert};
 use crate::extn::core::array::{Array, InlineBuffer};
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
-impl Convert<&[Value], Value> for Artichoke {
-    fn convert(&self, value: &[Value]) -> Value {
+impl ConvertMut<&[Value], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[Value]) -> Value {
         let ary = Array::new(InlineBuffer::from(value));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<Vec<Value>, Value> for Artichoke {
-    fn convert(&self, value: Vec<Value>) -> Value {
+impl ConvertMut<Vec<Value>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Value>) -> Value {
         let ary = Array::new(InlineBuffer::from(value));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<&[Option<Value>], Value> for Artichoke {
-    fn convert(&self, value: &[Option<Value>]) -> Value {
+impl ConvertMut<&[Option<Value>], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[Option<Value>]) -> Value {
         let ary = Array::new(InlineBuffer::from_iter(value));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<Vec<Vec<u8>>, Value> for Artichoke {
-    fn convert(&self, value: Vec<Vec<u8>>) -> Value {
+impl ConvertMut<Vec<Vec<u8>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Vec<u8>>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
+impl ConvertMut<Vec<&[u8]>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<&[u8]>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
+impl ConvertMut<Vec<String>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<String>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
+impl ConvertMut<Vec<&str>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<&str>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
+impl ConvertMut<Vec<Int>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Int>) -> Value {
         let iter = value.into_iter().map(|item| self.convert(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<Vec<&[u8]>, Value> for Artichoke {
-    fn convert(&self, value: Vec<&[u8]>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
-        let ary = Array::new(InlineBuffer::from_iter(iter));
-        ary.try_into_ruby(self, None).expect("Array into Value")
-    }
-}
-
-impl Convert<Vec<String>, Value> for Artichoke {
-    fn convert(&self, value: Vec<String>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
-        let ary = Array::new(InlineBuffer::from_iter(iter));
-        ary.try_into_ruby(self, None).expect("Array into Value")
-    }
-}
-
-impl Convert<Vec<&str>, Value> for Artichoke {
-    fn convert(&self, value: Vec<&str>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
-        let ary = Array::new(InlineBuffer::from_iter(iter));
-        ary.try_into_ruby(self, None).expect("Array into Value")
-    }
-}
-
-impl Convert<Vec<Int>, Value> for Artichoke {
-    fn convert(&self, value: Vec<Int>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
-        let ary = Array::new(InlineBuffer::from_iter(iter));
-        ary.try_into_ruby(self, None).expect("Array into Value")
-    }
-}
-
-impl Convert<&[Int], Value> for Artichoke {
-    fn convert(&self, value: &[Int]) -> Value {
+impl ConvertMut<&[Int], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[Int]) -> Value {
         let iter = value.iter().copied().map(|item| self.convert(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<Vec<Option<Vec<u8>>>, Value> for Artichoke {
-    fn convert(&self, value: Vec<Option<Vec<u8>>>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
+impl ConvertMut<&[Option<Vec<u8>>], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[Option<Vec<u8>>]) -> Value {
+        let iter = value.iter().map(|item| self.convert_mut(item.as_deref()));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<&[Option<&[u8]>], Value> for Artichoke {
-    fn convert(&self, value: &[Option<&[u8]>]) -> Value {
-        let iter = value.iter().copied().map(|item| self.convert(item));
+impl ConvertMut<Vec<Option<Vec<u8>>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Option<Vec<u8>>>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<Vec<Option<&[u8]>>, Value> for Artichoke {
-    fn convert(&self, value: Vec<Option<&[u8]>>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
+impl ConvertMut<&[Option<&[u8]>], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[Option<&[u8]>]) -> Value {
+        let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<Vec<Vec<Option<&[u8]>>>, Value> for Artichoke {
-    fn convert(&self, value: Vec<Vec<Option<&[u8]>>>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
+impl ConvertMut<Vec<Option<&[u8]>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Option<&[u8]>>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<&[Option<&str>], Value> for Artichoke {
-    fn convert(&self, value: &[Option<&str>]) -> Value {
-        let iter = value.iter().copied().map(|item| self.convert(item));
+impl ConvertMut<Vec<Vec<Option<&[u8]>>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Vec<Option<&[u8]>>>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<Vec<Option<&str>>, Value> for Artichoke {
-    fn convert(&self, value: Vec<Option<&str>>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
+impl ConvertMut<&[Option<&str>], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[Option<&str>]) -> Value {
+        let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }
 }
 
-impl Convert<Vec<Vec<Option<&str>>>, Value> for Artichoke {
-    fn convert(&self, value: Vec<Vec<Option<&str>>>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert(item));
+impl ConvertMut<Vec<Option<&str>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Option<&str>>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
+impl ConvertMut<Vec<Vec<Option<&str>>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Vec<Option<&str>>>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }

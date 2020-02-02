@@ -1,7 +1,7 @@
 //! Converters for nilable primitive Ruby types. Excludes collection types
 //! Array and Hash.
 
-use crate::convert::{Convert, TryConvert};
+use crate::convert::{Convert, ConvertMut, TryConvert};
 use crate::sys;
 use crate::types::{Int, Ruby};
 use crate::value::Value;
@@ -27,30 +27,32 @@ impl Convert<Option<Int>, Value> for Artichoke {
     }
 }
 
-impl Convert<Option<Vec<u8>>, Value> for Artichoke {
-    fn convert(&self, value: Option<Vec<u8>>) -> Value {
+impl ConvertMut<Option<Vec<u8>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Option<Vec<u8>>) -> Value {
+        self.convert_mut(value.as_deref())
+    }
+}
+
+impl ConvertMut<Option<&[u8]>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Option<&[u8]>) -> Value {
         if let Some(value) = value {
-            self.convert(value)
+            self.convert_mut(value)
         } else {
             Value::new(self, unsafe { sys::mrb_sys_nil_value() })
         }
     }
 }
 
-impl Convert<Option<&[u8]>, Value> for Artichoke {
-    fn convert(&self, value: Option<&[u8]>) -> Value {
-        if let Some(value) = value {
-            self.convert(value)
-        } else {
-            Value::new(self, unsafe { sys::mrb_sys_nil_value() })
-        }
+impl ConvertMut<Option<String>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Option<String>) -> Value {
+        self.convert_mut(value.as_deref())
     }
 }
 
-impl Convert<Option<&str>, Value> for Artichoke {
-    fn convert(&self, value: Option<&str>) -> Value {
+impl ConvertMut<Option<&str>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Option<&str>) -> Value {
         if let Some(value) = value {
-            self.convert(value)
+            self.convert_mut(value)
         } else {
             Value::new(self, unsafe { sys::mrb_sys_nil_value() })
         }

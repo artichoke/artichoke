@@ -27,7 +27,7 @@ macro_rules! global_const {
             sys::mrb_define_global_const(
                 mrb,
                 concat!(stringify!($constant), "\0").as_ptr() as *const i8,
-                $interp.convert($constant).inner(),
+                $interp.convert_mut($constant).inner(),
             );
         }
     }};
@@ -37,7 +37,7 @@ macro_rules! global_const {
             sys::mrb_define_global_const(
                 mrb,
                 concat!(stringify!($constant), "\0").as_ptr() as *const i8,
-                $interp.convert($value).inner(),
+                $interp.convert_mut($value).inner(),
             );
         }
     }};

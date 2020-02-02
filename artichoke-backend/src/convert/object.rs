@@ -160,12 +160,12 @@ mod tests {
             mrb: *mut sys::mrb_state,
             slf: sys::mrb_value,
         ) -> sys::mrb_value {
-            let interp = unwrap_interpreter!(mrb);
+            let mut interp = unwrap_interpreter!(mrb);
 
             let value = Value::new(&interp, slf);
             if let Ok(container) = Self::try_from_ruby(&interp, &value) {
                 let borrow = container.borrow();
-                interp.convert(borrow.inner.as_bytes()).inner()
+                interp.convert_mut(borrow.inner.as_bytes()).inner()
             } else {
                 interp.convert(None::<Value>).inner()
             }
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn convert_obj_not_data() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let spec =
             class::Spec::new("Container", None, Some(def::rust_data_free::<Container>)).unwrap();
         class::Builder::for_spec(&interp, &spec)
@@ -236,7 +236,7 @@ mod tests {
             .unwrap();
         interp.0.borrow_mut().def_class::<Box<Other>>(spec);
 
-        let value = interp.convert("string");
+        let value = interp.convert_mut("string");
         let class = value.funcall::<Value>("class", &[], None).expect("funcall");
         assert_eq!(class.to_s(), b"String");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };

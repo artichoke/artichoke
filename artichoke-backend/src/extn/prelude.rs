@@ -7,7 +7,7 @@
 //! ```
 
 pub use crate::class;
-pub use crate::convert::{Convert, RustBackedValue, TryConvert};
+pub use crate::convert::{Convert, ConvertMut, RustBackedValue, TryConvert, TryConvertMut};
 pub use crate::def::{self, EnclosingRubyScope};
 pub use crate::exception::{self, Exception, RubyException};
 pub use crate::extn::core::exception::*;

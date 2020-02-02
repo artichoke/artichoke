@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::convert::{Convert, RustBackedValue, TryConvert};
+use crate::convert::{ConvertMut, RustBackedValue, TryConvert};
 use crate::extn::core::array;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
@@ -11,8 +11,8 @@ use crate::{Artichoke, ArtichokeError};
 // TODO: implement `PartialEq`, `Eq`, and `Hash` on `Value`, see GH-159.
 // TODO: implement `Convert<HashMap<Value, Value>>`, see GH-160.
 
-impl Convert<Vec<(Value, Value)>, Value> for Artichoke {
-    fn convert(&self, value: Vec<(Value, Value)>) -> Value {
+impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<(Value, Value)>) -> Value {
         let mrb = self.0.borrow().mrb;
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { sys::mrb_hash_new_capa(mrb, capa) };
@@ -25,43 +25,43 @@ impl Convert<Vec<(Value, Value)>, Value> for Artichoke {
     }
 }
 
-impl Convert<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
-    fn convert(&self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Value {
+impl ConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Value {
         let mrb = self.0.borrow().mrb;
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { sys::mrb_hash_new_capa(mrb, capa) };
         for (key, val) in value {
-            let key = self.convert(key).inner();
-            let val = self.convert(val).inner();
+            let key = self.convert_mut(key).inner();
+            let val = self.convert_mut(val).inner();
             unsafe { sys::mrb_hash_set(mrb, hash, key, val) };
         }
         Value::new(self, hash)
     }
 }
 
-impl Convert<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
-    fn convert(&self, value: HashMap<Vec<u8>, Vec<u8>>) -> Value {
+impl ConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: HashMap<Vec<u8>, Vec<u8>>) -> Value {
         let mrb = self.0.borrow().mrb;
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { sys::mrb_hash_new_capa(mrb, capa) };
         for (key, val) in value {
-            let key = self.convert(key).inner();
-            let val = self.convert(val).inner();
+            let key = self.convert_mut(key).inner();
+            let val = self.convert_mut(val).inner();
             unsafe { sys::mrb_hash_set(mrb, hash, key, val) };
         }
         Value::new(self, hash)
     }
 }
 
-impl Convert<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke {
-    fn convert(&self, value: Option<HashMap<Vec<u8>, Option<Vec<u8>>>>) -> Value {
+impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Option<HashMap<Vec<u8>, Option<Vec<u8>>>>) -> Value {
         if let Some(value) = value {
             let mrb = self.0.borrow().mrb;
             let capa = Int::try_from(value.len()).unwrap_or_default();
             let hash = unsafe { sys::mrb_hash_new_capa(mrb, capa) };
             for (key, val) in value {
-                let key = self.convert(key).inner();
-                let val = self.convert(val).inner();
+                let key = self.convert_mut(key).inner();
+                let val = self.convert_mut(val).inner();
                 unsafe { sys::mrb_hash_set(mrb, hash, key, val) };
             }
             Value::new(self, hash)
@@ -109,14 +109,14 @@ mod tests {
 
     #[test]
     fn roundtrip_kv() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
         let map = vec![
             (interp.convert(1), interp.convert(2)),
             (interp.convert(7), interp.convert(8)),
         ];
 
-        let value = Convert::<_, Value>::convert(&interp, map);
+        let value = ConvertMut::<_, Value>::convert_mut(&mut interp, map);
         assert_eq!(value.to_s(), b"{1=>2, 7=>8}");
 
         let pairs = value.try_into::<Vec<(Value, Value)>>().expect("convert");

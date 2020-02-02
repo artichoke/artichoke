@@ -121,10 +121,16 @@ mod warn;
 mod test;
 
 pub use artichoke_core as core;
+
 /// Re-export from [`artichoke_core`](artichoke_core::convert::Convert).
-pub use artichoke_core::convert::Convert;
+pub use crate::core::convert::Convert;
+/// Re-export from [`artichoke_core`](artichoke_core::convert::ConvertMut).
+pub use crate::core::convert::ConvertMut;
 /// Re-export from [`artichoke_core`](artichoke_core::convert::TryConvert).
-pub use artichoke_core::convert::TryConvert;
+pub use crate::core::convert::TryConvert;
+/// Re-export from [`artichoke_core`](artichoke_core::convert::TryConvertMut).
+pub use crate::core::convert::TryConvertMut;
+
 pub use artichoke_core::eval::Eval;
 pub use artichoke_core::file::File;
 pub use artichoke_core::intern::Intern;

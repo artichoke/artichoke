@@ -1,23 +1,23 @@
 use std::str;
 
-use crate::convert::{Convert, TryConvert};
-use crate::types::{Ruby, Rust};
+use crate::convert::{ConvertMut, TryConvert};
+use crate::types::Rust;
 use crate::value::Value;
 use crate::{Artichoke, ArtichokeError};
 
-impl Convert<String, Value> for Artichoke {
-    fn convert(&self, value: String) -> Value {
+impl ConvertMut<String, Value> for Artichoke {
+    fn convert_mut(&mut self, value: String) -> Value {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        self.convert(value.as_bytes())
+        self.convert_mut(value.as_bytes())
     }
 }
 
-impl Convert<&str, Value> for Artichoke {
-    fn convert(&self, value: &str) -> Value {
+impl ConvertMut<&str, Value> for Artichoke {
+    fn convert_mut(&mut self, value: &str) -> Value {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        self.convert(value.as_bytes())
+        self.convert_mut(value.as_bytes())
     }
 }
 
@@ -30,18 +30,18 @@ impl TryConvert<Value, String> for Artichoke {
 impl<'a> TryConvert<Value, &'a str> for Artichoke {
     fn try_convert(&self, value: Value) -> Result<&'a str, ArtichokeError> {
         let type_tag = value.ruby_type();
-        let bytes = self
-            .try_convert(value)
-            .map_err(|_| ArtichokeError::ConvertToRust {
+        self.try_convert(value)
+            .ok()
+            .and_then(|bytes| {
+                // This converter requires that the bytes be valid UTF-8 data.
+                // If the `Value` contains binary data, use the `Vec<u8>` or
+                // `&[u8]` converter.
+                str::from_utf8(bytes).ok()
+            })
+            .ok_or(ArtichokeError::ConvertToRust {
                 from: type_tag,
                 to: Rust::String,
-            })?;
-        // This converter requires that the bytes be valid UTF-8 data. If the
-        // `mrb_value` contains binary data, use the `Vec<u8>` converter.
-        str::from_utf8(bytes).map_err(|_| ArtichokeError::ConvertToRust {
-            from: Ruby::String,
-            to: Rust::String,
-        })
+            })
     }
 }
 
@@ -70,9 +70,9 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_string(s: String) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let mrb = interp.0.borrow().mrb;
-        let value = interp.convert(s.clone());
+        let value = interp.convert_mut(s.clone());
         let ptr = unsafe { sys::mrb_string_value_ptr(mrb, value.inner()) };
         let len = unsafe { sys::mrb_string_value_len(mrb, value.inner()) };
         let string =
@@ -83,16 +83,16 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn string_with_value(s: String) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(s.clone());
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(s.clone());
         value.to_s() == s.as_bytes()
     }
 
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(s: String) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(s.clone());
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(s.clone());
         let value = value.try_into::<String>().expect("convert");
         value == s
     }

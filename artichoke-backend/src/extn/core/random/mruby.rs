@@ -169,9 +169,9 @@ unsafe extern "C" fn artichoke_random_self_urandom(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let size = Value::new(&interp, size);
-    let result = random::urandom(&interp, size);
+    let result = random::urandom(&mut interp, size);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

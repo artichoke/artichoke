@@ -26,7 +26,7 @@ impl RubyException for Exception {
         self.0.backtrace(interp)
     }
 
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         self.0.as_mrb_value(interp)
     }
 }
@@ -64,8 +64,8 @@ impl From<Box<dyn RubyException>> for Exception {
 /// Because this precondition must hold for all frames between the caller and
 /// the closest [`sys::mrb_protect`] landing pad, this function should only be
 /// called in the entrypoint into Rust from mruby.
-pub unsafe fn raise(interp: Artichoke, exception: impl RubyException + fmt::Debug) -> ! {
-    let exc = if let Some(exc) = exception.as_mrb_value(&interp) {
+pub unsafe fn raise(mut interp: Artichoke, exception: impl RubyException + fmt::Debug) -> ! {
+    let exc = if let Some(exc) = exception.as_mrb_value(&mut interp) {
         exc
     } else {
         error!("unable to raise {:?}", exception);
@@ -107,7 +107,7 @@ where
     fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>>;
 
     /// Return a raiseable [`sys::mrb_value`].
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value>;
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value>;
 }
 
 impl RubyException for Box<dyn RubyException> {
@@ -127,7 +127,7 @@ impl RubyException for Box<dyn RubyException> {
         self.as_ref().backtrace(interp)
     }
 
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         self.as_ref().as_mrb_value(interp)
     }
 }
@@ -224,7 +224,7 @@ impl RubyException for CaughtException {
         self.value.funcall("backtrace", &[], None).ok()
     }
 
-    fn as_mrb_value(&self, interp: &Artichoke) -> Option<sys::mrb_value> {
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let _ = interp;
         Some(self.value.inner())
     }

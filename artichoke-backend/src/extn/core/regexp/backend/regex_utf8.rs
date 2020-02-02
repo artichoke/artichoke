@@ -213,25 +213,23 @@ impl RegexpType for RegexUtf8 {
         if let Some(captures) = self.regex.captures(pattern) {
             let globals_to_set = cmp::max(interp.0.borrow().active_regexp_globals, captures.len());
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
-            let value = interp.convert(
-                captures
-                    .get(0)
-                    .as_ref()
-                    .map(regex::Match::as_str)
-                    .map(str::as_bytes),
-            );
+            let fullmatch = captures
+                .get(0)
+                .as_ref()
+                .map(regex::Match::as_str)
+                .map(str::as_bytes);
+            let value = interp.convert_mut(fullmatch);
             unsafe {
                 sys::mrb_gv_set(mrb, sym, value.inner());
             }
             for group in 1..=globals_to_set {
                 let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                let value = interp.convert(
-                    captures
-                        .get(0)
-                        .as_ref()
-                        .map(regex::Match::as_str)
-                        .map(str::as_bytes),
-                );
+                let capture = captures
+                    .get(group)
+                    .as_ref()
+                    .map(regex::Match::as_str)
+                    .map(str::as_bytes);
+                let value = interp.convert_mut(capture);
                 unsafe {
                     sys::mrb_gv_set(mrb, sym, value.inner());
                 }
@@ -244,8 +242,8 @@ impl RegexpType for RegexUtf8 {
                 let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
                 let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
                 unsafe {
-                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert(pre_match).inner());
-                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert(post_match).inner());
+                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert_mut(pre_match).inner());
+                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert_mut(post_match).inner());
                 }
             }
             let matchdata = MatchData::new(
@@ -350,25 +348,23 @@ impl RegexpType for RegexUtf8 {
         if let Some(captures) = self.regex.captures(match_target) {
             let globals_to_set = cmp::max(interp.0.borrow().active_regexp_globals, captures.len());
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
-            let value = interp.convert(
-                captures
-                    .get(0)
-                    .as_ref()
-                    .map(regex::Match::as_str)
-                    .map(str::as_bytes),
-            );
+            let fullmatch = captures
+                .get(0)
+                .as_ref()
+                .map(regex::Match::as_str)
+                .map(str::as_bytes);
+            let value = interp.convert_mut(fullmatch);
             unsafe {
                 sys::mrb_gv_set(mrb, sym, value.inner());
             }
             for group in 1..=globals_to_set {
                 let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                let value = interp.convert(
-                    captures
-                        .get(0)
-                        .as_ref()
-                        .map(regex::Match::as_str)
-                        .map(str::as_bytes),
-                );
+                let capture = captures
+                    .get(group)
+                    .as_ref()
+                    .map(regex::Match::as_str)
+                    .map(str::as_bytes);
+                let value = interp.convert_mut(capture);
                 unsafe {
                     sys::mrb_gv_set(mrb, sym, value.inner());
                 }
@@ -387,8 +383,8 @@ impl RegexpType for RegexUtf8 {
                 let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
                 let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
                 unsafe {
-                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert(pre_match).inner());
-                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert(post_match).inner());
+                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert_mut(pre_match).inner());
+                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert_mut(post_match).inner());
                 }
                 matchdata.set_region(
                     byte_offset + match_pos.start(),
@@ -440,25 +436,23 @@ impl RegexpType for RegexUtf8 {
         if let Some(captures) = self.regex.captures(pattern) {
             let globals_to_set = cmp::max(interp.0.borrow().active_regexp_globals, captures.len());
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
-            let value = interp.convert(
-                captures
-                    .get(0)
-                    .as_ref()
-                    .map(regex::Match::as_str)
-                    .map(str::as_bytes),
-            );
+            let fullmatch = captures
+                .get(0)
+                .as_ref()
+                .map(regex::Match::as_str)
+                .map(str::as_bytes);
+            let value = interp.convert_mut(fullmatch);
             unsafe {
                 sys::mrb_gv_set(mrb, sym, value.inner());
             }
             for group in 1..=globals_to_set {
                 let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                let value = interp.convert(
-                    captures
-                        .get(0)
-                        .as_ref()
-                        .map(regex::Match::as_str)
-                        .map(str::as_bytes),
-                );
+                let capture = captures
+                    .get(group)
+                    .as_ref()
+                    .map(regex::Match::as_str)
+                    .map(str::as_bytes);
+                let value = interp.convert_mut(capture);
                 unsafe {
                     sys::mrb_gv_set(mrb, sym, value.inner());
                 }
@@ -482,8 +476,8 @@ impl RegexpType for RegexUtf8 {
                 sys::mrb_gv_set(mrb, matchdata_sym, matchdata.inner());
             }
             if let Some(match_pos) = captures.get(0) {
-                let pre_match = interp.convert(&pattern[..match_pos.start()]);
-                let post_match = interp.convert(&pattern[match_pos.end()..]);
+                let pre_match = interp.convert_mut(&pattern[..match_pos.start()]);
+                let post_match = interp.convert_mut(&pattern[match_pos.end()..]);
                 let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
                 let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
                 unsafe {
@@ -656,7 +650,7 @@ impl RegexpType for RegexUtf8 {
                         .as_ref()
                         .map(regex::Match::as_str)
                         .map(str::as_bytes);
-                    let capture = interp.convert(matched);
+                    let capture = interp.convert_mut(matched);
                     let fullmatch = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
                     unsafe {
                         sys::mrb_gv_set(mrb, fullmatch, capture.inner());
@@ -669,14 +663,14 @@ impl RegexpType for RegexUtf8 {
                             .as_ref()
                             .map(regex::Match::as_str)
                             .map(str::as_bytes);
-                        let capture = interp.convert(matched);
+                        let capture = interp.convert_mut(matched);
                         groups.push(matched);
                         unsafe {
                             sys::mrb_gv_set(mrb, sym, capture.inner());
                         }
                     }
 
-                    let matched = interp.convert(groups);
+                    let matched = interp.convert_mut(groups);
                     if let Some(pos) = captures.get(0) {
                         matchdata.set_region(pos.start(), pos.end());
                     }
@@ -701,7 +695,7 @@ impl RegexpType for RegexUtf8 {
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.start()..pos.end()];
-                    let matched = interp.convert(scanned);
+                    let matched = interp.convert_mut(scanned);
                     matchdata.set_region(pos.start(), pos.end());
                     let data = matchdata.clone().try_into_ruby(interp, None).map_err(|_| {
                         Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
@@ -734,7 +728,7 @@ impl RegexpType for RegexUtf8 {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                     }
-                    return Ok(interp.convert(Vec::<Value>::new()));
+                    return Ok(interp.convert_mut(&[] as &[Value]));
                 }
                 for captures in iter {
                     let mut groups = vec![];
@@ -762,19 +756,19 @@ impl RegexpType for RegexUtf8 {
                 let mut iter = collected.iter().enumerate();
                 if let Some((_, fullcapture)) = iter.next() {
                     let fullmatch = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
-                    let fullcapture = interp.convert(fullcapture.as_slice());
+                    let fullcapture = interp.convert_mut(fullcapture.as_slice());
                     unsafe {
                         sys::mrb_gv_set(mrb, fullmatch, fullcapture.inner());
                     }
                 }
                 for (group, capture) in iter {
                     let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                    let capture = interp.convert(capture.as_slice());
+                    let capture = interp.convert_mut(capture.as_slice());
                     unsafe {
                         sys::mrb_gv_set(mrb, sym, capture.inner());
                     }
                 }
-                Ok(interp.convert(collected))
+                Ok(interp.convert_mut(collected))
             } else {
                 let mut collected = vec![];
                 let mut iter = self.regex.find_iter(haystack).peekable();
@@ -782,7 +776,7 @@ impl RegexpType for RegexUtf8 {
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
                     }
-                    return Ok(interp.convert(Vec::<Value>::new()));
+                    return Ok(interp.convert_mut(&[] as &[Value]));
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.start()..pos.end()];
@@ -798,12 +792,12 @@ impl RegexpType for RegexUtf8 {
                 }
                 if let Some(fullcapture) = collected.last().copied() {
                     let fullmatch = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
-                    let fullcapture = interp.convert(fullcapture);
+                    let fullcapture = interp.convert_mut(fullcapture);
                     unsafe {
                         sys::mrb_gv_set(mrb, fullmatch, fullcapture.inner());
                     }
                 }
-                Ok(interp.convert(collected))
+                Ok(interp.convert_mut(collected))
             }
         }
     }

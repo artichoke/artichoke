@@ -130,7 +130,7 @@ mod tests {
     fn string_scan() {
         let mut interp = crate::interpreter().expect("init");
 
-        let s = interp.convert("abababa");
+        let s = interp.convert_mut("abababa");
         let result = s
             .funcall::<Vec<&str>>("scan", &[interp.eval(b"/./").expect("eval")], None)
             .expect("funcall");
