@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use crate::extn::core::regexp::{Config, Encoding};
 use crate::extn::prelude::*;
 
-pub mod hybrid;
 pub mod lazy;
 pub mod onig;
-pub mod regex;
-pub mod regex_binary;
+// See GH-490: Add `regex::Binary` implementation of `RegexType`.
+// pub mod regex;
+// pub mod regex_binary;
 pub mod regex_utf8;
 
 type NilableString = Option<Vec<u8>>;
