@@ -25,6 +25,10 @@ pub use backend::RegexpType;
 pub use enc::Encoding;
 pub use opts::Options;
 
+use backend::lazy::Lazy;
+use backend::onig::Onig;
+use backend::regex::utf8::Utf8;
+
 pub const IGNORECASE: Int = 1;
 pub const EXTENDED: Int = 2;
 pub const MULTILINE: Int = 4;
@@ -46,10 +50,6 @@ pub const STRING_RIGHT_OF_MATCH: &[u8] = b"$'";
 pub const HIGHEST_MATCH_GROUP: &[u8] = b"$+";
 /// The information about the last match in the current scope.
 pub const LAST_MATCH: &[u8] = b"$~";
-
-use backend::lazy::Lazy;
-use backend::onig::Onig;
-use backend::regex_utf8::RegexUtf8;
 
 /// The Nth group of the last successful match. May be > 1.
 #[inline]
@@ -102,8 +102,8 @@ impl Regexp {
             derived_config.clone(),
             encoding,
         )?;
-        if let Ok(regex_utf8) = RegexUtf8::new(interp, literal_config, derived_config, encoding) {
-            Ok(Self(Box::new(regex_utf8)))
+        if let Ok(regex) = Utf8::new(interp, literal_config, derived_config, encoding) {
+            Ok(Self(Box::new(regex)))
         } else {
             Ok(Self(Box::new(onig)))
         }

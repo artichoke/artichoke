@@ -9,17 +9,17 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType};
 use crate::extn::prelude::*;
 
-use super::{HashOfStringToArrayOfInt, NilableString};
+use super::super::{HashOfStringToArrayOfInt, NilableString};
 
 #[derive(Clone)]
-pub struct RegexUtf8 {
+pub struct Utf8 {
     literal: Config,
     derived: Config,
     encoding: Encoding,
     regex: Regex,
 }
 
-impl RegexUtf8 {
+impl Utf8 {
     pub fn new(
         interp: &Artichoke,
         literal: Config,
@@ -53,7 +53,7 @@ impl RegexUtf8 {
     }
 }
 
-impl fmt::Debug for RegexUtf8 {
+impl fmt::Debug for Utf8 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -65,7 +65,7 @@ impl fmt::Debug for RegexUtf8 {
     }
 }
 
-impl fmt::Display for RegexUtf8 {
+impl fmt::Display for Utf8 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -75,7 +75,7 @@ impl fmt::Display for RegexUtf8 {
     }
 }
 
-impl RegexpType for RegexUtf8 {
+impl RegexpType for Utf8 {
     fn box_clone(&self) -> Box<dyn RegexpType> {
         Box::new(self.clone())
     }
