@@ -33,7 +33,7 @@ use crate::Artichoke;
 /// escape_unicode(&mut message, &filename[..]);
 /// assert_eq!(r"cannot load such file -- oh-no-\xFF", message);
 /// ```
-pub fn escape_unicode<T>(mut f: T, string: &[u8]) -> Result<(), WriteError>
+pub fn escape_unicode<T>(f: &mut T, string: &[u8]) -> Result<(), WriteError>
 where
     T: fmt::Write,
 {
