@@ -1,3 +1,4 @@
+use regex::{Regex, RegexBuilder};
 use std::cmp::{self, Ordering};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -8,12 +9,14 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType};
 use crate::extn::prelude::*;
 
+use super::{HashOfStringToArrayOfInt, NilableString};
+
 #[derive(Clone)]
 pub struct RegexUtf8 {
     literal: Config,
     derived: Config,
     encoding: Encoding,
-    regex: regex::Regex,
+    regex: Regex,
 }
 
 impl RegexUtf8 {
@@ -29,7 +32,7 @@ impl RegexUtf8 {
                 "Oniguruma-backed Regexp only supports UTF-8 patterns",
             )
         })?;
-        let mut builder = regex::RegexBuilder::new(pattern);
+        let mut builder = RegexBuilder::new(pattern);
         builder.case_insensitive(derived.options.ignore_case);
         builder.multi_line(derived.options.multiline);
         builder.ignore_whitespace(derived.options.extended);
@@ -81,7 +84,7 @@ impl RegexpType for RegexUtf8 {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception> {
+    ) -> Result<Option<Vec<NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -505,7 +508,7 @@ impl RegexpType for RegexUtf8 {
         }
     }
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception> {
+    fn named_captures(&self, interp: &Artichoke) -> Result<HashOfStringToArrayOfInt, Exception> {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
@@ -533,7 +536,7 @@ impl RegexpType for RegexUtf8 {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception> {
+    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,

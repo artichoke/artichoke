@@ -5,6 +5,8 @@ use std::fmt;
 use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType};
 use crate::extn::prelude::*;
 
+use super::{HashOfStringToArrayOfInt, NilableString};
+
 pub struct Lazy {
     literal: Config,
     encoding: Encoding,
@@ -70,7 +72,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception> {
+    ) -> Result<Option<Vec<NilableString>>, Exception> {
         self.regexp(interp)?.inner().captures(interp, haystack)
     }
 
@@ -161,7 +163,7 @@ impl RegexpType for Lazy {
         self.regexp(interp)?.inner().match_operator(interp, pattern)
     }
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception> {
+    fn named_captures(&self, interp: &Artichoke) -> Result<HashOfStringToArrayOfInt, Exception> {
         self.regexp(interp)?.inner().named_captures(interp)
     }
 
@@ -169,7 +171,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception> {
+    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
         self.regexp(interp)?
             .inner()
             .named_captures_for_haystack(interp, haystack)

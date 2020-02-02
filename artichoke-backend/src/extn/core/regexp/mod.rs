@@ -6,7 +6,6 @@
 
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -15,7 +14,6 @@ use std::str;
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 
-#[allow(clippy::type_complexity)]
 pub mod backend;
 pub mod enc;
 pub mod mruby;
@@ -23,6 +21,7 @@ pub mod opts;
 pub mod syntax;
 pub mod trampoline;
 
+pub use backend::RegexpType;
 pub use enc::Encoding;
 pub use opts::Options;
 
@@ -519,85 +518,6 @@ impl From<Box<dyn RegexpType>> for Regexp {
 pub struct Config {
     pattern: Vec<u8>,
     options: opts::Options,
-}
-
-#[allow(clippy::module_name_repetitions, clippy::type_complexity)]
-pub trait RegexpType {
-    fn box_clone(&self) -> Box<dyn RegexpType>;
-    fn debug(&self) -> String;
-    fn literal_config(&self) -> &Config;
-    fn derived_config(&self) -> &Config;
-    fn encoding(&self) -> &Encoding;
-    fn inspect(&self, interp: &Artichoke) -> Vec<u8>;
-    fn string(&self, interp: &Artichoke) -> &[u8];
-
-    fn captures(
-        &self,
-        interp: &Artichoke,
-        haystack: &[u8],
-    ) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception>;
-
-    fn capture_indexes_for_name(
-        &self,
-        interp: &Artichoke,
-        name: &[u8],
-    ) -> Result<Option<Vec<usize>>, Exception>;
-
-    fn captures_len(&self, interp: &Artichoke, haystack: Option<&[u8]>)
-        -> Result<usize, Exception>;
-
-    fn capture0<'a>(
-        &self,
-        interp: &Artichoke,
-        haystack: &'a [u8],
-    ) -> Result<Option<&'a [u8]>, Exception>;
-
-    fn case_match(&self, interp: &mut Artichoke, pattern: &[u8]) -> Result<bool, Exception>;
-
-    fn is_match(
-        &self,
-        interp: &Artichoke,
-        pattern: &[u8],
-        pos: Option<Int>,
-    ) -> Result<bool, Exception>;
-
-    fn match_(
-        &self,
-        interp: &mut Artichoke,
-        pattern: &[u8],
-        pos: Option<Int>,
-        block: Option<Block>,
-    ) -> Result<Value, Exception>;
-
-    fn match_operator(
-        &self,
-        interp: &mut Artichoke,
-        pattern: &[u8],
-    ) -> Result<Option<Int>, Exception>;
-
-    fn named_captures(&self, interp: &Artichoke) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception>;
-
-    fn named_captures_for_haystack(
-        &self,
-        interp: &Artichoke,
-        haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Exception>;
-
-    fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>>;
-
-    fn pos(
-        &self,
-        interp: &Artichoke,
-        haystack: &[u8],
-        at: usize,
-    ) -> Result<Option<(usize, usize)>, Exception>;
-
-    fn scan(
-        &self,
-        interp: &mut Artichoke,
-        haystack: Value,
-        block: Option<Block>,
-    ) -> Result<Value, Exception>;
 }
 
 impl Clone for Box<dyn RegexpType> {
