@@ -70,9 +70,9 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_string(s: String) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let mrb = interp.0.borrow().mrb;
-        let value = interp.convert(s.clone());
+        let value = interp.convert_mut(s.clone());
         let ptr = unsafe { sys::mrb_string_value_ptr(mrb, value.inner()) };
         let len = unsafe { sys::mrb_string_value_len(mrb, value.inner()) };
         let string =
@@ -83,16 +83,16 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn string_with_value(s: String) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(s.clone());
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(s.clone());
         value.to_s() == s.as_bytes()
     }
 
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(s: String) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(s.clone());
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(s.clone());
         let value = value.try_into::<String>().expect("convert");
         value == s
     }

@@ -95,17 +95,17 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_vec(v: Vec<u8>) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(v.clone());
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(v.clone());
         value.ruby_type() == Ruby::String
     }
 
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn vec_with_value(v: Vec<u8>) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let mrb = interp.0.borrow().mrb;
-        let value = interp.convert(v.clone());
+        let value = interp.convert_mut(v.clone());
         let inner = value.inner();
         let len = unsafe { sys::mrb_string_value_len(mrb, inner) };
         let len = usize::try_from(len).expect("usize");
@@ -115,8 +115,8 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(v: Vec<u8>) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(v.clone());
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(v.clone());
         let value = value.try_into::<Vec<u8>>().expect("convert");
         value == v
     }

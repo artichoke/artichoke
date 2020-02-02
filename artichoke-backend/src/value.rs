@@ -480,54 +480,54 @@ mod tests {
 
     #[test]
     fn to_s_string() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
-        let value = interp.convert("interstate");
+        let value = interp.convert_mut("interstate");
         let string = value.to_s();
         assert_eq!(string, b"interstate");
     }
 
     #[test]
     fn debug_string() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
-        let value = interp.convert("interstate");
+        let value = interp.convert_mut("interstate");
         let debug = value.to_s_debug();
         assert_eq!(debug, r#"String<"interstate">"#);
     }
 
     #[test]
     fn inspect_string() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
-        let value = interp.convert("interstate");
+        let value = interp.convert_mut("interstate");
         let debug = value.inspect();
         assert_eq!(debug, br#""interstate""#);
     }
 
     #[test]
     fn to_s_empty_string() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
-        let value = interp.convert("");
+        let value = interp.convert_mut("");
         let string = value.to_s();
         assert_eq!(string, b"");
     }
 
     #[test]
     fn debug_empty_string() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
-        let value = interp.convert("");
+        let value = interp.convert_mut("");
         let debug = value.to_s_debug();
         assert_eq!(debug, r#"String<"">"#);
     }
 
     #[test]
     fn inspect_empty_string() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
-        let value = interp.convert("");
+        let value = interp.convert_mut("");
         let debug = value.inspect();
         assert_eq!(debug, br#""""#);
     }
@@ -572,12 +572,12 @@ mod tests {
 
     #[test]
     fn funcall() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
         assert!(nil.funcall::<bool>("nil?", &[], None).expect("nil?"));
-        let s = interp.convert("foo");
+        let s = interp.convert_mut("foo");
         assert!(!s.funcall::<bool>("nil?", &[], None).expect("nil?"));
-        let delim = interp.convert("");
+        let delim = interp.convert_mut("");
         let split = s
             .funcall::<Vec<&str>>("split", &[delim], None)
             .expect("split");
@@ -586,18 +586,18 @@ mod tests {
 
     #[test]
     fn funcall_different_types() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
-        let s = interp.convert("foo");
+        let s = interp.convert_mut("foo");
         let eql = nil.funcall::<bool>("==", &[s], None).unwrap();
         assert!(!eql);
     }
 
     #[test]
     fn funcall_type_error() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
-        let s = interp.convert("foo");
+        let s = interp.convert_mut("foo");
         let err = s.funcall::<String>("+", &[nil], None).unwrap_err();
         assert_eq!("TypeError", err.name().as_str());
         assert_eq!(&b"nil cannot be converted to String"[..], err.message());
@@ -605,9 +605,9 @@ mod tests {
 
     #[test]
     fn funcall_method_not_exists() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
         let nil = interp.convert(None::<Value>);
-        let s = interp.convert("foo");
+        let s = interp.convert_mut("foo");
         let err = nil
             .funcall::<bool>("garbage_method_name", &[s], None)
             .unwrap_err();

@@ -109,14 +109,14 @@ mod tests {
 
     #[test]
     fn roundtrip_kv() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().expect("init");
 
         let map = vec![
             (interp.convert(1), interp.convert(2)),
             (interp.convert(7), interp.convert(8)),
         ];
 
-        let value = Convert::<_, Value>::convert(&interp, map);
+        let value = ConvertMut::<_, Value>::convert_mut(&mut interp, map);
         assert_eq!(value.to_s(), b"{1=>2, 7=>8}");
 
         let pairs = value.try_into::<Vec<(Value, Value)>>().expect("convert");

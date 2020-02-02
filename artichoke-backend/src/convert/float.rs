@@ -49,15 +49,15 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_float(f: Float) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(f);
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(f);
         value.ruby_type() == Ruby::Float
     }
 
     #[quickcheck]
     fn float_with_value(f: Float) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(f);
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(f);
         let inner = value.inner();
         let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
         (cdouble - f).abs() < std::f64::EPSILON
@@ -65,8 +65,8 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(f: Float) -> bool {
-        let interp = crate::interpreter().expect("init");
-        let value = interp.convert(f);
+        let mut interp = crate::interpreter().expect("init");
+        let value = interp.convert_mut(f);
         let value = value.try_into::<Float>().expect("convert");
         (value - f).abs() < std::f64::EPSILON
     }

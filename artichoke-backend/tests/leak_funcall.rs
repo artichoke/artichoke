@@ -14,7 +14,7 @@
 //! If resident memory increases more than 10MB during the test, we likely are
 //! leaking memory.
 
-use artichoke_backend::convert::Convert;
+use artichoke_backend::convert::ConvertMut;
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::ValueLike as _;
 
@@ -25,8 +25,8 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 30;
 
 #[test]
 fn funcall_arena() {
-    let interp = artichoke_backend::interpreter().expect("init");
-    let s = interp.convert("a".repeat(1024 * 1024));
+    let mut interp = artichoke_backend::interpreter().expect("init");
+    let s = interp.convert_mut("a".repeat(1024 * 1024));
 
     leak::Detector::new("ValueLike::funcall", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
         let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
