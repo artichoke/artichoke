@@ -3,8 +3,10 @@
 
 require 'optparse'
 require 'shellwords'
+require 'yaml'
 
 WORKSPACE_ROOT = File.absolute_path(File.join(__dir__, '..'))
+SPEC_CONFIG = File.join(WORKSPACE_ROOT, 'spec-runner', 'enforced-specs.yaml')
 SPEC_ROOT = File.join(WORKSPACE_ROOT, 'spec-runner', 'vendor', 'spec')
 
 USAGE = <<~USAGE.strip
@@ -174,50 +176,19 @@ if ARGV.empty?
   puts USAGE
   exit 1
 elsif ARGV.first == 'passing'
-  runner.register(Spec.new('core', 'array', 'any'))
-  runner.register(Spec.new('core', 'array', 'append'))
-  runner.register(Spec.new('core', 'array', 'array'))
-  runner.register(Spec.new('core', 'array', 'assoc'))
-  runner.register(Spec.new('core', 'array', 'at'))
-  runner.register(Spec.new('core', 'array', 'clear'))
-  runner.register(Spec.new('core', 'array', 'collect'))
-  runner.register(Spec.new('core', 'array', 'combination'))
-  runner.register(Spec.new('core', 'array', 'compact'))
-  runner.register(Spec.new('core', 'array', 'count'))
-  runner.register(Spec.new('core', 'array', 'cycle'))
-  runner.register(Spec.new('core', 'array', 'delete_at'))
-  runner.register(Spec.new('core', 'array', 'delete_if'))
-  runner.register(Spec.new('core', 'array', 'delete'))
-  runner.register(Spec.new('core', 'array', 'drop'))
-  runner.register(Spec.new('core', 'array', 'each_index'))
-  runner.register(Spec.new('core', 'array', 'each'))
-  runner.register(Spec.new('core', 'array', 'empty'))
-  runner.register(Spec.new('core', 'array', 'frozen'))
-  runner.register(Spec.new('core', 'array', 'include'))
-  runner.register(Spec.new('core', 'array', 'last'))
-  runner.register(Spec.new('core', 'array', 'length'))
-  runner.register(Spec.new('core', 'array', 'map'))
-  runner.register(Spec.new('core', 'array', 'plus'))
-  runner.register(Spec.new('core', 'array', 'prepend'))
-  runner.register(Spec.new('core', 'array', 'push'))
-  runner.register(Spec.new('core', 'array', 'rassoc'))
-  runner.register(Spec.new('core', 'array', 'replace'))
-  runner.register(Spec.new('core', 'array', 'reverse_each'))
-  runner.register(Spec.new('core', 'array', 'reverse'))
-  runner.register(Spec.new('core', 'array', 'shift'))
-  runner.register(Spec.new('core', 'array', 'size'))
-  runner.register(Spec.new('core', 'array', 'sort_by'))
-  runner.register(Spec.new('core', 'array', 'to_ary'))
-  runner.register(Spec.new('core', 'array', 'try_convert'))
-  runner.register(Spec.new('core', 'array', 'unshift'))
-  runner.register(Spec.new('core', 'comparable'))
-  runner.register(Spec.new('core', 'matchdata'))
-  runner.register(Spec.new('core', 'regexp'))
-  runner.register(Spec.new('core', 'string', 'scan'))
-  runner.register(Spec.new('library', 'monitor'))
-  runner.register(Spec.new('library', 'stringscanner'))
-  runner.register(Spec.new('library', 'uri'))
-  runner.register(Spec.new('library', 'abbrev'))
+  conf = YAML.load_file(SPEC_CONFIG)
+  conf.fetch('specs').each_pair do |category, suites|
+    suites.map do |suite|
+      name = suite.fetch('suite')
+      if suite.key?('specs')
+        suite.fetch('specs').each do |spec|
+          runner.register(Spec.new(category, name, spec))
+        end
+      else
+        runner.register(Spec.new(category, name))
+      end
+    end
+  end
 else
   runner.register(Spec.new(*ARGV))
 end
