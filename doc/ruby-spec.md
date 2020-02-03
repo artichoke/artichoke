@@ -4,6 +4,9 @@ artichoke embeds a copy of [ruby/spec](/spec-runner/vendor/spec). ruby/spec is a
 set of specifications for testing the Ruby language, core, and standard library
 packages.
 
+Artichoke enforces that some ruby/specs pass. These specs are tracked in
+[`spec-runner/enforced-specs.yaml`](/spec-runner/enforced-specs.yaml).
+
 ## Running Specs
 
 You can run these specs for Artichoke crate with the `spec-runner` crate.
@@ -52,6 +55,7 @@ cargo install flamegraph
 
 ## Regression Testing
 
-Once a spec suite passes, add it to [`scripts/spec.rb`](/scripts/spec.rb). This
+Once a spec suite passes, add it to
+[`spec-runner/enforced-specs.yaml`](/spec-runner/enforced-specs.yaml). This
 script is run as part of CI and will ensure that a suite that does pass
 continues to pass.
