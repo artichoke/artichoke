@@ -68,7 +68,7 @@ end
 
 class Artichoke < Runner
   def do_test
-    system('cargo build')
+    exit 1 unless system('cargo build')
     binary = File.join(WORKSPACE_ROOT, 'target', 'debug', 'spec-runner')
     Dir.chdir(SPEC_ROOT)
     spec_sources = Spec.fixtures + specs.flat_map(&:files)
@@ -78,7 +78,7 @@ class Artichoke < Runner
   end
 
   def do_timing
-    system('cargo build --release')
+    exit 1 unless system('cargo build --release')
     binary = File.join(WORKSPACE_ROOT, 'target', 'release', 'spec-runner')
     Dir.chdir(SPEC_ROOT)
     spec_sources = Spec.fixtures + specs.flat_map(&:files)
