@@ -1,5 +1,7 @@
 //! Run code on an Artichoke interpreter.
 
+use std::ffi::OsStr;
+
 use crate::value::Value;
 
 /// Interpreters that implement [`Eval`] expose methods for injecting code and
@@ -21,4 +23,15 @@ pub trait Eval {
     ///
     /// If an exception is raised on the interpreter, then an error is returned.
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error>;
+
+    /// Eval code on the Artichoke interpreter using the current `Context` when
+    /// given code as an [`OsStr`].
+    ///
+    /// # Errors
+    ///
+    /// If an exception is raised on the interpreter, then an error is returned.
+    ///
+    /// If `code` cannot be converted to a `&[u8]` on the current platform, then
+    /// an error is returned.
+    fn eval_os_str(&mut self, code: &OsStr) -> Result<Self::Value, Self::Error>;
 }

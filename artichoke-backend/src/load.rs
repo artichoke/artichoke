@@ -2,7 +2,8 @@ use std::borrow::Cow;
 use std::io;
 use std::path::Path;
 
-use crate::fs::{self, RUBY_LOAD_PATH};
+use crate::ffi;
+use crate::fs::RUBY_LOAD_PATH;
 use crate::{Artichoke, ArtichokeError, File, LoadSources};
 
 impl LoadSources for Artichoke {
@@ -13,10 +14,10 @@ impl LoadSources for Artichoke {
         T: File<Artichoke = Self>,
     {
         let api = self.0.borrow();
-        let path = fs::bytes_to_osstr(self, filename).map_err(|err| {
+        let path = ffi::bytes_to_os_str(filename).map_err(|err| {
             ArtichokeError::Vfs(io::Error::new(io::ErrorKind::Other, err.to_string()))
         })?;
-        let path = Path::new(path);
+        let path = Path::new(&path);
         let path = if path.is_relative() {
             Path::new(RUBY_LOAD_PATH).join(path)
         } else {
@@ -44,10 +45,10 @@ impl LoadSources for Artichoke {
         T: Into<Cow<'static, [u8]>>,
     {
         let api = self.0.borrow();
-        let path = fs::bytes_to_osstr(self, filename).map_err(|err| {
+        let path = ffi::bytes_to_os_str(filename).map_err(|err| {
             ArtichokeError::Vfs(io::Error::new(io::ErrorKind::Other, err.to_string()))
         })?;
-        let path = Path::new(path);
+        let path = Path::new(&path);
         let path = if path.is_relative() {
             Path::new(RUBY_LOAD_PATH).join(path)
         } else {

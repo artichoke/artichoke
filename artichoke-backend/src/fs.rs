@@ -1,10 +1,8 @@
 //! [`Artichoke`] virtual filesystem used for storing Ruby sources.
 
 use artichoke_vfs::{FakeFileSystem, FileSystem};
-use std::ffi::OsStr;
 use std::path::{Component, Path, PathBuf};
 
-use crate::exception::Exception;
 use crate::{Artichoke, ArtichokeError};
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
@@ -145,50 +143,4 @@ fn absolutize_relative_to(path: &Path, cwd: &Path) -> Result<PathBuf, ArtichokeE
         }
     }
     Ok(components.into_iter().collect())
-}
-
-#[cfg(unix)]
-pub fn osstr_to_bytes<'a>(interp: &Artichoke, value: &'a OsStr) -> Result<&'a [u8], Exception> {
-    use std::os::unix::ffi::OsStrExt;
-
-    let _ = interp;
-    Ok(value.as_bytes())
-}
-
-#[cfg(not(unix))]
-pub fn osstr_to_bytes<'a>(interp: &Artichoke, value: &'a OsStr) -> Result<&'a [u8], Exception> {
-    use crate::extn::core::exception::Fatal;
-
-    if let Some(converted) = value.to_str() {
-        Ok(converted.as_bytes())
-    } else {
-        Err(Exception::from(Fatal::new(
-            interp,
-            // TODO: Add a ticket number to this message.
-            "non UTF-8 ENV keys and values are not yet supported on this Artichoke platform",
-        )))
-    }
-}
-
-#[cfg(unix)]
-pub fn bytes_to_osstr<'a>(interp: &Artichoke, value: &'a [u8]) -> Result<&'a OsStr, Exception> {
-    use std::os::unix::ffi::OsStrExt;
-
-    let _ = interp;
-    Ok(OsStr::from_bytes(value))
-}
-
-#[cfg(not(unix))]
-pub fn bytes_to_osstr<'a>(interp: &Artichoke, value: &'a [u8]) -> Result<&'a OsStr, Exception> {
-    use crate::extn::core::exception::Fatal;
-
-    if let Ok(converted) = std::str::from_utf8(value) {
-        Ok(OsStr::new(converted))
-    } else {
-        Err(Exception::from(Fatal::new(
-            interp,
-            // TODO: Add a ticket number to this message.
-            "non UTF-8 ENV keys and values are not yet supported on this Artichoke platform",
-        )))
-    }
 }
