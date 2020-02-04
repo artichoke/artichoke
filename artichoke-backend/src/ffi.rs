@@ -2,14 +2,35 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
+use std::borrow::Cow;
 use std::cell::RefCell;
+use std::error;
+use std::ffi::OsStr;
+use std::fmt;
 use std::mem;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
+use crate::convert::ConvertMut;
+use crate::exception::{Exception, RubyException};
+use crate::extn::core::exception::ArgumentError;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
 use crate::{Artichoke, ArtichokeError};
+
+#[cfg(unix)]
+mod unix;
+#[cfg(not(any(unix, windows)))]
+mod unknown;
+#[cfg(windows)]
+mod windows;
+
+#[cfg(unix)]
+use unix as imp;
+#[cfg(not(any(unix, windows)))]
+use unknown as imp;
+#[cfg(windows)]
+use windows as imp;
 
 /// Extract an [`Artichoke`] interpreter from the user data pointer on a
 /// [`sys::mrb_state`].
@@ -52,6 +73,78 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, Arti
         mrb.debug()
     );
     Ok(Artichoke(api))
+}
+
+/// Convert a byte slice to a platform-specific [`OsStr`].
+///
+/// Unsupported platforms fallback to converting through `str`.
+pub fn bytes_to_os_str(value: &[u8]) -> Result<Cow<'_, OsStr>, ConvertBytesError> {
+    imp::bytes_to_os_str(value)
+}
+
+/// Convert a platform-specific [`OsStr`] to a byte slice.
+///
+/// Unsupported platforms fallback to converting through `str`.
+pub fn os_str_to_bytes(value: &OsStr) -> Result<Cow<'_, [u8]>, ConvertBytesError> {
+    imp::os_str_to_bytes(value)
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct ConvertBytesError;
+
+impl fmt::Display for ConvertBytesError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", error::Error::description(self))
+    }
+}
+
+impl error::Error for ConvertBytesError {
+    fn description(&self) -> &str {
+        "Could not convert between bytes and platform string"
+    }
+
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
+    }
+}
+
+impl RubyException for ConvertBytesError {
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        Box::new(*self)
+    }
+
+    fn message(&self) -> &[u8] {
+        &b"invalid byte sequence"[..]
+    }
+
+    fn name(&self) -> String {
+        String::from("ArgumentError")
+    }
+
+    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.message());
+        let borrow = interp.0.borrow();
+        let spec = borrow.class_spec::<ArgumentError>()?;
+        let value = spec.new_instance(interp, &[message])?;
+        Some(value.inner())
+    }
+}
+
+impl From<ConvertBytesError> for Box<dyn RubyException> {
+    fn from(err: ConvertBytesError) -> Self {
+        Box::new(err)
+    }
+}
+
+impl From<ConvertBytesError> for Exception {
+    fn from(err: ConvertBytesError) -> Self {
+        Exception::from(Box::<dyn RubyException>::from(err))
+    }
 }
 
 #[cfg(test)]

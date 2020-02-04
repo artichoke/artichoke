@@ -4,13 +4,12 @@
 
 use artichoke_backend::convert::ConvertMut;
 use artichoke_backend::exception::Exception;
-use artichoke_backend::fs;
+use artichoke_backend::ffi;
 use artichoke_backend::state::parser::Context;
 use artichoke_backend::string;
 use artichoke_backend::sys;
-use artichoke_backend::{Artichoke, BootError, Eval, Intern, Parser as _};
+use artichoke_backend::{BootError, Eval, Intern, Parser as _};
 use std::ffi::{OsStr, OsString};
-use std::fmt::Write;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
@@ -123,7 +122,6 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
             data
         } else {
             return Err(Error::from(load_error(
-                &interp,
                 fixture.as_os_str(),
                 "No such file or directory",
             )?));
@@ -136,13 +134,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
         }
     }
     for command in commands {
-        if let Ok(command) = fs::osstr_to_bytes(&interp, command.as_os_str()) {
-            let _ = interp.eval(command)?;
-        } else {
-            return Err(Error::from(
-                "Unable to parse non-UTF-8 command line arguments on this platform",
-            ));
-        }
+        let _ = interp.eval_os_str(command.as_os_str())?;
     }
     Ok(())
 }
@@ -154,7 +146,6 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
             data
         } else {
             return Err(Error::from(load_error(
-                &interp,
                 fixture.as_os_str(),
                 "No such file or directory",
             )?));
@@ -171,17 +162,14 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
         Err(err) => {
             return match err.kind() {
                 io::ErrorKind::NotFound => Err(Error::from(load_error(
-                    &interp,
                     programfile.as_os_str(),
                     "No such file or directory",
                 )?)),
                 io::ErrorKind::PermissionDenied => Err(Error::from(load_error(
-                    &interp,
                     programfile.as_os_str(),
                     "Permission denied",
                 )?)),
                 _ => Err(Error::from(load_error(
-                    &interp,
                     programfile.as_os_str(),
                     "Could not read file",
                 )?)),
@@ -192,14 +180,11 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
     Ok(())
 }
 
-fn load_error(interp: &Artichoke, file: &OsStr, message: &str) -> Result<String, Error> {
+fn load_error(file: &OsStr, message: &str) -> Result<String, Error> {
     let mut buf = String::from(message);
     buf.push_str(" -- ");
-    if let Ok(file) = fs::osstr_to_bytes(interp, file) {
-        string::escape_unicode(&mut buf, file).map_err(Exception::from)?;
-    } else {
-        write!(&mut buf, "{:?}", file).map_err(|err| err.to_string())?;
-    }
+    let path = ffi::os_str_to_bytes(file).map_err(Exception::from)?;
+    string::escape_unicode(&mut buf, &path).map_err(Exception::from)?;
     buf.push_str(" (LoadError)");
     Ok(buf)
 }

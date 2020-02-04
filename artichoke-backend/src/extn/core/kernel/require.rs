@@ -1,10 +1,11 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
 use std::ffi::OsStr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::extn::prelude::*;
-use crate::fs::{self, RUBY_LOAD_PATH};
+use crate::ffi;
+use crate::fs::RUBY_LOAD_PATH;
 use crate::state::parser::Context;
 use crate::Parser;
 
@@ -28,12 +29,12 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
             "path name contains null byte",
         )));
     }
-    let file: &Path = fs::bytes_to_osstr(interp, filename)?.as_ref();
-    let path = if file.is_relative() {
-        let base: &Path = fs::bytes_to_osstr(interp, RUBY_LOAD_PATH.as_bytes())?.as_ref();
-        base.join(file)
+    let file = ffi::bytes_to_os_str(filename)?;
+    let path = if Path::new(&file).is_relative() {
+        let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
+        Path::new(&base).join(&file)
     } else {
-        file.to_path_buf()
+        PathBuf::from(&file)
     };
     let is_file = {
         let api = interp.0.borrow();
@@ -50,7 +51,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     // and module with `LoadSources` and Ruby files can require
     // arbitrary other files, including some child sources that may
     // depend on these module definitions.
-    let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
+    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
 
@@ -101,19 +102,20 @@ pub fn require(
             "path name contains null byte",
         )));
     }
-    let file: &Path = fs::bytes_to_osstr(interp, filename)?.as_ref();
+    let file = ffi::bytes_to_os_str(filename)?;
+    let path = Path::new(&file);
 
-    if file.is_relative() && file.extension() != Some(OsStr::new(RUBY_EXTENSION)) {
-        let relative_base: &Path = if let Some(base) = base {
-            base
-        } else {
-            fs::bytes_to_osstr(interp, RUBY_LOAD_PATH.as_bytes())?.as_ref()
-        };
+    if path.is_relative() && path.extension() != Some(OsStr::new(RUBY_EXTENSION)) {
         let mut with_rb_ext = Vec::with_capacity(filename.len() + 3);
         with_rb_ext.extend(filename.iter());
         with_rb_ext.extend(b".rb".iter());
-        let rb_ext = fs::bytes_to_osstr(interp, with_rb_ext.as_slice())?;
-        let path = relative_base.join(rb_ext);
+        let rb_ext = ffi::bytes_to_os_str(with_rb_ext.as_slice())?;
+        let path = if let Some(base) = base {
+            base.join(rb_ext)
+        } else {
+            let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
+            Path::new(&base).join(rb_ext)
+        };
         let is_file = {
             let api = interp.0.borrow();
             api.vfs.is_file(path.as_path())
@@ -131,7 +133,7 @@ pub fn require(
             // and module with `LoadSources` and Ruby files can require
             // arbitrary other files, including some child sources that may
             // depend on these module definitions.
-            let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
+            let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
                 .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
             interp.push_context(context);
             // Require Rust File first because an File may define classes and
@@ -173,7 +175,12 @@ pub fn require(
             );
             return Ok(interp.convert(true));
         } else {
-            let path = relative_base.join(file);
+            let path = if let Some(base) = base {
+                base.join(&file)
+            } else {
+                let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
+                Path::new(&base).join(&file)
+            };
             let is_file = {
                 let api = interp.0.borrow();
                 api.vfs.is_file(path.as_path())
@@ -191,7 +198,7 @@ pub fn require(
                 // and module with `LoadSources` and Ruby files can require
                 // arbitrary other files, including some child sources that may
                 // depend on these module definitions.
-                let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
+                let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
                     .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
                 interp.push_context(context);
                 // Require Rust File first because an File may define classes and
@@ -235,13 +242,12 @@ pub fn require(
             }
         }
     }
-    let relative_base: &Path = if let Some(base) = base {
-        base
+    let path = if let Some(base) = base {
+        base.join(&file)
     } else {
-        let path = fs::bytes_to_osstr(interp, RUBY_LOAD_PATH.as_bytes())?;
-        Path::new(path)
+        let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
+        Path::new(&base).join(&file)
     };
-    let path = relative_base.join(file);
     let is_file = {
         let api = interp.0.borrow();
         api.vfs.is_file(path.as_path())
@@ -261,7 +267,7 @@ pub fn require(
     // and module with `LoadSources` and Ruby files can require
     // arbitrary other files, including some child sources that may
     // depend on these module definitions.
-    let context = Context::new(fs::osstr_to_bytes(interp, path.as_os_str())?.to_vec())
+    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
     // Require Rust File first because an File may define classes and
@@ -315,7 +321,7 @@ pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Ex
             .parser
             .peek_context()
             .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
-        fs::bytes_to_osstr(interp, context.filename())?.to_owned()
+        ffi::bytes_to_os_str(context.filename())?.into_owned()
     };
     let base = if let Some(base) = Path::new(current.as_os_str()).parent() {
         base

@@ -1,6 +1,9 @@
+use std::ffi::OsStr;
+
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
+use crate::ffi;
 use crate::sys::{protect, DescribeState};
 use crate::value::Value;
 use crate::{Artichoke, Eval};
@@ -37,6 +40,11 @@ impl Eval for Artichoke {
                 Err(exception_handler::last_error(self, exception)?)
             }
         }
+    }
+
+    fn eval_os_str(&mut self, code: &OsStr) -> Result<Self::Value, Self::Error> {
+        let code = ffi::os_str_to_bytes(code)?;
+        self.eval(&code)
     }
 }
 

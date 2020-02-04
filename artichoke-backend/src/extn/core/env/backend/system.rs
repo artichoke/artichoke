@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::extn::core::env::backend::EnvType;
 use crate::extn::prelude::*;
-use crate::fs;
+use crate::ffi;
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct System;
@@ -44,12 +44,10 @@ impl EnvType for System {
             // `nil` since these names are invalid at the OS level.
             Ok(None)
         } else {
-            let name = fs::bytes_to_osstr(interp, name)?;
+            let name = ffi::bytes_to_os_str(name)?;
             if let Some(value) = std::env::var_os(name) {
-                fs::osstr_to_bytes(interp, value.as_os_str())
-                    .map(<[_]>::to_vec)
-                    .map(Cow::from)
-                    .map(Some)
+                let value = ffi::os_str_to_bytes(value.as_os_str())?;
+                Ok(Some(value.into_owned().into()))
             } else {
                 Ok(None)
             }
@@ -96,24 +94,24 @@ impl EnvType for System {
                     "bad environment variable value: contains null byte",
                 )));
             }
-            std::env::set_var(
-                fs::bytes_to_osstr(interp, name)?,
-                fs::bytes_to_osstr(interp, value)?,
-            );
+            let name = ffi::bytes_to_os_str(name)?;
+            let value = ffi::bytes_to_os_str(value)?;
+            std::env::set_var(name, value);
             Ok(())
         } else {
-            let name = fs::bytes_to_osstr(interp, name)?;
+            let name = ffi::bytes_to_os_str(name)?;
             std::env::remove_var(name);
             Ok(())
         }
     }
 
     fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
+        let _ = interp;
         let mut map = HashMap::default();
         for (name, value) in std::env::vars_os() {
-            let name = fs::osstr_to_bytes(interp, name.as_os_str())?;
-            let value = fs::osstr_to_bytes(interp, value.as_os_str())?;
-            map.insert(name.to_vec(), value.to_vec());
+            let name = ffi::os_str_to_bytes(name.as_os_str())?;
+            let value = ffi::os_str_to_bytes(value.as_os_str())?;
+            map.insert(name.into_owned(), value.into_owned());
         }
         Ok(map)
     }
