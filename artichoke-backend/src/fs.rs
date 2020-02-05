@@ -30,27 +30,23 @@ impl Filesystem {
 
     pub fn create_dir_all<P: AsRef<Path>>(&self, path: P) -> Result<(), ArtichokeError> {
         let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = absolutize_relative_to(path.as_ref(), cwd.as_path())?;
-        self.fs
-            .create_dir_all(path.as_path())
-            .map_err(ArtichokeError::Vfs)
+        let path = absolutize_relative_to(path, cwd);
+        self.fs.create_dir_all(path).map_err(ArtichokeError::Vfs)
     }
 
     pub fn is_file<P: AsRef<Path>>(&self, path: P) -> bool {
-        self.fs
-            .current_dir()
-            .map_err(ArtichokeError::Vfs)
-            .and_then(|cwd| absolutize_relative_to(path.as_ref(), cwd.as_path()))
-            .map(|path| self.fs.is_file(path.as_path()))
-            .unwrap_or_default()
+        if let Ok(cwd) = self.fs.current_dir() {
+            let path = absolutize_relative_to(path, cwd);
+            self.fs.is_file(path)
+        } else {
+            false
+        }
     }
 
     pub fn read_file<P: AsRef<Path>>(&self, path: P) -> Result<Vec<u8>, ArtichokeError> {
         let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = absolutize_relative_to(path.as_ref(), cwd.as_path())?;
-        self.fs
-            .read_file(path.as_path())
-            .map_err(ArtichokeError::Vfs)
+        let path = absolutize_relative_to(path, cwd);
+        self.fs.read_file(path).map_err(ArtichokeError::Vfs)
     }
 
     pub fn write_file<P, B>(&self, path: P, buf: B) -> Result<(), ArtichokeError>
@@ -59,10 +55,8 @@ impl Filesystem {
         B: AsRef<[u8]>,
     {
         let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = absolutize_relative_to(path.as_ref(), cwd.as_path())?;
-        self.fs
-            .write_file(path.as_path(), buf.as_ref())
-            .map_err(ArtichokeError::Vfs)
+        let path = absolutize_relative_to(path, cwd);
+        self.fs.write_file(path, buf).map_err(ArtichokeError::Vfs)
     }
 
     pub fn set_metadata<P: AsRef<Path>>(
@@ -71,16 +65,16 @@ impl Filesystem {
         metadata: Metadata,
     ) -> Result<(), ArtichokeError> {
         let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = absolutize_relative_to(path.as_ref(), cwd.as_path())?;
+        let path = absolutize_relative_to(path, cwd);
         self.fs
-            .set_metadata(path.as_path(), metadata)
+            .set_metadata(path, metadata)
             .map_err(ArtichokeError::Vfs)
     }
 
     pub fn metadata<P: AsRef<Path>>(&self, path: P) -> Option<Metadata> {
         let cwd = self.fs.current_dir().ok()?;
-        let path = absolutize_relative_to(path.as_ref(), cwd.as_path()).ok()?;
-        self.fs.metadata(path.as_path())
+        let path = absolutize_relative_to(path, cwd);
+        self.fs.metadata(path)
     }
 }
 
@@ -119,16 +113,20 @@ impl Default for Metadata {
     }
 }
 
-fn absolutize_relative_to(path: &Path, cwd: &Path) -> Result<PathBuf, ArtichokeError> {
-    let mut iter = path.components().peekable();
+fn absolutize_relative_to<T, U>(path: T, cwd: U) -> PathBuf
+where
+    T: AsRef<Path>,
+    U: AsRef<Path>,
+{
+    let mut iter = path.as_ref().components().peekable();
     let hint = iter.size_hint();
     let mut components = if let Some(Component::RootDir) = iter.peek() {
         Vec::with_capacity(hint.1.unwrap_or(hint.0))
     } else {
         let mut components = cwd
+            .as_ref()
             .components()
             .map(Component::as_os_str)
-            .map(Path::new)
             .collect::<Vec<_>>();
         components.reserve(hint.1.unwrap_or(hint.0));
         components
@@ -139,8 +137,10 @@ fn absolutize_relative_to(path: &Path, cwd: &Path) -> Result<PathBuf, ArtichokeE
             Component::ParentDir => {
                 components.pop();
             }
-            c => components.push(Path::new(c.as_os_str())),
+            c => {
+                components.push(c.as_os_str());
+            }
         }
     }
-    Ok(components.into_iter().collect())
+    components.into_iter().collect()
 }
