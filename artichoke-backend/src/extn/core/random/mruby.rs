@@ -32,12 +32,14 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.0.borrow_mut().def_class::<random::Random>(spec);
 
     let default = random::Random::interpreter_prng_delegate();
-    let default = default.try_into_ruby(interp, None)?;
+    let default = default
+        .try_into_ruby(interp, None)
+        .map_err(|_| NotDefinedError::ClassConstant(String::from("Random::DEFAULT")))?;
     let borrow = interp.0.borrow();
     let mut rclass = borrow
         .class_spec::<random::Random>()
         .and_then(|spec| spec.rclass(interp.0.borrow().mrb))
-        .ok_or(ArtichokeError::New)?;
+        .ok_or_else(|| NotDefinedError::Class(String::from("Random")))?;
     let mrb = borrow.mrb;
     unsafe {
         sys::mrb_define_const(

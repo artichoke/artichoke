@@ -105,6 +105,7 @@ pub mod fs;
 pub mod gc;
 mod intern;
 mod interpreter;
+mod io;
 mod load;
 pub mod method;
 pub mod module;

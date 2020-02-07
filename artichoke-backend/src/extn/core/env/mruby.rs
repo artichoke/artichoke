@@ -11,7 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .borrow_mut()
         .module_spec::<artichoke::Artichoke>()
         .map(EnclosingRubyScope::module)
-        .ok_or(ArtichokeError::New)?;
+        .ok_or_else(|| NotDefinedError::Module(String::from("Artichoke")))?;
     let spec = class::Spec::new(
         "Environ",
         Some(scope),

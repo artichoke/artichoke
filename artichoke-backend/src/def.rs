@@ -1,14 +1,20 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
+use std::error;
 use std::ffi::c_void;
+use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 use std::rc::Rc;
 
 use crate::class;
+use crate::convert::ConvertMut;
 use crate::convert::RustBackedValue;
+use crate::exception::{Exception, RubyException};
+use crate::extn::core::exception::{NameError, ScriptError};
 use crate::module;
 use crate::sys;
+use crate::Artichoke;
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
@@ -186,6 +192,191 @@ impl Hash for EnclosingRubyScope {
             Self::Class { spec } => spec.hash(state),
             Self::Module { spec } => spec.hash(state),
         };
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ConstantNameError(String);
+
+impl ConstantNameError {
+    pub fn new<T>(name: T) -> Self
+    where
+        T: Into<String>,
+    {
+        Self(name.into())
+    }
+}
+
+impl fmt::Display for ConstantNameError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Invalid constant name contained a NUL byte")
+    }
+}
+
+impl error::Error for ConstantNameError {
+    fn description(&self) -> &str {
+        "Invalid constant name contained a NUL byte"
+    }
+
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
+    }
+}
+
+impl RubyException for ConstantNameError {
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        Box::new(self.clone())
+    }
+
+    fn message(&self) -> &[u8] {
+        error::Error::description(self).as_bytes()
+    }
+
+    fn name(&self) -> String {
+        String::from("NameError")
+    }
+
+    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.message());
+        let borrow = interp.0.borrow();
+        let spec = borrow.class_spec::<NameError>()?;
+        let value = spec.new_instance(interp, &[message])?;
+        Some(value.inner())
+    }
+}
+
+impl From<ConstantNameError> for Exception {
+    fn from(exception: ConstantNameError) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<Box<ConstantNameError>> for Exception {
+    fn from(exception: Box<ConstantNameError>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<ConstantNameError> for Box<dyn RubyException> {
+    fn from(exception: ConstantNameError) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<Box<ConstantNameError>> for Box<dyn RubyException> {
+    fn from(exception: Box<ConstantNameError>) -> Box<dyn RubyException> {
+        exception
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum NotDefinedError {
+    EnclosingScope(String),
+    Super(String),
+    Class(String),
+    Module(String),
+    GlobalConstant(String),
+    ClassConstant(String),
+}
+
+impl NotDefinedError {
+    #[must_use]
+    pub fn fqdn(&self) -> &str {
+        match self {
+            Self::EnclosingScope(ref fqdn)
+            | Self::Super(ref fqdn)
+            | Self::Class(ref fqdn)
+            | Self::Module(ref fqdn) => fqdn.as_str(),
+            Self::GlobalConstant(ref name) | Self::ClassConstant(ref name) => name.as_str(),
+        }
+    }
+
+    #[must_use]
+    pub fn item_type(&self) -> &str {
+        match self {
+            Self::EnclosingScope(_) => "enclosing scope",
+            Self::Super(_) => "super class",
+            Self::Class(_) => "class",
+            Self::Module(_) => "module",
+            Self::GlobalConstant(_) => "global constant",
+            Self::ClassConstant(_) => "class constant",
+        }
+    }
+}
+
+impl fmt::Display for NotDefinedError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} '{}' not defined", self.item_type(), self.fqdn())
+    }
+}
+
+impl error::Error for NotDefinedError {
+    fn description(&self) -> &str {
+        "Class-like not defined"
+    }
+
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
+    }
+}
+
+impl RubyException for NotDefinedError {
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        Box::new(self.clone())
+    }
+
+    fn message(&self) -> &[u8] {
+        error::Error::description(self).as_bytes()
+    }
+
+    fn name(&self) -> String {
+        String::from("ScriptError")
+    }
+
+    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.message());
+        let borrow = interp.0.borrow();
+        let spec = borrow.class_spec::<ScriptError>()?;
+        let value = spec.new_instance(interp, &[message])?;
+        Some(value.inner())
+    }
+}
+
+impl From<NotDefinedError> for Exception {
+    fn from(exception: NotDefinedError) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<Box<NotDefinedError>> for Exception {
+    fn from(exception: Box<NotDefinedError>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<NotDefinedError> for Box<dyn RubyException> {
+    fn from(exception: NotDefinedError) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<Box<NotDefinedError>> for Box<dyn RubyException> {
+    fn from(exception: Box<NotDefinedError>) -> Box<dyn RubyException> {
+        exception
     }
 }
 
