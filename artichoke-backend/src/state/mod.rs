@@ -6,7 +6,7 @@ use std::mem;
 use std::ptr::{self, NonNull};
 
 use crate::class;
-use crate::fs::Filesystem;
+use crate::fs;
 use crate::module;
 use crate::sys::{self, DescribeState};
 
@@ -21,7 +21,7 @@ pub struct State {
     pub parser: parser::State,
     classes: HashMap<TypeId, Box<class::Spec>>,
     modules: HashMap<TypeId, Box<module::Spec>>,
-    pub vfs: Filesystem,
+    pub vfs: fs::Virtual,
     pub active_regexp_globals: usize,
     captured_output: Option<Vec<u8>>,
     #[cfg(feature = "artichoke-random")]
@@ -32,14 +32,14 @@ impl State {
     /// Create a new [`State`] from a [`sys::mrb_state`] and
     /// [`sys::mrbc_context`] with an
     /// [in memory virtual filesystem](Filesystem).
-    pub fn new(mrb: &mut sys::mrb_state, vfs: Filesystem) -> Option<Self> {
+    pub fn new(mrb: &mut sys::mrb_state) -> Option<Self> {
         let parser = parser::State::new(mrb)?;
         let state = Self {
             mrb,
             parser,
             classes: HashMap::default(),
             modules: HashMap::default(),
-            vfs,
+            vfs: fs::Virtual::new(),
             active_regexp_globals: 0,
             captured_output: None,
             #[cfg(feature = "artichoke-random")]

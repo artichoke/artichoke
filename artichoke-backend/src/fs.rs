@@ -1,114 +1,236 @@
 //! [`Artichoke`] virtual filesystem used for storing Ruby sources.
 
-use artichoke_vfs::{FakeFileSystem, FileSystem};
+use std::borrow::Cow;
+use std::collections::hash_map::Entry as HashEntry;
+use std::collections::HashMap;
+use std::fmt;
+use std::io;
 use std::path::{Component, Path, PathBuf};
 
-use crate::{Artichoke, ArtichokeError};
+use crate::exception::Exception;
+use crate::Artichoke;
 
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
-pub type RequireFunc = fn(&mut Artichoke) -> Result<(), ArtichokeError>;
+pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Exception>;
 
-/// Virtual filesystem that wraps a [`artichoke_vfs`] [`FakeFileSystem`].
-pub struct Filesystem {
-    fs: FakeFileSystem<Metadata>,
+#[cfg(test)]
+mod hook_prototype_tests {
+    use crate::test::prelude::*;
+
+    struct TestFile;
+
+    impl File for TestFile {
+        type Artichoke = Artichoke;
+        type Error = Exception;
+
+        fn require(_interp: &mut Artichoke) -> Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn prototype() {
+        // must compile
+        let _ = super::Extension::new(TestFile::require);
+    }
 }
 
-impl Filesystem {
+struct Extension {
+    hook: ExtensionHook,
+}
+
+impl Extension {
+    fn new(hook: ExtensionHook) -> Self {
+        Self { hook }
+    }
+}
+
+impl fmt::Debug for Extension {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Extension")
+            .field("hook", &"fn(&mut Artichoke) -> Result<(), Exception>")
+            .finish()
+    }
+}
+
+#[derive(Debug)]
+struct Code {
+    content: Cow<'static, [u8]>,
+}
+
+impl Code {
+    fn new<T>(content: T) -> Self
+    where
+        T: Into<Cow<'static, [u8]>>,
+    {
+        Self {
+            content: content.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Entry {
+    code: Option<Code>,
+    extension: Option<Extension>,
+    required: bool,
+}
+
+impl Entry {
+    fn default_file_contents() -> &'static [u8] {
+        &b"# virtual source file"[..]
+    }
+
+    fn from_code<T>(content: T) -> Self
+    where
+        T: Into<Cow<'static, [u8]>>,
+    {
+        Self {
+            code: Some(Code::new(content)),
+            extension: None,
+            required: false,
+        }
+    }
+
+    fn from_ext(hook: ExtensionHook) -> Self {
+        Self {
+            code: None,
+            extension: Some(Extension::new(hook)),
+            required: false,
+        }
+    }
+
+    fn replace_content<T>(&mut self, content: T)
+    where
+        T: Into<Cow<'static, [u8]>>,
+    {
+        self.code.replace(Code::new(content));
+    }
+
+    fn set_extension(&mut self, hook: ExtensionHook) {
+        self.extension.replace(Extension::new(hook));
+    }
+
+    fn extension(&self) -> Option<ExtensionHook> {
+        self.extension.as_ref().map(|ext| ext.hook)
+    }
+
+    fn is_required(&self) -> bool {
+        self.required
+    }
+
+    fn mark_required(&mut self) {
+        self.required = true;
+    }
+}
+
+/// Virtual filesystem that wraps a [`artichoke_vfs`] [`FakeFileSystem`].
+#[derive(Debug)]
+pub struct Virtual {
+    fs: HashMap<PathBuf, Entry>,
+    cwd: PathBuf,
+}
+
+impl Default for Virtual {
+    fn default() -> Self {
+        Self {
+            fs: HashMap::default(),
+            cwd: PathBuf::from(RUBY_LOAD_PATH),
+        }
+    }
+}
+
+impl Virtual {
     /// Create a new in memory virtual filesystem.
     ///
     /// Creates a directory at [`RUBY_LOAD_PATH`] for storing Ruby source files.
     /// This path is searched by
     /// [`Kernel::require`](crate::extn::core::kernel::Kernel::require) and
     /// [`Kernel::require_relative`](crate::extn::core::kernel::Kernel::require_relative).
-    pub fn new() -> Result<Self, ArtichokeError> {
-        let fs = FakeFileSystem::new();
-        fs.create_dir_all(RUBY_LOAD_PATH)
-            .map_err(ArtichokeError::Vfs)?;
-        Ok(Self { fs })
-    }
-
-    pub fn create_dir_all<P: AsRef<Path>>(&self, path: P) -> Result<(), ArtichokeError> {
-        let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = absolutize_relative_to(path, cwd);
-        self.fs.create_dir_all(path).map_err(ArtichokeError::Vfs)
-    }
-
-    pub fn is_file<P: AsRef<Path>>(&self, path: P) -> bool {
-        if let Ok(cwd) = self.fs.current_dir() {
-            let path = absolutize_relative_to(path, cwd);
-            self.fs.is_file(path)
-        } else {
-            false
-        }
-    }
-
-    pub fn read_file<P: AsRef<Path>>(&self, path: P) -> Result<Vec<u8>, ArtichokeError> {
-        let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = absolutize_relative_to(path, cwd);
-        self.fs.read_file(path).map_err(ArtichokeError::Vfs)
-    }
-
-    pub fn write_file<P, B>(&self, path: P, buf: B) -> Result<(), ArtichokeError>
-    where
-        P: AsRef<Path>,
-        B: AsRef<[u8]>,
-    {
-        let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = absolutize_relative_to(path, cwd);
-        self.fs.write_file(path, buf).map_err(ArtichokeError::Vfs)
-    }
-
-    pub fn set_metadata<P: AsRef<Path>>(
-        &self,
-        path: P,
-        metadata: Metadata,
-    ) -> Result<(), ArtichokeError> {
-        let cwd = self.fs.current_dir().map_err(ArtichokeError::Vfs)?;
-        let path = absolutize_relative_to(path, cwd);
-        self.fs
-            .set_metadata(path, metadata)
-            .map_err(ArtichokeError::Vfs)
-    }
-
-    pub fn metadata<P: AsRef<Path>>(&self, path: P) -> Option<Metadata> {
-        let cwd = self.fs.current_dir().ok()?;
-        let path = absolutize_relative_to(path, cwd);
-        self.fs.metadata(path)
-    }
-}
-
-#[derive(Clone)]
-pub struct Metadata {
-    pub require: Option<RequireFunc>,
-    already_required: bool,
-}
-
-impl Metadata {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    #[must_use]
-    pub fn mark_required(self) -> Self {
-        Self {
-            require: self.require,
-            already_required: true,
+    pub fn is_file<P: AsRef<Path>>(&self, path: P) -> bool {
+        let path = absolutize_relative_to(path, &self.cwd);
+        self.fs.contains_key(&path)
+    }
+
+    pub fn read_file<P: AsRef<Path>>(&self, path: P) -> io::Result<&[u8]> {
+        let path = absolutize_relative_to(path, &self.cwd);
+        if let Some(ref entry) = self.fs.get(&path) {
+            if let Some(ref code) = entry.code {
+                Ok(code.content.as_ref())
+            } else {
+                Ok(Entry::default_file_contents())
+            }
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "file not found in virtual file system",
+            ))
         }
     }
 
-    #[must_use]
-    pub fn is_already_required(&self) -> bool {
-        self.already_required
+    pub fn write_file<P, T>(&mut self, path: P, buf: T) -> io::Result<()>
+    where
+        P: AsRef<Path>,
+        T: Into<Cow<'static, [u8]>>,
+    {
+        let path = absolutize_relative_to(path, &self.cwd);
+        match self.fs.entry(path) {
+            HashEntry::Occupied(mut entry) => {
+                entry.get_mut().replace_content(buf);
+            }
+            HashEntry::Vacant(entry) => {
+                entry.insert(Entry::from_code(buf));
+            }
+        }
+        Ok(())
     }
-}
 
-impl Default for Metadata {
-    fn default() -> Self {
-        Self {
-            require: None,
-            already_required: false,
+    pub fn is_required<P: AsRef<Path>>(&self, path: P) -> bool {
+        let path = absolutize_relative_to(path, &self.cwd);
+        if let Some(entry) = self.fs.get(&path) {
+            entry.is_required()
+        } else {
+            false
+        }
+    }
+
+    pub fn mark_required<P: AsRef<Path>>(&mut self, path: P) -> io::Result<()> {
+        let path = absolutize_relative_to(path, &self.cwd);
+        if let Some(entry) = self.fs.get_mut(&path) {
+            entry.mark_required();
+            Ok(())
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "file not found in virtual file system",
+            ))
+        }
+    }
+
+    pub fn get_extension<P: AsRef<Path>>(&self, path: P) -> Option<ExtensionHook> {
+        let path = absolutize_relative_to(path, &self.cwd);
+        if let Some(entry) = self.fs.get(&path) {
+            entry.extension()
+        } else {
+            None
+        }
+    }
+
+    pub fn register_extension<P: AsRef<Path>>(&mut self, path: P, extension: ExtensionHook) {
+        let path = absolutize_relative_to(path, &self.cwd);
+        match self.fs.entry(path) {
+            HashEntry::Occupied(mut entry) => {
+                entry.get_mut().set_extension(extension);
+            }
+            HashEntry::Vacant(entry) => {
+                entry.insert(Entry::from_ext(extension));
+            }
         }
     }
 }
