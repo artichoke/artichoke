@@ -1,6 +1,6 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Set", None, None)?;
     interp.0.borrow_mut().def_class::<Set>(spec);
     let spec = class::Spec::new("SortedSet", None, None)?;

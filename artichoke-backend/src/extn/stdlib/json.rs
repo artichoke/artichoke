@@ -1,6 +1,6 @@
 use crate::extn::prelude::*;
 
-pub fn init(interp: &Artichoke) -> InitializeResult<()> {
+pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.def_rb_source_file(b"json.rb", &include_bytes!("json.rb")[..])?;
     interp.def_rb_source_file(b"json/common.rb", &include_bytes!("json/common.rb")[..])?;
     interp.def_rb_source_file(
