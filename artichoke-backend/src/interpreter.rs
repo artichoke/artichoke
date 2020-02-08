@@ -12,8 +12,8 @@ use crate::{Artichoke, ArtichokeError, BootError, Eval};
 /// Create and initialize an [`Artichoke`] interpreter.
 ///
 /// This function creates a new [`State`], embeds it in the [`sys::mrb_state`],
-/// initializes an [in memory virtual filesystem](Filesystem), and loads the
-/// [`extn`] extensions to Ruby Core and Stdlib.
+/// initializes an [in memory virtual filesystem](crate::fs::Virtual), and loads
+/// the [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, BootError> {
     let mut mrb = if let Some(mrb) = NonNull::new(unsafe { sys::mrb_open() }) {
         mrb

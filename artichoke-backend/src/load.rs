@@ -27,7 +27,7 @@ impl LoadSources for Artichoke {
         self.0
             .borrow_mut()
             .vfs
-            .register_extension(&path, T::require);
+            .register_extension(&path, T::require)?;
         trace!(
             "Added Rust extension to interpreter filesystem -- {:?}",
             &path

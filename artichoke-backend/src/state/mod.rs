@@ -14,7 +14,7 @@ pub mod parser;
 #[cfg(feature = "artichoke-random")]
 pub mod prng;
 
-// NOTE: ArtichokeState assumes that it it is stored in `mrb_state->ud` wrapped in a
+// NOTE: `State` assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
 pub struct State {
     pub mrb: *mut sys::mrb_state,
@@ -29,9 +29,17 @@ pub struct State {
 }
 
 impl State {
-    /// Create a new [`State`] from a [`sys::mrb_state`] and
-    /// [`sys::mrbc_context`] with an
-    /// [in memory virtual filesystem](Filesystem).
+    /// Create a new [`State`] from a [`sys::mrb_state`].
+    ///
+    /// The state is comprised of several components:
+    ///
+    /// - `Class` and `Module` registries.
+    /// - `Regexp` global state.
+    /// - [In memory virtual filesystem](fs::Virtual).
+    /// - Ruby parser and file context.
+    /// - [Intepreter-level PRNG](prng::Prng) (behind the `artichoke-random`
+    ///   feature).
+    /// - IO capturing strategy.
     pub fn new(mrb: &mut sys::mrb_state) -> Option<Self> {
         let parser = parser::State::new(mrb)?;
         let state = Self {

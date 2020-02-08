@@ -10,8 +10,18 @@ use std::path::{Component, Path, PathBuf};
 use crate::exception::Exception;
 use crate::Artichoke;
 
+/// Directory at which Ruby sources and extensions are stored in the virtual
+/// filesystem.
+///
+/// `RUBY_LOAD_PATH` is the default current working directory for [`Virtual`]
+/// filesystems.
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
+/// Function type for extension hooks stored in the virtual filesystem.
+///
+/// This signature is equivalent to the signature for `File::require` as defined
+/// by the `artichoke-backend` implementation of
+/// [`LoadSources`](crate::LoadSources).
 pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Exception>;
 
 #[cfg(test)]
@@ -125,7 +135,22 @@ impl Entry {
     }
 }
 
-/// Virtual filesystem that wraps a [`artichoke_vfs`] [`FakeFileSystem`].
+/// Virtual filesystem for sources, extensions, and require metadata.
+///
+/// `Virtual` is a [`HashMap`] from paths to an entry struct that contains:
+///
+/// - A bit for whether the path that points to the entry has been required
+///   before.
+/// - Optional binary content representing Ruby source code.
+/// - Optional hook to a Rust function to be executed on `require` (similar to a
+///   MRI C extension rubygem).
+///
+/// Sources in `Virtual` are only writable via the
+/// [`LoadSources`](crate::LoadSources) trait. Sources can only be completely
+/// replaced.
+///
+/// These APIs are consumed primarily by the `Kernel::require` implementation in
+/// [`extn::core::kernel::require`](crate::extn::core::kernel::require).
 #[derive(Debug)]
 pub struct Virtual {
     fs: HashMap<PathBuf, Entry>,
@@ -133,6 +158,8 @@ pub struct Virtual {
 }
 
 impl Default for Virtual {
+    /// Virtual filesystem with current working directory set to
+    /// [`RUBY_LOAD_PATH`].
     fn default() -> Self {
         Self {
             fs: HashMap::default(),
@@ -144,20 +171,30 @@ impl Default for Virtual {
 impl Virtual {
     /// Create a new in memory virtual filesystem.
     ///
-    /// Creates a directory at [`RUBY_LOAD_PATH`] for storing Ruby source files.
-    /// This path is searched by
-    /// [`Kernel::require`](crate::extn::core::kernel::Kernel::require) and
-    /// [`Kernel::require_relative`](crate::extn::core::kernel::Kernel::require_relative).
+    /// Sets the current working directory of the VFS to [`RUBY_LOAD_PATH`] for
+    /// storing Ruby source files. This path is searched by
+    /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`](crate::extn::core::kernel::require).
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Check whether `path` points to a file in the virtual filesystem.
     pub fn is_file<P: AsRef<Path>>(&self, path: P) -> bool {
         let path = absolutize_relative_to(path, &self.cwd);
         self.fs.contains_key(&path)
     }
 
+    /// Read file contents for the file at `path`.
+    ///
+    /// Returns a byte slice of complete file contents. If `path` is relative,
+    /// it is absolutized relative to the current working directory of the
+    /// virtual file system.
+    ///
+    /// # Errors
+    ///
+    /// If `path` does not exist, an [`io::Error`] with error kind
+    /// [`io::ErrorKind::NotFound`] is returned.
     pub fn read_file<P: AsRef<Path>>(&self, path: P) -> io::Result<&[u8]> {
         let path = absolutize_relative_to(path, &self.cwd);
         if let Some(ref entry) = self.fs.get(&path) {
@@ -174,6 +211,15 @@ impl Virtual {
         }
     }
 
+    /// Write file contents into the virtual file system at `path`.
+    ///
+    /// Writes the full file contents. If any file contents already exist at
+    /// `path`, they are replaced. Extension hooks are preserved.
+    ///
+    /// # Errors
+    ///
+    /// This API is currently infallible but returns [`io::Result`] to reserve
+    /// the ability to return errors in the future.
     pub fn write_file<P, T>(&mut self, path: P, buf: T) -> io::Result<()>
     where
         P: AsRef<Path>,
@@ -191,6 +237,47 @@ impl Virtual {
         Ok(())
     }
 
+    /// Retrieve an extension hook for the file at `path`.
+    ///
+    /// This API is infallible and will return `None` for non-existent paths.
+    pub fn get_extension<P: AsRef<Path>>(&self, path: P) -> Option<ExtensionHook> {
+        let path = absolutize_relative_to(path, &self.cwd);
+        if let Some(entry) = self.fs.get(&path) {
+            entry.extension()
+        } else {
+            None
+        }
+    }
+
+    /// Write extension hook into the virtual file system at `path`.
+    ///
+    /// If any extension hooks already exist at `path`, they are replaced. File
+    /// contents are preserved.
+    ///
+    /// # Errors
+    ///
+    /// This API is currently infallible but returns [`io::Result`] to reserve
+    /// the ability to return errors in the future.
+    pub fn register_extension<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+        extension: ExtensionHook,
+    ) -> io::Result<()> {
+        let path = absolutize_relative_to(path, &self.cwd);
+        match self.fs.entry(path) {
+            HashEntry::Occupied(mut entry) => {
+                entry.get_mut().set_extension(extension);
+            }
+            HashEntry::Vacant(entry) => {
+                entry.insert(Entry::from_ext(extension));
+            }
+        }
+        Ok(())
+    }
+
+    /// Check whether a file at `path` has been required already.
+    ///
+    /// This API is infallible and will return `false` for non-existent paths.
     pub fn is_required<P: AsRef<Path>>(&self, path: P) -> bool {
         let path = absolutize_relative_to(path, &self.cwd);
         if let Some(entry) = self.fs.get(&path) {
@@ -200,6 +287,16 @@ impl Virtual {
         }
     }
 
+    /// Mark a source at `path` as required on the interpreter.
+    ///
+    /// This metadata is used by `Kernel#require` and friends to enforce that
+    /// Ruby sources are only loaded into the interpreter once to limit side
+    /// effects.
+    ///
+    /// # Errors
+    ///
+    /// If `path` does not exist, an [`io::Error`] with error kind
+    /// [`io::ErrorKind::NotFound`] is returned.
     pub fn mark_required<P: AsRef<Path>>(&mut self, path: P) -> io::Result<()> {
         let path = absolutize_relative_to(path, &self.cwd);
         if let Some(entry) = self.fs.get_mut(&path) {
@@ -210,27 +307,6 @@ impl Virtual {
                 io::ErrorKind::NotFound,
                 "file not found in virtual file system",
             ))
-        }
-    }
-
-    pub fn get_extension<P: AsRef<Path>>(&self, path: P) -> Option<ExtensionHook> {
-        let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(entry) = self.fs.get(&path) {
-            entry.extension()
-        } else {
-            None
-        }
-    }
-
-    pub fn register_extension<P: AsRef<Path>>(&mut self, path: P, extension: ExtensionHook) {
-        let path = absolutize_relative_to(path, &self.cwd);
-        match self.fs.entry(path) {
-            HashEntry::Occupied(mut entry) => {
-                entry.get_mut().set_extension(extension);
-            }
-            HashEntry::Vacant(entry) => {
-                entry.insert(Entry::from_ext(extension));
-            }
         }
     }
 }
