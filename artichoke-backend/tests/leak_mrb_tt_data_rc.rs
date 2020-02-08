@@ -22,11 +22,11 @@ extern crate artichoke_backend;
 use artichoke_backend::class;
 use artichoke_backend::convert::RustBackedValue;
 use artichoke_backend::def;
-use artichoke_backend::exception::{self, RubyException};
+use artichoke_backend::exception::{self, Exception, RubyException};
 use artichoke_backend::extn::core::exception::Fatal;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
-use artichoke_backend::{Artichoke, ArtichokeError, Eval, File, LoadSources, ValueLike};
+use artichoke_backend::{Artichoke, Eval, File, LoadSources, ValueLike};
 
 mod leak;
 
@@ -73,7 +73,9 @@ impl Container {
 impl File for Container {
     type Artichoke = Artichoke;
 
-    fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
+    type Error = Exception;
+
+    fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
         let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Self>))?;
         class::Builder::for_spec(interp, &spec)
             .value_is_rust_object()

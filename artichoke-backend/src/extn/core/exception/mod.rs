@@ -451,7 +451,9 @@ mod tests {
     impl File for Run {
         type Artichoke = Artichoke;
 
-        fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
+        type Error = Exception;
+
+        fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
             let spec = class::Spec::new("Run", None, None).unwrap();
             class::Builder::for_spec(interp, &spec)
                 .add_self_method("run", Self::run, sys::mrb_args_none())?
