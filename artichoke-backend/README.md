@@ -31,9 +31,9 @@ assert_eq!(result, Ok(100));
 
 ## Virtual Filesystem and `Kernel#require`
 
-The artichoke-backend `State` embeds an
-[in-memory virtual Unix filesystem](/artichoke-vfs). The VFS stores Ruby sources
-that are either pure Ruby, implemented with a Rust `File`, or both.
+The artichoke-backend `State` embeds an in-memory virtual filesystem. The VFS
+stores Ruby sources that are either pure Ruby, implemented with a Rust `File`,
+or both.
 
 artichoke-backend crate implements
 [`Kernel#require` and `Kernel#require_relative`](src/extn/core/kernel) which
