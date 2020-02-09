@@ -1,4 +1,12 @@
-//! [`Artichoke`] virtual filesystem used for storing Ruby sources.
+//! Virtual filesystem.
+//!
+//! Artichoke proxies all filesystem access through a
+//! [virtual filesystem](Virtual). The filesystem can store Ruby sources and
+//! [extension hooks](ExtensionHook) in memory and will support proxying to the
+//! host filesystem for reads and writes.
+//!
+//! Artichoke uses the virtual filesystem to track metadata about loaded
+//! features.
 
 use std::borrow::Cow;
 use std::collections::hash_map::Entry as HashEntry;
@@ -180,6 +188,8 @@ impl Virtual {
     }
 
     /// Check whether `path` points to a file in the virtual filesystem.
+    ///
+    /// This API is infallible and will return `false` for non-existent paths.
     pub fn is_file<P: AsRef<Path>>(&self, path: P) -> bool {
         let path = absolutize_relative_to(path, &self.cwd);
         self.fs.contains_key(&path)
