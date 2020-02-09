@@ -318,8 +318,8 @@ where
 {
     let mut iter = path.as_ref().components().peekable();
     let hint = iter.size_hint();
-    let mut components = if let Some(Component::RootDir) = iter.peek() {
-        Vec::with_capacity(hint.1.unwrap_or(hint.0))
+    let (mut components, cwd_is_relative) = if let Some(Component::RootDir) = iter.peek() {
+        (Vec::with_capacity(hint.1.unwrap_or(hint.0)), false)
     } else {
         let mut components = cwd
             .as_ref()
@@ -327,13 +327,19 @@ where
             .map(Component::as_os_str)
             .collect::<Vec<_>>();
         components.reserve(hint.1.unwrap_or(hint.0));
-        components
+        (components, cwd.as_ref().is_relative())
     };
     for component in iter {
         match component {
             Component::CurDir => {}
+            Component::ParentDir if cwd_is_relative => {
+                components.pop();
+            }
             Component::ParentDir => {
                 components.pop();
+                if components.is_empty() {
+                    components.push(Component::RootDir.as_os_str());
+                }
             }
             c => {
                 components.push(c.as_os_str());
@@ -341,4 +347,107 @@ where
         }
     }
     components.into_iter().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::absolutize_relative_to;
+
+    #[test]
+    fn absolutize_absolute_path() {
+        let path = Path::new("/foo/bar");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(absolutize_relative_to(&path, cwd), path);
+        let cwd = Path::new("relative/path");
+        assert_eq!(absolutize_relative_to(&path, cwd), path);
+    }
+
+    #[test]
+    fn absolutize_absolute_path_dedot_current_dir() {
+        let path = Path::new("/././foo/./bar/./././.");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/foo/bar"));
+        let cwd = Path::new("relative/path");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/foo/bar"));
+    }
+
+    #[test]
+    fn absolutize_absolute_path_dedot_parent_dir() {
+        let path = Path::new("/foo/bar/..");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/foo"));
+        let cwd = Path::new("relative/path");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/foo"));
+
+        let path = Path::new("/foo/../../../../bar/../../../");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/"));
+        let cwd = Path::new("relative/path");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/"));
+
+        let path = Path::new("/foo/../../../../bar/../../../boom/baz");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/boom/baz"));
+        let cwd = Path::new("relative/path");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/boom/baz"));
+    }
+
+    #[test]
+    fn absolutize_relative_path() {
+        let path = Path::new("foo/bar");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(
+            absolutize_relative_to(&path, cwd),
+            Path::new("/home/artichoke/foo/bar")
+        );
+        let cwd = Path::new("relative/path");
+        assert_eq!(
+            absolutize_relative_to(&path, cwd),
+            Path::new("relative/path/foo/bar")
+        );
+    }
+
+    #[test]
+    fn absolutize_relative_path_dedot_current_dir() {
+        let path = Path::new("././././foo/./bar/./././.");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(
+            absolutize_relative_to(&path, cwd),
+            Path::new("/home/artichoke/foo/bar")
+        );
+        let cwd = Path::new("relative/path");
+        assert_eq!(
+            absolutize_relative_to(&path, cwd),
+            Path::new("relative/path/foo/bar")
+        );
+    }
+
+    #[test]
+    fn absolutize_relative_path_dedot_parent_dir() {
+        let path = Path::new("foo/bar/..");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(
+            absolutize_relative_to(&path, cwd),
+            Path::new("/home/artichoke/foo")
+        );
+        let cwd = Path::new("relative/path");
+        assert_eq!(
+            absolutize_relative_to(&path, cwd),
+            Path::new("relative/path/foo")
+        );
+
+        let path = Path::new("foo/../../../../bar/../../../");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/"));
+        let cwd = Path::new("relative/path");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new(""));
+
+        let path = Path::new("foo/../../../../bar/../../../boom/baz");
+        let cwd = Path::new("/home/artichoke");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/boom/baz"));
+        let cwd = Path::new("relative/path");
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("boom/baz"));
+    }
 }
