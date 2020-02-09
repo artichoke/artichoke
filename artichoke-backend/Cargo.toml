@@ -22,9 +22,6 @@ smallvec = "1"
 [dependencies.artichoke-core]
 path = "../artichoke-core"
 
-[dependencies.artichoke-vfs]
-path = "../artichoke-vfs"
-
 [dependencies.onig]
 git = "https://github.com/artichoke/rust-onig"
 rev = "952305049073f37ada5543536c4c58540ea3642b"
