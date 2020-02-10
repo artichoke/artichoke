@@ -9,7 +9,7 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType};
 use crate::extn::prelude::*;
 
-use super::super::{HashOfStringToArrayOfInt, NilableString};
+use super::super::{NameToCaptureLocations, NilableString};
 
 #[derive(Clone)]
 pub struct Utf8 {
@@ -508,7 +508,7 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<HashOfStringToArrayOfInt, Exception> {
+    fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception> {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];

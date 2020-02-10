@@ -8,7 +8,7 @@ pub mod onig;
 pub mod regex;
 
 type NilableString = Option<Vec<u8>>;
-type HashOfStringToArrayOfInt = Vec<(Vec<u8>, Vec<Int>)>;
+type NameToCaptureLocations = Vec<(Vec<u8>, Vec<Int>)>;
 
 pub trait RegexpType {
     fn box_clone(&self) -> Box<dyn RegexpType>;
@@ -69,7 +69,7 @@ pub trait RegexpType {
         pattern: &[u8],
     ) -> Result<Option<Int>, Exception>;
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<HashOfStringToArrayOfInt, Exception>;
+    fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception>;
 
     fn named_captures_for_haystack(
         &self,
