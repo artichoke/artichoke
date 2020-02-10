@@ -17,6 +17,6 @@
 use artichoke_frontend::repl;
 use std::io;
 
-fn main() -> Result<(), artichoke_frontend::repl::Error> {
+fn main() -> Result<(), repl::Error> {
     repl::run(io::stdout(), io::stderr(), None)
 }
