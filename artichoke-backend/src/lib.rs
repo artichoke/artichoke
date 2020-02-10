@@ -216,11 +216,7 @@ impl fmt::Display for BootError {
 }
 
 impl error::Error for BootError {
-    fn description(&self) -> &str {
-        "Artichoke interpreter boot error"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self.0 {
             BootErrorType::Artichoke(ref err) => Some(err),
             BootErrorType::Ruby(ref exc) => Some(exc),

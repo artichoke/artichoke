@@ -1,6 +1,7 @@
 use std::error;
 use std::fmt;
 
+use crate::string;
 use crate::sys;
 use crate::value::Value;
 use crate::{Artichoke, ValueLike};
@@ -22,8 +23,8 @@ impl RubyException for Exception {
         self.0.name()
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
-        self.0.backtrace(interp)
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        self.0.vm_backtrace(interp)
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
@@ -37,15 +38,7 @@ impl fmt::Display for Exception {
     }
 }
 
-impl error::Error for Exception {
-    fn description(&self) -> &str {
-        "Ruby Exception thrown on Artichoke VM"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
+impl error::Error for Exception {}
 
 impl From<Box<dyn RubyException>> for Exception {
     fn from(exc: Box<dyn RubyException>) -> Self {
@@ -87,7 +80,7 @@ pub unsafe fn raise(mut interp: Artichoke, exception: impl RubyException + fmt::
 /// [`exception::raise`](raise). Rust code can re-raise a trait object to
 /// propagate exceptions from native code back into the interpreter.
 #[allow(clippy::module_name_repetitions)]
-pub trait RubyException
+pub trait RubyException: error::Error
 where
     Self: 'static,
 {
@@ -104,7 +97,7 @@ where
     fn name(&self) -> String;
 
     /// Optional backtrace specified by a `Vec` of frames.
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>>;
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>>;
 
     /// Return a raiseable [`sys::mrb_value`].
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value>;
@@ -123,8 +116,8 @@ impl RubyException for Box<dyn RubyException> {
         self.as_ref().name()
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
-        self.as_ref().backtrace(interp)
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        self.as_ref().vm_backtrace(interp)
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
@@ -132,57 +125,9 @@ impl RubyException for Box<dyn RubyException> {
     }
 }
 
-impl fmt::Debug for Box<dyn RubyException> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let classname = self.name();
-        let message = String::from_utf8_lossy(self.message());
-        write!(f, "{} ({})", classname, message)
-    }
-}
+impl error::Error for Box<dyn RubyException> {}
 
-impl fmt::Display for Box<dyn RubyException> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let classname = self.name();
-        let message = String::from_utf8_lossy(self.message());
-        write!(f, "{} ({})", classname, message)
-    }
-}
-
-impl error::Error for Box<dyn RubyException> {
-    fn description(&self) -> &str {
-        "Ruby Exception thrown on Artichoke VM"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
-
-impl fmt::Debug for &dyn RubyException {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let classname = self.name();
-        let message = String::from_utf8_lossy(self.message());
-        write!(f, "{} ({})", classname, message)
-    }
-}
-
-impl fmt::Display for &dyn RubyException {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let classname = self.name();
-        let message = String::from_utf8_lossy(self.message());
-        write!(f, "{} ({})", classname, message)
-    }
-}
-
-impl error::Error for &dyn RubyException {
-    fn description(&self) -> &str {
-        "Ruby Exception thrown on Artichoke VM"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
+impl error::Error for &dyn RubyException {}
 
 /// An `Exception` rescued with [`sys::mrb_protect`].
 ///
@@ -206,6 +151,17 @@ impl CaughtException {
     }
 }
 
+impl fmt::Display for CaughtException {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let classname = self.name();
+        write!(f, "{} (", classname)?;
+        string::escape_unicode(f, self.message()).map_err(string::WriteError::into_inner)?;
+        write!(f, ")")
+    }
+}
+
+impl error::Error for CaughtException {}
+
 impl RubyException for CaughtException {
     fn box_clone(&self) -> Box<dyn RubyException> {
         Box::new(self.clone())
@@ -219,7 +175,7 @@ impl RubyException for CaughtException {
         self.name.clone()
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         self.value.funcall("backtrace", &[], None).ok()
     }
@@ -240,13 +196,5 @@ impl From<CaughtException> for Box<dyn RubyException> {
 impl From<CaughtException> for Exception {
     fn from(exc: CaughtException) -> Self {
         Self(Box::new(exc))
-    }
-}
-
-impl fmt::Display for CaughtException {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let classname = self.name();
-        let message = String::from_utf8_lossy(self.message());
-        write!(f, "{} ({})", classname, message)
     }
 }

@@ -56,6 +56,13 @@ where
 #[derive(Debug, Clone)]
 pub struct WriteError(fmt::Error);
 
+impl WriteError {
+    #[must_use]
+    pub fn into_inner(self) -> fmt::Error {
+        self.0
+    }
+}
+
 impl From<fmt::Error> for WriteError {
     fn from(err: fmt::Error) -> Self {
         Self(err)
@@ -69,11 +76,7 @@ impl fmt::Display for WriteError {
 }
 
 impl error::Error for WriteError {
-    fn description(&self) -> &str {
-        "Write error"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(&self.0)
     }
 }
@@ -91,7 +94,7 @@ impl RubyException for WriteError {
         String::from("fatal")
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
