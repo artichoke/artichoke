@@ -347,7 +347,7 @@ macro_rules! ruby_exception_impl {
                 String::from(stringify!($exception))
             }
 
-            fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+            fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
                 let _ = interp;
                 None
             }
@@ -367,8 +367,9 @@ macro_rules! ruby_exception_impl {
         {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let classname = self.name();
-                let message = String::from_utf8_lossy(self.message());
-                write!(f, "{} ({})", classname, message)
+                write!(f, "{} (", classname)?;
+                string::escape_unicode(f, self.message()).map_err(|err| err.into_inner())?;
+                write!(f, ")")
             }
         }
 
@@ -378,20 +379,13 @@ macro_rules! ruby_exception_impl {
         {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let classname = self.name();
-                let message = String::from_utf8_lossy(self.message());
-                write!(f, "{} ({})", classname, message)
+                write!(f, "{} (", classname)?;
+                string::escape_unicode(f, self.message()).map_err(|err| err.into_inner())?;
+                write!(f, ")")
             }
         }
 
-        impl error::Error for $exception {
-            fn description(&self) -> &str {
-                concat!("Ruby Exception: ", stringify!($exception))
-            }
-
-            fn cause(&self) -> Option<&dyn error::Error> {
-                None
-            }
-        }
+        impl error::Error for $exception {}
     };
 }
 

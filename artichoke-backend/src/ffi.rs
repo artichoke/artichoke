@@ -94,19 +94,11 @@ pub struct ConvertBytesError;
 
 impl fmt::Display for ConvertBytesError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", error::Error::description(self))
+        write!(f, "Could not convert between bytes and platform string")
     }
 }
 
-impl error::Error for ConvertBytesError {
-    fn description(&self) -> &str {
-        "Could not convert between bytes and platform string"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
+impl error::Error for ConvertBytesError {}
 
 impl RubyException for ConvertBytesError {
     fn box_clone(&self) -> Box<dyn RubyException> {
@@ -121,7 +113,7 @@ impl RubyException for ConvertBytesError {
         String::from("ArgumentError")
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }

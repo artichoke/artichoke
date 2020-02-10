@@ -213,15 +213,7 @@ impl fmt::Display for ConstantNameError {
     }
 }
 
-impl error::Error for ConstantNameError {
-    fn description(&self) -> &str {
-        "Invalid constant name contained a NUL byte"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
+impl error::Error for ConstantNameError {}
 
 impl RubyException for ConstantNameError {
     fn box_clone(&self) -> Box<dyn RubyException> {
@@ -229,14 +221,14 @@ impl RubyException for ConstantNameError {
     }
 
     fn message(&self) -> &[u8] {
-        error::Error::description(self).as_bytes()
+        &b"Invalid constant name contained a NUL byte"[..]
     }
 
     fn name(&self) -> String {
         String::from("NameError")
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
@@ -317,15 +309,7 @@ impl fmt::Display for NotDefinedError {
     }
 }
 
-impl error::Error for NotDefinedError {
-    fn description(&self) -> &str {
-        "Class-like not defined"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
+impl error::Error for NotDefinedError {}
 
 impl RubyException for NotDefinedError {
     fn box_clone(&self) -> Box<dyn RubyException> {
@@ -333,14 +317,14 @@ impl RubyException for NotDefinedError {
     }
 
     fn message(&self) -> &[u8] {
-        error::Error::description(self).as_bytes()
+        &b"Class-like not defined"[..]
     }
 
     fn name(&self) -> String {
         String::from("ScriptError")
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }

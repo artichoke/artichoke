@@ -9,11 +9,18 @@ use crate::sys;
 use crate::Artichoke;
 
 #[derive(Debug)]
-pub struct IOError(Option<io::Error>);
+pub struct IOError {
+    inner: Option<io::Error>,
+    message: String,
+}
 
 impl From<io::Error> for IOError {
     fn from(err: io::Error) -> Self {
-        Self(Some(err))
+        let message = err.to_string();
+        Self {
+            inner: Some(err),
+            message,
+        }
     }
 }
 
@@ -25,17 +32,13 @@ impl From<io::Error> for Exception {
 
 impl fmt::Display for IOError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Unable to write escaped Unicode into destination")
+        write!(f, "IOError: {}", self.message)
     }
 }
 
 impl error::Error for IOError {
-    fn description(&self) -> &str {
-        "Write error"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        if let Some(ref err) = self.0 {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        if let Some(ref err) = self.inner {
             Some(err)
         } else {
             None
@@ -45,28 +48,27 @@ impl error::Error for IOError {
 
 impl RubyException for IOError {
     fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(Self(None))
+        Box::new(Self {
+            inner: None,
+            message: self.message.clone(),
+        })
     }
 
     fn message(&self) -> &[u8] {
-        if let Some(ref err) = self.0 {
-            error::Error::description(err).as_bytes()
-        } else {
-            &b"IO Error"[..]
-        }
+        self.message.as_bytes()
     }
 
     fn name(&self) -> String {
-        String::from("fatal")
+        String::from("IOError")
     }
 
-    fn backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = if let Some(ref err) = self.0 {
+        let message = if let Some(ref err) = self.inner {
             interp.convert_mut(err.to_string())
         } else {
             interp.convert_mut(self.message())

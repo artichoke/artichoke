@@ -99,12 +99,4 @@ impl fmt::Display for ArtichokeError {
     }
 }
 
-impl error::Error for ArtichokeError {
-    fn description(&self) -> &str {
-        "Artichoke interpreter error"
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
+impl error::Error for ArtichokeError {}
