@@ -104,7 +104,9 @@ mod tests {
         impl File for NestedEval {
             type Artichoke = Artichoke;
 
-            fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
+            type Error = Exception;
+
+            fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
                 let spec = module::Spec::new(interp, "NestedEval", None)?;
                 module::Builder::for_spec(interp, &spec)
                     .add_self_method("file", Self::nested_eval, sys::mrb_args_none())?

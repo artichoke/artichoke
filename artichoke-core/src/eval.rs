@@ -1,5 +1,6 @@
 //! Run code on an Artichoke interpreter.
 
+use std::error;
 use std::ffi::OsStr;
 
 use crate::value::Value;
@@ -15,7 +16,7 @@ pub trait Eval {
     type Value: Value;
 
     /// Concrete error type for eval functions.
-    type Error: std::error::Error;
+    type Error: error::Error;
 
     /// Eval code on the Artichoke interpreter using the current `Context`.
     ///

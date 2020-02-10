@@ -44,7 +44,6 @@ name = "artichoke-backend"
 version = "0.1.0"
 dependencies = [
  "artichoke-core",
- "artichoke-vfs",
  "bindgen",
  "bstr",
  "cc",
@@ -81,13 +80,6 @@ dependencies = [
  "bstr",
  "rustyline",
  "structopt",
-]
-
-[[package]]
-name = "artichoke-vfs"
-version = "0.5.0-alpha"
-dependencies = [
- "rand",
 ]
 
 [[package]]

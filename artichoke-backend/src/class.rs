@@ -6,12 +6,12 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
-use crate::def::{EnclosingRubyScope, Free, Method};
+use crate::def::{ConstantNameError, EnclosingRubyScope, Free, Method, NotDefinedError};
 use crate::method;
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::Artichoke;
 
 #[derive(Clone)]
 pub struct Builder<'a> {
@@ -51,7 +51,7 @@ impl<'a> Builder<'a> {
         name: T,
         method: Method,
         args: sys::mrb_aspec,
-    ) -> Result<Self, ArtichokeError>
+    ) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
@@ -65,7 +65,7 @@ impl<'a> Builder<'a> {
         name: T,
         method: Method,
         args: sys::mrb_aspec,
-    ) -> Result<Self, ArtichokeError>
+    ) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
@@ -74,21 +74,21 @@ impl<'a> Builder<'a> {
         Ok(self)
     }
 
-    pub fn define(self) -> Result<(), ArtichokeError> {
+    pub fn define(self) -> Result<(), NotDefinedError> {
         let mrb = self.interp.0.borrow().mrb;
         let mut super_class = if let Some(spec) = self.super_class {
             spec.rclass(mrb)
-                .ok_or_else(|| ArtichokeError::NotDefined(spec.fqname().into_owned().into()))?
+                .ok_or_else(|| NotDefinedError::Super(spec.fqname().into_owned()))?
         } else {
             let rclass = unsafe { (*mrb).object_class };
-            NonNull::new(rclass).ok_or_else(|| ArtichokeError::NotDefined("Object".into()))?
+            NonNull::new(rclass).ok_or_else(|| NotDefinedError::Super(String::from("Object")))?
         };
         let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
             let mut scope_rclass = scope
                 .rclass(mrb)
-                .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname().into_owned().into()))?;
+                .ok_or_else(|| NotDefinedError::EnclosingScope(scope.fqname().into_owned()))?;
             let rclass = unsafe {
                 sys::mrb_define_class_under(
                     mrb,
@@ -97,20 +97,18 @@ impl<'a> Builder<'a> {
                     super_class.as_mut(),
                 )
             };
-            NonNull::new(rclass).ok_or_else(|| {
-                ArtichokeError::NotDefined(self.spec.name.as_ref().to_owned().into())
-            })?
+            NonNull::new(rclass)
+                .ok_or_else(|| NotDefinedError::Class(self.spec.name.as_ref().to_owned()))?
         } else {
             let rclass = unsafe {
                 sys::mrb_define_class(mrb, self.spec.name_c_str().as_ptr(), super_class.as_mut())
             };
-            NonNull::new(rclass).ok_or_else(|| {
-                ArtichokeError::NotDefined(self.spec.name.as_ref().to_owned().into())
-            })?
+            NonNull::new(rclass)
+                .ok_or_else(|| NotDefinedError::Class(self.spec.name.as_ref().to_owned()))?
         };
         for method in &self.methods {
             unsafe {
-                method.define(self.interp, rclass.as_mut())?;
+                method.define(self.interp, rclass.as_mut());
             }
         }
         // If a `Spec` defines a `Class` whose isntances own a pointer to a
@@ -137,23 +135,25 @@ impl Spec {
         name: T,
         enclosing_scope: Option<EnclosingRubyScope>,
         free: Option<Free>,
-    ) -> Result<Self, ArtichokeError>
+    ) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        let cstring =
-            CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
-        let data_type = sys::mrb_data_type {
-            struct_name: cstring.as_ptr(),
-            dfree: free,
-        };
-        Ok(Self {
-            name,
-            cstring,
-            data_type,
-            enclosing_scope: enclosing_scope.map(Box::new),
-        })
+        if let Ok(cstring) = CString::new(name.as_ref()) {
+            let data_type = sys::mrb_data_type {
+                struct_name: cstring.as_ptr(),
+                dfree: free,
+            };
+            Ok(Self {
+                name,
+                cstring,
+                data_type,
+                enclosing_scope: enclosing_scope.map(Box::new),
+            })
+        } else {
+            Err(ConstantNameError::new(name))
+        }
     }
 
     #[must_use]

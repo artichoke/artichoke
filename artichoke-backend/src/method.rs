@@ -3,9 +3,9 @@ use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use crate::def::Method;
+use crate::def::{ConstantNameError, Method};
 use crate::sys;
-use crate::{Artichoke, ArtichokeError};
+use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Type {
@@ -30,20 +30,22 @@ impl Spec {
         method_name: T,
         method: Method,
         args: sys::mrb_aspec,
-    ) -> Result<Self, ArtichokeError>
+    ) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
         let name = method_name.into();
-        let method_cstr =
-            CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
-        Ok(Self {
-            name,
-            cstring: method_cstr,
-            method_type,
-            method,
-            args,
-        })
+        if let Ok(method_cstr) = CString::new(name.as_ref()) {
+            Ok(Self {
+                name,
+                cstring: method_cstr,
+                method_type,
+                method,
+                args,
+            })
+        } else {
+            Err(ConstantNameError::new(name))
+        }
     }
 
     #[must_use]
@@ -70,11 +72,7 @@ impl Spec {
     ///
     /// This method requires that the [`sys::mrb_state`] has a valid `top_self`
     /// object.
-    pub unsafe fn define(
-        &self,
-        interp: &Artichoke,
-        into: &mut sys::RClass,
-    ) -> Result<(), ArtichokeError> {
+    pub unsafe fn define(&self, interp: &Artichoke, into: &mut sys::RClass) {
         let mrb = interp.0.borrow().mrb;
         match self.method_type {
             Type::Class => sys::mrb_define_class_method(
@@ -106,7 +104,6 @@ impl Spec {
                 self.args,
             ),
         }
-        Ok(())
     }
 }
 

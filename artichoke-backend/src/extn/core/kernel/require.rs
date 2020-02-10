@@ -43,14 +43,6 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     if !is_file {
         return Err(Exception::from(load_error(interp, filename)?));
     }
-    let metadata = {
-        let api = interp.0.borrow();
-        api.vfs.metadata(path.as_path()).unwrap_or_default()
-    };
-    // Require Rust File first because an File may define classes
-    // and module with `LoadSources` and Ruby files can require
-    // arbitrary other files, including some child sources that may
-    // depend on these module definitions.
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
@@ -59,16 +51,17 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     // module with `LoadSources` and Ruby files can require arbitrary
     // other files, including some child sources that may depend on these
     // module definitions.
-    if let Some(require) = metadata.require {
+    let hook = interp.0.borrow().vfs.get_extension(path.as_path());
+    if let Some(hook) = hook {
         // dynamic, Rust-backed `File` require
-        if require(interp).is_err() {
+        if let Err(err) = hook(interp) {
             let _ = interp.pop_context();
-            return Err(Exception::from(load_error(interp, filename)?));
+            return Err(err);
         }
     }
     let contents = {
         let api = interp.0.borrow();
-        api.vfs.read_file(path.as_path())
+        api.vfs.read_file(path.as_path()).map(<[_]>::to_vec)
     };
     if let Ok(contents) = contents {
         let _ = interp.eval(contents.as_slice())?;
@@ -121,18 +114,10 @@ pub fn require(
             api.vfs.is_file(path.as_path())
         };
         if is_file {
-            let metadata = {
-                let api = interp.0.borrow();
-                api.vfs.metadata(path.as_path()).unwrap_or_default()
-            };
             // If a file is already required, short circuit.
-            if metadata.is_already_required() {
+            if interp.0.borrow().vfs.is_required(path.as_path()) {
                 return Ok(interp.convert(false));
             }
-            // Require Rust File first because an File may define classes
-            // and module with `LoadSources` and Ruby files can require
-            // arbitrary other files, including some child sources that may
-            // depend on these module definitions.
             let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
                 .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
             interp.push_context(context);
@@ -140,32 +125,31 @@ pub fn require(
             // module with `LoadSources` and Ruby files can require arbitrary
             // other files, including some child sources that may depend on these
             // module definitions.
-            if let Some(require) = metadata.require {
+            let hook = interp.0.borrow().vfs.get_extension(path.as_path());
+            if let Some(hook) = hook {
                 // dynamic, Rust-backed `File` require
-                if require(interp).is_err() {
+                if let Err(err) = hook(interp) {
                     let _ = interp.pop_context();
-                    return Err(Exception::from(load_error(interp, filename)?));
+                    return Err(err);
                 }
             }
             let contents = {
                 let api = interp.0.borrow();
-                api.vfs.read_file(path.as_path())
+                api.vfs.read_file(path.as_path()).map(<[_]>::to_vec)
             };
             if let Ok(contents) = contents {
                 let _ = interp.eval(contents.as_slice())?;
             }
             let _ = interp.pop_context();
-            let metadata = metadata.mark_required();
-            let borrow = interp.0.borrow();
-            borrow
+            if interp
+                .0
+                .borrow_mut()
                 .vfs
-                .set_metadata(path.as_path(), metadata)
-                .map_err(|_| {
-                    Fatal::new(
-                        interp,
-                        "Unable to set require metadata in the Artichoke virtual filesystem",
-                    )
-                })?;
+                .mark_required(path.as_path())
+                .is_err()
+            {
+                return Err(Exception::from(load_error(interp, b"internal error")?));
+            }
             let mut logged_filename = String::new();
             string::escape_unicode(&mut logged_filename, filename)?;
             trace!(
@@ -186,18 +170,10 @@ pub fn require(
                 api.vfs.is_file(path.as_path())
             };
             if is_file {
-                let metadata = {
-                    let api = interp.0.borrow();
-                    api.vfs.metadata(path.as_path()).unwrap_or_default()
-                };
                 // If a file is already required, short circuit.
-                if metadata.is_already_required() {
+                if interp.0.borrow().vfs.is_required(path.as_path()) {
                     return Ok(interp.convert(false));
                 }
-                // Require Rust File first because an File may define classes
-                // and module with `LoadSources` and Ruby files can require
-                // arbitrary other files, including some child sources that may
-                // depend on these module definitions.
                 let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
                     .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
                 interp.push_context(context);
@@ -205,32 +181,31 @@ pub fn require(
                 // module with `LoadSources` and Ruby files can require arbitrary
                 // other files, including some child sources that may depend on these
                 // module definitions.
-                if let Some(require) = metadata.require {
+                let hook = interp.0.borrow().vfs.get_extension(path.as_path());
+                if let Some(hook) = hook {
                     // dynamic, Rust-backed `File` require
-                    if require(interp).is_err() {
+                    if let Err(err) = hook(interp) {
                         let _ = interp.pop_context();
-                        return Err(Exception::from(load_error(interp, filename)?));
+                        return Err(err);
                     }
                 }
                 let contents = {
                     let api = interp.0.borrow();
-                    api.vfs.read_file(path.as_path())
+                    api.vfs.read_file(path.as_path()).map(<[_]>::to_vec)
                 };
                 if let Ok(contents) = contents {
                     let _ = interp.eval(contents.as_slice())?;
                 }
                 let _ = interp.pop_context();
-                let metadata = metadata.mark_required();
-                let borrow = interp.0.borrow();
-                borrow
+                if interp
+                    .0
+                    .borrow_mut()
                     .vfs
-                    .set_metadata(path.as_path(), metadata)
-                    .map_err(|_| {
-                        Fatal::new(
-                            interp,
-                            "Unable to set require metadata in the Artichoke virtual filesystem",
-                        )
-                    })?;
+                    .mark_required(path.as_path())
+                    .is_err()
+                {
+                    return Err(Exception::from(load_error(interp, b"internal error")?));
+                }
                 let mut logged_filename = String::new();
                 string::escape_unicode(&mut logged_filename, filename)?;
                 trace!(
@@ -248,25 +223,13 @@ pub fn require(
         let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
         Path::new(&base).join(&file)
     };
-    let is_file = {
-        let api = interp.0.borrow();
-        api.vfs.is_file(path.as_path())
-    };
-    if !is_file {
+    if !interp.0.borrow().vfs.is_file(path.as_path()) {
         return Err(Exception::from(load_error(interp, filename)?));
     }
-    let metadata = {
-        let api = interp.0.borrow();
-        api.vfs.metadata(path.as_path()).unwrap_or_default()
-    };
     // If a file is already required, short circuit.
-    if metadata.is_already_required() {
+    if interp.0.borrow().vfs.is_required(path.as_path()) {
         return Ok(interp.convert(false));
     }
-    // Require Rust File first because an File may define classes
-    // and module with `LoadSources` and Ruby files can require
-    // arbitrary other files, including some child sources that may
-    // depend on these module definitions.
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
@@ -274,33 +237,30 @@ pub fn require(
     // module with `LoadSources` and Ruby files can require arbitrary
     // other files, including some child sources that may depend on these
     // module definitions.
-    if let Some(require) = metadata.require {
+    let hook = interp.0.borrow().vfs.get_extension(path.as_path());
+    if let Some(hook) = hook {
         // dynamic, Rust-backed `File` require
-        if require(interp).is_err() {
+        if let Err(err) = hook(interp) {
             let _ = interp.pop_context();
-            return Err(Exception::from(load_error(interp, filename)?));
+            return Err(err);
         }
     }
     let contents = {
         let api = interp.0.borrow();
-        api.vfs.read_file(path.as_path())
+        api.vfs.read_file(path.as_path()).map(<[_]>::to_vec)
     };
     if let Ok(contents) = contents {
         let _ = interp.eval(contents.as_slice())?;
     }
     let _ = interp.pop_context();
+    if interp
+        .0
+        .borrow_mut()
+        .vfs
+        .mark_required(path.as_path())
+        .is_err()
     {
-        let metadata = metadata.mark_required();
-        let borrow = interp.0.borrow();
-        borrow
-            .vfs
-            .set_metadata(path.as_path(), metadata)
-            .map_err(|_| {
-                Fatal::new(
-                    interp,
-                    "Unable to set require metadata in the Artichoke virtual filesystem",
-                )
-            })?;
+        return Err(Exception::from(load_error(interp, b"internal error")?));
     }
     let mut logged_filename = String::new();
     string::escape_unicode(&mut logged_filename, filename)?;

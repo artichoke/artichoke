@@ -28,7 +28,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .borrow()
         .module_spec::<artichoke::Artichoke>()
         .map(EnclosingRubyScope::module)
-        .ok_or(ArtichokeError::New)?;
+        .ok_or_else(|| NotDefinedError::Module(String::from("Artichoke")))?;
     let spec = module::Spec::new(interp, "Kernel", Some(scope))?;
     module::Builder::for_spec(interp, &spec)
         .add_method("Integer", Kernel::integer, sys::mrb_args_req_and_opt(1, 1))?
@@ -150,7 +150,9 @@ mod tests {
         impl File for TestFile {
             type Artichoke = Artichoke;
 
-            fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
+            type Error = Exception;
+
+            fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
                 let _ = interp.eval(b"@i = 255").unwrap();
                 Ok(())
             }
@@ -222,7 +224,9 @@ mod tests {
         impl File for Foo {
             type Artichoke = Artichoke;
 
-            fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
+            type Error = Exception;
+
+            fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
                 let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();
                 Ok(())
             }
@@ -250,7 +254,9 @@ mod tests {
         impl File for Foo {
             type Artichoke = Artichoke;
 
-            fn require(interp: &mut Artichoke) -> Result<(), ArtichokeError> {
+            type Error = Exception;
+
+            fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
                 let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();
                 Ok(())
             }

@@ -23,33 +23,29 @@ pub const INPUT_RECORD_SEPARATOR: &str = "\n";
 macro_rules! global_const {
     ($interp:expr, $constant:ident) => {{
         let mrb = $interp.0.borrow().mrb;
+        let name = concat!(stringify!($constant), "\0");
+        let value = $interp.convert_mut($constant);
         unsafe {
-            sys::mrb_define_global_const(
-                mrb,
-                concat!(stringify!($constant), "\0").as_ptr() as *const i8,
-                $interp.convert_mut($constant).inner(),
-            );
+            sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
         }
     }};
     ($interp:expr, $constant:ident, $value:expr) => {{
         let mrb = $interp.0.borrow().mrb;
+        let name = concat!(stringify!($constant), "\0");
+        let value = $interp.convert_mut($value);
         unsafe {
-            sys::mrb_define_global_const(
-                mrb,
-                concat!(stringify!($constant), "\0").as_ptr() as *const i8,
-                $interp.convert_mut($value).inner(),
-            );
+            sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
         }
     }};
     ($interp:expr, $constant:ident as Int) => {{
         let mrb = $interp.0.borrow().mrb;
-        let constant = $constant.parse::<Int>().map_err(|_| ArtichokeError::New)?;
+        let constant = $constant
+            .parse::<Int>()
+            .map_err(|_| NotDefinedError::GlobalConstant(String::from(stringify!($constant))))?;
+        let name = concat!(stringify!($constant), "\0");
+        let value = $interp.convert(constant);
         unsafe {
-            sys::mrb_define_global_const(
-                mrb,
-                concat!(stringify!($constant), "\0").as_ptr() as *const i8,
-                $interp.convert(constant).inner(),
-            );
+            sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
         }
     }};
 }

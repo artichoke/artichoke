@@ -6,11 +6,11 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
-use crate::def::{EnclosingRubyScope, Method};
+use crate::def::{ConstantNameError, EnclosingRubyScope, Method, NotDefinedError};
 use crate::method;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, Intern};
+use crate::{Artichoke, Intern};
 
 #[derive(Clone)]
 pub struct Builder<'a> {
@@ -34,7 +34,7 @@ impl<'a> Builder<'a> {
         name: T,
         method: Method,
         args: sys::mrb_aspec,
-    ) -> Result<Self, ArtichokeError>
+    ) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
@@ -48,7 +48,7 @@ impl<'a> Builder<'a> {
         name: T,
         method: Method,
         args: sys::mrb_aspec,
-    ) -> Result<Self, ArtichokeError>
+    ) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
@@ -62,7 +62,7 @@ impl<'a> Builder<'a> {
         name: T,
         method: Method,
         args: sys::mrb_aspec,
-    ) -> Result<Self, ArtichokeError>
+    ) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
@@ -71,14 +71,14 @@ impl<'a> Builder<'a> {
         Ok(self)
     }
 
-    pub fn define(self) -> Result<(), ArtichokeError> {
+    pub fn define(self) -> Result<(), NotDefinedError> {
         let mrb = self.interp.0.borrow().mrb;
         let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
             let mut scope_rclass = scope
                 .rclass(mrb)
-                .ok_or_else(|| ArtichokeError::NotDefined(scope.fqname().into_owned().into()))?;
+                .ok_or_else(|| NotDefinedError::EnclosingScope(scope.fqname().into_owned()))?;
             let rclass = unsafe {
                 sys::mrb_define_module_under(
                     mrb,
@@ -86,18 +86,16 @@ impl<'a> Builder<'a> {
                     self.spec.name_c_str().as_ptr(),
                 )
             };
-            NonNull::new(rclass).ok_or_else(|| {
-                ArtichokeError::NotDefined(self.spec.name.as_ref().to_owned().into())
-            })?
+            NonNull::new(rclass)
+                .ok_or_else(|| NotDefinedError::Module(self.spec.name.as_ref().to_owned()))?
         } else {
             let rclass = unsafe { sys::mrb_define_module(mrb, self.spec.name_c_str().as_ptr()) };
-            NonNull::new(rclass).ok_or_else(|| {
-                ArtichokeError::NotDefined(self.spec.name.as_ref().to_owned().into())
-            })?
+            NonNull::new(rclass)
+                .ok_or_else(|| NotDefinedError::Module(self.spec.name.as_ref().to_owned()))?
         };
         for method in self.methods {
             unsafe {
-                method.define(self.interp, rclass.as_mut())?;
+                method.define(self.interp, rclass.as_mut());
             }
         }
         Ok(())
@@ -117,23 +115,25 @@ impl Spec {
         interp: &mut Artichoke,
         name: T,
         enclosing_scope: Option<EnclosingRubyScope>,
-    ) -> Result<Self, ArtichokeError>
+    ) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        let cstring =
-            CString::new(name.as_ref()).map_err(|_| ArtichokeError::InvalidConstantName)?;
-        let sym = match name {
-            Cow::Borrowed(name) => interp.intern_symbol(name.as_bytes()),
-            Cow::Owned(ref name) => interp.intern_symbol(name.clone().into_bytes()),
-        };
-        Ok(Self {
-            name,
-            cstring,
-            sym,
-            enclosing_scope: enclosing_scope.map(Box::new),
-        })
+        if let Ok(cstring) = CString::new(name.as_ref()) {
+            let sym = match name {
+                Cow::Borrowed(name) => interp.intern_symbol(name.as_bytes()),
+                Cow::Owned(ref name) => interp.intern_symbol(name.clone().into_bytes()),
+            };
+            Ok(Self {
+                name,
+                cstring,
+                sym,
+                enclosing_scope: enclosing_scope.map(Box::new),
+            })
+        } else {
+            Err(ConstantNameError::new(name))
+        }
     }
 
     #[must_use]

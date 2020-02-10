@@ -1,12 +1,15 @@
 //! File-backed Rust extensions for the Artichoke VM.
 
-use crate::ArtichokeError;
+use std::error;
 
 /// Types that implement `File` can be loaded into an interpreter and modify
 /// the VM when `require`d.
 pub trait File {
     /// Concrete type for interpreter.
     type Artichoke;
+
+    /// Concrete error type for eval functions.
+    type Error: error::Error;
 
     /// Called when the filename mapped to this type is required by the VM.
     ///
@@ -20,5 +23,5 @@ pub trait File {
     /// should return an error. Example fallible APIs that might be called on
     /// require include [`Eval::eval`](crate::eval::Eval::eval) and
     /// [`LoadSources::def_rb_source_file`](crate::load::LoadSources::def_rb_source_file).
-    fn require(interp: &mut Self::Artichoke) -> Result<(), ArtichokeError>;
+    fn require(interp: &mut Self::Artichoke) -> Result<(), Self::Error>;
 }

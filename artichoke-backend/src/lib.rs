@@ -32,7 +32,7 @@
 //! ## Virtual Filesystem and `Kernel#require`
 //!
 //! The artichoke-backend `State` embeds an
-//! [in-memory virtual Unix filesystem](/artichoke-vfs). The VFS stores Ruby sources
+//! [in-memory virtual filesystem](fs::Virtual). The VFS stores Ruby sources
 //! that are either pure Ruby, implemented with a Rust `File`, or both.
 //!
 //! artichoke-backend crate implements
@@ -61,8 +61,7 @@
 //!
 //! ## License
 //!
-//! artichoke-backend is licensed with the [MIT License](/LICENSE) (c) Ryan
-//! Lopopolo.
+//! artichoke-backend is licensed with the MIT License (c) Ryan Lopopolo.
 //!
 //! Some portions of artichoke-backend are derived from
 //! [mruby](https://github.com/mruby/mruby) which is Copyright (c) 2019 mruby
@@ -105,6 +104,7 @@ pub mod fs;
 pub mod gc;
 mod intern;
 mod interpreter;
+mod io;
 mod load;
 pub mod method;
 pub mod module;

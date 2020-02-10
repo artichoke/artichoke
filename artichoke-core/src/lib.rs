@@ -19,7 +19,6 @@
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
-use std::io;
 
 pub mod convert;
 pub mod eval;
@@ -33,7 +32,7 @@ pub mod value;
 pub mod warn;
 
 /// Errors returned by Artichoke interpreters.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ArtichokeError {
     /// Failed to convert from a Rust type to a [`Value`](value::Value).
     ConvertToRuby {
@@ -70,20 +69,6 @@ pub enum ArtichokeError {
     UninitializedValue(&'static str),
     /// Eval or funcall returned an interpreter-internal value.
     UnreachableValue,
-    /// [`io::Error`] when interacting with virtual filesystem.
-    ///
-    /// See `artichoke_vfs`.
-    Vfs(io::Error),
-}
-
-impl Eq for ArtichokeError {}
-
-// TODO: remove this impl. I think this is only a kludge for tests.
-impl PartialEq for ArtichokeError {
-    fn eq(&self, other: &Self) -> bool {
-        // this is a hack because io::Error does not impl PartialEq
-        format!("{}", self) == format!("{}", other)
-    }
 }
 
 impl fmt::Display for ArtichokeError {
@@ -110,7 +95,6 @@ impl fmt::Display for ArtichokeError {
                 class
             ),
             Self::UnreachableValue => write!(f, "Extracted unreachable type from interpreter"),
-            Self::Vfs(err) => write!(f, "mrb vfs io error: {}", err),
         }
     }
 }
@@ -121,9 +105,6 @@ impl error::Error for ArtichokeError {
     }
 
     fn cause(&self) -> Option<&dyn error::Error> {
-        match self {
-            Self::Vfs(inner) => Some(inner),
-            _ => None,
-        }
+        None
     }
 }

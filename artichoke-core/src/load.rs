@@ -1,9 +1,9 @@
 //! Load Ruby and Rust sources into the VM.
 
 use std::borrow::Cow;
+use std::error;
 
 use crate::file::File;
-use crate::ArtichokeError;
 
 /// Interpreters that implement [`LoadSources`] expose methods for loading Ruby
 /// and Rust sources into the VM.
@@ -11,6 +11,12 @@ use crate::ArtichokeError;
 pub trait LoadSources {
     /// Concrete type for interpreter.
     type Artichoke;
+
+    /// Concrete type for errors returned from filesystem IO.
+    type Error: error::Error;
+
+    /// Concrete type for errors returned by `File::require`.
+    type Exception: error::Error;
 
     /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
     /// Ruby file is added to the filesystem and [`File::require`] will
@@ -24,9 +30,9 @@ pub trait LoadSources {
     /// # Errors
     ///
     /// If writes to the underlying filesystem fail, an error is returned.
-    fn def_file_for_type<T>(&self, filename: &[u8]) -> Result<(), ArtichokeError>
+    fn def_file_for_type<T>(&mut self, filename: &[u8]) -> Result<(), Self::Error>
     where
-        T: File<Artichoke = Self::Artichoke>;
+        T: File<Artichoke = Self::Artichoke, Error = Self::Exception>;
 
     /// Add a pure Ruby source file to the virtual filesystem.
     ///
@@ -38,7 +44,7 @@ pub trait LoadSources {
     /// # Errors
     ///
     /// If writes to the underlying filesystem fail, an error is returned.
-    fn def_rb_source_file<T>(&self, filename: &[u8], contents: T) -> Result<(), ArtichokeError>
+    fn def_rb_source_file<T>(&mut self, filename: &[u8], contents: T) -> Result<(), Self::Error>
     where
         T: Into<Cow<'static, [u8]>>;
 }

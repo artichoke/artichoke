@@ -4,7 +4,6 @@ use std::ptr::NonNull;
 use std::rc::Rc;
 
 use crate::extn;
-use crate::fs::Filesystem;
 use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
@@ -13,10 +12,9 @@ use crate::{Artichoke, ArtichokeError, BootError, Eval};
 /// Create and initialize an [`Artichoke`] interpreter.
 ///
 /// This function creates a new [`State`], embeds it in the [`sys::mrb_state`],
-/// initializes an [in memory virtual filesystem](Filesystem), and loads the
-/// [`extn`] extensions to Ruby Core and Stdlib.
+/// initializes an [in memory virtual filesystem](crate::fs::Virtual), and loads
+/// the [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, BootError> {
-    let vfs = Filesystem::new()?;
     let mut mrb = if let Some(mrb) = NonNull::new(unsafe { sys::mrb_open() }) {
         mrb
     } else {
@@ -24,7 +22,7 @@ pub fn interpreter() -> Result<Artichoke, BootError> {
         return Err(BootError::from(ArtichokeError::New));
     };
 
-    let state = State::new(unsafe { mrb.as_mut() }, vfs).ok_or(ArtichokeError::New)?;
+    let state = State::new(unsafe { mrb.as_mut() }).ok_or(ArtichokeError::New)?;
     let api = Rc::new(RefCell::new(state));
 
     // Transmute the smart pointer that wraps the API and store it in the user

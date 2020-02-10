@@ -6,7 +6,7 @@ use std::mem;
 use std::ptr::{self, NonNull};
 
 use crate::class;
-use crate::fs::Filesystem;
+use crate::fs;
 use crate::module;
 use crate::sys::{self, DescribeState};
 
@@ -14,14 +14,14 @@ pub mod parser;
 #[cfg(feature = "artichoke-random")]
 pub mod prng;
 
-// NOTE: ArtichokeState assumes that it it is stored in `mrb_state->ud` wrapped in a
+// NOTE: `State` assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
 pub struct State {
     pub mrb: *mut sys::mrb_state,
     pub parser: parser::State,
     classes: HashMap<TypeId, Box<class::Spec>>,
     modules: HashMap<TypeId, Box<module::Spec>>,
-    pub vfs: Filesystem,
+    pub vfs: fs::Virtual,
     pub active_regexp_globals: usize,
     captured_output: Option<Vec<u8>>,
     #[cfg(feature = "artichoke-random")]
@@ -29,17 +29,25 @@ pub struct State {
 }
 
 impl State {
-    /// Create a new [`State`] from a [`sys::mrb_state`] and
-    /// [`sys::mrbc_context`] with an
-    /// [in memory virtual filesystem](Filesystem).
-    pub fn new(mrb: &mut sys::mrb_state, vfs: Filesystem) -> Option<Self> {
+    /// Create a new [`State`] from a [`sys::mrb_state`].
+    ///
+    /// The state is comprised of several components:
+    ///
+    /// - `Class` and `Module` registries.
+    /// - `Regexp` global state.
+    /// - [In memory virtual filesystem](fs::Virtual).
+    /// - Ruby parser and file context.
+    /// - [Intepreter-level PRNG](prng::Prng) (behind the `artichoke-random`
+    ///   feature).
+    /// - IO capturing strategy.
+    pub fn new(mrb: &mut sys::mrb_state) -> Option<Self> {
         let parser = parser::State::new(mrb)?;
         let state = Self {
             mrb,
             parser,
             classes: HashMap::default(),
             modules: HashMap::default(),
-            vfs,
+            vfs: fs::Virtual::new(),
             active_regexp_globals: 0,
             captured_output: None,
             #[cfg(feature = "artichoke-random")]
