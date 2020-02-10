@@ -4,8 +4,7 @@
 #![doc(deny(warnings))]
 
 //! `spec-runner` is a wrapper around MSpec and ruby/spec that works with the
-//! Artichoke
-//! [virtual filesystem](https://artichoke.github.io/artichoke/artichoke_vfs/).
+//! Artichoke virtual filesystem.
 //!
 //! `spec-runner` is invokable directly by passing paths to spec files as command
 //! line arguments. `spec-runner` is sensitive to CWD relative to the specs it
