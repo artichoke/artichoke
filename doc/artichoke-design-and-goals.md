@@ -20,19 +20,23 @@ are:
 
 ## Core
 
-The traits in
-[Artichoke core](https://artichoke.github.io/artichoke/artichoke_core/) define:
+`artichoke-core` contains traits for the core set of APIs an interpreter must
+implement. The traits in
+[`artichoke-core`](https://artichoke.github.io/artichoke/artichoke_core/)
+define:
 
-- Capabilities of a VM backend.
-- Capabilities of a
+- APIs a concrete VM must implement to support the Artichoke runtime and
+  frontends.
+- How to box polymorphic core types into
   [Ruby `Value`](https://artichoke.github.io/artichoke/artichoke_core/value/trait.Value.html).
-- Interoperability between the VM backend and the Rust-implemented core.
+- [Interoperability](https://artichoke.github.io/artichoke/artichoke_core/convert/index.html)
+  between the VM backend and the Rust-implemented core.
 
-Example capabilities a Ruby implementation must provide include
+Some of the core APIs a Ruby implementation must provide are
 [evaluating code](https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html),
-[declaring classes and modules](https://artichoke.github.io/artichoke/artichoke_core/def/trait.DeclareClassLike.html),
+[converting Rust data structures to boxed `Value`s on the interpreter heap](https://artichoke.github.io/artichoke/artichoke_core/convert/trait.ConvertMut.html),
 and
-[exposing _top self_](https://artichoke.github.io/artichoke/artichoke_core/top_self/trait.TopSelf.html).
+[interning `Symbol`s](https://artichoke.github.io/artichoke/artichoke_core/intern/trait.Intern.html).
 
 ### Runtime
 
@@ -51,7 +55,7 @@ Artichoke core will support embedding with:
 - Multiple
   [filesystem backends](https://github.com/artichoke/artichoke/labels/A-filesystem),
   including an in-memory
-  [virtual filesystem](https://artichoke.github.io/artichoke/artichoke_vfs/).
+  [virtual filesystem](https://artichoke.github.io/artichoke/artichoke_backend/fs/index.html).
 - Multiple [`ENV` backends](/artichoke-backend/src/extn/core/env), including an
   in-memory `HashMap` backend.
 - Optional C dependencies via multiple implementations of Core classes, e.g.
@@ -102,7 +106,7 @@ Artichoke will include `ruby` and `irb`
 with dynamically selectable VM backends.
 
 Artichoke will produce a
-[WebAssembly frontend](https://github.com/artichoke/artichoke/labels/A-cross-build).
+[WebAssembly frontend](https://github.com/artichoke/artichoke/labels/A-build-target).
 
 Artichoke will include implementation-agnostic
 [C APIs](https://github.com/artichoke/artichoke/labels/A-C-API) targeting:
