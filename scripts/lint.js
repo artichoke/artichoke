@@ -299,30 +299,23 @@ async function clippyLinter() {
 
 async function rustDocBuilder() {
   try {
-    const toolchainContents = await fs.readFile("rustdoc-toolchain");
-    const toolchain = toolchainContents.toString().trim();
-    const toolchainCode = await execAsync("rustup", [
-      "toolchain",
-      "install",
-      toolchain
+    const toolchain = (await fs.readFile("rustdoc-toolchain"))
+      .toString()
+      .trim();
+    const code = await execAsync("rustup", [
+      "run",
+      "--install",
+      toolchain,
+      "cargo",
+      "doc",
+      "--no-deps",
+      "--all"
     ]);
-    if (toolchainCode === 0) {
-      const code = await execAsync("cargo", [
-        `+${toolchain}`,
-        "doc",
-        "--no-deps",
-        "--all"
-      ]);
-      if (code === 0) {
-        return Promise.resolve(STATUS.ok);
-      }
-      console.error("KO: cargo doc");
-      return Promise.resolve(STATUS.failed);
+    if (code === 0) {
+      return Promise.resolve(STATUS.ok);
     }
-    console.error(
-      `KO: cargo doc [unable to install rustdoc toolchain ${toolchain}]`
-    );
-    return Promise.reject(toolchainCode);
+    console.error("KO: cargo doc");
+    return Promise.reject(code);
   } catch (err) {
     return Promise.reject(err);
   }
