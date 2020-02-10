@@ -6,7 +6,7 @@
 <br>
 [![Frontend documentation](https://img.shields.io/badge/docs-artichoke--frontend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_frontend/)
 
-Crate artichoke-frontend provides binaries for interacting with the Ruby
+`artichoke-frontend` crate provides binaries for interacting with the Ruby
 interpreter implemented in the [artichoke-backend](/artichoke-backend).
 
 ## `airb`
