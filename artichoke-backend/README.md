@@ -6,19 +6,19 @@
 <br>
 [![Backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
 
-artichoke-backend crate provides a Ruby interpreter. It currently is implemented
-with [mruby](https://github.com/mruby/mruby) bindings exported by the
-[`sys`](src/sys) module.
+`artichoke-backend` crate provides a Ruby interpreter. It currently is
+implemented with [mruby](https://github.com/mruby/mruby) bindings exported by
+the [`sys`](src/sys) module.
 
 ## Execute Ruby Code
 
-artichoke-backend crate exposes several mechanisms for executing Ruby code on
+`artichoke-backend` crate exposes several mechanisms for executing Ruby code on
 the interpreter.
 
 ### Evaling Source Code
 
-artichoke-backend crate exposes eval on the `State` with the `Eval` trait. Side
-effects from eval are persisted across invocations.
+The `artichoke-backend` interpreter implements
+[`Eval` from `artichoke-core`](https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html).
 
 ```rust
 use artichoke_backend::{Eval, ValueLike};
@@ -27,27 +27,45 @@ let mut interp = artichoke_backend::interpreter().unwrap();
 let result = interp.eval(b"10 * 10").unwrap();
 let result = result.try_into::<i64>();
 assert_eq!(result, Ok(100));
+let result = result.try_into::<i64>().unwrap();
+assert_eq!(result, 100);
+```
+
+### Calling Functions on Ruby Objects
+
+`Value`s returned by the `artichoke-backend` interpreter implement
+[`Value` from `artichoke-core`](https://artichoke.github.io/artichoke/artichoke_core/value/trait.Value.html),
+which enables calling Ruby functions from Rust.
+
+```rust
+use artichoke_backend::{Eval, ValueLike};
+
+let mut interp = artichoke_backend::interpreter().unwrap();
+let result = interp.eval(b"'ruby funcall'").unwrap();
+let result = result.funcall::<usize>("length", &[], None).unwrap();
+assert_eq!(result, 12);
 ```
 
 ## Virtual Filesystem and `Kernel#require`
 
-The artichoke-backend `State` embeds an in-memory virtual filesystem. The VFS
-stores Ruby sources that are either pure Ruby, implemented with a Rust `File`,
-or both.
+The `artichoke-backend` interpreter includes an in-memory virtual filesystem.
+The filesystem stores Ruby sources and Rust extension functions that are similar
+to MRI C extensions.
 
-artichoke-backend crate implements
-[`Kernel#require` and `Kernel#require_relative`](src/extn/core/kernel) which
-loads sources from the VFS. For Ruby sources, the source is loaded from the VFS
-as a `Vec<u8>` and evaled with `Eval::eval_with_context`. For Rust sources,
-`File::require` methods are stored as custom metadata on `File` nodes in the
-VFS.
+The virtual filesystem enables applications built with `artichoke-backend` to
+`require` sources that are embedded in the binary without host filesystem
+access.
 
 ## Embed Rust Types in Ruby `Value`s
 
-Rust types that implement `RustBackedValue` can be injected into the interpreter
-as the backend for a Ruby object.
+`artichoke-backend` exposes a concept similar to `data`-typed values in MRI and
+mruby.
 
-Examples of `RustBackedValues` include:
+When Rust types implement a special trait, they can be embedded in a Ruby
+`Value` and passed through the Ruby VM as a Ruby object. Classes defined in this
+way can define methods in Rust or Ruby.
+
+Examples of these types include:
 
 - `Regexp` and `MatchData`, which are backed by regular expressions from the
   `onig` and `regex` crates.
@@ -57,7 +75,7 @@ Examples of `RustBackedValues` include:
 
 The [`convert` module](src/convert) provides implementations for conversions
 between boxed Ruby values and native Rust types like `i64` and
-`HashMap<String, Option<Vec<u8>>>` using an `Artichoke` interpreter.
+`HashMap<String, Option<Vec<u8>>>` using an `artichoke-backend` interpreter.
 
 ## License
 
