@@ -5,7 +5,7 @@ use std::fmt;
 use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType};
 use crate::extn::prelude::*;
 
-use super::{HashOfStringToArrayOfInt, NilableString};
+use super::{NameToCaptureLocations, NilableString};
 
 pub struct Lazy {
     literal: Config,
@@ -163,7 +163,7 @@ impl RegexpType for Lazy {
         self.regexp(interp)?.inner().match_operator(interp, pattern)
     }
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<HashOfStringToArrayOfInt, Exception> {
+    fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception> {
         self.regexp(interp)?.inner().named_captures(interp)
     }
 
