@@ -187,6 +187,6 @@ end.join
             Vec::from(&b"/src/lib/thread.rb:122:in initialize"[..]),
             Vec::from(&b"(eval):2"[..]),
         ];
-        assert_eq!(Some(expected_backtrace), err.backtrace(&interp));
+        assert_eq!(Some(expected_backtrace), err.vm_backtrace(&interp));
     }
 }

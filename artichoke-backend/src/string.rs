@@ -57,6 +57,7 @@ where
 pub struct WriteError(fmt::Error);
 
 impl WriteError {
+    #[must_use]
     pub fn into_inner(self) -> fmt::Error {
         self.0
     }

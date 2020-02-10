@@ -368,7 +368,8 @@ macro_rules! ruby_exception_impl {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let classname = self.name();
                 write!(f, "{} (", classname)?;
-                string::escape_unicode(f, self.message()).map_err(|err| err.into_inner())?;
+                string::escape_unicode(f, self.message())
+                    .map_err(string::WriteError::into_inner)?;
                 write!(f, ")")
             }
         }
@@ -380,7 +381,8 @@ macro_rules! ruby_exception_impl {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let classname = self.name();
                 write!(f, "{} (", classname)?;
-                string::escape_unicode(f, self.message()).map_err(|err| err.into_inner())?;
+                string::escape_unicode(f, self.message())
+                    .map_err(string::WriteError::into_inner)?;
                 write!(f, ")")
             }
         }
@@ -466,7 +468,7 @@ mod tests {
         assert_eq!(Vec::from(&b"something went wrong"[..]), err.message());
         assert_eq!(
             Some(vec![Vec::from(&b"(eval):1"[..])]),
-            err.backtrace(&interp)
+            err.vm_backtrace(&interp)
         );
     }
 }

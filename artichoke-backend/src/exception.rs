@@ -155,7 +155,7 @@ impl fmt::Display for CaughtException {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let classname = self.name();
         write!(f, "{} (", classname)?;
-        string::escape_unicode(f, self.message()).map_err(|err| err.into_inner())?;
+        string::escape_unicode(f, self.message()).map_err(string::WriteError::into_inner)?;
         write!(f, ")")
     }
 }
