@@ -1,9 +1,13 @@
 //! Types that implement `Value` can be represented in the Artichoke VM.
 
+use std::error;
+
 use crate::convert::TryConvert;
 use crate::ArtichokeError;
 
-/// A value in the Artichoke VM, equivalent to an `RValue` in MRI.
+/// A boxed Ruby value owned by the interpreter.
+///
+/// `Value` is equivalent to an `RValue` in MRI or `mrb_value` in mruby.
 pub trait Value
 where
     Self: Sized,
@@ -18,7 +22,7 @@ where
     type Block;
 
     /// Concrete error type for funcall errors.
-    type Error: std::error::Error;
+    type Error: error::Error;
 
     /// Call a method on this [`Value`] with arguments and an optional block.
     ///

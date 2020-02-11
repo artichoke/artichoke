@@ -1,12 +1,14 @@
-//! Intern symbols on an Artichoke interpreter.
+//! Intern [`Symbol`][symbol]s on an interpreter.
 //!
-//! Symbols are immutable byte vectors that have the same lifetime as the
+//! `Symbol`s are immutable byte vectors that have the same lifetime as the
 //! interpreter.
+//!
+//! [symbol]: https://ruby-doc.org/core-2.6.3/Symbol.html
 
 use std::borrow::Cow;
 
-/// Interpreters that implement [`Intern`] expose methods for storing and
-/// retrieving byte content that lives for the life of the interpreter.
+/// Store and retrieve byte vectors that have the same lifetime as the
+/// interpreter.
 ///
 /// See the [Ruby `Symbol` type][symbol].
 ///
@@ -15,7 +17,7 @@ pub trait Intern {
     /// Concrete type for symbol identifiers.
     ///
     /// The symbol identifier enables lookups in the underlying storage.
-    type Symbol;
+    type Symbol: Copy;
 
     /// Store an immutable byte vector for the life of the interpreter.
     ///

@@ -1,16 +1,17 @@
-//! Emit warnings during VM execution.
+//! Emit warnings during interpreter execution.
 
-/// Interpreters that implement [`Warn`] expose methods for emitting warnings
-/// during execution.
+use std::error;
+
+/// Emit warnings during interpreter execution to stderr.
 ///
-/// Some functionality required to be compliant with ruby-spec is deprecated or
-/// invalid behavior and ruby-spec expects a warning to be emitted to `$stderr`
-/// using the
-/// [`Warning`](https://ruby-doc.org/core-2.6.3/Warning.html#method-i-warn)
-/// module from the standard library.
+/// Some functionality required to be compliant with ruby/spec is deprecated or
+/// invalid behavior and ruby/spec expects a warning to be emitted to `$stderr`
+/// using the [`Warning`][warningmod] module from the standard library.
+///
+/// [warningmod]: https://ruby-doc.org/core-2.6.3/Warning.html#method-i-warn
 pub trait Warn {
     /// Concrete error type for errors encountered when outputting warnings.
-    type Error: std::error::Error;
+    type Error: error::Error;
 
     /// Emit a warning message using `Warning#warn`.
     ///
