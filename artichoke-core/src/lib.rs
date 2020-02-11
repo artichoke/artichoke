@@ -64,10 +64,6 @@ pub enum ArtichokeError {
         /// Destination type of conversion.
         to: types::Rust,
     },
-    /// Constant name is invalid for the VM backend.
-    ///
-    /// For example, if the name contains a NUL byte, or is invalid UTF-8.
-    InvalidConstantName,
     /// Class or module with this name is not defined in the artichoke VM.
     NotDefined(Cow<'static, str>),
     /// Arg count exceeds maximum allowed by the VM.
@@ -94,7 +90,6 @@ impl fmt::Display for ArtichokeError {
             Self::ConvertToRust { from, to } => {
                 write!(f, "Failed to convert from {} to {}", from, to)
             }
-            Self::InvalidConstantName => write!(f, "Invalid constant name"),
             Self::NotDefined(fqname) => write!(f, "{} not defined", fqname),
             Self::TooManyArgs { given, max } => write!(
                 f,
