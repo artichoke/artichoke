@@ -14,8 +14,8 @@
 //! If resident memory increases more than 10MB during the test, we likely are
 //! leaking memory.
 
-use artichoke_backend::convert::ConvertMut;
 use artichoke_backend::gc::MrbGarbageCollection;
+use artichoke_backend::ConvertMut;
 use artichoke_backend::ValueLike as _;
 
 mod leak;

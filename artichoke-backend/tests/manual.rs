@@ -6,13 +6,13 @@
 extern crate artichoke_backend;
 
 use artichoke_backend::class;
-use artichoke_backend::convert::{Convert, RustBackedValue};
+use artichoke_backend::convert::RustBackedValue;
 use artichoke_backend::def;
 use artichoke_backend::exception::Exception;
 use artichoke_backend::sys;
 use artichoke_backend::types::Int;
 use artichoke_backend::value::Value;
-use artichoke_backend::{Artichoke, Eval, File, LoadSources, ValueLike};
+use artichoke_backend::{Artichoke, Convert, Eval, File, LoadSources, ValueLike};
 
 #[derive(Clone, Debug, Default)]
 struct Container {

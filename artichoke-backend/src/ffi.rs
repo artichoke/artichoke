@@ -11,12 +11,11 @@ use std::mem;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
-use crate::convert::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::ArgumentError;
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, ConvertMut};
 
 #[cfg(unix)]
 mod unix;

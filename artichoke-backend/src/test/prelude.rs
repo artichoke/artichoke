@@ -7,7 +7,7 @@
 //! ```
 
 pub use crate::class;
-pub use crate::convert::{Convert, ConvertMut, RustBackedValue, TryConvert, TryConvertMut};
+pub use crate::convert::RustBackedValue;
 pub use crate::def::{self, EnclosingRubyScope};
 pub use crate::exception::{self, Exception, RubyException};
 pub use crate::extn::core::exception::*;
@@ -18,5 +18,6 @@ pub use crate::sys;
 pub use crate::types::{Float, Int, Ruby, Rust};
 pub use crate::value::{Block, Value};
 pub use crate::{
-    Artichoke, ArtichokeError, BootError, Eval, File, LoadSources, Parser, ValueLike, Warn,
+    Artichoke, ArtichokeError, BootError, Convert, ConvertMut, Eval, File, LoadSources, Parser,
+    TryConvert, TryConvertMut, ValueLike, Warn,
 };

@@ -2,11 +2,10 @@ use std::error;
 use std::fmt;
 use std::io;
 
-use crate::convert::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception;
 use crate::sys;
-use crate::Artichoke;
+use crate::{Artichoke, ConvertMut};
 
 #[derive(Debug)]
 pub struct IOError {

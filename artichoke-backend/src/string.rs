@@ -10,11 +10,10 @@ use bstr::ByteSlice;
 use std::error;
 use std::fmt;
 
-use crate::convert::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::sys;
-use crate::Artichoke;
+use crate::{Artichoke, ConvertMut};
 
 /// Write a UTF-8 representation of a (potentially) binary `String`.
 ///

@@ -1,11 +1,10 @@
 use std::io::{self, Write};
 
-use crate::convert::ConvertMut;
 use crate::def::NotDefinedError;
 use crate::exception::Exception;
 use crate::extn::core::warning::Warning;
 use crate::value::Value;
-use crate::{Artichoke, ValueLike, Warn};
+use crate::{Artichoke, ConvertMut, ValueLike, Warn};
 
 impl Warn for Artichoke {
     type Error = Exception;

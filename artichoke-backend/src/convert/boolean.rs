@@ -1,8 +1,7 @@
-use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, Convert, TryConvert};
 
 impl Convert<bool, Value> for Artichoke {
     fn convert(&self, value: bool) -> Value {

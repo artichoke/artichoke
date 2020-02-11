@@ -2,11 +2,10 @@ use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::slice;
 
-use crate::convert::{ConvertMut, TryConvert};
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, ConvertMut, TryConvert};
 
 impl ConvertMut<Vec<u8>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<u8>) -> Value {

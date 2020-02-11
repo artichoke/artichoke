@@ -1,11 +1,10 @@
 //! Converters for nilable primitive Ruby types. Excludes collection types
 //! Array and Hash.
 
-use crate::convert::{Convert, ConvertMut, TryConvert};
 use crate::sys;
 use crate::types::{Int, Ruby};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, Convert, ConvertMut, TryConvert};
 
 impl Convert<Option<Value>, Value> for Artichoke {
     fn convert(&self, value: Option<Value>) -> Value {
