@@ -1,4 +1,4 @@
-//! Artichoke Ruby and Rust type mappings.
+//! Ruby and Rust type mappings.
 
 use std::fmt;
 

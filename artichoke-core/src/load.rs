@@ -5,8 +5,7 @@ use std::error;
 
 use crate::file::File;
 
-/// Interpreters that implement [`LoadSources`] expose methods for loading Ruby
-/// and Rust sources into the VM.
+/// Load Ruby sources and Rust extensions into an interpreter.
 #[allow(clippy::module_name_repetitions)]
 pub trait LoadSources {
     /// Concrete type for interpreter.
@@ -18,9 +17,9 @@ pub trait LoadSources {
     /// Concrete type for errors returned by `File::require`.
     type Exception: error::Error;
 
-    /// Add a Rust-backed Ruby source file to the virtual filesystem. A stub
-    /// Ruby file is added to the filesystem and [`File::require`] will
-    /// dynamically define Ruby items when invoked via `Kernel#require`.
+    /// Add a Rust extension hook to the virtual filesystem. A stub Ruby file is
+    /// added to the filesystem and [`File::require`] will dynamically define
+    /// Ruby items when invoked via `Kernel#require`.
     ///
     /// If filename is a relative path, the Ruby source is added to the
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
@@ -34,7 +33,7 @@ pub trait LoadSources {
     where
         T: File<Artichoke = Self::Artichoke, Error = Self::Exception>;
 
-    /// Add a pure Ruby source file to the virtual filesystem.
+    /// Add a Ruby source to the virtual filesystem.
     ///
     /// If filename is a relative path, the Ruby source is added to the
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the

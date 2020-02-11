@@ -5,12 +5,7 @@ use std::ffi::OsStr;
 
 use crate::value::Value;
 
-/// Interpreters that implement [`Eval`] expose methods for injecting code and
-/// extracting [`Value`]s from the interpereter.
-///
-/// Implementations are expected to maintain a stack of `Context` objects
-/// that maintain filename context across nested invocations of
-/// [`Eval::eval`].
+/// Execute code and retrieve its result.
 pub trait Eval {
     /// Concrete type for return values from eval.
     type Value: Value;

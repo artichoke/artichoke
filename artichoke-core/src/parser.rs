@@ -3,8 +3,7 @@
 use std::error;
 use std::fmt;
 
-/// Interpreters that implement [`Parser`] expose methods for manipulating parser
-/// state, active filename context, and line number metadata.
+/// Manage parser state, active filename context, and line number metadata.
 ///
 /// Parsers maintain a stack of `Context`s which are modified as successive
 /// sources are parsed, for example as a set of nested `require`s.
