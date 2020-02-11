@@ -32,7 +32,6 @@
 //!
 //! artichoke-core is licensed with the MIT License (c) Ryan Lopopolo.
 
-use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
@@ -64,8 +63,6 @@ pub enum ArtichokeError {
         /// Destination type of conversion.
         to: types::Rust,
     },
-    /// Class or module with this name is not defined in the artichoke VM.
-    NotDefined(Cow<'static, str>),
     /// Arg count exceeds maximum allowed by the VM.
     TooManyArgs {
         /// Number of arguments supplied.
@@ -75,8 +72,6 @@ pub enum ArtichokeError {
     },
     /// Attempted to use an uninitialized interpreter.
     Uninitialized,
-    /// Attempted to extract Rust object from uninitialized `Value`.
-    UninitializedValue(&'static str),
     /// Eval or funcall returned an interpreter-internal value.
     UnreachableValue,
 }
@@ -90,18 +85,12 @@ impl fmt::Display for ArtichokeError {
             Self::ConvertToRust { from, to } => {
                 write!(f, "Failed to convert from {} to {}", from, to)
             }
-            Self::NotDefined(fqname) => write!(f, "{} not defined", fqname),
             Self::TooManyArgs { given, max } => write!(
                 f,
                 "Too many args for funcall. Gave {}, but max is {}",
                 given, max
             ),
             Self::Uninitialized => write!(f, "Interpreter not initialized"),
-            Self::UninitializedValue(class) => write!(
-                f,
-                "Attempted to extract pointer from uninitialized Value with class {}",
-                class
-            ),
             Self::UnreachableValue => write!(f, "Extracted unreachable type from interpreter"),
         }
     }

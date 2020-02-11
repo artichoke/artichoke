@@ -18,18 +18,14 @@ impl RustBackedValue for Environ {
 #[cfg(feature = "artichoke-system-environ")]
 pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
     let obj = Environ(Box::new(backend::system::System::new()));
-    let result = obj
-        .try_into_ruby(&interp, into)
-        .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby ENV with Rust ENV"))?;
+    let result = obj.try_into_ruby(&interp, into)?;
     Ok(result)
 }
 
 #[cfg(not(feature = "artichoke-system-environ"))]
 pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
     let obj = Environ(Box::new(backend::memory::Memory::new()));
-    let result = obj
-        .try_into_ruby(&interp, into)
-        .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby ENV with Rust ENV"))?;
+    let result = obj.try_into_ruby(&interp, into)?;
     Ok(result)
 }
 
@@ -38,8 +34,7 @@ pub fn element_reference(
     obj: Value,
     name: &Value,
 ) -> Result<Value, Exception> {
-    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
-        .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
+    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
     let ruby_type = name.pretty_name();
     let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
         name
@@ -62,8 +57,7 @@ pub fn element_assignment(
     name: &Value,
     value: Value,
 ) -> Result<Value, Exception> {
-    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
-        .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
+    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
     let name_type_name = name.pretty_name();
     let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
         name
@@ -92,8 +86,7 @@ pub fn element_assignment(
 }
 
 pub fn to_h(interp: &mut Artichoke, obj: Value) -> Result<Value, Exception> {
-    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }
-        .map_err(|_| Fatal::new(interp, "Unable to extract Rust ENV from Ruby ENV receiver"))?;
+    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
     let result = obj.borrow().0.as_map(interp)?;
     Ok(interp.convert_mut(result))
 }

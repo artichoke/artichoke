@@ -146,7 +146,12 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 Ok(borrow.as_vec(self))
             }
@@ -165,7 +170,12 @@ impl TryConvert<Value, Vec<Vec<u8>>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
@@ -189,7 +199,12 @@ impl TryConvert<Value, Vec<Option<Vec<u8>>>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
@@ -213,7 +228,12 @@ impl<'a> TryConvert<Value, Vec<&'a [u8]>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
@@ -237,7 +257,12 @@ impl<'a> TryConvert<Value, Vec<Option<&'a [u8]>>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
@@ -261,7 +286,12 @@ impl TryConvert<Value, Vec<String>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
@@ -285,7 +315,12 @@ impl TryConvert<Value, Vec<Option<String>>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
@@ -309,7 +344,12 @@ impl<'a> TryConvert<Value, Vec<&'a str>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
@@ -333,7 +373,12 @@ impl<'a> TryConvert<Value, Vec<Option<&'a str>>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
@@ -357,7 +402,12 @@ impl TryConvert<Value, Vec<Int>> for Artichoke {
                 unreachable!("mrb_array implementation is obsoleted by extn::core::array")
             }
             Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value)? };
+                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Object,
+                        to: Rust::Vec,
+                    }
+                })?;
                 let borrow = array.borrow();
                 let array = borrow.as_vec(self);
                 let mut buf = Vec::with_capacity(array.len());
