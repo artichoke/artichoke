@@ -1,14 +1,13 @@
 use std::fmt;
 use std::ptr;
 
-use crate::convert::{Convert, ConvertMut, TryConvert};
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::{Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
-use crate::{Artichoke, ArtichokeError, Intern, ValueLike};
+use crate::{Artichoke, ArtichokeError, Convert, ConvertMut, Intern, TryConvert, ValueLike};
 
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;

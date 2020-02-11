@@ -1,8 +1,7 @@
-use crate::convert::{ConvertMut, TryConvert};
 use crate::sys;
 use crate::types::{Float, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, ConvertMut, TryConvert};
 
 // TODO: when ,mruby is gone, float conversion should not allocate.
 impl ConvertMut<Float, Value> for Artichoke {

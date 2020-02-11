@@ -1,10 +1,9 @@
 use std::convert::TryFrom;
 
-use crate::convert::{Convert, TryConvert};
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, Convert, TryConvert};
 
 impl Convert<u8, Value> for Artichoke {
     fn convert(&self, value: u8) -> Value {

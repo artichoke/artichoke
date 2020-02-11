@@ -7,7 +7,7 @@
 //! ```
 
 pub use crate::class;
-pub use crate::convert::{Convert, ConvertMut, RustBackedValue, TryConvert, TryConvertMut};
+pub use crate::convert::RustBackedValue;
 pub use crate::def::{self, EnclosingRubyScope, NotDefinedError};
 pub use crate::exception::{self, Exception, RubyException};
 pub use crate::extn::core::exception::*;
@@ -16,7 +16,10 @@ pub use crate::string;
 pub use crate::sys;
 pub use crate::types::{Float, Int, Ruby};
 pub use crate::value::{Block, Value};
-pub use crate::{Artichoke, ArtichokeError, Eval, Intern, LoadSources, ValueLike, Warn};
+pub use crate::{
+    Artichoke, ArtichokeError, Convert, ConvertMut, Eval, Intern, LoadSources, TryConvert,
+    TryConvertMut, ValueLike, Warn,
+};
 
 /// Type alias for errors returned from `init` functions in
 /// [`extn`](crate::extn).

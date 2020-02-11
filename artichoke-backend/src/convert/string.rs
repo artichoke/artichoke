@@ -1,9 +1,8 @@
 use std::str;
 
-use crate::convert::{ConvertMut, TryConvert};
 use crate::types::Rust;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::{Artichoke, ArtichokeError, ConvertMut, TryConvert};
 
 impl ConvertMut<String, Value> for Artichoke {
     fn convert_mut(&mut self, value: String) -> Value {

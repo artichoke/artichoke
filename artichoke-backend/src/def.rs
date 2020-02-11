@@ -8,13 +8,12 @@ use std::ptr::NonNull;
 use std::rc::Rc;
 
 use crate::class;
-use crate::convert::ConvertMut;
 use crate::convert::RustBackedValue;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::{NameError, ScriptError};
 use crate::module;
 use crate::sys;
-use crate::Artichoke;
+use crate::{Artichoke, ConvertMut};
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
