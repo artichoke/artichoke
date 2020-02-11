@@ -113,15 +113,16 @@ checksum = "b41b7ea54a0c9d92199de89e20e58d49f02f8e699814ef3fdf266f6f748d15c7"
 
 [[package]]
 name = "bindgen"
-version = "0.51.1"
+version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebd71393f1ec0509b553aa012b9b58e81dadbdff7130bd3b8cba576e69b32f75"
+checksum = "99de13bb6361e01e493b3db7928085dcc474b7ba4f5481818e53a89d76b8393f"
 dependencies = [
  "bitflags",
  "cexpr",
  "cfg-if",
  "clang-sys",
  "lazy_static",
+ "lazycell",
  "peeking_take_while",
  "proc-macro2",
  "quote",
@@ -376,6 +377,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
+name = "lazycell"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b294d6fa9ee409a054354afc4352b0b9ef7ca222c69b8812cbea9e7d2bf3783f"
+
+[[package]]
 name = "libc"
 version = "0.2.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -476,7 +483,7 @@ checksum = "b1c601810575c99596d4afc46f78a678c80105117c379eb3650cf99b8a21ce5b"
 [[package]]
 name = "onig"
 version = "5.0.0"
-source = "git+https://github.com/artichoke/rust-onig?rev=952305049073f37ada5543536c4c58540ea3642b#952305049073f37ada5543536c4c58540ea3642b"
+source = "git+https://github.com/artichoke/rust-onig?rev=11bc679d45b6799df2866cb4c90e1d542c4ba4c0#11bc679d45b6799df2866cb4c90e1d542c4ba4c0"
 dependencies = [
  "bitflags",
  "lazy_static",
@@ -487,7 +494,7 @@ dependencies = [
 [[package]]
 name = "onig_sys"
 version = "69.2.0"
-source = "git+https://github.com/artichoke/rust-onig?rev=952305049073f37ada5543536c4c58540ea3642b#952305049073f37ada5543536c4c58540ea3642b"
+source = "git+https://github.com/artichoke/rust-onig?rev=11bc679d45b6799df2866cb4c90e1d542c4ba4c0#11bc679d45b6799df2866cb4c90e1d542c4ba4c0"
 dependencies = [
  "bindgen",
  "cc",
