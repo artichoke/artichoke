@@ -302,7 +302,8 @@ mod libmruby {
             // work around warnings caused by cargo doc interpreting Ruby doc blocks
             // as Rust code.
             // See: https://github.com/rust-lang/rust-bindgen/issues/426
-            .generate_comments(false);
+            .generate_comments(false)
+            .size_t_is_usize(true);
         if let Architecture::Wasm32 = target.architecture {
             bindgen = bindgen
                 .clang_arg(format!("-I{}", wasm_include_dir().to_str().unwrap()))
