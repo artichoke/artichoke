@@ -74,6 +74,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
 }
 
 #[derive(Debug, Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct InterpreterAllocError;
 
 impl fmt::Display for InterpreterAllocError {
