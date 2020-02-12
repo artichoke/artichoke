@@ -4,19 +4,12 @@ use crate::extn::prelude::*;
 
 pub fn now(interp: &Artichoke) -> Result<Value, Exception> {
     let now = Time(time::factory().now(interp));
-    let result = now
-        .try_into_ruby(&interp, None)
-        .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Time with Rust Time"))?;
+    let result = now.try_into_ruby(&interp, None)?;
     Ok(result)
 }
 
 pub fn day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let day = time.borrow().inner().day();
     let result = interp
         .try_convert(day)
@@ -25,12 +18,7 @@ pub fn day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
 }
 
 pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let hour = time.borrow().inner().hour();
     let result = interp
         .try_convert(hour)
@@ -39,12 +27,7 @@ pub fn hour(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
 }
 
 pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let minute = time.borrow().inner().minute();
     let result = interp
         .try_convert(minute)
@@ -53,12 +36,7 @@ pub fn minute(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
 }
 
 pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let month = time.borrow().inner().month();
     let result = interp
         .try_convert(month)
@@ -67,12 +45,7 @@ pub fn month(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
 }
 
 pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let nanosecond = time.borrow().inner().nanosecond();
     let result = interp
         .try_convert(nanosecond)
@@ -81,12 +54,7 @@ pub fn nanosecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
 }
 
 pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let second = time.borrow().inner().second();
     let result = interp
         .try_convert(second)
@@ -95,12 +63,7 @@ pub fn second(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
 }
 
 pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let microsecond = time.borrow().inner().microsecond();
     let result = interp
         .try_convert(microsecond)
@@ -109,12 +72,7 @@ pub fn microsecond(interp: &Artichoke, time: Value) -> Result<Value, Exception> 
 }
 
 pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let weekday = time.borrow().inner().weekday();
     let result = interp
         .try_convert(weekday)
@@ -123,12 +81,7 @@ pub fn weekday(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
 }
 
 pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let year_day = time.borrow().inner().year_day();
     let result = interp
         .try_convert(year_day)
@@ -137,12 +90,7 @@ pub fn year_day(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
 }
 
 pub fn year(interp: &Artichoke, time: Value) -> Result<Value, Exception> {
-    let time = unsafe { Time::try_from_ruby(interp, &time) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust Time from Ruby Time receiver",
-        )
-    })?;
+    let time = unsafe { Time::try_from_ruby(interp, &time) }?;
     let year = time.borrow().inner().year();
     let result = interp
         .try_convert(year)

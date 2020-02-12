@@ -104,9 +104,7 @@ impl Array {
             InlineBuffer::default()
         };
         let result = Self(result);
-        let result = result
-            .try_into_ruby(interp, Some(into.inner()))
-            .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array"))?;
+        let result = result.try_into_ruby(interp, Some(into.inner()))?;
         Ok(result)
     }
 
@@ -137,9 +135,7 @@ impl Array {
         if let Some(len) = len {
             let result = self.0.slice(interp, start, len)?;
             let result = Self(result);
-            let result = result.try_into_ruby(interp, None).map_err(|_| {
-                Fatal::new(interp, "Unable to initialize Ruby Array from Rust Array")
-            })?;
+            let result = result.try_into_ruby(interp, None)?;
             Ok(result)
         } else {
             let result = self.0.get(interp, start)?;

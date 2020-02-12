@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::convert::RustBackedValue;
-use crate::extn::core::array;
+use crate::extn::core::array::Array;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
@@ -80,8 +80,13 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
                 let keys = unsafe { sys::mrb_hash_keys(mrb, hash) };
 
                 let keys = Value::new(self, keys);
-                let ary = unsafe { array::Array::try_from_ruby(self, &keys) }?;
-                let borrow = ary.borrow();
+                let array = unsafe { Array::try_from_ruby(self, &keys) }.map_err(|_| {
+                    ArtichokeError::ConvertToRust {
+                        from: Ruby::Hash,
+                        to: Rust::Map,
+                    }
+                })?;
+                let borrow = array.borrow();
 
                 let pairs = borrow
                     .as_vec(self)

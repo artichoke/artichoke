@@ -47,42 +47,24 @@ pub fn initialize(
     } else {
         Random(backend::rand::new(None))
     };
-    let result = rand
-        .try_into_ruby(&interp, into)
-        .map_err(|_| Fatal::new(interp, "Unable to initialize Ruby Random with Rust Random"))?;
+    let result = rand.try_into_ruby(&interp, into)?;
     Ok(result)
 }
 
 pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Exception> {
-    if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
-        if let Ok(other) = unsafe { Random::try_from_ruby(interp, &other) } {
-            if ptr::eq(rand.as_ref(), other.as_ref()) {
-                Ok(interp.convert(true))
-            } else {
-                let this_seed = rand.borrow().inner().seed(interp);
-                let other_seed = other.borrow().inner().seed(interp);
-                Ok(interp.convert(this_seed == other_seed))
-            }
-        } else {
-            Ok(interp.convert(false))
-        }
+    let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
+    let other = unsafe { Random::try_from_ruby(interp, &other) }?;
+    if ptr::eq(rand.as_ref(), other.as_ref()) {
+        Ok(interp.convert(true))
     } else {
-        Err(Exception::from(Fatal::new(
-            interp,
-            "Failed to extract Rust Random from Ruby Random receiver",
-        )))
+        let this_seed = rand.borrow().inner().seed(interp);
+        let other_seed = other.borrow().inner().seed(interp);
+        Ok(interp.convert(this_seed == other_seed))
     }
 }
 
 pub fn bytes(interp: &mut Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
-    let rand = if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
-        rand
-    } else {
-        return Err(Exception::from(Fatal::new(
-            interp,
-            "Failed to extract Rust Random from Ruby Random receiver",
-        )));
-    };
+    let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
     let size = size.implicitly_convert_to_int()?;
     if let Ok(size) = usize::try_from(size) {
         let mut buf = vec![0; size];
@@ -104,14 +86,7 @@ pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<V
         Int(Int),
         None,
     }
-    let rand = if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
-        rand
-    } else {
-        return Err(Exception::from(Fatal::new(
-            interp,
-            "Failed to extract Rust Random from Ruby Random receiver",
-        )));
-    };
+    let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
     let max = if let Some(max) = max {
         if let Ok(max) = max.clone().try_into::<Int>() {
             Max::Int(max)
@@ -156,17 +131,11 @@ pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<V
 }
 
 pub fn seed(interp: &Artichoke, rand: Value) -> Result<Value, Exception> {
-    if let Ok(rand) = unsafe { Random::try_from_ruby(interp, &rand) } {
-        let borrow = rand.borrow();
-        let seed = borrow.inner().seed(interp);
-        #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
-        Ok(interp.convert(seed as Int))
-    } else {
-        Err(Exception::from(Fatal::new(
-            interp,
-            "Failed to extract Rust Random from Ruby Random receiver",
-        )))
-    }
+    let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
+    let borrow = rand.borrow();
+    let seed = borrow.inner().seed(interp);
+    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
+    Ok(interp.convert(seed as Int))
 }
 
 pub fn new_seed(interp: &Artichoke) -> Result<Value, Exception> {
@@ -176,7 +145,6 @@ pub fn new_seed(interp: &Artichoke) -> Result<Value, Exception> {
 }
 
 pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Exception> {
-    let _ = number;
     let new_seed = if let Some(number) = number {
         let new_seed = number.implicitly_convert_to_int()?;
         #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]

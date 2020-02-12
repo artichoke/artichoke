@@ -4,10 +4,13 @@ use std::mem;
 use std::ptr;
 use std::rc::Rc;
 
+use crate::def::NotDefinedError;
+use crate::exception::Exception;
+use crate::extn::core::exception::TypeError;
 use crate::sys;
-use crate::types::{Ruby, Rust};
+use crate::types::Ruby;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError};
+use crate::Artichoke;
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].
 ///
@@ -40,15 +43,12 @@ where
         self,
         interp: &Artichoke,
         slf: Option<sys::mrb_value>,
-    ) -> Result<Value, ArtichokeError> {
+    ) -> Result<Value, Exception> {
         let borrow = interp.0.borrow();
         let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
-            .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                from: Rust::Object,
-                to: Ruby::Object,
-            })?;
+            .ok_or_else(|| NotDefinedError::Class(String::from(Self::ruby_type_name())))?;
         let data = Rc::new(RefCell::new(self));
         let ptr = Rc::into_raw(data);
         let obj = if let Some(mut slf) = slf {
@@ -59,10 +59,7 @@ where
         } else {
             let mut rclass = spec
                 .rclass(mrb)
-                .ok_or_else(|| ArtichokeError::ConvertToRuby {
-                    from: Rust::Object,
-                    to: Ruby::Object,
-                })?;
+                .ok_or_else(|| NotDefinedError::Class(String::from(Self::ruby_type_name())))?;
             unsafe {
                 let alloc = sys::mrb_data_object_alloc(
                     mrb,
@@ -96,37 +93,40 @@ where
     unsafe fn try_from_ruby(
         interp: &Artichoke,
         slf: &Value,
-    ) -> Result<Rc<RefCell<Self>>, ArtichokeError> {
+    ) -> Result<Rc<RefCell<Self>>, Exception> {
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
-            return Err(ArtichokeError::ConvertToRust {
-                from: slf.ruby_type(),
-                to: Rust::Object,
-            });
+            return Err(Exception::from(TypeError::new(
+                interp,
+                format!("uninitialized {}", Self::ruby_type_name()),
+            )));
         }
         let borrow = interp.0.borrow();
         let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
-            .ok_or_else(|| ArtichokeError::NotDefined(Self::ruby_type_name().into()))?;
+            .ok_or_else(|| NotDefinedError::Class(String::from(Self::ruby_type_name())))?;
         // Sanity check that the RClass matches.
         let mut rclass = spec
             .rclass(mrb)
-            .ok_or_else(|| ArtichokeError::NotDefined(Self::ruby_type_name().into()))?;
+            .ok_or_else(|| NotDefinedError::Class(String::from(Self::ruby_type_name())))?;
         if !ptr::eq(
             sys::mrb_sys_class_of_value(mrb, slf.inner()),
             rclass.as_mut(),
         ) {
-            return Err(ArtichokeError::ConvertToRust {
-                from: slf.ruby_type(),
-                to: Rust::Object,
-            });
+            return Err(Exception::from(TypeError::new(
+                interp,
+                format!("Could not extract {} from receiver", Self::ruby_type_name()),
+            )));
         }
         let ptr = sys::mrb_data_check_get_ptr(mrb, slf.inner(), spec.data_type());
         if ptr.is_null() {
             // `Object#allocate` can be used to create `MRB_TT_DATA` without calling
             // `#initialize`. These objects will return a NULL pointer.
-            return Err(ArtichokeError::UninitializedValue(Self::ruby_type_name()));
+            return Err(Exception::from(TypeError::new(
+                interp,
+                format!("uninitialized {}", Self::ruby_type_name()),
+            )));
         }
         let data = Rc::from_raw(ptr as *const RefCell<Self>);
         let value = Rc::clone(&data);

@@ -25,12 +25,7 @@ impl<'a> Args<'a> {
 }
 
 pub fn method(interp: &Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
-    let data = unsafe { MatchData::try_from_ruby(interp, value) }.map_err(|_| {
-        Fatal::new(
-            interp,
-            "Unable to extract Rust MatchData from Ruby MatchData receiver",
-        )
-    })?;
+    let data = unsafe { MatchData::try_from_ruby(interp, value) }?;
     let borrow = data.borrow();
     let haystack = &borrow.string[borrow.region.start..borrow.region.end];
     let index = match args {

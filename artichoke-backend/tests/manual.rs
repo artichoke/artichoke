@@ -33,12 +33,10 @@ impl Container {
         let inner = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
         let inner = Value::new(&interp, inner);
-        inner
-            .try_into::<Int>()
-            .and_then(|inner| {
-                let container = Box::new(Self { inner });
-                container.try_into_ruby(&interp, Some(slf))
-            })
+        let inner = inner.try_into::<Int>().unwrap_or_default();
+        let container = Box::new(Self { inner });
+        container
+            .try_into_ruby(&interp, Some(slf))
             .unwrap_or_else(|_| interp.convert(None::<Value>))
             .inner()
     }
