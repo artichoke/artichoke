@@ -9,7 +9,7 @@ use ansi_term::Style;
 use artichoke_backend::exception::{Exception, RubyException};
 use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::state::parser::Context;
-use artichoke_backend::{Artichoke, BootError, Eval, Parser as _, ValueLike};
+use artichoke_backend::{Artichoke, Eval, Parser as _, ValueLike};
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::io::{self, Write};
@@ -40,8 +40,6 @@ pub enum Error {
     ReplInit,
     /// Unrecoverable [`Parser`] error.
     ReplParse(parser::Error),
-    /// Error during Artichoke interpreter initialization.
-    Artichoke(BootError),
     /// Exception thrown by eval.
     Ruby(Exception),
     /// IO error when writing to output or error streams.
@@ -51,12 +49,6 @@ pub enum Error {
 impl From<parser::Error> for Error {
     fn from(err: parser::Error) -> Self {
         Self::ReplParse(err)
-    }
-}
-
-impl From<BootError> for Error {
-    fn from(err: BootError) -> Self {
-        Self::Artichoke(err)
     }
 }
 
@@ -94,14 +86,10 @@ impl Default for PromptConfig {
 }
 
 fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
-    let description = interp
-        .eval(b"RUBY_DESCRIPTION")?
-        .try_into::<&str>()
-        .map_err(BootError::from)?;
+    let description = interp.eval(b"RUBY_DESCRIPTION")?.try_into::<&str>()?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")?
-        .try_into::<&str>()
-        .map_err(BootError::from)?;
+        .try_into::<&str>()?;
     let mut buf = String::new();
     buf.push_str(description);
     buf.push('\n');

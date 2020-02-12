@@ -18,6 +18,6 @@ pub use crate::sys;
 pub use crate::types::{Float, Int, Ruby, Rust};
 pub use crate::value::{Block, Value};
 pub use crate::{
-    Artichoke, ArtichokeError, BootError, Convert, ConvertMut, Eval, File, LoadSources, Parser,
-    TryConvert, TryConvertMut, ValueLike, Warn,
+    Artichoke, Convert, ConvertMut, Eval, File, LoadSources, Parser, TryConvert, TryConvertMut,
+    ValueLike, Warn,
 };
