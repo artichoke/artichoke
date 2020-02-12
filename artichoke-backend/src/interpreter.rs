@@ -73,7 +73,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     Ok(interp)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 #[allow(clippy::module_name_repetitions)]
 pub struct InterpreterAllocError;
 
@@ -87,7 +87,7 @@ impl error::Error for InterpreterAllocError {}
 
 impl RubyException for InterpreterAllocError {
     fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(self.clone())
+        Box::new(*self)
     }
 
     fn message(&self) -> &[u8] {

@@ -63,9 +63,6 @@ pub enum ArtichokeError {
         /// Destination type of conversion.
         to: types::Rust,
     },
-    /// Arg count exceeds maximum allowed by the VM.
-    /// Attempted to use an uninitialized interpreter.
-    Uninitialized,
 }
 
 impl fmt::Display for ArtichokeError {
@@ -77,7 +74,6 @@ impl fmt::Display for ArtichokeError {
             Self::ConvertToRust { from, to } => {
                 write!(f, "Failed to convert from {} to {}", from, to)
             }
-            Self::Uninitialized => write!(f, "Interpreter not initialized"),
         }
     }
 }
