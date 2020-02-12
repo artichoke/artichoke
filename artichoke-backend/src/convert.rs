@@ -62,6 +62,7 @@ pub struct UnboxRubyError {
 }
 
 impl UnboxRubyError {
+    #[must_use]
     pub fn new(value: &Value, into: Rust) -> Self {
         Self {
             from: value.ruby_type(),
@@ -139,6 +140,7 @@ pub struct BoxIntoRubyError {
 }
 
 impl BoxIntoRubyError {
+    #[must_use]
     pub fn new(from: Rust, into: Ruby) -> Self {
         Self { from, into }
     }
