@@ -64,12 +64,6 @@ pub enum ArtichokeError {
         to: types::Rust,
     },
     /// Arg count exceeds maximum allowed by the VM.
-    TooManyArgs {
-        /// Number of arguments supplied.
-        given: usize,
-        /// Maximum number of arguments supported.
-        max: usize,
-    },
     /// Attempted to use an uninitialized interpreter.
     Uninitialized,
     /// Eval or funcall returned an interpreter-internal value.
@@ -85,11 +79,6 @@ impl fmt::Display for ArtichokeError {
             Self::ConvertToRust { from, to } => {
                 write!(f, "Failed to convert from {} to {}", from, to)
             }
-            Self::TooManyArgs { given, max } => write!(
-                f,
-                "Too many args for funcall. Gave {}, but max is {}",
-                given, max
-            ),
             Self::Uninitialized => write!(f, "Interpreter not initialized"),
             Self::UnreachableValue => write!(f, "Extracted unreachable type from interpreter"),
         }
