@@ -6,7 +6,7 @@ use crate::extn::core::exception::TypeError;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ConvertMut};
+use crate::{Artichoke, Convert, ConvertMut, TryConvert, TryConvertMut};
 
 mod array;
 mod boolean;
@@ -19,6 +19,40 @@ mod object;
 mod string;
 
 pub use object::RustBackedValue;
+
+/// Provide a fallible converter for types that implement an infallible
+/// conversion.
+impl<T, U> TryConvert<T, U> for Artichoke
+where
+    Artichoke: Convert<T, U>,
+{
+    // TODO: this should be the never type.
+    // https://github.com/rust-lang/rust/issues/35121
+    type Error = Exception;
+
+    /// Blanket implementation that always succeeds by delegating to
+    /// [`Convert::convert`].
+    fn try_convert(&self, value: T) -> Result<U, Self::Error> {
+        Ok(Convert::convert(self, value))
+    }
+}
+
+/// Provide a mutable fallible converter for types that implement an infallible
+/// conversion.
+impl<T, U> TryConvertMut<T, U> for Artichoke
+where
+    Artichoke: ConvertMut<T, U>,
+{
+    // TODO: this should be the never type.
+    // https://github.com/rust-lang/rust/issues/35121
+    type Error = Exception;
+
+    /// Blanket implementation that always succeeds by delegating to
+    /// [`Convert::convert`].
+    fn try_convert_mut(&mut self, value: T) -> Result<U, Self::Error> {
+        Ok(ConvertMut::convert_mut(self, value))
+    }
+}
 
 /// Failed to convert from boxed Ruby value to a Rust type.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
