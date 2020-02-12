@@ -38,12 +38,8 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").expect("eval");
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Object,
-            to: Rust::Float,
-        });
         let result = value.try_into::<Float>();
-        assert_eq!(result, expected);
+        assert!(result.is_err());
     }
 
     #[quickcheck]
@@ -75,10 +71,6 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
         let value = value.try_into::<Float>();
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Bool,
-            to: Rust::Float,
-        });
-        value == expected
+        value.is_err()
     }
 }
