@@ -3,7 +3,7 @@
 use std::fmt;
 
 /// Classes of Rust types.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Rust {
     /// Rust `bool` type.
     Bool,
@@ -33,12 +33,23 @@ pub enum Rust {
 
 impl fmt::Display for Rust {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "Rust ")?;
+        match self {
+            Self::Bool => write!(f, "bool"),
+            Self::Bytes => write!(f, "Vec<u8>"),
+            Self::Float => write!(f, "f64"),
+            Self::Map => write!(f, "HashMap"),
+            Self::Object => write!(f, "RustBackedValue"),
+            Self::SignedInt => write!(f, "i64"),
+            Self::String => write!(f, "String"),
+            Self::UnsignedInt => write!(f, "u64"),
+            Self::Vec => write!(f, "Vec<Value>"),
+        }
     }
 }
 
 /// Classes of Ruby types.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Ruby {
     /// Ruby `Array` type.
     Array,
