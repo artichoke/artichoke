@@ -1,7 +1,9 @@
+use crate::convert::UnboxRubyError;
+use crate::exception::Exception;
 use crate::sys;
 use crate::types::{Float, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, ConvertMut, TryConvert};
+use crate::{Artichoke, ConvertMut, TryConvert};
 
 // TODO: when ,mruby is gone, float conversion should not allocate.
 impl ConvertMut<Float, Value> for Artichoke {
@@ -13,16 +15,14 @@ impl ConvertMut<Float, Value> for Artichoke {
 }
 
 impl TryConvert<Value, Float> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Float, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Float => {
-                let value = value.inner();
-                Ok(unsafe { sys::mrb_sys_float_to_cdouble(value) })
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Float,
-            }),
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Float, Self::Error> {
+        if let Ruby::Float = value.ruby_type() {
+            let value = value.inner();
+            Ok(unsafe { sys::mrb_sys_float_to_cdouble(value) })
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Float)))
         }
     }
 }

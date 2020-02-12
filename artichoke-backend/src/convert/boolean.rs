@@ -1,7 +1,9 @@
+use crate::convert::UnboxRubyError;
+use crate::exception::Exception;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, Convert, TryConvert};
+use crate::{Artichoke, Convert, TryConvert};
 
 impl Convert<bool, Value> for Artichoke {
     fn convert(&self, value: bool) -> Value {
@@ -14,26 +16,22 @@ impl Convert<bool, Value> for Artichoke {
 }
 
 impl TryConvert<Value, bool> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<bool, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Bool => {
-                let value = value.inner();
-                if unsafe { sys::mrb_sys_value_is_true(value) } {
-                    Ok(true)
-                } else if unsafe { sys::mrb_sys_value_is_false(value) } {
-                    Ok(false)
-                } else {
-                    // This should be unreachable
-                    Err(ArtichokeError::ConvertToRust {
-                        from: Ruby::Bool,
-                        to: Rust::Bool,
-                    })
-                }
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<bool, Self::Error> {
+        if let Ruby::Bool = value.ruby_type() {
+            let inner = value.inner();
+            if unsafe { sys::mrb_sys_value_is_true(inner) } {
+                Ok(true)
+            } else if unsafe { sys::mrb_sys_value_is_false(inner) } {
+                Ok(false)
+            } else {
+                // This branch is unreachable because `MRB_TT_BOOL` typed values
+                // are guaranteed to be either true or false.
+                Err(Exception::from(UnboxRubyError::new(&value, Rust::Bool)))
             }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Bool,
-            }),
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Bool)))
         }
     }
 }
