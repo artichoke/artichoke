@@ -66,8 +66,6 @@ pub enum ArtichokeError {
     /// Arg count exceeds maximum allowed by the VM.
     /// Attempted to use an uninitialized interpreter.
     Uninitialized,
-    /// Eval or funcall returned an interpreter-internal value.
-    UnreachableValue,
 }
 
 impl fmt::Display for ArtichokeError {
@@ -80,7 +78,6 @@ impl fmt::Display for ArtichokeError {
                 write!(f, "Failed to convert from {} to {}", from, to)
             }
             Self::Uninitialized => write!(f, "Interpreter not initialized"),
-            Self::UnreachableValue => write!(f, "Extracted unreachable type from interpreter"),
         }
     }
 }

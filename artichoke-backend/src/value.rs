@@ -60,15 +60,16 @@ impl Value {
         }
     }
 
+    /// Whether a value is an interpreter-only variant not exposed to Ruby.
+    ///
     /// Some type tags like [`MRB_TT_UNDEF`](sys::mrb_vtype::MRB_TT_UNDEF) are
     /// internal to the mruby VM and manipulating them with the [`sys`] API is
     /// unspecified and may result in a segfault.
     ///
     /// After extracting a [`sys::mrb_value`] from the interpreter, check to see
-    /// if the value is [unreachable](Ruby::Unreachable) and propagate an
-    /// [`ArtichokeError::UnreachableValue`](crate::ArtichokeError::UnreachableValue) error.
+    /// if the value is [unreachable](Ruby::Unreachable) a [`Fatal`] exception.
     ///
-    /// See: <https://github.com/mruby/mruby/issues/4460>
+    /// See: [mruby GH-4460](https://github.com/mruby/mruby/issues/4460).
     #[must_use]
     pub fn is_unreachable(&self) -> bool {
         self.ruby_type() == Ruby::Unreachable
