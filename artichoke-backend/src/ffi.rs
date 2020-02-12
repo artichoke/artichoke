@@ -12,10 +12,10 @@ use std::ptr::NonNull;
 use std::rc::Rc;
 
 use crate::exception::{Exception, RubyException};
-use crate::extn::core::exception::ArgumentError;
+use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::state::State;
 use crate::sys::{self, DescribeState};
-use crate::{Artichoke, ArtichokeError, ConvertMut};
+use crate::{Artichoke, ConvertMut};
 
 #[cfg(unix)]
 mod unix;
@@ -42,18 +42,20 @@ use windows as imp;
 /// This function assumes that the user data pointer was created with
 /// [`Rc::into_raw`] and that the pointer is to a non-free'd
 /// [`Rc`]`<`[`RefCell`]`<`[`State`]`>>`.
-pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, ArtichokeError> {
+pub unsafe fn from_user_data(
+    mrb: *mut sys::mrb_state,
+) -> Result<Artichoke, InterpreterExtractError> {
     let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
         mrb
     } else {
         error!("Attempted to extract Artichoke from null mrb_state");
-        return Err(ArtichokeError::Uninitialized);
+        return Err(InterpreterExtractError);
     };
     let state = if let Some(state) = NonNull::new(mrb.as_mut().ud) {
         state.cast::<RefCell<State>>()
     } else {
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
-        return Err(ArtichokeError::Uninitialized);
+        return Err(InterpreterExtractError);
     };
     // Extract the smart pointer that wraps the API from the user data on
     // the mrb interpreter. The `mrb_state` should retain ownership of its
@@ -72,6 +74,74 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, Arti
         mrb.debug()
     );
     Ok(Artichoke(api))
+}
+
+/// Failed to extract Artichoke interpreter at an FFI boundary.
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct InterpreterExtractError;
+
+impl fmt::Display for InterpreterExtractError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Failed to extract Artichoke Ruby interpreter from mrb_state userdata"
+        )
+    }
+}
+
+impl error::Error for InterpreterExtractError {}
+
+impl RubyException for InterpreterExtractError {
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        Box::new(*self)
+    }
+
+    fn message(&self) -> &[u8] {
+        &b"Failed to extract Artichoke Ruby interpreter from mrb_state"[..]
+    }
+
+    fn name(&self) -> String {
+        String::from("fatal")
+    }
+
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.message());
+        let borrow = interp.0.borrow();
+        let spec = borrow.class_spec::<Fatal>()?;
+        let value = spec.new_instance(interp, &[message])?;
+        Some(value.inner())
+    }
+}
+
+impl From<InterpreterExtractError> for Exception {
+    fn from(exception: InterpreterExtractError) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<Box<InterpreterExtractError>> for Exception {
+    fn from(exception: Box<InterpreterExtractError>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<InterpreterExtractError> for Box<dyn RubyException> {
+    fn from(exception: InterpreterExtractError) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<Box<InterpreterExtractError>> for Box<dyn RubyException> {
+    fn from(exception: Box<InterpreterExtractError>) -> Box<dyn RubyException> {
+        exception
+    }
 }
 
 /// Convert a byte slice to a platform-specific [`OsStr`].
@@ -126,15 +196,29 @@ impl RubyException for ConvertBytesError {
     }
 }
 
-impl From<ConvertBytesError> for Box<dyn RubyException> {
-    fn from(err: ConvertBytesError) -> Self {
-        Box::new(err)
+impl From<ConvertBytesError> for Exception {
+    fn from(exception: ConvertBytesError) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<ConvertBytesError> for Exception {
-    fn from(err: ConvertBytesError) -> Self {
-        Exception::from(Box::<dyn RubyException>::from(err))
+impl From<Box<ConvertBytesError>> for Exception {
+    fn from(exception: Box<ConvertBytesError>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<ConvertBytesError> for Box<dyn RubyException> {
+    fn from(exception: ConvertBytesError) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<Box<ConvertBytesError>> for Box<dyn RubyException> {
+    fn from(exception: Box<ConvertBytesError>) -> Box<dyn RubyException> {
+        exception
     }
 }
 
@@ -143,12 +227,12 @@ mod tests {
     use std::ptr;
     use std::rc::Rc;
 
-    use crate::ArtichokeError;
+    use crate::ffi::InterpreterExtractError;
 
     #[test]
     fn from_user_data_null_pointer() {
         let err = unsafe { super::from_user_data(ptr::null_mut()) };
-        assert_eq!(err.err(), Some(ArtichokeError::Uninitialized));
+        assert_eq!(err.err(), Some(InterpreterExtractError));
     }
 
     #[test]
@@ -160,7 +244,7 @@ mod tests {
             (*mrb).ud = ptr::null_mut();
         }
         let err = unsafe { super::from_user_data(mrb) };
-        assert_eq!(err.err(), Some(ArtichokeError::Uninitialized));
+        assert_eq!(err.err(), Some(InterpreterExtractError));
     }
 
     #[test]
