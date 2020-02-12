@@ -227,12 +227,12 @@ mod tests {
     use std::ptr;
     use std::rc::Rc;
 
-    use crate::ArtichokeError;
+    use crate::ffi::InterpreterExtractError;
 
     #[test]
     fn from_user_data_null_pointer() {
         let err = unsafe { super::from_user_data(ptr::null_mut()) };
-        assert_eq!(err.err(), Some(ArtichokeError::Uninitialized));
+        assert_eq!(err.err(), Some(InterpreterExtractError));
     }
 
     #[test]
@@ -244,7 +244,7 @@ mod tests {
             (*mrb).ud = ptr::null_mut();
         }
         let err = unsafe { super::from_user_data(mrb) };
-        assert_eq!(err.err(), Some(ArtichokeError::Uninitialized));
+        assert_eq!(err.err(), Some(InterpreterExtractError));
     }
 
     #[test]
