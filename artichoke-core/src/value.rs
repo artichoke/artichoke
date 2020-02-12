@@ -3,7 +3,6 @@
 use std::error;
 
 use crate::convert::TryConvert;
-use crate::ArtichokeError;
 
 /// A boxed Ruby value owned by the interpreter.
 ///
@@ -38,7 +37,7 @@ where
         block: Option<Self::Block>,
     ) -> Result<T, Self::Error>
     where
-        Self::Artichoke: TryConvert<Self, T>;
+        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>;
 
     /// Consume `self` and try to convert `self` to type `T`.
     ///
@@ -47,21 +46,9 @@ where
     /// # Errors
     ///
     /// If a [`TryConvert`] conversion fails, then an error is returned.
-    fn try_into<T>(self) -> Result<T, ArtichokeError>
+    fn try_into<T>(self) -> Result<T, Self::Error>
     where
-        Self::Artichoke: TryConvert<Self, T>;
-
-    /// Call `#itself` on this [`Value`] and try to convert the result to type
-    /// `T`.
-    ///
-    /// If you want to consume this [`Value`], use [`Value::try_into`].
-    ///
-    /// # Errors
-    ///
-    /// If a [`TryConvert`] conversion fails, then an error is returned.
-    fn itself<T>(&self) -> Result<T, ArtichokeError>
-    where
-        Self::Artichoke: TryConvert<Self, T>;
+        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>;
 
     /// Call `#freeze` on this [`Value`].
     ///

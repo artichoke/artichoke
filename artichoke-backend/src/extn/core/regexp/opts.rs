@@ -79,19 +79,19 @@ pub fn parse(value: &Value) -> Options {
     // Regexp::EXTENDED, Regexp::IGNORECASE, and Regexp::MULTILINE, logically
     // or-ed together. Otherwise, if options is not nil or false, the regexp
     // will be case insensitive.
-    if let Ok(options) = value.itself::<Int>() {
+    if let Ok(options) = value.clone().try_into::<Int>() {
         Options {
             multiline: options & regexp::MULTILINE > 0,
             ignore_case: options & regexp::IGNORECASE > 0,
             extended: options & regexp::EXTENDED > 0,
             literal: options & regexp::LITERAL > 0,
         }
-    } else if let Ok(options) = value.itself::<Option<bool>>() {
+    } else if let Ok(options) = value.clone().try_into::<Option<bool>>() {
         match options {
             Some(false) | None => Options::default(),
             _ => Options::ignore_case(),
         }
-    } else if let Ok(options) = value.itself::<Option<&str>>() {
+    } else if let Ok(options) = value.clone().try_into::<Option<&str>>() {
         if let Some(options) = options {
             Options {
                 multiline: options.contains('m'),
