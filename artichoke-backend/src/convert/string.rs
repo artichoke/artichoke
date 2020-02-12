@@ -1,8 +1,10 @@
 use std::str;
 
+use crate::convert::UnboxRubyError;
+use crate::exception::Exception;
 use crate::types::Rust;
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, ConvertMut, TryConvert};
+use crate::{Artichoke, ConvertMut, TryConvert};
 
 impl ConvertMut<String, Value> for Artichoke {
     fn convert_mut(&mut self, value: String) -> Value {
@@ -21,26 +23,23 @@ impl ConvertMut<&str, Value> for Artichoke {
 }
 
 impl TryConvert<Value, String> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<String, ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<String, Self::Error> {
         TryConvert::<_, &str>::try_convert(self, value).map(String::from)
     }
 }
 
 impl<'a> TryConvert<Value, &'a str> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<&'a str, ArtichokeError> {
-        let type_tag = value.ruby_type();
-        self.try_convert(value)
-            .ok()
-            .and_then(|bytes| {
-                // This converter requires that the bytes be valid UTF-8 data.
-                // If the `Value` contains binary data, use the `Vec<u8>` or
-                // `&[u8]` converter.
-                str::from_utf8(bytes).ok()
-            })
-            .ok_or(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::String,
-            })
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<&'a str, Self::Error> {
+        let err = UnboxRubyError::new(&value, Rust::String);
+        let bytes = self.try_convert(value)?;
+        // This converter requires that the bytes be valid UTF-8 data. If the
+        // `Value` contains binary data, use the `Vec<u8>` or `&[u8]` converter.
+        let string = str::from_utf8(bytes).map_err(|_| err)?;
+        Ok(string)
     }
 }
 
@@ -58,12 +57,8 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").expect("eval");
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Object,
-            to: Rust::String,
-        });
         let result = value.try_into::<String>();
-        assert_eq!(result, expected);
+        assert!(result.is_err());
     }
 
     #[allow(clippy::needless_pass_by_value)]
@@ -100,12 +95,8 @@ mod tests {
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
-        let value = value.try_into::<String>();
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Bool,
-            to: Rust::String,
-        });
-        value == expected
+        let result = value.try_into::<String>();
+        result.is_err()
     }
 
     #[test]

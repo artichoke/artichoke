@@ -64,7 +64,7 @@ impl PartialEq for Encoding {
 impl Eq for Encoding {}
 
 pub fn parse(value: &Value) -> Result<Encoding, Error> {
-    if let Ok(encoding) = value.itself::<Int>() {
+    if let Ok(encoding) = value.clone().try_into::<Int>() {
         // Only deal with Encoding opts
         let encoding = encoding & !regexp::ALL_REGEXP_OPTS;
         if encoding == regexp::FIXEDENCODING {
@@ -76,7 +76,7 @@ pub fn parse(value: &Value) -> Result<Encoding, Error> {
         } else {
             Err(Error::InvalidEncoding)
         }
-    } else if let Ok(encoding) = value.itself::<&str>() {
+    } else if let Ok(encoding) = value.clone().try_into::<&str>() {
         if encoding.contains('u') && encoding.contains('n') {
             return Err(Error::InvalidEncoding);
         }

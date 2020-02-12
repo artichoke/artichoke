@@ -11,9 +11,7 @@ use crate::gc::MrbGarbageCollection;
 unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     let result = Array(InlineBuffer::default());
-    let result = result
-        .try_into_ruby(&interp, None)
-        .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
+    let result = result.try_into_ruby(&interp, None);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -30,9 +28,7 @@ unsafe extern "C" fn artichoke_ary_new_capa(
     let result = Array(InlineBuffer::with_capacity(
         usize::try_from(capa).unwrap_or_default(),
     ));
-    let result = result
-        .try_into_ruby(&interp, None)
-        .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
+    let result = result.try_into_ruby(&interp, None);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -51,9 +47,7 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
     let values = slice::from_raw_parts(vals, size);
     let result = InlineBuffer::from(values);
     let result = Array(result);
-    let result = result
-        .try_into_ruby(&interp, None)
-        .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
+    let result = result.try_into_ruby(&interp, None);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(value.inner());
@@ -77,9 +71,7 @@ unsafe extern "C" fn artichoke_ary_splat(
     }
     let result = InlineBuffer::from(vec![value.inner()]);
     let result = Array(result);
-    let result = result
-        .try_into_ruby(&interp, None)
-        .map_err(|_| Fatal::new(&interp, "Unable to initialize Ruby Array from Rust Array"));
+    let result = result.try_into_ruby(&interp, None);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

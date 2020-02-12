@@ -1,10 +1,11 @@
 use std::iter::FromIterator;
 
-use crate::convert::RustBackedValue;
+use crate::convert::{RustBackedValue, UnboxRubyError};
+use crate::exception::Exception;
 use crate::extn::core::array::{Array, InlineBuffer};
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, Convert, ConvertMut, TryConvert};
+use crate::{Artichoke, Convert, ConvertMut, TryConvert};
 
 impl ConvertMut<&[Value], Value> for Artichoke {
     fn convert_mut(&mut self, value: &[Value]) -> Value {
@@ -140,286 +141,186 @@ impl ConvertMut<Vec<Vec<Option<&str>>>, Value> for Artichoke {
 }
 
 impl TryConvert<Value, Vec<Value>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<Value>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
-            }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                Ok(borrow.as_vec(self))
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<Value>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            Ok(borrow.as_vec(self))
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl TryConvert<Value, Vec<Vec<u8>>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<Vec<u8>>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<Vec<u8>>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl TryConvert<Value, Vec<Option<Vec<u8>>>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<Option<Vec<u8>>>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<Option<Vec<u8>>>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl<'a> TryConvert<Value, Vec<&'a [u8]>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<&'a [u8]>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<&'a [u8]>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl<'a> TryConvert<Value, Vec<Option<&'a [u8]>>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<Option<&'a [u8]>>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<Option<&'a [u8]>>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl TryConvert<Value, Vec<String>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<String>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<String>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl TryConvert<Value, Vec<Option<String>>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<Option<String>>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<Option<String>>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl<'a> TryConvert<Value, Vec<&'a str>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<&'a str>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<&'a str>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl<'a> TryConvert<Value, Vec<Option<&'a str>>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<Option<&'a str>>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<Option<&'a str>>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }
 
 impl TryConvert<Value, Vec<Int>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<Int>, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Array => {
-                unreachable!("mrb_array implementation is obsoleted by extn::core::array")
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<Int>, Self::Error> {
+        if let Ruby::Data = value.ruby_type() {
+            let array = unsafe { Array::try_from_ruby(self, &value) }?;
+            let borrow = array.borrow();
+            let array = borrow.as_vec(self);
+            let mut buf = Vec::with_capacity(array.len());
+            for elem in array {
+                buf.push(self.try_convert(elem)?);
             }
-            Ruby::Data => {
-                let array = unsafe { Array::try_from_ruby(self, &value) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Object,
-                        to: Rust::Vec,
-                    }
-                })?;
-                let borrow = array.borrow();
-                let array = borrow.as_vec(self);
-                let mut buf = Vec::with_capacity(array.len());
-                for elem in array {
-                    buf.push(self.try_convert(elem)?);
-                }
-                Ok(buf)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Vec,
-            }),
+            Ok(buf)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
     }
 }

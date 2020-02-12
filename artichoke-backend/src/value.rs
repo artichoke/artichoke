@@ -8,7 +8,7 @@ use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
-use crate::{Artichoke, ArtichokeError, Convert, ConvertMut, Intern, TryConvert, ValueLike};
+use crate::{Artichoke, Convert, ConvertMut, Intern, TryConvert, ValueLike};
 
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
@@ -154,7 +154,7 @@ impl ValueLike for Value {
         block: Option<Self::Block>,
     ) -> Result<T, Self::Error>
     where
-        Self::Artichoke: TryConvert<Self, T>,
+        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
@@ -208,9 +208,7 @@ impl ValueLike for Value {
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    let value = value.try_into::<T>().map_err(|err| {
-                        TypeError::new(&self.interp, format!("Type conversion failed: {}", err))
-                    })?;
+                    let value = value.try_into::<T>()?;
                     Ok(value)
                 }
             }
@@ -221,20 +219,14 @@ impl ValueLike for Value {
         }
     }
 
-    fn try_into<T>(self) -> Result<T, ArtichokeError>
+    fn try_into<T>(self) -> Result<T, Self::Error>
     where
-        Self::Artichoke: TryConvert<Self, T>,
+        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
     {
         // We must clone interp out of self because try_convert consumes self.
         let interp = self.interp.clone();
-        interp.try_convert(self)
-    }
-
-    fn itself<T>(&self) -> Result<T, ArtichokeError>
-    where
-        Self::Artichoke: TryConvert<Self, T>,
-    {
-        self.clone().try_into::<T>()
+        let result = interp.try_convert(self)?;
+        Ok(result)
     }
 
     fn freeze(&mut self) -> Result<(), Self::Error> {
@@ -324,7 +316,7 @@ impl Block {
 
     pub fn yield_arg<T>(&self, interp: &Artichoke, arg: &Value) -> Result<T, Exception>
     where
-        Artichoke: TryConvert<Value, T>,
+        Artichoke: TryConvert<Value, T, Error = Exception>,
     {
         // Ensure the borrow is out of scope by the time we eval code since
         // Rust-backed files and types may need to mutably borrow the `Artichoke` to
@@ -348,9 +340,7 @@ impl Block {
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    let value = value.try_into::<T>().map_err(|err| {
-                        TypeError::new(interp, format!("Type conversion failed: {}", err))
-                    })?;
+                    let value = value.try_into::<T>()?;
                     Ok(value)
                 }
             }

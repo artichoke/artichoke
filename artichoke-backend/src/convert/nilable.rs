@@ -1,10 +1,11 @@
 //! Converters for nilable primitive Ruby types. Excludes collection types
 //! Array and Hash.
 
+use crate::exception::Exception;
 use crate::sys;
 use crate::types::{Int, Ruby};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, Convert, ConvertMut, TryConvert};
+use crate::{Artichoke, Convert, ConvertMut, TryConvert};
 
 impl Convert<Option<Value>, Value> for Artichoke {
     fn convert(&self, value: Option<Value>) -> Value {
@@ -69,7 +70,9 @@ impl Convert<Value, Option<Value>> for Artichoke {
 }
 
 impl<'a> TryConvert<Value, Option<bool>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Option<bool>, ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Option<bool>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
@@ -79,7 +82,9 @@ impl<'a> TryConvert<Value, Option<bool>> for Artichoke {
 }
 
 impl<'a> TryConvert<Value, Option<Vec<u8>>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Option<Vec<u8>>, ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Option<Vec<u8>>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
@@ -89,7 +94,9 @@ impl<'a> TryConvert<Value, Option<Vec<u8>>> for Artichoke {
 }
 
 impl<'a> TryConvert<Value, Option<&'a [u8]>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Option<&'a [u8]>, ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Option<&'a [u8]>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
@@ -99,7 +106,9 @@ impl<'a> TryConvert<Value, Option<&'a [u8]>> for Artichoke {
 }
 
 impl<'a> TryConvert<Value, Option<String>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Option<String>, ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Option<String>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
@@ -109,7 +118,9 @@ impl<'a> TryConvert<Value, Option<String>> for Artichoke {
 }
 
 impl<'a> TryConvert<Value, Option<&'a str>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Option<&'a str>, ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Option<&'a str>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
@@ -119,7 +130,9 @@ impl<'a> TryConvert<Value, Option<&'a str>> for Artichoke {
 }
 
 impl<'a> TryConvert<Value, Option<Int>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Option<Int>, ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Option<Int>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {

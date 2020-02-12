@@ -67,9 +67,11 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
 
         let value = interp.eval(br#""cat o' 9 tails" =~ /\d/"#).unwrap();
-        assert_eq!(value.try_into::<Option<i64>>(), Ok(Some(7)));
+        let value = value.try_into::<Option<i64>>().unwrap();
+        assert_eq!(value, Some(7));
         let value = interp.eval(br#""cat o' 9 tails" =~ 9"#).unwrap();
-        assert_eq!(value.try_into::<Option<i64>>(), Ok(None));
+        let value = value.try_into::<Option<i64>>().unwrap();
+        assert!(value.is_none());
     }
 
     #[test]

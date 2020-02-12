@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::convert::RustBackedValue;
+use crate::convert::{RustBackedValue, UnboxRubyError};
+use crate::exception::Exception;
 use crate::extn::core::array::Array;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, ConvertMut, TryConvert};
+use crate::{Artichoke, ConvertMut, TryConvert};
 
 // TODO: implement `PartialEq`, `Eq`, and `Hash` on `Value`, see GH-159.
 // TODO: implement `Convert<HashMap<Value, Value>>`, see GH-160.
@@ -72,36 +73,29 @@ impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke 
 }
 
 impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<(Value, Value)>, ArtichokeError> {
-        let mrb = self.0.borrow().mrb;
-        match value.ruby_type() {
-            Ruby::Hash => {
-                let hash = value.inner();
-                let keys = unsafe { sys::mrb_hash_keys(mrb, hash) };
+    type Error = Exception;
 
-                let keys = Value::new(self, keys);
-                let array = unsafe { Array::try_from_ruby(self, &keys) }.map_err(|_| {
-                    ArtichokeError::ConvertToRust {
-                        from: Ruby::Hash,
-                        to: Rust::Map,
-                    }
-                })?;
-                let borrow = array.borrow();
+    fn try_convert(&self, value: Value) -> Result<Vec<(Value, Value)>, Self::Error> {
+        if let Ruby::Hash = value.ruby_type() {
+            let mrb = self.0.borrow().mrb;
+            let hash = value.inner();
+            let keys = unsafe { sys::mrb_hash_keys(mrb, hash) };
 
-                let pairs = borrow
-                    .as_vec(self)
-                    .into_iter()
-                    .map(|key| {
-                        let value = unsafe { sys::mrb_hash_get(mrb, hash, key.inner()) };
-                        (key, Value::new(self, value))
-                    })
-                    .collect::<Vec<_>>();
-                Ok(pairs)
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Map,
-            }),
+            let keys = Value::new(self, keys);
+            let array = unsafe { Array::try_from_ruby(self, &keys) }?;
+            let borrow = array.borrow();
+
+            let pairs = borrow
+                .as_vec(self)
+                .into_iter()
+                .map(|key| {
+                    let value = unsafe { sys::mrb_hash_get(mrb, hash, key.inner()) };
+                    (key, Value::new(self, value))
+                })
+                .collect::<Vec<_>>();
+            Ok(pairs)
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Map)))
         }
     }
 }

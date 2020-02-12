@@ -2,10 +2,12 @@ use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::slice;
 
+use crate::convert::UnboxRubyError;
+use crate::exception::Exception;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, ConvertMut, TryConvert};
+use crate::{Artichoke, ConvertMut, TryConvert};
 
 impl ConvertMut<Vec<u8>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<u8>) -> Value {
@@ -28,13 +30,17 @@ impl ConvertMut<&[u8], Value> for Artichoke {
 }
 
 impl TryConvert<Value, Vec<u8>> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Vec<u8>, ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Vec<u8>, Self::Error> {
         TryConvert::<_, &[u8]>::try_convert(self, value).map(<[_]>::to_vec)
     }
 }
 
 impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<&'a [u8], ArtichokeError> {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<&'a [u8], Self::Error> {
         let mrb = self.0.borrow().mrb;
         match value.ruby_type() {
             Ruby::Symbol => {
@@ -51,20 +57,15 @@ impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
                 let bytes = value.inner();
                 let raw = unsafe { sys::mrb_string_value_ptr(mrb, bytes) as *const u8 };
                 let len = unsafe { sys::mrb_string_value_len(mrb, bytes) };
-                let len = usize::try_from(len).map_err(|_| ArtichokeError::ConvertToRust {
-                    from: Ruby::String,
-                    to: Rust::Bytes,
-                })?;
+                let len =
+                    usize::try_from(len).map_err(|_| UnboxRubyError::new(&value, Rust::Bytes))?;
                 // We can return a borrowed slice because the memory is stored
                 // on the mruby heap. As long as `value` is reachable, this
                 // slice points to valid memory.
                 let slice = unsafe { slice::from_raw_parts(raw, len) };
                 Ok(slice)
             }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::Bytes,
-            }),
+            _ => Err(Exception::from(UnboxRubyError::new(&value, Rust::Bytes))),
         }
     }
 }
@@ -83,12 +84,8 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").expect("eval");
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Object,
-            to: Rust::Bytes,
-        });
         let result = value.try_into::<Vec<u8>>();
-        assert_eq!(result, expected);
+        assert!(result.is_err());
     }
 
     #[allow(clippy::needless_pass_by_value)]
@@ -125,10 +122,6 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
         let value = value.try_into::<Vec<u8>>();
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Bool,
-            to: Rust::Bytes,
-        });
-        value == expected
+        value.is_err()
     }
 }

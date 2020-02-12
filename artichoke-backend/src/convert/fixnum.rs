@@ -1,9 +1,11 @@
 use std::convert::TryFrom;
 
+use crate::convert::{BoxIntoRubyError, UnboxRubyError};
+use crate::exception::Exception;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ArtichokeError, Convert, TryConvert};
+use crate::{Artichoke, Convert, TryConvert};
 
 impl Convert<u8, Value> for Artichoke {
     fn convert(&self, value: u8) -> Value {
@@ -26,22 +28,22 @@ impl Convert<u32, Value> for Artichoke {
 
 #[cfg(target_arch = "wasm32")]
 impl TryConvert<u32, Value> for Artichoke {
-    fn try_convert(&self, value: u32) -> Result<Value, ArtichokeError> {
-        let value = Int::try_from(value).map_err(|_| ArtichokeError::ConvertToRuby {
-            from: Rust::UnsignedInt,
-            to: Ruby::Fixnum,
-        })?;
+    type Error = Exception;
+
+    fn try_convert(&self, value: u32) -> Result<Value, Self::Error> {
+        let value = Int::try_from(value)
+            .map_err(|_| BoxIntoRubyError::new(Rust::UnsignedInt, Ruby::Fixnum))?;
         let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
         Ok(Value::new(self, fixnum))
     }
 }
 
 impl TryConvert<u64, Value> for Artichoke {
-    fn try_convert(&self, value: u64) -> Result<Value, ArtichokeError> {
-        let value = Int::try_from(value).map_err(|_| ArtichokeError::ConvertToRuby {
-            from: Rust::UnsignedInt,
-            to: Ruby::Fixnum,
-        })?;
+    type Error = Exception;
+
+    fn try_convert(&self, value: u64) -> Result<Value, Self::Error> {
+        let value = Int::try_from(value)
+            .map_err(|_| BoxIntoRubyError::new(Rust::UnsignedInt, Ruby::Fixnum))?;
         let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
         Ok(Value::new(self, fixnum))
     }
@@ -75,40 +77,40 @@ impl Convert<i64, Value> for Artichoke {
 
 #[cfg(target_arch = "wasm32")]
 impl TryConvert<i64, Value> for Artichoke {
-    fn try_convert(&self, value: i64) -> Result<Value, ArtichokeError> {
-        let value = Int::try_from(value).map_err(|_| ArtichokeError::ConvertToRuby {
-            from: Rust::UnsignedInt,
-            to: Ruby::Fixnum,
-        })?;
+    type Error = Exception;
+
+    fn try_convert(&self, value: i64) -> Result<Value, Self::Error> {
+        let value = Int::try_from(value)
+            .map_err(|_| BoxIntoRubyError::new(Rust::SignedInt, Ruby::Fixnum))?;
         let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
         Ok(Value::new(self, fixnum))
     }
 }
 
 impl TryConvert<Value, Int> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<Int, ArtichokeError> {
-        match value.ruby_type() {
-            Ruby::Fixnum => {
-                let value = value.inner();
-                Ok(unsafe { sys::mrb_sys_fixnum_to_cint(value) })
-            }
-            type_tag => Err(ArtichokeError::ConvertToRust {
-                from: type_tag,
-                to: Rust::SignedInt,
-            }),
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<Int, Self::Error> {
+        if let Ruby::Fixnum = value.ruby_type() {
+            let value = value.inner();
+            Ok(unsafe { sys::mrb_sys_fixnum_to_cint(value) })
+        } else {
+            Err(Exception::from(UnboxRubyError::new(
+                &value,
+                Rust::SignedInt,
+            )))
         }
     }
 }
 
 impl TryConvert<Value, usize> for Artichoke {
-    fn try_convert(&self, value: Value) -> Result<usize, ArtichokeError> {
-        TryConvert::<_, Int>::try_convert(self, value)
-            .ok()
-            .and_then(|value| usize::try_from(value).ok())
-            .ok_or(ArtichokeError::ConvertToRust {
-                from: Ruby::Fixnum,
-                to: Rust::UnsignedInt,
-            })
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<usize, Self::Error> {
+        let err = UnboxRubyError::new(&value, Rust::UnsignedInt);
+        let int = TryConvert::<_, Int>::try_convert(self, value)?;
+        let int = usize::try_from(int).map_err(|_| err)?;
+        Ok(int)
     }
 }
 
@@ -123,12 +125,8 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").expect("eval");
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Object,
-            to: Rust::SignedInt,
-        });
         let result = value.try_into::<Int>();
-        assert_eq!(result, expected);
+        assert!(result.is_err());
     }
 
     #[quickcheck]
@@ -160,26 +158,17 @@ mod tests {
         let interp = crate::interpreter().expect("init");
         let value = interp.convert(b);
         let value = value.try_into::<Int>();
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Bool,
-            to: Rust::SignedInt,
-        });
-        value == expected
+        value.is_err()
     }
 
     #[test]
     fn fixnum_to_usize() {
         let interp = crate::interpreter().expect("init");
         let value = Convert::<_, Value>::convert(&interp, 100);
-        let value = value.try_into::<usize>();
-        let expected = Ok(100);
-        assert_eq!(value, expected);
+        let value = value.try_into::<usize>().unwrap();
+        assert_eq!(value, 100);
         let value = Convert::<_, Value>::convert(&interp, -100);
         let value = value.try_into::<usize>();
-        let expected = Err(ArtichokeError::ConvertToRust {
-            from: Ruby::Fixnum,
-            to: Rust::UnsignedInt,
-        });
-        assert_eq!(value, expected);
+        assert!(value.is_err());
     }
 }
