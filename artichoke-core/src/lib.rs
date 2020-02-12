@@ -32,9 +32,6 @@
 //!
 //! artichoke-core is licensed with the MIT License (c) Ryan Lopopolo.
 
-use std::error;
-use std::fmt;
-
 pub mod convert;
 pub mod eval;
 pub mod file;
@@ -45,37 +42,3 @@ pub mod top_self;
 pub mod types;
 pub mod value;
 pub mod warn;
-
-/// Errors returned by Artichoke interpreters.
-#[derive(Debug, PartialEq, Eq)]
-pub enum ArtichokeError {
-    /// Failed to convert from a Rust type to a [`Value`](value::Value).
-    ConvertToRuby {
-        /// Source type of conversion.
-        from: types::Rust,
-        /// Destination type of conversion.
-        to: types::Ruby,
-    },
-    /// Failed to convert from a [`Value`](value::Value) to a Rust type.
-    ConvertToRust {
-        /// Source type of conversion.
-        from: types::Ruby,
-        /// Destination type of conversion.
-        to: types::Rust,
-    },
-}
-
-impl fmt::Display for ArtichokeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::ConvertToRuby { from, to } => {
-                write!(f, "Failed to convert from {} to {}", from, to)
-            }
-            Self::ConvertToRust { from, to } => {
-                write!(f, "Failed to convert from {} to {}", from, to)
-            }
-        }
-    }
-}
-
-impl error::Error for ArtichokeError {}

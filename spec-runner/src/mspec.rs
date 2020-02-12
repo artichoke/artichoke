@@ -1,7 +1,8 @@
-use artichoke_backend::{Artichoke, BootError, ConvertMut, Eval, LoadSources, TopSelf, ValueLike};
+use artichoke_backend::exception::Exception;
+use artichoke_backend::{Artichoke, ConvertMut, Eval, LoadSources, TopSelf, ValueLike};
 use std::borrow::Cow;
 
-pub fn init(interp: &mut Artichoke) -> Result<(), BootError> {
+pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
     for source in Sources::iter() {
         let content = Sources::get(&source).unwrap();
         interp.def_rb_source_file(source.as_bytes(), content)?;
@@ -29,7 +30,7 @@ impl Runner {
         }
     }
 
-    pub fn add_spec<T>(&mut self, source: &str, contents: T) -> Result<(), BootError>
+    pub fn add_spec<T>(&mut self, source: &str, contents: T) -> Result<(), Exception>
     where
         T: Into<Cow<'static, [u8]>>,
     {
@@ -41,7 +42,7 @@ impl Runner {
         Ok(())
     }
 
-    pub fn run(mut self) -> Result<bool, BootError> {
+    pub fn run(mut self) -> Result<bool, Exception> {
         init(&mut self.interp).unwrap();
         self.interp
             .def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;

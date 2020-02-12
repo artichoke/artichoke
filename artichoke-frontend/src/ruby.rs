@@ -7,7 +7,7 @@ use artichoke_backend::ffi;
 use artichoke_backend::state::parser::Context;
 use artichoke_backend::string;
 use artichoke_backend::sys;
-use artichoke_backend::{BootError, ConvertMut, Eval, Intern, Parser as _};
+use artichoke_backend::{ConvertMut, Eval, Intern, Parser as _};
 use std::ffi::{OsStr, OsString};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
@@ -50,18 +50,10 @@ struct Opt {
 /// Error from Ruby CLI frontend
 #[derive(Debug)]
 pub enum Error {
-    /// Error from Artichoke interpreter initialization.
-    Artichoke(BootError),
     /// Ruby `Exception` thrown during eval.
     Ruby(Exception),
     /// Fatal error from CLI internals.
     Fail(String),
-}
-
-impl From<BootError> for Error {
-    fn from(err: BootError) -> Self {
-        Self::Artichoke(err)
-    }
 }
 
 impl From<Exception> for Error {
