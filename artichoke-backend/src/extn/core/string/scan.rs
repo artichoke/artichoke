@@ -36,10 +36,7 @@ pub fn method(
             for pos in string.find_iter(pattern_bytes) {
                 restore_nil = false;
                 matchdata.set_region(pos, pos + patlen);
-                let data = matchdata
-                    .clone()
-                    .try_into_ruby(interp, None)
-                    .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
+                let data = matchdata.clone().try_into_ruby(interp, None)?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
@@ -72,9 +69,7 @@ pub fn method(
                 let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
-                let data = matchdata
-                    .try_into_ruby(interp, None)
-                    .map_err(|_| Fatal::new(interp, "Failed to convert MatchData to Ruby Value"))?;
+                let data = matchdata.try_into_ruby(interp, None)?;
                 unsafe {
                     sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                 }
@@ -104,9 +99,7 @@ pub fn method(
                 for pos in string.find_iter(pattern_bytes) {
                     restore_nil = false;
                     matchdata.set_region(pos, pos + patlen);
-                    let data = matchdata.clone().try_into_ruby(interp, None).map_err(|_| {
-                        Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
-                    })?;
+                    let data = matchdata.clone().try_into_ruby(interp, None)?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
@@ -139,9 +132,7 @@ pub fn method(
                     let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
                     let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                     matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
-                    let data = matchdata.try_into_ruby(interp, None).map_err(|_| {
-                        Fatal::new(interp, "Failed to convert MatchData to Ruby Value")
-                    })?;
+                    let data = matchdata.try_into_ruby(interp, None)?;
                     unsafe {
                         sys::mrb_gv_set(mrb, last_match_sym, data.inner());
                     }
