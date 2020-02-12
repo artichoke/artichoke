@@ -163,17 +163,17 @@ mod tests {
             .def_file_for_type::<TestFile>(b"file.rb")
             .expect("def file");
         let result = interp.eval(b"require 'file'").expect("eval");
-        let require_result = result.try_into::<bool>();
-        assert_eq!(require_result, Ok(true));
+        let require_result = result.try_into::<bool>().unwrap();
+        assert_eq!(require_result, true);
         let result = interp.eval(b"@i").expect("eval");
-        let i_result = result.try_into::<i64>();
-        assert_eq!(i_result, Ok(255));
+        let i_result = result.try_into::<i64>().unwrap();
+        assert_eq!(i_result, 255);
         let result = interp.eval(b"@i = 1000; require 'file'").expect("eval");
-        let second_require_result = result.try_into::<bool>();
-        assert_eq!(second_require_result, Ok(false));
+        let second_require_result = result.try_into::<bool>().unwrap();
+        assert_eq!(second_require_result, false);
         let result = interp.eval(b"@i").expect("eval");
-        let second_i_result = result.try_into::<i64>();
-        assert_eq!(second_i_result, Ok(1000));
+        let second_i_result = result.try_into::<i64>().unwrap();
+        assert_eq!(second_i_result, 1000);
         let err = interp.eval(b"require 'non-existent-source'").unwrap_err();
         assert_eq!(
             &b"cannot load such file -- non-existent-source"[..],
