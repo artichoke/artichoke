@@ -41,8 +41,6 @@ where
 
     /// Consume `self` and try to convert `self` to type `T`.
     ///
-    /// If you do not want to consume this [`Value`], use [`Value::itself`].
-    ///
     /// # Errors
     ///
     /// If a [`TryConvert`] conversion fails, then an error is returned.
