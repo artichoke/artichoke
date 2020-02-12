@@ -1,9 +1,10 @@
+use std::error;
 use std::fmt;
 use std::ptr;
 
-use crate::exception::Exception;
+use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
-use crate::extn::core::exception::{Fatal, TypeError};
+use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
@@ -161,19 +162,15 @@ impl ValueLike for Value {
 
         let _arena = self.interp.create_arena_savepoint();
 
-        let args = args.iter().map(Self::inner).collect::<Vec<_>>();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
-            warn!(
-                "Too many args supplied to funcall: given {}, max {}.",
-                args.len(),
-                MRB_FUNCALL_ARGC_MAX
-            );
-            let err = ArtichokeError::TooManyArgs {
+            let err = ArgCountError {
                 given: args.len(),
                 max: MRB_FUNCALL_ARGC_MAX,
             };
-            return Err(Exception::from(Fatal::new(&self.interp, err.to_string())));
+            warn!("{}", err);
+            return Err(Exception::from(err));
         }
+        let args = args.iter().map(Self::inner).collect::<Vec<_>>();
         trace!(
             "Calling {}#{} with {} args{}",
             types::ruby_from_mrb_value(self.inner()),
@@ -361,6 +358,81 @@ impl Block {
                 Err(exception_handler::last_error(interp, exception)?)
             }
         }
+    }
+}
+
+/// Argument count exceeds maximum allowed by the VM.
+#[derive(Debug, Clone, Copy)]
+pub struct ArgCountError {
+    /// Number of arguments given.
+    pub given: usize,
+    /// Maximum number of arguments supported.
+    pub max: usize,
+}
+
+impl fmt::Display for ArgCountError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Too many arguments for function call: ")?;
+        write!(
+            f,
+            "gave {} arguments, but Artichoke only supports a maximum of {} arguments",
+            self.given, self.max
+        )
+    }
+}
+
+impl error::Error for ArgCountError {}
+
+impl RubyException for ArgCountError {
+    fn box_clone(&self) -> Box<dyn RubyException> {
+        Box::new(*self)
+    }
+
+    fn message(&self) -> &[u8] {
+        &b"Too many arguments"[..]
+    }
+
+    fn name(&self) -> String {
+        String::from("ArgumentError")
+    }
+
+    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.to_string());
+        let borrow = interp.0.borrow();
+        let spec = borrow.class_spec::<ArgumentError>()?;
+        let value = spec.new_instance(interp, &[message])?;
+        Some(value.inner())
+    }
+}
+
+impl From<ArgCountError> for Exception {
+    fn from(exception: ArgCountError) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<Box<ArgCountError>> for Exception {
+    fn from(exception: Box<ArgCountError>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<ArgCountError> for Box<dyn RubyException> {
+    fn from(exception: ArgCountError) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<Box<ArgCountError>> for Box<dyn RubyException> {
+    fn from(exception: Box<ArgCountError>) -> Box<dyn RubyException> {
+        exception
     }
 }
 
