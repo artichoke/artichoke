@@ -41,7 +41,7 @@ macro_rules! global_const {
         let mrb = $interp.0.borrow().mrb;
         let constant = $constant
             .parse::<Int>()
-            .map_err(|_| NotDefinedError::GlobalConstant(String::from(stringify!($constant))))?;
+            .map_err(|_| NotDefinedError::global_constant(stringify!($constant)))?;
         let name = concat!(stringify!($constant), "\0");
         let value = $interp.convert(constant);
         unsafe {

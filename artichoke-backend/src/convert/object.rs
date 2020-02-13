@@ -48,7 +48,7 @@ where
         let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
-            .ok_or_else(|| NotDefinedError::Class(String::from(Self::ruby_type_name())))?;
+            .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         let data = Rc::new(RefCell::new(self));
         let ptr = Rc::into_raw(data);
         let obj = if let Some(mut slf) = slf {
@@ -59,7 +59,7 @@ where
         } else {
             let mut rclass = spec
                 .rclass(mrb)
-                .ok_or_else(|| NotDefinedError::Class(String::from(Self::ruby_type_name())))?;
+                .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
             unsafe {
                 let alloc = sys::mrb_data_object_alloc(
                     mrb,
@@ -105,11 +105,11 @@ where
         let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
-            .ok_or_else(|| NotDefinedError::Class(String::from(Self::ruby_type_name())))?;
+            .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         // Sanity check that the RClass matches.
         let mut rclass = spec
             .rclass(mrb)
-            .ok_or_else(|| NotDefinedError::Class(String::from(Self::ruby_type_name())))?;
+            .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         if !ptr::eq(
             sys::mrb_sys_class_of_value(mrb, slf.inner()),
             rclass.as_mut(),
