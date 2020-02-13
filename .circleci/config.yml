@@ -244,6 +244,33 @@ jobs:
           root: target
           paths:
             - "doc"
+  audit:
+    docker:
+      - image: circleci/ruby:2.6.3-buster
+    resource_class: large
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore sccache cache
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+      - setup-linux-builder
+      - run:
+          name: Install cargo-deny
+          command: cargo install cargo-deny
+      - run:
+          name: Installed Toolchain Versions
+          command: |
+            cargo --version
+            cargo deny --version
+            cargo deny check --version
+      - save_cache:
+          name: Save sccache cache
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          paths:
+            - "~/.cache/sccache"
+      - run:
+          name: Cargo Deny Check
+          command: cargo deny check
   deploy:
     docker:
       - image: node:lts
