@@ -333,10 +333,9 @@ mod libmruby {
 }
 
 mod rubylib {
-    use rayon::prelude::*;
     use std::env;
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::process::Command;
 
     use super::buildpath;
@@ -345,49 +344,48 @@ mod rubylib {
         buildpath::crate_root().join("scripts").join("auto_import")
     }
 
-    pub fn generated_package_dir() -> PathBuf {
+    pub fn rendered_stdlib_package_out_dir() -> PathBuf {
         PathBuf::from(env::var_os("OUT_DIR").unwrap())
             .join("src")
             .join("generated")
     }
 
-    fn generated_package(package: &str) -> PathBuf {
-        generated_package_dir().join(format!("{}.rs", package))
+    fn rendered_stdlib_package_rust_module_path(package: &str) -> PathBuf {
+        rendered_stdlib_package_out_dir().join(format!("{}.rs", package))
     }
 
     pub fn build() {
-        packages().par_iter().for_each(|package| {
+        for package in packages() {
+            // Collect all of the Ruby sources that are loaded when requiring
+            // the package in MRI.
             let sources = package_files(package)
                 .trim()
                 .split('\n')
                 .map(str::trim)
-                .filter_map(|s| {
-                    if s.is_empty() {
-                        None
-                    } else {
-                        Some(String::from(s))
-                    }
-                })
+                .filter_map(|s| Some(s).filter(|s| !s.is_empty()).map(String::from))
                 .collect::<Vec<_>>();
-            sources.par_iter().for_each(|source| {
-                let source = PathBuf::from(source.to_owned());
-                let package_source =
-                    source.strip_prefix(buildpath::source::ruby_vendored_lib_dir());
-                let out = generated_package_dir().join(package_source.unwrap());
+            for source in &sources {
+                let source = Path::new(source);
+                // Extract the relative path for each package file from the MRI
+                // lib root.
+                let package_source = source
+                    .strip_prefix(buildpath::source::ruby_vendored_lib_dir())
+                    .unwrap();
+                let out = rendered_stdlib_package_out_dir().join(package_source);
                 if let Some(parent) = out.parent() {
                     fs::create_dir_all(parent).unwrap();
                 }
+                // Copy the source from MRI lib root to the build `OUT_DIR`.
                 fs::copy(source, &out).unwrap();
-            });
-            generate_rust_glue(package, sources.as_slice());
-        });
+            }
+            render_rust_module(package, sources.as_slice());
+        }
     }
 
     fn package_files(package: &str) -> String {
         let script = auto_import_root().join("get_package_files.rb");
         let output = Command::new("ruby")
-            .arg("--disable-did_you_mean")
-            .arg("--disable-gems")
+            .arg("--disable-all")
             .arg(script)
             .arg(buildpath::source::ruby_vendored_lib_dir())
             .arg(package)
@@ -404,15 +402,14 @@ mod rubylib {
     }
 
     // The invoked Ruby script handles writing the output to disk
-    fn generate_rust_glue(package: &str, sources: &[String]) {
-        let pkg_dest = generated_package(&package);
+    fn render_rust_module(package: &str, sources: &[String]) {
+        let pkg_dest = rendered_stdlib_package_rust_module_path(package);
         if let Some(parent) = pkg_dest.parent() {
             fs::create_dir_all(parent).unwrap();
         }
         let script = auto_import_root().join("auto_import.rb");
         let output = Command::new("ruby")
-            .arg("--disable-did_you_mean")
-            .arg("--disable-gems")
+            .arg("--disable-all")
             .arg(script)
             .arg(buildpath::source::ruby_vendored_lib_dir())
             .arg(package)
@@ -585,6 +582,7 @@ mod release {
                 String::from_utf8(initial_commit.stderr).unwrap()
             );
         }
+        // This code assumes there is only one root commit reachable from HEAD.
         let initial_commit = String::from_utf8(initial_commit.stdout).unwrap();
         let birth_date = Command::new("git")
             .arg("show")
@@ -692,7 +690,7 @@ mod build {
         )
         .unwrap();
 
-        fs::create_dir_all(rubylib::generated_package_dir()).unwrap();
+        fs::create_dir_all(rubylib::rendered_stdlib_package_out_dir()).unwrap();
 
         let opts = file::CopyOptions::new();
         let _ = file::remove(libmruby::mruby_build_config());
