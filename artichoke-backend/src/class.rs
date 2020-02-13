@@ -78,17 +78,17 @@ impl<'a> Builder<'a> {
         let mrb = self.interp.0.borrow().mrb;
         let mut super_class = if let Some(spec) = self.super_class {
             spec.rclass(mrb)
-                .ok_or_else(|| NotDefinedError::Super(spec.fqname().into_owned()))?
+                .ok_or_else(|| NotDefinedError::super_class(spec.fqname().into_owned()))?
         } else {
             let rclass = unsafe { (*mrb).object_class };
-            NonNull::new(rclass).ok_or_else(|| NotDefinedError::Super(String::from("Object")))?
+            NonNull::new(rclass).ok_or_else(|| NotDefinedError::super_class("Object"))?
         };
         let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
             let mut scope_rclass = scope
                 .rclass(mrb)
-                .ok_or_else(|| NotDefinedError::EnclosingScope(scope.fqname().into_owned()))?;
+                .ok_or_else(|| NotDefinedError::enclosing_scope(scope.fqname().into_owned()))?;
             let rclass = unsafe {
                 sys::mrb_define_class_under(
                     mrb,
@@ -98,13 +98,13 @@ impl<'a> Builder<'a> {
                 )
             };
             NonNull::new(rclass)
-                .ok_or_else(|| NotDefinedError::Class(self.spec.name.as_ref().to_owned()))?
+                .ok_or_else(|| NotDefinedError::class(self.spec.name.as_ref().to_owned()))?
         } else {
             let rclass = unsafe {
                 sys::mrb_define_class(mrb, self.spec.name_c_str().as_ptr(), super_class.as_mut())
             };
             NonNull::new(rclass)
-                .ok_or_else(|| NotDefinedError::Class(self.spec.name.as_ref().to_owned()))?
+                .ok_or_else(|| NotDefinedError::class(self.spec.name.as_ref().to_owned()))?
         };
         for method in &self.methods {
             unsafe {

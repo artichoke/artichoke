@@ -67,6 +67,7 @@ version = "0.1.0"
 dependencies = [
  "ansi_term",
  "artichoke-backend",
+ "bstr",
  "rustyline",
  "structopt",
 ]

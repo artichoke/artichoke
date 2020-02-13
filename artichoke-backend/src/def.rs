@@ -269,23 +269,65 @@ impl From<Box<ConstantNameError>> for Box<dyn RubyException> {
 
 #[derive(Debug, Clone)]
 pub enum NotDefinedError {
-    EnclosingScope(String),
-    Super(String),
-    Class(String),
-    Module(String),
-    GlobalConstant(String),
-    ClassConstant(String),
+    EnclosingScope(Cow<'static, str>),
+    Super(Cow<'static, str>),
+    Class(Cow<'static, str>),
+    Module(Cow<'static, str>),
+    GlobalConstant(Cow<'static, str>),
+    ClassConstant(Cow<'static, str>),
 }
 
 impl NotDefinedError {
+    pub fn enclosing_scope<T>(item: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self::EnclosingScope(item.into())
+    }
+
+    pub fn super_class<T>(item: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self::Super(item.into())
+    }
+
+    pub fn class<T>(item: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self::Class(item.into())
+    }
+
+    pub fn module<T>(item: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self::Module(item.into())
+    }
+
+    pub fn global_constant<T>(item: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self::GlobalConstant(item.into())
+    }
+
+    pub fn class_constant<T>(item: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self::ClassConstant(item.into())
+    }
+
     #[must_use]
     pub fn fqdn(&self) -> &str {
         match self {
             Self::EnclosingScope(ref fqdn)
             | Self::Super(ref fqdn)
             | Self::Class(ref fqdn)
-            | Self::Module(ref fqdn) => fqdn.as_str(),
-            Self::GlobalConstant(ref name) | Self::ClassConstant(ref name) => name.as_str(),
+            | Self::Module(ref fqdn) => fqdn.as_ref(),
+            Self::GlobalConstant(ref name) | Self::ClassConstant(ref name) => name.as_ref(),
         }
     }
 

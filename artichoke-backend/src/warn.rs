@@ -17,9 +17,9 @@ impl Warn for Artichoke {
             let borrow = self.0.borrow();
             let spec = borrow
                 .module_spec::<Warning>()
-                .ok_or_else(|| NotDefinedError::Module(String::from("Warning")))?;
+                .ok_or_else(|| NotDefinedError::module("Warning"))?;
             spec.value(self)
-                .ok_or_else(|| NotDefinedError::Module(String::from("Warning")))?
+                .ok_or_else(|| NotDefinedError::module("Warning"))?
         };
         let message = self.convert_mut(message);
         let _ = warning.funcall::<Value>("warn", &[message], None)?;

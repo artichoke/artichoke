@@ -78,7 +78,7 @@ impl<'a> Builder<'a> {
         } else if let Some(scope) = self.spec.enclosing_scope() {
             let mut scope_rclass = scope
                 .rclass(mrb)
-                .ok_or_else(|| NotDefinedError::EnclosingScope(scope.fqname().into_owned()))?;
+                .ok_or_else(|| NotDefinedError::enclosing_scope(scope.fqname().into_owned()))?;
             let rclass = unsafe {
                 sys::mrb_define_module_under(
                     mrb,
@@ -87,11 +87,11 @@ impl<'a> Builder<'a> {
                 )
             };
             NonNull::new(rclass)
-                .ok_or_else(|| NotDefinedError::Module(self.spec.name.as_ref().to_owned()))?
+                .ok_or_else(|| NotDefinedError::module(self.spec.name.as_ref().to_owned()))?
         } else {
             let rclass = unsafe { sys::mrb_define_module(mrb, self.spec.name_c_str().as_ptr()) };
             NonNull::new(rclass)
-                .ok_or_else(|| NotDefinedError::Module(self.spec.name.as_ref().to_owned()))?
+                .ok_or_else(|| NotDefinedError::module(self.spec.name.as_ref().to_owned()))?
         };
         for method in self.methods {
             unsafe {
