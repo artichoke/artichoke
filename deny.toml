@@ -1,0 +1,35 @@
+[advisories]
+vulnerability = "deny"
+unmaintained = "deny"
+notice = "warn"
+ignore = []
+
+[licenses]
+unlicensed = "deny"
+allow = [
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "CC0-1.0",
+  "ISC",
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+]
+deny = []
+copyleft = "deny"
+allow-osi-fsf-free = "neither"
+default = "deny"
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "deny"
+highlight = "all"
+allow = []
+deny = []
+skip = []
+skip-tree = [{ name = "autocfg", version = "< 1" }]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-git = ["https://github.com/artichoke/rust-onig"]

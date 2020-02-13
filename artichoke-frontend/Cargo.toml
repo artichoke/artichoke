@@ -11,7 +11,7 @@ keywords = ["artichoke", "artichoke-ruby", "ruby"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-ansi_term = "0.12"
+ansi_term = "0.11" # cannot upgrade until clap 3 is released
 bstr = "0.2"
 rustyline = "6"
 structopt = "0.3"
