@@ -195,12 +195,12 @@ impl Hash for EnclosingRubyScope {
 }
 
 #[derive(Debug, Clone)]
-pub struct ConstantNameError(String);
+pub struct ConstantNameError(Cow<'static, str>);
 
 impl ConstantNameError {
     pub fn new<T>(name: T) -> Self
     where
-        T: Into<String>,
+        T: Into<Cow<'static, str>>,
     {
         Self(name.into())
     }
