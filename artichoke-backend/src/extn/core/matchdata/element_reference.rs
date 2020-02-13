@@ -129,15 +129,9 @@ pub fn method(interp: &mut Artichoke, args: Args, value: &Value) -> Result<Value
                 let group = indexes
                     .iter()
                     .copied()
-                    .filter_map(|index| {
-                        if let Some(Some(group)) = captures.get(index) {
-                            Some(group)
-                        } else {
-                            None
-                        }
-                    })
+                    .filter_map(|index| captures.get(index).map(Option::as_deref).flatten())
                     .last();
-                Ok(interp.convert_mut(group.map(Vec::as_slice)))
+                Ok(interp.convert_mut(group))
             } else {
                 let mut message = String::from("undefined group name reference: \"");
                 string::escape_unicode(&mut message, name)?;
