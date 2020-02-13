@@ -300,11 +300,13 @@ workflows:
       - x86_64-windows
       - ruby-spec
       - linter
+      - audit
       - deploy:
           requires:
             - x86_64-linux
             - x86_64-windows
             - linter
+            - audit
           filters:
             branches:
               only: master
