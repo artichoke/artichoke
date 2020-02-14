@@ -163,24 +163,12 @@ impl Regexp {
                 pattern: borrow.0.literal_config().pattern.clone(),
                 options,
             }
-        } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
-            Config {
-                pattern: bytes.to_vec(),
-                options: options.unwrap_or_default(),
-            }
-        } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
-            Config {
-                pattern: bytes.to_vec(),
-                options: options.unwrap_or_default(),
-            }
         } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {} into String",
-                    pattern.pretty_name()
-                ),
-            )));
+            let bytes = pattern.implicitly_convert_to_string()?;
+            Config {
+                pattern: bytes.to_vec(),
+                options: options.unwrap_or_default(),
+            }
         };
         let (pattern, options) =
             opts::parse_pattern(literal_config.pattern.as_slice(), literal_config.options);
@@ -196,18 +184,10 @@ impl Regexp {
     }
 
     pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<&[u8]>() {
-            pattern
-        } else if let Ok(pattern) = pattern.funcall::<&[u8]>("to_str", &[], None) {
-            pattern
-        } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                "No implicit conversion into String",
-            )));
-        };
-        let pattern = str::from_utf8(pattern)
-            .map_err(|_| ArgumentError::new(interp, "Self::escape only supports UTF-8 patterns"))?;
+        let pattern = pattern.implicitly_convert_to_string()?;
+        let pattern = str::from_utf8(pattern).map_err(|_| {
+            ArgumentError::new(interp, "Regexp::escape only supports UTF-8 patterns")
+        })?;
 
         Ok(interp.convert_mut(syntax::escape(pattern)))
     }
@@ -217,19 +197,20 @@ impl Regexp {
         let pattern = if let Some(first) = iter.next() {
             if iter.peek().is_none() {
                 if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &first) } {
-                    let borrow = ary.borrow();
-                    let ary = borrow.as_vec(interp);
+                    let ary = ary.borrow().as_vec(interp);
                     let mut patterns = Vec::with_capacity(ary.len());
                     for pattern in ary {
                         if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                             patterns.push(regexp.borrow().0.derived_config().pattern.clone());
-                        } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
-                            patterns.push(syntax::escape(pattern).into_bytes());
                         } else {
-                            return Err(Exception::from(TypeError::new(
-                                interp,
-                                "No implicit conversion into String",
-                            )));
+                            let pattern = pattern.implicitly_convert_to_string()?;
+                            let pattern = str::from_utf8(pattern).map_err(|_| {
+                                ArgumentError::new(
+                                    interp,
+                                    "Regexp::union only supports UTF-8 patterns",
+                                )
+                            })?;
+                            patterns.push(syntax::escape(pattern).into_bytes());
                         }
                     }
                     bstr::join(b"|", patterns)
@@ -237,59 +218,40 @@ impl Regexp {
                     let pattern = first;
                     if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                         regexp.borrow().0.derived_config().pattern.clone()
-                    } else if let Ok(pattern) = pattern.funcall::<&str>("to_str", &[], None) {
-                        syntax::escape(pattern).into_bytes()
                     } else {
-                        return Err(Exception::from(TypeError::new(
-                            interp,
-                            "No implicit conversion into String",
-                        )));
+                        let pattern = pattern.implicitly_convert_to_string()?;
+                        let pattern = str::from_utf8(pattern).map_err(|_| {
+                            ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
+                        })?;
+                        syntax::escape(pattern).into_bytes()
                     }
                 }
             } else {
-                let mut patterns = vec![];
+                let mut patterns = Vec::with_capacity(patterns.len());
                 if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &first) } {
                     patterns.push(regexp.borrow().0.derived_config().pattern.clone());
-                } else if let Ok(bytes) = first.clone().try_into::<&[u8]>() {
-                    let pattern = str::from_utf8(bytes).map_err(|_| {
-                        ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
-                    })?;
-                    patterns.push(syntax::escape(pattern).into_bytes());
-                } else if let Ok(bytes) = first.funcall::<&[u8]>("to_str", &[], None) {
-                    let pattern = str::from_utf8(bytes).map_err(|_| {
-                        ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
-                    })?;
-                    patterns.push(syntax::escape(pattern).into_bytes());
                 } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        "no implicit conversion into String",
-                    )));
+                    let bytes = first.implicitly_convert_to_string()?;
+                    let pattern = str::from_utf8(bytes).map_err(|_| {
+                        ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
+                    })?;
+                    patterns.push(syntax::escape(pattern).into_bytes());
                 }
                 for pattern in iter {
                     if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                         patterns.push(regexp.borrow().0.derived_config().pattern.clone());
-                    } else if let Ok(bytes) = pattern.clone().try_into::<&[u8]>() {
-                        let pattern = str::from_utf8(bytes).map_err(|_| {
-                            ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
-                        })?;
-                        patterns.push(syntax::escape(pattern).into_bytes());
-                    } else if let Ok(bytes) = pattern.funcall::<&[u8]>("to_str", &[], None) {
-                        let pattern = str::from_utf8(bytes).map_err(|_| {
-                            ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
-                        })?;
-                        patterns.push(syntax::escape(pattern).into_bytes());
                     } else {
-                        return Err(Exception::from(TypeError::new(
-                            interp,
-                            "no implicit conversion into String",
-                        )));
+                        let bytes = pattern.implicitly_convert_to_string()?;
+                        let pattern = str::from_utf8(bytes).map_err(|_| {
+                            ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
+                        })?;
+                        patterns.push(syntax::escape(pattern).into_bytes());
                     }
                 }
                 bstr::join(b"|", patterns)
             }
         } else {
-            Vec::from(b"(?!)".as_ref())
+            Vec::from(&b"(?!)"[..])
         };
         let derived_config = {
             let (pattern, options) = opts::parse_pattern(pattern.as_slice(), Options::default());
@@ -311,9 +273,7 @@ impl Regexp {
     }
 
     pub fn case_compare(&self, interp: &mut Artichoke, other: Value) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = other.clone().try_into::<&[u8]>() {
-            pattern
-        } else if let Ok(pattern) = other.funcall::<&[u8]>("to_str", &[], None) {
+        let pattern = if let Ok(pattern) = other.implicitly_convert_to_string() {
             pattern
         } else {
             let sym = interp.intern_symbol(LAST_MATCH);
@@ -370,19 +330,7 @@ impl Regexp {
         pattern: Value,
         pos: Option<Value>,
     ) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
-            pattern
-        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
-            pattern
-        } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {} into String",
-                    pattern.pretty_name()
-                ),
-            )));
-        };
+        let pattern = pattern.implicitly_convert_to_nilable_string()?;
         let pattern = if let Some(pattern) = pattern {
             pattern
         } else {
@@ -403,19 +351,7 @@ impl Regexp {
         pos: Option<Value>,
         block: Option<Block>,
     ) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
-            pattern
-        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
-            pattern
-        } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {} into String",
-                    pattern.pretty_name()
-                ),
-            )));
-        };
+        let pattern = pattern.implicitly_convert_to_nilable_string()?;
         let pattern = if let Some(pattern) = pattern {
             pattern
         } else {
@@ -441,19 +377,7 @@ impl Regexp {
         interp: &mut Artichoke,
         pattern: Value,
     ) -> Result<Value, Exception> {
-        let pattern = if let Ok(pattern) = pattern.clone().try_into::<Option<&[u8]>>() {
-            pattern
-        } else if let Ok(pattern) = pattern.funcall::<Option<&[u8]>>("to_str", &[], None) {
-            pattern
-        } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {} into String",
-                    pattern.pretty_name()
-                ),
-            )));
-        };
+        let pattern = pattern.implicitly_convert_to_nilable_string()?;
         let pattern = if let Some(pattern) = pattern {
             pattern
         } else {

@@ -37,6 +37,7 @@ impl<'a> Args<'a> {
             }
         } else {
             let name = elem.pretty_name();
+            // TODO: GH-452 - use Value::implicitly_convert_to_string
             if let Ok(index) = elem.implicitly_convert_to_int() {
                 Ok(Self::Index(index))
             } else if let Ok(name) = elem.clone().try_into::<&[u8]>() {

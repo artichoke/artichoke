@@ -197,11 +197,11 @@ impl MatchData {
     }
 
     unsafe extern "C" fn offset(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let elem = mrb_get_args!(mrb, required = 1);
+        let offset = mrb_get_args!(mrb, required = 1);
         let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = offset::Args::extract(&interp, Value::new(&interp, elem))
-            .and_then(|args| offset::method(&mut interp, args, &value));
+        let offset = Value::new(&interp, offset);
+        let result = offset::method(&mut interp, value, offset);
         match result {
             Ok(result) => result.inner(),
             Err(exception) => exception::raise(interp, exception),

@@ -6,66 +6,46 @@ use std::str;
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::prelude::*;
 
-#[derive(Debug, Clone, Copy)]
-pub enum Args<'a> {
-    Index(Int),
-    Name(&'a str),
-}
-
-impl<'a> Args<'a> {
-    pub fn extract(interp: &Artichoke, elem: Value) -> Result<Self, Exception> {
-        let _ = interp;
-        if let Ok(name) = elem.funcall::<&str>("to_str", &[], None) {
-            Ok(Self::Name(name))
-        } else {
-            let index = elem.implicitly_convert_to_int()?;
-            Ok(Self::Index(index))
-        }
-    }
-}
-
-pub fn method(interp: &mut Artichoke, args: Args, value: &Value) -> Result<Value, Exception> {
-    let data = unsafe { MatchData::try_from_ruby(interp, value) }?;
+pub fn method(interp: &mut Artichoke, value: Value, offset: Value) -> Result<Value, Exception> {
+    let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
     let haystack = &borrow.string[borrow.region.start..borrow.region.end];
-    let index = match args {
-        Args::Index(index) => {
-            let captures_len = borrow.regexp.inner().captures_len(interp, Some(haystack))?;
-            if index < 0 {
-                // Positive Int must be usize
-                let idx = usize::try_from(-index).map_err(|_| {
-                    Fatal::new(interp, "Expected positive position to convert to usize")
-                })?;
-                if let Some(idx) = captures_len.checked_sub(idx) {
-                    idx
-                } else {
-                    return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
-                }
-            } else {
-                let idx = usize::try_from(index).map_err(|_| {
-                    Fatal::new(interp, "Expected positive position to convert to usize")
-                })?;
-                if idx > captures_len {
-                    return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
-                }
-                idx
-            }
+    let index = if let Ok(name) = offset.implicitly_convert_to_string() {
+        let indexes = borrow
+            .regexp
+            .inner()
+            .capture_indexes_for_name(interp, name)?;
+        let indexes = if let Some(indexes) = indexes {
+            indexes
+        } else {
+            return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
+        };
+        if let Some(Ok(index)) = indexes.last().copied().map(usize::try_from) {
+            index
+        } else {
+            return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
         }
-        Args::Name(name) => {
-            let indexes = borrow
-                .regexp
-                .inner()
-                .capture_indexes_for_name(interp, name.as_bytes())?;
-            let indexes = if let Some(indexes) = indexes {
-                indexes
-            } else {
-                return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
-            };
-            if let Some(Ok(index)) = indexes.last().copied().map(usize::try_from) {
-                index
+    } else {
+        let index = offset.implicitly_convert_to_int()?;
+        let captures_len = borrow.regexp.inner().captures_len(interp, Some(haystack))?;
+        if index < 0 {
+            // Positive Int must be usize
+            let idx = usize::try_from(-index).map_err(|_| {
+                Fatal::new(interp, "Expected positive position to convert to usize")
+            })?;
+            if let Some(idx) = captures_len.checked_sub(idx) {
+                idx
             } else {
                 return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
             }
+        } else {
+            let idx = usize::try_from(index).map_err(|_| {
+                Fatal::new(interp, "Expected positive position to convert to usize")
+            })?;
+            if idx > captures_len {
+                return Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]));
+            }
+            idx
         }
     };
     if let Some((begin, end)) = borrow.regexp.inner().pos(interp, haystack, index)? {
