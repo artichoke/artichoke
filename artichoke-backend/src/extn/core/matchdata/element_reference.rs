@@ -65,23 +65,21 @@ pub fn method(
         } else {
             return Ok(interp.convert(None::<Value>));
         }
+    } else if let Ok(index) = elem.implicitly_convert_to_int() {
+        Args::Index(index)
+    } else if let Ok(name) = elem.implicitly_convert_to_string() {
+        Args::Name(name)
     } else {
-        if let Ok(index) = elem.implicitly_convert_to_int() {
-            Args::Index(index)
-        } else if let Ok(name) = elem.implicitly_convert_to_string() {
-            Args::Name(name)
-        } else {
-            let rangelen = Int::try_from(borrow.regexp.inner().captures_len(interp, None)?)
-                .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
-            match unsafe { is_range(interp, &elem, rangelen) } {
-                Ok(Some((start, len))) => Args::StartLen(start, len),
-                Ok(None) => return Ok(interp.convert(None::<Value>)),
-                Err(_) => {
-                    let mut message = String::from("no implicit conversion of ");
-                    message.push_str(elem.pretty_name());
-                    message.push_str(" into Integer");
-                    return Err(Exception::from(TypeError::new(interp, message)));
-                }
+        let rangelen = Int::try_from(borrow.regexp.inner().captures_len(interp, None)?)
+            .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
+        match unsafe { is_range(interp, &elem, rangelen) } {
+            Ok(Some((start, len))) => Args::StartLen(start, len),
+            Ok(None) => return Ok(interp.convert(None::<Value>)),
+            Err(_) => {
+                let mut message = String::from("no implicit conversion of ");
+                message.push_str(elem.pretty_name());
+                message.push_str(" into Integer");
+                return Err(Exception::from(TypeError::new(interp, message)));
             }
         }
     };
