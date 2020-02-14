@@ -46,8 +46,9 @@ pub fn method(
                 }
             }
             if restore_nil {
+                let nil = interp.convert(None::<Value>).inner();
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
+                    sys::mrb_gv_set(mrb, last_match_sym, nil);
                 }
             }
             Ok(value)
@@ -75,8 +76,9 @@ pub fn method(
             } else {
                 let mrb = interp.0.borrow().mrb;
                 let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
+                let nil = interp.convert(None::<Value>).inner();
                 unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
+                    sys::mrb_gv_set(mrb, last_match_sym, nil);
                 }
             }
             Ok(interp.convert_mut(result))

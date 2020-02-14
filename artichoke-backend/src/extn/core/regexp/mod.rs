@@ -233,7 +233,7 @@ impl Regexp {
                 } else {
                     let bytes = first.implicitly_convert_to_string()?;
                     let pattern = str::from_utf8(bytes).map_err(|_| {
-                        ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
+                        ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
                     })?;
                     patterns.push(syntax::escape(pattern).into_bytes());
                 }
@@ -243,7 +243,7 @@ impl Regexp {
                     } else {
                         let bytes = pattern.implicitly_convert_to_string()?;
                         let pattern = str::from_utf8(bytes).map_err(|_| {
-                            ArgumentError::new(interp, "Self::union only supports UTF-8 patterns")
+                            ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
                         })?;
                         patterns.push(syntax::escape(pattern).into_bytes());
                     }
