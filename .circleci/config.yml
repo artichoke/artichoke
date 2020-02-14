@@ -426,6 +426,7 @@ workflows:
       - ruby-spec
       - linter
       - audit
+      - restriction
       - deploy:
           requires:
             - x86_64-linux
