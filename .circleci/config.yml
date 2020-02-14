@@ -403,7 +403,7 @@ jobs:
             -W clippy::result_unwrap_used \
             -W clippy::todo \
             -W clippy::unimplemented \
-            -W clippy::unreachable
+            -W clippy::unreachable || :
   deploy:
     docker:
       - image: node:lts
