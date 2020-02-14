@@ -131,16 +131,9 @@ impl MatchData {
         let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
         let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        let result = element_reference::Args::num_captures(&interp, &value)
-            .and_then(|num_captures| {
-                element_reference::Args::extract(
-                    &interp,
-                    Value::new(&interp, elem),
-                    len.map(|len| Value::new(&interp, len)),
-                    num_captures,
-                )
-            })
-            .and_then(|args| element_reference::method(&mut interp, args, &value));
+        let elem = Value::new(&interp, elem);
+        let len = len.map(|len| Value::new(&interp, len));
+        let result = element_reference::method(&mut interp, value, elem, len);
         match result {
             Ok(result) => result.inner(),
             Err(exception) => exception::raise(interp, exception),
