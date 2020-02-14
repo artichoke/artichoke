@@ -67,7 +67,6 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 }
 
 unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
-    println!("ary concat C");
     let other = mrb_get_args!(mrb, optional = 1);
     let interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
