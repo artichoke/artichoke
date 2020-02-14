@@ -129,7 +129,7 @@ pub fn method(interp: &mut Artichoke, args: Args, value: &Value) -> Result<Value
                 let group = indexes
                     .iter()
                     .copied()
-                    .filter_map(|index| captures.get(index).map(Option::as_deref).flatten())
+                    .filter_map(|index| captures.get(index).and_then(Option::as_deref))
                     .last();
                 Ok(interp.convert_mut(group))
             } else {
