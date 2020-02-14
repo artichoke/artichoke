@@ -8,7 +8,7 @@ use std::ptr::{self, NonNull};
 use crate::class;
 use crate::fs;
 use crate::module;
-use crate::sys::{self, DescribeState};
+use crate::sys;
 
 pub mod parser;
 #[cfg(feature = "artichoke-random")]
@@ -164,12 +164,10 @@ impl State {
 
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.mrb.debug())
-    }
-}
-
-impl fmt::Display for State {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.mrb.info())
+        write!(
+            f,
+            "Artichoke State {{ {} }}",
+            sys::mrb_sys_state_debug(self.mrb)
+        )
     }
 }
