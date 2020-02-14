@@ -288,6 +288,7 @@ jobs:
       - run:
           name: Install Rust Toolchain
           command: |
+            rustup component add rustfmt
             rustup component add clippy
       - run:
           name: Install cargo-expand
@@ -297,6 +298,7 @@ jobs:
           command: |
             cargo --version
             cargo expand --version
+            rustfmt --version
             cargo clippy -- --version
       - save_cache:
           name: Save sccache cache
