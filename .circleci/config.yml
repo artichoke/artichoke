@@ -286,6 +286,10 @@ jobs:
           name: Install nightly Rust
           command: rustup install nightly
       - run:
+          name: Install Rust Toolchain
+          command: |
+            rustup component add clippy
+      - run:
           name: Install cargo-expand
           command: cargo install cargo-expand
       - run:
@@ -293,6 +297,7 @@ jobs:
           command: |
             cargo --version
             cargo expand --version
+            cargo clippy -- --version
       - save_cache:
           name: Save sccache cache
           key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
