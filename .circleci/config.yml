@@ -247,7 +247,7 @@ jobs:
   audit:
     docker:
       - image: circleci/ruby:2.6.3-buster
-    resource_class: large
+    resource_class: medium
     steps:
       - checkout
       - restore_cache:
@@ -271,6 +271,131 @@ jobs:
       - run:
           name: Cargo Deny Check
           command: cargo deny check
+  restriction:
+    # this job is not enforced, currently informational only
+    docker:
+      - image: circleci/ruby:2.6.3-buster
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore sccache cache
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+      - setup-linux-builder
+      - run:
+          name: Install cargo-expand
+          command: cargo install cargo-expand
+      - run:
+          name: Installed Toolchain Versions
+          command: |
+            cargo --version
+            cargo expand --version
+      - save_cache:
+          name: Save sccache cache
+          key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}
+          paths:
+            - "~/.cache/sccache"
+      - run:
+          name: panicking pathways - artichoke-core
+          working_directory: "artichoke-core"
+          command: |
+            echo "panic!, todo!, and unreachable!"
+            cargo expand | grep "::std::rt::begin_panic_fmt" | wc -l
+            echo "format!"
+            cargo expand | grep "::alloc::fmt::format" | wc -l
+            echo "print! and println!"
+            cargo expand | grep "::std::io::_print" | wc -l
+            echo "eprint! and eprintln!"
+            cargo expand | grep "::std::io::_eprint" | wc -l
+      - run:
+          name: panicking pathways - artichoke-backend
+          working_directory: "artichoke-backend"
+          command: |
+            echo "panic!, todo!, and unreachable!"
+            cargo expand | grep "::std::rt::begin_panic_fmt" | wc -l
+            echo "format!"
+            cargo expand | grep "::alloc::fmt::format" | wc -l
+            echo "print! and println!"
+            cargo expand | grep "::std::io::_print" | wc -l
+            echo "eprint! and eprintln!"
+            cargo expand | grep "::std::io::_eprint" | wc -l
+      - run:
+          name: panicking pathways - artichoke-frontend lib
+          working_directory: "artichoke-frontend"
+          command: |
+            echo "panic!, todo!, and unreachable!"
+            cargo expand --lib | grep "::std::rt::begin_panic_fmt" | wc -l
+            echo "format!"
+            cargo expand --lib | grep "::alloc::fmt::format" | wc -l
+            echo "print! and println!"
+            cargo expand --lib | grep "::std::io::_print" | wc -l
+            echo "eprint! and eprintln!"
+            cargo expand --lib | grep "::std::io::_eprint" | wc -l
+      - run:
+          name: panicking pathways - artichoke-frontend artichoke bin
+          working_directory: "artichoke-frontend"
+          command: |
+            echo "panic!, todo!, and unreachable!"
+            cargo expand --bin artichoke | grep "::std::rt::begin_panic_fmt" | wc -l
+            echo "format!"
+            cargo expand --bin artichoke | grep "::alloc::fmt::format" | wc -l
+            echo "print! and println!"
+            cargo expand --bin artichoke | grep "::std::io::_print" | wc -l
+            echo "eprint! and eprintln!"
+            cargo expand --bin artichoke | grep "::std::io::_eprint" | wc -l
+      - run:
+          name: panicking pathways - artichoke-frontend ruby bin
+          working_directory: "artichoke-frontend"
+          command: |
+            echo "panic!, todo!, and unreachable!"
+            cargo expand --bin ruby | grep "::std::rt::begin_panic_fmt" | wc -l
+            echo "format!"
+            cargo expand --bin ruby | grep "::alloc::fmt::format" | wc -l
+            echo "print! and println!"
+            cargo expand --bin ruby | grep "::std::io::_print" | wc -l
+            echo "eprint! and eprintln!"
+            cargo expand --bin ruby | grep "::std::io::_eprint" | wc -l
+      - run:
+          name: panicking pathways - artichoke-frontend airb bin
+          working_directory: "artichoke-frontend"
+          command: |
+            echo "panic!, todo!, and unreachable!"
+            cargo expand --bin airb | grep "::std::rt::begin_panic_fmt" | wc -l
+            echo "format!"
+            cargo expand --bin airb | grep "::alloc::fmt::format" | wc -l
+            echo "print! and println!"
+            cargo expand --bin airb | grep "::std::io::_print" | wc -l
+            echo "eprint! and eprintln!"
+            cargo expand --bin airb | grep "::std::io::_eprint" | wc -l
+      - run:
+          name: panicking pathways - spec-runner
+          working_directory: "spec-runner"
+          command: |
+            echo "panic!, todo!, and unreachable!"
+            cargo expand | grep "::std::rt::begin_panic_fmt" | wc -l
+            echo "format!"
+            cargo expand | grep "::alloc::fmt::format" | wc -l
+            echo "print! and println!"
+            cargo expand | grep "::std::io::_print" | wc -l
+            echo "eprint! and eprintln!"
+            cargo expand | grep "::std::io::_eprint" | wc -l
+      - run:
+          # Search for "restriction lints": https://rust-lang.github.io/rust-clippy/master/index.html
+          name: clippy restriction lints
+          command: |
+            cargo clippy -- \
+            -W clippy::dbg_macro \
+            -W clippy::get_unwrap \
+            -W clippy::indexing_slicing \
+            -W clippy::option_expect_used \
+            -W clippy::option_unwrap_used \
+            -W clippy::panic \
+            -W clippy::print_stdout \
+            -W clippy::result_expect_used \
+            -W clippy::result_unwrap_used \
+            -W clippy::todo \
+            -W clippy::unimplemented \
+            -W clippy::unreachable
   deploy:
     docker:
       - image: node:lts
