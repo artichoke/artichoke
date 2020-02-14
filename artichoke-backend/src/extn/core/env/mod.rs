@@ -35,17 +35,7 @@ pub fn element_reference(
     name: &Value,
 ) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
-    let ruby_type = name.pretty_name();
-    let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
-        name
-    } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
-        name
-    } else {
-        return Err(Exception::from(TypeError::new(
-            interp,
-            format!("no implicit conversion of {} into String", ruby_type),
-        )));
-    };
+    let name = name.implicitly_convert_to_string()?;
     let env = obj.borrow();
     let result = env.0.get(interp, name)?;
     Ok(interp.convert_mut(result.as_ref().map(Cow::as_ref)))
@@ -58,28 +48,8 @@ pub fn element_assignment(
     value: Value,
 ) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
-    let name_type_name = name.pretty_name();
-    let name = if let Ok(name) = name.clone().try_into::<&[u8]>() {
-        name
-    } else if let Ok(name) = name.funcall::<&[u8]>("to_str", &[], None) {
-        name
-    } else {
-        return Err(Exception::from(TypeError::new(
-            interp,
-            format!("no implicit conversion of {} into String", name_type_name),
-        )));
-    };
-    let value_type_name = value.pretty_name();
-    let value = if let Ok(value) = value.clone().try_into::<Option<&[u8]>>() {
-        value
-    } else if let Ok(value) = value.clone().funcall::<&[u8]>("to_str", &[], None) {
-        Some(value)
-    } else {
-        return Err(Exception::from(TypeError::new(
-            interp,
-            format!("no implicit conversion of {} into String", value_type_name),
-        )));
-    };
+    let name = name.implicitly_convert_to_string()?;
+    let value = value.implicitly_convert_to_nilable_string()?;
     obj.borrow_mut().0.put(interp, name, value)?;
     // Return original object, even if we converted it to a `String`.
     Ok(interp.convert_mut(value))

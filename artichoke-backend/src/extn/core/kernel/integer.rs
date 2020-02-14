@@ -27,17 +27,12 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         Some(Err(_)) => return Err(Exception::from(ArgumentError::new(interp, "invalid radix"))),
         None => None,
     };
-    let ruby_type = arg.pretty_name();
-    let arg = if let Ok(arg) = arg.clone().try_into::<&[u8]>() {
-        arg
-    } else if let Ok(arg) = arg.funcall::<&[u8]>("to_str", &[], None) {
-        arg
-    } else {
-        return Err(Exception::from(TypeError::new(
-            interp,
-            format!("can't convert {} into Integer", ruby_type),
-        )));
-    };
+    let arg = arg.implicitly_convert_to_string().map_err(|_| {
+        let mut message = String::from("can't convert ");
+        message.push_str(arg.pretty_name());
+        message.push_str(" into Integer");
+        TypeError::new(interp, message)
+    })?;
     if memchr::memchr(b'\0', arg).is_some() {
         return Err(Exception::from(invalid_value_err(interp, arg)?));
     }

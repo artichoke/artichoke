@@ -112,32 +112,103 @@ impl Value {
         )
     }
 
-    pub fn implicitly_convert_to_int(&self) -> Result<Int, Exception> {
+    pub fn implicitly_convert_to_int(&self) -> Result<Int, TypeError> {
         let int = if let Ok(int) = self.clone().try_into::<Int>() {
             int
-        } else {
-            let pretty_name = self.pretty_name();
-            if let Ok(maybe_int) = self.funcall::<Self>("to_int", &[], None) {
-                let gives_pretty_name = maybe_int.pretty_name();
-                if let Ok(int) = maybe_int.try_into::<Int>() {
+        } else if let Ok(true) = self.respond_to("to_int") {
+            if let Ok(maybe) = self.funcall::<Self>("to_int", &[], None) {
+                let gives_pretty_name = maybe.pretty_name();
+                if let Ok(int) = maybe.try_into::<Int>() {
                     int
                 } else {
-                    return Err(Exception::from(TypeError::new(
-                        &self.interp,
-                        format!(
-                            "can't convert {} to Integer ({}#to_int gives {})",
-                            pretty_name, pretty_name, gives_pretty_name
-                        ),
-                    )));
+                    let mut message = String::from("can't convert ");
+                    message.push_str(self.pretty_name());
+                    message.push_str(" to Integer (");
+                    message.push_str(self.pretty_name());
+                    message.push_str("#to_int gives ");
+                    message.push_str(gives_pretty_name);
+                    message.push(')');
+                    return Err(TypeError::new(&self.interp, message));
                 }
             } else {
-                return Err(Exception::from(TypeError::new(
-                    &self.interp,
-                    format!("no implicit conversion of {} into Integer", pretty_name),
-                )));
+                let mut message = String::from("no implicit conversion of ");
+                message.push_str(self.pretty_name());
+                message.push_str(" into Integer");
+                return Err(TypeError::new(&self.interp, message));
             }
+        } else {
+            let mut message = String::from("no implicit conversion of ");
+            message.push_str(self.pretty_name());
+            message.push_str(" into Integer");
+            return Err(TypeError::new(&self.interp, message));
         };
         Ok(int)
+    }
+
+    pub fn implicitly_convert_to_string(&self) -> Result<&[u8], TypeError> {
+        let string = if let Ok(string) = self.clone().try_into::<&[u8]>() {
+            string
+        } else if let Ok(true) = self.respond_to("to_str") {
+            if let Ok(maybe) = self.funcall::<Self>("to_str", &[], None) {
+                let gives_pretty_name = maybe.pretty_name();
+                if let Ok(string) = maybe.try_into::<&[u8]>() {
+                    string
+                } else {
+                    let mut message = String::from("can't convert ");
+                    message.push_str(self.pretty_name());
+                    message.push_str(" to String (");
+                    message.push_str(self.pretty_name());
+                    message.push_str("#to_str gives ");
+                    message.push_str(gives_pretty_name);
+                    message.push(')');
+                    return Err(TypeError::new(&self.interp, message));
+                }
+            } else {
+                let mut message = String::from("no implicit conversion of ");
+                message.push_str(self.pretty_name());
+                message.push_str(" into String");
+                return Err(TypeError::new(&self.interp, message));
+            }
+        } else {
+            let mut message = String::from("no implicit conversion of ");
+            message.push_str(self.pretty_name());
+            message.push_str(" into String");
+            return Err(TypeError::new(&self.interp, message));
+        };
+        Ok(string)
+    }
+
+    pub fn implicitly_convert_to_nilable_string(&self) -> Result<Option<&[u8]>, TypeError> {
+        let string = if let Ok(string) = self.clone().try_into::<Option<&[u8]>>() {
+            string
+        } else if let Ok(true) = self.respond_to("to_str") {
+            if let Ok(maybe) = self.funcall::<Self>("to_str", &[], None) {
+                let gives_pretty_name = maybe.pretty_name();
+                if let Ok(string) = maybe.try_into::<&[u8]>() {
+                    Some(string)
+                } else {
+                    let mut message = String::from("can't convert ");
+                    message.push_str(self.pretty_name());
+                    message.push_str(" to String (");
+                    message.push_str(self.pretty_name());
+                    message.push_str("#to_str gives ");
+                    message.push_str(gives_pretty_name);
+                    message.push(')');
+                    return Err(TypeError::new(&self.interp, message));
+                }
+            } else {
+                let mut message = String::from("no implicit conversion of ");
+                message.push_str(self.pretty_name());
+                message.push_str(" into String");
+                return Err(TypeError::new(&self.interp, message));
+            }
+        } else {
+            let mut message = String::from("no implicit conversion of ");
+            message.push_str(self.pretty_name());
+            message.push_str(" into String");
+            return Err(TypeError::new(&self.interp, message));
+        };
+        Ok(string)
     }
 }
 

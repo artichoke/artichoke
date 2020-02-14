@@ -12,17 +12,7 @@ use crate::Parser;
 const RUBY_EXTENSION: &str = "rb";
 
 pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception> {
-    let ruby_type = filename.pretty_name();
-    let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
-        filename
-    } else if let Ok(filename) = filename.funcall::<&[u8]>("to_str", &[], None) {
-        filename
-    } else {
-        return Err(Exception::from(TypeError::new(
-            interp,
-            format!("no implicit conversion of {} into String", ruby_type),
-        )));
-    };
+    let filename = filename.implicitly_convert_to_string()?;
     if memchr::memchr(b'\0', filename).is_some() {
         return Err(Exception::from(ArgumentError::new(
             interp,
@@ -78,17 +68,7 @@ pub fn require(
     filename: Value,
     base: Option<&Path>,
 ) -> Result<Value, Exception> {
-    let ruby_type = filename.pretty_name();
-    let filename = if let Ok(filename) = filename.clone().try_into::<&[u8]>() {
-        filename
-    } else if let Ok(filename) = filename.funcall::<&[u8]>("to_str", &[], None) {
-        filename
-    } else {
-        return Err(Exception::from(TypeError::new(
-            interp,
-            format!("no implicit conversion of {} into String", ruby_type),
-        )));
-    };
+    let filename = filename.implicitly_convert_to_string()?;
     if memchr::memchr(b'\0', filename).is_some() {
         return Err(Exception::from(ArgumentError::new(
             interp,
