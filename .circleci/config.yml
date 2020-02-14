@@ -283,6 +283,9 @@ jobs:
           key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
       - setup-linux-builder
       - run:
+          name: Install nightly Rust
+          command: rustup install nightly
+      - run:
           name: Install cargo-expand
           command: cargo install cargo-expand
       - run:
