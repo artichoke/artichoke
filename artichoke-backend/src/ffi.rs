@@ -14,7 +14,7 @@ use std::rc::Rc;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::state::State;
-use crate::sys::{self, DescribeState};
+use crate::sys;
 use crate::{Artichoke, ConvertMut};
 
 #[cfg(unix)]
@@ -71,7 +71,7 @@ pub unsafe fn from_user_data(
     // At this point, `Rc::strong_count` will be increased by 1.
     trace!(
         "Extracted Artichoke from user data pointer on {}",
-        mrb.debug()
+        sys::mrb_sys_state_debug(mrb.as_mut())
     );
     Ok(Artichoke(api))
 }

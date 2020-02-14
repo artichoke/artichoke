@@ -4,7 +4,7 @@ use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
 use crate::ffi;
-use crate::sys::{protect, DescribeState};
+use crate::sys::{self, protect};
 use crate::value::Value;
 use crate::{Artichoke, Eval};
 
@@ -20,7 +20,7 @@ impl Eval for Artichoke {
         let mrb = self.0.borrow().mrb;
         let context = self.0.borrow_mut().parser.context_mut() as *mut _;
 
-        trace!("Evaling code on {}", mrb.debug());
+        trace!("Evaling code on {}", sys::mrb_sys_state_debug(mrb));
         match unsafe { protect::eval(mrb, context, code) } {
             Ok(value) => {
                 let value = Value::new(self, value);

@@ -10,7 +10,7 @@ use crate::extn;
 use crate::extn::core::exception::Fatal;
 use crate::gc::MrbGarbageCollection;
 use crate::state::State;
-use crate::sys::{self, DescribeState};
+use crate::sys;
 use crate::{Artichoke, ConvertMut, Eval};
 
 /// Create and initialize an [`Artichoke`] interpreter.
@@ -58,7 +58,10 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     }
     arena.restore();
 
-    debug!("Allocated {}", mrb.debug());
+    debug!(
+        "Allocated {}",
+        sys::mrb_sys_state_debug(unsafe { mrb.as_mut() })
+    );
 
     // mruby lazily initializes some core objects like top_self and generates a
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
