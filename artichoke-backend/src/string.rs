@@ -49,6 +49,15 @@ where
     Ok(())
 }
 
+pub fn format_int_into<T, I>(f: &mut T, value: I) -> Result<(), WriteError>
+where
+    T: fmt::Write,
+    I: itoa::Integer,
+{
+    itoa::fmt(f, value)?;
+    Ok(())
+}
+
 /// Error type for [`escape_unicode`].
 ///
 /// This error type wraps a [`fmt::Error`].
