@@ -13,6 +13,7 @@ keywords = ["artichoke", "artichoke-ruby", "ruby"]
 bstr = "0.2"
 chrono = "0.4"
 downcast = "0.10"
+itoa = "0.4.5"
 log = "0.4"
 memchr = "2"
 once_cell = "1"
