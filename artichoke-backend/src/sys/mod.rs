@@ -17,6 +17,7 @@ mod args;
 #[allow(non_snake_case)]
 #[allow(clippy::all)]
 #[allow(clippy::pedantic)]
+#[allow(clippy::restriction)]
 mod ffi {
     include!(concat!(env!("OUT_DIR"), "/ffi.rs"));
 }
