@@ -32,6 +32,7 @@
 //!
 //! artichoke-core is licensed with the MIT License (c) Ryan Lopopolo.
 
+pub mod constant;
 pub mod convert;
 pub mod eval;
 pub mod file;

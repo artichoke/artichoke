@@ -17,8 +17,8 @@ pub use crate::sys;
 pub use crate::types::{Float, Int, Ruby};
 pub use crate::value::{Block, Value};
 pub use crate::{
-    Artichoke, Convert, ConvertMut, Eval, Intern, LoadSources, TryConvert, TryConvertMut,
-    ValueLike, Warn,
+    Artichoke, Convert, ConvertMut, DefineConstant, Eval, Intern, LoadSources, TryConvert,
+    TryConvertMut, ValueLike, Warn,
 };
 
 /// Type alias for errors returned from `init` functions in

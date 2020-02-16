@@ -20,52 +20,45 @@ pub const ARTICHOKE_COMPILER_VERSION: &str = env!("ARTICHOKE_COMPILER_VERSION");
 
 pub const INPUT_RECORD_SEPARATOR: &str = "\n";
 
-macro_rules! global_const {
-    ($interp:expr, $constant:ident) => {{
-        let mrb = $interp.0.borrow().mrb;
-        let name = concat!(stringify!($constant), "\0");
-        let value = $interp.convert_mut($constant);
-        unsafe {
-            sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
-        }
-    }};
-    ($interp:expr, $constant:ident, $value:expr) => {{
-        let mrb = $interp.0.borrow().mrb;
-        let name = concat!(stringify!($constant), "\0");
-        let value = $interp.convert_mut($value);
-        unsafe {
-            sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
-        }
-    }};
-    ($interp:expr, $constant:ident as Int) => {{
-        let mrb = $interp.0.borrow().mrb;
-        let constant = $constant
-            .parse::<Int>()
-            .map_err(|_| NotDefinedError::global_constant(stringify!($constant)))?;
-        let name = concat!(stringify!($constant), "\0");
-        let value = $interp.convert(constant);
-        unsafe {
-            sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
-        }
-    }};
-}
-
 pub fn init(interp: &mut Artichoke, backend_name: &str) -> InitializeResult<()> {
+    let copyright = interp.convert_mut(RUBY_COPYRIGHT);
+    interp.define_global_constant("RUBY_COPYRIGHT", copyright)?;
+
+    let description = interp.convert_mut(RUBY_DESCRIPTION);
+    interp.define_global_constant("RUBY_DESCRIPTION", description)?;
+
     let mut engine = String::from(RUBY_ENGINE);
     engine.push('-');
     engine.push_str(backend_name);
+    let engine = interp.convert_mut(engine);
+    interp.define_global_constant("RUBY_ENGINE", engine)?;
 
-    global_const!(interp, RUBY_COPYRIGHT);
-    global_const!(interp, RUBY_DESCRIPTION);
-    global_const!(interp, RUBY_ENGINE, engine);
-    global_const!(interp, RUBY_ENGINE_VERSION);
-    global_const!(interp, RUBY_PATCHLEVEL as Int);
-    global_const!(interp, RUBY_PLATFORM);
-    global_const!(interp, RUBY_RELEASE_DATE);
-    global_const!(interp, RUBY_REVISION as Int);
-    global_const!(interp, RUBY_VERSION);
+    let engine_version = interp.convert_mut(RUBY_ENGINE_VERSION);
+    interp.define_global_constant("RUBY_ENGINE_VERSION", engine_version)?;
 
-    global_const!(interp, ARTICHOKE_COMPILER_VERSION);
+    let patchlevel = RUBY_PATCHLEVEL
+        .parse::<Int>()
+        .map_err(|_| NotDefinedError::global_constant("RUBY_PATCHLEVEL"))?;
+    let patchlevel = interp.convert(patchlevel);
+    interp.define_global_constant("RUBY_PATCHLEVEL", patchlevel)?;
+
+    let platform = interp.convert_mut(RUBY_PLATFORM);
+    interp.define_global_constant("RUBY_PLATFORM", platform)?;
+
+    let release_date = interp.convert_mut(RUBY_RELEASE_DATE);
+    interp.define_global_constant("RUBY_RELEASE_DATE", release_date)?;
+
+    let revision = RUBY_REVISION
+        .parse::<Int>()
+        .map_err(|_| NotDefinedError::global_constant("RUBY_REVISION"))?;
+    let revision = interp.convert(revision);
+    interp.define_global_constant("RUBY_REVISION", revision)?;
+
+    let version = interp.convert_mut(RUBY_VERSION);
+    interp.define_global_constant("RUBY_VERSION", version)?;
+
+    let compiler_version = interp.convert_mut(ARTICHOKE_COMPILER_VERSION);
+    interp.define_global_constant("ARTICHOKE_COMPILER_VERSION", compiler_version)?;
 
     core::init(interp)?;
     stdlib::init(interp)?;
