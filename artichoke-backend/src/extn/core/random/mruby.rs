@@ -35,21 +35,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let default = default
         .try_into_ruby(interp, None)
         .map_err(|_| NotDefinedError::class_constant("Random::DEFAULT"))?;
-    let borrow = interp.0.borrow();
-    let mut rclass = borrow
-        .class_spec::<random::Random>()
-        .and_then(|spec| spec.rclass(interp.0.borrow().mrb))
-        .ok_or_else(|| NotDefinedError::class("Random"))?;
-    let mrb = borrow.mrb;
-    unsafe {
-        sys::mrb_define_const(
-            mrb,
-            rclass.as_mut(),
-            b"DEFAULT\0".as_ptr() as *const i8,
-            default.inner(),
-        );
-    }
-    drop(borrow);
+    interp.define_class_constant::<random::Random>("DEFAULT", default)?;
     let _ = interp.eval(&include_bytes!("random.rb")[..])?;
     trace!("Patched Random onto interpreter");
     Ok(())

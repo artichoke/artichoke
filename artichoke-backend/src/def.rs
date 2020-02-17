@@ -275,6 +275,7 @@ pub enum NotDefinedError {
     Module(Cow<'static, str>),
     GlobalConstant(Cow<'static, str>),
     ClassConstant(Cow<'static, str>),
+    ModuleConstant(Cow<'static, str>),
 }
 
 impl NotDefinedError {
@@ -320,6 +321,13 @@ impl NotDefinedError {
         Self::ClassConstant(item.into())
     }
 
+    pub fn module_constant<T>(item: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self::ModuleConstant(item.into())
+    }
+
     #[must_use]
     pub fn fqdn(&self) -> &str {
         match self {
@@ -327,7 +335,9 @@ impl NotDefinedError {
             | Self::Super(ref fqdn)
             | Self::Class(ref fqdn)
             | Self::Module(ref fqdn) => fqdn.as_ref(),
-            Self::GlobalConstant(ref name) | Self::ClassConstant(ref name) => name.as_ref(),
+            Self::GlobalConstant(ref name)
+            | Self::ClassConstant(ref name)
+            | Self::ModuleConstant(ref name) => name.as_ref(),
         }
     }
 
@@ -340,6 +350,7 @@ impl NotDefinedError {
             Self::Module(_) => "module",
             Self::GlobalConstant(_) => "global constant",
             Self::ClassConstant(_) => "class constant",
+            Self::ModuleConstant(_) => "module constant",
         }
     }
 }

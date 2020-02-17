@@ -107,6 +107,7 @@ use std::rc::Rc;
 pub mod macros;
 
 pub mod class;
+mod constant;
 pub mod convert;
 pub mod def;
 mod eval;
@@ -136,6 +137,7 @@ mod test;
 
 pub use artichoke_core as core;
 
+pub use artichoke_core::constant::DefineConstant;
 pub use artichoke_core::convert::Convert;
 pub use artichoke_core::convert::ConvertMut;
 pub use artichoke_core::convert::TryConvert;
