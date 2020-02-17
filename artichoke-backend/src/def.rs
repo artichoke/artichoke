@@ -100,7 +100,7 @@ pub type Method =
 /// Because there is no C API to resolve class and module names directly, each
 /// class-like holds a reference to its enclosing scope so it can recursively
 /// resolve its enclosing [`RClass *`](sys::RClass).
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub enum EnclosingRubyScope {
     /// Reference to a Ruby `Class` enclosing scope.
     Class {

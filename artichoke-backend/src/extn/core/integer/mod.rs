@@ -8,6 +8,7 @@ use crate::types;
 pub mod mruby;
 pub mod trampoline;
 
+#[derive(Debug)]
 pub struct Integer;
 
 pub fn chr(

@@ -1,5 +1,6 @@
 use std::convert::AsRef;
 
+#[derive(Debug)]
 pub struct Detector {
     test: String,
     iterations: usize,

@@ -102,7 +102,7 @@ impl<'a> Builder<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
     sym: sys::mrb_sym,
@@ -212,12 +212,6 @@ impl Spec {
                 NonNull::new(unsafe { sys::mrb_module_get(mrb, self.name_c_str().as_ptr()) })
             }
         }
-    }
-}
-
-impl fmt::Debug for Spec {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
     }
 }
 

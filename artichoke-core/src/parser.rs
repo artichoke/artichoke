@@ -39,21 +39,13 @@ pub trait Parser {
 ///
 /// Errors include overflows of the interpreters line counter.
 #[non_exhaustive]
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IncrementLinenoError {
     /// An overflow occurred when incrementing the line number.
     ///
     /// This error is reported based on the internal parser storage width
     /// and contains the max value the parser can store.
     Overflow(usize),
-}
-
-impl fmt::Debug for IncrementLinenoError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Overflow(max) => write!(f, "Parser exceeded maximum line count: {}", max),
-        }
-    }
 }
 
 impl fmt::Display for IncrementLinenoError {

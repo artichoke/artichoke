@@ -15,7 +15,7 @@ pub enum Type {
     Module,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
     cstring: CString,
@@ -104,12 +104,6 @@ impl Spec {
                 self.args,
             ),
         }
-    }
-}
-
-impl fmt::Debug for Spec {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
     }
 }
 

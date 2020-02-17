@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
+use std::fmt;
 use std::ptr::NonNull;
 
 use crate::core::parser::IncrementLinenoError;
@@ -12,6 +13,15 @@ pub const TOP_FILENAME: &[u8] = b"(eval)";
 pub struct State {
     context: NonNull<sys::mrbc_context>,
     stack: Vec<Context>,
+}
+
+impl fmt::Debug for State {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("parser::State")
+            .field("context", &"non-null mrb_context")
+            .field("stack", &self.stack)
+            .finish()
+    }
 }
 
 impl State {

@@ -65,6 +65,7 @@ impl From<io::Error> for Error {
 }
 
 /// Configuration for the REPL readline prompt.
+#[derive(Debug, Clone)]
 pub struct PromptConfig {
     /// Basic prompt for start of a new expression.
     pub simple: String,

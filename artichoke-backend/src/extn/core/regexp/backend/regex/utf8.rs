@@ -11,7 +11,7 @@ use crate::extn::prelude::*;
 
 use super::super::{NameToCaptureLocations, NilableString};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Utf8 {
     literal: Config,
     derived: Config,
@@ -50,18 +50,6 @@ impl Utf8 {
             regex,
         };
         Ok(regexp)
-    }
-}
-
-impl fmt::Debug for Utf8 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "/{}/{}{}",
-            String::from_utf8_lossy(self.literal.pattern.as_slice()).replace("/", r"\/"),
-            self.literal.options.modifier_string(),
-            self.encoding.string()
-        )
     }
 }
 

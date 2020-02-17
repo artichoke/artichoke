@@ -4,6 +4,7 @@ use crate::extn::core::random::backend::rand::Rand;
 use crate::extn::core::random::backend::RandType;
 use crate::types::{Float, Int};
 
+#[derive(Debug)]
 pub struct Prng {
     random: Rand<SmallRng>,
 }

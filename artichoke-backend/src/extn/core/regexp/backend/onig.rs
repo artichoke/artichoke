@@ -12,7 +12,7 @@ use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Onig {
     literal: Config,
     derived: Config,
@@ -49,18 +49,6 @@ impl Onig {
             regex: Rc::new(regex),
         };
         Ok(regexp)
-    }
-}
-
-impl fmt::Debug for Onig {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "/{}/{}{}",
-            String::from_utf8_lossy(self.literal.pattern.as_slice()).replace("/", r"\/"),
-            self.literal.options.modifier_string(),
-            self.encoding.string()
-        )
     }
 }
 
