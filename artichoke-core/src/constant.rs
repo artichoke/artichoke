@@ -20,6 +20,12 @@ pub trait DefineConstant {
     type Error: error::Error;
 
     /// Define a global constant.
+    ///
+    /// # Errors
+    ///
+    /// If the given constant name is not valid, an error is returned.
+    ///
+    /// If the interpreter cannot define the constant, an error is returned.
     fn define_global_constant(
         &mut self,
         constant: &str,
@@ -29,6 +35,14 @@ pub trait DefineConstant {
     /// Define a class constant.
     ///
     /// The class is specified by the type parameter `T`.
+    ///
+    /// # Errors
+    ///
+    /// If the class named by type `T` is not defined, an error is returned.
+    ///
+    /// If the given constant name is not valid, an error is returned.
+    ///
+    /// If the interpreter cannot define the constant, an error is returned.
     fn define_class_constant<T: 'static>(
         &mut self,
         constant: &str,
@@ -38,6 +52,14 @@ pub trait DefineConstant {
     /// Define a module constant.
     ///
     /// The class is specified by the type parameter `T`.
+    ///
+    /// # Errors
+    ///
+    /// If the module named by type `T` is not defined, an error is returned.
+    ///
+    /// If the given constant name is not valid, an error is returned.
+    ///
+    /// If the interpreter cannot define the constant, an error is returned.
     fn define_module_constant<T: 'static>(
         &mut self,
         constant: &str,
