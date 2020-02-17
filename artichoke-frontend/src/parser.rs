@@ -59,6 +59,7 @@ pub enum Error {
 }
 
 /// Wraps a [`artichoke_backend`] mruby parser.
+// TODO: add a `Debug` impl
 pub struct Parser {
     parser: *mut sys::mrb_parser_state,
     context: *mut sys::mrbc_context,

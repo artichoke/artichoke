@@ -122,7 +122,7 @@ impl<'a> Builder<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
     cstring: CString,
@@ -234,16 +234,6 @@ impl Spec {
             // Class exists in root scope.
             NonNull::new(unsafe { sys::mrb_class_get(mrb, self.name_c_str().as_ptr()) })
         }
-    }
-}
-
-impl fmt::Debug for Spec {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)?;
-        if self.data_type.dfree.is_some() {
-            write!(f, " -- with free func")?;
-        }
-        Ok(())
     }
 }
 

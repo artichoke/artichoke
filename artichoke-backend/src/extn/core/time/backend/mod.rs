@@ -74,3 +74,9 @@ pub trait TimeType: Any {
 pub trait MakeTime: Any {
     fn now(&self, interp: &Artichoke) -> Box<dyn TimeType>;
 }
+
+#[allow(clippy::missing_safety_doc)]
+mod internal {
+    downcast!(dyn super::TimeType);
+    downcast!(dyn super::MakeTime);
+}

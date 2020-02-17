@@ -374,6 +374,12 @@ pub struct Block {
     value: sys::mrb_value,
 }
 
+impl fmt::Debug for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "proc")
+    }
+}
+
 impl Block {
     /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
     #[must_use]

@@ -17,6 +17,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
+#[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
 pub struct RString;
 

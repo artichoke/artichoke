@@ -1,10 +1,13 @@
 use std::borrow::Cow;
+use std::fmt;
 
 use crate::extn::prelude::*;
 
 pub mod backend;
 pub mod mruby;
 
+use backend::memory::Memory;
+use backend::system::System;
 use backend::EnvType;
 
 pub struct Environ(Box<dyn EnvType>);
@@ -15,16 +18,30 @@ impl RustBackedValue for Environ {
     }
 }
 
+impl fmt::Debug for Environ {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Ok(backend) = self.0.downcast_ref::<System>() {
+            f.debug_struct("Environ").field("backend", backend).finish()
+        } else if let Ok(backend) = self.0.downcast_ref::<Memory>() {
+            f.debug_struct("Environ").field("backend", backend).finish()
+        } else {
+            f.debug_struct("Environ")
+                .field("backend", &"unknown")
+                .finish()
+        }
+    }
+}
+
 #[cfg(feature = "artichoke-system-environ")]
 pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
-    let obj = Environ(Box::new(backend::system::System::new()));
+    let obj = Environ(Box::new(System::new()));
     let result = obj.try_into_ruby(&interp, into)?;
     Ok(result)
 }
 
 #[cfg(not(feature = "artichoke-system-environ"))]
 pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
-    let obj = Environ(Box::new(backend::memory::Memory::new()));
+    let obj = Environ(Box::new(Memory::new()));
     let result = obj.try_into_ruby(&interp, into)?;
     Ok(result)
 }

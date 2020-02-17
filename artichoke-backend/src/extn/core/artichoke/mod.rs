@@ -11,6 +11,8 @@ pub fn init(interp: &mut crate::Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
+#[derive(Debug)]
 pub struct Artichoke;
 
+#[derive(Debug)]
 pub struct Kernel;

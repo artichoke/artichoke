@@ -164,10 +164,16 @@ impl State {
 
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Artichoke State {{ {} }}",
-            sys::mrb_sys_state_debug(self.mrb)
-        )
+        let mut fmt = f.debug_struct("State");
+        fmt.field("mrb", &sys::mrb_sys_state_debug(self.mrb))
+            .field("parser", &self.parser)
+            .field("classes", &self.classes)
+            .field("modules", &self.modules)
+            .field("vfs", &self.vfs)
+            .field("active_regexp_globals", &self.active_regexp_globals)
+            .field("captured_output", &self.captured_output);
+        #[cfg(feature = "artichoke-random")]
+        fmt.field("prng", &self.prng);
+        fmt.finish()
     }
 }

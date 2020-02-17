@@ -21,5 +21,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 <% constants.each_with_index do |(constant, _), i| %>
+#[derive(Debug)]
 pub struct <%= constant %>;
+
 <% end %>

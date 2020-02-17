@@ -1,6 +1,7 @@
 use smallvec::SmallVec;
 use std::cmp;
-use std::iter::FromIterator;
+use std::fmt;
+use std::iter::{self, FromIterator};
 
 use crate::extn::core::array::ArrayType;
 use crate::extn::prelude::*;
@@ -60,6 +61,14 @@ impl<'a> FromIterator<&'a Option<Value>> for InlineBuffer {
                 unsafe { sys::mrb_sys_nil_value() }
             }
         })))
+    }
+}
+
+impl fmt::Debug for InlineBuffer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list()
+            .entries(iter::repeat("Value").take(self.len()))
+            .finish()
     }
 }
 

@@ -7,6 +7,7 @@ use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
 
+#[derive(Debug)]
 pub struct Lazy {
     literal: Config,
     encoding: Encoding,
@@ -32,18 +33,6 @@ impl Lazy {
                 Encoding::default(),
             )
         })
-    }
-}
-
-impl fmt::Debug for Lazy {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "/{}/{}{}",
-            String::from_utf8_lossy(self.literal.pattern.as_slice()).replace("/", r"\/"),
-            self.literal.options.modifier_string(),
-            Encoding::default().string()
-        )
     }
 }
 

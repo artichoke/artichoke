@@ -14,6 +14,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
+#[derive(Debug)]
 pub struct Float;
 
 impl Float {

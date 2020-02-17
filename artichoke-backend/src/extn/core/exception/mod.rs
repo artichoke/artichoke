@@ -265,7 +265,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 macro_rules! ruby_exception_impl {
     ($exception:ident) => {
-        #[derive(Clone)]
+        #[derive(Debug, Clone)]
         pub struct $exception {
             message: Cow<'static, [u8]>,
         }
@@ -295,40 +295,28 @@ macro_rules! ruby_exception_impl {
         }
 
         #[allow(clippy::use_self)]
-        impl From<$exception> for exception::Exception
-        where
-            $exception: RubyException,
-        {
+        impl From<$exception> for exception::Exception {
             fn from(exception: $exception) -> exception::Exception {
                 exception::Exception::from(Box::<dyn RubyException>::from(exception))
             }
         }
 
         #[allow(clippy::use_self)]
-        impl From<Box<$exception>> for exception::Exception
-        where
-            $exception: RubyException,
-        {
+        impl From<Box<$exception>> for exception::Exception {
             fn from(exception: Box<$exception>) -> exception::Exception {
                 exception::Exception::from(Box::<dyn RubyException>::from(exception))
             }
         }
 
         #[allow(clippy::use_self)]
-        impl From<$exception> for Box<dyn RubyException>
-        where
-            $exception: RubyException,
-        {
+        impl From<$exception> for Box<dyn RubyException> {
             fn from(exception: $exception) -> Box<dyn RubyException> {
                 Box::new(exception)
             }
         }
 
         #[allow(clippy::use_self)]
-        impl From<Box<$exception>> for Box<dyn RubyException>
-        where
-            $exception: RubyException,
-        {
+        impl From<Box<$exception>> for Box<dyn RubyException> {
             fn from(exception: Box<$exception>) -> Box<dyn RubyException> {
                 exception
             }
@@ -361,23 +349,7 @@ macro_rules! ruby_exception_impl {
             }
         }
 
-        impl fmt::Debug for $exception
-        where
-            $exception: RubyException,
-        {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                let classname = self.name();
-                write!(f, "{} (", classname)?;
-                string::escape_unicode(f, self.message())
-                    .map_err(string::WriteError::into_inner)?;
-                write!(f, ")")
-            }
-        }
-
-        impl fmt::Display for $exception
-        where
-            $exception: RubyException,
-        {
+        impl fmt::Display for $exception {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let classname = self.name();
                 write!(f, "{} (", classname)?;

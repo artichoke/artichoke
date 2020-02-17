@@ -22,3 +22,8 @@ pub trait EnvType {
 
     fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception>;
 }
+
+#[allow(clippy::missing_safety_doc)]
+mod internal {
+    downcast!(dyn super::EnvType);
+}

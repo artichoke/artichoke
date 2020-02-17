@@ -12,13 +12,8 @@ pub mod trampoline;
 pub use backend::ArrayType;
 pub use inline_buffer::InlineBuffer;
 
+#[derive(Debug, Clone)]
 pub struct Array(InlineBuffer);
-
-impl Clone for Array {
-    fn clone(&self) -> Self {
-        Self(self.0.clone())
-    }
-}
 
 impl Array {
     #[must_use]
