@@ -2,7 +2,7 @@ name: CI
 on: [push]
 jobs:
   build:
-    name: Build and test
+    name: Build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -94,7 +94,7 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
+          args: --all-targets --all-features
 
   ruby:
     name: Lint and format Ruby
@@ -119,6 +119,46 @@ jobs:
       - name: Lint and check formatting with Rubocop
         run: bundle exec rubocop
 
+  c:
+    name: Lint and format C
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Node toolchain
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: Install Nodejs toolchain
+        run: yarn install --frozen-lockfile
+
+      - name: Lint and check formatting with clang-format
+        run: node scripts/clang-format.js --check
+
+  js:
+    name: Lint and format JS
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Node toolchain
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: Install Nodejs toolchain
+        run: yarn install --frozen-lockfile
+
+      - name: Lint and check formatting with eslint
+        run: yarn eslint .
+
   text:
     name: Lint and format text
     runs-on: ubuntu-latest
@@ -134,7 +174,10 @@ jobs:
           node-version: "12.x"
 
       - name: Install Nodejs toolchain
-        run: yarn install
+        run: yarn install --frozen-lockfile
 
       - name: Lint and check formatting with prettier
-        run: node scripts/format.js --check
+        run: yarn prettier --check '**/*'
+
+      - name: Format markdown with prettier
+        run: yarn prettier --prose-wrap always --check '**/*.md' '*.md'

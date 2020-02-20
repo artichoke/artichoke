@@ -29,13 +29,12 @@ If you'd like to engage in a discussion outside of GitHub, you can
   [using Serde to implement the JSON package](https://github.com/artichoke/artichoke/issues/77).
 - If there is a Rust crate that does what we need, prefer to use it. Forking is
   OK, too, e.g.
-  [artichoke/rust-onig](https://github.com/artichoke/rust-onig/tree/wasm).
+  [artichoke/rust-onig](https://github.com/artichoke/rust-onig/tree/artichoke-vendor).
 
 ## Setup
 
-Artichoke includes Rust, Ruby, C, Shell, and Text sources. Developing on
-Artichoke requires configuring several dependencies, which are orchestrated by
-[Yarn](https://yarnpkg.com/).
+Artichoke includes Rust, Ruby, C, and Text sources. Developing on Artichoke
+requires configuring several dependencies.
 
 ### Rust Toolchain
 
@@ -65,9 +64,9 @@ rustup component add clippy
 
 ### Rust Crates
 
-Artichoke depends on several Rust libraries, or crates. Once you have the Rust
-toolchain installed, you can install the crates specified in
-[`Cargo.lock`](/Cargo.lock) by running:
+Artichoke depends on several Rust libraries. In Rust, a library is called a
+_crate_. Once you have the Rust toolchain installed, you can install the crates
+specified in [`Cargo.lock`](/Cargo.lock) by running:
 
 ```sh
 cargo build
@@ -103,21 +102,6 @@ default, mruby requires the following to compile:
 You can override the requirement for clang by setting the `CC` and `LD`
 environment variables.
 
-### Node.js
-
-Artichoke uses Yarn and Node.js for linting and orchestration.
-
-You will need to install
-[Node.js](https://nodejs.org/en/download/package-manager/) and
-[Yarn](https://yarnpkg.com/en/docs/install).
-
-On macOS, you can install Node.js and Yarn with
-[Homebrew](https://docs.brew.sh/Installation):
-
-```sh
-brew install node yarn
-```
-
 ### Ruby
 
 Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
@@ -141,12 +125,57 @@ gem install bundler
 rbenv rehash
 ```
 
-To lint Ruby sources, Artichoke uses
-[RuboCop](https://github.com/rubocop-hq/rubocop). You can install RuboCop and
-other Ruby dependencies by running:
+The [`Gemfile`](/Gemfile) in Artichoke specifies several dev dependencies. You
+can install these dependencies by running:
 
 ```sh
 bundle install
+```
+
+Artichoke uses [`rake`](/Rakefile) as a task runner. You can see the available
+tasks by running:
+
+```console
+$ bundle exec rake --tasks
+rake doc               # Generate Rust API documentation
+rake doc:open          # Generate Rust API documentation and open it in a web browser
+rake lint:all          # Lint and format
+rake lint:deps         # Install linting dependencies
+rake lint:format       # Format sources
+rake lint:restriction  # Lint with restriction pass (unenforced lints)
+rake lint:rubocop      # Run rubocop
+rake spec              # Run enforced ruby/spec suite
+```
+
+To lint Ruby sources, Artichoke uses
+[RuboCop](https://github.com/rubocop-hq/rubocop). RuboCop runs as part of the
+`lint:all` task. You can run only RuboCop by invoking the `lint:rubocop` task.
+
+### Node.js
+
+Node.js and Yarn are optional dependencies that are used for formatting text
+sources with [prettier](https://prettier.io/).
+
+Node.js is only required for formatting if modifying the following filetypes:
+
+- `c`
+- `h`
+- `html`
+- `json`
+- `md`
+- `toml`
+- `yaml`
+- `yml`
+
+You will need to install
+[Node.js](https://nodejs.org/en/download/package-manager/) and
+[Yarn](https://yarnpkg.com/en/docs/install).
+
+On macOS, you can install Node.js and Yarn with
+[Homebrew](https://docs.brew.sh/Installation):
+
+```sh
+brew install node yarn
 ```
 
 ### Node.js Packages
@@ -161,18 +190,6 @@ yarn install
 You can check to see that this worked by running `yarn lint` and observing no
 errors.
 
-### Shell
-
-Artichoke uses [shfmt](https://github.com/mvdan/sh) for formatting and
-[shellcheck](https://github.com/koalaman/shellcheck) for linting Shell scripts.
-
-On macOS, you can install shfmt and shellcheck with
-[Homebrew](https://docs.brew.sh/Installation):
-
-```sh
-brew install shfmt shellcheck
-```
-
 ## Code Quality
 
 ### Linting
@@ -181,7 +198,7 @@ Once you [configure a development environment](#setup), run the following to
 lint sources:
 
 ```sh
-yarn lint
+rake lint:all
 ```
 
 Merges will be blocked by CI if there are lint errors.
@@ -221,11 +238,8 @@ Tests are run for every PR. All builds must pass before merging a PR.
 
 ### Rust Toolchain
 
-Because rustfmt, clippy, and the language server sometimes break on nightly,
-Artichoke pegs a specific date archive of nightly. If you want to update the
-pegged nightly version, choose one that has
-[passing builds for rustfmt, clippy, and rls](https://rust-lang-nursery.github.io/rust-toolstate/);
-otherwise, the build will fail on [CI](/.circleci/config.yml).
+Upgrades to the Rust toolchain should happen in a dedicated PR that addresses
+any changes to ructc warnings and clippy lints.
 
 ### Rust Crates
 
