@@ -1,8 +1,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 #![allow(clippy::restriction)]
-#![deny(warnings, intra_doc_link_resolution_failure)]
-#![doc(deny(warnings))]
 
 use std::env;
 use std::path::Path;
@@ -85,6 +83,7 @@ mod libmruby {
     use std::fs;
     use std::path::{Component, PathBuf};
     use std::process::Command;
+    use std::str;
     use target_lexicon::{Architecture, OperatingSystem, Triple};
     use walkdir::WalkDir;
 
@@ -184,20 +183,17 @@ mod libmruby {
         // directly with the `cc` crate. We must first hijack the mruby build
         // system to do the codegen for us.
         generate_mrbgem_config();
-        let output = Command::new("ruby")
+        let status = Command::new("ruby")
             .arg(mruby_minirake())
             .arg("--jobs")
             .arg(num_cpus::get().to_string())
             .env("MRUBY_BUILD_DIR", mruby_build_dir())
             .env("MRUBY_CONFIG", mruby_build_config())
             .current_dir(mruby_source_dir())
-            .output()
+            .status()
             .unwrap();
-        if !output.status.success() {
-            panic!(
-                "minirake executed with failing error: {}",
-                String::from_utf8(output.stderr).unwrap()
-            );
+        if !status.success() {
+            panic!("minirake failed");
         }
 
         let mut sources = HashMap::new();
@@ -338,6 +334,7 @@ mod rubylib {
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::process::Command;
+    use std::str;
 
     use super::buildpath;
 
@@ -392,12 +389,14 @@ mod rubylib {
             .arg(package)
             .output()
             .unwrap();
-
         if !output.status.success() {
-            panic!(
-                "Command executed with failing error: {}",
-                String::from_utf8(output.stderr).unwrap()
-            );
+            eprintln!("ruby get_package_files.rb failed");
+            eprintln!("--- stdout:");
+            eprintln!("{}", str::from_utf8(output.stdout.as_slice()).unwrap());
+            eprintln!();
+            eprintln!("--- stderr:");
+            eprintln!("{}", str::from_utf8(output.stderr.as_slice()).unwrap());
+            panic!("ruby get_package_files.rb failed");
         }
         String::from_utf8(output.stdout).unwrap()
     }
@@ -409,21 +408,17 @@ mod rubylib {
             fs::create_dir_all(parent).unwrap();
         }
         let script = auto_import_root().join("auto_import.rb");
-        let output = Command::new("ruby")
+        let status = Command::new("ruby")
             .arg("--disable-all")
             .arg(script)
             .arg(buildpath::source::ruby_vendored_lib_dir())
             .arg(package)
             .arg(pkg_dest)
             .arg(sources.join(","))
-            .output()
+            .status()
             .unwrap();
-
-        if !output.status.success() {
-            panic!(
-                "Command executed with failing error: {}",
-                String::from_utf8(output.stderr).unwrap()
-            );
+        if !status.success() {
+            panic!("auto_import.rb failed");
         }
     }
 
@@ -537,6 +532,7 @@ mod release {
     use std::env;
     use std::fmt;
     use std::process::Command;
+    use std::str;
     use target_lexicon::Triple;
 
     pub fn build(target: &Triple) {
@@ -571,51 +567,62 @@ mod release {
 
     fn birthdate() -> DateTime<Utc> {
         // birth date taken from git log of first commit.
-        let initial_commit = Command::new("git")
+        let output = Command::new("git")
             .arg("rev-list")
             .arg("--max-parents=0")
             .arg("HEAD")
             .output()
             .unwrap();
-        if !initial_commit.status.success() {
-            panic!(
-                "Command executed with failing error: {}",
-                String::from_utf8(initial_commit.stderr).unwrap()
-            );
+        if !output.status.success() {
+            eprintln!("git rev-list failed");
+            eprintln!("--- stdout:");
+            eprintln!("{}", str::from_utf8(output.stdout.as_slice()).unwrap());
+            eprintln!();
+            eprintln!("--- stderr:");
+            eprintln!("{}", str::from_utf8(output.stderr.as_slice()).unwrap());
+            panic!("git rev-list failed");
         }
         // This code assumes there is only one root commit reachable from HEAD.
-        let initial_commit = String::from_utf8(initial_commit.stdout).unwrap();
-        let birth_date = Command::new("git")
+        let initial_commit = String::from_utf8(output.stdout).unwrap();
+        let output = Command::new("git")
             .arg("show")
             .arg("--no-patch")
             .arg("--format=%cD")
             .arg(initial_commit.trim())
             .output()
             .unwrap();
-        if !birth_date.status.success() {
-            panic!(
-                "Command executed with failing error: {}",
-                String::from_utf8(birth_date.stderr).unwrap()
-            );
+        if !output.status.success() {
+            eprintln!("git show {} failed", initial_commit.trim());
+            eprintln!("--- stdout:");
+            eprintln!("{}", str::from_utf8(output.stdout.as_slice()).unwrap());
+            eprintln!();
+            eprintln!("--- stderr:");
+            eprintln!("{}", str::from_utf8(output.stderr.as_slice()).unwrap());
+            panic!("git show {} failed", initial_commit.trim());
         }
-        let birth_date = String::from_utf8(birth_date.stdout).unwrap();
+        let birth_date = str::from_utf8(output.stdout.as_slice()).unwrap();
         DateTime::<Utc>::from(DateTime::parse_from_rfc2822(birth_date.trim()).expect("birth"))
     }
 
     fn revision_count() -> String {
-        let revision_count = Command::new("git")
+        let output = Command::new("git")
             .arg("rev-list")
             .arg("--count")
             .arg("HEAD")
             .output()
             .unwrap();
-        if !revision_count.status.success() {
-            panic!(
-                "Command executed with failing error: {}",
-                String::from_utf8(revision_count.stderr).unwrap()
-            );
+        if !output.status.success() {
+            let mut message = String::new();
+            message.push('\n');
+            message.push_str("stdout:\n");
+            message.push_str(str::from_utf8(output.stdout.as_slice()).unwrap());
+            message.push('\n');
+            message.push_str("=".repeat(50).as_str());
+            message.push_str("stdout:\n");
+            message.push_str(str::from_utf8(output.stdout.as_slice()).unwrap());
+            panic!("git rev-list failed: {}", message);
         }
-        String::from_utf8(revision_count.stdout)
+        str::from_utf8(output.stdout.as_slice())
             .unwrap()
             .trim()
             .to_owned()

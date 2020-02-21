@@ -228,8 +228,8 @@ jobs:
       - setup-rubocop:
           target: .
       - run:
-          name: Check formatting and linter errors
-          command: node scripts/lint.js --check
+          name: HACK - generate docs
+          command: cargo doc --all --no-deps
       - save_cache:
           name: Save sccache cache
           key: v2-sccache-cache-stable-{{ arch }}-{{ .Environment.CIRCLE_JOB }}-{{ epoch }}

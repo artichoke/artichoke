@@ -22,8 +22,7 @@ mod filename_test {
         let contains_nul_byte = super::INLINE_EVAL_SWITCH_FILENAME
             .iter()
             .copied()
-            .position(|b| b == b'\0')
-            .is_some();
+            .any(|b| b == b'\0');
         assert!(!contains_nul_byte);
     }
 }

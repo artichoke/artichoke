@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![deny(missing_docs, warnings, intra_doc_link_resolution_failure)]
-#![doc(deny(warnings))]
+#![deny(missing_docs, intra_doc_link_resolution_failure)]
 #![forbid(unsafe_code)]
 
 //! # artichoke-core

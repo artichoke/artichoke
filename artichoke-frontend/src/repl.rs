@@ -22,11 +22,7 @@ const REPL_FILENAME: &[u8] = b"(airb)";
 mod filename_test {
     #[test]
     fn repl_filename_does_not_contain_nul_byte() {
-        let contains_nul_byte = super::REPL_FILENAME
-            .iter()
-            .copied()
-            .position(|b| b == b'\0')
-            .is_some();
+        let contains_nul_byte = super::REPL_FILENAME.iter().copied().any(|b| b == b'\0');
         assert!(!contains_nul_byte);
     }
 }

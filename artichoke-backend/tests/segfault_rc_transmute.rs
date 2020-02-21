@@ -1,6 +1,5 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![deny(warnings, intra_doc_link_resolution_failure)]
 
 //! This integration test checks for segfaults that stem from the improper
 //! handling of `Rc` when storing the `Artichoke` interpreter in the `sys::mrb_state`

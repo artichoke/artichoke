@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![deny(missing_docs, warnings, intra_doc_link_resolution_failure)]
-#![doc(deny(warnings))]
+#![deny(missing_docs, intra_doc_link_resolution_failure)]
 
 //!  `artichoke-frontend` crate provides binaries for interacting with the
 //!  artichoke interpreter in the [`artichoke-backend`](artichoke_backend)

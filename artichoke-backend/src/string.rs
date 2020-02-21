@@ -170,7 +170,7 @@ mod tests {
     #[test]
     fn escaped() {
         let mut buf = String::new();
-        escape_unicode(&mut buf, "\n".as_bytes()).unwrap();
+        escape_unicode(&mut buf, b"\n").unwrap();
         assert_eq!(r"\n", buf.as_str());
     }
 }

@@ -1,0 +1,183 @@
+name: CI
+on: [push]
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Install Ruby toolchain
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+
+      - name: Install Clang
+        run: sudo apt install clang
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Install Clang
+        run: choco install llvm --no-progress
+        if: matrix.os == 'windows-latest'
+
+      - name: Install Bison
+        run: sudo apt install bison
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: Install Bison
+        run: choco install winflexbison3 --no-progress
+        if: matrix.os == 'windows-latest'
+
+      - name: Compile
+        run: cargo build --verbose
+
+      - name: Compile tests
+        run: cargo test --no-run
+
+      - name: Test
+        run: cargo test
+
+      - name: Compile artichoke-backend with no default features
+        working-directory: artichoke-backend
+        run: cargo build --verbose --no-default-features
+
+      - name: Compile artichoke-backend with all features
+        working-directory: artichoke-backend
+        run: cargo build --verbose --all-features
+
+  rust:
+    name: Lint and format Rust
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt, clippy
+
+      - name: Install Ruby toolchain
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+
+      - name: Install Clang
+        run: sudo apt install clang
+
+      - name: Install Bison
+        run: sudo apt install bison
+
+      - name: Check formatting
+        run: cargo fmt -- --check --color=auto
+
+      - name: Lint with Clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
+
+  ruby:
+    name: Lint and format Ruby
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Ruby toolchain
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+
+      - name: Install bundler
+        run: gem install bundler
+
+      - name: Install gems
+        run: bundle install
+
+      - name: Lint and check formatting with Rubocop
+        run: bundle exec rubocop
+
+  c:
+    name: Lint and format C
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Node toolchain
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: Install Nodejs toolchain
+        run: yarn install --frozen-lockfile
+
+      - name: Lint and check formatting with clang-format
+        run: node scripts/clang-format.js --check
+
+  js:
+    name: Lint and format JS
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Node toolchain
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: Install Nodejs toolchain
+        run: yarn install --frozen-lockfile
+
+      - name: Lint and check formatting with eslint
+        run: yarn eslint .
+
+  text:
+    name: Lint and format text
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Node toolchain
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: Install Nodejs toolchain
+        run: yarn install --frozen-lockfile
+
+      - name: Lint and check formatting with prettier
+        run: yarn prettier --check '**/*'
+
+      - name: Format markdown with prettier
+        run: yarn prettier --prose-wrap always --check '**/*.md' '*.md'

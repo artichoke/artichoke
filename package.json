@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "description": "Artichoke Ruby",
-  "keywords": ["programming language", "scripting", "ruby", "rust"],
+  "keywords": [
+    "programming language",
+    "scripting",
+    "ruby",
+    "rust"
+  ],
   "homepage": "https://github.com/artichoke/artichoke#readme",
   "bugs": "https://github.com/artichoke/artichoke/issues",
   "license": "MIT",
@@ -25,15 +30,13 @@
   },
   "dependencies": {
     "array-flat-polyfill": "^1.0.1",
-    "clang-format": "^1.2.4",
-    "eslint": "^6.1.0",
-    "prettier": "^1.15.3",
-    "shebang-command": "^2.0.0"
+    "clang-format": "^1.2.4"
   },
   "devDependencies": {
     "@babel/core": "^7.2.2",
     "@babel/preset-env": "^7.5.5",
     "babel-eslint": "^10.0.1",
+    "eslint": "^6.1.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-config-prettier": "^6.0.0",
     "eslint-plugin-html": "^6.0.0",
@@ -42,10 +45,13 @@
     "eslint-plugin-prettier": "^3.0.1",
     "eslint-plugin-react": "^7.14.3",
     "eslint-plugin-react-hooks": "^1.7.0",
+    "prettier": "^1.15.3",
     "prettier-plugin-toml": "^0.3.1"
   },
   "babel": {
-    "presets": ["@babel/preset-env"]
+    "presets": [
+      "@babel/preset-env"
+    ]
   },
   "eslintConfig": {
     "env": {
@@ -55,8 +61,15 @@
       "node": true
     },
     "parser": "babel-eslint",
-    "plugins": ["html", "import", "prettier"],
-    "extends": ["airbnb", "prettier"],
+    "plugins": [
+      "html",
+      "import",
+      "prettier"
+    ],
+    "extends": [
+      "airbnb",
+      "prettier"
+    ],
     "rules": {
       "prettier/prettier": "error",
       "react/jsx-closing-bracket-location": "off",
@@ -76,9 +89,6 @@
     }
   },
   "scripts": {
-    "doc": "rustup run --install $(cat rustdoc-toolchain) cargo doc --no-deps --all",
-    "eslint-check": "eslint --print-config package.json | eslint-config-prettier-check",
-    "lint": "node scripts/lint.js",
-    "spec": "ruby scripts/spec.rb artichoke passing"
+    "eslint-check": "eslint --print-config package.json | eslint-config-prettier-check"
   }
 }

@@ -1,0 +1,51 @@
+name: Documentation
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  rustdoc:
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+          components: rustfmt, rust-src
+
+      - name: Install Ruby toolchain
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+
+      - name: Install Clang
+        run: sudo apt install clang
+
+      - name: Install Bison
+        run: sudo apt install bison
+
+      - name: Build Documentation
+        run: cargo doc --all --no-deps
+
+      - name: Copy static content
+        run: cp assets/* target/doc
+
+      - name: Deploy Docs
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/master'
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          publish_dir: ./target/doc
+          publish_branch: gh-pages
+          user_name: artichoke-ci
+          user_email: ci@artichokeruby.org

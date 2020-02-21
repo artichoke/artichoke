@@ -1,6 +1,5 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![deny(warnings, intra_doc_link_resolution_failure)]
 
 #[macro_use]
 extern crate artichoke_backend;
