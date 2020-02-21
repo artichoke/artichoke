@@ -1,9 +1,5 @@
 name: Documentation
-on:
-  pull_request:
-  push:
-    branches:
-      - master
+on: [push]
 jobs:
   rustdoc:
     runs-on: ubuntu-latest
