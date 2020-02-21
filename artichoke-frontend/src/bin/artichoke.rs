@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![deny(warnings, intra_doc_link_resolution_failure)]
-#![doc(deny(warnings))]
+#![deny(intra_doc_link_resolution_failure)]
 
 //! `artichoke` is the `ruby` binary frontend to Artichoke.
 //!

@@ -1,6 +1,5 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![deny(warnings, intra_doc_link_resolution_failure)]
 
 //! This integration test checks for memory leaks that stem from improper
 //! handling of `mrb_state`.

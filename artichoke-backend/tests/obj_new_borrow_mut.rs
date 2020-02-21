@@ -1,6 +1,5 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![deny(warnings, intra_doc_link_resolution_failure)]
 
 //! This integration test checks for segfaults that stem from the improperly
 //! holding a borrow on the interpreter in converters that prevent arbitrary

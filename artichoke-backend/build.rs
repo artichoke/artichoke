@@ -1,8 +1,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 #![allow(clippy::restriction)]
-#![deny(warnings, intra_doc_link_resolution_failure)]
-#![doc(deny(warnings))]
 
 use std::env;
 use std::path::Path;
