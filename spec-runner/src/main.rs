@@ -2,7 +2,7 @@
 #![deny(clippy::pedantic)]
 #![deny(intra_doc_link_resolution_failure)]
 
-//! `spec-runner` is a wrapper around MSpec and ruby/spec that works with the
+//! `spec-runner` is a wrapper around `MSpec` and ruby/spec that works with the
 //! Artichoke virtual filesystem.
 //!
 //! `spec-runner` is invokable directly by passing paths to spec files as command
