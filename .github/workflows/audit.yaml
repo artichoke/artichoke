@@ -1,9 +1,5 @@
 name: Audit
-on:
-  pull_request:
-  push:
-    branches:
-      - master
+on: [push]
 jobs:
   rust:
     runs-on: ubuntu-latest
