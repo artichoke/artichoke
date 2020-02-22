@@ -2,6 +2,7 @@ name: Documentation
 on: [push]
 jobs:
   rustdoc:
+    name: Build Rust API docs
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -D warnings
