@@ -8,8 +8,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Float", None, None)?;
     interp.0.borrow_mut().def_class::<Float>(spec);
     let _ = interp.eval(&include_bytes!("float.rb")[..])?;
-    // TODO: Add proper constant defs to class::Spec, see GH-158.
-    let _ = interp.eval(format!("class Float; EPSILON={} end", Float::EPSILON).as_bytes())?;
+    let epsilon = interp.convert_mut(Float::EPSILON);
+    interp.define_class_constant::<Float>("EPSILON", epsilon)?;
     trace!("Patched Float onto interpreter");
     Ok(())
 }
