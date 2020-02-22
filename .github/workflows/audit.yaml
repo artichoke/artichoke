@@ -2,7 +2,7 @@ name: Audit
 on:
   push:
   schedule:
-    - cron: '0 0 * * 2' # midnight on Tuesday
+    - cron: "0 0 * * 2" # midnight on Tuesday
 jobs:
   rust:
     name: Audit Rust Dependencies
