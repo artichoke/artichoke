@@ -33,15 +33,16 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .define()?;
     interp.0.borrow_mut().def_class::<regexp::Regexp>(spec);
     let _ = interp.eval(&include_bytes!("regexp.rb")[..])?;
-    // TODO: Add proper constant defs to class::Spec, see GH-27.
-    let _ = interp.eval(format!(
-        "class Regexp; IGNORECASE = {}; EXTENDED = {}; MULTILINE = {}; FIXEDENCODING = {}; NOENCODING = {}; end",
-        regexp::IGNORECASE,
-        regexp::EXTENDED,
-        regexp::MULTILINE,
-        regexp::FIXEDENCODING,
-        regexp::NOENCODING,
-    ).as_bytes())?;
+    let ignorecase = interp.convert(regexp::IGNORECASE);
+    interp.define_class_constant::<regexp::Regexp>("IGNORECASE", ignorecase)?;
+    let extended = interp.convert(regexp::EXTENDED);
+    interp.define_class_constant::<regexp::Regexp>("EXTENDED", extended)?;
+    let multiline = interp.convert(regexp::MULTILINE);
+    interp.define_class_constant::<regexp::Regexp>("MULTILINE", multiline)?;
+    let fixed_encoding = interp.convert(regexp::FIXEDENCODING);
+    interp.define_class_constant::<regexp::Regexp>("FIXEDENCODING", fixed_encoding)?;
+    let no_encoding = interp.convert(regexp::NOENCODING);
+    interp.define_class_constant::<regexp::Regexp>("NOENCODING", no_encoding)?;
     trace!("Patched Regexp onto interpreter");
     Ok(())
 }
