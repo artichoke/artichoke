@@ -58,7 +58,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     }
     let _ = interp.pop_context();
     let mut logged_filename = String::new();
-    string::escape_unicode(&mut logged_filename, filename)?;
+    string::format_unicode_debug_into(&mut logged_filename, filename)?;
     trace!(r#"Successful load of "{}" at {:?}"#, logged_filename, path,);
     Ok(interp.convert(true))
 }
@@ -131,7 +131,7 @@ pub fn require(
                 return Err(Exception::from(load_error(interp, b"internal error")?));
             }
             let mut logged_filename = String::new();
-            string::escape_unicode(&mut logged_filename, filename)?;
+            string::format_unicode_debug_into(&mut logged_filename, filename)?;
             trace!(
                 r#"Successful require of "{}" at {:?}"#,
                 logged_filename,
@@ -187,7 +187,7 @@ pub fn require(
                     return Err(Exception::from(load_error(interp, b"internal error")?));
                 }
                 let mut logged_filename = String::new();
-                string::escape_unicode(&mut logged_filename, filename)?;
+                string::format_unicode_debug_into(&mut logged_filename, filename)?;
                 trace!(
                     r#"Successful require of "{}" at {:?}"#,
                     logged_filename,
@@ -243,7 +243,7 @@ pub fn require(
         return Err(Exception::from(load_error(interp, b"internal error")?));
     }
     let mut logged_filename = String::new();
-    string::escape_unicode(&mut logged_filename, filename)?;
+    string::format_unicode_debug_into(&mut logged_filename, filename)?;
     trace!(
         r#"Successful require of "{}" at {:?}"#,
         logged_filename,
@@ -273,6 +273,6 @@ pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Ex
 
 fn load_error(interp: &Artichoke, filename: &[u8]) -> Result<LoadError, Exception> {
     let mut message = String::from("cannot load such file -- ");
-    string::escape_unicode(&mut message, filename)?;
+    string::format_unicode_debug_into(&mut message, filename)?;
     Ok(LoadError::new(interp, message))
 }
