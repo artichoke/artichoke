@@ -1,7 +1,11 @@
 name: Audit
-on: [push]
+on:
+  push:
+  schedule:
+    - cron: "0 0 * * 2" # midnight on Tuesday
 jobs:
   rust:
+    name: Audit Rust Dependencies
     runs-on: ubuntu-latest
 
     steps:
@@ -20,3 +24,22 @@ jobs:
 
       - name: Run cargo-deny
         run: cargo deny check
+
+  js:
+    name: Audit JS Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Node toolchain
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: Install Nodejs toolchain
+        run: yarn install --frozen-lockfile
+
+      - name: Yarn audit
+        run: yarn audit
