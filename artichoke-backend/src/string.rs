@@ -15,50 +15,58 @@ use crate::extn::core::exception::Fatal;
 use crate::sys;
 use crate::{Artichoke, ConvertMut};
 
-/// Write a UTF-8 representation of a (potentially) binary `String`.
+/// Write a UTF-8 debug representation of a byte slice into the given writer.
 ///
-/// This function encodes a bytes slice into a UTF-8 valid representation by
+/// This method encodes a bytes slice into a UTF-8 valid representation by
 /// writing invalid sequences as `\xXX` escape codes.
 ///
-/// This function uses `char::escape_debug` which means UTF-8 valid characters
-/// like `\n` and `\t` are also escaped.
+/// This method also escapes UTF-8 valid characters like `\n` and `\t`.
 ///
 /// # Examples
 ///
+/// Basic usage:
+///
 /// ```
-/// # use artichoke_backend::string::escape_unicode;
+/// # use artichoke_backend::string::format_unicode_debug_into;
+///
 /// let mut message = String::from("cannot load such file -- ");
-/// let filename = b"oh-no-\xFF";
-/// escape_unicode(&mut message, &filename[..]);
-/// assert_eq!(r"cannot load such file -- oh-no-\xFF", message);
+/// let filename = b"utf8-invalid-name-\xFF";
+/// format_unicode_debug_into(&mut message, &filename[..]);
+/// assert_eq!(r"cannot load such file -- utf8-invalid-name-\xFF", message);
 /// ```
-pub fn escape_unicode<T>(f: &mut T, string: &[u8]) -> Result<(), WriteError>
+///
+/// # Errors
+///
+/// This method only returns an error when the given writer returns an
+/// error.
+pub fn format_unicode_debug_into<W>(mut f: W, string: &[u8]) -> Result<(), WriteError>
 where
-    T: fmt::Write,
+    W: fmt::Write,
 {
-    let buf = bstr::B(string);
-    for (start, end, ch) in buf.char_indices() {
+    for (start, end, ch) in string.char_indices() {
         if ch == '\u{FFFD}' {
-            for byte in buf[start..end].as_bytes() {
-                write!(f, r"\x{:X}", byte)?;
+            if let Some(slice) = string.get(start..end) {
+                for byte in slice {
+                    write!(f, r"\x{:X}", byte).map_err(WriteError)?;
+                }
             }
         } else {
-            write!(f, "{}", ch.escape_debug())?;
+            write!(f, "{}", ch.escape_debug()).map_err(WriteError)?;
         }
     }
     Ok(())
 }
 
-pub fn format_int_into<T, I>(f: &mut T, value: I) -> Result<(), WriteError>
+pub fn format_int_into<W, I>(f: W, value: I) -> Result<(), WriteError>
 where
-    T: fmt::Write,
+    W: fmt::Write,
     I: itoa::Integer,
 {
-    itoa::fmt(f, value)?;
+    itoa::fmt(f, value).map_err(WriteError)?;
     Ok(())
 }
 
-/// Error type for [`escape_unicode`].
+/// Error type for [`format_unicode_debug_into`].
 ///
 /// This error type wraps a [`fmt::Error`].
 #[derive(Debug, Clone)]
@@ -68,12 +76,6 @@ impl WriteError {
     #[must_use]
     pub fn into_inner(self) -> fmt::Error {
         self.0
-    }
-}
-
-impl From<fmt::Error> for WriteError {
-    fn from(err: fmt::Error) -> Self {
-        Self(err)
     }
 }
 
@@ -144,33 +146,33 @@ impl From<Box<WriteError>> for Box<dyn RubyException> {
 
 #[cfg(test)]
 mod tests {
-    use super::escape_unicode;
+    use super::format_unicode_debug_into;
 
     #[test]
     fn invalid_utf8() {
         let mut buf = String::new();
-        escape_unicode(&mut buf, &b"abc\xFF"[..]).unwrap();
+        format_unicode_debug_into(&mut buf, &b"abc\xFF"[..]).unwrap();
         assert_eq!(r"abc\xFF", buf.as_str());
     }
 
     #[test]
     fn ascii() {
         let mut buf = String::new();
-        escape_unicode(&mut buf, &b"abc"[..]).unwrap();
+        format_unicode_debug_into(&mut buf, &b"abc"[..]).unwrap();
         assert_eq!(r"abc", buf.as_str());
     }
 
     #[test]
     fn emoji() {
         let mut buf = String::new();
-        escape_unicode(&mut buf, "Ruby 💎".as_bytes()).unwrap();
+        format_unicode_debug_into(&mut buf, "Ruby 💎".as_bytes()).unwrap();
         assert_eq!(r"Ruby 💎", buf.as_str());
     }
 
     #[test]
     fn escaped() {
         let mut buf = String::new();
-        escape_unicode(&mut buf, b"\n").unwrap();
+        format_unicode_debug_into(&mut buf, b"\n").unwrap();
         assert_eq!(r"\n", buf.as_str());
     }
 }

@@ -32,12 +32,13 @@
 //!     <programfile>
 //! ```
 
-use artichoke_frontend::ruby::{self, Error};
+use artichoke_frontend::ruby;
+use std::io::{self, Write};
+use std::process;
 
 fn main() {
-    match ruby::entrypoint() {
-        Ok(_) => {}
-        Err(Error::Ruby(err)) => eprintln!("{}", err),
-        Err(Error::Fail(err)) => eprintln!("{}", err),
+    if let Err(err) = ruby::entrypoint() {
+        let _ = writeln!(io::stderr(), "{}", err);
+        process::exit(1);
     }
 }

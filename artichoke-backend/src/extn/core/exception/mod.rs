@@ -350,10 +350,10 @@ macro_rules! ruby_exception_impl {
         }
 
         impl fmt::Display for $exception {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
                 let classname = self.name();
                 write!(f, "{} (", classname)?;
-                string::escape_unicode(f, self.message())
+                string::format_unicode_debug_into(&mut f, self.message())
                     .map_err(string::WriteError::into_inner)?;
                 write!(f, ")")
             }

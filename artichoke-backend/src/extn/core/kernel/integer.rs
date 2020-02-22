@@ -180,7 +180,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
 
 fn invalid_value_err(interp: &Artichoke, arg: &[u8]) -> Result<ArgumentError, Exception> {
     let mut message = String::from(r#"invalid value for Integer(): ""#);
-    string::escape_unicode(&mut message, arg)?;
+    string::format_unicode_debug_into(&mut message, arg)?;
     message.push('"');
     Ok(ArgumentError::new(interp, message))
 }

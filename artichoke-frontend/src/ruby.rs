@@ -3,6 +3,7 @@
 //! Exported as `ruby` and `artichoke` binaries.
 
 use artichoke_backend::exception::Exception;
+use artichoke_backend::extn::core::exception::{IOError, LoadError};
 use artichoke_backend::ffi;
 use artichoke_backend::state::parser::Context;
 use artichoke_backend::string;
@@ -46,39 +47,12 @@ struct Opt {
     programfile: Option<PathBuf>,
 }
 
-/// Error from Ruby CLI frontend
-#[derive(Debug)]
-pub enum Error {
-    /// Ruby `Exception` thrown during eval.
-    Ruby(Exception),
-    /// Fatal error from CLI internals.
-    Fail(String),
-}
-
-impl From<Exception> for Error {
-    fn from(err: Exception) -> Self {
-        Self::Ruby(err)
-    }
-}
-
-impl From<String> for Error {
-    fn from(err: String) -> Self {
-        Self::Fail(err)
-    }
-}
-
-impl From<&'static str> for Error {
-    fn from(err: &'static str) -> Self {
-        Self::Fail(err.to_owned())
-    }
-}
-
 /// Main entrypoint for Artichoke's version of the `ruby` CLI.
 ///
 /// # Errors
 ///
 /// If an exception is raised on the interpreter, then an error is returned.
-pub fn entrypoint() -> Result<(), Error> {
+pub fn entrypoint() -> Result<(), Exception> {
     let opt = Opt::from_args();
     if opt.copyright {
         let mut interp = artichoke_backend::interpreter()?;
@@ -89,17 +63,17 @@ pub fn entrypoint() -> Result<(), Error> {
     } else if let Some(programfile) = opt.programfile {
         execute_program_file(programfile.as_path(), opt.fixture.as_ref().map(Path::new))
     } else {
+        let mut interp = artichoke_backend::interpreter()?;
         let mut program = vec![];
         io::stdin()
             .read_to_end(&mut program)
-            .map_err(|_| "Could not read program from STDIN")?;
-        let mut interp = artichoke_backend::interpreter()?;
+            .map_err(|_| IOError::new(&interp, "Could not read program from STDIN"))?;
         let _ = interp.eval(program.as_slice())?;
         Ok(())
     }
 }
 
-fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Result<(), Error> {
+fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Result<(), Exception> {
     let mut interp = artichoke_backend::interpreter()?;
     // safety:
     //
@@ -111,10 +85,10 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
         let data = if let Ok(data) = std::fs::read(fixture) {
             data
         } else {
-            return Err(Error::from(load_error(
-                fixture.as_os_str(),
-                "No such file or directory",
-            )?));
+            return Err(Exception::from(LoadError::new(
+                &interp,
+                load_error(fixture.as_os_str(), "No such file or directory")?,
+            )));
         };
         let sym = interp.intern_symbol(&b"$fixture"[..]);
         let mrb = interp.0.borrow().mrb;
@@ -129,16 +103,16 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
     Ok(())
 }
 
-fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<(), Error> {
+fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<(), Exception> {
     let mut interp = artichoke_backend::interpreter()?;
     if let Some(ref fixture) = fixture {
         let data = if let Ok(data) = std::fs::read(fixture) {
             data
         } else {
-            return Err(Error::from(load_error(
-                fixture.as_os_str(),
-                "No such file or directory",
-            )?));
+            return Err(Exception::from(LoadError::new(
+                &interp,
+                load_error(fixture.as_os_str(), "No such file or directory")?,
+            )));
         };
         let sym = interp.intern_symbol(&b"$fixture"[..]);
         let mrb = interp.0.borrow().mrb;
@@ -151,18 +125,18 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
         Ok(programfile) => programfile,
         Err(err) => {
             return match err.kind() {
-                io::ErrorKind::NotFound => Err(Error::from(load_error(
-                    programfile.as_os_str(),
-                    "No such file or directory",
-                )?)),
-                io::ErrorKind::PermissionDenied => Err(Error::from(load_error(
-                    programfile.as_os_str(),
-                    "Permission denied",
-                )?)),
-                _ => Err(Error::from(load_error(
-                    programfile.as_os_str(),
-                    "Could not read file",
-                )?)),
+                io::ErrorKind::NotFound => Err(Exception::from(LoadError::new(
+                    &interp,
+                    load_error(programfile.as_os_str(), "No such file or directory")?,
+                ))),
+                io::ErrorKind::PermissionDenied => Err(Exception::from(LoadError::new(
+                    &interp,
+                    load_error(programfile.as_os_str(), "Permission denied")?,
+                ))),
+                _ => Err(Exception::from(LoadError::new(
+                    &interp,
+                    load_error(programfile.as_os_str(), "Could not read file")?,
+                ))),
             }
         }
     };
@@ -170,11 +144,10 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
     Ok(())
 }
 
-fn load_error(file: &OsStr, message: &str) -> Result<String, Error> {
+fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
     let mut buf = String::from(message);
     buf.push_str(" -- ");
-    let path = ffi::os_str_to_bytes(file).map_err(Exception::from)?;
-    string::escape_unicode(&mut buf, &path).map_err(Exception::from)?;
-    buf.push_str(" (LoadError)");
+    let path = ffi::os_str_to_bytes(file)?;
+    string::format_unicode_debug_into(&mut buf, &path)?;
     Ok(buf)
 }

@@ -119,7 +119,7 @@ pub fn method(
                 Ok(interp.convert_mut(group))
             } else {
                 let mut message = String::from("undefined group name reference: \"");
-                string::escape_unicode(&mut message, name)?;
+                string::format_unicode_debug_into(&mut message, name)?;
                 message.push('"');
                 Err(Exception::from(IndexError::new(interp, message)))
             }
