@@ -49,19 +49,17 @@ impl Array {
             if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
                 ary.borrow().0.clone()
             } else if first.respond_to("to_ary")? {
-                let ruby_type = first.pretty_name();
                 let other = first.funcall("to_ary", &[], None)?;
                 if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                     other.borrow().0.clone()
                 } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        format!(
-                            "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
-                            classname = ruby_type,
-                            gives = other.pretty_name()
-                        ),
-                    )));
+                    let mut message = String::from("can't convert ");
+                    message.push_str(first.pretty_name());
+                    message.push_str(" to Array (");
+                    message.push_str(first.pretty_name());
+                    message.push_str("#to_ary gives ");
+                    message.push_str(other.pretty_name());
+                    return Err(Exception::from(TypeError::new(interp, message)));
                 }
             } else {
                 let len = first.implicitly_convert_to_int()?;
@@ -151,19 +149,17 @@ impl Array {
             if let Ok(other) = unsafe { Self::try_from_ruby(interp, &elem) } {
                 self.0.set_slice(interp, start, drain, &other.borrow().0)?;
             } else if elem.respond_to("to_ary")? {
-                let ruby_type = elem.pretty_name();
                 let other = elem.funcall("to_ary", &[], None)?;
                 if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                     self.0.set_slice(interp, start, drain, &other.borrow().0)?;
                 } else {
-                    return Err(Exception::from(TypeError::new(
-                        interp,
-                        format!(
-                            "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
-                            classname = ruby_type,
-                            gives = other.pretty_name()
-                        ),
-                    )));
+                    let mut message = String::from("can't convert ");
+                    message.push_str(elem.pretty_name());
+                    message.push_str(" to Array (");
+                    message.push_str(elem.pretty_name());
+                    message.push_str("#to_ary gives ");
+                    message.push_str(other.pretty_name());
+                    return Err(Exception::from(TypeError::new(interp, message)));
                 }
             } else {
                 self.0.set_with_drain(interp, start, drain, elem.clone())?;
@@ -219,28 +215,23 @@ impl Array {
         if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             self.0.concat(interp, &other.borrow().0)?;
         } else if other.respond_to("to_ary")? {
-            let ruby_type = other.pretty_name();
-            let other = other.funcall("to_ary", &[], None)?;
-            if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
+            let arr = other.funcall("to_ary", &[], None)?;
+            if let Ok(other) = unsafe { Self::try_from_ruby(interp, &arr) } {
                 self.0.concat(interp, &other.borrow().0)?;
             } else {
-                return Err(Exception::from(TypeError::new(
-                    interp,
-                    format!(
-                        "can't convert {classname} to Array ({classname}#to_ary gives {gives})",
-                        classname = ruby_type,
-                        gives = other.pretty_name()
-                    ),
-                )));
+                let mut message = String::from("can't convert ");
+                message.push_str(other.pretty_name());
+                message.push_str(" to Array (");
+                message.push_str(other.pretty_name());
+                message.push_str("#to_ary gives ");
+                message.push_str(other.pretty_name());
+                return Err(Exception::from(TypeError::new(interp, message)));
             }
         } else {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!(
-                    "no implicit conversion of {classname} into Array",
-                    classname = other.pretty_name(),
-                ),
-            )));
+            let mut message = String::from("no implicit conversion of ");
+            message.push_str(other.pretty_name());
+            message.push_str(" into Array");
+            return Err(Exception::from(TypeError::new(interp, message)));
         };
         Ok(())
     }
