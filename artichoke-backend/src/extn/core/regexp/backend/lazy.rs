@@ -38,11 +38,8 @@ impl Lazy {
 
 impl fmt::Display for Lazy {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            String::from_utf8_lossy(self.literal.pattern.as_slice())
-        )
+        string::format_unicode_debug_into(f, self.literal.pattern.as_slice())
+            .map_err(string::WriteError::into_inner)
     }
 }
 
@@ -92,7 +89,20 @@ impl RegexpType for Lazy {
     }
 
     fn debug(&self) -> String {
-        format!("{:?}", self)
+        let mut debug = String::from("/");
+        let mut pattern = String::new();
+        // Explicitly supress this error because `debug` is infallible and
+        // cannot panic.
+        //
+        // In practice this error will never be triggered since the only
+        // fallible call in `string::format_unicode_debug_into` is to `write!` which never
+        // `panic!`s for a `String` formatter, which we are using here.
+        let _ = string::format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
+        debug.push_str(pattern.replace("/", r"\/").as_str());
+        debug.push('/');
+        debug.push_str(self.literal.options.modifier_string().as_str());
+        debug.push_str(self.encoding.string());
+        debug
     }
 
     fn literal_config(&self) -> &Config {
