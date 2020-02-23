@@ -1,7 +1,6 @@
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt;
-use std::io::{self, Write};
 use std::mem;
 use std::ptr::{self, NonNull};
 
@@ -10,6 +9,7 @@ use crate::fs;
 use crate::module;
 use crate::sys;
 
+pub mod output;
 pub mod parser;
 #[cfg(feature = "artichoke-random")]
 pub mod prng;
@@ -23,7 +23,7 @@ pub struct State {
     modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: fs::Virtual,
     pub active_regexp_globals: usize,
-    captured_output: Option<Vec<u8>>,
+    pub output: Box<dyn output::Output>,
     #[cfg(feature = "artichoke-random")]
     pub prng: prng::Prng,
 }
@@ -49,41 +49,11 @@ impl State {
             modules: HashMap::default(),
             vfs: fs::Virtual::new(),
             active_regexp_globals: 0,
-            captured_output: None,
+            output: Box::new(output::Process::new()),
             #[cfg(feature = "artichoke-random")]
             prng: prng::Prng::default(),
         };
         Some(state)
-    }
-
-    pub fn capture_output(&mut self) {
-        self.captured_output = Some(Vec::default());
-    }
-
-    pub fn get_and_clear_captured_output(&mut self) -> Vec<u8> {
-        self.captured_output
-            .replace(Vec::default())
-            .unwrap_or_default()
-    }
-
-    pub fn print(&mut self, s: &[u8]) {
-        if let Some(ref mut captured_output) = self.captured_output {
-            captured_output.extend_from_slice(s);
-        } else {
-            let _ = io::stdout().write_all(s);
-            let _ = io::stdout().flush();
-        }
-    }
-
-    pub fn puts(&mut self, s: &[u8]) {
-        if let Some(ref mut captured_output) = self.captured_output {
-            captured_output.extend_from_slice(s);
-            captured_output.push(b'\n');
-        } else {
-            let _ = io::stdout().write_all(s);
-            let _ = io::stdout().write_all(&[b'\n']);
-            let _ = io::stdout().flush();
-        }
     }
 
     /// Close a [`State`] and free underlying mruby structs and memory.
@@ -171,7 +141,7 @@ impl fmt::Debug for State {
             .field("modules", &self.modules)
             .field("vfs", &self.vfs)
             .field("active_regexp_globals", &self.active_regexp_globals)
-            .field("captured_output", &self.captured_output);
+            .field("output", &self.output.backend_name());
         #[cfg(feature = "artichoke-random")]
         fmt.field("prng", &self.prng);
         fmt.finish()

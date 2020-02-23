@@ -1,7 +1,8 @@
-use std::io::{self, Write};
+use std::fmt::Write;
 
 use crate::def::NotDefinedError;
 use crate::exception::Exception;
+use crate::extn::core::exception::IOError;
 use crate::extn::core::warning::Warning;
 use crate::value::Value;
 use crate::{Artichoke, ConvertMut, ValueLike, Warn};
@@ -10,9 +11,19 @@ impl Warn for Artichoke {
     type Error = Exception;
 
     fn warn(&mut self, message: &[u8]) -> Result<(), Self::Error> {
-        let _ = io::stderr().write_all(b"rb warning: ");
-        let _ = io::stderr().write_all(message);
-        let _ = io::stderr().write_all(b"\n");
+        {
+            let mut borrow = self.0.borrow_mut();
+            borrow
+                .output
+                .write_stderr(b"rb warning: ")
+                .and_then(|_| borrow.output.write_stderr(message))
+                .and_then(|_| borrow.output.write_stderr(b"\n"))
+                .map_err(|err| {
+                    let mut message = String::from("Failed to write warning to $stderr: ");
+                    let _ = write!(&mut message, "{}", err);
+                    IOError::new(self, message)
+                })?
+        }
         let warning = {
             let borrow = self.0.borrow();
             let spec = borrow
