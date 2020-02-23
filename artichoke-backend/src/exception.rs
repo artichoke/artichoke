@@ -75,7 +75,7 @@ pub unsafe fn raise(mut interp: Artichoke, exception: impl RubyException + fmt::
         // `mrb_sys_raise` will call longjmp which will unwind the stack.
         sys::mrb_sys_raise(
             mrb,
-            "RuntimeError".as_ptr() as *const i8,
+            "RuntimeError\0".as_ptr() as *const i8,
             "Unable to raise exception".as_ptr() as *const i8,
         );
     }
