@@ -18,6 +18,8 @@ pub trait Output: 'static + Send + Sync {
     }
 }
 
+downcast!(dyn Output);
+
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Process;
 
