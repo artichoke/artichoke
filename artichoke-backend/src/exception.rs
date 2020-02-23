@@ -1,5 +1,6 @@
 use std::error;
 use std::fmt;
+use std::hint;
 
 use crate::string;
 use crate::sys;
@@ -58,20 +59,28 @@ impl From<Box<dyn RubyException>> for Exception {
 /// the closest [`sys::mrb_protect`] landing pad, this function should only be
 /// called in the entrypoint into Rust from mruby.
 pub unsafe fn raise(mut interp: Artichoke, exception: impl RubyException + fmt::Debug) -> ! {
-    let exc = if let Some(exc) = exception.as_mrb_value(&mut interp) {
-        exc
+    let exc = exception.as_mrb_value(&mut interp);
+    let mrb = Artichoke::into_raw(interp);
+    if let Some(exc) = exc {
+        // Any non-`Copy` objects that we haven't cleaned up at this point will
+        // leak, so drop everything.
+        drop(exception);
+        // `mrb_exc_raise` will call longjmp which will unwind the stack.
+        sys::mrb_exc_raise(mrb, exc);
     } else {
         error!("unable to raise {:?}", exception);
-        panic!("unable to raise {:?}", exception);
-    };
-    // `mrb_sys_raise` will call longjmp which will unwind the stack.
-    // Any non-`Copy` objects that we haven't cleaned up at this point will
-    // leak, so drop everything.
-    let mrb = Artichoke::into_raw(interp);
-    drop(exception);
-
-    sys::mrb_exc_raise(mrb, exc);
-    unreachable!("mrb_exc_raise will unwind the stack with longjmp");
+        // Any non-`Copy` objects that we haven't cleaned up at this point will
+        // leak, so drop everything.
+        drop(exception);
+        // `mrb_sys_raise` will call longjmp which will unwind the stack.
+        sys::mrb_sys_raise(
+            mrb,
+            "RuntimeError\0".as_ptr() as *const i8,
+            "Unable to raise exception".as_ptr() as *const i8,
+        );
+    }
+    // unreachable: `raise` will unwind the stack with longjmp.
+    hint::unreachable_unchecked()
 }
 
 /// Polymorphic exception type that corresponds to Ruby's `Exception`.
