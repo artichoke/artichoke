@@ -92,10 +92,6 @@ impl error::Error for WriteError {
 }
 
 impl RubyException for WriteError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(self.clone())
-    }
-
     fn message(&self) -> &[u8] {
         &b"Unable to escape Unicode message"[..]
     }
@@ -104,7 +100,7 @@ impl RubyException for WriteError {
         String::from("fatal")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }

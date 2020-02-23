@@ -181,7 +181,7 @@ mod tests {
             err.message()
         );
         let expected = vec![Vec::from(&b"(eval):1"[..])];
-        assert_eq!(Some(expected), err.vm_backtrace(&interp),);
+        assert_eq!(Some(expected), err.vm_backtrace(&mut interp),);
     }
 
     #[test]
@@ -215,7 +215,7 @@ mod tests {
         let err = interp.eval(b"require '/src'").unwrap_err();
         assert_eq!(&b"cannot load such file -- /src"[..], err.message());
         let expected = vec![Vec::from(&b"(eval):1"[..])];
-        assert_eq!(Some(expected), err.vm_backtrace(&interp),);
+        assert_eq!(Some(expected), err.vm_backtrace(&mut interp),);
     }
 
     #[test]

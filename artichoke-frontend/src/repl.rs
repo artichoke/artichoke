@@ -157,7 +157,7 @@ pub fn run(
                         output.write_all(result.as_slice())?;
                     }
                     Err(exc) => {
-                        if let Some(backtrace) = exc.vm_backtrace(&interp) {
+                        if let Some(backtrace) = exc.vm_backtrace(&mut interp) {
                             writeln!(
                                 error,
                                 "{} (most recent call last)",

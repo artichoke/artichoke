@@ -452,10 +452,6 @@ impl fmt::Display for ArgCountError {
 impl error::Error for ArgCountError {}
 
 impl RubyException for ArgCountError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(*self)
-    }
-
     fn message(&self) -> &[u8] {
         &b"Too many arguments"[..]
     }
@@ -464,7 +460,7 @@ impl RubyException for ArgCountError {
         String::from("ArgumentError")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }

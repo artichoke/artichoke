@@ -9,7 +9,7 @@ use crate::{Artichoke, ConvertMut};
 
 #[derive(Debug)]
 pub struct IOError {
-    inner: Option<io::Error>,
+    inner: io::Error,
     message: String,
 }
 
@@ -17,7 +17,7 @@ impl From<io::Error> for IOError {
     fn from(err: io::Error) -> Self {
         let message = err.to_string();
         Self {
-            inner: Some(err),
+            inner: err,
             message,
         }
     }
@@ -37,22 +37,11 @@ impl fmt::Display for IOError {
 
 impl error::Error for IOError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        if let Some(ref err) = self.inner {
-            Some(err)
-        } else {
-            None
-        }
+        Some(&self.inner)
     }
 }
 
 impl RubyException for IOError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(Self {
-            inner: None,
-            message: self.message.clone(),
-        })
-    }
-
     fn message(&self) -> &[u8] {
         self.message.as_bytes()
     }
@@ -61,17 +50,13 @@ impl RubyException for IOError {
         String::from("IOError")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = if let Some(ref err) = self.inner {
-            interp.convert_mut(err.to_string())
-        } else {
-            interp.convert_mut(self.message())
-        };
+        let message = interp.convert_mut(self.inner.to_string());
         let borrow = interp.0.borrow();
         let spec = borrow.class_spec::<exception::IOError>()?;
         let value = spec.new_instance(interp, &[message])?;

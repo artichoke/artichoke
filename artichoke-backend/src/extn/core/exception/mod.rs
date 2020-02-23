@@ -323,10 +323,6 @@ macro_rules! ruby_exception_impl {
         }
 
         impl RubyException for $exception {
-            fn box_clone(&self) -> Box<dyn RubyException> {
-                Box::new(self.clone())
-            }
-
             fn message(&self) -> &[u8] {
                 self.message.as_ref()
             }
@@ -335,7 +331,7 @@ macro_rules! ruby_exception_impl {
                 String::from(stringify!($exception))
             }
 
-            fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+            fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
                 let _ = interp;
                 None
             }
@@ -440,7 +436,7 @@ mod tests {
         assert_eq!(Vec::from(&b"something went wrong"[..]), err.message());
         assert_eq!(
             Some(vec![Vec::from(&b"(eval):1"[..])]),
-            err.vm_backtrace(&interp)
+            err.vm_backtrace(&mut interp)
         );
     }
 }

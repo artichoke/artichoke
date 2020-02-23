@@ -215,10 +215,6 @@ impl fmt::Display for ConstantNameError {
 impl error::Error for ConstantNameError {}
 
 impl RubyException for ConstantNameError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(self.clone())
-    }
-
     fn message(&self) -> &[u8] {
         &b"Invalid constant name contained a NUL byte"[..]
     }
@@ -227,7 +223,7 @@ impl RubyException for ConstantNameError {
         String::from("NameError")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
@@ -364,10 +360,6 @@ impl fmt::Display for NotDefinedError {
 impl error::Error for NotDefinedError {}
 
 impl RubyException for NotDefinedError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(self.clone())
-    }
-
     fn message(&self) -> &[u8] {
         &b"Class-like not defined"[..]
     }
@@ -376,7 +368,7 @@ impl RubyException for NotDefinedError {
         String::from("ScriptError")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
