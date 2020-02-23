@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-pub trait Output: 'static + Send + Sync {
+pub trait Output: Send + Sync {
     fn backend_name(&self) -> &str;
 
     fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()>;
@@ -69,6 +69,20 @@ impl Captured {
 }
 
 impl Output for Captured {
+    fn backend_name(&self) -> &str {
+        "Captured"
+    }
+
+    fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
+        self.stdout.write_all(bytes)
+    }
+
+    fn write_stderr(&mut self, bytes: &[u8]) -> io::Result<()> {
+        self.stderr.write_all(bytes)
+    }
+}
+
+impl<'a> Output for &'a mut Captured {
     fn backend_name(&self) -> &str {
         "Captured"
     }
