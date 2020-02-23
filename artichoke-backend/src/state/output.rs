@@ -18,12 +18,16 @@ pub trait Output: Send + Sync {
     }
 }
 
-downcast!(dyn Output);
+#[allow(clippy::missing_safety_doc)]
+mod internal {
+    downcast!(dyn super::Output);
+}
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Process;
 
 impl Process {
+    #[must_use]
     pub fn new() -> Self {
         Self
     }
@@ -50,6 +54,7 @@ pub struct Captured {
 }
 
 impl Captured {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -59,10 +64,12 @@ impl Captured {
         self.stderr.clear();
     }
 
+    #[must_use]
     pub fn stdout(&self) -> &[u8] {
         self.stdout.as_slice()
     }
 
+    #[must_use]
     pub fn stderr(&self) -> &[u8] {
         self.stderr.as_slice()
     }
@@ -100,6 +107,7 @@ impl<'a> Output for &'a mut Captured {
 pub struct Null;
 
 impl Null {
+    #[must_use]
     pub fn new() -> Self {
         Self
     }
