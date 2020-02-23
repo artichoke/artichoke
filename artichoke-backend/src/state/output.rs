@@ -95,3 +95,28 @@ impl<'a> Output for &'a mut Captured {
         self.stderr.write_all(bytes)
     }
 }
+
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct Null;
+
+impl Null {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Output for Null {
+    fn backend_name(&self) -> &str {
+        "Null"
+    }
+
+    fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
+        let _ = bytes;
+        Ok(())
+    }
+
+    fn write_stderr(&mut self, bytes: &[u8]) -> io::Result<()> {
+        let _ = bytes;
+        Ok(())
+    }
+}
