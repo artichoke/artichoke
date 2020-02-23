@@ -57,7 +57,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     random::mruby::init(interp)?;
     range::init(interp)?;
     regexp::mruby::init(interp)?;
-    string::init(interp)?;
+    string::mruby::init(interp)?;
     symbol::init(interp)?;
     thread::init(interp)?;
     time::mruby::init(interp)?;
