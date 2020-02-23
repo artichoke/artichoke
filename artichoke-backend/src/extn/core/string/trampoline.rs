@@ -24,7 +24,7 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
                 }
             }
         } else {
-            // All `char`s are value `u32`s
+            // All `char`s are valid `u32`s
             // https://github.com/rust-lang/rust/blob/1.41.0/src/libcore/char/convert.rs#L12-L20
             ch as u32
         }
