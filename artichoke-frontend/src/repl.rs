@@ -12,9 +12,11 @@ use artichoke_backend::state::parser::Context;
 use artichoke_backend::{Artichoke, Eval, Parser as _, ValueLike};
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
-use std::io::{self, Write};
+use std::error;
+use std::fmt;
+use std::io::Write;
 
-use crate::parser::{self, Parser, State};
+use crate::parser::{Parser, State};
 
 const REPL_FILENAME: &[u8] = b"(airb)";
 
@@ -27,36 +29,59 @@ mod filename_test {
     }
 }
 
-/// REPL errors.
+/// Failed to initialize parser during REPL boot.
+///
+/// The parser is needed to properly enter and exit multi-line editing mode.
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+struct ParserAllocError;
+
+impl fmt::Display for ParserAllocError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Failed to initialize Ruby parser")
+    }
+}
+
+impl error::Error for ParserAllocError {}
+
+/// Parser processed too many lines of input.
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+struct ParserLineCountError;
+
+impl fmt::Display for ParserLineCountError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "The interpreter has parsed too many lines and must exit")
+    }
+}
+
+impl error::Error for ParserLineCountError {}
+
+/// Internal fatal parser error.
+///
+/// This is usually an unknown FFI to Rust translation.
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+struct ParserInternalError;
+
+impl fmt::Display for ParserInternalError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "A fatal parsing error occurred")
+    }
+}
+
+impl error::Error for ParserInternalError {}
+
+/// The input loop encountered an unknown error condition.
 #[derive(Debug)]
-pub enum Error {
-    /// Fatal error.
-    Fatal,
-    /// Could not initialize REPL.
-    ReplInit,
-    /// Unrecoverable [`Parser`] error.
-    ReplParse(parser::Error),
-    /// Exception thrown by eval.
-    Ruby(Exception),
-    /// IO error when writing to output or error streams.
-    Io(io::Error),
-}
+struct UnhandledReadlineError(ReadlineError);
 
-impl From<parser::Error> for Error {
-    fn from(err: parser::Error) -> Self {
-        Self::ReplParse(err)
+impl fmt::Display for UnhandledReadlineError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Unhandled REPL Readline error: {}", self.0)
     }
 }
 
-impl From<Exception> for Error {
-    fn from(err: Exception) -> Self {
-        Self::Ruby(err)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Self {
-        Self::Io(err)
+impl error::Error for UnhandledReadlineError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        Some(&self.0)
     }
 }
 
@@ -75,22 +100,21 @@ pub struct PromptConfig {
 impl Default for PromptConfig {
     fn default() -> Self {
         Self {
-            simple: ">>> ".to_owned(),
-            continued: "... ".to_owned(),
-            result_prefix: "=> ".to_owned(),
+            simple: String::from(">>> "),
+            continued: String::from("... "),
+            result_prefix: String::from("=> "),
         }
     }
 }
 
-fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
+fn preamble(interp: &mut Artichoke) -> Result<String, Exception> {
     let description = interp.eval(b"RUBY_DESCRIPTION")?.try_into::<&str>()?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")?
         .try_into::<&str>()?;
-    let mut buf = String::new();
+    let mut buf = String::with_capacity(description.len() + 2 + compiler.len() + 1);
     buf.push_str(description);
-    buf.push('\n');
-    buf.push('[');
+    buf.push_str("\n[");
     buf.push_str(compiler);
     buf.push(']');
     Ok(buf)
@@ -115,7 +139,7 @@ pub fn run(
     mut output: impl Write,
     mut error: impl Write,
     config: Option<PromptConfig>,
-) -> Result<(), Error> {
+) -> Result<(), Box<dyn error::Error>> {
     let config = config.unwrap_or_default();
     let mut interp = artichoke_backend::interpreter()?;
     writeln!(output, "{}", preamble(&mut interp)?)?;
@@ -126,7 +150,7 @@ pub fn run(
     // REPL_FILENAME is controlled by this crate and asserts this invariant
     // with a test.
     interp.push_context(unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) });
-    let parser = Parser::new(&interp).ok_or(Error::ReplInit)?;
+    let mut parser = Parser::new(&interp).ok_or(ParserAllocError)?;
 
     let mut rl = Editor::<()>::new();
     // If a code block is open, accumulate code from multiple readlines in this
@@ -145,9 +169,17 @@ pub fn run(
         match readline {
             Ok(line) => {
                 buf.push_str(line.as_str());
-                parser_state = parser.parse(buf.as_str())?;
+                parser_state = parser.parse(buf.as_bytes());
+                if parser_state.is_fatal() {
+                    return Err(Box::new(ParserInternalError));
+                }
                 if parser_state.is_code_block_open() {
                     buf.push('\n');
+                    continue;
+                }
+                if parser_state.is_recoverable_error() {
+                    write!(error, "Could not parse input")?;
+                    buf.clear();
                     continue;
                 }
                 match interp.eval(buf.as_bytes()) {
@@ -190,10 +222,10 @@ pub fn run(
                         .borrow_mut()
                         .parser
                         .add_fetch_lineno(1)
-                        .map_err(|_| parser::Error::TooManyLines)?;
+                        .map_err(|_| ParserLineCountError)?;
                 }
-                // mruby eval successful, so reset the REPL state for the
-                // next expression.
+                // Eval successful, so reset the REPL state for the next
+                // expression.
                 interp.incremental_gc();
                 buf.clear();
             }
@@ -204,11 +236,10 @@ pub fn run(
                 // clear parser state
                 parser_state = State::default();
                 writeln!(output, "^C")?;
-                continue;
             }
             // Gracefully exit on CTRL-D EOF
             Err(ReadlineError::Eof) => break,
-            Err(_) => return Err(Error::Fatal),
+            Err(err) => return Err(Box::new(UnhandledReadlineError(err))),
         };
     }
     Ok(())
