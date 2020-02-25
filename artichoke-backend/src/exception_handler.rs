@@ -67,7 +67,7 @@ mod tests {
         assert_eq!(&b"waffles"[..], err.message());
         assert_eq!(
             Some(vec![Vec::from(&b"(eval):1"[..])]),
-            err.vm_backtrace(&interp)
+            err.vm_backtrace(&mut interp)
         );
     }
 
@@ -77,7 +77,7 @@ mod tests {
         let err = interp.eval(b"def bad; (; end").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_str());
         assert_eq!(&b"syntax error"[..], err.message());
-        assert_eq!(None, err.vm_backtrace(&interp));
+        assert_eq!(None, err.vm_backtrace(&mut interp));
     }
 
     #[test]

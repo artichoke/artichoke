@@ -80,10 +80,6 @@ impl fmt::Display for UnboxRubyError {
 impl error::Error for UnboxRubyError {}
 
 impl RubyException for UnboxRubyError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(*self)
-    }
-
     fn message(&self) -> &[u8] {
         &b"Failed to convert from Ruby value to Rust type"[..]
     }
@@ -92,7 +88,7 @@ impl RubyException for UnboxRubyError {
         String::from("TypeError")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
@@ -155,10 +151,6 @@ impl fmt::Display for BoxIntoRubyError {
 impl error::Error for BoxIntoRubyError {}
 
 impl RubyException for BoxIntoRubyError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(*self)
-    }
-
     fn message(&self) -> &[u8] {
         &b"Failed to convert from Rust type to Ruby value"[..]
     }
@@ -167,7 +159,7 @@ impl RubyException for BoxIntoRubyError {
         String::from("TypeError")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }

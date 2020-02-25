@@ -11,10 +11,6 @@ use crate::{Artichoke, ValueLike};
 pub struct Exception(Box<dyn RubyException>);
 
 impl RubyException for Exception {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        self.0.box_clone()
-    }
-
     fn message(&self) -> &[u8] {
         self.0.message()
     }
@@ -24,7 +20,7 @@ impl RubyException for Exception {
         self.0.name()
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         self.0.vm_backtrace(interp)
     }
 
@@ -89,13 +85,7 @@ pub unsafe fn raise(mut interp: Artichoke, exception: impl RubyException + fmt::
 /// [`exception::raise`](raise). Rust code can re-raise a trait object to
 /// propagate exceptions from native code back into the interpreter.
 #[allow(clippy::module_name_repetitions)]
-pub trait RubyException: error::Error
-where
-    Self: 'static,
-{
-    /// Clone `self` and return a new boxed trait object.
-    fn box_clone(&self) -> Box<dyn RubyException>;
-
+pub trait RubyException: error::Error + 'static {
     /// Message of the `Exception`.
     ///
     /// This value is a byte slice since Ruby `String`s are equivalent to
@@ -106,17 +96,13 @@ where
     fn name(&self) -> String;
 
     /// Optional backtrace specified by a `Vec` of frames.
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>>;
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>>;
 
     /// Return a raiseable [`sys::mrb_value`].
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value>;
 }
 
 impl RubyException for Box<dyn RubyException> {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        self.as_ref().box_clone()
-    }
-
     fn message(&self) -> &[u8] {
         self.as_ref().message()
     }
@@ -125,7 +111,7 @@ impl RubyException for Box<dyn RubyException> {
         self.as_ref().name()
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         self.as_ref().vm_backtrace(interp)
     }
 
@@ -173,10 +159,6 @@ impl fmt::Display for CaughtException {
 impl error::Error for CaughtException {}
 
 impl RubyException for CaughtException {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(self.clone())
-    }
-
     fn message(&self) -> &[u8] {
         self.message.as_slice()
     }
@@ -185,7 +167,7 @@ impl RubyException for CaughtException {
         self.name.clone()
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         self.value.funcall("backtrace", &[], None).ok()
     }

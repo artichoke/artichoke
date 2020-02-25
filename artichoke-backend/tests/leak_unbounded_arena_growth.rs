@@ -48,7 +48,7 @@ end
         let arena = interp.create_arena_savepoint();
         let result = interp.eval(code).unwrap_err();
         arena.restore();
-        assert_eq!(expected, result.vm_backtrace(&interp));
+        assert_eq!(expected, result.vm_backtrace(&mut interp));
         drop(result);
         interp.incremental_gc();
     });

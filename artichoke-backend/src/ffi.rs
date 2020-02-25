@@ -92,10 +92,6 @@ impl fmt::Display for InterpreterExtractError {
 impl error::Error for InterpreterExtractError {}
 
 impl RubyException for InterpreterExtractError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(*self)
-    }
-
     fn message(&self) -> &[u8] {
         &b"Failed to extract Artichoke Ruby interpreter from mrb_state"[..]
     }
@@ -104,7 +100,7 @@ impl RubyException for InterpreterExtractError {
         String::from("fatal")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
@@ -170,10 +166,6 @@ impl fmt::Display for ConvertBytesError {
 impl error::Error for ConvertBytesError {}
 
 impl RubyException for ConvertBytesError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(*self)
-    }
-
     fn message(&self) -> &[u8] {
         &b"invalid byte sequence"[..]
     }
@@ -182,7 +174,7 @@ impl RubyException for ConvertBytesError {
         String::from("ArgumentError")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }

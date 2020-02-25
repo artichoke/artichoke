@@ -89,10 +89,6 @@ impl fmt::Display for InterpreterAllocError {
 impl error::Error for InterpreterAllocError {}
 
 impl RubyException for InterpreterAllocError {
-    fn box_clone(&self) -> Box<dyn RubyException> {
-        Box::new(*self)
-    }
-
     fn message(&self) -> &[u8] {
         &b"Failed to allocate Artichoke Ruby interpreter"[..]
     }
@@ -101,7 +97,7 @@ impl RubyException for InterpreterAllocError {
         String::from("fatal")
     }
 
-    fn vm_backtrace(&self, interp: &Artichoke) -> Option<Vec<Vec<u8>>> {
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
         let _ = interp;
         None
     }
