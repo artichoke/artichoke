@@ -612,15 +612,13 @@ mod release {
             .output()
             .unwrap();
         if !output.status.success() {
-            let mut message = String::new();
-            message.push('\n');
-            message.push_str("stdout:\n");
-            message.push_str(str::from_utf8(output.stdout.as_slice()).unwrap());
-            message.push('\n');
-            message.push_str("=".repeat(50).as_str());
-            message.push_str("stdout:\n");
-            message.push_str(str::from_utf8(output.stdout.as_slice()).unwrap());
-            panic!("git rev-list failed: {}", message);
+            eprintln!("git rev-list --count HEAD failed");
+            eprintln!("--- stdout:");
+            eprintln!("{}", str::from_utf8(output.stdout.as_slice()).unwrap());
+            eprintln!();
+            eprintln!("--- stderr:");
+            eprintln!("{}", str::from_utf8(output.stderr.as_slice()).unwrap());
+            panic!("git rev-list --count HEAD failed");
         }
         str::from_utf8(output.stdout.as_slice())
             .unwrap()
