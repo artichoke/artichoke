@@ -2,7 +2,7 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
-use std::borrow::Cow;
+use bstr::ByteSlice;
 use std::cell::RefCell;
 use std::error;
 use std::ffi::OsStr;
@@ -16,20 +16,6 @@ use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::state::State;
 use crate::sys;
 use crate::{Artichoke, ConvertMut};
-
-#[cfg(unix)]
-mod unix;
-#[cfg(not(any(unix, windows)))]
-mod unknown;
-#[cfg(windows)]
-mod windows;
-
-#[cfg(unix)]
-use unix as imp;
-#[cfg(not(any(unix, windows)))]
-use unknown as imp;
-#[cfg(windows)]
-use windows as imp;
 
 /// Extract an [`Artichoke`] interpreter from the user data pointer on a
 /// [`sys::mrb_state`].
@@ -143,15 +129,17 @@ impl From<Box<InterpreterExtractError>> for Box<dyn RubyException> {
 /// Convert a byte slice to a platform-specific [`OsStr`].
 ///
 /// Unsupported platforms fallback to converting through `str`.
-pub fn bytes_to_os_str(value: &[u8]) -> Result<Cow<'_, OsStr>, ConvertBytesError> {
-    imp::bytes_to_os_str(value)
+#[inline]
+pub fn bytes_to_os_str(value: &[u8]) -> Result<&OsStr, ConvertBytesError> {
+    value.to_os_str().map_err(|_| ConvertBytesError)
 }
 
 /// Convert a platform-specific [`OsStr`] to a byte slice.
 ///
 /// Unsupported platforms fallback to converting through `str`.
-pub fn os_str_to_bytes(value: &OsStr) -> Result<Cow<'_, [u8]>, ConvertBytesError> {
-    imp::os_str_to_bytes(value)
+#[inline]
+pub fn os_str_to_bytes(value: &OsStr) -> Result<&[u8], ConvertBytesError> {
+    <[u8]>::from_os_str(value).ok_or(ConvertBytesError)
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]

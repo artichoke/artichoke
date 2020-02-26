@@ -21,8 +21,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     }
     let file = ffi::bytes_to_os_str(filename)?;
     let path = if Path::new(&file).is_relative() {
-        let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
-        Path::new(&base).join(&file)
+        Path::new(RUBY_LOAD_PATH).join(&file)
     } else {
         PathBuf::from(&file)
     };
@@ -33,7 +32,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     if !is_file {
         return Err(Exception::from(load_error(interp, filename)?));
     }
-    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
+    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
 
@@ -86,8 +85,7 @@ pub fn require(
         let path = if let Some(base) = base {
             base.join(rb_ext)
         } else {
-            let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
-            Path::new(&base).join(rb_ext)
+            Path::new(RUBY_LOAD_PATH).join(rb_ext)
         };
         let is_file = {
             let api = interp.0.borrow();
@@ -98,7 +96,7 @@ pub fn require(
             if interp.0.borrow().vfs.is_required(path.as_path()) {
                 return Ok(interp.convert(false));
             }
-            let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
+            let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
                 .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
             interp.push_context(context);
             // Require Rust File first because an File may define classes and
@@ -142,8 +140,7 @@ pub fn require(
             let path = if let Some(base) = base {
                 base.join(&file)
             } else {
-                let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
-                Path::new(&base).join(&file)
+                Path::new(RUBY_LOAD_PATH).join(&file)
             };
             let is_file = {
                 let api = interp.0.borrow();
@@ -154,7 +151,7 @@ pub fn require(
                 if interp.0.borrow().vfs.is_required(path.as_path()) {
                     return Ok(interp.convert(false));
                 }
-                let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
+                let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
                     .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
                 interp.push_context(context);
                 // Require Rust File first because an File may define classes and
@@ -200,8 +197,7 @@ pub fn require(
     let path = if let Some(base) = base {
         base.join(&file)
     } else {
-        let base = ffi::bytes_to_os_str(RUBY_LOAD_PATH.as_bytes())?;
-        Path::new(&base).join(&file)
+        Path::new(RUBY_LOAD_PATH).join(&file)
     };
     if !interp.0.borrow().vfs.is_file(path.as_path()) {
         return Err(Exception::from(load_error(interp, filename)?));
@@ -210,7 +206,7 @@ pub fn require(
     if interp.0.borrow().vfs.is_required(path.as_path()) {
         return Ok(interp.convert(false));
     }
-    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.into_owned())
+    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
     // Require Rust File first because an File may define classes and
@@ -254,21 +250,20 @@ pub fn require(
 
 #[allow(clippy::module_name_repetitions)]
 pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Exception> {
-    let current = {
+    let base = {
         let borrow = interp.0.borrow();
         // TODO: GH-468 - Use `Parser::peek_context`.
         let context = borrow
             .parser
             .peek_context()
             .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
-        ffi::bytes_to_os_str(context.filename())?.into_owned()
+        if let Some(base) = Path::new(ffi::bytes_to_os_str(context.filename())?).parent() {
+            base.to_owned()
+        } else {
+            PathBuf::from("/")
+        }
     };
-    let base = if let Some(base) = Path::new(current.as_os_str()).parent() {
-        base
-    } else {
-        Path::new("/")
-    };
-    require(interp, file, Some(base))
+    require(interp, file, Some(&base))
 }
 
 fn load_error(interp: &Artichoke, filename: &[u8]) -> Result<LoadError, Exception> {
