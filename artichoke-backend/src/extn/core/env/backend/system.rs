@@ -1,3 +1,4 @@
+use bstr::ByteSlice;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
@@ -33,13 +34,13 @@ impl EnvType for System {
             // since empty names are invalid at the OS level.
             return Ok(None);
         }
-        if memchr::memchr(b'\0', name).is_some() {
+        if name.find_byte(b'\0').is_some() {
             return Err(Exception::from(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
             )));
         }
-        if memchr::memchr(b'=', name).is_some() {
+        if name.find_byte(b'=').is_some() {
             // MRI accepts names containing '=' on get and should always return
             // `nil` since these names are invalid at the OS level.
             Ok(None)
@@ -74,13 +75,13 @@ impl EnvType for System {
                 "Invalid argument - setenv()",
             )));
         }
-        if memchr::memchr(b'\0', name).is_some() {
+        if name.find_byte(b'\0').is_some() {
             return Err(Exception::from(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
             )));
         }
-        if memchr::memchr(b'=', name).is_some() {
+        if name.find_byte(b'=').is_some() {
             let mut message = b"Invalid argumen - setenv(".to_vec();
             message.extend(name.to_vec());
             message.push(b')');
@@ -88,7 +89,7 @@ impl EnvType for System {
             return Err(Exception::from(ArgumentError::new_raw(interp, message)));
         }
         if let Some(value) = value {
-            if memchr::memchr(b'\0', value).is_some() {
+            if value.find_byte(b'\0').is_some() {
                 return Err(Exception::from(ArgumentError::new(
                     interp,
                     "bad environment variable value: contains null byte",

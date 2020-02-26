@@ -44,7 +44,6 @@ dependencies = [
  "itoa",
  "libc",
  "log",
- "memchr",
  "num_cpus",
  "once_cell",
  "onig",
