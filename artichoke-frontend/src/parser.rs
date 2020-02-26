@@ -4,15 +4,18 @@ use artichoke_backend::sys;
 use artichoke_backend::Artichoke;
 use std::convert::TryFrom;
 use std::ffi::CStr;
+use std::ptr::NonNull;
 
 /// State shows whether artichoke can parse some code or why it cannot.
 ///
 /// This enum only encapsulates whether artichoke can parse the code. It may
 /// still have syntactic or semantic errors.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum State {
     /// Internal parser error. This is a fatal error.
     ParseError,
+    /// Code must be fewer than `isize::max_value` bytes.
+    CodeTooLong,
     /// The code has too many end statements.
     UnexpectedEnd,
     /// The code has unclosed blocks.
@@ -30,14 +33,37 @@ pub enum State {
 }
 
 impl State {
-    /// Does this state indicate a code block is open? Used by the REPL to know
-    /// whether to buffer code before attempting to eval it on the interpreter.
+    /// Whether this variant indicates a code block is open.
+    ///
+    /// This method can be used by a REPL to check whether to buffer code or
+    /// begin a multi-line editing session before attempting to eval the code on
+    /// an interpreter.
     #[must_use]
-    pub fn is_code_block_open(&self) -> bool {
+    pub fn is_code_block_open(self) -> bool {
         match self {
-            Self::Valid | Self::UnexpectedEnd | Self::UnexpectedRegexpBegin => false,
+            Self::Valid | Self::UnexpectedEnd | Self::UnexpectedRegexpBegin | Self::CodeTooLong => {
+                false
+            }
             _ => true,
         }
+    }
+
+    /// Whether this variant is a recoverable error.
+    ///
+    /// Recoverable errors should be handled by resetting the parser and input
+    /// buffer.
+    #[must_use]
+    pub fn is_recoverable_error(self) -> bool {
+        self == Self::CodeTooLong
+    }
+
+    /// Whether this variant is a fatal parse error.
+    ///
+    /// Fatal parser states indicate the parser is corrupted and cannot be used
+    /// again.
+    #[must_use]
+    pub fn is_fatal(self) -> bool {
+        self == Self::ParseError
     }
 }
 
@@ -47,22 +73,11 @@ impl Default for State {
     }
 }
 
-/// Errors encountered during parsing some Ruby code.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Error {
-    /// Code must be fewer than `isize::max_value` bytes.
-    CodeTooLong,
-    /// Too many lines parsed.
-    TooManyLines,
-    /// Fatal error with message.
-    Fatal(String),
-}
-
 /// Wraps a [`artichoke_backend`] mruby parser.
 // TODO: add a `Debug` impl
 pub struct Parser {
-    parser: *mut sys::mrb_parser_state,
-    context: *mut sys::mrbc_context,
+    parser: NonNull<sys::mrb_parser_state>,
+    context: NonNull<sys::mrbc_context>,
 }
 
 impl Parser {
@@ -72,12 +87,10 @@ impl Parser {
         let mut borrow = interp.0.borrow_mut();
         let mrb = borrow.mrb;
         let context = borrow.parser.context_mut();
+        let context = NonNull::new(context)?;
         let parser = unsafe { sys::mrb_parser_new(mrb) };
-        if parser.is_null() {
-            None
-        } else {
-            Some(Self { parser, context })
-        }
+        let parser = NonNull::new(parser)?;
+        Some(Self { parser, context })
     }
 
     /// Parse the code buffer to determine if the code is a complete expression
@@ -91,44 +104,48 @@ impl Parser {
     ///
     /// If the underlying parser returns a UTF-8 invalid error message, an error
     /// is returned.
-    pub fn parse<T>(&self, code: T) -> Result<State, Error>
-    where
-        T: AsRef<[u8]>,
-    {
-        let bytes = code.as_ref();
-        let len = isize::try_from(bytes.len()).map_err(|_| Error::CodeTooLong)?;
-        let code_has_unterminated_expression = unsafe {
-            let ptr = bytes.as_ptr() as *const i8;
-            (*self.parser).s = ptr;
-            (*self.parser).send = ptr.offset(len);
-            (*self.parser).lineno = (*self.context).lineno;
-            sys::mrb_parser_parse(self.parser, self.context);
+    pub fn parse(&mut self, code: &[u8]) -> State {
+        let len = if let Ok(len) = isize::try_from(code.len()) {
+            len
+        } else {
+            return State::CodeTooLong;
+        };
+        let parser = unsafe { self.parser.as_mut() };
+        let context = unsafe { self.context.as_mut() };
 
-            if !(*self.parser).parsing_heredoc.is_null() {
-                return Ok(State::UnterminatedHeredoc);
+        let ptr = code.as_ptr() as *const i8;
+        parser.s = ptr;
+        parser.send = unsafe { ptr.offset(len) };
+        parser.lineno = context.lineno;
+        unsafe {
+            sys::mrb_parser_parse(parser, context);
+        }
+
+        if !parser.parsing_heredoc.is_null() {
+            return State::UnterminatedHeredoc;
+        }
+        if !parser.lex_strterm.is_null() {
+            return State::UnterminatedString;
+        }
+        if parser.nerr > 0 {
+            let errmsg = parser.error_buffer[0].message;
+            if errmsg.is_null() {
+                return State::ParseError;
             }
-            if !(*self.parser).lex_strterm.is_null() {
-                return Ok(State::UnterminatedString);
-            }
-            if (*self.parser).nerr > 0 {
-                let errmsg = (*self.parser).error_buffer[0].message;
-                if errmsg.is_null() {
-                    return Ok(State::ParseError);
+            let cstring = unsafe { CStr::from_ptr(errmsg) };
+            if let Ok(message) = cstring.to_str() {
+                match message {
+                    "syntax error, unexpected $end" => State::UnexpectedProgramEnd,
+                    "syntax error, unexpected keyword_end" => State::UnexpectedEnd,
+                    "syntax error, unexpected tREGEXP_BEG" => State::UnexpectedRegexpBegin,
+                    _ => State::ParseError,
                 }
-                let cstring = CStr::from_ptr(errmsg);
-                let message = cstring.to_str().map(ToOwned::to_owned).map_err(|_| {
-                    Error::Fatal("parser error with unparseable message".to_owned())
-                })?;
-                #[allow(clippy::match_same_arms)]
-                return match message.as_str() {
-                    "syntax error, unexpected $end" => Ok(State::UnexpectedProgramEnd),
-                    "syntax error, unexpected keyword_end" => Ok(State::UnexpectedEnd),
-                    "syntax error, unexpected tREGEXP_BEG" => Ok(State::UnexpectedRegexpBegin),
-                    _ => Ok(State::ParseError),
-                };
+            } else {
+                State::ParseError
             }
+        } else {
             #[allow(clippy::match_same_arms)]
-            match (*self.parser).lstate {
+            let code_has_unterminated_expression = match parser.lstate {
                 // beginning of a statement, that means previous line ended
                 sys::mrb_lex_state_enum::EXPR_BEG => false,
                 // a message dot was the last token, there has to come more
@@ -154,12 +171,12 @@ impl Parser {
                 // this token is unreachable and is used to do integer math on the
                 // values of `mrb_lex_state_enum`.
                 sys::mrb_lex_state_enum::EXPR_MAX_STATE => false,
+            };
+            if code_has_unterminated_expression {
+                State::UnterminatedBlock
+            } else {
+                State::Valid
             }
-        };
-        if code_has_unterminated_expression {
-            Ok(State::UnterminatedBlock)
-        } else {
-            Ok(State::Valid)
         }
     }
 }
@@ -167,7 +184,7 @@ impl Parser {
 impl Drop for Parser {
     fn drop(&mut self) {
         unsafe {
-            sys::mrb_parser_free(self.parser);
+            sys::mrb_parser_free(self.parser.as_mut());
         }
     }
 }
