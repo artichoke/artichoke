@@ -1,3 +1,4 @@
+use bstr::ByteSlice;
 use std::convert::TryFrom;
 use std::iter::Iterator;
 use std::str::{self, FromStr};
@@ -33,7 +34,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         message.push_str(" into Integer");
         TypeError::new(interp, message)
     })?;
-    if memchr::memchr(b'\0', arg).is_some() {
+    if arg.find_byte(b'\0').is_some() {
         return Err(Exception::from(invalid_value_err(interp, arg)?));
     }
     let arg = if let Ok(arg) = str::from_utf8(arg) {
