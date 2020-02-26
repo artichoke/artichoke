@@ -80,7 +80,7 @@ impl WriteError {
 }
 
 impl fmt::Display for WriteError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Unable to write escaped Unicode into destination")
     }
 }

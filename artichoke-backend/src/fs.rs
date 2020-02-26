@@ -65,7 +65,7 @@ impl Extension {
 }
 
 impl fmt::Debug for Extension {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Extension")
             .field("hook", &"fn(&mut Artichoke) -> Result<(), Exception>")
             .finish()

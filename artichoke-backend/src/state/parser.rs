@@ -16,7 +16,7 @@ pub struct State {
 }
 
 impl fmt::Debug for State {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("parser::State")
             .field("context", &"non-null mrb_context")
             .field("stack", &self.stack)

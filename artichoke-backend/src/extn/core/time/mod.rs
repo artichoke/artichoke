@@ -30,7 +30,7 @@ impl RustBackedValue for Time {
 }
 
 impl fmt::Debug for Time {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Ok(backend) = self.0.downcast_ref::<Chrono<Local>>() {
             f.debug_struct("Time").field("backend", backend).finish()
         } else {

@@ -36,7 +36,7 @@ mod filename_test {
 struct ParserAllocError;
 
 impl fmt::Display for ParserAllocError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Failed to initialize Ruby parser")
     }
 }
@@ -48,7 +48,7 @@ impl error::Error for ParserAllocError {}
 struct ParserLineCountError;
 
 impl fmt::Display for ParserLineCountError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "The interpreter has parsed too many lines and must exit")
     }
 }
@@ -62,7 +62,7 @@ impl error::Error for ParserLineCountError {}
 struct ParserInternalError;
 
 impl fmt::Display for ParserInternalError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "A fatal parsing error occurred")
     }
 }
@@ -74,7 +74,7 @@ impl error::Error for ParserInternalError {}
 struct UnhandledReadlineError(ReadlineError);
 
 impl fmt::Display for UnhandledReadlineError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Unhandled REPL Readline error: {}", self.0)
     }
 }

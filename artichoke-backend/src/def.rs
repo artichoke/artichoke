@@ -165,7 +165,7 @@ impl EnclosingRubyScope {
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
     #[must_use]
-    pub fn fqname(&self) -> Cow<str> {
+    pub fn fqname(&self) -> Cow<'_, str> {
         match self {
             Self::Class { spec } => spec.fqname(),
             Self::Module { spec } => spec.fqname(),
@@ -207,7 +207,7 @@ impl ConstantNameError {
 }
 
 impl fmt::Display for ConstantNameError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Invalid constant name contained a NUL byte")
     }
 }
@@ -352,7 +352,7 @@ impl NotDefinedError {
 }
 
 impl fmt::Display for NotDefinedError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} '{}' not defined", self.item_type(), self.fqdn())
     }
 }

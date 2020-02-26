@@ -346,7 +346,7 @@ macro_rules! ruby_exception_impl {
         }
 
         impl fmt::Display for $exception {
-            fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, mut f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let classname = self.name();
                 write!(f, "{} (", classname)?;
                 string::format_unicode_debug_into(&mut f, self.message())

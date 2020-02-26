@@ -439,7 +439,7 @@ impl Clone for Box<dyn RegexpType> {
 }
 
 impl fmt::Debug for Box<dyn RegexpType> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.debug())
     }
 }
@@ -460,7 +460,7 @@ impl PartialEq for Box<dyn RegexpType> {
 impl Eq for Box<dyn RegexpType> {}
 
 impl fmt::Debug for &dyn RegexpType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.debug())
     }
 }

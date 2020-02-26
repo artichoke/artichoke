@@ -2,6 +2,7 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::missing_errors_doc)]
 #![deny(intra_doc_link_resolution_failure)]
+#![warn(rust_2018_idioms)]
 
 //! # artichoke-backend
 //!

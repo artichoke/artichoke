@@ -81,7 +81,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
 pub struct InterpreterAllocError;
 
 impl fmt::Display for InterpreterAllocError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Failed to allocate Artichoke interpreter")
     }
 }

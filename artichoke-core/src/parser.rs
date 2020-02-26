@@ -49,7 +49,7 @@ pub enum IncrementLinenoError {
 }
 
 impl fmt::Display for IncrementLinenoError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Overflow(max) => write!(f, "Parser exceeded maximum line count: {}", max),
         }

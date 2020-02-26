@@ -72,7 +72,7 @@ impl UnboxRubyError {
 }
 
 impl fmt::Display for UnboxRubyError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "failed to convert from {} to {}", self.from, self.into)
     }
 }
@@ -143,7 +143,7 @@ impl BoxIntoRubyError {
 }
 
 impl fmt::Display for BoxIntoRubyError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "failed to convert from {} to {}", self.from, self.into)
     }
 }
