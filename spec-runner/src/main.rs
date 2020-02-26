@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 #![deny(intra_doc_link_resolution_failure)]
+#![warn(rust_2018_idioms)]
 
 //! `spec-runner` is a wrapper around `MSpec` and ruby/spec that works with the
 //! Artichoke virtual filesystem.
