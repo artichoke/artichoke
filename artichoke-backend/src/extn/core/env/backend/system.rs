@@ -47,7 +47,7 @@ impl EnvType for System {
             let name = ffi::bytes_to_os_str(name)?;
             if let Some(value) = std::env::var_os(name) {
                 let value = ffi::os_str_to_bytes(value.as_os_str())?;
-                Ok(Some(value.into_owned().into()))
+                Ok(Some(value.to_vec().into()))
             } else {
                 Ok(None)
             }
@@ -111,7 +111,7 @@ impl EnvType for System {
         for (name, value) in std::env::vars_os() {
             let name = ffi::os_str_to_bytes(name.as_os_str())?;
             let value = ffi::os_str_to_bytes(value.as_os_str())?;
-            map.insert(name.into_owned(), value.into_owned());
+            map.insert(name.to_vec(), value.to_vec());
         }
         Ok(map)
     }
