@@ -19,7 +19,7 @@ impl RustBackedValue for Environ {
 }
 
 impl fmt::Debug for Environ {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Ok(backend) = self.0.downcast_ref::<System>() {
             f.debug_struct("Environ").field("backend", backend).finish()
         } else if let Ok(backend) = self.0.downcast_ref::<Memory>() {

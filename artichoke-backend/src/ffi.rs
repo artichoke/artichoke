@@ -81,7 +81,7 @@ pub unsafe fn from_user_data(
 pub struct InterpreterExtractError;
 
 impl fmt::Display for InterpreterExtractError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "Failed to extract Artichoke Ruby interpreter from mrb_state userdata"
@@ -158,7 +158,7 @@ pub fn os_str_to_bytes(value: &OsStr) -> Result<Cow<'_, [u8]>, ConvertBytesError
 pub struct ConvertBytesError;
 
 impl fmt::Display for ConvertBytesError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Could not convert between bytes and platform string")
     }
 }

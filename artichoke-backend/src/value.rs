@@ -340,14 +340,14 @@ impl Convert<Value, Value> for Artichoke {
 }
 
 impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let string_repr = self.to_s();
         write!(f, "{}", String::from_utf8_lossy(string_repr.as_slice()))
     }
 }
 
 impl fmt::Debug for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.to_s_debug())
     }
 }
@@ -375,7 +375,7 @@ pub struct Block {
 }
 
 impl fmt::Debug for Block {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "proc")
     }
 }
@@ -439,7 +439,7 @@ pub struct ArgCountError {
 }
 
 impl fmt::Display for ArgCountError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Too many arguments for function call: ")?;
         write!(
             f,

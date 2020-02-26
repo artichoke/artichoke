@@ -53,7 +53,7 @@ impl Onig {
 }
 
 impl fmt::Display for Onig {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         string::format_unicode_debug_into(f, self.derived.pattern.as_slice())
             .map_err(string::WriteError::into_inner)
     }

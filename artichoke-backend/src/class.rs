@@ -194,7 +194,7 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn fqname(&self) -> Cow<str> {
+    pub fn fqname(&self) -> Cow<'_, str> {
         if let Some(scope) = self.enclosing_scope() {
             Cow::Owned(format!("{}::{}", scope.fqname(), self.name()))
         } else {
@@ -238,7 +238,7 @@ impl Spec {
 }
 
 impl fmt::Display for Spec {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "artichoke class spec -- {}", self.fqname())
     }
 }

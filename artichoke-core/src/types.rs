@@ -32,7 +32,7 @@ pub enum Rust {
 }
 
 impl fmt::Display for Rust {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Rust ")?;
         match self {
             Self::Bool => write!(f, "bool"),
@@ -147,7 +147,7 @@ impl Ruby {
 }
 
 impl fmt::Display for Ruby {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Ruby {}", self.class_name())
     }
 }

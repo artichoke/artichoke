@@ -41,7 +41,7 @@ impl RustBackedValue for Random {
 }
 
 impl fmt::Debug for Random {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Ok(inner) = self.inner().downcast_ref::<Rand<SmallRng>>() {
             f.debug_struct("Random")
                 .field("backend_type", &"Rand<SmallRng>")

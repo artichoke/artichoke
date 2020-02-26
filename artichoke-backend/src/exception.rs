@@ -30,7 +30,7 @@ impl RubyException for Exception {
 }
 
 impl fmt::Display for Exception {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
@@ -147,7 +147,7 @@ impl CaughtException {
 }
 
 impl fmt::Display for CaughtException {
-    fn fmt(&self, mut f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, mut f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let classname = self.name();
         write!(f, "{} (", classname)?;
         string::format_unicode_debug_into(&mut f, self.message())

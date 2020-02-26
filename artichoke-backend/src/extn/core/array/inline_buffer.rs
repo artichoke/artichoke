@@ -65,7 +65,7 @@ impl<'a> FromIterator<&'a Option<Value>> for InlineBuffer {
 }
 
 impl fmt::Debug for InlineBuffer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list()
             .entries(iter::repeat("Value").take(self.len()))
             .finish()
