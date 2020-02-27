@@ -133,10 +133,11 @@ pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<V
             let number = borrow.inner_mut().rand_float(interp, Some(max));
             Ok(interp.convert_mut(number))
         }
-        Max::Int(max) if max < 1 => Err(Exception::from(ArgumentError::new(
-            interp,
-            format!("invalid argument - {}", max),
-        ))),
+        Max::Int(max) if max < 1 => {
+            let mut message = String::from("invalid argument - ");
+            string::format_int_into(&mut message, max)?;
+            Err(Exception::from(ArgumentError::new(interp, message)))
+        }
         Max::Int(max) => {
             let mut borrow = rand.borrow_mut();
             let number = borrow.inner_mut().rand_int(interp, max);

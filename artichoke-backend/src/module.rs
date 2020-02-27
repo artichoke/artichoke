@@ -161,12 +161,12 @@ impl Spec {
     #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {
         if let Some(scope) = self.enclosing_scope() {
-            Cow::Owned(format!("{}::{}", scope.fqname(), self.name()))
+            let mut fqname = String::from(scope.fqname());
+            fqname.push_str("::");
+            fqname.push_str(self.name.as_ref());
+            fqname.into()
         } else {
-            match &self.name {
-                Cow::Borrowed(name) => Cow::Borrowed(name),
-                Cow::Owned(name) => Cow::Borrowed(name.as_str()),
-            }
+            self.name.as_ref().into()
         }
     }
 
