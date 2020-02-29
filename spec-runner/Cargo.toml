@@ -10,12 +10,8 @@ license = "MIT"
 keywords = ["artichoke", "artichoke-ruby", "ruby", "ruby-spec", "testing"]
 categories = ["development-tools::testing"]
 
+[dependencies]
+rust-embed = "5.5.0"
+
 [dependencies.artichoke-backend]
 path = "../artichoke-backend"
-
-[dependencies.rust-embed]
-version = "5.1.0"
-features = ["interpolate-folder-path"]
-
-[build-dependencies]
-fs_extra = "1.1.0"

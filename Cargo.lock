@@ -640,9 +640,9 @@ dependencies = [
 
 [[package]]
 name = "rust-embed"
-version = "5.2.0"
+version = "5.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b18893bdbdb0fa5bce588f5d7ab4afbd0678fc879d31535912bf39b7fbc062d6"
+checksum = "20eb43fdf7722a83abfcbc60e10a99c0940d3f07ca69a643edee10bf174240ff"
 dependencies = [
  "rust-embed-impl",
  "rust-embed-utils",
@@ -651,13 +651,12 @@ dependencies = [
 
 [[package]]
 name = "rust-embed-impl"
-version = "5.2.0"
+version = "5.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50633968284cfc373661345fc6382e62b738079f045738023ebc5e445cf44357"
+checksum = "c44c2cbb1a7168b8232ce002b83ebe0c669414d53d6deb38994222d995027f97"
 dependencies = [
  "quote",
  "rust-embed-utils",
- "shellexpand",
  "syn",
  "walkdir",
 ]
@@ -740,15 +739,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
-name = "shellexpand"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c7e79eddc7b411f9beeaaf2d421de7e7cb3b1ab9eaf1b79704c0e4130cba6b5"
-dependencies = [
- "dirs",
-]
-
-[[package]]
 name = "shlex"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -765,7 +755,6 @@ name = "spec-runner"
 version = "0.1.0"
 dependencies = [
  "artichoke-backend",
- "fs_extra",
  "rust-embed",
 ]
 
