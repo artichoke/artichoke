@@ -11,7 +11,7 @@ pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
 }
 
 #[derive(RustEmbed)]
-#[folder = "$OUT_DIR/mspec/lib"]
+#[folder = "vendor/mspec/lib"]
 struct Sources;
 
 #[derive(Debug)]
