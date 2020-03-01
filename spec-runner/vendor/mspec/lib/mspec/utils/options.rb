@@ -34,7 +34,7 @@ class MSpecOptions
 
   attr_accessor :config, :banner, :width, :options
 
-  def initialize(banner="", width=30, config=nil)
+  def initialize(banner = "", width = 30, config = nil)
     @banner   = banner
     @config   = config
     @width    = width
@@ -94,7 +94,7 @@ class MSpecOptions
     @options.find { |o| o.match? opt }
   end
 
-  # Processes an option. Calles the #on_extra block (or default) for
+  # Processes an option. Calls the #on_extra block (or default) for
   # unrecognized options. For registered options, possibly fetches an
   # argument and invokes the option's block if it is not nil.
   def process(argv, entry, opt, arg)
@@ -123,7 +123,7 @@ class MSpecOptions
 
   # Parses an array of command line entries, calling blocks for
   # registered options.
-  def parse(argv=ARGV)
+  def parse(argv = ARGV)
     argv = Array(argv).dup
 
     while entry = argv.shift
@@ -377,7 +377,7 @@ class MSpecOptions
   def randomize
     on("-H", "--random",
        "Randomize the list of spec files") do
-      MSpec.randomize
+      MSpec.randomize = true
     end
   end
 
@@ -392,10 +392,10 @@ class MSpecOptions
     on("-V", "--verbose", "Output the name of each file processed") do
       obj = Object.new
       def obj.start
-        @width = MSpec.retrieve(:files).inject(0) { |max, f| f.size > max ? f.size : max }
+        @width = MSpec.files_array.inject(0) { |max, f| f.size > max ? f.size : max }
       end
       def obj.load
-        file = MSpec.retrieve :file
+        file = MSpec.file
         STDERR.print "\n#{file.ljust(@width)}"
       end
       MSpec.register :start, obj
@@ -414,7 +414,7 @@ class MSpecOptions
   end
 
   def interrupt
-    on("--int-spec", "Control-C interupts the current spec only") do
+    on("--int-spec", "Control-C interrupts the current spec only") do
       config[:abort] = false
     end
   end
