@@ -202,11 +202,42 @@ impl Float {
         Self(0.0)
     }
 
+    /// Construct a new `Float` with a given [`f64`].
+    #[inline]
+    #[must_use]
+    pub const fn with_f64(f: f64) -> Self {
+        Self(f)
+    }
+
+    /// Convert self to an `i64` with a saturating cast.
+    #[inline]
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
+    pub const fn as_i64(self) -> i64 {
+        self.0 as i64
+    }
+
     /// Return the inner [`f64`].
     #[inline]
     #[must_use]
     pub const fn as_f64(self) -> f64 {
         self.0
+    }
+
+    #[inline]
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_precision_loss)]
+    pub fn try_into_fixnum(self) -> Option<i64> {
+        const FIXABLE_MAX: f64 = 2_i64.pow(f64::MANTISSA_DIGITS) as f64;
+        const FIXABLE_MIN: f64 = -(2_i64.pow(f64::MANTISSA_DIGITS)) as f64;
+
+        match self.0 {
+            x if !x.is_finite() => None,
+            x if x > FIXABLE_MAX => None,
+            x if x < FIXABLE_MIN => None,
+            x => Some(x as i64),
+        }
     }
 
     /// Compute the remainder of self and other.
