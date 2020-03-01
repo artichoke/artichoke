@@ -40,6 +40,7 @@ module Comparable
   end
 
   def ==(other)
+    return true if self.equal?(other)
     return false unless respond_to?(:<=>)
 
     cmp = (self <=> other)
