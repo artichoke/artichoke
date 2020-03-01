@@ -4,15 +4,15 @@
 # directory is empty when the process exits.
 
 # mruby does not support `at_exit` and there is no need to clean up so only set
-# the `SPEC_TEMP_DIR` constant and return.
+# the `SPEC_TEMP_DIR` constants and return.
+SPEC_TEMP_DIR_PID = "999"
 SPEC_TEMP_DIR = "rubyspec_temp"
+SPEC_TEMP_UNIQUIFIER = "0"
 return
 
-SPEC_TEMP_DIR = File.expand_path(ENV["SPEC_TEMP_DIR"] || "rubyspec_temp")
-
-SPEC_TEMP_UNIQUIFIER = "0"
-
 SPEC_TEMP_DIR_PID = Process.pid
+SPEC_TEMP_DIR = File.expand_path(ENV["SPEC_TEMP_DIR"] || "rubyspec_temp/#{SPEC_TEMP_DIR_PID}")
+SPEC_TEMP_UNIQUIFIER = "0"
 
 at_exit do
   begin
@@ -35,8 +35,8 @@ all specs are cleaning up temporary files:
   end
 end
 
-def tmp(name, uniquify=true)
-  Dir.mkdir SPEC_TEMP_DIR unless Dir.exist? SPEC_TEMP_DIR
+def tmp(name, uniquify = true)
+  mkdir_p SPEC_TEMP_DIR unless Dir.exist? SPEC_TEMP_DIR
 
   if uniquify and !name.empty?
     slash = name.rindex "/"

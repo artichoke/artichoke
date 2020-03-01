@@ -464,11 +464,14 @@ describe ContextState, "#process" do
   end
 
   it "shuffles the spec list if MSpec.randomize? is true" do
-    MSpec.randomize
-    MSpec.should_receive(:shuffle)
-    @state.it("") { }
-    @state.process
-    MSpec.randomize false
+    MSpec.randomize = true
+    begin
+      MSpec.should_receive(:shuffle)
+      @state.it("") { }
+      @state.process
+    ensure
+      MSpec.randomize = false
+    end
   end
 
   it "sets the current MSpec ContextState" do

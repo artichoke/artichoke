@@ -24,7 +24,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  rake
+  rake (>= 12.3.3)
   rubocop
   rubocop-rake
 
