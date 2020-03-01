@@ -27,7 +27,7 @@ highlight = "all"
 allow = []
 deny = []
 skip = []
-skip-tree = [{ name = "autocfg", version = "< 1" }]
+skip-tree = [{ name = "version_check", version = "< 0.9" }]
 
 [sources]
 unknown-registry = "deny"
