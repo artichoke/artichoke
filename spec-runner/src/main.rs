@@ -30,50 +30,90 @@
 #[macro_use]
 extern crate rust_embed;
 
-use std::env;
+use artichoke_backend::{Artichoke, LoadSources};
+use std::error::Error;
+use std::ffi::OsStr;
 use std::fs;
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use std::process;
+use std::str;
+use structopt::StructOpt;
 
+mod model;
 mod mspec;
+mod rubyspec;
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "spec-runner", about = "ruby/spec runner for Artichoke.")]
+struct Opt {
+    /// Path to YAML config file.
+    #[structopt(parse(from_os_str))]
+    config: PathBuf,
+}
 
 pub fn main() {
-    let mut interp = match artichoke_backend::interpreter() {
-        Ok(interp) => interp,
-        Err(err) => {
-            eprintln!("{}", err);
-            process::exit(1);
-        }
-    };
-    if let Err(err) = mspec::init(&mut interp) {
-        eprintln!("{}", err);
-        process::exit(1);
-    };
-    let mut mspec_runner = mspec::Runner::new(interp);
-
-    let mut args = env::args();
-    let mut specs = vec![];
-    // ignore binary name
-    args.next();
-    for spec in args {
-        // multi-threading is not supported
-        if spec.contains("thread/") || spec.contains("mutex/owned_spec.rb") {
-            continue;
-        }
-        // access modifiers are a mess which means the fixtures in
-        // `core/module/fixtures/classes.rb` are unloadable
-        if spec.contains("module/") {
-            continue;
-        }
-        let contents = fs::read(&spec).unwrap();
-        mspec_runner.add_spec(spec.as_str(), contents).unwrap();
-        specs.push(spec);
-    }
-    match mspec_runner.run() {
+    let opt = Opt::from_args();
+    match try_main(opt.config.as_path()) {
         Ok(true) => process::exit(0),
         Ok(false) => process::exit(1),
         Err(err) => {
-            eprintln!("{}", err);
+            let _ = writeln!(io::stderr(), "{}", err);
             process::exit(1);
         }
+    }
+}
+
+pub fn try_main(config: &Path) -> Result<bool, Box<dyn Error>> {
+    let config = fs::read(config)?;
+    let config = str::from_utf8(config.as_slice())?;
+    let config = serde_yaml::from_str::<model::Config>(config)?;
+
+    let mut interp = artichoke_backend::interpreter()?;
+
+    rubyspec::init(&mut interp)?;
+    let specs = rubyspec::Specs::iter()
+        .filter_map(|path| {
+            is_require_path(&mut interp, &config, path.as_ref()).map(|_| path.into_owned())
+        })
+        .collect::<Vec<_>>();
+
+    mspec::init(&mut interp)?;
+    let result = mspec::run(&mut interp, specs.as_slice())?;
+    Ok(result)
+}
+
+pub fn is_require_path(interp: &mut Artichoke, config: &model::Config, name: &str) -> Option<()> {
+    let path = Path::new(name);
+    let is_shared = path.components().any(|component| {
+        component.as_os_str() == OsStr::new("fixture")
+            || component.as_os_str() == OsStr::new("shared")
+    });
+    if is_shared {
+        if let Some(contents) = mspec::Sources::get(name.as_ref()) {
+            interp.def_rb_source_file(name.as_bytes(), contents).ok()?;
+        }
+        return None;
+    }
+    let mut components = path.components();
+    let family = components.next()?.as_os_str();
+    let suites = config.suites_for_family(family)?;
+    let suite_name = components.next()?.as_os_str();
+    let suite = suites
+        .iter()
+        .find(|suite| OsStr::new(suite.suite.as_str()) == suite_name)?;
+    let spec_name = components.next()?.as_os_str().to_str()?;
+    if let Some(ref skip) = suite.skip {
+        if skip.iter().any(|name| spec_name.starts_with(name)) {
+            return None;
+        }
+    }
+    if let Some(ref specs) = suite.specs {
+        specs
+            .iter()
+            .position(|name| spec_name.starts_with(name))
+            .map(|_| ())
+    } else {
+        Some(())
     }
 }

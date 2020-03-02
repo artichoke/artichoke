@@ -1,80 +1,43 @@
 use artichoke_backend::exception::Exception;
 use artichoke_backend::{Artichoke, ConvertMut, Eval, LoadSources, TopSelf, ValueLike};
-use std::borrow::Cow;
 
 pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
     for source in Sources::iter() {
-        let content = Sources::get(&source).unwrap();
-        interp.def_rb_source_file(source.as_bytes(), content)?;
+        if let Some(content) = Sources::get(&source) {
+            interp.def_rb_source_file(source.as_bytes(), content)?;
+        }
     }
     Ok(())
 }
 
 #[derive(RustEmbed)]
 #[folder = "vendor/mspec/lib"]
-struct Sources;
+pub struct Sources;
 
-#[derive(Debug)]
-pub struct Runner {
-    specs: Vec<String>,
-    interp: Artichoke,
-    enforce: bool,
-}
-
-impl Runner {
-    pub fn new(interp: Artichoke) -> Self {
-        Self {
-            specs: vec![],
-            interp,
-            enforce: true,
-        }
-    }
-
-    pub fn add_spec<T>(&mut self, source: &str, contents: T) -> Result<(), Exception>
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        if !source.contains("/fixtures/") && !source.contains("/shared/") {
-            self.specs.push(source.to_owned());
-        }
-        self.interp
-            .def_rb_source_file(source.as_bytes(), contents)?;
-        Ok(())
-    }
-
-    pub fn run(mut self) -> Result<bool, Exception> {
-        init(&mut self.interp).unwrap();
-        self.interp
-            .def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;
-        self.interp
-            .def_rb_source_file(b"/src/lib/spec_helper.rb", &b""[..])?;
-        self.interp.def_rb_source_file(
-            b"/src/test/spec_runner",
-            &include_bytes!("spec_runner.rb")[..],
-        )?;
-        if let Err(err) = self.interp.eval(b"require '/src/test/spec_runner'") {
-            eprintln!("{}", err);
-            assert!(!self.enforce);
-        }
-        let specs = self.interp.convert_mut(self.specs);
-        let result = self
-            .interp
-            .top_self()
-            .funcall::<bool>("run_specs", &[specs], None)?;
-        Ok(result)
-    }
+pub fn run(interp: &mut Artichoke, specs: &[String]) -> Result<bool, Exception> {
+    interp.def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;
+    interp.def_rb_source_file(b"/src/lib/spec_helper.rb", &b""[..])?;
+    interp.def_rb_source_file(
+        b"/src/test/spec_runner",
+        &include_bytes!("spec_runner.rb")[..],
+    )?;
+    interp.eval(b"require '/src/test/spec_runner'")?;
+    let specs = interp.convert_mut(specs);
+    let result = interp
+        .top_self()
+        .funcall::<bool>("run_specs", &[specs], None)?;
+    Ok(result)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::mspec::Runner;
-
     #[test]
     // TODO: GH-528 - fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn mspec_framework_loads() {
-        let interp = artichoke_backend::interpreter().expect("init");
+        let mut interp = artichoke_backend::interpreter().unwrap();
+        super::init(&mut interp).unwrap();
         // should not panic
-        assert!(Runner::new(interp).run().unwrap());
+        assert!(super::run(&mut interp, &[]).unwrap());
     }
 }
