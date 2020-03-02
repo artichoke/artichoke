@@ -12,7 +12,7 @@
 Artichoke virtual filesystem. `spec-runner` runs the specs declared in a
 manifest file.
 
-# Spec Manifest
+## Spec Manifest
 
 `spec-runner` is invoked with a YAML manifest that specifies which specs to run.
 The manifest can run whole suites, like all of the `StringScanner` specs, or
@@ -37,7 +37,7 @@ library:
       - parse
 ```
 
-# Usage
+## Usage
 
 ```console
 $ cargo run -q --bin spec-runner -- --help
