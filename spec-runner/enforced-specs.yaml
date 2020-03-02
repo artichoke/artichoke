@@ -15,12 +15,13 @@ core:
       - compact
       - count
       - cycle
+      - delete
       - delete_at
       - delete_if
-      - delete
       - drop
-      - each_index
+      - drop_while
       - each
+      - each_index
       - empty
       - frozen
       - include
@@ -32,8 +33,8 @@ core:
       - push
       - rassoc
       - replace
-      - reverse_each
       - reverse
+      - reverse_each
       - shift
       - size
       - sort_by
