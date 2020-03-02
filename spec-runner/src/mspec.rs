@@ -1,6 +1,13 @@
+//! Embedded `MSpec` framework.
+
 use artichoke_backend::exception::Exception;
 use artichoke_backend::{Artichoke, ConvertMut, Eval, LoadSources, TopSelf, ValueLike};
 
+/// Load `MSpec` sources into the Artichoke virtual filesystem.
+///
+/// # Errors
+///
+/// If an exception is raised on the Artichoke interpreter, it is returned.
 pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
     for source in Sources::iter() {
         if let Some(content) = Sources::get(&source) {
@@ -10,10 +17,16 @@ pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
     Ok(())
 }
 
+/// `MSpec` source code.
 #[derive(RustEmbed)]
 #[folder = "vendor/mspec/lib"]
 pub struct Sources;
 
+/// Load the Artichoke `MSpec` entry point end execute the specs.
+///
+/// # Errors
+///
+/// If an exception is raised on the Artichoke interpreter, it is returned.
 pub fn run(interp: &mut Artichoke, specs: &[String]) -> Result<bool, Exception> {
     interp.def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;
     interp.def_rb_source_file(b"/src/lib/spec_helper.rb", &b""[..])?;

@@ -6,28 +6,51 @@
 <br>
 [![Spec runner documentation](https://img.shields.io/badge/docs-spec--runner-blue.svg)](https://artichoke.github.io/artichoke/spec_runner/)
 
-`spec-runner` is a binary crate that produces the `spec-runner` executable.
+`spec-runner` is the ruby/spec runner for Artichoke.
 
-`spec-runner` is a wrapper around MSpec and ruby/spec that works with the
-Artichoke virtual filesystem.
+`spec-runner` is a wrapper around `MSpec` and ruby/spec that works with the
+Artichoke virtual filesystem. `spec-runner` runs the specs declared in a
+manifest file.
 
-`spec-runner` is invokable directly by passing paths to spec files as command
-line arguments. `spec-runner` is sensitive to CWD relative to the specs it
-wraps, so in practice it is easier to invoke `spec-runner` via the `spec.rb`
-wrapper in `scripts`.
+# Spec Manifest
+
+`spec-runner` is invoked with a YAML manifest that specifies which specs to run.
+The manifest can run whole suites, like all of the `StringScanner` specs, or
+specific specs, like the `Array#drop` spec. The manifest supports marking specs
+as skipped.
+
+```yaml
+core:
+  - suite: array
+    specs:
+      - any
+      - append
+      - array
+  - suite: comparable
+  - suite: string
+    specs:
+      - scan
+library:
+  - suite: stringscanner
+  - suite: uri
+    skip:
+      - parse
+```
+
+# Usage
 
 ```console
-$ ruby scripts/spec.rb --help
-spec.rb runs ruby/specs against Artichoke and MRI.
+$ cargo run -q --bin spec-runner -- --help
+spec-runner 0.1.0
+ruby/spec runner for Artichoke.
 
-Usage: scripts/spec.rb artichoke [ --timed ITERATIONS | --profile ] [ passing | family [ component [ spec ] ] ]
-Usage: scripts/spec.rb ruby [ --timed ITERATIONS ] family [ component [ spec ] ]
+USAGE:
+    spec-runner <config>
 
-Examples:
-    $ scripts/spec.rb artichoke passing
-    $ scripts/spec.rb artichoke core
-    $ scripts/spec.rb artichoke core string
-    $ scripts/spec.rb ruby core string scan
-    $ scripts/spec.rb artichoke --timed 30 core string scan
-    $ scripts/spec.rb artichoke --profile passing
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+ARGS:
+    <config>    Path to YAML config file
 ```

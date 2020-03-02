@@ -1,3 +1,5 @@
+//! Models for reading spec manifests.
+
 use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 
@@ -22,11 +24,12 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn suites_for_family(&self, suite: &OsStr) -> Option<&[Suite]> {
-        match suite {
-            suite if suite == OsStr::new("lanugage") => self.language.as_deref(),
-            suite if suite == OsStr::new("core") => self.core.as_deref(),
-            suite if suite == OsStr::new("library") => self.library.as_deref(),
+    /// Lookup a suite.
+    pub fn suites_for_family(&self, family: &OsStr) -> Option<&[Suite]> {
+        match family {
+            family if family == OsStr::new("lanugage") => self.language.as_deref(),
+            family if family == OsStr::new("core") => self.core.as_deref(),
+            family if family == OsStr::new("library") => self.library.as_deref(),
             _ => None,
         }
     }
