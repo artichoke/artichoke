@@ -625,6 +625,7 @@ class Array
       idx += 1
     end
     self[0, drop_until] = []
+    self
   end
 
   def each(&block)
