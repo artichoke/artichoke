@@ -44,6 +44,22 @@ impl ConvertMut<Vec<&[u8]>, Value> for Artichoke {
     }
 }
 
+impl ConvertMut<&[Vec<u8>], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[Vec<u8>]) -> Value {
+        let iter = value.iter().map(|item| self.convert_mut(item.as_slice()));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
+impl ConvertMut<&[&[u8]], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[&[u8]]) -> Value {
+        let iter = value.iter().copied().map(|item| self.convert_mut(item));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
 impl ConvertMut<Vec<String>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<String>) -> Value {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
@@ -55,6 +71,22 @@ impl ConvertMut<Vec<String>, Value> for Artichoke {
 impl ConvertMut<Vec<&str>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<&str>) -> Value {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
+impl ConvertMut<&[String], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[String]) -> Value {
+        let iter = value.iter().map(|item| self.convert_mut(item.as_str()));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
+impl ConvertMut<&[&str], Value> for Artichoke {
+    fn convert_mut(&mut self, value: &[&str]) -> Value {
+        let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::new(InlineBuffer::from_iter(iter));
         ary.try_into_ruby(self, None).expect("Array into Value")
     }

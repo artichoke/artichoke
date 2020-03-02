@@ -11,51 +11,29 @@ Artichoke enforces that some ruby/specs pass. These specs are tracked in
 
 You can run these specs for Artichoke crate with the `spec-runner` crate.
 
-The commands exposed by this runner support running for `artichoke` or `ruby`.
-
 ### Running the enforced specs
 
 ```shell
-ruby scripts/spec.rb artichoke passing
+cargo run -q --bin spec-runner -- spec-runner/enforced-specs.yaml
 ```
 
 ### Running specific specs
 
+To run specific specs, create a custom spec manifest and pass it as the
+positional argument to the `spec-runner` binary.
+
 For the `uri` stdlib package:
 
-```shell
-ruby scripts/spec.rb artichoke library uri
+```yaml
+library:
+  - suite: uri
 ```
 
 For `Array#each`:
 
-```shell
-ruby scripts/spec.rb artichoke core array each
+```yaml
+core:
+  - suite: array
+    specs:
+      - each
 ```
-
-### Performance testing
-
-#### Timing
-
-```shell
-ruby scripts/spec.rb artichoke --timed 30 passing
-```
-
-#### Profiling
-
-```shell
-ruby scripts/spec.rb artichoke --profile passing
-```
-
-This script requires the `cargo-flamegraph` binary, which can be installed with:
-
-```shell
-cargo install flamegraph
-```
-
-## Regression Testing
-
-Once a spec suite passes, add it to
-[`spec-runner/enforced-specs.yaml`](/spec-runner/enforced-specs.yaml). This
-script is run as part of CI and will ensure that a suite that does pass
-continues to pass.

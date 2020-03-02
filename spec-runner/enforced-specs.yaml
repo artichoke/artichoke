@@ -1,54 +1,56 @@
 ---
 # This config file lists the ruby/specs that are enforced as passing in
 # Artichoke Ruby during CI.
-specs:
-  core:
-    - suite: array
-      specs:
-        - any
-        - append
-        - array
-        - assoc
-        - at
-        - clear
-        - collect
-        - combination
-        - compact
-        - count
-        - cycle
-        - delete_at
-        - delete_if
-        - delete
-        - drop
-        - each_index
-        - each
-        - empty
-        - frozen
-        - include
-        - last
-        - length
-        - map
-        - plus
-        - prepend
-        - push
-        - rassoc
-        - replace
-        - reverse_each
-        - reverse
-        - shift
-        - size
-        - sort_by
-        - to_ary
-        - try_convert
-        - unshift
-    - suite: comparable
-    - suite: matchdata
-    - suite: regexp
-    - suite: string
-      specs:
-        - scan
-  library:
-    - suite: abbrev
-    - suite: monitor
-    - suite: stringscanner
-    - suite: uri
+core:
+  - suite: array
+    specs:
+      - any
+      - append
+      - array
+      - assoc
+      - at
+      - clear
+      - collect
+      - combination
+      - compact
+      - count
+      - cycle
+      - delete
+      - delete_at
+      - delete_if
+      - drop
+      - drop_while
+      - each
+      - each_index
+      - empty
+      - frozen
+      - include
+      - last
+      - length
+      - map
+      - plus
+      - prepend
+      - push
+      - rassoc
+      - replace
+      - reverse
+      - reverse_each
+      - shift
+      - size
+      - sort_by
+      - to_ary
+      - try_convert
+      - unshift
+  - suite: comparable
+  - suite: matchdata
+  - suite: regexp
+  - suite: string
+    specs:
+      - scan
+library:
+  - suite: abbrev
+  - suite: monitor
+  - suite: stringscanner
+  - suite: uri
+    skip:
+      - parse

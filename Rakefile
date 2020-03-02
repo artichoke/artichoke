@@ -59,5 +59,5 @@ end
 
 desc 'Run enforced ruby/spec suite'
 task :spec do
-  sh 'ruby scripts/spec.rb artichoke passing'
+  sh 'cargo run -q --bin spec-runner -- spec-runner/enforced-specs.yaml'
 end

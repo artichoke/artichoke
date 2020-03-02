@@ -1,6 +1,6 @@
 [package]
 name = "spec-runner"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 description = "Binary for running Ruby Specs with Artichoke Ruby"
@@ -12,6 +12,9 @@ categories = ["development-tools::testing"]
 
 [dependencies]
 rust-embed = "5.5.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"
+structopt = "0.3"
 
 [dependencies.artichoke-backend]
 path = "../artichoke-backend"
