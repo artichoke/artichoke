@@ -20,7 +20,7 @@ use std::process;
 
 fn main() {
     if let Err(err) = repl::run(io::stdout(), io::stderr(), None) {
-        let _ = write!(io::stderr(), "{}", err);
+        let _ = writeln!(io::stderr(), "{}", err);
         process::exit(1);
     }
 }
