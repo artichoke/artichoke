@@ -779,7 +779,7 @@ checksum = "5c2fb2ec9bcd216a5b0d0ccf31ab17b5ed1d627960edff65bbe95d3ce221cefc"
 
 [[package]]
 name = "spec-runner"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "artichoke-backend",
  "rust-embed",
