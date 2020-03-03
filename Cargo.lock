@@ -35,12 +35,14 @@ name = "artichoke-backend"
 version = "0.1.0"
 dependencies = [
  "artichoke-core",
+ "base64",
  "bindgen",
  "bstr",
  "cc",
  "chrono",
  "downcast",
  "fs_extra",
+ "hex",
  "itoa",
  "libc",
  "log",
@@ -54,6 +56,7 @@ dependencies = [
  "rustc_version",
  "smallvec",
  "target-lexicon",
+ "uuid",
  "walkdir",
 ]
 
@@ -310,6 +313,12 @@ checksum = "1010591b26bbfe835e9faeabeb11866061cc7dcebffd56ad7d0942d0e61aefd8"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "hex"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35"
 
 [[package]]
 name = "itoa"
@@ -898,6 +907,15 @@ name = "utf8parse"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8772a4ccbb4e89959023bc5b7cb8623a795caa7092d99f3aa9501b9484d4557d"
+
+[[package]]
+name = "uuid"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fde2f6a4bea1d6e007c4ad38c6839fa71cbb63b6dbf5b595aa38dc9b1093c11"
+dependencies = [
+ "rand",
+]
 
 [[package]]
 name = "vec_map"

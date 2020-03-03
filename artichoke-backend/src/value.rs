@@ -113,8 +113,15 @@ impl Value {
     }
 
     pub fn implicitly_convert_to_int(&self) -> Result<Int, TypeError> {
-        let int = if let Ok(int) = self.clone().try_into::<Int>() {
-            int
+        let int = if let Ok(int) = self.clone().try_into::<Option<Int>>() {
+            if let Some(int) = int {
+                int
+            } else {
+                return Err(TypeError::new(
+                    &self.interp,
+                    "no implicit conversion from nil to integer",
+                ));
+            }
         } else if let Ok(true) = self.respond_to("to_int") {
             if let Ok(maybe) = self.funcall::<Self>("to_int", &[], None) {
                 let gives_pretty_name = maybe.pretty_name();

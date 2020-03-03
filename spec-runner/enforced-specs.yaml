@@ -50,6 +50,10 @@ core:
 library:
   - suite: abbrev
   - suite: monitor
+  - suite: securerandom
+    skip:
+      - random_bytes # specs require ASCII-8BIT encoding for Strings
+      - random_number # missing support for Bignum and Range arguments
   - suite: stringscanner
   - suite: uri
     skip:

@@ -44,12 +44,12 @@ impl fmt::Debug for Random {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Ok(inner) = self.inner().downcast_ref::<Rand<SmallRng>>() {
             f.debug_struct("Random")
-                .field("backend_type", &"Rand<SmallRng>")
+                .field("backend", &inner)
                 .field("seed", &inner.seed())
                 .finish()
         } else {
             f.debug_struct("Random")
-                .field("backend_type", &"unknown")
+                .field("backend", &"unknown")
                 .finish()
         }
     }
