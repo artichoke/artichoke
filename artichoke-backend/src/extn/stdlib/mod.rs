@@ -6,6 +6,8 @@ pub mod forwardable;
 pub mod json;
 pub mod monitor;
 pub mod ostruct;
+#[cfg(feature = "artichoke-random")]
+pub mod securerandom;
 pub mod set;
 pub mod strscan;
 
@@ -16,6 +18,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     json::init(interp)?;
     monitor::init(interp)?;
     ostruct::init(interp)?;
+    #[cfg(feature = "artichoke-random")]
+    securerandom::mruby::init(interp)?;
     set::init(interp)?;
     strscan::init(interp)?;
     uri::init(interp)?;
@@ -24,6 +28,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 pub mod uri {
     //! Ruby URI package, implemented with embedded sources from MRI 2.6.3.
-    // See scripts/auto_import/.
+    //!
+    //! See `scripts/auto_import/`.
+
     include!(concat!(env!("OUT_DIR"), "/src/generated/uri.rs"));
 }
