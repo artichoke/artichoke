@@ -22,9 +22,8 @@ impl File for SecureRandomFile {
         {
             return Ok(());
         }
-        let spec = class::Spec::new("SecureRandom", None, None)?; // No destructor since SecureRandom is a ZST
-        class::Builder::for_spec(interp, &spec)
-            .value_is_rust_object()
+        let spec = module::Spec::new(interp, "SecureRandom", None)?;
+        module::Builder::for_spec(interp, &spec)
             .add_self_method(
                 "alphanumeric",
                 artichoke_securerandom_alphanumeric,
@@ -51,7 +50,7 @@ impl File for SecureRandomFile {
         interp
             .0
             .borrow_mut()
-            .def_class::<securerandom::SecureRandom>(spec);
+            .def_module::<securerandom::SecureRandom>(spec);
 
         trace!("Patched SecureRandom onto interpreter");
         Ok(())

@@ -11,7 +11,7 @@ pub mod trampoline;
 
 const DEFAULT_REQUESTED_BYTES: usize = 16;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct SecureRandom;
 
 impl SecureRandom {
@@ -123,11 +123,5 @@ impl SecureRandom {
         let mut buf = Uuid::encode_buffer();
         let enc = uuid.to_hyphenated().encode_lower(&mut buf);
         enc.to_owned()
-    }
-}
-
-impl RustBackedValue for SecureRandom {
-    fn ruby_type_name() -> &'static str {
-        "SecureRandom"
     }
 }
