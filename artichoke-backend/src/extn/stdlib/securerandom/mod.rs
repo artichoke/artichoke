@@ -11,6 +11,16 @@ pub mod trampoline;
 
 const DEFAULT_REQUESTED_BYTES: usize = 16;
 
+#[cfg(test)]
+mod tests {
+    fn rng_must_be_cryptographically_secure<T: rand::CryptoRng>(_rng: T) {}
+
+    #[test]
+    fn rand_thread_rng_must_be_cryptographically_secure() {
+        rng_must_be_cryptographically_secure(rand::thread_rng())
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct SecureRandom;
 
