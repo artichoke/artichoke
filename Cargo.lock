@@ -41,7 +41,6 @@ dependencies = [
  "cc",
  "chrono",
  "downcast",
- "fs_extra",
  "hex",
  "itoa",
  "libc",
@@ -57,7 +56,6 @@ dependencies = [
  "smallvec",
  "target-lexicon",
  "uuid",
- "walkdir",
 ]
 
 [[package]]
@@ -272,12 +270,6 @@ name = "dtoa"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4358a9e11b9a09cf52383b451b49a169e8d797b68aa02301ff586d70d9661ea3"
-
-[[package]]
-name = "fs_extra"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f2a4a2034423744d2cc7ca2068453168dcdb82c438419e639a26bd87839c674"
 
 [[package]]
 name = "getrandom"

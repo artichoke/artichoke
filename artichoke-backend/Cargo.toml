@@ -41,11 +41,9 @@ bindgen = { version = "0.53.1", default-features = false, features = [
 ] }
 cc = { version = "1.0", features = ["parallel"] }
 chrono = "0.4"
-fs_extra = "1.1.0"
 num_cpus = "1"
 rustc_version = "0.2.3"
 target-lexicon = "0.10.0"
-walkdir = "2"
 
 [features]
 default = ["artichoke-random", "artichoke-system-environ"]
