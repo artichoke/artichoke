@@ -3,20 +3,26 @@
 #![allow(clippy::restriction)]
 
 use std::env;
-use std::path::Path;
+use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use target_lexicon::Triple;
-use walkdir::WalkDir;
 
-fn enumerate_sources(path: &Path, into: &mut Vec<String>) {
-    into.push(path.to_str().unwrap().to_owned());
-    let walker = WalkDir::new(path).into_iter();
-    for entry in walker {
-        if let Ok(entry) = entry {
-            let source = entry.path();
-            into.push(source.to_str().unwrap().to_owned());
+fn enumerate_sources<T: AsRef<Path>>(path: T, into: &mut Vec<PathBuf>) -> io::Result<()> {
+    let mut stack = vec![PathBuf::from(path.as_ref())];
+    into.push(PathBuf::from(path.as_ref()));
+    while let Some(from) = stack.pop() {
+        for entry in fs::read_dir(from)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path.clone());
+            }
+            into.push(path);
         }
     }
+    Ok(())
 }
 
 mod buildpath {
@@ -35,15 +41,15 @@ mod buildpath {
         use std::path::PathBuf;
         use target_lexicon::Triple;
 
-        pub fn rerun_if_changed(target: &Triple, into: &mut Vec<String>) {
-            into.push(mruby_build_config(target).to_str().unwrap().into());
-            into.push(mruby_bootstrap_gembox().to_str().unwrap().into());
-            into.push(mruby_bootstrap_gembox().to_str().unwrap().into());
-            into.push(mruby_noop().to_str().unwrap().into());
+        pub fn rerun_if_changed(target: &Triple, into: &mut Vec<PathBuf>) {
+            into.push(mruby_build_config(target));
+            into.push(mruby_bootstrap_gembox());
+            into.push(mruby_bootstrap_gembox());
+            into.push(mruby_noop());
 
-            crate::enumerate_sources(mruby_vendored_include_dir().as_path(), into);
-            crate::enumerate_sources(mruby_vendored_source_dir().as_path(), into);
-            crate::enumerate_sources(ruby_vendored_lib_dir().as_path(), into);
+            crate::enumerate_sources(mruby_vendored_include_dir(), into).unwrap();
+            crate::enumerate_sources(mruby_vendored_source_dir(), into).unwrap();
+            crate::enumerate_sources(ruby_vendored_lib_dir(), into).unwrap();
         }
 
         pub fn ruby_vendored_lib_dir() -> PathBuf {
@@ -85,7 +91,6 @@ mod libmruby {
     use std::process::Command;
     use std::str;
     use target_lexicon::{Architecture, OperatingSystem, Triple};
-    use walkdir::WalkDir;
 
     use super::buildpath;
 
@@ -138,7 +143,7 @@ mod libmruby {
             .join("libc")
     }
 
-    fn mruby_source_dir() -> PathBuf {
+    pub fn mruby_source_dir() -> PathBuf {
         buildpath::build_root().join("mruby")
     }
 
@@ -150,7 +155,7 @@ mod libmruby {
         mruby_source_dir().join("include")
     }
 
-    fn mruby_build_dir() -> PathBuf {
+    pub fn mruby_build_dir() -> PathBuf {
         buildpath::build_root().join("mruby-build")
     }
 
@@ -198,47 +203,43 @@ mod libmruby {
 
         let mut sources = HashMap::new();
         sources.insert(ext_source_file(), ext_source_file());
-        let walker = WalkDir::new(mruby_source_dir()).into_iter();
-        for entry in walker {
-            if let Ok(entry) = entry {
-                let source = entry.path();
-                let relative_source = source.strip_prefix(mruby_source_dir()).unwrap();
-                let is_core_source = source.strip_prefix(mruby_source_dir().join("src")).is_ok();
-                let is_required_gem_source = gems().iter().any(|gem| {
-                    source
-                        .components()
-                        .any(|component| component == Component::Normal(OsStr::new(gem)))
-                });
-                if is_core_source || is_required_gem_source {
-                    let is_build_source = relative_source
-                        .components()
-                        .any(|component| component == Component::Normal(OsStr::new("build")));
-                    let is_test_source = relative_source
-                        .components()
-                        .any(|component| component == Component::Normal(OsStr::new("test")));
-                    if is_build_source || is_test_source {
-                        continue;
-                    }
-                    if source.extension().and_then(OsStr::to_str) == Some("c") {
-                        sources.insert(relative_source.to_owned(), source.to_owned());
-                    }
-                }
-            }
-        }
-        let walker = WalkDir::new(mruby_generated_source_dir()).into_iter();
-        for entry in walker {
-            if let Ok(entry) = entry {
-                let source = entry.path();
-                let relative_source = source.strip_prefix(mruby_generated_source_dir()).unwrap();
+        let mut mruby_sources = vec![];
+        crate::enumerate_sources(mruby_source_dir(), &mut mruby_sources).unwrap();
+        for source in mruby_sources {
+            let relative_source = source.strip_prefix(mruby_source_dir()).unwrap();
+            let is_core_source = source.strip_prefix(mruby_source_dir().join("src")).is_ok();
+            let is_required_gem_source = gems().iter().any(|gem| {
+                source
+                    .components()
+                    .any(|component| component == Component::Normal(OsStr::new(gem)))
+            });
+            if is_core_source || is_required_gem_source {
+                let is_build_source = relative_source
+                    .components()
+                    .any(|component| component == Component::Normal(OsStr::new("build")));
                 let is_test_source = relative_source
                     .components()
                     .any(|component| component == Component::Normal(OsStr::new("test")));
-                if is_test_source {
+                if is_build_source || is_test_source {
                     continue;
                 }
                 if source.extension().and_then(OsStr::to_str) == Some("c") {
                     sources.insert(relative_source.to_owned(), source.to_owned());
                 }
+            }
+        }
+        let mut mruby_codegen_sources = vec![];
+        crate::enumerate_sources(mruby_generated_source_dir(), &mut mruby_codegen_sources).unwrap();
+        for source in mruby_codegen_sources {
+            let relative_source = source.strip_prefix(mruby_generated_source_dir()).unwrap();
+            let is_test_source = relative_source
+                .components()
+                .any(|component| component == Component::Normal(OsStr::new("test")));
+            if is_test_source {
+                continue;
+            }
+            if source.extension().and_then(OsStr::to_str) == Some("c") {
+                sources.insert(relative_source.to_owned(), source.to_owned());
             }
         }
         // Build the extension library
@@ -669,66 +670,89 @@ mod release {
 }
 
 mod build {
-    use fs_extra::{dir, file};
     use std::fs;
+    use std::io;
+    use std::path::{Path, PathBuf};
     use target_lexicon::Triple;
 
     use super::{buildpath, libmruby, rubylib};
 
     pub fn clean() {
-        let _ = dir::remove(buildpath::build_root());
+        let _ = fs::remove_dir_all(buildpath::build_root());
     }
 
     pub fn setup_build_root(target: &Triple) {
         fs::create_dir_all(buildpath::build_root()).unwrap();
 
-        let opts = dir::CopyOptions::new();
-        dir::copy(
+        copy_dir_recursive(
             buildpath::crate_root().join("vendor").join("mruby"),
-            buildpath::build_root(),
-            &opts,
+            libmruby::mruby_source_dir(),
         )
         .unwrap();
-        dir::copy(
+        copy_dir_recursive(
             buildpath::crate_root().join("vendor").join("ruby"),
-            buildpath::build_root(),
-            &opts,
+            buildpath::build_root().join("ruby"),
         )
         .unwrap();
 
         fs::create_dir_all(rubylib::rendered_stdlib_package_out_dir()).unwrap();
 
-        let opts = file::CopyOptions::new();
-        let _ = file::remove(libmruby::mruby_build_config());
-        file::copy(
+        let _ = fs::remove_file(libmruby::mruby_build_config());
+        fs::create_dir_all(libmruby::mruby_build_dir()).unwrap();
+        fs::copy(
             buildpath::source::mruby_build_config(target),
             libmruby::mruby_build_config(),
-            &opts,
         )
         .unwrap();
-        file::copy(
+        fs::copy(
             buildpath::source::mruby_bootstrap_gembox(),
             libmruby::bootstrap_gembox(),
-            &opts,
         )
         .unwrap();
-        file::copy(
-            buildpath::source::mruby_noop(),
-            libmruby::builder_noop(),
-            &opts,
-        )
-        .unwrap();
+        fs::copy(buildpath::source::mruby_noop(), libmruby::builder_noop()).unwrap();
     }
 
     pub fn rerun_if_changed(target: &Triple) {
         let mut paths = vec![];
         buildpath::source::rerun_if_changed(target, &mut paths);
-        crate::enumerate_sources(libmruby::ext_source_dir().as_path(), &mut paths);
-        crate::enumerate_sources(rubylib::auto_import_root().as_path(), &mut paths);
+        crate::enumerate_sources(libmruby::ext_source_dir(), &mut paths).unwrap();
+        crate::enumerate_sources(rubylib::auto_import_root(), &mut paths).unwrap();
 
         for path in paths {
-            println!("cargo:rerun-if-changed={}", path);
+            println!("cargo:rerun-if-changed={}", path.to_str().unwrap());
         }
+    }
+
+    fn copy_dir_recursive<F: AsRef<Path>, T: AsRef<Path>>(from: F, to: T) -> io::Result<()> {
+        let mut stack = vec![PathBuf::from(from.as_ref())];
+        let dest_root = PathBuf::from(to.as_ref());
+        let input_root_depth = from.as_ref().components().count();
+        println!("copying {:?} -> {:?}", from.as_ref(), to.as_ref());
+
+        while let Some(from) = stack.pop() {
+            let dest = dest_root.join(
+                from.components()
+                    .skip(input_root_depth)
+                    .collect::<PathBuf>(),
+            );
+            let _ = fs::create_dir_all(&dest);
+
+            for entry in fs::read_dir(from)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_dir() {
+                    stack.push(path);
+                } else if let Some(filename) = path.file_name() {
+                    let dest = dest.as_path().join(filename);
+                    println!("  copy: {:?} -> {:?}", path, dest);
+                    fs::copy(&path, &dest)?;
+                } else {
+                    eprintln!("failed: {:?}", path);
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
