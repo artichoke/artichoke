@@ -9,6 +9,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::convert::TryFrom;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::num::NonZeroUsize;
 use std::str;
 
 use crate::extn::core::array::Array;
@@ -51,12 +52,11 @@ pub const HIGHEST_MATCH_GROUP: &[u8] = b"$+";
 /// The information about the last match in the current scope.
 pub const LAST_MATCH: &[u8] = b"$~";
 
-/// The Nth group of the last successful match. May be > 1.
+/// Global variable name for the nth capture group from a `Regexp` match.
 #[inline]
 #[must_use]
-pub fn nth_match_group(group: usize) -> Cow<'static, [u8]> {
-    match group {
-        0 => panic!("$0 is the name of the current script, not a capture group"),
+pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, [u8]> {
+    match group.get() {
         1 => b"$1".as_ref().into(),
         2 => b"$2".as_ref().into(),
         3 => b"$3".as_ref().into(),
@@ -78,10 +78,34 @@ pub fn nth_match_group(group: usize) -> Cow<'static, [u8]> {
         19 => b"$19".as_ref().into(),
         20 => b"$20".as_ref().into(),
         num => {
-            let mut buf = Vec::from(b"$".as_ref());
-            buf.extend(num.to_string().as_bytes());
-            buf.into()
+            let mut buf = String::from("$");
+            // Suppress io errors because this function is infallible.
+            //
+            // In practice string::format_int_into will never error because the
+            // fmt::Write impl for String never panics.
+            let _ = string::format_int_into(&mut buf, num);
+            buf.into_bytes().into()
         }
+    }
+}
+
+pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Exception> {
+    let groups = interp.0.borrow_mut().active_regexp_globals.take();
+    if let Some(groups) = groups {
+        let nil = interp.convert(None::<Value>);
+        for group in 1..=groups.get() {
+            if let Some(group) = NonZeroUsize::new(group) {
+                let name = nth_match_group(group);
+                let sym = interp.intern_symbol(name);
+                let mrb = interp.0.borrow().mrb;
+                unsafe {
+                    sys::mrb_gv_set(mrb, sym, nil.inner());
+                }
+            }
+        }
+        Ok(())
+    } else {
+        Ok(())
     }
 }
 

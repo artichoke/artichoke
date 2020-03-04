@@ -2,6 +2,7 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt;
 use std::mem;
+use std::num::NonZeroUsize;
 use std::ptr::{self, NonNull};
 
 use crate::class;
@@ -22,7 +23,7 @@ pub struct State {
     classes: HashMap<TypeId, Box<class::Spec>>,
     modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: fs::Virtual,
-    pub active_regexp_globals: usize,
+    pub active_regexp_globals: Option<NonZeroUsize>,
     pub output: Box<dyn output::Output>,
     #[cfg(feature = "artichoke-random")]
     pub prng: prng::Prng,
@@ -48,7 +49,7 @@ impl State {
             classes: HashMap::default(),
             modules: HashMap::default(),
             vfs: fs::Virtual::new(),
-            active_regexp_globals: 0,
+            active_regexp_globals: None,
             output: Box::new(output::Process::new()),
             #[cfg(feature = "artichoke-random")]
             prng: prng::Prng::default(),

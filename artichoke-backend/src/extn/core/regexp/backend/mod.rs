@@ -46,19 +46,19 @@ pub trait RegexpType {
         haystack: &'a [u8],
     ) -> Result<Option<&'a [u8]>, Exception>;
 
-    fn case_match(&self, interp: &mut Artichoke, pattern: &[u8]) -> Result<bool, Exception>;
+    fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Exception>;
 
     fn is_match(
         &self,
         interp: &Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
         pos: Option<Int>,
     ) -> Result<bool, Exception>;
 
     fn match_(
         &self,
         interp: &mut Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
     ) -> Result<Value, Exception>;
@@ -66,7 +66,7 @@ pub trait RegexpType {
     fn match_operator(
         &self,
         interp: &mut Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
     ) -> Result<Option<Int>, Exception>;
 
     fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception>;

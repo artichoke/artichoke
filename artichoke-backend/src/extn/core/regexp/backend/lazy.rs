@@ -30,7 +30,7 @@ impl Lazy {
                 interp,
                 self.literal.clone(),
                 self.literal.clone(),
-                Encoding::default(),
+                self.encoding,
             )
         })
     }
@@ -129,37 +129,39 @@ impl RegexpType for Lazy {
             .unwrap_or_default()
     }
 
-    fn case_match(&self, interp: &mut Artichoke, pattern: &[u8]) -> Result<bool, Exception> {
-        self.regexp(interp)?.inner().case_match(interp, pattern)
+    fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Exception> {
+        self.regexp(interp)?.inner().case_match(interp, haystack)
     }
 
     fn is_match(
         &self,
         interp: &Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
         pos: Option<Int>,
     ) -> Result<bool, Exception> {
-        self.regexp(interp)?.inner().is_match(interp, pattern, pos)
+        self.regexp(interp)?.inner().is_match(interp, haystack, pos)
     }
 
     fn match_(
         &self,
         interp: &mut Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
     ) -> Result<Value, Exception> {
         self.regexp(interp)?
             .inner()
-            .match_(interp, pattern, pos, block)
+            .match_(interp, haystack, pos, block)
     }
 
     fn match_operator(
         &self,
         interp: &mut Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
     ) -> Result<Option<Int>, Exception> {
-        self.regexp(interp)?.inner().match_operator(interp, pattern)
+        self.regexp(interp)?
+            .inner()
+            .match_operator(interp, haystack)
     }
 
     fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception> {

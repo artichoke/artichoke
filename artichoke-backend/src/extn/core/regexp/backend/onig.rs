@@ -1,8 +1,9 @@
 use onig::{Regex, Syntax};
-use std::cmp::{self, Ordering};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
+use std::num::NonZeroUsize;
 use std::rc::Rc;
 use std::str;
 
@@ -30,7 +31,7 @@ impl Onig {
         let pattern = str::from_utf8(derived.pattern.as_slice()).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 patterns",
+                "Oniguruma backend for Regexp only supports UTF-8 patterns",
             )
         })?;
         let regex = Regex::with_options(pattern, derived.options.flags(), Syntax::ruby()).map_err(
@@ -72,7 +73,7 @@ impl RegexpType for Onig {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 haystacks",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
         let result = self.regex.captures(haystack).map(|captures| {
@@ -117,7 +118,7 @@ impl RegexpType for Onig {
             let haystack = str::from_utf8(haystack).map_err(|_| {
                 ArgumentError::new(
                     interp,
-                    "Oniguruma-backed Regexp only supports UTF-8 haystacks",
+                    "Oniguruma backend for Regexp only supports UTF-8 haystacks",
                 )
             })?;
             self.regex
@@ -138,7 +139,7 @@ impl RegexpType for Onig {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 haystacks",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
         let result = self
@@ -199,33 +200,34 @@ impl RegexpType for Onig {
         self.derived.pattern.as_slice()
     }
 
-    fn case_match(&self, interp: &mut Artichoke, pattern: &[u8]) -> Result<bool, Exception> {
-        let pattern = str::from_utf8(pattern).map_err(|_| {
+    fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Exception> {
+        let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 patterns",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
         let mrb = interp.0.borrow().mrb;
-        if let Some(captures) = self.regex.captures(pattern) {
-            let globals_to_set = cmp::max(interp.0.borrow().active_regexp_globals, captures.len());
+        if let Some(captures) = self.regex.captures(haystack) {
+            regexp::clear_capture_globals(interp)?;
+            interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
             let value = interp.convert_mut(captures.at(0));
             unsafe {
                 sys::mrb_gv_set(mrb, sym, value.inner());
             }
-            for group in 1..=globals_to_set {
+            for group in 0..captures.len() {
+                let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
                 let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                let value = interp.convert_mut(captures.at(group));
+                let value = interp.convert_mut(captures.at(group.get()));
                 unsafe {
                     sys::mrb_gv_set(mrb, sym, value.inner());
                 }
             }
-            interp.0.borrow_mut().active_regexp_globals = captures.len();
 
             if let Some(match_pos) = captures.pos(0) {
-                let pre_match = interp.convert_mut(&pattern[..match_pos.0]);
-                let post_match = interp.convert_mut(&pattern[match_pos.1..]);
+                let pre_match = interp.convert_mut(&haystack[..match_pos.0]);
+                let post_match = interp.convert_mut(&haystack[match_pos.1..]);
                 let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
                 let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
                 unsafe {
@@ -234,10 +236,10 @@ impl RegexpType for Onig {
                 }
             }
             let matchdata = MatchData::new(
-                pattern.as_bytes().to_vec(),
+                haystack.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
-                pattern.len(),
+                haystack.len(),
             );
             let matchdata = matchdata.try_into_ruby(&interp, None)?;
             let matchdata_sym = interp.intern_symbol(regexp::LAST_MATCH);
@@ -260,22 +262,22 @@ impl RegexpType for Onig {
     fn is_match(
         &self,
         interp: &Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
         pos: Option<Int>,
     ) -> Result<bool, Exception> {
-        let pattern = str::from_utf8(pattern).map_err(|_| {
+        let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 patterns",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
-        let pattern_char_len = pattern.chars().count();
+        let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
         let pos = if pos < 0 {
             let pos = usize::try_from(-pos).map_err(|_| {
                 Fatal::new(interp, "Expected positive position to convert to usize")
             })?;
-            if let Some(pos) = pattern_char_len.checked_sub(pos) {
+            if let Some(pos) = haystack_char_len.checked_sub(pos) {
                 pos
             } else {
                 return Ok(false);
@@ -285,36 +287,36 @@ impl RegexpType for Onig {
                 .map_err(|_| Fatal::new(interp, "Expected positive position to convert to usize"))?
         };
         // onig will panic if pos is beyond the end of string
-        if pos > pattern_char_len {
+        if pos > haystack_char_len {
             return Ok(false);
         }
-        let byte_offset = pattern.chars().take(pos).map(char::len_utf8).sum();
+        let byte_offset = haystack.chars().take(pos).map(char::len_utf8).sum();
 
-        let match_target = &pattern[byte_offset..];
+        let match_target = &haystack[byte_offset..];
         Ok(self.regex.find(match_target).is_some())
     }
 
     fn match_(
         &self,
         interp: &mut Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
     ) -> Result<Value, Exception> {
         let mrb = interp.0.borrow().mrb;
-        let pattern = str::from_utf8(pattern).map_err(|_| {
+        let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 patterns",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
-        let pattern_char_len = pattern.chars().count();
+        let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
         let pos = if pos < 0 {
             let pos = usize::try_from(-pos).map_err(|_| {
                 Fatal::new(interp, "Expected positive position to convert to usize")
             })?;
-            if let Some(pos) = pattern_char_len.checked_sub(pos) {
+            if let Some(pos) = haystack_char_len.checked_sub(pos) {
                 pos
             } else {
                 return Ok(interp.convert(None::<Value>));
@@ -324,33 +326,35 @@ impl RegexpType for Onig {
                 .map_err(|_| Fatal::new(interp, "Expected positive position to convert to usize"))?
         };
         // onig will panic if pos is beyond the end of string
-        if pos > pattern_char_len {
+        if pos > haystack_char_len {
             return Ok(interp.convert(None::<Value>));
         }
-        let byte_offset = pattern.chars().take(pos).map(char::len_utf8).sum();
+        let byte_offset = haystack.chars().take(pos).map(char::len_utf8).sum();
 
-        let match_target = &pattern[byte_offset..];
+        let match_target = &haystack[byte_offset..];
         if let Some(captures) = self.regex.captures(match_target) {
-            let globals_to_set = cmp::max(interp.0.borrow().active_regexp_globals, captures.len());
+            regexp::clear_capture_globals(interp)?;
+            interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
+
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
             let value = interp.convert_mut(captures.at(0));
             unsafe {
                 sys::mrb_gv_set(mrb, sym, value.inner());
             }
-            for group in 1..=globals_to_set {
+            for group in 0..captures.len() {
+                let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
                 let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                let value = interp.convert_mut(captures.at(group));
+                let value = interp.convert_mut(captures.at(group.get()));
                 unsafe {
                     sys::mrb_gv_set(mrb, sym, value.inner());
                 }
             }
-            interp.0.borrow_mut().active_regexp_globals = captures.len();
 
             let mut matchdata = MatchData::new(
-                pattern.as_bytes().to_vec(),
+                haystack.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
-                pattern.len(),
+                haystack.len(),
             );
             if let Some(match_pos) = captures.pos(0) {
                 let pre_match = interp.convert_mut(&match_target[..match_pos.0]);
@@ -391,36 +395,38 @@ impl RegexpType for Onig {
     fn match_operator(
         &self,
         interp: &mut Artichoke,
-        pattern: &[u8],
+        haystack: &[u8],
     ) -> Result<Option<Int>, Exception> {
         let mrb = interp.0.borrow().mrb;
-        let pattern = str::from_utf8(pattern).map_err(|_| {
+        let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 patterns",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
-        if let Some(captures) = self.regex.captures(pattern) {
-            let globals_to_set = cmp::max(interp.0.borrow().active_regexp_globals, captures.len());
+        if let Some(captures) = self.regex.captures(haystack) {
+            regexp::clear_capture_globals(interp)?;
+            interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
+
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
             let value = interp.convert_mut(captures.at(0));
             unsafe {
                 sys::mrb_gv_set(mrb, sym, value.inner());
             }
-            for group in 1..=globals_to_set {
+            for group in 0..captures.len() {
+                let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
                 let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                let value = interp.convert_mut(captures.at(group));
+                let value = interp.convert_mut(captures.at(group.get()));
                 unsafe {
                     sys::mrb_gv_set(mrb, sym, value.inner());
                 }
             }
-            interp.0.borrow_mut().active_regexp_globals = captures.len();
 
             let matchdata = MatchData::new(
-                pattern.as_bytes().to_vec(),
+                haystack.as_bytes().to_vec(),
                 Regexp::from(self.box_clone()),
                 0,
-                pattern.len(),
+                haystack.len(),
             );
             let matchdata = matchdata.try_into_ruby(interp, None)?;
             let matchdata_sym = interp.intern_symbol(regexp::LAST_MATCH);
@@ -428,8 +434,8 @@ impl RegexpType for Onig {
                 sys::mrb_gv_set(mrb, matchdata_sym, matchdata.inner());
             }
             if let Some(match_pos) = captures.pos(0) {
-                let pre_match = interp.convert_mut(&pattern[..match_pos.0]);
-                let post_match = interp.convert_mut(&pattern[match_pos.1..]);
+                let pre_match = interp.convert_mut(&haystack[..match_pos.0]);
+                let post_match = interp.convert_mut(&haystack[match_pos.1..]);
                 let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
                 let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
                 unsafe {
@@ -493,7 +499,7 @@ impl RegexpType for Onig {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 haystacks",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
         if let Some(captures) = self.regex.captures(haystack) {
@@ -546,7 +552,7 @@ impl RegexpType for Onig {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 haystacks",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
         let pos = self
@@ -573,7 +579,7 @@ impl RegexpType for Onig {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
-                "Oniguruma-backed Regexp only supports UTF-8 haystacks",
+                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
         let mrb = interp.0.borrow().mrb;
@@ -585,23 +591,17 @@ impl RegexpType for Onig {
             haystack.len(),
         );
 
-        let len = self.regex.captures_len();
+        let len = NonZeroUsize::new(self.regex.captures_len());
         if let Some(block) = block {
-            if len > 0 {
-                // zero old globals
-                let globals = interp.0.borrow().active_regexp_globals;
-                let nil = interp.convert(None::<Value>).inner();
-                for group in 1..=globals {
-                    let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                    unsafe {
-                        sys::mrb_gv_set(mrb, sym, nil);
-                    }
-                }
-                interp.0.borrow_mut().active_regexp_globals = len;
+            if let Some(len) = len {
+                regexp::clear_capture_globals(interp)?;
+                interp.0.borrow_mut().active_regexp_globals = Some(len);
+
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
+                    let nil = interp.convert(None::<Value>);
                     unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, nil);
+                        sys::mrb_gv_set(mrb, last_match_sym, nil.inner());
                     }
                     return Ok(value);
                 }
@@ -612,10 +612,11 @@ impl RegexpType for Onig {
                         sys::mrb_gv_set(mrb, fullmatch, fullcapture.inner());
                     }
                     let mut groups = vec![];
-                    for group in 1..=len {
+                    for group in 1..=len.get() {
+                        let group = unsafe { NonZeroUsize::new_unchecked(group) };
                         let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                        let capture = interp.convert_mut(captures.at(group));
-                        groups.push(captures.at(group));
+                        let capture = interp.convert_mut(captures.at(group.get()));
+                        groups.push(captures.at(group.get()));
                         unsafe {
                             sys::mrb_gv_set(mrb, sym, capture.inner());
                         }
@@ -659,28 +660,22 @@ impl RegexpType for Onig {
             Ok(value)
         } else {
             let mut last_pos = (0, 0);
-            if len > 0 {
+            if let Some(len) = len {
+                regexp::clear_capture_globals(interp)?;
+                interp.0.borrow_mut().active_regexp_globals = Some(len);
+
                 let mut collected = vec![];
-                // zero old globals
-                let globals = interp.0.borrow().active_regexp_globals;
-                let nil = interp.convert(None::<Value>).inner();
-                for group in 1..=globals {
-                    let sym = interp.intern_symbol(regexp::nth_match_group(group));
-                    unsafe {
-                        sys::mrb_gv_set(mrb, sym, nil);
-                    }
-                }
-                interp.0.borrow_mut().active_regexp_globals = len;
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
+                    let nil = interp.convert(None::<Value>);
                     unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, nil);
+                        sys::mrb_gv_set(mrb, last_match_sym, nil.inner());
                     }
                     return Ok(interp.convert_mut(&[] as &[Value]));
                 }
                 for captures in iter {
                     let mut groups = vec![];
-                    for group in 1..=len {
+                    for group in 1..=len.get() {
                         groups.push(captures.at(group));
                     }
 
@@ -703,6 +698,7 @@ impl RegexpType for Onig {
                     }
                 }
                 for (group, capture) in iter {
+                    let group = unsafe { NonZeroUsize::new_unchecked(group) };
                     let sym = interp.intern_symbol(regexp::nth_match_group(group));
                     let capture = interp.convert_mut(capture.as_slice());
                     unsafe {
