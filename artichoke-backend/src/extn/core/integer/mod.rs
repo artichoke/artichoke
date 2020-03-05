@@ -94,16 +94,8 @@ pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Val
         }
         Ruby::Float => {
             let denominator = denominator.try_into::<types::Float>()?;
-            if denominator == 0.0 {
-                match value {
-                    x if x > 0 => Ok(interp.convert_mut(Float::INFINITY)),
-                    x if x < 0 => Ok(interp.convert_mut(Float::NEG_INFINITY)),
-                    _ => Ok(interp.convert_mut(Float::NAN)),
-                }
-            } else {
-                #[allow(clippy::cast_precision_loss)]
-                Ok(interp.convert_mut(value as types::Float / denominator))
-            }
+            #[allow(clippy::cast_precision_loss)]
+            Ok(interp.convert_mut(value as types::Float / denominator))
         }
         _ => {
             let mut message = String::from(denominator.pretty_name());

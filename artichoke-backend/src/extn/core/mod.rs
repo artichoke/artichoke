@@ -14,6 +14,7 @@ pub mod hash;
 pub mod integer;
 pub mod kernel;
 pub mod matchdata;
+pub mod math;
 pub mod method;
 pub mod module;
 pub mod numeric;
@@ -49,6 +50,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     float::init(interp)?;
     kernel::init(interp)?;
     matchdata::init(interp)?;
+    math::mruby::init(interp)?;
     method::init(interp)?;
     module::init(interp)?;
     object::init(interp)?;

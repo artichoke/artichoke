@@ -43,6 +43,9 @@ core:
       - unshift
   - suite: comparable
   - suite: matchdata
+  - suite: math
+    skip:
+      - log2 # missing support for Bignum
   - suite: regexp
   - suite: string
     specs:
