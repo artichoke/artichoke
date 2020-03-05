@@ -207,9 +207,9 @@ impl RegexpType for Onig {
                 "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
+        regexp::clear_capture_globals(interp)?;
         let mrb = interp.0.borrow().mrb;
         if let Some(captures) = self.regex.captures(haystack) {
-            regexp::clear_capture_globals(interp)?;
             interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
             let value = interp.convert_mut(captures.at(0));
@@ -236,7 +236,7 @@ impl RegexpType for Onig {
                 }
             }
             let matchdata = MatchData::new(
-                haystack.as_bytes().to_vec(),
+                haystack.into(),
                 Regexp::from(self.box_clone()),
                 0,
                 haystack.len(),
@@ -310,6 +310,7 @@ impl RegexpType for Onig {
                 "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
+        regexp::clear_capture_globals(interp)?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
         let pos = if pos < 0 {
@@ -333,7 +334,6 @@ impl RegexpType for Onig {
 
         let match_target = &haystack[byte_offset..];
         if let Some(captures) = self.regex.captures(match_target) {
-            regexp::clear_capture_globals(interp)?;
             interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
 
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
@@ -351,7 +351,7 @@ impl RegexpType for Onig {
             }
 
             let mut matchdata = MatchData::new(
-                haystack.as_bytes().to_vec(),
+                haystack.into(),
                 Regexp::from(self.box_clone()),
                 0,
                 haystack.len(),
@@ -404,8 +404,8 @@ impl RegexpType for Onig {
                 "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
+        regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
-            regexp::clear_capture_globals(interp)?;
             interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
 
             let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
@@ -423,7 +423,7 @@ impl RegexpType for Onig {
             }
 
             let matchdata = MatchData::new(
-                haystack.as_bytes().to_vec(),
+                haystack.into(),
                 Regexp::from(self.box_clone()),
                 0,
                 haystack.len(),
@@ -478,7 +478,7 @@ impl RegexpType for Onig {
                     break;
                 }
             }
-            map.push((group.as_bytes().to_owned(), indexes));
+            map.push((group.into(), indexes));
             !fatal
         });
         if fatal {
@@ -510,9 +510,9 @@ impl RegexpType for Onig {
                     captures.at(index)
                 });
                 if let Some(capture) = capture {
-                    map.insert(group.as_bytes().to_vec(), Some(capture.as_bytes().to_vec()));
+                    map.insert(group.into(), Some(capture.into()));
                 } else {
-                    map.insert(group.as_bytes().to_vec(), None);
+                    map.insert(group.into(), None);
                 }
                 true
             });
@@ -525,9 +525,9 @@ impl RegexpType for Onig {
     fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>> {
         let _ = interp;
         let mut names = vec![];
-        let mut capture_names = vec![];
+        let mut capture_names = Vec::<(Vec<u8>, Vec<u32>)>::new();
         self.regex.foreach_name(|group, group_indexes| {
-            capture_names.push((group.as_bytes().to_owned(), group_indexes.to_vec()));
+            capture_names.push((group.into(), group_indexes.into()));
             true
         });
         capture_names.sort_by(|left, right| {
@@ -582,10 +582,11 @@ impl RegexpType for Onig {
                 "Oniguruma backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
+        regexp::clear_capture_globals(interp)?;
         let mrb = interp.0.borrow().mrb;
         let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
         let mut matchdata = MatchData::new(
-            haystack.as_bytes().to_vec(),
+            haystack.into(),
             Regexp::from(self.box_clone()),
             0,
             haystack.len(),
@@ -594,7 +595,6 @@ impl RegexpType for Onig {
         let len = NonZeroUsize::new(self.regex.captures_len());
         if let Some(block) = block {
             if let Some(len) = len {
-                regexp::clear_capture_globals(interp)?;
                 interp.0.borrow_mut().active_regexp_globals = Some(len);
 
                 let mut iter = self.regex.captures_iter(haystack).peekable();
@@ -661,7 +661,6 @@ impl RegexpType for Onig {
         } else {
             let mut last_pos = (0, 0);
             if let Some(len) = len {
-                regexp::clear_capture_globals(interp)?;
                 interp.0.borrow_mut().active_regexp_globals = Some(len);
 
                 let mut collected = vec![];

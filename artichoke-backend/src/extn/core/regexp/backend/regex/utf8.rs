@@ -1,7 +1,7 @@
 use regex::{Regex, RegexBuilder};
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::convert::TryFrom;
+use std::convert::{self, TryFrom};
 use std::fmt;
 use std::num::NonZeroUsize;
 use std::str;
@@ -77,19 +77,19 @@ impl RegexpType for Utf8 {
                 "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
-        let result = self.regex.captures(haystack).map(|captures| {
-            captures
-                .iter()
-                .map(|capture| {
-                    capture
-                        .as_ref()
-                        .map(regex::Match::as_str)
-                        .map(str::as_bytes)
-                        .map(<[u8]>::to_vec)
-                })
-                .collect()
-        });
-        Ok(result)
+        if let Some(captures) = self.regex.captures(haystack) {
+            let mut result = Vec::with_capacity(captures.len());
+            for capture in captures.iter() {
+                if let Some(capture) = capture {
+                    result.push(Some(capture.as_str().into()));
+                } else {
+                    result.push(None);
+                }
+            }
+            Ok(Some(result))
+        } else {
+            Ok(None)
+        }
     }
 
     fn capture_indexes_for_name(
@@ -211,9 +211,9 @@ impl RegexpType for Utf8 {
                 "regex crate utf8 backend for Regexp only supports UTF-8 haystack",
             )
         })?;
+        regexp::clear_capture_globals(interp)?;
         let mrb = interp.0.borrow().mrb;
         if let Some(captures) = self.regex.captures(haystack) {
-            regexp::clear_capture_globals(interp)?;
             // per the [docs] for `captures.len()`:
             //
             // > This is always at least 1, since every regex has at least one
@@ -258,7 +258,7 @@ impl RegexpType for Utf8 {
                 }
             }
             let matchdata = MatchData::new(
-                haystack.as_bytes().to_vec(),
+                haystack.into(),
                 Regexp::from(self.box_clone()),
                 0,
                 haystack.len(),
@@ -332,6 +332,7 @@ impl RegexpType for Utf8 {
                 "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
+        regexp::clear_capture_globals(interp)?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
         let pos = if pos < 0 {
@@ -355,7 +356,6 @@ impl RegexpType for Utf8 {
 
         let match_target = &haystack[byte_offset..];
         if let Some(captures) = self.regex.captures(match_target) {
-            regexp::clear_capture_globals(interp)?;
             // per the [docs] for `captures.len()`:
             //
             // > This is always at least 1, since every regex has at least one
@@ -390,7 +390,7 @@ impl RegexpType for Utf8 {
             }
 
             let mut matchdata = MatchData::new(
-                haystack.as_bytes().to_vec(),
+                haystack.into(),
                 Regexp::from(self.box_clone()),
                 0,
                 haystack.len(),
@@ -446,8 +446,8 @@ impl RegexpType for Utf8 {
                 "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
+        regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
-            regexp::clear_capture_globals(interp)?;
             // per the [docs] for `captures.len()`:
             //
             // > This is always at least 1, since every regex has at least one
@@ -482,7 +482,7 @@ impl RegexpType for Utf8 {
             }
 
             let matchdata = MatchData::new(
-                haystack.as_bytes().to_vec(),
+                haystack.into(),
                 Regexp::from(self.box_clone()),
                 0,
                 haystack.len(),
@@ -526,21 +526,19 @@ impl RegexpType for Utf8 {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
-        for group in self.regex.capture_names() {
-            if let Some(group) = group {
-                if let Some(indexes) = self.capture_indexes_for_name(interp, group.as_bytes())? {
-                    let mut group_indexes = Vec::with_capacity(indexes.len());
-                    for idx in indexes {
-                        let idx = Int::try_from(idx).map_err(|_| {
-                            Fatal::new(
-                                interp,
-                                "Regexp named capture index does not fit in Integer max",
-                            )
-                        })?;
-                        group_indexes.push(idx);
-                    }
-                    map.push((group.as_bytes().to_vec(), group_indexes));
+        for group in self.regex.capture_names().filter_map(convert::identity) {
+            if let Some(indexes) = self.capture_indexes_for_name(interp, group.as_bytes())? {
+                let mut group_indexes = Vec::with_capacity(indexes.len());
+                for idx in indexes {
+                    let idx = Int::try_from(idx).map_err(|_| {
+                        Fatal::new(
+                            interp,
+                            "Regexp named capture index does not fit in Integer max",
+                        )
+                    })?;
+                    group_indexes.push(idx);
                 }
+                map.push((Vec::<u8>::from(group), group_indexes));
             }
         }
         Ok(map)
@@ -565,7 +563,7 @@ impl RegexpType for Utf8 {
                     captures.get(index)
                 });
                 if let Some(capture) = capture {
-                    map.insert(group, Some(capture.as_str().as_bytes().to_vec()));
+                    map.insert(group, Some(capture.as_str().into()));
                 } else {
                     map.insert(group, None);
                 }
@@ -632,10 +630,11 @@ impl RegexpType for Utf8 {
                 "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
             )
         })?;
+        regexp::clear_capture_globals(interp)?;
         let mrb = interp.0.borrow().mrb;
         let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
         let mut matchdata = MatchData::new(
-            haystack.as_bytes().to_vec(),
+            haystack.into(),
             Regexp::from(self.box_clone()),
             0,
             haystack.len(),
@@ -647,11 +646,9 @@ impl RegexpType for Utf8 {
             .captures_len()
             .checked_sub(1)
             .and_then(NonZeroUsize::new);
+        interp.0.borrow_mut().active_regexp_globals = len;
         if let Some(block) = block {
             if let Some(len) = len {
-                regexp::clear_capture_globals(interp)?;
-                interp.0.borrow_mut().active_regexp_globals = Some(len);
-
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     unsafe {
@@ -725,9 +722,6 @@ impl RegexpType for Utf8 {
         } else {
             let mut last_pos = (0, 0);
             if let Some(len) = len {
-                regexp::clear_capture_globals(interp)?;
-                interp.0.borrow_mut().active_regexp_globals = Some(len);
-
                 let mut collected = vec![];
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
