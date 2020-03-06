@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::extn::core::float::Float;
+use crate::extn::core::numeric::Numeric;
 use crate::extn::prelude::*;
 use crate::types;
 
@@ -98,9 +98,42 @@ pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Val
             Ok(interp.convert_mut(value as types::Float / denominator))
         }
         _ => {
-            let mut message = String::from(denominator.pretty_name());
-            message.push_str(" can't be coerced into Integer");
-            Err(Exception::from(TypeError::new(interp, message)))
+            let borrow = interp.0.borrow();
+            let numeric = borrow
+                .class_spec::<Numeric>()
+                .ok_or_else(|| NotDefinedError::class("Numeric"))?;
+            let numeric = numeric
+                .value(interp)
+                .ok_or_else(|| NotDefinedError::class("Numeric"))?;
+            drop(borrow);
+            if let Ok(true) = denominator.funcall("is_a?", &[numeric], None) {
+                if denominator.respond_to("to_f")? {
+                    let coerced = denominator.funcall::<Value>("to_f", &[], None)?;
+                    if let Ruby::Float = coerced.ruby_type() {
+                        let denominator = coerced.try_into::<Float>()?;
+                        #[allow(clippy::cast_precision_loss)]
+                        Ok(interp.convert_mut(value as types::Float / denominator))
+                    } else {
+                        let mut message = String::from("can't convert ");
+                        message.push_str(denominator.pretty_name());
+                        message.push_str(" into Float (");
+                        message.push_str(denominator.pretty_name());
+                        message.push_str("#to_f gives ");
+                        message.push_str(coerced.pretty_name());
+                        message.push(')');
+                        Err(Exception::from(TypeError::new(interp, message)))
+                    }
+                } else {
+                    let mut message = String::from("can't convert ");
+                    message.push_str(denominator.pretty_name());
+                    message.push_str(" into Float");
+                    Err(Exception::from(TypeError::new(interp, message)))
+                }
+            } else {
+                let mut message = String::from(denominator.pretty_name());
+                message.push_str(" can't be coerced into Integer");
+                Err(Exception::from(TypeError::new(interp, message)))
+            }
         }
     }
 }
