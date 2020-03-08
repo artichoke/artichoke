@@ -36,6 +36,7 @@ pub mod constant;
 pub mod convert;
 pub mod eval;
 pub mod file;
+pub mod globals;
 pub mod intern;
 pub mod load;
 pub mod parser;
