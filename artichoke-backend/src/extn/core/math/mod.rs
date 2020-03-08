@@ -1,8 +1,11 @@
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::error;
 use std::f64;
 use std::fmt;
+use std::num::FpCategory;
 
+use crate::extn::core::float;
 use crate::extn::core::numeric::Numeric;
 use crate::extn::prelude::*;
 
@@ -160,20 +163,36 @@ pub fn cosh(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
     Ok(result)
 }
 
+#[cfg(not(feature = "core-math-extra"))]
 pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
     let _ = value;
     Err(Exception::from(NotImplementedError::new(
         interp,
-        "depend on libm or statsrs",
+        "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
 
+#[cfg(feature = "core-math-extra")]
+pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
+    let value = value_to_float(interp, value)?;
+    let result = libm::erf(value);
+    Ok(result)
+}
+
+#[cfg(not(feature = "core-math-extra"))]
 pub fn erfc(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
     let _ = value;
     Err(Exception::from(NotImplementedError::new(
         interp,
-        "depend on libm or statsrs",
+        "enable 'core-math-extra' feature when building Artichoke",
     )))
+}
+
+#[cfg(feature = "core-math-extra")]
+pub fn erfc(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
+    let value = value_to_float(interp, value)?;
+    let result = libm::erfc(value);
+    Ok(result)
 }
 
 pub fn exp(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
@@ -182,20 +201,94 @@ pub fn exp(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
     Ok(result)
 }
 
+#[cfg(not(feature = "core-math-extra"))]
 pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Float, Int), Exception> {
     let _ = value;
     Err(Exception::from(NotImplementedError::new(
         interp,
-        "depend on libm or statsrs",
+        "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
 
+#[cfg(feature = "core-math-extra")]
+pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Float, Int), Exception> {
+    let value = value_to_float(interp, value)?;
+    let (fraction, exponent) = libm::frexp(value);
+    Ok((fraction, exponent.into()))
+}
+
+#[cfg(not(feature = "core-math-extra"))]
 pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
     let _ = value;
     Err(Exception::from(NotImplementedError::new(
         interp,
-        "depend on libm or statsrs",
+        "enable 'core-math-extra' feature when building Artichoke",
     )))
+}
+
+#[cfg(feature = "core-math-extra")]
+pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
+    let value = value_to_float(interp, value)?;
+    let factorial_table = [
+        1.0_f64,                /* fact(0) */
+        1.0,                    /* fact(1) */
+        2.0,                    /* fact(2) */
+        6.0,                    /* fact(3) */
+        24.0,                   /* fact(4) */
+        120.0,                  /* fact(5) */
+        720.0,                  /* fact(6) */
+        5040.0,                 /* fact(7) */
+        40320.0,                /* fact(8) */
+        362880.0,               /* fact(9) */
+        3628800.0,              /* fact(10) */
+        39916800.0,             /* fact(11) */
+        479001600.0,            /* fact(12) */
+        6227020800.0,           /* fact(13) */
+        87178291200.0,          /* fact(14) */
+        1307674368000.0,        /* fact(15) */
+        20922789888000.0,       /* fact(16) */
+        355687428096000.0,      /* fact(17) */
+        6402373705728000.0,     /* fact(18) */
+        121645100408832000.0,   /* fact(19) */
+        2432902008176640000.0,  /* fact(20) */
+        51090942171709440000.0, /* fact(21) */
+        1124000727777607680000.0, /* fact(22) */
+                                /* fact(23)=25852016738884976640000 needs 56bit mantissa which is
+                                 * impossible to represent exactly in IEEE 754 double which have
+                                 * 53bit mantissa. */
+    ];
+    if value.is_infinite() {
+        if value.is_sign_negative() {
+            Err(Exception::from(DomainError::new(
+                r#"Numerical argument is out of domain - "gamma""#,
+            )))
+        } else {
+            Ok(float::Float::INFINITY)
+        }
+    } else if let FpCategory::Zero = value.classify() {
+        if value.is_sign_negative() {
+            Ok(float::Float::NEG_INFINITY)
+        } else {
+            Ok(float::Float::INFINITY)
+        }
+    } else if value == value.floor() {
+        if value < 0.0 {
+            Err(Exception::from(DomainError::new(
+                r#"Numerical argument is out of domain - "gamma""#,
+            )))
+        } else {
+            let idx = (value as Int) // TODO: use `approx_unchecked_to` once stabilized.
+                .checked_sub(1)
+                .and_then(|idx| usize::try_from(idx).ok());
+            let result = idx
+                .and_then(|idx| factorial_table.get(idx).copied())
+                .unwrap_or_else(|| libm::tgamma(value));
+            Ok(result)
+        }
+    } else {
+        let result = libm::tgamma(value);
+        Ok(result)
+    }
 }
 
 pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Float, Exception> {
@@ -205,21 +298,69 @@ pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Float
     Ok(result)
 }
 
+#[cfg(not(feature = "core-math-extra"))]
 pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Float, Exception> {
     let _ = fraction;
     let _ = exponent;
     Err(Exception::from(NotImplementedError::new(
         interp,
-        "depend on libm or statsrs",
+        "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
 
+#[cfg(feature = "core-math-extra")]
+pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Float, Exception> {
+    let fraction = value_to_float(interp, fraction)?;
+    let exponent = exponent.implicitly_convert_to_int().or_else(|err| {
+        if let Ok(exponent) = exponent.try_into::<Float>() {
+            if exponent.is_nan() {
+                Err(Exception::from(RangeError::new(
+                    interp,
+                    "float NaN out of range of integer",
+                )))
+            } else {
+                // TODO: use `approx_unchecked_to` once stabilized.
+                Ok(exponent as Int)
+            }
+        } else {
+            Err(Exception::from(err))
+        }
+    })?;
+    if let Ok(exponent) = i32::try_from(exponent) {
+        Ok(libm::ldexp(fraction, exponent))
+    } else if exponent < 0 {
+        let mut message = String::from("integer ");
+        string::format_int_into(&mut message, exponent)?;
+        message.push_str("too small to convert to `int'");
+        Err(Exception::from(RangeError::new(interp, message)))
+    } else {
+        let mut message = String::from("integer ");
+        string::format_int_into(&mut message, exponent)?;
+        message.push_str("too big to convert to `int'");
+        Err(Exception::from(RangeError::new(interp, message)))
+    }
+}
+
+#[cfg(not(feature = "core-math-extra"))]
 pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Float, Int), Exception> {
     let _ = value;
     Err(Exception::from(NotImplementedError::new(
         interp,
-        "depend on libm or statsrs",
+        "enable 'core-math-extra' feature when building Artichoke",
     )))
+}
+
+#[cfg(feature = "core-math-extra")]
+pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Float, Int), Exception> {
+    let value = value_to_float(interp, value)?;
+    if value.is_infinite() && value.is_sign_negative() {
+        Err(Exception::from(DomainError::new(
+            r#"Numerical argument is out of domain - "lgamma""#,
+        )))
+    } else {
+        let (result, sign) = libm::lgamma_r(value);
+        Ok((result, Int::from(sign)))
+    }
 }
 
 pub fn log(interp: &mut Artichoke, value: Value, base: Option<Value>) -> Result<Float, Exception> {
@@ -314,7 +455,7 @@ pub fn tanh(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
     Ok(result)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct DomainError(Cow<'static, str>);
 
 impl DomainError {
