@@ -1,4 +1,3 @@
-use rand::distributions::{Distribution, Uniform};
 use rand::rngs::SmallRng;
 use rand::{self, Rng, SeedableRng};
 
@@ -28,6 +27,7 @@ where
 }
 
 impl<T> Rand<T> {
+    #[inline]
     pub fn seed(&self) -> u64 {
         self.seed
     }
@@ -52,19 +52,20 @@ impl<T> Rand<T>
 where
     T: Rng,
 {
+    #[inline]
     pub fn bytes(&mut self, buf: &mut [u8]) {
         self.rng.fill_bytes(buf);
     }
 
+    #[inline]
     pub fn rand_int(&mut self, max: Int) -> Int {
-        let between = Uniform::from(0..max);
-        between.sample(&mut self.rng)
+        self.rng.gen_range(0, max)
     }
 
+    #[inline]
     pub fn rand_float(&mut self, max: Option<Float>) -> Float {
         let max = max.unwrap_or(1.0);
-        let between = Uniform::from(0.0..max);
-        between.sample(&mut self.rng)
+        self.rng.gen_range(0.0, max)
     }
 }
 

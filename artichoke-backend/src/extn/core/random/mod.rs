@@ -87,9 +87,12 @@ pub fn bytes(interp: &mut Artichoke, rand: Value, size: Value) -> Result<Value, 
     let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
     let size = size.implicitly_convert_to_int()?;
     if let Ok(size) = usize::try_from(size) {
+        if size == 0 {
+            return Ok(interp.convert_mut(""));
+        }
         let mut buf = vec![0; size];
         let mut borrow = rand.borrow_mut();
-        borrow.inner_mut().bytes(interp, buf.as_mut_slice());
+        borrow.inner_mut().bytes(interp, &mut buf);
         Ok(interp.convert_mut(buf))
     } else {
         Err(Exception::from(ArgumentError::new(
@@ -184,8 +187,12 @@ pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Exception> 
     let size = size.implicitly_convert_to_int()?;
     let size = usize::try_from(size)
         .map_err(|_| ArgumentError::new(interp, "negative string size (or size too big)"))?;
+    if size == 0 {
+        return Ok(interp.convert_mut(""));
+    }
     let mut bytes = vec![0; size];
     let mut rng = rand::thread_rng();
-    rng.fill_bytes(bytes.as_mut_slice());
+    rng.try_fill_bytes(&mut bytes)
+        .map_err(|err| RuntimeError::new(interp, err.to_string()))?;
     Ok(interp.convert_mut(bytes))
 }
