@@ -21,6 +21,8 @@ fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Float, Excepti
     if let Ok(value) = value.clone().try_into::<Float>() {
         Ok(value)
     } else if let Ok(value) = value.clone().try_into::<Int>() {
+        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_precision_loss)]
         Ok(value as Float)
     } else if let Ruby::Nil = value.ruby_type() {
         Err(Exception::from(TypeError::new(
@@ -229,33 +231,33 @@ pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
 #[cfg(feature = "core-math-extra")]
 pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
     let value = value_to_float(interp, value)?;
+    // `gamma(n)` is the same as `n!` for integer n > 0. `gamma` returns float
+    // and might be an approximation so include a lookup table for as many `n`
+    // as can fit in the float manitssa.
     let factorial_table = [
-        1.0_f64,                /* fact(0) */
-        1.0,                    /* fact(1) */
-        2.0,                    /* fact(2) */
-        6.0,                    /* fact(3) */
-        24.0,                   /* fact(4) */
-        120.0,                  /* fact(5) */
-        720.0,                  /* fact(6) */
-        5040.0,                 /* fact(7) */
-        40320.0,                /* fact(8) */
-        362880.0,               /* fact(9) */
-        3628800.0,              /* fact(10) */
-        39916800.0,             /* fact(11) */
-        479001600.0,            /* fact(12) */
-        6227020800.0,           /* fact(13) */
-        87178291200.0,          /* fact(14) */
-        1307674368000.0,        /* fact(15) */
-        20922789888000.0,       /* fact(16) */
-        355687428096000.0,      /* fact(17) */
-        6402373705728000.0,     /* fact(18) */
-        121645100408832000.0,   /* fact(19) */
-        2432902008176640000.0,  /* fact(20) */
-        51090942171709440000.0, /* fact(21) */
-        1124000727777607680000.0, /* fact(22) */
-                                /* fact(23)=25852016738884976640000 needs 56bit mantissa which is
-                                 * impossible to represent exactly in IEEE 754 double which have
-                                 * 53bit mantissa. */
+        1.0_f64,                         // fact(0)
+        1.0,                             // fact(1)
+        2.0,                             // fact(2)
+        6.0,                             // fact(3)
+        24.0,                            // fact(4)
+        120.0,                           // fact(5)
+        720.0,                           // fact(6)
+        5_040.0,                         // fact(7)
+        40_320.0,                        // fact(8)
+        362_880.0,                       // fact(9)
+        3_628_800.0,                     // fact(10)
+        39_916_800.0,                    // fact(11)
+        479_001_600.0,                   // fact(12)
+        6_227_020_800.0,                 // fact(13)
+        87_178_291_200.0,                // fact(14)
+        1_307_674_368_000.0,             // fact(15)
+        20_922_789_888_000.0,            // fact(16)
+        355_687_428_096_000.0,           // fact(17)
+        6_402_373_705_728_000.0,         // fact(18)
+        121_645_100_408_832_000.0,       // fact(19)
+        2_432_902_008_176_640_000.0,     // fact(20)
+        51_090_942_171_709_440_000.0,    // fact(21)
+        1_124_000_727_777_607_680_000.0, // fact(22)
     ];
     if value.is_infinite() {
         if value.is_sign_negative() {
@@ -271,12 +273,13 @@ pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
         } else {
             Ok(float::Float::INFINITY)
         }
-    } else if value == value.floor() {
+    } else if (value - value.floor()).abs() < f64::EPSILON {
         if value < 0.0 {
             Err(Exception::from(DomainError::new(
                 r#"Numerical argument is out of domain - "gamma""#,
             )))
         } else {
+            #[allow(clippy::cast_possible_truncation)]
             let idx = (value as Int) // TODO: use `approx_unchecked_to` once stabilized.
                 .checked_sub(1)
                 .and_then(|idx| usize::try_from(idx).ok());
@@ -320,6 +323,7 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
                 )))
             } else {
                 // TODO: use `approx_unchecked_to` once stabilized.
+                #[allow(clippy::cast_possible_truncation)]
                 Ok(exponent as Int)
             }
         } else {

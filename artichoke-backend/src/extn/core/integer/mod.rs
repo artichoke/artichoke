@@ -110,9 +110,9 @@ pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Val
                 if denominator.respond_to("to_f")? {
                     let coerced = denominator.funcall::<Value>("to_f", &[], None)?;
                     if let Ruby::Float = coerced.ruby_type() {
-                        let denominator = coerced.try_into::<Float>()?;
+                        let denom = coerced.try_into::<Float>()?;
                         #[allow(clippy::cast_precision_loss)]
-                        Ok(interp.convert_mut(value as types::Float / denominator))
+                        Ok(interp.convert_mut(value as types::Float / denom))
                     } else {
                         let mut message = String::from("can't convert ");
                         message.push_str(denominator.pretty_name());
