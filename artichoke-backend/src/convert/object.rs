@@ -96,10 +96,9 @@ where
     ) -> Result<Rc<RefCell<Self>>, Exception> {
         // Make sure we have a Data otherwise extraction will fail.
         if slf.ruby_type() != Ruby::Data {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("uninitialized {}", Self::ruby_type_name()),
-            )));
+            let mut message = String::from("uninitialized ");
+            message.push_str(Self::ruby_type_name());
+            return Err(Exception::from(TypeError::new(interp, message)));
         }
         let borrow = interp.0.borrow();
         let mrb = borrow.mrb;
@@ -114,19 +113,18 @@ where
             sys::mrb_sys_class_of_value(mrb, slf.inner()),
             rclass.as_mut(),
         ) {
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("Could not extract {} from receiver", Self::ruby_type_name()),
-            )));
+            let mut message = String::from("Could not extract ");
+            message.push_str(Self::ruby_type_name());
+            message.push_str(" from receiver");
+            return Err(Exception::from(TypeError::new(interp, message)));
         }
         let ptr = sys::mrb_data_check_get_ptr(mrb, slf.inner(), spec.data_type());
         if ptr.is_null() {
             // `Object#allocate` can be used to create `MRB_TT_DATA` without calling
             // `#initialize`. These objects will return a NULL pointer.
-            return Err(Exception::from(TypeError::new(
-                interp,
-                format!("uninitialized {}", Self::ruby_type_name()),
-            )));
+            let mut message = String::from("uninitialized ");
+            message.push_str(Self::ruby_type_name());
+            return Err(Exception::from(TypeError::new(interp, message)));
         }
         let data = Rc::from_raw(ptr as *const RefCell<Self>);
         let value = Rc::clone(&data);

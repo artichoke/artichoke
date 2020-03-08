@@ -24,7 +24,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
     };
     let radix = match radix.map(u32::try_from) {
         Some(Ok(radix)) if radix >= 2 && radix <= 36 => Some(radix),
-        Some(Ok(radix)) => return Err(Exception::from(invalid_radix_error(interp, radix))),
+        Some(Ok(radix)) => return Err(Exception::from(invalid_radix_error(interp, radix)?)),
         Some(Err(_)) => return Err(Exception::from(ArgumentError::new(interp, "invalid radix"))),
         None => None,
     };
@@ -174,7 +174,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         }
         (Some(_), Some(_)) => Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?)),
         (Some(radix), None) | (None, Some(radix)) => {
-            Err(Exception::from(invalid_radix_error(interp, radix)))
+            Err(Exception::from(invalid_radix_error(interp, radix)?))
         }
     }
 }
@@ -186,6 +186,11 @@ fn invalid_value_err(interp: &Artichoke, arg: &[u8]) -> Result<ArgumentError, Ex
     Ok(ArgumentError::new(interp, message))
 }
 
-fn invalid_radix_error(interp: &Artichoke, radix: u32) -> ArgumentError {
-    ArgumentError::new(interp, format!("invalid radix {}", radix))
+fn invalid_radix_error(
+    interp: &Artichoke,
+    radix: u32,
+) -> Result<ArgumentError, string::WriteError> {
+    let mut message = String::from("invalid radix ");
+    string::format_int_into(&mut message, radix)?;
+    Ok(ArgumentError::new(interp, message))
 }

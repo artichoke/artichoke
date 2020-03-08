@@ -24,20 +24,19 @@ pub fn element_reference(
         } else {
             Ok(ElementReference::Empty)
         }
+    } else if let Ok(index) = elem.implicitly_convert_to_int() {
+        Ok(ElementReference::Index(index))
     } else {
-        let name = elem.pretty_name();
-        if let Ok(index) = elem.implicitly_convert_to_int() {
-            Ok(ElementReference::Index(index))
-        } else {
-            let rangelen = Int::try_from(ary_len)
-                .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
-            match unsafe { is_range(interp, &elem, rangelen) } {
-                Ok(Some((start, len))) => Ok(ElementReference::StartLen(start, len)),
-                Ok(None) => Ok(ElementReference::Empty),
-                Err(_) => Err(Exception::from(TypeError::new(
-                    interp,
-                    format!("no implicit conversion of {} into Integer", name),
-                ))),
+        let rangelen = Int::try_from(ary_len)
+            .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
+        match unsafe { is_range(interp, &elem, rangelen) } {
+            Ok(Some((start, len))) => Ok(ElementReference::StartLen(start, len)),
+            Ok(None) => Ok(ElementReference::Empty),
+            Err(_) => {
+                let mut message = String::from("no implicit conversion of ");
+                message.push_str(elem.pretty_name());
+                message.push_str(" into Integer");
+                Err(Exception::from(TypeError::new(interp, message)))
             }
         }
     }
@@ -60,20 +59,21 @@ pub fn element_assignment(
             if start < len {
                 len - start
             } else {
-                return Err(Exception::from(IndexError::new(
-                    interp,
-                    format!("index {} too small for array; minimum: -{}", start, len),
-                )));
+                let mut message = String::from("index ");
+                string::format_int_into(&mut message, start)?;
+                message.push_str(" too small for array; minimum: -");
+                string::format_int_into(&mut message, len)?;
+                return Err(Exception::from(IndexError::new(interp, message)));
             }
         };
         let slice_len = second.implicitly_convert_to_int()?;
         if let Ok(slice_len) = usize::try_from(slice_len) {
             Ok((start, Some(slice_len), elem))
         } else {
-            Err(Exception::from(IndexError::new(
-                interp,
-                format!("negative length ({})", slice_len),
-            )))
+            let mut message = String::from("negative length (");
+            string::format_int_into(&mut message, slice_len)?;
+            message.push(')');
+            Err(Exception::from(IndexError::new(interp, message)))
         }
     } else if let Ok(index) = first.implicitly_convert_to_int() {
         if let Ok(index) = usize::try_from(index) {
@@ -84,10 +84,11 @@ pub fn element_assignment(
             if index < len {
                 Ok((len - index, None, second))
             } else {
-                Err(Exception::from(IndexError::new(
-                    interp,
-                    format!("index {} too small for array; minimum: -{}", index, len),
-                )))
+                let mut message = String::from("index ");
+                string::format_int_into(&mut message, index)?;
+                message.push_str(" too small for array; minimum: -");
+                string::format_int_into(&mut message, len)?;
+                Err(Exception::from(IndexError::new(interp, message)))
             }
         }
     } else {
@@ -121,10 +122,12 @@ pub fn element_assignment(
                 };
                 let end = end.implicitly_convert_to_int()?;
                 if start + (end - start) < 0 {
-                    return Err(Exception::from(RangeError::new(
-                        interp,
-                        format!("{}..{} out of range", start, end),
-                    )));
+                    let mut message = String::new();
+                    string::format_int_into(&mut message, start)?;
+                    message.push_str("..");
+                    string::format_int_into(&mut message, end)?;
+                    message.push_str(" out of range");
+                    return Err(Exception::from(RangeError::new(interp, message)));
                 }
                 match (usize::try_from(start), usize::try_from(end)) {
                     (Ok(start), Ok(end)) => {
@@ -145,25 +148,28 @@ pub fn element_assignment(
                                 Ok((start, None, second))
                             }
                         } else {
-                            Err(Exception::from(IndexError::new(
-                                interp,
-                                format!("index {} too small for array; minimum: -{}", start, len),
-                            )))
+                            let mut message = String::from("index ");
+                            string::format_int_into(&mut message, start)?;
+                            message.push_str(" too small for array; minimum: -");
+                            string::format_int_into(&mut message, len)?;
+                            Err(Exception::from(IndexError::new(interp, message)))
                         }
                     }
                     (Ok(start), Err(_)) => Ok((start, None, second)),
-                    (Err(_), Err(_)) => Err(Exception::from(IndexError::new(
-                        interp,
-                        format!("index {} too small for array; minimum: -{}", start, len),
-                    ))),
+                    (Err(_), Err(_)) => {
+                        let mut message = String::from("index ");
+                        string::format_int_into(&mut message, start)?;
+                        message.push_str(" too small for array; minimum: -");
+                        string::format_int_into(&mut message, len)?;
+                        Err(Exception::from(IndexError::new(interp, message)))
+                    }
                 }
             }
             Err(_) => {
-                let index_type_name = first.pretty_name();
-                Err(Exception::from(TypeError::new(
-                    interp,
-                    format!("no implicit conversion of {} into Integer", index_type_name),
-                )))
+                let mut message = String::from("no implicit conversion of ");
+                message.push_str(first.pretty_name());
+                message.push_str(" into Integer");
+                Err(Exception::from(TypeError::new(interp, message)))
             }
         }
     }
