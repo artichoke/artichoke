@@ -51,42 +51,34 @@ pub fn scan(
         let string = value.clone().try_into::<&[u8]>()?;
         if let Some(ref block) = block {
             let regex = Regexp::lazy(pattern_bytes);
-            let mrb = interp.0.borrow().mrb;
-            let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
             let matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
             let patlen = pattern_bytes.len();
             if let Some(pos) = string.find(pattern_bytes) {
                 let mut data = matchdata.clone();
                 data.set_region(pos, pos + patlen);
                 let data = data.try_into_ruby(interp, None)?;
-                unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                }
+                interp.set_global_variable(regexp::LAST_MATCH, &data)?;
+
                 let block_arg = interp.convert_mut(pattern_bytes);
                 let _ = block.yield_arg::<Value>(interp, &block_arg)?;
-                unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                }
+
+                interp.set_global_variable(regexp::LAST_MATCH, &data)?;
+
                 let offset = pos + patlen;
                 let string = string.get(offset..).unwrap_or_default();
                 for pos in string.find_iter(pattern_bytes) {
                     let mut data = matchdata.clone();
                     data.set_region(offset + pos, offset + pos + patlen);
                     let data = data.try_into_ruby(interp, None)?;
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    }
+                    interp.set_global_variable(regexp::LAST_MATCH, &data)?;
+
                     let block_arg = interp.convert_mut(pattern_bytes);
                     let _ = block.yield_arg::<Value>(interp, &block_arg)?;
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    }
+
+                    interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             } else {
-                let nil = interp.convert(None::<Value>).inner();
-                unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, nil);
-                }
+                interp.unset_global_variable(regexp::LAST_MATCH)?;
             }
             Ok(value)
         } else {
@@ -102,21 +94,12 @@ pub fn scan(
             }
             if matches > 0 {
                 let regex = Regexp::lazy(pattern_bytes);
-                let mrb = interp.0.borrow().mrb;
-                let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
                 let data = matchdata.try_into_ruby(interp, None)?;
-                unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                }
+                interp.set_global_variable(regexp::LAST_MATCH, &data)?;
             } else {
-                let mrb = interp.0.borrow().mrb;
-                let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
-                let nil = interp.convert(None::<Value>).inner();
-                unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, nil);
-                }
+                interp.unset_global_variable(regexp::LAST_MATCH)?;
             }
             Ok(interp.convert_mut(result))
         }
