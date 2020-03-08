@@ -1,4 +1,4 @@
-#![deny(missing_docs, warnings, intra_doc_link_resolution_failure)]
+#![deny(missing_docs, intra_doc_link_resolution_failure)]
 
 //! Rust bindings for mruby, customized for Artichoke.
 //!

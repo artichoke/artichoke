@@ -2280,19 +2280,7 @@ RETRY_TRY_BLOCK:
         {
           mrb_float x = (mrb_float)mrb_fixnum(regs[a]);
           mrb_float y = mrb_float(regs[a+1]);
-          mrb_float f;
-          if (y == 0) {
-            if (x > 0) {
-              f = INFINITY;
-            } else if (x < 0) {
-              f = -INFINITY;
-            } else /* if (x == 0) */ {
-              f = NAN;
-            }
-          }
-          else {
-            f = x / y;
-          }
+          mrb_float f = x / y;
           SET_FLOAT_VALUE(mrb, regs[a], f);
         }
         break;
@@ -2300,19 +2288,7 @@ RETRY_TRY_BLOCK:
         {
           mrb_float x = mrb_float(regs[a]);
           mrb_float y = (mrb_float)mrb_fixnum(regs[a+1]);
-          mrb_float f;
-          if (y == 0) {
-            if (x > 0) {
-              f = INFINITY;
-            } else if (x < 0) {
-              f = -INFINITY;
-            } else /* if (x == 0) */ {
-              f = NAN;
-            }
-          }
-          else {
-            f = x / y;
-          }
+          mrb_float f = x / y;
           SET_FLOAT_VALUE(mrb, regs[a], f);
         }
         break;
@@ -2320,19 +2296,7 @@ RETRY_TRY_BLOCK:
         {
           mrb_float x = mrb_float(regs[a]);
           mrb_float y = mrb_float(regs[a+1]);
-          mrb_float f;
-          if (y == 0) {
-            if (x > 0) {
-              f = INFINITY;
-            } else if (x < 0) {
-              f = -INFINITY;
-            } else /* if (x == 0) */ {
-              f = NAN;
-            }
-          }
-          else {
-            f = x / y;
-          }
+          mrb_float f = x / y;
           SET_FLOAT_VALUE(mrb, regs[a], f);
         }
         break;
