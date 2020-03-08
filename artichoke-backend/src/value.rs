@@ -640,7 +640,7 @@ mod tests {
 
         let value = interp.convert_mut("interstate");
         let debug = value.to_s_debug();
-        assert_eq!(debug, r#"String<"interstate">"#);
+        assert_eq!(debug, r#"String<\"interstate\">"#);
     }
 
     #[test]
@@ -667,7 +667,7 @@ mod tests {
 
         let value = interp.convert_mut("");
         let debug = value.to_s_debug();
-        assert_eq!(debug, r#"String<"">"#);
+        assert_eq!(debug, r#"String<\"\">"#);
     }
 
     #[test]

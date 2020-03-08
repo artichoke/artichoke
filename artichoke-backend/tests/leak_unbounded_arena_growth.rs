@@ -71,7 +71,7 @@ end
 
     // Value::to_s_debug
     let interp = artichoke_backend::interpreter().expect("init");
-    let expected = format!(r#"String<"{}">"#, "a".repeat(1024 * 1024));
+    let expected = format!(r#"String<\"{}\">"#, "a".repeat(1024 * 1024));
     leak::Detector::new("to_s_debug", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
             let mut interp = interp.clone();

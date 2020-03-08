@@ -162,7 +162,7 @@ impl From<Box<WriteError>> for Box<dyn RubyException> {
     }
 }
 
-/// Error type for [`format_float_into`].
+/// Error type for [`write_float_into`].
 ///
 /// This error type wraps an [`io::Error`].
 #[derive(Debug)]
