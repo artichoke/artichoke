@@ -36,18 +36,23 @@ pub fn method(interp: &Artichoke, args: Args<'_>, value: &Value) -> Result<Value
                 let idx = usize::try_from(-index).map_err(|_| {
                     Fatal::new(interp, "Expected positive position to convert to usize")
                 })?;
-                captures_len.checked_sub(idx).ok_or_else(|| {
-                    IndexError::new(interp, format!("index {} out of matches", index))
-                })?
+                if let Some(index) = captures_len.checked_sub(idx) {
+                    index
+                } else {
+                    let mut message = String::from("index ");
+                    string::format_int_into(&mut message, index)?;
+                    message.push_str(" out of matches");
+                    return Err(Exception::from(IndexError::new(interp, message)));
+                }
             } else {
                 let idx = usize::try_from(index).map_err(|_| {
                     Fatal::new(interp, "Expected positive position to convert to usize")
                 })?;
                 if idx > captures_len {
-                    return Err(Exception::from(IndexError::new(
-                        interp,
-                        format!("index {} out of matches", index),
-                    )));
+                    let mut message = String::from("index ");
+                    string::format_int_into(&mut message, index)?;
+                    message.push_str(" out of matches");
+                    return Err(Exception::from(IndexError::new(interp, message)));
                 }
                 idx
             }

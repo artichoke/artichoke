@@ -6,6 +6,7 @@ use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
+use crate::string;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
 use crate::{Artichoke, Convert, ConvertMut, Intern, TryConvert, ValueLike};
@@ -105,11 +106,13 @@ impl Value {
     #[must_use]
     pub fn to_s_debug(&self) -> String {
         let inspect = self.inspect();
-        format!(
-            "{}<{}>",
-            self.ruby_type().class_name(),
-            String::from_utf8_lossy(&inspect)
-        )
+        let mut debug = String::from(self.ruby_type().class_name());
+        debug.push('<');
+        // It is safe to suppress this error since the `fmt::Write` impl for
+        // `String` does not return `Err`.
+        let _ = string::format_unicode_debug_into(&mut debug, inspect.as_slice());
+        debug.push('>');
+        debug
     }
 
     pub fn implicitly_convert_to_int(&self) -> Result<Int, TypeError> {
@@ -348,8 +351,10 @@ impl Convert<Value, Value> for Artichoke {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let string_repr = self.to_s();
-        write!(f, "{}", String::from_utf8_lossy(string_repr.as_slice()))
+        let display = self.to_s();
+        string::format_unicode_debug_into(f, display.as_slice())
+            .map_err(string::WriteError::into_inner)?;
+        Ok(())
     }
 }
 
@@ -635,7 +640,7 @@ mod tests {
 
         let value = interp.convert_mut("interstate");
         let debug = value.to_s_debug();
-        assert_eq!(debug, r#"String<"interstate">"#);
+        assert_eq!(debug, r#"String<\"interstate\">"#);
     }
 
     #[test]
@@ -662,7 +667,7 @@ mod tests {
 
         let value = interp.convert_mut("");
         let debug = value.to_s_debug();
-        assert_eq!(debug, r#"String<"">"#);
+        assert_eq!(debug, r#"String<\"\">"#);
     }
 
     #[test]

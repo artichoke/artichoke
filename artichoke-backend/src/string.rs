@@ -9,6 +9,7 @@
 use bstr::ByteSlice;
 use std::error;
 use std::fmt;
+use std::io;
 
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::Fatal;
@@ -66,13 +67,27 @@ where
     Ok(())
 }
 
-/// Error type for [`format_unicode_debug_into`].
+pub fn write_float_into<W, F>(f: W, value: F) -> Result<(), IoWriteError>
+where
+    W: io::Write,
+    F: dtoa::Floating,
+{
+    // Potentially replace with a `fmt` variant for better ergonomics like
+    // `format_into_int` above.
+    //
+    // See: https://github.com/dtolnay/dtoa/issues/18
+    dtoa::write(f, value).map_err(IoWriteError)?;
+    Ok(())
+}
+
+/// Error type for [`format_unicode_debug_into`] and [`format_int_into`].
 ///
 /// This error type wraps a [`fmt::Error`].
 #[derive(Debug, Clone)]
 pub struct WriteError(fmt::Error);
 
 impl WriteError {
+    #[inline]
     #[must_use]
     pub fn into_inner(self) -> fmt::Error {
         self.0
@@ -81,21 +96,24 @@ impl WriteError {
 
 impl fmt::Display for WriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unable to write escaped Unicode into destination")
+        write!(f, "Unable to write message into destination")
     }
 }
 
 impl error::Error for WriteError {
+    #[inline]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(&self.0)
     }
 }
 
 impl RubyException for WriteError {
+    #[inline]
     fn message(&self) -> &[u8] {
-        &b"Unable to escape Unicode message"[..]
+        &b"Unable to write message into destination"[..]
     }
 
+    #[inline]
     fn name(&self) -> String {
         String::from("fatal")
     }
@@ -115,12 +133,14 @@ impl RubyException for WriteError {
 }
 
 impl From<WriteError> for Exception {
+    #[inline]
     fn from(exception: WriteError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
 impl From<Box<WriteError>> for Exception {
+    #[inline]
     fn from(exception: Box<WriteError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
@@ -128,6 +148,7 @@ impl From<Box<WriteError>> for Exception {
 
 #[allow(clippy::use_self)]
 impl From<WriteError> for Box<dyn RubyException> {
+    #[inline]
     fn from(exception: WriteError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
@@ -135,7 +156,90 @@ impl From<WriteError> for Box<dyn RubyException> {
 
 #[allow(clippy::use_self)]
 impl From<Box<WriteError>> for Box<dyn RubyException> {
+    #[inline]
     fn from(exception: Box<WriteError>) -> Box<dyn RubyException> {
+        exception
+    }
+}
+
+/// Error type for [`write_float_into`].
+///
+/// This error type wraps an [`io::Error`].
+#[derive(Debug)]
+pub struct IoWriteError(io::Error);
+
+impl IoWriteError {
+    #[inline]
+    #[must_use]
+    pub fn into_inner(self) -> io::Error {
+        self.0
+    }
+}
+
+impl fmt::Display for IoWriteError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unable to write message into destination")
+    }
+}
+
+impl error::Error for IoWriteError {
+    #[inline]
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        Some(&self.0)
+    }
+}
+
+impl RubyException for IoWriteError {
+    #[inline]
+    fn message(&self) -> &[u8] {
+        &b"Unable to write message"[..]
+    }
+
+    #[inline]
+    fn name(&self) -> String {
+        String::from("fatal")
+    }
+
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.message());
+        let borrow = interp.0.borrow();
+        let spec = borrow.class_spec::<Fatal>()?;
+        let value = spec.new_instance(interp, &[message])?;
+        Some(value.inner())
+    }
+}
+
+impl From<IoWriteError> for Exception {
+    #[inline]
+    fn from(exception: IoWriteError) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<Box<IoWriteError>> for Exception {
+    #[inline]
+    fn from(exception: Box<IoWriteError>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<IoWriteError> for Box<dyn RubyException> {
+    #[inline]
+    fn from(exception: IoWriteError) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+#[allow(clippy::use_self)]
+impl From<Box<IoWriteError>> for Box<dyn RubyException> {
+    #[inline]
+    fn from(exception: Box<IoWriteError>) -> Box<dyn RubyException> {
         exception
     }
 }
