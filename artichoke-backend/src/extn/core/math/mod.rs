@@ -1,11 +1,8 @@
 use std::borrow::Cow;
-use std::convert::TryFrom;
 use std::error;
 use std::f64;
 use std::fmt;
-use std::num::FpCategory;
 
-use crate::extn::core::float;
 use crate::extn::core::numeric::Numeric;
 use crate::extn::prelude::*;
 
@@ -230,6 +227,10 @@ pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
 
 #[cfg(feature = "core-math-extra")]
 pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
+    use crate::extn::core::float;
+    use std::convert::TryFrom;
+    use std::num::FpCategory;
+
     let value = value_to_float(interp, value)?;
     // `gamma(n)` is the same as `n!` for integer n > 0. `gamma` returns float
     // and might be an approximation so include a lookup table for as many `n`
@@ -313,6 +314,8 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
 
 #[cfg(feature = "core-math-extra")]
 pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Float, Exception> {
+    use std::convert::TryFrom;
+
     let fraction = value_to_float(interp, fraction)?;
     let exponent = exponent.implicitly_convert_to_int().or_else(|err| {
         if let Ok(exponent) = exponent.try_into::<Float>() {
