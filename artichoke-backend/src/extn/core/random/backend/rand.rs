@@ -54,6 +54,8 @@ where
 {
     #[inline]
     pub fn bytes(&mut self, buf: &mut [u8]) {
+        // TODO: use non-panicking ``Rng::try_fill_bytes`, which requires a
+        // custom error type and returning `Result<(), Exception>`.
         self.rng.fill_bytes(buf);
     }
 
