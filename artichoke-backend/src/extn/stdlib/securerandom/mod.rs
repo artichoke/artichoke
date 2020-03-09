@@ -1,7 +1,6 @@
 use rand::distributions::Alphanumeric;
 use rand::{self, Rng, RngCore};
 use std::convert::TryFrom;
-use std::iter;
 use uuid::Uuid;
 
 use crate::extn::prelude::*;
@@ -27,23 +26,25 @@ pub struct SecureRandom;
 impl SecureRandom {
     pub fn random_bytes(interp: &mut Artichoke, len: Option<Value>) -> Result<Vec<u8>, Exception> {
         let len = if let Some(len) = len {
-            match len.implicitly_convert_to_int()? {
-                len if len < 0 => {
-                    return Err(Exception::from(ArgumentError::new(
-                        interp,
-                        "negative string size (or size too big)",
-                    )))
+            let len = len.implicitly_convert_to_int()?;
+            if let Ok(len) = usize::try_from(len) {
+                if len == 0 {
+                    return Ok(Vec::new());
                 }
-                len if len == 0 => return Ok(Vec::new()),
-                len => usize::try_from(len)
-                    .map_err(|_| Fatal::new(interp, "positive Int must be usize"))?,
+                len
+            } else {
+                return Err(Exception::from(ArgumentError::new(
+                    interp,
+                    "negative string size (or size too big)",
+                )));
             }
         } else {
             DEFAULT_REQUESTED_BYTES
         };
         let mut rng = rand::thread_rng();
         let mut bytes = vec![0; len];
-        rng.fill_bytes(&mut bytes);
+        rng.try_fill_bytes(&mut bytes)
+            .map_err(|err| RuntimeError::new(interp, err.to_string()))?;
         Ok(bytes)
     }
 
@@ -96,34 +97,34 @@ impl SecureRandom {
     }
 
     pub fn hex(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
-        Self::random_bytes(interp, len).map(hex::encode)
+        let bytes = Self::random_bytes(interp, len)?;
+        Ok(hex::encode(bytes))
     }
 
     pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
-        Self::random_bytes(interp, len).map(|bytes| base64::encode(bytes.as_slice()))
+        let bytes = Self::random_bytes(interp, len)?;
+        Ok(base64::encode(bytes.as_slice()))
     }
 
     pub fn alphanumeric(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
         let len = if let Some(len) = len {
-            match len.implicitly_convert_to_int()? {
-                len if len < 0 => {
-                    return Err(Exception::from(ArgumentError::new(
-                        interp,
-                        "negative string size (or size too big)",
-                    )))
+            let len = len.implicitly_convert_to_int()?;
+            if let Ok(len) = usize::try_from(len) {
+                if len == 0 {
+                    return Ok(String::new());
                 }
-                len if len == 0 => return Ok(String::new()),
-                len => usize::try_from(len)
-                    .map_err(|_| Fatal::new(interp, "positive Int must be usize"))?,
+                len
+            } else {
+                return Err(Exception::from(ArgumentError::new(
+                    interp,
+                    "negative string size (or size too big)",
+                )));
             }
         } else {
             DEFAULT_REQUESTED_BYTES
         };
-        let mut rng = rand::thread_rng();
-        let string = iter::repeat(())
-            .map(|_| rng.sample(Alphanumeric))
-            .take(len)
-            .collect::<String>();
+        let rng = rand::thread_rng();
+        let string = rng.sample_iter(Alphanumeric).take(len).collect();
         Ok(string)
     }
 
