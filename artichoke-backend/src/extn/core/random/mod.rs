@@ -73,13 +73,16 @@ pub fn initialize(
 
 pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Exception> {
     let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
-    let other = unsafe { Random::try_from_ruby(interp, &other) }?;
-    if ptr::eq(rand.as_ref(), other.as_ref()) {
-        Ok(interp.convert(true))
+    if let Ok(other) = unsafe { Random::try_from_ruby(interp, &other) } {
+        if ptr::eq(rand.as_ref(), other.as_ref()) {
+            Ok(interp.convert(true))
+        } else {
+            let this_seed = rand.borrow().inner().seed(interp);
+            let other_seed = other.borrow().inner().seed(interp);
+            Ok(interp.convert(this_seed == other_seed))
+        }
     } else {
-        let this_seed = rand.borrow().inner().seed(interp);
-        let other_seed = other.borrow().inner().seed(interp);
-        Ok(interp.convert(this_seed == other_seed))
+        Ok(interp.convert(false))
     }
 }
 
