@@ -142,7 +142,7 @@ impl fmt::Debug for State {
             .field("modules", &self.modules)
             .field("vfs", &self.vfs)
             .field("active_regexp_globals", &self.active_regexp_globals)
-            .field("output", &self.output.backend_name());
+            .field("output", self.output.as_debug());
         #[cfg(feature = "artichoke-random")]
         fmt.field("prng", &self.prng);
         fmt.finish()

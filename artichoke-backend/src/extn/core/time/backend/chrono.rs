@@ -1,4 +1,5 @@
 use chrono::{DateTime, Datelike, Local, TimeZone, Timelike, Weekday};
+use std::fmt;
 
 use crate::extn::core::time::backend::{MakeTime, TimeType};
 use crate::Artichoke;
@@ -15,7 +16,11 @@ impl<T: TimeZone> Chrono<T> {
     }
 }
 
-impl<T: TimeZone> TimeType for Chrono<T> {
+impl<T: 'static + TimeZone + fmt::Debug> TimeType for Chrono<T> {
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
+    }
+
     fn day(&self) -> u32 {
         self.0.day()
     }
@@ -97,8 +102,14 @@ impl<T: TimeZone> TimeType for Chrono<T> {
 }
 
 impl MakeTime for Factory {
-    fn now(&self, interp: &Artichoke) -> Box<dyn TimeType> {
+    type Time = Chrono<Local>;
+
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
+    }
+
+    fn now(&self, interp: &Artichoke) -> Self::Time {
         let _ = interp;
-        Box::new(Chrono::new(Local::now()))
+        Chrono::new(Local::now())
     }
 }

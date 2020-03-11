@@ -1,11 +1,14 @@
-use std::any::Any;
+use std::fmt;
 
 use crate::Artichoke;
 
 pub mod chrono;
 
 /// Common API for [`Time`](crate::extn::core::time::Time) backends.
-pub trait TimeType: Any {
+pub trait TimeType {
+    /// Return a `dyn Debug` representation of this `Time`.
+    fn as_debug(&self) -> &dyn fmt::Debug;
+
     /// Returns the day of the month (1..n) for time.
     fn day(&self) -> u32;
 
@@ -71,12 +74,14 @@ pub trait TimeType: Any {
     fn is_sunday(&self) -> bool;
 }
 
-pub trait MakeTime: Any {
-    fn now(&self, interp: &Artichoke) -> Box<dyn TimeType>;
-}
+/// Common API for [`Time`](crate::extn::core::time::Time) constructors.
+pub trait MakeTime {
+    /// Concrete type for `Time` backends constructed by this factory.
+    type Time: TimeType;
 
-#[allow(clippy::missing_safety_doc)]
-mod internal {
-    downcast!(dyn super::TimeType);
-    downcast!(dyn super::MakeTime);
+    /// Return a `dyn Debug` representation of this `Time`.
+    fn as_debug(&self) -> &dyn fmt::Debug;
+
+    /// Construct the current time.
+    fn now(&self, interp: &Artichoke) -> Self::Time;
 }

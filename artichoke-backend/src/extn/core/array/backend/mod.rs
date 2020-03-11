@@ -1,8 +1,6 @@
-use std::any::Any;
-
 use crate::extn::prelude::*;
 
-pub trait ArrayType: Any {
+pub trait ArrayType {
     fn box_clone(&self) -> Box<dyn ArrayType>;
 
     fn gc_mark(&self, interp: &Artichoke);
@@ -62,9 +60,4 @@ pub trait ArrayType: Any {
     ) -> Result<Value, Exception>;
 
     fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception>;
-}
-
-#[allow(clippy::missing_safety_doc)]
-mod internal {
-    downcast!(dyn super::ArrayType);
 }

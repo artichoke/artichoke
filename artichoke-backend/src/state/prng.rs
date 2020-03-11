@@ -1,7 +1,7 @@
 use rand::rngs::SmallRng;
 
 use crate::extn::core::random::backend::rand::Rand;
-use crate::extn::core::random::backend::RandType;
+use crate::extn::core::random::backend::InternalState;
 use crate::types::{Float, Int};
 
 #[derive(Debug)]
@@ -29,9 +29,10 @@ impl Prng {
         self.random = Rand::new(new_seed);
     }
 
+    #[must_use]
     #[inline]
-    pub fn has_same_internal_state(&self, other: &dyn RandType) -> bool {
-        self.random.has_same_internal_state(other)
+    pub fn internal_state(&self) -> InternalState {
+        self.random.internal_state()
     }
 
     #[inline]

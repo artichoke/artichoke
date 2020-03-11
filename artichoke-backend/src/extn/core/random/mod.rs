@@ -3,14 +3,10 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::ptr;
 
-use rand::rngs::SmallRng;
-
 use crate::extn::prelude::*;
 
 pub mod backend;
 pub mod mruby;
-
-use backend::rand::Rand;
 
 pub struct Random(Box<dyn backend::RandType>);
 
@@ -42,16 +38,9 @@ impl RustBackedValue for Random {
 
 impl fmt::Debug for Random {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Ok(inner) = self.inner().downcast_ref::<Rand<SmallRng>>() {
-            f.debug_struct("Random")
-                .field("backend", &inner)
-                .field("seed", &inner.seed())
-                .finish()
-        } else {
-            f.debug_struct("Random")
-                .field("backend", &"unknown")
-                .finish()
-        }
+        f.debug_struct("Random")
+            .field("backend", self.0.as_debug())
+            .finish()
     }
 }
 

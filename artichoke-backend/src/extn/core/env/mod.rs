@@ -6,8 +6,6 @@ use crate::extn::prelude::*;
 pub mod backend;
 pub mod mruby;
 
-use backend::memory::Memory;
-use backend::system::System;
 use backend::EnvType;
 
 pub struct Environ(Box<dyn EnvType>);
@@ -20,20 +18,15 @@ impl RustBackedValue for Environ {
 
 impl fmt::Debug for Environ {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Ok(backend) = self.0.downcast_ref::<System>() {
-            f.debug_struct("Environ").field("backend", backend).finish()
-        } else if let Ok(backend) = self.0.downcast_ref::<Memory>() {
-            f.debug_struct("Environ").field("backend", backend).finish()
-        } else {
-            f.debug_struct("Environ")
-                .field("backend", &"unknown")
-                .finish()
-        }
+        f.debug_struct("Environ")
+            .field("backend", self.0.as_debug())
+            .finish()
     }
 }
 
 #[cfg(feature = "artichoke-system-environ")]
 pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
+    use backend::system::System;
     let obj = Environ(Box::new(System::new()));
     let result = obj.try_into_ruby(&interp, into)?;
     Ok(result)
@@ -41,6 +34,7 @@ pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Va
 
 #[cfg(not(feature = "artichoke-system-environ"))]
 pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
+    use backend::memory::Memory;
     let obj = Environ(Box::new(Memory::new()));
     let result = obj.try_into_ruby(&interp, into)?;
     Ok(result)
