@@ -1,6 +1,7 @@
 use bstr::ByteSlice;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::extn::core::env::backend::EnvType;
 use crate::extn::prelude::*;
@@ -18,6 +19,10 @@ impl Memory {
 }
 
 impl EnvType for Memory {
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
+    }
+
     fn get<'a>(
         &'a self,
         interp: &Artichoke,

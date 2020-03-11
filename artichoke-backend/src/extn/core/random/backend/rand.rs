@@ -1,7 +1,8 @@
 use rand::rngs::SmallRng;
 use rand::{self, Rng, SeedableRng};
+use std::fmt;
 
-use crate::extn::core::random::backend::RandType;
+use crate::extn::core::random::backend::{InternalState, RandType};
 use crate::extn::prelude::*;
 
 #[must_use]
@@ -37,14 +38,10 @@ impl<T> Rand<T>
 where
     T: 'static,
 {
-    pub fn has_same_internal_state(&self, other: &dyn RandType) -> bool {
-        if let Ok(other) = other.downcast_ref::<Self>() {
-            // This is not quite right. It needs to take into account bytes
-            // read from the PRNG.
-            self.seed == other.seed
-        } else {
-            false
-        }
+    pub fn internal_state(&self) -> InternalState {
+        // This is not quite right. It needs to take into account bytes read
+        // from the PRNG.
+        InternalState::Rand { seed: self.seed }
     }
 }
 
@@ -73,8 +70,12 @@ where
 
 impl<T> RandType for Rand<T>
 where
-    T: 'static + Rng,
+    T: 'static + Rng + fmt::Debug,
 {
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
+    }
+
     fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) {
         let _ = interp;
         self.bytes(buf);
@@ -85,9 +86,9 @@ where
         self.seed()
     }
 
-    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn RandType) -> bool {
+    fn internal_state(&self, interp: &Artichoke) -> InternalState {
         let _ = interp;
-        self.has_same_internal_state(other)
+        self.internal_state()
     }
 
     fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Int {

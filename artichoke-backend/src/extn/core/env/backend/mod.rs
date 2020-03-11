@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::extn::prelude::*;
 
@@ -7,6 +8,9 @@ pub mod memory;
 pub mod system;
 
 pub trait EnvType {
+    /// Return a `dyn Debug` representation of this `Environ`.
+    fn as_debug(&self) -> &dyn fmt::Debug;
+
     fn get<'a>(
         &'a self,
         interp: &Artichoke,
@@ -21,9 +25,4 @@ pub trait EnvType {
     ) -> Result<(), Exception>;
 
     fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception>;
-}
-
-#[allow(clippy::missing_safety_doc)]
-mod internal {
-    downcast!(dyn super::EnvType);
 }

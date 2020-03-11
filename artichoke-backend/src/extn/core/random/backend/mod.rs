@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::fmt;
 
 use crate::extn::prelude::*;
 
@@ -6,7 +6,10 @@ pub mod default;
 pub mod rand;
 
 /// Common API for [`Random`](crate::extn::core::random::Random) backends.
-pub trait RandType: Any {
+pub trait RandType {
+    /// Return a `dyn Debug` representation of this `Random`.
+    fn as_debug(&self) -> &dyn fmt::Debug;
+
     /// Completely fill a buffer with random bytes.
     fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]);
 
@@ -15,7 +18,7 @@ pub trait RandType: Any {
 
     /// Return true if this and `other` would return the same sequence of random
     /// data.
-    fn has_same_internal_state(&self, interp: &Artichoke, other: &dyn RandType) -> bool;
+    fn internal_state(&self, interp: &Artichoke) -> InternalState;
 
     /// Return a random `Integer` between 0 and `max` -- `[0, max)`.
     fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Int;
@@ -27,7 +30,8 @@ pub trait RandType: Any {
     fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Float>) -> Float;
 }
 
-#[allow(clippy::missing_safety_doc)]
-mod internal {
-    downcast!(dyn super::RandType);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum InternalState {
+    Rand { seed: u64 },
 }

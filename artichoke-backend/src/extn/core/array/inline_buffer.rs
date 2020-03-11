@@ -144,14 +144,14 @@ impl ArrayType for InlineBuffer {
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<usize, Exception> {
         let _ = realloc;
-        if let Ok(buffer) = with.downcast_ref::<Self>() {
-            Self::set_slice(self, interp, start, drain, buffer)
-        } else {
-            Err(Exception::from(Fatal::new(
-                interp,
-                "set slice on InlineBuffer with unknown ArrayType",
-            )))
+        let mut slice = Vec::with_capacity(with.len());
+        for idx in 0..with.len() {
+            if let Some(elem) = with.get(interp, idx)? {
+                slice.push(elem);
+            }
         }
+        let buffer = Self::from(slice);
+        Self::set_slice(self, interp, start, drain, &buffer)
     }
 
     fn concat(
@@ -161,14 +161,14 @@ impl ArrayType for InlineBuffer {
         realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
     ) -> Result<(), Exception> {
         let _ = realloc;
-        if let Ok(buffer) = other.downcast_ref::<Self>() {
-            Self::concat(self, interp, buffer)
-        } else {
-            Err(Exception::from(Fatal::new(
-                interp,
-                "concat on InlineBuffer with unknown ArrayType",
-            )))
+        let mut slice = Vec::with_capacity(other.len());
+        for idx in 0..other.len() {
+            if let Some(elem) = other.get(interp, idx)? {
+                slice.push(elem);
+            }
         }
+        let buffer = Self::from(slice);
+        Self::concat(self, interp, &buffer)
     }
 
     fn pop(

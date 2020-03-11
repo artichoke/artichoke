@@ -1,7 +1,8 @@
+use std::fmt;
 use std::io::{self, Write};
 
 pub trait Output: Send + Sync {
-    fn backend_name(&self) -> &str;
+    fn as_debug(&self) -> &dyn fmt::Debug;
 
     fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()>;
 
@@ -18,11 +19,6 @@ pub trait Output: Send + Sync {
     }
 }
 
-#[allow(clippy::missing_safety_doc)]
-mod internal {
-    downcast!(dyn super::Output);
-}
-
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Process;
 
@@ -34,8 +30,8 @@ impl Process {
 }
 
 impl Output for Process {
-    fn backend_name(&self) -> &str {
-        "Process"
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
     }
 
     fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
@@ -76,8 +72,8 @@ impl Captured {
 }
 
 impl Output for Captured {
-    fn backend_name(&self) -> &str {
-        "Captured"
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
     }
 
     fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
@@ -90,8 +86,8 @@ impl Output for Captured {
 }
 
 impl<'a> Output for &'a mut Captured {
-    fn backend_name(&self) -> &str {
-        "Captured"
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
     }
 
     fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
@@ -114,8 +110,8 @@ impl Null {
 }
 
 impl Output for Null {
-    fn backend_name(&self) -> &str {
-        "Null"
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
     }
 
     fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {

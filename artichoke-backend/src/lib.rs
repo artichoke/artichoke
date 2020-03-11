@@ -95,8 +95,6 @@
 //! [MIT/Expat License](https://github.com/emscripten-core/emsdk/blob/master/LICENSE).
 
 #[macro_use]
-extern crate downcast;
-#[macro_use]
 extern crate log;
 
 use std::cell::RefCell;

@@ -40,7 +40,6 @@ dependencies = [
  "bstr",
  "cc",
  "chrono",
- "downcast",
  "dtoa",
  "hex",
  "itoa",
@@ -260,12 +259,6 @@ dependencies = [
  "redox_users",
  "winapi",
 ]
-
-[[package]]
-name = "downcast"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bb454f0228b18c7f4c3b0ebbee346ed9c52e7443b0999cd543ff3571205701d"
 
 [[package]]
 name = "dtoa"

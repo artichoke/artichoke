@@ -3,7 +3,7 @@ use crate::extn::core::time::{self, Time};
 use crate::extn::prelude::*;
 
 pub fn now(interp: &Artichoke) -> Result<Value, Exception> {
-    let now = Time(time::factory().now(interp));
+    let now = Time(Box::new(time::factory().now(interp)));
     let result = now.try_into_ruby(&interp, None)?;
     Ok(result)
 }
