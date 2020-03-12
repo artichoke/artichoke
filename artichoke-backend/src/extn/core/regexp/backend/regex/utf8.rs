@@ -212,7 +212,6 @@ impl RegexpType for Utf8 {
             )
         })?;
         regexp::clear_capture_globals(interp)?;
-        let mrb = interp.0.borrow().mrb;
         if let Some(captures) = self.regex.captures(haystack) {
             // per the [docs] for `captures.len()`:
             //
@@ -223,39 +222,29 @@ impl RegexpType for Utf8 {
             interp.0.borrow_mut().active_regexp_globals =
                 captures.len().checked_sub(1).and_then(NonZeroUsize::new);
 
-            let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
             let fullmatch = captures
                 .get(0)
                 .as_ref()
                 .map(regex::Match::as_str)
                 .map(str::as_bytes);
             let value = interp.convert_mut(fullmatch);
-            unsafe {
-                sys::mrb_gv_set(mrb, sym, value.inner());
-            }
+            interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 1..captures.len() {
-                let group = unsafe { NonZeroUsize::new_unchecked(group) };
-                let sym = interp.intern_symbol(regexp::nth_match_group(group));
                 let capture = captures
-                    .get(group.get())
+                    .get(group)
                     .as_ref()
                     .map(regex::Match::as_str)
                     .map(str::as_bytes);
                 let value = interp.convert_mut(capture);
-                unsafe {
-                    sys::mrb_gv_set(mrb, sym, value.inner());
-                }
+                let group = unsafe { NonZeroUsize::new_unchecked(group) };
+                interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
             if let Some(match_pos) = captures.get(0) {
-                let pre_match = &haystack[..match_pos.start()];
-                let post_match = &haystack[match_pos.end()..];
-                let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
-                let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
-                unsafe {
-                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert_mut(pre_match).inner());
-                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert_mut(post_match).inner());
-                }
+                let pre_match = interp.convert_mut(&haystack[..match_pos.start()]);
+                let post_match = interp.convert_mut(&haystack[match_pos.end()..]);
+                interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
+                interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
             }
             let matchdata = MatchData::new(
                 haystack.into(),
@@ -264,19 +253,11 @@ impl RegexpType for Utf8 {
                 haystack.len(),
             );
             let matchdata = matchdata.try_into_ruby(&interp, None)?;
-            let matchdata_sym = interp.intern_symbol(regexp::LAST_MATCH);
-            unsafe {
-                sys::mrb_gv_set(mrb, matchdata_sym, matchdata.inner());
-            }
+            interp.set_global_variable(regexp::LAST_MATCH, &matchdata)?;
             Ok(true)
         } else {
-            let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
-            let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
-            let nil = interp.convert(None::<Value>).inner();
-            unsafe {
-                sys::mrb_gv_set(mrb, pre_match_sym, nil);
-                sys::mrb_gv_set(mrb, post_match_sym, nil);
-            }
+            interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
             Ok(false)
         }
     }
@@ -295,27 +276,26 @@ impl RegexpType for Utf8 {
         })?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
-        let pos = if pos < 0 {
-            let pos = usize::try_from(-pos).map_err(|_| {
-                Fatal::new(interp, "Expected positive position to convert to usize")
-            })?;
+        let pos = if let Ok(pos) = usize::try_from(pos) {
+            pos
+        } else if let Ok(pos) = usize::try_from(-pos) {
             if let Some(pos) = haystack_char_len.checked_sub(pos) {
                 pos
             } else {
                 return Ok(false);
             }
         } else {
-            usize::try_from(pos)
-                .map_err(|_| Fatal::new(interp, "Expected positive position to convert to usize"))?
+            return Err(Exception::from(ArgumentError::new(
+                interp,
+                "invalid position",
+            )));
         };
-        // onig will panic if pos is beyond the end of string
-        if pos > haystack_char_len {
-            return Ok(false);
+        let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
+        if let Some(haystack) = haystack.get(offset..) {
+            Ok(self.regex.find(haystack).is_some())
+        } else {
+            Ok(false)
         }
-        let byte_offset = haystack.chars().take(pos).map(char::len_utf8).sum();
-
-        let match_target = &haystack[byte_offset..];
-        Ok(self.regex.find(match_target).is_some())
     }
 
     fn match_(
@@ -325,7 +305,6 @@ impl RegexpType for Utf8 {
         pos: Option<Int>,
         block: Option<Block>,
     ) -> Result<Value, Exception> {
-        let mrb = interp.0.borrow().mrb;
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -335,27 +314,30 @@ impl RegexpType for Utf8 {
         regexp::clear_capture_globals(interp)?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
-        let pos = if pos < 0 {
-            let pos = usize::try_from(-pos).map_err(|_| {
-                Fatal::new(interp, "Expected positive position to convert to usize")
-            })?;
+        let pos = if let Ok(pos) = usize::try_from(pos) {
+            pos
+        } else if let Ok(pos) = usize::try_from(-pos) {
             if let Some(pos) = haystack_char_len.checked_sub(pos) {
                 pos
             } else {
                 return Ok(interp.convert(None::<Value>));
             }
         } else {
-            usize::try_from(pos)
-                .map_err(|_| Fatal::new(interp, "Expected positive position to convert to usize"))?
+            return Err(Exception::from(ArgumentError::new(
+                interp,
+                "invalid position",
+            )));
         };
-        // onig will panic if pos is beyond the end of string
-        if pos > haystack_char_len {
+        let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
+        let target = if let Some(haystack) = haystack.get(offset..) {
+            haystack
+        } else {
+            interp.unset_global_variable(regexp::LAST_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
             return Ok(interp.convert(None::<Value>));
-        }
-        let byte_offset = haystack.chars().take(pos).map(char::len_utf8).sum();
-
-        let match_target = &haystack[byte_offset..];
-        if let Some(captures) = self.regex.captures(match_target) {
+        };
+        if let Some(captures) = self.regex.captures(target) {
             // per the [docs] for `captures.len()`:
             //
             // > This is always at least 1, since every regex has at least one
@@ -365,28 +347,22 @@ impl RegexpType for Utf8 {
             interp.0.borrow_mut().active_regexp_globals =
                 captures.len().checked_sub(1).and_then(NonZeroUsize::new);
 
-            let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
             let fullmatch = captures
                 .get(0)
                 .as_ref()
                 .map(regex::Match::as_str)
                 .map(str::as_bytes);
             let value = interp.convert_mut(fullmatch);
-            unsafe {
-                sys::mrb_gv_set(mrb, sym, value.inner());
-            }
+            interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 1..captures.len() {
-                let group = unsafe { NonZeroUsize::new_unchecked(group) };
-                let sym = interp.intern_symbol(regexp::nth_match_group(group));
                 let capture = captures
-                    .get(group.get())
+                    .get(group)
                     .as_ref()
                     .map(regex::Match::as_str)
                     .map(str::as_bytes);
                 let value = interp.convert_mut(capture);
-                unsafe {
-                    sys::mrb_gv_set(mrb, sym, value.inner());
-                }
+                let group = unsafe { NonZeroUsize::new_unchecked(group) };
+                interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
             let mut matchdata = MatchData::new(
@@ -396,24 +372,14 @@ impl RegexpType for Utf8 {
                 haystack.len(),
             );
             if let Some(match_pos) = captures.get(0) {
-                let pre_match = &match_target[..match_pos.start()];
-                let post_match = &match_target[match_pos.end()..];
-                let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
-                let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
-                unsafe {
-                    sys::mrb_gv_set(mrb, pre_match_sym, interp.convert_mut(pre_match).inner());
-                    sys::mrb_gv_set(mrb, post_match_sym, interp.convert_mut(post_match).inner());
-                }
-                matchdata.set_region(
-                    byte_offset + match_pos.start(),
-                    byte_offset + match_pos.end(),
-                );
+                let pre_match = interp.convert_mut(&target[..match_pos.start()]);
+                let post_match = interp.convert_mut(&target[match_pos.end()..]);
+                interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
+                interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
+                matchdata.set_region(offset + match_pos.start(), offset + match_pos.end());
             }
             let data = matchdata.try_into_ruby(interp, None)?;
-            let matchdata_sym = interp.intern_symbol(regexp::LAST_MATCH);
-            unsafe {
-                sys::mrb_gv_set(mrb, matchdata_sym, data.inner());
-            }
+            interp.set_global_variable(regexp::LAST_MATCH, &data)?;
             if let Some(block) = block {
                 let result = block.yield_arg(interp, &data)?;
                 Ok(result)
@@ -421,15 +387,9 @@ impl RegexpType for Utf8 {
                 Ok(data)
             }
         } else {
-            let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
-            let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
-            let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
-            let nil = interp.convert(None::<Value>).inner();
-            unsafe {
-                sys::mrb_gv_set(mrb, last_match_sym, nil);
-                sys::mrb_gv_set(mrb, pre_match_sym, nil);
-                sys::mrb_gv_set(mrb, post_match_sym, nil);
-            }
+            interp.unset_global_variable(regexp::LAST_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
             Ok(interp.convert(None::<Value>))
         }
     }
@@ -439,7 +399,6 @@ impl RegexpType for Utf8 {
         interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<Int>, Exception> {
-        let mrb = interp.0.borrow().mrb;
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -457,28 +416,22 @@ impl RegexpType for Utf8 {
             interp.0.borrow_mut().active_regexp_globals =
                 captures.len().checked_sub(1).and_then(NonZeroUsize::new);
 
-            let sym = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
             let fullmatch = captures
                 .get(0)
                 .as_ref()
                 .map(regex::Match::as_str)
                 .map(str::as_bytes);
             let value = interp.convert_mut(fullmatch);
-            unsafe {
-                sys::mrb_gv_set(mrb, sym, value.inner());
-            }
+            interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 1..captures.len() {
-                let group = unsafe { NonZeroUsize::new_unchecked(group) };
-                let sym = interp.intern_symbol(regexp::nth_match_group(group));
                 let capture = captures
-                    .get(group.get())
+                    .get(group)
                     .as_ref()
                     .map(regex::Match::as_str)
                     .map(str::as_bytes);
                 let value = interp.convert_mut(capture);
-                unsafe {
-                    sys::mrb_gv_set(mrb, sym, value.inner());
-                }
+                let group = unsafe { NonZeroUsize::new_unchecked(group) };
+                interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
             let matchdata = MatchData::new(
@@ -488,19 +441,12 @@ impl RegexpType for Utf8 {
                 haystack.len(),
             );
             let matchdata = matchdata.try_into_ruby(interp, None)?;
-            let matchdata_sym = interp.intern_symbol(regexp::LAST_MATCH);
-            unsafe {
-                sys::mrb_gv_set(mrb, matchdata_sym, matchdata.inner());
-            }
+            interp.set_global_variable(regexp::LAST_MATCH, &matchdata)?;
             if let Some(match_pos) = captures.get(0) {
                 let pre_match = interp.convert_mut(&haystack[..match_pos.start()]);
                 let post_match = interp.convert_mut(&haystack[match_pos.end()..]);
-                let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
-                let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
-                unsafe {
-                    sys::mrb_gv_set(mrb, pre_match_sym, pre_match.inner());
-                    sys::mrb_gv_set(mrb, post_match_sym, post_match.inner());
-                }
+                interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
+                interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
                 let pos = Int::try_from(match_pos.start()).map_err(|_| {
                     Fatal::new(interp, "Match position does not fit in Integer max")
                 })?;
@@ -509,15 +455,9 @@ impl RegexpType for Utf8 {
                 Ok(Some(0))
             }
         } else {
-            let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
-            let pre_match_sym = interp.intern_symbol(regexp::STRING_LEFT_OF_MATCH);
-            let post_match_sym = interp.intern_symbol(regexp::STRING_RIGHT_OF_MATCH);
-            let nil = interp.convert(None::<Value>).inner();
-            unsafe {
-                sys::mrb_gv_set(mrb, last_match_sym, nil);
-                sys::mrb_gv_set(mrb, pre_match_sym, nil);
-                sys::mrb_gv_set(mrb, post_match_sym, nil);
-            }
+            interp.unset_global_variable(regexp::LAST_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
             Ok(None)
         }
     }
@@ -631,8 +571,6 @@ impl RegexpType for Utf8 {
             )
         })?;
         regexp::clear_capture_globals(interp)?;
-        let mrb = interp.0.borrow().mrb;
-        let last_match_sym = interp.intern_symbol(regexp::LAST_MATCH);
         let mut matchdata = MatchData::new(
             haystack.into(),
             Regexp::from(self.box_clone()),
@@ -651,9 +589,7 @@ impl RegexpType for Utf8 {
             if let Some(len) = len {
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, interp.convert(None::<Value>).inner());
-                    }
+                    interp.unset_global_variable(regexp::LAST_MATCH)?;
                     return Ok(value);
                 }
                 for captures in iter {
@@ -663,24 +599,19 @@ impl RegexpType for Utf8 {
                         .map(regex::Match::as_str)
                         .map(str::as_bytes);
                     let capture = interp.convert_mut(matched);
-                    let fullmatch = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
-                    unsafe {
-                        sys::mrb_gv_set(mrb, fullmatch, capture.inner());
-                    }
-                    let mut groups = vec![];
+                    interp.set_global_variable(regexp::LAST_MATCHED_STRING, &capture)?;
+
+                    let mut groups = Vec::with_capacity(len.get() - 1);
                     for group in 1..=len.get() {
-                        let group = unsafe { NonZeroUsize::new_unchecked(group) };
-                        let sym = interp.intern_symbol(regexp::nth_match_group(group));
                         let matched = captures
-                            .get(group.get())
+                            .get(group)
                             .as_ref()
                             .map(regex::Match::as_str)
                             .map(str::as_bytes);
                         let capture = interp.convert_mut(matched);
+                        let group = unsafe { NonZeroUsize::new_unchecked(group) };
+                        interp.set_global_variable(regexp::nth_match_group(group), &capture)?;
                         groups.push(matched);
-                        unsafe {
-                            sys::mrb_gv_set(mrb, sym, capture.inner());
-                        }
                     }
 
                     let matched = interp.convert_mut(groups);
@@ -688,20 +619,14 @@ impl RegexpType for Utf8 {
                         matchdata.set_region(pos.start(), pos.end());
                     }
                     let data = matchdata.clone().try_into_ruby(interp, None)?;
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    }
+                    interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                     let _ = block.yield_arg::<Value>(interp, &matched)?;
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    }
+                    interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             } else {
                 let mut iter = self.regex.find_iter(haystack).peekable();
                 if iter.peek().is_none() {
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
-                    }
+                    interp.unset_global_variable(regexp::LAST_MATCH)?;
                     return Ok(value);
                 }
                 for pos in iter {
@@ -709,13 +634,9 @@ impl RegexpType for Utf8 {
                     let matched = interp.convert_mut(scanned);
                     matchdata.set_region(pos.start(), pos.end());
                     let data = matchdata.clone().try_into_ruby(interp, None)?;
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    }
+                    interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                     let _ = block.yield_arg::<Value>(interp, &matched)?;
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                    }
+                    interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             }
             Ok(value)
@@ -725,13 +646,11 @@ impl RegexpType for Utf8 {
                 let mut collected = vec![];
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
-                    }
+                    interp.unset_global_variable(regexp::LAST_MATCH)?;
                     return Ok(interp.convert_mut(&[] as &[Value]));
                 }
                 for captures in iter {
-                    let mut groups = vec![];
+                    let mut groups = Vec::with_capacity(len.get() - 1);
                     for group in 1..=len.get() {
                         let matched = captures
                             .get(group)
@@ -748,33 +667,23 @@ impl RegexpType for Utf8 {
                 }
                 matchdata.set_region(last_pos.0, last_pos.1);
                 let data = matchdata.try_into_ruby(interp, None)?;
-                unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                }
+                interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 let mut iter = collected.iter().enumerate();
                 if let Some((_, fullcapture)) = iter.next() {
-                    let fullmatch = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
                     let fullcapture = interp.convert_mut(fullcapture.as_slice());
-                    unsafe {
-                        sys::mrb_gv_set(mrb, fullmatch, fullcapture.inner());
-                    }
+                    interp.set_global_variable(regexp::LAST_MATCHED_STRING, &fullcapture)?;
                 }
                 for (group, capture) in iter {
-                    let group = unsafe { NonZeroUsize::new_unchecked(group) };
-                    let sym = interp.intern_symbol(regexp::nth_match_group(group));
                     let capture = interp.convert_mut(capture.as_slice());
-                    unsafe {
-                        sys::mrb_gv_set(mrb, sym, capture.inner());
-                    }
+                    let group = unsafe { NonZeroUsize::new_unchecked(group) };
+                    interp.set_global_variable(regexp::nth_match_group(group), &capture)?;
                 }
                 Ok(interp.convert_mut(collected))
             } else {
                 let mut collected = vec![];
                 let mut iter = self.regex.find_iter(haystack).peekable();
                 if iter.peek().is_none() {
-                    unsafe {
-                        sys::mrb_gv_set(mrb, last_match_sym, sys::mrb_sys_nil_value());
-                    }
+                    interp.unset_global_variable(regexp::LAST_MATCH)?;
                     return Ok(interp.convert_mut(&[] as &[Value]));
                 }
                 for pos in iter {
@@ -784,15 +693,10 @@ impl RegexpType for Utf8 {
                 }
                 matchdata.set_region(last_pos.0, last_pos.1);
                 let data = matchdata.try_into_ruby(interp, None)?;
-                unsafe {
-                    sys::mrb_gv_set(mrb, last_match_sym, data.inner());
-                }
+                interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 if let Some(fullcapture) = collected.last().copied() {
-                    let fullmatch = interp.intern_symbol(regexp::LAST_MATCHED_STRING);
                     let fullcapture = interp.convert_mut(fullcapture);
-                    unsafe {
-                        sys::mrb_gv_set(mrb, fullmatch, fullcapture.inner());
-                    }
+                    interp.set_global_variable(regexp::LAST_MATCHED_STRING, &fullcapture)?;
                 }
                 Ok(interp.convert_mut(collected))
             }
