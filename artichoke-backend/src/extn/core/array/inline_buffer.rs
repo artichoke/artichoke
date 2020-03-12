@@ -53,7 +53,8 @@ impl FromIterator<Option<Value>> for InlineBuffer {
         I: IntoIterator<Item = Option<Value>>,
     {
         Self(SmallVec::from_iter(iter.into_iter().map(|elem| {
-            elem.map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, |elem| elem.inner())
+            elem.as_ref()
+                .map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, Value::inner)
         })))
     }
 }
@@ -65,7 +66,7 @@ impl<'a> FromIterator<&'a Option<Value>> for InlineBuffer {
     {
         Self(SmallVec::from_iter(iter.into_iter().map(|elem| {
             elem.as_ref()
-                .map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, |elem| elem.inner())
+                .map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, Value::inner)
         })))
     }
 }
