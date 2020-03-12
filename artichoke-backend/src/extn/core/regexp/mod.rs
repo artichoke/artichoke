@@ -92,16 +92,9 @@ pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, [u8]> {
 pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Exception> {
     let groups = interp.0.borrow_mut().active_regexp_globals.take();
     if let Some(groups) = groups {
-        let nil = interp.convert(None::<Value>);
         for group in 1..=groups.get() {
-            if let Some(group) = NonZeroUsize::new(group) {
-                let name = nth_match_group(group);
-                let sym = interp.intern_symbol(name);
-                let mrb = interp.0.borrow().mrb;
-                unsafe {
-                    sys::mrb_gv_set(mrb, sym, nil.inner());
-                }
-            }
+            let group = unsafe { NonZeroUsize::new_unchecked(group) };
+            interp.unset_global_variable(nth_match_group(group))?;
         }
         Ok(())
     } else {
@@ -300,11 +293,7 @@ impl Regexp {
         let pattern = if let Ok(pattern) = other.implicitly_convert_to_string() {
             pattern
         } else {
-            let sym = interp.intern_symbol(LAST_MATCH);
-            let mrb = interp.0.borrow().mrb;
-            unsafe {
-                sys::mrb_gv_set(mrb, sym, interp.convert(None::<Value>).inner());
-            }
+            interp.unset_global_variable(LAST_MATCH)?;
             return Ok(interp.convert(false));
         };
         let result = self.0.case_match(interp, pattern)?;
@@ -379,13 +368,8 @@ impl Regexp {
         let pattern = if let Some(pattern) = pattern {
             pattern
         } else {
-            let mrb = interp.0.borrow().mrb;
-            let sym = interp.intern_symbol(LAST_MATCH);
-            let matchdata = interp.convert(None::<Value>);
-            unsafe {
-                sys::mrb_gv_set(mrb, sym, matchdata.inner());
-            }
-            return Ok(matchdata);
+            interp.unset_global_variable(LAST_MATCH)?;
+            return Ok(interp.convert(None::<Value>));
         };
         let pos = if let Some(pos) = pos {
             Some(pos.implicitly_convert_to_int()?)
