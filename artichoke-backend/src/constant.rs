@@ -25,11 +25,14 @@ impl DefineConstant for Artichoke {
         Ok(())
     }
 
-    fn define_class_constant<T: 'static>(
+    fn define_class_constant<T>(
         &mut self,
         constant: &str,
         value: Self::Value,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<(), Self::Error>
+    where
+        T: 'static,
+    {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
         let borrow = self.0.borrow();
@@ -49,11 +52,14 @@ impl DefineConstant for Artichoke {
         Ok(())
     }
 
-    fn define_module_constant<T: 'static>(
+    fn define_module_constant<T>(
         &mut self,
         constant: &str,
         value: Self::Value,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<(), Self::Error>
+    where
+        T: 'static,
+    {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
         let borrow = self.0.borrow();

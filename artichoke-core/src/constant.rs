@@ -43,11 +43,13 @@ pub trait DefineConstant {
     /// If the given constant name is not valid, an error is returned.
     ///
     /// If the interpreter cannot define the constant, an error is returned.
-    fn define_class_constant<T: 'static>(
+    fn define_class_constant<T>(
         &mut self,
         constant: &str,
         value: Self::Value,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error>
+    where
+        T: 'static;
 
     /// Define a module constant.
     ///
@@ -60,9 +62,11 @@ pub trait DefineConstant {
     /// If the given constant name is not valid, an error is returned.
     ///
     /// If the interpreter cannot define the constant, an error is returned.
-    fn define_module_constant<T: 'static>(
+    fn define_module_constant<T>(
         &mut self,
         constant: &str,
         value: Self::Value,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::Error>
+    where
+        T: 'static;
 }

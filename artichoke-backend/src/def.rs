@@ -34,14 +34,15 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 ///
 /// This function assumes it is called by the mruby VM as a free function for
 /// an [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
-pub unsafe extern "C" fn rust_data_free<T: 'static + RustBackedValue>(
-    _mrb: *mut sys::mrb_state,
-    data: *mut c_void,
-) {
+pub unsafe extern "C" fn rust_data_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void)
+where
+    T: 'static + RustBackedValue,
+{
     if data.is_null() {
         panic!(
-            "Received null pointer in rust_data_free<{}>",
-            T::ruby_type_name()
+            "Received null pointer in rust_data_free<{}>: {:p}",
+            T::ruby_type_name(),
+            data
         );
     }
     let data = Rc::from_raw(data as *const RefCell<T>);

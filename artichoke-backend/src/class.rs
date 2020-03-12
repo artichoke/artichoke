@@ -254,7 +254,7 @@ impl Eq for Spec {}
 
 impl PartialEq for Spec {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
+        self.fqname() == other.fqname()
     }
 }
 
