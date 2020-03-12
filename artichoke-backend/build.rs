@@ -9,7 +9,10 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use target_lexicon::Triple;
 
-fn enumerate_sources<T: AsRef<Path>>(path: T, into: &mut Vec<PathBuf>) -> io::Result<()> {
+fn enumerate_sources<T>(path: T, into: &mut Vec<PathBuf>) -> io::Result<()>
+where
+    T: AsRef<Path>,
+{
     let mut stack = vec![PathBuf::from(path.as_ref())];
     into.push(PathBuf::from(path.as_ref()));
     while let Some(from) = stack.pop() {
@@ -562,7 +565,10 @@ mod release {
         emit("ARTICHOKE_COMPILER_VERSION", compiler_version());
     }
 
-    fn emit<T: fmt::Display>(env: &str, value: T) {
+    fn emit<T>(env: &str, value: T)
+    where
+        T: fmt::Display,
+    {
         println!("cargo:rustc-env={}={}", env, value);
     }
 
@@ -723,7 +729,11 @@ mod build {
         }
     }
 
-    fn copy_dir_recursive<F: AsRef<Path>, T: AsRef<Path>>(from: F, to: T) -> io::Result<()> {
+    fn copy_dir_recursive<T, U>(from: T, to: U) -> io::Result<()>
+    where
+        T: AsRef<Path>,
+        U: AsRef<Path>,
+    {
         let mut stack = vec![PathBuf::from(from.as_ref())];
         let dest_root = PathBuf::from(to.as_ref());
         let input_root_depth = from.as_ref().components().count();

@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 use std::ffi::c_void;
-use std::ptr::NonNull;
+use std::ptr::{self, NonNull};
 
 use crate::sys;
 use crate::types::Int;
@@ -39,10 +39,10 @@ pub unsafe fn block_yield(
     protect(mrb, data)
 }
 
-unsafe fn protect<T: Protect>(
-    mrb: *mut sys::mrb_state,
-    data: T,
-) -> Result<sys::mrb_value, sys::mrb_value> {
+unsafe fn protect<T>(mrb: *mut sys::mrb_state, data: T) -> Result<sys::mrb_value, sys::mrb_value>
+where
+    T: Protect,
+{
     let data = Box::new(data);
     let data = Box::into_raw(data);
     let data = sys::mrb_sys_cptr_value(mrb, data as *mut c_void);
@@ -50,6 +50,7 @@ unsafe fn protect<T: Protect>(
 
     let value = sys::mrb_protect(mrb, Some(T::run), data, &mut state);
     if let Some(exc) = NonNull::new((*mrb).exc) {
+        (*mrb).exc = ptr::null_mut();
         Err(sys::mrb_sys_obj_value(exc.cast::<c_void>().as_ptr()))
     } else if state == 0 {
         Ok(value)

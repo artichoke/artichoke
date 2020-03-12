@@ -1,5 +1,3 @@
-use std::ptr;
-
 use crate::exception::{CaughtException, Exception};
 use crate::gc::MrbGarbageCollection;
 use crate::value::Value;
@@ -21,14 +19,6 @@ pub fn last_error(interp: &Artichoke, exception: Value) -> Result<Exception, Exc
     // `mrb_value`. `Value::funcall` handles errors by calling this
     // function, so not clearing the exception results in a stack overflow.
 
-    // Safety:
-    //
-    // - Artichoke is guaranteed to be constructed with a non-null `mrb`
-    //   pointer by `ffi::from_user_data` and `interpreter::interpreter`.
-    unsafe {
-        let mrb = interp.0.borrow().mrb;
-        (*mrb).exc = ptr::null_mut();
-    }
     // Generate exception metadata in by executing the Ruby code:
     //
     // ```ruby

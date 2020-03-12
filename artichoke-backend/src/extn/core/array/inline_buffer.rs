@@ -37,7 +37,10 @@ impl<'a> From<&'a [Value]> for InlineBuffer {
 }
 
 impl FromIterator<Value> for InlineBuffer {
-    fn from_iter<I: IntoIterator<Item = Value>>(iter: I) -> Self {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = Value>,
+    {
         Self(SmallVec::from_iter(
             iter.into_iter().map(|elem| elem.inner()),
         ))
@@ -45,21 +48,25 @@ impl FromIterator<Value> for InlineBuffer {
 }
 
 impl FromIterator<Option<Value>> for InlineBuffer {
-    fn from_iter<I: IntoIterator<Item = Option<Value>>>(iter: I) -> Self {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = Option<Value>>,
+    {
         Self(SmallVec::from_iter(iter.into_iter().map(|elem| {
-            elem.map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, |elem| elem.inner())
+            elem.as_ref()
+                .map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, Value::inner)
         })))
     }
 }
 
 impl<'a> FromIterator<&'a Option<Value>> for InlineBuffer {
-    fn from_iter<I: IntoIterator<Item = &'a Option<Value>>>(iter: I) -> Self {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = &'a Option<Value>>,
+    {
         Self(SmallVec::from_iter(iter.into_iter().map(|elem| {
-            if let Some(elem) = elem {
-                elem.inner()
-            } else {
-                unsafe { sys::mrb_sys_nil_value() }
-            }
+            elem.as_ref()
+                .map_or_else(|| unsafe { sys::mrb_sys_nil_value() }, Value::inner)
         })))
     }
 }
