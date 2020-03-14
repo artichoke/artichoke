@@ -58,6 +58,27 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
     }
 }
 
+// MRB_API mrb_value mrb_assoc_new(mrb_state *mrb, mrb_value car, mrb_value cdr)
+#[no_mangle]
+unsafe extern "C" fn artichoke_ary_new_assoc(
+    mrb: *mut sys::mrb_state,
+    one: sys::mrb_value,
+    two: sys::mrb_value,
+) -> sys::mrb_value {
+    let interp = unwrap_interpreter!(mrb);
+    let result = InlineBuffer::from(&[one, two][..]);
+    let result = Array(result);
+    let result = result.try_into_ruby(&interp, None);
+    match result {
+        Ok(value) => {
+            let basic = sys::mrb_sys_basic_ptr(value.inner());
+            sys::mrb_write_barrier(mrb, basic);
+            value.inner()
+        }
+        Err(exception) => exception::raise(interp, exception),
+    }
+}
+
 // MRB_API mrb_value mrb_ary_splat(mrb_state *mrb, mrb_value value);
 #[no_mangle]
 unsafe extern "C" fn artichoke_ary_splat(

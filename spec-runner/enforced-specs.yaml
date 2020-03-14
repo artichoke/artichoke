@@ -42,6 +42,11 @@ core:
       - try_convert
       - unshift
   - suite: comparable
+  - suite: env
+    skip:
+      - element_set # missing Errno::EINVAL implementation
+      - store # missing Errno::EINVAL implementation
+      - values_at # Hash#values_at is not implemented
   - suite: matchdata
   - suite: math
     skip:

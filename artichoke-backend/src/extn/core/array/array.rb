@@ -1391,10 +1391,20 @@ class Array
     idx = 0
     len = length
     while idx < len
+      v = self[idx]
       v = blk.call(v) if blk
-      raise TypeError, "wrong element type #{v.class} at #{idx} (expected array)" unless v.respond_to?(:to_ary)
+      v =
+        if v.is_a?(Array)
+          v
+        elsif v.respond_to?(:to_ary)
+          val = v.to_ary
+          raise TypeError, "can't convert #{v.class} to Array (#{v.class}#to_ary gives #{val.class})" unless v.is_a?(Array)
 
-      v = v.to_ary
+          val
+        else
+          raise TypeError, "wrong element type #{v.class} at #{idx} (expected array)"
+        end
+
       raise ArgumentError, "wrong array length at #{idx} (expected 2, was #{v.length})" unless v.length == 2
 
       key, value = *v

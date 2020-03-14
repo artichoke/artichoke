@@ -7,6 +7,7 @@ mrb_value artichoke_ary_new(mrb_state *mrb);
 mrb_value artichoke_ary_new_capa(mrb_state *mrb, mrb_int capa);
 mrb_value artichoke_ary_new_from_values(mrb_state *mrb, mrb_int size,
                                         const mrb_value *vals);
+mrb_value artichoke_ary_new_assoc(mrb_state *mrb, mrb_value car, mrb_value cdr);
 mrb_value artichoke_ary_splat(mrb_state *mrb, mrb_value value);
 mrb_value artichoke_ary_concat(mrb_state *mrb, mrb_value ary, mrb_value other);
 mrb_value artichoke_ary_pop(mrb_state *mrb, mrb_value ary);

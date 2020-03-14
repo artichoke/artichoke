@@ -1068,7 +1068,7 @@ mrb_hash_shift(mrb_state *mrb, mrb_value hash)
     ht_shift(mrb, t, &del_key, &del_val);
     mrb_gc_protect(mrb, del_key);
     mrb_gc_protect(mrb, del_val);
-    return mrb_assoc_new(mrb, del_key, del_val);
+    return ARY_NEW_ASSOC(mrb, del_key, del_val);
   }
 
   if (MRB_RHASH_DEFAULT_P(hash)) {
