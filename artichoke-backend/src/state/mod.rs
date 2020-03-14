@@ -12,7 +12,7 @@ use crate::sys;
 
 pub mod output;
 pub mod parser;
-#[cfg(feature = "artichoke-random")]
+#[cfg(feature = "core-random")]
 pub mod prng;
 
 // NOTE: `State` assumes that it it is stored in `mrb_state->ud` wrapped in a
@@ -25,7 +25,7 @@ pub struct State {
     pub vfs: fs::Virtual,
     pub active_regexp_globals: Option<NonZeroUsize>,
     pub output: Box<dyn output::Output>,
-    #[cfg(feature = "artichoke-random")]
+    #[cfg(feature = "core-random")]
     pub prng: prng::Prng,
 }
 
@@ -38,7 +38,7 @@ impl State {
     /// - `Regexp` global state.
     /// - [In memory virtual filesystem](fs::Virtual).
     /// - Ruby parser and file context.
-    /// - [Intepreter-level PRNG](prng::Prng) (behind the `artichoke-random`
+    /// - [Intepreter-level PRNG](prng::Prng) (behind the `core-random`
     ///   feature).
     /// - IO capturing strategy.
     pub fn new(mrb: &mut sys::mrb_state) -> Option<Self> {
@@ -51,7 +51,7 @@ impl State {
             vfs: fs::Virtual::new(),
             active_regexp_globals: None,
             output: Box::new(output::Process::new()),
-            #[cfg(feature = "artichoke-random")]
+            #[cfg(feature = "core-random")]
             prng: prng::Prng::default(),
         };
         Some(state)
@@ -143,7 +143,7 @@ impl fmt::Debug for State {
             .field("vfs", &self.vfs)
             .field("active_regexp_globals", &self.active_regexp_globals)
             .field("output", self.output.as_debug());
-        #[cfg(feature = "artichoke-random")]
+        #[cfg(feature = "core-random")]
         fmt.field("prng", &self.prng);
         fmt.finish()
     }
