@@ -1,7 +1,18 @@
 # frozen_string_literal: true
 
+class KeyError
+  attr_reader :key
+  attr_reader :receiver
+
+  def initialize(message = nil, receiver: nil, key: nil)
+    @receiver = receiver
+    @key = key
+    super(message)
+  end
+end
+
 class NameError
-  attr_accessor :name
+  attr_reader :name
 
   def initialize(message = nil, name = nil)
     @name = name

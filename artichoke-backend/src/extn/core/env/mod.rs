@@ -24,17 +24,19 @@ impl fmt::Debug for Environ {
     }
 }
 
-#[cfg(feature = "artichoke-system-environ")]
+#[cfg(feature = "core-env-system")]
 pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
     use backend::system::System;
+
     let obj = Environ(Box::new(System::new()));
     let result = obj.try_into_ruby(&interp, into)?;
     Ok(result)
 }
 
-#[cfg(not(feature = "artichoke-system-environ"))]
+#[cfg(not(feature = "core-env-system"))]
 pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
     use backend::memory::Memory;
+
     let obj = Environ(Box::new(Memory::new()));
     let result = obj.try_into_ruby(&interp, into)?;
     Ok(result)
@@ -49,7 +51,9 @@ pub fn element_reference(
     let name = name.implicitly_convert_to_string()?;
     let env = obj.borrow();
     let result = env.0.get(interp, name)?;
-    Ok(interp.convert_mut(result.as_ref().map(Cow::as_ref)))
+    let mut result = interp.convert_mut(result.as_ref().map(Cow::as_ref));
+    result.freeze()?;
+    Ok(result)
 }
 
 pub fn element_assignment(
@@ -60,10 +64,10 @@ pub fn element_assignment(
 ) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
     let name = name.implicitly_convert_to_string()?;
-    let value = value.implicitly_convert_to_nilable_string()?;
-    obj.borrow_mut().0.put(interp, name, value)?;
+    let env_value = value.implicitly_convert_to_nilable_string()?;
+    obj.borrow_mut().0.put(interp, name, env_value)?;
     // Return original object, even if we converted it to a `String`.
-    Ok(interp.convert_mut(value))
+    Ok(value)
 }
 
 pub fn to_h(interp: &mut Artichoke, obj: Value) -> Result<Value, Exception> {

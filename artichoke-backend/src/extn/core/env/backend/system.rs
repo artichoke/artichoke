@@ -74,6 +74,9 @@ impl EnvType for System {
         // sign '=' or the NUL character '\0', or when the value contains the
         // NUL character.
         if name.is_empty() {
+            if value.is_none() {
+                return Ok(());
+            }
             // TODO: This should raise `Errno::EINVAL`.
             return Err(Exception::from(ArgumentError::new(
                 interp,
@@ -81,13 +84,19 @@ impl EnvType for System {
             )));
         }
         if name.find_byte(b'\0').is_some() {
+            if value.is_none() {
+                return Ok(());
+            }
             return Err(Exception::from(ArgumentError::new(
                 interp,
                 "bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
-            let mut message = b"Invalid argumen - setenv(".to_vec();
+            if value.is_none() {
+                return Ok(());
+            }
+            let mut message = b"Invalid argument - setenv(".to_vec();
             message.extend(name.to_vec());
             message.push(b')');
             // TODO: This should raise `Errno::EINVAL`.

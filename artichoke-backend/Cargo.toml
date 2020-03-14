@@ -47,7 +47,7 @@ rustc_version = "0.2.3"
 target-lexicon = "0.10.0"
 
 [features]
-default = ["artichoke-random", "artichoke-system-environ", "core-math-extra"]
+default = ["artichoke-random", "core-env-system", "core-math-extra"]
 artichoke-random = ["base64", "hex", "rand", "uuid"]
-artichoke-system-environ = []
+core-env-system = []
 core-math-extra = ["libm"]

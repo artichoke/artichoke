@@ -1,36 +1,20 @@
 # frozen_string_literal: true
 
-module Artichoke
-  class Environ
-    def self.[](name)
-      @environ ||= new
-      @environ[name]
-    end
-
-    def self.[]=(name, value)
-      @environ ||= new
-      @environ[name] = value
-    end
-
-    def self.to_h
-      @environ ||= new
-      @environ.to_h
-    end
-  end
-end
-
 ENV = Object.new
 
 class << ENV
   def [](name)
-    ::Artichoke::Environ[name]
+    @backend ||= ::Artichoke::Environ.new
+    @backend[name]
   end
 
   def []=(name, value)
-    ::Artichoke::Environ[name] = value
+    @backend ||= ::Artichoke::Environ.new
+    @backend[name] = value
   end
 
   def assoc(name)
+    name = name.to_str unless name.is_a?(String)
     value = self[name]
     return nil if value.nil?
 
@@ -47,7 +31,10 @@ class << ENV
 
   def delete(name)
     value = self[name]
-    return nil if value.nil?
+    if value.nil?
+      yield name if block_given?
+      return nil
+    end
 
     self[name] = nil
     yield name if block_given?
@@ -93,12 +80,29 @@ class << ENV
   end
 
   def fetch(name, default = (not_set = true))
+    warn 'warning: block supersedes default value argument' if !not_set && block_given?
+
+    name =
+      if name.is_a?(String)
+        name
+      elsif name.respond_to?(:to_str)
+        converted = name.to_str
+        raise TypeError, "can't convert #{name.class} to String (#{name.class}#to_str gives #{converted.class})" unless converted.is_a?(String)
+
+        converted
+      else
+        cls = name.class
+        cls = 'nil' if name.nil?
+
+        raise TypeError, "no implicit conversion of #{cls} into String"
+      end
+
     value = self[name]
     return value unless value.nil?
     return yield name if block_given?
-    return default if not_set.nil?
+    return default unless not_set
 
-    raise KeyError, "key not found: #{name}"
+    raise KeyError.new("key not found: #{name.inspect}", receiver: self, key: name)
   end
 
   def filter
@@ -167,6 +171,7 @@ class << ENV
   end
 
   def rassoc(value)
+    value = value.to_str unless value.is_a?(String)
     to_h.each do |k, v|
       return [k, v] if v == value
     end
@@ -186,19 +191,17 @@ class << ENV
   def reject!
     return to_enum(:reject!) unless block_given?
 
-    env = to_h
-    # collect all the keys where the block evaluates to true
-    to_remove = env.reject do |key, value|
-      yield key, value
+    modified = false
+    to_h.each do |key, value|
+      if yield key, value
+        delete(key)
+        modified = true
+      end
     end
 
-    # returns nil if no changes were made
-    return nil if to_remove.empty?
+    return self if modified
 
-    to_remove.each do |key, _|
-      delete(key)
-    end
-    self
+    nil
   end
 
   def replace(hash)
@@ -258,7 +261,28 @@ class << ENV
   end
 
   def to_h
-    ::Artichoke::Environ.to_h
+    @backend ||= ::Artichoke::Environ.new
+    h = @backend.to_h
+    if block_given?
+      pairs = h.each_pair.map do |name, value|
+        tx = yield(name, value)
+        if tx.is_a?(Array)
+          raise ArgumentError, "element has wrong array length (expected 2, was #{tx.length})" if tx.length != 2
+
+          tx
+        elsif tx.respond_to?(:to_ary)
+          pair = tx.to_ary
+          raise TypeError, "can't convert #{tx.class} to Array (#{tx.class}#to_ary gives #{pair.class})" unless pair.is_a?(Array)
+
+          pair
+        else
+          raise TypeError, "wrong element type #{tx.class} (expected array)"
+        end
+      end
+      pairs.to_h
+    else
+      h
+    end
   end
 
   def to_hash
@@ -271,6 +295,7 @@ class << ENV
 
   def update(hash)
     hash.each do |key, value|
+      value = yield(key, self[key], value) if block_given? && key?(key)
       self[key] = value
     end
 
