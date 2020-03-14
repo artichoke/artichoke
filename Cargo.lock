@@ -52,6 +52,7 @@ dependencies = [
  "quickcheck",
  "quickcheck_macros",
  "rand",
+ "rand_pcg",
  "regex",
  "rustc_version",
  "smallvec",
@@ -550,7 +551,6 @@ dependencies = [
  "rand_chacha",
  "rand_core",
  "rand_hc",
- "rand_pcg",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
-use rand::rngs::SmallRng;
 use rand::{self, Rng, SeedableRng};
+use rand_pcg::Pcg64;
 use std::fmt;
 
 use crate::extn::core::random::backend::{InternalState, RandType};
@@ -7,7 +7,7 @@ use crate::extn::prelude::*;
 
 #[must_use]
 pub fn new(seed: Option<u64>) -> Box<dyn RandType> {
-    Box::new(Rand::<SmallRng>::new(seed))
+    Box::new(Rand::<Pcg64>::new(seed))
 }
 
 #[derive(Debug, Clone)]

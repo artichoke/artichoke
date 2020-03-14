@@ -6,7 +6,7 @@ pub mod forwardable;
 pub mod json;
 pub mod monitor;
 pub mod ostruct;
-#[cfg(feature = "artichoke-random")]
+#[cfg(feature = "stdlib-securerandom")]
 pub mod securerandom;
 pub mod set;
 pub mod strscan;
@@ -18,7 +18,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     json::init(interp)?;
     monitor::init(interp)?;
     ostruct::init(interp)?;
-    #[cfg(feature = "artichoke-random")]
+    #[cfg(feature = "stdlib-securerandom")]
     securerandom::mruby::init(interp)?;
     set::init(interp)?;
     strscan::init(interp)?;
