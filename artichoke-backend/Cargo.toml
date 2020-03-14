@@ -48,7 +48,12 @@ rustc_version = "0.2.3"
 target-lexicon = "0.10.0"
 
 [features]
-default = ["core-env-system", "core-math-extra", "core-random", "stdlib-securerandom"]
+default = [
+  "core-env-system",
+  "core-math-extra",
+  "core-random",
+  "stdlib-securerandom"
+]
 core-env-system = []
 core-math-extra = ["libm"]
 core-random = ["rand", "rand_pcg"]
