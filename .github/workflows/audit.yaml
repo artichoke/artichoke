@@ -1,8 +1,13 @@
 name: Audit
 on:
   push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
   schedule:
-    - cron: "0 0 * * 2" # midnight on Tuesday
+    - cron: "0 0 * * TUE"
 jobs:
   rust:
     name: Audit Rust Dependencies
