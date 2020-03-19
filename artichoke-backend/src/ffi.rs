@@ -2,10 +2,13 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
-use bstr::ByteSlice;
+use os_str_bytes::OsStrBytes;
+use os_str_bytes::OsStringBytes;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::error;
 use std::ffi::OsStr;
+use std::ffi::OsString;
 use std::fmt;
 use std::mem;
 use std::ptr::NonNull;
@@ -127,19 +130,23 @@ impl From<Box<InterpreterExtractError>> for Box<dyn RubyException> {
 }
 
 /// Convert a byte slice to a platform-specific [`OsStr`].
-///
-/// Unsupported platforms fallback to converting through `str`.
 #[inline]
-pub fn bytes_to_os_str(value: &[u8]) -> Result<&OsStr, ConvertBytesError> {
-    value.to_os_str().map_err(|_| ConvertBytesError)
+pub fn bytes_to_os_str(value: &[u8]) -> Result<Cow<'_, OsStr>, ConvertBytesError> {
+    OsStr::from_bytes(value).map_err(|_| ConvertBytesError)
 }
 
 /// Convert a platform-specific [`OsStr`] to a byte slice.
-///
-/// Unsupported platforms fallback to converting through `str`.
 #[inline]
-pub fn os_str_to_bytes(value: &OsStr) -> Result<&[u8], ConvertBytesError> {
-    <[u8]>::from_os_str(value).ok_or(ConvertBytesError)
+#[must_use]
+pub fn os_str_to_bytes(value: &OsStr) -> Cow<'_, [u8]> {
+    value.to_bytes()
+}
+
+/// Convert a platform-specific [`OsString`] to a byte vector.
+#[inline]
+#[must_use]
+pub fn os_string_to_bytes(value: OsString) -> Vec<u8> {
+    value.into_vec()
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]

@@ -33,7 +33,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     if !is_file {
         return Err(Exception::from(load_error(interp, filename)?));
     }
-    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
+    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str()).into_owned())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
 
@@ -97,7 +97,7 @@ pub fn require(
             if interp.0.borrow().vfs.is_required(path.as_path()) {
                 return Ok(interp.convert(false));
             }
-            let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
+            let context = Context::new(ffi::os_str_to_bytes(path.as_os_str()).into_owned())
                 .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
             interp.push_context(context);
             // Require Rust File first because an File may define classes and
@@ -152,7 +152,7 @@ pub fn require(
                 if interp.0.borrow().vfs.is_required(path.as_path()) {
                     return Ok(interp.convert(false));
                 }
-                let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
+                let context = Context::new(ffi::os_str_to_bytes(path.as_os_str()).into_owned())
                     .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
                 interp.push_context(context);
                 // Require Rust File first because an File may define classes and
@@ -207,7 +207,7 @@ pub fn require(
     if interp.0.borrow().vfs.is_required(path.as_path()) {
         return Ok(interp.convert(false));
     }
-    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
+    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str()).into_owned())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
     // Require Rust File first because an File may define classes and
@@ -258,7 +258,7 @@ pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Ex
             .parser
             .peek_context()
             .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
-        if let Some(base) = Path::new(ffi::bytes_to_os_str(context.filename())?).parent() {
+        if let Some(base) = Path::new(&ffi::bytes_to_os_str(context.filename())?).parent() {
             base.to_owned()
         } else {
             PathBuf::from("/")

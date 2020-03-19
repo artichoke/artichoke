@@ -147,7 +147,7 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
 fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
     let mut buf = String::from(message);
     buf.push_str(" -- ");
-    let path = ffi::os_str_to_bytes(file)?;
+    let path = ffi::os_str_to_bytes(file);
     string::format_unicode_debug_into(&mut buf, &path)?;
     Ok(buf)
 }

@@ -49,6 +49,7 @@ dependencies = [
  "num_cpus",
  "once_cell",
  "onig",
+ "os_str_bytes",
  "quickcheck",
  "quickcheck_macros",
  "rand",
@@ -456,6 +457,12 @@ dependencies = [
  "cc",
  "pkg-config",
 ]
+
+[[package]]
+name = "os_str_bytes"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88965106cacfe1c6e05d1ec53c395f19b4e30f56fbf5e0b49c75ae4c4531e91b"
 
 [[package]]
 name = "peeking_take_while"

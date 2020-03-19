@@ -112,9 +112,9 @@ impl EnvType for Memory {
         }
     }
 
-    fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
+    fn as_map(&self, interp: &Artichoke) -> HashMap<Vec<u8>, Vec<u8>> {
         let _ = interp;
-        Ok(self.store.clone())
+        self.store.clone()
     }
 }
 
@@ -174,14 +174,14 @@ mod tests {
         let env2_value = "value2";
 
         // when
-        let size_before = backend.as_map(&interp).unwrap().len();
+        let size_before = backend.as_map(&interp).len();
         backend
             .put(&interp, env1_name.as_bytes(), Some(env1_value.as_bytes()))
             .unwrap();
         backend
             .put(&interp, env2_name.as_bytes(), Some(env2_value.as_bytes()))
             .unwrap();
-        let data = backend.as_map(&interp).unwrap();
+        let data = backend.as_map(&interp);
         let size_after = data.len();
 
         // then

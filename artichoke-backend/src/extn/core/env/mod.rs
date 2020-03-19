@@ -72,6 +72,6 @@ pub fn element_assignment(
 
 pub fn to_h(interp: &mut Artichoke, obj: Value) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
-    let result = obj.borrow().0.as_map(interp)?;
+    let result = obj.borrow().0.as_map(interp);
     Ok(interp.convert_mut(result))
 }

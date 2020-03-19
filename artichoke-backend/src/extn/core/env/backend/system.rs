@@ -51,12 +51,9 @@ impl EnvType for System {
             Ok(None)
         } else {
             let name = ffi::bytes_to_os_str(name)?;
-            if let Some(value) = std::env::var_os(name) {
-                let value = ffi::os_str_to_bytes(value.as_os_str())?;
-                Ok(Some(value.to_vec().into()))
-            } else {
-                Ok(None)
-            }
+            Ok(std::env::var_os(name)
+                .map(ffi::os_string_to_bytes)
+                .map(Cow::Owned))
         }
     }
 
@@ -120,14 +117,14 @@ impl EnvType for System {
         }
     }
 
-    fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
+    fn as_map(&self, interp: &Artichoke) -> HashMap<Vec<u8>, Vec<u8>> {
         let _ = interp;
         let mut map = HashMap::default();
         for (name, value) in std::env::vars_os() {
-            let name = ffi::os_str_to_bytes(name.as_os_str())?;
-            let value = ffi::os_str_to_bytes(value.as_os_str())?;
-            map.insert(name.to_vec(), value.to_vec());
+            let name = ffi::os_string_to_bytes(name);
+            let value = ffi::os_string_to_bytes(value);
+            map.insert(name, value);
         }
-        Ok(map)
+        map
     }
 }

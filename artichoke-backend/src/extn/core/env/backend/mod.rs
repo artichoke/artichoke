@@ -24,5 +24,5 @@ pub trait EnvType {
         value: Option<&[u8]>,
     ) -> Result<(), Exception>;
 
-    fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception>;
+    fn as_map(&self, interp: &Artichoke) -> HashMap<Vec<u8>, Vec<u8>>;
 }
