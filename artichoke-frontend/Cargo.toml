@@ -12,7 +12,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 ansi_term = "0.11" # cannot upgrade until clap 3 is released
-rustyline = "6"
+rustyline = { version = "6", default-features = false }
 structopt = "0.3"
 
 [dependencies.artichoke-backend]
