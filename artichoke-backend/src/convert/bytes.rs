@@ -1,13 +1,14 @@
 use std::convert::TryFrom;
-use std::ffi::CStr;
+use std::ffi::{CStr, OsStr, OsString};
 use std::slice;
 
 use crate::convert::UnboxRubyError;
 use crate::exception::Exception;
+use crate::ffi;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ConvertMut, TryConvert};
+use crate::{Artichoke, ConvertMut, TryConvert, TryConvertMut};
 
 impl ConvertMut<Vec<u8>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<u8>) -> Value {
@@ -26,6 +27,24 @@ impl ConvertMut<&[u8], Value> for Artichoke {
         // to worry about the lifetime of the slice passed into this converter.
         let string = unsafe { sys::mrb_str_new(mrb, raw, len) };
         Value::new(self, string)
+    }
+}
+
+impl TryConvertMut<OsString, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: OsString) -> Result<Value, Self::Error> {
+        let bytes = ffi::os_str_to_bytes(&*value)?;
+        Ok(self.convert_mut(bytes))
+    }
+}
+
+impl TryConvertMut<&OsStr, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &OsStr) -> Result<Value, Self::Error> {
+        let bytes = ffi::os_str_to_bytes(value)?;
+        Ok(self.convert_mut(bytes))
     }
 }
 
