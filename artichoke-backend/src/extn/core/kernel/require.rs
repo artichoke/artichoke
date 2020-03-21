@@ -80,8 +80,8 @@ pub fn require(
 
     if path.is_relative() && path.extension() != Some(OsStr::new(RUBY_EXTENSION)) {
         let mut with_rb_ext = Vec::with_capacity(filename.len() + 3);
-        with_rb_ext.extend(filename.iter());
-        with_rb_ext.extend(b".rb".iter());
+        with_rb_ext.extend_from_slice(filename);
+        with_rb_ext.extend_from_slice(b".rb");
         let rb_ext = ffi::bytes_to_os_str(with_rb_ext.as_slice())?;
         let path = if let Some(base) = base {
             base.join(rb_ext)

@@ -2,10 +2,10 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
-use bstr::ByteSlice;
+use bstr::{ByteSlice, ByteVec};
 use std::cell::RefCell;
 use std::error;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::mem;
 use std::ptr::NonNull;
@@ -140,6 +140,14 @@ pub fn bytes_to_os_str(value: &[u8]) -> Result<&OsStr, ConvertBytesError> {
 #[inline]
 pub fn os_str_to_bytes(value: &OsStr) -> Result<&[u8], ConvertBytesError> {
     <[u8]>::from_os_str(value).ok_or(ConvertBytesError)
+}
+
+/// Convert a platform-specific [`OsString`] to a byte vec.
+///
+/// Unsupported platforms fallback to converting through `String`.
+#[inline]
+pub fn os_string_to_bytes(value: OsString) -> Result<Vec<u8>, ConvertBytesError> {
+    Vec::from_os_string(value).map_err(|_| ConvertBytesError)
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]

@@ -52,8 +52,8 @@ impl EnvType for System {
         } else {
             let name = ffi::bytes_to_os_str(name)?;
             if let Some(value) = std::env::var_os(name) {
-                let value = ffi::os_str_to_bytes(value.as_os_str())?;
-                Ok(Some(value.to_vec().into()))
+                let value = ffi::os_string_to_bytes(value)?;
+                Ok(Some(value.into()))
             } else {
                 Ok(None)
             }
@@ -124,9 +124,9 @@ impl EnvType for System {
         let _ = interp;
         let mut map = HashMap::default();
         for (name, value) in std::env::vars_os() {
-            let name = ffi::os_str_to_bytes(name.as_os_str())?;
-            let value = ffi::os_str_to_bytes(value.as_os_str())?;
-            map.insert(name.to_vec(), value.to_vec());
+            let name = ffi::os_string_to_bytes(name)?;
+            let value = ffi::os_string_to_bytes(value)?;
+            map.insert(name, value);
         }
         Ok(map)
     }
