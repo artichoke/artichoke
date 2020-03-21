@@ -10,6 +10,7 @@ pub mod ostruct;
 pub mod securerandom;
 pub mod set;
 pub mod strscan;
+pub mod uri;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     abbrev::init(interp)?;
@@ -24,12 +25,4 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     strscan::init(interp)?;
     uri::init(interp)?;
     Ok(())
-}
-
-pub mod uri {
-    //! Ruby URI package, implemented with embedded sources from MRI 2.6.3.
-    //!
-    //! See `scripts/auto_import/`.
-
-    include!(concat!(env!("OUT_DIR"), "/src/generated/uri.rs"));
 }
