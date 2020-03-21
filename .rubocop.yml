@@ -6,6 +6,8 @@ AllCops:
     - "**/node_modules/**/*"
     - "**/target/**/*"
     - "**/vendor/**/*"
+    - "**/extn/stdlib/uri/**/*"
+    - "**/extn/stdlib/gen/**/*"
 Metrics:
   Enabled: false
 Style/Documentation:
