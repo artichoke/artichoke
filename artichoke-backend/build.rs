@@ -333,204 +333,6 @@ mod libmruby {
     }
 }
 
-mod rubylib {
-    use std::env;
-    use std::fs;
-    use std::path::{Path, PathBuf};
-    use std::process::Command;
-    use std::str;
-
-    use super::buildpath;
-
-    pub fn auto_import_root() -> PathBuf {
-        buildpath::crate_root().join("scripts").join("auto_import")
-    }
-
-    pub fn rendered_stdlib_package_out_dir() -> PathBuf {
-        PathBuf::from(env::var_os("OUT_DIR").unwrap())
-            .join("src")
-            .join("generated")
-    }
-
-    fn rendered_stdlib_package_rust_module_path(package: &str) -> PathBuf {
-        rendered_stdlib_package_out_dir().join(format!("{}.rs", package))
-    }
-
-    pub fn build() {
-        for package in packages() {
-            // Collect all of the Ruby sources that are loaded when requiring
-            // the package in MRI.
-            let sources = package_files(package)
-                .trim()
-                .split('\n')
-                .map(str::trim)
-                .filter_map(|s| Some(s).filter(|s| !s.is_empty()).map(String::from))
-                .collect::<Vec<_>>();
-            for source in &sources {
-                let source = Path::new(source);
-                // Extract the relative path for each package file from the MRI
-                // lib root.
-                let package_source = source
-                    .strip_prefix(buildpath::source::ruby_vendored_lib_dir())
-                    .unwrap();
-                let out = rendered_stdlib_package_out_dir().join(package_source);
-                if let Some(parent) = out.parent() {
-                    fs::create_dir_all(parent).unwrap();
-                }
-                // Copy the source from MRI lib root to the build `OUT_DIR`.
-                fs::copy(source, &out).unwrap();
-            }
-            render_rust_module(package, sources.as_slice());
-        }
-    }
-
-    fn package_files(package: &str) -> String {
-        let script = auto_import_root().join("get_package_files.rb");
-        let output = Command::new("ruby")
-            .arg("--disable-all")
-            .arg(script)
-            .arg(buildpath::source::ruby_vendored_lib_dir())
-            .arg(package)
-            .output()
-            .unwrap();
-        if !output.status.success() {
-            eprintln!("ruby get_package_files.rb failed");
-            eprintln!("--- stdout:");
-            eprintln!("{}", str::from_utf8(output.stdout.as_slice()).unwrap());
-            eprintln!();
-            eprintln!("--- stderr:");
-            eprintln!("{}", str::from_utf8(output.stderr.as_slice()).unwrap());
-            panic!("ruby get_package_files.rb failed");
-        }
-        String::from_utf8(output.stdout).unwrap()
-    }
-
-    // The invoked Ruby script handles writing the output to disk
-    fn render_rust_module(package: &str, sources: &[String]) {
-        let pkg_dest = rendered_stdlib_package_rust_module_path(package);
-        if let Some(parent) = pkg_dest.parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-        let script = auto_import_root().join("auto_import.rb");
-        let status = Command::new("ruby")
-            .arg("--disable-all")
-            .arg(script)
-            .arg(buildpath::source::ruby_vendored_lib_dir())
-            .arg(package)
-            .arg(pkg_dest)
-            .arg(sources.join(","))
-            .status()
-            .unwrap();
-        if !status.success() {
-            panic!("auto_import.rb failed");
-        }
-    }
-
-    fn packages() -> Vec<&'static str> {
-        vec![
-            "abbrev",
-            "base64",
-            "benchmark",
-            // "bigdecimal", implemented with native code in MRI
-            "cgi",
-            "cmath",
-            // "coverage", implemented with native code in MRI
-            "csv",
-            // "date", implemented with native code in MRI
-            // "dbm", implemented with native code in MRI and not present in some build configurations. See GH-206.
-            // "debug", this package outputs on require which breaks the autogen script
-            "delegate",
-            "digest",
-            "drb",
-            "e2mmap",
-            "English",
-            "erb",
-            "etc",
-            // "expect", not available in CI for Windows
-            // "extmk", this is part of ext for building native extensions
-            "fcntl",
-            "fiddle",
-            "fileutils",
-            "find",
-            "forwardable",
-            // "gdbm", implemented with native code in MRI and not present in some build configurations. See GH-206.
-            "getoptlong",
-            "io/console",
-            "io/nonblock",
-            "io/wait",
-            "ipaddr",
-            "irb",
-            "json",
-            "logger",
-            "matrix",
-            "mkmf",
-            "monitor",
-            "mutex_m",
-            "net/ftp",
-            "net/http",
-            "net/imap",
-            "net/pop",
-            "net/smtp",
-            // "net/telnet", as of Ruby 2.3.0, net/telnet is gemified
-            "nkf",
-            "objspace",
-            "observer",
-            "open-uri",
-            "open3",
-            "openssl",
-            "optparse",
-            "ostruct",
-            "pathname",
-            "prettyprint",
-            "prime",
-            "profile",
-            "profiler",
-            "pstore",
-            "psych",
-            // "pty", not available in CI for Windows
-            // "racc", racc is a gem
-            "racc/parser",
-            // "rake", rake is a gem
-            "rdoc",
-            "readline",
-            "resolv",
-            "resolv-replace",
-            // "rexml", this gem is not requirable with its package name. e.g. require 'rexml/rexml'
-            // "rinda", ???
-            "ripper",
-            "rss",
-            "rubygems",
-            "scanf",
-            "sdbm",
-            "securerandom",
-            "set",
-            "shell",
-            "shellwords",
-            "singleton",
-            "socket",
-            "stringio",
-            "strscan",
-            "sync",
-            // "syslog", not available in CI on Windows
-            "tempfile",
-            "thwait",
-            "time",
-            "timeout",
-            "tmpdir",
-            "tracer",
-            "tsort",
-            "un",
-            // "unicode_normalize", this gem is not requirable with its package name. e.g. require 'unicode_normalize/normalize'
-            "uri",
-            "weakref",
-            "webrick",
-            // "win32ole", native code, not requirable on all platforms
-            "yaml",
-            // "zlib", implemented with native code in MRI
-        ]
-    }
-}
-
 mod release {
     use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
     use std::env;
@@ -681,7 +483,7 @@ mod build {
     use std::path::{Path, PathBuf};
     use target_lexicon::Triple;
 
-    use super::{buildpath, libmruby, rubylib};
+    use super::{buildpath, libmruby};
 
     pub fn clean() {
         let _ = fs::remove_dir_all(buildpath::build_root());
@@ -700,8 +502,6 @@ mod build {
             buildpath::build_root().join("ruby"),
         )
         .unwrap();
-
-        fs::create_dir_all(rubylib::rendered_stdlib_package_out_dir()).unwrap();
 
         let _ = fs::remove_file(libmruby::mruby_build_config());
         fs::create_dir_all(libmruby::mruby_build_dir()).unwrap();
@@ -722,7 +522,6 @@ mod build {
         let mut paths = vec![];
         buildpath::source::rerun_if_changed(target, &mut paths);
         crate::enumerate_sources(libmruby::ext_source_dir(), &mut paths).unwrap();
-        crate::enumerate_sources(rubylib::auto_import_root(), &mut paths).unwrap();
 
         for path in paths {
             println!("cargo:rerun-if-changed={}", path.to_str().unwrap());
@@ -772,6 +571,5 @@ fn main() {
     build::rerun_if_changed(&target);
     build::setup_build_root(&target);
     libmruby::build(&target);
-    rubylib::build();
     release::build(&target);
 }
