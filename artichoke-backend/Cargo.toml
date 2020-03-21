@@ -11,7 +11,7 @@ keywords = ["artichoke", "artichoke-ruby", "ruby"]
 
 [dependencies]
 base64 = { version = "0.11", optional = true }
-bstr = "0.2"
+bstr = { version = "0.2", default-features = false, features = ["std"] }
 chrono = "0.4"
 dtoa = "0.4"
 hex = { version = "0.4", optional = true }
