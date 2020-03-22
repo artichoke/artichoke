@@ -25,7 +25,7 @@ namespace :lint do
   end
 
   desc 'Check markdown links'
-  task links: :deps do
+  task :links do
     markdown = [
       'BUILD.md',
       'CONTRIBUTING.md',
@@ -40,7 +40,7 @@ namespace :lint do
       'spec-runner/vendor/README.md'
     ]
     markdown.each do |source|
-      sh "yarn run markdown-link-check --config .github/markdown-link-check.json #{source}"
+      sh "npx markdown-link-check --config .github/markdown-link-check.json #{source}"
     end
   end
 
