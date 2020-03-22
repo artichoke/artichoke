@@ -192,6 +192,7 @@ jobs:
 
       - name: Validate links in markdown
         run: |
+          yarn run markdown-link-check --config .github/markdown-link-check.json BUILD.md
           yarn run markdown-link-check --config .github/markdown-link-check.json CONTRIBUTING.md
           yarn run markdown-link-check --config .github/markdown-link-check.json README.md
           yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/README.md
@@ -199,7 +200,6 @@ jobs:
           yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/vendor/README.md
           yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-core/README.md
           yarn run markdown-link-check --config .github/markdown-link-check.json doc/artichoke-design-and-goals.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json doc/build.md
           yarn run markdown-link-check --config .github/markdown-link-check.json doc/ruby-spec.md
           yarn run markdown-link-check --config .github/markdown-link-check.json spec-runner/README.md
           yarn run markdown-link-check --config .github/markdown-link-check.json spec-runner/vendor/README.md
