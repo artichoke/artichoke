@@ -9,6 +9,7 @@ pub mod ostruct;
 #[cfg(feature = "stdlib-securerandom")]
 pub mod securerandom;
 pub mod set;
+pub mod shellwords;
 pub mod strscan;
 pub mod uri;
 
@@ -22,6 +23,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     #[cfg(feature = "stdlib-securerandom")]
     securerandom::mruby::init(interp)?;
     set::init(interp)?;
+    shellwords::init(interp)?;
     strscan::init(interp)?;
     uri::init(interp)?;
     Ok(())

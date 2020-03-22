@@ -6,6 +6,7 @@ AllCops:
     - "**/node_modules/**/*"
     - "**/target/**/*"
     - "**/vendor/**/*"
+    - "**/extn/stdlib/shellwords/**/*"
     - "**/extn/stdlib/uri/**/*"
     - "**/extn/stdlib/gen/**/*"
 Metrics:

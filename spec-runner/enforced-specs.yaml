@@ -63,6 +63,9 @@ library:
     skip:
       - random_bytes # specs require ASCII-8BIT encoding for Strings
       - random_number # missing support for Bignum and Range arguments
+  - suite: shellwords
+    skip:
+      - shellwords # missing String#gsub support for back references
   - suite: stringscanner
   - suite: uri
     skip:
