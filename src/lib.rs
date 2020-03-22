@@ -7,6 +7,17 @@
 //!  artichoke interpreter in the [`artichoke-backend`](artichoke_backend)
 //!  crate.
 
+#![doc(html_root_url = "https://docs.rs/artichoke/0.1.0-pre.0")]
+
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
+#[cfg(doctest)]
+doc_comment::doctest!("../artichoke-backend/README.md");
+#[cfg(doctest)]
+doc_comment::doctest!("../artichoke-core/README.md");
+#[cfg(doctest)]
+doc_comment::doctest!("../spec-runner/README.md");
+
 pub use artichoke_backend as backend;
 
 pub mod parser;

@@ -21,14 +21,15 @@ The `artichoke-backend` interpreter implements
 [`Eval` from `artichoke-core`](https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html).
 
 ```rust
-use artichoke_backend::{Eval, ValueLike};
+use artichoke_backend::{Eval, ValueLike, exception::Exception};
 
-let mut interp = artichoke_backend::interpreter().unwrap();
-let result = interp.eval(b"10 * 10").unwrap();
-let result = result.try_into::<i64>();
-assert_eq!(result, Ok(100));
-let result = result.try_into::<i64>().unwrap();
-assert_eq!(result, 100);
+fn example() -> Result<(), Exception> {
+    let mut interp = artichoke_backend::interpreter()?;
+    let result = interp.eval(b"10 * 10")?;
+    let result = result.try_into::<i64>()?;
+    assert_eq!(100, result);
+    Ok(())
+}
 ```
 
 ### Calling Functions on Ruby Objects
@@ -38,12 +39,15 @@ assert_eq!(result, 100);
 which enables calling Ruby functions from Rust.
 
 ```rust
-use artichoke_backend::{Eval, ValueLike};
+use artichoke_backend::{Eval, ValueLike, exception::Exception};
 
-let mut interp = artichoke_backend::interpreter().unwrap();
-let result = interp.eval(b"'ruby funcall'").unwrap();
-let result = result.funcall::<usize>("length", &[], None).unwrap();
-assert_eq!(result, 12);
+fn example() -> Result<(), Exception> {
+    let mut interp = artichoke_backend::interpreter()?;
+    let s = interp.eval(b"'ruby funcall'")?;
+    let len = s.funcall::<usize>("length", &[], None)?;
+    assert_eq!(12, len);
+    Ok(())
+}
 ```
 
 ## Virtual Filesystem and `Kernel#require`
