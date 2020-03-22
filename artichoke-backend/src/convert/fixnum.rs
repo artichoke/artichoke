@@ -103,6 +103,17 @@ impl TryConvert<Value, Int> for Artichoke {
     }
 }
 
+impl TryConvert<Value, u32> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert(&self, value: Value) -> Result<u32, Self::Error> {
+        let err = UnboxRubyError::new(&value, Rust::UnsignedInt);
+        let int = TryConvert::<_, Int>::try_convert(self, value)?;
+        let int = u32::try_from(int).map_err(|_| err)?;
+        Ok(int)
+    }
+}
+
 impl TryConvert<Value, usize> for Artichoke {
     type Error = Exception;
 
