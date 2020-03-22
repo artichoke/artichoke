@@ -8,6 +8,7 @@ AllCops:
     - "**/vendor/**/*"
     - "**/extn/stdlib/cmath/**/*"
     - "**/extn/stdlib/shellwords/**/*"
+    - "**/extn/stdlib/time/**/*"
     - "**/extn/stdlib/uri/**/*"
     - "**/extn/stdlib/gen/**/*"
 Metrics:

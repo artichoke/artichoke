@@ -12,6 +12,7 @@ pub mod securerandom;
 pub mod set;
 pub mod shellwords;
 pub mod strscan;
+pub mod time;
 pub mod uri;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
@@ -27,6 +28,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     set::init(interp)?;
     shellwords::init(interp)?;
     strscan::init(interp)?;
+    time::init(interp)?;
     uri::init(interp)?;
     Ok(())
 }
