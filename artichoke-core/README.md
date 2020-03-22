@@ -9,7 +9,7 @@
 `artichoke-core` crate provides a set of traits that, when implemented, provide
 a complete Ruby interpreter.
 
-[`artichoke-backend`](/artichoke-backend) is one implementation of the
+[`artichoke-backend`](../artichoke-backend) is one implementation of the
 `artichoke-core` traits.
 
 ## Core APIs
@@ -32,4 +32,4 @@ and
 
 ## License
 
-artichoke-core is licensed with the [MIT License](/LICENSE) (c) Ryan Lopopolo.
+artichoke-core is licensed with the [MIT License](../LICENSE) (c) Ryan Lopopolo.

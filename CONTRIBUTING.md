@@ -24,7 +24,7 @@ If you'd like to engage in a discussion outside of GitHub, you can
 ## Implementation Philosophy
 
 - Prefer pure Ruby implementations when initially implementing features.
-- A feature is not done until it passes [ruby/spec](/doc/ruby-spec.md).
+- A feature is not done until it passes [ruby/spec](doc/ruby-spec.md).
 - Move implementations to Rust for performance, e.g.
   [using Serde to implement the JSON package](https://github.com/artichoke/artichoke/issues/77).
 - If there is a Rust crate that does what we need, prefer to use it. Forking is
@@ -40,7 +40,7 @@ requires configuring several dependencies.
 
 Artichoke depends on Rust and several compiler plugins for linting and
 formatting. The specific version of Rust Artichoke requires is specified in the
-[toolchain file](/rust-toolchain)
+[toolchain file](rust-toolchain).
 
 #### Installation
 
@@ -66,7 +66,7 @@ rustup component add clippy
 
 Artichoke depends on several Rust libraries. In Rust, a library is called a
 _crate_. Once you have the Rust toolchain installed, you can install the crates
-specified in [`Cargo.lock`](/Cargo.lock) by running:
+specified in [`Cargo.lock`](Cargo.lock) by running:
 
 ```sh
 cargo build --workspace
@@ -105,7 +105,7 @@ environment variables.
 ### Ruby
 
 Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
-[`.ruby-version`](/.ruby-version) file in the root of Artichoke specifies Ruby
+[`.ruby-version`](.ruby-version) file in the root of Artichoke specifies Ruby
 2.6.3.
 
 If you use [RVM](https://rvm.io/), you can install Ruby dependencies by running:
@@ -125,14 +125,14 @@ gem install bundler
 rbenv rehash
 ```
 
-The [`Gemfile`](/Gemfile) in Artichoke specifies several dev dependencies. You
+The [`Gemfile`](Gemfile) in Artichoke specifies several dev dependencies. You
 can install these dependencies by running:
 
 ```sh
 bundle install
 ```
 
-Artichoke uses [`rake`](/Rakefile) as a task runner. You can see the available
+Artichoke uses [`rake`](Rakefile) as a task runner. You can see the available
 tasks by running:
 
 ```console
@@ -181,7 +181,7 @@ brew install node yarn
 ### Node.js Packages
 
 Once you have Yarn installed, you can install the packages specified in
-[`package.json`](/package.json) by running:
+[`package.json`](package.json) by running:
 
 ```sh
 yarn install
@@ -209,7 +209,7 @@ A PR must have tests for it to be merged. The
 [Rust book chapter on testing](https://doc.rust-lang.org/book/ch11-00-testing.html)
 is a good place to start. If you'd like to see some examples in Artichoke, take
 a look at the `Value` tests in
-[`artichoke-backend/src/value/mod.rs`](/artichoke-backend/src/value/mod.rs).
+[`artichoke-backend/src/value/mod.rs`](artichoke-backend/src/value.rs).
 
 To run tests:
 
@@ -226,7 +226,7 @@ cargo test -p artichoke-backend
 
 `cargo test` accepts a filter argument that will limit test execution to tests
 that substring match. For example, to run all of the
-[`Regexp`](/artichoke-backend/src/extn/core/regexp) tests:
+[`Regexp`](artichoke-backend/src/extn/core/regexp) tests:
 
 ```sh
 cargo test -p artichoke-backend regexp

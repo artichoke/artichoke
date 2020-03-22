@@ -16,7 +16,7 @@ closely and
 
 [Ruby](https://github.com/ruby/ruby) is MRI Ruby, the reference implementation
 of Ruby. Artichoke uses Ruby as the base for the implementation of the Ruby
-Standard Library in [artichoke-core](/artichoke-core).
+Standard Library in [artichoke-backend](../src/extn/stdlib).
 
 artichoke-backend [vendors](ruby) a
 [fork of Ruby](https://github.com/artichoke/ruby/tree/artichoke-vendor).

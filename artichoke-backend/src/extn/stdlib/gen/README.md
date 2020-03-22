@@ -8,4 +8,4 @@ by an
 
 The intent is to promote these generated sources to be packages included in
 `artichoke-backend`'s `extn::stdlib` module. One example of a promoted package
-is [`uri`](/artichoke-backend/src/extn/stdlib/uri).
+is [`uri`](../uri).

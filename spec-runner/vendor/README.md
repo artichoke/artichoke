@@ -4,7 +4,7 @@
 
 [ruby/spec](https://github.com/ruby/spec) is a black box testing suite for the
 Ruby programming language. Artichoke uses ruby/spec to test the
-[artichoke-core runtime](/artichoke-core) for compliance with MRI Ruby.
+[artichoke-backend runtime](../../artichoke-backend/src/extn) for compliance with MRI Ruby.
 
 spec-runner [vendors](spec) a
 [fork of ruby/spec](https://github.com/artichoke/spec/tree/artichoke-vendor).

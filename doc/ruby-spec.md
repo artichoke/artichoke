@@ -1,11 +1,11 @@
 # Ruby Spec
 
-artichoke embeds a copy of [ruby/spec](/spec-runner/vendor/spec). ruby/spec is a
+artichoke embeds a copy of [ruby/spec](../spec-runner/vendor/spec). ruby/spec is a
 set of specifications for testing the Ruby language, core, and standard library
 packages.
 
 Artichoke enforces that some ruby/specs pass. These specs are tracked in
-[`spec-runner/enforced-specs.yaml`](/spec-runner/enforced-specs.yaml).
+[`spec-runner/enforced-specs.yaml`](../spec-runner/enforced-specs.yaml).
 
 ## Running Specs
 

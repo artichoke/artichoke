@@ -42,8 +42,8 @@ cargo install --git https://github.com/artichoke/artichoke --locked
 ```
 
 If instead you'd like to build Artichoke locally, you'll need Rust, clang, and
-Ruby. [`CONTRIBUTING.md`](/CONTRIBUTING.md) has more detail on
-[how to set up the compiler toolchain](/CONTRIBUTING.md#setup).
+Ruby. [`CONTRIBUTING.md`](CONTRIBUTING.md) has more detail on
+[how to set up the compiler toolchain](CONTRIBUTING.md#setup).
 
 ## Usage
 
@@ -91,8 +91,8 @@ ARGS:
 ## Design and Goals
 
 Artichoke is
-[designed to enable experimentation](/doc/artichoke-design-and-goals.md). The
-top goals of the project are:
+[designed to enable experimentation](doc/artichoke-design-and-goals.md). The top
+goals of the project are:
 
 - [Support WebAssembly as a build target](https://github.com/artichoke/artichoke/labels/O-wasm-unknown).
 - Support embedding and executing Ruby in untrusted environments.
@@ -127,7 +127,7 @@ If you'd like to engage in a discussion outside of GitHub, you can
 
 ## License
 
-artichoke is licensed with the [MIT License](/LICENSE) (c) Ryan Lopopolo.
+artichoke is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 Some portions of Artichoke are derived from third party sources. The READMEs in
 each crate discuss which third party licenses are applicable to the sources and
