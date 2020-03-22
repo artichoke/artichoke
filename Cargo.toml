@@ -25,6 +25,10 @@ structopt = "0.3.10"
 [dependencies.artichoke-backend]
 path = "artichoke-backend"
 
+[dev-dependencies]
+doc-comment = "0.3"
+version-sync = "0.8"
+
 [workspace]
 members = ["artichoke-backend", "artichoke-core", "spec-runner"]
 
