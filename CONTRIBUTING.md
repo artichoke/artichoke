@@ -69,14 +69,14 @@ _crate_. Once you have the Rust toolchain installed, you can install the crates
 specified in [`Cargo.lock`](/Cargo.lock) by running:
 
 ```sh
-cargo build
+cargo build --workspace
 ```
 
 You can check to see that this worked by running the following and observing no
 errors:
 
 ```sh
-cargo test
+cargo test --workspace
 cargo fmt -- --check
 cargo clippy --all-targets --all-features
 ```
@@ -214,7 +214,7 @@ a look at the `Value` tests in
 To run tests:
 
 ```sh
-cargo test
+cargo test --workspace
 ```
 
 If you are only working on one package, it can speed up iteration time to only

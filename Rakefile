@@ -49,15 +49,15 @@ end
 
 desc 'Generate Rust API documentation'
 task :doc do
-  sh 'rustup run --install nightly cargo doc --no-deps --all'
+  sh 'rustup run --install nightly cargo doc --workspace --no-deps'
 end
 
 desc 'Generate Rust API documentation and open it in a web browser'
 task :'doc:open' do
-  sh 'rustup run --install nightly cargo doc --no-deps --all --open'
+  sh 'rustup run --install nightly cargo doc --workspace --no-deps --open'
 end
 
 desc 'Run enforced ruby/spec suite'
 task :spec do
-  sh 'cargo run -q --bin spec-runner -- spec-runner/enforced-specs.yaml'
+  sh 'cargo run -q -p spec-runner -- spec-runner/enforced-specs.yaml'
 end

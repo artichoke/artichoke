@@ -14,7 +14,7 @@ You can run these specs for Artichoke crate with the `spec-runner` crate.
 ### Running the enforced specs
 
 ```shell
-cargo run -q --bin spec-runner -- spec-runner/enforced-specs.yaml
+cargo run -q --p spec-runner -- spec-runner/enforced-specs.yaml
 ```
 
 ### Running specific specs

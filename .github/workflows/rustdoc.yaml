@@ -40,7 +40,7 @@ jobs:
         run: sudo apt install bison
 
       - name: Build Documentation
-        run: cargo doc --all --no-deps
+        run: cargo doc --workspace --no-deps
 
       - name: Copy static content
         run: cp assets/* target/doc
