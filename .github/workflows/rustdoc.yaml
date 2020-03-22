@@ -43,7 +43,7 @@ jobs:
         run: cargo doc --workspace --no-deps
 
       - name: Copy static content
-        run: cp assets/* target/doc
+        run: cp --verbose .github/rustdoc/* target/doc/
 
       - name: Deploy Docs
         uses: peaceiris/actions-gh-pages@v3
