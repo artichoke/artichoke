@@ -58,12 +58,21 @@ core:
       - scan
 library:
   - suite: abbrev
+  - suite: delegate
+    specs:
+      - skip_all
   - suite: monitor
   - suite: securerandom
     skip:
       - random_bytes # specs require ASCII-8BIT encoding for Strings
       - random_number # missing support for Bignum and Range arguments
+  - suite: shellwords
+    skip:
+      - shellwords # missing String#gsub support for back references
   - suite: stringscanner
+  - suite: time
+    specs:
+      - skip_all # missing date package
   - suite: uri
     skip:
       - parse
