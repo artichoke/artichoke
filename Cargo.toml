@@ -35,3 +35,15 @@ members = ["artichoke-backend", "artichoke-core", "spec-runner"]
 [profile.release]
 codegen-units = 1
 lto = true
+
+[features]
+default = [
+  "core-env-system",
+  "core-math-extra",
+  "core-random",
+  "stdlib-securerandom"
+]
+core-env-system = ["artichoke-backend/core-env-system"]
+core-math-extra = ["artichoke-backend/core-math-extra"]
+core-random = ["artichoke-backend/core-random"]
+stdlib-securerandom = ["artichoke-backend/stdlib-securerandom"]
