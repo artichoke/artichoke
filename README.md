@@ -90,9 +90,8 @@ ARGS:
 
 ## Design and Goals
 
-Artichoke is
-[designed to enable experimentation](doc/artichoke-design-and-goals.md). The top
-goals of the project are:
+Artichoke is [designed to enable experimentation](VISION.md). The top goals of
+the project are:
 
 - [Support WebAssembly as a build target](https://github.com/artichoke/artichoke/labels/O-wasm-unknown).
 - Support embedding and executing Ruby in untrusted environments.

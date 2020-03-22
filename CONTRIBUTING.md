@@ -24,7 +24,7 @@ If you'd like to engage in a discussion outside of GitHub, you can
 ## Implementation Philosophy
 
 - Prefer pure Ruby implementations when initially implementing features.
-- A feature is not done until it passes [ruby/spec](doc/ruby-spec.md).
+- A feature is not done until it passes [ruby/spec](RUBYSPEC.md).
 - Move implementations to Rust for performance, e.g.
   [using Serde to implement the JSON package](https://github.com/artichoke/artichoke/issues/77).
 - If there is a Rust crate that does what we need, prefer to use it. Forking is

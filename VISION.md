@@ -45,7 +45,7 @@ Artichoke core will pass 100% of the
 [Core](https://github.com/artichoke/artichoke/labels/A-ruby-core) and
 [Standard Library](https://github.com/artichoke/artichoke/labels/A-ruby-stdlib)
 Ruby specs. The runtime will be implemented in a hybrid of Rust and Ruby. The
-[`Regexp` implementation](../artichoke-backend/src/extn/core/regexp) is a
+[`Regexp` implementation](artichoke-backend/src/extn/core/regexp) is a
 representative example of the approach.
 
 ### Embedding
@@ -56,10 +56,10 @@ Artichoke core will support embedding with:
   [filesystem backends](https://github.com/artichoke/artichoke/labels/A-filesystem),
   including an in-memory
   [virtual filesystem](https://artichoke.github.io/artichoke/artichoke_backend/fs/index.html).
-- Multiple [`ENV` backends](../artichoke-backend/src/extn/core/env), including
-  an in-memory `HashMap` backend.
+- Multiple [`ENV` backends](artichoke-backend/src/extn/core/env), including an
+  in-memory `HashMap` backend.
 - Optional C dependencies via multiple implementations of Core classes, e.g.
-  [`Regexp`](../artichoke-backend/src/extn/core/regexp).
+  [`Regexp`](artichoke-backend/src/extn/core/regexp).
 - [Optional standard-library](https://github.com/artichoke/artichoke/labels/A-optional-stdlib).
 - [Optional multi-threading](https://github.com/artichoke/artichoke/labels/A-parallelism).
 - Capturable IO.
