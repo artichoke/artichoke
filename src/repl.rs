@@ -141,7 +141,7 @@ pub fn run(
     config: Option<PromptConfig>,
 ) -> Result<(), Box<dyn error::Error>> {
     let config = config.unwrap_or_default();
-    let mut interp = artichoke_backend::interpreter()?;
+    let mut interp = crate::interpreter()?;
     writeln!(output, "{}", preamble(&mut interp)?)?;
 
     interp.reset_parser();

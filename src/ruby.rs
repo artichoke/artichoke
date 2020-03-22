@@ -56,7 +56,7 @@ struct Opt {
 pub fn entrypoint() -> Result<(), Exception> {
     let opt = Opt::from_args();
     if opt.copyright {
-        let mut interp = artichoke_backend::interpreter()?;
+        let mut interp = crate::interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(())
     } else if !opt.commands.is_empty() {
@@ -64,7 +64,7 @@ pub fn entrypoint() -> Result<(), Exception> {
     } else if let Some(programfile) = opt.programfile {
         execute_program_file(programfile.as_path(), opt.fixture.as_ref().map(Path::new))
     } else {
-        let mut interp = artichoke_backend::interpreter()?;
+        let mut interp = crate::interpreter()?;
         let mut program = vec![];
         io::stdin()
             .read_to_end(&mut program)
@@ -75,7 +75,7 @@ pub fn entrypoint() -> Result<(), Exception> {
 }
 
 fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Result<(), Exception> {
-    let mut interp = artichoke_backend::interpreter()?;
+    let mut interp = crate::interpreter()?;
     // safety:
     //
     // - `Context::new_unchecked` requires that its argument has no NUL bytes.
@@ -105,7 +105,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
 }
 
 fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<(), Exception> {
-    let mut interp = artichoke_backend::interpreter()?;
+    let mut interp = crate::interpreter()?;
     if let Some(ref fixture) = fixture {
         let data = if let Ok(data) = std::fs::read(fixture) {
             data
