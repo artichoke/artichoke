@@ -42,95 +42,22 @@ Artichoke depends on Rust and several compiler plugins for linting and
 formatting. The specific version of Rust Artichoke requires is specified in the
 [toolchain file](rust-toolchain).
 
-#### Installation
-
-The recommended way to install the Rust toolchain is with
-[rustup](https://rustup.rs/). On macOS, you can install rustup with
-[Homebrew](https://docs.brew.sh/Installation):
-
-```sh
-brew install rustup-init
-rustup-init
-```
-
-Once you have rustup, you can install the Rust toolchain needed to compile
-Artichoke.
-
-```sh
-rustup toolchain install "$(cat rust-toolchain)"
-rustup component add rustfmt
-rustup component add clippy
-```
-
-### Rust Crates
-
-Artichoke depends on several Rust libraries. In Rust, a library is called a
-_crate_. Once you have the Rust toolchain installed, you can install the crates
-specified in [`Cargo.lock`](Cargo.lock) by running:
-
-```sh
-cargo build --workspace
-```
-
-You can check to see that this worked by running the following and observing no
-errors:
-
-```sh
-cargo test --workspace
-cargo fmt -- --check
-cargo clippy --all-targets --all-features
-```
+Toolchain requirements are documented in [`BUILD.md`](BUILD.md#rust-toolchain).
 
 ### C Toolchain
 
-#### `cc` Crate
+Some artichoke dependencies, like the mruby [`sys`](artichoke-backend/src/sys)
+and [`onig`](https://crates.io/crates/onig), build C static libraries and
+require a C compiler.
 
-Artichoke and some of its dependencies use the Rust
-[`cc` crate](https://crates.io/crates/cc) to build. `cc` uses a
-[platform-dependent C compiler](https://github.com/alexcrichton/cc-rs#compile-time-requirements)
-to compile C sources. On Unix, `cc` crate uses the `cc` binary.
-
-#### mruby Backend
-
-To build the Artichoke mruby backend, you will need a C compiler toolchain. By
-default, mruby requires the following to compile:
-
-- clang
-- bison
-- ar
-
-You can override the requirement for clang by setting the `CC` and `LD`
-environment variables.
+Toolchain requirements are documented in [`BUILD.md`](BUILD.md#c-toolchain).
 
 ### Ruby
 
 Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
-[`.ruby-version`](.ruby-version) file in the root of Artichoke specifies Ruby
-2.6.3.
+[`.ruby-version`](.ruby-version) file in this repository specifies Ruby 2.6.3.
 
-If you use [RVM](https://rvm.io/), you can install Ruby dependencies by running:
-
-```sh
-rvm install "$(cat .ruby-version)"
-gem install bundler
-```
-
-If you use [rbenv](https://github.com/rbenv/rbenv) and
-[ruby-build](https://github.com/rbenv/ruby-build), you can install Ruby
-dependencies by running:
-
-```sh
-rbenv install "$(cat .ruby-version)"
-gem install bundler
-rbenv rehash
-```
-
-The [`Gemfile`](Gemfile) in Artichoke specifies several dev dependencies. You
-can install these dependencies by running:
-
-```sh
-bundle install
-```
+Toolchain requirements are documented in [`BUILD.md`](BUILD.md#ruby-toolchain).
 
 Artichoke uses [`rake`](Rakefile) as a task runner. You can see the available
 tasks by running:
@@ -141,7 +68,9 @@ rake doc               # Generate Rust API documentation
 rake doc:open          # Generate Rust API documentation and open it in a web browser
 rake lint:all          # Lint and format
 rake lint:deps         # Install linting dependencies
+rake lint:eslint       # Run eslint
 rake lint:format       # Format sources
+rake lint:links        # Check markdown links
 rake lint:restriction  # Lint with restriction pass (unenforced lints)
 rake lint:rubocop      # Run rubocop
 rake spec              # Run enforced ruby/spec suite
@@ -149,7 +78,7 @@ rake spec              # Run enforced ruby/spec suite
 
 To lint Ruby sources, Artichoke uses
 [RuboCop](https://github.com/rubocop-hq/rubocop). RuboCop runs as part of the
-`lint:all` task. You can run only RuboCop by invoking the `lint:rubocop` task.
+`lint:all` task. To run RuboCop by itself, invoke the `lint:rubocop` task.
 
 ### Node.js
 
@@ -225,11 +154,10 @@ cargo test -p artichoke-backend
 ```
 
 `cargo test` accepts a filter argument that will limit test execution to tests
-that substring match. For example, to run all of the
-[`Regexp`](artichoke-backend/src/extn/core/regexp) tests:
+that substring match. For example, to run all of the Ruby/Rust interop tests:
 
 ```sh
-cargo test -p artichoke-backend regexp
+cargo test -p artichoke-backend convert
 ```
 
 Tests are run for every PR. All builds must pass before merging a PR.
@@ -239,7 +167,8 @@ Tests are run for every PR. All builds must pass before merging a PR.
 ### Rust Toolchain
 
 Upgrades to the Rust toolchain should happen in a dedicated PR that addresses
-any changes to ructc warnings and clippy lints.
+any changes to ructc warnings and clippy lints. See
+[GH-482](https://github.com/artichoke/artichoke/pull/482) for an example.
 
 ### Rust Crates
 
@@ -250,7 +179,8 @@ To see what crates are outdated, you can use
 [cargo-outdated](https://github.com/kbknapp/cargo-outdated).
 
 If you need to pull in an updated version of a crate for a bugfix or a new
-feature, update the version number in `Cargo.toml`.
+feature, update the version number in `Cargo.toml`. See
+[GH-548](https://github.com/artichoke/artichoke/pull/548) for an example.
 
 To update Rust crate dependencies run the following command and check in the
 updated `Cargo.lock` file:

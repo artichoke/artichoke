@@ -2,20 +2,29 @@
 
 To build Artichoke, install the [prerequisites](#prerequisites) and run:
 
-```sh
-git clone https://github.com/artichoke/artichoke.git
-cd ./artichoke
-cargo build
-cargo test
+```console
+$ git clone https://github.com/artichoke/artichoke.git
+$ cd ./artichoke
+$ cargo build --release
+$ ./target/release/artichoke --version
+artichoke 0.1.0-pre.0
 ```
 
-Cross-builds are supported with the normal cargo invocation (although they are
-not yet tested in CI):
+## WebAssembly
+
+Artichoke can be used in WebAssembly environments via the
+`wasm32-unknown-emscripten` target. This target is not tested in CI and should
+be considered unstable.
 
 ```sh
-rustup target add wasm32-unknown-unknown
-cargo build --target wasm32-unknown-unknown
+rustup target add wasm32-unknown-emscripten
+cargo build --release --target wasm32-unknown-unknown
 ```
+
+This on its own does not produce a usable artifact. To build a WebAssembly
+bundle, depend on `artichoke` in a crate with a main. See the
+[artichoke/playground](https://github.com/artichoke/playground) repository for
+an example.
 
 ## Prerequisites
 
@@ -23,7 +32,10 @@ cargo build --target wasm32-unknown-unknown
 
 Artichoke is a collection of Rust crates and requires a Rust compiler. The
 specific version of Rust Artichoke requires is specified in the
-[toolchain file](/rust-toolchain)
+[toolchain file](rust-toolchain).
+
+Artichoke only guarantees support for the latest stable version of the Rust
+compiler.
 
 #### Installation
 
@@ -49,19 +61,20 @@ rustup component add clippy
 
 Artichoke depends on several Rust libraries, or crates. Once you have the Rust
 toolchain installed, you can install the crates specified in
-[`Cargo.lock`](/Cargo.lock) by running:
+[`Cargo.lock`](Cargo.lock) by running:
 
 ```sh
-cargo build
+cargo build --workspace
 ```
 
 ### C Toolchain
 
-Some artichoke dependencies, like the mruby [`sys`](/artichoke-backend/src/sys)
-and [`onig`](https://docs.rs/onig/) build C static libraries and require a C
-compiler.
+Some artichoke dependencies, like the mruby [`sys`](artichoke-backend/src/sys)
+and [`onig`](https://crates.io/crates/onig), build C static libraries and
+require a C compiler.
 
-Artichoke specifically requires clang. Wasm targets require clang-8 or newer.
+Artichoke specifically requires clang. WebAssembly targets require clang-8 or
+newer.
 
 #### `cc` Crate
 
@@ -81,3 +94,32 @@ default, mruby requires the following to compile:
 
 You can override the requirement for clang by setting the `CC` and `LD`
 environment variables.
+
+### Ruby Toolchain
+
+Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
+[`.ruby-version`](.ruby-version) file in this repository specifies Ruby 2.6.3.
+
+If you use [RVM](https://rvm.io/), you can install Ruby dependencies by running:
+
+```sh
+rvm install "$(cat .ruby-version)"
+gem install bundler
+```
+
+If you use [rbenv](https://github.com/rbenv/rbenv) and
+[ruby-build](https://github.com/rbenv/ruby-build), you can install Ruby
+dependencies by running:
+
+```sh
+rbenv install "$(cat .ruby-version)"
+gem install bundler
+rbenv rehash
+```
+
+The [`Gemfile`](Gemfile) in Artichoke specifies several dev dependencies. You
+can install these dependencies by running:
+
+```sh
+bundle install
+```
