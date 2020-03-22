@@ -50,13 +50,13 @@ jobs:
         if: matrix.os == 'windows-latest'
 
       - name: Compile
-        run: cargo build --verbose
+        run: cargo build --workspace --verbose
 
       - name: Compile tests
-        run: cargo test --no-run
+        run: cargo test --workspace --no-run
 
       - name: Test
-        run: cargo test
+        run: cargo test --workspace
 
       - name: Compile artichoke-backend with no default features
         working-directory: artichoke-backend

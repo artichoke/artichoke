@@ -40,7 +40,7 @@ library:
 ## Usage
 
 ```console
-$ cargo run -q --bin spec-runner -- --help
+$ cargo run -q -p spec-runner -- --help
 spec-runner 0.1.0
 ruby/spec runner for Artichoke.
 
