@@ -176,6 +176,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Install Ruby toolchain
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+
+      - name: Install bundler
+        run: gem install bundler
+
+      - name: Install gems
+        run: bundle install
+
       - name: Install Node toolchain
         uses: actions/setup-node@v1
         with:
@@ -189,3 +200,6 @@ jobs:
 
       - name: Format markdown with prettier
         run: yarn prettier --prose-wrap always --check '**/*.md' '*.md'
+
+      - name: Validate links in markdown
+        run: bundle exec rake lint:links
