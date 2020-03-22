@@ -24,6 +24,21 @@ namespace :lint do
     sh 'yarn eslint --fix .'
   end
 
+  desc 'Check markdown links'
+  task links: :deps do
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json CONTRIBUTING.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json README.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/README.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/src/extn/stdlib/gen/README.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/vendor/README.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-core/README.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json doc/artichoke-design-and-goals.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json doc/build.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json doc/ruby-spec.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json spec-runner/README.md'
+    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json spec-runner/vendor/README.md'
+  end
+
   desc 'Install linting dependencies'
   task :deps do
     sh 'yarn install --frozen-lockfile'
