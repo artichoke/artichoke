@@ -4,9 +4,9 @@
 [![Discord](https://img.shields.io/discord/607683947496734760)](https://discord.gg/QCe2tp2)
 [![Twitter](https://img.shields.io/twitter/follow/artichokeruby?label=Follow&style=social)](https://twitter.com/artichokeruby)
 <br>
-[![Backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
-[![Core documentation](https://img.shields.io/badge/docs-artichoke--core-blue.svg)](https://artichoke.github.io/artichoke/artichoke_core/)
-[![Frontend documentation](https://img.shields.io/badge/docs-artichoke--frontend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_frontend/)
+[![Crate](https://img.shields.io/crates/v/artichoke.svg)](https://crates.io/crates/artichoke)
+[![API](https://docs.rs/artichoke/badge.svg)](https://docs.rs/artichoke)
+[![API master](https://img.shields.io/badge/docs-master-blue.svg)](https://artichoke.github.io/artichoke/artichoke/)
 
 <p align="center">
   <a href="https://artichoke.run">
@@ -32,17 +32,61 @@ You can [try Artichoke in your browser](https://artichoke.run). The
 [Artichoke Playground](https://github.com/artichoke/playground) runs a
 [WebAssembly](https://webassembly.org/) build of Artichoke.
 
-You can launch an interactive `irb`-style shell locally. The following command
-launches the Artichoke `irb` shell using `cargo`. `cargo` is the Rust equivalent
-to Ruby `bundler` that also manages building Rust code.
+## Install Artichoke
+
+You can install a pre-release build of Artichoke using `cargo`, Rust's package
+manager, by running:
 
 ```sh
-cargo run --bin airb
+cargo install --git https://github.com/artichoke/artichoke --locked
 ```
 
-To build Artichoke, you'll need Rust, clang, and Ruby.
-[`CONTRIBUTING.md`](/CONTRIBUTING.md) has more detail on
+If instead you'd like to build Artichoke locally, you'll need Rust, clang, and
+Ruby. [`CONTRIBUTING.md`](/CONTRIBUTING.md) has more detail on
 [how to set up the compiler toolchain](/CONTRIBUTING.md#setup).
+
+## Usage
+
+Artichoke ships with two binaries: `airb` and `artichoke`.
+
+### `airb`
+
+`airb` is the Artichoke implementation of `irb` and is an interactive Ruby shell
+and [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop).
+
+`airb` is a readline-enabled shell, although it does not persist history.
+
+## `artichoke`
+
+`artichoke` is the `ruby` binary frontend to Artichoke.
+
+`artichoke` supports executing programs via files, stdin, or inline with one or
+more `-e` flags.
+
+Artichoke does not yet support local filesystem access. A temporary workaround
+is to inject data into the interpreter with the `--with-fixture` flag, which
+reads file contents into a `$fixture` global.
+
+```console
+$ artichoke --help
+artichoke 0.1.0-pre.0
+Artichoke is a Ruby made with Rust.
+
+USAGE:
+    artichoke [FLAGS] [OPTIONS] [--] [programfile]
+
+FLAGS:
+        --copyright    print the copyright
+    -h, --help         Prints help information
+    -V, --version      Prints version information
+
+OPTIONS:
+    -e <commands>...                one line of script. Several -e's allowed. Omit [programfile]
+        --with-fixture <fixture>    file whose contents will be read into the `$fixture` global
+
+ARGS:
+    <programfile>
+```
 
 ## Design and Goals
 

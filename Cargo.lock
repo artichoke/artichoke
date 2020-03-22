@@ -19,6 +19,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "artichoke"
+version = "0.1.0-pre.0"
+dependencies = [
+ "ansi_term",
+ "artichoke-backend",
+ "rustyline",
+ "structopt",
+]
+
+[[package]]
 name = "artichoke-backend"
 version = "0.1.0"
 dependencies = [
@@ -51,16 +61,6 @@ dependencies = [
 [[package]]
 name = "artichoke-core"
 version = "0.1.0"
-
-[[package]]
-name = "artichoke-frontend"
-version = "0.1.0"
-dependencies = [
- "ansi_term",
- "artichoke-backend",
- "rustyline",
- "structopt",
-]
 
 [[package]]
 name = "atty"
@@ -694,9 +694,9 @@ checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
 name = "structopt"
-version = "0.3.9"
+version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1bcbed7d48956fcbb5d80c6b95aedb553513de0a1b451ea92679d999c010e98"
+checksum = "c8faa2719539bbe9d77869bfb15d4ee769f99525e707931452c97b693b3f159d"
 dependencies = [
  "clap",
  "lazy_static",
@@ -705,9 +705,9 @@ dependencies = [
 
 [[package]]
 name = "structopt-derive"
-version = "0.4.2"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "095064aa1f5b94d14e635d0a5684cf140c43ae40a0fd990708d38f5d669e5f64"
+checksum = "3f88b8e18c69496aad6f9ddf4630dd7d585bcaf765786cb415b9aec2fe5a0430"
 dependencies = [
  "heck",
  "proc-macro-error",
