@@ -7,9 +7,7 @@ ignore = []
 [licenses]
 unlicensed = "deny"
 allow = [
-  "BSD-2-Clause",
   "BSD-3-Clause",
-  "CC0-1.0",
   "ISC",
   "MIT",
   "Apache-2.0",
@@ -31,7 +29,7 @@ skip = [
   { name = "quote", version = "<1.0" }, # version-check 0.8.1
   { name = "syn", version = "<1.0" }, # version-check 0.8.1
   { name = "unicode-xid", version = "<1.0" }, # version-check 0.8.1
-  { name = "version_check", version = "< 0.9" },
+  { name = "semver-parser", version = "< 0.9" },
 ]
 skip-tree = []
 
