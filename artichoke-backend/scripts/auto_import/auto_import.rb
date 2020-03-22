@@ -20,8 +20,3 @@ template = File.read("#{auto_import_dir}/rust_glue.rs.erb")
 renderer = ERB.new(template)
 output = renderer.result(binding)
 File.write(out_file.to_s, output)
-
-# Add test for spec compliance. Make a commit here.
-# Run spec compliance tests with yarn spec.
-# If the tests pass, great. If they do not, there is likely a bug in Artichoke
-# or an upstream bug in mruby. We can discuss in this issue how to proceed.
