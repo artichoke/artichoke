@@ -33,19 +33,11 @@
     "clang-format": "^1.2.4"
   },
   "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "@babel/preset-env": "^7.5.5",
-    "babel-eslint": "^10.0.1",
     "eslint": "^6.1.0",
     "eslint-config-prettier": "^6.0.0",
     "eslint-plugin-html": "^6.0.0",
     "prettier": "^1.15.3",
     "prettier-plugin-toml": "^0.3.1"
-  },
-  "babel": {
-    "presets": [
-      "@babel/preset-env"
-    ]
   },
   "eslintConfig": {
     "env": {
@@ -54,7 +46,9 @@
       "es6": true,
       "node": true
     },
-    "parser": "babel-eslint",
+    "parserOptions": {
+      "ecmaVersion": 8
+    },
     "plugins": [
       "html"
     ],
