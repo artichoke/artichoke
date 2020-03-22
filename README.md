@@ -42,8 +42,8 @@ cargo install --git https://github.com/artichoke/artichoke --locked
 ```
 
 If instead you'd like to build Artichoke locally, you'll need Rust, clang, and
-Ruby. [`CONTRIBUTING.md`](CONTRIBUTING.md) has more detail on
-[how to set up the compiler toolchain](CONTRIBUTING.md#setup).
+Ruby. [`BUILD.md`](BUILD.md) has more detail on
+[how to set up the compiler toolchain](BUILD.md#prerequisites).
 
 ## Usage
 
