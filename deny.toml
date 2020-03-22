@@ -26,8 +26,14 @@ multiple-versions = "deny"
 highlight = "all"
 allow = []
 deny = []
-skip = []
-skip-tree = [{ name = "version_check", version = "< 0.9" }]
+skip = [
+  { name = "proc-macro2", version = "<1.0" }, # version-check 0.8.1
+  { name = "quote", version = "<1.0" }, # version-check 0.8.1
+  { name = "syn", version = "<1.0" }, # version-check 0.8.1
+  { name = "unicode-xid", version = "<1.0" }, # version-check 0.8.1
+  { name = "version_check", version = "< 0.9" },
+]
+skip-tree = []
 
 [sources]
 unknown-registry = "deny"
