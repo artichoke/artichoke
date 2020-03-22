@@ -26,17 +26,22 @@ namespace :lint do
 
   desc 'Check markdown links'
   task links: :deps do
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json BUILD.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json CONTRIBUTING.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json README.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/README.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/src/extn/stdlib/gen/README.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/vendor/README.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-core/README.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json doc/artichoke-design-and-goals.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json doc/ruby-spec.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json spec-runner/README.md'
-    sh 'yarn run markdown-link-check --config .github/markdown-link-check.json spec-runner/vendor/README.md'
+    markdown = [
+      'BUILD.md',
+      'CONTRIBUTING.md',
+      'README.md',
+      'RUBYSPEC.md',
+      'VISION.md',
+      'artichoke-backend/README.md',
+      'artichoke-backend/src/extn/stdlib/gen/README.md',
+      'artichoke-backend/vendor/README.md',
+      'artichoke-core/README.md',
+      'spec-runner/README.md',
+      'spec-runner/vendor/README.md'
+    ]
+    markdown.each do |source|
+      sh "yarn run markdown-link-check --config .github/markdown-link-check.json #{source}"
+    end
   end
 
   desc 'Install linting dependencies'

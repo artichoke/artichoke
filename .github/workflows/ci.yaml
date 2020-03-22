@@ -176,6 +176,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Install Ruby toolchain
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+
+      - name: Install bundler
+        run: gem install bundler
+
+      - name: Install gems
+        run: bundle install
+
       - name: Install Node toolchain
         uses: actions/setup-node@v1
         with:
@@ -191,15 +202,4 @@ jobs:
         run: yarn prettier --prose-wrap always --check '**/*.md' '*.md'
 
       - name: Validate links in markdown
-        run: |
-          yarn run markdown-link-check --config .github/markdown-link-check.json BUILD.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json CONTRIBUTING.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json README.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/README.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/src/extn/stdlib/gen/README.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-backend/vendor/README.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json artichoke-core/README.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json doc/artichoke-design-and-goals.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json doc/ruby-spec.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json spec-runner/README.md
-          yarn run markdown-link-check --config .github/markdown-link-check.json spec-runner/vendor/README.md
+        run: bundle exec rake lint:links
