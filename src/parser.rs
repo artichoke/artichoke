@@ -75,7 +75,7 @@ impl Default for State {
 }
 
 /// Wraps a [`artichoke_backend`] mruby parser.
-// TODO: add a `Debug` impl
+#[derive(Debug)]
 pub struct Parser {
     parser: NonNull<sys::mrb_parser_state>,
     context: NonNull<sys::mrbc_context>,

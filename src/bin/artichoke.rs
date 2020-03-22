@@ -1,6 +1,7 @@
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
 #![deny(intra_doc_link_resolution_failure)]
+#![warn(missing_debug_implementations)]
 #![warn(rust_2018_idioms)]
 
 //! `artichoke` is the `ruby` binary frontend to Artichoke.
