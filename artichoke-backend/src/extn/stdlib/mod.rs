@@ -1,6 +1,7 @@
 use crate::extn::prelude::*;
 
 pub mod abbrev;
+pub mod cmath;
 pub mod delegate;
 pub mod forwardable;
 pub mod json;
@@ -15,6 +16,7 @@ pub mod uri;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     abbrev::init(interp)?;
+    cmath::init(interp)?;
     delegate::init(interp)?;
     forwardable::init(interp)?;
     json::init(interp)?;

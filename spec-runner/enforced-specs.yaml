@@ -58,6 +58,9 @@ core:
       - scan
 library:
   - suite: abbrev
+  - suite: delegate
+    specs:
+      - skip_all
   - suite: monitor
   - suite: securerandom
     skip:
