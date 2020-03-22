@@ -56,8 +56,8 @@ Artichoke core will support embedding with:
   [filesystem backends](https://github.com/artichoke/artichoke/labels/A-filesystem),
   including an in-memory
   [virtual filesystem](https://artichoke.github.io/artichoke/artichoke_backend/fs/index.html).
-- Multiple [`ENV` backends](../artichoke-backend/src/extn/core/env), including an
-  in-memory `HashMap` backend.
+- Multiple [`ENV` backends](../artichoke-backend/src/extn/core/env), including
+  an in-memory `HashMap` backend.
 - Optional C dependencies via multiple implementations of Core classes, e.g.
   [`Regexp`](../artichoke-backend/src/extn/core/regexp).
 - [Optional standard-library](https://github.com/artichoke/artichoke/labels/A-optional-stdlib).
