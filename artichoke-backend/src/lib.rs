@@ -1,7 +1,8 @@
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
 #![allow(clippy::missing_errors_doc)]
-#![deny(intra_doc_link_resolution_failure)]
+#![warn(intra_doc_link_resolution_failure)]
+#![warn(missing_debug_implementations)]
 #![warn(rust_2018_idioms)]
 
 //! # artichoke-backend
@@ -74,25 +75,8 @@
 //! The [`convert` module](convert) provides implementations for conversions
 //! between boxed Ruby values and native Rust types like `i64` and
 //! `HashMap<String, Option<Vec<u8>>>` using an `artichoke-backend` interpreter.
-//!
-//! ## License
-//!
-//! artichoke-backend is licensed with the MIT License (c) Ryan Lopopolo.
-//!
-//! Some portions of artichoke-backend are derived from
-//! [mruby](https://github.com/mruby/mruby) which is Copyright (c) 2019 mruby
-//! developers. mruby is licensed with the
-//! [MIT License](https://github.com/mruby/mruby/blob/master/LICENSE).
-//!
-//! Some portions of artichoke-backend are derived from Ruby @
-//! [2.6.3](https://github.com/ruby/ruby/tree/v2_6_3) which is copyright Yukihiro
-//! Matsumoto \<matz@netlab.jp\>. Ruby is licensed with the
-//! [2-clause BSDL License](https://github.com/ruby/ruby/blob/v2_6_3/COPYING).
-//!
-//! artichoke-backend vendors headers provided by
-//! [emsdk](https://github.com/emscripten-core/emsdk) which is Copyright (c) 2018
-//! Emscripten authors. emsdk is licensed with the
-//! [MIT/Expat License](https://github.com/emscripten-core/emsdk/blob/master/LICENSE).
+
+#![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_backend")]
 
 #[macro_use]
 extern crate log;

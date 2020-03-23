@@ -1,6 +1,7 @@
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
-#![deny(missing_docs, intra_doc_link_resolution_failure)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(missing_docs, intra_doc_link_resolution_failure)]
+#![warn(missing_debug_implementations)]
 #![warn(rust_2018_idioms)]
 #![forbid(unsafe_code)]
 
@@ -27,10 +28,8 @@
 //! [evaluating code](eval::Eval),
 //! [converting Rust data structures to boxed `Value`s on the interpreter heap](convert::ConvertMut),
 //! and [interning `Symbol`s](intern::Intern).
-//!
-//! ## License
-//!
-//! artichoke-core is licensed with the MIT License (c) Ryan Lopopolo.
+
+#![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_core")]
 
 pub mod constant;
 pub mod convert;
