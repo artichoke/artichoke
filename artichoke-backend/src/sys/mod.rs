@@ -10,6 +10,7 @@ use std::ffi::CStr;
 use std::fmt::Write;
 
 mod args;
+#[allow(missing_debug_implementations)]
 #[allow(missing_docs)]
 #[allow(non_camel_case_types)]
 #[allow(non_upper_case_globals)]

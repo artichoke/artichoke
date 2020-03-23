@@ -13,7 +13,7 @@ use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Builder<'a> {
     interp: &'a Artichoke,
     spec: &'a Spec,

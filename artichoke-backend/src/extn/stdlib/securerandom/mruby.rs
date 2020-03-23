@@ -7,6 +7,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
+#[derive(Debug)]
 pub struct SecureRandomFile;
 
 impl File for SecureRandomFile {
