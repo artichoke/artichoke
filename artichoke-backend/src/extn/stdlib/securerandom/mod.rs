@@ -105,7 +105,7 @@ pub fn hex(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Excepti
 
 pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
     let bytes = random_bytes(interp, len)?;
-    Ok(base64::encode(bytes.as_slice()))
+    Ok(base64::encode(bytes))
 }
 
 pub fn alphanumeric(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
