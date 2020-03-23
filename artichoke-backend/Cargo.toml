@@ -10,7 +10,7 @@ license = "MIT"
 keywords = ["artichoke", "artichoke-ruby", "ruby"]
 
 [dependencies]
-base64 = { version = "0.11", optional = true }
+base64 = { version = "0.12", optional = true }
 bstr = { version = "0.2", default-features = false, features = ["std"] }
 chrono = "0.4"
 dtoa = "0.4"
