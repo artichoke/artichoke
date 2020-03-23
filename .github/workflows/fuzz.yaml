@@ -20,6 +20,17 @@ jobs:
           profile: minimal
           override: true
 
+      - name: Install Ruby toolchain
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.6"
+
+      - name: Install Clang
+        run: sudo apt install clang
+
+      - name: Install Bison
+        run: sudo apt install bison
+
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
 
