@@ -82,8 +82,8 @@ To lint Ruby sources, Artichoke uses
 
 ### Node.js
 
-Node.js and Yarn are optional dependencies that are used for formatting text
-sources with [prettier](https://prettier.io/).
+Node.js is an optional dependency that is used for formatting text sources with
+[prettier](https://prettier.io/).
 
 Node.js is only required for formatting if modifying the following filetypes:
 
@@ -97,27 +97,22 @@ Node.js is only required for formatting if modifying the following filetypes:
 - `yml`
 
 You will need to install
-[Node.js](https://nodejs.org/en/download/package-manager/) and
-[Yarn](https://yarnpkg.com/en/docs/install).
+[Node.js](https://nodejs.org/en/download/package-manager/).
 
-On macOS, you can install Node.js and Yarn with
+On macOS, you can install Node.js with
 [Homebrew](https://docs.brew.sh/Installation):
 
 ```sh
-brew install node yarn
+brew install node
 ```
 
 ### Node.js Packages
 
-Once you have Yarn installed, you can install the packages specified in
-[`package.json`](package.json) by running:
+Once you have Node.js installed, you can install the packages specified in
+[`package.json`](package.json).
 
-```sh
-yarn install
-```
-
-You can check to see that this worked by running `yarn lint` and observing no
-errors.
+Node.js packages are automatically installed by linting tasks defined in the
+[`Rakefile`](Rakefile).
 
 ## Code Quality
 
@@ -191,17 +186,17 @@ cargo update
 
 ### Node.js Packages
 
-To see what packages are outdated, you can run `yarn outdated`.
+To see what packages are outdated, you can run `npm outdated`.
 
 To update Node.js package dependencies run the following command and check in
-the updated `yarn.lock` file:
+the updated `package-lock.json` file:
 
 ```sh
-yarn upgrade
+npm update
 ```
 
-If after running `yarn upgrade` there are still outdated packages reported by
-`yarn outdated`, there has likely been a major release of a dependency. If you
+If after running `npm update` there are still outdated packages reported by
+`npm outdated`, there has likely been a major release of a dependency. If you
 would like to update the dependency and deal with any breakage, please do;
 otherwise, please
 [file an issue](https://github.com/artichoke/artichoke/issues/new).
