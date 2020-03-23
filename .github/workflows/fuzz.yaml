@@ -1,0 +1,27 @@
+name: Fuzz
+on:
+  schedule:
+    - cron: "0 12 * * *"
+jobs:
+  eval:
+    name: Fuzz eval
+    runs-on: ubuntu-latest
+    env:
+      RUST_BACKTRACE: 1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+
+      - name: Fuzz eval
+        run: cargo fuzz run eval -- -max_total_time=1800 # 30 minutes
