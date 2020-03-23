@@ -2,11 +2,13 @@
 //!
 //! Exported as `ruby` and `artichoke` binaries.
 
+use ansi_term::Style;
 use std::ffi::{OsStr, OsString};
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
+use crate::backend::exception::RubyException;
 use crate::backend::exception::Exception;
 use crate::backend::extn::core::exception::{IOError, LoadError};
 use crate::backend::ffi;
@@ -69,7 +71,8 @@ pub fn entrypoint() -> Result<(), Exception> {
         io::stdin()
             .read_to_end(&mut program)
             .map_err(|_| IOError::new(&interp, "Could not read program from STDIN"))?;
-        let _ = interp.eval(program.as_slice())?;
+        let _ = interp.eval(program.as_slice()).map_err(|exc| handle_exception(&mut interp, exc));
+
         Ok(())
     }
 }
@@ -99,7 +102,10 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
         }
     }
     for command in commands {
-        let _ = interp.eval_os_str(command.as_os_str())?;
+        if let Err(exc) = interp.eval_os_str(command.as_os_str()) {
+            handle_exception(&mut interp, exc)?;
+            return Ok(()); // short circuit, but don't return an error since we already printed it
+        }
     }
     Ok(())
 }
@@ -141,7 +147,9 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
             }
         }
     };
-    let _ = interp.eval(program.as_slice())?;
+
+    let _ = interp.eval(program.as_slice()).map_err(|exc| handle_exception(&mut interp, exc));
+
     Ok(())
 }
 
@@ -151,4 +159,36 @@ fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
     let path = ffi::os_str_to_bytes(file)?;
     string::format_unicode_debug_into(&mut buf, &path)?;
     Ok(buf)
+}
+
+fn handle_exception(interp: &mut artichoke_backend::Artichoke, exc: artichoke_backend::exception::Exception) -> Result<(), Exception> {
+    if let Some(backtrace) = exc.vm_backtrace(interp) {
+        writeln!(
+            io::stderr(),
+            "{} (most recent call last)",
+            Style::new().bold().paint("Traceback")
+        )?;
+        for (num, frame) in backtrace.into_iter().enumerate().rev() {
+            write!(io::stderr(), "\t{}: from ", num + 1)?;
+            io::stderr().write_all(frame.as_slice())?;
+            writeln!(io::stderr())?;
+        }
+    }
+
+    write!(
+        io::stderr(),
+        "{} {}",
+        Style::new().bold().paint(exc.name()),
+        Style::new().bold().paint("(")
+    )?;
+
+    Style::new()
+        .bold()
+        .underline()
+        .paint(exc.message())
+        .write_to(&mut io::stderr())?;
+
+    writeln!(io::stderr(), "{}", Style::new().bold().paint(")"))?;
+
+    Ok(())
 }
