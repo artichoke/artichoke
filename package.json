@@ -12,81 +12,22 @@
   "homepage": "https://github.com/artichoke/artichoke#readme",
   "bugs": "https://github.com/artichoke/artichoke/issues",
   "license": "MIT",
-  "author": {
-    "name": "Ryan Lopopolo",
-    "email": "rjl@hyperbo.la",
-    "url": "https://hyperbo.la"
-  },
+  "author": "Ryan Lopopolo <rjl@hyperbo.la> (https://hyperbo.la/)",
   "contributors": [
-    {
-      "name": "Ryan Lopopolo",
-      "email": "rjl@hyperbo.la",
-      "url": "https://hyperbo.la"
-    }
+    "Ryan Lopopolo <rjl@hyperbo.la> (https://hyperbo.la/)"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/artichoke/artichoke.git"
-  },
+  "repository": "github:artichoke/artichoke",
   "dependencies": {
     "array-flat-polyfill": "^1.0.1",
     "clang-format": "^1.2.4"
   },
-  "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "@babel/preset-env": "^7.5.5",
-    "babel-eslint": "^10.0.1",
-    "eslint": "^6.1.0",
-    "eslint-config-airbnb": "^18.0.1",
-    "eslint-config-prettier": "^6.0.0",
-    "eslint-plugin-html": "^6.0.0",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-prettier": "^3.0.1",
-    "eslint-plugin-react": "^7.14.3",
-    "eslint-plugin-react-hooks": "^1.7.0",
-    "markdown-link-check": "^3.8.0",
-    "prettier": "^1.15.3",
-    "prettier-plugin-toml": "^0.3.1"
-  },
-  "babel": {
-    "presets": [
-      "@babel/preset-env"
-    ]
-  },
+  "devDependencies": {},
   "eslintConfig": {
     "env": {
-      "browser": true,
-      "commonjs": true,
-      "es6": true,
       "node": true
     },
-    "parser": "babel-eslint",
-    "plugins": [
-      "html",
-      "import",
-      "prettier"
-    ],
-    "extends": [
-      "airbnb",
-      "prettier"
-    ],
-    "rules": {
-      "prettier/prettier": "error",
-      "react/jsx-closing-bracket-location": "off",
-      "react/jsx-closing-tag-location": "off",
-      "react/jsx-curly-newline": "off",
-      "react/jsx-curly-spacing": "off",
-      "react/jsx-equals-spacing": "off",
-      "react/jsx-first-prop-new-line": "off",
-      "react/jsx-indent": "off",
-      "react/jsx-indent-props": "off",
-      "react/jsx-max-props-per-line": "off",
-      "react/jsx-one-expression-per-line": "off",
-      "react/jsx-props-no-multi-spaces": "off",
-      "react/jsx-tag-spacing": "off",
-      "react/jsx-wrap-multilines": "off",
-      "react/self-closing-comp": "off"
+    "parserOptions": {
+      "ecmaVersion": 8
     }
   },
   "scripts": {

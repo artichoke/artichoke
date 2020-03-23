@@ -9,14 +9,14 @@ const { spawnClangFormat } = require("clang-format");
 
 const STATUS = Object.freeze({
   ok: "ok",
-  failed: "failed"
+  failed: "failed",
 });
 
 const IGNORE_DIRECTORIES = Object.freeze([
   ".git",
   "node_modules",
   "target",
-  "vendor"
+  "vendor",
 ]);
 const args = process.argv.slice(2);
 const checkMode = args.includes("--check");
@@ -25,8 +25,8 @@ async function walk(dir) {
   try {
     const files = await fs.readdir(dir);
     const children = files
-      .filter(file => !IGNORE_DIRECTORIES.includes(file))
-      .map(async file => {
+      .filter((file) => !IGNORE_DIRECTORIES.includes(file))
+      .map(async (file) => {
         try {
           const filepath = path.join(dir, file);
           const stats = await fs.stat(filepath);
@@ -41,8 +41,8 @@ async function walk(dir) {
           return Promise.reject(err);
         }
       });
-    return Promise.all(children).then(dirEntries =>
-      dirEntries.flat(Infinity).filter(entry => entry != null)
+    return Promise.all(children).then((dirEntries) =>
+      dirEntries.flat(Infinity).filter((entry) => entry != null)
     );
   } catch (err) {
     return Promise.reject(err);
@@ -50,24 +50,24 @@ async function walk(dir) {
 }
 
 const filesWithExtension = (files, ext) =>
-  files.filter(file => {
+  files.filter((file) => {
     const extname = path.extname(file);
     return [ext, `.${ext}`].includes(extname);
   });
 
-const cFiles = files => [
+const cFiles = (files) => [
   ...filesWithExtension(files, "c"),
-  ...filesWithExtension(files, "h")
+  ...filesWithExtension(files, "h"),
 ];
 
 async function clangFormatter(files) {
   const sources = cFiles(files);
   return Promise.all(
-    sources.map(source => {
+    sources.map((source) => {
       const relative = path.relative(path.resolve(__dirname, ".."), source);
       return new Promise((resolve, reject) => {
         let formatted = "";
-        const done = async err => {
+        const done = async (err) => {
           if (err) {
             console.error(`KO: ${relative}`);
             reject(err);
@@ -94,9 +94,9 @@ async function clangFormatter(files) {
         const formatter = spawnClangFormat([source], done, [
           "ignore",
           "pipe",
-          process.stderr
+          process.stderr,
         ]);
-        formatter.stdout.on("data", data => {
+        formatter.stdout.on("data", (data) => {
           formatted += data.toString();
         });
       });
@@ -111,7 +111,7 @@ async function clangFormatter(files) {
     const lintState = await clangFormatter(files);
     const failures = lintState
       .flat(Infinity)
-      .filter(status => status === STATUS.failed);
+      .filter((status) => status === STATUS.failed);
     if (failures.length > 0) {
       process.exit(1);
     }

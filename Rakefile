@@ -14,18 +14,18 @@ namespace :lint do
   desc 'Format sources'
   task format: :deps do
     sh 'cargo fmt -- --color=auto'
-    sh "yarn prettier --write '**/*'"
-    sh "yarn prettier --prose-wrap always --write '**/*.md' '*.md'"
+    sh "npx prettier --write '**/*'"
+    sh "npx prettier --prose-wrap always --write '**/*.md' '*.md'"
     sh 'node scripts/clang-format.js'
   end
 
   desc 'Run eslint'
   task eslint: :deps do
-    sh 'yarn eslint --fix .'
+    sh 'npx eslint --fix .'
   end
 
   desc 'Check markdown links'
-  task links: :deps do
+  task :links do
     markdown = [
       'BUILD.md',
       'CONTRIBUTING.md',
@@ -40,13 +40,13 @@ namespace :lint do
       'spec-runner/vendor/README.md'
     ]
     markdown.each do |source|
-      sh "yarn run markdown-link-check --config .github/markdown-link-check.json #{source}"
+      sh "npx markdown-link-check --config .github/markdown-link-check.json #{source}"
     end
   end
 
   desc 'Install linting dependencies'
   task :deps do
-    sh 'yarn install --frozen-lockfile'
+    sh 'npm install'
   end
 
   desc 'Lint with restriction pass (unenforced lints)'

@@ -40,7 +40,7 @@ jobs:
           node-version: "12.x"
 
       - name: Install Nodejs toolchain
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
-      - name: Yarn audit
-        run: yarn audit
+      - name: npm audit
+        run: npm audit

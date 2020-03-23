@@ -142,7 +142,7 @@ jobs:
           node-version: "12.x"
 
       - name: Install Nodejs toolchain
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Lint and check formatting with clang-format
         run: node scripts/clang-format.js --check
@@ -161,11 +161,8 @@ jobs:
         with:
           node-version: "12.x"
 
-      - name: Install Nodejs toolchain
-        run: yarn install --frozen-lockfile
-
       - name: Lint and check formatting with eslint
-        run: yarn eslint .
+        run: npx eslint .
 
   text:
     name: Lint and format text
@@ -192,14 +189,11 @@ jobs:
         with:
           node-version: "12.x"
 
-      - name: Install Nodejs toolchain
-        run: yarn install --frozen-lockfile
-
       - name: Lint and check formatting with prettier
-        run: yarn prettier --check '**/*'
+        run: npx prettier --check '**/*'
 
       - name: Format markdown with prettier
-        run: yarn prettier --prose-wrap always --check '**/*.md' '*.md'
+        run: npx prettier --prose-wrap always --check '**/*.md' '*.md'
 
       - name: Validate links in markdown
         run: bundle exec rake lint:links
