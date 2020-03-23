@@ -21,21 +21,14 @@
     "array-flat-polyfill": "^1.0.1",
     "clang-format": "^1.2.4"
   },
-  "devDependencies": {
-    "eslint": "^6.1.0",
-    "eslint-config-prettier": "^6.0.0",
-    "prettier": "^2.0.1"
-  },
+  "devDependencies": {},
   "eslintConfig": {
     "env": {
       "node": true
     },
     "parserOptions": {
       "ecmaVersion": 8
-    },
-    "extends": [
-      "prettier"
-    ]
+    }
   },
   "scripts": {
     "eslint-check": "eslint --print-config package.json | eslint-config-prettier-check"

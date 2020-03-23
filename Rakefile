@@ -14,14 +14,14 @@ namespace :lint do
   desc 'Format sources'
   task format: :deps do
     sh 'cargo fmt -- --color=auto'
-    sh "yarn prettier --write '**/*'"
-    sh "yarn prettier --prose-wrap always --write '**/*.md' '*.md'"
+    sh "npx prettier --write '**/*'"
+    sh "npx prettier --prose-wrap always --write '**/*.md' '*.md'"
     sh 'node scripts/clang-format.js'
   end
 
   desc 'Run eslint'
   task eslint: :deps do
-    sh 'yarn eslint --fix .'
+    sh 'npx eslint --fix .'
   end
 
   desc 'Check markdown links'
@@ -46,7 +46,7 @@ namespace :lint do
 
   desc 'Install linting dependencies'
   task :deps do
-    sh 'yarn install --frozen-lockfile'
+    sh 'npm install'
   end
 
   desc 'Lint with restriction pass (unenforced lints)'
