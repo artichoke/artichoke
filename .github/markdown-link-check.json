@@ -1,5 +1,9 @@
 {
-  "ignorePatterns": [],
+  "ignorePatterns": [
+    {
+      "pattern": "img.shields.io"
+    }
+  ],
   "replacementPatterns": [],
   "httpHeaders": [
     {
