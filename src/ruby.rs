@@ -167,7 +167,7 @@ fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
 
 fn handle_exception(
     interp: &mut artichoke_backend::Artichoke,
-    exc: artichoke_backend::exception::Exception
+    exc: artichoke_backend::exception::Exception,
 ) -> Result<(), Exception> {
     if let Some(backtrace) = exc.vm_backtrace(interp) {
         writeln!(
