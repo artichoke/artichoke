@@ -73,7 +73,7 @@ pub fn entrypoint() -> Result<(), Exception> {
             .map_err(|_| IOError::new(&interp, "Could not read program from STDIN"))?;
         let _ = interp
             .eval(program.as_slice())
-            .map_err(|exc| handle_exception(&mut interp, exc));
+            .map_err(|exc| handle_exception(&mut interp, &exc));
 
         Ok(())
     }
@@ -105,7 +105,7 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
     }
     for command in commands {
         if let Err(exc) = interp.eval_os_str(command.as_os_str()) {
-            handle_exception(&mut interp, exc)?;
+            handle_exception(&mut interp, &exc)?;
             return Ok(()); // short circuit, but don't return an error since we already printed it
         }
     }
@@ -152,7 +152,7 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
 
     let _ = interp
         .eval(program.as_slice())
-        .map_err(|exc| handle_exception(&mut interp, exc));
+        .map_err(|exc| handle_exception(&mut interp, &exc));
 
     Ok(())
 }
@@ -167,7 +167,7 @@ fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
 
 fn handle_exception(
     interp: &mut artichoke_backend::Artichoke,
-    exc: artichoke_backend::exception::Exception,
+    exc: &artichoke_backend::exception::Exception,
 ) -> Result<(), Exception> {
     if let Some(backtrace) = exc.vm_backtrace(interp) {
         writeln!(
