@@ -1,13 +1,17 @@
-use rand::{self, Rng, SeedableRng};
-use rand_pcg::Pcg64;
+use rand::{self, SeedableRng};
 use std::fmt;
 
 use crate::extn::core::random::backend::{InternalState, RandType};
 use crate::extn::prelude::*;
 
+#[cfg(all(not(target_os = "emscripten"), target_pointer_width = "64"))]
+pub type Rng = rand_pcg::Pcg64Mcg;
+#[cfg(not(all(not(target_os = "emscripten"), target_pointer_width = "64")))]
+pub type Rng = rand_pcg::Pcg32;
+
 #[must_use]
 pub fn new(seed: Option<u64>) -> Box<dyn RandType> {
-    Box::new(Rand::<Pcg64>::new(seed))
+    Box::new(Rand::<Rng>::new(seed))
 }
 
 #[derive(Debug, Clone)]
@@ -47,7 +51,7 @@ where
 
 impl<T> Rand<T>
 where
-    T: Rng,
+    T: rand::Rng,
 {
     #[inline]
     pub fn bytes(&mut self, buf: &mut [u8]) {
@@ -70,7 +74,7 @@ where
 
 impl<T> RandType for Rand<T>
 where
-    T: 'static + Rng + fmt::Debug,
+    T: 'static + rand::Rng + fmt::Debug,
 {
     fn as_debug(&self) -> &dyn fmt::Debug {
         self
