@@ -58,12 +58,10 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
-      - name: Compile artichoke-backend with no default features
-        working-directory: artichoke-backend
+      - name: Compile artichoke with no default features
         run: cargo build --verbose --no-default-features
 
-      - name: Compile artichoke-backend with all features
-        working-directory: artichoke-backend
+      - name: Compile artichoke with all features
         run: cargo build --verbose --all-features
 
   rust:
