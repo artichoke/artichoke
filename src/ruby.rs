@@ -71,7 +71,9 @@ pub fn entrypoint() -> Result<(), Exception> {
         io::stdin()
             .read_to_end(&mut program)
             .map_err(|_| IOError::new(&interp, "Could not read program from STDIN"))?;
-        let _ = interp.eval(program.as_slice()).map_err(|exc| handle_exception(&mut interp, exc));
+        let _ = interp
+            .eval(program.as_slice())
+            .map_err(|exc| handle_exception(&mut interp, exc));
 
         Ok(())
     }
@@ -148,7 +150,9 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
         }
     };
 
-    let _ = interp.eval(program.as_slice()).map_err(|exc| handle_exception(&mut interp, exc));
+    let _ = interp
+        .eval(program.as_slice())
+        .map_err(|exc| handle_exception(&mut interp, exc));
 
     Ok(())
 }
