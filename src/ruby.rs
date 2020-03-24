@@ -8,8 +8,8 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
-use crate::backend::exception::RubyException;
 use crate::backend::exception::Exception;
+use crate::backend::exception::RubyException;
 use crate::backend::extn::core::exception::{IOError, LoadError};
 use crate::backend::ffi;
 use crate::backend::state::parser::Context;
@@ -165,7 +165,10 @@ fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
     Ok(buf)
 }
 
-fn handle_exception(interp: &mut artichoke_backend::Artichoke, exc: artichoke_backend::exception::Exception) -> Result<(), Exception> {
+fn handle_exception(
+    interp: &mut artichoke_backend::Artichoke,
+    exc: artichoke_backend::exception::Exception
+) -> Result<(), Exception> {
     if let Some(backtrace) = exc.vm_backtrace(interp) {
         writeln!(
             io::stderr(),
