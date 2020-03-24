@@ -193,6 +193,7 @@ mod libmruby {
         generate_mrbgem_config();
         let status = Command::new("ruby")
             .arg(mruby_minirake())
+            .arg("--verbose")
             .arg("--jobs")
             .arg(num_cpus::get().to_string())
             .env("MRUBY_BUILD_DIR", mruby_build_dir())
