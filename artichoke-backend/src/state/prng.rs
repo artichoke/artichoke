@@ -1,12 +1,10 @@
-use rand_pcg::Pcg64;
-
-use crate::extn::core::random::backend::rand::Rand;
+use crate::extn::core::random::backend::rand::{Rand, Rng};
 use crate::extn::core::random::backend::InternalState;
 use crate::types::{Float, Int};
 
 #[derive(Debug)]
 pub struct Prng {
-    random: Rand<Pcg64>,
+    random: Rand<Rng>,
 }
 
 impl Prng {
