@@ -24,6 +24,7 @@ structopt = "0.3.10"
 
 [dependencies.artichoke-backend]
 path = "artichoke-backend"
+default-features = false
 
 [dev-dependencies]
 doc-comment = "0.3"
