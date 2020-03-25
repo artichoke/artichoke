@@ -1,5 +1,6 @@
 use crate::extn::core::artichoke;
 use crate::extn::prelude::*;
+use crate::state::output::Output;
 
 pub mod integer;
 pub mod require;

@@ -55,4 +55,6 @@ default = [
 core-env-system = []
 core-math-extra = ["libm"]
 core-random = ["rand", "rand_pcg"]
+output-strategy-capture = []
+output-strategy-null = ["output-strategy-capture"]
 stdlib-securerandom = ["base64", "hex", "rand", "uuid"]

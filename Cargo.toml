@@ -47,4 +47,6 @@ default = [
 core-env-system = ["artichoke-backend/core-env-system"]
 core-math-extra = ["artichoke-backend/core-math-extra"]
 core-random = ["artichoke-backend/core-random"]
+output-strategy-capture = ["artichoke-backend/output-strategy-capture"]
+output-strategy-null = ["artichoke-backend/output-strategy-null"]
 stdlib-securerandom = ["artichoke-backend/stdlib-securerandom"]
