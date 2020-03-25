@@ -24,7 +24,7 @@ pub struct State {
     modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: fs::Virtual,
     pub active_regexp_globals: Option<NonZeroUsize>,
-    pub output: Box<dyn output::Output>,
+    pub output: output::Strategy,
     #[cfg(feature = "core-random")]
     pub prng: prng::Prng,
 }
@@ -50,7 +50,7 @@ impl State {
             modules: HashMap::default(),
             vfs: fs::Virtual::new(),
             active_regexp_globals: None,
-            output: Box::new(output::Process::new()),
+            output: output::Strategy::new(),
             #[cfg(feature = "core-random")]
             prng: prng::Prng::default(),
         };
@@ -142,7 +142,7 @@ impl fmt::Debug for State {
             .field("modules", &self.modules)
             .field("vfs", &self.vfs)
             .field("active_regexp_globals", &self.active_regexp_globals)
-            .field("output", self.output.as_debug());
+            .field("output", &self.output);
         #[cfg(feature = "core-random")]
         fmt.field("prng", &self.prng);
         fmt.finish()
