@@ -56,11 +56,11 @@ pub fn scan(
         let string = value.clone().try_into::<&[u8]>()?;
         if let Some(ref block) = block {
             let regex = Regexp::lazy(pattern_bytes.to_vec());
-            let matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
+            let matchdata = MatchData::new(string.to_vec(), regex, ..);
             let patlen = pattern_bytes.len();
             if let Some(pos) = string.find(pattern_bytes) {
                 let mut data = matchdata.clone();
-                data.set_region(pos, pos + patlen);
+                data.set_region(pos..pos + patlen);
                 let data = data.try_into_ruby(interp, None)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
@@ -73,7 +73,7 @@ pub fn scan(
                 let string = string.get(offset..).unwrap_or_default();
                 for pos in string.find_iter(pattern_bytes) {
                     let mut data = matchdata.clone();
-                    data.set_region(offset + pos, offset + pos + patlen);
+                    data.set_region(offset + pos..offset + pos + patlen);
                     let data = data.try_into_ruby(interp, None)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
@@ -99,8 +99,11 @@ pub fn scan(
             }
             if matches > 0 {
                 let regex = Regexp::lazy(pattern_bytes.to_vec());
-                let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
-                matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
+                let matchdata = MatchData::new(
+                    string.to_vec(),
+                    regex,
+                    last_pos..last_pos + pattern_bytes.len(),
+                );
                 let data = matchdata.try_into_ruby(interp, None)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
             } else {
