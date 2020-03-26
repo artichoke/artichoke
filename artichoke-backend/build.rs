@@ -52,11 +52,6 @@ mod buildpath {
 
             crate::enumerate_sources(mruby_vendored_include_dir(), into).unwrap();
             crate::enumerate_sources(mruby_vendored_source_dir(), into).unwrap();
-            crate::enumerate_sources(ruby_vendored_lib_dir(), into).unwrap();
-        }
-
-        pub fn ruby_vendored_lib_dir() -> PathBuf {
-            super::crate_root().join("vendor").join("ruby").join("lib")
         }
 
         pub fn mruby_vendored_include_dir() -> PathBuf {
@@ -496,11 +491,6 @@ mod build {
         copy_dir_recursive(
             buildpath::crate_root().join("vendor").join("mruby"),
             libmruby::mruby_source_dir(),
-        )
-        .unwrap();
-        copy_dir_recursive(
-            buildpath::crate_root().join("vendor").join("ruby"),
-            buildpath::build_root().join("ruby"),
         )
         .unwrap();
 
