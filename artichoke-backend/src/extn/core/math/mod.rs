@@ -275,18 +275,23 @@ pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
             Ok(float::Float::INFINITY)
         }
     } else if (value - value.floor()).abs() < f64::EPSILON {
-        if value < 0.0 {
+        if value.is_sign_negative() {
             Err(Exception::from(DomainError::new(
                 r#"Numerical argument is out of domain - "gamma""#,
             )))
         } else {
+            // TODO: use `approx_unchecked_to` once stabilized instead of `as`
+            // cast.
             #[allow(clippy::cast_possible_truncation)]
-            let idx = (value as Int) // TODO: use `approx_unchecked_to` once stabilized.
-                .checked_sub(1)
-                .and_then(|idx| usize::try_from(idx).ok());
-            let result = idx
-                .and_then(|idx| factorial_table.get(idx).copied())
-                .unwrap_or_else(|| libm::tgamma(value));
+            let idx = (value as Int).checked_sub(1).map(usize::try_from);
+            let result = if let Some(Ok(idx)) = idx {
+                factorial_table
+                    .get(idx)
+                    .copied()
+                    .unwrap_or_else(|| libm::tgamma(value))
+            } else {
+                libm::tgamma(value)
+            };
             Ok(result)
         }
     } else {
