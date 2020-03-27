@@ -30,7 +30,13 @@ pub fn element_reference(
         let rangelen = Int::try_from(ary_len)
             .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
         match unsafe { is_range(interp, &elem, rangelen) } {
-            Ok(Some((start, len))) => Ok(ElementReference::StartLen(start, len)),
+            Ok(Some((start, len))) => {
+                if let Ok(len) = usize::try_from(len) {
+                    Ok(ElementReference::StartLen(start, len))
+                } else {
+                    Ok(ElementReference::Empty)
+                }
+            }
             Ok(None) => Ok(ElementReference::Empty),
             Err(_) => {
                 let mut message = String::from("no implicit conversion of ");
@@ -54,10 +60,12 @@ pub fn element_assignment(
         let start = if let Ok(start) = usize::try_from(start) {
             start
         } else {
-            let start = usize::try_from(start)
-                .map_err(|_| Fatal::new(interp, "Positive Int must be usize"))?;
-            if start < len {
-                len - start
+            let pos = start
+                .checked_neg()
+                .and_then(|start| usize::try_from(start).ok())
+                .and_then(|start| len.checked_sub(start));
+            if let Some(start) = pos {
+                start
             } else {
                 let mut message = String::from("index ");
                 string::format_int_into(&mut message, start)?;
@@ -79,10 +87,12 @@ pub fn element_assignment(
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
-            let index = usize::try_from(-index)
-                .map_err(|_| Fatal::new(interp, "Positive Int must be usize"))?;
-            if index < len {
-                Ok((len - index, None, second))
+            let idx = index
+                .checked_neg()
+                .and_then(|index| usize::try_from(index).ok())
+                .and_then(|index| len.checked_sub(index));
+            if let Some(idx) = idx {
+                Ok((idx, None, second))
             } else {
                 let mut message = String::from("index ");
                 string::format_int_into(&mut message, index)?;
@@ -96,31 +106,19 @@ pub fn element_assignment(
             .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
         match unsafe { is_range(interp, &first, rangelen) } {
             Ok(Some((start, len))) => {
-                if let Ok(start) = usize::try_from(start) {
-                    Ok((start, Some(len), second))
-                } else {
-                    Ok((0, Some(len), second))
-                }
+                let start = usize::try_from(start).unwrap_or_else(|_| {
+                    unimplemented!("should throw RangeError (-11..1 out of range)")
+                });
+                let len = usize::try_from(len)
+                    .unwrap_or_else(|_| unreachable!("Range can't have negative length"));
+                Ok((start, Some(len), second))
             }
             Ok(None) => {
-                let start = if let Ok(start) = first.funcall::<Value>("begin", &[], None) {
-                    start
-                } else {
-                    return Err(Exception::from(Fatal::new(
-                        interp,
-                        "Unable to extract first from Range",
-                    )));
-                };
+                let start = first.funcall::<Value>("begin", &[], None)?;
                 let start = start.implicitly_convert_to_int()?;
-                let end = if let Ok(end) = first.funcall::<Value>("last", &[], None) {
-                    end
-                } else {
-                    return Err(Exception::from(Fatal::new(
-                        interp,
-                        "Unable to extract first from Range",
-                    )));
-                };
+                let end = first.funcall::<Value>("last", &[], None)?;
                 let end = end.implicitly_convert_to_int()?;
+                // TODO: This conditional is probably not doing the right thing
                 if start + (end - start) < 0 {
                     let mut message = String::new();
                     string::format_int_into(&mut message, start)?;
@@ -130,23 +128,14 @@ pub fn element_assignment(
                     return Err(Exception::from(RangeError::new(interp, message)));
                 }
                 match (usize::try_from(start), usize::try_from(end)) {
-                    (Ok(start), Ok(end)) => {
-                        if end > start {
-                            Ok((start, Some(end - start), second))
-                        } else {
-                            Ok((start, None, second))
-                        }
-                    }
+                    (Ok(start), Ok(end)) => Ok((start, end.checked_sub(start), second)),
                     (Err(_), Ok(end)) => {
-                        let start = usize::try_from(start)
-                            .map_err(|_| Fatal::new(interp, "Positive Int must be usize"))?;
-                        if start < len {
-                            let start = len - start;
-                            if end > start {
-                                Ok((start, Some(end - start), second))
-                            } else {
-                                Ok((start, None, second))
-                            }
+                        let pos = start
+                            .checked_neg()
+                            .and_then(|start| usize::try_from(start).ok())
+                            .and_then(|start| len.checked_sub(start));
+                        if let Some(start) = pos {
+                            Ok((start, end.checked_sub(start), second))
                         } else {
                             let mut message = String::from("index ");
                             string::format_int_into(&mut message, start)?;
@@ -179,7 +168,7 @@ unsafe fn is_range(
     interp: &Artichoke,
     range: &Value,
     length: Int,
-) -> Result<Option<(Int, usize)>, Exception> {
+) -> Result<Option<(Int, Int)>, Exception> {
     let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
     let mut len = mem::MaybeUninit::<sys::mrb_int>::uninit();
     let mrb = interp.0.borrow().mrb;
@@ -196,8 +185,6 @@ unsafe fn is_range(
     let start = start.assume_init();
     let len = len.assume_init();
     if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
-        let len = usize::try_from(len)
-            .map_err(|_| TypeError::new(interp, "no implicit conversion into Integer"))?;
         Ok(Some((start, len)))
     } else {
         Ok(None)
