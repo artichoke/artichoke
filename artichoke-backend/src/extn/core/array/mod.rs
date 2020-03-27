@@ -112,19 +112,22 @@ impl Array {
             args::ElementReference::Index(index) => (index, None),
             args::ElementReference::StartLen(index, len) => (index, Some(len)),
         };
-        let start = if index < 0 {
-            // Positive Int must be usize
-            let idx = usize::try_from(-index)
-                .map_err(|_| Fatal::new(interp, "Expected positive index to convert to usize"))?;
-            if let Some(index) = self.0.len().checked_sub(idx) {
-                index
+        let start = if let Ok(start) = usize::try_from(index) {
+            start
+        } else {
+            let idx = index
+                .checked_neg()
+                .and_then(|index| usize::try_from(index).ok())
+                .and_then(|index| self.0.len().checked_sub(index));
+            if let Some(start) = idx {
+                start
             } else {
                 return Ok(interp.convert(None::<Value>));
             }
-        } else {
-            usize::try_from(index)
-                .map_err(|_| Fatal::new(interp, "Expected positive index to convert to usize"))?
         };
+        if start > self.0.len() {
+            return Ok(interp.convert(None::<Value>));
+        }
         if let Some(len) = len {
             let result = self.0.slice(interp, start, len)?;
             let result = Self(result);

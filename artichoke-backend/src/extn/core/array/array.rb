@@ -165,10 +165,14 @@ class Array
       idx += 1
       next if left.equal?(right)
 
-      cmp = left <=> right
-      return false if cmp.nil?
-      raise ArgumentError unless cmp.is_a?(Numeric)
-      return false unless cmp.zero?
+      if left.is_a?(Comparable)
+        cmp = left <=> right
+        return false if cmp.nil?
+        raise ArgumentError unless cmp.is_a?(Numeric)
+        return false unless cmp.zero?
+      else
+        return false unless left == right
+      end
     end
     true
   rescue NoMethodError
