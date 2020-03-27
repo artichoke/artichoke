@@ -58,14 +58,14 @@ end
 def empty_slice
   a = []
   raise unless a[0, 0] == []
-  raise unless a[1, 10] == []
+  raise unless a[1, 10] == nil
 end
 
 def inline_slice
   a = [1, 2, 3]
   raise unless a[0, 0] == []
   raise unless a[1, 10] == [2, 3]
-  raise unless a[10, 5] == []
+  raise unless a[10, 5] == nil
 end
 
 def dynamic_slice
@@ -74,7 +74,7 @@ def dynamic_slice
   raise unless a[1, 10] == [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
   raise unless a[10, 5] == [11, 12, 13, 14, 15]
   raise unless a[22, 10] == [23, 24, 25]
-  raise unless a[100, 10] == []
+  raise unless a[100, 10] == nil
 end
 
 def inline_set
@@ -414,3 +414,5 @@ def reverse
   a.reverse!
   raise unless a == [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 end
+
+spec if $PROGRAM_NAME == __FILE__
