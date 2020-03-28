@@ -37,13 +37,13 @@ impl Utf8 {
         builder.case_insensitive(derived.options.ignore_case);
         builder.multi_line(derived.options.multiline);
         builder.ignore_whitespace(derived.options.extended);
-        let regex = builder.build().map_err(|err| {
-            if literal.options.literal {
-                Exception::from(SyntaxError::new(interp, err.to_string()))
-            } else {
-                Exception::from(RegexpError::new(interp, err.to_string()))
+        let regex = match builder.build() {
+            Ok(regex) => regex,
+            Err(err) if literal.options.literal => {
+                return Err(Exception::from(SyntaxError::new(interp, err.to_string())));
             }
-        })?;
+            Err(err) => return Err(Exception::from(RegexpError::new(interp, err.to_string()))),
+        };
         let regexp = Self {
             literal,
             derived,

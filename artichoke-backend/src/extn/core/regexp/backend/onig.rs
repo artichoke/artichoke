@@ -34,15 +34,21 @@ impl Onig {
                 "Oniguruma backend for Regexp only supports UTF-8 patterns",
             )
         })?;
-        let regex = Regex::with_options(pattern, derived.options.flags(), Syntax::ruby()).map_err(
-            |err| {
-                if literal.options.literal {
-                    Exception::from(SyntaxError::new(interp, err.description().to_owned()))
-                } else {
-                    Exception::from(RegexpError::new(interp, err.description().to_owned()))
-                }
-            },
-        )?;
+        let regex = match Regex::with_options(pattern, derived.options.flags(), Syntax::ruby()) {
+            Ok(regex) => regex,
+            Err(err) if literal.options.literal => {
+                return Err(Exception::from(SyntaxError::new(
+                    interp,
+                    err.description().to_owned(),
+                )))
+            }
+            Err(err) => {
+                return Err(Exception::from(RegexpError::new(
+                    interp,
+                    err.description().to_owned(),
+                )))
+            }
+        };
         let regexp = Self {
             literal,
             derived,
