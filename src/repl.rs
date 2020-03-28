@@ -218,9 +218,6 @@ pub fn run(
                 for line in buf.lines() {
                     rl.add_history_entry(line);
                     interp
-                        .0
-                        .borrow_mut()
-                        .parser
                         .add_fetch_lineno(1)
                         .map_err(|_| ParserLineCountError)?;
                 }
