@@ -1,6 +1,7 @@
-//! Infrastructure for `ruby` CLI.
+//! Artichoke CLI entrypoint.
 //!
-//! Exported as `artichoke` binary.
+//! Artichoke's version of the `ruby` CLI. This module is exported as the
+//! `artichoke` binary.
 
 use std::ffi::{OsStr, OsString};
 use std::io;

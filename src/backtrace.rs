@@ -1,4 +1,4 @@
-//! Utilities for formatting Ruby backtraces.
+//! Format Ruby `Exception` backtraces.
 
 use ansi_term::Style;
 use std::io;

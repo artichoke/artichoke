@@ -1,4 +1,7 @@
-//! Parser for Ruby code that determines if it is fit to eval on an interpreter.
+//! Detect if Ruby code parses successfully.
+//!
+//! The REPL needs to check if code is valid to determine whether it should
+//! enter multiline editing mode.
 
 use std::convert::TryFrom;
 use std::ffi::CStr;
