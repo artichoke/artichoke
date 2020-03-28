@@ -42,8 +42,39 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[derive(Debug)]
-pub struct Float;
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Float(types::Float);
+
+impl ConvertMut<Float, Value> for Artichoke {
+    #[inline]
+    fn convert_mut(&mut self, from: Float) -> Value {
+        self.convert_mut(from.0)
+    }
+}
+
+impl TryConvert<Value, Float> for Artichoke {
+    type Error = Exception;
+
+    #[inline]
+    fn try_convert(&self, value: Value) -> Result<Float, Self::Error> {
+        let num = self.try_convert(value)?;
+        Ok(Float(num))
+    }
+}
+
+impl From<types::Float> for Float {
+    #[inline]
+    fn from(flt: types::Float) -> Self {
+        Self(flt)
+    }
+}
+
+impl From<Float> for types::Float {
+    #[inline]
+    fn from(flt: Float) -> Self {
+        flt.as_f64()
+    }
+}
 
 impl Float {
     /// The minimum number of significant decimal digits in a double-precision
@@ -147,4 +178,19 @@ impl Float {
     /// [stackoverflow]: https://stackoverflow.com/a/28122536
     /// [round]: https://doc.rust-lang.org/1.42.0/std/primitive.f64.html#method.round
     pub const ROUNDS: Int = -1;
+
+    #[inline]
+    pub fn new(num: types::Float) -> Self {
+        Self(num)
+    }
+
+    #[inline]
+    pub fn as_f64(self) -> f64 {
+        self.0
+    }
+
+    #[inline]
+    pub fn modulo(self, other: Self) -> Self {
+        Self(self.0 % other.0)
+    }
 }
