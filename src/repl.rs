@@ -5,17 +5,17 @@
 //! multi-line Ruby expressions, CTRL-C to break out of an expression, and can
 //! inspect return values and exception backtraces.
 
-use ansi_term::Style;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use std::error;
 use std::fmt;
-use std::io::Write;
+use std::io;
 
-use crate::backend::exception::{Exception, RubyException};
+use crate::backend::exception::Exception;
 use crate::backend::gc::MrbGarbageCollection;
 use crate::backend::state::parser::Context;
 use crate::backend::{Artichoke, Eval, Parser as _, ValueLike};
+use crate::backtrace;
 use crate::parser::{Parser, State};
 
 const REPL_FILENAME: &[u8] = b"(airb)";
@@ -135,11 +135,15 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Exception> {
 /// fails, an error is returned.
 ///
 /// If an unhandled readline state is encountered, a fatal error is returned.
-pub fn run(
-    mut output: impl Write,
-    mut error: impl Write,
+pub fn run<Wout, Werr>(
+    mut output: Wout,
+    mut error: Werr,
     config: Option<PromptConfig>,
-) -> Result<(), Box<dyn error::Error>> {
+) -> Result<(), Box<dyn error::Error>>
+where
+    Wout: io::Write,
+    Werr: io::Write,
+{
     let config = config.unwrap_or_default();
     let mut interp = crate::interpreter()?;
     writeln!(output, "{}", preamble(&mut interp)?)?;
@@ -188,31 +192,8 @@ pub fn run(
                         output.write_all(config.result_prefix.as_bytes())?;
                         output.write_all(result.as_slice())?;
                     }
-                    Err(exc) => {
-                        if let Some(backtrace) = exc.vm_backtrace(&mut interp) {
-                            writeln!(
-                                error,
-                                "{} (most recent call last)",
-                                Style::new().bold().paint("Traceback")
-                            )?;
-                            for (num, frame) in backtrace.into_iter().enumerate().rev() {
-                                write!(error, "\t{}: from ", num + 1)?;
-                                error.write_all(frame.as_slice())?;
-                                writeln!(error)?;
-                            }
-                        }
-                        write!(
-                            error,
-                            "{} {}",
-                            Style::new().bold().paint(exc.name()),
-                            Style::new().bold().paint("(")
-                        )?;
-                        Style::new()
-                            .bold()
-                            .underline()
-                            .paint(exc.message())
-                            .write_to(&mut error)?;
-                        writeln!(error, "{}", Style::new().bold().paint(")"))?;
+                    Err(ref exc) => {
+                        backtrace::format_repl_trace_into(&mut error, &mut interp, exc)?
                     }
                 }
                 for line in buf.lines() {
