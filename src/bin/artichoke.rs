@@ -39,8 +39,12 @@ use std::io::{self, Write};
 use std::process;
 
 fn main() {
-    if let Err(err) = ruby::entrypoint() {
-        let _ = writeln!(io::stderr(), "{}", err);
-        process::exit(1);
+    match ruby::entrypoint() {
+        Ok(Ok(())) => {}
+        Ok(Err(())) => process::exit(1),
+        Err(err) => {
+            let _ = writeln!(io::stderr(), "{}", err);
+            process::exit(1);
+        }
     }
 }

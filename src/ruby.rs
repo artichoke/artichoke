@@ -1,21 +1,19 @@
 //! Infrastructure for `ruby` CLI.
 //!
-//! Exported as `ruby` and `artichoke` binaries.
+//! Exported as `artichoke` binary.
 
 use ansi_term::Style;
 use std::ffi::{OsStr, OsString};
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
-use crate::backend::exception::Exception;
-use crate::backend::exception::RubyException;
+use crate::backend::exception::{Exception, RubyException};
 use crate::backend::extn::core::exception::{IOError, LoadError};
 use crate::backend::ffi;
 use crate::backend::state::parser::Context;
 use crate::backend::string;
-use crate::backend::sys;
-use crate::backend::{ConvertMut, Eval, Intern, Parser as _};
+use crate::backend::{Artichoke, ConvertMut, Eval, Globals, Parser as _};
 
 const INLINE_EVAL_SWITCH_FILENAME: &[u8] = b"-e";
 
@@ -55,12 +53,12 @@ struct Opt {
 /// # Errors
 ///
 /// If an exception is raised on the interpreter, then an error is returned.
-pub fn entrypoint() -> Result<(), Exception> {
+pub fn entrypoint() -> Result<Result<(), ()>, Exception> {
     let opt = Opt::from_args();
     if opt.copyright {
         let mut interp = crate::interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
-        Ok(())
+        Ok(Ok(()))
     } else if !opt.commands.is_empty() {
         execute_inline_eval(opt.commands, opt.fixture.as_ref().map(Path::new))
     } else if let Some(programfile) = opt.programfile {
@@ -71,16 +69,20 @@ pub fn entrypoint() -> Result<(), Exception> {
         io::stdin()
             .read_to_end(&mut program)
             .map_err(|_| IOError::new(&interp, "Could not read program from STDIN"))?;
-        let _ = interp
-            .eval(program.as_slice())
-            .map_err(|exc| handle_exception(&mut interp, &exc));
-
-        Ok(())
+        if let Err(exc) = interp.eval(program.as_slice()) {
+            format_backtrace_into(io::stdout(), &mut interp, &exc)?;
+            return Ok(Err(()));
+        }
+        Ok(Ok(()))
     }
 }
 
-fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Result<(), Exception> {
+fn execute_inline_eval(
+    commands: Vec<OsString>,
+    fixture: Option<&Path>,
+) -> Result<Result<(), ()>, Exception> {
     let mut interp = crate::interpreter()?;
+    interp.pop_context();
     // safety:
     //
     // - `Context::new_unchecked` requires that its argument has no NUL bytes.
@@ -96,23 +98,25 @@ fn execute_inline_eval(commands: Vec<OsString>, fixture: Option<&Path>) -> Resul
                 load_error(fixture.as_os_str(), "No such file or directory")?,
             )));
         };
-        let sym = interp.intern_symbol(&b"$fixture"[..]);
-        let mrb = interp.0.borrow().mrb;
         let value = interp.convert_mut(data);
-        unsafe {
-            sys::mrb_gv_set(mrb, sym, value.inner());
-        }
+        interp.set_global_variable(&b"$fixture"[..], &value)?;
     }
     for command in commands {
         if let Err(exc) = interp.eval_os_str(command.as_os_str()) {
-            handle_exception(&mut interp, &exc)?;
-            return Ok(()); // short circuit, but don't return an error since we already printed it
+            format_backtrace_into(io::stdout(), &mut interp, &exc)?;
+            // short circuit, but don't return an error since we already printed it
+            return Ok(Err(()));
         }
+        // TODO: Do not suppress this error and implement RubyException for it.
+        let _ = interp.add_fetch_lineno(1);
     }
-    Ok(())
+    Ok(Ok(()))
 }
 
-fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<(), Exception> {
+fn execute_program_file(
+    programfile: &Path,
+    fixture: Option<&Path>,
+) -> Result<Result<(), ()>, Exception> {
     let mut interp = crate::interpreter()?;
     if let Some(ref fixture) = fixture {
         let data = if let Ok(data) = std::fs::read(fixture) {
@@ -123,12 +127,8 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
                 load_error(fixture.as_os_str(), "No such file or directory")?,
             )));
         };
-        let sym = interp.intern_symbol(&b"$fixture"[..]);
-        let mrb = interp.0.borrow().mrb;
         let value = interp.convert_mut(data);
-        unsafe {
-            sys::mrb_gv_set(mrb, sym, value.inner());
-        }
+        interp.set_global_variable(&b"$fixture"[..], &value)?;
     }
     let program = match std::fs::read(programfile) {
         Ok(programfile) => programfile,
@@ -149,12 +149,11 @@ fn execute_program_file(programfile: &Path, fixture: Option<&Path>) -> Result<()
             }
         }
     };
-
-    let _ = interp
-        .eval(program.as_slice())
-        .map_err(|exc| handle_exception(&mut interp, &exc));
-
-    Ok(())
+    if let Err(exc) = interp.eval(program.as_slice()) {
+        format_backtrace_into(io::stdout(), &mut interp, &exc)?;
+        return Ok(Err(()));
+    }
+    Ok(Ok(()))
 }
 
 fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
@@ -165,37 +164,48 @@ fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
     Ok(buf)
 }
 
-fn handle_exception(
-    interp: &mut artichoke_backend::Artichoke,
-    exc: &artichoke_backend::exception::Exception,
-) -> Result<(), Exception> {
+/// Format an [`Exception`] backtrace into the given writer.
+///
+/// # Errors
+///
+/// If writing into the provided `out` writer fails, an error is returned.
+pub fn format_backtrace_into<W>(
+    mut out: W,
+    interp: &mut Artichoke,
+    exc: &Exception,
+) -> Result<(), Exception>
+where
+    W: io::Write,
+{
+    let mut top = None;
     if let Some(backtrace) = exc.vm_backtrace(interp) {
         writeln!(
-            io::stderr(),
-            "{} (most recent call last)",
+            out,
+            "{} (most recent call last):",
             Style::new().bold().paint("Traceback")
         )?;
-        for (num, frame) in backtrace.into_iter().enumerate().rev() {
-            write!(io::stderr(), "\t{}: from ", num + 1)?;
-            io::stderr().write_all(frame.as_slice())?;
-            writeln!(io::stderr())?;
+        let mut iter = backtrace.into_iter().enumerate();
+        top = iter.next();
+        for (num, frame) in iter.rev() {
+            write!(out, "\t{}: from ", num + 1)?;
+            out.write_all(frame.as_slice())?;
+            writeln!(out)?;
         }
     }
-
-    write!(
-        io::stderr(),
-        "{} {}",
-        Style::new().bold().paint(exc.name()),
-        Style::new().bold().paint("(")
-    )?;
-
+    if let Some((_, frame)) = top {
+        out.write_all(frame.as_slice())?;
+        write!(out, ": ")?;
+    }
     Style::new()
         .bold()
-        .underline()
         .paint(exc.message())
-        .write_to(&mut io::stderr())?;
-
-    writeln!(io::stderr(), "{}", Style::new().bold().paint(")"))?;
-
+        .write_to(&mut out)?;
+    writeln!(
+        out,
+        " {}{}{}",
+        Style::new().bold().paint("("),
+        Style::new().bold().underline().paint(exc.name()),
+        Style::new().bold().paint(")")
+    )?;
     Ok(())
 }

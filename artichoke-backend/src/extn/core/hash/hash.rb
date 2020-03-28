@@ -178,7 +178,7 @@ class Hash
     elsif !not_set
       default
     else
-      raise KeyError, "Key not found: #{key.inspect}"
+      raise KeyError, "key not found: #{key.inspect}"
     end
   end
 
