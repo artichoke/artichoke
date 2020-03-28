@@ -109,6 +109,8 @@ impl Parser {
     /// If the underlying parser returns a UTF-8 invalid error message, an error
     /// is returned.
     pub fn parse(&mut self, code: &[u8]) -> State {
+        use sys::mrb_lex_state_enum::*;
+
         let len = if let Ok(len) = isize::try_from(code.len()) {
             len
         } else {
@@ -151,30 +153,30 @@ impl Parser {
             #[allow(clippy::match_same_arms)]
             let code_has_unterminated_expression = match parser.lstate {
                 // beginning of a statement, that means previous line ended
-                sys::mrb_lex_state_enum::EXPR_BEG => false,
+                EXPR_BEG => false,
                 // a message dot was the last token, there has to come more
-                sys::mrb_lex_state_enum::EXPR_DOT => true,
+                EXPR_DOT => true,
                 // class keyword is not enough! we need also a name of the class
-                sys::mrb_lex_state_enum::EXPR_CLASS => true,
+                EXPR_CLASS => true,
                 // a method name is necessary
-                sys::mrb_lex_state_enum::EXPR_FNAME => true,
+                EXPR_FNAME => true,
                 // if, elsif, etc. without condition
-                sys::mrb_lex_state_enum::EXPR_VALUE => true,
+                EXPR_VALUE => true,
                 // an argument is the last token
-                sys::mrb_lex_state_enum::EXPR_ARG => false,
+                EXPR_ARG => false,
                 // a block/proc/lambda argument is the last token
-                sys::mrb_lex_state_enum::EXPR_CMDARG => false,
+                EXPR_CMDARG => false,
                 // an expression was ended
-                sys::mrb_lex_state_enum::EXPR_END => false,
+                EXPR_END => false,
                 // closing parenthesis
-                sys::mrb_lex_state_enum::EXPR_ENDARG => false,
+                EXPR_ENDARG => false,
                 // definition end
-                sys::mrb_lex_state_enum::EXPR_ENDFN => false,
+                EXPR_ENDFN => false,
                 // jump keyword like break, return, ...
-                sys::mrb_lex_state_enum::EXPR_MID => false,
+                EXPR_MID => false,
                 // this token is unreachable and is used to do integer math on the
                 // values of `mrb_lex_state_enum`.
-                sys::mrb_lex_state_enum::EXPR_MAX_STATE => false,
+                EXPR_MAX_STATE => false,
             };
             if code_has_unterminated_expression {
                 State::UnterminatedBlock
