@@ -1,153 +1,191 @@
 use std::convert::TryFrom;
 use std::mem;
 
-use crate::extn::core::numeric::Numeric;
+use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
 
 pub mod mruby;
 pub mod trampoline;
 
-#[derive(Debug)]
-pub struct Integer;
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Integer(Int);
 
-pub fn chr(
-    interp: &mut Artichoke,
-    value: Int,
-    encoding: Option<Value>,
-) -> Result<Vec<u8>, Exception> {
-    if let Some(encoding) = encoding {
-        let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
-        message.extend(encoding.inspect());
-        message.extend(b") not supported");
-        Err(Exception::from(NotImplementedError::new_raw(
-            &interp, message,
-        )))
-    } else {
-        // When no encoding is supplied, MRI assumes the encoding is
-        // either ASCII or ASCII-8BIT.
-        //
-        // - `Integer`s from 0..127 result in a `String` with ASCII
-        //   encoding.
-        // - `Integer`s from 128..256 result in a `String` with binary
-        //   (ASCII-8BIT) encoding.
-        // - All other integers raise a `RangeError`.
-        //
-        // ```txt
-        // [2.6.3] > [0.chr, 0.chr.encoding]
-        // => ["\x00", #<Encoding:US-ASCII>]
-        // [2.6.3] > [127.chr, 127.chr.encoding]
-        // => ["\x7F", #<Encoding:US-ASCII>]
-        // [2.6.3] > [128.chr, 128.chr.encoding]
-        // => ["\x80", #<Encoding:ASCII-8BIT>]
-        // [2.6.3] > [255.chr, 255.chr.encoding]
-        // => ["\xFF", #<Encoding:ASCII-8BIT>]
-        // [2.6.3] > [256.chr, 256.chr.encoding]
-        // Traceback (most recent call last):
-        //         5: from /usr/local/var/rbenv/versions/2.6.3/bin/irb:23:in `<main>'
-        //         4: from /usr/local/var/rbenv/versions/2.6.3/bin/irb:23:in `load'
-        //         3: from /usr/local/var/rbenv/versions/2.6.3/lib/ruby/gems/2.6.0/gems/irb-1.0.0/exe/irb:11:in `<top (required)>'
-        //         2: from (irb):9
-        //         1: from (irb):9:in `chr'
-        // RangeError (256 out of char range)
-        // ```
-        match u8::try_from(value) {
-            // ASCII encoding | Binary/ASCII-8BIT encoding
-            // Without `Encoding` support, these two arms are the same
-            Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
-                // Create a single byte `String` from the character given by
-                // `self`.
-                Ok(vec![chr])
+impl Convert<Integer, Value> for Artichoke {
+    #[inline]
+    fn convert(&self, from: Integer) -> Value {
+        self.convert(from.0)
+    }
+}
+
+impl TryConvert<Value, Integer> for Artichoke {
+    type Error = Exception;
+
+    #[inline]
+    fn try_convert(&self, value: Value) -> Result<Integer, Self::Error> {
+        let num = self.try_convert(value)?;
+        Ok(Integer(num))
+    }
+}
+
+impl From<Int> for Integer {
+    #[inline]
+    fn from(int: Int) -> Self {
+        Self(int)
+    }
+}
+
+impl From<Integer> for Int {
+    #[inline]
+    fn from(int: Integer) -> Self {
+        int.as_i64()
+    }
+}
+
+impl From<Integer> for Outcome {
+    #[inline]
+    fn from(int: Integer) -> Self {
+        Self::Integer(int.into())
+    }
+}
+
+impl From<Int> for Outcome {
+    #[inline]
+    fn from(int: Int) -> Self {
+        Self::Integer(int)
+    }
+}
+
+impl Integer {
+    #[inline]
+    pub fn new(int: Int) -> Self {
+        Self(int)
+    }
+
+    #[inline]
+    pub fn as_i64(self) -> i64 {
+        self.0
+    }
+
+    #[allow(clippy::cast_precision_loss)]
+    #[inline]
+    pub fn as_f64(self) -> f64 {
+        self.0 as f64
+    }
+
+    pub fn chr(
+        self,
+        interp: &mut Artichoke,
+        encoding: Option<Value>,
+    ) -> Result<Vec<u8>, Exception> {
+        if let Some(encoding) = encoding {
+            let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
+            message.extend(encoding.inspect());
+            message.extend(b") not supported");
+            Err(Exception::from(NotImplementedError::new_raw(
+                &interp, message,
+            )))
+        } else {
+            // When no encoding is supplied, MRI assumes the encoding is
+            // either ASCII or ASCII-8BIT.
+            //
+            // - `Integer`s from 0..127 result in a `String` with ASCII
+            //   encoding.
+            // - `Integer`s from 128..256 result in a `String` with binary
+            //   (ASCII-8BIT) encoding.
+            // - All other integers raise a `RangeError`.
+            //
+            // ```txt
+            // [2.6.3] > [0.chr, 0.chr.encoding]
+            // => ["\x00", #<Encoding:US-ASCII>]
+            // [2.6.3] > [127.chr, 127.chr.encoding]
+            // => ["\x7F", #<Encoding:US-ASCII>]
+            // [2.6.3] > [128.chr, 128.chr.encoding]
+            // => ["\x80", #<Encoding:ASCII-8BIT>]
+            // [2.6.3] > [255.chr, 255.chr.encoding]
+            // => ["\xFF", #<Encoding:ASCII-8BIT>]
+            // [2.6.3] > [256.chr, 256.chr.encoding]
+            // Traceback (most recent call last):
+            //         5: from /usr/local/var/rbenv/versions/2.6.3/bin/irb:23:in `<main>'
+            //         4: from /usr/local/var/rbenv/versions/2.6.3/bin/irb:23:in `load'
+            //         3: from /usr/local/var/rbenv/versions/2.6.3/lib/ruby/gems/2.6.0/gems/irb-1.0.0/exe/irb:11:in `<top (required)>'
+            //         2: from (irb):9
+            //         1: from (irb):9:in `chr'
+            // RangeError (256 out of char range)
+            // ```
+            match u8::try_from(self.as_i64()) {
+                // ASCII encoding | Binary/ASCII-8BIT encoding
+                // Without `Encoding` support, these two arms are the same
+                Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
+                    // Create a single byte `String` from the character given by
+                    // `self`.
+                    Ok(vec![chr])
+                }
+                _ => {
+                    let mut message = String::new();
+                    string::format_int_into(&mut message, self.as_i64())?;
+                    message.push_str(" out of char range");
+                    Err(Exception::from(RangeError::new(&interp, message)))
+                }
+            }
+        }
+    }
+
+    pub fn bit(self, interp: &Artichoke, bit: Value) -> Result<Self, Exception> {
+        let _ = interp;
+        let bit = bit.implicitly_convert_to_int()?;
+        if let Ok(bit) = u32::try_from(bit) {
+            Ok(self.as_i64().checked_shr(bit).map_or(0, |v| v & 1).into())
+        } else {
+            Ok(Self(0))
+        }
+    }
+
+    pub fn div(self, interp: &mut Artichoke, denominator: Value) -> Result<Outcome, Exception> {
+        match denominator.ruby_type() {
+            Ruby::Fixnum => {
+                let denom = denominator.try_into::<Int>()?;
+                let value = self.as_i64();
+                if denom == 0 {
+                    Err(Exception::from(ZeroDivisionError::new(
+                        interp,
+                        "divided by 0",
+                    )))
+                } else if value < 0 && (value % denom) != 0 {
+                    Ok(((value / denom) - 1).into())
+                } else {
+                    Ok((value / denom).into())
+                }
+            }
+            Ruby::Float => {
+                let denom = denominator.try_into::<Float>()?;
+                Ok((self.as_f64() / denom).into())
             }
             _ => {
-                let mut message = String::new();
-                string::format_int_into(&mut message, value)?;
-                message.push_str(" out of char range");
-                Err(Exception::from(RangeError::new(&interp, message)))
-            }
-        }
-    }
-}
-
-pub fn element_reference(interp: &Artichoke, value: Int, bit: Value) -> Result<Int, Exception> {
-    let _ = interp;
-    let bit = bit.implicitly_convert_to_int()?;
-    if let Ok(bit) = u32::try_from(bit) {
-        Ok(value.checked_shr(bit).map_or(0, |v| v & 1))
-    } else {
-        Ok(0)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Quotient {
-    Int(Int),
-    Float(Float),
-}
-
-pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Quotient, Exception> {
-    match denominator.ruby_type() {
-        Ruby::Fixnum => {
-            let denominator = denominator.try_into::<Int>()?;
-            if denominator == 0 {
-                Err(Exception::from(ZeroDivisionError::new(
-                    interp,
-                    "divided by 0",
-                )))
-            } else {
-                Ok(Quotient::Int(value / denominator))
-            }
-        }
-        Ruby::Float => {
-            let denominator = denominator.try_into::<Float>()?;
-            #[allow(clippy::cast_precision_loss)]
-            Ok(Quotient::Float(value as Float / denominator))
-        }
-        _ => {
-            let borrow = interp.0.borrow();
-            let numeric = borrow
-                .class_spec::<Numeric>()
-                .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-            let numeric = numeric
-                .value(interp)
-                .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-            drop(borrow);
-            if let Ok(true) = denominator.funcall("is_a?", &[numeric], None) {
-                if denominator.respond_to("to_f")? {
-                    let coerced = denominator.funcall::<Value>("to_f", &[], None)?;
-                    if let Ruby::Float = coerced.ruby_type() {
-                        let denom = coerced.try_into::<Float>()?;
-                        #[allow(clippy::cast_precision_loss)]
-                        Ok(Quotient::Float(value as Float / denom))
-                    } else {
-                        let mut message = String::from("can't convert ");
-                        message.push_str(denominator.pretty_name());
-                        message.push_str(" into Float (");
-                        message.push_str(denominator.pretty_name());
-                        message.push_str("#to_f gives ");
-                        message.push_str(coerced.pretty_name());
-                        message.push(')');
-                        Err(Exception::from(TypeError::new(interp, message)))
+                let x = interp.convert(self);
+                let coerced = numeric::coerce(interp, x, denominator)?;
+                match coerced {
+                    Coercion::Float(_, denom) if denom == 0.0 => Err(Exception::from(
+                        ZeroDivisionError::new(interp, "divided by 0"),
+                    )),
+                    Coercion::Integer(_, 0) => Err(Exception::from(ZeroDivisionError::new(
+                        interp,
+                        "divided by 0",
+                    ))),
+                    Coercion::Float(numer, denom) => Ok(Outcome::Float(numer / denom)),
+                    Coercion::Integer(numer, denom) if numer < 0 && (numer % denom) != 0 => {
+                        Ok(((numer / denom) - 1).into())
                     }
-                } else {
-                    let mut message = String::from("can't convert ");
-                    message.push_str(denominator.pretty_name());
-                    message.push_str(" into Float");
-                    Err(Exception::from(TypeError::new(interp, message)))
+                    Coercion::Integer(numer, denom) => Ok((numer / denom).into()),
                 }
-            } else {
-                let mut message = String::from(denominator.pretty_name());
-                message.push_str(" can't be coerced into Integer");
-                Err(Exception::from(TypeError::new(interp, message)))
             }
         }
     }
-}
 
-#[must_use]
-pub const fn size(interp: &Artichoke, value: Int) -> usize {
-    let _ = interp;
-    let _ = value;
-    mem::size_of::<Int>()
+    #[must_use]
+    pub const fn size(self, interp: &Artichoke) -> usize {
+        let _ = interp;
+        mem::size_of::<Int>()
+    }
 }
 
 #[cfg(test)]

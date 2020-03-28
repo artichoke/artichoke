@@ -1,4 +1,4 @@
-use crate::extn::core::integer::{self, Quotient};
+use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
 pub fn chr(
@@ -6,8 +6,8 @@ pub fn chr(
     value: Value,
     encoding: Option<Value>,
 ) -> Result<Value, Exception> {
-    let value = value.try_into::<Int>()?;
-    let s = integer::chr(interp, value, encoding)?;
+    let value = value.try_into::<Integer>()?;
+    let s = value.chr(interp, encoding)?;
     Ok(interp.convert_mut(s))
 }
 
@@ -16,24 +16,21 @@ pub fn element_reference(
     value: Value,
     bit: Value,
 ) -> Result<Value, Exception> {
-    let value = value.try_into::<Int>()?;
-    let bit = integer::element_reference(interp, value, bit)?;
+    let value = value.try_into::<Integer>()?;
+    let bit = value.bit(interp, bit)?;
     Ok(interp.convert(bit))
 }
 
 pub fn div(interp: &mut Artichoke, value: Value, denominator: Value) -> Result<Value, Exception> {
-    let value = value.try_into::<Int>()?;
-    let quotient = integer::div(interp, value, denominator)?;
-    match quotient {
-        Quotient::Int(num) => Ok(interp.convert(num)),
-        Quotient::Float(num) => Ok(interp.convert_mut(num)),
-    }
+    let value = value.try_into::<Integer>()?;
+    let quotient = value.div(interp, denominator)?;
+    Ok(interp.convert_mut(quotient))
 }
 
 pub fn size(interp: &Artichoke, value: Value) -> Result<Value, Exception> {
-    let value = value.try_into::<Int>()?;
+    let value = value.try_into::<Integer>()?;
     // This `as` cast is lossless because size_of::<Int> is guaranteed to be
     // less than `Int::MAX`.
-    let size = integer::size(interp, value) as Int;
+    let size = value.size(interp) as Int;
     Ok(interp.convert(size))
 }
