@@ -67,7 +67,7 @@ pub trait RegexpType {
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Int>, Exception>;
+    ) -> Result<Option<usize>, Exception>;
 
     fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception>;
 

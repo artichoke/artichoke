@@ -158,7 +158,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Int>, Exception> {
+    ) -> Result<Option<usize>, Exception> {
         self.regexp(interp)?
             .inner()
             .match_operator(interp, haystack)

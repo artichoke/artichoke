@@ -391,8 +391,15 @@ impl Regexp {
         } else {
             return Ok(interp.convert(None::<Value>));
         };
-        let result = self.0.match_operator(interp, pattern)?;
-        Ok(interp.convert(result))
+        let pos = self.0.match_operator(interp, pattern)?;
+        match pos.map(Int::try_from) {
+            Some(Ok(pos)) => Ok(interp.convert(pos)),
+            Some(Err(_)) => Err(Exception::from(ArgumentError::new(
+                interp,
+                "string too long",
+            ))),
+            None => Ok(interp.convert(None::<Value>)),
+        }
     }
 
     pub fn named_captures(&self, interp: &mut Artichoke) -> Result<Value, Exception> {

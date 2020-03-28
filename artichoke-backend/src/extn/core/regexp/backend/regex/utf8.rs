@@ -398,7 +398,7 @@ impl RegexpType for Utf8 {
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Int>, Exception> {
+    ) -> Result<Option<usize>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -447,9 +447,7 @@ impl RegexpType for Utf8 {
                 let post_match = interp.convert_mut(&haystack[match_pos.end()..]);
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
-                let pos = Int::try_from(match_pos.start()).map_err(|_| {
-                    Fatal::new(interp, "Match position does not fit in Integer max")
-                })?;
+                let pos = match_pos.start();
                 Ok(Some(pos))
             } else {
                 Ok(Some(0))
