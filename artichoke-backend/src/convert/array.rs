@@ -140,6 +140,14 @@ impl ConvertMut<Vec<Option<&[u8]>>, Value> for Artichoke {
     }
 }
 
+impl ConvertMut<Vec<Vec<Option<Vec<u8>>>>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Vec<Vec<Option<Vec<u8>>>>) -> Value {
+        let iter = value.into_iter().map(|item| self.convert_mut(item));
+        let ary = Array::new(InlineBuffer::from_iter(iter));
+        ary.try_into_ruby(self, None).expect("Array into Value")
+    }
+}
+
 impl ConvertMut<Vec<Vec<Option<&[u8]>>>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<Vec<Option<&[u8]>>>) -> Value {
         let iter = value.into_iter().map(|item| self.convert_mut(item));

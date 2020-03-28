@@ -22,7 +22,7 @@ pub mod opts;
 pub mod syntax;
 pub mod trampoline;
 
-pub use backend::RegexpType;
+pub use backend::{RegexpType, Scan};
 pub use enc::Encoding;
 pub use opts::Options;
 
@@ -391,13 +391,35 @@ impl Regexp {
         } else {
             return Ok(interp.convert(None::<Value>));
         };
-        let result = self.0.match_operator(interp, pattern)?;
-        Ok(interp.convert(result))
+        let pos = self.0.match_operator(interp, pattern)?;
+        match pos.map(Int::try_from) {
+            Some(Ok(pos)) => Ok(interp.convert(pos)),
+            Some(Err(_)) => Err(Exception::from(ArgumentError::new(
+                interp,
+                "string too long",
+            ))),
+            None => Ok(interp.convert(None::<Value>)),
+        }
     }
 
     pub fn named_captures(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
         let captures = self.0.named_captures(interp)?;
-        Ok(interp.convert_mut(captures))
+        let mut converted = Vec::with_capacity(captures.len());
+        for (name, indexes) in captures {
+            let mut fixnums = Vec::with_capacity(indexes.len());
+            for idx in indexes {
+                if let Ok(idx) = Int::try_from(idx) {
+                    fixnums.push(idx);
+                } else {
+                    return Err(Exception::from(ArgumentError::new(
+                        interp,
+                        "string too long",
+                    )));
+                }
+            }
+            converted.push((name, fixnums));
+        }
+        Ok(interp.convert_mut(converted))
     }
 
     pub fn names(&self, interp: &mut Artichoke) -> Result<Value, Exception> {

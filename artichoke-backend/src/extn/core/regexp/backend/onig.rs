@@ -8,7 +8,7 @@ use std::rc::Rc;
 use std::str;
 
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType};
+use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan};
 use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
@@ -34,15 +34,21 @@ impl Onig {
                 "Oniguruma backend for Regexp only supports UTF-8 patterns",
             )
         })?;
-        let regex = Regex::with_options(pattern, derived.options.flags(), Syntax::ruby()).map_err(
-            |err| {
-                if literal.options.literal {
-                    Exception::from(SyntaxError::new(interp, err.description().to_owned()))
-                } else {
-                    Exception::from(RegexpError::new(interp, err.description().to_owned()))
-                }
-            },
-        )?;
+        let regex = match Regex::with_options(pattern, derived.options.flags(), Syntax::ruby()) {
+            Ok(regex) => regex,
+            Err(err) if literal.options.literal => {
+                return Err(Exception::from(SyntaxError::new(
+                    interp,
+                    err.description().to_owned(),
+                )))
+            }
+            Err(err) => {
+                return Err(Exception::from(RegexpError::new(
+                    interp,
+                    err.description().to_owned(),
+                )))
+            }
+        };
         let regexp = Self {
             literal,
             derived,
@@ -103,7 +109,12 @@ impl RegexpType for Onig {
                 let indexes = group_indexes
                     .iter()
                     .copied()
-                    .map(|index| usize::try_from(index).unwrap_or_default())
+                    .map(|index: u32| {
+                        // u32 is always losslessly convertable to usize on
+                        // 32-bit and 64-bit targets.
+                        debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
+                        index as usize
+                    })
                     .collect::<Vec<_>>();
                 result = Some(indexes);
                 false
@@ -262,17 +273,16 @@ impl RegexpType for Onig {
         let pos = pos.unwrap_or_default();
         let pos = if let Ok(pos) = usize::try_from(pos) {
             pos
-        } else if let Ok(pos) = usize::try_from(-pos) {
-            if let Some(pos) = haystack_char_len.checked_sub(pos) {
+        } else {
+            let pos = pos
+                .checked_neg()
+                .and_then(|pos| usize::try_from(pos).ok())
+                .and_then(|pos| haystack_char_len.checked_sub(pos));
+            if let Some(pos) = pos {
                 pos
             } else {
                 return Ok(false);
             }
-        } else {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "invalid position",
-            )));
         };
         let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
         if let Some(haystack) = haystack.get(offset..) {
@@ -300,17 +310,16 @@ impl RegexpType for Onig {
         let pos = pos.unwrap_or_default();
         let pos = if let Ok(pos) = usize::try_from(pos) {
             pos
-        } else if let Ok(pos) = usize::try_from(-pos) {
-            if let Some(pos) = haystack_char_len.checked_sub(pos) {
+        } else {
+            let pos = pos
+                .checked_neg()
+                .and_then(|pos| usize::try_from(pos).ok())
+                .and_then(|pos| haystack_char_len.checked_sub(pos));
+            if let Some(pos) = pos {
                 pos
             } else {
                 return Ok(interp.convert(None::<Value>));
             }
-        } else {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "invalid position",
-            )));
         };
         let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
         let target = if let Some(haystack) = haystack.get(offset..) {
@@ -366,7 +375,7 @@ impl RegexpType for Onig {
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<Int>, Exception> {
+    ) -> Result<Option<usize>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -398,9 +407,7 @@ impl RegexpType for Onig {
                 let post_match = interp.convert_mut(&haystack[match_pos.1..]);
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
-                let pos = Int::try_from(match_pos.0).map_err(|_| {
-                    Fatal::new(interp, "Match position does not fit in Integer max")
-                })?;
+                let pos = match_pos.0;
                 Ok(Some(pos))
             } else {
                 Ok(Some(0))
@@ -414,31 +421,22 @@ impl RegexpType for Onig {
     }
 
     fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception> {
+        let _ = interp;
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
-        let mut fatal = false;
-        self.regex.foreach_name(|group, group_indexes| {
-            let mut indexes = vec![];
-            for idx in group_indexes {
-                if let Ok(idx) = Int::try_from(*idx) {
-                    indexes.push(idx);
-                } else {
-                    fatal = true;
-                    break;
-                }
+        self.regex.foreach_name(|group, indexes: &[u32]| {
+            let mut converted = Vec::with_capacity(indexes.len());
+            for &idx in indexes {
+                // u32 is always losslessly convertable to usize on 32-bit and
+                // 64-bit targets.
+                debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
+                converted.push(idx as usize);
             }
-            map.push((group.into(), indexes));
-            !fatal
+            map.push((group.into(), converted));
+            true
         });
-        if fatal {
-            Err(Exception::from(Fatal::new(
-                interp,
-                "Regexp#named_captures group index does not fit in Integer max",
-            )))
-        } else {
-            Ok(map)
-        }
+        Ok(map)
     }
 
     fn named_captures_for_haystack(
@@ -455,9 +453,11 @@ impl RegexpType for Onig {
         if let Some(captures) = self.regex.captures(haystack) {
             let mut map = HashMap::with_capacity(captures.len());
             self.regex.foreach_name(|group, group_indexes| {
-                let capture = group_indexes.iter().rev().copied().find_map(|index| {
-                    let index = usize::try_from(index).unwrap_or_default();
-                    captures.at(index)
+                let capture = group_indexes.iter().rev().copied().find_map(|index: u32| {
+                    // u32 is always losslessly convertable to usize on 32-bit
+                    // and 64-bit targets.
+                    debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
+                    captures.at(index as usize)
                 });
                 if let Some(capture) = capture {
                     map.insert(group.into(), Some(capture.into()));
@@ -515,17 +515,9 @@ impl RegexpType for Onig {
     fn scan(
         &self,
         interp: &mut Artichoke,
-        value: Value,
+        haystack: &[u8],
         block: Option<Block>,
-    ) -> Result<Value, Exception> {
-        let haystack = if let Ok(haystack) = value.clone().try_into::<&[u8]>() {
-            haystack
-        } else {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "Regexp scan expected String haystack",
-            )));
-        };
+    ) -> Result<Scan, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -548,7 +540,7 @@ impl RegexpType for Onig {
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     interp.unset_global_variable(regexp::LAST_MATCH)?;
-                    return Ok(value);
+                    return Ok(Scan::Haystack);
                 }
                 for captures in iter {
                     let fullcapture = interp.convert_mut(captures.at(0));
@@ -576,7 +568,7 @@ impl RegexpType for Onig {
                 let mut iter = self.regex.find_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     interp.unset_global_variable(regexp::LAST_MATCH)?;
-                    return Ok(value);
+                    return Ok(Scan::Haystack);
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.0..pos.1];
@@ -588,7 +580,7 @@ impl RegexpType for Onig {
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             }
-            Ok(value)
+            Ok(Scan::Haystack)
         } else {
             let mut last_pos = (0, 0);
             if let Some(len) = len {
@@ -598,12 +590,12 @@ impl RegexpType for Onig {
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     interp.unset_global_variable(regexp::LAST_MATCH)?;
-                    return Ok(interp.convert_mut(&[] as &[Value]));
+                    return Ok(Scan::Collected(Vec::new()));
                 }
                 for captures in iter {
                     let mut groups = Vec::with_capacity(len.get());
                     for group in 1..=len.get() {
-                        groups.push(captures.at(group));
+                        groups.push(captures.at(group).map(str::as_bytes).map(Vec::from));
                     }
 
                     if let Some(pos) = captures.pos(0) {
@@ -625,27 +617,27 @@ impl RegexpType for Onig {
                     let group = unsafe { NonZeroUsize::new_unchecked(group) };
                     interp.set_global_variable(regexp::nth_match_group(group), &capture)?;
                 }
-                Ok(interp.convert_mut(collected))
+                Ok(Scan::Collected(collected))
             } else {
                 let mut collected = vec![];
                 let mut iter = self.regex.find_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     interp.unset_global_variable(regexp::LAST_MATCH)?;
-                    return Ok(interp.convert_mut(&[] as &[Value]));
+                    return Ok(Scan::Patterns(Vec::new()));
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.0..pos.1];
                     last_pos = pos;
-                    collected.push(scanned);
+                    collected.push(Vec::from(scanned.as_bytes()));
                 }
                 matchdata.set_region(last_pos.0, last_pos.1);
                 let data = matchdata.try_into_ruby(interp, None)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                if let Some(fullcapture) = collected.last().copied() {
-                    let fullcapture = interp.convert_mut(fullcapture);
-                    interp.set_global_variable(regexp::LAST_MATCHED_STRING, &fullcapture)?;
-                }
-                Ok(interp.convert_mut(collected))
+
+                let last_matched = collected.last().map(Vec::as_slice);
+                let last_matched = interp.convert_mut(last_matched);
+                interp.set_global_variable(regexp::LAST_MATCHED_STRING, &last_matched)?;
+                Ok(Scan::Patterns(collected))
             }
         }
     }
