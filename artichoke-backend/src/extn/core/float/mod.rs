@@ -223,7 +223,7 @@ impl Float {
         let coerced = numeric::coerce(interp, x, other)?;
         match coerced {
             Coercion::Float(x, y) => Ok((x % y).into()),
-            Coercion::Integer(x, y) => Ok(Outcome::Integer(x % y)),
+            Coercion::Integer(x, y) => Ok((x % y).into()),
         }
     }
 }

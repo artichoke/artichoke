@@ -171,7 +171,7 @@ impl Integer {
                         interp,
                         "divided by 0",
                     ))),
-                    Coercion::Float(numer, denom) => Ok(Outcome::Float(numer / denom)),
+                    Coercion::Float(numer, denom) => Ok((numer / denom).into()),
                     Coercion::Integer(numer, denom) if numer < 0 && (numer % denom) != 0 => {
                         Ok(((numer / denom) - 1).into())
                     }
