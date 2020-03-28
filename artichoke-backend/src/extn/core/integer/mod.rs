@@ -195,62 +195,138 @@ mod tests {
     use crate::test::prelude::*;
 
     #[quickcheck]
-    fn integer_division_vm_opcode(x: Int, y: Int) -> bool {
+    fn positive_integer_division_vm_opcode(x: u8, y: u8) -> bool {
         let mut interp = crate::interpreter().expect("init");
-        let mut result = true;
         match (x, y) {
-            (0, 0) => result &= interp.eval(b"0 / 0").is_err(),
+            (0, 0) => interp.eval(b"0 / 0").is_err(),
             (x, 0) | (0, x) => {
                 let expr = format!("{} / 0", x).into_bytes();
-                result &= interp.eval(expr.as_slice()).is_err();
+                if interp.eval(expr.as_slice()).is_ok() {
+                    return false;
+                }
                 let expr = format!("0 / {}", x).into_bytes();
-                let division = interp
+                let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
                     .try_into::<Int>()
                     .unwrap();
-                result &= division == 0
+                quotient == 0
             }
             (x, y) => {
                 let expr = format!("{} / {}", x, y).into_bytes();
-                let division = interp
+                let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
                     .try_into::<Int>()
                     .unwrap();
-                result &= division == x / y
+                let expected = Int::from(x) / Int::from(y);
+                quotient == expected
             }
         }
-        result
     }
 
     #[quickcheck]
-    fn integer_division_send(x: Int, y: Int) -> bool {
+    fn positive_integer_division_send(x: u8, y: u8) -> bool {
         let mut interp = crate::interpreter().expect("init");
-        let mut result = true;
         match (x, y) {
-            (0, 0) => result &= interp.eval(b"0.send('/', 0)").is_err(),
+            (0, 0) => interp.eval(b"0.send('/', 0)").is_err(),
             (x, 0) | (0, x) => {
                 let expr = format!("{}.send('/', 0)", x).into_bytes();
-                result &= interp.eval(expr.as_slice()).is_err();
+                if interp.eval(expr.as_slice()).is_ok() {
+                    return false;
+                }
                 let expr = format!("0.send('/', {})", x).into_bytes();
-                let division = interp
+                let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
                     .try_into::<Int>()
                     .unwrap();
-                result &= division == 0
+                quotient == 0
             }
             (x, y) => {
                 let expr = format!("{}.send('/', {})", x, y).into_bytes();
-                let division = interp
+                let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
                     .try_into::<Int>()
                     .unwrap();
-                result &= division == x / y
+                let expected = Int::from(x) / Int::from(y);
+                quotient == expected
             }
         }
-        result
+    }
+
+    #[quickcheck]
+    fn negative_integer_division_vm_opcode(x: u8, y: u8) -> bool {
+        let mut interp = crate::interpreter().expect("init");
+        match (x, y) {
+            (0, 0) => interp.eval(b"-0 / 0").is_err(),
+            (x, 0) | (0, x) => {
+                let expr = format!("-{} / 0", x).into_bytes();
+                if interp.eval(expr.as_slice()).is_ok() {
+                    return false;
+                }
+                let expr = format!("0 / -{}", x).into_bytes();
+                let quotient = interp
+                    .eval(expr.as_slice())
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                quotient == 0
+            }
+            (x, y) => {
+                let expr = format!("-{} / {}", x, y).into_bytes();
+                let quotient = interp
+                    .eval(expr.as_slice())
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                if x % y == 0 {
+                    let expected = -Int::from(x) / Int::from(y);
+                    quotient == expected
+                } else {
+                    // Round negative integer division toward negative infinity.
+                    let expected = (-Int::from(x) / Int::from(y)) - 1;
+                    quotient == expected
+                }
+            }
+        }
+    }
+
+    #[quickcheck]
+    fn negative_integer_division_send(x: u8, y: u8) -> bool {
+        let mut interp = crate::interpreter().expect("init");
+        match (x, y) {
+            (0, 0) => interp.eval(b"-0.send('/', 0)").is_err(),
+            (x, 0) | (0, x) => {
+                let expr = format!("-{}.send('/', 0)", x).into_bytes();
+                if interp.eval(expr.as_slice()).is_ok() {
+                    return false;
+                }
+                let expr = format!("0.send('/', -{})", x).into_bytes();
+                let quotient = interp
+                    .eval(expr.as_slice())
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                quotient == 0
+            }
+            (x, y) => {
+                let expr = format!("-{}.send('/', {})", x, y).into_bytes();
+                let quotient = interp
+                    .eval(expr.as_slice())
+                    .unwrap()
+                    .try_into::<Int>()
+                    .unwrap();
+                if x % y == 0 {
+                    let expected = -Int::from(x) / Int::from(y);
+                    quotient == expected
+                } else {
+                    // Round negative integer division toward negative infinity.
+                    let expected = (-Int::from(x) / Int::from(y)) - 1;
+                    quotient == expected
+                }
+            }
+        }
     }
 }
