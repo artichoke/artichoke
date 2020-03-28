@@ -69,6 +69,7 @@ pub fn chr(
 }
 
 pub fn element_reference(interp: &Artichoke, value: Int, bit: Value) -> Result<Int, Exception> {
+    let _ = interp;
     let bit = bit.implicitly_convert_to_int()?;
     if let Ok(bit) = u32::try_from(bit) {
         Ok(value.checked_shr(bit).map_or(0, |v| v & 1))
@@ -142,8 +143,9 @@ pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Quo
     }
 }
 
-#[inline]
-pub fn size(interp: &Artichoke, value: Int) -> usize {
+#[must_use]
+pub const fn size(interp: &Artichoke, value: Int) -> usize {
+    let _ = interp;
     let _ = value;
     mem::size_of::<Int>()
 }
