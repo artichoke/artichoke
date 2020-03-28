@@ -486,10 +486,11 @@ impl RegexpType for Utf8 {
         if let Some(captures) = self.regex.captures(haystack) {
             let mut map = HashMap::with_capacity(captures.len());
             for (group, group_indexes) in self.named_captures(interp)? {
-                let capture = group_indexes.iter().rev().copied().find_map(|index| {
-                    let index = usize::try_from(index).unwrap_or_default();
-                    captures.get(index)
-                });
+                let capture = group_indexes
+                    .iter()
+                    .rev()
+                    .copied()
+                    .find_map(|index| captures.get(index));
                 if let Some(capture) = capture {
                     map.insert(group, Some(capture.as_str().into()));
                 } else {

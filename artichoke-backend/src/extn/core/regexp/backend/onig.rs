@@ -109,7 +109,12 @@ impl RegexpType for Onig {
                 let indexes = group_indexes
                     .iter()
                     .copied()
-                    .map(|index| usize::try_from(index).unwrap_or_default())
+                    .map(|index: u32| {
+                        // u32 is always losslessly convertable to usize on
+                        // 32-bit and 64-bit targets.
+                        debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
+                        index as usize
+                    })
                     .collect::<Vec<_>>();
                 result = Some(indexes);
                 false
@@ -422,7 +427,7 @@ impl RegexpType for Onig {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
-        self.regex.foreach_name(|group, indexes| {
+        self.regex.foreach_name(|group, indexes: &[u32]| {
             let mut converted = Vec::with_capacity(indexes.len());
             for &idx in indexes {
                 // u32 is always losslessly convertable to usize on 32-bit and
@@ -450,9 +455,11 @@ impl RegexpType for Onig {
         if let Some(captures) = self.regex.captures(haystack) {
             let mut map = HashMap::with_capacity(captures.len());
             self.regex.foreach_name(|group, group_indexes| {
-                let capture = group_indexes.iter().rev().copied().find_map(|index| {
-                    let index = usize::try_from(index).unwrap_or_default();
-                    captures.at(index)
+                let capture = group_indexes.iter().rev().copied().find_map(|index: u32| {
+                    // u32 is always losslessly convertable to usize on 32-bit
+                    // and 64-bit targets.
+                    debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
+                    captures.at(index as usize)
                 });
                 if let Some(capture) = capture {
                     map.insert(group.into(), Some(capture.into()));
