@@ -112,7 +112,7 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                 if let Ok(true) = y.funcall("is_a?", &[class_of_numeric], None) {
                     if y.respond_to("coerce")? {
                         let mut coerced = y
-                            .funcall::<Vec<Value>>("coerce", &[x.clone()], None)
+                            .funcall::<Vec<Value>>("coerce", &[x], None)
                             .map_err(|_| TypeError::new(interp, "coerce must return [x, y]"))?
                             .into_iter();
                         let y = coerced.next();

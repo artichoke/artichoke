@@ -195,16 +195,19 @@ impl Float {
     pub const ROUNDS: Int = -1;
 
     #[inline]
+    #[must_use]
     pub fn new(num: types::Float) -> Self {
         Self(num)
     }
 
     #[inline]
+    #[must_use]
     pub fn as_f64(self) -> f64 {
         self.0
     }
 
     #[inline]
+    #[must_use]
     pub fn modulo(self, other: Self) -> Self {
         Self(self.0 % other.0)
     }

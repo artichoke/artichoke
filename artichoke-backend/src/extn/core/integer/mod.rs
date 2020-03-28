@@ -57,17 +57,20 @@ impl From<Int> for Outcome {
 
 impl Integer {
     #[inline]
+    #[must_use]
     pub fn new(int: Int) -> Self {
         Self(int)
     }
 
     #[inline]
+    #[must_use]
     pub fn as_i64(self) -> i64 {
         self.0
     }
 
     #[allow(clippy::cast_precision_loss)]
     #[inline]
+    #[must_use]
     pub fn as_f64(self) -> f64 {
         self.0 as f64
     }
@@ -182,6 +185,8 @@ impl Integer {
     }
 
     #[must_use]
+    // Future Bignum support requires taking self.
+    #[allow(clippy::unused_self)]
     pub const fn size(self, interp: &Artichoke) -> usize {
         let _ = interp;
         mem::size_of::<Int>()
