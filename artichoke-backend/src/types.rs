@@ -2,7 +2,8 @@ use crate::sys;
 
 /// Artichoke native floating point type.
 ///
-/// `Float` is the backend to the `Float` class.
+/// `Float` is the backend to the [`Float`](crate::extn::core::float::Float)
+/// class.
 ///
 /// The `Float` type alias is for the `f64` floating point primitive.
 ///
@@ -17,7 +18,8 @@ pub type Float = f64;
 
 /// Artichoke native integer type.
 ///
-/// `Int` is the fixed size (`Fixnum`) backend to the `Integer` class.
+/// `Int` is the fixed size (`Fixnum`) backend to the
+/// [`Integer`](crate::extn::core::integer::Integer) class.
 ///
 /// The `Int` type alias is for the `i64` integer primitive.
 ///
