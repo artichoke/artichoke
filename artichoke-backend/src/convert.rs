@@ -32,6 +32,7 @@ where
 
     /// Blanket implementation that always succeeds by delegating to
     /// [`Convert::convert`].
+    #[inline]
     fn try_convert(&self, value: T) -> Result<U, Self::Error> {
         Ok(Convert::convert(self, value))
     }
@@ -49,6 +50,7 @@ where
 
     /// Blanket implementation that always succeeds by delegating to
     /// [`Convert::convert`].
+    #[inline]
     fn try_convert_mut(&mut self, value: T) -> Result<U, Self::Error> {
         Ok(ConvertMut::convert_mut(self, value))
     }
@@ -63,6 +65,7 @@ pub struct UnboxRubyError {
 
 impl UnboxRubyError {
     #[must_use]
+    #[inline]
     pub fn new(value: &Value, into: Rust) -> Self {
         Self {
             from: value.ruby_type(),
@@ -137,6 +140,7 @@ pub struct BoxIntoRubyError {
 
 impl BoxIntoRubyError {
     #[must_use]
+    #[inline]
     pub fn new(from: Rust, into: Ruby) -> Self {
         Self { from, into }
     }

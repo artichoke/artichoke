@@ -319,11 +319,7 @@ mod libmruby {
 
     pub fn build(target: &Triple) {
         fs::create_dir_all(mruby_build_dir()).unwrap();
-        let mrb_int = if let Architecture::Wasm32 = target.architecture {
-            "MRB_INT32"
-        } else {
-            "MRB_INT64"
-        };
+        let mrb_int = "MRB_INT64";
         staticlib(target, mrb_int);
         bindgen(target, mrb_int);
     }
