@@ -1,5 +1,6 @@
 use std::f64;
 
+use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
 use crate::types;
 
@@ -73,6 +74,20 @@ impl From<Float> for types::Float {
     #[inline]
     fn from(flt: Float) -> Self {
         flt.as_f64()
+    }
+}
+
+impl From<Float> for Outcome {
+    #[inline]
+    fn from(flt: Float) -> Self {
+        Self::Float(flt.into())
+    }
+}
+
+impl From<types::Float> for Outcome {
+    #[inline]
+    fn from(flt: types::Float) -> Self {
+        Self::Float(flt)
     }
 }
 
@@ -192,5 +207,23 @@ impl Float {
     #[inline]
     pub fn modulo(self, other: Self) -> Self {
         Self(self.0 % other.0)
+    }
+
+    #[inline]
+    pub fn coerced_modulo(
+        self,
+        interp: &mut Artichoke,
+        other: Value,
+    ) -> Result<Outcome, Exception> {
+        if let Ruby::Float = other.ruby_type() {
+            let other = other.try_into::<Float>()?;
+            return Ok(self.modulo(other).into());
+        }
+        let x = interp.convert_mut(self);
+        let coerced = numeric::coerce(interp, x, other)?;
+        match coerced {
+            Coercion::Float(x, y) => Ok((x % y).into()),
+            Coercion::Integer(x, y) => Ok(Outcome::Integer(x % y)),
+        }
     }
 }
