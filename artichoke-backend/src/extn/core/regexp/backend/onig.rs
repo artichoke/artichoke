@@ -273,17 +273,16 @@ impl RegexpType for Onig {
         let pos = pos.unwrap_or_default();
         let pos = if let Ok(pos) = usize::try_from(pos) {
             pos
-        } else if let Ok(pos) = usize::try_from(-pos) {
-            if let Some(pos) = haystack_char_len.checked_sub(pos) {
+        } else {
+            let pos = pos
+                .checked_neg()
+                .and_then(|pos| usize::try_from(pos).ok())
+                .and_then(|pos| haystack_char_len.checked_sub(pos));
+            if let Some(pos) = pos {
                 pos
             } else {
                 return Ok(false);
             }
-        } else {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "invalid position",
-            )));
         };
         let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
         if let Some(haystack) = haystack.get(offset..) {
@@ -311,17 +310,16 @@ impl RegexpType for Onig {
         let pos = pos.unwrap_or_default();
         let pos = if let Ok(pos) = usize::try_from(pos) {
             pos
-        } else if let Ok(pos) = usize::try_from(-pos) {
-            if let Some(pos) = haystack_char_len.checked_sub(pos) {
+        } else {
+            let pos = pos
+                .checked_neg()
+                .and_then(|pos| usize::try_from(pos).ok())
+                .and_then(|pos| haystack_char_len.checked_sub(pos));
+            if let Some(pos) = pos {
                 pos
             } else {
                 return Ok(interp.convert(None::<Value>));
             }
-        } else {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "invalid position",
-            )));
         };
         let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
         let target = if let Some(haystack) = haystack.get(offset..) {
