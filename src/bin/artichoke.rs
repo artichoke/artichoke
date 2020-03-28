@@ -39,7 +39,7 @@ use std::io::{self, Write};
 use std::process;
 
 fn main() {
-    match ruby::entrypoint() {
+    match ruby::entrypoint(io::stdin(), io::stderr()) {
         Ok(Ok(())) => {}
         Ok(Err(())) => process::exit(1),
         Err(err) => {

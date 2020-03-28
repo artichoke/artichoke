@@ -89,6 +89,7 @@ doc_comment::doctest!("../spec-runner/README.md");
 pub use artichoke_backend as backend;
 pub use backend::interpreter;
 
+pub mod backtrace;
 pub mod parser;
 pub mod repl;
 pub mod ruby;

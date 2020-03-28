@@ -1,19 +1,20 @@
-//! Infrastructure for `ruby` CLI.
+//! Artichoke CLI entrypoint.
 //!
-//! Exported as `artichoke` binary.
+//! Artichoke's version of the `ruby` CLI. This module is exported as the
+//! `artichoke` binary.
 
-use ansi_term::Style;
 use std::ffi::{OsStr, OsString};
-use std::io::{self, Read};
+use std::io;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
-use crate::backend::exception::{Exception, RubyException};
+use crate::backend::exception::Exception;
 use crate::backend::extn::core::exception::{IOError, LoadError};
 use crate::backend::ffi;
 use crate::backend::state::parser::Context;
 use crate::backend::string;
 use crate::backend::{Artichoke, ConvertMut, Eval, Globals, Parser as _};
+use crate::backtrace;
 
 const INLINE_EVAL_SWITCH_FILENAME: &[u8] = b"-e";
 
@@ -53,34 +54,42 @@ struct Opt {
 /// # Errors
 ///
 /// If an exception is raised on the interpreter, then an error is returned.
-pub fn entrypoint() -> Result<Result<(), ()>, Exception> {
+pub fn entrypoint<R, W>(mut input: R, error: W) -> Result<Result<(), ()>, Exception>
+where
+    R: io::Read,
+    W: io::Write,
+{
     let opt = Opt::from_args();
     if opt.copyright {
         let mut interp = crate::interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(Ok(()))
     } else if !opt.commands.is_empty() {
-        execute_inline_eval(opt.commands, opt.fixture.as_ref().map(Path::new))
+        execute_inline_eval(error, opt.commands, opt.fixture.as_deref())
     } else if let Some(programfile) = opt.programfile {
-        execute_program_file(programfile.as_path(), opt.fixture.as_ref().map(Path::new))
+        execute_program_file(error, programfile.as_path(), opt.fixture.as_deref())
     } else {
         let mut interp = crate::interpreter()?;
         let mut program = vec![];
-        io::stdin()
+        input
             .read_to_end(&mut program)
             .map_err(|_| IOError::new(&interp, "Could not read program from STDIN"))?;
-        if let Err(exc) = interp.eval(program.as_slice()) {
-            format_backtrace_into(io::stdout(), &mut interp, &exc)?;
+        if let Err(ref exc) = interp.eval(program.as_slice()) {
+            backtrace::format_cli_trace_into(error, &mut interp, exc)?;
             return Ok(Err(()));
         }
         Ok(Ok(()))
     }
 }
 
-fn execute_inline_eval(
+fn execute_inline_eval<W>(
+    error: W,
     commands: Vec<OsString>,
     fixture: Option<&Path>,
-) -> Result<Result<(), ()>, Exception> {
+) -> Result<Result<(), ()>, Exception>
+where
+    W: io::Write,
+{
     let mut interp = crate::interpreter()?;
     interp.pop_context();
     // safety:
@@ -90,20 +99,11 @@ fn execute_inline_eval(
     // - A test asserts that `INLINE_EVAL_SWITCH_FILENAME` has no NUL bytes.
     interp.push_context(unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH_FILENAME) });
     if let Some(ref fixture) = fixture {
-        let data = if let Ok(data) = std::fs::read(fixture) {
-            data
-        } else {
-            return Err(Exception::from(LoadError::new(
-                &interp,
-                load_error(fixture.as_os_str(), "No such file or directory")?,
-            )));
-        };
-        let value = interp.convert_mut(data);
-        interp.set_global_variable(&b"$fixture"[..], &value)?;
+        setup_fixture_hack(&mut interp, fixture)?;
     }
     for command in commands {
-        if let Err(exc) = interp.eval_os_str(command.as_os_str()) {
-            format_backtrace_into(io::stdout(), &mut interp, &exc)?;
+        if let Err(ref exc) = interp.eval_os_str(command.as_os_str()) {
+            backtrace::format_cli_trace_into(error, &mut interp, exc)?;
             // short circuit, but don't return an error since we already printed it
             return Ok(Err(()));
         }
@@ -113,22 +113,17 @@ fn execute_inline_eval(
     Ok(Ok(()))
 }
 
-fn execute_program_file(
+fn execute_program_file<W>(
+    error: W,
     programfile: &Path,
     fixture: Option<&Path>,
-) -> Result<Result<(), ()>, Exception> {
+) -> Result<Result<(), ()>, Exception>
+where
+    W: io::Write,
+{
     let mut interp = crate::interpreter()?;
     if let Some(ref fixture) = fixture {
-        let data = if let Ok(data) = std::fs::read(fixture) {
-            data
-        } else {
-            return Err(Exception::from(LoadError::new(
-                &interp,
-                load_error(fixture.as_os_str(), "No such file or directory")?,
-            )));
-        };
-        let value = interp.convert_mut(data);
-        interp.set_global_variable(&b"$fixture"[..], &value)?;
+        setup_fixture_hack(&mut interp, fixture)?;
     }
     let program = match std::fs::read(programfile) {
         Ok(programfile) => programfile,
@@ -136,76 +131,51 @@ fn execute_program_file(
             return match err.kind() {
                 io::ErrorKind::NotFound => Err(Exception::from(LoadError::new(
                     &interp,
-                    load_error(programfile.as_os_str(), "No such file or directory")?,
+                    load_error(programfile, "No such file or directory")?,
                 ))),
                 io::ErrorKind::PermissionDenied => Err(Exception::from(LoadError::new(
                     &interp,
-                    load_error(programfile.as_os_str(), "Permission denied")?,
+                    load_error(programfile, "Permission denied")?,
                 ))),
                 _ => Err(Exception::from(LoadError::new(
                     &interp,
-                    load_error(programfile.as_os_str(), "Could not read file")?,
+                    load_error(programfile, "Could not read file")?,
                 ))),
             }
         }
     };
-    if let Err(exc) = interp.eval(program.as_slice()) {
-        format_backtrace_into(io::stdout(), &mut interp, &exc)?;
+    if let Err(ref exc) = interp.eval(program.as_slice()) {
+        backtrace::format_cli_trace_into(error, &mut interp, exc)?;
         return Ok(Err(()));
     }
     Ok(Ok(()))
 }
 
-fn load_error(file: &OsStr, message: &str) -> Result<String, Exception> {
+fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Exception> {
     let mut buf = String::from(message);
     buf.push_str(" -- ");
-    let path = ffi::os_str_to_bytes(file)?;
+    let path = ffi::os_str_to_bytes(file.as_ref())?;
     string::format_unicode_debug_into(&mut buf, &path)?;
     Ok(buf)
 }
 
-/// Format an [`Exception`] backtrace into the given writer.
-///
-/// # Errors
-///
-/// If writing into the provided `out` writer fails, an error is returned.
-pub fn format_backtrace_into<W>(
-    mut out: W,
-    interp: &mut Artichoke,
-    exc: &Exception,
-) -> Result<(), Exception>
-where
-    W: io::Write,
-{
-    let mut top = None;
-    if let Some(backtrace) = exc.vm_backtrace(interp) {
-        writeln!(
-            out,
-            "{} (most recent call last):",
-            Style::new().bold().paint("Traceback")
-        )?;
-        let mut iter = backtrace.into_iter().enumerate();
-        top = iter.next();
-        for (num, frame) in iter.rev() {
-            write!(out, "\t{}: from ", num + 1)?;
-            out.write_all(frame.as_slice())?;
-            writeln!(out)?;
-        }
-    }
-    if let Some((_, frame)) = top {
-        out.write_all(frame.as_slice())?;
-        write!(out, ": ")?;
-    }
-    Style::new()
-        .bold()
-        .paint(exc.message())
-        .write_to(&mut out)?;
-    writeln!(
-        out,
-        " {}{}{}",
-        Style::new().bold().paint("("),
-        Style::new().bold().underline().paint(exc.name()),
-        Style::new().bold().paint(")")
-    )?;
+// This function exists to provide a workaround for Artichoke not being able to
+// read from the local filesystem.
+//
+// By passing the `--fixture PATH` argument, this function loads the file at
+// `PATH` into memory and stores it in the interpreter bound to the `$fixture`
+// global.
+#[inline]
+fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Result<(), Exception> {
+    let data = if let Ok(data) = std::fs::read(fixture.as_ref()) {
+        data
+    } else {
+        return Err(Exception::from(LoadError::new(
+            &interp,
+            load_error(fixture.as_ref(), "No such file or directory")?,
+        )));
+    };
+    let value = interp.convert_mut(data);
+    interp.set_global_variable(&b"$fixture"[..], &value)?;
     Ok(())
 }
