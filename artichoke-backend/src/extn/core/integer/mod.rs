@@ -3,7 +3,6 @@ use std::mem;
 
 use crate::extn::core::numeric::Numeric;
 use crate::extn::prelude::*;
-use crate::types;
 
 pub mod mruby;
 pub mod trampoline;
@@ -15,7 +14,7 @@ pub fn chr(
     interp: &mut Artichoke,
     value: Int,
     encoding: Option<Value>,
-) -> Result<Value, Exception> {
+) -> Result<Vec<u8>, Exception> {
     if let Some(encoding) = encoding {
         let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
         message.extend(encoding.inspect());
@@ -57,7 +56,7 @@ pub fn chr(
             Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
                 // Create a single byte `String` from the character given by
                 // `self`.
-                Ok(interp.convert_mut(&[chr][..]))
+                Ok(vec![chr])
             }
             _ => {
                 let mut message = String::new();
@@ -69,17 +68,22 @@ pub fn chr(
     }
 }
 
-fn element_reference(interp: &Artichoke, value: Int, bit: Value) -> Result<Value, Exception> {
+pub fn element_reference(interp: &Artichoke, value: Int, bit: Value) -> Result<Int, Exception> {
     let bit = bit.implicitly_convert_to_int()?;
-    let result = if let Ok(bit) = u32::try_from(bit) {
-        value.checked_shr(bit).map_or(0, |v| v & 1)
+    if let Ok(bit) = u32::try_from(bit) {
+        Ok(value.checked_shr(bit).map_or(0, |v| v & 1))
     } else {
-        0
-    };
-    Ok(interp.convert(result))
+        Ok(0)
+    }
 }
 
-pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Value, Exception> {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Quotient {
+    Int(Int),
+    Float(Float),
+}
+
+pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Quotient, Exception> {
     match denominator.ruby_type() {
         Ruby::Fixnum => {
             let denominator = denominator.try_into::<Int>()?;
@@ -89,13 +93,13 @@ pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Val
                     "divided by 0",
                 )))
             } else {
-                Ok(interp.convert(value / denominator))
+                Ok(Quotient::Int(value / denominator))
             }
         }
         Ruby::Float => {
-            let denominator = denominator.try_into::<types::Float>()?;
+            let denominator = denominator.try_into::<Float>()?;
             #[allow(clippy::cast_precision_loss)]
-            Ok(interp.convert_mut(value as types::Float / denominator))
+            Ok(Quotient::Float(value as Float / denominator))
         }
         _ => {
             let borrow = interp.0.borrow();
@@ -112,7 +116,7 @@ pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Val
                     if let Ruby::Float = coerced.ruby_type() {
                         let denom = coerced.try_into::<Float>()?;
                         #[allow(clippy::cast_precision_loss)]
-                        Ok(interp.convert_mut(value as types::Float / denom))
+                        Ok(Quotient::Float(value as Float / denom))
                     } else {
                         let mut message = String::from("can't convert ");
                         message.push_str(denominator.pretty_name());
@@ -138,12 +142,10 @@ pub fn div(interp: &mut Artichoke, value: Int, denominator: Value) -> Result<Val
     }
 }
 
-fn size(interp: &Artichoke, value: Int) -> Result<Value, Fatal> {
+#[inline]
+pub fn size(interp: &Artichoke, value: Int) -> usize {
     let _ = value;
-    let size = mem::size_of::<Int>();
-    let size = Int::try_from(size)
-        .map_err(|_| Fatal::new(interp, "size of Integer exceeds Integer max value"))?;
-    Ok(interp.convert(size))
+    mem::size_of::<Int>()
 }
 
 #[cfg(test)]
