@@ -31,7 +31,7 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
     } else {
         return Err(Exception::from(ArgumentError::new(interp, "empty string")));
     };
-    interp.try_convert(ord)
+    Ok(interp.convert(ord))
 }
 
 pub fn scan(

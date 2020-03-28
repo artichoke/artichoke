@@ -1,13 +1,36 @@
 use crate::sys;
 
+/// Artichoke native floating point type.
+///
+/// `Float` is the backend to the `Float` class.
+///
+/// The `Float` type alias is for the `f64` floating point primitive.
+///
+/// ```
+/// # use std::any::TypeId;
+/// # use std::mem;
+/// # use artichoke_backend::types::Float;
+/// assert_eq!(mem::size_of::<f64>(), mem::size_of::<Float>());
+/// assert_eq!(TypeId::of::<f64>(), TypeId::of::<Float>());
+/// ```
 pub type Float = f64;
 
-// Parameterize Fixnum integer type based on architecture.
-#[cfg(not(target_arch = "wasm32"))]
+/// Artichoke native integer type.
+///
+/// `Int` is the fixed size (`Fixnum`) backend to the `Integer` class.
+///
+/// The `Int` type alias is for the `i64` integer primitive.
+///
+/// ```
+/// # use std::any::TypeId;
+/// # use std::mem;
+/// # use artichoke_backend::types::Int;
+/// assert_eq!(mem::size_of::<i64>(), mem::size_of::<Int>());
+/// assert_eq!(i64::min_value(), Int::min_value());
+/// assert_eq!(i64::max_value(), Int::max_value());
+/// assert_eq!(TypeId::of::<i64>(), TypeId::of::<Int>());
+/// ```
 pub type Int = i64;
-// wasm32 builds target 32-bit Ruby `Integer`s.
-#[cfg(target_arch = "wasm32")]
-pub type Int = i32;
 
 pub use crate::core::types::{Ruby, Rust};
 
