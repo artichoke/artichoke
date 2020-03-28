@@ -70,12 +70,11 @@ unsafe extern "C" fn artichoke_integer_div(
 
 unsafe extern "C" fn artichoke_integer_size(
     mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
+    _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = trampoline::size(&interp, value);
+    let result = trampoline::size(&interp);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

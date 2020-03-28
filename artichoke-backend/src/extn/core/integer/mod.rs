@@ -185,10 +185,7 @@ impl Integer {
     }
 
     #[must_use]
-    // Future Bignum support requires taking self.
-    #[allow(clippy::unused_self)]
-    pub const fn size(self, interp: &Artichoke) -> usize {
-        let _ = interp;
+    pub const fn size() -> usize {
         mem::size_of::<Int>()
     }
 }

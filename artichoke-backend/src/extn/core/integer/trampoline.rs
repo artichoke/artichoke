@@ -27,10 +27,9 @@ pub fn div(interp: &mut Artichoke, value: Value, denominator: Value) -> Result<V
     Ok(interp.convert_mut(quotient))
 }
 
-pub fn size(interp: &Artichoke, value: Value) -> Result<Value, Exception> {
-    let value = value.try_into::<Integer>()?;
+pub fn size(interp: &Artichoke) -> Result<Value, Exception> {
     // This `as` cast is lossless because size_of::<Int> is guaranteed to be
     // less than `Int::MAX`.
-    let size = value.size(interp) as Int;
+    let size = Integer::size() as Int;
     Ok(interp.convert(size))
 }
