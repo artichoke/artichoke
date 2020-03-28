@@ -412,31 +412,22 @@ impl RegexpType for Onig {
     }
 
     fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception> {
+        let _ = interp;
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
-        let mut fatal = false;
-        self.regex.foreach_name(|group, group_indexes| {
-            let mut indexes = vec![];
-            for idx in group_indexes {
-                if let Ok(idx) = Int::try_from(*idx) {
-                    indexes.push(idx);
-                } else {
-                    fatal = true;
-                    break;
-                }
+        self.regex.foreach_name(|group, indexes| {
+            let mut converted = Vec::with_capacity(indexes.len());
+            for &idx in indexes {
+                // u32 is always losslessly convertable to usize on 32-bit and
+                // 64-bit targets.
+                debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
+                converted.push(idx as usize);
             }
-            map.push((group.into(), indexes));
-            !fatal
+            map.push((group.into(), converted));
+            true
         });
-        if fatal {
-            Err(Exception::from(Fatal::new(
-                interp,
-                "Regexp#named_captures group index does not fit in Integer max",
-            )))
-        } else {
-            Ok(map)
-        }
+        Ok(map)
     }
 
     fn named_captures_for_haystack(

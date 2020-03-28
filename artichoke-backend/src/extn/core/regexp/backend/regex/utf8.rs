@@ -466,17 +466,7 @@ impl RegexpType for Utf8 {
         let mut map = vec![];
         for group in self.regex.capture_names().filter_map(convert::identity) {
             if let Some(indexes) = self.capture_indexes_for_name(interp, group.as_bytes())? {
-                let mut group_indexes = Vec::with_capacity(indexes.len());
-                for idx in indexes {
-                    let idx = Int::try_from(idx).map_err(|_| {
-                        Fatal::new(
-                            interp,
-                            "Regexp named capture index does not fit in Integer max",
-                        )
-                    })?;
-                    group_indexes.push(idx);
-                }
-                map.push((Vec::<u8>::from(group), group_indexes));
+                map.push((group.into(), indexes));
             }
         }
         Ok(map)
@@ -516,8 +506,8 @@ impl RegexpType for Utf8 {
         let mut names = vec![];
         let mut capture_names = self.named_captures(interp).unwrap_or_default();
         capture_names.sort_by(|left, right| {
-            let left = left.1.iter().copied().fold(Int::max_value(), Int::min);
-            let right = right.1.iter().copied().fold(Int::max_value(), Int::min);
+            let left = left.1.iter().copied().fold(usize::max_value(), usize::min);
+            let right = right.1.iter().copied().fold(usize::max_value(), usize::min);
             left.partial_cmp(&right).unwrap_or(Ordering::Equal)
         });
         for (name, _) in capture_names {

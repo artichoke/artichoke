@@ -8,7 +8,7 @@ pub mod onig;
 pub mod regex;
 
 type NilableString = Option<Vec<u8>>;
-type NameToCaptureLocations = Vec<(Vec<u8>, Vec<Int>)>;
+type NameToCaptureLocations = Vec<(Vec<u8>, Vec<usize>)>;
 
 pub trait RegexpType {
     fn box_clone(&self) -> Box<dyn RegexpType>;
