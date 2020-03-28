@@ -2272,7 +2272,11 @@ RETRY_TRY_BLOCK:
             mrb_raise(mrb, mrb_exc_get(mrb, "ZeroDivisionError"), "divided by 0");
           }
 #endif
-          SET_INT_VALUE(regs[a], y ? x / y : 0);
+          if (x < 0) {
+            SET_INT_VALUE(regs[a], (x / y) - 1);
+          } else {
+            SET_INT_VALUE(regs[a], x / y);
+          }
         }
         break;
 #ifndef MRB_WITHOUT_FLOAT
