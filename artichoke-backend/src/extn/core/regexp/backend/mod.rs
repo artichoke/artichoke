@@ -10,6 +10,13 @@ pub mod regex;
 type NilableString = Option<Vec<u8>>;
 type NameToCaptureLocations = Vec<(Vec<u8>, Vec<usize>)>;
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum Scan {
+    Collected(Vec<Vec<Option<Vec<u8>>>>),
+    Patterns(Vec<Vec<u8>>),
+    Haystack,
+}
+
 pub trait RegexpType {
     fn box_clone(&self) -> Box<dyn RegexpType>;
 
@@ -89,7 +96,7 @@ pub trait RegexpType {
     fn scan(
         &self,
         interp: &mut Artichoke,
-        haystack: Value,
+        haystack: &[u8],
         block: Option<Block>,
-    ) -> Result<Value, Exception>;
+    ) -> Result<Scan, Exception>;
 }

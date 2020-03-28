@@ -7,7 +7,7 @@ use std::num::NonZeroUsize;
 use std::str;
 
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType};
+use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan};
 use crate::extn::prelude::*;
 
 use super::super::{NameToCaptureLocations, NilableString};
@@ -540,17 +540,9 @@ impl RegexpType for Utf8 {
     fn scan(
         &self,
         interp: &mut Artichoke,
-        value: Value,
+        haystack: &[u8],
         block: Option<Block>,
-    ) -> Result<Value, Exception> {
-        let haystack = if let Ok(haystack) = value.clone().try_into::<&[u8]>() {
-            haystack
-        } else {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "Regexp scan expected String haystack",
-            )));
-        };
+    ) -> Result<Scan, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::new(
                 interp,
@@ -577,7 +569,7 @@ impl RegexpType for Utf8 {
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     interp.unset_global_variable(regexp::LAST_MATCH)?;
-                    return Ok(value);
+                    return Ok(Scan::Haystack);
                 }
                 for captures in iter {
                     let matched = captures
@@ -614,7 +606,7 @@ impl RegexpType for Utf8 {
                 let mut iter = self.regex.find_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     interp.unset_global_variable(regexp::LAST_MATCH)?;
-                    return Ok(value);
+                    return Ok(Scan::Haystack);
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.start()..pos.end()];
@@ -626,7 +618,7 @@ impl RegexpType for Utf8 {
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             }
-            Ok(value)
+            Ok(Scan::Haystack)
         } else {
             let mut last_pos = (0, 0);
             if let Some(len) = len {
@@ -634,7 +626,7 @@ impl RegexpType for Utf8 {
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     interp.unset_global_variable(regexp::LAST_MATCH)?;
-                    return Ok(interp.convert_mut(&[] as &[Value]));
+                    return Ok(Scan::Collected(Vec::new()));
                 }
                 for captures in iter {
                     let mut groups = Vec::with_capacity(len.get() - 1);
@@ -643,7 +635,8 @@ impl RegexpType for Utf8 {
                             .get(group)
                             .as_ref()
                             .map(regex::Match::as_str)
-                            .map(str::as_bytes);
+                            .map(str::as_bytes)
+                            .map(Vec::from);
                         groups.push(matched);
                     }
 
@@ -665,27 +658,26 @@ impl RegexpType for Utf8 {
                     let group = unsafe { NonZeroUsize::new_unchecked(group) };
                     interp.set_global_variable(regexp::nth_match_group(group), &capture)?;
                 }
-                Ok(interp.convert_mut(collected))
+                Ok(Scan::Collected(collected))
             } else {
                 let mut collected = vec![];
                 let mut iter = self.regex.find_iter(haystack).peekable();
                 if iter.peek().is_none() {
                     interp.unset_global_variable(regexp::LAST_MATCH)?;
-                    return Ok(interp.convert_mut(&[] as &[Value]));
+                    return Ok(Scan::Patterns(Vec::new()));
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.start()..pos.end()];
                     last_pos = (pos.start(), pos.end());
-                    collected.push(scanned);
+                    collected.push(Vec::from(scanned.as_bytes()));
                 }
                 matchdata.set_region(last_pos.0, last_pos.1);
                 let data = matchdata.try_into_ruby(interp, None)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                if let Some(fullcapture) = collected.last().copied() {
-                    let fullcapture = interp.convert_mut(fullcapture);
-                    interp.set_global_variable(regexp::LAST_MATCHED_STRING, &fullcapture)?;
-                }
-                Ok(interp.convert_mut(collected))
+                let last_matched = collected.last().map(Vec::as_slice);
+                let last_matched = interp.convert_mut(last_matched);
+                interp.set_global_variable(regexp::LAST_MATCHED_STRING, &last_matched)?;
+                Ok(Scan::Patterns(collected))
             }
         }
     }

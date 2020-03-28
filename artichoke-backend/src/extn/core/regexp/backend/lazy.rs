@@ -2,7 +2,7 @@ use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType};
+use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType, Scan};
 use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
@@ -196,9 +196,9 @@ impl RegexpType for Lazy {
     fn scan(
         &self,
         interp: &mut Artichoke,
-        haystack: Value,
+        haystack: &[u8],
         block: Option<Block>,
-    ) -> Result<Value, Exception> {
+    ) -> Result<Scan, Exception> {
         self.regexp(interp)?.inner().scan(interp, haystack, block)
     }
 }

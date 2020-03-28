@@ -22,7 +22,7 @@ pub mod opts;
 pub mod syntax;
 pub mod trampoline;
 
-pub use backend::RegexpType;
+pub use backend::{RegexpType, Scan};
 pub use enc::Encoding;
 pub use opts::Options;
 
