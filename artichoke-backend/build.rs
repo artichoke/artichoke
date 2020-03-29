@@ -103,8 +103,8 @@ mod libmruby {
             "mruby-fiber",        // Fiber class from core, required by mruby-enumerator
             "mruby-pack",         // Array#pack and String#unpack
             "mruby-sprintf",      // Kernel#sprintf, Kernel#format, String#%
-            "mruby-class-ext",    // Pending removal, see GH-32
-            "mruby-proc-ext",     // required by mruby-method, see GH-32
+            "mruby-class-ext",    // NOTE(GH-32): Pending removal.
+            "mruby-proc-ext",     // NOTE(GH-32): This gem is required by `mruby-method`.
         ]
     }
 

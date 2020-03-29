@@ -253,7 +253,7 @@ pub fn require(
 pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Exception> {
     let base = {
         let borrow = interp.0.borrow();
-        // TODO: GH-468 - Use `Parser::peek_context`.
+        // TODO(GH-468): Use `Parser::peek_context`.
         let context = borrow
             .parser
             .peek_context()

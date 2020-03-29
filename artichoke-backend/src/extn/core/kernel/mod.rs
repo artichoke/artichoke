@@ -84,8 +84,9 @@ impl Kernel {
 
     unsafe extern "C" fn puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         fn puts_foreach(interp: &mut Artichoke, value: &Value) {
-            // GH-310: Value shoud implicitly convert to Array.
-            // Values that respond to `to_ary` are converted and iterated over.
+            // TODO(GH-310): Use `Value::implicitly_convert_to_array` when
+            // implemented so `Value`s that respond to `to_ary` are converted
+            // and iterated over.
             if let Ok(array) = value.clone().try_into::<Vec<Value>>() {
                 for value in &array {
                     puts_foreach(interp, value);
