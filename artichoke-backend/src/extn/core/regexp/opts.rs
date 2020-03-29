@@ -107,7 +107,7 @@ pub fn parse(value: &Value) -> Options {
     }
 }
 
-// TODO: Add tests for this parse_pattern, see GH-157.
+// TODO(GH-26): Add tests for `parse_pattern`.
 #[must_use]
 pub fn parse_pattern(pattern: &[u8], mut opts: Options) -> (Vec<u8>, Options) {
     let orig_opts = opts;

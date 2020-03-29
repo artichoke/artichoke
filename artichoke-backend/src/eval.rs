@@ -67,7 +67,7 @@ mod tests {
         interp.push_context(context);
         let _ = interp.eval(b"15").expect("eval");
         assert_eq!(
-            // TODO: GH-468 - Use `Parser::peek_context`.
+            // TODO(GH-468): Use `Parser::peek_context`.
             interp.0.borrow().parser.peek_context().unwrap().filename(),
             &b"context.rb"[..]
         );
@@ -77,7 +77,7 @@ mod tests {
     fn root_context_is_not_pushed_after_eval() {
         let mut interp = crate::interpreter().expect("init");
         let _ = interp.eval(b"15").expect("eval");
-        // TODO: GH-468 - Use `Parser::peek_context`.
+        // TODO(GH-468): Use `Parser::peek_context`.
         assert!(interp.0.borrow().parser.peek_context().is_none());
     }
 
@@ -170,7 +170,7 @@ NestedEval.file
     }
 
     #[test]
-    // TODO: GH-528 - fix failing tests on Windows.
+    // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn file_magic_constant() {
         let mut interp = crate::interpreter().expect("init");

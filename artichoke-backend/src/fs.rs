@@ -435,7 +435,7 @@ mod tests {
     }
 
     #[test]
-    // TODO: GH-528 - fix failing tests on Windows.
+    // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn absolutize_relative_path_dedot_parent_dir() {
         let path = Path::new("foo/bar/..");

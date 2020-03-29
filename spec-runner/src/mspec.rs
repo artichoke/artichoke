@@ -45,7 +45,7 @@ pub fn run(interp: &mut Artichoke, specs: &[String]) -> Result<bool, Exception> 
 #[cfg(test)]
 mod tests {
     #[test]
-    // TODO: GH-528 - fix failing tests on Windows.
+    // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn mspec_framework_loads() {
         let mut interp = artichoke_backend::interpreter().unwrap();

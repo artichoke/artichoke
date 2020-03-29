@@ -31,7 +31,7 @@ impl Value {
     }
 
     /// The [`sys::mrb_value`] that this [`Value`] wraps.
-    // TODO: make Value::inner pub(crate), GH-251.
+    // TODO(GH-251): make `Value::inner` pub(crate).
     #[inline]
     #[must_use]
     pub fn inner(&self) -> sys::mrb_value {
@@ -70,7 +70,7 @@ impl Value {
     /// After extracting a [`sys::mrb_value`] from the interpreter, check to see
     /// if the value is [unreachable](Ruby::Unreachable) a [`Fatal`] exception.
     ///
-    /// See: [mruby GH-4460](https://github.com/mruby/mruby/issues/4460).
+    /// See: [mruby#4460](https://github.com/mruby/mruby/issues/4460).
     #[must_use]
     pub fn is_unreachable(&self) -> bool {
         self.ruby_type() == Ruby::Unreachable

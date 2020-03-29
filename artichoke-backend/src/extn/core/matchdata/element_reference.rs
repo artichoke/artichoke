@@ -13,7 +13,7 @@ enum Args<'a> {
     StartLen(Int, usize),
 }
 
-// TODO: GH-308 - extract this function into `sys::protect`
+// TODO(GH-308): extract this function into `sys::protect`
 unsafe fn is_range<'a>(
     interp: &'a Artichoke,
     first: &Value,
@@ -22,8 +22,8 @@ unsafe fn is_range<'a>(
     let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
     let mut len = mem::MaybeUninit::<sys::mrb_int>::uninit();
     let mrb = interp.0.borrow().mrb;
-    // `mrb_range_beg_len` can raise.
-    // TODO: GH-308 - wrap this in a call to `mrb_protect`.
+    // NOTE: `mrb_range_beg_len` can raise.
+    // TODO(GH-308): wrap this in a call to `mrb_protect`.
     let check_range = sys::mrb_range_beg_len(
         mrb,
         first.inner(),

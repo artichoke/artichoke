@@ -23,7 +23,6 @@ mod ffi {
 }
 pub(crate) mod protect;
 
-#[path = "ffi_tests.rs"]
 #[cfg(test)]
 mod ffi_tests;
 

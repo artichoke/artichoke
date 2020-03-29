@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     #[allow(clippy::shadow_unrelated)]
-    // TODO: GH-528 - fix failing tests on Windows.
+    // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn forwardable() {
         let mut interp = crate::interpreter().expect("init");
@@ -90,7 +90,7 @@ r.record_number(0)
     }
 
     #[test]
-    // TODO: GH-528 - fix failing tests on Windows.
+    // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn forwardable_another_example() {
         let mut interp = crate::interpreter().expect("init");
@@ -149,7 +149,7 @@ out << q.first
     }
 
     #[test]
-    // TODO: GH-528 - fix failing tests on Windows.
+    // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn forwardable_def_instance_delegator() {
         let mut interp = crate::interpreter().expect("init");
