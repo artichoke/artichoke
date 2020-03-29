@@ -201,11 +201,16 @@ impl Regexp {
     }
 
     pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
-        let pattern = pattern.implicitly_convert_to_string()?;
-        let pattern = str::from_utf8(pattern).map_err(|_| {
-            ArgumentError::new(interp, "Regexp::escape only supports UTF-8 patterns")
-        })?;
-
+        let bytes = pattern.implicitly_convert_to_string()?;
+        let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
+            pattern
+        } else {
+            // drop(bytes);
+            return Err(Exception::from(ArgumentError::new(
+                interp,
+                "invalid encoding (non UTF-8)",
+            )));
+        };
         Ok(interp.convert_mut(syntax::escape(pattern)))
     }
 
@@ -220,13 +225,16 @@ impl Regexp {
                         if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                             patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                         } else {
-                            let pattern = pattern.implicitly_convert_to_string()?;
-                            let pattern = str::from_utf8(pattern).map_err(|_| {
-                                ArgumentError::new(
+                            let bytes = pattern.implicitly_convert_to_string()?;
+                            let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
+                                pattern
+                            } else {
+                                // drop(bytes);
+                                return Err(Exception::from(ArgumentError::new(
                                     interp,
-                                    "Regexp::union only supports UTF-8 patterns",
-                                )
-                            })?;
+                                    "invalid encoding (non UTF-8)",
+                                )));
+                            };
                             patterns.push(syntax::escape(pattern).into_bytes());
                         }
                     }
@@ -236,10 +244,16 @@ impl Regexp {
                     if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
                         regexp.borrow().0.derived_config().pattern.clone()
                     } else {
-                        let pattern = pattern.implicitly_convert_to_string()?;
-                        let pattern = str::from_utf8(pattern).map_err(|_| {
-                            ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
-                        })?;
+                        let bytes = pattern.implicitly_convert_to_string()?;
+                        let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
+                            pattern
+                        } else {
+                            // drop(bytes);
+                            return Err(Exception::from(ArgumentError::new(
+                                interp,
+                                "invalid encoding (non UTF-8)",
+                            )));
+                        };
                         syntax::escape(pattern).into_bytes()
                     }
                 }
@@ -249,9 +263,15 @@ impl Regexp {
                     patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                 } else {
                     let bytes = first.implicitly_convert_to_string()?;
-                    let pattern = str::from_utf8(bytes).map_err(|_| {
-                        ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
-                    })?;
+                    let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
+                        pattern
+                    } else {
+                        // drop(bytes);
+                        return Err(Exception::from(ArgumentError::new(
+                            interp,
+                            "invalid encoding (non UTF-8)",
+                        )));
+                    };
                     patterns.push(syntax::escape(pattern).into_bytes());
                 }
                 for pattern in iter {
@@ -259,9 +279,15 @@ impl Regexp {
                         patterns.push(regexp.borrow().0.derived_config().pattern.clone());
                     } else {
                         let bytes = pattern.implicitly_convert_to_string()?;
-                        let pattern = str::from_utf8(bytes).map_err(|_| {
-                            ArgumentError::new(interp, "Regexp::union only supports UTF-8 patterns")
-                        })?;
+                        let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
+                            pattern
+                        } else {
+                            // drop(bytes);
+                            return Err(Exception::from(ArgumentError::new(
+                                interp,
+                                "invalid encoding (non UTF-8)",
+                            )));
+                        };
                         patterns.push(syntax::escape(pattern).into_bytes());
                     }
                 }
