@@ -78,19 +78,18 @@ pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Excep
 pub fn bytes(interp: &mut Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
     let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
     let size = size.implicitly_convert_to_int()?;
-    if let Ok(size) = usize::try_from(size) {
-        if size == 0 {
-            return Ok(interp.convert_mut(""));
+    match usize::try_from(size) {
+        Ok(0) => Ok(interp.convert_mut("")),
+        Ok(len) => {
+            let mut buf = vec![0; len];
+            let mut borrow = rand.borrow_mut();
+            borrow.inner_mut().bytes(interp, &mut buf);
+            Ok(interp.convert_mut(buf))
         }
-        let mut buf = vec![0; size];
-        let mut borrow = rand.borrow_mut();
-        borrow.inner_mut().bytes(interp, &mut buf);
-        Ok(interp.convert_mut(buf))
-    } else {
-        Err(Exception::from(ArgumentError::new(
+        Err(_) => Err(Exception::from(ArgumentError::new(
             interp,
             "negative string size (or size too big)",
-        )))
+        ))),
     }
 }
 
@@ -178,14 +177,18 @@ pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Excepti
 
 pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Exception> {
     let size = size.implicitly_convert_to_int()?;
-    let size = usize::try_from(size)
-        .map_err(|_| ArgumentError::new(interp, "negative string size (or size too big)"))?;
-    if size == 0 {
-        return Ok(interp.convert_mut(""));
+    match usize::try_from(size) {
+        Ok(0) => Ok(interp.convert_mut("")),
+        Ok(len) => {
+            let mut buf = vec![0; len];
+            let mut rng = rand::thread_rng();
+            rng.try_fill_bytes(&mut buf)
+                .map_err(|err| RuntimeError::new(interp, err.to_string()))?;
+            Ok(interp.convert_mut(buf))
+        }
+        Err(_) => Err(Exception::from(ArgumentError::new(
+            interp,
+            "negative string size (or size too big)",
+        ))),
     }
-    let mut bytes = vec![0; size];
-    let mut rng = rand::thread_rng();
-    rng.try_fill_bytes(&mut bytes)
-        .map_err(|err| RuntimeError::new(interp, err.to_string()))?;
-    Ok(interp.convert_mut(bytes))
 }
