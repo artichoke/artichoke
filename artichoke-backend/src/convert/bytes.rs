@@ -90,55 +90,84 @@ impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
 }
 
 #[cfg(test)]
-// Convert<Vec<u8>> is implemented in terms of Convert<&[u8]> so only implement
-// the tests for Vec<u8> to exercise both code paths.
 mod tests {
     use quickcheck_macros::quickcheck;
-    use std::convert::TryFrom;
 
     use crate::test::prelude::*;
 
     #[test]
     fn fail_convert() {
-        let mut interp = crate::interpreter().expect("init");
-        // get a mrb_value that can't be converted to a primitive type.
-        let value = interp.eval(b"Object.new").expect("eval");
+        let mut interp = crate::interpreter().unwrap();
+        // get a Ruby value that can't be converted to a primitive type.
+        let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_into::<Vec<u8>>();
         assert!(result.is_err());
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
-    fn convert_to_vec(v: Vec<u8>) -> bool {
-        let mut interp = crate::interpreter().expect("init");
-        let value = interp.convert_mut(v.clone());
+    fn convert_to_vec(bytes: Vec<u8>) -> bool {
+        let mut interp = crate::interpreter().unwrap();
+        let value = interp.convert_mut(bytes);
         value.ruby_type() == Ruby::String
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
-    fn vec_with_value(v: Vec<u8>) -> bool {
-        let mut interp = crate::interpreter().expect("init");
-        let mrb = interp.0.borrow().mrb;
-        let value = interp.convert_mut(v.clone());
-        let inner = value.inner();
-        let len = unsafe { sys::mrb_string_value_len(mrb, inner) };
-        let len = usize::try_from(len).expect("usize");
-        v.len() == len
+    fn bytestring(bytes: Vec<u8>) -> bool {
+        let mut interp = crate::interpreter().unwrap();
+        // Borrowed converter
+        let value = interp.convert_mut(bytes.as_slice());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != bytes.len() {
+            return false;
+        }
+        let empty = value.funcall::<bool>("empty?", &[], None).unwrap();
+        if empty != bytes.is_empty() {
+            return false;
+        }
+        let first = value
+            .funcall::<Option<&[u8]>>("[]", &[interp.convert(0)], None)
+            .unwrap();
+        if first != bytes.get(0..1) {
+            return false;
+        }
+        let recovered: Vec<u8> = interp.try_convert(value).unwrap();
+        if recovered != bytes {
+            return false;
+        }
+        // Owned converter
+        let value = interp.convert_mut(bytes.to_vec());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != bytes.len() {
+            return false;
+        }
+        let empty = value.funcall::<bool>("empty?", &[], None).unwrap();
+        if empty != bytes.is_empty() {
+            return false;
+        }
+        let first = value
+            .funcall::<Option<&[u8]>>("[]", &[interp.convert(0)], None)
+            .unwrap();
+        if first != bytes.get(0..1) {
+            return false;
+        }
+        let recovered: Vec<u8> = interp.try_convert(value).unwrap();
+        if recovered != bytes {
+            return false;
+        }
+        true
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
-    fn roundtrip(v: Vec<u8>) -> bool {
-        let mut interp = crate::interpreter().expect("init");
-        let value = interp.convert_mut(v.clone());
-        let value = value.try_into::<Vec<u8>>().expect("convert");
-        value == v
+    fn roundtrip(bytes: Vec<u8>) -> bool {
+        let mut interp = crate::interpreter().unwrap();
+        let value = interp.convert_mut(bytes.as_slice());
+        let value = value.try_into::<Vec<u8>>().unwrap();
+        value == bytes
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
         let value = value.try_into::<Vec<u8>>();
         value.is_err()

@@ -149,7 +149,7 @@ mod tests {
     #[test]
     fn fail_convert() {
         let mut interp = crate::interpreter().unwrap();
-        // get a mrb_value that can't be converted to a primitive type.
+        // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_into::<Int>();
         assert!(result.is_err());
