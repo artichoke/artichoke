@@ -35,23 +35,23 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = crate::interpreter().expect("init");
-        // get a mrb_value that can't be converted to a primitive type.
-        let value = interp.eval(b"Object.new").expect("eval");
+        let mut interp = crate::interpreter().unwrap();
+        // get a Ruby Value that can't be converted to a primitive type.
+        let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_into::<Float>();
         assert!(result.is_err());
     }
 
     #[quickcheck]
     fn convert_to_float(f: Float) -> bool {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(f);
         value.ruby_type() == Ruby::Float
     }
 
     #[quickcheck]
     fn float_with_value(f: Float) -> bool {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(f);
         let inner = value.inner();
         let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
@@ -60,15 +60,15 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(f: Float) -> bool {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(f);
-        let value = value.try_into::<Float>().expect("convert");
+        let value = value.try_into::<Float>().unwrap();
         (value - f).abs() < std::f64::EPSILON
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
         let value = value.try_into::<Float>();
         value.is_err()

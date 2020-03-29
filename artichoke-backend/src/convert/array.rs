@@ -364,3 +364,129 @@ impl TryConvert<Value, Vec<Int>> for Artichoke {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use quickcheck_macros::quickcheck;
+
+    use crate::test::prelude::*;
+
+    #[test]
+    fn fail_convert() {
+        let mut interp = crate::interpreter().unwrap();
+        // get a Ruby value that can't be converted to a primitive type.
+        let value = interp.eval(b"Object.new").unwrap();
+        let result = value.try_into::<Vec<Value>>();
+        assert!(result.is_err());
+    }
+
+    #[quickcheck]
+    fn arr_int(arr: Vec<Int>) -> bool {
+        let mut interp = crate::interpreter().unwrap();
+        // Borrowed converter
+        let value = interp.convert_mut(arr.as_slice());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != arr.len() {
+            return false;
+        }
+        let empty = value.funcall::<bool>("empty?", &[], None).unwrap();
+        if empty != arr.is_empty() {
+            return false;
+        }
+        let recovered: Vec<Int> = interp.try_convert(value).unwrap();
+        if recovered != arr {
+            return false;
+        }
+        // Owned converter
+        let value = interp.convert_mut(arr.to_vec());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != arr.len() {
+            return false;
+        }
+        let empty = value.funcall::<bool>("empty?", &[], None).unwrap();
+        if empty != arr.is_empty() {
+            return false;
+        }
+        let recovered: Vec<Int> = interp.try_convert(value).unwrap();
+        if recovered != arr {
+            return false;
+        }
+        true
+    }
+
+    #[quickcheck]
+    fn arr_utf8(arr: Vec<String>) -> bool {
+        let mut interp = crate::interpreter().unwrap();
+        // Borrowed converter
+        let value = interp.convert_mut(arr.as_slice());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != arr.len() {
+            return false;
+        }
+        let empty = value.funcall::<bool>("empty?", &[], None).unwrap();
+        if empty != arr.is_empty() {
+            return false;
+        }
+        let recovered: Vec<String> = interp.try_convert(value).unwrap();
+        if recovered != arr {
+            return false;
+        }
+        // Owned converter
+        let value = interp.convert_mut(arr.to_vec());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != arr.len() {
+            return false;
+        }
+        let empty = value.funcall::<bool>("empty?", &[], None).unwrap();
+        if empty != arr.is_empty() {
+            return false;
+        }
+        let recovered: Vec<String> = interp.try_convert(value).unwrap();
+        if recovered != arr {
+            return false;
+        }
+        true
+    }
+
+    #[quickcheck]
+    fn arr_nilable_bstr(arr: Vec<Option<Vec<u8>>>) -> bool {
+        let mut interp = crate::interpreter().unwrap();
+        // Borrowed converter
+        let value = interp.convert_mut(arr.as_slice());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != arr.len() {
+            return false;
+        }
+        let empty = value.funcall::<bool>("empty?", &[], None).unwrap();
+        if empty != arr.is_empty() {
+            return false;
+        }
+        let recovered: Vec<Option<Vec<u8>>> = interp.try_convert(value).unwrap();
+        if recovered != arr {
+            return false;
+        }
+        // Owned converter
+        let value = interp.convert_mut(arr.to_vec());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != arr.len() {
+            return false;
+        }
+        let empty = value.funcall::<bool>("empty?", &[], None).unwrap();
+        if empty != arr.is_empty() {
+            return false;
+        }
+        let recovered: Vec<Option<Vec<u8>>> = interp.try_convert(value).unwrap();
+        if recovered != arr {
+            return false;
+        }
+        true
+    }
+
+    #[quickcheck]
+    fn roundtrip_err(i: i64) -> bool {
+        let interp = crate::interpreter().unwrap();
+        let value = interp.convert(i);
+        let value = value.try_into::<Vec<Value>>();
+        value.is_err()
+    }
+}

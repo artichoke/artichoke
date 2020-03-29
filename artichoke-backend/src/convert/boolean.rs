@@ -26,7 +26,7 @@ impl TryConvert<Value, bool> for Artichoke {
             } else if unsafe { sys::mrb_sys_value_is_false(inner) } {
                 Ok(false)
             } else {
-                // This branch is unreachable because `MRB_TT_BOOL` typed values
+                // This branch is unreachable because `Ruby::Bool` typed values
                 // are guaranteed to be either true or false.
                 Err(Exception::from(UnboxRubyError::new(&value, Rust::Bool)))
             }
@@ -44,47 +44,60 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = crate::interpreter().expect("init");
-        // get a mrb_value that can't be converted to a primitive type.
-        let value = interp.eval(b"Object.new").expect("eval");
+        let mut interp = crate::interpreter().unwrap();
+        // get a Ruby value that can't be converted to a primitive type.
+        let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_into::<bool>();
         assert!(result.is_err());
     }
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
         value.ruby_type() == Ruby::Bool
     }
 
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
         let value = value.inner();
         if b {
-            !unsafe { sys::mrb_sys_value_is_false(value) }
-                && unsafe { sys::mrb_sys_value_is_true(value) }
-                && !unsafe { sys::mrb_sys_value_is_nil(value) }
+            if unsafe { sys::mrb_sys_value_is_false(value) } {
+                return false;
+            }
+            if !unsafe { sys::mrb_sys_value_is_true(value) } {
+                return false;
+            }
+            if unsafe { sys::mrb_sys_value_is_nil(value) } {
+                return false;
+            }
         } else {
-            !unsafe { sys::mrb_sys_value_is_true(value) }
-                && unsafe { sys::mrb_sys_value_is_false(value) }
-                && !unsafe { sys::mrb_sys_value_is_nil(value) }
+            if !unsafe { sys::mrb_sys_value_is_false(value) } {
+                return false;
+            }
+            if unsafe { sys::mrb_sys_value_is_true(value) } {
+                return false;
+            }
+            if unsafe { sys::mrb_sys_value_is_nil(value) } {
+                return false;
+            }
         }
+        true
     }
 
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
-        let value = value.try_into::<bool>().expect("convert");
+        let value = value.try_into::<bool>().unwrap();
         value == b
     }
 
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let value = interp.convert(i);
         let value = value.try_into::<bool>();
         value.is_err()

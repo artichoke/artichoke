@@ -102,35 +102,31 @@ impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    use quickcheck_macros::quickcheck;
     use std::collections::HashMap;
 
     use crate::test::prelude::*;
 
-    #[test]
-    fn roundtrip_kv() {
-        let mut interp = crate::interpreter().expect("init");
-
-        let map = vec![
-            (interp.convert(1), interp.convert(2)),
-            (interp.convert(7), interp.convert(8)),
-        ];
-
-        let value = ConvertMut::<_, Value>::convert_mut(&mut interp, map);
-        assert_eq!(value.to_s(), b"{1=>2, 7=>8}");
-
-        let pairs = value.try_into::<Vec<(Value, Value)>>().expect("convert");
-        let map = pairs
-            .into_iter()
-            .map(|(key, value)| {
-                let key = key.try_into::<Int>().expect("convert");
-                let value = value.try_into::<Int>().expect("convert");
-                (key, value)
-            })
-            .collect::<HashMap<_, _>>();
-        let mut expected = HashMap::new();
-        expected.insert(1, 2);
-        expected.insert(7, 8);
-
-        assert_eq!(map, expected);
+    #[quickcheck]
+    fn roundtrip_kv(hash: HashMap<Vec<u8>, Vec<u8>>) -> bool {
+        let mut interp = crate::interpreter().unwrap();
+        let value = interp.convert_mut(hash.clone());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != hash.len() {
+            return false;
+        }
+        let recovered = value.try_into::<Vec<(Value, Value)>>().unwrap();
+        if recovered.len() != hash.len() {
+            return false;
+        }
+        for (key, val) in recovered {
+            let key = key.try_into::<Vec<u8>>().unwrap();
+            let val = val.try_into::<Vec<u8>>().unwrap();
+            match hash.get(&key) {
+                Some(retrieved) if retrieved == &val => {}
+                _ => return false,
+            }
+        }
+        true
     }
 }

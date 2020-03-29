@@ -82,18 +82,70 @@ mod tests {
         value.to_s() == s.as_bytes()
     }
 
+    #[quickcheck]
+    fn utf8string(string: String) -> bool {
+        let mut interp = crate::interpreter().unwrap();
+        // Borrowed converter
+        let value = interp.convert_mut(string.as_str());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != string.chars().count() {
+            return false;
+        }
+        let first = value
+            .funcall::<Option<String>>("[]", &[interp.convert(0)], None)
+            .unwrap();
+        let mut iter = string.chars();
+        if let Some(ch) = iter.next() {
+            if first != Some(ch.to_string()) {
+                return false;
+            }
+        } else {
+            if first.is_some() {
+                return false;
+            }
+        }
+        let recovered: String = interp.try_convert(value).unwrap();
+        if recovered != string {
+            return false;
+        }
+        // Owned converter
+        let value = interp.convert_mut(string.clone());
+        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        if len != string.chars().count() {
+            return false;
+        }
+        let first = value
+            .funcall::<Option<String>>("[]", &[interp.convert(0)], None)
+            .unwrap();
+        let mut iter = string.chars();
+        if let Some(ch) = iter.next() {
+            if first != Some(ch.to_string()) {
+                return false;
+            }
+        } else {
+            if first.is_some() {
+                return false;
+            }
+        }
+        let recovered: String = interp.try_convert(value).unwrap();
+        if recovered != string {
+            return false;
+        }
+        true
+    }
+
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(s: String) -> bool {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(s.clone());
-        let value = value.try_into::<String>().expect("convert");
+        let value = value.try_into::<String>().unwrap();
         value == s
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
         let result = value.try_into::<String>();
         result.is_err()
@@ -101,9 +153,9 @@ mod tests {
 
     #[test]
     fn symbol_to_string() {
-        let mut interp = crate::interpreter().expect("init");
-        let value = interp.eval(b":sym").expect("eval");
-        let value = value.try_into::<String>().expect("convert");
+        let mut interp = crate::interpreter().unwrap();
+        let value = interp.eval(b":sym").unwrap();
+        let value = value.try_into::<String>().unwrap();
         assert_eq!(&value, "sym");
     }
 }
