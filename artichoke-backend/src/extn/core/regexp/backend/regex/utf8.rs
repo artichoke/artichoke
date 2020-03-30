@@ -22,7 +22,7 @@ pub struct Utf8 {
 
 impl Utf8 {
     pub fn new(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         literal: Config,
         derived: Config,
         encoding: Encoding,
@@ -68,7 +68,7 @@ impl RegexpType for Utf8 {
 
     fn captures(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<Vec<NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
@@ -94,7 +94,7 @@ impl RegexpType for Utf8 {
 
     fn capture_indexes_for_name(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         name: &[u8],
     ) -> Result<Option<Vec<usize>>, Exception> {
         let _ = interp;
@@ -113,7 +113,7 @@ impl RegexpType for Utf8 {
 
     fn captures_len(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: Option<&[u8]>,
     ) -> Result<usize, Exception> {
         let result = if let Some(haystack) = haystack {
@@ -135,7 +135,7 @@ impl RegexpType for Utf8 {
 
     fn capture0<'a>(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &'a [u8],
     ) -> Result<Option<&'a [u8]>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
@@ -183,7 +183,7 @@ impl RegexpType for Utf8 {
         &self.encoding
     }
 
-    fn inspect(&self, interp: &Artichoke) -> Vec<u8> {
+    fn inspect(&self, interp: &mut Artichoke) -> Vec<u8> {
         let _ = interp;
         // pattern length + 2x '/' + mix + encoding
         let mut inspect = Vec::with_capacity(self.literal.pattern.len() + 2 + 4);
@@ -199,7 +199,7 @@ impl RegexpType for Utf8 {
         inspect
     }
 
-    fn string(&self, interp: &Artichoke) -> &[u8] {
+    fn string(&self, interp: &mut Artichoke) -> &[u8] {
         let _ = interp;
         self.derived.pattern.as_slice()
     }
@@ -264,7 +264,7 @@ impl RegexpType for Utf8 {
 
     fn is_match(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
         pos: Option<Int>,
     ) -> Result<bool, Exception> {
@@ -458,7 +458,7 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception> {
+    fn named_captures(&self, interp: &mut Artichoke) -> Result<NameToCaptureLocations, Exception> {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
@@ -472,7 +472,7 @@ impl RegexpType for Utf8 {
 
     fn named_captures_for_haystack(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
@@ -501,7 +501,7 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>> {
+    fn names(&self, interp: &mut Artichoke) -> Vec<Vec<u8>> {
         let mut names = vec![];
         let mut capture_names = self.named_captures(interp).unwrap_or_default();
         capture_names.sort_by(|left, right| {
@@ -519,7 +519,7 @@ impl RegexpType for Utf8 {
 
     fn pos(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
         at: usize,
     ) -> Result<Option<(usize, usize)>, Exception> {

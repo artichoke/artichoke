@@ -24,7 +24,7 @@ impl Lazy {
         }
     }
 
-    pub fn regexp(&self, interp: &Artichoke) -> Result<&Regexp, Exception> {
+    pub fn regexp(&self, interp: &mut Artichoke) -> Result<&Regexp, Exception> {
         self.regexp.get_or_try_init(|| {
             Regexp::new(
                 interp,
@@ -56,7 +56,7 @@ impl RegexpType for Lazy {
 
     fn captures(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<Vec<NilableString>>, Exception> {
         self.regexp(interp)?.inner().captures(interp, haystack)
@@ -64,7 +64,7 @@ impl RegexpType for Lazy {
 
     fn capture_indexes_for_name(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         name: &[u8],
     ) -> Result<Option<Vec<usize>>, Exception> {
         self.regexp(interp)?
@@ -74,7 +74,7 @@ impl RegexpType for Lazy {
 
     fn captures_len(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: Option<&[u8]>,
     ) -> Result<usize, Exception> {
         self.regexp(interp)?.inner().captures_len(interp, haystack)
@@ -82,7 +82,7 @@ impl RegexpType for Lazy {
 
     fn capture0<'a>(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &'a [u8],
     ) -> Result<Option<&'a [u8]>, Exception> {
         self.regexp(interp)?.inner().capture0(interp, haystack)
@@ -117,13 +117,13 @@ impl RegexpType for Lazy {
         &self.encoding
     }
 
-    fn inspect(&self, interp: &Artichoke) -> Vec<u8> {
+    fn inspect(&self, interp: &mut Artichoke) -> Vec<u8> {
         self.regexp(interp)
             .map(|regexp| regexp.inner().inspect(interp))
             .unwrap_or_default()
     }
 
-    fn string(&self, interp: &Artichoke) -> &[u8] {
+    fn string(&self, interp: &mut Artichoke) -> &[u8] {
         self.regexp(interp)
             .map(|regexp| regexp.inner().string(interp))
             .unwrap_or_default()
@@ -135,7 +135,7 @@ impl RegexpType for Lazy {
 
     fn is_match(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
         pos: Option<Int>,
     ) -> Result<bool, Exception> {
@@ -164,13 +164,13 @@ impl RegexpType for Lazy {
             .match_operator(interp, haystack)
     }
 
-    fn named_captures(&self, interp: &Artichoke) -> Result<NameToCaptureLocations, Exception> {
+    fn named_captures(&self, interp: &mut Artichoke) -> Result<NameToCaptureLocations, Exception> {
         self.regexp(interp)?.inner().named_captures(interp)
     }
 
     fn named_captures_for_haystack(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
         self.regexp(interp)?
@@ -178,7 +178,7 @@ impl RegexpType for Lazy {
             .named_captures_for_haystack(interp, haystack)
     }
 
-    fn names(&self, interp: &Artichoke) -> Vec<Vec<u8>> {
+    fn names(&self, interp: &mut Artichoke) -> Vec<Vec<u8>> {
         self.regexp(interp)
             .map(|regexp| regexp.inner().names(interp))
             .unwrap_or_default()
@@ -186,7 +186,7 @@ impl RegexpType for Lazy {
 
     fn pos(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         haystack: &[u8],
         at: usize,
     ) -> Result<Option<(usize, usize)>, Exception> {

@@ -22,7 +22,7 @@ pub mod opts;
 pub mod syntax;
 pub mod trampoline;
 
-pub use backend::{RegexpType, Scan};
+pub use backend::{NilableString, RegexpType, Scan};
 pub use enc::Encoding;
 pub use opts::Options;
 
@@ -107,7 +107,7 @@ pub struct Regexp(Box<dyn RegexpType>);
 
 impl Regexp {
     pub fn new(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         literal_config: Config,
         derived_config: Config,
         encoding: Encoding,
@@ -127,9 +127,9 @@ impl Regexp {
     }
 
     #[must_use]
-    pub fn lazy(pattern: &[u8]) -> Self {
+    pub fn lazy(pattern: Vec<u8>) -> Self {
         let literal_config = Config {
-            pattern: pattern.to_vec(),
+            pattern,
             options: Options::default(),
         };
         let backend = Box::new(Lazy::new(literal_config));
@@ -139,37 +139,9 @@ impl Regexp {
     pub fn initialize(
         interp: &mut Artichoke,
         pattern: Value,
-        options: Option<Value>,
-        encoding: Option<Value>,
-        into: Option<Value>,
-    ) -> Result<Value, Exception> {
-        let (options, encoding) = if let Some(encoding) = encoding {
-            let encoding = match enc::parse(&encoding) {
-                Ok(encoding) => Some(encoding),
-                Err(enc::Error::InvalidEncoding) => {
-                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
-                    warning.extend(encoding.to_s());
-                    interp.warn(warning.as_slice())?;
-                    None
-                }
-            };
-            let options = options.as_ref().map(opts::parse);
-            (options, encoding)
-        } else if let Some(options) = options {
-            let encoding = match enc::parse(&options) {
-                Ok(encoding) => Some(encoding),
-                Err(enc::Error::InvalidEncoding) => {
-                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
-                    warning.extend(options.to_s());
-                    interp.warn(warning.as_slice())?;
-                    None
-                }
-            };
-            let options = opts::parse(&options);
-            (Some(options), encoding)
-        } else {
-            (None, None)
-        };
+        options: Option<opts::Options>,
+        encoding: Option<enc::Encoding>,
+    ) -> Result<Self, Exception> {
         let literal_config = if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
             if options.is_some() || encoding.is_some() {
                 interp.warn(&b"flags ignored when initializing from Regexp"[..])?;
@@ -190,17 +162,15 @@ impl Regexp {
         let (pattern, options) =
             opts::parse_pattern(literal_config.pattern.as_slice(), literal_config.options);
         let derived_config = Config { pattern, options };
-        let regexp = Self::new(
+        Self::new(
             interp,
             literal_config,
             derived_config,
             encoding.unwrap_or_default(),
-        )?;
-        let regexp = regexp.try_into_ruby(interp, into.as_ref().map(Value::inner))?;
-        Ok(regexp)
+        )
     }
 
-    pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
+    pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<String, Exception> {
         let bytes = pattern.implicitly_convert_to_string()?;
         let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
             pattern
@@ -211,91 +181,51 @@ impl Regexp {
                 "invalid encoding (non UTF-8)",
             )));
         };
-        Ok(interp.convert_mut(syntax::escape(pattern)))
+        Ok(syntax::escape(pattern))
     }
 
-    pub fn union(interp: &Artichoke, patterns: &[Value]) -> Result<Value, Exception> {
-        let mut iter = patterns.iter().peekable();
-        let pattern = if let Some(first) = iter.next() {
-            if iter.peek().is_none() {
-                if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &first) } {
-                    let ary = ary.borrow().as_vec(interp);
-                    let mut patterns = Vec::with_capacity(ary.len());
-                    for pattern in ary {
-                        if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
-                            patterns.push(regexp.borrow().0.derived_config().pattern.clone());
-                        } else {
-                            let bytes = pattern.implicitly_convert_to_string()?;
-                            let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
-                                pattern
-                            } else {
-                                // drop(bytes);
-                                return Err(Exception::from(ArgumentError::new(
-                                    interp,
-                                    "invalid encoding (non UTF-8)",
-                                )));
-                            };
-                            patterns.push(syntax::escape(pattern).into_bytes());
-                        }
-                    }
-                    bstr::join(b"|", patterns)
-                } else {
-                    let pattern = first;
-                    if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
-                        regexp.borrow().0.derived_config().pattern.clone()
-                    } else {
-                        let bytes = pattern.implicitly_convert_to_string()?;
-                        let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
-                            pattern
-                        } else {
-                            // drop(bytes);
-                            return Err(Exception::from(ArgumentError::new(
-                                interp,
-                                "invalid encoding (non UTF-8)",
-                            )));
-                        };
-                        syntax::escape(pattern).into_bytes()
-                    }
-                }
+    pub fn union(interp: &mut Artichoke, patterns: Vec<Value>) -> Result<Self, Exception> {
+        fn extract_pattern(interp: &mut Artichoke, value: &Value) -> Result<Vec<u8>, Exception> {
+            if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &value) } {
+                Ok(regexp.borrow().0.derived_config().pattern.clone())
             } else {
-                let mut patterns = Vec::with_capacity(patterns.len());
-                if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &first) } {
-                    patterns.push(regexp.borrow().0.derived_config().pattern.clone());
+                let bytes = value.implicitly_convert_to_string()?;
+                let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
+                    pattern
                 } else {
-                    let bytes = first.implicitly_convert_to_string()?;
-                    let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
-                        pattern
-                    } else {
-                        // drop(bytes);
-                        return Err(Exception::from(ArgumentError::new(
-                            interp,
-                            "invalid encoding (non UTF-8)",
-                        )));
-                    };
-                    patterns.push(syntax::escape(pattern).into_bytes());
-                }
-                for pattern in iter {
-                    if let Ok(regexp) = unsafe { Self::try_from_ruby(&interp, &pattern) } {
-                        patterns.push(regexp.borrow().0.derived_config().pattern.clone());
-                    } else {
-                        let bytes = pattern.implicitly_convert_to_string()?;
-                        let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
-                            pattern
-                        } else {
-                            // drop(bytes);
-                            return Err(Exception::from(ArgumentError::new(
-                                interp,
-                                "invalid encoding (non UTF-8)",
-                            )));
-                        };
-                        patterns.push(syntax::escape(pattern).into_bytes());
-                    }
+                    // drop(bytes);
+                    return Err(Exception::from(ArgumentError::new(
+                        interp,
+                        "invalid encoding (non UTF-8)",
+                    )));
+                };
+                Ok(syntax::escape(pattern).into_bytes())
+            }
+        }
+        let mut iter = patterns.iter();
+        let pattern = if let Some(first) = iter.next() {
+            if let Some(second) = iter.next() {
+                let mut patterns = Vec::with_capacity(patterns.len());
+                patterns.push(extract_pattern(interp, first)?);
+                patterns.push(extract_pattern(interp, second)?);
+                for value in iter {
+                    patterns.push(extract_pattern(interp, value)?);
                 }
                 bstr::join(b"|", patterns)
+            } else if let Ok(ary) = unsafe { Array::try_from_ruby(interp, first) } {
+                let ary = ary.borrow().as_vec(interp);
+                let mut patterns = Vec::with_capacity(ary.len());
+                for value in &ary {
+                    patterns.push(extract_pattern(interp, value)?);
+                }
+                bstr::join(b"|", patterns)
+            } else {
+                extract_pattern(interp, first)?
             }
         } else {
-            Vec::from(&b"(?!)"[..])
+            b"(?!)".to_vec()
         };
+
         let derived_config = {
             let (pattern, options) = opts::parse_pattern(pattern.as_slice(), Options::default());
             Config { pattern, options }
@@ -304,9 +234,7 @@ impl Regexp {
             pattern,
             options: Options::default(),
         };
-        let regexp = Self::new(interp, literal_config, derived_config, Encoding::default())?;
-        let regexp = regexp.try_into_ruby(interp, None)?;
-        Ok(regexp)
+        Self::new(interp, literal_config, derived_config, Encoding::default())
     }
 
     #[inline]
@@ -315,120 +243,109 @@ impl Regexp {
         self.0.as_ref()
     }
 
-    pub fn case_compare(&self, interp: &mut Artichoke, other: Value) -> Result<Value, Exception> {
+    pub fn case_compare(&self, interp: &mut Artichoke, other: Value) -> Result<bool, Exception> {
         let pattern = if let Ok(pattern) = other.implicitly_convert_to_string() {
             pattern
         } else {
             interp.unset_global_variable(LAST_MATCH)?;
-            return Ok(interp.convert(false));
+            return Ok(false);
         };
-        let result = self.0.case_match(interp, pattern)?;
-        Ok(interp.convert(result))
+        self.0.case_match(interp, pattern)
     }
 
-    pub fn eql(&self, interp: &Artichoke, other: Value) -> Result<Value, Exception> {
+    #[must_use]
+    pub fn eql(&self, interp: &mut Artichoke, other: Value) -> bool {
         if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-            Ok(interp.convert(self.inner() == other.borrow().inner()))
+            self.inner() == other.borrow().inner()
         } else {
-            Ok(interp.convert(false))
+            false
         }
     }
 
-    pub fn hash(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    #[inline]
+    #[must_use]
+    pub fn hash(&self, interp: &mut Artichoke) -> u64 {
+        let _ = interp;
         let mut s = DefaultHasher::new();
         self.0.hash(&mut s);
-        let hash = s.finish();
-        #[allow(clippy::cast_possible_wrap)]
-        Ok(interp.convert(hash as Int))
+        s.finish()
     }
 
-    pub fn inspect(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
-        let debug = self.0.inspect(interp);
-        Ok(interp.convert_mut(debug))
+    #[inline]
+    #[must_use]
+    pub fn inspect(&self, interp: &mut Artichoke) -> Vec<u8> {
+        self.0.inspect(interp)
     }
 
-    pub fn is_casefold(&self, interp: &Artichoke) -> Result<Value, Exception> {
-        Ok(interp.convert(self.0.literal_config().options.ignore_case))
+    #[inline]
+    #[must_use]
+    pub fn is_casefold(&self, interp: &mut Artichoke) -> bool {
+        let _ = interp;
+        self.0.literal_config().options.ignore_case
     }
 
-    pub fn is_fixed_encoding(&self, interp: &Artichoke) -> Result<Value, Exception> {
+    #[must_use]
+    pub fn is_fixed_encoding(&self, interp: &mut Artichoke) -> bool {
+        let _ = interp;
         match self.0.encoding() {
             Encoding::No => {
-                let opts = Int::try_from(self.0.literal_config().options.flags().bits())
-                    .map_err(|_| Fatal::new(interp, "Regexp options do not fit in Integer"))?;
-                Ok(interp.convert(opts & NOENCODING != 0))
+                let bits = self.0.literal_config().options.flags().bits();
+                if let Ok(opts) = Int::try_from(bits) {
+                    (opts & NOENCODING) != 0
+                } else {
+                    false
+                }
             }
-            Encoding::Fixed => Ok(interp.convert(true)),
-            Encoding::None => Ok(interp.convert(false)),
+            Encoding::Fixed => true,
+            Encoding::None => false,
         }
     }
 
     pub fn is_match(
         &self,
-        interp: &Artichoke,
-        pattern: Value,
-        pos: Option<Value>,
-    ) -> Result<Value, Exception> {
-        let pattern = pattern.implicitly_convert_to_nilable_string()?;
-        let pattern = if let Some(pattern) = pattern {
-            pattern
+        interp: &mut Artichoke,
+        pattern: Option<&[u8]>,
+        pos: Option<Int>,
+    ) -> Result<bool, Exception> {
+        if let Some(pattern) = pattern {
+            self.0.is_match(interp, pattern, pos)
         } else {
-            return Ok(interp.convert(false));
-        };
-        let pos = if let Some(pos) = pos {
-            Some(pos.implicitly_convert_to_int()?)
-        } else {
-            None
-        };
-        Ok(interp.convert(self.0.is_match(interp, pattern, pos)?))
+            Ok(false)
+        }
     }
 
     pub fn match_(
         &self,
         interp: &mut Artichoke,
-        pattern: Value,
-        pos: Option<Value>,
+        pattern: Option<&[u8]>,
+        pos: Option<Int>,
         block: Option<Block>,
     ) -> Result<Value, Exception> {
-        let pattern = pattern.implicitly_convert_to_nilable_string()?;
-        let pattern = if let Some(pattern) = pattern {
-            pattern
+        if let Some(pattern) = pattern {
+            self.0.match_(interp, pattern, pos, block)
         } else {
             interp.unset_global_variable(LAST_MATCH)?;
-            return Ok(interp.convert(None::<Value>));
-        };
-        let pos = if let Some(pos) = pos {
-            Some(pos.implicitly_convert_to_int()?)
-        } else {
-            None
-        };
-        let result = self.0.match_(interp, pattern, pos, block)?;
-        Ok(interp.convert(result))
-    }
-
-    pub fn match_operator(
-        &self,
-        interp: &mut Artichoke,
-        pattern: Value,
-    ) -> Result<Value, Exception> {
-        let pattern = pattern.implicitly_convert_to_nilable_string()?;
-        let pattern = if let Some(pattern) = pattern {
-            pattern
-        } else {
-            return Ok(interp.convert(None::<Value>));
-        };
-        let pos = self.0.match_operator(interp, pattern)?;
-        match pos.map(Int::try_from) {
-            Some(Ok(pos)) => Ok(interp.convert(pos)),
-            Some(Err(_)) => Err(Exception::from(ArgumentError::new(
-                interp,
-                "string too long",
-            ))),
-            None => Ok(interp.convert(None::<Value>)),
+            Ok(interp.convert(None::<Value>))
         }
     }
 
-    pub fn named_captures(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
+    #[inline]
+    pub fn match_operator(
+        &self,
+        interp: &mut Artichoke,
+        pattern: Option<&[u8]>,
+    ) -> Result<Option<usize>, Exception> {
+        if let Some(pattern) = pattern {
+            self.0.match_operator(interp, pattern)
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn named_captures(
+        &self,
+        interp: &mut Artichoke,
+    ) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception> {
         let captures = self.0.named_captures(interp)?;
         let mut converted = Vec::with_capacity(captures.len());
         for (name, indexes) in captures {
@@ -445,28 +362,35 @@ impl Regexp {
             }
             converted.push((name, fixnums));
         }
-        Ok(interp.convert_mut(converted))
+        Ok(converted)
     }
 
-    pub fn names(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
-        let names = self.0.names(interp);
-        Ok(interp.convert_mut(names))
+    #[inline]
+    #[must_use]
+    pub fn names(&self, interp: &mut Artichoke) -> Vec<Vec<u8>> {
+        self.0.names(interp)
     }
 
-    pub fn options(&self, interp: &Artichoke) -> Result<Value, Exception> {
-        let opts = Int::try_from(self.0.literal_config().options.flags().bits())
-            .map_err(|_| Fatal::new(interp, "Regexp options do not fit in Integer"))?;
-        let opts = opts | self.0.encoding().flags();
-        Ok(interp.convert(opts))
+    #[inline]
+    #[must_use]
+    pub fn options(&self, interp: &mut Artichoke) -> Int {
+        let _ = interp;
+        let opts =
+            Int::try_from(self.0.literal_config().options.flags().bits()).unwrap_or_default();
+        opts | self.0.encoding().flags()
     }
 
-    pub fn source(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
-        Ok(interp.convert_mut(self.0.literal_config().pattern.as_slice()))
+    #[inline]
+    #[must_use]
+    pub fn source(&self, interp: &mut Artichoke) -> &[u8] {
+        let _ = interp;
+        self.0.literal_config().pattern.as_slice()
     }
 
-    pub fn string(&self, interp: &mut Artichoke) -> Result<Value, Exception> {
-        let string = self.0.string(interp);
-        Ok(interp.convert_mut(string))
+    #[inline]
+    #[must_use]
+    pub fn string(&self, interp: &mut Artichoke) -> &[u8] {
+        self.0.string(interp)
     }
 }
 
@@ -487,6 +411,14 @@ pub struct Config {
     pattern: Vec<u8>,
     options: opts::Options,
 }
+
+impl PartialEq for Regexp {
+    fn eq(&self, other: &Self) -> bool {
+        &self.0 == &other.0
+    }
+}
+
+impl Eq for Regexp {}
 
 impl Clone for Box<dyn RegexpType> {
     fn clone(&self) -> Self {
@@ -535,3 +467,43 @@ impl PartialEq for &dyn RegexpType {
 }
 
 impl Eq for &dyn RegexpType {}
+
+impl TryConvertMut<(Option<Value>, Option<Value>), (Option<opts::Options>, Option<enc::Encoding>)>
+    for Artichoke
+{
+    type Error = Exception;
+
+    fn try_convert_mut(
+        &mut self,
+        value: (Option<Value>, Option<Value>),
+    ) -> Result<(Option<opts::Options>, Option<enc::Encoding>), Self::Error> {
+        let (options, encoding) = value;
+        if let Some(encoding) = encoding {
+            let encoding = match enc::parse(&encoding) {
+                Ok(encoding) => Some(encoding),
+                Err(enc::Error::InvalidEncoding) => {
+                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
+                    warning.extend(encoding.to_s());
+                    self.warn(warning.as_slice())?;
+                    None
+                }
+            };
+            let options = options.as_ref().map(opts::parse);
+            Ok((options, encoding))
+        } else if let Some(options) = options {
+            let encoding = match enc::parse(&options) {
+                Ok(encoding) => Some(encoding),
+                Err(enc::Error::InvalidEncoding) => {
+                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
+                    warning.extend(options.to_s());
+                    self.warn(warning.as_slice())?;
+                    None
+                }
+            };
+            let options = opts::parse(&options);
+            Ok((Some(options), encoding))
+        } else {
+            Ok((None, None))
+        }
+    }
+}
