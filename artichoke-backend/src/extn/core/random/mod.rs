@@ -85,6 +85,7 @@ impl Random {
     }
 
     #[inline]
+    #[must_use]
     pub fn inner(&self) -> &dyn backend::RandType {
         self.0.as_ref()
     }
@@ -175,6 +176,7 @@ impl Random {
         seed
     }
 
+    #[must_use]
     pub fn new_seed() -> Int {
         let mut rng = rand::thread_rng();
         rng.gen::<Int>()
@@ -195,6 +197,7 @@ impl fmt::Debug for Random {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum RandomNumberMax {
     Float(Float),
@@ -240,6 +243,7 @@ impl TryConvert<Option<Value>, RandomNumberMax> for Artichoke {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum RandomNumber {
     Integer(Int),
