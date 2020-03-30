@@ -28,7 +28,7 @@ default-features = false
 
 [dev-dependencies]
 doc-comment = "0.3"
-version-sync = "0.8"
+version-sync = "0.9"
 
 [workspace]
 members = ["artichoke-backend", "artichoke-core", "spec-runner"]

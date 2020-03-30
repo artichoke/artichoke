@@ -25,10 +25,6 @@ highlight = "all"
 allow = []
 deny = []
 skip = [
-  { name = "proc-macro2", version = "<1.0" }, # version-check 0.8.1
-  { name = "quote", version = "<1.0" }, # version-check 0.8.1
-  { name = "syn", version = "<1.0" }, # version-check 0.8.1
-  { name = "unicode-xid", version = "<1.0" }, # version-check 0.8.1
   { name = "semver-parser", version = "< 0.9" },
 ]
 skip-tree = []
