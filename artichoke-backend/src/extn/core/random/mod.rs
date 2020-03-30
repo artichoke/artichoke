@@ -1,13 +1,76 @@
 use rand::{self, Rng, RngCore};
 use std::convert::TryFrom;
 use std::fmt;
-use std::ptr;
 
 use crate::extn::prelude::*;
 
 pub mod backend;
 pub mod mruby;
+pub mod trampoline;
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Seed {
+    New(Int),
+    None,
+}
+
+impl Seed {
+    fn to_reseed(self) -> Option<u64> {
+        if let Self::New(seed) = self {
+            #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
+            Some(seed as u64)
+        } else {
+            None
+        }
+    }
+}
+
+impl TryConvert<Value, Seed> for Artichoke {
+    type Error = TypeError;
+
+    fn try_convert(&self, value: Value) -> Result<Seed, Self::Error> {
+        let optional: Option<Value> = self.convert(value);
+        self.try_convert(optional)
+    }
+}
+
+impl TryConvert<Option<Value>, Seed> for Artichoke {
+    type Error = TypeError;
+
+    fn try_convert(&self, value: Option<Value>) -> Result<Seed, Self::Error> {
+        if let Some(value) = value {
+            let seed = value.implicitly_convert_to_int()?;
+            Ok(Seed::New(seed))
+        } else {
+            Ok(Seed::None)
+        }
+    }
+}
+
+pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Exception> {
+    let mut borrow = interp.0.borrow_mut();
+    let old_seed = borrow.prng.seed();
+    borrow.prng.reseed(seed.to_reseed());
+    #[allow(clippy::cast_possible_wrap)]
+    Ok(old_seed as Int)
+}
+
+pub fn urandom(interp: &mut Artichoke, size: Int) -> Result<Vec<u8>, Exception> {
+    match usize::try_from(size) {
+        Ok(0) => Ok(Vec::new()),
+        Ok(len) => {
+            let mut buf = vec![0; len];
+            let mut rng = rand::thread_rng();
+            rng.try_fill_bytes(&mut buf)
+                .map_err(|err| RuntimeError::new(interp, err.to_string()))?;
+            Ok(buf)
+        }
+        Err(_) => Err(Exception::from(ArgumentError::new(
+            interp,
+            "negative string size (or size too big)",
+        ))),
+    }
+}
 pub struct Random(Box<dyn backend::RandType>);
 
 impl Random {
@@ -21,12 +84,100 @@ impl Random {
         Self(Box::new(backend::default::Default::default()))
     }
 
-    fn inner(&self) -> &dyn backend::RandType {
+    #[inline]
+    pub fn inner(&self) -> &dyn backend::RandType {
         self.0.as_ref()
     }
 
-    fn inner_mut(&mut self) -> &mut dyn backend::RandType {
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut dyn backend::RandType {
         self.0.as_mut()
+    }
+
+    #[inline]
+    pub fn initialize(interp: &mut Artichoke, seed: Seed) -> Result<Self, Exception> {
+        let _ = interp;
+        Ok(Self(backend::rand::new(seed.to_reseed())))
+    }
+
+    pub fn eql(&self, interp: &mut Artichoke, other: Value) -> bool {
+        if let Ok(other) = unsafe { Random::try_from_ruby(interp, &other) } {
+            let this_seed = self.inner().seed(interp);
+            let other_seed = other.borrow().inner().seed(interp);
+            this_seed == other_seed
+        } else {
+            false
+        }
+    }
+
+    pub fn bytes(&mut self, interp: &mut Artichoke, size: Int) -> Result<Vec<u8>, Exception> {
+        match usize::try_from(size) {
+            Ok(0) => Ok(Vec::new()),
+            Ok(len) => {
+                let mut buf = vec![0; len];
+                self.inner_mut().bytes(interp, &mut buf);
+                Ok(buf)
+            }
+            Err(_) => Err(Exception::from(ArgumentError::new(
+                interp,
+                "negative string size (or size too big)",
+            ))),
+        }
+    }
+
+    pub fn rand(
+        &mut self,
+        interp: &mut Artichoke,
+        max: RandomNumberMax,
+    ) -> Result<RandomNumber, Exception> {
+        match max {
+            RandomNumberMax::Float(max) if !max.is_finite() => {
+                // NOTE: MRI returns `Errno::EDOM` exception class.
+                Err(Exception::from(ArgumentError::new(
+                    interp,
+                    "Numerical argument out of domain",
+                )))
+            }
+            RandomNumberMax::Float(max) if max < 0.0 => {
+                let mut message = b"invalid argument - ".to_vec();
+                string::write_float_into(&mut message, max)?;
+                Err(Exception::from(ArgumentError::new_raw(interp, message)))
+            }
+            RandomNumberMax::Float(max) if max == 0.0 => {
+                let number = self.inner_mut().rand_float(interp, None);
+                Ok(RandomNumber::Float(number))
+            }
+            RandomNumberMax::Float(max) => {
+                let number = self.inner_mut().rand_float(interp, Some(max));
+                Ok(RandomNumber::Float(number))
+            }
+            RandomNumberMax::Integer(max) if max < 1 => {
+                let mut message = String::from("invalid argument - ");
+                string::format_int_into(&mut message, max)?;
+                Err(Exception::from(ArgumentError::new(interp, message)))
+            }
+            RandomNumberMax::Integer(max) => {
+                let number = self.inner_mut().rand_int(interp, max);
+                Ok(RandomNumber::Integer(number))
+            }
+            RandomNumberMax::None => {
+                let number = self.inner_mut().rand_float(interp, None);
+                Ok(RandomNumber::Float(number))
+            }
+        }
+    }
+
+    #[inline]
+    pub fn seed(&self, interp: &mut Artichoke) -> Int {
+        let seed = self.inner().seed(interp);
+        #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
+        let seed = seed as Int;
+        seed
+    }
+
+    pub fn new_seed() -> Int {
+        let mut rng = rand::thread_rng();
+        rng.gen::<Int>()
     }
 }
 
@@ -44,151 +195,62 @@ impl fmt::Debug for Random {
     }
 }
 
-pub fn initialize(
-    interp: &Artichoke,
-    seed: Option<Value>,
-    into: Option<sys::mrb_value>,
-) -> Result<Value, Exception> {
-    let rand = if let Some(seed) = seed {
-        let seed = seed.implicitly_convert_to_int()?;
-        #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
-        Random(backend::rand::new(Some(seed as u64)))
-    } else {
-        Random(backend::rand::new(None))
-    };
-    let result = rand.try_into_ruby(&interp, into)?;
-    Ok(result)
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum RandomNumberMax {
+    Float(Float),
+    Integer(Int),
+    None,
 }
 
-pub fn eql(interp: &Artichoke, rand: Value, other: Value) -> Result<Value, Exception> {
-    let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
-    if let Ok(other) = unsafe { Random::try_from_ruby(interp, &other) } {
-        if ptr::eq(rand.as_ref(), other.as_ref()) {
-            Ok(interp.convert(true))
+impl TryConvert<Value, RandomNumberMax> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert(&self, max: Value) -> Result<RandomNumberMax, Self::Error> {
+        let optional: Option<Value> = self.try_convert(max)?;
+        self.try_convert(optional)
+    }
+}
+
+impl TryConvert<Option<Value>, RandomNumberMax> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert(&self, max: Option<Value>) -> Result<RandomNumberMax, Self::Error> {
+        if let Some(max) = max {
+            match max.ruby_type() {
+                Ruby::Fixnum => {
+                    let max = max.try_into()?;
+                    Ok(RandomNumberMax::Integer(max))
+                }
+                Ruby::Float => {
+                    let max = max.try_into()?;
+                    Ok(RandomNumberMax::Float(max))
+                }
+                _ => {
+                    let max = max.implicitly_convert_to_int().map_err(|_| {
+                        let mut message = b"invalid argument - ".to_vec();
+                        message.extend(max.inspect().as_slice());
+                        ArgumentError::new_raw(self, message)
+                    })?;
+                    Ok(RandomNumberMax::Integer(max))
+                }
+            }
         } else {
-            let this_seed = rand.borrow().inner().seed(interp);
-            let other_seed = other.borrow().inner().seed(interp);
-            Ok(interp.convert(this_seed == other_seed))
-        }
-    } else {
-        Ok(interp.convert(false))
-    }
-}
-
-pub fn bytes(interp: &mut Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
-    let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
-    let size = size.implicitly_convert_to_int()?;
-    match usize::try_from(size) {
-        Ok(0) => Ok(interp.convert_mut("")),
-        Ok(len) => {
-            let mut buf = vec![0; len];
-            let mut borrow = rand.borrow_mut();
-            borrow.inner_mut().bytes(interp, &mut buf);
-            Ok(interp.convert_mut(buf))
-        }
-        Err(_) => Err(Exception::from(ArgumentError::new(
-            interp,
-            "negative string size (or size too big)",
-        ))),
-    }
-}
-
-pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<Value, Exception> {
-    #[derive(Debug, Clone, Copy)]
-    enum Max {
-        Float(Float),
-        Int(Int),
-        None,
-    }
-    let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
-    let max = if let Some(max) = max {
-        if let Ok(max) = max.clone().try_into::<Int>() {
-            Max::Int(max)
-        } else if let Ok(max) = max.clone().try_into::<Float>() {
-            Max::Float(max)
-        } else {
-            Max::Int(max.implicitly_convert_to_int()?)
-        }
-    } else {
-        Max::None
-    };
-    match max {
-        Max::Float(max) if max < 0.0 => {
-            let mut message = b"invalid argument - ".to_vec();
-            string::write_float_into(&mut message, max)?;
-            Err(Exception::from(ArgumentError::new_raw(interp, message)))
-        }
-        Max::Float(max) if max == 0.0 => {
-            let mut borrow = rand.borrow_mut();
-            let number = borrow.inner_mut().rand_float(interp, None);
-            Ok(interp.convert_mut(number))
-        }
-        Max::Float(max) => {
-            let mut borrow = rand.borrow_mut();
-            let number = borrow.inner_mut().rand_float(interp, Some(max));
-            Ok(interp.convert_mut(number))
-        }
-        Max::Int(max) if max < 1 => {
-            let mut message = String::from("invalid argument - ");
-            string::format_int_into(&mut message, max)?;
-            Err(Exception::from(ArgumentError::new(interp, message)))
-        }
-        Max::Int(max) => {
-            let mut borrow = rand.borrow_mut();
-            let number = borrow.inner_mut().rand_int(interp, max);
-            Ok(interp.convert(number))
-        }
-        Max::None => {
-            let mut borrow = rand.borrow_mut();
-            let number = borrow.inner_mut().rand_float(interp, None);
-            Ok(interp.convert_mut(number))
+            Ok(RandomNumberMax::None)
         }
     }
 }
 
-pub fn seed(interp: &Artichoke, rand: Value) -> Result<Value, Exception> {
-    let rand = unsafe { Random::try_from_ruby(interp, &rand) }?;
-    let borrow = rand.borrow();
-    let seed = borrow.inner().seed(interp);
-    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
-    Ok(interp.convert(seed as Int))
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum RandomNumber {
+    Integer(Int),
+    Float(Float),
 }
 
-pub fn new_seed(interp: &Artichoke) -> Result<Value, Exception> {
-    let mut rng = rand::thread_rng();
-    let result = rng.gen::<Int>();
-    Ok(interp.convert(result))
-}
-
-pub fn srand(interp: &Artichoke, number: Option<Value>) -> Result<Value, Exception> {
-    let new_seed = if let Some(number) = number {
-        let new_seed = number.implicitly_convert_to_int()?;
-        #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
-        Some(new_seed as u64)
-    } else {
-        None
-    };
-    let mut borrow = interp.0.borrow_mut();
-    let old_seed = borrow.prng.seed();
-    borrow.prng.reseed(new_seed);
-    #[allow(clippy::cast_possible_wrap)]
-    Ok(interp.convert(old_seed as Int))
-}
-
-pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Exception> {
-    let size = size.implicitly_convert_to_int()?;
-    match usize::try_from(size) {
-        Ok(0) => Ok(interp.convert_mut("")),
-        Ok(len) => {
-            let mut buf = vec![0; len];
-            let mut rng = rand::thread_rng();
-            rng.try_fill_bytes(&mut buf)
-                .map_err(|err| RuntimeError::new(interp, err.to_string()))?;
-            Ok(interp.convert_mut(buf))
+impl ConvertMut<RandomNumber, Value> for Artichoke {
+    fn convert_mut(&mut self, from: RandomNumber) -> Value {
+        match from {
+            RandomNumber::Integer(num) => self.convert(num),
+            RandomNumber::Float(num) => self.convert_mut(num),
         }
-        Err(_) => Err(Exception::from(ArgumentError::new(
-            interp,
-            "negative string size (or size too big)",
-        ))),
     }
 }
