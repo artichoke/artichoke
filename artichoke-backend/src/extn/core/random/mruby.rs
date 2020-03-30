@@ -1,4 +1,4 @@
-use crate::extn::core::random;
+use crate::extn::core::random::{self, trampoline};
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
@@ -47,12 +47,10 @@ unsafe extern "C" fn artichoke_random_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let seed = mrb_get_args!(mrb, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
-    let result = random::initialize(
-        &interp,
-        seed.map(|seed| Value::new(&interp, seed)),
-        Some(slf),
-    );
+    let mut interp = unwrap_interpreter!(mrb);
+    let slf = Value::new(&interp, slf);
+    let seed = seed.map(|seed| Value::new(&interp, seed));
+    let result = trampoline::initialize(&mut interp, seed, slf);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -65,10 +63,10 @@ unsafe extern "C" fn artichoke_random_eq(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let other = Value::new(&interp, other);
-    let result = random::eql(&interp, rand, other);
+    let result = trampoline::equal(&mut interp, rand, other);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -84,7 +82,7 @@ unsafe extern "C" fn artichoke_random_bytes(
     let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let size = Value::new(&interp, size);
-    let result = random::bytes(&mut interp, rand, size);
+    let result = trampoline::bytes(&mut interp, rand, size);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -100,7 +98,7 @@ unsafe extern "C" fn artichoke_random_rand(
     let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
     let max = max.map(|max| Value::new(&interp, max));
-    let result = random::rand(&mut interp, rand, max);
+    let result = trampoline::rand(&mut interp, rand, max);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -113,9 +111,9 @@ unsafe extern "C" fn artichoke_random_seed(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let rand = Value::new(&interp, slf);
-    let result = random::seed(&interp, rand);
+    let result = trampoline::seed(&mut interp, rand);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -128,8 +126,8 @@ unsafe extern "C" fn artichoke_random_self_new_seed(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
-    let result = random::new_seed(&interp);
+    let mut interp = unwrap_interpreter!(mrb);
+    let result = trampoline::new_seed(&mut interp);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -142,9 +140,9 @@ unsafe extern "C" fn artichoke_random_self_srand(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let number = mrb_get_args!(mrb, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let number = number.map(|number| Value::new(&interp, number));
-    let result = random::srand(&interp, number);
+    let result = trampoline::srand(&mut interp, number);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -159,7 +157,7 @@ unsafe extern "C" fn artichoke_random_self_urandom(
     let size = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let size = Value::new(&interp, size);
-    let result = random::urandom(&mut interp, size);
+    let result = trampoline::urandom(&mut interp, size);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

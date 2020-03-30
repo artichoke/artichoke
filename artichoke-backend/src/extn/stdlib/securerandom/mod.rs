@@ -50,59 +50,109 @@ pub fn random_bytes(interp: &mut Artichoke, len: Option<Value>) -> Result<Vec<u8
     Ok(bytes)
 }
 
-pub fn random_number(interp: &mut Artichoke, max: Option<Value>) -> Result<Value, Exception> {
-    #[derive(Debug, Clone, Copy)]
-    enum Max {
-        Float(Float),
-        Int(Int),
-        None,
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum RandomNumberMax {
+    Float(Float),
+    Integer(Int),
+    None,
+}
+
+impl TryConvert<Value, RandomNumberMax> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert(&self, max: Value) -> Result<RandomNumberMax, Self::Error> {
+        let optional: Option<Value> = self.try_convert(max)?;
+        self.try_convert(optional)
     }
-    let max = if let Some(max) = max {
-        if let Ok(max) = max.clone().try_into::<Int>() {
-            Max::Int(max)
-        } else if let Ok(max) = max.clone().try_into::<Float>() {
-            Max::Float(max)
+}
+
+impl TryConvert<Option<Value>, RandomNumberMax> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert(&self, max: Option<Value>) -> Result<RandomNumberMax, Self::Error> {
+        if let Some(max) = max {
+            match max.ruby_type() {
+                Ruby::Fixnum => {
+                    let max = max.try_into()?;
+                    Ok(RandomNumberMax::Integer(max))
+                }
+                Ruby::Float => {
+                    let max = max.try_into()?;
+                    Ok(RandomNumberMax::Float(max))
+                }
+                _ => {
+                    let max = max.implicitly_convert_to_int().map_err(|_| {
+                        let mut message = b"invalid argument - ".to_vec();
+                        message.extend(max.inspect().as_slice());
+                        ArgumentError::new_raw(self, message)
+                    })?;
+                    Ok(RandomNumberMax::Integer(max))
+                }
+            }
         } else {
-            let max = max.implicitly_convert_to_int().map_err(|_| {
-                let mut message = b"invalid argument - ".to_vec();
-                message.extend(max.inspect().as_slice());
-                ArgumentError::new_raw(interp, message)
-            })?;
-            Max::Int(max)
-        }
-    } else {
-        Max::None
-    };
-    let mut rng = rand::thread_rng();
-    match max {
-        Max::Float(max) if max <= 0.0 => {
-            let number = rng.gen_range(0.0, 1.0);
-            Ok(interp.convert_mut(number))
-        }
-        Max::Float(max) => {
-            let number = rng.gen_range(0.0, max);
-            Ok(interp.convert_mut(number))
-        }
-        Max::Int(max) if max <= 0 => {
-            let number = rng.gen_range(0.0, 1.0);
-            Ok(interp.convert_mut(number))
-        }
-        Max::Int(max) => {
-            let number = rng.gen_range(0, max);
-            Ok(interp.convert(number))
-        }
-        Max::None => {
-            let number = rng.gen_range(0.0, 1.0);
-            Ok(interp.convert_mut(number))
+            Ok(RandomNumberMax::None)
         }
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum RandomNumber {
+    Integer(Int),
+    Float(Float),
+}
+
+impl ConvertMut<RandomNumber, Value> for Artichoke {
+    fn convert_mut(&mut self, from: RandomNumber) -> Value {
+        match from {
+            RandomNumber::Integer(num) => self.convert(num),
+            RandomNumber::Float(num) => self.convert_mut(num),
+        }
+    }
+}
+
+pub fn random_number(
+    interp: &mut Artichoke,
+    max: RandomNumberMax,
+) -> Result<RandomNumber, ArgumentError> {
+    let mut rng = rand::thread_rng();
+    match max {
+        RandomNumberMax::Float(max) if !max.is_finite() => {
+            // NOTE: MRI returns `Errno::EDOM` exception class.
+            Err(ArgumentError::new(
+                interp,
+                "Numerical argument out of domain",
+            ))
+        }
+        RandomNumberMax::Float(max) if max <= 0.0 => {
+            let number = rng.gen_range(0.0, 1.0);
+            Ok(RandomNumber::Float(number))
+        }
+        RandomNumberMax::Float(max) => {
+            let number = rng.gen_range(0.0, max);
+            Ok(RandomNumber::Float(number))
+        }
+        RandomNumberMax::Integer(max) if max <= 0 => {
+            let number = rng.gen_range(0.0, 1.0);
+            Ok(RandomNumber::Float(number))
+        }
+        RandomNumberMax::Integer(max) => {
+            let number = rng.gen_range(0, max);
+            Ok(RandomNumber::Integer(number))
+        }
+        RandomNumberMax::None => {
+            let number = rng.gen_range(0.0, 1.0);
+            Ok(RandomNumber::Float(number))
+        }
+    }
+}
+
+#[inline]
 pub fn hex(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
     let bytes = random_bytes(interp, len)?;
     Ok(hex::encode(bytes))
 }
 
+#[inline]
 pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
     let bytes = random_bytes(interp, len)?;
     Ok(base64::encode(bytes))
