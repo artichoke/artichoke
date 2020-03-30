@@ -7,7 +7,6 @@
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
 use std::convert::TryFrom;
-use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::num::NonZeroUsize;
 use std::str;
@@ -29,6 +28,8 @@ pub use opts::Options;
 use backend::lazy::Lazy;
 use backend::onig::Onig;
 use backend::regex::utf8::Utf8;
+
+pub type NameToCaptureLocations = Vec<(Vec<u8>, Vec<Int>)>;
 
 pub const IGNORECASE: Int = 1;
 pub const EXTENDED: Int = 2;
@@ -102,8 +103,22 @@ pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Exception> {
     }
 }
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone)]
 pub struct Regexp(Box<dyn RegexpType>);
+
+impl Hash for Regexp {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
+impl PartialEq for Regexp {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner() == other.inner()
+    }
+}
+
+impl Eq for Regexp {}
 
 impl Regexp {
     pub fn new(
@@ -345,7 +360,7 @@ impl Regexp {
     pub fn named_captures(
         &self,
         interp: &mut Artichoke,
-    ) -> Result<Vec<(Vec<u8>, Vec<Int>)>, Exception> {
+    ) -> Result<NameToCaptureLocations, Exception> {
         let captures = self.0.named_captures(interp)?;
         let mut converted = Vec::with_capacity(captures.len());
         for (name, indexes) in captures {
@@ -411,62 +426,6 @@ pub struct Config {
     pattern: Vec<u8>,
     options: opts::Options,
 }
-
-impl PartialEq for Regexp {
-    fn eq(&self, other: &Self) -> bool {
-        &self.0 == &other.0
-    }
-}
-
-impl Eq for Regexp {}
-
-impl Clone for Box<dyn RegexpType> {
-    fn clone(&self) -> Self {
-        self.box_clone()
-    }
-}
-
-impl fmt::Debug for Box<dyn RegexpType> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.debug())
-    }
-}
-
-impl Hash for Box<dyn RegexpType> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.literal_config().hash(state);
-    }
-}
-
-impl PartialEq for Box<dyn RegexpType> {
-    fn eq(&self, other: &Self) -> bool {
-        self.derived_config().pattern == other.derived_config().pattern
-            && self.encoding() == other.encoding()
-    }
-}
-
-impl Eq for Box<dyn RegexpType> {}
-
-impl fmt::Debug for &dyn RegexpType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.debug())
-    }
-}
-
-impl Hash for &dyn RegexpType {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.literal_config().hash(state);
-    }
-}
-
-impl PartialEq for &dyn RegexpType {
-    fn eq(&self, other: &Self) -> bool {
-        self.derived_config().pattern == other.derived_config().pattern
-            && self.encoding() == other.encoding()
-    }
-}
-
-impl Eq for &dyn RegexpType {}
 
 impl TryConvertMut<(Option<Value>, Option<Value>), (Option<opts::Options>, Option<enc::Encoding>)>
     for Artichoke

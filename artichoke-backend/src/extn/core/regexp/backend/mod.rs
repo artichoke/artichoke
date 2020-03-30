@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fmt;
+use std::hash::{Hash, Hasher};
 
 use crate::extn::core::regexp::{Config, Encoding};
 use crate::extn::prelude::*;
@@ -103,3 +105,77 @@ pub trait RegexpType {
         block: Option<Block>,
     ) -> Result<Scan, Exception>;
 }
+
+impl Clone for Box<dyn RegexpType> {
+    #[inline]
+    fn clone(&self) -> Self {
+        self.box_clone()
+    }
+}
+
+impl fmt::Debug for Box<dyn RegexpType> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.as_ref(), f)
+    }
+}
+
+impl Hash for Box<dyn RegexpType> {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(&self.as_ref(), state)
+    }
+}
+
+impl PartialEq for Box<dyn RegexpType> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        PartialEq::eq(&self.as_ref(), &other.as_ref())
+    }
+}
+
+impl Eq for Box<dyn RegexpType> {}
+
+impl fmt::Debug for &dyn RegexpType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.debug())
+    }
+}
+
+impl Hash for &dyn RegexpType {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.literal_config().hash(state);
+    }
+}
+
+impl PartialEq for &dyn RegexpType {
+    fn eq(&self, other: &Self) -> bool {
+        self.derived_config().pattern == other.derived_config().pattern
+            && self.encoding() == other.encoding()
+    }
+}
+
+impl Eq for &dyn RegexpType {}
+
+impl fmt::Debug for &mut dyn RegexpType {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&&*self, f)
+    }
+}
+
+impl Hash for &mut dyn RegexpType {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(&&*self, state);
+    }
+}
+
+impl PartialEq for &mut dyn RegexpType {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        PartialEq::eq(&&*self, &&*other)
+    }
+}
+
+impl Eq for &mut dyn RegexpType {}

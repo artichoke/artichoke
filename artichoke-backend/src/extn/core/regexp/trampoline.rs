@@ -116,6 +116,7 @@ pub fn hash(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }?;
     let borrow = regexp.borrow();
     let hash = borrow.hash(interp);
+    #[allow(clippy::cast_possible_wrap)]
     Ok(interp.convert(hash as Int))
 }
 
