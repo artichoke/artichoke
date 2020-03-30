@@ -246,12 +246,7 @@ impl RegexpType for Utf8 {
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
             }
-            let matchdata = MatchData::new(
-                haystack.into(),
-                Regexp::from(self.box_clone()),
-                0,
-                haystack.len(),
-            );
+            let matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
             let matchdata = matchdata.try_into_ruby(&interp, None)?;
             interp.set_global_variable(regexp::LAST_MATCH, &matchdata)?;
             Ok(true)
@@ -363,18 +358,13 @@ impl RegexpType for Utf8 {
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
-            let mut matchdata = MatchData::new(
-                haystack.into(),
-                Regexp::from(self.box_clone()),
-                0,
-                haystack.len(),
-            );
+            let mut matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
             if let Some(match_pos) = captures.get(0) {
                 let pre_match = interp.convert_mut(&target[..match_pos.start()]);
                 let post_match = interp.convert_mut(&target[match_pos.end()..]);
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
-                matchdata.set_region(offset + match_pos.start(), offset + match_pos.end());
+                matchdata.set_region(offset + match_pos.start()..offset + match_pos.end());
             }
             let data = matchdata.try_into_ruby(interp, None)?;
             interp.set_global_variable(regexp::LAST_MATCH, &data)?;
@@ -432,12 +422,7 @@ impl RegexpType for Utf8 {
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
-            let matchdata = MatchData::new(
-                haystack.into(),
-                Regexp::from(self.box_clone()),
-                0,
-                haystack.len(),
-            );
+            let matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
             let matchdata = matchdata.try_into_ruby(interp, None)?;
             interp.set_global_variable(regexp::LAST_MATCH, &matchdata)?;
             if let Some(match_pos) = captures.get(0) {
@@ -550,12 +535,7 @@ impl RegexpType for Utf8 {
             )
         })?;
         regexp::clear_capture_globals(interp)?;
-        let mut matchdata = MatchData::new(
-            haystack.into(),
-            Regexp::from(self.box_clone()),
-            0,
-            haystack.len(),
-        );
+        let mut matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
 
         // regex crate always includes the zero group in the captures len.
         let len = self
@@ -595,7 +575,7 @@ impl RegexpType for Utf8 {
 
                     let matched = interp.convert_mut(groups);
                     if let Some(pos) = captures.get(0) {
-                        matchdata.set_region(pos.start(), pos.end());
+                        matchdata.set_region(pos.start()..pos.end());
                     }
                     let data = matchdata.clone().try_into_ruby(interp, None)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
@@ -611,7 +591,7 @@ impl RegexpType for Utf8 {
                 for pos in iter {
                     let scanned = &haystack[pos.start()..pos.end()];
                     let matched = interp.convert_mut(scanned);
-                    matchdata.set_region(pos.start(), pos.end());
+                    matchdata.set_region(pos.start()..pos.end());
                     let data = matchdata.clone().try_into_ruby(interp, None)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                     let _ = block.yield_arg::<Value>(interp, &matched)?;
@@ -645,7 +625,7 @@ impl RegexpType for Utf8 {
                     }
                     collected.push(groups);
                 }
-                matchdata.set_region(last_pos.0, last_pos.1);
+                matchdata.set_region(last_pos.0..last_pos.1);
                 let data = matchdata.try_into_ruby(interp, None)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 let mut iter = collected.iter().enumerate();
@@ -671,7 +651,7 @@ impl RegexpType for Utf8 {
                     last_pos = (pos.start(), pos.end());
                     collected.push(Vec::from(scanned.as_bytes()));
                 }
-                matchdata.set_region(last_pos.0, last_pos.1);
+                matchdata.set_region(last_pos.0..last_pos.1);
                 let data = matchdata.try_into_ruby(interp, None)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 let last_matched = collected.last().map(Vec::as_slice);
