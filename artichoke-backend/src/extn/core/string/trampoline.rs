@@ -55,7 +55,7 @@ pub fn scan(
     } else if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string() {
         let string = value.clone().try_into::<&[u8]>()?;
         if let Some(ref block) = block {
-            let regex = Regexp::lazy(pattern_bytes);
+            let regex = Regexp::lazy(pattern_bytes.to_vec());
             let matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
             let patlen = pattern_bytes.len();
             if let Some(pos) = string.find(pattern_bytes) {
@@ -98,7 +98,7 @@ pub fn scan(
                 result.push(interp.convert_mut(pattern_bytes));
             }
             if matches > 0 {
-                let regex = Regexp::lazy(pattern_bytes);
+                let regex = Regexp::lazy(pattern_bytes.to_vec());
                 let mut matchdata = MatchData::new(string.to_vec(), regex, 0, string.len());
                 matchdata.set_region(last_pos, last_pos + pattern_bytes.len());
                 let data = matchdata.try_into_ruby(interp, None)?;
