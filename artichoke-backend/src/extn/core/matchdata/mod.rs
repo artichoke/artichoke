@@ -83,7 +83,7 @@ impl<'a> TryConvertMut<&'a Value, Capture<'a>> for Artichoke {
     type Error = TypeError;
 
     fn try_convert_mut(&mut self, value: &'a Value) -> Result<Capture<'a>, Self::Error> {
-        if let Ok(name) = value.implicitly_convert_to_string() {
+        if let Ok(name) = value.implicitly_convert_to_string(self) {
             Ok(Capture::GroupName(name))
         } else {
             let idx = value.implicitly_convert_to_int(self)?;

@@ -32,7 +32,7 @@ pub fn method(
         Some(Err(_)) => return Err(Exception::from(ArgumentError::new(interp, "invalid radix"))),
         None => None,
     };
-    let arg = arg.implicitly_convert_to_string().map_err(|_| {
+    let arg = arg.implicitly_convert_to_string(interp).map_err(|_| {
         let mut message = String::from("can't convert ");
         message.push_str(arg.pretty_name());
         message.push_str(" into Integer");

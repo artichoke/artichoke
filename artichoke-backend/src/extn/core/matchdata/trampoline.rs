@@ -44,7 +44,7 @@ pub fn element_reference(
         CaptureAt::StartLen(start, len)
     } else if let Ok(index) = elem.implicitly_convert_to_int(interp) {
         CaptureAt::GroupIndex(index)
-    } else if let Ok(name) = elem.implicitly_convert_to_string() {
+    } else if let Ok(name) = elem.implicitly_convert_to_string(interp) {
         CaptureAt::GroupName(name)
     } else {
         // NOTE(lopopolo): Encapsulation is broken here by reaching into the
