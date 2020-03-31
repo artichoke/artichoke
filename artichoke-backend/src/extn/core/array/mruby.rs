@@ -144,11 +144,11 @@ unsafe extern "C" fn ary_element_reference(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let elem = Value::new(&interp, elem);
     let len = len.map(|len| Value::new(&interp, len));
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::element_reference(&interp, array, elem, len);
+    let result = array::trampoline::element_reference(&mut interp, array, elem, len);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
@@ -160,12 +160,12 @@ unsafe extern "C" fn ary_element_assignment(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (first, second, third) = mrb_get_args!(mrb, required = 2, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let first = Value::new(&interp, first);
     let second = Value::new(&interp, second);
     let third = third.map(|third| Value::new(&interp, third));
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::element_assignment(&interp, array, first, second, third);
+    let result = array::trampoline::element_assignment(&mut interp, array, first, second, third);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

@@ -13,7 +13,7 @@ use crate::Parser;
 const RUBY_EXTENSION: &str = "rb";
 
 pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception> {
-    let filename = filename.implicitly_convert_to_string()?;
+    let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
         return Err(Exception::from(ArgumentError::new(
             interp,
@@ -68,7 +68,7 @@ pub fn require(
     filename: Value,
     base: Option<&Path>,
 ) -> Result<Value, Exception> {
-    let filename = filename.implicitly_convert_to_string()?;
+    let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
         return Err(Exception::from(ArgumentError::new(
             interp,

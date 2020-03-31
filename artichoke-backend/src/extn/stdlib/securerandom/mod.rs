@@ -27,9 +27,8 @@ mod tests {
 #[derive(Debug, Clone, Copy)]
 pub struct SecureRandom;
 
-pub fn random_bytes(interp: &mut Artichoke, len: Option<Value>) -> Result<Vec<u8>, Exception> {
+pub fn random_bytes(interp: &mut Artichoke, len: Option<Int>) -> Result<Vec<u8>, Exception> {
     let len = if let Some(len) = len {
-        let len = len.implicitly_convert_to_int()?;
         match usize::try_from(len) {
             Ok(0) => return Ok(Vec::new()),
             Ok(len) => len,
@@ -57,19 +56,19 @@ pub enum RandomNumberMax {
     None,
 }
 
-impl TryConvert<Value, RandomNumberMax> for Artichoke {
+impl TryConvertMut<Value, RandomNumberMax> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, max: Value) -> Result<RandomNumberMax, Self::Error> {
+    fn try_convert_mut(&mut self, max: Value) -> Result<RandomNumberMax, Self::Error> {
         let optional: Option<Value> = self.try_convert(max)?;
-        self.try_convert(optional)
+        self.try_convert_mut(optional)
     }
 }
 
-impl TryConvert<Option<Value>, RandomNumberMax> for Artichoke {
+impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, max: Option<Value>) -> Result<RandomNumberMax, Self::Error> {
+    fn try_convert_mut(&mut self, max: Option<Value>) -> Result<RandomNumberMax, Self::Error> {
         if let Some(max) = max {
             match max.ruby_type() {
                 Ruby::Fixnum => {
@@ -81,7 +80,7 @@ impl TryConvert<Option<Value>, RandomNumberMax> for Artichoke {
                     Ok(RandomNumberMax::Float(max))
                 }
                 _ => {
-                    let max = max.implicitly_convert_to_int().map_err(|_| {
+                    let max = max.implicitly_convert_to_int(self).map_err(|_| {
                         let mut message = b"invalid argument - ".to_vec();
                         message.extend(max.inspect().as_slice());
                         ArgumentError::new_raw(self, message)
@@ -147,20 +146,19 @@ pub fn random_number(
 }
 
 #[inline]
-pub fn hex(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
+pub fn hex(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
     let bytes = random_bytes(interp, len)?;
     Ok(hex::encode(bytes))
 }
 
 #[inline]
-pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
+pub fn base64(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
     let bytes = random_bytes(interp, len)?;
     Ok(base64::encode(bytes))
 }
 
-pub fn alphanumeric(interp: &mut Artichoke, len: Option<Value>) -> Result<String, Exception> {
+pub fn alphanumeric(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
     let len = if let Some(len) = len {
-        let len = len.implicitly_convert_to_int()?;
         match usize::try_from(len) {
             Ok(0) => return Ok(String::new()),
             Ok(len) => len,

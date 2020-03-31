@@ -48,7 +48,7 @@ pub fn element_reference(
     name: &Value,
 ) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
-    let name = name.implicitly_convert_to_string()?;
+    let name = name.implicitly_convert_to_string(interp)?;
     let env = obj.borrow();
     let result = env.0.get(interp, name)?;
     let mut result = interp.convert_mut(result.as_ref().map(Cow::as_ref));
@@ -63,8 +63,8 @@ pub fn element_assignment(
     value: Value,
 ) -> Result<Value, Exception> {
     let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
-    let name = name.implicitly_convert_to_string()?;
-    let env_value = value.implicitly_convert_to_nilable_string()?;
+    let name = name.implicitly_convert_to_string(interp)?;
+    let env_value = value.implicitly_convert_to_nilable_string(interp)?;
     obj.borrow_mut().0.put(interp, name, env_value)?;
     // Return original object, even if we converted it to a `String`.
     Ok(value)

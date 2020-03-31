@@ -17,7 +17,8 @@ pub fn element_reference(
     bit: Value,
 ) -> Result<Value, Exception> {
     let value = value.try_into::<Integer>()?;
-    let bit = value.bit(interp, bit)?;
+    let bit = bit.implicitly_convert_to_int(interp)?;
+    let bit = value.bit(bit)?;
     Ok(interp.convert(bit))
 }
 

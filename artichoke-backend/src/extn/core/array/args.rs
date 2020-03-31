@@ -11,20 +11,20 @@ pub enum ElementReference {
 }
 
 pub fn element_reference(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     elem: Value,
     len: Option<Value>,
     ary_len: usize,
 ) -> Result<ElementReference, Exception> {
     if let Some(len) = len {
-        let start = elem.implicitly_convert_to_int()?;
-        let len = len.implicitly_convert_to_int()?;
+        let start = elem.implicitly_convert_to_int(interp)?;
+        let len = len.implicitly_convert_to_int(interp)?;
         if let Ok(len) = usize::try_from(len) {
             Ok(ElementReference::StartLen(start, len))
         } else {
             Ok(ElementReference::Empty)
         }
-    } else if let Ok(index) = elem.implicitly_convert_to_int() {
+    } else if let Ok(index) = elem.implicitly_convert_to_int(interp) {
         Ok(ElementReference::Index(index))
     } else {
         let rangelen = Int::try_from(ary_len)
@@ -49,14 +49,14 @@ pub fn element_reference(
 }
 
 pub fn element_assignment(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     first: Value,
     second: Value,
     third: Option<Value>,
     len: usize,
 ) -> Result<(usize, Option<usize>, Value), Exception> {
     if let Some(elem) = third {
-        let start = first.implicitly_convert_to_int()?;
+        let start = first.implicitly_convert_to_int(interp)?;
         let start = if let Ok(start) = usize::try_from(start) {
             start
         } else {
@@ -74,7 +74,7 @@ pub fn element_assignment(
                 return Err(Exception::from(IndexError::new(interp, message)));
             }
         };
-        let slice_len = second.implicitly_convert_to_int()?;
+        let slice_len = second.implicitly_convert_to_int(interp)?;
         if let Ok(slice_len) = usize::try_from(slice_len) {
             Ok((start, Some(slice_len), elem))
         } else {
@@ -83,7 +83,7 @@ pub fn element_assignment(
             message.push(')');
             Err(Exception::from(IndexError::new(interp, message)))
         }
-    } else if let Ok(index) = first.implicitly_convert_to_int() {
+    } else if let Ok(index) = first.implicitly_convert_to_int(interp) {
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
@@ -115,9 +115,9 @@ pub fn element_assignment(
             }
             Ok(None) => {
                 let start = first.funcall::<Value>("begin", &[], None)?;
-                let start = start.implicitly_convert_to_int()?;
+                let start = start.implicitly_convert_to_int(interp)?;
                 let end = first.funcall::<Value>("last", &[], None)?;
-                let end = end.implicitly_convert_to_int()?;
+                let end = end.implicitly_convert_to_int(interp)?;
                 // TODO: This conditional is probably not doing the right thing
                 if start + (end - start) < 0 {
                     let mut message = String::new();

@@ -62,7 +62,7 @@ impl Array {
                     return Err(Exception::from(TypeError::new(interp, message)));
                 }
             } else {
-                let len = first.implicitly_convert_to_int()?;
+                let len = first.implicitly_convert_to_int(interp)?;
                 let len = usize::try_from(len)
                     .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
                 if let Some(block) = block {
@@ -103,7 +103,7 @@ impl Array {
 
     fn element_reference(
         &self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         index: Value,
         len: Option<Value>,
     ) -> Result<Value, Exception> {
@@ -141,7 +141,7 @@ impl Array {
 
     fn element_assignment(
         &mut self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         first: Value,
         second: Value,
         third: Option<Value>,

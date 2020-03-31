@@ -16,6 +16,7 @@ pub fn initialize(
 }
 
 pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
+    let pattern = pattern.implicitly_convert_to_string(interp)?;
     let pattern = Regexp::escape(interp, pattern)?;
     Ok(interp.convert_mut(pattern))
 }
@@ -33,9 +34,9 @@ pub fn is_match(
 ) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }?;
     let borrow = regexp.borrow();
-    let pattern = pattern.implicitly_convert_to_nilable_string()?;
+    let pattern = pattern.implicitly_convert_to_nilable_string(interp)?;
     let pos = if let Some(pos) = pos {
-        Some(pos.implicitly_convert_to_int()?)
+        Some(pos.implicitly_convert_to_int(interp)?)
     } else {
         None
     };
@@ -52,9 +53,9 @@ pub fn match_(
 ) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }?;
     let borrow = regexp.borrow();
-    let pattern = pattern.implicitly_convert_to_nilable_string()?;
+    let pattern = pattern.implicitly_convert_to_nilable_string(interp)?;
     let pos = if let Some(pos) = pos {
-        Some(pos.implicitly_convert_to_int()?)
+        Some(pos.implicitly_convert_to_int(interp)?)
     } else {
         None
     };
@@ -86,7 +87,7 @@ pub fn match_operator(
 ) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }?;
     let borrow = regexp.borrow();
-    let pattern = pattern.implicitly_convert_to_nilable_string()?;
+    let pattern = pattern.implicitly_convert_to_nilable_string(interp)?;
     let pos = borrow.match_operator(interp, pattern)?;
     match pos.map(Int::try_from) {
         Some(Ok(pos)) => Ok(interp.convert(pos)),

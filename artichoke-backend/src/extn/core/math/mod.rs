@@ -15,39 +15,47 @@ pub const PI: f64 = f64::consts::PI;
 pub struct Math;
 
 fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
-    if let Ok(value) = value.clone().try_into::<Float>() {
-        Ok(value)
-    } else if let Ok(value) = value.clone().try_into::<Int>() {
-        #[allow(clippy::cast_possible_truncation)]
-        #[allow(clippy::cast_precision_loss)]
-        Ok(value as Float)
-    } else if let Ruby::Nil = value.ruby_type() {
-        Err(Exception::from(TypeError::new(
+    match value.ruby_type() {
+        Ruby::Float => value.try_into(),
+        Ruby::Fixnum =>
+        {
+            #[allow(clippy::cast_possible_truncation)]
+            #[allow(clippy::cast_precision_loss)]
+            value.try_into::<Int>().map(|num| num as Float)
+        }
+        Ruby::Nil => Err(Exception::from(TypeError::new(
             interp,
             "can't convert nil into Float",
-        )))
-    } else {
-        let borrow = interp.0.borrow();
-        let numeric = borrow
-            .class_spec::<Numeric>()
-            .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-        let numeric = numeric
-            .value(interp)
-            .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-        drop(borrow);
-        if let Ok(true) = value.funcall("is_a?", &[numeric], None) {
-            if value.respond_to("to_f")? {
-                let coerced = value.funcall::<Value>("to_f", &[], None)?;
-                if let Ruby::Float = coerced.ruby_type() {
-                    coerced.try_into::<Float>()
+        ))),
+        _ => {
+            // TODO: This should use `numeric::coerce`
+            let borrow = interp.0.borrow();
+            let numeric = borrow
+                .class_spec::<Numeric>()
+                .ok_or_else(|| NotDefinedError::class("Numeric"))?;
+            let numeric = numeric
+                .value(interp)
+                .ok_or_else(|| NotDefinedError::class("Numeric"))?;
+            drop(borrow);
+            if let Ok(true) = value.funcall("is_a?", &[numeric], None) {
+                if value.respond_to("to_f")? {
+                    let coerced = value.funcall::<Value>("to_f", &[], None)?;
+                    if let Ruby::Float = coerced.ruby_type() {
+                        coerced.try_into::<Float>()
+                    } else {
+                        let mut message = String::from("can't convert ");
+                        message.push_str(value.pretty_name());
+                        message.push_str(" into Float (");
+                        message.push_str(value.pretty_name());
+                        message.push_str("#to_f gives ");
+                        message.push_str(coerced.pretty_name());
+                        message.push(')');
+                        Err(Exception::from(TypeError::new(interp, message)))
+                    }
                 } else {
                     let mut message = String::from("can't convert ");
                     message.push_str(value.pretty_name());
-                    message.push_str(" into Float (");
-                    message.push_str(value.pretty_name());
-                    message.push_str("#to_f gives ");
-                    message.push_str(coerced.pretty_name());
-                    message.push(')');
+                    message.push_str(" into Float");
                     Err(Exception::from(TypeError::new(interp, message)))
                 }
             } else {
@@ -56,11 +64,6 @@ fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Float, Excepti
                 message.push_str(" into Float");
                 Err(Exception::from(TypeError::new(interp, message)))
             }
-        } else {
-            let mut message = String::from("can't convert ");
-            message.push_str(value.pretty_name());
-            message.push_str(" into Float");
-            Err(Exception::from(TypeError::new(interp, message)))
         }
     }
 }
@@ -322,7 +325,7 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
     use std::convert::TryFrom;
 
     let fraction = value_to_float(interp, fraction)?;
-    let exponent = exponent.implicitly_convert_to_int().or_else(|err| {
+    let exponent = exponent.implicitly_convert_to_int(interp).or_else(|err| {
         if let Ok(exponent) = exponent.try_into::<Float>() {
             if exponent.is_nan() {
                 Err(Exception::from(RangeError::new(

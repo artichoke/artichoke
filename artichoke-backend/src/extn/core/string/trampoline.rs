@@ -52,7 +52,7 @@ pub fn scan(
             Scan::Collected(collected) => Ok(interp.convert_mut(collected)),
             Scan::Patterns(patterns) => Ok(interp.convert_mut(patterns)),
         }
-    } else if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string() {
+    } else if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
         let string = value.clone().try_into::<&[u8]>()?;
         if let Some(ref block) = block {
             let regex = Regexp::lazy(pattern_bytes.to_vec());

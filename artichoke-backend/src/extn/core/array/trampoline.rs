@@ -16,7 +16,7 @@ pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Exception> {
 }
 
 pub fn element_reference(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     ary: Value,
     first: Value,
     second: Option<Value>,
@@ -27,7 +27,7 @@ pub fn element_reference(
 }
 
 pub fn element_assignment(
-    interp: &Artichoke,
+    interp: &mut Artichoke,
     ary: Value,
     first: Value,
     second: Value,

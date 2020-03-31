@@ -133,9 +133,8 @@ impl Integer {
         }
     }
 
-    pub fn bit(self, interp: &Artichoke, bit: Value) -> Result<Self, Exception> {
-        let _ = interp;
-        let bit = bit.implicitly_convert_to_int()?;
+    #[inline]
+    pub fn bit(self, bit: Int) -> Result<Self, Exception> {
         if let Ok(bit) = u32::try_from(bit) {
             Ok(self.as_i64().checked_shr(bit).map_or(0, |v| v & 1).into())
         } else {

@@ -168,7 +168,7 @@ impl Regexp {
                 options,
             }
         } else {
-            let bytes = pattern.implicitly_convert_to_string()?;
+            let bytes = pattern.implicitly_convert_to_string(interp)?;
             Config {
                 pattern: bytes.to_vec(),
                 options: options.unwrap_or_default(),
@@ -185,18 +185,16 @@ impl Regexp {
         )
     }
 
-    pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<String, Exception> {
-        let bytes = pattern.implicitly_convert_to_string()?;
-        let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
-            pattern
+    pub fn escape(interp: &mut Artichoke, pattern: &[u8]) -> Result<String, Exception> {
+        if let Ok(pattern) = str::from_utf8(pattern) {
+            Ok(syntax::escape(pattern))
         } else {
             // drop(bytes);
-            return Err(Exception::from(ArgumentError::new(
+            Err(Exception::from(ArgumentError::new(
                 interp,
                 "invalid encoding (non UTF-8)",
-            )));
-        };
-        Ok(syntax::escape(pattern))
+            )))
+        }
     }
 
     pub fn union(interp: &mut Artichoke, patterns: Vec<Value>) -> Result<Self, Exception> {
@@ -204,7 +202,7 @@ impl Regexp {
             if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &value) } {
                 Ok(regexp.borrow().0.derived_config().pattern.clone())
             } else {
-                let bytes = value.implicitly_convert_to_string()?;
+                let bytes = value.implicitly_convert_to_string(interp)?;
                 let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
                     pattern
                 } else {
@@ -259,7 +257,7 @@ impl Regexp {
     }
 
     pub fn case_compare(&self, interp: &mut Artichoke, other: Value) -> Result<bool, Exception> {
-        let pattern = if let Ok(pattern) = other.implicitly_convert_to_string() {
+        let pattern = if let Ok(pattern) = other.implicitly_convert_to_string(interp) {
             pattern
         } else {
             interp.unset_global_variable(LAST_MATCH)?;
