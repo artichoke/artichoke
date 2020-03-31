@@ -115,13 +115,13 @@ impl Value {
         debug
     }
 
-    pub fn implicitly_convert_to_int(&self) -> Result<Int, TypeError> {
+    pub fn implicitly_convert_to_int(&self, interp: &mut Artichoke) -> Result<Int, TypeError> {
         let int = if let Ok(int) = self.clone().try_into::<Option<Int>>() {
             if let Some(int) = int {
                 int
             } else {
                 return Err(TypeError::new(
-                    &self.interp,
+                    interp,
                     "no implicit conversion from nil to integer",
                 ));
             }
@@ -138,19 +138,19 @@ impl Value {
                     message.push_str("#to_int gives ");
                     message.push_str(gives_pretty_name);
                     message.push(')');
-                    return Err(TypeError::new(&self.interp, message));
+                    return Err(TypeError::new(interp, message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
                 message.push_str(self.pretty_name());
                 message.push_str(" into Integer");
-                return Err(TypeError::new(&self.interp, message));
+                return Err(TypeError::new(interp, message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
             message.push_str(self.pretty_name());
             message.push_str(" into Integer");
-            return Err(TypeError::new(&self.interp, message));
+            return Err(TypeError::new(interp, message));
         };
         Ok(int)
     }

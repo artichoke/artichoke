@@ -5,7 +5,11 @@ use std::str::{self, FromStr};
 
 use crate::extn::prelude::*;
 
-pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Value, Exception> {
+pub fn method(
+    interp: &mut Artichoke,
+    arg: Value,
+    radix: Option<Value>,
+) -> Result<Value, Exception> {
     #[derive(Debug, Clone, Copy)]
     enum Sign {
         Pos,
@@ -18,7 +22,7 @@ pub fn method(interp: &Artichoke, arg: Value, radix: Option<Value>) -> Result<Va
         Accumulate(Sign, String),
     }
     let radix = if let Some(radix) = radix {
-        radix.implicitly_convert_to_int().ok()
+        radix.implicitly_convert_to_int(interp).ok()
     } else {
         None
     };

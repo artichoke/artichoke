@@ -25,21 +25,21 @@ impl Seed {
     }
 }
 
-impl TryConvert<Value, Seed> for Artichoke {
+impl TryConvertMut<Value, Seed> for Artichoke {
     type Error = TypeError;
 
-    fn try_convert(&self, value: Value) -> Result<Seed, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Seed, Self::Error> {
         let optional: Option<Value> = self.convert(value);
-        self.try_convert(optional)
+        self.try_convert_mut(optional)
     }
 }
 
-impl TryConvert<Option<Value>, Seed> for Artichoke {
+impl TryConvertMut<Option<Value>, Seed> for Artichoke {
     type Error = TypeError;
 
-    fn try_convert(&self, value: Option<Value>) -> Result<Seed, Self::Error> {
+    fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Seed, Self::Error> {
         if let Some(value) = value {
-            let seed = value.implicitly_convert_to_int()?;
+            let seed = value.implicitly_convert_to_int(self)?;
             Ok(Seed::New(seed))
         } else {
             Ok(Seed::None)
@@ -205,19 +205,19 @@ pub enum RandomNumberMax {
     None,
 }
 
-impl TryConvert<Value, RandomNumberMax> for Artichoke {
+impl TryConvertMut<Value, RandomNumberMax> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, max: Value) -> Result<RandomNumberMax, Self::Error> {
+    fn try_convert_mut(&mut self, max: Value) -> Result<RandomNumberMax, Self::Error> {
         let optional: Option<Value> = self.try_convert(max)?;
-        self.try_convert(optional)
+        self.try_convert_mut(optional)
     }
 }
 
-impl TryConvert<Option<Value>, RandomNumberMax> for Artichoke {
+impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, max: Option<Value>) -> Result<RandomNumberMax, Self::Error> {
+    fn try_convert_mut(&mut self, max: Option<Value>) -> Result<RandomNumberMax, Self::Error> {
         if let Some(max) = max {
             match max.ruby_type() {
                 Ruby::Fixnum => {
@@ -229,7 +229,7 @@ impl TryConvert<Option<Value>, RandomNumberMax> for Artichoke {
                     Ok(RandomNumberMax::Float(max))
                 }
                 _ => {
-                    let max = max.implicitly_convert_to_int().map_err(|_| {
+                    let max = max.implicitly_convert_to_int(self).map_err(|_| {
                         let mut message = b"invalid argument - ".to_vec();
                         message.extend(max.inspect().as_slice());
                         ArgumentError::new_raw(self, message)

@@ -6,7 +6,7 @@ use crate::extn::prelude::*;
 pub fn begin(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
-    let capture = interp.try_convert(&at)?;
+    let capture = interp.try_convert_mut(&at)?;
     let begin = borrow.begin(interp, capture)?;
     match begin.map(Int::try_from) {
         Some(Ok(begin)) => Ok(interp.convert(begin)),
@@ -39,10 +39,10 @@ pub fn element_reference(
     // TODO(GH-308): Once extracting a `Range` is safe, extract this conversion
     // to a `TryConvert<&'a Value, CaptureAt<'a>>` impl.
     let at = if let Some(len) = len {
-        let start = elem.implicitly_convert_to_int()?;
-        let len = len.implicitly_convert_to_int()?;
+        let start = elem.implicitly_convert_to_int(interp)?;
+        let len = len.implicitly_convert_to_int(interp)?;
         CaptureAt::StartLen(start, len)
-    } else if let Ok(index) = elem.implicitly_convert_to_int() {
+    } else if let Ok(index) = elem.implicitly_convert_to_int(interp) {
         CaptureAt::GroupIndex(index)
     } else if let Ok(name) = elem.implicitly_convert_to_string() {
         CaptureAt::GroupName(name)
@@ -70,7 +70,7 @@ pub fn element_reference(
 pub fn end(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
-    let capture = interp.try_convert(&at)?;
+    let capture = interp.try_convert_mut(&at)?;
     let end = borrow.end(interp, capture)?;
     match end.map(Int::try_from) {
         Some(Ok(end)) => Ok(interp.convert(end)),
@@ -113,7 +113,7 @@ pub fn names(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
 pub fn offset(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
-    let capture = interp.try_convert(&at)?;
+    let capture = interp.try_convert_mut(&at)?;
     if let Some([begin, end]) = borrow.offset(interp, capture)? {
         if let (Ok(begin), Ok(end)) = (Int::try_from(begin), Int::try_from(end)) {
             // TODO: use a proper assoc 2-tuple

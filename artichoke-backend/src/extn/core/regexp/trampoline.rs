@@ -35,7 +35,7 @@ pub fn is_match(
     let borrow = regexp.borrow();
     let pattern = pattern.implicitly_convert_to_nilable_string()?;
     let pos = if let Some(pos) = pos {
-        Some(pos.implicitly_convert_to_int()?)
+        Some(pos.implicitly_convert_to_int(interp)?)
     } else {
         None
     };
@@ -54,7 +54,7 @@ pub fn match_(
     let borrow = regexp.borrow();
     let pattern = pattern.implicitly_convert_to_nilable_string()?;
     let pos = if let Some(pos) = pos {
-        Some(pos.implicitly_convert_to_int()?)
+        Some(pos.implicitly_convert_to_int(interp)?)
     } else {
         None
     };

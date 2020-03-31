@@ -46,12 +46,10 @@ pub struct Kernel;
 impl Kernel {
     unsafe extern "C" fn integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
-        let interp = unwrap_interpreter!(mrb);
-        let result = integer::method(
-            &interp,
-            Value::new(&interp, arg),
-            base.map(|base| Value::new(&interp, base)),
-        );
+        let mut interp = unwrap_interpreter!(mrb);
+        let arg = Value::new(&interp, arg);
+        let base = base.map(|base| Value::new(&interp, base));
+        let result = integer::method(&mut interp, arg, base);
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
