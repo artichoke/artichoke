@@ -42,7 +42,7 @@ pub fn scan(
 ) -> Result<Value, Exception> {
     if let Ruby::Symbol = pattern.ruby_type() {
         let mut message = String::from("wrong argument type ");
-        message.push_str(pattern.pretty_name());
+        message.push_str(pattern.pretty_name(interp));
         message.push_str(" (expected Regexp)");
         Err(Exception::from(TypeError::new(interp, message)))
     } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
@@ -113,7 +113,7 @@ pub fn scan(
         }
     } else {
         let mut message = String::from("wrong argument type ");
-        message.push_str(pattern.pretty_name());
+        message.push_str(pattern.pretty_name(interp));
         message.push_str(" (expected Regexp)");
         Err(Exception::from(TypeError::new(interp, message)))
     }

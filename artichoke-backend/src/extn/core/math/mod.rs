@@ -44,23 +44,23 @@ fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Float, Excepti
                         coerced.try_into::<Float>()
                     } else {
                         let mut message = String::from("can't convert ");
-                        message.push_str(value.pretty_name());
+                        message.push_str(value.pretty_name(interp));
                         message.push_str(" into Float (");
-                        message.push_str(value.pretty_name());
+                        message.push_str(value.pretty_name(interp));
                         message.push_str("#to_f gives ");
-                        message.push_str(coerced.pretty_name());
+                        message.push_str(coerced.pretty_name(interp));
                         message.push(')');
                         Err(Exception::from(TypeError::new(interp, message)))
                     }
                 } else {
                     let mut message = String::from("can't convert ");
-                    message.push_str(value.pretty_name());
+                    message.push_str(value.pretty_name(interp));
                     message.push_str(" into Float");
                     Err(Exception::from(TypeError::new(interp, message)))
                 }
             } else {
                 let mut message = String::from("can't convert ");
-                message.push_str(value.pretty_name());
+                message.push_str(value.pretty_name(interp));
                 message.push_str(" into Float");
                 Err(Exception::from(TypeError::new(interp, message)))
             }

@@ -57,7 +57,7 @@ pub fn element_reference(
             Ok(None) => return Ok(interp.convert(None::<Value>)),
             Err(_) => {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(elem.pretty_name());
+                message.push_str(elem.pretty_name(interp));
                 message.push_str(" into Integer");
                 return Err(Exception::from(TypeError::new(interp, message)));
             }

@@ -68,10 +68,10 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 
 unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, optional = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let other = other.map(|other| Value::new(&interp, other));
-    let result = array::trampoline::concat(&interp, array, other);
+    let result = array::trampoline::concat(&mut interp, array, other);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

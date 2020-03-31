@@ -106,13 +106,13 @@ unsafe extern "C" fn artichoke_ary_concat(
     ary: sys::mrb_value,
     other: sys::mrb_value,
 ) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
     let result = if let Ok(array) = Array::try_from_ruby(&interp, &ary) {
         let mut borrow = array.borrow_mut();
         let gc_was_enabled = interp.disable_gc();
-        let result = borrow.concat(&interp, other);
+        let result = borrow.concat(&mut interp, other);
         if gc_was_enabled {
             interp.enable_gc();
         }

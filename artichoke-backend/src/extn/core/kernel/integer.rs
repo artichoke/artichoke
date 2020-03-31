@@ -34,7 +34,7 @@ pub fn method(
     };
     let arg = arg.implicitly_convert_to_string(interp).map_err(|_| {
         let mut message = String::from("can't convert ");
-        message.push_str(arg.pretty_name());
+        message.push_str(arg.pretty_name(interp));
         message.push_str(" into Integer");
         TypeError::new(interp, message)
     })?;

@@ -132,12 +132,12 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                         }
                     } else {
                         let mut message = String::from("can't convert ");
-                        message.push_str(y.pretty_name());
+                        message.push_str(y.pretty_name(interp));
                         message.push_str(" into Float");
                         Err(Exception::from(TypeError::new(interp, message)))
                     }
                 } else {
-                    let mut message = String::from(y.pretty_name());
+                    let mut message = String::from(y.pretty_name(interp));
                     message.push_str(" can't be coerced into Float");
                     Err(Exception::from(TypeError::new(interp, message)))
                 }

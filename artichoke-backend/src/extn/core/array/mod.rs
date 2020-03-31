@@ -54,11 +54,11 @@ impl Array {
                     other.borrow().0.clone()
                 } else {
                     let mut message = String::from("can't convert ");
-                    message.push_str(first.pretty_name());
+                    message.push_str(first.pretty_name(interp));
                     message.push_str(" to Array (");
-                    message.push_str(first.pretty_name());
+                    message.push_str(first.pretty_name(interp));
                     message.push_str("#to_ary gives ");
-                    message.push_str(other.pretty_name());
+                    message.push_str(other.pretty_name(interp));
                     return Err(Exception::from(TypeError::new(interp, message)));
                 }
             } else {
@@ -157,11 +157,11 @@ impl Array {
                     self.0.set_slice(interp, start, drain, &other.borrow().0)?;
                 } else {
                     let mut message = String::from("can't convert ");
-                    message.push_str(elem.pretty_name());
+                    message.push_str(elem.pretty_name(interp));
                     message.push_str(" to Array (");
-                    message.push_str(elem.pretty_name());
+                    message.push_str(elem.pretty_name(interp));
                     message.push_str("#to_ary gives ");
-                    message.push_str(other.pretty_name());
+                    message.push_str(other.pretty_name(interp));
                     return Err(Exception::from(TypeError::new(interp, message)));
                 }
             } else {
@@ -214,7 +214,7 @@ impl Array {
         Ok(())
     }
 
-    pub fn concat(&mut self, interp: &Artichoke, other: Value) -> Result<(), Exception> {
+    pub fn concat(&mut self, interp: &mut Artichoke, other: Value) -> Result<(), Exception> {
         if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             self.0.concat(interp, &other.borrow().0)?;
         } else if other.respond_to("to_ary")? {
@@ -223,16 +223,16 @@ impl Array {
                 self.0.concat(interp, &other.borrow().0)?;
             } else {
                 let mut message = String::from("can't convert ");
-                message.push_str(other.pretty_name());
+                message.push_str(other.pretty_name(interp));
                 message.push_str(" to Array (");
-                message.push_str(other.pretty_name());
+                message.push_str(other.pretty_name(interp));
                 message.push_str("#to_ary gives ");
-                message.push_str(other.pretty_name());
+                message.push_str(other.pretty_name(interp));
                 return Err(Exception::from(TypeError::new(interp, message)));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
-            message.push_str(other.pretty_name());
+            message.push_str(other.pretty_name(interp));
             message.push_str(" into Array");
             return Err(Exception::from(TypeError::new(interp, message)));
         };

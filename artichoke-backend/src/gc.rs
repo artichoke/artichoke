@@ -253,7 +253,7 @@ mod tests {
             let arena = interp.create_arena_savepoint();
             let result = interp.eval(b"'gc test'");
             let value = result.unwrap();
-            assert!(!value.is_dead());
+            assert!(!value.is_dead(&mut interp));
             arena.restore();
             interp.incremental_gc();
         }
