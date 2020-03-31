@@ -6,7 +6,6 @@ use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
-use crate::string;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
 use crate::{Artichoke, Convert, ConvertMut, Intern, TryConvert, ValueLike};
@@ -39,25 +38,28 @@ impl Value {
     }
 
     /// Return this values [Rust-mapped type tag](Ruby).
+    #[inline]
     #[must_use]
     pub fn ruby_type(&self) -> Ruby {
         types::ruby_from_mrb_value(self.value)
     }
 
     #[must_use]
-    pub fn pretty_name<'a>(&self) -> &'a str {
-        if let Ok(true) = Self::new(&self.interp, self.value).try_into::<bool>() {
-            "true"
-        } else if let Ok(false) = Self::new(&self.interp, self.value).try_into::<bool>() {
-            "false"
-        } else if let Ok(None) = Self::new(&self.interp, self.value).try_into::<Option<Self>>() {
-            "nil"
-        } else if let Ruby::Data | Ruby::Object = self.ruby_type() {
-            self.funcall::<Self>("class", &[], None)
-                .and_then(|class| class.funcall::<&'a str>("name", &[], None))
-                .unwrap_or_default()
-        } else {
-            self.ruby_type().class_name()
+    pub fn pretty_name<'a>(&self, interp: &mut Artichoke) -> &'a str {
+        let _ = interp;
+        match self.clone().try_into() {
+            Ok(Some(true)) => "true",
+            Ok(Some(false)) => "false",
+            Ok(None) => "nil",
+            Err(_) => {
+                if let Ruby::Data | Ruby::Object = self.ruby_type() {
+                    self.funcall::<Self>("class", &[], None)
+                        .and_then(|class| class.funcall::<&'a str>("name", &[], None))
+                        .unwrap_or_default()
+                } else {
+                    self.ruby_type().class_name()
+                }
+            }
         }
     }
 
@@ -72,47 +74,16 @@ impl Value {
     ///
     /// See: [mruby#4460](https://github.com/mruby/mruby/issues/4460).
     #[must_use]
+    #[inline]
     pub fn is_unreachable(&self) -> bool {
-        self.ruby_type() == Ruby::Unreachable
-    }
-
-    /// Prevent this value from being garbage collected.
-    ///
-    /// Calls [`sys::mrb_gc_protect`] on this value which adds it to the GC
-    /// arena. This object will remain in the arena until
-    /// [`ArenaIndex::restore`](crate::gc::ArenaIndex::restore) restores the
-    /// arena to an index before this call to protect.
-    pub fn protect(&self) {
-        let mrb = self.interp.0.borrow().mrb;
-        unsafe { sys::mrb_gc_protect(mrb, self.value) }
+        matches!(self.ruby_type(), Ruby::Unreachable)
     }
 
     /// Return whether this object is unreachable by any GC roots.
     #[must_use]
-    pub fn is_dead(&self) -> bool {
-        let mrb = self.interp.0.borrow().mrb;
+    pub fn is_dead(&self, interp: &mut Artichoke) -> bool {
+        let mrb = interp.0.borrow().mrb;
         unsafe { sys::mrb_sys_value_is_dead(mrb, self.value) }
-    }
-
-    /// Generate a debug representation of self.
-    ///
-    /// Format:
-    ///
-    /// ```ruby
-    /// "#{self.class.name}<#{self.inspect}>"
-    /// ```
-    ///
-    /// This function can never fail.
-    #[must_use]
-    pub fn to_s_debug(&self) -> String {
-        let inspect = self.inspect();
-        let mut debug = String::from(self.ruby_type().class_name());
-        debug.push('<');
-        // It is safe to suppress this error since the `fmt::Write` impl for
-        // `String` does not return `Err`.
-        let _ = string::format_unicode_debug_into(&mut debug, inspect.as_slice());
-        debug.push('>');
-        debug
     }
 
     pub fn implicitly_convert_to_int(&self, interp: &mut Artichoke) -> Result<Int, TypeError> {
@@ -127,28 +98,27 @@ impl Value {
             }
         } else if let Ok(true) = self.respond_to("to_int") {
             if let Ok(maybe) = self.funcall::<Self>("to_int", &[], None) {
-                let gives_pretty_name = maybe.pretty_name();
-                if let Ok(int) = maybe.try_into::<Int>() {
+                if let Ok(int) = maybe.clone().try_into::<Int>() {
                     int
                 } else {
                     let mut message = String::from("can't convert ");
-                    message.push_str(self.pretty_name());
+                    message.push_str(self.pretty_name(interp));
                     message.push_str(" to Integer (");
-                    message.push_str(self.pretty_name());
+                    message.push_str(self.pretty_name(interp));
                     message.push_str("#to_int gives ");
-                    message.push_str(gives_pretty_name);
+                    message.push_str(maybe.pretty_name(interp));
                     message.push(')');
                     return Err(TypeError::new(interp, message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(self.pretty_name());
+                message.push_str(self.pretty_name(interp));
                 message.push_str(" into Integer");
                 return Err(TypeError::new(interp, message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
-            message.push_str(self.pretty_name());
+            message.push_str(self.pretty_name(interp));
             message.push_str(" into Integer");
             return Err(TypeError::new(interp, message));
         };
@@ -160,28 +130,27 @@ impl Value {
             string
         } else if let Ok(true) = self.respond_to("to_str") {
             if let Ok(maybe) = self.funcall::<Self>("to_str", &[], None) {
-                let gives_pretty_name = maybe.pretty_name();
-                if let Ok(string) = maybe.try_into::<&[u8]>() {
+                if let Ok(string) = maybe.clone().try_into::<&[u8]>() {
                     string
                 } else {
                     let mut message = String::from("can't convert ");
-                    message.push_str(self.pretty_name());
+                    message.push_str(self.pretty_name(interp));
                     message.push_str(" to String (");
-                    message.push_str(self.pretty_name());
+                    message.push_str(self.pretty_name(interp));
                     message.push_str("#to_str gives ");
-                    message.push_str(gives_pretty_name);
+                    message.push_str(maybe.pretty_name(interp));
                     message.push(')');
                     return Err(TypeError::new(interp, message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(self.pretty_name());
+                message.push_str(self.pretty_name(interp));
                 message.push_str(" into String");
                 return Err(TypeError::new(interp, message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
-            message.push_str(self.pretty_name());
+            message.push_str(self.pretty_name(interp));
             message.push_str(" into String");
             return Err(TypeError::new(interp, message));
         };
@@ -328,18 +297,17 @@ impl Convert<Value, Value> for Artichoke {
     }
 }
 
-impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let display = self.to_s();
-        string::format_unicode_debug_into(f, display.as_slice())
-            .map_err(string::WriteError::into_inner)?;
-        Ok(())
+impl ConvertMut<Value, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Value) -> Value {
+        value
     }
 }
 
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_s_debug())
+        f.debug_struct("Value")
+            .field("type", &self.ruby_type())
+            .finish()
     }
 }
 
@@ -506,15 +474,6 @@ mod tests {
     }
 
     #[test]
-    fn debug_true() {
-        let interp = crate::interpreter().expect("init");
-
-        let value = interp.convert(true);
-        let debug = value.to_s_debug();
-        assert_eq!(debug, "Boolean<true>");
-    }
-
-    #[test]
     fn inspect_true() {
         let interp = crate::interpreter().expect("init");
 
@@ -530,15 +489,6 @@ mod tests {
         let value = interp.convert(false);
         let string = value.to_s();
         assert_eq!(string, b"false");
-    }
-
-    #[test]
-    fn debug_false() {
-        let interp = crate::interpreter().expect("init");
-
-        let value = interp.convert(false);
-        let debug = value.to_s_debug();
-        assert_eq!(debug, "Boolean<false>");
     }
 
     #[test]
@@ -560,15 +510,6 @@ mod tests {
     }
 
     #[test]
-    fn debug_nil() {
-        let interp = crate::interpreter().expect("init");
-
-        let value = interp.convert(None::<Value>);
-        let debug = value.to_s_debug();
-        assert_eq!(debug, "NilClass<nil>");
-    }
-
-    #[test]
     fn inspect_nil() {
         let interp = crate::interpreter().expect("init");
 
@@ -584,15 +525,6 @@ mod tests {
         let value = Convert::<_, Value>::convert(&interp, 255);
         let string = value.to_s();
         assert_eq!(string, b"255");
-    }
-
-    #[test]
-    fn debug_fixnum() {
-        let interp = crate::interpreter().expect("init");
-
-        let value = Convert::<_, Value>::convert(&interp, 255);
-        let debug = value.to_s_debug();
-        assert_eq!(debug, "Fixnum<255>");
     }
 
     #[test]
@@ -614,15 +546,6 @@ mod tests {
     }
 
     #[test]
-    fn debug_string() {
-        let mut interp = crate::interpreter().expect("init");
-
-        let value = interp.convert_mut("interstate");
-        let debug = value.to_s_debug();
-        assert_eq!(debug, r#"String<\"interstate\">"#);
-    }
-
-    #[test]
     fn inspect_string() {
         let mut interp = crate::interpreter().expect("init");
 
@@ -641,15 +564,6 @@ mod tests {
     }
 
     #[test]
-    fn debug_empty_string() {
-        let mut interp = crate::interpreter().expect("init");
-
-        let value = interp.convert_mut("");
-        let debug = value.to_s_debug();
-        assert_eq!(debug, r#"String<\"\">"#);
-    }
-
-    #[test]
     fn inspect_empty_string() {
         let mut interp = crate::interpreter().expect("init");
 
@@ -663,16 +577,16 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         let arena = interp.create_arena_savepoint();
         let live = interp.eval(b"'dead'").expect("value");
-        assert!(!live.is_dead());
+        assert!(!live.is_dead(&mut interp));
         let dead = live;
         let live = interp.eval(b"'live'").expect("value");
         arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
-        assert!(dead.is_dead());
+        assert!(dead.is_dead(&mut interp));
         // the result of the most recent eval is always live even after a full
         // garbage collection
-        assert!(!live.is_dead());
+        assert!(!live.is_dead(&mut interp));
     }
 
     #[test]
@@ -680,20 +594,20 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         let arena = interp.create_arena_savepoint();
         let live = interp.eval(b"27").expect("value");
-        assert!(!live.is_dead());
+        assert!(!live.is_dead(&mut interp));
         let immediate = live;
         let live = interp.eval(b"64").expect("value");
         arena.restore();
         interp.full_gc();
         // immediate objects are never dead
-        assert!(!immediate.is_dead());
+        assert!(!immediate.is_dead(&mut interp));
         // the result of the most recent eval is always live even after a full
         // garbage collection
-        assert!(!live.is_dead());
+        assert!(!live.is_dead(&mut interp));
         // Fixnums are immediate even if they are created directly without an
         // interpreter.
         let fixnum = Convert::<_, Value>::convert(&interp, 99);
-        assert!(!fixnum.is_dead());
+        assert!(!fixnum.is_dead(&mut interp));
     }
 
     #[test]

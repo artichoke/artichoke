@@ -70,7 +70,11 @@ pub fn pop(interp: &Artichoke, ary: Value) -> Result<Value, Exception> {
     result
 }
 
-pub fn concat(interp: &Artichoke, ary: Value, other: Option<Value>) -> Result<Value, Exception> {
+pub fn concat(
+    interp: &mut Artichoke,
+    ary: Value,
+    other: Option<Value>,
+) -> Result<Value, Exception> {
     if ary.is_frozen() {
         return Err(Exception::from(FrozenError::new(
             interp,

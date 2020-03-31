@@ -69,16 +69,16 @@ end
         || interp.clone().full_gc(),
     );
 
-    // Value::to_s_debug
+    // Value::inspect
     let interp = artichoke_backend::interpreter().expect("init");
-    let expected = format!(r#"String<\"{}\">"#, "a".repeat(1024 * 1024));
-    leak::Detector::new("to_s_debug", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
+    let expected = format!(r#""{}""#, "a".repeat(1024 * 1024)).into_bytes();
+    leak::Detector::new("inspect", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
         |_| {
             let mut interp = interp.clone();
             let arena = interp.create_arena_savepoint();
             let result = interp.eval(b"'a' * 1024 * 1024").expect("eval");
             arena.restore();
-            assert_eq!(result.to_s_debug(), expected);
+            assert_eq!(result.inspect(), expected);
             drop(result);
             interp.incremental_gc();
         },

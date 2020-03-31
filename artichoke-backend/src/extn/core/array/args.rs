@@ -40,7 +40,7 @@ pub fn element_reference(
             Ok(None) => Ok(ElementReference::Empty),
             Err(_) => {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(elem.pretty_name());
+                message.push_str(elem.pretty_name(interp));
                 message.push_str(" into Integer");
                 Err(Exception::from(TypeError::new(interp, message)))
             }
@@ -156,7 +156,7 @@ pub fn element_assignment(
             }
             Err(_) => {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(first.pretty_name());
+                message.push_str(first.pretty_name(interp));
                 message.push_str(" into Integer");
                 Err(Exception::from(TypeError::new(interp, message)))
             }
