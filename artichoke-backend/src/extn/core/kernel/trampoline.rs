@@ -8,7 +8,10 @@ pub fn integer(
     arg: Value,
     base: Option<Value>,
 ) -> Result<Value, Exception> {
-    kernel::integer::method(interp, arg, base)
+    let arg = interp.try_convert_mut(&arg)?;
+    let base = interp.try_convert_mut(base)?;
+    let integer = kernel::integer::method(interp, arg, base)?;
+    Ok(interp.convert(integer))
 }
 
 pub fn load(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> {

@@ -1,5 +1,3 @@
-use crate::extn::prelude::*;
-
 pub mod integer;
 pub mod mruby;
 pub mod require;
