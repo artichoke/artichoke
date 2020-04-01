@@ -17,18 +17,18 @@ pub type Strategy = Null;
 pub trait Output: Send + Sync {
     fn as_debug(&self) -> &dyn fmt::Debug;
 
-    fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()>;
+    fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()>;
 
-    fn write_stderr(&mut self, bytes: &[u8]) -> io::Result<()>;
+    fn write_stderr<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()>;
 
-    fn print(&mut self, bytes: &[u8]) {
+    fn print<T: AsRef<[u8]>>(&mut self, bytes: T) {
         let _ = self.write_stdout(bytes);
     }
 
-    fn puts(&mut self, bytes: &[u8]) {
-        let _ = self
-            .write_stdout(bytes)
-            .and_then(|_| self.write_stdout(b"\n"));
+    fn puts<T: AsRef<[u8]>>(&mut self, bytes: T) {
+        if self.write_stdout(bytes).is_ok() {
+            let _ = self.write_stdout(b"\n");
+        }
     }
 }
 
@@ -47,12 +47,12 @@ impl Output for Process {
         self
     }
 
-    fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
-        io::stdout().write_all(bytes)
+    fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
+        io::stdout().write_all(bytes.as_ref())
     }
 
-    fn write_stderr(&mut self, bytes: &[u8]) -> io::Result<()> {
-        io::stderr().write_all(bytes)
+    fn write_stderr<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
+        io::stderr().write_all(bytes.as_ref())
     }
 }
 
@@ -89,12 +89,14 @@ impl Output for Captured {
         self
     }
 
-    fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
-        self.stdout.write_all(bytes)
+    fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
+        self.stdout.extend_from_slice(bytes.as_ref());
+        Ok(())
     }
 
-    fn write_stderr(&mut self, bytes: &[u8]) -> io::Result<()> {
-        self.stderr.write_all(bytes)
+    fn write_stderr<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
+        self.stderr.extend_from_slice(bytes.as_ref());
+        Ok(())
     }
 }
 
@@ -103,12 +105,14 @@ impl<'a> Output for &'a mut Captured {
         self
     }
 
-    fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
-        self.stdout.write_all(bytes)
+    fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
+        self.stdout.extend_from_slice(bytes.as_ref());
+        Ok(())
     }
 
-    fn write_stderr(&mut self, bytes: &[u8]) -> io::Result<()> {
-        self.stderr.write_all(bytes)
+    fn write_stderr<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
+        self.stderr.extend_from_slice(bytes.as_ref());
+        Ok(())
     }
 }
 
@@ -127,12 +131,12 @@ impl Output for Null {
         self
     }
 
-    fn write_stdout(&mut self, bytes: &[u8]) -> io::Result<()> {
+    fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
         let _ = bytes;
         Ok(())
     }
 
-    fn write_stderr(&mut self, bytes: &[u8]) -> io::Result<()> {
+    fn write_stderr<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
         let _ = bytes;
         Ok(())
     }
