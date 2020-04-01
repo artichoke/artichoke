@@ -11,6 +11,7 @@ pub struct Radix(NonZeroU32);
 
 impl Radix {
     #[inline]
+    #[must_use]
     pub fn as_u32(self) -> u32 {
         self.0.get()
     }
@@ -41,14 +42,17 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(clippy::module_name_repetitions)]
 pub struct IntegerString<'a>(&'a str);
 
 impl<'a> IntegerString<'a> {
     #[inline]
+    #[must_use]
     pub fn new(string: &'a str) -> Self {
         Self(string)
     }
 
+    #[must_use]
     pub fn from_slice(arg: &'a [u8]) -> Option<Self> {
         if arg.find_byte(b'\0').is_some() {
             return None;
@@ -61,11 +65,13 @@ impl<'a> IntegerString<'a> {
     }
 
     #[inline]
+    #[must_use]
     pub fn inner(self) -> &'a str {
         self.0
     }
 
     #[inline]
+    #[must_use]
     pub fn as_bytes(self) -> &'a [u8] {
         self.0.as_bytes()
     }
@@ -85,7 +91,7 @@ impl<'a> TryConvertMut<&'a Value, IntegerString<'a>> for Artichoke {
             Ok(converted)
         } else {
             let mut message = String::from(r#"invalid value for Integer(): ""#);
-            string::format_unicode_debug_into(&mut message, arg.into())?;
+            string::format_unicode_debug_into(&mut message, arg)?;
             message.push('"');
             Err(ArgumentError::new(self, message).into())
         }
