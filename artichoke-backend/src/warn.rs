@@ -14,16 +14,21 @@ impl Warn for Artichoke {
     fn warn(&mut self, message: &[u8]) -> Result<(), Self::Error> {
         {
             let mut borrow = self.0.borrow_mut();
-            borrow
-                .output
-                .write_stderr(b"rb warning: ")
-                .and_then(|_| borrow.output.write_stderr(message))
-                .and_then(|_| borrow.output.write_stderr(b"\n"))
-                .map_err(|err| {
-                    let mut message = String::from("Failed to write warning to $stderr: ");
-                    let _ = write!(&mut message, "{}", err);
-                    IOError::new(self, message)
-                })?
+            if let Err(err) = borrow.output.write_stderr(b"rb warning: ") {
+                let mut message = String::from("Failed to write warning to $stderr: ");
+                let _ = write!(&mut message, "{}", err);
+                return Err(IOError::new(self, message).into());
+            }
+            if let Err(err) = borrow.output.write_stderr(message) {
+                let mut message = String::from("Failed to write warning to $stderr: ");
+                let _ = write!(&mut message, "{}", err);
+                return Err(IOError::new(self, message).into());
+            }
+            if let Err(err) = borrow.output.write_stderr(b"\n") {
+                let mut message = String::from("Failed to write warning to $stderr: ");
+                let _ = write!(&mut message, "{}", err);
+                return Err(IOError::new(self, message).into());
+            }
         }
         let warning = {
             let borrow = self.0.borrow();
