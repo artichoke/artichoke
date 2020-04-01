@@ -111,24 +111,24 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                 };
                 if let Ok(true) = y.funcall("is_a?", &[class_of_numeric], None) {
                     if y.respond_to("coerce")? {
-                        let mut coerced = y
-                            .funcall::<Vec<Value>>("coerce", &[x], None)
-                            .map_err(|_| TypeError::new(interp, "coerce must return [x, y]"))?
-                            .into_iter();
-                        let y = coerced.next();
-                        let x = coerced.next();
+                        let coerced = y.funcall::<Value>("coerce", &[x], None)?;
+                        let coerced: Vec<Value> = interp
+                            .try_convert(coerced)
+                            .map_err(|_| TypeError::new(interp, "coerce must return [x, y]"))?;
+                        let mut coerced = coerced.into_iter();
+                        let y = coerced
+                            .next()
+                            .ok_or_else(|| TypeError::new(interp, "coerce must return [x, y]"))?;
+                        let x = coerced
+                            .next()
+                            .ok_or_else(|| TypeError::new(interp, "coerce must return [x, y]"))?;
                         if coerced.next().is_some() {
                             Err(Exception::from(TypeError::new(
                                 interp,
                                 "coerce must return [x, y]",
                             )))
-                        } else if let (Some(x), Some(y)) = (x, y) {
-                            do_coerce(interp, x, y, depth + 1)
                         } else {
-                            Err(Exception::from(TypeError::new(
-                                interp,
-                                "coerce must return [x, y]",
-                            )))
+                            do_coerce(interp, x, y, depth + 1)
                         }
                     } else {
                         let mut message = String::from("can't convert ");
