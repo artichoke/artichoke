@@ -48,7 +48,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     numeric::init(interp)?;
     integer::mruby::init(interp)?;
     float::init(interp)?;
-    kernel::init(interp)?;
+    kernel::mruby::init(interp)?;
     matchdata::mruby::init(interp)?;
     math::mruby::init(interp)?;
     method::init(interp)?;

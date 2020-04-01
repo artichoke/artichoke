@@ -1,4 +1,5 @@
 use crate::extn::core::kernel;
+use crate::extn::core::kernel::require::RelativePath;
 use crate::extn::prelude::*;
 use crate::state::output::Output;
 
@@ -55,5 +56,6 @@ pub fn require(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> 
 }
 
 pub fn require_relative(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> {
-    kernel::require::require_relative(interp, path)
+    let relative_base = RelativePath::try_from_interp(interp)?;
+    kernel::require::require(interp, path, Some(relative_base))
 }

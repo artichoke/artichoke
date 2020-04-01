@@ -66,7 +66,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
 pub fn require(
     interp: &mut Artichoke,
     filename: Value,
-    base: Option<&Path>,
+    base: Option<RelativePath>,
 ) -> Result<Value, Exception> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
@@ -83,7 +83,7 @@ pub fn require(
         with_rb_ext.extend_from_slice(filename);
         with_rb_ext.extend_from_slice(b".rb");
         let rb_ext = ffi::bytes_to_os_str(with_rb_ext.as_slice())?;
-        let path = if let Some(base) = base {
+        let path = if let Some(ref base) = base {
             base.join(rb_ext)
         } else {
             Path::new(RUBY_LOAD_PATH).join(rb_ext)
@@ -138,7 +138,7 @@ pub fn require(
             );
             return Ok(interp.convert(true));
         } else {
-            let path = if let Some(base) = base {
+            let path = if let Some(ref base) = base {
                 base.join(&file)
             } else {
                 Path::new(RUBY_LOAD_PATH).join(&file)
@@ -195,7 +195,7 @@ pub fn require(
             }
         }
     }
-    let path = if let Some(base) = base {
+    let path = if let Some(ref base) = base {
         base.join(&file)
     } else {
         Path::new(RUBY_LOAD_PATH).join(&file)
@@ -249,22 +249,36 @@ pub fn require(
     Ok(interp.convert(true))
 }
 
-#[allow(clippy::module_name_repetitions)]
-pub fn require_relative(interp: &mut Artichoke, file: Value) -> Result<Value, Exception> {
-    let base = {
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct RelativePath(PathBuf);
+
+impl RelativePath {
+    pub fn new<T>(path: T) -> Self
+    where
+        T: Into<PathBuf>,
+    {
+        Self(path.into())
+    }
+
+    pub fn join<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+        self.0.join(path.as_ref())
+    }
+
+    pub fn try_from_interp(interp: &mut Artichoke) -> Result<Self, Exception> {
         let borrow = interp.0.borrow();
         // TODO(GH-468): Use `Parser::peek_context`.
         let context = borrow
             .parser
             .peek_context()
             .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
-        if let Some(base) = Path::new(ffi::bytes_to_os_str(context.filename())?).parent() {
-            base.to_owned()
+        let path = ffi::bytes_to_os_str(context.filename())?;
+        let path = Path::new(path);
+        if let Some(base) = path.parent() {
+            Ok(Self::new(base))
         } else {
-            PathBuf::from("/")
+            Ok(Self::new("/"))
         }
-    };
-    require(interp, file, Some(&base))
+    }
 }
 
 fn load_error(interp: &Artichoke, filename: &[u8]) -> Result<LoadError, Exception> {
