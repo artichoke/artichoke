@@ -162,7 +162,7 @@ pub fn string(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> 
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
     let mut string = interp.convert_mut(borrow.string());
-    string.freeze()?;
+    string.freeze(interp)?;
     Ok(string)
 }
 

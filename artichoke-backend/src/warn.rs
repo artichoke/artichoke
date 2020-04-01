@@ -39,7 +39,7 @@ impl Warn for Artichoke {
                 .ok_or_else(|| NotDefinedError::module("Warning"))?
         };
         let message = self.convert_mut(message);
-        let _ = warning.funcall::<Value>("warn", &[message], None)?;
+        let _ = warning.funcall::<Value>(self, "warn", &[message], None)?;
         Ok(())
     }
 }

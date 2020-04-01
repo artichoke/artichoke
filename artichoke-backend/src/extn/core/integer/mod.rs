@@ -82,10 +82,10 @@ impl Integer {
     ) -> Result<Vec<u8>, Exception> {
         if let Some(encoding) = encoding {
             let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
-            message.extend(encoding.inspect());
+            message.extend(encoding.inspect(interp));
             message.extend(b") not supported");
             Err(Exception::from(NotImplementedError::new_raw(
-                &interp, message,
+                interp, message,
             )))
         } else {
             // When no encoding is supplied, MRI assumes the encoding is
@@ -145,7 +145,7 @@ impl Integer {
     pub fn div(self, interp: &mut Artichoke, denominator: Value) -> Result<Outcome, Exception> {
         match denominator.ruby_type() {
             Ruby::Fixnum => {
-                let denom = denominator.try_into::<Int>()?;
+                let denom = denominator.try_into::<Int>(interp)?;
                 let value = self.as_i64();
                 if denom == 0 {
                     Err(Exception::from(ZeroDivisionError::new(
@@ -159,7 +159,7 @@ impl Integer {
                 }
             }
             Ruby::Float => {
-                let denom = denominator.try_into::<Float>()?;
+                let denom = denominator.try_into::<Float>(interp)?;
                 Ok((self.as_f64() / denom).into())
             }
             _ => {

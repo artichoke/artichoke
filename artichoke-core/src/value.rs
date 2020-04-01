@@ -32,6 +32,7 @@ where
     /// If a [`TryConvert`] conversion fails, then an error is returned.
     fn funcall<T>(
         &self,
+        interp: &mut Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
@@ -44,19 +45,22 @@ where
     /// # Errors
     ///
     /// If a [`TryConvert`] conversion fails, then an error is returned.
-    fn try_into<T>(self) -> Result<T, Self::Error>
+    fn try_into<T>(self, interp: &mut Self::Artichoke) -> Result<T, Self::Error>
     where
-        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>;
+        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
+    {
+        interp.try_convert(self)
+    }
 
     /// Call `#freeze` on this [`Value`].
     ///
     /// # Errors
     ///
     /// If an exception is raised on the interpreter, then an error is returned.
-    fn freeze(&mut self) -> Result<(), Self::Error>;
+    fn freeze(&mut self, interp: &mut Self::Artichoke) -> Result<(), Self::Error>;
 
     /// Call `#frozen?` on this [`Value`].
-    fn is_frozen(&self) -> bool;
+    fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool;
 
     /// Whether `self` is `nil`
     fn is_nil(&self) -> bool;
@@ -68,15 +72,15 @@ where
     /// # Errors
     ///
     /// If an exception is raised on the interpreter, then an error is returned.
-    fn respond_to(&self, method: &str) -> Result<bool, Self::Error>;
+    fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error>;
 
     /// Call `#inspect` on this [`Value`].
     ///
     /// This function can never fail.
-    fn inspect(&self) -> Vec<u8>;
+    fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8>;
 
     /// Call `#to_s` on this [`Value`].
     ///
     /// This function can never fail.
-    fn to_s(&self) -> Vec<u8>;
+    fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8>;
 }

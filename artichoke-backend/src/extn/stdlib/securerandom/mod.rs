@@ -72,17 +72,17 @@ impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
         if let Some(max) = max {
             match max.ruby_type() {
                 Ruby::Fixnum => {
-                    let max = max.try_into()?;
+                    let max = max.try_into(self)?;
                     Ok(RandomNumberMax::Integer(max))
                 }
                 Ruby::Float => {
-                    let max = max.try_into()?;
+                    let max = max.try_into(self)?;
                     Ok(RandomNumberMax::Float(max))
                 }
                 _ => {
                     let max = max.implicitly_convert_to_int(self).map_err(|_| {
                         let mut message = b"invalid argument - ".to_vec();
-                        message.extend(max.inspect().as_slice());
+                        message.extend(max.inspect(self).as_slice());
                         ArgumentError::new_raw(self, message)
                     })?;
                     Ok(RandomNumberMax::Integer(max))

@@ -35,9 +35,10 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 }
 
 unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
-    let interp = unwrap_interpreter!(mrb);
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::pop(&interp, array);
+    let result = array::trampoline::pop(&mut interp, array);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -126,9 +127,9 @@ unsafe extern "C" fn ary_reverse_bang(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
-    let result = array::trampoline::reverse_bang(&interp, array);
+    let result = array::trampoline::reverse_bang(&mut interp, array);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

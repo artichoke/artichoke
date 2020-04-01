@@ -2,8 +2,8 @@ use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::MrbGarbageCollection;
 
-pub fn clear(interp: &Artichoke, ary: Value) -> Result<Value, Exception> {
-    if ary.is_frozen() {
+pub fn clear(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+    if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -33,7 +33,7 @@ pub fn element_assignment(
     second: Value,
     third: Option<Value>,
 ) -> Result<Value, Exception> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -53,8 +53,8 @@ pub fn element_assignment(
     result
 }
 
-pub fn pop(interp: &Artichoke, ary: Value) -> Result<Value, Exception> {
-    if ary.is_frozen() {
+pub fn pop(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+    if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -75,7 +75,7 @@ pub fn concat(
     ary: Value,
     other: Option<Value>,
 ) -> Result<Value, Exception> {
-    if ary.is_frozen() {
+    if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -93,8 +93,8 @@ pub fn concat(
     Ok(ary)
 }
 
-pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Exception> {
-    if ary.is_frozen() {
+pub fn push(interp: &mut Artichoke, ary: Value, value: Value) -> Result<Value, Exception> {
+    if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
@@ -111,8 +111,8 @@ pub fn push(interp: &Artichoke, ary: Value, value: Value) -> Result<Value, Excep
     Ok(ary)
 }
 
-pub fn reverse_bang(interp: &Artichoke, ary: Value) -> Result<Value, Exception> {
-    if ary.is_frozen() {
+pub fn reverse_bang(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+    if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
