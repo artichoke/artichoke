@@ -113,9 +113,9 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                         .value(interp)
                         .ok_or_else(|| NotDefinedError::class("Numeric"))?
                 };
-                if let Ok(true) = y.funcall("is_a?", &[class_of_numeric], None) {
-                    if y.respond_to("coerce")? {
-                        let coerced = y.funcall::<Value>("coerce", &[x], None)?;
+                if let Ok(true) = y.funcall(interp, "is_a?", &[class_of_numeric], None) {
+                    if y.respond_to(interp, "coerce")? {
+                        let coerced = y.funcall::<Value>(interp, "coerce", &[x], None)?;
                         let coerced: Vec<Value> = interp
                             .try_convert(coerced)
                             .map_err(|_| TypeError::new(interp, "coerce must return [x, y]"))?;

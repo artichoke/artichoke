@@ -200,14 +200,9 @@ impl core::value::Value for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = {
-            // This is a hack until Value properly supports interpreter
-            // mutability.
-            let mut interp = self.interp.clone();
-            interp.intern_symbol(func.as_bytes().to_vec())
-        };
+        let func = interp.intern_symbol(func.as_bytes().to_vec());
         let mrb = interp.0.borrow_mut().mrb;
-        let _arena = self.interp.create_arena_savepoint();
+        let _arena = interp.create_arena_savepoint();
         let result = unsafe {
             protect::funcall(
                 mrb,
@@ -219,7 +214,7 @@ impl core::value::Value for Value {
         };
         match result {
             Ok(value) => {
-                let value = Self::new(&self.interp, value);
+                let value = Self::new(interp, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
