@@ -4,7 +4,7 @@ use artichoke_backend::Artichoke;
 
 #[derive(Debug)]
 pub struct Detector<'a> {
-    interp: &'a mut Artichoke
+    interp: &'a mut Artichoke,
     test: String,
     iterations: usize,
     tolerance: i64, // in bytes
@@ -35,15 +35,15 @@ impl<'a> Detector<'a> {
 
     pub fn check_leaks<F>(self, execute: F)
     where
-        F: FnMut(&'a mut Artichoke) -> (),
+        F: for<'b> FnMut(&'b mut Artichoke) -> (),
     {
         self.check_leaks_with_finalizer(execute, |_| {});
     }
 
     pub fn check_leaks_with_finalizer<F, G>(self, mut execute: F, finalize: G)
     where
-        F: FnMut(&'a mut Artichoke) -> (),
-        G: FnOnce(&'a mut Artichoke) -> (),
+        F: for<'b> FnMut(&'b mut Artichoke) -> (),
+        G: for<'b> FnOnce(&'b mut Artichoke) -> (),
     {
         let start_mem = resident_memsize();
         for _ in 0..self.iterations {

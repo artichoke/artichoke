@@ -27,12 +27,15 @@ fn funcall_arena() {
     let mut interp = artichoke_backend::interpreter().expect("init");
     let s = interp.convert_mut("a".repeat(1024 * 1024));
 
-    leak::Detector::new("ValueLike::funcall", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
-        let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
-        // we have to call a function that calls into the Ruby VM, so we can't
-        // just use `to_s`.
-        let inspect = s.funcall::<String>("inspect", &[], None).unwrap();
-        assert_eq!(inspect, expected);
-        interp.incremental_gc();
-    });
+    leak::Detector::new("ValueLike::funcall", &mut interp)
+        .with_iterations(ITERATIONS)
+        .with_tolerance(LEAK_TOLERANCE)
+        .check_leaks(|interp| {
+            let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
+            // we have to call a function that calls into the Ruby VM, so we
+            // can't just use `to_s`.
+            let inspect = s.funcall::<String>(interp, "inspect", &[], None).unwrap();
+            assert_eq!(inspect, expected);
+            interp.incremental_gc();
+        });
 }

@@ -21,8 +21,7 @@ extern crate artichoke_backend;
 use artichoke_backend::class;
 use artichoke_backend::convert::RustBackedValue;
 use artichoke_backend::def;
-use artichoke_backend::exception::{self, Exception, RubyException};
-use artichoke_backend::extn::core::exception::Fatal;
+use artichoke_backend::exception::{self, Exception};
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, Eval, File, LoadSources, ValueLike};
@@ -49,19 +48,11 @@ impl Container {
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let inner = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let inner = Value::new(&interp, inner);
-        let inner = inner.try_into::<&str>().unwrap_or_else(|_| "").to_owned();
+        let inner = inner.try_into::<String>(&mut interp).unwrap_or_default();
         let container = Self { inner };
-        let result: Result<Value, Box<dyn RubyException>> =
-            if let Ok(result) = container.try_into_ruby(&interp, Some(slf)) {
-                Ok(result)
-            } else {
-                Err(Box::new(Fatal::new(
-                    &interp,
-                    "Unable to intialize Container Ruby Value",
-                )))
-            };
+        let result = container.try_into_ruby(&interp, Some(slf));
         match result {
             Ok(value) => value.inner(),
             Err(exception) => exception::raise(interp, exception),
@@ -87,15 +78,18 @@ impl File for Container {
 
 #[test]
 fn rust_backed_mrb_value_smart_pointer_leak() {
-    leak::Detector::new("smart pointer", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
-        let mut interp = artichoke_backend::interpreter().expect("init");
-        interp
-            .def_file_for_type::<Container>(b"container")
-            .expect("def file");
+    // dummy interp, we will instantiate a fresh interp for each detector loop.
+    let mut interp = artichoke_backend::interpreter().unwrap();
+    leak::Detector::new("smart pointer", &mut interp)
+        .with_iterations(ITERATIONS)
+        .with_tolerance(LEAK_TOLERANCE)
+        .check_leaks(|_| {
+            let mut interp = artichoke_backend::interpreter().unwrap();
+            interp.def_file_for_type::<Container>(b"container").unwrap();
 
-        let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
-        let result = interp.eval(code);
-        assert_eq!(true, result.is_ok());
-        interp.close();
-    });
+            let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
+            let result = interp.eval(code);
+            assert_eq!(true, result.is_ok());
+            interp.close();
+        });
 }
