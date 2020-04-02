@@ -447,120 +447,120 @@ mod tests {
 
     #[test]
     fn to_s_true() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(true);
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"true");
     }
 
     #[test]
     fn inspect_true() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(true);
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"true");
     }
 
     #[test]
     fn to_s_false() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(false);
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"false");
     }
 
     #[test]
     fn inspect_false() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(false);
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"false");
     }
 
     #[test]
     fn to_s_nil() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(None::<Value>);
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"");
     }
 
     #[test]
     fn inspect_nil() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(None::<Value>);
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"nil");
     }
 
     #[test]
     fn to_s_fixnum() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = Convert::<_, Value>::convert(&interp, 255);
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"255");
     }
 
     #[test]
     fn inspect_fixnum() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = Convert::<_, Value>::convert(&interp, 255);
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"255");
     }
 
     #[test]
     fn to_s_string() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert_mut("interstate");
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"interstate");
     }
 
     #[test]
     fn inspect_string() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert_mut("interstate");
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, br#""interstate""#);
     }
 
     #[test]
     fn to_s_empty_string() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert_mut("");
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"");
     }
 
     #[test]
     fn inspect_empty_string() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert_mut("");
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, br#""""#);
     }
 
     #[test]
     fn is_dead() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"'dead'").expect("value");
+        let live = interp.eval(b"'dead'").unwrap();
         assert!(!live.is_dead(&mut interp));
         let dead = live;
-        let live = interp.eval(b"'live'").expect("value");
+        let live = interp.eval(b"'live'").unwrap();
         arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
@@ -572,12 +572,12 @@ mod tests {
 
     #[test]
     fn immediate_is_dead() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"27").expect("value");
+        let live = interp.eval(b"27").unwrap();
         assert!(!live.is_dead(&mut interp));
         let immediate = live;
-        let live = interp.eval(b"64").expect("value");
+        let live = interp.eval(b"64").unwrap();
         arena.restore();
         interp.full_gc();
         // immediate objects are never dead
@@ -593,44 +593,48 @@ mod tests {
 
     #[test]
     fn funcall() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
-        assert!(nil.funcall::<bool>("nil?", &[], None).expect("nil?"));
+        let nil_is_nil = nil.funcall::<bool>(&mut interp, "nil?", &[], None).unwrap();
+        assert!(nil_is_nil);
         let s = interp.convert_mut("foo");
-        assert!(!s.funcall::<bool>("nil?", &[], None).expect("nil?"));
+        let string_is_nil = s.funcall::<bool>(&mut interp, "nil?", &[], None).unwrap();
+        assert!(!string_is_nil);
         let delim = interp.convert_mut("");
         let split = s
-            .funcall::<Vec<&str>>("split", &[delim], None)
-            .expect("split");
+            .funcall::<Vec<&str>>(&mut interp, "split", &[delim], None)
+            .unwrap();
         assert_eq!(split, vec!["f", "o", "o"])
     }
 
     #[test]
     fn funcall_different_types() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
-        let eql = nil.funcall::<bool>("==", &[s], None).unwrap();
+        let eql = nil.funcall::<bool>(&mut interp, "==", &[s], None).unwrap();
         assert!(!eql);
     }
 
     #[test]
     fn funcall_type_error() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
-        let err = s.funcall::<String>("+", &[nil], None).unwrap_err();
+        let err = s
+            .funcall::<String>(&mut interp, "+", &[nil], None)
+            .unwrap_err();
         assert_eq!("TypeError", err.name().as_str());
         assert_eq!(&b"nil cannot be converted to String"[..], err.message());
     }
 
     #[test]
     fn funcall_method_not_exists() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
         let err = nil
-            .funcall::<bool>("garbage_method_name", &[s], None)
+            .funcall::<bool>(&mut interp, "garbage_method_name", &[s], None)
             .unwrap_err();
         assert_eq!("NoMethodError", err.name().as_str());
         assert_eq!(
