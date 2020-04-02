@@ -4,6 +4,7 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
+use bstr::BString;
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
 use std::convert::TryFrom;
@@ -144,7 +145,7 @@ impl Regexp {
     #[must_use]
     pub fn lazy(pattern: Vec<u8>) -> Self {
         let literal_config = Config {
-            pattern,
+            pattern: pattern.into(),
             options: Options::default(),
         };
         let backend = Box::new(Lazy::new(literal_config));
@@ -170,13 +171,16 @@ impl Regexp {
         } else {
             let bytes = pattern.implicitly_convert_to_string(interp)?;
             Config {
-                pattern: bytes.to_vec(),
+                pattern: bytes.into(),
                 options: options.unwrap_or_default(),
             }
         };
         let (pattern, options) =
             opts::parse_pattern(literal_config.pattern.as_slice(), literal_config.options);
-        let derived_config = Config { pattern, options };
+        let derived_config = Config {
+            pattern: pattern.into(),
+            options,
+        };
         Self::new(
             interp,
             literal_config,
@@ -200,7 +204,7 @@ impl Regexp {
     pub fn union(interp: &mut Artichoke, patterns: Vec<Value>) -> Result<Self, Exception> {
         fn extract_pattern(interp: &mut Artichoke, value: &Value) -> Result<Vec<u8>, Exception> {
             if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &value) } {
-                Ok(regexp.borrow().0.derived_config().pattern.clone())
+                Ok(regexp.borrow().0.derived_config().pattern.clone().into())
             } else {
                 let bytes = value.implicitly_convert_to_string(interp)?;
                 let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
@@ -241,10 +245,13 @@ impl Regexp {
 
         let derived_config = {
             let (pattern, options) = opts::parse_pattern(pattern.as_slice(), Options::default());
-            Config { pattern, options }
+            Config {
+                pattern: pattern.into(),
+                options,
+            }
         };
         let literal_config = Config {
-            pattern,
+            pattern: pattern.into(),
             options: Options::default(),
         };
         Self::new(interp, literal_config, derived_config, Encoding::default())
@@ -421,7 +428,7 @@ impl From<Box<dyn RegexpType>> for Regexp {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Config {
-    pattern: Vec<u8>,
+    pattern: BString,
     options: opts::Options,
 }
 

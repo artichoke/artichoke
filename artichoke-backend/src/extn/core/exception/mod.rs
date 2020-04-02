@@ -265,7 +265,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 macro_rules! ruby_exception_impl {
     ($exception:ident) => {
-        #[derive(Debug, Clone)]
+        #[derive(Clone)]
         pub struct $exception {
             message: Cow<'static, [u8]>,
         }
@@ -342,6 +342,14 @@ macro_rules! ruby_exception_impl {
                 let spec = borrow.class_spec::<Self>()?;
                 let value = spec.new_instance(interp, &[message])?;
                 Some(value.inner())
+            }
+        }
+
+        impl fmt::Debug for $exception {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.debug_struct(stringify!($exception))
+                    .field("message", &bstr::B(self.message.as_ref()))
+                    .finish()
             }
         }
 

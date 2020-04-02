@@ -38,7 +38,7 @@ pub fn last_error(interp: &Artichoke, exception: Value) -> Result<Exception, Exc
     let classname = class.funcall::<&str>("name", &[], None)?;
     let message = exception.funcall::<&[u8]>("message", &[], None)?;
 
-    let exception = CaughtException::new(exception, classname, message);
+    let exception = CaughtException::new(exception, String::from(classname), message.to_vec());
     debug!("Extracted exception from interpreter: {}", exception);
     Ok(Exception::from(exception))
 }

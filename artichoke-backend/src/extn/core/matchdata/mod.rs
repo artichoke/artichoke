@@ -9,6 +9,7 @@
 //! [matchdata]: https://ruby-doc.org/core-2.6.3/MatchData.html
 //! [rubyspec]: https://github.com/ruby/spec
 
+use bstr::BString;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::ops::{Bound, RangeBounds};
@@ -118,7 +119,7 @@ impl ConvertMut<CaptureMatch, Value> for Artichoke {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct MatchData {
-    haystack: Vec<u8>,
+    haystack: BString,
     regexp: Regexp,
     region: Region,
 }
@@ -137,7 +138,7 @@ impl MatchData {
     {
         let region = Region::from_range(bounds);
         Self {
-            haystack,
+            haystack: haystack.into(),
             regexp,
             region,
         }
