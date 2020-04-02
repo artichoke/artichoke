@@ -1,3 +1,4 @@
+use bstr::BString;
 use std::error;
 use std::fmt;
 use std::hint;
@@ -132,16 +133,16 @@ impl error::Error for &dyn RubyException {}
 pub(crate) struct CaughtException {
     value: Value,
     name: String,
-    message: Vec<u8>,
+    message: BString,
 }
 
 impl CaughtException {
     /// Construct a new `CaughtException`.
-    pub fn new(value: Value, name: &str, message: &[u8]) -> Self {
+    pub fn new(value: Value, name: String, message: Vec<u8>) -> Self {
         Self {
             value,
-            name: name.to_owned(),
-            message: message.to_vec(),
+            name,
+            message: message.into(),
         }
     }
 }

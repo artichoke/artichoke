@@ -1,3 +1,4 @@
+use bstr::BString;
 use std::fmt;
 use std::io::{self, Write};
 
@@ -58,8 +59,8 @@ impl Output for Process {
 
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Captured {
-    stdout: Vec<u8>,
-    stderr: Vec<u8>,
+    stdout: BString,
+    stderr: BString,
 }
 
 impl Captured {
