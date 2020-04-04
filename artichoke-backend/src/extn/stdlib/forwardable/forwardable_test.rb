@@ -14,7 +14,7 @@ def spec
   lookup
   reopen
   # reqires STDOUT impl
-  # object_extend
+  object_extend
   another_example
 
   true
@@ -40,7 +40,9 @@ def reopen
   raise unless r.map { |x| x * 2 } == [2, 4, 6, 8]
 end
 
-def object_extend
+def object_extend(skipped = true)
+  return if skipped
+
   my_hash = {}
   my_hash.extend Forwardable              # prepare object for delegation
   my_hash.def_delegator 'STDOUT', 'puts'  # add delegation for STDOUT.puts()
