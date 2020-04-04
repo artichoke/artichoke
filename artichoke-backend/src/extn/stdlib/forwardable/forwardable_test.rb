@@ -22,35 +22,36 @@ end
 
 def lookup
   r = RecordCollection.new
-  r.records = [4,5,6]
+  r.records = [4, 5, 6]
   raise unless r.record_number(0) == 4
 end
 
-class RecordCollection # re-open RecordCollection class
+# re-open RecordCollection class
+class RecordCollection
   def_delegators :@records, :size, :<<, :map
 end
 
 def reopen
   r = RecordCollection.new
-  r.records = [1,2,3]
+  r.records = [1, 2, 3]
   raise unless r.record_number(0) == 1
   raise unless r.size == 3
   raise unless (r << 4) == [1, 2, 3, 4]
-  raise unless r.map { |x| x * 2 }  == [2, 4, 6, 8]
+  raise unless r.map { |x| x * 2 } == [2, 4, 6, 8]
 end
 
 def object_extend
-  my_hash = Hash.new
+  my_hash = {}
   my_hash.extend Forwardable              # prepare object for delegation
-  my_hash.def_delegator "STDOUT", "puts"  # add delegation for STDOUT.puts()
-  my_hash.puts "Howdy!"
+  my_hash.def_delegator 'STDOUT', 'puts'  # add delegation for STDOUT.puts()
+  my_hash.puts 'Howdy!'
 end
 
 class Queue
   extend Forwardable
 
   def initialize
-    @q = [ ]    # prepare delegate object
+    @q = [] # prepare delegate object
   end
 
   # setup preferred interface, enq() and deq()...
@@ -67,14 +68,16 @@ def another_example
   q.push 6
 
   raise unless q.shift == 1
-  while q.size > 0
+
+  while q.size > 0 # rubocop:disable Style/ZeroLengthPredicate,Style/NumericPredicate
     result = q.deq
     expected = 6 - q.size
     raise unless result == expected
   end
 
-  q.enq "Ruby", "Perl", "Python"
-  raise unless q.first == "Ruby"
+  q.enq 'Ruby', 'Perl', 'Python'
+  raise unless q.first == 'Ruby'
+
   q.clear
   raise unless q.first.nil?
 end

@@ -46,6 +46,7 @@ def add_custom_urls
     'RSYNC' => URI::RSYNC
   }
   raise unless URI.scheme_list == expected_scheme_list
+
   uri = URI('rsync://rsync.foo.com')
   raise unless uri.inspect == '#<URI::RSYNC rsync://rsync.foo.com>'
 end
@@ -91,13 +92,13 @@ def uri_regexp(skipped = true)
   return if skipped
 
   # extract first URI from html_string
-  html_string.slice(URI.regexp)
+  html_string.slice(URI::DEFAULT_PARSER.make_regexp)
 
   # remove ftp URIs
   html_string.sub(URI.regexp(['ftp']), '')
 
   # You should not rely on the number of parentheses
-  html_string.scan(URI.regexp) do |*matches|
+  html_string.scan(URI::DEFAULT_PARSER.make_regexp) do |*_matches|
     p $&
   end
 end
