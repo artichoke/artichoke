@@ -34,6 +34,8 @@ def spec
   test_skip_until
   test_unscan
   test_values_at
+
+  true
 end
 
 def test_strscan
@@ -334,3 +336,5 @@ def test_values_at
   raise unless s.scan(/(\w+) (\w+) (\d+) /).nil?
   raise unless s.values_at(0, -1, 5, 2).nil?
 end
+
+spec if $PROGRAM_NAME == __FILE__
