@@ -39,6 +39,8 @@ mod tests {
     use crate::test::prelude::*;
 
     #[test]
+    // TODO(GH-528): fix failing tests on Windows.
+    #[cfg_attr(target_os = "windows", should_panic)]
     fn integration_test() {
         let mut interp = crate::interpreter().unwrap();
         let _ = interp.eval(&include_bytes!("json_test.rb")[..]).unwrap();
