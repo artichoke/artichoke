@@ -43,7 +43,7 @@
 //! # fn main() -> Result<(), artichoke::backend::exception::Exception> {
 //! let mut interp = artichoke::interpreter()?;
 //! let s = interp.convert_mut("💎");
-//! let codepoint = s.funcall::<u32>("ord", &[] /* args */, None /* block parameter */)?;
+//! let codepoint = s.funcall::<u32>(&mut interp, "ord", &[] /* args */, None /* block */)?;
 //! assert_eq!(128142, codepoint);
 //! # Ok(())
 //! # }
