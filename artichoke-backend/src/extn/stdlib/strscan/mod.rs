@@ -19,7 +19,7 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         interp.eval(&include_bytes!("strscan_test.rb")[..]).unwrap();
         let result = interp.eval(b"spec");
-        let result = result.unwrap().try_into::<bool>().unwrap();
+        let result = result.unwrap().try_into::<bool>(&mut interp).unwrap();
         assert!(result);
     }
 }
