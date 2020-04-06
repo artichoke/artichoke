@@ -268,7 +268,7 @@ mod tests {
     fn super_class() {
         struct RustError;
 
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let borrow = interp.0.borrow();
         let standard_error = borrow.class_spec::<StandardError>().unwrap();
         let spec = class::Spec::new("RustError", None, None).unwrap();
@@ -279,26 +279,24 @@ mod tests {
         drop(borrow);
         interp.0.borrow_mut().def_class::<RustError>(spec);
 
-        let result = interp
-            .eval(b"RustError.new.is_a?(StandardError)")
-            .expect("eval");
-        let result = result.try_into::<bool>().expect("convert");
+        let result = interp.eval(b"RustError.new.is_a?(StandardError)").unwrap();
+        let result = result.try_into::<bool>(&interp).unwrap();
         assert!(result, "RustError instances are instance of StandardError");
-        let result = interp.eval(b"RustError < StandardError").expect("eval");
-        let result = result.try_into::<bool>().expect("convert");
+        let result = interp.eval(b"RustError < StandardError").unwrap();
+        let result = result.try_into::<bool>(&interp).unwrap();
         assert!(result, "RustError inherits from StandardError");
     }
 
     #[test]
     fn rclass_for_undef_root_class() {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let spec = class::Spec::new("Foo", None, None).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_none());
     }
 
     #[test]
     fn rclass_for_undef_nested_class() {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let borrow = interp.0.borrow();
         let scope = borrow.module_spec::<Kernel>().unwrap();
         let spec = class::Spec::new("Foo", Some(EnclosingRubyScope::module(scope)), None).unwrap();
@@ -308,7 +306,7 @@ mod tests {
 
     #[test]
     fn rclass_for_root_class() {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let borrow = interp.0.borrow();
         let spec = borrow.class_spec::<StandardError>().unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_some());
@@ -316,10 +314,8 @@ mod tests {
 
     #[test]
     fn rclass_for_nested_class() {
-        let mut interp = crate::interpreter().expect("init");
-        let _ = interp
-            .eval(b"module Foo; class Bar; end; end")
-            .expect("eval");
+        let mut interp = crate::interpreter().unwrap();
+        let _ = interp.eval(b"module Foo; class Bar; end; end").unwrap();
         let spec = module::Spec::new(&mut interp, "Foo", None).unwrap();
         let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::module(&spec)), None).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_some());
@@ -327,10 +323,8 @@ mod tests {
 
     #[test]
     fn rclass_for_nested_class_under_class() {
-        let mut interp = crate::interpreter().expect("init");
-        let _ = interp
-            .eval(b"class Foo; class Bar; end; end")
-            .expect("eval");
+        let mut interp = crate::interpreter().unwrap();
+        let _ = interp.eval(b"class Foo; class Bar; end; end").unwrap();
         let spec = class::Spec::new("Foo", None, None).unwrap();
         let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::class(&spec)), None).unwrap();
         assert!(spec.rclass(interp.0.borrow().mrb).is_some());

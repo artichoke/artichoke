@@ -26,7 +26,7 @@
 //!
 //! let mut interp = artichoke_backend::interpreter().unwrap();
 //! let result = interp.eval(b"10 * 10").unwrap();
-//! let result = result.try_into::<i64>().unwrap();
+//! let result = result.try_into::<i64>(&interp).unwrap();
 //! assert_eq!(result, 100);
 //! ```
 //!
@@ -41,7 +41,7 @@
 //!
 //! let mut interp = artichoke_backend::interpreter().unwrap();
 //! let result = interp.eval(b"'ruby funcall'").unwrap();
-//! let result = result.funcall::<usize>("length", &[], None).unwrap();
+//! let result = result.funcall::<usize>(&mut interp, "length", &[], None).unwrap();
 //! assert_eq!(result, 12);
 //! ```
 //!

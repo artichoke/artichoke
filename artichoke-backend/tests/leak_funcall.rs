@@ -26,12 +26,12 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 30;
 fn funcall_arena() {
     let mut interp = artichoke_backend::interpreter().expect("init");
     let s = interp.convert_mut("a".repeat(1024 * 1024));
+    let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
 
     leak::Detector::new("ValueLike::funcall", &mut interp)
         .with_iterations(ITERATIONS)
         .with_tolerance(LEAK_TOLERANCE)
         .check_leaks(|interp| {
-            let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
             // we have to call a function that calls into the Ruby VM, so we
             // can't just use `to_s`.
             let inspect = s.funcall::<String>(interp, "inspect", &[], None).unwrap();

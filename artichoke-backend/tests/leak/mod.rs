@@ -1,3 +1,4 @@
+#[cfg(target_os = "linux")]
 use std::mem::MaybeUninit;
 
 use artichoke_backend::Artichoke;
@@ -62,9 +63,15 @@ impl<'a> Detector<'a> {
     }
 }
 
+#[cfg(target_os = "linux")]
 fn resident_memsize() -> i64 {
     let mut out = MaybeUninit::<libc::rusage>::uninit();
     assert!(unsafe { libc::getrusage(libc::RUSAGE_SELF, out.as_mut_ptr()) } == 0);
     let out = unsafe { out.assume_init() };
     out.ru_maxrss
+}
+
+#[cfg(not(target_os = "linux"))]
+fn resident_memsize() -> i64 {
+    0
 }

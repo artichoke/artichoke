@@ -22,6 +22,7 @@ use artichoke_backend::class;
 use artichoke_backend::convert::RustBackedValue;
 use artichoke_backend::def;
 use artichoke_backend::exception::{self, Exception};
+use artichoke_backend::gc::MrbGarbageCollection;
 use artichoke_backend::sys;
 use artichoke_backend::value::Value;
 use artichoke_backend::{Artichoke, Eval, File, LoadSources, ValueLike};
@@ -42,21 +43,19 @@ impl RustBackedValue for Container {
     }
 }
 
-impl Container {
-    unsafe extern "C" fn initialize(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
-        let inner = mrb_get_args!(mrb, required = 1);
-        let mut interp = unwrap_interpreter!(mrb);
-        let inner = Value::new(&interp, inner);
-        let inner = inner.try_into::<String>(&mut interp).unwrap_or_default();
-        let container = Self { inner };
-        let result = container.try_into_ruby(&interp, Some(slf));
-        match result {
-            Ok(value) => value.inner(),
-            Err(exception) => exception::raise(interp, exception),
-        }
+unsafe extern "C" fn container_initialize(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    let inner = mrb_get_args!(mrb, required = 1);
+    let interp = unwrap_interpreter!(mrb);
+    let inner = Value::new(&interp, inner);
+    let inner = inner.try_into::<String>(&interp).unwrap_or_default();
+    let container = Container { inner };
+    let result = container.try_into_ruby(&interp, Some(slf));
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -69,7 +68,7 @@ impl File for Container {
         let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Self>))?;
         class::Builder::for_spec(interp, &spec)
             .value_is_rust_object()
-            .add_method("initialize", Self::initialize, sys::mrb_args_req(1))?
+            .add_method("initialize", container_initialize, sys::mrb_args_req(1))?
             .define()?;
         interp.0.borrow_mut().def_class::<Self>(spec);
         Ok(())
@@ -83,13 +82,16 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
     leak::Detector::new("smart pointer", &mut interp)
         .with_iterations(ITERATIONS)
         .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks(|_| {
-            let mut interp = artichoke_backend::interpreter().unwrap();
-            interp.def_file_for_type::<Container>(b"container").unwrap();
+        .check_leaks_with_finalizer(
+            |_| {
+                let mut interp = artichoke_backend::interpreter().unwrap();
+                interp.def_file_for_type::<Container>(b"container").unwrap();
 
-            let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
-            let result = interp.eval(code);
-            assert_eq!(true, result.is_ok());
-            interp.close();
-        });
+                let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
+                let result = interp.eval(code);
+                assert_eq!(true, result.is_ok());
+                interp.close();
+            },
+            |interp| interp.full_gc(),
+        );
 }

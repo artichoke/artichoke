@@ -111,17 +111,19 @@ mod tests {
     fn roundtrip_kv(hash: HashMap<Vec<u8>, Vec<u8>>) -> bool {
         let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(hash.clone());
-        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        let len = value
+            .funcall::<usize>(&mut interp, "length", &[], None)
+            .unwrap();
         if len != hash.len() {
             return false;
         }
-        let recovered = value.try_into::<Vec<(Value, Value)>>().unwrap();
+        let recovered = value.try_into::<Vec<(Value, Value)>>(&interp).unwrap();
         if recovered.len() != hash.len() {
             return false;
         }
         for (key, val) in recovered {
-            let key = key.try_into::<Vec<u8>>().unwrap();
-            let val = val.try_into::<Vec<u8>>().unwrap();
+            let key = key.try_into::<Vec<u8>>(&interp).unwrap();
+            let val = val.try_into::<Vec<u8>>(&interp).unwrap();
             match hash.get(&key) {
                 Some(retrieved) if retrieved == &val => {}
                 _ => return false,

@@ -99,7 +99,7 @@ fail
             "#,
         );
         let kernel = interp.eval(br#"Kernel"#).unwrap();
-        let _ = kernel.funcall::<Value>("raise", &[], None);
-        let _ = kernel.funcall::<Value>("raise", &[], None);
+        let _ = kernel.funcall::<Value>(&mut interp, "raise", &[], None);
+        let _ = kernel.funcall::<Value>(&mut interp, "raise", &[], None);
     }
 }

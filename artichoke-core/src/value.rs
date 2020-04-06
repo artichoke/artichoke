@@ -45,7 +45,7 @@ where
     /// # Errors
     ///
     /// If a [`TryConvert`] conversion fails, then an error is returned.
-    fn try_into<T>(self, interp: &mut Self::Artichoke) -> Result<T, Self::Error>
+    fn try_into<T>(self, interp: &Self::Artichoke) -> Result<T, Self::Error>
     where
         Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
     {

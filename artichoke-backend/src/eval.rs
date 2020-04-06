@@ -54,18 +54,18 @@ mod tests {
 
     #[test]
     fn root_eval_context() {
-        let mut interp = crate::interpreter().expect("init");
-        let result = interp.eval(b"__FILE__").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let mut interp = crate::interpreter().unwrap();
+        let result = interp.eval(b"__FILE__").unwrap();
+        let result = result.try_into::<&str>(&mut interp).unwrap();
         assert_eq!(result, "(eval)");
     }
 
     #[test]
     fn context_is_restored_after_eval() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let context = Context::new(&b"context.rb"[..]).unwrap();
         interp.push_context(context);
-        let _ = interp.eval(b"15").expect("eval");
+        let _ = interp.eval(b"15").unwrap();
         assert_eq!(
             // TODO(GH-468): Use `Parser::peek_context`.
             interp.0.borrow().parser.peek_context().unwrap().filename(),
@@ -75,29 +75,27 @@ mod tests {
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
-        let mut interp = crate::interpreter().expect("init");
-        let _ = interp.eval(b"15").expect("eval");
+        let mut interp = crate::interpreter().unwrap();
+        let _ = interp.eval(b"15").unwrap();
         // TODO(GH-468): Use `Parser::peek_context`.
         assert!(interp.0.borrow().parser.peek_context().is_none());
     }
 
-    #[test]
-    #[should_panic]
-    // this test is known broken
-    fn eval_context_is_a_stack_for_nested_eval() {
+    mod nested {
+        use crate::test::prelude::*;
+
+        #[derive(Debug)]
         struct NestedEval;
 
-        impl NestedEval {
-            unsafe extern "C" fn nested_eval(
-                mrb: *mut sys::mrb_state,
-                _slf: sys::mrb_value,
-            ) -> sys::mrb_value {
-                let mut interp = unwrap_interpreter!(mrb);
-                if let Ok(value) = interp.eval(b"__FILE__") {
-                    value.inner()
-                } else {
-                    interp.convert(None::<Value>).inner()
-                }
+        unsafe extern "C" fn nested_eval_file(
+            mrb: *mut sys::mrb_state,
+            _slf: sys::mrb_value,
+        ) -> sys::mrb_value {
+            let mut interp = unwrap_interpreter!(mrb);
+            if let Ok(value) = interp.eval(b"__FILE__") {
+                value.inner()
+            } else {
+                interp.convert(None::<Value>).inner()
             }
         }
 
@@ -109,63 +107,66 @@ mod tests {
             fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
                 let spec = module::Spec::new(interp, "NestedEval", None)?;
                 module::Builder::for_spec(interp, &spec)
-                    .add_self_method("file", Self::nested_eval, sys::mrb_args_none())?
+                    .add_self_method("file", nested_eval_file, sys::mrb_args_none())?
                     .define()?;
                 interp.0.borrow_mut().def_module::<Self>(spec);
                 Ok(())
             }
         }
-        let mut interp = crate::interpreter().expect("init");
-        interp
-            .def_file_for_type::<NestedEval>(b"nested_eval.rb")
-            .expect("def file");
-        let code = br#"
-require 'nested_eval'
-NestedEval.file
-        "#;
-        let result = interp.eval(code).expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
-        assert_eq!(result, "/src/lib/nested_eval.rb");
+
+        #[test]
+        #[should_panic]
+        // this test is known broken
+        fn eval_context_is_a_stack() {
+            let mut interp = crate::interpreter().unwrap();
+            interp
+                .def_file_for_type::<NestedEval>(b"nested_eval.rb")
+                .unwrap();
+            let code = br#"require 'nested_eval'; NestedEval.file"#;
+            let result = interp.eval(code).unwrap();
+            let result = result.try_into::<&str>(&mut interp).unwrap();
+            assert_eq!(result, "/src/lib/nested_eval.rb");
+        }
     }
 
     #[test]
     fn eval_with_context() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
-        let result = interp.eval(b"__FILE__").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = interp.eval(b"__FILE__").unwrap();
+        let result = result.try_into::<&str>(&mut interp).unwrap();
         assert_eq!(result, "source.rb");
         interp.pop_context();
 
         interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
-        let result = interp.eval(b"__FILE__").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = interp.eval(b"__FILE__").unwrap();
+        let result = result.try_into::<&str>(&mut interp).unwrap();
         assert_eq!(result, "source.rb");
         interp.pop_context();
 
         interp.push_context(Context::new(b"main.rb".as_ref()).unwrap());
-        let result = interp.eval(b"__FILE__").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = interp.eval(b"__FILE__").unwrap();
+        let result = result.try_into::<&str>(&mut interp).unwrap();
         assert_eq!(result, "main.rb");
         interp.pop_context();
     }
 
     #[test]
     fn unparseable_code_returns_err_syntax_error() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let err = interp.eval(b"'a").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_str());
     }
 
     #[test]
     fn interpreter_is_usable_after_syntax_error() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let err = interp.eval(b"'a").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_str());
         // Ensure interpreter is usable after evaling unparseable code
-        let result = interp.eval(b"'a' * 10 ").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+        let result = interp.eval(b"'a' * 10 ").unwrap();
+        let result = result.try_into::<&str>(&mut interp).unwrap();
         assert_eq!(result, "a".repeat(10));
     }
 
@@ -173,32 +174,32 @@ NestedEval.file
     // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn file_magic_constant() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         interp
             .def_rb_source_file(b"source.rb", &b"def file; __FILE__; end"[..])
-            .expect("def file");
-        let result = interp.eval(b"require 'source'; file").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+            .unwrap();
+        let result = interp.eval(b"require 'source'; file").unwrap();
+        let result = result.try_into::<&str>(&mut interp).unwrap();
         assert_eq!(result, "/src/lib/source.rb");
     }
 
     #[test]
     fn file_not_persistent() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         interp
             .def_rb_source_file(b"source.rb", &b"def file; __FILE__; end"[..])
-            .expect("def file");
-        let result = interp.eval(b"require 'source'; __FILE__").expect("eval");
-        let result = result.try_into::<&str>().expect("convert");
+            .unwrap();
+        let result = interp.eval(b"require 'source'; __FILE__").unwrap();
+        let result = result.try_into::<&str>(&mut interp).unwrap();
         assert_eq!(result, "(eval)");
     }
 
     #[test]
     fn return_syntax_error() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         interp
             .def_rb_source_file(b"fail.rb", &b"def bad; 'as'.scan(; end"[..])
-            .expect("def file");
+            .unwrap();
         let err = interp.eval(b"require 'fail'").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_str());
     }

@@ -38,7 +38,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // get a Ruby Value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<Float>();
+        let result = value.try_into::<Float>(&interp);
         assert!(result.is_err());
     }
 
@@ -62,7 +62,7 @@ mod tests {
     fn roundtrip(f: Float) -> bool {
         let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(f);
-        let value = value.try_into::<Float>().unwrap();
+        let value = value.try_into::<Float>(&interp).unwrap();
         (value - f).abs() < std::f64::EPSILON
     }
 
@@ -70,7 +70,7 @@ mod tests {
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
-        let value = value.try_into::<Float>();
+        let value = value.try_into::<Float>(&interp);
         value.is_err()
     }
 }
