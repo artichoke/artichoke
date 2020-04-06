@@ -30,9 +30,9 @@ end
 
 def string_scan
   s = 'abababa'
-  raise unless s.scan(/./) == ['a', 'b', 'a', 'b', 'a', 'b', 'a']
-  raise unless s.scan(/../) == ['ab', 'ab', 'ab']
-  raise unless s.scan('aba') == ['aba', 'aba']
+  raise unless s.scan(/./) == %w[a b a b a b a]
+  raise unless s.scan(/../) == %w[ab ab ab]
+  raise unless s.scan('aba') == %w[aba aba]
   raise unless s.scan('no no no') == []
 end
 

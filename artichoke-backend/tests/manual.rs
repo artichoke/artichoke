@@ -30,7 +30,7 @@ impl Container {
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let inner = mrb_get_args!(mrb, required = 1);
-        let mut interp = unwrap_interpreter!(mrb);
+        let interp = unwrap_interpreter!(mrb);
         let inner = Value::new(&interp, inner);
         let inner = inner.try_into::<Int>(&interp).unwrap_or_default();
         let container = Box::new(Self { inner });

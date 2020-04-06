@@ -59,7 +59,7 @@ def thread_abort_on_exception
   raised = false
   begin
     Thread.new { raise 'failboat' }.join
-  rescue
+  rescue StandardError
     raised = true
   ensure
     raise unless raised
@@ -69,13 +69,12 @@ def thread_abort_on_exception
   raised = false
   begin
     Thread.new do
-      begin
-        Thread.new { raise 'failboat' }.join
-      rescue StandardError
-        # swallow errors
-      end
+      Thread.new { raise 'failboat' }.join
+    rescue StandardError
+      # swallow errors
+      nil
     end.join
-  rescue
+  rescue StandardError
     raised = true
   ensure
     raise unless raised
@@ -85,43 +84,40 @@ def thread_abort_on_exception
   raised = false
   begin
     Thread.new do
-      begin
+      Thread.new do
+        Thread.current.abort_on_exception = true
+        raise 'failboat'
+      end.join
+    rescue StandardError
+      # swallow errors
+      nil
+    end.join
+  rescue StandardError
+    raised = true
+  ensure
+    raise unless raised
+  end
+
+  Thread.abort_on_exception = false
+  raised = false
+  begin
+    Thread.new do
+      Thread.new do
         Thread.new do
           Thread.current.abort_on_exception = true
-          raise 'failboat'
+          raise 'inner'
         end.join
+        raise 'outer'
       rescue StandardError
         # swallow errors
-      end
+        nil
+      end.join
+      raise 'failboat'
+    rescue StandardError
+      # swallow errors
+      nil
     end.join
-  rescue
-    raised = true
-  ensure
-    raise unless raised
-  end
-
-  Thread.abort_on_exception = false
-  raised = false
-  begin
-    Thread.new do
-      begin
-        Thread.new do
-          begin
-            Thread.new do
-              Thread.current.abort_on_exception = true
-              raise 'inner'
-            end.join
-            raise 'outer'
-          rescue StandardError
-            # swallow errors
-          end
-        end.join
-        raise 'failboat'
-      rescue StandardError
-        # swallow errors
-      end
-    end.join
-  rescue => e
+  rescue StandardError => e
     raised = true
     raise unless e.message == 'inner'
   ensure
