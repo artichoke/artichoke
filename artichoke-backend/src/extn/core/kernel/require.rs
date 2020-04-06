@@ -31,7 +31,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
         api.vfs.is_file(path.as_path())
     };
     if !is_file {
-        return Err(Exception::from(load_error(interp, filename)?));
+        return Err(Exception::from(load_error(interp, filename)));
     }
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
@@ -127,7 +127,7 @@ pub fn require(
                 .mark_required(path.as_path())
                 .is_err()
             {
-                return Err(Exception::from(load_error(interp, b"internal error")?));
+                return Err(Exception::from(load_error(interp, b"internal error")));
             }
             let mut logged_filename = String::new();
             string::format_unicode_debug_into(&mut logged_filename, filename)?;
@@ -182,7 +182,7 @@ pub fn require(
                     .mark_required(path.as_path())
                     .is_err()
                 {
-                    return Err(Exception::from(load_error(interp, b"internal error")?));
+                    return Err(Exception::from(load_error(interp, b"internal error")));
                 }
                 let mut logged_filename = String::new();
                 string::format_unicode_debug_into(&mut logged_filename, filename)?;
@@ -201,7 +201,7 @@ pub fn require(
         Path::new(RUBY_LOAD_PATH).join(&file)
     };
     if !interp.0.borrow().vfs.is_file(path.as_path()) {
-        return Err(Exception::from(load_error(interp, filename)?));
+        return Err(Exception::from(load_error(interp, filename)));
     }
     // If a file is already required, short circuit.
     if interp.0.borrow().vfs.is_required(path.as_path()) {
@@ -237,7 +237,7 @@ pub fn require(
         .mark_required(path.as_path())
         .is_err()
     {
-        return Err(Exception::from(load_error(interp, b"internal error")?));
+        return Err(Exception::from(load_error(interp, b"internal error")));
     }
     let mut logged_filename = String::new();
     string::format_unicode_debug_into(&mut logged_filename, filename)?;
@@ -281,8 +281,8 @@ impl RelativePath {
     }
 }
 
-fn load_error(interp: &Artichoke, filename: &[u8]) -> Result<LoadError, Exception> {
-    let mut message = String::from("cannot load such file -- ");
-    string::format_unicode_debug_into(&mut message, filename)?;
-    Ok(LoadError::new(interp, message))
+fn load_error(interp: &Artichoke, filename: &[u8]) -> LoadError {
+    let mut message = String::from("cannot load such file -- ").into_bytes();
+    message.extend_from_slice(filename);
+    LoadError::new_raw(&interp, message)
 }
