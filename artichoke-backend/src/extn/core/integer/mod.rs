@@ -209,7 +209,7 @@ mod tests {
                 let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
-                    .try_into::<Int>(&mut interp)
+                    .try_into::<Int>(&interp)
                     .unwrap();
                 quotient == 0
             }
@@ -218,7 +218,7 @@ mod tests {
                 let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
-                    .try_into::<Int>(&mut interp)
+                    .try_into::<Int>(&interp)
                     .unwrap();
                 let expected = Int::from(x) / Int::from(y);
                 quotient == expected
@@ -240,7 +240,7 @@ mod tests {
                 let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
-                    .try_into::<Int>(&mut interp)
+                    .try_into::<Int>(&interp)
                     .unwrap();
                 quotient == 0
             }
@@ -249,7 +249,7 @@ mod tests {
                 let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
-                    .try_into::<Int>(&mut interp)
+                    .try_into::<Int>(&interp)
                     .unwrap();
                 let expected = Int::from(x) / Int::from(y);
                 quotient == expected
@@ -271,7 +271,7 @@ mod tests {
                 let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
-                    .try_into::<Int>(&mut interp)
+                    .try_into::<Int>(&interp)
                     .unwrap();
                 quotient == 0
             }
@@ -280,7 +280,7 @@ mod tests {
                 let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
-                    .try_into::<Int>(&mut interp)
+                    .try_into::<Int>(&interp)
                     .unwrap();
                 if x % y == 0 {
                     let expected = -Int::from(x) / Int::from(y);
@@ -308,7 +308,7 @@ mod tests {
                 let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
-                    .try_into::<Int>(&mut interp)
+                    .try_into::<Int>(&interp)
                     .unwrap();
                 quotient == 0
             }
@@ -317,7 +317,7 @@ mod tests {
                 let quotient = interp
                     .eval(expr.as_slice())
                     .unwrap()
-                    .try_into::<Int>(&mut interp)
+                    .try_into::<Int>(&interp)
                     .unwrap();
                 if x % y == 0 {
                     let expected = -Int::from(x) / Int::from(y);

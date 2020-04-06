@@ -26,7 +26,7 @@ use artichoke_backend::{Eval, ValueLike, exception::Exception};
 fn example() -> Result<(), Exception> {
     let mut interp = artichoke_backend::interpreter()?;
     let result = interp.eval(b"10 * 10")?;
-    let result = result.try_into::<i64>(&mut interp)?;
+    let result = result.try_into::<i64>(&interp)?;
     assert_eq!(100, result);
     Ok(())
 }

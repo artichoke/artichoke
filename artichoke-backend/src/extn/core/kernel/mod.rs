@@ -15,7 +15,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let _ = interp.eval(&include_bytes!("kernel_test.rb")[..]).unwrap();
         let result = interp.eval(b"spec");
-        let result = result.unwrap().try_into::<bool>(&mut interp).unwrap();
+        let result = result.unwrap().try_into::<bool>(&interp).unwrap();
         assert!(result);
     }
 
@@ -64,16 +64,16 @@ mod tests {
                 .def_file_for_type::<IntegrationTest>(b"file.rb")
                 .unwrap();
             let result = interp.eval(b"require 'file'").unwrap();
-            let require_result = result.try_into::<bool>(&mut interp).unwrap();
+            let require_result = result.try_into::<bool>(&interp).unwrap();
             assert!(require_result);
             let result = interp.eval(b"@i").unwrap();
-            let i_result = result.try_into::<i64>(&mut interp).unwrap();
+            let i_result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(i_result, 255);
             let result = interp.eval(b"@i = 1000; require 'file'").unwrap();
-            let second_require_result = result.try_into::<bool>(&mut interp).unwrap();
+            let second_require_result = result.try_into::<bool>(&interp).unwrap();
             assert!(!second_require_result);
             let result = interp.eval(b"@i").unwrap();
-            let second_i_result = result.try_into::<i64>(&mut interp).unwrap();
+            let second_i_result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(second_i_result, 1000);
             let err = interp.eval(b"require 'non-existent-source'").unwrap_err();
             assert_eq!(
@@ -91,9 +91,9 @@ mod tests {
                 .def_rb_source_file(b"/foo/bar/source.rb", &b"# a source file"[..])
                 .unwrap();
             let result = interp.eval(b"require '/foo/bar/source.rb'").unwrap();
-            assert!(result.try_into::<bool>(&mut interp).unwrap());
+            assert!(result.try_into::<bool>(&interp).unwrap());
             let result = interp.eval(b"require '/foo/bar/source.rb'").unwrap();
-            assert!(!result.try_into::<bool>(&mut interp).unwrap());
+            assert!(!result.try_into::<bool>(&interp).unwrap());
         }
 
         #[test]
@@ -106,9 +106,9 @@ mod tests {
                 .def_rb_source_file(b"/foo/bar.rb", &b"# a source file"[..])
                 .unwrap();
             let result = interp.eval(b"require '/foo/bar/source.rb'").unwrap();
-            assert!(result.try_into::<bool>(&mut interp).unwrap());
+            assert!(result.try_into::<bool>(&interp).unwrap());
             let result = interp.eval(b"require '/foo/bar.rb'").unwrap();
-            assert!(!result.try_into::<bool>(&mut interp).unwrap());
+            assert!(!result.try_into::<bool>(&interp).unwrap());
         }
 
         #[test]
@@ -130,10 +130,10 @@ mod tests {
                 .def_file_for_type::<HybridRustAndRuby>(b"foo.rb")
                 .unwrap();
             let result = interp.eval(b"require 'foo'").unwrap();
-            let result = result.try_into::<bool>(&mut interp).unwrap();
+            let result = result.try_into::<bool>(&interp).unwrap();
             assert!(result, "successfully required foo.rb");
             let result = interp.eval(b"Foo::RUBY + Foo::RUST").unwrap();
-            let result = result.try_into::<i64>(&mut interp).unwrap();
+            let result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(
                 result, 10,
                 "defined Ruby and Rust sources from single require"
@@ -150,10 +150,10 @@ mod tests {
                 .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
                 .unwrap();
             let result = interp.eval(b"require 'foo'").unwrap();
-            let result = result.try_into::<bool>(&mut interp).unwrap();
+            let result = result.try_into::<bool>(&interp).unwrap();
             assert!(result, "successfully required foo.rb");
             let result = interp.eval(b"Foo::RUBY + Foo::RUST").unwrap();
-            let result = result.try_into::<i64>(&mut interp).unwrap();
+            let result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(
                 result, 10,
                 "defined Ruby and Rust sources from single require"

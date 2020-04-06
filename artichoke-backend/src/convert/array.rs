@@ -376,7 +376,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<Vec<Value>>(&mut interp);
+        let result = value.try_into::<Vec<Value>>(&interp);
         assert!(result.is_err());
     }
 

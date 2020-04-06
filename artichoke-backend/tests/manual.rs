@@ -32,7 +32,7 @@ impl Container {
         let inner = mrb_get_args!(mrb, required = 1);
         let mut interp = unwrap_interpreter!(mrb);
         let inner = Value::new(&interp, inner);
-        let inner = inner.try_into::<Int>(&mut interp).unwrap_or_default();
+        let inner = inner.try_into::<Int>(&interp).unwrap_or_default();
         let container = Box::new(Self { inner });
         container
             .try_into_ruby(&interp, Some(slf))
@@ -78,10 +78,10 @@ fn define_rust_backed_ruby_class() {
 
     let _ = interp.eval(b"require 'container'").unwrap();
     let result = interp.eval(b"Container.new(15).value").unwrap();
-    let result = result.try_into::<Int>(&mut interp).unwrap();
+    let result = result.try_into::<Int>(&interp).unwrap();
     assert_eq!(result, 15);
     // Ensure Rc is cloned correctly and still points to valid memory.
     let result = interp.eval(b"Container.new(105).value").unwrap();
-    let result = result.try_into::<Int>(&mut interp).unwrap();
+    let result = result.try_into::<Int>(&interp).unwrap();
     assert_eq!(result, 105);
 }
