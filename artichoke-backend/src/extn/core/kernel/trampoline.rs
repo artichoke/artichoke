@@ -32,7 +32,7 @@ pub fn puts(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exception
         // TODO(GH-310): Use `Value::implicitly_convert_to_array` when
         // implemented so `Value`s that respond to `to_ary` are converted
         // and iterated over.
-        if let Ok(array) = value.clone().try_into::<Vec<Value>>(interp) {
+        if let Ok(array) = value.try_into::<Vec<Value>>(interp) {
             for value in &array {
                 puts_foreach(interp, value);
             }

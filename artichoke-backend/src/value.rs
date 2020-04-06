@@ -14,20 +14,32 @@ use crate::{Artichoke, Convert, ConvertMut, Intern, TryConvert};
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 
-/// Wrapper around a [`sys::mrb_value`].
-pub struct Value {
-    interp: Artichoke,
-    value: sys::mrb_value,
+/// Boxed Ruby value in the [`Artichoke`] interpreter.
+#[derive(Clone, Copy)]
+pub struct Value(sys::mrb_value);
+
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Value")
+            .field("type", &self.ruby_type())
+            .finish()
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        let this = unsafe { sys::mrb_sys_basic_ptr(self.inner()) };
+        let other = unsafe { sys::mrb_sys_basic_ptr(other.inner()) };
+        ptr::eq(this, other)
+    }
 }
 
 impl Value {
     /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
     #[must_use]
     pub fn new(interp: &Artichoke, value: sys::mrb_value) -> Self {
-        Self {
-            interp: interp.clone(),
-            value,
-        }
+        let _ = interp;
+        Self(value)
     }
 
     /// The [`sys::mrb_value`] that this [`Value`] wraps.
@@ -35,20 +47,20 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn inner(&self) -> sys::mrb_value {
-        self.value
+        self.0
     }
 
     /// Return this values [Rust-mapped type tag](Ruby).
     #[inline]
     #[must_use]
     pub fn ruby_type(&self) -> Ruby {
-        types::ruby_from_mrb_value(self.value)
+        types::ruby_from_mrb_value(self.inner())
     }
 
     #[must_use]
     pub fn pretty_name<'a>(&self, interp: &mut Artichoke) -> &'a str {
         let _ = interp;
-        match self.clone().try_into(interp) {
+        match self.try_into(interp) {
             Ok(Some(true)) => "true",
             Ok(Some(false)) => "false",
             Ok(None) => "nil",
@@ -84,11 +96,11 @@ impl Value {
     #[must_use]
     pub fn is_dead(&self, interp: &mut Artichoke) -> bool {
         let mrb = interp.0.borrow().mrb;
-        unsafe { sys::mrb_sys_value_is_dead(mrb, self.value) }
+        unsafe { sys::mrb_sys_value_is_dead(mrb, self.inner()) }
     }
 
     pub fn implicitly_convert_to_int(&self, interp: &mut Artichoke) -> Result<Int, TypeError> {
-        let int = if let Ok(int) = self.clone().try_into::<Option<Int>>(interp) {
+        let int = if let Ok(int) = self.try_into::<Option<Int>>(interp) {
             if let Some(int) = int {
                 int
             } else {
@@ -99,7 +111,7 @@ impl Value {
             }
         } else if let Ok(true) = self.respond_to(interp, "to_int") {
             if let Ok(maybe) = self.funcall::<Self>(interp, "to_int", &[], None) {
-                if let Ok(int) = maybe.clone().try_into::<Int>(interp) {
+                if let Ok(int) = maybe.try_into::<Int>(interp) {
                     int
                 } else {
                     let mut message = String::from("can't convert ");
@@ -127,11 +139,11 @@ impl Value {
     }
 
     pub fn implicitly_convert_to_string(&self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
-        let string = if let Ok(string) = self.clone().try_into::<&[u8]>(interp) {
+        let string = if let Ok(string) = self.try_into::<&[u8]>(interp) {
             string
         } else if let Ok(true) = self.respond_to(interp, "to_str") {
             if let Ok(maybe) = self.funcall::<Self>(interp, "to_str", &[], None) {
-                if let Ok(string) = maybe.clone().try_into::<&[u8]>(interp) {
+                if let Ok(string) = maybe.try_into::<&[u8]>(interp) {
                     string
                 } else {
                     let mut message = String::from("can't convert ");
@@ -243,8 +255,7 @@ impl core::value::Value for Value {
 
     fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool {
         let mrb = interp.0.borrow_mut().mrb;
-        let inner = self.inner();
-        unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
+        unsafe { sys::mrb_sys_obj_frozen(mrb, self.inner()) }
     }
 
     fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
@@ -278,35 +289,8 @@ impl ConvertMut<Value, Value> for Artichoke {
     }
 }
 
-impl fmt::Debug for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Value")
-            .field("type", &self.ruby_type())
-            .finish()
-    }
-}
-
-impl Clone for Value {
-    fn clone(&self) -> Self {
-        Self {
-            interp: self.interp.clone(),
-            value: self.value,
-        }
-    }
-}
-
-impl PartialEq for Value {
-    fn eq(&self, other: &Self) -> bool {
-        let this = unsafe { sys::mrb_sys_basic_ptr(self.inner()) };
-        let other = unsafe { sys::mrb_sys_basic_ptr(other.inner()) };
-        ptr::eq(this, other)
-    }
-}
-
 #[derive(Clone, Copy)]
-pub struct Block {
-    value: sys::mrb_value,
-}
+pub struct Block(sys::mrb_value);
 
 impl fmt::Debug for Block {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -320,8 +304,14 @@ impl Block {
         if let Ruby::Nil = types::ruby_from_mrb_value(block) {
             None
         } else {
-            Some(Self { value: block })
+            Some(Self(block))
         }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn inner(&self) -> sys::mrb_value {
+        self.0
     }
 
     pub fn yield_arg<T>(&self, interp: &mut Artichoke, arg: &Value) -> Result<T, Exception>
@@ -331,7 +321,7 @@ impl Block {
         let _arena = interp.create_arena_savepoint();
 
         let mrb = interp.0.borrow_mut().mrb;
-        let result = unsafe { protect::block_yield(mrb, self.value, arg.inner()) };
+        let result = unsafe { protect::block_yield(mrb, self.inner(), arg.inner()) };
         match result {
             Ok(value) => {
                 let value = Value::new(interp, value);
