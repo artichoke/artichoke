@@ -52,7 +52,7 @@ pub fn element_reference(
     let env = obj.borrow();
     let result = env.0.get(interp, name)?;
     let mut result = interp.convert_mut(result.as_ref().map(Cow::as_ref));
-    result.freeze()?;
+    result.freeze(interp)?;
     Ok(result)
 }
 

@@ -107,10 +107,10 @@ impl Default for PromptConfig {
 }
 
 fn preamble(interp: &mut Artichoke) -> Result<String, Exception> {
-    let description = interp.eval(b"RUBY_DESCRIPTION")?.try_into::<&str>()?;
+    let description = interp.eval(b"RUBY_DESCRIPTION")?.try_into::<&str>(interp)?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")?
-        .try_into::<&str>()?;
+        .try_into::<&str>(interp)?;
     let mut buf = String::with_capacity(description.len() + 2 + compiler.len() + 1);
     buf.push_str(description);
     buf.push_str("\n[");
@@ -187,7 +187,7 @@ where
                 }
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
-                        let result = value.inspect();
+                        let result = value.inspect(&mut interp);
                         output.write_all(config.result_prefix.as_bytes())?;
                         output.write_all(result.as_slice())?;
                     }

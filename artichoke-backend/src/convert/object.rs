@@ -153,20 +153,18 @@ mod tests {
         inner: String,
     }
 
-    impl Container {
-        unsafe extern "C" fn value(
-            mrb: *mut sys::mrb_state,
-            slf: sys::mrb_value,
-        ) -> sys::mrb_value {
-            let mut interp = unwrap_interpreter!(mrb);
+    unsafe extern "C" fn container_value(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let mut interp = unwrap_interpreter!(mrb);
 
-            let value = Value::new(&interp, slf);
-            if let Ok(container) = Self::try_from_ruby(&interp, &value) {
-                let borrow = container.borrow();
-                interp.convert_mut(borrow.inner.as_bytes()).inner()
-            } else {
-                interp.convert(None::<Value>).inner()
-            }
+        let value = Value::new(&interp, slf);
+        if let Ok(container) = Container::try_from_ruby(&interp, &value) {
+            let borrow = container.borrow();
+            interp.convert_mut(borrow.inner.as_bytes()).inner()
+        } else {
+            interp.convert(None::<Value>).inner()
         }
     }
 
@@ -190,12 +188,12 @@ mod tests {
 
     #[test]
     fn convert_obj_roundtrip() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let spec =
             class::Spec::new("Container", None, Some(def::rust_data_free::<Container>)).unwrap();
         class::Builder::for_spec(&interp, &spec)
             .value_is_rust_object()
-            .add_method("value", Container::value, sys::mrb_args_none())
+            .add_method("value", container_value, sys::mrb_args_none())
             .unwrap()
             .define()
             .unwrap();
@@ -204,25 +202,29 @@ mod tests {
             inner: "contained string contents".to_owned(),
         };
 
-        let value = obj.try_into_ruby(&interp, None).expect("convert");
-        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
-        assert_eq!(class.to_s(), b"Container");
-        let data = unsafe { Container::try_from_ruby(&interp, &value) }.expect("convert");
+        let value = obj.try_into_ruby(&interp, None).unwrap();
+        let class = value
+            .funcall::<Value>(&mut interp, "class", &[], None)
+            .unwrap();
+        assert_eq!(class.to_s(&mut interp), b"Container");
+        let data = unsafe { Container::try_from_ruby(&interp, &value) }.unwrap();
         assert_eq!(Rc::strong_count(&data), 2);
         assert_eq!(&data.borrow().inner, "contained string contents");
         drop(data);
-        let inner = value.funcall::<&str>("value", &[], None).expect("funcall");
+        let inner = value
+            .funcall::<&str>(&mut interp, "value", &[], None)
+            .unwrap();
         assert_eq!(inner, "contained string contents");
     }
 
     #[test]
     fn convert_obj_not_data() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let spec =
             class::Spec::new("Container", None, Some(def::rust_data_free::<Container>)).unwrap();
         class::Builder::for_spec(&interp, &spec)
             .value_is_rust_object()
-            .add_method("value", Container::value, sys::mrb_args_none())
+            .add_method("value", container_value, sys::mrb_args_none())
             .unwrap()
             .define()
             .unwrap();
@@ -235,15 +237,19 @@ mod tests {
         interp.0.borrow_mut().def_class::<Box<Other>>(spec);
 
         let value = interp.convert_mut("string");
-        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
-        assert_eq!(class.to_s(), b"String");
+        let class = value
+            .funcall::<Value>(&mut interp, "class", &[], None)
+            .unwrap();
+        assert_eq!(class.to_s(&mut interp), b"String");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };
         assert!(data.is_err());
         let value = Box::new(Other::default())
             .try_into_ruby(&interp, None)
-            .expect("convert");
-        let class = value.funcall::<Value>("class", &[], None).expect("funcall");
-        assert_eq!(class.to_s(), b"Other");
+            .unwrap();
+        let class = value
+            .funcall::<Value>(&mut interp, "class", &[], None)
+            .unwrap();
+        assert_eq!(class.to_s(&mut interp), b"Other");
         let data = unsafe { Container::try_from_ruby(&interp, &value) };
         assert!(data.is_err());
     }

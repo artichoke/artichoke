@@ -411,127 +411,153 @@ impl From<Box<NotDefinedError>> for Box<dyn RubyException> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
+    mod fqname {
+        use crate::test::prelude::*;
 
-    #[test]
-    fn fqname() {
-        struct Root; // A
-        struct ModuleUnderRoot; // A::B
-        struct ClassUnderRoot; // A::C
-        struct ClassUnderModule; // A::B::D
-        struct ModuleUnderClass; // A::C::E
-        struct ClassUnderClass; // A::C::F
+        /// A
+        #[derive(Debug)]
+        struct Root;
 
-        // Setup: define module and class hierarchy
-        let mut interp = crate::interpreter().expect("init");
-        let root = module::Spec::new(&mut interp, "A", None).unwrap();
-        let mod_under_root =
-            module::Spec::new(&mut interp, "B", Some(EnclosingRubyScope::module(&root))).unwrap();
-        let cls_under_root =
-            class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None).unwrap();
-        let cls_under_mod =
-            class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None).unwrap();
-        let mod_under_cls = module::Spec::new(
-            &mut interp,
-            "E",
-            Some(EnclosingRubyScope::class(&cls_under_root)),
-        )
-        .unwrap();
-        let cls_under_cls =
-            class::Spec::new("F", Some(EnclosingRubyScope::class(&cls_under_root)), None).unwrap();
-        module::Builder::for_spec(&interp, &root).define().unwrap();
-        module::Builder::for_spec(&interp, &mod_under_root)
-            .define()
-            .unwrap();
-        class::Builder::for_spec(&interp, &cls_under_root)
-            .define()
-            .unwrap();
-        class::Builder::for_spec(&interp, &cls_under_mod)
-            .define()
-            .unwrap();
-        module::Builder::for_spec(&interp, &mod_under_cls)
-            .define()
-            .unwrap();
-        class::Builder::for_spec(&interp, &cls_under_cls)
-            .define()
-            .unwrap();
-        interp.0.borrow_mut().def_module::<Root>(root);
-        interp
-            .0
-            .borrow_mut()
-            .def_module::<ModuleUnderRoot>(mod_under_root);
-        interp
-            .0
-            .borrow_mut()
-            .def_class::<ClassUnderRoot>(cls_under_root);
-        interp
-            .0
-            .borrow_mut()
-            .def_class::<ClassUnderModule>(cls_under_mod);
-        interp
-            .0
-            .borrow_mut()
-            .def_module::<ModuleUnderClass>(mod_under_cls);
-        interp
-            .0
-            .borrow_mut()
-            .def_class::<ClassUnderClass>(cls_under_cls);
+        /// A::B
+        #[derive(Debug)]
+        struct ModuleUnderRoot;
 
-        let borrow = interp.0.borrow();
-        let root = borrow.module_spec::<Root>().unwrap();
-        assert_eq!(root.fqname().as_ref(), "A");
-        assert_eq!(&format!("{}", root), "artichoke module spec -- A");
-        let mod_under_root = borrow.module_spec::<ModuleUnderRoot>().unwrap();
-        assert_eq!(mod_under_root.fqname().as_ref(), "A::B");
-        assert_eq!(
-            &format!("{}", mod_under_root),
-            "artichoke module spec -- A::B"
-        );
-        let cls_under_root = borrow.class_spec::<ClassUnderRoot>().unwrap();
-        assert_eq!(cls_under_root.fqname().as_ref(), "A::C");
-        assert_eq!(
-            &format!("{}", cls_under_root),
-            "artichoke class spec -- A::C"
-        );
-        let cls_under_mod = borrow.class_spec::<ClassUnderModule>().unwrap();
-        assert_eq!(cls_under_mod.fqname().as_ref(), "A::B::D");
-        assert_eq!(
-            &format!("{}", cls_under_mod),
-            "artichoke class spec -- A::B::D"
-        );
-        let mod_under_cls = borrow.module_spec::<ModuleUnderClass>().unwrap();
-        assert_eq!(mod_under_cls.fqname().as_ref(), "A::C::E");
-        assert_eq!(
-            &format!("{}", mod_under_cls),
-            "artichoke module spec -- A::C::E"
-        );
-        let cls_under_cls = borrow.class_spec::<ClassUnderClass>().unwrap();
-        assert_eq!(cls_under_cls.fqname().as_ref(), "A::C::F");
-        assert_eq!(
-            &format!("{}", cls_under_cls),
-            "artichoke class spec -- A::C::F"
-        );
+        /// A::C
+        #[derive(Debug)]
+        struct ClassUnderRoot;
+
+        /// A::B::D
+        #[derive(Debug)]
+        struct ClassUnderModule;
+
+        /// A::C::E
+        #[derive(Debug)]
+        struct ModuleUnderClass;
+
+        /// A::C::F
+        #[derive(Debug)]
+        struct ClassUnderClass;
+
+        #[test]
+        fn integration_test() {
+            // Setup: define module and class hierarchy
+            let mut interp = crate::interpreter().unwrap();
+            let root = module::Spec::new(&mut interp, "A", None).unwrap();
+            let mod_under_root =
+                module::Spec::new(&mut interp, "B", Some(EnclosingRubyScope::module(&root)))
+                    .unwrap();
+            let cls_under_root =
+                class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None).unwrap();
+            let cls_under_mod =
+                class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None)
+                    .unwrap();
+            let mod_under_cls = module::Spec::new(
+                &mut interp,
+                "E",
+                Some(EnclosingRubyScope::class(&cls_under_root)),
+            )
+            .unwrap();
+            let cls_under_cls =
+                class::Spec::new("F", Some(EnclosingRubyScope::class(&cls_under_root)), None)
+                    .unwrap();
+            module::Builder::for_spec(&interp, &root).define().unwrap();
+            module::Builder::for_spec(&interp, &mod_under_root)
+                .define()
+                .unwrap();
+            class::Builder::for_spec(&interp, &cls_under_root)
+                .define()
+                .unwrap();
+            class::Builder::for_spec(&interp, &cls_under_mod)
+                .define()
+                .unwrap();
+            module::Builder::for_spec(&interp, &mod_under_cls)
+                .define()
+                .unwrap();
+            class::Builder::for_spec(&interp, &cls_under_cls)
+                .define()
+                .unwrap();
+            interp.0.borrow_mut().def_module::<Root>(root);
+            interp
+                .0
+                .borrow_mut()
+                .def_module::<ModuleUnderRoot>(mod_under_root);
+            interp
+                .0
+                .borrow_mut()
+                .def_class::<ClassUnderRoot>(cls_under_root);
+            interp
+                .0
+                .borrow_mut()
+                .def_class::<ClassUnderModule>(cls_under_mod);
+            interp
+                .0
+                .borrow_mut()
+                .def_module::<ModuleUnderClass>(mod_under_cls);
+            interp
+                .0
+                .borrow_mut()
+                .def_class::<ClassUnderClass>(cls_under_cls);
+
+            let borrow = interp.0.borrow();
+            let root = borrow.module_spec::<Root>().unwrap();
+            assert_eq!(root.fqname().as_ref(), "A");
+            assert_eq!(&format!("{}", root), "artichoke module spec -- A");
+            let mod_under_root = borrow.module_spec::<ModuleUnderRoot>().unwrap();
+            assert_eq!(mod_under_root.fqname().as_ref(), "A::B");
+            assert_eq!(
+                &format!("{}", mod_under_root),
+                "artichoke module spec -- A::B"
+            );
+            let cls_under_root = borrow.class_spec::<ClassUnderRoot>().unwrap();
+            assert_eq!(cls_under_root.fqname().as_ref(), "A::C");
+            assert_eq!(
+                &format!("{}", cls_under_root),
+                "artichoke class spec -- A::C"
+            );
+            let cls_under_mod = borrow.class_spec::<ClassUnderModule>().unwrap();
+            assert_eq!(cls_under_mod.fqname().as_ref(), "A::B::D");
+            assert_eq!(
+                &format!("{}", cls_under_mod),
+                "artichoke class spec -- A::B::D"
+            );
+            let mod_under_cls = borrow.module_spec::<ModuleUnderClass>().unwrap();
+            assert_eq!(mod_under_cls.fqname().as_ref(), "A::C::E");
+            assert_eq!(
+                &format!("{}", mod_under_cls),
+                "artichoke module spec -- A::C::E"
+            );
+            let cls_under_cls = borrow.class_spec::<ClassUnderClass>().unwrap();
+            assert_eq!(cls_under_cls.fqname().as_ref(), "A::C::F");
+            assert_eq!(
+                &format!("{}", cls_under_cls),
+                "artichoke class spec -- A::C::F"
+            );
+        }
     }
 
     mod functional {
         use crate::test::prelude::*;
 
-        #[test]
-        fn define_method() {
-            struct Class;
-            struct Module;
+        #[derive(Debug)]
+        struct Class;
 
-            extern "C" fn value(_mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-                unsafe {
-                    match slf.tt {
-                        sys::mrb_vtype::MRB_TT_CLASS => sys::mrb_sys_fixnum_value(8),
-                        sys::mrb_vtype::MRB_TT_MODULE => sys::mrb_sys_fixnum_value(27),
-                        sys::mrb_vtype::MRB_TT_OBJECT => sys::mrb_sys_fixnum_value(64),
-                        _ => sys::mrb_sys_fixnum_value(125),
-                    }
+        #[derive(Debug)]
+        struct Module;
+
+        extern "C" fn value(_mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+            unsafe {
+                match slf.tt {
+                    sys::mrb_vtype::MRB_TT_CLASS => sys::mrb_sys_fixnum_value(8),
+                    sys::mrb_vtype::MRB_TT_MODULE => sys::mrb_sys_fixnum_value(27),
+                    sys::mrb_vtype::MRB_TT_OBJECT => sys::mrb_sys_fixnum_value(64),
+                    _ => sys::mrb_sys_fixnum_value(125),
                 }
             }
-            let mut interp = crate::interpreter().expect("init");
+        }
+
+        #[test]
+        fn define_method() {
+            let mut interp = crate::interpreter().unwrap();
             let class = class::Spec::new("DefineMethodTestClass", None, None).unwrap();
             class::Builder::for_spec(&interp, &class)
                 .add_method("value", value, sys::mrb_args_none())
@@ -552,39 +578,29 @@ mod tests {
             interp.0.borrow_mut().def_module::<Module>(module);
 
             let _ = interp
-                .eval(
-                    br#"
-                    class DynamicTestClass
-                        include DefineMethodTestModule
-                        extend DefineMethodTestModule
-                    end
+                .eval(b"class DynamicTestClass; include DefineMethodTestModule; extend DefineMethodTestModule; end")
+                .unwrap();
+            let _ = interp
+                .eval(b"module DynamicTestModule; extend DefineMethodTestModule; end")
+                .unwrap();
 
-                    module DynamicTestModule
-                        extend DefineMethodTestModule
-                    end
-                    "#,
-                )
-                .expect("eval");
-
-            let result = interp
-                .eval(b"DefineMethodTestClass.new.value")
-                .expect("eval");
-            let result = result.try_into::<i64>().expect("convert");
+            let result = interp.eval(b"DefineMethodTestClass.new.value").unwrap();
+            let result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(result, 64);
-            let result = interp.eval(b"DefineMethodTestClass.value").expect("eval");
-            let result = result.try_into::<i64>().expect("convert");
+            let result = interp.eval(b"DefineMethodTestClass.value").unwrap();
+            let result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(result, 8);
-            let result = interp.eval(b"DefineMethodTestModule.value").expect("eval");
-            let result = result.try_into::<i64>().expect("convert");
+            let result = interp.eval(b"DefineMethodTestModule.value").unwrap();
+            let result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(result, 27);
-            let result = interp.eval(b"DynamicTestClass.new.value").expect("eval");
-            let result = result.try_into::<i64>().expect("convert");
+            let result = interp.eval(b"DynamicTestClass.new.value").unwrap();
+            let result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(result, 64);
-            let result = interp.eval(b"DynamicTestClass.value").expect("eval");
-            let result = result.try_into::<i64>().expect("convert");
+            let result = interp.eval(b"DynamicTestClass.value").unwrap();
+            let result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(result, 8);
-            let result = interp.eval(b"DynamicTestModule.value").expect("eval");
-            let result = result.try_into::<i64>().expect("convert");
+            let result = interp.eval(b"DynamicTestModule.value").unwrap();
+            let result = result.try_into::<i64>(&interp).unwrap();
             assert_eq!(result, 27);
         }
     }

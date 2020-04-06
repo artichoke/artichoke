@@ -8,7 +8,7 @@ use crate::{Artichoke, ValueLike};
 /// # Errors
 ///
 /// This function makes funcalls on the interpreter which are fallible.
-pub fn last_error(interp: &Artichoke, exception: Value) -> Result<Exception, Exception> {
+pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Exception, Exception> {
     let _arena = interp.create_arena_savepoint();
     // Clear the current exception from the mruby interpreter so subsequent
     // calls to the mruby VM are not tainted by an error they did not
@@ -34,9 +34,9 @@ pub fn last_error(interp: &Artichoke, exception: Value) -> Result<Exception, Exc
     //
     // println!("{:?}", exception);
 
-    let class = exception.funcall::<Value>("class", &[], None)?;
-    let classname = class.funcall::<&str>("name", &[], None)?;
-    let message = exception.funcall::<&[u8]>("message", &[], None)?;
+    let class = exception.funcall::<Value>(interp, "class", &[], None)?;
+    let classname = class.funcall::<&str>(interp, "name", &[], None)?;
+    let message = exception.funcall::<&[u8]>(interp, "message", &[], None)?;
 
     let exception = CaughtException::new(exception, String::from(classname), message.to_vec());
     debug!("Extracted exception from interpreter: {}", exception);
@@ -99,7 +99,7 @@ fail
             "#,
         );
         let kernel = interp.eval(br#"Kernel"#).unwrap();
-        let _ = kernel.funcall::<Value>("raise", &[], None);
-        let _ = kernel.funcall::<Value>("raise", &[], None);
+        let _ = kernel.funcall::<Value>(&mut interp, "raise", &[], None);
+        let _ = kernel.funcall::<Value>(&mut interp, "raise", &[], None);
     }
 }

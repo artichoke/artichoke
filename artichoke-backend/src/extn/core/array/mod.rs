@@ -48,8 +48,8 @@ impl Array {
         let result = if let Some(first) = first {
             if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
                 ary.borrow().0.clone()
-            } else if first.respond_to("to_ary")? {
-                let other = first.funcall("to_ary", &[], None)?;
+            } else if first.respond_to(interp, "to_ary")? {
+                let other = first.funcall(interp, "to_ary", &[], None)?;
                 if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                     other.borrow().0.clone()
                 } else {
@@ -151,8 +151,8 @@ impl Array {
         if let Some(drain) = drain {
             if let Ok(other) = unsafe { Self::try_from_ruby(interp, &elem) } {
                 self.0.set_slice(interp, start, drain, &other.borrow().0)?;
-            } else if elem.respond_to("to_ary")? {
-                let other = elem.funcall("to_ary", &[], None)?;
+            } else if elem.respond_to(interp, "to_ary")? {
+                let other = elem.funcall(interp, "to_ary", &[], None)?;
                 if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
                     self.0.set_slice(interp, start, drain, &other.borrow().0)?;
                 } else {
@@ -217,8 +217,8 @@ impl Array {
     pub fn concat(&mut self, interp: &mut Artichoke, other: Value) -> Result<(), Exception> {
         if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
             self.0.concat(interp, &other.borrow().0)?;
-        } else if other.respond_to("to_ary")? {
-            let arr = other.funcall("to_ary", &[], None)?;
+        } else if other.respond_to(interp, "to_ary")? {
+            let arr = other.funcall(interp, "to_ary", &[], None)?;
             if let Ok(other) = unsafe { Self::try_from_ruby(interp, &arr) } {
                 self.0.concat(interp, &other.borrow().0)?;
             } else {

@@ -38,7 +38,7 @@ pub fn run(interp: &mut Artichoke, specs: &[String]) -> Result<bool, Exception> 
     let specs = interp.convert_mut(specs);
     let result = interp
         .top_self()
-        .funcall::<bool>("run_specs", &[specs], None)?;
+        .funcall::<bool>(interp, "run_specs", &[specs], None)?;
     Ok(result)
 }
 

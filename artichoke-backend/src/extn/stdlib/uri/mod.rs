@@ -59,7 +59,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let _ = interp.eval(&include_bytes!("uri_test.rb")[..]).unwrap();
         let result = interp.eval(b"spec");
-        let result = result.unwrap().try_into::<bool>().unwrap();
+        let result = result.unwrap().try_into::<bool>(&interp).unwrap();
         assert!(result);
     }
 }

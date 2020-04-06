@@ -47,7 +47,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<bool>();
+        let result = value.try_into::<bool>(&interp);
         assert!(result.is_err());
     }
 
@@ -91,7 +91,7 @@ mod tests {
     fn roundtrip(b: bool) -> bool {
         let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
-        let value = value.try_into::<bool>().unwrap();
+        let value = value.try_into::<bool>(&interp).unwrap();
         value == b
     }
 
@@ -99,7 +99,7 @@ mod tests {
     fn roundtrip_err(i: i64) -> bool {
         let interp = crate::interpreter().unwrap();
         let value = interp.convert(i);
-        let value = value.try_into::<bool>();
+        let value = value.try_into::<bool>(&interp);
         value.is_err()
     }
 }

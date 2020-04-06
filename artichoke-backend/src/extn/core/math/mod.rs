@@ -3,6 +3,7 @@ use std::error;
 use std::f64;
 use std::fmt;
 
+use crate::extn::core::integer::Integer;
 use crate::extn::core::numeric::Numeric;
 use crate::extn::prelude::*;
 
@@ -16,32 +17,28 @@ pub struct Math;
 
 fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Float, Exception> {
     match value.ruby_type() {
-        Ruby::Float => value.try_into(),
-        Ruby::Fixnum =>
-        {
-            #[allow(clippy::cast_possible_truncation)]
-            #[allow(clippy::cast_precision_loss)]
-            value.try_into::<Int>().map(|num| num as Float)
-        }
+        Ruby::Float => value.try_into(interp),
+        Ruby::Fixnum => value.try_into::<Integer>(interp).map(Integer::as_f64),
         Ruby::Nil => Err(Exception::from(TypeError::new(
             interp,
             "can't convert nil into Float",
         ))),
         _ => {
             // TODO: This should use `numeric::coerce`
-            let borrow = interp.0.borrow();
-            let numeric = borrow
-                .class_spec::<Numeric>()
-                .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-            let numeric = numeric
-                .value(interp)
-                .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-            drop(borrow);
-            if let Ok(true) = value.funcall("is_a?", &[numeric], None) {
-                if value.respond_to("to_f")? {
-                    let coerced = value.funcall::<Value>("to_f", &[], None)?;
+            let class_of_numeric = {
+                let borrow = interp.0.borrow();
+                let numeric = borrow
+                    .class_spec::<Numeric>()
+                    .ok_or_else(|| NotDefinedError::class("Numeric"))?;
+                numeric
+                    .value(interp)
+                    .ok_or_else(|| NotDefinedError::class("Numeric"))?
+            };
+            if let Ok(true) = value.funcall(interp, "is_a?", &[class_of_numeric], None) {
+                if value.respond_to(interp, "to_f")? {
+                    let coerced = value.funcall::<Value>(interp, "to_f", &[], None)?;
                     if let Ruby::Float = coerced.ruby_type() {
-                        coerced.try_into::<Float>()
+                        coerced.try_into::<Float>(interp)
                     } else {
                         let mut message = String::from("can't convert ");
                         message.push_str(value.pretty_name(interp));
@@ -326,7 +323,7 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
 
     let fraction = value_to_float(interp, fraction)?;
     let exponent = exponent.implicitly_convert_to_int(interp).or_else(|err| {
-        if let Ok(exponent) = exponent.try_into::<Float>() {
+        if let Ok(exponent) = exponent.try_into::<Float>(interp) {
             if exponent.is_nan() {
                 Err(Exception::from(RangeError::new(
                     interp,

@@ -57,7 +57,7 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").expect("eval");
-        let result = value.try_into::<String>();
+        let result = value.try_into::<String>(&interp);
         assert!(result.is_err());
     }
 
@@ -79,7 +79,7 @@ mod tests {
     fn string_with_value(s: String) -> bool {
         let mut interp = crate::interpreter().expect("init");
         let value = interp.convert_mut(s.clone());
-        value.to_s() == s.as_bytes()
+        value.to_s(&mut interp) == s.as_bytes()
     }
 
     #[quickcheck]
@@ -87,12 +87,15 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(string.as_str());
-        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        let len = value
+            .funcall::<usize>(&mut interp, "length", &[], None)
+            .unwrap();
         if len != string.chars().count() {
             return false;
         }
+        let zero = interp.convert(0);
         let first = value
-            .funcall::<Option<String>>("[]", &[interp.convert(0)], None)
+            .funcall::<Option<String>>(&mut interp, "[]", &[zero], None)
             .unwrap();
         let mut iter = string.chars();
         if let Some(ch) = iter.next() {
@@ -110,12 +113,15 @@ mod tests {
         }
         // Owned converter
         let value = interp.convert_mut(string.clone());
-        let len = value.funcall::<usize>("length", &[], None).unwrap();
+        let len = value
+            .funcall::<usize>(&mut interp, "length", &[], None)
+            .unwrap();
         if len != string.chars().count() {
             return false;
         }
+        let zero = interp.convert(0);
         let first = value
-            .funcall::<Option<String>>("[]", &[interp.convert(0)], None)
+            .funcall::<Option<String>>(&mut interp, "[]", &[zero], None)
             .unwrap();
         let mut iter = string.chars();
         if let Some(ch) = iter.next() {
@@ -139,7 +145,7 @@ mod tests {
     fn roundtrip(s: String) -> bool {
         let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(s.clone());
-        let value = value.try_into::<String>().unwrap();
+        let value = value.try_into::<String>(&interp).unwrap();
         value == s
     }
 
@@ -147,7 +153,7 @@ mod tests {
     fn roundtrip_err(b: bool) -> bool {
         let interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
-        let result = value.try_into::<String>();
+        let result = value.try_into::<String>(&interp);
         result.is_err()
     }
 
@@ -155,7 +161,7 @@ mod tests {
     fn symbol_to_string() {
         let mut interp = crate::interpreter().unwrap();
         let value = interp.eval(b":sym").unwrap();
-        let value = value.try_into::<String>().unwrap();
+        let value = value.try_into::<String>(&interp).unwrap();
         assert_eq!(&value, "sym");
     }
 }

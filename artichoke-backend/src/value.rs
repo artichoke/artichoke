@@ -2,13 +2,14 @@ use std::error;
 use std::fmt;
 use std::ptr;
 
+use crate::core::{self, value::Value as _};
 use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
-use crate::{Artichoke, Convert, ConvertMut, Intern, TryConvert, ValueLike};
+use crate::{Artichoke, Convert, ConvertMut, Intern, TryConvert};
 
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
@@ -47,14 +48,14 @@ impl Value {
     #[must_use]
     pub fn pretty_name<'a>(&self, interp: &mut Artichoke) -> &'a str {
         let _ = interp;
-        match self.clone().try_into() {
+        match self.clone().try_into(interp) {
             Ok(Some(true)) => "true",
             Ok(Some(false)) => "false",
             Ok(None) => "nil",
             Err(_) => {
                 if let Ruby::Data | Ruby::Object = self.ruby_type() {
-                    self.funcall::<Self>("class", &[], None)
-                        .and_then(|class| class.funcall::<&'a str>("name", &[], None))
+                    self.funcall::<Self>(interp, "class", &[], None)
+                        .and_then(|class| class.funcall::<&'a str>(interp, "name", &[], None))
                         .unwrap_or_default()
                 } else {
                     self.ruby_type().class_name()
@@ -87,7 +88,7 @@ impl Value {
     }
 
     pub fn implicitly_convert_to_int(&self, interp: &mut Artichoke) -> Result<Int, TypeError> {
-        let int = if let Ok(int) = self.clone().try_into::<Option<Int>>() {
+        let int = if let Ok(int) = self.clone().try_into::<Option<Int>>(interp) {
             if let Some(int) = int {
                 int
             } else {
@@ -96,9 +97,9 @@ impl Value {
                     "no implicit conversion from nil to integer",
                 ));
             }
-        } else if let Ok(true) = self.respond_to("to_int") {
-            if let Ok(maybe) = self.funcall::<Self>("to_int", &[], None) {
-                if let Ok(int) = maybe.clone().try_into::<Int>() {
+        } else if let Ok(true) = self.respond_to(interp, "to_int") {
+            if let Ok(maybe) = self.funcall::<Self>(interp, "to_int", &[], None) {
+                if let Ok(int) = maybe.clone().try_into::<Int>(interp) {
                     int
                 } else {
                     let mut message = String::from("can't convert ");
@@ -126,11 +127,11 @@ impl Value {
     }
 
     pub fn implicitly_convert_to_string(&self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
-        let string = if let Ok(string) = self.clone().try_into::<&[u8]>() {
+        let string = if let Ok(string) = self.clone().try_into::<&[u8]>(interp) {
             string
-        } else if let Ok(true) = self.respond_to("to_str") {
-            if let Ok(maybe) = self.funcall::<Self>("to_str", &[], None) {
-                if let Ok(string) = maybe.clone().try_into::<&[u8]>() {
+        } else if let Ok(true) = self.respond_to(interp, "to_str") {
+            if let Ok(maybe) = self.funcall::<Self>(interp, "to_str", &[], None) {
+                if let Ok(string) = maybe.clone().try_into::<&[u8]>(interp) {
                     string
                 } else {
                     let mut message = String::from("can't convert ");
@@ -170,7 +171,7 @@ impl Value {
     }
 }
 
-impl ValueLike for Value {
+impl core::value::Value for Value {
     type Artichoke = Artichoke;
     type Arg = Self;
     type Block = Self;
@@ -178,6 +179,7 @@ impl ValueLike for Value {
 
     fn funcall<T>(
         &self,
+        interp: &mut Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
@@ -185,35 +187,22 @@ impl ValueLike for Value {
     where
         Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
     {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let mrb = self.interp.0.borrow().mrb;
-
-        let _arena = self.interp.create_arena_savepoint();
-
         if args.len() > MRB_FUNCALL_ARGC_MAX {
-            let err = ArgCountError {
-                given: args.len(),
-                max: MRB_FUNCALL_ARGC_MAX,
-            };
+            let err = ArgCountError::new(args);
             warn!("{}", err);
-            return Err(Exception::from(err));
+            return Err(err.into());
         }
         let args = args.iter().map(Self::inner).collect::<Vec<_>>();
         trace!(
             "Calling {}#{} with {} args{}",
-            types::ruby_from_mrb_value(self.inner()),
+            self.ruby_type(),
             func,
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = {
-            // This is a hack until Value properly supports interpreter
-            // mutability.
-            let mut interp = self.interp.clone();
-            interp.intern_symbol(func.as_bytes().to_vec())
-        };
+        let func = interp.intern_symbol(func.as_bytes().to_vec());
+        let mrb = interp.0.borrow_mut().mrb;
+        let _arena = interp.create_arena_savepoint();
         let result = unsafe {
             protect::funcall(
                 mrb,
@@ -225,7 +214,7 @@ impl ValueLike for Value {
         };
         match result {
             Ok(value) => {
-                let value = Self::new(&self.interp, value);
+                let value = Self::new(interp, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -233,61 +222,47 @@ impl ValueLike for Value {
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
                     Err(Exception::from(Fatal::new(
-                        &self.interp,
+                        interp,
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    let value = value.try_into::<T>()?;
-                    Ok(value)
+                    value.try_into::<T>(interp)
                 }
             }
             Err(exception) => {
-                let exception = Self::new(&self.interp, exception);
-                Err(exception_handler::last_error(&self.interp, exception)?)
+                let exception = Self::new(interp, exception);
+                Err(exception_handler::last_error(interp, exception)?)
             }
         }
     }
 
-    fn try_into<T>(self) -> Result<T, Self::Error>
-    where
-        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
-    {
-        // We must clone interp out of self because try_convert consumes self.
-        let interp = self.interp.clone();
-        let result = interp.try_convert(self)?;
-        Ok(result)
-    }
-
-    fn freeze(&mut self) -> Result<(), Self::Error> {
-        let _ = self.funcall::<Self>("freeze", &[], None)?;
+    fn freeze(&mut self, interp: &mut Self::Artichoke) -> Result<(), Self::Error> {
+        let _ = self.funcall::<Self>(interp, "freeze", &[], None)?;
         Ok(())
     }
 
-    fn is_frozen(&self) -> bool {
-        let mrb = self.interp.0.borrow().mrb;
+    fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool {
+        let mrb = interp.0.borrow_mut().mrb;
         let inner = self.inner();
         unsafe { sys::mrb_sys_obj_frozen(mrb, inner) }
     }
 
-    fn inspect(&self) -> Vec<u8> {
-        self.funcall::<Vec<u8>>("inspect", &[], None)
+    fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
+        self.funcall(interp, "inspect", &[], None)
             .unwrap_or_default()
     }
 
     fn is_nil(&self) -> bool {
-        unsafe { sys::mrb_sys_value_is_nil(self.inner()) }
+        matches!(self.ruby_type(), Ruby::Nil)
     }
 
-    fn respond_to(&self, method: &str) -> Result<bool, Self::Error> {
-        // This is a hack until Value properly supports interpreter mutability.
-        let mut interp = self.interp.clone();
+    fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error> {
         let method = interp.convert_mut(method);
-        self.funcall::<bool>("respond_to?", &[method], None)
+        self.funcall::<bool>(interp, "respond_to?", &[method], None)
     }
 
-    fn to_s(&self) -> Vec<u8> {
-        self.funcall::<Vec<u8>>("to_s", &[], None)
-            .unwrap_or_default()
+    fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
+        self.funcall(interp, "to_s", &[], None).unwrap_or_default()
     }
 }
 
@@ -340,27 +315,22 @@ impl fmt::Debug for Block {
 }
 
 impl Block {
-    /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
     #[must_use]
     pub fn new(block: sys::mrb_value) -> Option<Self> {
-        if unsafe { sys::mrb_sys_value_is_nil(block) } {
+        if let Ruby::Nil = types::ruby_from_mrb_value(block) {
             None
         } else {
             Some(Self { value: block })
         }
     }
 
-    pub fn yield_arg<T>(&self, interp: &Artichoke, arg: &Value) -> Result<T, Exception>
+    pub fn yield_arg<T>(&self, interp: &mut Artichoke, arg: &Value) -> Result<T, Exception>
     where
         Artichoke: TryConvert<Value, T, Error = Exception>,
     {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let mrb = interp.0.borrow().mrb;
-
         let _arena = interp.create_arena_savepoint();
 
+        let mrb = interp.0.borrow_mut().mrb;
         let result = unsafe { protect::block_yield(mrb, self.value, arg.inner()) };
         match result {
             Ok(value) => {
@@ -376,8 +346,7 @@ impl Block {
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    let value = value.try_into::<T>()?;
-                    Ok(value)
+                    value.try_into::<T>(interp)
                 }
             }
             Err(exception) => {
@@ -395,6 +364,18 @@ pub struct ArgCountError {
     pub given: usize,
     /// Maximum number of arguments supported.
     pub max: usize,
+}
+
+impl ArgCountError {
+    pub fn new<T>(args: T) -> Self
+    where
+        T: AsRef<[Value]>,
+    {
+        Self {
+            given: args.as_ref().len(),
+            max: MRB_FUNCALL_ARGC_MAX,
+        }
+    }
 }
 
 impl fmt::Display for ArgCountError {
@@ -466,120 +447,120 @@ mod tests {
 
     #[test]
     fn to_s_true() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(true);
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"true");
     }
 
     #[test]
     fn inspect_true() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(true);
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"true");
     }
 
     #[test]
     fn to_s_false() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(false);
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"false");
     }
 
     #[test]
     fn inspect_false() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(false);
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"false");
     }
 
     #[test]
     fn to_s_nil() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(None::<Value>);
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"");
     }
 
     #[test]
     fn inspect_nil() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert(None::<Value>);
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"nil");
     }
 
     #[test]
     fn to_s_fixnum() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = Convert::<_, Value>::convert(&interp, 255);
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"255");
     }
 
     #[test]
     fn inspect_fixnum() {
-        let interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = Convert::<_, Value>::convert(&interp, 255);
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"255");
     }
 
     #[test]
     fn to_s_string() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert_mut("interstate");
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"interstate");
     }
 
     #[test]
     fn inspect_string() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert_mut("interstate");
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, br#""interstate""#);
     }
 
     #[test]
     fn to_s_empty_string() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert_mut("");
-        let string = value.to_s();
+        let string = value.to_s(&mut interp);
         assert_eq!(string, b"");
     }
 
     #[test]
     fn inspect_empty_string() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
 
         let value = interp.convert_mut("");
-        let debug = value.inspect();
+        let debug = value.inspect(&mut interp);
         assert_eq!(debug, br#""""#);
     }
 
     #[test]
     fn is_dead() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"'dead'").expect("value");
+        let live = interp.eval(b"'dead'").unwrap();
         assert!(!live.is_dead(&mut interp));
         let dead = live;
-        let live = interp.eval(b"'live'").expect("value");
+        let live = interp.eval(b"'live'").unwrap();
         arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
@@ -591,12 +572,12 @@ mod tests {
 
     #[test]
     fn immediate_is_dead() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"27").expect("value");
+        let live = interp.eval(b"27").unwrap();
         assert!(!live.is_dead(&mut interp));
         let immediate = live;
-        let live = interp.eval(b"64").expect("value");
+        let live = interp.eval(b"64").unwrap();
         arena.restore();
         interp.full_gc();
         // immediate objects are never dead
@@ -612,44 +593,48 @@ mod tests {
 
     #[test]
     fn funcall() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
-        assert!(nil.funcall::<bool>("nil?", &[], None).expect("nil?"));
+        let nil_is_nil = nil.funcall::<bool>(&mut interp, "nil?", &[], None).unwrap();
+        assert!(nil_is_nil);
         let s = interp.convert_mut("foo");
-        assert!(!s.funcall::<bool>("nil?", &[], None).expect("nil?"));
+        let string_is_nil = s.funcall::<bool>(&mut interp, "nil?", &[], None).unwrap();
+        assert!(!string_is_nil);
         let delim = interp.convert_mut("");
         let split = s
-            .funcall::<Vec<&str>>("split", &[delim], None)
-            .expect("split");
+            .funcall::<Vec<&str>>(&mut interp, "split", &[delim], None)
+            .unwrap();
         assert_eq!(split, vec!["f", "o", "o"])
     }
 
     #[test]
     fn funcall_different_types() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
-        let eql = nil.funcall::<bool>("==", &[s], None).unwrap();
+        let eql = nil.funcall::<bool>(&mut interp, "==", &[s], None).unwrap();
         assert!(!eql);
     }
 
     #[test]
     fn funcall_type_error() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
-        let err = s.funcall::<String>("+", &[nil], None).unwrap_err();
+        let err = s
+            .funcall::<String>(&mut interp, "+", &[nil], None)
+            .unwrap_err();
         assert_eq!("TypeError", err.name().as_str());
         assert_eq!(&b"nil cannot be converted to String"[..], err.message());
     }
 
     #[test]
     fn funcall_method_not_exists() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
         let err = nil
-            .funcall::<bool>("garbage_method_name", &[s], None)
+            .funcall::<bool>(&mut interp, "garbage_method_name", &[s], None)
             .unwrap_err();
         assert_eq!("NoMethodError", err.name().as_str());
         assert_eq!(

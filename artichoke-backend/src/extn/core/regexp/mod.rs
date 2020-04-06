@@ -443,28 +443,28 @@ impl TryConvertMut<(Option<Value>, Option<Value>), (Option<opts::Options>, Optio
     ) -> Result<(Option<opts::Options>, Option<enc::Encoding>), Self::Error> {
         let (options, encoding) = value;
         if let Some(encoding) = encoding {
-            let encoding = match enc::parse(&encoding) {
+            let encoding = match enc::parse(self, &encoding) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
                     let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
-                    warning.extend(encoding.to_s());
+                    warning.extend(encoding.to_s(self));
                     self.warn(warning.as_slice())?;
                     None
                 }
             };
-            let options = options.as_ref().map(opts::parse);
+            let options = options.map(|options| opts::parse(self, &options));
             Ok((options, encoding))
         } else if let Some(options) = options {
-            let encoding = match enc::parse(&options) {
+            let encoding = match enc::parse(self, &options) {
                 Ok(encoding) => Some(encoding),
                 Err(enc::Error::InvalidEncoding) => {
                     let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
-                    warning.extend(options.to_s());
+                    warning.extend(options.to_s(self));
                     self.warn(warning.as_slice())?;
                     None
                 }
             };
-            let options = opts::parse(&options);
+            let options = opts::parse(self, &options);
             Ok((Some(options), encoding))
         } else {
             Ok((None, None))

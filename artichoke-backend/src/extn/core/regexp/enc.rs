@@ -63,8 +63,8 @@ impl PartialEq for Encoding {
 
 impl Eq for Encoding {}
 
-pub fn parse(value: &Value) -> Result<Encoding, Error> {
-    if let Ok(encoding) = value.clone().try_into::<Int>() {
+pub fn parse(interp: &mut Artichoke, value: &Value) -> Result<Encoding, Error> {
+    if let Ok(encoding) = value.clone().try_into::<Int>(interp) {
         // Only deal with Encoding opts
         let encoding = encoding & !regexp::ALL_REGEXP_OPTS;
         if encoding == regexp::FIXEDENCODING {
@@ -76,23 +76,20 @@ pub fn parse(value: &Value) -> Result<Encoding, Error> {
         } else {
             Err(Error::InvalidEncoding)
         }
-    } else if let Ok(encoding) = value.clone().try_into::<&str>() {
+    } else if let Ok(encoding) = value.clone().try_into::<&str>(interp) {
         if encoding.contains('u') && encoding.contains('n') {
             return Err(Error::InvalidEncoding);
         }
-        let mut enc = vec![];
+        let mut enc = None;
         for flag in encoding.chars() {
             match flag {
-                'u' | 's' | 'e' => enc.push(Encoding::Fixed),
-                'n' => enc.push(Encoding::No),
+                'u' | 's' | 'e' if enc.is_none() => enc = Some(Encoding::Fixed),
+                'n' if enc.is_none() => enc = Some(Encoding::No),
                 'i' | 'm' | 'x' | 'o' => continue,
                 _ => return Err(Error::InvalidEncoding),
             }
         }
-        if enc.len() > 1 {
-            return Err(Error::InvalidEncoding);
-        }
-        Ok(enc.pop().unwrap_or_default())
+        Ok(enc.unwrap_or_default())
     } else {
         Ok(Encoding::default())
     }

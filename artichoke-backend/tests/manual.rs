@@ -32,7 +32,7 @@ impl Container {
         let inner = mrb_get_args!(mrb, required = 1);
         let interp = unwrap_interpreter!(mrb);
         let inner = Value::new(&interp, inner);
-        let inner = inner.try_into::<Int>().unwrap_or_default();
+        let inner = inner.try_into::<Int>(&interp).unwrap_or_default();
         let container = Box::new(Self { inner });
         container
             .try_into_ruby(&interp, Some(slf))
@@ -42,7 +42,8 @@ impl Container {
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         let interp = unwrap_interpreter!(mrb);
-        if let Ok(data) = Box::<Self>::try_from_ruby(&interp, &Value::new(&interp, slf)) {
+        let value = Value::new(&interp, slf);
+        if let Ok(data) = Box::<Self>::try_from_ruby(&interp, &value) {
             let borrow = data.borrow();
             interp.convert(borrow.inner).inner()
         } else {
@@ -70,17 +71,17 @@ impl File for Container {
 
 #[test]
 fn define_rust_backed_ruby_class() {
-    let mut interp = artichoke_backend::interpreter().expect("init");
+    let mut interp = artichoke_backend::interpreter().unwrap();
     interp
         .def_file_for_type::<Container>(b"container.rb")
-        .expect("def file");
+        .unwrap();
 
-    let _ = interp.eval(b"require 'container'").expect("require");
-    let result = interp.eval(b"Container.new(15).value").expect("eval");
-    let result = result.try_into::<Int>().unwrap();
+    let _ = interp.eval(b"require 'container'").unwrap();
+    let result = interp.eval(b"Container.new(15).value").unwrap();
+    let result = result.try_into::<Int>(&interp).unwrap();
     assert_eq!(result, 15);
     // Ensure Rc is cloned correctly and still points to valid memory.
-    let result = interp.eval(b"Container.new(105).value").expect("eval");
-    let result = result.try_into::<Int>().unwrap();
+    let result = interp.eval(b"Container.new(105).value").unwrap();
+    let result = result.try_into::<Int>(&interp).unwrap();
     assert_eq!(result, 105);
 }

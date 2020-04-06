@@ -219,7 +219,7 @@ impl Float {
         other: Value,
     ) -> Result<Outcome, Exception> {
         if let Ruby::Float = other.ruby_type() {
-            let other = other.try_into::<Float>()?;
+            let other = other.try_into::<Float>(interp)?;
             return Ok(self.modulo(other).into());
         }
         let x = interp.convert_mut(self);

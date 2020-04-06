@@ -89,16 +89,20 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
             )));
         }
         match (x.ruby_type(), y.ruby_type()) {
-            (Ruby::Float, Ruby::Float) => Ok(Coercion::Float(x.try_into()?, y.try_into()?)),
+            (Ruby::Float, Ruby::Float) => {
+                Ok(Coercion::Float(x.try_into(interp)?, y.try_into(interp)?))
+            }
             (Ruby::Float, Ruby::Fixnum) => {
-                let y = y.try_into::<Integer>()?;
-                Ok(Coercion::Float(x.try_into()?, y.as_f64()))
+                let y = y.try_into::<Integer>(interp)?;
+                Ok(Coercion::Float(x.try_into(interp)?, y.as_f64()))
             }
             (Ruby::Fixnum, Ruby::Float) => {
-                let x = x.try_into::<Integer>()?;
-                Ok(Coercion::Float(x.as_f64(), y.try_into::<Float>()?))
+                let x = x.try_into::<Integer>(interp)?;
+                Ok(Coercion::Float(x.as_f64(), y.try_into(interp)?))
             }
-            (Ruby::Fixnum, Ruby::Fixnum) => Ok(Coercion::Integer(x.try_into()?, y.try_into()?)),
+            (Ruby::Fixnum, Ruby::Fixnum) => {
+                Ok(Coercion::Integer(x.try_into(interp)?, y.try_into(interp)?))
+            }
             _ => {
                 let class_of_numeric = {
                     let borrow = interp.0.borrow();
@@ -109,9 +113,9 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                         .value(interp)
                         .ok_or_else(|| NotDefinedError::class("Numeric"))?
                 };
-                if let Ok(true) = y.funcall("is_a?", &[class_of_numeric], None) {
-                    if y.respond_to("coerce")? {
-                        let coerced = y.funcall::<Value>("coerce", &[x], None)?;
+                if let Ok(true) = y.funcall(interp, "is_a?", &[class_of_numeric], None) {
+                    if y.respond_to(interp, "coerce")? {
+                        let coerced = y.funcall::<Value>(interp, "coerce", &[x], None)?;
                         let coerced: Vec<Value> = interp
                             .try_convert(coerced)
                             .map_err(|_| TypeError::new(interp, "coerce must return [x, y]"))?;

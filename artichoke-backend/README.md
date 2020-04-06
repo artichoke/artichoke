@@ -26,7 +26,7 @@ use artichoke_backend::{Eval, ValueLike, exception::Exception};
 fn example() -> Result<(), Exception> {
     let mut interp = artichoke_backend::interpreter()?;
     let result = interp.eval(b"10 * 10")?;
-    let result = result.try_into::<i64>()?;
+    let result = result.try_into::<i64>(&interp)?;
     assert_eq!(100, result);
     Ok(())
 }
@@ -44,7 +44,7 @@ use artichoke_backend::{Eval, ValueLike, exception::Exception};
 fn example() -> Result<(), Exception> {
     let mut interp = artichoke_backend::interpreter()?;
     let s = interp.eval(b"'ruby funcall'")?;
-    let len = s.funcall::<usize>("length", &[], None)?;
+    let len = s.funcall::<usize>(&mut interp, "length", &[], None)?;
     assert_eq!(12, len);
     Ok(())
 }

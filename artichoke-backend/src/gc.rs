@@ -132,12 +132,12 @@ mod tests {
 
     #[test]
     fn arena_restore_on_explicit_restore() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         let arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
-            let value = interp.eval(b"'a'").expect("value");
-            let _ = value.to_s();
+            let value = interp.eval(b"'a'").unwrap();
+            let _ = value.to_s(&mut interp);
         }
         arena.restore();
         interp.full_gc();
@@ -152,13 +152,13 @@ mod tests {
 
     #[test]
     fn arena_restore_on_drop() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         {
             let _arena = interp.create_arena_savepoint();
             for _ in 0..2000 {
-                let value = interp.eval(b"'a'").expect("value");
-                let _ = value.to_s();
+                let value = interp.eval(b"'a'").unwrap();
+                let _ = value.to_s(&mut interp);
             }
         }
         interp.full_gc();
@@ -173,15 +173,15 @@ mod tests {
 
     #[test]
     fn arena_clone() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         let arena = interp.create_arena_savepoint();
         let arena_clone = arena.clone();
         // restore original before any objects have been allocated
         arena.restore();
         for _ in 0..2000 {
-            let value = interp.eval(b"'a'").expect("value");
-            let _ = value.to_s();
+            let value = interp.eval(b"'a'").unwrap();
+            let _ = value.to_s(&mut interp);
         }
         arena_clone.restore();
         interp.full_gc();
@@ -195,7 +195,7 @@ mod tests {
     }
     #[test]
     fn enable_disable_gc() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         interp.disable_gc();
         let arena = interp.create_arena_savepoint();
         let _ = interp
@@ -215,7 +215,7 @@ mod tests {
                 []
                 "#,
             )
-            .expect("eval");
+            .unwrap();
         let live = interp.live_object_count();
         interp.full_gc();
         assert_eq!(
@@ -235,10 +235,10 @@ mod tests {
 
     #[test]
     fn gc_after_empty_eval() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let arena = interp.create_arena_savepoint();
         let baseline_object_count = interp.live_object_count();
-        drop(interp.eval(b"").expect("eval"));
+        drop(interp.eval(b"").unwrap());
         arena.restore();
         interp.full_gc();
         assert_eq!(interp.live_object_count(), baseline_object_count);
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn gc_functional_test() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         let initial_arena = interp.create_arena_savepoint();
         for _ in 0..2000 {

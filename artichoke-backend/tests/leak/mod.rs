@@ -1,42 +1,58 @@
+#![allow(dead_code)]
+
 #[cfg(target_os = "linux")]
 use std::mem::MaybeUninit;
 
+use artichoke_backend::Artichoke;
+
 #[derive(Debug)]
-pub struct Detector {
+pub struct Detector<'a> {
+    interp: &'a mut Artichoke,
     test: String,
     iterations: usize,
     tolerance: i64, // in bytes
 }
 
-impl Detector {
-    pub fn new<T>(test: T, iterations: usize, tolerance: i64) -> Self
+impl<'a> Detector<'a> {
+    pub fn new<T>(test: T, interp: &'a mut Artichoke) -> Self
     where
         T: Into<String>,
     {
         Self {
+            interp,
             test: test.into(),
-            iterations,
-            tolerance,
+            iterations: 0,
+            tolerance: 0,
         }
     }
 
-    pub fn check_leaks<F>(&self, execute: F)
-    where
-        F: FnMut(usize) -> (),
-    {
-        self.check_leaks_with_finalizer(execute, || {});
+    pub fn with_iterations(mut self, iterations: usize) -> Self {
+        self.iterations = iterations;
+        self
     }
 
-    pub fn check_leaks_with_finalizer<F, G>(&self, mut execute: F, finalize: G)
+    pub fn with_tolerance(mut self, tolerance: i64) -> Self {
+        self.tolerance = tolerance;
+        self
+    }
+
+    pub fn check_leaks<F>(self, execute: F)
     where
-        F: FnMut(usize) -> (),
-        G: FnOnce() -> (),
+        F: for<'b> FnMut(&'b mut Artichoke) -> (),
+    {
+        self.check_leaks_with_finalizer(execute, |_| {});
+    }
+
+    pub fn check_leaks_with_finalizer<F, G>(self, mut execute: F, finalize: G)
+    where
+        F: for<'b> FnMut(&'b mut Artichoke) -> (),
+        G: for<'b> FnOnce(&'b mut Artichoke) -> (),
     {
         let start_mem = resident_memsize();
-        for i in 0..self.iterations {
-            execute(i);
+        for _ in 0..self.iterations {
+            execute(self.interp);
         }
-        finalize();
+        finalize(self.interp);
         let end_mem = resident_memsize();
         assert!(
             end_mem <= start_mem + self.tolerance,

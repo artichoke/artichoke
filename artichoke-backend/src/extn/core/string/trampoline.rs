@@ -5,7 +5,7 @@ use crate::extn::core::regexp::{self, Regexp, Scan};
 use crate::extn::prelude::*;
 
 pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
-    let string = value.try_into::<&[u8]>()?;
+    let string = value.try_into::<&[u8]>(interp)?;
 
     let ord = if let Some((start, end, ch)) = string.char_indices().next() {
         if ch == '\u{FFFD}' {
@@ -46,14 +46,14 @@ pub fn scan(
         message.push_str(" (expected Regexp)");
         Err(Exception::from(TypeError::new(interp, message)))
     } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
-        let haystack = value.clone().try_into::<&[u8]>()?;
+        let haystack = value.clone().try_into::<&[u8]>(interp)?;
         match regexp.borrow().inner().scan(interp, haystack, block)? {
             Scan::Haystack => Ok(value),
             Scan::Collected(collected) => Ok(interp.convert_mut(collected)),
             Scan::Patterns(patterns) => Ok(interp.convert_mut(patterns)),
         }
     } else if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
-        let string = value.clone().try_into::<&[u8]>()?;
+        let string = value.clone().try_into::<&[u8]>(interp)?;
         if let Some(ref block) = block {
             let regex = Regexp::lazy(pattern_bytes.to_vec());
             let matchdata = MatchData::new(string.to_vec(), regex, ..);

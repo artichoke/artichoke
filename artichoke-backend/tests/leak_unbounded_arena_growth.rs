@@ -31,57 +31,67 @@ const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 #[test]
 fn unbounded_arena_growth() {
     // ArtichokeApi::current_exception
-    let mut interp = artichoke_backend::interpreter().expect("init");
+    let mut interp = artichoke_backend::interpreter().unwrap();
     let code = r#"
 def bad_code
   raise ArgumentError.new("n" * 1024 * 1024)
 end
     "#;
-    let _ = interp.eval(code.trim().as_bytes()).expect("eval");
+    let _ = interp.eval(code.trim().as_bytes()).unwrap();
     let expected = Some(vec![
         Vec::from(&b"(eval):2:in bad_code"[..]),
         Vec::from(&b"(eval):1"[..]),
     ]);
-    leak::Detector::new("current exception", ITERATIONS, LEAK_TOLERANCE).check_leaks(|_| {
-        let mut interp = interp.clone();
-        let code = b"bad_code";
-        let arena = interp.create_arena_savepoint();
-        let result = interp.eval(code).unwrap_err();
-        arena.restore();
-        assert_eq!(expected, result.vm_backtrace(&mut interp));
-        drop(result);
-        interp.incremental_gc();
-    });
+    leak::Detector::new("current exception", &mut interp)
+        .with_iterations(ITERATIONS)
+        .with_tolerance(LEAK_TOLERANCE)
+        .check_leaks(|interp| {
+            let code = b"bad_code";
+            let arena = interp.create_arena_savepoint();
+            let result = interp.eval(code).unwrap_err();
+            arena.restore();
+            assert_eq!(expected, result.vm_backtrace(interp));
+            drop(result);
+            interp.incremental_gc();
+        });
+    interp.close();
 
     // Value::to_s
-    let interp = artichoke_backend::interpreter().expect("init");
+    let mut interp = artichoke_backend::interpreter().unwrap();
     let expected = "a".repeat(1024 * 1024);
-    leak::Detector::new("to_s", ITERATIONS, LEAK_TOLERANCE).check_leaks_with_finalizer(
-        |_| {
-            let mut interp = interp.clone();
-            let arena = interp.create_arena_savepoint();
-            let result = interp.eval(b"'a' * 1024 * 1024").expect("eval");
-            arena.restore();
-            assert_eq!(result.to_s(), expected.as_bytes());
-            drop(result);
-            interp.incremental_gc();
-        },
-        || interp.clone().full_gc(),
-    );
+    leak::Detector::new("to_s", &mut interp)
+        .with_iterations(ITERATIONS)
+        .with_tolerance(LEAK_TOLERANCE)
+        .check_leaks_with_finalizer(
+            |interp| {
+                let mut interp = interp.clone();
+                let arena = interp.create_arena_savepoint();
+                let result = interp.eval(b"'a' * 1024 * 1024").unwrap();
+                arena.restore();
+                assert_eq!(result.to_s(&mut interp), expected.as_bytes());
+                drop(result);
+                interp.incremental_gc();
+            },
+            |interp| interp.full_gc(),
+        );
+    interp.close();
 
     // Value::inspect
-    let interp = artichoke_backend::interpreter().expect("init");
+    let mut interp = artichoke_backend::interpreter().unwrap();
     let expected = format!(r#""{}""#, "a".repeat(1024 * 1024)).into_bytes();
-    leak::Detector::new("inspect", ITERATIONS, 3 * LEAK_TOLERANCE).check_leaks_with_finalizer(
-        |_| {
-            let mut interp = interp.clone();
-            let arena = interp.create_arena_savepoint();
-            let result = interp.eval(b"'a' * 1024 * 1024").expect("eval");
-            arena.restore();
-            assert_eq!(result.inspect(), expected);
-            drop(result);
-            interp.incremental_gc();
-        },
-        || interp.clone().full_gc(),
-    );
+    leak::Detector::new("inspect", &mut interp)
+        .with_iterations(ITERATIONS)
+        .with_tolerance(LEAK_TOLERANCE)
+        .check_leaks_with_finalizer(
+            |interp| {
+                let arena = interp.create_arena_savepoint();
+                let result = interp.eval(b"'a' * 1024 * 1024").unwrap();
+                arena.restore();
+                assert_eq!(result.inspect(interp), expected);
+                drop(result);
+                interp.incremental_gc();
+            },
+            |interp| interp.full_gc(),
+        );
+    interp.close();
 }
