@@ -84,9 +84,7 @@ pub fn parse(interp: &mut Artichoke, value: &Value) -> Result<Encoding, Error> {
         for flag in encoding.chars() {
             match flag {
                 'u' | 's' | 'e' if enc.is_none() => enc = Some(Encoding::Fixed),
-                'u' | 's' | 'e' => return Err(Error::InvalidEncoding),
                 'n' if enc.is_none() => enc = Some(Encoding::No),
-                'n' => return Err(Error::InvalidEncoding),
                 'i' | 'm' | 'x' | 'o' => continue,
                 _ => return Err(Error::InvalidEncoding),
             }
