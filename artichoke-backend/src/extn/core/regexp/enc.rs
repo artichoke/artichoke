@@ -64,7 +64,7 @@ impl PartialEq for Encoding {
 impl Eq for Encoding {}
 
 pub fn parse(interp: &mut Artichoke, value: &Value) -> Result<Encoding, Error> {
-    if let Ok(encoding) = value.clone().try_into::<Int>(interp) {
+    if let Ok(encoding) = value.try_into::<Int>(interp) {
         // Only deal with Encoding opts
         let encoding = encoding & !regexp::ALL_REGEXP_OPTS;
         if encoding == regexp::FIXEDENCODING {
@@ -76,7 +76,7 @@ pub fn parse(interp: &mut Artichoke, value: &Value) -> Result<Encoding, Error> {
         } else {
             Err(Error::InvalidEncoding)
         }
-    } else if let Ok(encoding) = value.clone().try_into::<&str>(interp) {
+    } else if let Ok(encoding) = value.try_into::<&str>(interp) {
         if encoding.contains('u') && encoding.contains('n') {
             return Err(Error::InvalidEncoding);
         }
