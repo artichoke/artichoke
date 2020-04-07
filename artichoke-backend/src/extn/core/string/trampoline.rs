@@ -1,7 +1,7 @@
 use bstr::ByteSlice;
 
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::{self, Regexp, Scan};
+use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::prelude::*;
 
 pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
@@ -47,11 +47,8 @@ pub fn scan(
         Err(Exception::from(TypeError::new(interp, message)))
     } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
         let haystack = value.try_into::<&[u8]>(interp)?;
-        match regexp.borrow().inner().scan(interp, haystack, block)? {
-            Scan::Haystack => Ok(value),
-            Scan::Collected(collected) => Ok(interp.convert_mut(collected)),
-            Scan::Patterns(patterns) => Ok(interp.convert_mut(patterns)),
-        }
+        let scan = regexp.borrow().inner().scan(interp, haystack, block)?;
+        Ok(interp.convert_mut(scan).unwrap_or(value))
     } else if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
         let string = value.try_into::<&[u8]>(interp)?;
         if let Some(ref block) = block {
