@@ -282,7 +282,7 @@ impl RelativePath {
 }
 
 fn load_error(interp: &Artichoke, filename: &[u8]) -> LoadError {
-    let mut message = String::from("cannot load such file -- ").into_bytes();
+    let mut message = b"cannot load such file -- ".to_vec();
     message.extend_from_slice(filename);
-    LoadError::new_raw(&interp, message)
+    LoadError::new_raw(interp, message)
 }
