@@ -19,6 +19,16 @@ pub enum Scan {
     Haystack,
 }
 
+impl ConvertMut<Scan, Option<Value>> for Artichoke {
+    fn convert_mut(&mut self, from: Scan) -> Option<Value> {
+        match from {
+            Scan::Collected(collected) => Some(self.convert_mut(collected)),
+            Scan::Patterns(patterns) => Some(self.convert_mut(patterns)),
+            Scan::Haystack => None,
+        }
+    }
+}
+
 pub trait RegexpType {
     fn box_clone(&self) -> Box<dyn RegexpType>;
 
