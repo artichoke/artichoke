@@ -9,8 +9,8 @@
 [![API master](https://img.shields.io/badge/docs-master-blue.svg)](https://artichoke.github.io/artichoke/artichoke/)
 
 <p align="center">
-  <a href="https://artichoke.run">
-    <img height="200" width="200" src="https://artichoke.run/logo.svg">
+  <a href="https://www.artichokeruby.org">
+    <img height="200" width="200" src="https://www.artichokeruby.org/artichoke-logo.svg">
   </a>
 </p>
 
@@ -22,7 +22,7 @@ Artichoke provides a Ruby runtime implemented in Rust and Ruby.
 
 <p align="center">
   <a href="https://artichoke.run">
-    <img style="max-width: 400px" width="400" src="https://artichoke.run/playground.png?bust">
+    <img style="max-width: 400px" width="400" src="https://artichoke.run/playground.png">
   </a>
   <br>
   <em>Artichoke Ruby Wasm Playground</em>
