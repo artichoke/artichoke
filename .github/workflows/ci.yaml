@@ -29,9 +29,9 @@ jobs:
           profile: minimal
 
       - name: Install Ruby toolchain
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.6"
+          ruby-version: ".ruby-version"
 
       - name: Install Clang
         run: sudo apt install clang
@@ -83,9 +83,9 @@ jobs:
           components: rustfmt, clippy
 
       - name: Install Ruby toolchain
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.6"
+          ruby-version: ".ruby-version"
 
       - name: Install Clang
         run: sudo apt install clang
@@ -112,12 +112,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Ruby toolchain
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.6"
-
-      - name: Install bundler
-        run: gem install bundler
+          ruby-version: ".ruby-version"
 
       - name: Install gems
         run: bundle install
@@ -134,11 +131,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install Node toolchain
-        uses: actions/setup-node@v1
-        with:
-          node-version: "12.x"
-
       - name: Install Nodejs toolchain
         run: npm ci
 
@@ -154,11 +146,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install Node toolchain
-        uses: actions/setup-node@v1
-        with:
-          node-version: "12.x"
-
       - name: Lint and check formatting with eslint
         run: npx eslint .
 
@@ -170,22 +157,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
-      - name: Install Ruby toolchain
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: "2.6"
-
-      - name: Install bundler
-        run: gem install bundler
-
-      - name: Install gems
-        run: bundle install
-
-      - name: Install Node toolchain
-        uses: actions/setup-node@v1
-        with:
-          node-version: "12.x"
 
       - name: Lint and check formatting with prettier
         run: npx prettier --check '**/*'

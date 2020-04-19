@@ -34,11 +34,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install Node toolchain
-        uses: actions/setup-node@v1
-        with:
-          node-version: "12.x"
-
       - name: Install Nodejs toolchain
         run: npm ci
 

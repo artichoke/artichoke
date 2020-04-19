@@ -29,9 +29,9 @@ jobs:
           components: rustfmt, rust-src
 
       - name: Install Ruby toolchain
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.6"
+          ruby-version: ".ruby-version"
 
       - name: Install Clang
         run: sudo apt install clang
