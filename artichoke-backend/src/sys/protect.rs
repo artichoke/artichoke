@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 use std::ffi::c_void;
+use std::mem;
 use std::ptr::{self, NonNull};
 
 use crate::sys;
@@ -139,5 +140,65 @@ impl Protect for BlockYield {
         let ptr = sys::mrb_sys_cptr_ptr(data);
         let Self { block, arg } = *Box::from_raw(ptr as *mut Self);
         sys::mrb_yield(mrb, block, arg)
+    }
+}
+
+pub unsafe fn is_range(
+    mrb: *mut sys::mrb_state,
+    value: sys::mrb_value,
+    len: i64,
+) -> Result<Option<Range>, sys::mrb_value> {
+    let data = IsRange { value, len };
+    let is_range = protect(mrb, data)?;
+    if sys::mrb_sys_value_is_nil(is_range) {
+        Ok(None)
+    } else {
+        let ptr = sys::mrb_sys_cptr_ptr(is_range);
+        let out = *Box::from_raw(ptr as *mut Range);
+        Ok(Some(out))
+    }
+}
+
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Range {
+    pub start: sys::mrb_int,
+    pub len: sys::mrb_int,
+}
+
+// `IsRange` must be `Copy` because the we may unwind past the frames in which
+// it is used with `longjmp` which does not allow Rust  to run destructors.
+#[derive(Clone, Copy)]
+struct IsRange {
+    value: sys::mrb_value,
+    len: sys::mrb_int,
+}
+
+impl Protect for IsRange {
+    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
+        let ptr = sys::mrb_sys_cptr_ptr(data);
+        let Self { value, len } = *Box::from_raw(ptr as *mut Self);
+        let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
+        let mut range_len = mem::MaybeUninit::<sys::mrb_int>::uninit();
+        let check_range = sys::mrb_range_beg_len(
+            mrb,
+            value,
+            start.as_mut_ptr(),
+            range_len.as_mut_ptr(),
+            len,
+            0_u8,
+        );
+        if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
+            let start = start.assume_init();
+            let range_len = range_len.assume_init();
+            let out = Range {
+                start,
+                len: range_len,
+            };
+            let out = Box::new(out);
+            let out = Box::into_raw(out);
+            sys::mrb_sys_cptr_value(mrb, out as *mut c_void)
+        } else {
+            sys::mrb_sys_nil_value()
+        }
     }
 }

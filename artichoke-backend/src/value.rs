@@ -99,6 +99,21 @@ impl Value {
         unsafe { sys::mrb_sys_value_is_dead(mrb, self.inner()) }
     }
 
+    pub fn is_range(
+        &self,
+        interp: &mut Artichoke,
+        len: Int,
+    ) -> Result<Option<protect::Range>, Exception> {
+        let mrb = interp.0.borrow().mrb;
+        match unsafe { protect::is_range(mrb, self.inner(), len) } {
+            Ok(range) => Ok(range),
+            Err(exception) => {
+                let exception = Value::new(interp, exception);
+                Err(exception_handler::last_error(interp, exception)?)
+            }
+        }
+    }
+
     pub fn implicitly_convert_to_int(&self, interp: &mut Artichoke) -> Result<Int, TypeError> {
         let int = if let Ok(int) = self.try_into::<Option<Int>>(interp) {
             if let Some(int) = int {

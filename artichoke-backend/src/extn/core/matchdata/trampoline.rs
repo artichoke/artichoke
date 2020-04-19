@@ -1,7 +1,8 @@
 use std::convert::TryFrom;
 
-use crate::extn::core::matchdata::{args, CaptureAt, MatchData};
+use crate::extn::core::matchdata::{CaptureAt, MatchData};
 use crate::extn::prelude::*;
+use crate::sys::protect;
 
 pub fn begin(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
@@ -52,15 +53,10 @@ pub fn element_reference(
         let captures_len = borrow.regexp.inner().captures_len(interp, None)?;
         let rangelen = Int::try_from(captures_len)
             .map_err(|_| ArgumentError::new(interp, "input string too long"))?;
-        match unsafe { args::is_range(interp, &elem, rangelen) } {
-            Ok(Some((start, len))) => CaptureAt::StartLen(start, len),
-            Ok(None) => return Ok(interp.convert(None::<Value>)),
-            Err(_) => {
-                let mut message = String::from("no implicit conversion of ");
-                message.push_str(elem.pretty_name(interp));
-                message.push_str(" into Integer");
-                return Err(Exception::from(TypeError::new(interp, message)));
-            }
+        if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
+            CaptureAt::StartLen(start, len)
+        } else {
+            return Ok(interp.convert(None::<Value>));
         }
     };
     let matched = borrow.capture_at(interp, at)?;

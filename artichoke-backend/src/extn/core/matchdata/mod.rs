@@ -19,7 +19,6 @@ use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;
 use crate::extn::prelude::*;
 
-mod args;
 pub mod mruby;
 pub mod trampoline;
 
