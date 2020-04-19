@@ -37,8 +37,6 @@ pub fn element_reference(
 ) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
-    // TODO(GH-308): Once extracting a `Range` is safe, extract this conversion
-    // to a `TryConvert<&'a Value, CaptureAt<'a>>` impl.
     let at = if let Some(len) = len {
         let start = elem.implicitly_convert_to_int(interp)?;
         let len = len.implicitly_convert_to_int(interp)?;
