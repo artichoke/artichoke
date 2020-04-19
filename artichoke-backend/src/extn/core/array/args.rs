@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
-use std::mem;
 
 use crate::extn::prelude::*;
+use crate::sys::protect;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ElementReference {
@@ -29,21 +29,14 @@ pub fn element_reference(
     } else {
         let rangelen = Int::try_from(ary_len)
             .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
-        match unsafe { is_range(interp, &elem, rangelen) } {
-            Ok(Some((start, len))) => {
-                if let Ok(len) = usize::try_from(len) {
-                    Ok(ElementReference::StartLen(start, len))
-                } else {
-                    Ok(ElementReference::Empty)
-                }
+        if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
+            if let Ok(len) = usize::try_from(len) {
+                Ok(ElementReference::StartLen(start, len))
+            } else {
+                Ok(ElementReference::Empty)
             }
-            Ok(None) => Ok(ElementReference::Empty),
-            Err(_) => {
-                let mut message = String::from("no implicit conversion of ");
-                message.push_str(elem.pretty_name(interp));
-                message.push_str(" into Integer");
-                Err(Exception::from(TypeError::new(interp, message)))
-            }
+        } else {
+            Ok(ElementReference::Empty)
         }
     }
 }
@@ -104,48 +97,37 @@ pub fn element_assignment(
     } else {
         let rangelen = Int::try_from(len)
             .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
-        match unsafe { is_range(interp, &first, rangelen) } {
-            Ok(Some((start, len))) => {
-                let start = usize::try_from(start).unwrap_or_else(|_| {
-                    unimplemented!("should throw RangeError (-11..1 out of range)")
-                });
-                let len = usize::try_from(len)
-                    .unwrap_or_else(|_| unreachable!("Range can't have negative length"));
-                Ok((start, Some(len), second))
+        if let Some(protect::Range { start, len }) = first.is_range(interp, rangelen)? {
+            let start = usize::try_from(start).unwrap_or_else(|_| {
+                unimplemented!("should throw RangeError (-11..1 out of range)")
+            });
+            let len = usize::try_from(len)
+                .unwrap_or_else(|_| unreachable!("Range can't have negative length"));
+            Ok((start, Some(len), second))
+        } else {
+            let start = first.funcall::<Value>(interp, "begin", &[], None)?;
+            let start = start.implicitly_convert_to_int(interp)?;
+            let end = first.funcall::<Value>(interp, "last", &[], None)?;
+            let end = end.implicitly_convert_to_int(interp)?;
+            // TODO: This conditional is probably not doing the right thing
+            if start + (end - start) < 0 {
+                let mut message = String::new();
+                string::format_int_into(&mut message, start)?;
+                message.push_str("..");
+                string::format_int_into(&mut message, end)?;
+                message.push_str(" out of range");
+                return Err(Exception::from(RangeError::new(interp, message)));
             }
-            Ok(None) => {
-                let start = first.funcall::<Value>(interp, "begin", &[], None)?;
-                let start = start.implicitly_convert_to_int(interp)?;
-                let end = first.funcall::<Value>(interp, "last", &[], None)?;
-                let end = end.implicitly_convert_to_int(interp)?;
-                // TODO: This conditional is probably not doing the right thing
-                if start + (end - start) < 0 {
-                    let mut message = String::new();
-                    string::format_int_into(&mut message, start)?;
-                    message.push_str("..");
-                    string::format_int_into(&mut message, end)?;
-                    message.push_str(" out of range");
-                    return Err(Exception::from(RangeError::new(interp, message)));
-                }
-                match (usize::try_from(start), usize::try_from(end)) {
-                    (Ok(start), Ok(end)) => Ok((start, end.checked_sub(start), second)),
-                    (Err(_), Ok(end)) => {
-                        let pos = start
-                            .checked_neg()
-                            .and_then(|start| usize::try_from(start).ok())
-                            .and_then(|start| len.checked_sub(start));
-                        if let Some(start) = pos {
-                            Ok((start, end.checked_sub(start), second))
-                        } else {
-                            let mut message = String::from("index ");
-                            string::format_int_into(&mut message, start)?;
-                            message.push_str(" too small for array; minimum: -");
-                            string::format_int_into(&mut message, len)?;
-                            Err(Exception::from(IndexError::new(interp, message)))
-                        }
-                    }
-                    (Ok(start), Err(_)) => Ok((start, None, second)),
-                    (Err(_), Err(_)) => {
+            match (usize::try_from(start), usize::try_from(end)) {
+                (Ok(start), Ok(end)) => Ok((start, end.checked_sub(start), second)),
+                (Err(_), Ok(end)) => {
+                    let pos = start
+                        .checked_neg()
+                        .and_then(|start| usize::try_from(start).ok())
+                        .and_then(|start| len.checked_sub(start));
+                    if let Some(start) = pos {
+                        Ok((start, end.checked_sub(start), second))
+                    } else {
                         let mut message = String::from("index ");
                         string::format_int_into(&mut message, start)?;
                         message.push_str(" too small for array; minimum: -");
@@ -153,41 +135,15 @@ pub fn element_assignment(
                         Err(Exception::from(IndexError::new(interp, message)))
                     }
                 }
-            }
-            Err(_) => {
-                let mut message = String::from("no implicit conversion of ");
-                message.push_str(first.pretty_name(interp));
-                message.push_str(" into Integer");
-                Err(Exception::from(TypeError::new(interp, message)))
+                (Ok(start), Err(_)) => Ok((start, None, second)),
+                (Err(_), Err(_)) => {
+                    let mut message = String::from("index ");
+                    string::format_int_into(&mut message, start)?;
+                    message.push_str(" too small for array; minimum: -");
+                    string::format_int_into(&mut message, len)?;
+                    Err(Exception::from(IndexError::new(interp, message)))
+                }
             }
         }
-    }
-}
-
-// TODO(GH-308): extract this function into `sys::protect`
-unsafe fn is_range(
-    interp: &Artichoke,
-    range: &Value,
-    length: Int,
-) -> Result<Option<(Int, Int)>, Exception> {
-    let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
-    let mut len = mem::MaybeUninit::<sys::mrb_int>::uninit();
-    let mrb = interp.0.borrow().mrb;
-    // NOTE: `mrb_range_beg_len` can raise.
-    // TODO(GH-308): wrap this in a call to `mrb_protect`.
-    let check_range = sys::mrb_range_beg_len(
-        mrb,
-        range.inner(),
-        start.as_mut_ptr(),
-        len.as_mut_ptr(),
-        length,
-        0_u8,
-    );
-    let start = start.assume_init();
-    let len = len.assume_init();
-    if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
-        Ok(Some((start, len)))
-    } else {
-        Ok(None)
     }
 }
