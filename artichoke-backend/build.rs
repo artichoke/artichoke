@@ -460,12 +460,15 @@ mod release {
 
     fn compiler_version() -> String {
         let metadata = rustc_version::version_meta().unwrap();
-        let mut commit = metadata.commit_hash.unwrap();
-        commit.truncate(7);
-        format!(
-            "Rust {} (rev {}) on {}",
-            metadata.semver, commit, metadata.host
-        )
+        if let Some(mut commit) = metadata.commit_hash {
+            commit.truncate(7);
+            format!(
+                "Rust {} (rev {}) on {}",
+                metadata.semver, commit, metadata.host
+            )
+        } else {
+            format!("Rust {} on {}", metadata.semver, metadata.host)
+        }
     }
 }
 
