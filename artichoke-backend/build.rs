@@ -359,7 +359,9 @@ mod release {
         emit("RUBY_PLATFORM", platform);
         emit("RUBY_COPYRIGHT", copyright);
         emit("RUBY_DESCRIPTION", description);
-        emit("ARTICHOKE_COMPILER_VERSION", compiler_version());
+        if let Some(compiler_version) = compiler_version() {
+            emit("ARTICHOKE_COMPILER_VERSION", compiler_version);
+        }
     }
 
     fn emit<T>(env: &str, value: T)
@@ -430,9 +432,9 @@ mod release {
         }
     }
 
-    fn compiler_version() -> String {
-        let metadata = rustc_version::version_meta().unwrap();
-        if let Some(mut commit) = metadata.commit_hash {
+    fn compiler_version() -> Option<String> {
+        let metadata = rustc_version::version_meta().ok()?;
+        let compiler_version = if let Some(mut commit) = metadata.commit_hash {
             commit.truncate(7);
             format!(
                 "Rust {} (rev {}) on {}",
@@ -440,7 +442,8 @@ mod release {
             )
         } else {
             format!("Rust {} on {}", metadata.semver, metadata.host)
-        }
+        };
+        Some(compiler_version)
     }
 }
 
