@@ -41,6 +41,7 @@ quickcheck_macros = "0.9"
 bindgen = { version = "0.53.1", default-features = false, features = ["runtime"] }
 cc = { version = "1.0", features = ["parallel"] }
 chrono = "0.4"
+git2 = "0.13"
 num_cpus = "1"
 rustc_version = "0.2.3"
 target-lexicon = "0.10.0"

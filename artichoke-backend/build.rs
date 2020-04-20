@@ -326,25 +326,26 @@ mod libmruby {
 }
 
 mod release {
-    use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
+    use chrono::prelude::*;
+    use git2::Repository;
     use std::env;
     use std::fmt;
-    use std::process::Command;
     use std::str;
     use target_lexicon::Triple;
 
     pub fn build(target: &Triple) {
         let version = env::var("CARGO_PKG_VERSION").unwrap();
-        let birth_date = birthdate();
-        let build_date: DateTime<Utc> = Utc::now();
-        let release_date = NaiveDateTime::from_timestamp(build_date.timestamp(), 0).date();
-        let revision_count = revision_count();
+        let repo = Repository::open(crate::buildpath::crate_root().parent().unwrap()).ok();
+        let birth_date = birthdate(repo.as_ref());
+        let build_date = Utc::now();
+        let release_date = Utc.timestamp(build_date.timestamp(), 0).date();
+        let revision_count = revision_count(repo.as_ref());
         let platform = platform(target);
         let copyright = copyright(birth_date, build_date);
         let description = description(
             version.as_str(),
             release_date,
-            revision_count.as_str(),
+            revision_count,
             platform.as_str(),
         );
 
@@ -352,7 +353,9 @@ mod release {
         emit("RUBY_RELEASE_YEAR", build_date.year());
         emit("RUBY_RELEASE_MONTH", build_date.month());
         emit("RUBY_RELEASE_DAY", build_date.day());
-        emit("RUBY_REVISION", revision_count);
+        if let Some(revision_count) = revision_count {
+            emit("RUBY_REVISION", revision_count);
+        }
         emit("RUBY_PLATFORM", platform);
         emit("RUBY_COPYRIGHT", copyright);
         emit("RUBY_DESCRIPTION", description);
@@ -366,96 +369,65 @@ mod release {
         println!("cargo:rustc-env={}={}", env, value);
     }
 
-    fn birthdate() -> DateTime<Utc> {
-        // birth date taken from git log of first commit.
-        let output = Command::new("git")
-            .arg("rev-list")
-            .arg("--max-parents=0")
-            .arg("HEAD")
-            .output()
-            .unwrap();
-        if !output.status.success() {
-            eprintln!("git rev-list failed");
-            eprintln!("--- stdout:");
-            eprintln!("{}", str::from_utf8(output.stdout.as_slice()).unwrap());
-            eprintln!();
-            eprintln!("--- stderr:");
-            eprintln!("{}", str::from_utf8(output.stderr.as_slice()).unwrap());
-            panic!("git rev-list failed");
-        }
-        // This code assumes there is only one root commit reachable from HEAD.
-        let initial_commit = String::from_utf8(output.stdout).unwrap();
-        let output = Command::new("git")
-            .arg("show")
-            .arg("--no-patch")
-            .arg("--format=%cD")
-            .arg(initial_commit.trim())
-            .output()
-            .unwrap();
-        if !output.status.success() {
-            eprintln!("git show {} failed", initial_commit.trim());
-            eprintln!("--- stdout:");
-            eprintln!("{}", str::from_utf8(output.stdout.as_slice()).unwrap());
-            eprintln!();
-            eprintln!("--- stderr:");
-            eprintln!("{}", str::from_utf8(output.stderr.as_slice()).unwrap());
-            panic!("git show {} failed", initial_commit.trim());
-        }
-        let birth_date = str::from_utf8(output.stdout.as_slice()).unwrap();
-        DateTime::<Utc>::from(DateTime::parse_from_rfc2822(birth_date.trim()).expect("birth"))
+    fn birthdate(repo: Option<&Repository>) -> Option<DateTime<Utc>> {
+        let repo = repo?;
+        let mut revwalk = repo.revwalk().ok()?;
+        revwalk.push_head().ok()?;
+        revwalk
+            .set_sorting(git2::Sort::TIME | git2::Sort::REVERSE)
+            .ok()?;
+        let rev = revwalk.next()?.ok()?;
+        let commit = repo.find_commit(rev).ok()?;
+        let time = commit.time().seconds();
+        Some(Utc.timestamp(time, 0))
     }
 
-    fn revision_count() -> String {
-        let output = Command::new("git")
-            .arg("rev-list")
-            .arg("--count")
-            .arg("HEAD")
-            .output()
-            .unwrap();
-        if !output.status.success() {
-            eprintln!("git rev-list --count HEAD failed");
-            eprintln!("--- stdout:");
-            eprintln!("{}", str::from_utf8(output.stdout.as_slice()).unwrap());
-            eprintln!();
-            eprintln!("--- stderr:");
-            eprintln!("{}", str::from_utf8(output.stderr.as_slice()).unwrap());
-            panic!("git rev-list --count HEAD failed");
-        }
-        str::from_utf8(output.stdout.as_slice())
-            .unwrap()
-            .trim()
-            .to_owned()
+    fn revision_count(repo: Option<&Repository>) -> Option<usize> {
+        let repo = repo?;
+        let mut revwalk = repo.revwalk().ok()?;
+        revwalk.push_head().ok();
+        revwalk
+            .set_sorting(git2::Sort::TIME | git2::Sort::REVERSE)
+            .ok()?;
+        Some(revwalk.count())
     }
 
     fn platform(target: &Triple) -> String {
         format!("{}-{}", target.architecture, target.operating_system)
     }
 
-    fn copyright(birth_date: DateTime<Utc>, build_date: DateTime<Utc>) -> String {
-        if birth_date.year() == build_date.year() {
-            format!(
+    fn copyright(birth_date: Option<DateTime<Utc>>, build_date: DateTime<Utc>) -> String {
+        match birth_date {
+            Some(birth) if birth.year() == build_date.year() => format!(
                 "Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
-                birth_date.year()
-            )
-        } else {
-            format!(
+                birth.year()
+            ),
+            Some(birth) => format!(
                 "Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
-                birth_date.year(),
+                birth.year(),
                 build_date.year()
-            )
+            ),
+            None => format!(
+                "Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
+                build_date.year()
+            ),
         }
     }
 
     fn description(
         version: &str,
-        release_date: NaiveDate,
-        revision_count: &str,
+        release_date: Date<Utc>,
+        revision_count: Option<usize>,
         platform: &str,
     ) -> String {
-        format!(
-            "artichoke {} ({} revision {}) [{}]",
-            version, release_date, revision_count, platform
-        )
+        if let Some(revision_count) = revision_count {
+            format!(
+                "artichoke {} ({} revision {}) [{}]",
+                version, release_date, revision_count, platform
+            )
+        } else {
+            format!("artichoke {} ({}) [{}]", version, release_date, platform)
+        }
     }
 
     fn compiler_version() -> String {
