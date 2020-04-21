@@ -349,7 +349,7 @@ mod release {
             platform.as_str(),
         );
 
-        emit("RUBY_RELEASE_DATE", release_date);
+        emit("RUBY_RELEASE_DATE", release_date.naive_utc());
         emit("RUBY_RELEASE_YEAR", build_date.year());
         emit("RUBY_RELEASE_MONTH", build_date.month());
         emit("RUBY_RELEASE_DAY", build_date.day());
@@ -388,9 +388,6 @@ mod release {
         let repo = repo?;
         let mut revwalk = repo.revwalk().ok()?;
         revwalk.push_head().ok();
-        revwalk
-            .set_sorting(git2::Sort::TIME | git2::Sort::REVERSE)
-            .ok()?;
         Some(revwalk.count())
     }
 
@@ -425,10 +422,18 @@ mod release {
         if let Some(revision_count) = revision_count {
             format!(
                 "artichoke {} ({} revision {}) [{}]",
-                version, release_date, revision_count, platform
+                version,
+                release_date.naive_utc(),
+                revision_count,
+                platform
             )
         } else {
-            format!("artichoke {} ({}) [{}]", version, release_date, platform)
+            format!(
+                "artichoke {} ({}) [{}]",
+                version,
+                release_date.naive_utc(),
+                platform
+            )
         }
     }
 
