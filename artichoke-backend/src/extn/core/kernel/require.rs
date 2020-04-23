@@ -32,9 +32,9 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<bool, Exception> 
     }
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
-    interp.push_context(context);
+    interp.push_context(context)?;
     let result = interp.load_source(path);
-    let _ = interp.pop_context();
+    let _ = interp.pop_context()?;
     result
 }
 
@@ -76,18 +76,18 @@ pub fn require(
     if interp.source_is_file(&path)? {
         let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
             .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
-        interp.push_context(context);
+        interp.push_context(context)?;
         let result = interp.require_source(&path);
-        let _ = interp.pop_context();
+        let _ = interp.pop_context()?;
         return result;
     }
     if let Some(path) = alternate {
         if interp.source_is_file(&path)? {
             let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
                 .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
-            interp.push_context(context);
+            interp.push_context(context)?;
             let result = interp.require_source(&path);
-            let _ = interp.pop_context();
+            let _ = interp.pop_context()?;
             return result;
         }
     }
@@ -112,11 +112,8 @@ impl RelativePath {
     }
 
     pub fn try_from_interp(interp: &mut Artichoke) -> Result<Self, Exception> {
-        let borrow = interp.0.borrow();
-        // TODO(GH-468): Use `Parser::peek_context`.
-        let context = borrow
-            .parser
-            .peek_context()
+        let context = interp
+            .peek_context()?
             .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
         let path = ffi::bytes_to_os_str(context.filename())?;
         let path = Path::new(path);

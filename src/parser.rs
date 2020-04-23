@@ -87,12 +87,11 @@ pub struct Parser {
 impl Parser {
     /// Create a new parser from an interpreter instance.
     #[must_use]
-    pub fn new(interp: &Artichoke) -> Option<Self> {
-        let mut borrow = interp.0.borrow_mut();
-        let mrb = borrow.mrb;
-        let context = borrow.parser.context_mut();
+    pub fn new(interp: &mut Artichoke) -> Option<Self> {
+        let state = interp.state.as_mut()?;
+        let context = state.parser.context_mut();
         let context = NonNull::new(context)?;
-        let parser = unsafe { sys::mrb_parser_new(mrb) };
+        let parser = unsafe { sys::mrb_parser_new(interp.mrb.as_mut()) };
         let parser = NonNull::new(parser)?;
         Some(Self { parser, context })
     }

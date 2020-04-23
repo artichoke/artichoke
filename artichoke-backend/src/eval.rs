@@ -4,8 +4,8 @@ use crate::core::Eval;
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
-use crate::ffi;
-use crate::sys::{self, protect};
+use crate::ffi::{self, InterpreterExtractError};
+use crate::sys::protect;
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -15,14 +15,25 @@ impl Eval for Artichoke {
     type Error = Exception;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let mrb = self.0.borrow().mrb;
-        let context = self.0.borrow_mut().parser.context_mut() as *mut _;
-
-        trace!("Evaling code on {}", sys::mrb_sys_state_debug(mrb));
-        match unsafe { protect::eval(mrb, context, code) } {
+        let result = unsafe {
+            let context = self
+                .state
+                .as_mut()
+                .ok_or(InterpreterExtractError)?
+                .parser
+                .context_mut() as *mut _;
+            println!("eval before boundary");
+            let r = self.with_ffi_boundary(|mrb| {
+                println!("eval in boundary");
+                println!("{:?}", std::str::from_utf8(code));
+                let r = protect::eval(mrb, context, code);
+                println!("eval post boundary");
+                r
+            })?;
+            println!("eval post post boundary");
+            r
+        };
+        match result {
             Ok(value) => {
                 let value = Value::new(self, value);
                 if value.is_unreachable() {
@@ -68,8 +79,7 @@ mod tests {
         interp.push_context(context);
         let _ = interp.eval(b"15").unwrap();
         assert_eq!(
-            // TODO(GH-468): Use `Parser::peek_context`.
-            interp.0.borrow().parser.peek_context().unwrap().filename(),
+            interp.peek_context().unwrap().filename(),
             &b"context.rb"[..]
         );
     }
@@ -78,8 +88,7 @@ mod tests {
     fn root_context_is_not_pushed_after_eval() {
         let mut interp = crate::interpreter().unwrap();
         let _ = interp.eval(b"15").unwrap();
-        // TODO(GH-468): Use `Parser::peek_context`.
-        assert!(interp.0.borrow().parser.peek_context().is_none());
+        assert!(interp.peek_context().is_none());
     }
 
     mod nested {
@@ -93,11 +102,13 @@ mod tests {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let mut interp = unwrap_interpreter!(mrb);
-            if let Ok(value) = interp.eval(b"__FILE__") {
-                value.inner()
+            let mut guard = Guard::new(&mut interp);
+            let result = if let Ok(value) = guard.eval(b"__FILE__") {
+                value
             } else {
-                interp.convert(None::<Value>).inner()
-            }
+                guard.convert(None::<Value>)
+            };
+            result.inner()
         }
 
         impl File for NestedEval {

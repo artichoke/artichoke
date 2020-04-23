@@ -10,7 +10,7 @@ use crate::Artichoke;
 ///
 /// This function makes funcalls on the interpreter which are fallible.
 pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Exception, Exception> {
-    let _arena = interp.create_arena_savepoint();
+    let mut arena = interp.create_arena_savepoint();
     // Clear the current exception from the mruby interpreter so subsequent
     // calls to the mruby VM are not tainted by an error they did not
     // generate.
@@ -35,9 +35,11 @@ pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Exception,
     //
     // println!("{:?}", exception);
 
-    let class = exception.funcall::<Value>(interp, "class", &[], None)?;
-    let classname = class.funcall::<&str>(interp, "name", &[], None)?;
-    let message = exception.funcall::<&[u8]>(interp, "message", &[], None)?;
+    let class = exception.funcall::<Value>(arena.interp(), "class", &[], None)?;
+    let classname = class.funcall::<Value>(arena.interp(), "name", &[], None)?;
+    let classname = classname.try_into_mut::<&str>(arena.interp())?;
+    let message = exception.funcall::<Value>(arena.interp(), "message", &[], None)?;
+    let message = message.try_into_mut::<&[u8]>(arena.interp())?;
 
     let exception = CaughtException::new(exception, String::from(classname), message.to_vec());
     debug!("Extracted exception from interpreter: {}", exception);

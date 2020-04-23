@@ -3,14 +3,13 @@
 //! These functions are unsafe. Use them carefully.
 
 use bstr::{ByteSlice, ByteVec};
-use std::cell::RefCell;
 use std::error;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::mem;
-use std::ptr::NonNull;
-use std::rc::Rc;
+use std::ptr::{self, NonNull};
 
+use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::{ArgumentError, Fatal};
@@ -31,36 +30,27 @@ use crate::Artichoke;
 /// [`Rc`]`<`[`RefCell`]`<`[`State`]`>>`.
 pub unsafe fn from_user_data(
     mrb: *mut sys::mrb_state,
-) -> Result<Artichoke, InterpreterExtractError> {
+) -> Result<Artichoke, crate::exception::Exception> {
     let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
         mrb
     } else {
         error!("Attempted to extract Artichoke from null mrb_state");
-        return Err(InterpreterExtractError);
+        return Err(InterpreterExtractError.into());
     };
-    let state = if let Some(state) = NonNull::new(mrb.as_mut().ud) {
-        state.cast::<RefCell<State>>()
+    let ud = mem::replace(&mut mrb.as_mut().ud, ptr::null_mut());
+    println!("ffi boundary - ud: {:p}", ud);
+    let state = if let Some(state) = NonNull::new(ud) {
+        state.cast::<State>()
     } else {
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
-        return Err(InterpreterExtractError);
+        return Err(ConvertBytesError.into());
     };
-    // Extract the smart pointer that wraps the API from the user data on
-    // the mrb interpreter. The `mrb_state` should retain ownership of its
-    // copy of the smart pointer.
-    let state = Rc::from_raw(state.as_ref());
-    // Clone the API smart pointer and increase its ref count to return a
-    // reference to the caller.
-    let api = Rc::clone(&state);
-    // Forget the transmuted API extracted from the user data to make sure
-    // the `mrb_state` maintains ownership and the smart pointer does not
-    // get deallocated before `mrb_close` is called.
-    mem::forget(state);
-    // At this point, `Rc::strong_count` will be increased by 1.
+    let state = Box::from_raw(state.as_ptr());
     trace!(
         "Extracted Artichoke from user data pointer on {}",
         sys::mrb_sys_state_debug(mrb.as_mut())
     );
-    Ok(Artichoke(api))
+    Ok(Artichoke::new(mrb, state))
 }
 
 /// Failed to extract Artichoke interpreter at an FFI boundary.
@@ -94,9 +84,7 @@ impl RubyException for InterpreterExtractError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<Fatal>()?;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp.new_instance::<Fatal>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }
@@ -178,9 +166,10 @@ impl RubyException for ConvertBytesError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<ArgumentError>()?;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp
+            .new_instance::<ArgumentError>(&[message])
+            .ok()
+            .flatten()?;
         Some(value.inner())
     }
 }
@@ -227,8 +216,8 @@ mod tests {
     #[test]
     fn from_user_data_null_user_data() {
         let interp = crate::interpreter().expect("init");
-        let mrb = interp.0.borrow().mrb;
         unsafe {
+            let mrb = interp.mrb.as_mut();
             // fake null user data
             (*mrb).ud = ptr::null_mut();
         }
@@ -239,20 +228,10 @@ mod tests {
     #[test]
     fn from_user_data() {
         let interp = crate::interpreter().expect("init");
-        let mrb = interp.0.borrow().mrb;
-        let res = unsafe { super::from_user_data(mrb) };
+        let res = unsafe {
+            let mrb = interp.mrb.as_mut();
+            super::from_user_data(mrb)
+        };
         assert!(res.is_ok());
-    }
-
-    #[test]
-    fn from_user_data_rc_refcount() {
-        let interp = crate::interpreter().expect("init");
-        assert_eq!(Rc::strong_count(&interp.0), 1);
-        let mrb = interp.0.borrow().mrb;
-        let res = unsafe { super::from_user_data(mrb) };
-        assert_eq!(Rc::strong_count(&interp.0), 2);
-        assert!(res.is_ok());
-        drop(res);
-        assert_eq!(Rc::strong_count(&interp.0), 1);
     }
 }

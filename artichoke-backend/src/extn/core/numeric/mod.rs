@@ -2,11 +2,11 @@ use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<Numeric>().is_some() {
+    if interp.is_class_defined::<Numeric>() {
         return Ok(());
     }
     let spec = class::Spec::new("Numeric", None, None)?;
-    interp.0.borrow_mut().def_class::<Numeric>(spec);
+    interp.def_class::<Numeric>(spec)?;
     let _ = interp.eval(&include_bytes!("numeric.rb")[..])?;
     trace!("Patched Numeric onto interpreter");
     Ok(())
@@ -104,15 +104,9 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                 Ok(Coercion::Integer(x.try_into(interp)?, y.try_into(interp)?))
             }
             _ => {
-                let class_of_numeric = {
-                    let borrow = interp.0.borrow();
-                    let numeric = borrow
-                        .class_spec::<Numeric>()
-                        .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-                    numeric
-                        .value(interp)
-                        .ok_or_else(|| NotDefinedError::class("Numeric"))?
-                };
+                let class_of_numeric = interp
+                    .class_of::<Numeric>()?
+                    .ok_or_else(|| NotDefinedError::class("Numeric"))?;
                 if let Ok(true) = y.funcall(interp, "is_a?", &[class_of_numeric], None) {
                     if y.respond_to(interp, "coerce")? {
                         let coerced = y.funcall::<Value>(interp, "coerce", &[x], None)?;

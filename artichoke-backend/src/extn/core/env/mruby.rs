@@ -3,13 +3,11 @@ use crate::extn::core::env;
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<env::Environ>().is_some() {
+    if interp.is_class_defined::<env::Environ>() {
         return Ok(());
     }
     let scope = interp
-        .0
-        .borrow_mut()
-        .module_spec::<artichoke::Artichoke>()
+        .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;
     let spec = class::Spec::new(
@@ -28,7 +26,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("initialize", artichoke_env_initialize, sys::mrb_args_none())?
         .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<env::Environ>(spec);
+    interp.def_class::<env::Environ>(spec)?;
     let _ = interp.eval(&include_bytes!("env.rb")[..])?;
     trace!("Patched ENV onto interpreter");
     trace!("Patched Artichoke::Environ onto interpreter");
@@ -42,10 +40,11 @@ unsafe extern "C" fn artichoke_env_initialize(
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
-    let result = env::initialize(&mut interp, Some(slf));
+    let mut guard = Guard::new(&mut interp);
+    let result = env::initialize(&mut guard, Some(slf));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -56,12 +55,13 @@ unsafe extern "C" fn artichoke_env_element_reference(
 ) -> sys::mrb_value {
     let name = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
-    let name = Value::new(&interp, name);
-    let result = env::element_reference(&mut interp, obj, &name);
+    let mut guard = Guard::new(&mut interp);
+    let obj = Value::new(&guard, slf);
+    let name = Value::new(&guard, name);
+    let result = env::element_reference(&mut guard, obj, &name);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -72,13 +72,14 @@ unsafe extern "C" fn artichoke_env_element_assignment(
 ) -> sys::mrb_value {
     let (name, value) = mrb_get_args!(mrb, required = 2);
     let mut interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
-    let name = Value::new(&interp, name);
-    let value = Value::new(&interp, value);
-    let result = env::element_assignment(&mut interp, obj, &name, value);
+    let mut guard = Guard::new(&mut interp);
+    let obj = Value::new(&guard, slf);
+    let name = Value::new(&guard, name);
+    let value = Value::new(&guard, value);
+    let result = env::element_assignment(&mut guard, obj, &name, value);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -89,10 +90,11 @@ unsafe extern "C" fn artichoke_env_to_h(
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
-    let result = env::to_h(&mut interp, obj);
+    let mut guard = Guard::new(&mut interp);
+    let obj = Value::new(&guard, slf);
+    let result = env::to_h(&mut guard, obj);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }

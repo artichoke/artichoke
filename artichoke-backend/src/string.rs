@@ -11,6 +11,7 @@ use std::error;
 use std::fmt;
 use std::io;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::Fatal;
@@ -126,9 +127,7 @@ impl RubyException for WriteError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<Fatal>()?;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp.new_instance::<Fatal>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }
@@ -208,9 +207,7 @@ impl RubyException for IoWriteError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<Fatal>()?;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp.new_instance::<Fatal>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }

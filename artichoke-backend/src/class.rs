@@ -1,30 +1,30 @@
+use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
 use crate::def::{ConstantNameError, EnclosingRubyScope, Free, Method, NotDefinedError};
+use crate::exception::Exception;
+use crate::ffi::InterpreterExtractError;
 use crate::method;
 use crate::sys;
-use crate::types::Int;
-use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Builder<'a> {
-    interp: &'a Artichoke,
+    interp: &'a mut Artichoke,
     spec: &'a Spec,
     is_mrb_tt_data: bool,
-    super_class: Option<&'a Spec>,
+    super_class: Option<NonNull<sys::RClass>>,
     methods: HashSet<method::Spec>,
 }
 
 impl<'a> Builder<'a> {
     #[must_use]
-    pub fn for_spec(interp: &'a Artichoke, spec: &'a Spec) -> Self {
+    pub fn for_spec(interp: &'a mut Artichoke, spec: &'a Spec) -> Self {
         Self {
             interp,
             spec,
@@ -41,9 +41,22 @@ impl<'a> Builder<'a> {
     }
 
     #[must_use]
-    pub fn with_super_class(mut self, super_class: Option<&'a Spec>) -> Self {
-        self.super_class = super_class;
-        self
+    pub fn with_super_class<T>(mut self, classname: &str) -> Result<Self, Exception>
+    where
+        T: Any,
+    {
+        let state = self.interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state
+            .classes
+            .get::<T>()
+            .ok_or_else(|| NotDefinedError::super_class(String::from(classname)))?;
+        let rclass = unsafe {
+            let mrb = self.interp.mrb.as_mut();
+            spec.rclass(mrb)
+                .ok_or_else(|| NotDefinedError::super_class("super class"))?
+        };
+        self.super_class = Some(rclass);
+        Ok(self)
     }
 
     pub fn add_method<T>(
@@ -75,12 +88,11 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), NotDefinedError> {
-        let mrb = self.interp.0.borrow().mrb;
-        let mut super_class = if let Some(spec) = self.super_class {
-            spec.rclass(mrb)
-                .ok_or_else(|| NotDefinedError::super_class(spec.fqname().into_owned()))?
+        let mrb = unsafe { self.interp.mrb.as_mut() };
+        let mut super_class = if let Some(super_class) = self.super_class {
+            super_class
         } else {
-            let rclass = unsafe { (*mrb).object_class };
+            let rclass = mrb.object_class;
             NonNull::new(rclass).ok_or_else(|| NotDefinedError::super_class("Object"))?
         };
         let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
@@ -154,23 +166,6 @@ impl Spec {
         } else {
             Err(ConstantNameError::new(name))
         }
-    }
-
-    #[must_use]
-    pub fn new_instance(&self, interp: &Artichoke, args: &[Value]) -> Option<Value> {
-        let mrb = interp.0.borrow().mrb;
-        let mut rclass = self.rclass(mrb)?;
-        let args = args.iter().map(Value::inner).collect::<Vec<_>>();
-        let arglen = Int::try_from(args.len()).ok()?;
-        let value = unsafe { sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr()) };
-        Some(Value::new(interp, value))
-    }
-
-    #[must_use]
-    pub fn value(&self, interp: &Artichoke) -> Option<Value> {
-        let mut rclass = self.rclass(interp.0.borrow().mrb)?;
-        let module = unsafe { sys::mrb_sys_class_value(rclass.as_mut()) };
-        Some(Value::new(interp, module))
     }
 
     #[must_use]
@@ -270,10 +265,9 @@ mod tests {
 
         let mut interp = crate::interpreter().unwrap();
         let borrow = interp.0.borrow();
-        let standard_error = borrow.class_spec::<StandardError>().unwrap();
         let spec = class::Spec::new("RustError", None, None).unwrap();
         class::Builder::for_spec(&interp, &spec)
-            .with_super_class(Some(&standard_error))
+            .with_super_class::<StandardError>()?
             .define()
             .unwrap();
         drop(borrow);

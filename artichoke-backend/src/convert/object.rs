@@ -7,6 +7,7 @@ use std::rc::Rc;
 use crate::def::NotDefinedError;
 use crate::exception::Exception;
 use crate::extn::core::exception::TypeError;
+use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::types::Ruby;
 use crate::value::Value;
@@ -44,9 +45,10 @@ where
         interp: &mut Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, Exception> {
-        let borrow = interp.0.borrow();
-        let spec = borrow
-            .class_spec::<Self>()
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state
+            .classes
+            .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         let data = Rc::new(RefCell::new(self));
         let ptr = Rc::into_raw(data);
@@ -57,7 +59,7 @@ where
             slf
         } else {
             unsafe {
-                let mrb = borrow.mrb;
+                let mrb = interp.mrb.as_mut();
                 let mut rclass = spec
                     .rclass(mrb)
                     .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
@@ -100,12 +102,13 @@ where
             message.push_str(Self::ruby_type_name());
             return Err(Exception::from(TypeError::new(interp, message)));
         }
-        let borrow = interp.0.borrow();
-        let spec = borrow
-            .class_spec::<Self>()
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state
+            .classes
+            .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         // Sanity check that the RClass matches.
-        let mrb = borrow.mrb;
+        let mrb = interp.mrb.as_mut();
         let mut rclass = spec
             .rclass(mrb)
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
@@ -158,14 +161,16 @@ mod tests {
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let mut interp = unwrap_interpreter!(mrb);
+        let mut guard = Guard::new(&mut interp);
 
-        let value = Value::new(&interp, slf);
-        if let Ok(container) = Container::try_from_ruby(&mut interp, &value) {
+        let value = Value::new(&guard, slf);
+        let result = if let Ok(container) = Container::try_from_ruby(&mut guard, &value) {
             let borrow = container.borrow();
-            interp.convert_mut(borrow.inner.as_bytes()).inner()
+            guard.convert_mut(borrow.inner.as_bytes())
         } else {
-            interp.convert(None::<Value>).inner()
-        }
+            guard.convert(None::<Value>)
+        };
+        result.inner()
     }
 
     impl RustBackedValue for Container {

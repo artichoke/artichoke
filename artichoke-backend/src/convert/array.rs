@@ -205,7 +205,7 @@ impl TryConvertMut<Value, Vec<Vec<u8>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -224,7 +224,7 @@ impl TryConvertMut<Value, Vec<Option<Vec<u8>>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -243,7 +243,7 @@ impl<'a> TryConvertMut<Value, Vec<&'a [u8]>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -262,7 +262,7 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a [u8]>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -281,7 +281,7 @@ impl TryConvertMut<Value, Vec<String>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -300,7 +300,7 @@ impl TryConvertMut<Value, Vec<Option<String>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -319,7 +319,7 @@ impl<'a> TryConvertMut<Value, Vec<&'a str>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -338,7 +338,7 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a str>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {

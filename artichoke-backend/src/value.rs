@@ -2,6 +2,7 @@ use std::error;
 use std::fmt;
 use std::ptr;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::{Convert, ConvertMut, Intern, TryConvert, Value as ValueCore};
 use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
@@ -67,7 +68,8 @@ impl Value {
             Err(_) => {
                 if let Ruby::Data | Ruby::Object = self.ruby_type() {
                     self.funcall::<Self>(interp, "class", &[], None)
-                        .and_then(|class| class.funcall::<&'a str>(interp, "name", &[], None))
+                        .and_then(|class| class.funcall::<Value>(interp, "name", &[], None))
+                        .and_then(|class| class.try_into_mut(interp))
                         .unwrap_or_default()
                 } else {
                     self.ruby_type().class_name()
@@ -95,8 +97,10 @@ impl Value {
     /// Return whether this object is unreachable by any GC roots.
     #[must_use]
     pub fn is_dead(&self, interp: &mut Artichoke) -> bool {
-        let mrb = interp.0.borrow().mrb;
-        unsafe { sys::mrb_sys_value_is_dead(mrb, self.inner()) }
+        unsafe {
+            let mrb = interp.mrb.as_mut();
+            sys::mrb_sys_value_is_dead(mrb, self.inner())
+        }
     }
 
     pub fn is_range(
@@ -104,12 +108,17 @@ impl Value {
         interp: &mut Artichoke,
         len: Int,
     ) -> Result<Option<protect::Range>, Exception> {
-        let mrb = interp.0.borrow().mrb;
-        match unsafe { protect::is_range(mrb, self.inner(), len) } {
+        let mut arena = interp.create_arena_savepoint();
+        let result = unsafe {
+            arena
+                .interp()
+                .with_ffi_boundary(|mrb| protect::is_range(mrb, self.inner(), len))?
+        };
+        match result {
             Ok(range) => Ok(range),
             Err(exception) => {
-                let exception = Value::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Value::new(arena.interp(), exception);
+                Err(exception_handler::last_error(arena.interp(), exception)?)
             }
         }
     }
@@ -154,11 +163,11 @@ impl Value {
     }
 
     pub fn implicitly_convert_to_string(&self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
-        let string = if let Ok(string) = self.try_into::<&[u8]>(interp) {
+        let string = if let Ok(string) = self.try_into_mut::<&[u8]>(interp) {
             string
         } else if let Ok(true) = self.respond_to(interp, "to_str") {
             if let Ok(maybe) = self.funcall::<Self>(interp, "to_str", &[], None) {
-                if let Ok(string) = maybe.try_into::<&[u8]>(interp) {
+                if let Ok(string) = maybe.try_into_mut::<&[u8]>(interp) {
                     string
                 } else {
                     let mut message = String::from("can't convert ");
@@ -214,6 +223,7 @@ impl ValueCore for Value {
     where
         Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
     {
+        let mut arena = interp.create_arena_savepoint();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
             let err = ArgCountError::new(args);
             warn!("{}", err);
@@ -227,21 +237,21 @@ impl ValueCore for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = interp.intern_symbol(func.as_bytes().to_vec());
-        let mrb = interp.0.borrow_mut().mrb;
-        let _arena = interp.create_arena_savepoint();
+        let func = arena.interp().intern_symbol(func.as_bytes().to_vec());
         let result = unsafe {
-            protect::funcall(
-                mrb,
-                self.inner(),
-                func,
-                args.as_slice(),
-                block.as_ref().map(Self::inner),
-            )
+            arena.interp().with_ffi_boundary(|mrb| {
+                protect::funcall(
+                    mrb,
+                    self.inner(),
+                    func,
+                    args.as_slice(),
+                    block.as_ref().map(Self::inner),
+                )
+            })?
         };
         match result {
             Ok(value) => {
-                let value = Self::new(interp, value);
+                let value = Self::new(arena.interp(), value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -249,16 +259,16 @@ impl ValueCore for Value {
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
                     Err(Exception::from(Fatal::new(
-                        interp,
+                        arena.interp(),
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    value.try_into::<T>(interp)
+                    value.try_into::<T>(arena.interp())
                 }
             }
             Err(exception) => {
-                let exception = Self::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Self::new(arena.interp(), exception);
+                Err(exception_handler::last_error(arena.interp(), exception)?)
             }
         }
     }
@@ -269,13 +279,18 @@ impl ValueCore for Value {
     }
 
     fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool {
-        let mrb = interp.0.borrow_mut().mrb;
-        unsafe { sys::mrb_sys_obj_frozen(mrb, self.inner()) }
+        unsafe {
+            let mrb = interp.mrb.as_mut();
+            sys::mrb_sys_obj_frozen(mrb, self.inner())
+        }
     }
 
     fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
-        self.funcall(interp, "inspect", &[], None)
-            .unwrap_or_default()
+        if let Ok(display) = self.funcall::<Value>(interp, "inspect", &[], None) {
+            display.try_into_mut(interp).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
     }
 
     fn is_nil(&self) -> bool {
@@ -288,7 +303,11 @@ impl ValueCore for Value {
     }
 
     fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
-        self.funcall(interp, "to_s", &[], None).unwrap_or_default()
+        if let Ok(display) = self.funcall::<Value>(interp, "to_s", &[], None) {
+            display.try_into_mut(interp).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
     }
 }
 
@@ -333,13 +352,16 @@ impl Block {
     where
         Artichoke: TryConvert<Value, T, Error = Exception>,
     {
-        let _arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint();
 
-        let mrb = interp.0.borrow_mut().mrb;
-        let result = unsafe { protect::block_yield(mrb, self.inner(), arg.inner()) };
+        let result = unsafe {
+            arena
+                .interp()
+                .with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
+        };
         match result {
             Ok(value) => {
-                let value = Value::new(interp, value);
+                let value = Value::new(arena.interp(), value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -347,16 +369,16 @@ impl Block {
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
                     Err(Exception::from(Fatal::new(
-                        interp,
+                        arena.interp(),
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    value.try_into::<T>(interp)
+                    value.try_into::<T>(arena.interp())
                 }
             }
             Err(exception) => {
-                let exception = Value::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Value::new(arena.interp(), exception);
+                Err(exception_handler::last_error(arena.interp(), exception)?)
             }
         }
     }
@@ -412,9 +434,10 @@ impl RubyException for ArgCountError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.to_string());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<ArgumentError>()?;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp
+            .new_instance::<ArgumentError>(&[message])
+            .ok()
+            .flatten()?;
         Some(value.inner())
     }
 }

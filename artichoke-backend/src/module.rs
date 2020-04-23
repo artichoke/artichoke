@@ -10,19 +10,18 @@ use crate::core::Intern;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Method, NotDefinedError};
 use crate::method;
 use crate::sys;
-use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Builder<'a> {
-    interp: &'a Artichoke,
+    interp: &'a mut Artichoke,
     spec: &'a Spec,
     methods: HashSet<method::Spec>,
 }
 
 impl<'a> Builder<'a> {
     #[must_use]
-    pub fn for_spec(interp: &'a Artichoke, spec: &'a Spec) -> Self {
+    pub fn for_spec(interp: &'a mut Artichoke, spec: &'a Spec) -> Self {
         Self {
             interp,
             spec,
@@ -73,7 +72,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), NotDefinedError> {
-        let mrb = self.interp.0.borrow().mrb;
+        let mrb = unsafe { self.interp.mrb.as_mut() };
         let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {
@@ -135,13 +134,6 @@ impl Spec {
         } else {
             Err(ConstantNameError::new(name))
         }
-    }
-
-    #[must_use]
-    pub fn value(&self, interp: &Artichoke) -> Option<Value> {
-        let mut rclass = self.rclass(interp.0.borrow().mrb)?;
-        let module = unsafe { sys::mrb_sys_module_value(rclass.as_mut()) };
-        Some(Value::new(interp, module))
     }
 
     #[must_use]

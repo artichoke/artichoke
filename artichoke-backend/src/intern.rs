@@ -13,18 +13,12 @@ impl Intern for Artichoke {
     {
         match symbol.into() {
             Cow::Borrowed(bytes) => unsafe {
-                sys::mrb_intern(
-                    self.0.borrow().mrb,
-                    bytes.as_ptr() as *const i8,
-                    bytes.len(),
-                )
+                let mrb = self.mrb.as_mut();
+                sys::mrb_intern(mrb, bytes.as_ptr() as *const i8, bytes.len())
             },
             Cow::Owned(bytes) => unsafe {
-                sys::mrb_intern(
-                    self.0.borrow().mrb,
-                    bytes.as_ptr() as *const i8,
-                    bytes.len(),
-                )
+                let mrb = self.mrb.as_mut();
+                sys::mrb_intern(mrb, bytes.as_ptr() as *const i8, bytes.len())
             },
         }
     }

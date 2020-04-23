@@ -3,6 +3,7 @@ use std::path::Path;
 
 use crate::core::{Eval, File, LoadSources};
 use crate::exception::Exception;
+use crate::ffi::InterpreterExtractError;
 use crate::fs::RUBY_LOAD_PATH;
 use crate::Artichoke;
 
@@ -16,16 +17,14 @@ impl LoadSources for Artichoke {
         P: AsRef<Path>,
         T: File<Artichoke = Self::Artichoke, Error = Self::Exception>,
     {
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
         let mut path = path.as_ref();
         let absolute_path;
         if path.is_relative() {
             absolute_path = Path::new(RUBY_LOAD_PATH).join(path);
             path = &absolute_path;
         }
-        self.0
-            .borrow_mut()
-            .vfs
-            .register_extension(path, T::require)?;
+        state.vfs.register_extension(&path, T::require)?;
         trace!(
             "Added Rust extension to interpreter filesystem -- {}",
             path.display()
@@ -38,13 +37,14 @@ impl LoadSources for Artichoke {
         P: AsRef<Path>,
         T: Into<Cow<'static, [u8]>>,
     {
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
         let mut path = path.as_ref();
         let absolute_path;
         if path.is_relative() {
             absolute_path = Path::new(RUBY_LOAD_PATH).join(path);
             path = &absolute_path;
         }
-        self.0.borrow_mut().vfs.write_file(path, contents)?;
+        state.vfs.write_file(path, contents)?;
         trace!(
             "Added Ruby source to interpreter filesystem -- {}",
             path.display()
@@ -56,7 +56,12 @@ impl LoadSources for Artichoke {
     where
         P: AsRef<Path>,
     {
-        let is_file = self.0.borrow().vfs.is_file(path.as_ref());
+        let is_file = self
+            .state
+            .as_ref()
+            .ok_or(InterpreterExtractError)?
+            .vfs
+            .is_file(path.as_ref());
         Ok(is_file)
     }
 
@@ -64,14 +69,17 @@ impl LoadSources for Artichoke {
     where
         P: AsRef<Path>,
     {
-        // Load Rust `File` first because an File may define classes and
-        // modules with `LoadSources` and Ruby files can require arbitrary
-        // other files, including some child sources that may depend on these
-        // module definitions.
-        let hook = self.0.borrow().vfs.get_extension(path.as_ref());
-        if let Some(hook) = hook {
-            // dynamic, Rust-backed `File` require
-            hook(self)?;
+        {
+            let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+            // Load Rust `File` first because an File may define classes and
+            // modules with `LoadSources` and Ruby files can require arbitrary
+            // other files, including some child sources that may depend on these
+            // module definitions.
+            let hook = state.vfs.get_extension(path.as_ref());
+            if let Some(hook) = hook {
+                // dynamic, Rust-backed `File` require
+                hook(self)?;
+            }
         }
         let contents = self.read_source_file_contents(path.as_ref())?.into_owned();
         self.eval(contents.as_ref())?;
@@ -83,22 +91,26 @@ impl LoadSources for Artichoke {
     where
         P: AsRef<Path>,
     {
-        // If a file is already required, short circuit.
-        if self.0.borrow().vfs.is_required(path.as_ref()) {
-            return Ok(false);
-        }
-        // Require Rust `File` first because an File may define classes and
-        // modules with `LoadSources` and Ruby files can require arbitrary
-        // other files, including some child sources that may depend on these
-        // module definitions.
-        let hook = self.0.borrow().vfs.get_extension(path.as_ref());
-        if let Some(hook) = hook {
-            // dynamic, Rust-backed `File` require
-            hook(self)?;
+        {
+            let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+            // If a file is already required, short circuit.
+            if state.vfs.is_required(path.as_ref()) {
+                return Ok(false);
+            }
+            // Require Rust `File` first because an File may define classes and
+            // modules with `LoadSources` and Ruby files can require arbitrary
+            // other files, including some child sources that may depend on these
+            // module definitions.
+            let hook = state.vfs.get_extension(path.as_ref());
+            if let Some(hook) = hook {
+                // dynamic, Rust-backed `File` require
+                hook(self)?;
+            }
         }
         let contents = self.read_source_file_contents(path.as_ref())?.into_owned();
         self.eval(contents.as_ref())?;
-        self.0.borrow_mut().vfs.mark_required(path.as_ref())?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        state.vfs.mark_required(path.as_ref())?;
         trace!(r#"Successful require of {}"#, path.as_ref().display());
         Ok(true)
     }
@@ -107,8 +119,8 @@ impl LoadSources for Artichoke {
     where
         P: AsRef<Path>,
     {
-        let borrow = self.0.borrow();
-        let contents = borrow.vfs.read_file(path.as_ref())?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let contents = state.vfs.read_file(path.as_ref())?;
         Ok(contents.to_vec().into())
     }
 }
