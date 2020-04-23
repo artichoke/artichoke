@@ -75,12 +75,12 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), NotDefinedError> {
-        let mrb = self.interp.0.borrow().mrb;
+        let mrb = unsafe { self.interp.0.mrb.as_mut() };
         let mut super_class = if let Some(spec) = self.super_class {
             spec.rclass(mrb)
                 .ok_or_else(|| NotDefinedError::super_class(spec.fqname().into_owned()))?
         } else {
-            let rclass = unsafe { (*mrb).object_class };
+            let rclass = mrb.object_class;
             NonNull::new(rclass).ok_or_else(|| NotDefinedError::super_class("Object"))?
         };
         let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
@@ -157,12 +157,14 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn new_instance(&self, interp: &Artichoke, args: &[Value]) -> Option<Value> {
-        let mrb = interp.0.borrow().mrb;
+    pub fn new_instance(&self, interp: &mut Artichoke, args: &[Value]) -> Option<Value> {
         let mut rclass = self.rclass(mrb)?;
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
         let arglen = Int::try_from(args.len()).ok()?;
-        let value = unsafe { sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr()) };
+        let value = unsafe {
+            let mrb = interp.mrb.as_mut();
+            sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr())
+        };
         Some(Value::new(interp, value))
     }
 

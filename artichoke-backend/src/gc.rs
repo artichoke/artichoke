@@ -31,8 +31,10 @@ impl ArenaIndex {
 
 impl Drop for ArenaIndex {
     fn drop(&mut self) {
-        let mrb = self.interp.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_arena_restore(mrb, self.index) };
+        unsafe {
+            let mrb = self.interp.mrb.as_mut();
+            sys::mrb_sys_gc_arena_restore(mrb, self.index);
+        }
     }
 }
 
@@ -86,43 +88,58 @@ pub trait MrbGarbageCollection {
 
 impl MrbGarbageCollection for Artichoke {
     fn create_arena_savepoint(&self) -> ArenaIndex {
-        let mrb = self.0.borrow().mrb;
+        let index = {
+            let mrb = self.mrb.as_mut();
+            sys::mrb_sys_gc_arena_save(mrb)
+        };
         ArenaIndex {
-            index: unsafe { sys::mrb_sys_gc_arena_save(mrb) },
+            index,
             interp: self.clone(),
         }
     }
 
     fn live_object_count(&self) -> i32 {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_live_objects(mrb) }
+        unsafe {
+            let mrb = self.mrb.as_mut();
+            sys::mrb_sys_gc_live_objects(mrb)
+        }
     }
 
     fn mark_value(&self, value: &Value) {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_sys_safe_gc_mark(mrb, value.inner()) }
+        unsafe {
+            let mrb = self.mrb.as_mut();
+            sys::mrb_sys_safe_gc_mark(mrb, value.inner())
+        }
     }
 
     fn incremental_gc(&self) {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_incremental_gc(mrb) };
+        unsafe {
+            let mrb = self.mrb.as_mut();
+            sys::mrb_incremental_gc(mrb);
+        }
     }
 
     fn full_gc(&self) {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_full_gc(mrb) };
+        unsafe {
+            let mrb = self.mrb.as_mut();
+            sys::mrb_full_gc(mrb);
+        }
     }
 
     #[allow(clippy::must_use_candidate)]
     fn enable_gc(&self) -> bool {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_enable(mrb) }
+        unsafe {
+            let mrb = self.mrb.as_mut();
+            sys::mrb_sys_gc_enable(mrb)
+        }
     }
 
     #[allow(clippy::must_use_candidate)]
     fn disable_gc(&self) -> bool {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_disable(mrb) }
+        unsafe {
+            let mrb = self.mrb.as_mut();
+            sys::mrb_sys_gc_disable(mrb)
+        }
     }
 }
 

@@ -8,10 +8,8 @@ impl Parser for Artichoke {
     type Context = Context;
 
     fn reset_parser(&mut self) {
-        let mrb = self.0.borrow().mrb;
-        if let Some(mut mrb) = NonNull::new(mrb) {
-            self.0.borrow_mut().parser.reset(unsafe { mrb.as_mut() });
-        }
+        let mrb = unsafe { self.mrb.as_mut() };
+        self.state.parser.reset(mrb);
     }
 
     fn fetch_lineno(&self) -> usize {
@@ -23,29 +21,16 @@ impl Parser for Artichoke {
     }
 
     fn push_context(&mut self, context: Self::Context) {
-        let mrb = self.0.borrow().mrb;
-        if let Some(mut mrb) = NonNull::new(mrb) {
-            self.0
-                .borrow_mut()
-                .parser
-                .push_context(unsafe { mrb.as_mut() }, context);
-        }
+        let mrb = unsafe { self.mrb.as_mut() };
+        self.state.parser.push_context(mrb, context);
     }
 
     fn pop_context(&mut self) -> Option<Self::Context> {
-        let mrb = self.0.borrow().mrb;
-        if let Some(mut mrb) = NonNull::new(mrb) {
-            self.0
-                .borrow_mut()
-                .parser
-                .pop_context(unsafe { mrb.as_mut() })
-        } else {
-            None
-        }
+        let mrb = unsafe { self.mrb.as_mut() };
+        self.state.parser.pop_context(mrb)
     }
 
     fn peek_context(&self) -> Option<&Self::Context> {
-        // TODO(GH-468): Implement `Parser::peek_context`.
-        unimplemented!("GH-468: cannot implement Parser::peek_context due to internal RefCell");
+        self.state.parser.peek_context()
     }
 }

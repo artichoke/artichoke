@@ -19,8 +19,8 @@ impl DefineConstant for Artichoke {
     ) -> Result<(), Self::Error> {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let mrb = self.0.borrow().mrb;
         unsafe {
+            let mrb = self.mrb.as_mut();
             sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
         }
         Ok(())
@@ -36,8 +36,7 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let borrow = self.0.borrow();
-        let mrb = borrow.mrb;
+        let mrb = self.mrb.as_mut();
         let mut rclass = borrow
             .class_spec::<T>()
             .and_then(|spec| spec.rclass(mrb))
@@ -63,8 +62,7 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let borrow = self.0.borrow();
-        let mrb = borrow.mrb;
+        let mrb = self.mrb.as_mut();
         let mut rclass = borrow
             .module_spec::<T>()
             .and_then(|spec| spec.rclass(mrb))

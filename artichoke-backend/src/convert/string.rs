@@ -66,7 +66,7 @@ mod tests {
     #[quickcheck]
     fn convert_to_string(s: String) -> bool {
         let mut interp = crate::interpreter().expect("init");
-        let mrb = interp.0.borrow().mrb;
+        let mrb = unsafe { interp.mrb.as_mut() };
         let value = interp.convert_mut(s.clone());
         let ptr = unsafe { sys::mrb_string_value_ptr(mrb, value.inner()) };
         let len = unsafe { sys::mrb_string_value_len(mrb, value.inner()) };

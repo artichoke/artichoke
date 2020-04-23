@@ -73,7 +73,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), NotDefinedError> {
-        let mrb = self.interp.0.borrow().mrb;
+        let mrb = unsafe { self.interp.mrb.as_mut() };
         let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
             rclass
         } else if let Some(scope) = self.spec.enclosing_scope() {

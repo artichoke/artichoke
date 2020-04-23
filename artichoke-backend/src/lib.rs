@@ -83,8 +83,7 @@
 #[macro_use]
 extern crate log;
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::ptr::NonNull;
 
 #[macro_use]
 #[doc(hidden)]
@@ -162,7 +161,10 @@ pub mod prelude {
 /// Functionality is added to the interpreter via traits, for example,
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
 #[derive(Debug, Clone)]
-pub struct Artichoke(pub Rc<RefCell<state::State>>); // TODO: this should not be pub
+pub struct Artichoke {
+    pub mrb: NonNull<sys::mrb_state>,
+    pub state: Box<state::State>,
+}
 
 impl Artichoke {
     /// Consume an interpreter and return the pointer to the underlying
@@ -182,7 +184,7 @@ impl Artichoke {
     /// then call `Artichoke::close`.
     #[must_use]
     pub unsafe fn into_raw(interp: Self) -> *mut sys::mrb_state {
-        let mrb = interp.0.borrow_mut().mrb;
+        let mrb = unsafe { interp.mrb.as_ptr() };
         drop(interp);
         mrb
     }

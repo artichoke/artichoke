@@ -15,14 +15,14 @@ impl Eval for Artichoke {
     type Error = Exception;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let mrb = self.0.borrow().mrb;
-        let context = self.0.borrow_mut().parser.context_mut() as *mut _;
+        let context = self.state.parser.context_mut() as *mut _;
 
         trace!("Evaling code on {}", sys::mrb_sys_state_debug(mrb));
-        match unsafe { protect::eval(mrb, context, code) } {
+        let result = unsafe {
+            let mrb = self.mrb.as_mut();
+            protect::eval(mrb, context, code)
+        };
+        match result {
             Ok(value) => {
                 let value = Value::new(self, value);
                 if value.is_unreachable() {

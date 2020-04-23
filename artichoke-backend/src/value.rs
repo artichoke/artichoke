@@ -95,8 +95,10 @@ impl Value {
     /// Return whether this object is unreachable by any GC roots.
     #[must_use]
     pub fn is_dead(&self, interp: &mut Artichoke) -> bool {
-        let mrb = interp.0.borrow().mrb;
-        unsafe { sys::mrb_sys_value_is_dead(mrb, self.inner()) }
+        unsafe {
+            let mrb = interp.mrb.as_mut();
+            sys::mrb_sys_value_is_dead(mrb, self.inner())
+        }
     }
 
     pub fn is_range(
@@ -104,8 +106,11 @@ impl Value {
         interp: &mut Artichoke,
         len: Int,
     ) -> Result<Option<protect::Range>, Exception> {
-        let mrb = interp.0.borrow().mrb;
-        match unsafe { protect::is_range(mrb, self.inner(), len) } {
+        let result = unsafe {
+            let mrb = interp.mrb.as_mut();
+            protect::is_range(mrb, self.inner(), len)
+        };
+        match result {
             Ok(range) => Ok(range),
             Err(exception) => {
                 let exception = Value::new(interp, exception);
@@ -228,9 +233,9 @@ impl ValueCore for Value {
             if block.is_some() { " and block" } else { "" }
         );
         let func = interp.intern_symbol(func.as_bytes().to_vec());
-        let mrb = interp.0.borrow_mut().mrb;
         let _arena = interp.create_arena_savepoint();
         let result = unsafe {
+            let mrb = interp.mrb.as_mut();
             protect::funcall(
                 mrb,
                 self.inner(),
@@ -269,8 +274,10 @@ impl ValueCore for Value {
     }
 
     fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool {
-        let mrb = interp.0.borrow_mut().mrb;
-        unsafe { sys::mrb_sys_obj_frozen(mrb, self.inner()) }
+        unsafe {
+            let mrb = interp.mrb.as_mut();
+            sys::mrb_sys_obj_frozen(mrb, self.inner())
+        }
     }
 
     fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
@@ -335,8 +342,10 @@ impl Block {
     {
         let _arena = interp.create_arena_savepoint();
 
-        let mrb = interp.0.borrow_mut().mrb;
-        let result = unsafe { protect::block_yield(mrb, self.inner(), arg.inner()) };
+        let result = unsafe {
+            let mrb = interp.mrb.as_mut();
+            protect::block_yield(mrb, self.inner(), arg.inner())
+        };
         match result {
             Ok(value) => {
                 let value = Value::new(interp, value);

@@ -15,7 +15,7 @@ use crate::Artichoke;
 
 impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<(Value, Value)>) -> Value {
-        let mrb = self.0.borrow().mrb;
+        let mrb = self.mrb.as_mut();
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { sys::mrb_hash_new_capa(mrb, capa) };
         for (key, val) in value {
@@ -29,7 +29,7 @@ impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
 
 impl ConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Value {
-        let mrb = self.0.borrow().mrb;
+        let mrb = self.mrb.as_mut();
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { sys::mrb_hash_new_capa(mrb, capa) };
         for (key, val) in value {
@@ -43,7 +43,7 @@ impl ConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
 
 impl ConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
     fn convert_mut(&mut self, value: HashMap<Vec<u8>, Vec<u8>>) -> Value {
-        let mrb = self.0.borrow().mrb;
+        let mrb = self.mrb.as_mut();
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { sys::mrb_hash_new_capa(mrb, capa) };
         for (key, val) in value {
@@ -58,7 +58,7 @@ impl ConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
 impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Option<HashMap<Vec<u8>, Option<Vec<u8>>>>) -> Value {
         if let Some(value) = value {
-            let mrb = self.0.borrow().mrb;
+            let mrb = self.mrb.as_mut();
             let capa = Int::try_from(value.len()).unwrap_or_default();
             let hash = unsafe { sys::mrb_hash_new_capa(mrb, capa) };
             for (key, val) in value {
@@ -78,7 +78,7 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Vec<(Value, Value)>, Self::Error> {
         if let Ruby::Hash = value.ruby_type() {
-            let mrb = self.0.borrow().mrb;
+            let mrb = self.mrb.as_mut();
             let hash = value.inner();
             let keys = unsafe { sys::mrb_hash_keys(mrb, hash) };
 
