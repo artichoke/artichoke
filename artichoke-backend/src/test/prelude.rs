@@ -15,7 +15,7 @@ pub use crate::gc::MrbGarbageCollection;
 pub use crate::module;
 pub use crate::state::parser::Context;
 pub use crate::sys;
-pub use crate::types::{Float, Int, Ruby, Rust};
+pub use crate::types::{Fp, Int, Ruby, Rust};
 pub use crate::value::{Block, Value};
 pub use crate::{
     Artichoke, Convert, ConvertMut, DefineConstant, Eval, File, Globals, Intern, LoadSources,

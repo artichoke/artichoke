@@ -66,7 +66,7 @@ where
     }
 
     #[inline]
-    pub fn rand_float(&mut self, max: Option<Float>) -> Float {
+    pub fn rand_float(&mut self, max: Option<Fp>) -> Fp {
         let max = max.unwrap_or(1.0);
         self.rng.gen_range(0.0, max)
     }
@@ -100,7 +100,7 @@ where
         self.rand_int(max)
     }
 
-    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Float>) -> Float {
+    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Fp {
         let _ = interp;
         self.rand_float(max)
     }

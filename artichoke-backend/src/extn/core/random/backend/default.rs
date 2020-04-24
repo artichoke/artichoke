@@ -31,7 +31,7 @@ impl RandType for Default {
         borrow.prng.rand_int(max)
     }
 
-    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Float>) -> Float {
+    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Fp {
         let mut borrow = interp.0.borrow_mut();
         borrow.prng.rand_float(max)
     }

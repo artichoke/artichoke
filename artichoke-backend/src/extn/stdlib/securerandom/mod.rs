@@ -51,7 +51,7 @@ pub fn random_bytes(interp: &mut Artichoke, len: Option<Int>) -> Result<Vec<u8>,
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum RandomNumberMax {
-    Float(Float),
+    Float(Fp),
     Integer(Int),
     None,
 }
@@ -96,8 +96,8 @@ impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum RandomNumber {
+    Float(Fp),
     Integer(Int),
-    Float(Float),
 }
 
 impl ConvertMut<RandomNumber, Value> for Artichoke {

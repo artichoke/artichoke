@@ -159,7 +159,7 @@ impl Integer {
                 }
             }
             Ruby::Float => {
-                let denom = denominator.try_into::<Float>(interp)?;
+                let denom = denominator.try_into::<Fp>(interp)?;
                 Ok((self.as_f64() / denom).into())
             }
             _ => {

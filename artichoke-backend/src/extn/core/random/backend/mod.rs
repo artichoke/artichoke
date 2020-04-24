@@ -27,7 +27,7 @@ pub trait RandType {
     ///
     /// If `max` is `None`, return a random `Float between 0 and 1.0 --
     /// `[0, 1.0)`.
-    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Float>) -> Float;
+    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Fp;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
