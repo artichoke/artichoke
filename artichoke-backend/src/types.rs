@@ -2,19 +2,18 @@ use crate::sys;
 
 /// Artichoke native floating point type.
 ///
-/// `Float` is the backend to the [`Float`](crate::extn::core::float::Float)
-/// class.
+/// `Fp` is the backend to the [`Float`](crate::extn::core::float::Float) class.
 ///
-/// The `Float` type alias is for the `f64` floating point primitive.
+/// The `Fp` type alias is for the `f64` floating point primitive.
 ///
 /// ```
 /// # use std::any::TypeId;
 /// # use std::mem;
-/// # use artichoke_backend::types::Float;
-/// assert_eq!(mem::size_of::<f64>(), mem::size_of::<Float>());
-/// assert_eq!(TypeId::of::<f64>(), TypeId::of::<Float>());
+/// # use artichoke_backend::types::Fp;
+/// assert_eq!(mem::size_of::<f64>(), mem::size_of::<Fp>());
+/// assert_eq!(TypeId::of::<f64>(), TypeId::of::<Fp>());
 /// ```
-pub type Float = f64;
+pub type Fp = f64;
 
 /// Artichoke native integer type.
 ///

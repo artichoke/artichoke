@@ -1,6 +1,6 @@
 use crate::extn::core::random::backend::rand::{Rand, Rng};
 use crate::extn::core::random::backend::InternalState;
-use crate::types::{Float, Int};
+use crate::types::{Fp, Int};
 
 #[derive(Debug)]
 pub struct Prng {
@@ -44,7 +44,7 @@ impl Prng {
     }
 
     #[inline]
-    pub fn rand_float(&mut self, max: Option<Float>) -> Float {
+    pub fn rand_float(&mut self, max: Option<Fp>) -> Fp {
         self.random.rand_float(max)
     }
 }

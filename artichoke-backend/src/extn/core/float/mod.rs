@@ -1,6 +1,5 @@
 use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
-use crate::types;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.0.borrow().class_spec::<Float>().is_some() {
@@ -42,7 +41,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct Float(types::Float);
+pub struct Float(Fp);
 
 impl ConvertMut<Float, Value> for Artichoke {
     #[inline]
@@ -61,14 +60,14 @@ impl TryConvert<Value, Float> for Artichoke {
     }
 }
 
-impl From<types::Float> for Float {
+impl From<Fp> for Float {
     #[inline]
-    fn from(flt: types::Float) -> Self {
+    fn from(flt: Fp) -> Self {
         Self(flt)
     }
 }
 
-impl From<Float> for types::Float {
+impl From<Float> for Fp {
     #[inline]
     fn from(flt: Float) -> Self {
         flt.as_f64()
@@ -82,9 +81,9 @@ impl From<Float> for Outcome {
     }
 }
 
-impl From<types::Float> for Outcome {
+impl From<Fp> for Outcome {
     #[inline]
-    fn from(flt: types::Float) -> Self {
+    fn from(flt: Fp) -> Self {
         Self::Float(flt)
     }
 }
@@ -94,40 +93,40 @@ impl Float {
     /// floating point.
     ///
     /// Usually defaults to 15.
-    pub const DIG: Int = types::Float::DIGITS as Int;
+    pub const DIG: Int = Fp::DIGITS as Int;
 
     /// The difference between 1 and the smallest double-precision floating
     /// point number greater than 1.
     ///
     /// Usually defaults to 2.2204460492503131e-16.
-    pub const EPSILON: types::Float = types::Float::EPSILON;
+    pub const EPSILON: Fp = Fp::EPSILON;
 
     /// An expression representing positive infinity.
-    pub const INFINITY: types::Float = types::Float::INFINITY;
+    pub const INFINITY: Fp = Fp::INFINITY;
 
     /// The minimum number of significant decimal digits in a double-precision
     /// floating point.
     ///
     /// Usually defaults to 15.
-    pub const MANT_DIG: Int = types::Float::MANTISSA_DIGITS as Int;
+    pub const MANT_DIG: Int = Fp::MANTISSA_DIGITS as Int;
 
     /// The largest possible integer in a double-precision floating point
     /// number.
     ///
     /// Usually defaults to 1.7976931348623157e+308.
-    pub const MAX: types::Float = types::Float::MAX;
+    pub const MAX: Fp = Fp::MAX;
 
     /// The largest positive exponent in a double-precision floating point where
     /// 10 raised to this power minus 1.
     ///
     /// Usually defaults to 308.
-    pub const MAX_10_EXP: Int = types::Float::MAX_10_EXP as Int;
+    pub const MAX_10_EXP: Int = Fp::MAX_10_EXP as Int;
 
     /// The largest possible exponent value in a double-precision floating
     /// point.
     ///
     /// Usually defaults to 1024.
-    pub const MAX_EXP: Int = types::Float::MAX_EXP as Int;
+    pub const MAX_EXP: Int = Fp::MAX_EXP as Int;
 
     /// The smallest positive normalized number in a double-precision floating
     /// point.
@@ -137,31 +136,31 @@ impl Float {
     /// If the platform supports denormalized numbers, there are numbers between
     /// zero and [`Float::MIN`]. `0.0.next_float` returns the smallest positive
     /// floating point number including denormalized numbers.
-    pub const MIN: types::Float = types::Float::MIN;
+    pub const MIN: Fp = Fp::MIN;
 
     /// The smallest negative exponent in a double-precision floating point
     /// where 10 raised to this power minus 1.
     ///
     /// Usually defaults to -307.
-    pub const MIN_10_EXP: Int = types::Float::MIN_10_EXP as Int;
+    pub const MIN_10_EXP: Int = Fp::MIN_10_EXP as Int;
 
     /// The smallest possible exponent value in a double-precision floating
     /// point.
     ///
     /// Usually defaults to -1021.
-    pub const MIN_EXP: Int = types::Float::MIN_EXP as Int;
+    pub const MIN_EXP: Int = Fp::MIN_EXP as Int;
 
     /// An expression representing a value which is "not a number".
-    pub const NAN: types::Float = types::Float::NAN;
+    pub const NAN: Fp = Fp::NAN;
 
-    pub const NEG_INFINITY: types::Float = types::Float::NEG_INFINITY;
+    pub const NEG_INFINITY: Fp = Fp::NEG_INFINITY;
 
     /// The base of the floating point, or number of unique digits used to
     /// represent the number.
     ///
     /// Usually defaults to 2 on most systems, which would represent a base-10
     /// decimal.
-    pub const RADIX: Int = types::Float::RADIX as Int;
+    pub const RADIX: Int = Fp::RADIX as Int;
 
     /// Represents the rounding mode for floating point addition.
     ///
@@ -194,7 +193,7 @@ impl Float {
 
     #[inline]
     #[must_use]
-    pub fn new(num: types::Float) -> Self {
+    pub fn new(num: Fp) -> Self {
         Self(num)
     }
 

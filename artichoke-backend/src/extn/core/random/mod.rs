@@ -200,7 +200,7 @@ impl fmt::Debug for Random {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum RandomNumberMax {
-    Float(Float),
+    Float(Fp),
     Integer(Int),
     None,
 }
@@ -246,8 +246,8 @@ impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum RandomNumber {
+    Float(Fp),
     Integer(Int),
-    Float(Float),
 }
 
 impl ConvertMut<RandomNumber, Value> for Artichoke {

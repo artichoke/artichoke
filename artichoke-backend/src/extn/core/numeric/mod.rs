@@ -17,7 +17,7 @@ pub struct Numeric;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Outcome {
-    Float(Float),
+    Float(Fp),
     Integer(Int),
     // TODO: Complex? Rational?
 }
@@ -35,7 +35,7 @@ const MAX_COERCE_DEPTH: u8 = 15;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Coercion {
-    Float(Float, Float),
+    Float(Fp, Fp),
     Integer(Int, Int),
     // TODO: Complex? Rational?
 }

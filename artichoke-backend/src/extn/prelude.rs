@@ -14,7 +14,7 @@ pub use crate::extn::core::exception::*;
 pub use crate::module;
 pub use crate::string;
 pub use crate::sys;
-pub use crate::types::{Float, Int, Ruby};
+pub use crate::types::{Fp, Int, Ruby};
 pub use crate::value::{Block, Value};
 pub use crate::{
     Artichoke, Convert, ConvertMut, DefineConstant, Eval, File, Globals, Intern, LoadSources,
