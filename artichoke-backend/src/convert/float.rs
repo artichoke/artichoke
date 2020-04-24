@@ -55,7 +55,7 @@ mod tests {
         let value = interp.convert_mut(f);
         let inner = value.inner();
         let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
-        (cdouble - f).abs() < std::f64::EPSILON
+        (cdouble - f).abs() < Float::EPSILON
     }
 
     #[quickcheck]

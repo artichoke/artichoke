@@ -9,8 +9,8 @@ use crate::extn::prelude::*;
 
 pub mod mruby;
 
-pub const E: f64 = f64::consts::E;
-pub const PI: f64 = f64::consts::PI;
+pub const E: Float = f64::consts::E;
+pub const PI: Float = f64::consts::PI;
 
 #[derive(Debug)]
 pub struct Math;

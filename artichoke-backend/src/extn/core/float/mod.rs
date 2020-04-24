@@ -1,5 +1,3 @@
-use std::f64;
-
 use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
 use crate::types;
@@ -96,40 +94,40 @@ impl Float {
     /// floating point.
     ///
     /// Usually defaults to 15.
-    pub const DIG: Int = f64::DIGITS as Int;
+    pub const DIG: Int = types::Float::DIGITS as Int;
 
     /// The difference between 1 and the smallest double-precision floating
     /// point number greater than 1.
     ///
     /// Usually defaults to 2.2204460492503131e-16.
-    pub const EPSILON: types::Float = f64::EPSILON;
+    pub const EPSILON: types::Float = types::Float::EPSILON;
 
     /// An expression representing positive infinity.
-    pub const INFINITY: types::Float = f64::INFINITY;
+    pub const INFINITY: types::Float = types::Float::INFINITY;
 
     /// The minimum number of significant decimal digits in a double-precision
     /// floating point.
     ///
     /// Usually defaults to 15.
-    pub const MANT_DIG: Int = f64::MANTISSA_DIGITS as Int;
+    pub const MANT_DIG: Int = types::Float::MANTISSA_DIGITS as Int;
 
     /// The largest possible integer in a double-precision floating point
     /// number.
     ///
     /// Usually defaults to 1.7976931348623157e+308.
-    pub const MAX: types::Float = f64::MAX;
+    pub const MAX: types::Float = types::Float::MAX;
 
     /// The largest positive exponent in a double-precision floating point where
     /// 10 raised to this power minus 1.
     ///
     /// Usually defaults to 308.
-    pub const MAX_10_EXP: Int = f64::MAX_10_EXP as Int;
+    pub const MAX_10_EXP: Int = types::Float::MAX_10_EXP as Int;
 
     /// The largest possible exponent value in a double-precision floating
     /// point.
     ///
     /// Usually defaults to 1024.
-    pub const MAX_EXP: Int = f64::MAX_EXP as Int;
+    pub const MAX_EXP: Int = types::Float::MAX_EXP as Int;
 
     /// The smallest positive normalized number in a double-precision floating
     /// point.
@@ -139,31 +137,31 @@ impl Float {
     /// If the platform supports denormalized numbers, there are numbers between
     /// zero and [`Float::MIN`]. `0.0.next_float` returns the smallest positive
     /// floating point number including denormalized numbers.
-    pub const MIN: types::Float = f64::MIN;
+    pub const MIN: types::Float = types::Float::MIN;
 
     /// The smallest negative exponent in a double-precision floating point
     /// where 10 raised to this power minus 1.
     ///
     /// Usually defaults to -307.
-    pub const MIN_10_EXP: Int = f64::MIN_10_EXP as Int;
+    pub const MIN_10_EXP: Int = types::Float::MIN_10_EXP as Int;
 
     /// The smallest possible exponent value in a double-precision floating
     /// point.
     ///
     /// Usually defaults to -1021.
-    pub const MIN_EXP: Int = f64::MIN_EXP as Int;
+    pub const MIN_EXP: Int = types::Float::MIN_EXP as Int;
 
     /// An expression representing a value which is "not a number".
-    pub const NAN: types::Float = f64::NAN;
+    pub const NAN: types::Float = types::Float::NAN;
 
-    pub const NEG_INFINITY: types::Float = f64::NEG_INFINITY;
+    pub const NEG_INFINITY: types::Float = types::Float::NEG_INFINITY;
 
     /// The base of the floating point, or number of unique digits used to
     /// represent the number.
     ///
     /// Usually defaults to 2 on most systems, which would represent a base-10
     /// decimal.
-    pub const RADIX: Int = f64::RADIX as Int;
+    pub const RADIX: Int = types::Float::RADIX as Int;
 
     /// Represents the rounding mode for floating point addition.
     ///
