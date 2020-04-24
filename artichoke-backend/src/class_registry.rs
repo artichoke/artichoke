@@ -47,7 +47,6 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        // Ok(self.0.borrow_mut().classes.get::<T>())
-        unimplemented!("refcell prevents implementing this, see GH-442");
+        Ok(self.0.borrow_mut().classes.get::<T>())
     }
 }

@@ -90,28 +90,6 @@ impl State {
         self.mrb = ptr::null_mut();
     }
 
-    /// Create a class definition bound to a Rust type `T`. Class definitions
-    /// have the same lifetime as the [`State`] because the class def owns the
-    /// `mrb_data_type` for the type, which must be long-lived. Class defs are
-    /// stored by [`TypeId`] of `T`.
-    pub fn def_class<T>(&mut self, spec: class::Spec)
-    where
-        T: Any,
-    {
-        self.classes.insert::<T>(Box::new(spec));
-    }
-
-    /// Retrieve a class definition from the state bound to Rust type `T`.
-    ///
-    /// This function returns `None` if type `T` has not had a class spec
-    /// registered for it using [`State::def_class`].
-    pub fn class_spec<T>(&self) -> Option<&class::Spec>
-    where
-        T: Any,
-    {
-        self.classes.get::<T>()
-    }
-
     /// Create a module definition bound to a Rust type `T`. Module definitions
     /// have the same lifetime as the [`State`]. Module defs are stored by
     /// [`TypeId`] of `T`.
