@@ -108,6 +108,7 @@ impl Parser {
     ///
     /// If the underlying parser returns a UTF-8 invalid error message, an error
     /// is returned.
+    #[allow(clippy::enum_glob_use)]
     pub fn parse(&mut self, code: &[u8]) -> State {
         use sys::mrb_lex_state_enum::*;
 

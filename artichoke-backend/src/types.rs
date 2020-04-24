@@ -41,6 +41,7 @@ pub use crate::core::types::{Ruby, Rust};
 /// This function collapses some mruby types into a [`Ruby::Unreachable`] type
 /// that force an interaction with the VM to return an error.
 #[allow(non_upper_case_globals)]
+#[allow(clippy::enum_glob_use)]
 #[must_use]
 pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
     use sys::mrb_vtype::*;
