@@ -90,6 +90,7 @@ use std::ptr::NonNull;
 pub mod macros;
 
 pub mod class;
+pub mod class_registry;
 mod constant;
 pub mod convert;
 pub mod def;

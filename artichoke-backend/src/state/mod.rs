@@ -14,13 +14,14 @@ pub mod parser;
 #[cfg(feature = "core-random")]
 pub mod prng;
 pub mod regexp;
+pub mod type_registry;
 
 // NOTE: `State` assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
 pub struct State {
     pub mrb: *mut sys::mrb_state,
     pub parser: parser::State,
-    classes: HashMap<TypeId, Box<class::Spec>>,
+    pub classes: type_registry::TypeRegistry<class::Spec>,
     modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: fs::Virtual,
     pub regexp: regexp::State,
@@ -46,7 +47,7 @@ impl State {
         let state = Self {
             mrb,
             parser,
-            classes: HashMap::default(),
+            classes: type_registry::TypeRegistry::new(),
             modules: HashMap::default(),
             vfs: fs::Virtual::new(),
             regexp: regexp::State::new(),
@@ -97,7 +98,7 @@ impl State {
     where
         T: Any,
     {
-        self.classes.insert(TypeId::of::<T>(), Box::new(spec));
+        self.classes.insert::<T>(Box::new(spec));
     }
 
     /// Retrieve a class definition from the state bound to Rust type `T`.
@@ -108,7 +109,7 @@ impl State {
     where
         T: Any,
     {
-        self.classes.get(&TypeId::of::<T>()).map(Box::as_ref)
+        self.classes.get::<T>()
     }
 
     /// Create a module definition bound to a Rust type `T`. Module definitions
