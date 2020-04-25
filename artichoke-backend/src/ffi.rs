@@ -37,14 +37,14 @@ pub unsafe fn from_user_data(
         error!("Attempted to extract Artichoke from null mrb_state");
         return Err(InterpreterExtractError);
     };
-    let ud = mem::replace(mrb.as_mut().ud, ptr::null_mut());
-    let state = if let Some(state) = NonNull::new(ud) {
+    let ud = mem::replace(&mut mrb.as_mut().ud, ptr::null_mut());
+    let mut state = if let Some(state) = NonNull::new(ud) {
         state.cast::<State>()
     } else {
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
         return Err(InterpreterExtractError);
     };
-    let state = Box::from_raw(state.as_ref());
+    let state = Box::from_raw(state.as_mut());
     // At this point, `Rc::strong_count` will be increased by 1.
     trace!(
         "Extracted Artichoke from user data pointer on {}",
@@ -84,7 +84,7 @@ impl RubyException for InterpreterExtractError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let spec = interp.class_spec::<Fatal>()?;
+        let spec = interp.class_spec::<Fatal>().ok()??;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }
@@ -167,7 +167,7 @@ impl RubyException for ConvertBytesError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let spec = interp.class_spec::<ArgumentError>()?;
+        let spec = interp.class_spec::<ArgumentError>().ok()??;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

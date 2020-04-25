@@ -106,7 +106,7 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
             _ => {
                 let class_of_numeric = {
                     let numeric = interp
-                        .class_spec::<Numeric>()
+                        .class_spec::<Numeric>()?
                         .ok_or_else(|| NotDefinedError::class("Numeric"))?;
                     numeric
                         .value(interp)

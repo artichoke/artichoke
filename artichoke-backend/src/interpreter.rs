@@ -92,7 +92,7 @@ impl RubyException for InterpreterAllocError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let spec = interp.class_spec::<Fatal>()?;
+        let spec = interp.class_spec::<Fatal>().ok()??;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

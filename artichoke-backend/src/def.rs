@@ -233,7 +233,7 @@ impl RubyException for ConstantNameError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let spec = interp.class_spec::<NameError>()?;
+        let spec = interp.class_spec::<NameError>().ok()??;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }
@@ -377,7 +377,7 @@ impl RubyException for NotDefinedError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let spec = interp.class_spec::<ScriptError>()?;
+        let spec = interp.class_spec::<ScriptError>().ok()??;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

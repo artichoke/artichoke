@@ -27,7 +27,7 @@ fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception>
             // TODO: This should use `numeric::coerce`
             let class_of_numeric = {
                 let numeric = interp
-                    .class_spec::<Numeric>()
+                    .class_spec::<Numeric>()?
                     .ok_or_else(|| NotDefinedError::class("Numeric"))?;
                 numeric
                     .value(interp)
@@ -502,7 +502,7 @@ impl RubyException for DomainError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let spec = interp.class_spec::<Self>()?;
+        let spec = interp.class_spec::<Self>().ok()??;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

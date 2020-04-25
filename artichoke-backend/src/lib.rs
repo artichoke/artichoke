@@ -83,6 +83,7 @@
 #[macro_use]
 extern crate log;
 
+use std::ffi::c_void;
 use std::ptr::NonNull;
 
 #[macro_use]
@@ -187,7 +188,7 @@ impl Artichoke {
     #[must_use]
     pub unsafe fn into_raw(interp: Self) -> *mut sys::mrb_state {
         let mrb = interp.mrb.as_mut();
-        mrb.ud = Box::into_raw(interp.state);
+        mrb.ud = Box::into_raw(interp.state).cast::<c_void>();
         drop(interp);
         mrb
     }

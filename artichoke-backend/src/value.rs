@@ -422,7 +422,7 @@ impl RubyException for ArgCountError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.to_string());
-        let spec = interp.class_spec::<ArgumentError>()?;
+        let spec = interp.class_spec::<ArgumentError>().ok()??;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

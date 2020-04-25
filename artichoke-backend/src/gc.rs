@@ -54,7 +54,7 @@ pub trait MrbGarbageCollection {
     ///
     /// The returned [`ArenaIndex`] implements [`Drop`], so it is sufficient to
     /// let it go out of scope to ensure objects are eventually collected.
-    fn create_arena_savepoint(&self) -> ArenaIndex<'_>;
+    fn create_arena_savepoint(&mut self) -> ArenaIndex<'_>;
 
     /// Retrieve the number of live objects on the interpreter heap.
     ///

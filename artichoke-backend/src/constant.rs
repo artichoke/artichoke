@@ -4,6 +4,7 @@ use crate::class_registry::ClassRegistry;
 use crate::core::DefineConstant;
 use crate::def::{ConstantNameError, NotDefinedError};
 use crate::exception::Exception;
+use crate::module_registry::ModuleRegistry;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -38,8 +39,8 @@ impl DefineConstant for Artichoke {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
         let mrb = unsafe { self.mrb.as_mut() };
-        let mut rclass = interp
-            .class_spec::<T>()
+        let mut rclass = self
+            .class_spec::<T>()?
             .and_then(|spec| spec.rclass(mrb))
             .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
         unsafe {
@@ -63,9 +64,9 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let mrb = self.mrb.as_mut();
-        let mut rclass = borrow
-            .module_spec::<T>()
+        let mrb = unsafe { self.mrb.as_mut() };
+        let mut rclass = self
+            .module_spec::<T>()?
             .and_then(|spec| spec.rclass(mrb))
             .ok_or_else(|| NotDefinedError::module_constant(String::from(constant)))?;
         unsafe {
