@@ -1,7 +1,7 @@
 use std::any::Any;
 
 use crate::class;
-use crate::ffi::Exception;
+use crate::exception::Exception;
 use crate::Artichoke;
 
 pub trait ClassRegistry {

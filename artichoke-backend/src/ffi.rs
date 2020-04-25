@@ -3,13 +3,11 @@
 //! These functions are unsafe. Use them carefully.
 
 use bstr::{ByteSlice, ByteVec};
-use std::cell::RefCell;
 use std::error;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::mem;
-use std::ptr::NonNull;
-use std::rc::Rc;
+use std::ptr::{self, NonNull};
 
 use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
@@ -39,29 +37,20 @@ pub unsafe fn from_user_data(
         error!("Attempted to extract Artichoke from null mrb_state");
         return Err(InterpreterExtractError);
     };
-    let state = if let Some(state) = NonNull::new(mrb.as_mut().ud) {
-        state.cast::<RefCell<State>>()
+    let ud = mem::replace(mrb.as_mut().ud, ptr::null_mut());
+    let state = if let Some(state) = NonNull::new(ud) {
+        state.cast::<State>()
     } else {
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
         return Err(InterpreterExtractError);
     };
-    // Extract the smart pointer that wraps the API from the user data on
-    // the mrb interpreter. The `mrb_state` should retain ownership of its
-    // copy of the smart pointer.
-    let state = Rc::from_raw(state.as_ref());
-    // Clone the API smart pointer and increase its ref count to return a
-    // reference to the caller.
-    let api = Rc::clone(&state);
-    // Forget the transmuted API extracted from the user data to make sure
-    // the `mrb_state` maintains ownership and the smart pointer does not
-    // get deallocated before `mrb_close` is called.
-    mem::forget(state);
+    let state = Box::from_raw(state.as_ref());
     // At this point, `Rc::strong_count` will be increased by 1.
     trace!(
         "Extracted Artichoke from user data pointer on {}",
         sys::mrb_sys_state_debug(mrb.as_mut())
     );
-    Ok(Artichoke(api))
+    Ok(Artichoke { mrb, state })
 }
 
 /// Failed to extract Artichoke interpreter at an FFI boundary.

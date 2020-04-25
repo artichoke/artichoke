@@ -4,6 +4,7 @@ use std::mem;
 use std::ptr;
 use std::rc::Rc;
 
+use crate::class_registry::ClassRegistry;
 use crate::def::NotDefinedError;
 use crate::exception::Exception;
 use crate::extn::core::exception::TypeError;
@@ -44,8 +45,7 @@ where
         interp: &mut Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, Exception> {
-        let borrow = interp.0.borrow();
-        let spec = borrow
+        let spec = interp
             .class_spec::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         let data = Rc::new(RefCell::new(self));
@@ -57,7 +57,7 @@ where
             slf
         } else {
             unsafe {
-                let mrb = borrow.mrb;
+                let mrb = interp.mrb.as_mut();
                 let mut rclass = spec
                     .rclass(mrb)
                     .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
@@ -100,12 +100,11 @@ where
             message.push_str(Self::ruby_type_name());
             return Err(Exception::from(TypeError::new(interp, message)));
         }
-        let borrow = interp.0.borrow();
-        let spec = borrow
+        let spec = interp
             .class_spec::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         // Sanity check that the RClass matches.
-        let mrb = borrow.mrb;
+        let mrb = interp.mrb.as_mut();
         let mut rclass = spec
             .rclass(mrb)
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;

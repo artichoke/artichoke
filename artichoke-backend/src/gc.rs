@@ -22,7 +22,7 @@ pub struct ArenaIndex<'a> {
     interp: &'a mut Artichoke,
 }
 
-impl ArenaIndex {
+impl<'a> ArenaIndex<'a> {
     /// Restore the arena stack pointer to its prior index.
     pub fn restore(self) {
         drop(self);
@@ -34,7 +34,7 @@ impl ArenaIndex {
     }
 }
 
-impl Drop for ArenaIndex {
+impl<'a> Drop for ArenaIndex<'a> {
     fn drop(&mut self) {
         unsafe {
             let mrb = self.interp.mrb.as_mut();
@@ -54,7 +54,7 @@ pub trait MrbGarbageCollection {
     ///
     /// The returned [`ArenaIndex`] implements [`Drop`], so it is sufficient to
     /// let it go out of scope to ensure objects are eventually collected.
-    fn create_arena_savepoint(&self) -> ArenaIndex;
+    fn create_arena_savepoint(&self) -> ArenaIndex<'_>;
 
     /// Retrieve the number of live objects on the interpreter heap.
     ///

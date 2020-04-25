@@ -19,7 +19,8 @@ use crate::Artichoke;
 /// initializes an [in memory virtual filesystem](crate::fs::Virtual), and loads
 /// the [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, Exception> {
-    let mut mrb = if let Some(mrb) = NonNull::new(unsafe { sys::mrb_open() }) {
+    let raw = unsafe { sys::mrb_open() };
+    let mut mrb = if let Some(mrb) = NonNull::new(raw) {
         mrb
     } else {
         error!("Failed to allocate Artichoke interprter");
@@ -27,7 +28,8 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     };
 
     let state = State::new(unsafe { mrb.as_mut() }).ok_or(InterpreterAllocError)?;
-    let api = Box::new(state);
+    let state = Box::new(state);
+    let interp = Artichoke { mrb, state };
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before

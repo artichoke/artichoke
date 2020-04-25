@@ -17,7 +17,6 @@ impl Eval for Artichoke {
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
         let context = self.state.parser.context_mut() as *mut _;
 
-        trace!("Evaling code on {}", sys::mrb_sys_state_debug(mrb));
         let result = unsafe {
             let mrb = self.mrb.as_mut();
             protect::eval(mrb, context, code)

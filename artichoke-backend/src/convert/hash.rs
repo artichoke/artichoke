@@ -78,7 +78,7 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Vec<(Value, Value)>, Self::Error> {
         if let Ruby::Hash = value.ruby_type() {
-            let mrb = self.mrb.as_mut();
+            let mrb = unsafe { self.mrb.as_mut() };
             let hash = value.inner();
             let keys = unsafe { sys::mrb_hash_keys(mrb, hash) };
 

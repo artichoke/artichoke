@@ -1,5 +1,6 @@
 use std::ffi::CString;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::DefineConstant;
 use crate::def::{ConstantNameError, NotDefinedError};
 use crate::exception::Exception;
@@ -36,8 +37,8 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let mrb = self.mrb.as_mut();
-        let mut rclass = borrow
+        let mrb = unsafe { self.mrb.as_mut() };
+        let mut rclass = interp
             .class_spec::<T>()
             .and_then(|spec| spec.rclass(mrb))
             .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
