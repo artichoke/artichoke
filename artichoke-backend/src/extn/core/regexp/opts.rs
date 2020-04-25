@@ -92,7 +92,7 @@ pub fn parse(interp: &mut Artichoke, value: &Value) -> Options {
             Some(false) | None => Options::default(),
             _ => Options::ignore_case(),
         }
-    } else if let Ok(options) = value.try_into::<Option<&str>>(interp) {
+    } else if let Ok(options) = value.try_into_mut::<Option<&str>>(interp) {
         if let Some(options) = options {
             Options {
                 multiline: options.contains('m'),

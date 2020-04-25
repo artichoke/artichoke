@@ -1,7 +1,7 @@
 //! Converters for nilable primitive Ruby types. Excludes collection types
 //! Array and Hash.
 
-use crate::core::{Convert, ConvertMut, TryConvert};
+use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut};
 use crate::exception::Exception;
 use crate::sys;
 use crate::types::{Int, Ruby};
@@ -82,50 +82,50 @@ impl<'a> TryConvert<Value, Option<bool>> for Artichoke {
     }
 }
 
-impl<'a> TryConvert<Value, Option<Vec<u8>>> for Artichoke {
+impl<'a> TryConvertMut<Value, Option<Vec<u8>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Option<Vec<u8>>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Option<Vec<u8>>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
-            self.try_convert(value).map(Some)
+            self.try_convert_mut(value).map(Some)
         }
     }
 }
 
-impl<'a> TryConvert<Value, Option<&'a [u8]>> for Artichoke {
+impl<'a> TryConvertMut<Value, Option<&'a [u8]>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Option<&'a [u8]>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Option<&'a [u8]>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
-            self.try_convert(value).map(Some)
+            self.try_convert_mut(value).map(Some)
         }
     }
 }
 
-impl<'a> TryConvert<Value, Option<String>> for Artichoke {
+impl<'a> TryConvertMut<Value, Option<String>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Option<String>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Option<String>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
-            self.try_convert(value).map(Some)
+            self.try_convert_mut(value).map(Some)
         }
     }
 }
 
-impl<'a> TryConvert<Value, Option<&'a str>> for Artichoke {
+impl<'a> TryConvertMut<Value, Option<&'a str>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Option<&'a str>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Option<&'a str>, Self::Error> {
         if let Ruby::Nil = value.ruby_type() {
             Ok(None)
         } else {
-            self.try_convert(value).map(Some)
+            self.try_convert_mut(value).map(Some)
         }
     }
 }

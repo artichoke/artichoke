@@ -51,18 +51,18 @@ impl TryConvertMut<&OsStr, Value> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Vec<u8>> for Artichoke {
+impl TryConvertMut<Value, Vec<u8>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<u8>, Self::Error> {
-        TryConvert::<_, &[u8]>::try_convert(self, value).map(<[_]>::to_vec)
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<u8>, Self::Error> {
+        TryConvertMut::<_, &[u8]>::try_convert_mut(self, value).map(<[_]>::to_vec)
     }
 }
 
-impl<'a> TryConvert<Value, &'a [u8]> for Artichoke {
+impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<&'a [u8], Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<&'a [u8], Self::Error> {
         match value.ruby_type() {
             Ruby::Symbol => {
                 // mruby does not expose an API to get the raw byte contents of a

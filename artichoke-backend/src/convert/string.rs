@@ -1,7 +1,7 @@
 use std::str;
 
 use crate::convert::UnboxRubyError;
-use crate::core::{ConvertMut, TryConvert};
+use crate::core::{ConvertMut, TryConvertMut};
 use crate::exception::Exception;
 use crate::types::Rust;
 use crate::value::Value;
@@ -23,20 +23,20 @@ impl ConvertMut<&str, Value> for Artichoke {
     }
 }
 
-impl TryConvert<Value, String> for Artichoke {
+impl TryConvertMut<Value, String> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<String, Self::Error> {
-        TryConvert::<_, &str>::try_convert(self, value).map(String::from)
+    fn try_convert_mut(&mut self, value: Value) -> Result<String, Self::Error> {
+        TryConvertMut::<_, &str>::try_convert_mut(self, value).map(String::from)
     }
 }
 
-impl<'a> TryConvert<Value, &'a str> for Artichoke {
+impl<'a> TryConvertMut<Value, &'a str> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<&'a str, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<&'a str, Self::Error> {
         let err = UnboxRubyError::new(&value, Rust::String);
-        let bytes = self.try_convert(value)?;
+        let bytes = self.try_convert_mut(value)?;
         // This converter requires that the bytes be valid UTF-8 data. If the
         // `Value` contains binary data, use the `Vec<u8>` or `&[u8]` converter.
         let string = str::from_utf8(bytes).map_err(|_| err)?;

@@ -36,8 +36,10 @@ pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Exception,
     // println!("{:?}", exception);
 
     let class = exception.funcall::<Value>(arena.interp(), "class", &[], None)?;
-    let classname = class.funcall::<&str>(arena.interp(), "name", &[], None)?;
-    let message = exception.funcall::<&[u8]>(arena.interp(), "message", &[], None)?;
+    let classname = class.funcall::<Value>(arena.interp(), "name", &[], None)?;
+    let classname = classname.try_into_mut::<&str>(arena.interp())?;
+    let message = exception.funcall::<Value>(arena.interp(), "message", &[], None)?;
+    let message = message.try_into_mut::<&[u8]>(arena.interp())?;
 
     let exception = CaughtException::new(exception, String::from(classname), message.to_vec());
     debug!("Extracted exception from interpreter: {}", exception);

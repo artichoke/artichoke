@@ -68,7 +68,8 @@ impl Value {
             Err(_) => {
                 if let Ruby::Data | Ruby::Object = self.ruby_type() {
                     self.funcall::<Self>(interp, "class", &[], None)
-                        .and_then(|class| class.funcall::<&'a str>(interp, "name", &[], None))
+                        .and_then(|class| class.funcall::<Value>(interp, "name", &[], None))
+                        .and_then(|class| class.try_into_mut(interp))
                         .unwrap_or_default()
                 } else {
                     self.ruby_type().class_name()
@@ -160,11 +161,11 @@ impl Value {
     }
 
     pub fn implicitly_convert_to_string(&self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
-        let string = if let Ok(string) = self.try_into::<&[u8]>(interp) {
+        let string = if let Ok(string) = self.try_into_mut::<&[u8]>(interp) {
             string
         } else if let Ok(true) = self.respond_to(interp, "to_str") {
             if let Ok(maybe) = self.funcall::<Self>(interp, "to_str", &[], None) {
-                if let Ok(string) = maybe.try_into::<&[u8]>(interp) {
+                if let Ok(string) = maybe.try_into_mut::<&[u8]>(interp) {
                     string
                 } else {
                     let mut message = String::from("can't convert ");
@@ -282,8 +283,11 @@ impl ValueCore for Value {
     }
 
     fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
-        self.funcall(interp, "inspect", &[], None)
-            .unwrap_or_default()
+        if let Ok(display) = self.funcall::<Value>(interp, "inspect", &[], None) {
+            display.try_into_mut(interp).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
     }
 
     fn is_nil(&self) -> bool {
@@ -296,7 +300,11 @@ impl ValueCore for Value {
     }
 
     fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
-        self.funcall(interp, "to_s", &[], None).unwrap_or_default()
+        if let Ok(display) = self.funcall::<Value>(interp, "to_s", &[], None) {
+            display.try_into_mut(interp).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
     }
 }
 
