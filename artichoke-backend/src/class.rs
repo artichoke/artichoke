@@ -21,7 +21,7 @@ pub struct Builder<'a> {
     interp: &'a mut Artichoke,
     spec: &'a Spec,
     is_mrb_tt_data: bool,
-    super_class: Option<&'a Spec>,
+    super_class: Option<NonNull<sys::RClass>>,
     methods: HashSet<method::Spec>,
 }
 
@@ -50,9 +50,16 @@ impl<'a> Builder<'a> {
     {
         let spec = self
             .interp
-            .class_spec::<T>()?
+            .state
+            .classes
+            .get::<T>()
             .ok_or_else(|| NotDefinedError::super_class("super class"))?;
-        self.super_class = Some(spec);
+        let rclass = unsafe {
+            let mrb = self.interp.mrb.as_mut();
+            spec.rclass(mrb)
+                .ok_or_else(|| NotDefinedError::super_class("super class"))?
+        };
+        self.super_class = Some(rclass);
         Ok(self)
     }
 
@@ -86,9 +93,8 @@ impl<'a> Builder<'a> {
 
     pub fn define(self) -> Result<(), NotDefinedError> {
         let mrb = unsafe { self.interp.mrb.as_mut() };
-        let mut super_class = if let Some(spec) = self.super_class {
-            spec.rclass(mrb)
-                .ok_or_else(|| NotDefinedError::super_class(spec.fqname().into_owned()))?
+        let mut super_class = if let Some(super_class) = self.super_class {
+            super_class
         } else {
             let rclass = mrb.object_class;
             NonNull::new(rclass).ok_or_else(|| NotDefinedError::super_class("Object"))?

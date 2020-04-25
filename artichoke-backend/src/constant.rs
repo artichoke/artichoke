@@ -40,7 +40,9 @@ impl DefineConstant for Artichoke {
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
         let mrb = unsafe { self.mrb.as_mut() };
         let mut rclass = self
-            .class_spec::<T>()?
+            .state
+            .classes
+            .get::<T>()
             .and_then(|spec| spec.rclass(mrb))
             .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
         unsafe {
@@ -66,7 +68,9 @@ impl DefineConstant for Artichoke {
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
         let mrb = unsafe { self.mrb.as_mut() };
         let mut rclass = self
-            .module_spec::<T>()?
+            .state
+            .modules
+            .get::<T>()
             .and_then(|spec| spec.rclass(mrb))
             .ok_or_else(|| NotDefinedError::module_constant(String::from(constant)))?;
         unsafe {

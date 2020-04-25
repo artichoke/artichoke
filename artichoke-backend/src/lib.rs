@@ -186,10 +186,9 @@ impl Artichoke {
     /// do this is to call `ffi::from_user_data` with the returned pointer and
     /// then call `Artichoke::close`.
     #[must_use]
-    pub unsafe fn into_raw(interp: Self) -> *mut sys::mrb_state {
+    pub unsafe fn into_raw(mut interp: Self) -> *mut sys::mrb_state {
         let mrb = interp.mrb.as_mut();
         mrb.ud = Box::into_raw(interp.state).cast::<c_void>();
-        drop(interp);
         mrb
     }
 

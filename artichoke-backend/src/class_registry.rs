@@ -66,7 +66,7 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        let spec = if let Some(spec) = self.class_spec::<T>()? {
+        let spec = if let Some(spec) = self.state.classes.get::<T>() {
             spec
         } else {
             return Ok(None);
@@ -86,7 +86,7 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        let spec = if let Some(spec) = self.class_spec::<T>()? {
+        let spec = if let Some(spec) = self.state.classes.get::<T>() {
             spec
         } else {
             return Ok(None);

@@ -3,7 +3,7 @@ use crate::extn::prelude::*;
 pub trait ArrayType {
     fn box_clone(&self) -> Box<dyn ArrayType>;
 
-    fn gc_mark(&self, interp: &Artichoke);
+    fn gc_mark(&self, interp: &mut Artichoke);
 
     fn real_children(&self) -> usize;
 

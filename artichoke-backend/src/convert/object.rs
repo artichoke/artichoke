@@ -46,7 +46,9 @@ where
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, Exception> {
         let spec = interp
-            .class_spec::<Self>()?
+            .state
+            .classes
+            .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         let data = Rc::new(RefCell::new(self));
         let ptr = Rc::into_raw(data);
@@ -101,7 +103,9 @@ where
             return Err(Exception::from(TypeError::new(interp, message)));
         }
         let spec = interp
-            .class_spec::<Self>()?
+            .state
+            .classes
+            .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         // Sanity check that the RClass matches.
         let mrb = interp.mrb.as_mut();

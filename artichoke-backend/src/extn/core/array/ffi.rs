@@ -385,7 +385,7 @@ unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::m
     let array = Value::new(&interp, ary);
     if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
         let borrow = array.borrow();
-        borrow.gc_mark(&interp);
+        borrow.gc_mark(&mut interp);
     }
 }
 

@@ -26,7 +26,7 @@ impl Array {
         self.0.as_vec(interp)
     }
 
-    fn gc_mark(&self, interp: &Artichoke) {
+    fn gc_mark(&self, interp: &mut Artichoke) {
         self.0.gc_mark(interp)
     }
 
