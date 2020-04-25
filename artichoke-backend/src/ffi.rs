@@ -84,8 +84,7 @@ impl RubyException for InterpreterExtractError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let spec = interp.class_spec::<Fatal>().ok()??;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp.new_instance::<Fatal>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }
@@ -167,8 +166,10 @@ impl RubyException for ConvertBytesError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let spec = interp.class_spec::<ArgumentError>().ok()??;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp
+            .new_instance::<ArgumentError>(&[message])
+            .ok()
+            .flatten()?;
         Some(value.inner())
     }
 }

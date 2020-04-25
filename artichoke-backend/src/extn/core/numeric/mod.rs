@@ -104,14 +104,9 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                 Ok(Coercion::Integer(x.try_into(interp)?, y.try_into(interp)?))
             }
             _ => {
-                let class_of_numeric = {
-                    let numeric = interp
-                        .class_spec::<Numeric>()?
-                        .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-                    numeric
-                        .value(interp)
-                        .ok_or_else(|| NotDefinedError::class("Numeric"))?
-                };
+                let class_of_numeric = interp
+                    .class_of::<Numeric>()?
+                    .ok_or_else(|| NotDefinedError::class("Numeric"))?;
                 if let Ok(true) = y.funcall(interp, "is_a?", &[class_of_numeric], None) {
                     if y.respond_to(interp, "coerce")? {
                         let coerced = y.funcall::<Value>(interp, "coerce", &[x], None)?;

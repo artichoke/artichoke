@@ -1,7 +1,11 @@
 use std::any::Any;
+use std::convert::TryFrom;
 
 use crate::class;
 use crate::exception::Exception;
+use crate::sys;
+use crate::types::Int;
+use crate::value::Value;
 use crate::Artichoke;
 
 pub trait ClassRegistry {
@@ -23,6 +27,14 @@ pub trait ClassRegistry {
             false
         }
     }
+
+    fn class_of<T>(&mut self) -> Result<Option<Value>, Exception>
+    where
+        T: Any;
+
+    fn new_instance<T>(&mut self, args: &[Value]) -> Result<Option<Value>, Exception>
+    where
+        T: Any;
 }
 
 impl ClassRegistry for Artichoke {
@@ -48,5 +60,51 @@ impl ClassRegistry for Artichoke {
         T: Any,
     {
         Ok(self.state.classes.get::<T>())
+    }
+
+    fn class_of<T>(&mut self) -> Result<Option<Value>, Exception>
+    where
+        T: Any,
+    {
+        let spec = if let Some(spec) = self.class_spec::<T>()? {
+            spec
+        } else {
+            return Ok(None);
+        };
+        let class = unsafe {
+            let mrb = self.mrb.as_mut();
+            if let Some(mut rclass) = spec.rclass(mrb) {
+                sys::mrb_sys_class_value(rclass.as_mut())
+            } else {
+                return Ok(None);
+            }
+        };
+        Ok(Some(Value::new(self, class)))
+    }
+
+    fn new_instance<T>(&mut self, args: &[Value]) -> Result<Option<Value>, Exception>
+    where
+        T: Any,
+    {
+        let spec = if let Some(spec) = self.class_spec::<T>()? {
+            spec
+        } else {
+            return Ok(None);
+        };
+        let args = args.iter().map(Value::inner).collect::<Vec<_>>();
+        let arglen = if let Ok(len) = Int::try_from(args.len()) {
+            len
+        } else {
+            return Ok(None);
+        };
+        let value = unsafe {
+            let mrb = self.mrb.as_mut();
+            if let Some(mut rclass) = spec.rclass(mrb) {
+                sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr())
+            } else {
+                return Ok(None);
+            }
+        };
+        Ok(Some(Value::new(self, value)))
     }
 }

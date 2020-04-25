@@ -157,28 +157,6 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn new_instance(&self, interp: &mut Artichoke, args: &[Value]) -> Option<Value> {
-        let args = args.iter().map(Value::inner).collect::<Vec<_>>();
-        let arglen = Int::try_from(args.len()).ok()?;
-        let value = unsafe {
-            let mrb = interp.mrb.as_mut();
-            let mut rclass = self.rclass(mrb)?;
-            sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr())
-        };
-        Some(Value::new(interp, value))
-    }
-
-    #[must_use]
-    pub fn value(&self, interp: &Artichoke) -> Option<Value> {
-        let class = unsafe {
-            let mrb = interp.mrb.as_mut();
-            let mut rclass = self.rclass(mrb)?;
-            sys::mrb_sys_class_value(rclass.as_mut())
-        };
-        Some(Value::new(interp, class))
-    }
-
-    #[must_use]
     pub fn data_type(&self) -> &sys::mrb_data_type {
         &self.data_type
     }
