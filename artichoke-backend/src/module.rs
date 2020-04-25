@@ -13,16 +13,16 @@ use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Builder<'a> {
-    interp: &'a Artichoke,
+    interp: &'a mut Artichoke,
     spec: &'a Spec,
     methods: HashSet<method::Spec>,
 }
 
 impl<'a> Builder<'a> {
     #[must_use]
-    pub fn for_spec(interp: &'a Artichoke, spec: &'a Spec) -> Self {
+    pub fn for_spec(interp: &'a mut Artichoke, spec: &'a Spec) -> Self {
         Self {
             interp,
             spec,
@@ -135,16 +135,6 @@ impl Spec {
         } else {
             Err(ConstantNameError::new(name))
         }
-    }
-
-    #[must_use]
-    pub fn value(&self, interp: &Artichoke) -> Option<Value> {
-        let module = unsafe {
-            let mrb = interp.mrb.as_mut();
-            let mut rclass = self.rclass(mrb)?;
-            sys::mrb_sys_module_value(rclass.as_mut())
-        };
-        Some(Value::new(interp, module))
     }
 
     #[must_use]

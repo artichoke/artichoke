@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -6,16 +7,18 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
+use crate::class_registry::ClassRegistry;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Free, Method, NotDefinedError};
+use crate::exception::Exception;
 use crate::method;
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Builder<'a> {
-    interp: &'a Artichoke,
+    interp: &'a mut Artichoke,
     spec: &'a Spec,
     is_mrb_tt_data: bool,
     super_class: Option<&'a Spec>,
@@ -24,7 +27,7 @@ pub struct Builder<'a> {
 
 impl<'a> Builder<'a> {
     #[must_use]
-    pub fn for_spec(interp: &'a Artichoke, spec: &'a Spec) -> Self {
+    pub fn for_spec(interp: &'a mut Artichoke, spec: &'a Spec) -> Self {
         Self {
             interp,
             spec,
@@ -41,9 +44,16 @@ impl<'a> Builder<'a> {
     }
 
     #[must_use]
-    pub fn with_super_class(mut self, super_class: Option<&'a Spec>) -> Self {
-        self.super_class = super_class;
-        self
+    pub fn with_super_class<T>(mut self) -> Result<Self, Exception>
+    where
+        T: Any,
+    {
+        let spec = self
+            .interp
+            .class_spec::<T>()?
+            .ok_or_else(|| NotDefinedError::super_class("super class"))?;
+        self.super_class = Some(spec);
+        Ok(self)
     }
 
     pub fn add_method<T>(
@@ -253,10 +263,9 @@ mod tests {
 
         let mut interp = crate::interpreter().unwrap();
         let borrow = interp.0.borrow();
-        let standard_error = borrow.class_spec::<StandardError>().unwrap();
         let spec = class::Spec::new("RustError", None, None).unwrap();
         class::Builder::for_spec(&interp, &spec)
-            .with_super_class(Some(&standard_error))
+            .with_super_class::<StandardError>()?
             .define()
             .unwrap();
         drop(borrow);

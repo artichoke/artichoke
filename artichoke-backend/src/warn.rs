@@ -29,11 +29,8 @@ impl Warn for Artichoke {
             let _ = write!(&mut message, "{}", err);
             return Err(IOError::new(self, message).into());
         }
-        let spec = self
-            .module_spec::<Warning>()?
-            .ok_or_else(|| NotDefinedError::module("Warning"))?;
-        let warning = spec
-            .value(self)
+        let warning = self
+            .module_of::<Warning>()?
             .ok_or_else(|| NotDefinedError::module("Warning"))?;
         let message = self.convert_mut(message);
         let _ = warning.funcall::<Value>(self, "warn", &[message], None)?;

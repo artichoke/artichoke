@@ -54,7 +54,7 @@ impl State {
     }
 
     /// Close a [`State`] and free underlying mruby structs and memory.
-    pub fn close(mut self, mrb: &mut sys::mrb_state) {
+    pub fn close(self, mrb: &mut sys::mrb_state) {
         self.parser.close(mrb);
     }
 }

@@ -29,7 +29,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
 
     let state = State::new(unsafe { mrb.as_mut() }).ok_or(InterpreterAllocError)?;
     let state = Box::new(state);
-    let interp = Artichoke { mrb, state };
+    let mut interp = Artichoke { mrb, state };
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before
@@ -54,9 +54,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     // mruby lazily initializes some core objects like top_self and generates a
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
     // predictable initialization behavior.
-    let arena = interp.create_arena_savepoint();
-    let _ = interp.eval(&[])?;
-    arena.restore();
+    interp.create_arena_savepoint().interp().eval(&[])?;
 
     interp.enable_gc();
     interp.full_gc();

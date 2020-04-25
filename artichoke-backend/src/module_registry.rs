@@ -2,6 +2,8 @@ use std::any::Any;
 
 use crate::exception::Exception;
 use crate::module;
+use crate::sys;
+use crate::value::Value;
 use crate::Artichoke;
 
 pub trait ModuleRegistry {
@@ -23,6 +25,10 @@ pub trait ModuleRegistry {
             false
         }
     }
+
+    fn module_of<T>(&mut self) -> Result<Option<Value>, Exception>
+    where
+        T: Any;
 }
 
 impl ModuleRegistry for Artichoke {
@@ -48,5 +54,25 @@ impl ModuleRegistry for Artichoke {
         T: Any,
     {
         Ok(self.state.modules.get::<T>())
+    }
+
+    fn module_of<T>(&mut self) -> Result<Option<Value>, Exception>
+    where
+        T: Any,
+    {
+        let spec = if let Some(spec) = self.state.modules.get::<T>() {
+            spec
+        } else {
+            return Ok(None);
+        };
+        let module = unsafe {
+            let mrb = self.mrb.as_mut();
+            if let Some(mut rclass) = spec.rclass(mrb) {
+                sys::mrb_sys_module_value(rclass.as_mut())
+            } else {
+                return Ok(None);
+            }
+        };
+        Ok(Some(Value::new(self, module)))
     }
 }

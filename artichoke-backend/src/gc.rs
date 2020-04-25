@@ -59,10 +59,10 @@ pub trait MrbGarbageCollection {
     /// Retrieve the number of live objects on the interpreter heap.
     ///
     /// A live object is reachable via top self, the stack, or the arena.
-    fn live_object_count(&self) -> i32;
+    fn live_object_count(&mut self) -> i32;
 
     /// Mark a [`Value`] as reachable in the mruby garbage collector.
-    fn mark_value(&self, value: &Value);
+    fn mark_value(&mut self, value: &Value);
 
     /// Perform an incremental garbage collection.
     ///
@@ -70,7 +70,7 @@ pub trait MrbGarbageCollection {
     /// [full GC](MrbGarbageCollection::full_gc), but does not guarantee that
     /// all dead objects will be reaped. You may wish to use an incremental GC
     /// if you are operating with an interpreter in a loop.
-    fn incremental_gc(&self);
+    fn incremental_gc(&mut self);
 
     /// Perform a full garbage collection.
     ///
@@ -78,22 +78,22 @@ pub trait MrbGarbageCollection {
     /// expensive than an
     /// [incremental GC](MrbGarbageCollection::incremental_gc). You may wish to
     /// use a full GC if you are memory constrained.
-    fn full_gc(&self);
+    fn full_gc(&mut self);
 
     /// Enable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn enable_gc(&self) -> bool;
+    fn enable_gc(&mut self) -> bool;
 
     /// Disable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn disable_gc(&self) -> bool;
+    fn disable_gc(&mut self) -> bool;
 }
 
 impl MrbGarbageCollection for Artichoke {
     fn create_arena_savepoint(&mut self) -> ArenaIndex<'_> {
-        let index = {
+        let index = unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_sys_gc_arena_save(mrb)
         };
@@ -103,28 +103,28 @@ impl MrbGarbageCollection for Artichoke {
         }
     }
 
-    fn live_object_count(&self) -> i32 {
+    fn live_object_count(&mut self) -> i32 {
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_sys_gc_live_objects(mrb)
         }
     }
 
-    fn mark_value(&self, value: &Value) {
+    fn mark_value(&mut self, value: &Value) {
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_sys_safe_gc_mark(mrb, value.inner())
         }
     }
 
-    fn incremental_gc(&self) {
+    fn incremental_gc(&mut self) {
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_incremental_gc(mrb);
         }
     }
 
-    fn full_gc(&self) {
+    fn full_gc(&mut self) {
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_full_gc(mrb);
@@ -132,7 +132,7 @@ impl MrbGarbageCollection for Artichoke {
     }
 
     #[allow(clippy::must_use_candidate)]
-    fn enable_gc(&self) -> bool {
+    fn enable_gc(&mut self) -> bool {
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_sys_gc_enable(mrb)
@@ -140,7 +140,7 @@ impl MrbGarbageCollection for Artichoke {
     }
 
     #[allow(clippy::must_use_candidate)]
-    fn disable_gc(&self) -> bool {
+    fn disable_gc(&mut self) -> bool {
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_sys_gc_disable(mrb)

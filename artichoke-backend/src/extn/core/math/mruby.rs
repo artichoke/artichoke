@@ -38,7 +38,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let domainerror =
         class::Spec::new("DomainError", Some(EnclosingRubyScope::module(&spec)), None)?;
     class::Builder::for_spec(interp, &domainerror)
-        .with_super_class(interp.class_spec::<StandardError>()?)
+        .with_super_class::<StandardError>()?
         .define()?;
     interp.def_class::<math::DomainError>(domainerror)?;
 

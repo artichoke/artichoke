@@ -72,7 +72,7 @@ impl Spec {
     ///
     /// This method requires that the [`sys::mrb_state`] has a valid `top_self`
     /// object.
-    pub unsafe fn define(&self, interp: &Artichoke, into: &mut sys::RClass) {
+    pub unsafe fn define(&self, interp: &mut Artichoke, into: &mut sys::RClass) {
         let mrb = interp.mrb.as_mut();
         match self.method_type {
             Type::Class => sys::mrb_define_class_method(
