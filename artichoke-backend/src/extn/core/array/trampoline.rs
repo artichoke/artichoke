@@ -128,7 +128,7 @@ pub fn reverse_bang(interp: &mut Artichoke, ary: Value) -> Result<Value, Excepti
     Ok(ary)
 }
 
-pub fn len(interp: &Artichoke, ary: Value) -> Result<usize, Exception> {
+pub fn len(interp: &mut Artichoke, ary: Value) -> Result<usize, Exception> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     let borrow = array.borrow();
     Ok(borrow.len())
@@ -144,7 +144,11 @@ pub fn initialize(
     Array::initialize(interp, first, second, block, ary)
 }
 
-pub fn initialize_copy(interp: &Artichoke, ary: Value, from: Value) -> Result<Value, Exception> {
+pub fn initialize_copy(
+    interp: &mut Artichoke,
+    ary: Value,
+    from: Value,
+) -> Result<Value, Exception> {
     let from = unsafe { Array::try_from_ruby(interp, &from) }?;
     let borrow = from.borrow();
     let result = borrow.clone();

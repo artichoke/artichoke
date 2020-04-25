@@ -117,7 +117,7 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                     if y.respond_to(interp, "coerce")? {
                         let coerced = y.funcall::<Value>(interp, "coerce", &[x], None)?;
                         let coerced: Vec<Value> = interp
-                            .try_convert(coerced)
+                            .try_convert_mut(coerced)
                             .map_err(|_| TypeError::new(interp, "coerce must return [x, y]"))?;
                         let mut coerced = coerced.into_iter();
                         let y = coerced

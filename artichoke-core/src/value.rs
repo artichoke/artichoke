@@ -2,7 +2,7 @@
 
 use std::error;
 
-use crate::convert::TryConvert;
+use crate::convert::{TryConvert, TryConvertMut};
 
 /// A boxed Ruby value owned by the interpreter.
 ///
@@ -40,7 +40,8 @@ where
     where
         Self::Artichoke: TryConvert<Self, T, Error = Self::Error>;
 
-    /// Consume `self` and try to convert `self` to type `T`.
+    /// Consume `self` and try to convert `self` to type `T` using a
+    /// [`TryConvert`] conversion.
     ///
     /// # Errors
     ///
@@ -50,6 +51,19 @@ where
         Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
     {
         interp.try_convert(self)
+    }
+
+    /// Consume `self` and try to convert `self` to type `T` using a
+    /// [`TryConvertMut`] conversion.
+    ///
+    /// # Errors
+    ///
+    /// If a [`TryConvertMut`] conversion fails, then an error is returned.
+    fn try_into_mut<T>(self, interp: &mut Self::Artichoke) -> Result<T, Self::Error>
+    where
+        Self::Artichoke: TryConvertMut<Self, T, Error = Self::Error>,
+    {
+        interp.try_convert_mut(self)
     }
 
     /// Call `#freeze` on this [`Value`].

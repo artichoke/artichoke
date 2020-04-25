@@ -41,8 +41,8 @@ unsafe extern "C" fn artichoke_env_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
-    let result = env::initialize(&interp, Some(slf));
+    let mut interp = unwrap_interpreter!(mrb);
+    let result = env::initialize(&mut interp, Some(slf));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

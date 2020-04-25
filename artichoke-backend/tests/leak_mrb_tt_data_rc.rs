@@ -48,11 +48,11 @@ unsafe extern "C" fn container_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let inner = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let inner = Value::new(&interp, inner);
     let inner = inner.try_into::<String>(&interp).unwrap_or_default();
     let container = Container { inner };
-    let result = container.try_into_ruby(&interp, Some(slf));
+    let result = container.try_into_ruby(&mut interp, Some(slf));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),

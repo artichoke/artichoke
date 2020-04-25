@@ -51,15 +51,14 @@ unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 
 unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let ary = Value::new(&interp, ary);
-    let result = array::trampoline::len(&interp, ary).and_then(|len| {
-        sys::mrb_int::try_from(len).map_err(|_| {
-            Exception::from(Fatal::new(
-                &interp,
-                "Array length does not fit in mruby Integer max",
-            ))
-        })
+    let result = array::trampoline::len(&mut interp, ary).and_then(|len| {
+        if let Ok(len) = sys::mrb_int::try_from(len) {
+            Ok(len)
+        } else {
+            Err(Fatal::new(&interp, "Array length does not fit in mruby Integer max").into())
+        }
     });
     match result {
         Ok(len) => interp.convert(len).inner(),
@@ -108,10 +107,10 @@ unsafe extern "C" fn ary_initialize_copy(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let interp = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
     let array = Value::new(&interp, ary);
     let other = Value::new(&interp, other);
-    let result = array::trampoline::initialize_copy(&interp, array, other);
+    let result = array::trampoline::initialize_copy(&mut interp, array, other);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

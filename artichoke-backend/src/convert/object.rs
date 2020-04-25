@@ -41,11 +41,10 @@ where
     /// [`sys::mrb_value`] is allocated with [`sys::mrb_obj_new`].
     fn try_into_ruby(
         self,
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, Exception> {
         let borrow = interp.0.borrow();
-        let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
@@ -57,10 +56,11 @@ where
             }
             slf
         } else {
-            let mut rclass = spec
-                .rclass(mrb)
-                .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
             unsafe {
+                let mrb = borrow.mrb;
+                let mut rclass = spec
+                    .rclass(mrb)
+                    .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
                 let alloc = sys::mrb_data_object_alloc(
                     mrb,
                     rclass.as_mut(),
@@ -91,7 +91,7 @@ where
     /// been freed, which is built on the assumption that there are no garbage
     /// collector bugs in the mruby VM for Artichoke custom types.
     unsafe fn try_from_ruby(
-        interp: &Artichoke,
+        interp: &mut Artichoke,
         slf: &Value,
     ) -> Result<Rc<RefCell<Self>>, Exception> {
         // Make sure we have a Data otherwise extraction will fail.
@@ -101,11 +101,11 @@ where
             return Err(Exception::from(TypeError::new(interp, message)));
         }
         let borrow = interp.0.borrow();
-        let mrb = borrow.mrb;
         let spec = borrow
             .class_spec::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
         // Sanity check that the RClass matches.
+        let mrb = borrow.mrb;
         let mut rclass = spec
             .rclass(mrb)
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
@@ -160,7 +160,7 @@ mod tests {
         let mut interp = unwrap_interpreter!(mrb);
 
         let value = Value::new(&interp, slf);
-        if let Ok(container) = Container::try_from_ruby(&interp, &value) {
+        if let Ok(container) = Container::try_from_ruby(&mut interp, &value) {
             let borrow = container.borrow();
             interp.convert_mut(borrow.inner.as_bytes()).inner()
         } else {
@@ -202,12 +202,12 @@ mod tests {
             inner: "contained string contents".to_owned(),
         };
 
-        let value = obj.try_into_ruby(&interp, None).unwrap();
+        let value = obj.try_into_ruby(&mut interp, None).unwrap();
         let class = value
             .funcall::<Value>(&mut interp, "class", &[], None)
             .unwrap();
         assert_eq!(class.to_s(&mut interp), b"Container");
-        let data = unsafe { Container::try_from_ruby(&interp, &value) }.unwrap();
+        let data = unsafe { Container::try_from_ruby(&mut interp, &value) }.unwrap();
         assert_eq!(Rc::strong_count(&data), 2);
         assert_eq!(&data.borrow().inner, "contained string contents");
         drop(data);
@@ -241,16 +241,16 @@ mod tests {
             .funcall::<Value>(&mut interp, "class", &[], None)
             .unwrap();
         assert_eq!(class.to_s(&mut interp), b"String");
-        let data = unsafe { Container::try_from_ruby(&interp, &value) };
+        let data = unsafe { Container::try_from_ruby(&mut interp, &value) };
         assert!(data.is_err());
         let value = Box::new(Other::default())
-            .try_into_ruby(&interp, None)
+            .try_into_ruby(&mut interp, None)
             .unwrap();
         let class = value
             .funcall::<Value>(&mut interp, "class", &[], None)
             .unwrap();
         assert_eq!(class.to_s(&mut interp), b"Other");
-        let data = unsafe { Container::try_from_ruby(&interp, &value) };
+        let data = unsafe { Container::try_from_ruby(&mut interp, &value) };
         assert!(data.is_err());
     }
 }

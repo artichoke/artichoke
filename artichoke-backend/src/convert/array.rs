@@ -5,7 +5,7 @@ use crate::exception::Exception;
 use crate::extn::core::array::{Array, InlineBuffer};
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, Convert, ConvertMut, TryConvert};
+use crate::{Artichoke, Convert, ConvertMut, TryConvert, TryConvertMut};
 
 impl ConvertMut<&[Value], Value> for Artichoke {
     fn convert_mut(&mut self, value: &[Value]) -> Value {
@@ -180,10 +180,10 @@ impl ConvertMut<Vec<Vec<Option<&str>>>, Value> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Vec<Value>> for Artichoke {
+impl TryConvertMut<Value, Vec<Value>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<Value>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Value>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -194,10 +194,10 @@ impl TryConvert<Value, Vec<Value>> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Vec<Vec<u8>>> for Artichoke {
+impl TryConvertMut<Value, Vec<Vec<u8>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<Vec<u8>>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Vec<u8>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -213,10 +213,10 @@ impl TryConvert<Value, Vec<Vec<u8>>> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Vec<Option<Vec<u8>>>> for Artichoke {
+impl TryConvertMut<Value, Vec<Option<Vec<u8>>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<Option<Vec<u8>>>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Option<Vec<u8>>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -232,10 +232,10 @@ impl TryConvert<Value, Vec<Option<Vec<u8>>>> for Artichoke {
     }
 }
 
-impl<'a> TryConvert<Value, Vec<&'a [u8]>> for Artichoke {
+impl<'a> TryConvertMut<Value, Vec<&'a [u8]>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<&'a [u8]>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<&'a [u8]>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -251,10 +251,10 @@ impl<'a> TryConvert<Value, Vec<&'a [u8]>> for Artichoke {
     }
 }
 
-impl<'a> TryConvert<Value, Vec<Option<&'a [u8]>>> for Artichoke {
+impl<'a> TryConvertMut<Value, Vec<Option<&'a [u8]>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<Option<&'a [u8]>>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Option<&'a [u8]>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -270,10 +270,10 @@ impl<'a> TryConvert<Value, Vec<Option<&'a [u8]>>> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Vec<String>> for Artichoke {
+impl TryConvertMut<Value, Vec<String>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<String>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<String>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -289,10 +289,10 @@ impl TryConvert<Value, Vec<String>> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Vec<Option<String>>> for Artichoke {
+impl TryConvertMut<Value, Vec<Option<String>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<Option<String>>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Option<String>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -308,10 +308,10 @@ impl TryConvert<Value, Vec<Option<String>>> for Artichoke {
     }
 }
 
-impl<'a> TryConvert<Value, Vec<&'a str>> for Artichoke {
+impl<'a> TryConvertMut<Value, Vec<&'a str>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<&'a str>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<&'a str>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -327,10 +327,10 @@ impl<'a> TryConvert<Value, Vec<&'a str>> for Artichoke {
     }
 }
 
-impl<'a> TryConvert<Value, Vec<Option<&'a str>>> for Artichoke {
+impl<'a> TryConvertMut<Value, Vec<Option<&'a str>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<Option<&'a str>>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Option<&'a str>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -346,10 +346,10 @@ impl<'a> TryConvert<Value, Vec<Option<&'a str>>> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Vec<Int>> for Artichoke {
+impl TryConvertMut<Value, Vec<Int>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<Int>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Int>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
             let array = unsafe { Array::try_from_ruby(self, &value) }?;
             let borrow = array.borrow();
@@ -376,7 +376,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<Vec<Value>>(&interp);
+        let result = value.try_into_mut::<Vec<Value>>(&mut interp);
         assert!(result.is_err());
     }
 
@@ -397,7 +397,7 @@ mod tests {
         if empty != arr.is_empty() {
             return false;
         }
-        let recovered: Vec<Int> = interp.try_convert(value).unwrap();
+        let recovered: Vec<Int> = interp.try_convert_mut(value).unwrap();
         if recovered != arr {
             return false;
         }
@@ -415,7 +415,7 @@ mod tests {
         if empty != arr.is_empty() {
             return false;
         }
-        let recovered: Vec<Int> = interp.try_convert(value).unwrap();
+        let recovered: Vec<Int> = interp.try_convert_mut(value).unwrap();
         if recovered != arr {
             return false;
         }
@@ -439,7 +439,7 @@ mod tests {
         if empty != arr.is_empty() {
             return false;
         }
-        let recovered: Vec<String> = interp.try_convert(value).unwrap();
+        let recovered: Vec<String> = interp.try_convert_mut(value).unwrap();
         if recovered != arr {
             return false;
         }
@@ -457,7 +457,7 @@ mod tests {
         if empty != arr.is_empty() {
             return false;
         }
-        let recovered: Vec<String> = interp.try_convert(value).unwrap();
+        let recovered: Vec<String> = interp.try_convert_mut(value).unwrap();
         if recovered != arr {
             return false;
         }
@@ -481,7 +481,7 @@ mod tests {
         if empty != arr.is_empty() {
             return false;
         }
-        let recovered: Vec<Option<Vec<u8>>> = interp.try_convert(value).unwrap();
+        let recovered: Vec<Option<Vec<u8>>> = interp.try_convert_mut(value).unwrap();
         if recovered != arr {
             return false;
         }
@@ -499,7 +499,7 @@ mod tests {
         if empty != arr.is_empty() {
             return false;
         }
-        let recovered: Vec<Option<Vec<u8>>> = interp.try_convert(value).unwrap();
+        let recovered: Vec<Option<Vec<u8>>> = interp.try_convert_mut(value).unwrap();
         if recovered != arr {
             return false;
         }
@@ -508,9 +508,9 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let mut interp = crate::interpreter().unwrap();
         let value = interp.convert(i);
-        let value = value.try_into::<Vec<Value>>(&interp);
+        let value = value.try_into_mut::<Vec<Value>>(&mut interp);
         value.is_err()
     }
 }

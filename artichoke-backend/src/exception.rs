@@ -6,7 +6,7 @@ use std::hint;
 use crate::string;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, ValueLike};
+use crate::{Artichoke, TryConvertMut, ValueLike};
 
 #[derive(Debug)]
 pub struct Exception(Box<dyn RubyException>);
@@ -169,7 +169,9 @@ impl RubyException for CaughtException {
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
-        self.value.funcall(interp, "backtrace", &[], None).ok()
+        let backtrace = self.value.funcall(interp, "backtrace", &[], None).ok()?;
+        let backtrace = interp.try_convert_mut(backtrace).ok()?;
+        Some(backtrace)
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {

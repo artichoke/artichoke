@@ -607,8 +607,9 @@ mod tests {
         assert!(!string_is_nil);
         let delim = interp.convert_mut("");
         let split = s
-            .funcall::<Vec<&str>>(&mut interp, "split", &[delim], None)
+            .funcall::<Value>(&mut interp, "split", &[delim], None)
             .unwrap();
+        let split: Vec<&str> = interp.try_convert_mut(split).unwrap();
         assert_eq!(split, vec!["f", "o", "o"])
     }
 
