@@ -92,16 +92,13 @@ pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, [u8]> {
 }
 
 pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Exception> {
-    let groups = interp.0.borrow_mut().active_regexp_globals.take();
-    if let Some(groups) = groups {
-        for group in 1..=groups.get() {
-            let group = unsafe { NonZeroUsize::new_unchecked(group) };
-            interp.unset_global_variable(nth_match_group(group))?;
-        }
-        Ok(())
-    } else {
-        Ok(())
+    let mut idx = interp.0.borrow().regexp.active_regexp_globals();
+    while let Some(group) = NonZeroUsize::new(idx) {
+        interp.unset_global_variable(nth_match_group(group))?;
+        idx -= 1
     }
+    interp.0.borrow_mut().regexp.clear();
+    Ok(())
 }
 
 #[derive(Debug, Clone)]
