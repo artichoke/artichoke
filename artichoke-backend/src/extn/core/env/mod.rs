@@ -25,20 +25,26 @@ impl fmt::Debug for Environ {
 }
 
 #[cfg(feature = "core-env-system")]
-pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
+pub fn initialize(
+    interp: &mut Artichoke,
+    into: Option<sys::mrb_value>,
+) -> Result<Value, Exception> {
     use backend::system::System;
 
     let obj = Environ(Box::new(System::new()));
-    let result = obj.try_into_ruby(&interp, into)?;
+    let result = obj.try_into_ruby(interp, into)?;
     Ok(result)
 }
 
 #[cfg(not(feature = "core-env-system"))]
-pub fn initialize(interp: &Artichoke, into: Option<sys::mrb_value>) -> Result<Value, Exception> {
+pub fn initialize(
+    interp: &mut Artichoke,
+    into: Option<sys::mrb_value>,
+) -> Result<Value, Exception> {
     use backend::memory::Memory;
 
     let obj = Environ(Box::new(Memory::new()));
-    let result = obj.try_into_ruby(&interp, into)?;
+    let result = obj.try_into_ruby(interp, into)?;
     Ok(result)
 }
 

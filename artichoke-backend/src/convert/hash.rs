@@ -7,7 +7,7 @@ use crate::extn::core::array::Array;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ConvertMut, TryConvert};
+use crate::{Artichoke, ConvertMut, TryConvertMut};
 
 // TODO(GH-28): implement `PartialEq`, `Eq`, and `Hash` on `Value`.
 // TODO(GH-29): implement `Convert<HashMap<Value, Value>>`.
@@ -72,10 +72,10 @@ impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke 
     }
 }
 
-impl TryConvert<Value, Vec<(Value, Value)>> for Artichoke {
+impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert(&self, value: Value) -> Result<Vec<(Value, Value)>, Self::Error> {
+    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<(Value, Value)>, Self::Error> {
         if let Ruby::Hash = value.ruby_type() {
             let mrb = self.0.borrow().mrb;
             let hash = value.inner();
@@ -117,7 +117,9 @@ mod tests {
         if len != hash.len() {
             return false;
         }
-        let recovered = value.try_into::<Vec<(Value, Value)>>(&interp).unwrap();
+        let recovered = value
+            .try_into_mut::<Vec<(Value, Value)>>(&mut interp)
+            .unwrap();
         if recovered.len() != hash.len() {
             return false;
         }

@@ -30,20 +30,20 @@ impl Container {
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let inner = mrb_get_args!(mrb, required = 1);
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let inner = Value::new(&interp, inner);
         let inner = inner.try_into::<Int>(&interp).unwrap_or_default();
         let container = Box::new(Self { inner });
         container
-            .try_into_ruby(&interp, Some(slf))
+            .try_into_ruby(&mut interp, Some(slf))
             .unwrap_or_else(|_| interp.convert(None::<Value>))
             .inner()
     }
 
     unsafe extern "C" fn value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-        let interp = unwrap_interpreter!(mrb);
+        let mut interp = unwrap_interpreter!(mrb);
         let value = Value::new(&interp, slf);
-        if let Ok(data) = Box::<Self>::try_from_ruby(&interp, &value) {
+        if let Ok(data) = Box::<Self>::try_from_ruby(&mut interp, &value) {
             let borrow = data.borrow();
             interp.convert(borrow.inner).inner()
         } else {
