@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Fetch cargo-audit
+      - name: Fetch cargo-deny
         run: |
           curl -sL "$RELEASE" | sudo tar xvz -C /usr/local/bin/ --strip-components=1
         env:

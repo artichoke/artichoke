@@ -31,6 +31,9 @@
     }
   },
   "scripts": {
-    "eslint-check": "eslint --print-config package.json | eslint-config-prettier-check"
+    "fmt": "npx prettier --write '**/*'",
+    "fmt:all": "npm run fmt && npm run fmt:md && npm run fmt:yaml",
+    "fmt:md": "npx prettier --prose-wrap always --write '**/*.md'",
+    "fmt:yaml": "npx prettier --prose-wrap always --write '**/*.{yaml,yml}'"
   }
 }
