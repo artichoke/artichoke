@@ -39,16 +39,16 @@ requires configuring several dependencies.
 ### Rust Toolchain
 
 Artichoke depends on Rust and several compiler plugins for linting and
-formatting. The specific version of Rust Artichoke requires is specified in the
-[toolchain file](rust-toolchain).
+formatting. The specific version of Rust that Artichoke requires is specified in
+the [toolchain file](rust-toolchain).
 
 Toolchain requirements are documented in [`BUILD.md`](BUILD.md#rust-toolchain).
 
 ### C Toolchain
 
-Some artichoke dependencies, like the mruby [`sys`](artichoke-backend/src/sys)
-and [`onig`](https://crates.io/crates/onig), build C static libraries and
-require a C compiler.
+Some Artichoke dependencies, like the mruby [`sys`](artichoke-backend/src/sys)
+module and the [`onig`](https://crates.io/crates/onig) crate, build C static
+libraries and require a C compiler.
 
 Toolchain requirements are documented in [`BUILD.md`](BUILD.md#c-toolchain).
 
@@ -67,6 +67,7 @@ $ bundle exec rake --tasks
 rake doc               # Generate Rust API documentation
 rake doc:open          # Generate Rust API documentation and open it in a web browser
 rake lint:all          # Lint and format
+rake lint:clippy       # Run clippy
 rake lint:deps         # Install linting dependencies
 rake lint:eslint       # Run eslint
 rake lint:format       # Format sources
@@ -74,6 +75,7 @@ rake lint:links        # Check markdown links
 rake lint:restriction  # Lint with restriction pass (unenforced lints)
 rake lint:rubocop      # Run rubocop
 rake spec              # Run enforced ruby/spec suite
+rake test              # Run Artichoke Rust tests
 ```
 
 To lint Ruby sources, Artichoke uses
@@ -129,7 +131,7 @@ Merges will be blocked by CI if there are lint errors.
 
 ### Testing
 
-A PR must have tests for it to be merged. The
+A PR must have new or existing tests for it to be merged. The
 [Rust book chapter on testing](https://doc.rust-lang.org/book/ch11-00-testing.html)
 is a good place to start. If you'd like to see some examples in Artichoke, take
 a look at the `Value` tests in
@@ -138,11 +140,11 @@ a look at the `Value` tests in
 To run tests:
 
 ```sh
-cargo test --workspace
+rake test
 ```
 
-If you are only working on one package, it can speed up iteration time to only
-build and run tests for that package:
+If you are only working on one crate, it can speed up iteration time to only
+build and run tests for that crate:
 
 ```sh
 cargo test -p artichoke-backend

@@ -1,10 +1,21 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+
 task default: 'lint:all'
 
 namespace :lint do
   desc 'Lint and format'
-  task all: %i[format rubocop eslint]
+  task all: %i[format clippy rubocop eslint]
+
+  desc 'Run clippy'
+  task :clippy do
+    roots = Dir.glob('**/{lib,main}.rs')
+    roots.each do |root|
+      FileUtils.touch(root)
+    end
+    sh 'cargo clippy'
+  end
 
   desc 'Run rubocop'
   task :rubocop do
@@ -14,8 +25,7 @@ namespace :lint do
   desc 'Format sources'
   task format: :deps do
     sh 'cargo fmt -- --color=auto'
-    sh "npx prettier --write '**/*'"
-    sh "npx prettier --prose-wrap always --write '**/*.md' '*.md'"
+    sh 'npm run fmt:all'
     sh 'node scripts/clang-format.js'
   end
 
@@ -80,4 +90,9 @@ end
 desc 'Run enforced ruby/spec suite'
 task :spec do
   sh 'cargo run -q -p spec-runner -- spec-runner/enforced-specs.yaml'
+end
+
+desc 'Run Artichoke Rust tests'
+task :test do
+  sh 'cargo test --workspace'
 end
