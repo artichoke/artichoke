@@ -11,6 +11,7 @@ use std::mem;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::{ArgumentError, Fatal};
@@ -94,8 +95,7 @@ impl RubyException for InterpreterExtractError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<Fatal>()?;
+        let spec = interp.class_spec::<Fatal>()?;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }
@@ -178,8 +178,7 @@ impl RubyException for ConvertBytesError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<ArgumentError>()?;
+        let spec = interp.class_spec::<ArgumentError>()?;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

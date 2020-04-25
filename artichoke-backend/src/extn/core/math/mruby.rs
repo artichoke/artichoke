@@ -2,7 +2,7 @@ use crate::extn::core::math;
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().module_spec::<math::Math>().is_some() {
+    if interp.is_module_defined::<math::Math>() {
         return Ok(());
     }
     let spec = module::Spec::new(interp, "Math", None)?;
@@ -38,14 +38,11 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let domainerror =
         class::Spec::new("DomainError", Some(EnclosingRubyScope::module(&spec)), None)?;
     class::Builder::for_spec(interp, &domainerror)
-        .with_super_class(interp.0.borrow().class_spec::<StandardError>())
+        .with_super_class(interp.class_spec::<StandardError>()?)
         .define()?;
-    interp
-        .0
-        .borrow_mut()
-        .def_class::<math::DomainError>(domainerror);
+    interp.state.def_class::<math::DomainError>(domainerror)?;
 
-    interp.0.borrow_mut().def_module::<math::Math>(spec);
+    interp.def_module::<math::Math>(spec)?;
     let e = interp.convert_mut(math::E);
     interp.define_module_constant::<math::Math>("E", e)?;
     let pi = interp.convert_mut(math::PI);

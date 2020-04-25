@@ -3,13 +3,12 @@ use crate::extn::core::env;
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<env::Environ>().is_some() {
+    if interp.is_class_defined::<env::Environ>() {
         return Ok(());
     }
     let scope = interp
-        .0
-        .borrow_mut()
-        .module_spec::<artichoke::Artichoke>()
+        .state
+        .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;
     let spec = class::Spec::new(
@@ -28,7 +27,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("initialize", artichoke_env_initialize, sys::mrb_args_none())?
         .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<env::Environ>(spec);
+    interp.def_class::<env::Environ>(spec)?;
     let _ = interp.eval(&include_bytes!("env.rb")[..])?;
     trace!("Patched ENV onto interpreter");
     trace!("Patched Artichoke::Environ onto interpreter");

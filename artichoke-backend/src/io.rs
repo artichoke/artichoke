@@ -2,6 +2,7 @@ use std::error;
 use std::fmt;
 use std::io;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, Io};
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception;
@@ -89,8 +90,7 @@ impl RubyException for IOError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.inner.to_string());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<exception::IOError>()?;
+        let spec = interp.class_spec::<exception::IOError>()?;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

@@ -14,12 +14,7 @@ impl File for SecureRandomFile {
     type Error = Exception;
 
     fn require(interp: &mut Self::Artichoke) -> Result<(), Self::Error> {
-        if interp
-            .0
-            .borrow()
-            .class_spec::<securerandom::SecureRandom>()
-            .is_some()
-        {
+        if interp.is_module_defined::<securerandom::SecureRandom>() {
             return Ok(());
         }
         let spec = module::Spec::new(interp, "SecureRandom", None)?;
@@ -47,10 +42,7 @@ impl File for SecureRandomFile {
             )?
             .add_self_method("uuid", artichoke_securerandom_uuid, sys::mrb_args_none())?
             .define()?;
-        interp
-            .0
-            .borrow_mut()
-            .def_module::<securerandom::SecureRandom>(spec);
+        interp.def_module::<securerandom::SecureRandom>(spec)?;
 
         trace!("Patched SecureRandom onto interpreter");
         Ok(())

@@ -35,23 +35,10 @@ impl State {
         })
     }
 
-    /// Used for moving a `State` out of the larger Artichoke State to
-    /// work around Artichoke State being stored in a [`RefCell`].
-    ///
-    /// # Safety
-    ///
-    /// This function creates an uninitialized parser state. Calling methods on
-    /// it is unlikely to be correct.
-    pub(crate) unsafe fn uninit() -> Self {
-        Self {
-            context: NonNull::dangling(),
-            stack: vec![],
-        }
-    }
-
     pub fn close(mut self, mrb: &mut sys::mrb_state) {
         unsafe {
-            sys::mrbc_context_free(mrb, self.context.as_mut());
+            let ctx = self.context.as_mut();
+            sys::mrbc_context_free(mrb, ctx);
         }
     }
 
@@ -62,16 +49,18 @@ impl State {
     /// Reset line number to `1`.
     pub fn reset(&mut self, mrb: &mut sys::mrb_state) {
         unsafe {
-            self.context.as_mut().lineno = 1;
+            let ctx = self.context.as_mut();
+            ctx.lineno = 1;
+            reset_context_filename(mrb, ctx);
         }
         self.stack.clear();
-        reset_context_filename(mrb, unsafe { self.context.as_mut() });
     }
 
     /// Fetch the current line number from the parser state.
     #[must_use]
     pub fn fetch_lineno(&self) -> usize {
-        usize::from(unsafe { self.context.as_ref() }.lineno)
+        let ctx = unsafe { self.context.as_ref() };
+        usize::from(ctx.lineno)
     }
 
     /// Increment line number and return the new value.
@@ -101,7 +90,8 @@ impl State {
     pub fn push_context(&mut self, mrb: &mut sys::mrb_state, context: Context) {
         let filename = context.filename_as_c_str();
         unsafe {
-            sys::mrbc_filename(mrb, self.context.as_mut(), filename.as_ptr() as *const i8);
+            let ctx = self.context.as_mut();
+            sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
         }
         self.stack.push(context);
     }
@@ -116,10 +106,14 @@ impl State {
         if let Some(current) = self.stack.last() {
             let filename = current.filename_as_c_str();
             unsafe {
-                sys::mrbc_filename(mrb, self.context.as_mut(), filename.as_ptr() as *const i8);
+                let ctx = self.context.as_mut();
+                sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
             }
         } else {
-            reset_context_filename(mrb, unsafe { self.context.as_mut() });
+            unsafe {
+                let ctx = self.context.as_mut();
+                reset_context_filename(mrb, ctx);
+            }
         }
         context
     }

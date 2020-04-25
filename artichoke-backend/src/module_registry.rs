@@ -4,7 +4,7 @@ use crate::exception::Exception;
 use crate::module;
 use crate::Artichoke;
 
-trait ModuleRegistry {
+pub trait ModuleRegistry {
     fn def_module<T>(&mut self, spec: module::Spec) -> Result<(), Exception>
     where
         T: Any;
@@ -35,7 +35,7 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        self.0.borrow_mut().classes.insert::<T>(Box::new(spec));
+        self.state.modules.insert::<T>(Box::new(spec));
         Ok(())
     }
 
@@ -43,10 +43,10 @@ impl ModuleRegistry for Artichoke {
     ///
     /// This function returns `None` if type `T` has not had a module spec
     /// registered for it using [`ModuleRegistry::def_module`].
-    fn module_spec<T>(&self) -> Result<Option<&class::Spec>, Exception>
+    fn module_spec<T>(&self) -> Result<Option<&module::Spec>, Exception>
     where
         T: Any,
     {
-        Ok(self.0.borrow_mut().classes.get::<T>())
+        Ok(self.state.modules.get::<T>())
     }
 }

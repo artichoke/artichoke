@@ -75,7 +75,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), NotDefinedError> {
-        let mrb = unsafe { self.interp.0.mrb.as_mut() };
+        let mrb = unsafe { self.interp..mrb.as_mut() };
         let mut super_class = if let Some(spec) = self.super_class {
             spec.rclass(mrb)
                 .ok_or_else(|| NotDefinedError::super_class(spec.fqname().into_owned()))?

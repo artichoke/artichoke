@@ -16,16 +16,21 @@ use crate::Artichoke;
 ///
 /// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
 /// sufficient to ensure objects get collected eventually.
-#[derive(Debug, Clone)]
-pub struct ArenaIndex {
+#[derive(Debug)]
+pub struct ArenaIndex<'a> {
     index: i32,
-    interp: Artichoke,
+    interp: &'a mut Artichoke,
 }
 
 impl ArenaIndex {
     /// Restore the arena stack pointer to its prior index.
     pub fn restore(self) {
         drop(self);
+    }
+
+    #[inline]
+    pub fn interp(&mut self) -> &mut Artichoke {
+        self.interp
     }
 }
 
@@ -87,14 +92,14 @@ pub trait MrbGarbageCollection {
 }
 
 impl MrbGarbageCollection for Artichoke {
-    fn create_arena_savepoint(&self) -> ArenaIndex {
+    fn create_arena_savepoint(&mut self) -> ArenaIndex<'_> {
         let index = {
             let mrb = self.mrb.as_mut();
             sys::mrb_sys_gc_arena_save(mrb)
         };
         ArenaIndex {
             index,
-            interp: self.clone(),
+            interp: self,
         }
     }
 

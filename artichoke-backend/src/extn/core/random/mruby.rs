@@ -2,7 +2,7 @@ use crate::extn::core::random::{self, trampoline};
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<random::Random>().is_some() {
+    if interp.is_class_defined::<random::Random>() {
         return Ok(());
     }
     let spec = class::Spec::new("Random", None, Some(def::rust_data_free::<random::Random>))?;
@@ -29,7 +29,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))?
         .add_method("seed", artichoke_random_seed, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<random::Random>(spec);
+    interp.def_class::<random::Random>(spec)?;
 
     let default = random::Random::interpreter_prng_delegate();
     let default = default

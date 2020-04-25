@@ -2,7 +2,7 @@ use crate::extn::core::string::{self, trampoline};
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<string::String>().is_some() {
+    if interp.is_class_defined::<string::String>() {
         return Ok(());
     }
     let spec = class::Spec::new("String", None, None)?;
@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("ord", artichoke_string_ord, sys::mrb_args_none())?
         .add_method("scan", artichoke_string_scan, sys::mrb_args_req(1))?
         .define()?;
-    interp.0.borrow_mut().def_class::<string::String>(spec);
+    interp.def_class::<string::String>(spec)?;
     let _ = interp.eval(&include_bytes!("string.rb")[..])?;
     trace!("Patched String onto interpreter");
     Ok(())

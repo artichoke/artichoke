@@ -2,6 +2,7 @@ use std::error;
 use std::fmt;
 use std::ptr;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::{Convert, ConvertMut, Intern, TryConvert, Value as ValueCore};
 use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
@@ -421,8 +422,7 @@ impl RubyException for ArgCountError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.to_string());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<ArgumentError>()?;
+        let spec = interp.class_spec::<ArgumentError>()?;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

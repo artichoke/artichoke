@@ -3,7 +3,7 @@ use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<Integer>().is_some() {
+    if interp.is_class_defined::<Integer>() {
         return Ok(());
     }
     let spec = class::Spec::new("Integer", None, None)?;
@@ -17,7 +17,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("/", artichoke_integer_div, sys::mrb_args_req(1))?
         .add_method("size", artichoke_integer_size, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<Integer>(spec);
+    interp.def_class::<Integer>(spec)?;
     let _ = interp.eval(&include_bytes!("integer.rb")[..])?;
     trace!("Patched Integer onto interpreter");
     Ok(())

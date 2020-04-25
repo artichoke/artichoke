@@ -3,12 +3,7 @@ use crate::extn::prelude::*;
 use crate::sys;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp
-        .0
-        .borrow()
-        .class_spec::<matchdata::MatchData>()
-        .is_some()
-    {
+    if interp.is_class_defined::<matchdata::MatchData>() {
         return Ok(());
     }
     let spec = class::Spec::new(
@@ -54,10 +49,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("to_s", artichoke_matchdata_to_s, sys::mrb_args_none())?
         .add_method("end", artichoke_matchdata_end, sys::mrb_args_req(1))?
         .define()?;
-    interp
-        .0
-        .borrow_mut()
-        .def_class::<matchdata::MatchData>(spec);
+    interp.def_class::<matchdata::MatchData>(spec)?;
     let _ = interp.eval(&include_bytes!("matchdata.rb")[..])?;
     trace!("Patched MatchData onto interpreter");
     Ok(())

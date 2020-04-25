@@ -4,7 +4,7 @@ use crate::extn::core::array;
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<array::Array>().is_some() {
+    if interp.is_class_defined::<array::Array>() {
         return Ok(());
     }
     let spec = class::Spec::new("Array", None, Some(def::rust_data_free::<array::Array>))?;
@@ -28,7 +28,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("reverse!", ary_reverse_bang, sys::mrb_args_none())?
         .add_method("size", ary_len, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<array::Array>(spec);
+    interp.def_class::<array::Array>(spec)?;
     let _ = interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");
     Ok(())

@@ -13,11 +13,11 @@ impl Parser for Artichoke {
     }
 
     fn fetch_lineno(&self) -> usize {
-        self.0.borrow().parser.fetch_lineno()
+        self.state.parser.fetch_lineno()
     }
 
     fn add_fetch_lineno(&mut self, val: usize) -> Result<usize, IncrementLinenoError> {
-        self.0.borrow_mut().parser.add_fetch_lineno(val)
+        self.state.parser.add_fetch_lineno(val)
     }
 
     fn push_context(&mut self, context: Self::Context) {

@@ -1,15 +1,15 @@
 use std::any::Any;
 
 use crate::class;
-use crate::ffi::InterpreterExtractError;
+use crate::ffi::Exception;
 use crate::Artichoke;
 
-trait ClassRegistry {
-    fn def_class<T>(&mut self, spec: class::Spec) -> Result<(), InterpreterExtractError>
+pub trait ClassRegistry {
+    fn def_class<T>(&mut self, spec: class::Spec) -> Result<(), Exception>
     where
         T: Any;
 
-    fn class_spec<T>(&self) -> Result<Option<&class::Spec>, InterpreterExtractError>
+    fn class_spec<T>(&self) -> Result<Option<&class::Spec>, Exception>
     where
         T: Any;
 
@@ -31,11 +31,11 @@ impl ClassRegistry for Artichoke {
     /// Class definitions have the same lifetime as the [`State`] because the
     /// class def owns the `mrb_data_type` for the type, which must be
     /// long-lived.
-    fn def_class<T>(&mut self, spec: class::Spec) -> Result<(), InterpreterExtractError>
+    fn def_class<T>(&mut self, spec: class::Spec) -> Result<(), Exception>
     where
         T: Any,
     {
-        self.0.borrow_mut().classes.insert::<T>(Box::new(spec));
+        self.state.classes.insert::<T>(Box::new(spec));
         Ok(())
     }
 
@@ -43,10 +43,10 @@ impl ClassRegistry for Artichoke {
     ///
     /// This function returns `None` if type `T` has not had a class spec
     /// registered for it using [`ClassRegistry::def_class`].
-    fn class_spec<T>(&self) -> Result<Option<&class::Spec>, InterpreterExtractError>
+    fn class_spec<T>(&self) -> Result<Option<&class::Spec>, Exception>
     where
         T: Any,
     {
-        Ok(self.0.borrow_mut().classes.get::<T>())
+        Ok(self.state.classes.get::<T>())
     }
 }

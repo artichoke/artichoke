@@ -5,7 +5,7 @@ use crate::extn::prelude::*;
 use crate::sys;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<regexp::Regexp>().is_some() {
+    if interp.is_class_defined::<regexp::Regexp>() {
         return Ok(());
     }
     let spec = class::Spec::new("Regexp", None, Some(def::rust_data_free::<regexp::Regexp>))?;
@@ -32,7 +32,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("source", source, sys::mrb_args_none())?
         .add_method("to_s", to_s, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<regexp::Regexp>(spec);
+    interp.def_class::<regexp::Regexp>(spec)?;
     let _ = interp.eval(&include_bytes!("regexp.rb")[..])?;
     let ignorecase = interp.convert(regexp::IGNORECASE);
     interp.define_class_constant::<regexp::Regexp>("IGNORECASE", ignorecase)?;

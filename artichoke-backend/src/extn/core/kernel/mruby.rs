@@ -3,7 +3,7 @@ use crate::extn::core::kernel::{self, trampoline};
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().module_spec::<kernel::Kernel>().is_some() {
+    if interp.is_module_defined::<kernel::Kernel>() {
         return Ok(());
     }
     let spec = module::Spec::new(interp, "Kernel", None)?;
@@ -19,7 +19,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("print", artichoke_kernel_print, sys::mrb_args_rest())?
         .add_method("puts", artichoke_kernel_puts, sys::mrb_args_rest())?
         .define()?;
-    interp.0.borrow_mut().def_module::<kernel::Kernel>(spec);
+    interp.def_module::<kernel::Kernel>(spec)?;
     let _ = interp.eval(&include_bytes!("kernel.rb")[..])?;
     trace!("Patched Kernel onto interpreter");
 
@@ -28,9 +28,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // implementations of the `Kernel` methods that marshal arguments and handle
     // exceptions.
     let scope = interp
-        .0
-        .borrow()
-        .module_spec::<artichoke::Artichoke>()
+        .state
+        .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;
     let spec = module::Spec::new(interp, "Kernel", Some(scope))?;
@@ -46,7 +45,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
             sys::mrb_args_req_and_opt(1, 1),
         )?
         .define()?;
-    interp.0.borrow_mut().def_module::<artichoke::Kernel>(spec);
+    interp.def_module::<artichoke::Kernel>(spec)?;
     trace!("Patched Artichoke::Kernel onto interpreter");
     Ok(())
 }

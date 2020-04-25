@@ -2,7 +2,7 @@ use crate::extn::core::time::{self, trampoline};
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<time::Time>().is_some() {
+    if interp.is_class_defined::<time::Time>() {
         return Ok(());
     }
     let spec = class::Spec::new("Time", None, Some(def::rust_data_free::<time::Time>))?;
@@ -24,7 +24,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("yday", artichoke_time_year_day, sys::mrb_args_none())?
         .add_method("year", artichoke_time_year, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<time::Time>(spec);
+    interp.def_class::<time::Time>(spec)?;
 
     let _ = interp.eval(&include_bytes!("time.rb")[..])?;
     trace!("Patched Random onto interpreter");

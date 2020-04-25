@@ -162,7 +162,7 @@ pub mod prelude {
 ///
 /// Functionality is added to the interpreter via traits, for example,
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Artichoke {
     pub mrb: NonNull<sys::mrb_state>,
     pub state: Box<state::State>,
@@ -187,6 +187,7 @@ impl Artichoke {
     #[must_use]
     pub unsafe fn into_raw(interp: Self) -> *mut sys::mrb_state {
         let mrb = unsafe { interp.mrb.as_ptr() };
+        mrb.ud = Box::into_raw(interp.state);
         drop(interp);
         mrb
     }
@@ -194,7 +195,11 @@ impl Artichoke {
     /// Consume an interpreter and free all
     /// [live](gc::MrbGarbageCollection::live_object_count)
     /// [`Value`](value::Value)s.
-    pub fn close(self) {
-        self.0.borrow_mut().close();
+    pub fn close(mut self) {
+        let mrb = unsafe { self.mrb.as_mut() };
+        self.state.close(mrb);
+        unsafe {
+            sys::mrb_close(mrb);
+        }
     }
 }

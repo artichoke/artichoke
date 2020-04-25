@@ -2,13 +2,13 @@ use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("IPSocket", None, None)?;
-    interp.0.borrow_mut().def_class::<IpSocket>(spec);
+    interp.def_class::<IpSocket>(spec)?;
 
     let spec = class::Spec::new("IPAddr", None, None)?;
-    interp.0.borrow_mut().def_class::<IpAddr>(spec);
+    interp.def_class::<IpAddr>(spec)?;
 
     let spec = module::Spec::new(interp, "URI", None)?;
-    interp.0.borrow_mut().def_module::<Uri>(spec);
+    interp.def_module::<Uri>(spec)?;
 
     interp.def_rb_source_file("uri.rb", &include_bytes!("vendor/uri.rb")[..])?;
     interp.def_rb_source_file("uri/common.rb", &include_bytes!("vendor/uri/common.rb")[..])?;
