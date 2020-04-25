@@ -106,10 +106,12 @@ impl Default for PromptConfig {
 }
 
 fn preamble(interp: &mut Artichoke) -> Result<String, Exception> {
-    let description = interp.eval(b"RUBY_DESCRIPTION")?.try_into::<&str>(interp)?;
+    let description = interp
+        .eval(b"RUBY_DESCRIPTION")?
+        .try_into_mut::<&str>(interp)?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")?
-        .try_into::<&str>(interp)?;
+        .try_into_mut::<&str>(interp)?;
     let mut buf = String::with_capacity(description.len() + 2 + compiler.len() + 1);
     buf.push_str(description);
     buf.push_str("\n[");
@@ -152,7 +154,7 @@ where
     // REPL_FILENAME is controlled by this crate and asserts this invariant
     // with a test.
     interp.push_context(unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) });
-    let mut parser = Parser::new(&interp).ok_or(ParserAllocError)?;
+    let mut parser = Parser::new(&mut interp).ok_or(ParserAllocError)?;
 
     let mut rl = Editor::<()>::new();
     // If a code block is open, accumulate code from multiple readlines in this
