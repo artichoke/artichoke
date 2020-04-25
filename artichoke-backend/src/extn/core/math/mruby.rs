@@ -40,7 +40,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     class::Builder::for_spec(interp, &domainerror)
         .with_super_class(interp.class_spec::<StandardError>()?)
         .define()?;
-    interp.state.def_class::<math::DomainError>(domainerror)?;
+    interp.def_class::<math::DomainError>(domainerror)?;
 
     interp.def_module::<math::Math>(spec)?;
     let e = interp.convert_mut(math::E);

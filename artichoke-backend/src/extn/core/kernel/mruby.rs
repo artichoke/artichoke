@@ -28,7 +28,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // implementations of the `Kernel` methods that marshal arguments and handle
     // exceptions.
     let scope = interp
-        .state
         .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;

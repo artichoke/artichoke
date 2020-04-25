@@ -7,7 +7,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         return Ok(());
     }
     let scope = interp
-        .state
         .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;

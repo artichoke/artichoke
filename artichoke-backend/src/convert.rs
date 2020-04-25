@@ -1,6 +1,7 @@
 use std::error;
 use std::fmt;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut};
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::TypeError;
@@ -99,8 +100,7 @@ impl RubyException for UnboxRubyError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.to_string());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<TypeError>()?;
+        let spec = interp.class_spec::<TypeError>()?;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }
@@ -171,8 +171,7 @@ impl RubyException for BoxIntoRubyError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.to_string());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<TypeError>()?;
+        let spec = interp.class_spec::<TypeError>()?;
         let value = spec.new_instance(interp, &[message])?;
         Some(value.inner())
     }

@@ -75,7 +75,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), NotDefinedError> {
-        let mrb = unsafe { self.interp..mrb.as_mut() };
+        let mrb = unsafe { self.interp.mrb.as_mut() };
         let mut super_class = if let Some(spec) = self.super_class {
             spec.rclass(mrb)
                 .ok_or_else(|| NotDefinedError::super_class(spec.fqname().into_owned()))?
@@ -170,9 +170,12 @@ impl Spec {
 
     #[must_use]
     pub fn value(&self, interp: &Artichoke) -> Option<Value> {
-        let mut rclass = self.rclass(interp.0.borrow().mrb)?;
-        let module = unsafe { sys::mrb_sys_class_value(rclass.as_mut()) };
-        Some(Value::new(interp, module))
+        let class = unsafe {
+            let mrb = interp.mrb.as_mut();
+            let mut rclass = self.rclass(mrb)?;
+            sys::mrb_sys_class_value(rclass.as_mut())
+        };
+        Some(Value::new(interp, class))
     }
 
     #[must_use]

@@ -1,9 +1,3 @@
-use std::any::{Any, TypeId};
-use std::collections::HashMap;
-use std::fmt;
-use std::mem;
-use std::ptr::{self, NonNull};
-
 use crate::class;
 use crate::fs;
 use crate::module;
@@ -20,8 +14,7 @@ pub mod type_registry;
 use prng::Prng;
 use type_registry::TypeRegistry;
 
-// NOTE: `State` assumes that it it is stored in `mrb_state->ud` wrapped in a
-// [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
+#[derive(Debug)]
 pub struct State {
     pub parser: parser::State,
     pub classes: TypeRegistry<class::Spec>,
@@ -38,13 +31,13 @@ impl State {
     ///
     /// The state is comprised of several components:
     ///
-    /// - `Class` and `Module` registries.
-    /// - `Regexp` global state.
-    /// - [In memory virtual filesystem](fs::Virtual).
-    /// - Ruby parser and file context.
-    /// - [Intepreter-level PRNG](prng::Prng) (behind the `core-random`
-    ///   feature).
-    /// - IO capturing strategy.
+    /// - [`Class`](crate::class_registry::ClassRegistry) and
+    ///   [`Module`](crate::module_registry::ModModuleRegistry) registries.
+    /// - `Regexp` [global state](Regexp).
+    /// - [In-memory virtual filesystem](fs::Virtual).
+    /// - [Ruby parser and file context](parser::State).
+    /// - [Intepreter-level PRNG](Prng) (behind the `core-random` feature).
+    /// - [IO capturing](output::Strategy) strategy.
     pub fn new(mrb: &mut sys::mrb_state) -> Option<Self> {
         let parser = parser::State::new(mrb)?;
         let state = Self {
@@ -63,20 +56,5 @@ impl State {
     /// Close a [`State`] and free underlying mruby structs and memory.
     pub fn close(mut self, mrb: &mut sys::mrb_state) {
         self.parser.close(mrb);
-    }
-}
-
-impl fmt::Debug for State {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut fmt = f.debug_struct("State");
-        fmt.field("parser", &self.parser)
-            .field("classes", &self.classes)
-            .field("modules", &self.modules)
-            .field("vfs", &self.vfs)
-            .field("regexp", &self.regexp)
-            .field("output", &self.output);
-        #[cfg(feature = "core-random")]
-        fmt.field("prng", &self.prng);
-        fmt.finish()
     }
 }

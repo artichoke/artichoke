@@ -186,7 +186,7 @@ impl Artichoke {
     /// then call `Artichoke::close`.
     #[must_use]
     pub unsafe fn into_raw(interp: Self) -> *mut sys::mrb_state {
-        let mrb = unsafe { interp.mrb.as_ptr() };
+        let mrb = interp.mrb.as_mut();
         mrb.ud = Box::into_raw(interp.state);
         drop(interp);
         mrb

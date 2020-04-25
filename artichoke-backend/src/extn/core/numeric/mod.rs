@@ -105,8 +105,7 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
             }
             _ => {
                 let class_of_numeric = {
-                    let borrow = interp.0.borrow();
-                    let numeric = borrow
+                    let numeric = interp
                         .class_spec::<Numeric>()
                         .ok_or_else(|| NotDefinedError::class("Numeric"))?;
                     numeric
