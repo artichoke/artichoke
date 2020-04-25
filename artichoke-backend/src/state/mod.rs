@@ -16,18 +16,21 @@ pub mod prng;
 pub mod regexp;
 pub mod type_registry;
 
+#[cfg(feature = "core-random")]
+use prng::Prng;
+use type_registry::TypeRegistry;
+
 // NOTE: `State` assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
 pub struct State {
-    pub mrb: *mut sys::mrb_state,
     pub parser: parser::State,
-    pub classes: type_registry::TypeRegistry<class::Spec>,
-    modules: HashMap<TypeId, Box<module::Spec>>,
+    pub classes: TypeRegistry<class::Spec>,
+    pub modules: TypeRegistry<module::Spec>,
     pub vfs: fs::Virtual,
     pub regexp: regexp::State,
     pub output: output::Strategy,
     #[cfg(feature = "core-random")]
-    pub prng: prng::Prng,
+    pub prng: Prng,
 }
 
 impl State {
@@ -45,15 +48,14 @@ impl State {
     pub fn new(mrb: &mut sys::mrb_state) -> Option<Self> {
         let parser = parser::State::new(mrb)?;
         let state = Self {
-            mrb,
             parser,
-            classes: type_registry::TypeRegistry::new(),
-            modules: HashMap::default(),
+            classes: TypeRegistry::new(),
+            modules: TypeRegistry::new(),
             vfs: fs::Virtual::new(),
             regexp: regexp::State::new(),
             output: output::Strategy::new(),
             #[cfg(feature = "core-random")]
-            prng: prng::Prng::default(),
+            prng: Prng::default(),
         };
         Some(state)
     }
@@ -88,27 +90,6 @@ impl State {
         }
         // Cleanup dangling pointers
         self.mrb = ptr::null_mut();
-    }
-
-    /// Create a module definition bound to a Rust type `T`. Module definitions
-    /// have the same lifetime as the [`State`]. Module defs are stored by
-    /// [`TypeId`] of `T`.
-    pub fn def_module<T>(&mut self, spec: module::Spec)
-    where
-        T: Any,
-    {
-        self.modules.insert(TypeId::of::<T>(), Box::new(spec));
-    }
-
-    /// Retrieve a module definition from the state bound to Rust type `T`.
-    ///
-    /// This function returns `None` if type `T` has not had a class spec
-    /// registered for it using [`State::def_module`].
-    pub fn module_spec<T>(&self) -> Option<&module::Spec>
-    where
-        T: Any,
-    {
-        self.modules.get(&TypeId::of::<T>()).map(Box::as_ref)
     }
 }
 

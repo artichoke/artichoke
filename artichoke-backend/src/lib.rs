@@ -108,6 +108,7 @@ mod io;
 mod load;
 pub mod method;
 pub mod module;
+pub mod module_registry;
 mod parser;
 #[cfg(feature = "core-random")]
 mod prng;
