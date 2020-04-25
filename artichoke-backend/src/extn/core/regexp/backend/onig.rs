@@ -225,7 +225,11 @@ impl RegexpType for Onig {
         })?;
         regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
-            interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
+            interp
+                .0
+                .borrow_mut()
+                .regexp
+                .set_active_regexp_globals(captures.len());
             let value = interp.convert_mut(captures.at(0));
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
 
@@ -242,7 +246,7 @@ impl RegexpType for Onig {
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
             }
             let matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
-            let matchdata = matchdata.try_into_ruby(&interp, None)?;
+            let matchdata = matchdata.try_into_ruby(interp, None)?;
             interp.set_global_variable(regexp::LAST_MATCH, &matchdata)?;
             Ok(true)
         } else {
@@ -327,7 +331,11 @@ impl RegexpType for Onig {
         };
 
         if let Some(captures) = self.regex.captures(target) {
-            interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
+            interp
+                .0
+                .borrow_mut()
+                .regexp
+                .set_active_regexp_globals(captures.len());
 
             let value = interp.convert_mut(captures.at(0));
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
@@ -374,7 +382,11 @@ impl RegexpType for Onig {
         })?;
         regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
-            interp.0.borrow_mut().active_regexp_globals = NonZeroUsize::new(captures.len());
+            interp
+                .0
+                .borrow_mut()
+                .regexp
+                .set_active_regexp_globals(captures.len());
 
             let value = interp.convert_mut(captures.at(0));
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
@@ -515,7 +527,11 @@ impl RegexpType for Onig {
         let len = NonZeroUsize::new(self.regex.captures_len());
         if let Some(block) = block {
             if let Some(len) = len {
-                interp.0.borrow_mut().active_regexp_globals = Some(len);
+                interp
+                    .0
+                    .borrow_mut()
+                    .regexp
+                    .set_active_regexp_globals(len.get());
 
                 let mut iter = self.regex.captures_iter(haystack).peekable();
                 if iter.peek().is_none() {
@@ -564,7 +580,11 @@ impl RegexpType for Onig {
         } else {
             let mut last_pos = (0, 0);
             if let Some(len) = len {
-                interp.0.borrow_mut().active_regexp_globals = Some(len);
+                interp
+                    .0
+                    .borrow_mut()
+                    .regexp
+                    .set_active_regexp_globals(len.get());
 
                 let mut collected = vec![];
                 let mut iter = self.regex.captures_iter(haystack).peekable();

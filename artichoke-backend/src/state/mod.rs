@@ -2,7 +2,6 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt;
 use std::mem;
-use std::num::NonZeroUsize;
 use std::ptr::{self, NonNull};
 
 use crate::class;
@@ -14,6 +13,7 @@ pub mod output;
 pub mod parser;
 #[cfg(feature = "core-random")]
 pub mod prng;
+pub mod regexp;
 
 // NOTE: `State` assumes that it it is stored in `mrb_state->ud` wrapped in a
 // [`Rc`] with type [`Artichoke`] as created by [`crate::interpreter`].
@@ -23,7 +23,7 @@ pub struct State {
     classes: HashMap<TypeId, Box<class::Spec>>,
     modules: HashMap<TypeId, Box<module::Spec>>,
     pub vfs: fs::Virtual,
-    pub active_regexp_globals: Option<NonZeroUsize>,
+    pub regexp: regexp::State,
     pub output: output::Strategy,
     #[cfg(feature = "core-random")]
     pub prng: prng::Prng,
@@ -49,7 +49,7 @@ impl State {
             classes: HashMap::default(),
             modules: HashMap::default(),
             vfs: fs::Virtual::new(),
-            active_regexp_globals: None,
+            regexp: regexp::State::new(),
             output: output::Strategy::new(),
             #[cfg(feature = "core-random")]
             prng: prng::Prng::default(),
@@ -141,7 +141,7 @@ impl fmt::Debug for State {
             .field("classes", &self.classes)
             .field("modules", &self.modules)
             .field("vfs", &self.vfs)
-            .field("active_regexp_globals", &self.active_regexp_globals)
+            .field("regexp", &self.regexp)
             .field("output", &self.output);
         #[cfg(feature = "core-random")]
         fmt.field("prng", &self.prng);

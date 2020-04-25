@@ -219,8 +219,11 @@ impl RegexpType for Utf8 {
             // > capture group that corresponds to the full match.
             //
             // [docs]: https://docs.rs/regex/1.3.4/regex/struct.Captures.html#method.len
-            interp.0.borrow_mut().active_regexp_globals =
-                captures.len().checked_sub(1).and_then(NonZeroUsize::new);
+            interp
+                .0
+                .borrow_mut()
+                .regexp
+                .set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default());
 
             let fullmatch = captures
                 .get(0)
@@ -247,7 +250,7 @@ impl RegexpType for Utf8 {
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
             }
             let matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
-            let matchdata = matchdata.try_into_ruby(&interp, None)?;
+            let matchdata = matchdata.try_into_ruby(interp, None)?;
             interp.set_global_variable(regexp::LAST_MATCH, &matchdata)?;
             Ok(true)
         } else {
@@ -337,8 +340,11 @@ impl RegexpType for Utf8 {
             // > capture group that corresponds to the full match.
             //
             // [docs]: https://docs.rs/regex/1.3.4/regex/struct.Captures.html#method.len
-            interp.0.borrow_mut().active_regexp_globals =
-                captures.len().checked_sub(1).and_then(NonZeroUsize::new);
+            interp
+                .0
+                .borrow_mut()
+                .regexp
+                .set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default());
 
             let fullmatch = captures
                 .get(0)
@@ -401,8 +407,11 @@ impl RegexpType for Utf8 {
             // > capture group that corresponds to the full match.
             //
             // [docs]: https://docs.rs/regex/1.3.4/regex/struct.Captures.html#method.len
-            interp.0.borrow_mut().active_regexp_globals =
-                captures.len().checked_sub(1).and_then(NonZeroUsize::new);
+            interp
+                .0
+                .borrow_mut()
+                .regexp
+                .set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default());
 
             let fullmatch = captures
                 .get(0)
@@ -538,12 +547,13 @@ impl RegexpType for Utf8 {
         let mut matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
 
         // regex crate always includes the zero group in the captures len.
-        let len = self
-            .regex
-            .captures_len()
-            .checked_sub(1)
-            .and_then(NonZeroUsize::new);
-        interp.0.borrow_mut().active_regexp_globals = len;
+        let len = self.regex.captures_len().checked_sub(1);
+        interp
+            .0
+            .borrow_mut()
+            .regexp
+            .set_active_regexp_globals(len.unwrap_or_default());
+        let len = len.and_then(NonZeroUsize::new);
         if let Some(block) = block {
             if let Some(len) = len {
                 let mut iter = self.regex.captures_iter(haystack).peekable();
