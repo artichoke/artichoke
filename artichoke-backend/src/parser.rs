@@ -1,4 +1,6 @@
 use crate::core::{IncrementLinenoError, Parser};
+use crate::exception::Exception;
+use crate::ffi::InterpreterExtractError;
 use crate::state::parser::Context;
 use crate::Artichoke;
 
@@ -14,8 +16,11 @@ impl Parser for Artichoke {
         self.state.parser.fetch_lineno()
     }
 
-    fn add_fetch_lineno(&mut self, val: usize) -> Result<usize, IncrementLinenoError> {
-        self.state.parser.add_fetch_lineno(val)
+    fn add_fetch_lineno(&mut self, val: usize) -> Result<usize, Exception> {
+        self.state
+            .ok_or(InterpreterExtractError)?
+            .parser
+            .add_fetch_lineno(val)
     }
 
     fn push_context(&mut self, context: Self::Context) {

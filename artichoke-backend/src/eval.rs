@@ -18,8 +18,10 @@ impl Eval for Artichoke {
         let context = self.state.parser.context_mut() as *mut _;
 
         let result = unsafe {
+            arena.interp().prepare_to_cross_ffi_boundary();
             let mrb = self.mrb.as_mut();
-            protect::eval(mrb, context, code)
+            let result = protect::eval(mrb, context, code);
+            arena.interp().return_from_ffi_boundary();
         };
         match result {
             Ok(value) => {

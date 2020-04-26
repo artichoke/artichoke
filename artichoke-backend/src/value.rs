@@ -109,8 +109,11 @@ impl Value {
         len: Int,
     ) -> Result<Option<protect::Range>, Exception> {
         let result = unsafe {
+            arena.interp().prepare_to_cross_ffi_boundary();
             let mrb = interp.mrb.as_mut();
-            protect::is_range(mrb, self.inner(), len)
+            let result = protect::is_range(mrb, self.inner(), len);
+            arena.interp().return_from_ffi_boundary();
+            result
         };
         match result {
             Ok(range) => Ok(range),
@@ -237,14 +240,17 @@ impl ValueCore for Value {
         let func = interp.intern_symbol(func.as_bytes().to_vec());
         let mut arena = interp.create_arena_savepoint();
         let result = unsafe {
+            arena.interp().prepare_to_cross_ffi_boundary();
             let mrb = arena.interp().mrb.as_mut();
-            protect::funcall(
+            let result = protect::funcall(
                 mrb,
                 self.inner(),
                 func,
                 args.as_slice(),
                 block.as_ref().map(Self::inner),
-            )
+            );
+            arena.interp().return_from_ffi_boundary();
+            result
         };
         match result {
             Ok(value) => {
@@ -352,8 +358,11 @@ impl Block {
         let mut arena = interp.create_arena_savepoint();
 
         let result = unsafe {
+            arena.interp().prepare_to_cross_ffi_boundary();
             let mrb = arena.interp().mrb.as_mut();
-            protect::block_yield(mrb, self.inner(), arg.inner())
+            let result = protect::block_yield(mrb, self.inner(), arg.inner())
+            arena.interp().return_from_ffi_boundary();
+            result
         };
         match result {
             Ok(value) => {

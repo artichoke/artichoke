@@ -5,6 +5,7 @@ use crate::def::NotDefinedError;
 use crate::exception::Exception;
 use crate::extn::core::exception::IOError;
 use crate::extn::core::warning::Warning;
+use crate::ffi::InterpreterExtractError;
 use crate::module_registry::ModuleRegistry;
 use crate::state::output::Output;
 use crate::value::Value;
@@ -14,17 +15,18 @@ impl Warn for Artichoke {
     type Error = Exception;
 
     fn warn(&mut self, message: &[u8]) -> Result<(), Self::Error> {
-        if let Err(err) = self.state.output.write_stderr(b"rb warning: ") {
+        let state = self.state.ok_or(InterpreterExtractError)?;
+        if let Err(err) = state.output.write_stderr(b"rb warning: ") {
             let mut message = String::from("Failed to write warning to $stderr: ");
             let _ = write!(&mut message, "{}", err);
             return Err(IOError::new(self, message).into());
         }
-        if let Err(err) = self.state.output.write_stderr(message) {
+        if let Err(err) = state.output.write_stderr(message) {
             let mut message = String::from("Failed to write warning to $stderr: ");
             let _ = write!(&mut message, "{}", err);
             return Err(IOError::new(self, message).into());
         }
-        if let Err(err) = self.state.output.write_stderr(b"\n") {
+        if let Err(err) = state.output.write_stderr(b"\n") {
             let mut message = String::from("Failed to write warning to $stderr: ");
             let _ = write!(&mut message, "{}", err);
             return Err(IOError::new(self, message).into());

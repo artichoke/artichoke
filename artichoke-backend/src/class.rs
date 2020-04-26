@@ -44,7 +44,7 @@ impl<'a> Builder<'a> {
     }
 
     #[must_use]
-    pub fn with_super_class<T>(mut self) -> Result<Self, Exception>
+    pub fn with_super_class<T>(mut self, classname: &str) -> Result<Self, Exception>
     where
         T: Any,
     {
@@ -53,7 +53,7 @@ impl<'a> Builder<'a> {
             .state
             .classes
             .get::<T>()
-            .ok_or_else(|| NotDefinedError::super_class("super class"))?;
+            .ok_or_else(|| NotDefinedError::super_class(String::from(classname)))?;
         let rclass = unsafe {
             let mrb = self.interp.mrb.as_mut();
             spec.rclass(mrb)

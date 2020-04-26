@@ -28,7 +28,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     };
 
     let state = State::new(unsafe { mrb.as_mut() }).ok_or(InterpreterAllocError)?;
-    let state = Box::new(state);
+    let state = Some(Box::new(state));
     let mut interp = Artichoke { mrb, state };
 
     // mruby garbage collection relies on a fully initialized Array, which we

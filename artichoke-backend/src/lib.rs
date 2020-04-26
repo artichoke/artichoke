@@ -166,10 +166,25 @@ pub mod prelude {
 #[derive(Debug)]
 pub struct Artichoke {
     pub mrb: NonNull<sys::mrb_state>,
-    pub state: Box<state::State>,
+    pub state: Option<Box<state::State>>,
 }
 
 impl Artichoke {
+    pub unsafe fn prepare_to_cross_ffi_boundary(&mut self) {
+        if let Some(state) = self.state {
+            unsafe {
+                let mrb = self.mrb.as_mut();
+                mrb.ud = Box::into_raw(state).cast::<c_void>();
+            }
+        }
+    }
+
+    pub unsafe fn return_from_ffi_boundary(&mut self) -> Result<(), ffi::InterpreterExtractError> {
+        let mrb = self.mrb.as_mut();
+        let extracted = ffi::from_user_data(mrb)?;
+        *self = extracted;
+    }
+
     /// Consume an interpreter and return the pointer to the underlying
     /// [`sys::mrb_state`].
     ///
@@ -188,7 +203,9 @@ impl Artichoke {
     #[must_use]
     pub unsafe fn into_raw(mut interp: Self) -> *mut sys::mrb_state {
         let mrb = interp.mrb.as_mut();
-        mrb.ud = Box::into_raw(interp.state).cast::<c_void>();
+        if let Some(state) = self.state {
+            mrb.ud = Box::into_raw(state).cast::<c_void>();
+        }
         mrb
     }
 
