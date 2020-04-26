@@ -34,6 +34,8 @@ You can [try Artichoke in your browser](https://artichoke.run). The
 
 ## Install Artichoke
 
+### Cargo
+
 You can install a pre-release build of Artichoke using `cargo`, Rust's package
 manager, by running:
 
@@ -44,6 +46,16 @@ cargo install --git https://github.com/artichoke/artichoke --locked artichoke
 To install via `cargo install` or to checkout and build locally, you'll need
 Rust, clang, and Ruby. [`BUILD.md`](BUILD.md) has more detail on
 [how to set up the compiler toolchain](BUILD.md#prerequisites).
+
+### Docker
+
+[Artichoke is available on Docker Hub](https://hub.docker.com/r/artichokeruby/artichoke).
+
+You can launch a REPL by running:
+
+```sh
+docker run -it docker.io/artichokeruby/artichoke airb
+```
 
 ## Usage
 
