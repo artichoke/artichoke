@@ -54,6 +54,20 @@ pub fn puts(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exception
     Ok(interp.convert(None::<Value>))
 }
 
+pub fn p(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exception> {
+    for value in &args {
+        let display = value.inspect(interp);
+        let mut borrow = interp.0.borrow_mut();
+        borrow.output.puts(display);
+    }
+
+    match args.len() {
+        0 => Ok(interp.convert(None::<Value>)),
+        1 => Ok(interp.convert(args[0].to_owned())),
+        _ => Ok(interp.convert_mut(args)),
+    }
+}
+
 pub fn require(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> {
     kernel::require::require(interp, path, None)
 }
