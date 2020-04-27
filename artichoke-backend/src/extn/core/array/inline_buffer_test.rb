@@ -95,6 +95,7 @@ def inline_set
   raise unless a == [1, 2, 3, 'a']
 end
 
+# rubocop:disable Style/GuardClause
 def inline_set_sparse
   # to inline
   a = [1, 2, 3]
@@ -108,7 +109,9 @@ def inline_set_sparse
     raise
   end
 end
+# rubocop:enable Style/GuardClause
 
+# rubocop:disable Style/GuardClause
 def dynamic_set
   a = (1..25).map.to_a
   a[0] = 'a'
@@ -134,7 +137,9 @@ def dynamic_set
     raise
   end
 end
+# rubocop:enable Style/GuardClause
 
+# rubocop:disable Style/GuardClause
 def dynamic_set_sparse
   a = (1..25).map.to_a
   a[30] = 'a'
@@ -142,6 +147,7 @@ def dynamic_set_sparse
     raise
   end
 end
+# rubocop:enable Style/GuardClause
 
 def inline_set_with_drain
   a = [1, 2, 3]
@@ -189,6 +195,7 @@ def inline_set_with_drain
   raise unless a == [1, 2, 3, 4, 5, 6, 7, 'a']
 end
 
+# rubocop:disable Style/GuardClause
 def dynamic_set_with_drain
   a = (1..25).map.to_a
   a[0, 0] = 'a'
@@ -256,6 +263,7 @@ def dynamic_set_with_drain
     raise
   end
 end
+# rubocop:enable Style/GuardClause
 
 def inline_set_slice
   a = [1, 2, 3]

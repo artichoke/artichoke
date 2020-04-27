@@ -374,7 +374,7 @@ class Array
     self
   end
 
-  def combination(k, &block)
+  def combination(k, &block) # rubocop:disable Naming/MethodParameterName
     k =
       if k.is_a?(Integer)
         k

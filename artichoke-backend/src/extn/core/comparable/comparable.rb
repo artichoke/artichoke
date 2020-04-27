@@ -157,7 +157,7 @@ module Comparable
 
   def clamp(min, max)
     paramcmp = (min <=> max)
-    if paramcmp.nil? || paramcmp > 0
+    if paramcmp.nil? || paramcmp.positive?
       raise ArgumentError, 'min argument must be smaller than max argument'
     end
 

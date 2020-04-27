@@ -63,6 +63,7 @@ def uri_decode_www_form
   raise unless Hash[ary] == { 'a' => '2', 'b' => '3' }
 end
 
+# rubocop:disable Style/GuardClause
 def uri_encode_www_form
   unless URI.encode_www_form([%w[q ruby], %w[lang en]]) == 'q=ruby&lang=en'
     raise
@@ -77,12 +78,14 @@ def uri_encode_www_form
     raise
   end
 end
+# rubocop:enable Style/GuardClause
 
 def uri_extract
   uris = URI.extract('text here http://foo.example.org/bla and here mailto:test@example.com and here also.')
   raise unless uris == ['http://foo.example.org/bla', 'mailto:test@example.com']
 end
 
+# rubocop:disable Style/GuardClause
 def uri_join
   unless URI.join('http://example.com/', 'main.rbx').inspect == '#<URI::HTTP http://example.com/main.rbx>'
     raise
@@ -100,6 +103,7 @@ def uri_join
     raise
   end
 end
+# rubocop:enable Style/GuardClause
 
 def uri_parse
   uri = URI.parse('http://www.ruby-lang.org/')

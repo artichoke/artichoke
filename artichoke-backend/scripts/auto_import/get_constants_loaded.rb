@@ -9,5 +9,7 @@ $LOAD_PATH.unshift(base)
 old_constants = Module.constants
 require package
 new_constants = Module.constants - old_constants
-new_constants = new_constants.map { |const| "#{const},#{Object.const_get(const).class.name}" }
+new_constants = new_constants.map do |const|
+  "#{const},#{Object.const_get(const).class.name}"
+end
 puts new_constants

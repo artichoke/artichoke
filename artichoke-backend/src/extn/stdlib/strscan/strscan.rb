@@ -3,7 +3,7 @@
 class ScanError < StandardError; end
 
 class StringScanner
-  def self.must_C_version
+  def self.must_C_version # rubocop:disable Naming/MethodName
     self
   end
 
@@ -37,15 +37,13 @@ class StringScanner
     raise TypeError if group.is_a?(Range)
 
     case group
-    when Integer, Float then
+    when Integer, Float
       group = group.to_int
       return nil unless group.abs < @last_match.captures.length + 1
-    when String unless @last_match.named_captures.key?(group)
-                       raise IndexError
-                     end
-    when Symbol unless @last_match.named_captures.key?(group.to_s)
-                       raise IndexError
-                     end
+    when String
+      raise IndexError unless @last_match.named_captures.key?(group)
+    when Symbol
+      raise IndexError unless @last_match.named_captures.key?(group.to_s)
     end
     @last_match[group]
   end
@@ -100,7 +98,7 @@ class StringScanner
     match.end(0)
   end
 
-  def get_byte
+  def get_byte # rubocop:disable Naming/AccessorMethodName
     return nil if eos?
 
     byte, *_bytes = @string[@charpos..-1].bytes
@@ -180,6 +178,7 @@ class StringScanner
   end
   alias pointer pos
 
+  # rubocop:disable Lint/Void
   def pos=(pointer)
     raise RangeError unless pointer.abs < @string.bytesize
 
@@ -192,6 +191,7 @@ class StringScanner
     pointer
   end
   alias pointer= pos=
+  # rubocop:enable Lint/Void
 
   def post_match
     return nil if @last_match.nil?
