@@ -9,7 +9,7 @@ on:
   schedule:
     - cron: "0 0 * * TUE"
 jobs:
-  rust:
+  rust-audit:
     name: Audit Rust Dependencies
     runs-on: ubuntu-latest
 
@@ -26,7 +26,35 @@ jobs:
       - name: Run cargo-deny
         run: cargo-deny check
 
-  js:
+  rust-bloat:
+    name: cargo-bloat
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
+
+      - name: Install Clang
+        run: sudo apt install clang
+
+      - name: Install Bison
+        run: sudo apt install bison
+
+      - name: Run cargo bloat
+        uses: orf/cargo-bloat-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  js-audit:
     name: Audit JS Dependencies
     runs-on: ubuntu-latest
 
