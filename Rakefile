@@ -25,7 +25,7 @@ namespace :lint do
   desc 'Format sources'
   task format: :deps do
     sh 'cargo fmt -- --color=auto'
-    sh 'npm run fmt:all'
+    sh 'npm run fmt'
     sh 'node scripts/clang-format.js'
   end
 
