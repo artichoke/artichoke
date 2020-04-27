@@ -1,0 +1,9 @@
+overrides:
+  # Always wrap markdown
+  - files: "*.md"
+    options:
+      proseWrap: always
+  # Preserve wrap for yaml as wrapping make some commands less readable
+  - files: "*.{yaml,yml}"
+    options:
+      proseWrap: preserve

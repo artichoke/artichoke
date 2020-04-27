@@ -34,6 +34,13 @@ You can [try Artichoke in your browser](https://artichoke.run). The
 
 ## Install Artichoke
 
+### Prebuilt nightly binaries
+
+[Download a prebuilt binary from artichoke/nightly](https://github.com/artichoke/nightly/releases/latest).
+Binaries are available for Linux, Linux/Musl, macOS, and Windows.
+
+These daily binaries track the latest master branch of Artichoke.
+
 ### Cargo
 
 You can install a pre-release build of Artichoke using `cargo`, Rust's package
