@@ -6,12 +6,16 @@ module Comparable
 
     if cmp.nil?
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 
@@ -25,12 +29,16 @@ module Comparable
 
     if cmp.nil?
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 
@@ -48,7 +56,9 @@ module Comparable
 
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 
@@ -64,12 +74,16 @@ module Comparable
 
     if cmp.nil?
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 
@@ -83,12 +97,16 @@ module Comparable
 
     if cmp.nil?
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 
@@ -101,12 +119,16 @@ module Comparable
     cmp = (self <=> min)
     if cmp.nil?
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 
@@ -115,12 +137,16 @@ module Comparable
     cmp = (self <=> max)
     if cmp.nil?
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 
@@ -131,17 +157,23 @@ module Comparable
 
   def clamp(min, max)
     paramcmp = (min <=> max)
-    raise ArgumentError, 'min argument must be smaller than max argument' if paramcmp.nil? || paramcmp > 0 # rubocop:disable Style/NumericPredicate
+    if paramcmp.nil? || paramcmp > 0
+      raise ArgumentError, 'min argument must be smaller than max argument'
+    end
 
     cmp = (self <=> min)
     if cmp.nil?
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 
@@ -150,12 +182,16 @@ module Comparable
     cmp = (self <=> max)
     if cmp.nil?
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
     unless cmp.is_a?(Numeric)
       classname = other.class
-      classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+      if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
+        classname = other.inspect
+      end
       raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
     end
 

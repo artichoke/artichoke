@@ -3,7 +3,7 @@
 class ScanError < StandardError; end
 
 class StringScanner
-  def self.must_C_version # rubocop:disable Naming/MethodName
+  def self.must_C_version
     self
   end
 
@@ -40,8 +40,12 @@ class StringScanner
     when Integer, Float then
       group = group.to_int
       return nil unless group.abs < @last_match.captures.length + 1
-    when String then raise IndexError unless @last_match.named_captures.key?(group)
-    when Symbol then raise IndexError unless @last_match.named_captures.key?(group.to_s)
+    when String unless @last_match.named_captures.key?(group)
+                       raise IndexError
+                     end
+    when Symbol unless @last_match.named_captures.key?(group.to_s)
+                       raise IndexError
+                     end
     end
     @last_match[group]
   end
@@ -96,7 +100,7 @@ class StringScanner
     match.end(0)
   end
 
-  def get_byte # rubocop:disable Naming/AccessorMethodName
+  def get_byte
     return nil if eos?
 
     byte, *_bytes = @string[@charpos..-1].bytes
@@ -185,7 +189,7 @@ class StringScanner
       else
         @string.bytes[0, pointer].pack('c*').length
       end
-    pointer # rubocop:disable Lint/Void
+    pointer
   end
   alias pointer= pos=
 
@@ -243,7 +247,9 @@ class StringScanner
   end
 
   def scan_full(pattern, advance_pointer_p, return_string_p)
-    raise TypeError, "wrong argument type #{pattern.class} (expected Regexp)" unless pattern.is_a?(Regexp)
+    unless pattern.is_a?(Regexp)
+      raise TypeError, "wrong argument type #{pattern.class} (expected Regexp)"
+    end
 
     previous_charpos = @charpos
     match = pattern.match(@string[@charpos..-1])
@@ -334,7 +340,9 @@ class StringScanner
   end
 
   def unscan
-    raise ScanError, 'unscan failed: previous match record not exist' if @previous_charpos.nil?
+    if @previous_charpos.nil?
+      raise ScanError, 'unscan failed: previous match record not exist'
+    end
 
     @charpos = @previous_charpos
     @previous_charpos = nil

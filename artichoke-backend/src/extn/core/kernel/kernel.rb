@@ -29,11 +29,15 @@ module Kernel
     ret = arg.to_ary if arg.respond_to?(:to_ary)
     classname = arg.class
 
-    raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{ret.class})" unless ret.nil? || ret.is_a?(Array)
+    unless ret.nil? || ret.is_a?(Array)
+      raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{ret.class})"
+    end
 
     ret = arg.to_a if ret.nil? && arg.respond_to?(:to_a)
 
-    raise TypeError, "can't convert #{classname} to Array (#{classname}#to_a gives #{ret.class})" unless ret.nil? || ret.is_a?(Array)
+    unless ret.nil? || ret.is_a?(Array)
+      raise TypeError, "can't convert #{classname} to Array (#{classname}#to_a gives #{ret.class})"
+    end
 
     ret.nil? ? [arg] : ret
   end
@@ -58,7 +62,9 @@ module Kernel
   end
 
   def Integer(arg, base = nil, exception: true) # rubocop:disable Naming/MethodName
-    raise ArgumentError, 'base specified for non string value' if base&.positive? && arg.is_a?(Numeric)
+    if base&.positive? && arg.is_a?(Numeric)
+      raise ArgumentError, 'base specified for non string value'
+    end
 
     classname = arg.class
     classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
@@ -131,7 +137,9 @@ module Kernel
   def singleton_method(name)
     m = method(name)
     sc = (class << self; self; end)
-    raise NameError, "undefined method '#{name}' for class '#{sc}'" if m.owner != sc
+    if m.owner != sc
+      raise NameError, "undefined method '#{name}' for class '#{sc}'"
+    end
 
     m
   end

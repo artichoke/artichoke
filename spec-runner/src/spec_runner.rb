@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'vendor', 'mspec', 'lib')) if $PROGRAM_NAME == __FILE__
+if $PROGRAM_NAME == __FILE__
+  $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'vendor', 'mspec', 'lib'))
+end
 
 class StubIO
   def method_missing(method, *args, &block)
@@ -70,7 +72,9 @@ class SpecCollector
       skipped = true if state.message =~ /'allocate'/
       skipped = true if state.message =~ /'encoding'/
       skipped = true if state.message =~ /'private_instance_methods'/
-      skipped = true if state.message =~ /'size'/ # Enumerable#size is not implemented on mruby
+      if state.message =~ /'size'/
+        skipped = true
+      end # Enumerable#size is not implemented on mruby
       skipped = true if state.message =~ /'taint'/
       skipped = true if state.message =~ /'tainted\?'/
       skipped = true if state.message =~ /'untrust'/
@@ -93,7 +97,9 @@ class SpecCollector
     elsif state.exception.is_a?(RuntimeError)
       skipped = true if state.message =~ /invalid UTF-8/
     end
-    skipped = true if state.it == 'does not add a URI method to Object instances'
+    if state.it == 'does not add a URI method to Object instances'
+      skipped = true
+    end
     skipped = true if state.it == 'is multi-byte character sensitive'
     skipped = true if state.it =~ /UTF-8/
     skipped = true if state.it =~ /\\u/

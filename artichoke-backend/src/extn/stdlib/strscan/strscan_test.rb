@@ -77,7 +77,9 @@ def test_index
   raise unless s.pre_match == ''
 
   s.reset
-  raise unless s.scan(/(?<wday>\w+) (?<month>\w+) (?<day>\d+) /) == 'Fri Dec 12 '
+  unless s.scan(/(?<wday>\w+) (?<month>\w+) (?<day>\d+) /) == 'Fri Dec 12 '
+    raise
+  end
   raise unless s[0] == 'Fri Dec 12 '
   raise unless s[1] == 'Fri'
   raise unless s[2] == 'Dec'
