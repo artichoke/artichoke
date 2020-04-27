@@ -360,7 +360,7 @@ impl Block {
         let result = unsafe {
             arena.interp().prepare_to_cross_ffi_boundary();
             let mrb = arena.interp().mrb.as_mut();
-            let result = protect::block_yield(mrb, self.inner(), arg.inner())
+            let result = protect::block_yield(mrb, self.inner(), arg.inner());
             arena.interp().return_from_ffi_boundary();
             result
         };
