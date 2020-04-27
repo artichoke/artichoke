@@ -4,7 +4,9 @@ class Range
   include Enumerable
 
   def cover?(*args)
-    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" unless args.length == 1
+    unless args.length == 1
+      raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)"
+    end
 
     range_begin = self.begin
     range_end = self.end
@@ -94,7 +96,9 @@ class Range
   def first(*args)
     return self.begin if args.empty?
 
-    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" unless args.length == 1
+    unless args.length == 1
+      raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)"
+    end
 
     n = args[0].to_i
     raise ArgumentError, 'negative array size (or size too big)' unless n >= 0
@@ -118,15 +122,21 @@ class Range
   def last(*args)
     return self.end if args.empty?
 
-    raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..1)" if args.length > 1
+    if args.length > 1
+      raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 0..1)"
+    end
 
     arg = args[0]
     classname = arg.class
     classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
-    raise TypeError, "no implicit conversion of #{classname} into Integer" unless arg.respond_to?(:to_int)
+    unless arg.respond_to?(:to_int)
+      raise TypeError, "no implicit conversion of #{classname} into Integer"
+    end
 
     n = arg.to_int
-    raise TypeError, "can't convert #{arg.class} to Integer (#{arg.class}#to_int gives #{n.class})" unless n.is_a?(Integer)
+    unless n.is_a?(Integer)
+      raise TypeError, "can't convert #{arg.class} to Integer (#{arg.class}#to_int gives #{n.class})"
+    end
 
     array = to_a
     array.last(n)
@@ -182,7 +192,7 @@ class Range
 
       return 0 if delta.negative?
 
-      return delta + 1
+      delta + 1
     elsif range_begin.is_a?(Float) || range_end.is_a?(Float)
       epsilon = Float::EPSILON
       delta = range_end - range_begin
@@ -206,7 +216,7 @@ class Range
         delta = (delta + err).floor
       end
 
-      return delta + 1
+      delta + 1
     elsif range_begin.respond_to?(:succ) && range_end.respond_to?(:succ)
       # TODO: implement Range#size for object that responds to :succ
       raise NotImplementedError

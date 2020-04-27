@@ -8,7 +8,10 @@ def windows?
   /mswin|msys|mingw|cygwin|bccwin|wince|emc/.match?(RbConfig::CONFIG['host_os'])
 end
 
-NOOP = ['ruby', File.join(File.dirname(File.absolute_path(__FILE__)), 'noop.rb')].shelljoin
+NOOP = [
+  'ruby',
+  File.join(File.dirname(File.absolute_path(__FILE__)), 'noop.rb')
+].shelljoin
 
 # mruby requires a "default" build. This default build bootstraps the
 # compilation of the "sys" build.

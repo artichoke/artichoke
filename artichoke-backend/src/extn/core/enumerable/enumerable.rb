@@ -568,15 +568,23 @@ module Enumerable
     if blk
       each do |v|
         v = blk.call(v)
-        raise TypeError, "wrong element type #{v.class} (expected Array)" unless v.is_a? Array
-        raise ArgumentError, "element has wrong array length (expected 2, was #{v.size})" if v.size != 2
+        unless v.is_a? Array
+          raise TypeError, "wrong element type #{v.class} (expected Array)"
+        end
+        if v.size != 2
+          raise ArgumentError, "element has wrong array length (expected 2, was #{v.size})"
+        end
 
         h[v[0]] = v[1]
       end
     else
       each do |v|
-        raise TypeError, "wrong element type #{v.class} (expected Array)" unless v.is_a? Array
-        raise ArgumentError, "element has wrong array length (expected 2, was #{v.size})" if v.size != 2
+        unless v.is_a? Array
+          raise TypeError, "wrong element type #{v.class} (expected Array)"
+        end
+        if v.size != 2
+          raise ArgumentError, "element has wrong array length (expected 2, was #{v.size})"
+        end
 
         h[v[0]] = v[1]
       end
@@ -605,7 +613,9 @@ module Enumerable
   def zip(*arg, &block)
     result = block ? nil : []
     arg = arg.map do |a|
-      raise TypeError, "wrong argument type #{a.class} (must respond to :to_a)" unless a.respond_to?(:to_a)
+      unless a.respond_to?(:to_a)
+        raise TypeError, "wrong argument type #{a.class} (must respond to :to_a)"
+      end
 
       a.to_a
     end

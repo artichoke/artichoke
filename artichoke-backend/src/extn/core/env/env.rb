@@ -80,14 +80,18 @@ class << ENV
   end
 
   def fetch(name, default = (not_set = true))
-    warn 'warning: block supersedes default value argument' if !not_set && block_given?
+    if !not_set && block_given?
+      warn 'warning: block supersedes default value argument'
+    end
 
     name =
       if name.is_a?(String)
         name
       elsif name.respond_to?(:to_str)
         converted = name.to_str
-        raise TypeError, "can't convert #{name.class} to String (#{name.class}#to_str gives #{converted.class})" unless converted.is_a?(String)
+        unless converted.is_a?(String)
+          raise TypeError, "can't convert #{name.class} to String (#{name.class}#to_str gives #{converted.class})"
+        end
 
         converted
       else
@@ -267,12 +271,16 @@ class << ENV
       pairs = h.each_pair.map do |name, value|
         tx = yield(name, value)
         if tx.is_a?(Array)
-          raise ArgumentError, "element has wrong array length (expected 2, was #{tx.length})" if tx.length != 2
+          if tx.length != 2
+            raise ArgumentError, "element has wrong array length (expected 2, was #{tx.length})"
+          end
 
           tx
         elsif tx.respond_to?(:to_ary)
           pair = tx.to_ary
-          raise TypeError, "can't convert #{tx.class} to Array (#{tx.class}#to_ary gives #{pair.class})" unless pair.is_a?(Array)
+          unless pair.is_a?(Array)
+            raise TypeError, "can't convert #{tx.class} to Array (#{tx.class}#to_ary gives #{pair.class})"
+          end
 
           pair
         else

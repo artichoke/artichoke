@@ -25,7 +25,9 @@ end
 
 def basic_example
   uri = URI('http://foo.com/posts?id=30&limit=5#time=1305298413')
-  raise unless uri.inspect == '#<URI::HTTP http://foo.com/posts?id=30&limit=5#time=1305298413>'
+  unless uri.inspect == '#<URI::HTTP http://foo.com/posts?id=30&limit=5#time=1305298413>'
+    raise
+  end
   raise unless uri.scheme == 'http'
   raise unless uri.host == 'foo.com'
   raise unless uri.path == '/posts'
@@ -61,25 +63,47 @@ def uri_decode_www_form
   raise unless Hash[ary] == { 'a' => '2', 'b' => '3' }
 end
 
+# rubocop:disable Style/GuardClause
 def uri_encode_www_form
-  raise unless URI.encode_www_form([%w[q ruby], %w[lang en]]) == 'q=ruby&lang=en'
-  raise unless URI.encode_www_form('q' => 'ruby', 'lang' => 'en') == 'q=ruby&lang=en'
-  raise unless URI.encode_www_form('q' => %w[ruby perl], 'lang' => 'en') == 'q=ruby&q=perl&lang=en'
-  raise unless URI.encode_www_form([%w[q ruby], %w[q perl], %w[lang en]]) == 'q=ruby&q=perl&lang=en'
+  unless URI.encode_www_form([%w[q ruby], %w[lang en]]) == 'q=ruby&lang=en'
+    raise
+  end
+  unless URI.encode_www_form('q' => 'ruby', 'lang' => 'en') == 'q=ruby&lang=en'
+    raise
+  end
+  unless URI.encode_www_form('q' => %w[ruby perl], 'lang' => 'en') == 'q=ruby&q=perl&lang=en'
+    raise
+  end
+  unless URI.encode_www_form([%w[q ruby], %w[q perl], %w[lang en]]) == 'q=ruby&q=perl&lang=en'
+    raise
+  end
 end
+# rubocop:enable Style/GuardClause
 
 def uri_extract
   uris = URI.extract('text here http://foo.example.org/bla and here mailto:test@example.com and here also.')
   raise unless uris == ['http://foo.example.org/bla', 'mailto:test@example.com']
 end
 
+# rubocop:disable Style/GuardClause
 def uri_join
-  raise unless URI.join('http://example.com/', 'main.rbx').inspect == '#<URI::HTTP http://example.com/main.rbx>'
-  raise unless URI.join('http://example.com/', 'foo').inspect == '#<URI::HTTP http://example.com/foo>'
-  raise unless URI.join('http://example.com/', '/foo', '/bar').inspect == '#<URI::HTTP http://example.com/bar>'
-  raise unless URI.join('http://example.com/', '/foo', 'bar').inspect == '#<URI::HTTP http://example.com/bar>'
-  raise unless URI.join('http://example.com/', '/foo/', 'bar').inspect == '#<URI::HTTP http://example.com/foo/bar>'
+  unless URI.join('http://example.com/', 'main.rbx').inspect == '#<URI::HTTP http://example.com/main.rbx>'
+    raise
+  end
+  unless URI.join('http://example.com/', 'foo').inspect == '#<URI::HTTP http://example.com/foo>'
+    raise
+  end
+  unless URI.join('http://example.com/', '/foo', '/bar').inspect == '#<URI::HTTP http://example.com/bar>'
+    raise
+  end
+  unless URI.join('http://example.com/', '/foo', 'bar').inspect == '#<URI::HTTP http://example.com/bar>'
+    raise
+  end
+  unless URI.join('http://example.com/', '/foo/', 'bar').inspect == '#<URI::HTTP http://example.com/foo/bar>'
+    raise
+  end
 end
+# rubocop:enable Style/GuardClause
 
 def uri_parse
   uri = URI.parse('http://www.ruby-lang.org/')
@@ -95,7 +119,7 @@ def uri_regexp(skipped = true)
   html_string.slice(URI::DEFAULT_PARSER.make_regexp)
 
   # remove ftp URIs
-  html_string.sub(URI.regexp(['ftp']), '')
+  html_string.sub(URI::DEFAULT_PARSER.make_regexp(['ftp']), '')
 
   # You should not rely on the number of parentheses
   html_string.scan(URI::DEFAULT_PARSER.make_regexp) do |*_matches|

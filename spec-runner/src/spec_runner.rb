@@ -1,7 +1,10 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'vendor', 'mspec', 'lib')) if $PROGRAM_NAME == __FILE__
+if $PROGRAM_NAME == __FILE__
+  mspec = File.join(File.dirname(__FILE__), '..', 'vendor', 'mspec', 'lib')
+  $LOAD_PATH.unshift(mspec)
+end
 
 class StubIO
   def method_missing(method, *args, &block)
@@ -70,7 +73,10 @@ class SpecCollector
       skipped = true if state.message =~ /'allocate'/
       skipped = true if state.message =~ /'encoding'/
       skipped = true if state.message =~ /'private_instance_methods'/
-      skipped = true if state.message =~ /'size'/ # Enumerable#size is not implemented on mruby
+      if state.message =~ /'size'/
+        # Enumerable#size is not implemented on mruby
+        skipped = true
+      end
       skipped = true if state.message =~ /'taint'/
       skipped = true if state.message =~ /'tainted\?'/
       skipped = true if state.message =~ /'untrust'/
@@ -93,7 +99,9 @@ class SpecCollector
     elsif state.exception.is_a?(RuntimeError)
       skipped = true if state.message =~ /invalid UTF-8/
     end
-    skipped = true if state.it == 'does not add a URI method to Object instances'
+    if state.it == 'does not add a URI method to Object instances'
+      skipped = true
+    end
     skipped = true if state.it == 'is multi-byte character sensitive'
     skipped = true if state.it =~ /UTF-8/
     skipped = true if state.it =~ /\\u/
@@ -117,22 +125,45 @@ class SpecCollector
     puts "\n"
 
     if failures.zero?
-      report(color: GREEN, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
+      report(
+        color: GREEN,
+        successes: successes,
+        skipped: @skipped,
+        not_implemented: @not_implemented,
+        failed: failures
+      )
       return
     end
 
-    report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
+    report(
+      color: RED,
+      successes: successes,
+      skipped: @skipped,
+      not_implemented: @not_implemented,
+      failed: failures
+    )
     @errors.each do |state|
-      puts '', "#{RED}#{state.description}#{PLAIN}", "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}"
+      puts '',
+           "#{RED}#{state.description}#{PLAIN}",
+           "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}"
       puts '', state.backtrace unless state.exception.is_a?(SystemStackError)
     end
     puts ''
-    report(color: RED, successes: successes, skipped: @skipped, not_implemented: @not_implemented, failed: failures)
+    report(
+      color: RED,
+      successes: successes,
+      skipped: @skipped,
+      not_implemented: @not_implemented,
+      failed: failures
+    )
   end
 
   def report(color:, successes:, skipped:, not_implemented:, failed:)
     print color
-    print "Passed #{successes}, skipped #{skipped}, not implemented #{not_implemented}, failed #{failed} specs."
+    print "Passed #{successes}, "
+    print "skipped #{skipped}, "
+    print "not implemented #{not_implemented}, "
+    print "failed #{failed} specs."
     print PLAIN, "\n"
   end
 end
@@ -157,6 +188,11 @@ end
 
 if $PROGRAM_NAME == __FILE__
   ENV['MSPEC_RUNNER'] = '1'
-  specs = ARGV.reject { |file| file.include?('/fixtures/') || file.include?('/shared/') }
+  specs = ARGV.reject do |file|
+    next true if file.include?('/fixtures/')
+    next true if file.include?('/shared/')
+
+    false
+  end
   run_specs(*specs)
 end

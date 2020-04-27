@@ -152,9 +152,3 @@ jobs:
 
       - name: Lint and check formatting with prettier
         run: npx prettier --check '**/*'
-
-      - name: Format markdown with prettier
-        run: npx prettier --prose-wrap always --check '**/*.md'
-
-      - name: Format YAML with prettier
-        run: npx prettier --prose-wrap always --check '**/*.{yaml,yml}'

@@ -12,7 +12,9 @@ class Integer
     end
 
     classname = mask.class
-    classname = mask.inspect if mask.nil? || mask.equal?(false) || mask.equal?(true)
+    if mask.nil? || mask.equal?(false) || mask.equal?(true)
+      classname = mask.inspect
+    end
     raise TypeError, "no implicit conversion of #{classname} into #{self.class}"
   end
 
@@ -23,7 +25,9 @@ class Integer
     end
 
     classname = mask.class
-    classname = mask.inspect if mask.nil? || mask.equal?(false) || mask.equal?(true)
+    if mask.nil? || mask.equal?(false) || mask.equal?(true)
+      classname = mask.inspect
+    end
     raise TypeError, "no implicit conversion of #{classname} into #{self.class}"
   end
 
@@ -42,7 +46,9 @@ class Integer
     end
 
     classname = mask.class
-    classname = mask.inspect if mask.nil? || mask.equal?(false) || mask.equal?(true)
+    if mask.nil? || mask.equal?(false) || mask.equal?(true)
+      classname = mask.inspect
+    end
     raise TypeError, "no implicit conversion of #{classname} into #{self.class}"
   end
 
