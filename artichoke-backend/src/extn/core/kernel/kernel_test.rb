@@ -4,6 +4,9 @@
 # https://ruby-doc.org/core-2.6.3/Kernel.html
 def spec
   throw_catch
+  kernel_p_no_args
+  kernel_p_one_arg
+  kernel_p_array_args
 
   true
 end
@@ -38,6 +41,35 @@ def throw_catch
     456
   end
   raise unless result == 123
+end
+
+class Foo
+  attr_accessor :bar, :baz
+  def initialize(bar, baz)
+    @bar = bar
+    @baz = baz
+  end
+end
+
+# https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-p
+def kernel_p_no_args
+  result = p
+  raise unless result.nil?
+end
+
+def kernel_p_one_arg
+  f = Foo.new(1, 2)
+  result = p(f)
+  raise unless result.equal?(f)
+end
+
+def kernel_p_array_args
+  f = Foo.new(1, 2)
+  g = Foo.new(3, 4)
+  result = p(f, g)
+  raise unless result == [f, g]
+  raise unless result.is_a?(Array)
+  raise unless result.length == 2
 end
 
 spec if $PROGRAM_NAME == __FILE__

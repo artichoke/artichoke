@@ -61,6 +61,24 @@ where
     Ok(interp.convert(None::<Value>))
 }
 
+pub fn p<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
+where
+    T: IntoIterator<Item = Value>,
+{
+    let args = args.into_iter().collect::<Vec<_>>();
+    for value in &args {
+        let display = value.inspect(interp);
+        let mut borrow = interp.0.borrow_mut();
+        borrow.output.puts(display);
+    }
+
+    match args.len() {
+        0 => Ok(interp.convert(None::<Value>)),
+        1 => Ok(interp.convert(args[0].to_owned())),
+        _ => Ok(interp.convert_mut(args)),
+    }
+}
+
 pub fn require(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> {
     kernel::require::require(interp, path, None)
 }

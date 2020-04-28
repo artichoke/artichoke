@@ -15,6 +15,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
             sys::mrb_args_rest(),
         )?
         .add_method("load", artichoke_kernel_load, sys::mrb_args_rest())?
+        .add_method("p", artichoke_kernel_p, sys::mrb_args_rest())?
         .add_method("print", artichoke_kernel_print, sys::mrb_args_rest())?
         .add_method("puts", artichoke_kernel_puts, sys::mrb_args_rest())?
         .define()?;
@@ -73,6 +74,24 @@ unsafe extern "C" fn artichoke_kernel_load(
     let mut interp = unwrap_interpreter!(mrb);
     let file = Value::new(&interp, file);
     let result = trampoline::load(&mut interp, file);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(interp, exception),
+    }
+}
+
+unsafe extern "C" fn artichoke_kernel_p(
+    mrb: *mut sys::mrb_state,
+    _slf: sys::mrb_value,
+) -> sys::mrb_value {
+    let args = mrb_get_args!(mrb, *args);
+    let mut interp = unwrap_interpreter!(mrb);
+    let args = args
+        .iter()
+        .copied()
+        .map(|arg| Value::new(&interp, arg))
+        .collect::<Vec<_>>();
+    let result = trampoline::p(&mut interp, args);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
