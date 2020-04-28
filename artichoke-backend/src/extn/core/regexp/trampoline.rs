@@ -21,7 +21,10 @@ pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception
     Ok(interp.convert_mut(pattern))
 }
 
-pub fn union(interp: &mut Artichoke, patterns: Vec<Value>) -> Result<Value, Exception> {
+pub fn union<T>(interp: &mut Artichoke, patterns: T) -> Result<Value, Exception>
+where
+    T: IntoIterator<Item = Value>,
+{
     let regexp = Regexp::union(interp, patterns)?;
     regexp.try_into_ruby(interp, None)
 }

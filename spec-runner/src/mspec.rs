@@ -27,7 +27,10 @@ pub struct Sources;
 /// # Errors
 ///
 /// If an exception is raised on the Artichoke interpreter, it is returned.
-pub fn run(interp: &mut Artichoke, specs: &[String]) -> Result<bool, Exception> {
+pub fn run<'a, T>(interp: &mut Artichoke, specs: T) -> Result<bool, Exception>
+where
+    T: IntoIterator<Item = &'a str>,
+{
     interp.def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;
     interp.def_rb_source_file(b"/src/lib/spec_helper.rb", &b""[..])?;
     interp.def_rb_source_file(
@@ -35,7 +38,7 @@ pub fn run(interp: &mut Artichoke, specs: &[String]) -> Result<bool, Exception> 
         &include_bytes!("spec_runner.rb")[..],
     )?;
     interp.eval(b"require '/src/test/spec_runner'")?;
-    let specs = interp.convert_mut(specs);
+    let specs = interp.convert_mut(specs.into_iter().collect::<Vec<_>>());
     let result = interp
         .top_self()
         .funcall::<bool>(interp, "run_specs", &[specs], None)?;
@@ -51,6 +54,6 @@ mod tests {
         let mut interp = artichoke_backend::interpreter().unwrap();
         super::init(&mut interp).unwrap();
         // should not panic
-        assert!(super::run(&mut interp, &[]).unwrap());
+        assert!(super::run(&mut interp, vec![]).unwrap());
     }
 }
