@@ -56,12 +56,12 @@
 #[macro_use]
 extern crate rust_embed;
 
-use artichoke_backend::{Artichoke, LoadSources};
+use artichoke_backend::LoadSources;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process;
 use std::str;
 use structopt::StructOpt;
@@ -112,14 +112,29 @@ pub fn try_main(config: &Path) -> Result<bool, Box<dyn Error>> {
     let mut interp = artichoke_backend::interpreter()?;
 
     rubyspec::init(&mut interp)?;
-    let specs = rubyspec::Specs::iter()
-        .filter_map(|path| {
-            is_require_path(&mut interp, &config, path.as_ref()).map(|_| path.into_owned())
-        })
-        .collect::<Vec<_>>();
-
+    let mut specs = vec![];
+    for name in rubyspec::Specs::iter() {
+        let path = Path::new(name.as_ref());
+        let is_fixture = path
+            .components()
+            .map(Component::as_os_str)
+            .any(|component| component == OsStr::new("fixture"));
+        let is_shared = path
+            .components()
+            .map(Component::as_os_str)
+            .any(|component| component == OsStr::new("shared"));
+        if is_fixture || is_shared {
+            if let Some(contents) = mspec::Sources::get(&name) {
+                interp.def_rb_source_file(name.as_bytes(), contents)?;
+            }
+            continue;
+        }
+        if is_require_path(&config, &name).is_some() {
+            specs.push(name.into_owned())
+        }
+    }
     mspec::init(&mut interp)?;
-    let result = mspec::run(&mut interp, specs.as_slice())?;
+    let result = mspec::run(&mut interp, specs.iter().map(String::as_str))?;
     Ok(result)
 }
 
@@ -127,18 +142,8 @@ pub fn try_main(config: &Path) -> Result<bool, Box<dyn Error>> {
 ///
 /// This function evaluates a ruby/spec source file against the parsed spec
 /// manifest config to determine if the source should be tested.
-pub fn is_require_path(interp: &mut Artichoke, config: &model::Config, name: &str) -> Option<()> {
+pub fn is_require_path(config: &model::Config, name: &str) -> Option<()> {
     let path = Path::new(name);
-    let is_shared = path.components().any(|component| {
-        component.as_os_str() == OsStr::new("fixture")
-            || component.as_os_str() == OsStr::new("shared")
-    });
-    if is_shared {
-        if let Some(contents) = mspec::Sources::get(name) {
-            interp.def_rb_source_file(name.as_bytes(), contents).ok()?;
-        }
-        return None;
-    }
     let mut components = path.components();
     let family = components.next()?.as_os_str();
     let suites = config.suites_for_family(family)?;

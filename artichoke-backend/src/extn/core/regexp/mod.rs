@@ -198,7 +198,10 @@ impl Regexp {
         }
     }
 
-    pub fn union(interp: &mut Artichoke, patterns: Vec<Value>) -> Result<Self, Exception> {
+    pub fn union<T>(interp: &mut Artichoke, patterns: T) -> Result<Self, Exception>
+    where
+        T: IntoIterator<Item = Value>,
+    {
         fn extract_pattern(interp: &mut Artichoke, value: &Value) -> Result<Vec<u8>, Exception> {
             if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &value) } {
                 Ok(regexp.borrow().0.derived_config().pattern.clone().into())
@@ -216,17 +219,17 @@ impl Regexp {
                 Ok(syntax::escape(pattern).into_bytes())
             }
         }
-        let mut iter = patterns.iter();
+        let mut iter = patterns.into_iter();
         let pattern = if let Some(first) = iter.next() {
             if let Some(second) = iter.next() {
-                let mut patterns = Vec::with_capacity(patterns.len());
-                patterns.push(extract_pattern(interp, first)?);
-                patterns.push(extract_pattern(interp, second)?);
+                let mut patterns = vec![];
+                patterns.push(extract_pattern(interp, &first)?);
+                patterns.push(extract_pattern(interp, &second)?);
                 for value in iter {
-                    patterns.push(extract_pattern(interp, value)?);
+                    patterns.push(extract_pattern(interp, &value)?);
                 }
                 bstr::join(b"|", patterns)
-            } else if let Ok(ary) = unsafe { Array::try_from_ruby(interp, first) } {
+            } else if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &first) } {
                 let ary = ary.borrow().as_vec(interp);
                 let mut patterns = Vec::with_capacity(ary.len());
                 for value in &ary {
@@ -234,7 +237,7 @@ impl Regexp {
                 }
                 bstr::join(b"|", patterns)
             } else {
-                extract_pattern(interp, first)?
+                extract_pattern(interp, &first)?
             }
         } else {
             b"(?!)".to_vec()

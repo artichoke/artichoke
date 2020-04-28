@@ -509,11 +509,8 @@ mod build {
         println!("copying {:?} -> {:?}", from.as_ref(), to.as_ref());
 
         while let Some(from) = stack.pop() {
-            let dest = dest_root.join(
-                from.components()
-                    .skip(input_root_depth)
-                    .collect::<PathBuf>(),
-            );
+            let dest = from.components().skip(input_root_depth);
+            let dest = dest_root.join(dest.collect::<PathBuf>());
             let _ = fs::create_dir_all(&dest);
 
             for entry in fs::read_dir(from)? {

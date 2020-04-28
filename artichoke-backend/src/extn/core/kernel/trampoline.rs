@@ -18,7 +18,10 @@ pub fn load(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> {
     kernel::require::load(interp, path)
 }
 
-pub fn print(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exception> {
+pub fn print<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
+where
+    T: IntoIterator<Item = Value>,
+{
     for value in args {
         let display = value.to_s(interp);
         let mut borrow = interp.0.borrow_mut();
@@ -27,7 +30,10 @@ pub fn print(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exceptio
     Ok(interp.convert(None::<Value>))
 }
 
-pub fn puts(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exception> {
+pub fn puts<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
+where
+    T: IntoIterator<Item = Value>,
+{
     fn puts_foreach(interp: &mut Artichoke, value: &Value) {
         // TODO(GH-310): Use `Value::implicitly_convert_to_array` when
         // implemented so `Value`s that respond to `to_ary` are converted
@@ -43,12 +49,13 @@ pub fn puts(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exception
         }
     }
 
-    if args.is_empty() {
+    let mut args = args.into_iter().peekable();
+    if args.peek().is_none() {
         let mut borrow = interp.0.borrow_mut();
         borrow.output.print(b"\n");
     } else {
-        for value in &args {
-            puts_foreach(interp, value);
+        for value in args {
+            puts_foreach(interp, &value);
         }
     }
     Ok(interp.convert(None::<Value>))
