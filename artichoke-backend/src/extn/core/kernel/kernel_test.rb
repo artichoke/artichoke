@@ -44,30 +44,30 @@ def throw_catch
 end
 
 class Foo
-  attr_accessor :a, :b
-  def initialize(a, b)
-    @a = a
-    @b = b
+  attr_accessor :bar, :baz
+  def initialize(bar, baz)
+    @bar = bar
+    @baz = baz
   end
 end
 
 # https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-p
 def kernel_p_no_args
   result = p
-  raise if result
+  raise unless result.nil?
 end
 
 def kernel_p_one_arg
   f = Foo.new(1, 2)
   result = p(f)
-  raise unless result
+  raise unless result.equal?(f)
 end
 
 def kernel_p_array_args
   f = Foo.new(1, 2)
   g = Foo.new(3, 4)
-  result = p(f,g)
-  raise unless result
+  result = p(f, g)
+  raise unless result == [f, g]
   raise unless result.is_a?(Array)
   raise unless result.length == 2
 end

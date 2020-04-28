@@ -54,7 +54,11 @@ pub fn puts(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exception
     Ok(interp.convert(None::<Value>))
 }
 
-pub fn p(interp: &mut Artichoke, args: Vec<Value>) -> Result<Value, Exception> {
+pub fn p<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
+where
+    T: IntoIterator<Item = Value>,
+{
+    let args = args.into_iter().collect::<Vec<_>>();
     for value in &args {
         let display = value.inspect(interp);
         let mut borrow = interp.0.borrow_mut();

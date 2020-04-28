@@ -15,9 +15,9 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
             sys::mrb_args_rest(),
         )?
         .add_method("load", artichoke_kernel_load, sys::mrb_args_rest())?
+        .add_method("p", artichoke_kernel_p, sys::mrb_args_rest())?
         .add_method("print", artichoke_kernel_print, sys::mrb_args_rest())?
         .add_method("puts", artichoke_kernel_puts, sys::mrb_args_rest())?
-        .add_method("p", artichoke_kernel_p, sys::mrb_args_rest())?
         .define()?;
     interp.0.borrow_mut().def_module::<kernel::Kernel>(spec);
     let _ = interp.eval(&include_bytes!("kernel.rb")[..])?;
@@ -80,24 +80,6 @@ unsafe extern "C" fn artichoke_kernel_load(
     }
 }
 
-unsafe extern "C" fn artichoke_kernel_print(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
-    let args = mrb_get_args!(mrb, *args);
-    let mut interp = unwrap_interpreter!(mrb);
-    let args = args
-        .iter()
-        .copied()
-        .map(|arg| Value::new(&interp, arg))
-        .collect::<Vec<_>>();
-    let result = trampoline::print(&mut interp, args);
-    match result {
-        Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
-    }
-}
-
 unsafe extern "C" fn artichoke_kernel_p(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
@@ -110,6 +92,24 @@ unsafe extern "C" fn artichoke_kernel_p(
         .map(|arg| Value::new(&interp, arg))
         .collect::<Vec<_>>();
     let result = trampoline::p(&mut interp, args);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(interp, exception),
+    }
+}
+
+unsafe extern "C" fn artichoke_kernel_print(
+    mrb: *mut sys::mrb_state,
+    _slf: sys::mrb_value,
+) -> sys::mrb_value {
+    let args = mrb_get_args!(mrb, *args);
+    let mut interp = unwrap_interpreter!(mrb);
+    let args = args
+        .iter()
+        .copied()
+        .map(|arg| Value::new(&interp, arg))
+        .collect::<Vec<_>>();
+    let result = trampoline::print(&mut interp, args);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(interp, exception),
