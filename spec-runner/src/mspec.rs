@@ -11,7 +11,7 @@ use artichoke_backend::{Artichoke, ConvertMut, Eval, LoadSources, TopSelf, Value
 pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
     for source in Sources::iter() {
         if let Some(content) = Sources::get(&source) {
-            interp.def_rb_source_file(source.as_bytes(), content)?;
+            interp.def_rb_source_file(source.as_ref(), content)?;
         }
     }
     Ok(())
@@ -31,10 +31,10 @@ pub fn run<'a, T>(interp: &mut Artichoke, specs: T) -> Result<bool, Exception>
 where
     T: IntoIterator<Item = &'a str>,
 {
-    interp.def_rb_source_file(b"/src/spec_helper.rb", &b""[..])?;
-    interp.def_rb_source_file(b"/src/lib/spec_helper.rb", &b""[..])?;
+    interp.def_rb_source_file("/src/spec_helper.rb", &b""[..])?;
+    interp.def_rb_source_file("/src/lib/spec_helper.rb", &b""[..])?;
     interp.def_rb_source_file(
-        b"/src/test/spec_runner",
+        "/src/test/spec_runner",
         &include_bytes!("spec_runner.rb")[..],
     )?;
     interp.eval(b"require '/src/test/spec_runner'")?;

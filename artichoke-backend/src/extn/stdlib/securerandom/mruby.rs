@@ -3,7 +3,7 @@ use crate::extn::stdlib::securerandom::{self, trampoline};
 use crate::File;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    interp.def_file_for_type::<SecureRandomFile>(&b"securerandom.rb"[..])?;
+    interp.def_file_for_type::<_, SecureRandomFile>("securerandom.rb")?;
     Ok(())
 }
 

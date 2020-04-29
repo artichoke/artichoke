@@ -125,7 +125,7 @@ pub fn try_main(config: &Path) -> Result<bool, Box<dyn Error>> {
             .any(|component| component == OsStr::new("shared"));
         if is_fixture || is_shared {
             if let Some(contents) = mspec::Sources::get(&name) {
-                interp.def_rb_source_file(name.as_bytes(), contents)?;
+                interp.def_rb_source_file(path, contents)?;
             }
             continue;
         }

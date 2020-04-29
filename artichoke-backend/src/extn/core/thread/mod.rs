@@ -11,7 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.0.borrow_mut().def_class::<Thread>(spec);
     let spec = class::Spec::new("Mutex", None, None)?;
     interp.0.borrow_mut().def_class::<Mutex>(spec);
-    interp.def_rb_source_file(b"thread.rb", &include_bytes!("thread.rb")[..])?;
+    interp.def_rb_source_file("thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement
     let _ = interp.eval(&b"require 'thread'"[..])?;

@@ -6,26 +6,26 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // NOTE(lopopolo): This setup of the JSON gem in the vfs does not include
     // any of the `json/add` sources for serializing "extra" types like `Time`
     // and `BigDecimal`, not all of which Artichoke supports.
-    interp.def_rb_source_file(b"json.rb", &include_bytes!("vendor/json.rb")[..])?;
+    interp.def_rb_source_file("json.rb", &include_bytes!("vendor/json.rb")[..])?;
     interp.def_rb_source_file(
-        b"json/common.rb",
+        "json/common.rb",
         &include_bytes!("vendor/json/common.rb")[..],
     )?;
     interp.def_rb_source_file(
-        b"json/generic_object.rb",
+        "json/generic_object.rb",
         &include_bytes!("vendor/json/generic_object.rb")[..],
     )?;
     interp.def_rb_source_file(
-        b"json/version.rb",
+        "json/version.rb",
         &include_bytes!("vendor/json/version.rb")[..],
     )?;
-    interp.def_rb_source_file(b"json/pure.rb", &include_bytes!("vendor/json/pure.rb")[..])?;
+    interp.def_rb_source_file("json/pure.rb", &include_bytes!("vendor/json/pure.rb")[..])?;
     interp.def_rb_source_file(
-        b"json/pure/generator.rb",
+        "json/pure/generator.rb",
         &include_bytes!("vendor/json/pure/generator.rb")[..],
     )?;
     interp.def_rb_source_file(
-        b"json/pure/parser.rb",
+        "json/pure/parser.rb",
         &include_bytes!("vendor/json/pure/parser.rb")[..],
     )?;
     Ok(())

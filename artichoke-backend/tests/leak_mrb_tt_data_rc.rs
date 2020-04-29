@@ -85,7 +85,9 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
         .check_leaks_with_finalizer(
             |_| {
                 let mut interp = artichoke_backend::interpreter().unwrap();
-                interp.def_file_for_type::<Container>(b"container").unwrap();
+                interp
+                    .def_file_for_type::<_, Container>("container")
+                    .unwrap();
 
                 let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
                 let result = interp.eval(code);

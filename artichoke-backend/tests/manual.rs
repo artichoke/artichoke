@@ -73,7 +73,7 @@ impl File for Container {
 fn define_rust_backed_ruby_class() {
     let mut interp = artichoke_backend::interpreter().unwrap();
     interp
-        .def_file_for_type::<Container>(b"container.rb")
+        .def_file_for_type::<_, Container>("container.rb")
         .unwrap();
 
     let _ = interp.eval(b"require 'container'").unwrap();
