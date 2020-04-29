@@ -120,7 +120,7 @@ mod tests {
         fn eval_context_is_a_stack() {
             let mut interp = crate::interpreter().unwrap();
             interp
-                .def_file_for_type::<NestedEval>(b"nested_eval.rb")
+                .def_file_for_type::<_, NestedEval>("nested_eval.rb")
                 .unwrap();
             let code = br#"require 'nested_eval'; NestedEval.file"#;
             let result = interp.eval(code).unwrap();
@@ -176,7 +176,7 @@ mod tests {
     fn file_magic_constant() {
         let mut interp = crate::interpreter().unwrap();
         interp
-            .def_rb_source_file(b"source.rb", &b"def file; __FILE__; end"[..])
+            .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
         let result = interp.eval(b"require 'source'; file").unwrap();
         let result = result.try_into::<&str>(&interp).unwrap();
@@ -187,7 +187,7 @@ mod tests {
     fn file_not_persistent() {
         let mut interp = crate::interpreter().unwrap();
         interp
-            .def_rb_source_file(b"source.rb", &b"def file; __FILE__; end"[..])
+            .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
         let result = interp.eval(b"require 'source'; __FILE__").unwrap();
         let result = result.try_into::<&str>(&interp).unwrap();
@@ -198,7 +198,7 @@ mod tests {
     fn return_syntax_error() {
         let mut interp = crate::interpreter().unwrap();
         interp
-            .def_rb_source_file(b"fail.rb", &b"def bad; 'as'.scan(; end"[..])
+            .def_rb_source_file("fail.rb", &b"def bad; 'as'.scan(; end"[..])
             .unwrap();
         let err = interp.eval(b"require 'fail'").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_str());

@@ -61,7 +61,7 @@ mod tests {
         fn integration_test() {
             let mut interp = crate::interpreter().unwrap();
             interp
-                .def_file_for_type::<IntegrationTest>(b"file.rb")
+                .def_file_for_type::<_, IntegrationTest>("file.rb")
                 .unwrap();
             let result = interp.eval(b"require 'file'").unwrap();
             let require_result = result.try_into::<bool>(&interp).unwrap();
@@ -88,7 +88,7 @@ mod tests {
         fn absolute_path() {
             let mut interp = crate::interpreter().unwrap();
             interp
-                .def_rb_source_file(b"/foo/bar/source.rb", &b"# a source file"[..])
+                .def_rb_source_file("/foo/bar/source.rb", &b"# a source file"[..])
                 .unwrap();
             let result = interp.eval(b"require '/foo/bar/source.rb'").unwrap();
             assert!(result.try_into::<bool>(&interp).unwrap());
@@ -100,10 +100,10 @@ mod tests {
         fn relative_with_dotted_path() {
             let mut interp = crate::interpreter().unwrap();
             interp
-                .def_rb_source_file(b"/foo/bar/source.rb", &b"require_relative '../bar.rb'"[..])
+                .def_rb_source_file("/foo/bar/source.rb", &b"require_relative '../bar.rb'"[..])
                 .unwrap();
             interp
-                .def_rb_source_file(b"/foo/bar.rb", &b"# a source file"[..])
+                .def_rb_source_file("/foo/bar.rb", &b"# a source file"[..])
                 .unwrap();
             let result = interp.eval(b"require '/foo/bar/source.rb'").unwrap();
             assert!(result.try_into::<bool>(&interp).unwrap());
@@ -124,10 +124,10 @@ mod tests {
         fn path_defined_as_source_then_extension_file() {
             let mut interp = crate::interpreter().unwrap();
             interp
-                .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
+                .def_rb_source_file("foo.rb", &b"module Foo; RUBY = 3; end"[..])
                 .unwrap();
             interp
-                .def_file_for_type::<HybridRustAndRuby>(b"foo.rb")
+                .def_file_for_type::<_, HybridRustAndRuby>("foo.rb")
                 .unwrap();
             let result = interp.eval(b"require 'foo'").unwrap();
             let result = result.try_into::<bool>(&interp).unwrap();
@@ -144,10 +144,10 @@ mod tests {
         fn path_defined_as_extension_file_then_source() {
             let mut interp = crate::interpreter().unwrap();
             interp
-                .def_file_for_type::<HybridRustAndRuby>(b"foo.rb")
+                .def_file_for_type::<_, HybridRustAndRuby>("foo.rb")
                 .unwrap();
             interp
-                .def_rb_source_file(b"foo.rb", &b"module Foo; RUBY = 3; end"[..])
+                .def_rb_source_file("foo.rb", &b"module Foo; RUBY = 3; end"[..])
                 .unwrap();
             let result = interp.eval(b"require 'foo'").unwrap();
             let result = result.try_into::<bool>(&interp).unwrap();

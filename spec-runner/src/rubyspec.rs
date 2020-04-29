@@ -11,7 +11,7 @@ use artichoke_backend::{Artichoke, LoadSources};
 pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
     for source in Specs::iter() {
         if let Some(content) = Specs::get(&source) {
-            interp.def_rb_source_file(source.as_bytes(), content)?;
+            interp.def_rb_source_file(source.as_ref(), content)?;
         }
     }
     Ok(())

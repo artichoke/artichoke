@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 use std::error;
+use std::path::Path;
 
 use crate::file::File;
 
@@ -21,7 +22,7 @@ pub trait LoadSources {
     /// added to the filesystem and [`File::require`] will dynamically define
     /// Ruby items when invoked via `Kernel#require`.
     ///
-    /// If filename is a relative path, the Ruby source is added to the
+    /// If `path` is a relative path, the Ruby source is added to the
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
@@ -29,13 +30,14 @@ pub trait LoadSources {
     /// # Errors
     ///
     /// If writes to the underlying filesystem fail, an error is returned.
-    fn def_file_for_type<T>(&mut self, filename: &[u8]) -> Result<(), Self::Error>
+    fn def_file_for_type<P, T>(&mut self, path: P) -> Result<(), Self::Error>
     where
+        P: AsRef<Path>,
         T: File<Artichoke = Self::Artichoke, Error = Self::Exception>;
 
     /// Add a Ruby source to the virtual filesystem.
     ///
-    /// If filename is a relative path, the Ruby source is added to the
+    /// If `path` is a relative path, the Ruby source is added to the
     /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
     /// file is placed directly on the filesystem. Anscestor directories are
     /// created automatically.
@@ -43,7 +45,8 @@ pub trait LoadSources {
     /// # Errors
     ///
     /// If writes to the underlying filesystem fail, an error is returned.
-    fn def_rb_source_file<T>(&mut self, filename: &[u8], contents: T) -> Result<(), Self::Error>
+    fn def_rb_source_file<P, T>(&mut self, path: P, contents: T) -> Result<(), Self::Error>
     where
+        P: AsRef<Path>,
         T: Into<Cow<'static, [u8]>>;
 }
