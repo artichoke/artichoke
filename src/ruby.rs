@@ -66,7 +66,7 @@ where
         Ok(Ok(()))
     } else if !opt.commands.is_empty() {
         execute_inline_eval(error, opt.commands, opt.fixture.as_deref())
-    } else if let Some(programfile) = opt.programfile {
+    } else if let Some(programfile) = opt.programfile.filter(|file| file != Path::new("-")) {
         execute_program_file(error, programfile.as_path(), opt.fixture.as_deref())
     } else {
         let mut interp = crate::interpreter()?;
