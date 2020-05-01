@@ -4,6 +4,7 @@ use bstr::ByteSlice;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
+use crate::core::load::State;
 use crate::extn::prelude::*;
 use crate::ffi;
 use crate::fs::RUBY_LOAD_PATH;
@@ -26,11 +27,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     } else {
         PathBuf::from(&file)
     };
-    let is_file = {
-        let api = interp.0.borrow();
-        api.vfs.is_file(path.as_path())
-    };
-    if !is_file {
+    if !interp.source_is_file(&path)? {
         return Err(Exception::from(load_error(interp, filename)));
     }
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
@@ -41,25 +38,26 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
     // module with `LoadSources` and Ruby files can require arbitrary
     // other files, including some child sources that may depend on these
     // module definitions.
-    let hook = interp.0.borrow().vfs.get_extension(path.as_path());
-    if let Some(hook) = hook {
+    if let Some(hook) = interp.source_extension_hook(&path)? {
         // dynamic, Rust-backed `File` require
         if let Err(err) = hook(interp) {
             let _ = interp.pop_context();
             return Err(err);
         }
     }
-    let contents = {
-        let api = interp.0.borrow();
-        api.vfs.read_file(path.as_path()).map(<[_]>::to_vec)
-    };
-    if let Ok(contents) = contents {
-        let _ = interp.eval(contents.as_slice())?;
+    let contents = interp.read_source_file(&path)?.to_vec();
+    if let Err(err) = interp.eval(contents.as_ref()) {
+        let _ = interp.pop_context();
+        return Err(err);
     }
     let _ = interp.pop_context();
     let mut logged_filename = String::new();
     string::format_unicode_debug_into(&mut logged_filename, filename)?;
-    trace!(r#"Successful load of "{}" at {:?}"#, logged_filename, path,);
+    trace!(
+        r#"Successful load of "{}" at {}"#,
+        logged_filename,
+        path.display()
+    );
     Ok(interp.convert(true))
 }
 
@@ -88,13 +86,9 @@ pub fn require(
         } else {
             Path::new(RUBY_LOAD_PATH).join(rb_ext)
         };
-        let is_file = {
-            let api = interp.0.borrow();
-            api.vfs.is_file(path.as_path())
-        };
-        if is_file {
+        if interp.source_is_file(&path)? {
             // If a file is already required, short circuit.
-            if interp.0.borrow().vfs.is_required(path.as_path()) {
+            if interp.source_require_state(&path)?.is_required() {
                 return Ok(interp.convert(false));
             }
             let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
@@ -104,37 +98,26 @@ pub fn require(
             // module with `LoadSources` and Ruby files can require arbitrary
             // other files, including some child sources that may depend on these
             // module definitions.
-            let hook = interp.0.borrow().vfs.get_extension(path.as_path());
-            if let Some(hook) = hook {
+            if let Some(hook) = interp.source_extension_hook(&path)? {
                 // dynamic, Rust-backed `File` require
                 if let Err(err) = hook(interp) {
                     let _ = interp.pop_context();
                     return Err(err);
                 }
             }
-            let contents = {
-                let api = interp.0.borrow();
-                api.vfs.read_file(path.as_path()).map(<[_]>::to_vec)
-            };
-            if let Ok(contents) = contents {
-                let _ = interp.eval(contents.as_slice())?;
+            let contents = interp.read_source_file(&path)?.to_vec();
+            if let Err(err) = interp.eval(contents.as_ref()) {
+                let _ = interp.pop_context();
+                return Err(err);
             }
             let _ = interp.pop_context();
-            if interp
-                .0
-                .borrow_mut()
-                .vfs
-                .mark_required(path.as_path())
-                .is_err()
-            {
-                return Err(Exception::from(load_error(interp, b"internal error")));
-            }
+            interp.set_source_require_state(&path, State::Required)?;
             let mut logged_filename = String::new();
             string::format_unicode_debug_into(&mut logged_filename, filename)?;
             trace!(
-                r#"Successful require of "{}" at {:?}"#,
+                r#"Successful require of "{}" at {}"#,
                 logged_filename,
-                path,
+                path.display(),
             );
             return Ok(interp.convert(true));
         } else {
@@ -143,13 +126,9 @@ pub fn require(
             } else {
                 Path::new(RUBY_LOAD_PATH).join(&file)
             };
-            let is_file = {
-                let api = interp.0.borrow();
-                api.vfs.is_file(path.as_path())
-            };
-            if is_file {
+            if interp.source_is_file(&path)? {
                 // If a file is already required, short circuit.
-                if interp.0.borrow().vfs.is_required(path.as_path()) {
+                if interp.source_require_state(&path)?.is_required() {
                     return Ok(interp.convert(false));
                 }
                 let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
@@ -159,37 +138,26 @@ pub fn require(
                 // module with `LoadSources` and Ruby files can require arbitrary
                 // other files, including some child sources that may depend on these
                 // module definitions.
-                let hook = interp.0.borrow().vfs.get_extension(path.as_path());
-                if let Some(hook) = hook {
+                if let Some(hook) = interp.source_extension_hook(&path)? {
                     // dynamic, Rust-backed `File` require
                     if let Err(err) = hook(interp) {
                         let _ = interp.pop_context();
                         return Err(err);
                     }
                 }
-                let contents = {
-                    let api = interp.0.borrow();
-                    api.vfs.read_file(path.as_path()).map(<[_]>::to_vec)
-                };
-                if let Ok(contents) = contents {
-                    let _ = interp.eval(contents.as_slice())?;
+                let contents = interp.read_source_file(&path)?.to_vec();
+                if let Err(err) = interp.eval(contents.as_ref()) {
+                    let _ = interp.pop_context();
+                    return Err(err);
                 }
                 let _ = interp.pop_context();
-                if interp
-                    .0
-                    .borrow_mut()
-                    .vfs
-                    .mark_required(path.as_path())
-                    .is_err()
-                {
-                    return Err(Exception::from(load_error(interp, b"internal error")));
-                }
+                interp.set_source_require_state(&path, State::Required)?;
                 let mut logged_filename = String::new();
                 string::format_unicode_debug_into(&mut logged_filename, filename)?;
                 trace!(
-                    r#"Successful require of "{}" at {:?}"#,
+                    r#"Successful require of "{}" at {}"#,
                     logged_filename,
-                    path,
+                    path.display(),
                 );
                 return Ok(interp.convert(true));
             }
@@ -200,11 +168,11 @@ pub fn require(
     } else {
         Path::new(RUBY_LOAD_PATH).join(&file)
     };
-    if !interp.0.borrow().vfs.is_file(path.as_path()) {
+    if !interp.source_is_file(&path)? {
         return Err(Exception::from(load_error(interp, filename)));
     }
     // If a file is already required, short circuit.
-    if interp.0.borrow().vfs.is_required(path.as_path()) {
+    if interp.source_require_state(&path)?.is_required() {
         return Ok(interp.convert(false));
     }
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
@@ -214,37 +182,26 @@ pub fn require(
     // module with `LoadSources` and Ruby files can require arbitrary
     // other files, including some child sources that may depend on these
     // module definitions.
-    let hook = interp.0.borrow().vfs.get_extension(path.as_path());
-    if let Some(hook) = hook {
+    if let Some(hook) = interp.source_extension_hook(&path)? {
         // dynamic, Rust-backed `File` require
         if let Err(err) = hook(interp) {
             let _ = interp.pop_context();
             return Err(err);
         }
     }
-    let contents = {
-        let api = interp.0.borrow();
-        api.vfs.read_file(path.as_path()).map(<[_]>::to_vec)
-    };
-    if let Ok(contents) = contents {
-        let _ = interp.eval(contents.as_slice())?;
+    let contents = interp.read_source_file(&path)?.to_vec();
+    if let Err(err) = interp.eval(contents.as_ref()) {
+        let _ = interp.pop_context();
+        return Err(err);
     }
     let _ = interp.pop_context();
-    if interp
-        .0
-        .borrow_mut()
-        .vfs
-        .mark_required(path.as_path())
-        .is_err()
-    {
-        return Err(Exception::from(load_error(interp, b"internal error")));
-    }
+    interp.set_source_require_state(&path, State::Required)?;
     let mut logged_filename = String::new();
     string::format_unicode_debug_into(&mut logged_filename, filename)?;
     trace!(
-        r#"Successful require of "{}" at {:?}"#,
+        r#"Successful require of "{}" at {}"#,
         logged_filename,
-        path,
+        path.display(),
     );
     Ok(interp.convert(true))
 }
