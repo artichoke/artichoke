@@ -4,7 +4,6 @@ use bstr::ByteSlice;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
-use crate::core::load::State;
 use crate::extn::prelude::*;
 use crate::ffi;
 use crate::fs::RUBY_LOAD_PATH;
@@ -13,7 +12,7 @@ use crate::Parser;
 
 const RUBY_EXTENSION: &str = "rb";
 
-pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception> {
+pub fn load(interp: &mut Artichoke, filename: Value) -> Result<bool, Exception> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
         return Err(Exception::from(ArgumentError::new(
@@ -22,50 +21,30 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<Value, Exception>
         )));
     }
     let file = ffi::bytes_to_os_str(filename)?;
-    let path = if Path::new(&file).is_relative() {
-        Path::new(RUBY_LOAD_PATH).join(&file)
-    } else {
-        PathBuf::from(&file)
-    };
-    if !interp.source_is_file(&path)? {
-        return Err(Exception::from(load_error(interp, filename)));
+    let pathbuf;
+    let mut path = Path::new(file);
+    if path.is_relative() {
+        pathbuf = Path::new(RUBY_LOAD_PATH).join(file);
+        path = pathbuf.as_path();
+    }
+    if !interp.source_is_file(path)? {
+        let mut message = b"cannot load such file -- ".to_vec();
+        message.extend_from_slice(filename);
+        return Err(LoadError::new_raw(interp, message).into());
     }
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
-
-    // Require Rust File first because an File may define classes and
-    // module with `LoadSources` and Ruby files can require arbitrary
-    // other files, including some child sources that may depend on these
-    // module definitions.
-    if let Some(hook) = interp.source_extension_hook(&path)? {
-        // dynamic, Rust-backed `File` require
-        if let Err(err) = hook(interp) {
-            let _ = interp.pop_context();
-            return Err(err);
-        }
-    }
-    let contents = interp.read_source_file(&path)?.to_vec();
-    if let Err(err) = interp.eval(contents.as_ref()) {
-        let _ = interp.pop_context();
-        return Err(err);
-    }
+    let result = interp.load_source(path);
     let _ = interp.pop_context();
-    let mut logged_filename = String::new();
-    string::format_unicode_debug_into(&mut logged_filename, filename)?;
-    trace!(
-        r#"Successful load of "{}" at {}"#,
-        logged_filename,
-        path.display()
-    );
-    Ok(interp.convert(true))
+    result
 }
 
 pub fn require(
     interp: &mut Artichoke,
     filename: Value,
     base: Option<RelativePath>,
-) -> Result<Value, Exception> {
+) -> Result<bool, Exception> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
         return Err(Exception::from(ArgumentError::new(
@@ -74,7 +53,7 @@ pub fn require(
         )));
     }
     let file = ffi::bytes_to_os_str(filename)?;
-    let path = Path::new(&file);
+    let path = Path::new(file);
 
     if path.is_relative() && path.extension() != Some(OsStr::new(RUBY_EXTENSION)) {
         let mut with_rb_ext = Vec::with_capacity(filename.len() + 3);
@@ -87,123 +66,44 @@ pub fn require(
             Path::new(RUBY_LOAD_PATH).join(rb_ext)
         };
         if interp.source_is_file(&path)? {
-            // If a file is already required, short circuit.
-            if interp.source_require_state(&path)?.is_required() {
-                return Ok(interp.convert(false));
-            }
             let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
                 .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
             interp.push_context(context);
-            // Require Rust File first because an File may define classes and
-            // module with `LoadSources` and Ruby files can require arbitrary
-            // other files, including some child sources that may depend on these
-            // module definitions.
-            if let Some(hook) = interp.source_extension_hook(&path)? {
-                // dynamic, Rust-backed `File` require
-                if let Err(err) = hook(interp) {
-                    let _ = interp.pop_context();
-                    return Err(err);
-                }
-            }
-            let contents = interp.read_source_file(&path)?.to_vec();
-            if let Err(err) = interp.eval(contents.as_ref()) {
-                let _ = interp.pop_context();
-                return Err(err);
-            }
+            let result = interp.require_source(&path);
             let _ = interp.pop_context();
-            interp.set_source_require_state(&path, State::Required)?;
-            let mut logged_filename = String::new();
-            string::format_unicode_debug_into(&mut logged_filename, filename)?;
-            trace!(
-                r#"Successful require of "{}" at {}"#,
-                logged_filename,
-                path.display(),
-            );
-            return Ok(interp.convert(true));
+            return result;
         } else {
             let path = if let Some(ref base) = base {
-                base.join(&file)
+                base.join(file)
             } else {
-                Path::new(RUBY_LOAD_PATH).join(&file)
+                Path::new(RUBY_LOAD_PATH).join(file)
             };
             if interp.source_is_file(&path)? {
-                // If a file is already required, short circuit.
-                if interp.source_require_state(&path)?.is_required() {
-                    return Ok(interp.convert(false));
-                }
                 let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
                     .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
                 interp.push_context(context);
-                // Require Rust File first because an File may define classes and
-                // module with `LoadSources` and Ruby files can require arbitrary
-                // other files, including some child sources that may depend on these
-                // module definitions.
-                if let Some(hook) = interp.source_extension_hook(&path)? {
-                    // dynamic, Rust-backed `File` require
-                    if let Err(err) = hook(interp) {
-                        let _ = interp.pop_context();
-                        return Err(err);
-                    }
-                }
-                let contents = interp.read_source_file(&path)?.to_vec();
-                if let Err(err) = interp.eval(contents.as_ref()) {
-                    let _ = interp.pop_context();
-                    return Err(err);
-                }
+                let result = interp.require_source(&path);
                 let _ = interp.pop_context();
-                interp.set_source_require_state(&path, State::Required)?;
-                let mut logged_filename = String::new();
-                string::format_unicode_debug_into(&mut logged_filename, filename)?;
-                trace!(
-                    r#"Successful require of "{}" at {}"#,
-                    logged_filename,
-                    path.display(),
-                );
-                return Ok(interp.convert(true));
+                return result;
             }
         }
     }
     let path = if let Some(ref base) = base {
         base.join(&file)
     } else {
-        Path::new(RUBY_LOAD_PATH).join(&file)
+        Path::new(RUBY_LOAD_PATH).join(file)
     };
     if !interp.source_is_file(&path)? {
-        return Err(Exception::from(load_error(interp, filename)));
-    }
-    // If a file is already required, short circuit.
-    if interp.source_require_state(&path)?.is_required() {
-        return Ok(interp.convert(false));
+        let mut message = b"cannot load such file -- ".to_vec();
+        message.extend_from_slice(filename);
+        return Err(LoadError::new_raw(interp, message).into());
     }
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
         .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
     interp.push_context(context);
-    // Require Rust File first because an File may define classes and
-    // module with `LoadSources` and Ruby files can require arbitrary
-    // other files, including some child sources that may depend on these
-    // module definitions.
-    if let Some(hook) = interp.source_extension_hook(&path)? {
-        // dynamic, Rust-backed `File` require
-        if let Err(err) = hook(interp) {
-            let _ = interp.pop_context();
-            return Err(err);
-        }
-    }
-    let contents = interp.read_source_file(&path)?.to_vec();
-    if let Err(err) = interp.eval(contents.as_ref()) {
-        let _ = interp.pop_context();
-        return Err(err);
-    }
+    let result = interp.require_source(&path);
     let _ = interp.pop_context();
-    interp.set_source_require_state(&path, State::Required)?;
-    let mut logged_filename = String::new();
-    string::format_unicode_debug_into(&mut logged_filename, filename)?;
-    trace!(
-        r#"Successful require of "{}" at {}"#,
-        logged_filename,
-        path.display(),
-    );
-    Ok(interp.convert(true))
+    result
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -236,10 +136,4 @@ impl RelativePath {
             Ok(Self::new("/"))
         }
     }
-}
-
-fn load_error(interp: &Artichoke, filename: &[u8]) -> LoadError {
-    let mut message = b"cannot load such file -- ".to_vec();
-    message.extend_from_slice(filename);
-    LoadError::new_raw(interp, message)
 }

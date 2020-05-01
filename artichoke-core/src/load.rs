@@ -18,9 +18,6 @@ pub trait LoadSources {
     /// Concrete type for errors returned by `File::require`.
     type Exception: error::Error;
 
-    /// Concrete type for extension hooks defined by `File::require`.
-    type Extension;
-
     /// Add a Rust extension hook to the virtual filesystem. A stub Ruby file is
     /// added to the filesystem and [`File::require`] will dynamically define
     /// Ruby items when invoked via `Kernel#require`.
@@ -72,44 +69,17 @@ pub trait LoadSources {
     where
         P: AsRef<Path>;
 
-    /// Retrieve the require state for a source file.
+    /// Load source located at the given path.
     ///
-    /// Query the underlying virtual filesystem for the [`State`] of the source
-    /// file at `path`.
+    /// Query the underlying virtual filesystem for a source file and load it
+    /// onto the interpreter. This loads files with the following steps:
     ///
-    /// # Errors
+    /// 1. Retrieve and execute the extension hook, if any.
+    /// 2. Read file contents and [`eval`](crate::eval::Eval) them.
     ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
-    ///
-    /// If reads to the underlying filesystem fail, an error is returned.
-    ///
-    /// If `path` does not point to a source file, an error is returned.
-    fn source_require_state<P>(&self, path: P) -> Result<State, Self::Error>
-    where
-        P: AsRef<Path>;
-
-    /// Set the require state for a source file.
-    ///
-    /// Write the source require [`State`] into the underlying virtual
-    /// filesystem for the source file at `path`.
-    ///
-    /// # Errors
-    ///
-    /// If an invalid state transition occurs, an error is returned.
-    ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
-    ///
-    /// If writes to the underlying filesystem fail, an error is returned.
-    ///
-    /// If `path` does not point to a source file, an error is returned.
-    fn set_source_require_state<P>(&mut self, path: P, next: State) -> Result<(), Self::Error>
-    where
-        P: AsRef<Path>;
-
-    /// Retrieve the extension hook for a source file.
-    ///
-    /// Query the underlying virtual filesystem for the optional extension hook
-    /// of the source file at `path`.
+    /// If this function returns without error, the feature specified by `path`
+    /// is loaded, but is not added to `$LOADED_FEATURES`. This function is
+    /// equivalent to `Kernel#load`.
     ///
     /// # Errors
     ///
@@ -118,7 +88,35 @@ pub trait LoadSources {
     /// If reads to the underlying filesystem fail, an error is returned.
     ///
     /// If `path` does not point to a source file, an error is returned.
-    fn source_extension_hook<P>(&self, path: P) -> Result<Option<Self::Extension>, Self::Error>
+    ///
+    /// If the souce file at `path` has no contents, an error is returned.
+    fn load_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
+    where
+        P: AsRef<Path>;
+
+    /// Require source located at the given path.
+    ///
+    /// Query the underlying virtual filesystem for a source file and require it
+    /// onto the interpreter. This requires files with the following steps:
+    ///
+    /// 1. Retrieve and execute the extension hook, if any.
+    /// 2. Read file contents and [`eval`](crate::eval::Eval) them.
+    /// 3. Mark file as required and add to `$LOADED_FEATURES`.
+    ///
+    /// If this function returns without error, the feature specified by `path`
+    /// is loaded and added to `$LOADED_FEATURES`. This function is equivalent
+    /// to `Kernel#require`.
+    ///
+    /// # Errors
+    ///
+    /// If the underlying filesystem is inaccessible, an error is returned.
+    ///
+    /// If reads to the underlying filesystem fail, an error is returned.
+    ///
+    /// If `path` does not point to a source file, an error is returned.
+    ///
+    /// If the souce file at `path` has no contents, an error is returned.
+    fn require_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
     where
         P: AsRef<Path>;
 
@@ -134,43 +132,7 @@ pub trait LoadSources {
     /// If reads to the underlying filesystem fail, an error is returned.
     ///
     /// If `path` does not point to a source file, an error is returned.
-    fn read_source_file<P>(&self, path: P) -> Result<Cow<'_, [u8]>, Self::Error>
+    fn read_source_file_contents<P>(&self, path: P) -> Result<Cow<'_, [u8]>, Self::Error>
     where
         P: AsRef<Path>;
-}
-
-/// States in a source file's `require` lifecycle.
-///
-/// Source files are by default un-required.
-///
-/// When `Kernel#require` is invoked with a path that resolves to a source file,
-/// it's `require` state transitions to `Required`.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum State {
-    /// Default require state, the feature has not been required.
-    Default,
-    /// The feature has been loaded by `Kernel#require`.
-    Required,
-}
-
-impl Default for State {
-    #[inline]
-    fn default() -> Self {
-        Self::Default
-    }
-}
-
-impl State {
-    /// Create a new, default `State`.
-    #[inline]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Whether this state represents that `Kernel#require` has loaded the feature.
-    ///
-    /// Returns `true` if `self == State::Required`.
-    pub fn is_required(self) -> bool {
-        matches!(self, Self::Required)
-    }
 }
