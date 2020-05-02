@@ -69,9 +69,7 @@ module Kernel
     classname = arg.class
     classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
 
-    if arg.nil?
-      raise TypeError, "can't convert #{classname} into Integer"
-    end
+    raise TypeError, "can't convert #{classname} into Integer" if arg.nil?
 
     if arg&.respond_to?(:to_int)
       ret = arg.to_int
@@ -83,6 +81,7 @@ module Kernel
       if arg.respond_to?(:to_i)
         ret = arg.to_i
         return ret if ret.is_a?(Numeric)
+
         raise TypeError, "can't convert #{classname} to Integer (#{arg.class}#to_i gives #{ret.class})"
       end
     elsif !arg.is_a?(String) && arg && arg.respond_to?(:to_i)
