@@ -1,23 +1,24 @@
-//! Prelude for writing tests.
+//! A "prelude" for writing tests in the `artichoke-backend` crate.
 //!
-//! Include this module in a test module with:
+//! This prelude is similar to the standard library's prelude in that you'll
+//! almost always want to import its entire contents, but unlike the standard
+//! library's prelude, you'll have to do so manually:
 //!
-//! ```rust,ignore
-//! use crate::test::prelude::*;
 //! ```
+//! use artichoke_backend::test::prelude::*;
+//! ```
+//!
+//! The prelude may grow over time as additional items see ubiquitous use.
 
 pub use crate::class;
 pub use crate::convert::RustBackedValue;
-pub use crate::def::{self, EnclosingRubyScope};
-pub use crate::exception::{self, Exception, RubyException};
-pub use crate::extn::core::exception::*;
-pub use crate::gc::MrbGarbageCollection;
+pub use crate::core::{Value as _, *};
+pub use crate::def::{self, EnclosingRubyScope, NotDefinedError};
+pub use crate::exception;
 pub use crate::module;
+pub use crate::prelude::*;
 pub use crate::state::parser::Context;
+pub use crate::string;
 pub use crate::sys;
-pub use crate::types::{Fp, Int, Ruby, Rust};
+pub use crate::types::{Fp, Int};
 pub use crate::value::{Block, Value};
-pub use crate::{
-    Artichoke, Convert, ConvertMut, DefineConstant, Eval, File, Globals, Intern, LoadSources,
-    Parser, TryConvert, TryConvertMut, ValueLike, Warn,
-};

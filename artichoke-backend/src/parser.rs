@@ -1,6 +1,6 @@
 use std::ptr::NonNull;
 
-use crate::core::parser::{IncrementLinenoError, Parser};
+use crate::core::{IncrementLinenoError, Parser};
 use crate::state::parser::Context;
 use crate::Artichoke;
 

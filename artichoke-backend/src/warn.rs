@@ -1,12 +1,13 @@
 use std::fmt::Write;
 
+use crate::core::{ConvertMut, Value as _, Warn};
 use crate::def::NotDefinedError;
 use crate::exception::Exception;
 use crate::extn::core::exception::IOError;
 use crate::extn::core::warning::Warning;
 use crate::state::output::Output;
 use crate::value::Value;
-use crate::{Artichoke, ConvertMut, ValueLike, Warn};
+use crate::Artichoke;
 
 impl Warn for Artichoke {
     type Error = Exception;

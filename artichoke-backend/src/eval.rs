@@ -1,12 +1,13 @@
 use std::ffi::OsStr;
 
+use crate::core::Eval;
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
 use crate::ffi;
 use crate::sys::{self, protect};
 use crate::value::Value;
-use crate::{Artichoke, Eval};
+use crate::Artichoke;
 
 impl Eval for Artichoke {
     type Value = Value;

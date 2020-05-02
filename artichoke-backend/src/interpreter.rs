@@ -5,13 +5,14 @@ use std::fmt;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
+use crate::core::{ConvertMut, Eval};
 use crate::exception::{Exception, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
 use crate::gc::MrbGarbageCollection;
 use crate::state::State;
 use crate::sys;
-use crate::{Artichoke, ConvertMut, Eval};
+use crate::Artichoke;
 
 /// Create and initialize an [`Artichoke`] interpreter.
 ///

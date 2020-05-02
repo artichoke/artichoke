@@ -4,7 +4,7 @@ use std::ffi::{CStr, CString};
 use std::fmt;
 use std::ptr::NonNull;
 
-use crate::core::parser::IncrementLinenoError;
+use crate::core::IncrementLinenoError;
 use crate::sys;
 
 /// Filename of the top eval context.

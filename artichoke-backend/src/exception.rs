@@ -3,10 +3,11 @@ use std::error;
 use std::fmt;
 use std::hint;
 
+use crate::core::{TryConvertMut, Value as _};
 use crate::string;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, TryConvertMut, ValueLike};
+use crate::Artichoke;
 
 #[derive(Debug)]
 pub struct Exception(Box<dyn RubyException>);

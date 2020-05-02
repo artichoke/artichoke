@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 
+use crate::core::{Convert, Globals, Intern};
 use crate::exception::Exception;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, Convert, Globals, Intern};
+use crate::Artichoke;
 
 // TODO: Handle invalid variable names. For now this is delegated to mruby.
 

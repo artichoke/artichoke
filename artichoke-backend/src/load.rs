@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 use std::path::Path;
 
+use crate::core::{Eval, File, LoadSources};
 use crate::exception::Exception;
 use crate::fs::RUBY_LOAD_PATH;
-use crate::{Artichoke, Eval, File, LoadSources};
+use crate::Artichoke;
 
 impl LoadSources for Artichoke {
     type Artichoke = Self;

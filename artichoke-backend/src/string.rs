@@ -11,10 +11,11 @@ use std::error;
 use std::fmt;
 use std::io;
 
+use crate::core::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::sys;
-use crate::{Artichoke, ConvertMut};
+use crate::Artichoke;
 
 /// Write a UTF-8 debug representation of a byte slice into the given writer.
 ///

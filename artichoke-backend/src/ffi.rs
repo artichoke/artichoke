@@ -11,11 +11,12 @@ use std::mem;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
+use crate::core::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::state::State;
 use crate::sys;
-use crate::{Artichoke, ConvertMut};
+use crate::Artichoke;
 
 /// Extract an [`Artichoke`] interpreter from the user data pointer on a
 /// [`sys::mrb_state`].

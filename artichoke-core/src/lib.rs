@@ -37,9 +37,37 @@ pub mod eval;
 pub mod file;
 pub mod globals;
 pub mod intern;
+pub mod io;
 pub mod load;
 pub mod parser;
 pub mod top_self;
 pub mod types;
 pub mod value;
 pub mod warn;
+
+/// A "prelude" for users of the `artichoke-core` crate.
+///
+/// This prelude is similar to the standard library's prelude in that you'll
+/// almost always want to import its entire contents, but unlike the standard
+/// library's prelude, you'll have to do so manually:
+///
+/// ```
+/// use artichoke_core::prelude::*;
+/// ```
+///
+/// The prelude may grow over time as additional items see ubiquitous use.
+pub mod prelude {
+    pub use crate::constant::DefineConstant;
+    pub use crate::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
+    pub use crate::eval::Eval;
+    pub use crate::file::File;
+    pub use crate::globals::Globals;
+    pub use crate::intern::Intern;
+    pub use crate::io::Io;
+    pub use crate::load::LoadSources;
+    pub use crate::parser::{IncrementLinenoError, Parser};
+    pub use crate::top_self::TopSelf;
+    pub use crate::types::{Ruby, Rust};
+    pub use crate::value::Value;
+    pub use crate::warn::Warn;
+}

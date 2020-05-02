@@ -7,7 +7,7 @@
 
 //! # artichoke-backend
 //!
-//! `artichoke-backend` crate provides a Ruby interpreter. It currently is
+//! `artichoke-backend` crate provides a Ruby interpreter. It is currently
 //! implemented with [mruby](https://github.com/mruby/mruby) bindings exported
 //! by the [`sys`] module.
 //!
@@ -19,10 +19,11 @@
 //! ### Evaling Source Code
 //!
 //! The `artichoke-backend` interpreter implements
-//! [`Eval` from `artichoke-core`](crate::Eval).
+//! [`Eval` from `artichoke-core`](crate::prelude::core::Eval).
 //!
 //! ```rust
-//! use artichoke_backend::{Eval, ValueLike};
+//! use artichoke_backend::prelude::core::*;
+//! use artichoke_backend::prelude::*;
 //!
 //! let mut interp = artichoke_backend::interpreter().unwrap();
 //! let result = interp.eval(b"10 * 10").unwrap();
@@ -33,11 +34,12 @@
 //! ### Calling Functions on Ruby Objects
 //!
 //! [`Value`](value::Value)s returned by the `artichoke-backend` interpreter
-//! implement [`Value` from `artichoke-core`](crate::ValueLike), which enables
-//! calling Ruby functions from Rust.
+//! implement [`Value` from `artichoke-core`](crate::core::prelude::Value),
+//! which enables calling Ruby functions from Rust.
 //!
 //! ```rust
-//! use artichoke_backend::{Eval, ValueLike};
+//! use artichoke_backend::prelude::core::*;
+//! use artichoke_backend::prelude::*;
 //!
 //! let mut interp = artichoke_backend::interpreter().unwrap();
 //! let result = interp.eval(b"'ruby funcall'").unwrap();
@@ -118,24 +120,29 @@ mod warn;
 #[cfg(test)]
 mod test;
 
-pub use artichoke_core as core;
+pub use crate::interpreter::interpreter;
+pub use artichoke_core::prelude as core;
 
-pub use artichoke_core::constant::DefineConstant;
-pub use artichoke_core::convert::Convert;
-pub use artichoke_core::convert::ConvertMut;
-pub use artichoke_core::convert::TryConvert;
-pub use artichoke_core::convert::TryConvertMut;
-pub use artichoke_core::eval::Eval;
-pub use artichoke_core::file::File;
-pub use artichoke_core::globals::Globals;
-pub use artichoke_core::intern::Intern;
-pub use artichoke_core::load::LoadSources;
-pub use artichoke_core::parser::Parser;
-pub use artichoke_core::top_self::TopSelf;
-pub use artichoke_core::value::Value as ValueLike;
-pub use artichoke_core::warn::Warn;
+/// A "prelude" for users of the `artichoke-backend` crate.
+///
+/// This prelude is similar to the standard library's prelude in that you'll
+/// almost always want to import its entire contents, but unlike the standard
+/// library's prelude, you'll have to do so manually:
+///
+/// ```
+/// use artichoke_backend::prelude::*;
+/// ```
+///
+/// The prelude may grow over time as additional items see ubiquitous use.
+pub mod prelude {
+    pub use crate::core;
 
-pub use interpreter::interpreter;
+    pub use crate::exception::{raise, Exception, RubyException};
+    pub use crate::extn::core::exception::{Exception as _, *};
+    pub use crate::gc::MrbGarbageCollection;
+    pub use crate::interpreter::interpreter;
+    pub use crate::Artichoke;
+}
 
 /// Interpreter instance.
 ///

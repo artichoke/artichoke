@@ -1,7 +1,7 @@
 //! Embedded `MSpec` framework.
 
-use artichoke_backend::exception::Exception;
-use artichoke_backend::{Artichoke, ConvertMut, Eval, LoadSources, TopSelf, ValueLike};
+use artichoke_backend::prelude::core::*;
+use artichoke_backend::prelude::*;
 
 /// Load `MSpec` sources into the Artichoke virtual filesystem.
 ///

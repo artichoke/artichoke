@@ -1,10 +1,11 @@
 use std::str;
 
 use crate::convert::UnboxRubyError;
+use crate::core::{ConvertMut, TryConvert};
 use crate::exception::Exception;
 use crate::types::Rust;
 use crate::value::Value;
-use crate::{Artichoke, ConvertMut, TryConvert};
+use crate::Artichoke;
 
 impl ConvertMut<String, Value> for Artichoke {
     fn convert_mut(&mut self, value: String) -> Value {

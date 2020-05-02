@@ -3,8 +3,7 @@
 use ansi_term::Style;
 use std::io;
 
-use crate::backend::exception::{Exception, RubyException};
-use crate::backend::Artichoke;
+use crate::prelude::*;
 
 /// Format an `Exception` backtrace into an [`io::Write`] suitable for
 /// displaying in a Ruby REPL.

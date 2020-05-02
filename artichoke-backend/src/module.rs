@@ -6,11 +6,12 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
+use crate::core::Intern;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Method, NotDefinedError};
 use crate::method;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, Intern};
+use crate::Artichoke;
 
 #[derive(Debug, Clone)]
 pub struct Builder<'a> {
