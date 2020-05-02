@@ -25,7 +25,7 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
             let num = value.implicitly_convert_to_int(self)?;
             if let Ok(radix) = u32::try_from(num) {
                 if let Some(radix) = NonZeroU32::new(radix) {
-                    if radix.get() >= 2 && radix.get() <= 36 {
+                    if (2..=36).contains(&radix.get()) {
                         return Ok(Some(Radix(radix)));
                     }
                 }
@@ -41,7 +41,7 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::module_name_repetitions)]
 pub struct IntegerString<'a>(&'a str);
 
@@ -105,24 +105,127 @@ impl<'a> Into<&'a [u8]> for IntegerString<'a> {
     }
 }
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+enum Sign {
+    Pos,
+    Neg,
+}
+
+impl Default for Sign {
+    #[inline]
+    fn default() -> Self {
+        Self::Pos
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+enum ParseState<'a> {
+    Initial(IntegerString<'a>),
+    Sign(IntegerString<'a>, Sign),
+    Accumulate(IntegerString<'a>, Sign, String),
+}
+
+impl<'a> ParseState<'a> {
+    #[inline]
+    fn new(arg: IntegerString<'a>) -> Self {
+        Self::Initial(arg)
+    }
+
+    fn set_sign(self, interp: &mut Artichoke, sign: Sign) -> Result<Self, Exception> {
+        match self {
+            Self::Sign(arg, _) | Self::Accumulate(arg, _, _) => {
+                let mut message = String::from(r#"invalid value for Integer(): ""#);
+                string::format_unicode_debug_into(&mut message, arg.into())?;
+                message.push('"');
+                Err(ArgumentError::new(interp, message).into())
+            }
+            Self::Initial(arg) => Ok(ParseState::Sign(arg, sign)),
+        }
+    }
+
+    fn collect_digit(self, digit: char) -> Self {
+        match self {
+            Self::Initial(arg) => {
+                let mut digits = String::new();
+                digits.push(digit);
+                Self::Accumulate(arg, Sign::default(), digits)
+            }
+            Self::Sign(arg, sign) => {
+                let mut digits = String::new();
+                digits.push(digit);
+                Self::Accumulate(arg, sign, digits)
+            }
+            Self::Accumulate(arg, sign, mut digits) => {
+                digits.push(digit);
+                Self::Accumulate(arg, sign, digits)
+            }
+        }
+    }
+
+    fn parse(self, interp: &mut Artichoke) -> Result<(String, Option<Radix>), Exception> {
+        match self {
+            Self::Accumulate(arg, sign, mut digits) => {
+                let (mut src, radix) = match digits.as_bytes() {
+                    [b'0', b'b', ..] | [b'0', b'B', ..] => {
+                        digits.drain(..2);
+                        (digits, Some(Radix(unsafe { NonZeroU32::new_unchecked(2) })))
+                    }
+                    [b'0', b'o', ..] | [b'0', b'O', ..] => {
+                        digits.drain(..2);
+                        (digits, Some(Radix(unsafe { NonZeroU32::new_unchecked(8) })))
+                    }
+                    [b'0', b'd', ..] | [b'0', b'D', ..] => {
+                        digits.drain(..2);
+                        (
+                            digits,
+                            Some(Radix(unsafe { NonZeroU32::new_unchecked(10) })),
+                        )
+                    }
+                    [b'0', b'x', ..] | [b'0', b'X', ..] => {
+                        digits.drain(..2);
+                        (
+                            digits,
+                            Some(Radix(unsafe { NonZeroU32::new_unchecked(16) })),
+                        )
+                    }
+                    [x, y, ..] => {
+                        let first = char::from(*x);
+                        let next = char::from(*y);
+                        if !next.is_numeric() && !next.is_alphabetic() {
+                            let mut message = String::from(r#"invalid value for Integer(): ""#);
+                            string::format_unicode_debug_into(&mut message, arg.into())?;
+                            message.push('"');
+                            return Err(ArgumentError::new(interp, message).into());
+                        } else if '0' == first {
+                            digits.drain(..1);
+                            (digits, Some(Radix(unsafe { NonZeroU32::new_unchecked(8) })))
+                        } else {
+                            (digits, None)
+                        }
+                    }
+                    _ => (digits, None),
+                };
+                if let Sign::Neg = sign {
+                    src.insert(0, '-');
+                }
+                Ok((src, radix))
+            }
+            Self::Initial(arg) | Self::Sign(arg, _) => {
+                let mut message = String::from(r#"invalid value for Integer(): ""#);
+                string::format_unicode_debug_into(&mut message, arg.into())?;
+                message.push('"');
+                Err(ArgumentError::new(interp, message).into())
+            }
+        }
+    }
+}
+
 pub fn method<'a>(
     interp: &mut Artichoke,
     arg: IntegerString<'a>,
     radix: Option<Radix>,
 ) -> Result<Int, Exception> {
-    #[derive(Debug, Clone, Copy)]
-    enum Sign {
-        Pos,
-        Neg,
-    }
-    #[derive(Debug, Clone)]
-    enum ParseState {
-        Initial,
-        Sign(Sign),
-        Accumulate(Sign, String),
-    }
-
-    let mut state = ParseState::Initial;
+    let mut state = ParseState::new(arg);
     let mut chars = arg
         .inner()
         .chars()
@@ -133,13 +236,9 @@ pub fn method<'a>(
     while let Some(current) = chars.next() {
         // Ignore an embedded underscore (`_`).
         if current == '_' {
-            let valid_prev = prev
-                .map(|prev| prev.is_numeric() || prev.is_alphabetic())
-                .unwrap_or_default();
+            let valid_prev = prev.map_or(false, |prev| prev.is_numeric() || prev.is_alphabetic());
             let next = chars.peek();
-            let valid_next = next
-                .map(|next| next.is_numeric() || next.is_alphabetic())
-                .unwrap_or_default();
+            let valid_next = next.map_or(false, |next| next.is_numeric() || next.is_alphabetic());
             if valid_prev && valid_next {
                 prev = Some(current);
                 continue;
@@ -147,127 +246,40 @@ pub fn method<'a>(
         }
         if current.is_whitespace() {
             if let Some('+') | Some('-') = prev {
-                return Err(Exception::from(invalid_value_err(interp, arg)?));
+                let mut message = String::from(r#"invalid value for Integer(): ""#);
+                string::format_unicode_debug_into(&mut message, arg.into())?;
+                message.push('"');
+                return Err(ArgumentError::new(interp, message).into());
             } else {
                 prev = Some(current);
-
                 continue;
             }
         }
 
         state = match current {
-            '+' => {
-                if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
-                    return Err(Exception::from(invalid_value_err(interp, arg)?));
-                }
-                ParseState::Sign(Sign::Pos)
-            }
-            '-' => {
-                if let ParseState::Sign(_) | ParseState::Accumulate(_, _) = state {
-                    return Err(Exception::from(invalid_value_err(interp, arg)?));
-                }
-                ParseState::Sign(Sign::Neg)
-            }
-            digit => match state {
-                ParseState::Initial => {
-                    let mut digits = String::new();
-                    digits.push(digit);
-                    ParseState::Accumulate(Sign::Pos, digits)
-                }
-                ParseState::Sign(sign) => {
-                    let mut digits = String::new();
-                    digits.push(digit);
-                    ParseState::Accumulate(sign, digits)
-                }
-                ParseState::Accumulate(sign, mut digits) => {
-                    digits.push(digit);
-                    ParseState::Accumulate(sign, digits)
-                }
-            },
+            '+' => state.set_sign(interp, Sign::Pos)?,
+            '-' => state.set_sign(interp, Sign::Neg)?,
+            digit => state.collect_digit(digit),
         };
         prev = Some(current);
     }
 
-    let (candidate, parsed_radix) = if let ParseState::Accumulate(sign, mut digits) = state {
-        let parsed_radix = match digits.chars().take(2).collect::<String>().as_str() {
-            "0b" | "0B" => {
-                digits.drain(..2);
-                Some(Radix(unsafe { NonZeroU32::new_unchecked(2) }))
-            }
-            "0o" | "0O" => {
-                digits.drain(..2);
-                Some(Radix(unsafe { NonZeroU32::new_unchecked(8) }))
-            }
-            "0d" | "0D" => {
-                digits.drain(..2);
-                Some(Radix(unsafe { NonZeroU32::new_unchecked(10) }))
-            }
-            "0x" | "0X" => {
-                digits.drain(..2);
-                Some(Radix(unsafe { NonZeroU32::new_unchecked(16) }))
-            }
-            prefix => {
-                let mut chars = prefix.chars();
-                let first = chars.next();
-                let next = chars.next();
-                if let Some(next) = next {
-                    if !next.is_numeric() && !next.is_alphabetic() {
-                        return Err(Exception::from(invalid_value_err(interp, arg)?));
-                    } else if let Some('0') = first {
-                        digits.drain(..1);
-                        Some(Radix(unsafe { NonZeroU32::new_unchecked(8) }))
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            }
-        };
+    let (src, src_radix) = state.parse(interp)?;
 
-        if let Sign::Neg = sign {
-            digits.insert(0, '-');
+    let parsed_int = match (radix, src_radix) {
+        (Some(x), Some(y)) if x == y => Int::from_str_radix(src.as_str(), x.as_u32()).ok(),
+        (None, None) => Int::from_str(src.as_str()).ok(),
+        (Some(x), None) | (None, Some(x)) if (2..=36).contains(&x.as_u32()) => {
+            Int::from_str_radix(src.as_str(), x.as_u32()).ok()
         }
-        (digits, parsed_radix)
-    } else {
-        return Err(Exception::from(invalid_value_err(interp, arg)?));
+        _ => None,
     };
-
-    match (radix, parsed_radix) {
-        (x, y) if x == y => {
-            let integer = if let Some(radix) = x {
-                Int::from_str_radix(candidate.as_str(), radix.as_u32())
-            } else {
-                Int::from_str(candidate.as_str())
-            };
-            if let Ok(integer) = integer {
-                Ok(integer)
-            } else {
-                Err(Exception::from(invalid_value_err(interp, arg.as_bytes())?))
-            }
-        }
-        (Some(radix), None) | (None, Some(radix)) => {
-            if radix.as_u32() >= 2 && radix.as_u32() <= 36 {
-                if let Ok(integer) = Int::from_str_radix(candidate.as_str(), radix.as_u32()) {
-                    Ok(integer)
-                } else {
-                    Err(Exception::from(invalid_value_err(interp, arg)?))
-                }
-            } else {
-                Err(Exception::from(ArgumentError::new(interp, "invalid radix")))
-            }
-        }
-        _ => Err(Exception::from(ArgumentError::new(interp, "invalid radix"))),
+    if let Some(parsed_int) = parsed_int {
+        Ok(parsed_int)
+    } else {
+        let mut message = String::from(r#"invalid value for Integer(): ""#);
+        string::format_unicode_debug_into(&mut message, arg.into())?;
+        message.push('"');
+        Err(ArgumentError::new(interp, message).into())
     }
-}
-
-#[inline]
-fn invalid_value_err<'a, T: Into<&'a [u8]>>(
-    interp: &Artichoke,
-    arg: T,
-) -> Result<ArgumentError, Exception> {
-    let mut message = String::from(r#"invalid value for Integer(): ""#);
-    string::format_unicode_debug_into(&mut message, arg.into())?;
-    message.push('"');
-    Ok(ArgumentError::new(interp, message))
 }
