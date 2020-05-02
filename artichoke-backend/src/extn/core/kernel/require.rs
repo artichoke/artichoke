@@ -1,7 +1,6 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
 use bstr::ByteSlice;
-use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use crate::extn::prelude::*;
@@ -55,16 +54,35 @@ pub fn require(
     let file = ffi::bytes_to_os_str(filename)?;
     let path = Path::new(file);
 
-    if path.is_relative() && path.extension() != Some(OsStr::new(RUBY_EXTENSION)) {
-        let mut with_rb_ext = Vec::with_capacity(filename.len() + 3);
-        with_rb_ext.extend_from_slice(filename);
-        with_rb_ext.extend_from_slice(b".rb");
-        let rb_ext = ffi::bytes_to_os_str(with_rb_ext.as_slice())?;
-        let path = if let Some(ref base) = base {
-            base.join(rb_ext)
+    let is_rb = path
+        .extension()
+        .filter(|ext| ext == &RUBY_EXTENSION)
+        .is_some();
+    let (path, alternate) = if path.is_relative() {
+        let mut path = if let Some(ref base) = base {
+            base.join(path)
         } else {
-            Path::new(RUBY_LOAD_PATH).join(rb_ext)
+            Path::new(RUBY_LOAD_PATH).join(path)
         };
+        if !is_rb {
+            let alternate = path.clone();
+            path.set_extension(RUBY_EXTENSION);
+            (path, Some(alternate))
+        } else {
+            (path, None)
+        }
+    } else {
+        (path.to_owned(), None)
+    };
+    if interp.source_is_file(&path)? {
+        let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
+            .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
+        interp.push_context(context);
+        let result = interp.require_source(&path);
+        let _ = interp.pop_context();
+        return result;
+    }
+    if let Some(path) = alternate {
         if interp.source_is_file(&path)? {
             let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
                 .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
@@ -72,38 +90,11 @@ pub fn require(
             let result = interp.require_source(&path);
             let _ = interp.pop_context();
             return result;
-        } else {
-            let path = if let Some(ref base) = base {
-                base.join(file)
-            } else {
-                Path::new(RUBY_LOAD_PATH).join(file)
-            };
-            if interp.source_is_file(&path)? {
-                let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-                    .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
-                interp.push_context(context);
-                let result = interp.require_source(&path);
-                let _ = interp.pop_context();
-                return result;
-            }
         }
     }
-    let path = if let Some(ref base) = base {
-        base.join(&file)
-    } else {
-        Path::new(RUBY_LOAD_PATH).join(file)
-    };
-    if !interp.source_is_file(&path)? {
-        let mut message = b"cannot load such file -- ".to_vec();
-        message.extend_from_slice(filename);
-        return Err(LoadError::new_raw(interp, message).into());
-    }
-    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-        .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
-    interp.push_context(context);
-    let result = interp.require_source(&path);
-    let _ = interp.pop_context();
-    result
+    let mut message = b"cannot load such file -- ".to_vec();
+    message.extend_from_slice(filename);
+    Err(LoadError::new_raw(interp, message).into())
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
