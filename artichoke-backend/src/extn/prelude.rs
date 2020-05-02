@@ -16,7 +16,7 @@
 
 pub use crate::class;
 pub use crate::convert::RustBackedValue;
-pub use crate::core::{Value as _, *};
+pub use crate::core::{Regexp as _, Value as _, *};
 pub use crate::def::{self, EnclosingRubyScope, NotDefinedError};
 pub use crate::exception;
 pub use crate::module;
