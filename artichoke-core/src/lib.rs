@@ -40,6 +40,7 @@ pub mod intern;
 pub mod io;
 pub mod load;
 pub mod parser;
+pub mod prng;
 pub mod regexp;
 pub mod top_self;
 pub mod types;
@@ -67,6 +68,7 @@ pub mod prelude {
     pub use crate::io::Io;
     pub use crate::load::LoadSources;
     pub use crate::parser::{IncrementLinenoError, Parser};
+    pub use crate::prng::Prng;
     pub use crate::regexp::Regexp;
     pub use crate::top_self::TopSelf;
     pub use crate::types::{Ruby, Rust};

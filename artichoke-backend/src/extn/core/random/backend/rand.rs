@@ -80,28 +80,29 @@ where
         self
     }
 
-    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) {
+    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) -> Result<(), Exception> {
         let _ = interp;
         self.bytes(buf);
+        Ok(())
     }
 
-    fn seed(&self, interp: &Artichoke) -> u64 {
+    fn seed(&self, interp: &Artichoke) -> Result<u64, Exception> {
         let _ = interp;
-        self.seed()
+        Ok(self.seed())
     }
 
-    fn internal_state(&self, interp: &Artichoke) -> InternalState {
+    fn internal_state(&self, interp: &Artichoke) -> Result<InternalState, Exception> {
         let _ = interp;
-        self.internal_state()
+        Ok(self.internal_state())
     }
 
-    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Int {
+    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Result<Int, Exception> {
         let _ = interp;
-        self.rand_int(max)
+        Ok(self.rand_int(max))
     }
 
-    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Fp {
+    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Result<Fp, Exception> {
         let _ = interp;
-        self.rand_float(max)
+        Ok(self.rand_float(max))
     }
 }

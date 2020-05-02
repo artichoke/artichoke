@@ -11,28 +11,23 @@ impl RandType for Default {
         self
     }
 
-    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) {
-        let mut borrow = interp.0.borrow_mut();
-        borrow.prng.bytes(buf);
+    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) -> Result<(), Exception> {
+        interp.prng_fill_bytes(buf)
     }
 
-    fn seed(&self, interp: &Artichoke) -> u64 {
-        let borrow = interp.0.borrow();
-        borrow.prng.seed()
+    fn seed(&self, interp: &Artichoke) -> Result<u64, Exception> {
+        interp.prng_seed()
     }
 
-    fn internal_state(&self, interp: &Artichoke) -> InternalState {
-        let borrow = interp.0.borrow();
-        borrow.prng.internal_state()
+    fn internal_state(&self, interp: &Artichoke) -> Result<InternalState, Exception> {
+        interp.prng_internal_state()
     }
 
-    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Int {
-        let mut borrow = interp.0.borrow_mut();
-        borrow.prng.rand_int(max)
+    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Result<Int, Exception> {
+        interp.rand_int(max)
     }
 
-    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Fp {
-        let mut borrow = interp.0.borrow_mut();
-        borrow.prng.rand_float(max)
+    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Result<Fp, Exception> {
+        interp.rand_float(max)
     }
 }
