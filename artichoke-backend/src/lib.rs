@@ -109,6 +109,7 @@ mod load;
 pub mod method;
 pub mod module;
 mod parser;
+mod regexp;
 pub mod state;
 pub mod string;
 pub mod sys;
