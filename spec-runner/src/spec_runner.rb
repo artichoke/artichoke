@@ -81,6 +81,9 @@ class SpecCollector
       skipped = true if state.message =~ /'tainted\?'/
       skipped = true if state.message =~ /'untrust'/
       skipped = true if state.message =~ /'untrusted\?'/
+      skipped = true if state.message =~ /undefined method 'Rational'/
+    elsif state.exception.is_a?(NameError)
+      skipped = true if state.message =~ /uninitialized constant Bignum/
     elsif state.exception.is_a?(SpecExpectationNotMetError)
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
