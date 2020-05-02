@@ -19,9 +19,8 @@
 //! This test fails before commit
 //! `a450ca7c458d0a4db6fdc60375d8c2c8482c85a7` with a fairly massive leak.
 
-use artichoke_backend::exception::RubyException;
-use artichoke_backend::gc::MrbGarbageCollection;
-use artichoke_backend::{Eval, ValueLike};
+use artichoke_backend::prelude::core::*;
+use artichoke_backend::prelude::*;
 
 mod leak;
 

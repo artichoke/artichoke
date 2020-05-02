@@ -1,7 +1,7 @@
 //! Embedded copy of ruby/spec suites.
 
-use artichoke_backend::exception::Exception;
-use artichoke_backend::{Artichoke, LoadSources};
+use artichoke_backend::prelude::core::*;
+use artichoke_backend::prelude::*;
 
 /// Load ruby/spec sources into the Artichoke virtual filesystem.
 ///

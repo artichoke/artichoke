@@ -56,7 +56,7 @@
 #[macro_use]
 extern crate rust_embed;
 
-use artichoke_backend::LoadSources;
+use artichoke_backend::prelude::core::*;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;

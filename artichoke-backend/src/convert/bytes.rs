@@ -3,12 +3,13 @@ use std::ffi::{CStr, OsStr, OsString};
 use std::slice;
 
 use crate::convert::UnboxRubyError;
+use crate::core::{ConvertMut, TryConvert, TryConvertMut};
 use crate::exception::Exception;
 use crate::ffi;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ConvertMut, TryConvert, TryConvertMut};
+use crate::Artichoke;
 
 impl ConvertMut<Vec<u8>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<u8>) -> Value {

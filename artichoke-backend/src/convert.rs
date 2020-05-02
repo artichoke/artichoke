@@ -1,12 +1,13 @@
 use std::error;
 use std::fmt;
 
+use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut};
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::TypeError;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, Convert, ConvertMut, TryConvert, TryConvertMut};
+use crate::Artichoke;
 
 mod array;
 mod boolean;

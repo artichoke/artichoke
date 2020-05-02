@@ -1,11 +1,12 @@
 use std::iter::FromIterator;
 
 use crate::convert::{RustBackedValue, UnboxRubyError};
+use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut};
 use crate::exception::Exception;
 use crate::extn::core::array::{Array, InlineBuffer};
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, Convert, ConvertMut, TryConvert, TryConvertMut};
+use crate::Artichoke;
 
 impl ConvertMut<&[Value], Value> for Artichoke {
     fn convert_mut(&mut self, value: &[Value]) -> Value {

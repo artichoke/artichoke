@@ -33,7 +33,7 @@ pub type Fp = f64;
 /// ```
 pub type Int = i64;
 
-pub use crate::core::types::{Ruby, Rust};
+pub use crate::core::{Ruby, Rust};
 
 /// Parse a [`Ruby`] type classifier from a [`sys::mrb_value`].
 ///

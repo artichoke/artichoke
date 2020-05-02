@@ -2,12 +2,13 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::convert::{RustBackedValue, UnboxRubyError};
+use crate::core::{ConvertMut, TryConvertMut};
 use crate::exception::Exception;
 use crate::extn::core::array::Array;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, ConvertMut, TryConvertMut};
+use crate::Artichoke;
 
 // TODO(GH-28): implement `PartialEq`, `Eq`, and `Hash` on `Value`.
 // TODO(GH-29): implement `Convert<HashMap<Value, Value>>`.

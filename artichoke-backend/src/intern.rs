@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 
+use crate::core::Intern;
 use crate::sys;
-use crate::{Artichoke, Intern};
+use crate::Artichoke;
 
 impl Intern for Artichoke {
     type Symbol = sys::mrb_sym;

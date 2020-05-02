@@ -1,11 +1,12 @@
 use std::convert::TryFrom;
 
 use crate::convert::{BoxIntoRubyError, UnboxRubyError};
+use crate::core::{Convert, TryConvert};
 use crate::exception::Exception;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
-use crate::{Artichoke, Convert, TryConvert};
+use crate::Artichoke;
 
 impl Convert<u8, Value> for Artichoke {
     #[inline]

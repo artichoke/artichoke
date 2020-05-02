@@ -10,12 +10,11 @@ use std::error;
 use std::fmt;
 use std::io;
 
-use crate::backend::exception::Exception;
-use crate::backend::gc::MrbGarbageCollection;
 use crate::backend::state::parser::Context;
-use crate::backend::{Artichoke, Eval, Parser as _, ValueLike};
 use crate::backtrace;
 use crate::parser::{Parser, State};
+use crate::prelude::core::{Eval, Parser as _, Value};
+use crate::prelude::*;
 
 const REPL_FILENAME: &[u8] = b"(airb)";
 

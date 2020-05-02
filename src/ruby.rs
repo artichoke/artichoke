@@ -8,13 +8,12 @@ use std::io;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
-use crate::backend::exception::Exception;
-use crate::backend::extn::core::exception::{IOError, LoadError};
 use crate::backend::ffi;
 use crate::backend::state::parser::Context;
 use crate::backend::string;
-use crate::backend::{Artichoke, ConvertMut, Eval, Globals, Parser as _};
 use crate::backtrace;
+use crate::prelude::core::{ConvertMut, Eval, Globals, Parser};
+use crate::prelude::*;
 
 const INLINE_EVAL_SWITCH_FILENAME: &[u8] = b"-e";
 

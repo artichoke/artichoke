@@ -27,8 +27,9 @@
 //! You can create an interpreter and begin executing code on it:
 //!
 //! ```
-//! # use artichoke::backend::{Eval, ValueLike};
-//! # fn main() -> Result<(), artichoke::backend::exception::Exception> {
+//! # use artichoke::prelude::core::*;
+//! # use artichoke::prelude::*;
+//! # fn main() -> Result<(), Exception> {
 //! let mut interp = artichoke::interpreter()?;
 //! let result = interp.eval(b"2 + 5")?;
 //! # Ok(())
@@ -39,8 +40,9 @@
 //! Ruby boxed values and Rust native types:
 //!
 //! ```
-//! # use artichoke::backend::{ConvertMut, ValueLike};
-//! # fn main() -> Result<(), artichoke::backend::exception::Exception> {
+//! # use artichoke::prelude::core::*;
+//! # use artichoke::prelude::*;
+//! # fn main() -> Result<(), Exception> {
 //! let mut interp = artichoke::interpreter()?;
 //! let s = interp.convert_mut("💎");
 //! let codepoint = s.funcall::<u32>(&mut interp, "ord", &[] /* args */, None /* block */)?;
@@ -87,9 +89,24 @@ doc_comment::doctest!("../artichoke-core/README.md");
 doc_comment::doctest!("../spec-runner/README.md");
 
 pub use artichoke_backend as backend;
-pub use backend::interpreter;
+pub use backend::prelude::interpreter;
 
 pub mod backtrace;
 pub mod parser;
 pub mod repl;
 pub mod ruby;
+
+/// A "prelude" for users of the `artichoke-backend` crate.
+///
+/// This prelude is similar to the standard library's prelude in that you'll
+/// almost always want to import its entire contents, but unlike the standard
+/// library's prelude, you'll have to do so manually:
+///
+/// ```
+/// use artichoke::prelude::*;
+/// ```
+///
+/// The prelude may grow over time as additional items see ubiquitous use.
+pub mod prelude {
+    pub use artichoke_backend::prelude::*;
+}

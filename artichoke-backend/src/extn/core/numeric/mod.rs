@@ -57,7 +57,7 @@ pub enum Coercion {
 /// # Examples
 ///
 /// ```
-/// # use artichoke_backend::{Convert, ConvertMut};
+/// # use artichoke_backend::prelude::core::*;
 /// # use artichoke_backend::extn::core::numeric::{self, Coercion};
 /// # fn main() -> Result<(), Box<std::error::Error>> {
 /// # let mut interp = artichoke_backend::interpreter()?;

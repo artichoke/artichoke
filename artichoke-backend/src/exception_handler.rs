@@ -1,7 +1,8 @@
+use crate::core::Value as _;
 use crate::exception::{CaughtException, Exception};
 use crate::gc::MrbGarbageCollection;
 use crate::value::Value;
-use crate::{Artichoke, ValueLike};
+use crate::Artichoke;
 
 /// Transform a `Exception` Ruby `Value` into an [`Exception`].
 ///

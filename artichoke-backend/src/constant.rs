@@ -1,10 +1,11 @@
 use std::ffi::CString;
 
+use crate::core::DefineConstant;
 use crate::def::{ConstantNameError, NotDefinedError};
 use crate::exception::Exception;
 use crate::sys;
 use crate::value::Value;
-use crate::{Artichoke, DefineConstant};
+use crate::Artichoke;
 
 impl DefineConstant for Artichoke {
     type Value = Value;

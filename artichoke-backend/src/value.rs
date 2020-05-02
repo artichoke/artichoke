@@ -2,14 +2,14 @@ use std::error;
 use std::fmt;
 use std::ptr;
 
-use crate::core::{self, value::Value as _};
+use crate::core::{Convert, ConvertMut, Intern, TryConvert, Value as ValueCore};
 use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
-use crate::{Artichoke, Convert, ConvertMut, Intern, TryConvert};
+use crate::Artichoke;
 
 /// Max argument count for function calls including initialize and yield.
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
@@ -198,7 +198,7 @@ impl Value {
     }
 }
 
-impl core::value::Value for Value {
+impl ValueCore for Value {
     type Artichoke = Artichoke;
     type Arg = Self;
     type Block = Self;

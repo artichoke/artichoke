@@ -7,7 +7,6 @@ use crate::extn::prelude::*;
 use crate::ffi;
 use crate::fs::RUBY_LOAD_PATH;
 use crate::state::parser::Context;
-use crate::Parser;
 
 const RUBY_EXTENSION: &str = "rb";
 
