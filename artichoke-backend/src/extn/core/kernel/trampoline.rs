@@ -15,7 +15,8 @@ pub fn integer(
 }
 
 pub fn load(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> {
-    kernel::require::load(interp, path)
+    let success = kernel::require::load(interp, path)?;
+    Ok(interp.convert(success))
 }
 
 pub fn print<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
@@ -80,10 +81,12 @@ where
 }
 
 pub fn require(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> {
-    kernel::require::require(interp, path, None)
+    let success = kernel::require::require(interp, path, None)?;
+    Ok(interp.convert(success))
 }
 
 pub fn require_relative(interp: &mut Artichoke, path: Value) -> Result<Value, Exception> {
     let relative_base = RelativePath::try_from_interp(interp)?;
-    kernel::require::require(interp, path, Some(relative_base))
+    let success = kernel::require::require(interp, path, Some(relative_base))?;
+    Ok(interp.convert(success))
 }
