@@ -54,22 +54,22 @@ pub fn require(
     let file = ffi::bytes_to_os_str(filename)?;
     let path = Path::new(file);
 
-    let is_rb = path
-        .extension()
-        .filter(|ext| ext == &RUBY_EXTENSION)
-        .is_some();
     let (path, alternate) = if path.is_relative() {
         let mut path = if let Some(ref base) = base {
             base.join(path)
         } else {
             Path::new(RUBY_LOAD_PATH).join(path)
         };
-        if !is_rb {
+        let is_rb = path
+            .extension()
+            .filter(|ext| ext == &RUBY_EXTENSION)
+            .is_some();
+        if is_rb {
+            (path, None)
+        } else {
             let alternate = path.clone();
             path.set_extension(RUBY_EXTENSION);
             (path, Some(alternate))
-        } else {
-            (path, None)
         }
     } else {
         (path.to_owned(), None)
