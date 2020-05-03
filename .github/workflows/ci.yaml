@@ -134,8 +134,6 @@ jobs:
   js:
     name: Lint and format JS
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
