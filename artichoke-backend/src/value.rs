@@ -7,7 +7,6 @@ use crate::core::{Convert, ConvertMut, Intern, TryConvert, Value as ValueCore};
 use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
-use crate::ffi::InterpreterExtractError;
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
@@ -109,14 +108,17 @@ impl Value {
         interp: &mut Artichoke,
         len: Int,
     ) -> Result<Option<protect::Range>, Exception> {
-        let _arena = interp.create_arena_savepoint();
-        let result =
-            unsafe { interp.with_ffi_boundary(|mrb| protect::is_range(mrb, self.inner(), len))? };
+        let mut arena = interp.create_arena_savepoint();
+        let result = unsafe {
+            arena
+                .interp()
+                .with_ffi_boundary(|mrb| protect::is_range(mrb, self.inner(), len))?
+        };
         match result {
             Ok(range) => Ok(range),
             Err(exception) => {
-                let exception = Value::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Value::new(arena.interp(), exception);
+                Err(exception_handler::last_error(arena.interp(), exception)?)
             }
         }
     }
@@ -221,7 +223,7 @@ impl ValueCore for Value {
     where
         Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
     {
-        let _arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
             let err = ArgCountError::new(args);
             warn!("{}", err);
@@ -235,9 +237,9 @@ impl ValueCore for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = interp.intern_symbol(func.as_bytes().to_vec());
+        let func = arena.interp().intern_symbol(func.as_bytes().to_vec());
         let result = unsafe {
-            interp.with_ffi_boundary(|mrb| {
+            arena.interp().with_ffi_boundary(|mrb| {
                 protect::funcall(
                     mrb,
                     self.inner(),
@@ -249,7 +251,7 @@ impl ValueCore for Value {
         };
         match result {
             Ok(value) => {
-                let value = Self::new(interp, value);
+                let value = Self::new(arena.interp(), value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -257,16 +259,16 @@ impl ValueCore for Value {
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
                     Err(Exception::from(Fatal::new(
-                        interp,
+                        arena.interp(),
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    value.try_into::<T>(interp)
+                    value.try_into::<T>(arena.interp())
                 }
             }
             Err(exception) => {
-                let exception = Self::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Self::new(arena.interp(), exception);
+                Err(exception_handler::last_error(arena.interp(), exception)?)
             }
         }
     }
@@ -350,14 +352,16 @@ impl Block {
     where
         Artichoke: TryConvert<Value, T, Error = Exception>,
     {
-        let _arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint();
 
         let result = unsafe {
-            interp.with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
+            arena
+                .interp()
+                .with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
         };
         match result {
             Ok(value) => {
-                let value = Value::new(interp, value);
+                let value = Value::new(arena.interp(), value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -365,16 +369,16 @@ impl Block {
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
                     Err(Exception::from(Fatal::new(
-                        interp,
+                        arena.interp(),
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    value.try_into::<T>(interp)
+                    value.try_into::<T>(arena.interp())
                 }
             }
             Err(exception) => {
-                let exception = Value::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Value::new(arena.interp(), exception);
+                Err(exception_handler::last_error(arena.interp(), exception)?)
             }
         }
     }

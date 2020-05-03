@@ -48,10 +48,8 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        self.state
-            .ok_or(InterpreterExtractError)?
-            .classes
-            .insert::<T>(Box::new(spec));
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        state.classes.insert::<T>(Box::new(spec));
         Ok(())
     }
 
@@ -63,11 +61,8 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        let spec = self
-            .state
-            .ok_or(InterpreterExtractError)?
-            .classes
-            .get::<T>();
+        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state.classes.get::<T>();
         Ok(spec)
     }
 
@@ -75,11 +70,8 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        let spec = self
-            .state
-            .ok_or(InterpreterExtractError)?
-            .classes
-            .get::<T>();
+        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state.classes.get::<T>();
         let spec = if let Some(spec) = spec {
             spec
         } else {
@@ -100,11 +92,8 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        let spec = self
-            .state
-            .ok_or(InterpreterExtractError)?
-            .classes
-            .get::<T>();
+        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state.classes.get::<T>();
         let spec = if let Some(spec) = spec {
             spec
         } else {

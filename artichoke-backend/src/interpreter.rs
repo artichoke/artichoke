@@ -1,5 +1,4 @@
 use std::error;
-use std::ffi::c_void;
 use std::fmt;
 use std::ptr::NonNull;
 

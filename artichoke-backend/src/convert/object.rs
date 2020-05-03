@@ -4,7 +4,6 @@ use std::mem;
 use std::ptr;
 use std::rc::Rc;
 
-use crate::class_registry::ClassRegistry;
 use crate::def::NotDefinedError;
 use crate::exception::Exception;
 use crate::extn::core::exception::TypeError;
@@ -46,9 +45,8 @@ where
         interp: &mut Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, Exception> {
-        let spec = interp
-            .state
-            .ok_or(InterpreterExtractError)?
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state
             .classes
             .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
@@ -104,9 +102,8 @@ where
             message.push_str(Self::ruby_type_name());
             return Err(Exception::from(TypeError::new(interp, message)));
         }
-        let spec = interp
-            .state
-            .ok_or(InterpreterExtractError)?
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state
             .classes
             .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;

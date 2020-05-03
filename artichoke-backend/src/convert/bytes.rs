@@ -3,7 +3,7 @@ use std::ffi::{CStr, OsStr, OsString};
 use std::slice;
 
 use crate::convert::UnboxRubyError;
-use crate::core::{ConvertMut, TryConvert, TryConvertMut};
+use crate::core::{ConvertMut, TryConvertMut};
 use crate::exception::Exception;
 use crate::ffi;
 use crate::sys;

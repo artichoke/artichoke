@@ -12,23 +12,37 @@ impl Prng for Artichoke {
     type Float = Fp;
 
     fn prng_fill_bytes(&mut self, buf: &mut [u8]) -> Result<(), Self::Error> {
-        self.state.ok_or(InterpreterExtractError)?.prng.bytes(buf);
+        self.state
+            .as_mut()
+            .ok_or(InterpreterExtractError)?
+            .prng
+            .bytes(buf);
         Ok(())
     }
 
     fn prng_seed(&self) -> Result<u64, Self::Error> {
-        let seed = self.state.ok_or(InterpreterExtractError)?.prng.seed();
+        let seed = self
+            .state
+            .as_ref()
+            .ok_or(InterpreterExtractError)?
+            .prng
+            .seed();
         Ok(seed)
     }
 
     fn prng_reseed(&mut self, seed: Option<u64>) -> Result<(), Self::Error> {
-        self.state.ok_or(InterpreterExtractError)?.prng.reseed(seed);
+        self.state
+            .as_mut()
+            .ok_or(InterpreterExtractError)?
+            .prng
+            .reseed(seed);
         Ok(())
     }
 
     fn prng_internal_state(&self) -> Result<Self::InternalState, Self::Error> {
         let internal_state = self
             .state
+            .as_ref()
             .ok_or(InterpreterExtractError)?
             .prng
             .internal_state();
@@ -38,6 +52,7 @@ impl Prng for Artichoke {
     fn rand_int(&mut self, max: Self::Int) -> Result<Self::Int, Self::Error> {
         let next = self
             .state
+            .as_mut()
             .ok_or(InterpreterExtractError)?
             .prng
             .rand_int(max);
@@ -47,6 +62,7 @@ impl Prng for Artichoke {
     fn rand_float(&mut self, max: Option<Self::Float>) -> Result<Self::Float, Self::Error> {
         let next = self
             .state
+            .as_mut()
             .ok_or(InterpreterExtractError)?
             .prng
             .rand_float(max);

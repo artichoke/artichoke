@@ -38,7 +38,7 @@ pub unsafe fn from_user_data(
         return Err(InterpreterExtractError);
     };
     let ud = mem::replace(&mut mrb.as_mut().ud, ptr::null_mut());
-    let mut state = if let Some(state) = NonNull::new(ud) {
+    let state = if let Some(state) = NonNull::new(ud) {
         state.cast::<State>()
     } else {
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");

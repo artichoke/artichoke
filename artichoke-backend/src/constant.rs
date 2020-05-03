@@ -1,11 +1,9 @@
 use std::ffi::CString;
 
-use crate::class_registry::ClassRegistry;
 use crate::core::DefineConstant;
 use crate::def::{ConstantNameError, NotDefinedError};
 use crate::exception::Exception;
 use crate::ffi::InterpreterExtractError;
-use crate::module_registry::ModuleRegistry;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -39,11 +37,10 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
         unsafe {
             let mrb = self.mrb.as_mut();
-            let mut rclass = self
-                .state
-                .ok_or(InterpreterExtractError)?
+            let mut rclass = state
                 .classes
                 .get::<T>()
                 .and_then(|spec| spec.rclass(mrb))
@@ -68,11 +65,10 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
         unsafe {
             let mrb = self.mrb.as_mut();
-            let mut rclass = self
-                .state
-                .ok_or(InterpreterExtractError)?
+            let mut rclass = state
                 .modules
                 .get::<T>()
                 .and_then(|spec| spec.rclass(mrb))

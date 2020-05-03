@@ -177,7 +177,7 @@ impl Artichoke {
     where
         F: FnOnce(*mut sys::mrb_state) -> T,
     {
-        if let Some(state) = self.state {
+        if let Some(state) = self.state.take() {
             let mrb = self.mrb.as_mut();
             mrb.ud = Box::into_raw(state).cast::<c_void>();
             let result = func(mrb);

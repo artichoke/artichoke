@@ -1,20 +1,16 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
-use crate::class_registry::ClassRegistry;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Free, Method, NotDefinedError};
 use crate::exception::Exception;
 use crate::ffi::InterpreterExtractError;
 use crate::method;
 use crate::sys;
-use crate::types::Int;
-use crate::value::Value;
 use crate::Artichoke;
 
 #[derive(Debug)]
@@ -49,10 +45,8 @@ impl<'a> Builder<'a> {
     where
         T: Any,
     {
-        let spec = self
-            .interp
-            .state
-            .ok_or(InterpreterExtractError)?
+        let state = self.interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state
             .classes
             .get::<T>()
             .ok_or_else(|| NotDefinedError::super_class(String::from(classname)))?;

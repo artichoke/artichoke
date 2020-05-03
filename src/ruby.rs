@@ -90,13 +90,14 @@ where
     W: io::Write,
 {
     let mut interp = crate::interpreter()?;
-    interp.pop_context();
+    interp.pop_context()?;
     // safety:
     //
     // - `Context::new_unchecked` requires that its argument has no NUL bytes.
     // - `INLINE_EVAL_SWITCH_FILENAME` is controlled by this crate.
     // - A test asserts that `INLINE_EVAL_SWITCH_FILENAME` has no NUL bytes.
-    interp.push_context(unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH_FILENAME) });
+    let context = unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH_FILENAME) };
+    interp.push_context(context)?;
     if let Some(ref fixture) = fixture {
         setup_fixture_hack(&mut interp, fixture)?;
     }

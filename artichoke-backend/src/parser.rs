@@ -13,13 +13,18 @@ impl Parser for Artichoke {
 
     fn reset_parser(&mut self) -> Result<(), Self::Error> {
         let mrb = unsafe { self.mrb.as_mut() };
-        self.state.ok_or(InterpreterExtractError)?.parser.reset(mrb);
+        self.state
+            .as_mut()
+            .ok_or(InterpreterExtractError)?
+            .parser
+            .reset(mrb);
         Ok(())
     }
 
     fn fetch_lineno(&self) -> Result<usize, Self::Error> {
         let lineno = self
             .state
+            .as_ref()
             .ok_or(InterpreterExtractError)?
             .parser
             .fetch_lineno();
@@ -29,6 +34,7 @@ impl Parser for Artichoke {
     fn add_fetch_lineno(&mut self, val: usize) -> Result<usize, Self::Error> {
         let lineno = self
             .state
+            .as_mut()
             .ok_or(InterpreterExtractError)?
             .parser
             .add_fetch_lineno(val)?;
@@ -38,6 +44,7 @@ impl Parser for Artichoke {
     fn push_context(&mut self, context: Self::Context) -> Result<(), Self::Error> {
         let mrb = unsafe { self.mrb.as_mut() };
         self.state
+            .as_mut()
             .ok_or(InterpreterExtractError)?
             .parser
             .push_context(mrb, context);
@@ -48,6 +55,7 @@ impl Parser for Artichoke {
         let mrb = unsafe { self.mrb.as_mut() };
         let context = self
             .state
+            .as_mut()
             .ok_or(InterpreterExtractError)?
             .parser
             .pop_context(mrb);
@@ -57,6 +65,7 @@ impl Parser for Artichoke {
     fn peek_context(&self) -> Result<Option<&Self::Context>, Self::Error> {
         let context = self
             .state
+            .as_ref()
             .ok_or(InterpreterExtractError)?
             .parser
             .peek_context();

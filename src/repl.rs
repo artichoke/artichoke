@@ -148,12 +148,14 @@ where
     let mut interp = crate::interpreter()?;
     writeln!(output, "{}", preamble(&mut interp)?)?;
 
-    interp.reset_parser();
+    interp.reset_parser()?;
     // safety:
-    // Context::new_unchecked requires that REPL_FILENAME have no NUL bytes.
-    // REPL_FILENAME is controlled by this crate and asserts this invariant
-    // with a test.
-    interp.push_context(unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) });
+    //
+    // - `Context::new_unchecked` requires that its argument has no NUL bytes.
+    // - `REPL_FILENAME` is controlled by this crate.
+    // - A test asserts that `REPL_FILENAME` has no NUL bytes.
+    let context = unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) };
+    interp.push_context(context)?;
     let mut parser = Parser::new(&mut interp).ok_or(ParserAllocError)?;
 
     let mut rl = Editor::<()>::new();
