@@ -219,7 +219,7 @@ impl RegexpType for Utf8 {
             // > capture group that corresponds to the full match.
             //
             // [docs]: https://docs.rs/regex/1.3.4/regex/struct.Captures.html#method.len
-            interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default());
+            interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default())?;
 
             let fullmatch = captures
                 .get(0)
@@ -336,7 +336,7 @@ impl RegexpType for Utf8 {
             // > capture group that corresponds to the full match.
             //
             // [docs]: https://docs.rs/regex/1.3.4/regex/struct.Captures.html#method.len
-            interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default());
+            interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default())?;
 
             let fullmatch = captures
                 .get(0)
@@ -399,7 +399,7 @@ impl RegexpType for Utf8 {
             // > capture group that corresponds to the full match.
             //
             // [docs]: https://docs.rs/regex/1.3.4/regex/struct.Captures.html#method.len
-            interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default());
+            interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default())?;
 
             let fullmatch = captures
                 .get(0)
@@ -536,7 +536,7 @@ impl RegexpType for Utf8 {
 
         // regex crate always includes the zero group in the captures len.
         let len = self.regex.captures_len().checked_sub(1);
-        interp.set_active_regexp_globals(len.unwrap_or_default());
+        interp.set_active_regexp_globals(len.unwrap_or_default())?;
         let len = len.and_then(NonZeroUsize::new);
         if let Some(block) = block {
             if let Some(len) = len {

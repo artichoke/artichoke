@@ -1,6 +1,7 @@
 use std::any::Any;
 
 use crate::exception::Exception;
+use crate::ffi::InterpreterExtractError;
 use crate::module;
 use crate::sys;
 use crate::value::Value;
@@ -41,7 +42,10 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        self.state.modules.insert::<T>(Box::new(spec));
+        self.state
+            .ok_or(InterpreterExtractError)?
+            .modules
+            .insert::<T>(Box::new(spec));
         Ok(())
     }
 
@@ -53,14 +57,24 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        Ok(self.state.modules.get::<T>())
+        let spec = self
+            .state
+            .ok_or(InterpreterExtractError)?
+            .modules
+            .get::<T>();
+        Ok(spec)
     }
 
     fn module_of<T>(&mut self) -> Result<Option<Value>, Exception>
     where
         T: Any,
     {
-        let spec = if let Some(spec) = self.state.modules.get::<T>() {
+        let spec = self
+            .state
+            .ok_or(InterpreterExtractError)?
+            .modules
+            .get::<T>();
+        let spec = if let Some(spec) = spec {
             spec
         } else {
             return Ok(None);

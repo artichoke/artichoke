@@ -10,7 +10,6 @@ use crate::core::Intern;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Method, NotDefinedError};
 use crate::method;
 use crate::sys;
-use crate::value::Value;
 use crate::Artichoke;
 
 #[derive(Debug)]

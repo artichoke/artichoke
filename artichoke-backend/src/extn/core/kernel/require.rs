@@ -112,11 +112,8 @@ impl RelativePath {
     }
 
     pub fn try_from_interp(interp: &mut Artichoke) -> Result<Self, Exception> {
-        let borrow = interp.0.borrow();
-        // TODO(GH-468): Use `Parser::peek_context`.
-        let context = borrow
-            .parser
-            .peek_context()
+        let context = interp
+            .peek_context()?
             .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
         let path = ffi::bytes_to_os_str(context.filename())?;
         let path = Path::new(path);

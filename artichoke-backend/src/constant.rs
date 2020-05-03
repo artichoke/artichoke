@@ -4,6 +4,7 @@ use crate::class_registry::ClassRegistry;
 use crate::core::DefineConstant;
 use crate::def::{ConstantNameError, NotDefinedError};
 use crate::exception::Exception;
+use crate::ffi::InterpreterExtractError;
 use crate::module_registry::ModuleRegistry;
 use crate::sys;
 use crate::value::Value;
@@ -38,14 +39,15 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let mrb = unsafe { self.mrb.as_mut() };
-        let mut rclass = self
-            .state
-            .classes
-            .get::<T>()
-            .and_then(|spec| spec.rclass(mrb))
-            .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
         unsafe {
+            let mrb = self.mrb.as_mut();
+            let mut rclass = self
+                .state
+                .ok_or(InterpreterExtractError)?
+                .classes
+                .get::<T>()
+                .and_then(|spec| spec.rclass(mrb))
+                .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
             sys::mrb_define_const(
                 mrb,
                 rclass.as_mut(),
@@ -66,14 +68,15 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let mrb = unsafe { self.mrb.as_mut() };
-        let mut rclass = self
-            .state
-            .modules
-            .get::<T>()
-            .and_then(|spec| spec.rclass(mrb))
-            .ok_or_else(|| NotDefinedError::module_constant(String::from(constant)))?;
         unsafe {
+            let mrb = self.mrb.as_mut();
+            let mut rclass = self
+                .state
+                .ok_or(InterpreterExtractError)?
+                .modules
+                .get::<T>()
+                .and_then(|spec| spec.rclass(mrb))
+                .ok_or_else(|| NotDefinedError::module_constant(String::from(constant)))?;
             sys::mrb_define_const(
                 mrb,
                 rclass.as_mut(),

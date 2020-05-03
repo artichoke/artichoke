@@ -48,7 +48,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
 
     debug!(
         "Allocated {}",
-        sys::mrb_sys_state_debug(unsafe { mrb.as_mut() })
+        sys::mrb_sys_state_debug(unsafe { interp.mrb.as_mut() })
     );
 
     // mruby lazily initializes some core objects like top_self and generates a

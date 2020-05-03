@@ -8,6 +8,7 @@ use crate::class_registry::ClassRegistry;
 use crate::def::NotDefinedError;
 use crate::exception::Exception;
 use crate::extn::core::exception::TypeError;
+use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::types::Ruby;
 use crate::value::Value;
@@ -47,6 +48,7 @@ where
     ) -> Result<Value, Exception> {
         let spec = interp
             .state
+            .ok_or(InterpreterExtractError)?
             .classes
             .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
@@ -104,6 +106,7 @@ where
         }
         let spec = interp
             .state
+            .ok_or(InterpreterExtractError)?
             .classes
             .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;

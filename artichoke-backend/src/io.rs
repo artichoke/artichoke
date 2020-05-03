@@ -6,12 +6,13 @@ use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, Io};
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception;
+use crate::ffi::InterpreterExtractError;
 use crate::state::output::Output;
 use crate::sys;
 use crate::Artichoke;
 
 impl Io for Artichoke {
-    type Error = IOError;
+    type Error = Exception;
 
     /// Writes the given bytes to the interpreter stdout stream.
     ///
@@ -21,7 +22,10 @@ impl Io for Artichoke {
     ///
     /// If the output stream encounters an error, an error is returned.
     fn print<T: AsRef<[u8]>>(&mut self, message: T) -> Result<(), Self::Error> {
-        self.0.borrow_mut().output.write_stdout(message.as_ref())?;
+        self.state
+            .ok_or(InterpreterExtractError)?
+            .output
+            .write_stdout(message.as_ref())?;
         Ok(())
     }
 
@@ -34,8 +38,14 @@ impl Io for Artichoke {
     ///
     /// If the output stream encounters an error, an error is returned.
     fn puts<T: AsRef<[u8]>>(&mut self, message: T) -> Result<(), Self::Error> {
-        self.0.borrow_mut().output.write_stdout(message.as_ref())?;
-        self.0.borrow_mut().output.write_stdout(b"\n")?;
+        self.state
+            .ok_or(InterpreterExtractError)?
+            .output
+            .write_stdout(message.as_ref())?;
+        self.state
+            .ok_or(InterpreterExtractError)?
+            .output
+            .write_stdout(b"\n")?;
         Ok(())
     }
 }

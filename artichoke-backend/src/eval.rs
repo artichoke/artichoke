@@ -4,7 +4,8 @@ use crate::core::Eval;
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
-use crate::ffi;
+use crate::ffi::{self, InterpreterExtractError};
+use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::value::Value;
 use crate::Artichoke;
@@ -15,13 +16,14 @@ impl Eval for Artichoke {
     type Error = Exception;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
-        let context = self.state.parser.context_mut() as *mut _;
-
+        let arena = self.create_arena_savepoint();
         let result = unsafe {
-            arena.interp().prepare_to_cross_ffi_boundary();
-            let mrb = self.mrb.as_mut();
-            let result = protect::eval(mrb, context, code);
-            arena.interp().return_from_ffi_boundary();
+            let context = self
+                .state
+                .ok_or(InterpreterExtractError)?
+                .parser
+                .context_mut() as *mut _;
+            self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
         };
         match result {
             Ok(value) => {
@@ -69,8 +71,7 @@ mod tests {
         interp.push_context(context);
         let _ = interp.eval(b"15").unwrap();
         assert_eq!(
-            // TODO(GH-468): Use `Parser::peek_context`.
-            interp.0.borrow().parser.peek_context().unwrap().filename(),
+            interp.peek_context().unwrap().filename(),
             &b"context.rb"[..]
         );
     }
@@ -79,8 +80,7 @@ mod tests {
     fn root_context_is_not_pushed_after_eval() {
         let mut interp = crate::interpreter().unwrap();
         let _ = interp.eval(b"15").unwrap();
-        // TODO(GH-468): Use `Parser::peek_context`.
-        assert!(interp.0.borrow().parser.peek_context().is_none());
+        assert!(interp.peek_context().is_none());
     }
 
     mod nested {

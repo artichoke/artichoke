@@ -44,8 +44,7 @@ pub unsafe fn from_user_data(
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
         return Err(InterpreterExtractError);
     };
-    let state = Some(Box::from_raw(state.as_mut()));
-    // At this point, `Rc::strong_count` will be increased by 1.
+    let state = Some(Box::from_raw(state.as_ptr()));
     trace!(
         "Extracted Artichoke from user data pointer on {}",
         sys::mrb_sys_state_debug(mrb.as_mut())

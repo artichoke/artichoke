@@ -10,6 +10,7 @@ use std::ptr::NonNull;
 use crate::class_registry::ClassRegistry;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Free, Method, NotDefinedError};
 use crate::exception::Exception;
+use crate::ffi::InterpreterExtractError;
 use crate::method;
 use crate::sys;
 use crate::types::Int;
@@ -51,6 +52,7 @@ impl<'a> Builder<'a> {
         let spec = self
             .interp
             .state
+            .ok_or(InterpreterExtractError)?
             .classes
             .get::<T>()
             .ok_or_else(|| NotDefinedError::super_class(String::from(classname)))?;

@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 
 use crate::class;
 use crate::exception::Exception;
+use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::types::Int;
 use crate::value::Value;
@@ -47,7 +48,10 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        self.state.classes.insert::<T>(Box::new(spec));
+        self.state
+            .ok_or(InterpreterExtractError)?
+            .classes
+            .insert::<T>(Box::new(spec));
         Ok(())
     }
 
@@ -59,14 +63,24 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        Ok(self.state.classes.get::<T>())
+        let spec = self
+            .state
+            .ok_or(InterpreterExtractError)?
+            .classes
+            .get::<T>();
+        Ok(spec)
     }
 
     fn class_of<T>(&mut self) -> Result<Option<Value>, Exception>
     where
         T: Any,
     {
-        let spec = if let Some(spec) = self.state.classes.get::<T>() {
+        let spec = self
+            .state
+            .ok_or(InterpreterExtractError)?
+            .classes
+            .get::<T>();
+        let spec = if let Some(spec) = spec {
             spec
         } else {
             return Ok(None);
@@ -86,7 +100,12 @@ impl ClassRegistry for Artichoke {
     where
         T: Any,
     {
-        let spec = if let Some(spec) = self.state.classes.get::<T>() {
+        let spec = self
+            .state
+            .ok_or(InterpreterExtractError)?
+            .classes
+            .get::<T>();
+        let spec = if let Some(spec) = spec {
             spec
         } else {
             return Ok(None);

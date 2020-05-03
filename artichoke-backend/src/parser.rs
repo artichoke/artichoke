@@ -1,10 +1,11 @@
 use crate::class_registry::ClassRegistry;
-use crate::core::{IncrementLinenoError, Parser};
+use crate::core::{ConvertMut, IncrementLinenoError, Parser};
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::ScriptError;
 use crate::ffi::InterpreterExtractError;
 use crate::state::parser::Context;
-use crate::{Artichoke, ConvertMut};
+use crate::sys;
+use crate::Artichoke;
 
 impl Parser for Artichoke {
     type Context = Context;
@@ -88,27 +89,27 @@ impl RubyException for IncrementLinenoError {
 }
 
 impl From<IncrementLinenoError> for Exception {
-    fn from(exception: IOError) -> Self {
+    fn from(exception: IncrementLinenoError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
 impl From<Box<IncrementLinenoError>> for Exception {
-    fn from(exception: Box<IOError>) -> Self {
+    fn from(exception: Box<IncrementLinenoError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
 #[allow(clippy::use_self)]
 impl From<IncrementLinenoError> for Box<dyn RubyException> {
-    fn from(exception: IOError) -> Box<dyn RubyException> {
+    fn from(exception: IncrementLinenoError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
 #[allow(clippy::use_self)]
 impl From<Box<IncrementLinenoError>> for Box<dyn RubyException> {
-    fn from(exception: Box<IOError>) -> Box<dyn RubyException> {
+    fn from(exception: Box<IncrementLinenoError>) -> Box<dyn RubyException> {
         exception
     }
 }

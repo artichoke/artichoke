@@ -170,19 +170,23 @@ pub struct Artichoke {
 }
 
 impl Artichoke {
-    pub unsafe fn prepare_to_cross_ffi_boundary(&mut self) {
+    pub unsafe fn with_ffi_boundary<F, T>(
+        &mut self,
+        func: F,
+    ) -> Result<T, ffi::InterpreterExtractError>
+    where
+        F: FnOnce(*mut sys::mrb_state) -> T,
+    {
         if let Some(state) = self.state {
-            unsafe {
-                let mrb = self.mrb.as_mut();
-                mrb.ud = Box::into_raw(state).cast::<c_void>();
-            }
+            let mrb = self.mrb.as_mut();
+            mrb.ud = Box::into_raw(state).cast::<c_void>();
+            let result = func(mrb);
+            let extracted = ffi::from_user_data(mrb)?;
+            *self = extracted;
+            Ok(result)
+        } else {
+            Err(ffi::InterpreterExtractError)
         }
-    }
-
-    pub unsafe fn return_from_ffi_boundary(&mut self) -> Result<(), ffi::InterpreterExtractError> {
-        let mrb = self.mrb.as_mut();
-        let extracted = ffi::from_user_data(mrb)?;
-        *self = extracted;
     }
 
     /// Consume an interpreter and return the pointer to the underlying
@@ -203,8 +207,8 @@ impl Artichoke {
     #[must_use]
     pub unsafe fn into_raw(mut interp: Self) -> *mut sys::mrb_state {
         let mrb = interp.mrb.as_mut();
-        if let Some(state) = self.state {
-            mrb.ud = Box::into_raw(state).cast::<c_void>();
+        if let Some(state) = interp.state {
+            mrb.ud = Box::into_raw(state) as *mut c_void;
         }
         mrb
     }
@@ -213,9 +217,11 @@ impl Artichoke {
     /// [live](gc::MrbGarbageCollection::live_object_count)
     /// [`Value`](value::Value)s.
     pub fn close(mut self) {
-        let mrb = unsafe { self.mrb.as_mut() };
-        self.state.close(mrb);
         unsafe {
+            let mrb = self.mrb.as_mut();
+            if let Some(state) = self.state {
+                state.close(mrb);
+            }
             sys::mrb_close(mrb);
         }
     }
