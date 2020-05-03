@@ -1,5 +1,11 @@
 name: Fuzz
 on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
   schedule:
     - cron: "0 12 * * *"
 jobs:
@@ -35,4 +41,8 @@ jobs:
         run: cargo install cargo-fuzz
 
       - name: Fuzz eval
+        run: cargo fuzz build
+
+      - name: Fuzz eval
+        if: github.event_name == 'schedule'
         run: cargo fuzz run eval -- -max_total_time=1800 # 30 minutes
