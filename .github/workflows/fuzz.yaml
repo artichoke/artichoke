@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
   schedule:
     - cron: "0 12 * * *"
 jobs:
@@ -40,7 +37,7 @@ jobs:
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
 
-      - name: Fuzz eval
+      - name: Build fuzz targets
         run: cargo fuzz build
 
       - name: Fuzz eval
