@@ -53,7 +53,7 @@ unsafe extern "C" fn artichoke_random_initialize(
     let result = trampoline::initialize(&mut interp, seed, slf);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -69,7 +69,7 @@ unsafe extern "C" fn artichoke_random_eq(
     let result = trampoline::equal(&mut interp, rand, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -85,7 +85,7 @@ unsafe extern "C" fn artichoke_random_bytes(
     let result = trampoline::bytes(&mut interp, rand, size);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -101,7 +101,7 @@ unsafe extern "C" fn artichoke_random_rand(
     let result = trampoline::rand(&mut interp, rand, max);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -116,7 +116,7 @@ unsafe extern "C" fn artichoke_random_seed(
     let result = trampoline::seed(&mut interp, rand);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -130,7 +130,7 @@ unsafe extern "C" fn artichoke_random_self_new_seed(
     let result = trampoline::new_seed(&mut interp);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -145,7 +145,7 @@ unsafe extern "C" fn artichoke_random_self_srand(
     let result = trampoline::srand(&mut interp, number);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -160,6 +160,6 @@ unsafe extern "C" fn artichoke_random_self_urandom(
     let result = trampoline::urandom(&mut interp, size);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }

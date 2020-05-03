@@ -5,7 +5,6 @@ use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
 use crate::ffi::{self, InterpreterExtractError};
-use crate::gc::MrbGarbageCollection;
 use crate::sys::protect;
 use crate::value::Value;
 use crate::Artichoke;
@@ -16,39 +15,32 @@ impl Eval for Artichoke {
     type Error = Exception;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
-        let mut arena = self.create_arena_savepoint();
         let result = unsafe {
-            let context = arena
-                .interp()
+            let context = self
                 .state
                 .as_mut()
                 .ok_or(InterpreterExtractError)?
                 .parser
                 .context_mut() as *mut _;
-            arena
-                .interp()
-                .with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
+            self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
         };
         match result {
             Ok(value) => {
-                let value = Value::new(arena.interp(), value);
+                let value = Value::new(self, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
                     // and may result in a segfault.
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
-                    Err(Exception::from(Fatal::new(
-                        arena.interp(),
-                        "Unreachable Ruby value",
-                    )))
+                    Err(Exception::from(Fatal::new(self, "Unreachable Ruby value")))
                 } else {
                     Ok(value)
                 }
             }
             Err(exception) => {
-                let exception = Value::new(arena.interp(), exception);
-                Err(exception_handler::last_error(arena.interp(), exception)?)
+                let exception = Value::new(self, exception);
+                Err(exception_handler::last_error(self, exception)?)
             }
         }
     }

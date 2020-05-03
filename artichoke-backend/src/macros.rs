@@ -14,14 +14,14 @@
 macro_rules! unwrap_interpreter {
     ($mrb:expr, or_else = ()) => {
         if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
-            $crate::artichoke::ArtichokeGuard::new(interp)
+            interp
         } else {
             return;
         }
     };
     ($mrb:expr, or_else = $default:expr) => {
         if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
-            $crate::artichoke::ArtichokeGuard::new(interp)
+            interp
         } else {
             return $default;
         }

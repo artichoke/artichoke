@@ -43,7 +43,7 @@ unsafe extern "C" fn artichoke_env_initialize(
     let result = env::initialize(&mut interp, Some(slf));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -59,7 +59,7 @@ unsafe extern "C" fn artichoke_env_element_reference(
     let result = env::element_reference(&mut interp, obj, &name);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -76,7 +76,7 @@ unsafe extern "C" fn artichoke_env_element_assignment(
     let result = env::element_assignment(&mut interp, obj, &name, value);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -91,6 +91,6 @@ unsafe extern "C" fn artichoke_env_to_h(
     let result = env::to_h(&mut interp, obj);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }

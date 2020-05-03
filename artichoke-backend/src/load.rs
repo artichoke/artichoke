@@ -69,15 +69,17 @@ impl LoadSources for Artichoke {
     where
         P: AsRef<Path>,
     {
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
-        // Load Rust `File` first because an File may define classes and
-        // modules with `LoadSources` and Ruby files can require arbitrary
-        // other files, including some child sources that may depend on these
-        // module definitions.
-        let hook = state.vfs.get_extension(path.as_ref());
-        if let Some(hook) = hook {
-            // dynamic, Rust-backed `File` require
-            hook(self)?;
+        {
+            let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+            // Load Rust `File` first because an File may define classes and
+            // modules with `LoadSources` and Ruby files can require arbitrary
+            // other files, including some child sources that may depend on these
+            // module definitions.
+            let hook = state.vfs.get_extension(path.as_ref());
+            if let Some(hook) = hook {
+                // dynamic, Rust-backed `File` require
+                hook(self)?;
+            }
         }
         let contents = self.read_source_file_contents(path.as_ref())?.into_owned();
         self.eval(contents.as_ref())?;

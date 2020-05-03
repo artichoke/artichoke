@@ -60,7 +60,7 @@ unsafe extern "C" fn artichoke_kernel_integer(
     let result = trampoline::integer(&mut interp, arg, base);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -74,7 +74,7 @@ unsafe extern "C" fn artichoke_kernel_load(
     let result = trampoline::load(&mut interp, file);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -92,7 +92,7 @@ unsafe extern "C" fn artichoke_kernel_p(
     let result = trampoline::p(&mut interp, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -110,7 +110,7 @@ unsafe extern "C" fn artichoke_kernel_print(
     let result = trampoline::print(&mut interp, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -128,7 +128,7 @@ unsafe extern "C" fn artichoke_kernel_puts(
     let result = trampoline::puts(&mut interp, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -142,7 +142,7 @@ unsafe extern "C" fn artichoke_kernel_require(
     let result = trampoline::require(&mut interp, file);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -156,6 +156,6 @@ unsafe extern "C" fn artichoke_kernel_require_relative(
     let result = trampoline::require_relative(&mut interp, file);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }

@@ -14,7 +14,7 @@ unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_val
     let result = result.try_into_ruby(&mut interp, None);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -31,7 +31,7 @@ unsafe extern "C" fn artichoke_ary_new_capa(
     let result = result.try_into_ruby(&mut interp, None);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -54,7 +54,7 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -75,7 +75,7 @@ unsafe extern "C" fn artichoke_ary_new_assoc(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -95,7 +95,7 @@ unsafe extern "C" fn artichoke_ary_splat(
     let result = result.try_into_ruby(&mut interp, None);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -126,7 +126,7 @@ unsafe extern "C" fn artichoke_ary_concat(
             sys::mrb_write_barrier(mrb, basic);
             ary.inner()
         }
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -155,7 +155,7 @@ unsafe extern "C" fn artichoke_ary_pop(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -187,7 +187,7 @@ unsafe extern "C" fn artichoke_ary_push(
             sys::mrb_write_barrier(mrb, basic);
             ary.inner()
         }
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -214,7 +214,7 @@ unsafe extern "C" fn artichoke_ary_ref(
     };
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -265,7 +265,7 @@ unsafe extern "C" fn artichoke_ary_set(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
@@ -294,7 +294,7 @@ unsafe extern "C" fn artichoke_ary_shift(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp.into_inner(), exception),
+        Err(exception) => exception::raise(interp, exception),
     }
 }
 
