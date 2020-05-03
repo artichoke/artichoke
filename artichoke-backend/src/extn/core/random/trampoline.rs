@@ -15,7 +15,7 @@ pub fn initialize(
 pub fn equal(interp: &mut Artichoke, rand: Value, other: Value) -> Result<Value, Exception> {
     let rand = unsafe { Random::try_from_ruby(interp, &rand)? };
     let borrow = rand.borrow();
-    let eql = borrow.eql(interp, other);
+    let eql = borrow.eql(interp, other)?;
     Ok(interp.convert(eql))
 }
 
@@ -38,7 +38,7 @@ pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<V
 pub fn seed(interp: &mut Artichoke, rand: Value) -> Result<Value, Exception> {
     let rand = unsafe { Random::try_from_ruby(interp, &rand)? };
     let borrow = rand.borrow();
-    let seed = borrow.seed(interp);
+    let seed = borrow.seed(interp)?;
     Ok(interp.convert(seed))
 }
 

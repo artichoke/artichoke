@@ -48,9 +48,8 @@ impl TryConvertMut<Option<Value>, Seed> for Artichoke {
 }
 
 pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Exception> {
-    let mut borrow = interp.0.borrow_mut();
-    let old_seed = borrow.prng.seed();
-    borrow.prng.reseed(seed.to_reseed());
+    let old_seed = interp.prng_seed()?;
+    interp.prng_reseed(seed.to_reseed())?;
     #[allow(clippy::cast_possible_wrap)]
     Ok(old_seed as Int)
 }
@@ -101,13 +100,13 @@ impl Random {
         Ok(Self(backend::rand::new(seed.to_reseed())))
     }
 
-    pub fn eql(&self, interp: &mut Artichoke, other: Value) -> bool {
+    pub fn eql(&self, interp: &mut Artichoke, other: Value) -> Result<bool, Exception> {
         if let Ok(other) = unsafe { Random::try_from_ruby(interp, &other) } {
-            let this_seed = self.inner().seed(interp);
-            let other_seed = other.borrow().inner().seed(interp);
-            this_seed == other_seed
+            let this_seed = self.inner().seed(interp)?;
+            let other_seed = other.borrow().inner().seed(interp)?;
+            Ok(this_seed == other_seed)
         } else {
-            false
+            Ok(false)
         }
     }
 
@@ -116,7 +115,7 @@ impl Random {
             Ok(0) => Ok(Vec::new()),
             Ok(len) => {
                 let mut buf = vec![0; len];
-                self.inner_mut().bytes(interp, &mut buf);
+                self.inner_mut().bytes(interp, &mut buf)?;
                 Ok(buf)
             }
             Err(_) => Err(Exception::from(ArgumentError::new(
@@ -145,11 +144,11 @@ impl Random {
                 Err(Exception::from(ArgumentError::new_raw(interp, message)))
             }
             RandomNumberMax::Float(max) if max == 0.0 => {
-                let number = self.inner_mut().rand_float(interp, None);
+                let number = self.inner_mut().rand_float(interp, None)?;
                 Ok(RandomNumber::Float(number))
             }
             RandomNumberMax::Float(max) => {
-                let number = self.inner_mut().rand_float(interp, Some(max));
+                let number = self.inner_mut().rand_float(interp, Some(max))?;
                 Ok(RandomNumber::Float(number))
             }
             RandomNumberMax::Integer(max) if max < 1 => {
@@ -158,22 +157,22 @@ impl Random {
                 Err(Exception::from(ArgumentError::new(interp, message)))
             }
             RandomNumberMax::Integer(max) => {
-                let number = self.inner_mut().rand_int(interp, max);
+                let number = self.inner_mut().rand_int(interp, max)?;
                 Ok(RandomNumber::Integer(number))
             }
             RandomNumberMax::None => {
-                let number = self.inner_mut().rand_float(interp, None);
+                let number = self.inner_mut().rand_float(interp, None)?;
                 Ok(RandomNumber::Float(number))
             }
         }
     }
 
     #[inline]
-    pub fn seed(&self, interp: &mut Artichoke) -> Int {
-        let seed = self.inner().seed(interp);
+    pub fn seed(&self, interp: &mut Artichoke) -> Result<Int, Exception> {
+        let seed = self.inner().seed(interp)?;
         #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         let seed = seed as Int;
-        seed
+        Ok(seed)
     }
 
     #[must_use]
