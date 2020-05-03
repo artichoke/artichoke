@@ -406,7 +406,7 @@ mod tests {
         unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             let interp = unwrap_interpreter!(mrb);
             let exc = RuntimeError::new(&interp, "something went wrong");
-            exception::raise(interp, exc)
+            exception::raise(interp.into_inner(), exc)
         }
     }
 

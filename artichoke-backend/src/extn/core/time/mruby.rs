@@ -41,7 +41,7 @@ unsafe extern "C" fn artichoke_time_self_now(
     let result = trampoline::now(&mut interp);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -56,7 +56,7 @@ unsafe extern "C" fn artichoke_time_day(
     let result = trampoline::day(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -71,7 +71,7 @@ unsafe extern "C" fn artichoke_time_hour(
     let result = trampoline::hour(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -86,7 +86,7 @@ unsafe extern "C" fn artichoke_time_minute(
     let result = trampoline::minute(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -101,7 +101,7 @@ unsafe extern "C" fn artichoke_time_month(
     let result = trampoline::month(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -116,7 +116,7 @@ unsafe extern "C" fn artichoke_time_nanosecond(
     let result = trampoline::nanosecond(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -131,7 +131,7 @@ unsafe extern "C" fn artichoke_time_second(
     let result = trampoline::second(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -146,7 +146,7 @@ unsafe extern "C" fn artichoke_time_microsecond(
     let result = trampoline::microsecond(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -161,7 +161,7 @@ unsafe extern "C" fn artichoke_time_weekday(
     let result = trampoline::weekday(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -176,7 +176,7 @@ unsafe extern "C" fn artichoke_time_year_day(
     let result = trampoline::year_day(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -191,6 +191,6 @@ unsafe extern "C" fn artichoke_time_year(
     let result = trampoline::year(&mut interp, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }

@@ -83,13 +83,11 @@
 #[macro_use]
 extern crate log;
 
-use std::ffi::c_void;
-use std::ptr::NonNull;
-
 #[macro_use]
 #[doc(hidden)]
 pub mod macros;
 
+mod artichoke;
 pub mod class;
 pub mod class_registry;
 mod constant;
@@ -125,6 +123,7 @@ mod warn;
 #[cfg(test)]
 mod test;
 
+pub use crate::artichoke::{Artichoke, ArtichokeGuard};
 pub use crate::interpreter::interpreter;
 pub use artichoke_core::prelude as core;
 
@@ -147,82 +146,4 @@ pub mod prelude {
     pub use crate::gc::MrbGarbageCollection;
     pub use crate::interpreter::interpreter;
     pub use crate::Artichoke;
-}
-
-/// Interpreter instance.
-///
-/// The interpreter [`State`](state::State) is wrapped in an `Rc<RefCell<_>>`.
-///
-/// The [`Rc`] enables the State to be cloned so it can be stored in the
-/// [`sys::mrb_state`],
-/// [extracted in `extern "C"` functions](ffi::from_user_data), and used in
-/// [`Value`](value::Value) instances.
-///
-/// The [`RefCell`] enables mutable access to the underlying
-/// [`State`](state::State), even across an FFI boundary.
-///
-/// Functionality is added to the interpreter via traits, for example,
-/// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
-#[derive(Debug)]
-pub struct Artichoke {
-    pub mrb: NonNull<sys::mrb_state>,
-    pub state: Option<Box<state::State>>,
-}
-
-impl Artichoke {
-    pub unsafe fn with_ffi_boundary<F, T>(
-        &mut self,
-        func: F,
-    ) -> Result<T, ffi::InterpreterExtractError>
-    where
-        F: FnOnce(*mut sys::mrb_state) -> T,
-    {
-        if let Some(state) = self.state.take() {
-            let mrb = self.mrb.as_mut();
-            mrb.ud = Box::into_raw(state).cast::<c_void>();
-            let result = func(mrb);
-            let extracted = ffi::from_user_data(mrb)?;
-            *self = extracted;
-            Ok(result)
-        } else {
-            Err(ffi::InterpreterExtractError)
-        }
-    }
-
-    /// Consume an interpreter and return the pointer to the underlying
-    /// [`sys::mrb_state`].
-    ///
-    /// This function does not free any interpreter resources. Its intended use
-    /// is to prepare the interpreter to cross over an FFI boundary.
-    ///
-    /// This is an associated function and must be called as
-    /// `Artichoke::into_raw(interp)`.
-    ///
-    /// # Safety
-    ///
-    /// After calling this function, the caller is responsible for properly
-    /// freeing the memory occupied by the interpreter heap. The easiest way to
-    /// do this is to call `ffi::from_user_data` with the returned pointer and
-    /// then call `Artichoke::close`.
-    #[must_use]
-    pub unsafe fn into_raw(mut interp: Self) -> *mut sys::mrb_state {
-        let mrb = interp.mrb.as_mut();
-        if let Some(state) = interp.state {
-            mrb.ud = Box::into_raw(state) as *mut c_void;
-        }
-        mrb
-    }
-
-    /// Consume an interpreter and free all
-    /// [live](gc::MrbGarbageCollection::live_object_count)
-    /// [`Value`](value::Value)s.
-    pub fn close(mut self) {
-        unsafe {
-            let mrb = self.mrb.as_mut();
-            if let Some(state) = self.state {
-                state.close(mrb);
-            }
-            sys::mrb_close(mrb);
-        }
-    }
 }

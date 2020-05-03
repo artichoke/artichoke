@@ -62,7 +62,7 @@ unsafe extern "C" fn artichoke_securerandom_alphanumeric(
     let result = trampoline::alphanumeric(&mut interp, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -79,7 +79,7 @@ unsafe extern "C" fn artichoke_securerandom_base64(
     let result = trampoline::base64(&mut interp, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -96,7 +96,7 @@ unsafe extern "C" fn artichoke_securerandom_hex(
     let result = trampoline::hex(&mut interp, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -113,7 +113,7 @@ unsafe extern "C" fn artichoke_securerandom_random_bytes(
     let result = trampoline::random_bytes(&mut interp, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -130,7 +130,7 @@ unsafe extern "C" fn artichoke_securerandom_random_number(
     let result = trampoline::random_number(&mut interp, max);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -144,6 +144,6 @@ unsafe extern "C" fn artichoke_securerandom_uuid(
     let result = trampoline::uuid(&mut interp);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }

@@ -34,7 +34,7 @@ unsafe extern "C" fn artichoke_integer_chr(
     let result = trampoline::chr(&mut interp, value, encoding);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -49,7 +49,7 @@ unsafe extern "C" fn artichoke_integer_element_reference(
     let result = trampoline::element_reference(&mut interp, value, bit);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -64,7 +64,7 @@ unsafe extern "C" fn artichoke_integer_div(
     let result = trampoline::div(&mut interp, value, denominator);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -77,6 +77,6 @@ unsafe extern "C" fn artichoke_integer_size(
     let result = trampoline::size(&interp);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }

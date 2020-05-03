@@ -60,7 +60,7 @@ unsafe extern "C" fn artichoke_math_acos(
     let result = math::acos(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -74,7 +74,7 @@ unsafe extern "C" fn artichoke_math_acosh(
     let result = math::acosh(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -88,7 +88,7 @@ unsafe extern "C" fn artichoke_math_asin(
     let result = math::asin(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -102,7 +102,7 @@ unsafe extern "C" fn artichoke_math_asinh(
     let result = math::asinh(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -116,7 +116,7 @@ unsafe extern "C" fn artichoke_math_atan(
     let result = math::atan(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -131,7 +131,7 @@ unsafe extern "C" fn artichoke_math_atan2(
     let result = math::atan2(&mut interp, value, other).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -145,7 +145,7 @@ unsafe extern "C" fn artichoke_math_atanh(
     let result = math::atanh(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -159,7 +159,7 @@ unsafe extern "C" fn artichoke_math_cbrt(
     let result = math::cbrt(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -173,7 +173,7 @@ unsafe extern "C" fn artichoke_math_cos(
     let result = math::cos(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -187,7 +187,7 @@ unsafe extern "C" fn artichoke_math_cosh(
     let result = math::cosh(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -201,7 +201,7 @@ unsafe extern "C" fn artichoke_math_erf(
     let result = math::erf(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -215,7 +215,7 @@ unsafe extern "C" fn artichoke_math_erfc(
     let result = math::erfc(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -229,7 +229,7 @@ unsafe extern "C" fn artichoke_math_exp(
     let result = math::exp(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -247,7 +247,7 @@ unsafe extern "C" fn artichoke_math_frexp(
     });
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -261,7 +261,7 @@ unsafe extern "C" fn artichoke_math_gamma(
     let result = math::gamma(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -276,7 +276,7 @@ unsafe extern "C" fn artichoke_math_hypot(
     let result = math::hypot(&mut interp, value, other).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -292,7 +292,7 @@ unsafe extern "C" fn artichoke_math_ldexp(
         math::ldexp(&mut interp, fraction, exponent).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -310,7 +310,7 @@ unsafe extern "C" fn artichoke_math_lgamma(
     });
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -325,7 +325,7 @@ unsafe extern "C" fn artichoke_math_log(
     let result = math::log(&mut interp, value, base).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -339,7 +339,7 @@ unsafe extern "C" fn artichoke_math_log10(
     let result = math::log10(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -353,7 +353,7 @@ unsafe extern "C" fn artichoke_math_log2(
     let result = math::log2(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -367,7 +367,7 @@ unsafe extern "C" fn artichoke_math_sin(
     let result = math::sin(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -381,7 +381,7 @@ unsafe extern "C" fn artichoke_math_sinh(
     let result = math::sinh(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -395,7 +395,7 @@ unsafe extern "C" fn artichoke_math_sqrt(
     let result = math::sqrt(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -409,7 +409,7 @@ unsafe extern "C" fn artichoke_math_tan(
     let result = math::tan(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
@@ -423,6 +423,6 @@ unsafe extern "C" fn artichoke_math_tanh(
     let result = math::tanh(&mut interp, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }

@@ -48,7 +48,7 @@ unsafe extern "C" fn container_initialize(
     let result = container.try_into_ruby(&mut interp, Some(slf));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(interp.into_inner(), exception),
     }
 }
 
