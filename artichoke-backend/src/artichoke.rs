@@ -50,15 +50,11 @@ impl Artichoke {
     /// This function is only safe to call if the closure only calls FFI
     /// functions that use a raw `*mut sys::mrb_state`.
     #[must_use]
-    pub unsafe fn with_ffi_boundary<F, T>(
-        &mut self,
-        func: F,
-    ) -> Result<T, crate::exception::Exception>
+    pub unsafe fn with_ffi_boundary<F, T>(&mut self, func: F) -> Result<T, InterpreterExtractError>
     where
         F: FnOnce(*mut sys::mrb_state) -> T,
     {
         if let Some(state) = self.state.take() {
-            println!("ffi boundary - state: {:p}", state);
             // Ensure we don't create multiple mutable references by moving the
             // `mrb` out of the `Artichoke` and converting to a raw pointer.
             //
@@ -87,7 +83,7 @@ impl Artichoke {
             *self = extracted;
             Ok(result)
         } else {
-            Err(InterpreterExtractError.into())
+            Err(InterpreterExtractError)
         }
     }
 
@@ -108,12 +104,11 @@ impl Artichoke {
     /// then call [`Artichoke::close`].
     #[must_use]
     pub unsafe fn into_raw(mut interp: Self) -> *mut sys::mrb_state {
-        println!("artichoke into raw");
         let mrb = interp.mrb.as_mut();
         if let Some(state) = interp.state {
             mrb.ud = Box::into_raw(state) as *mut c_void;
         } else {
-            println!("artichoke into raw NO STATE");
+            error!("Called Artichoke::into_raw with no State");
         }
         mrb
     }
@@ -174,9 +169,10 @@ impl<'a> Drop for Guard<'a> {
         unsafe {
             let mrb = self.0.mrb.as_mut();
             if let Some(state) = self.0.state.take() {
+                trace!("Serializing Artichoke State into mrb to prepare for FFI boundary");
                 mrb.ud = Box::into_raw(state) as *mut c_void;
             } else {
-                println!("artichoke guard NO STATE");
+                error!("Dropping Guard with no State");
             }
         }
     }

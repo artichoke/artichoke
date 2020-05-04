@@ -83,19 +83,19 @@ pub trait MrbGarbageCollection {
     /// Enable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn enable_gc(&mut self) -> bool;
+    fn enable_gc(&mut self) -> State;
 
     /// Disable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn disable_gc(&mut self) -> bool;
+    fn disable_gc(&mut self) -> State;
 }
 
 impl MrbGarbageCollection for Artichoke {
     fn create_arena_savepoint(&mut self) -> ArenaIndex<'_> {
         let index = unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_sys_gc_arena_save(mrb)
+            self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_arena_save(mrb))
+                .unwrap_or_default()
         };
         ArenaIndex {
             index,
@@ -105,47 +105,64 @@ impl MrbGarbageCollection for Artichoke {
 
     fn live_object_count(&mut self) -> i32 {
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_sys_gc_live_objects(mrb)
+            self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_live_objects(mrb))
+                .unwrap_or_default()
         }
     }
 
     fn mark_value(&mut self, value: &Value) {
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_sys_safe_gc_mark(mrb, value.inner())
+            let _ = self.with_ffi_boundary(|mrb| sys::mrb_sys_safe_gc_mark(mrb, value.inner()));
         }
     }
 
     fn incremental_gc(&mut self) {
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_incremental_gc(mrb);
+            let _ = self.with_ffi_boundary(|mrb| {
+                sys::mrb_incremental_gc(mrb);
+            });
         }
     }
 
     fn full_gc(&mut self) {
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_full_gc(mrb);
+            let _ = self.with_ffi_boundary(|mrb| {
+                sys::mrb_full_gc(mrb);
+            });
         }
     }
 
-    #[allow(clippy::must_use_candidate)]
-    fn enable_gc(&mut self) -> bool {
+    fn enable_gc(&mut self) -> State {
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_sys_gc_enable(mrb)
+            self.with_ffi_boundary(|mrb| {
+                if sys::mrb_sys_gc_enable(mrb) {
+                    State::Enabled
+                } else {
+                    State::Disabled
+                }
+            })
+            .unwrap_or(State::Disabled)
         }
     }
 
-    #[allow(clippy::must_use_candidate)]
-    fn disable_gc(&mut self) -> bool {
+    fn disable_gc(&mut self) -> State {
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_sys_gc_disable(mrb)
+            self.with_ffi_boundary(|mrb| {
+                if sys::mrb_sys_gc_disable(mrb) {
+                    State::Enabled
+                } else {
+                    State::Disabled
+                }
+            })
+            .unwrap_or(State::Disabled)
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum State {
+    Disabled,
+    Enabled,
 }
 
 #[cfg(test)]
