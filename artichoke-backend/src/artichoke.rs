@@ -171,11 +171,13 @@ impl<'a> DerefMut for Guard<'a> {
 
 impl<'a> Drop for Guard<'a> {
     fn drop(&mut self) {
-        let mrb = self.0.mrb.as_mut();
-        if let Some(state) = self.0.state.take() {
-            mrb.ud = Box::into_raw(state) as *mut c_void;
-        } else {
-            println!("artichoke guard NO STATE");
+        unsafe {
+            let mrb = self.0.mrb.as_mut();
+            if let Some(state) = self.0.state.take() {
+                mrb.ud = Box::into_raw(state) as *mut c_void;
+            } else {
+                println!("artichoke guard NO STATE");
+            }
         }
     }
 }

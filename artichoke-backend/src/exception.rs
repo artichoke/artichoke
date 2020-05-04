@@ -56,7 +56,7 @@ impl From<Box<dyn RubyException>> for Exception {
 /// Because this precondition must hold for all frames between the caller and
 /// the closest [`sys::mrb_protect`] landing pad, this function should only be
 /// called in the entrypoint into Rust from mruby.
-pub unsafe fn raise(guard: Guard<'_>, exception: impl RubyException + fmt::Debug) -> ! {
+pub unsafe fn raise(mut guard: Guard<'_>, exception: impl RubyException + fmt::Debug) -> ! {
     let exc = exception.as_mrb_value(&mut guard);
     let mrb = guard.mrb.as_mut() as *mut _;
     drop(guard);
