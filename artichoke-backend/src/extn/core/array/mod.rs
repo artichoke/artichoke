@@ -75,7 +75,7 @@ impl Array {
                             RangeError::new(interp, "bignum too big to convert into `long'")
                         })?;
                         let idx = interp.convert(idx);
-                        let elem = block.yield_arg::<Value>(interp, &idx)?;
+                        let elem = block.yield_arg(interp, &idx)?;
                         buffer.push(elem.inner());
                     }
                     InlineBuffer::from(buffer)

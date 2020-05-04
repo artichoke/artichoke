@@ -67,8 +67,8 @@ impl Value {
             Ok(None) => "nil",
             Err(_) => {
                 if let Ruby::Data | Ruby::Object = self.ruby_type() {
-                    self.funcall::<Self>(interp, "class", &[], None)
-                        .and_then(|class| class.funcall::<Value>(interp, "name", &[], None))
+                    self.funcall(interp, "class", &[], None)
+                        .and_then(|class| class.funcall(interp, "name", &[], None))
                         .and_then(|class| class.try_into_mut(interp))
                         .unwrap_or_default()
                 } else {
@@ -134,7 +134,7 @@ impl Value {
                 ));
             }
         } else if let Ok(true) = self.respond_to(interp, "to_int") {
-            if let Ok(maybe) = self.funcall::<Self>(interp, "to_int", &[], None) {
+            if let Ok(maybe) = self.funcall(interp, "to_int", &[], None) {
                 if let Ok(int) = maybe.try_into::<Int>(interp) {
                     int
                 } else {
@@ -166,7 +166,7 @@ impl Value {
         let string = if let Ok(string) = self.try_into_mut::<&[u8]>(interp) {
             string
         } else if let Ok(true) = self.respond_to(interp, "to_str") {
-            if let Ok(maybe) = self.funcall::<Self>(interp, "to_str", &[], None) {
+            if let Ok(maybe) = self.funcall(interp, "to_str", &[], None) {
                 if let Ok(string) = maybe.try_into_mut::<&[u8]>(interp) {
                     string
                 } else {
@@ -210,19 +210,17 @@ impl Value {
 impl ValueCore for Value {
     type Artichoke = Artichoke;
     type Arg = Self;
+    type Value = Self;
     type Block = Self;
     type Error = Exception;
 
-    fn funcall<T>(
+    fn funcall(
         &self,
         interp: &mut Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
-    ) -> Result<T, Self::Error>
-    where
-        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
-    {
+    ) -> Result<Self::Value, Self::Error> {
         let mut arena = interp.create_arena_savepoint();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
             let err = ArgCountError::new(args);
@@ -263,7 +261,7 @@ impl ValueCore for Value {
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    value.try_into::<T>(arena.interp())
+                    Ok(value)
                 }
             }
             Err(exception) => {
@@ -274,7 +272,7 @@ impl ValueCore for Value {
     }
 
     fn freeze(&mut self, interp: &mut Self::Artichoke) -> Result<(), Self::Error> {
-        let _ = self.funcall::<Self>(interp, "freeze", &[], None)?;
+        let _ = self.funcall(interp, "freeze", &[], None)?;
         Ok(())
     }
 
@@ -286,7 +284,7 @@ impl ValueCore for Value {
     }
 
     fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
-        if let Ok(display) = self.funcall::<Value>(interp, "inspect", &[], None) {
+        if let Ok(display) = self.funcall(interp, "inspect", &[], None) {
             display.try_into_mut(interp).unwrap_or_default()
         } else {
             Vec::new()
@@ -299,11 +297,12 @@ impl ValueCore for Value {
 
     fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error> {
         let method = interp.convert_mut(method);
-        self.funcall::<bool>(interp, "respond_to?", &[method], None)
+        let respond_to = self.funcall(interp, "respond_to?", &[method], None)?;
+        interp.try_convert(respond_to)
     }
 
     fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
-        if let Ok(display) = self.funcall::<Value>(interp, "to_s", &[], None) {
+        if let Ok(display) = self.funcall(interp, "to_s", &[], None) {
             display.try_into_mut(interp).unwrap_or_default()
         } else {
             Vec::new()
@@ -348,10 +347,7 @@ impl Block {
         self.0
     }
 
-    pub fn yield_arg<T>(&self, interp: &mut Artichoke, arg: &Value) -> Result<T, Exception>
-    where
-        Artichoke: TryConvert<Value, T, Error = Exception>,
-    {
+    pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Exception> {
         let mut arena = interp.create_arena_savepoint();
 
         let result = unsafe {
@@ -373,7 +369,7 @@ impl Block {
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    value.try_into::<T>(arena.interp())
+                    Ok(value)
                 }
             }
             Err(exception) => {

@@ -8,7 +8,6 @@ use crate::extn::core::warning::Warning;
 use crate::ffi::InterpreterExtractError;
 use crate::module_registry::ModuleRegistry;
 use crate::state::output::Output;
-use crate::value::Value;
 use crate::Artichoke;
 
 impl Warn for Artichoke {
@@ -35,7 +34,7 @@ impl Warn for Artichoke {
             .module_of::<Warning>()?
             .ok_or_else(|| NotDefinedError::module("Warning"))?;
         let message = self.convert_mut(message);
-        let _ = warning.funcall::<Value>(self, "warn", &[message], None)?;
+        let _ = warning.funcall(self, "warn", &[message], None)?;
         Ok(())
     }
 }

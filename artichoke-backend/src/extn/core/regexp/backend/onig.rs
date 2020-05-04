@@ -541,7 +541,7 @@ impl RegexpType for Onig {
                     }
                     let data = matchdata.clone().try_into_ruby(interp, None)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                    let _ = block.yield_arg::<Value>(interp, &matched)?;
+                    let _ = block.yield_arg(interp, &matched)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             } else {
@@ -556,7 +556,7 @@ impl RegexpType for Onig {
                     matchdata.set_region(pos.0..pos.1);
                     let data = matchdata.clone().try_into_ruby(interp, None)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                    let _ = block.yield_arg::<Value>(interp, &matched)?;
+                    let _ = block.yield_arg(interp, &matched)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             }
