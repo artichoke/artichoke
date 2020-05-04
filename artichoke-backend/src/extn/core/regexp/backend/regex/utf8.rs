@@ -573,7 +573,7 @@ impl RegexpType for Utf8 {
                     }
                     let data = matchdata.clone().try_into_ruby(interp, None)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                    let _ = block.yield_arg::<Value>(interp, &matched)?;
+                    let _ = block.yield_arg(interp, &matched)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             } else {
@@ -588,7 +588,7 @@ impl RegexpType for Utf8 {
                     matchdata.set_region(pos.start()..pos.end());
                     let data = matchdata.clone().try_into_ruby(interp, None)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                    let _ = block.yield_arg::<Value>(interp, &matched)?;
+                    let _ = block.yield_arg(interp, &matched)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             }

@@ -28,9 +28,11 @@ fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception>
             let class_of_numeric = interp
                 .class_of::<Numeric>()?
                 .ok_or_else(|| NotDefinedError::class("Numeric"))?;
-            if let Ok(true) = value.funcall(interp, "is_a?", &[class_of_numeric], None) {
+            let is_a_numeric = value.funcall(interp, "is_a?", &[class_of_numeric], None)?;
+            let is_a_numeric = interp.try_convert(is_a_numeric);
+            if let Ok(true) = is_a_numeric {
                 if value.respond_to(interp, "to_f")? {
-                    let coerced = value.funcall::<Value>(interp, "to_f", &[], None)?;
+                    let coerced = value.funcall(interp, "to_f", &[], None)?;
                     if let Ruby::Float = coerced.ruby_type() {
                         coerced.try_into::<Fp>(interp)
                     } else {

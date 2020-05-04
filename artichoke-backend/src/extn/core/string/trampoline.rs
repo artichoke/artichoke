@@ -62,7 +62,7 @@ pub fn scan(
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
                 let block_arg = interp.convert_mut(pattern_bytes);
-                let _ = block.yield_arg::<Value>(interp, &block_arg)?;
+                let _ = block.yield_arg(interp, &block_arg)?;
 
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
@@ -75,7 +75,7 @@ pub fn scan(
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
                     let block_arg = interp.convert_mut(pattern_bytes);
-                    let _ = block.yield_arg::<Value>(interp, &block_arg)?;
+                    let _ = block.yield_arg(interp, &block_arg)?;
 
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }

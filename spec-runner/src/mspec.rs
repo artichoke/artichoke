@@ -41,8 +41,8 @@ where
     let specs = interp.convert_mut(specs.into_iter().collect::<Vec<_>>());
     let result = interp
         .top_self()
-        .funcall::<bool>(interp, "run_specs", &[specs], None)?;
-    Ok(result)
+        .funcall(interp, "run_specs", &[specs], None)?;
+    interp.try_convert(result)
 }
 
 #[cfg(test)]

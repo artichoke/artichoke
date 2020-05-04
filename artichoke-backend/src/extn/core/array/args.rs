@@ -105,9 +105,9 @@ pub fn element_assignment(
                 .unwrap_or_else(|_| unreachable!("Range can't have negative length"));
             Ok((start, Some(len), second))
         } else {
-            let start = first.funcall::<Value>(interp, "begin", &[], None)?;
+            let start = first.funcall(interp, "begin", &[], None)?;
             let start = start.implicitly_convert_to_int(interp)?;
-            let end = first.funcall::<Value>(interp, "last", &[], None)?;
+            let end = first.funcall(interp, "last", &[], None)?;
             let end = end.implicitly_convert_to_int(interp)?;
             // TODO: This conditional is probably not doing the right thing
             if start + (end - start) < 0 {
