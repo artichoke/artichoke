@@ -226,65 +226,72 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let spec =
             class::Spec::new("Container", None, Some(def::rust_data_free::<Container>)).unwrap();
-        class::Builder::for_spec(&interp, &spec)
+        class::Builder::for_spec(&mut interp, &spec)
             .value_is_rust_object()
             .add_method("value", container_value, sys::mrb_args_none())
             .unwrap()
             .define()
             .unwrap();
-        interp.0.borrow_mut().def_class::<Container>(spec);
+        interp.def_class::<Container>(spec).unwrap();
         let obj = Container {
-            inner: "contained string contents".to_owned(),
+            inner: String::from("contained string contents"),
         };
 
         let value = obj.try_into_ruby(&mut interp, None).unwrap();
-        let class = value
-            .funcall::<Value>(&mut interp, "class", &[], None)
-            .unwrap();
-        assert_eq!(class.to_s(&mut interp), b"Container");
+        let class = value.funcall(&mut interp, "class", &[], None).unwrap();
+        let class_display = class.to_s(&mut interp);
+        assert_eq!(class_display, b"Container");
+
         let data = unsafe { Container::try_from_ruby(&mut interp, &value) }.unwrap();
-        assert_eq!(Rc::strong_count(&data), 2);
-        assert_eq!(&data.borrow().inner, "contained string contents");
+        let sc = Rc::strong_count(&data);
+        assert_eq!(sc, 2);
+
+        let borrow = data.borrow();
+        let inner = borrow.inner.as_str();
+        assert_eq!(inner, "contained string contents");
+        drop(borrow);
         drop(data);
-        let inner = value
-            .funcall::<&str>(&mut interp, "value", &[], None)
-            .unwrap();
+
+        let inner = value.funcall(&mut interp, "value", &[], None).unwrap();
+        let inner = inner.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(inner, "contained string contents");
     }
 
     #[test]
     fn convert_obj_not_data() {
         let mut interp = crate::interpreter().unwrap();
+
         let spec =
             class::Spec::new("Container", None, Some(def::rust_data_free::<Container>)).unwrap();
-        class::Builder::for_spec(&interp, &spec)
+        class::Builder::for_spec(&mut interp, &spec)
             .value_is_rust_object()
             .add_method("value", container_value, sys::mrb_args_none())
             .unwrap()
             .define()
             .unwrap();
-        interp.0.borrow_mut().def_class::<Container>(spec);
+        interp.def_class::<Container>(spec).unwrap();
+
         let spec = class::Spec::new("Other", None, Some(def::rust_data_free::<Container>)).unwrap();
-        class::Builder::for_spec(&interp, &spec)
+        class::Builder::for_spec(&mut interp, &spec)
             .value_is_rust_object()
             .define()
             .unwrap();
-        interp.0.borrow_mut().def_class::<Box<Other>>(spec);
+        interp.def_class::<Box<Other>>(spec).unwrap();
 
         let value = interp.convert_mut("string");
-        let class = value
-            .funcall::<Value>(&mut interp, "class", &[], None)
-            .unwrap();
-        assert_eq!(class.to_s(&mut interp), b"String");
+        let class = value.funcall(&mut interp, "class", &[], None).unwrap();
+        let class_display = class.to_s(&mut interp);
+        assert_eq!(class_display, b"String");
+
         let data = unsafe { Container::try_from_ruby(&mut interp, &value) };
         assert!(data.is_err());
         let value = Box::new(Other::default())
             .try_into_ruby(&mut interp, None)
             .unwrap();
-        let class = value
-            .funcall::<Value>(&mut interp, "class", &[], None)
-            .unwrap();
-        assert_eq!(class.to_s(&mut interp), b"Other");
+        let class = value.funcall(&mut interp, "class", &[], None).unwrap();
+        let class_display = class.to_s(&mut interp);
+        assert_eq!(class_display, b"Other");
+
         let data = unsafe { Container::try_from_ruby(&mut interp, &value) };
         assert!(data.is_err());
     }

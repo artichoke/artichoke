@@ -106,7 +106,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<Vec<u8>>(&interp);
+        let result = value.try_into_mut::<Vec<u8>>(&mut interp);
         assert!(result.is_err());
     }
 
@@ -122,51 +122,45 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(bytes.as_slice());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != bytes.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != bytes.is_empty() {
             return false;
         }
         let zero = interp.convert(0);
-        let first = value
-            .funcall::<Option<&[u8]>>(&mut interp, "[]", &[zero], None)
-            .unwrap();
+        let first = value.funcall(&mut interp, "[]", &[zero], None).unwrap();
+        let first = first.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
         if first != bytes.get(0..1) {
             return false;
         }
-        let recovered: Vec<u8> = interp.try_convert(value).unwrap();
+        let recovered: Vec<u8> = interp.try_convert_mut(value).unwrap();
         if recovered != bytes {
             return false;
         }
         // Owned converter
         let value = interp.convert_mut(bytes.to_vec());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != bytes.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != bytes.is_empty() {
             return false;
         }
         let zero = interp.convert(0);
-        let first = value
-            .funcall::<Option<&[u8]>>(&mut interp, "[]", &[zero], None)
-            .unwrap();
+        let first = value.funcall(&mut interp, "[]", &[zero], None).unwrap();
+        let first = first.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
         if first != bytes.get(0..1) {
             return false;
         }
-        let recovered: Vec<u8> = interp.try_convert(value).unwrap();
+        let recovered: Vec<u8> = interp.try_convert_mut(value).unwrap();
         if recovered != bytes {
             return false;
         }
@@ -177,15 +171,15 @@ mod tests {
     fn roundtrip(bytes: Vec<u8>) -> bool {
         let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(bytes.as_slice());
-        let value = value.try_into::<Vec<u8>>(&interp).unwrap();
+        let value = value.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
         value == bytes
     }
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let mut interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
-        let value = value.try_into::<Vec<u8>>(&interp);
+        let value = value.try_into_mut::<Vec<u8>>(&mut interp);
         value.is_err()
     }
 }

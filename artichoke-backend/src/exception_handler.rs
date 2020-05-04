@@ -76,18 +76,18 @@ mod tests {
     #[test]
     fn raise_does_not_panic_or_segfault() {
         let mut interp = crate::interpreter().expect("init");
-        let _ = interp.eval(br#"raise 'foo'"#);
-        let _ = interp.eval(br#"raise 'foo'"#);
-        let _ = interp.eval(br#"eval(b"raise 'foo'""#);
-        let _ = interp.eval(br#"eval(b"raise 'foo'""#);
-        let _ = interp.eval(br#"require 'foo'"#);
-        let _ = interp.eval(br#"require 'foo'"#);
-        let _ = interp.eval(br#"eval(b"require 'foo'""#);
-        let _ = interp.eval(br#"eval(b"require 'foo'""#);
-        let _ = interp.eval(br#"Regexp.compile(2)"#);
-        let _ = interp.eval(br#"Regexp.compile(2)"#);
-        let _ = interp.eval(br#"eval(b"Regexp.compile(2)""#);
-        let _ = interp.eval(br#"eval(b"Regexp.compile(2)""#);
+        let _ = interp.eval(br#"raise 'foo'"#).unwrap_err();
+        let _ = interp.eval(br#"raise 'foo'"#).unwrap_err();
+        let _ = interp.eval(br#"eval("raise 'foo'")"#).unwrap_err();
+        let _ = interp.eval(br#"eval("raise 'foo'")"#).unwrap_err();
+        let _ = interp.eval(br#"require 'foo'"#).unwrap_err();
+        let _ = interp.eval(br#"require 'foo'"#).unwrap_err();
+        let _ = interp.eval(br#"eval("require 'foo'")"#).unwrap_err();
+        let _ = interp.eval(br#"eval("require 'foo'")"#).unwrap_err();
+        let _ = interp.eval(br#"Regexp.compile(2)"#).unwrap_err();
+        let _ = interp.eval(br#"Regexp.compile(2)"#).unwrap_err();
+        let _ = interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
+        let _ = interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
         let _ = interp.eval(
             br#"
 def fail
@@ -102,7 +102,7 @@ fail
             "#,
         );
         let kernel = interp.eval(br#"Kernel"#).unwrap();
-        let _ = kernel.funcall::<Value>(&mut interp, "raise", &[], None);
-        let _ = kernel.funcall::<Value>(&mut interp, "raise", &[], None);
+        let _ = kernel.funcall(&mut interp, "raise", &[], None).unwrap_err();
+        let _ = kernel.funcall(&mut interp, "raise", &[], None).unwrap_err();
     }
 }

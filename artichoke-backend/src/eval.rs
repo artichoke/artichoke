@@ -66,7 +66,7 @@ mod tests {
     fn root_eval_context() {
         let mut interp = crate::interpreter().unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "(eval)");
     }
 
@@ -74,19 +74,19 @@ mod tests {
     fn context_is_restored_after_eval() {
         let mut interp = crate::interpreter().unwrap();
         let context = Context::new(&b"context.rb"[..]).unwrap();
-        interp.push_context(context);
+        interp.push_context(context).unwrap();
         let _ = interp.eval(b"15").unwrap();
-        assert_eq!(
-            interp.peek_context().unwrap().filename(),
-            &b"context.rb"[..]
-        );
+        let context = interp.peek_context().unwrap();
+        let filename = context.unwrap().filename();
+        assert_eq!(filename, &b"context.rb"[..]);
     }
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
         let mut interp = crate::interpreter().unwrap();
         let _ = interp.eval(b"15").unwrap();
-        assert!(interp.peek_context().is_none());
+        let context = interp.peek_context().unwrap();
+        assert!(context.is_none());
     }
 
     mod nested {
@@ -119,7 +119,7 @@ mod tests {
                 module::Builder::for_spec(interp, &spec)
                     .add_self_method("file", nested_eval_file, sys::mrb_args_none())?
                     .define()?;
-                interp.0.borrow_mut().def_module::<Self>(spec);
+                interp.def_module::<Self>(spec)?;
                 Ok(())
             }
         }
@@ -134,7 +134,7 @@ mod tests {
                 .unwrap();
             let code = br#"require 'nested_eval'; NestedEval.file"#;
             let result = interp.eval(code).unwrap();
-            let result = result.try_into::<&str>(&interp).unwrap();
+            let result = result.try_into_mut::<&str>(&mut interp).unwrap();
             assert_eq!(result, "/src/lib/nested_eval.rb");
         }
     }
@@ -143,23 +143,26 @@ mod tests {
     fn eval_with_context() {
         let mut interp = crate::interpreter().unwrap();
 
-        interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
+        let context = Context::new(b"source.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "source.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
 
-        interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
+        let context = Context::new(b"source.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "source.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
 
-        interp.push_context(Context::new(b"main.rb".as_ref()).unwrap());
+        let context = Context::new(b"main.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "main.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
     }
 
     #[test]
@@ -176,7 +179,7 @@ mod tests {
         assert_eq!("SyntaxError", err.name().as_str());
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval(b"'a' * 10 ").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "a".repeat(10));
     }
 
@@ -189,7 +192,7 @@ mod tests {
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
         let result = interp.eval(b"require 'source'; file").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "/src/lib/source.rb");
     }
 
@@ -200,7 +203,7 @@ mod tests {
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
         let result = interp.eval(b"require 'source'; __FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "(eval)");
     }
 

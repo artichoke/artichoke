@@ -580,11 +580,11 @@ mod tests {
     #[test]
     fn is_dead() {
         let mut interp = crate::interpreter().unwrap();
-        let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"'dead'").unwrap();
-        assert!(!live.is_dead(&mut interp));
+        let mut arena = interp.create_arena_savepoint();
+        let live = arena.interp().eval(b"'dead'").unwrap();
+        assert!(!live.is_dead(arena.interp()));
         let dead = live;
-        let live = interp.eval(b"'live'").unwrap();
+        let live = arena.interp().eval(b"'live'").unwrap();
         arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
@@ -597,11 +597,11 @@ mod tests {
     #[test]
     fn immediate_is_dead() {
         let mut interp = crate::interpreter().unwrap();
-        let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"27").unwrap();
-        assert!(!live.is_dead(&mut interp));
+        let mut arena = interp.create_arena_savepoint();
+        let live = arena.interp().eval(b"27").unwrap();
+        assert!(!live.is_dead(arena.interp()));
         let immediate = live;
-        let live = interp.eval(b"64").unwrap();
+        let live = arena.interp().eval(b"64").unwrap();
         arena.restore();
         interp.full_gc();
         // immediate objects are never dead
@@ -619,16 +619,20 @@ mod tests {
     fn funcall() {
         let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
-        let nil_is_nil = nil.funcall::<bool>(&mut interp, "nil?", &[], None).unwrap();
+        let nil_is_nil = nil
+            .funcall(&mut interp, "nil?", &[], None)
+            .and_then(|value| value.try_into::<bool>(&interp))
+            .unwrap();
         assert!(nil_is_nil);
         let s = interp.convert_mut("foo");
-        let string_is_nil = s.funcall::<bool>(&mut interp, "nil?", &[], None).unwrap();
+        let string_is_nil = s
+            .funcall(&mut interp, "nil?", &[], None)
+            .and_then(|value| value.try_into::<bool>(&interp))
+            .unwrap();
         assert!(!string_is_nil);
         let delim = interp.convert_mut("");
-        let split = s
-            .funcall::<Value>(&mut interp, "split", &[delim], None)
-            .unwrap();
-        let split: Vec<&str> = interp.try_convert_mut(split).unwrap();
+        let split = s.funcall(&mut interp, "split", &[delim], None).unwrap();
+        let split = split.try_into_mut::<Vec<&str>>(&mut interp).unwrap();
         assert_eq!(split, vec!["f", "o", "o"])
     }
 
@@ -637,7 +641,10 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
-        let eql = nil.funcall::<bool>(&mut interp, "==", &[s], None).unwrap();
+        let eql = nil
+            .funcall(&mut interp, "==", &[s], None)
+            .and_then(|value| value.try_into::<bool>(&interp))
+            .unwrap();
         assert!(!eql);
     }
 
@@ -647,7 +654,8 @@ mod tests {
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
         let err = s
-            .funcall::<String>(&mut interp, "+", &[nil], None)
+            .funcall(&mut interp, "+", &[nil], None)
+            .and_then(|value| value.try_into_mut::<String>(&mut interp))
             .unwrap_err();
         assert_eq!("TypeError", err.name().as_str());
         assert_eq!(&b"nil cannot be converted to String"[..], err.message());
@@ -659,7 +667,7 @@ mod tests {
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
         let err = nil
-            .funcall::<bool>(&mut interp, "garbage_method_name", &[s], None)
+            .funcall(&mut interp, "garbage_method_name", &[s], None)
             .unwrap_err();
         assert_eq!("NoMethodError", err.name().as_str());
         assert_eq!(

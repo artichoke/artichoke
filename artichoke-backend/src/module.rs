@@ -236,48 +236,49 @@ mod tests {
 
     #[test]
     fn rclass_for_undef_root_module() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let spec = Spec::new(&mut interp, "Foo", None).unwrap();
-        assert!(spec.rclass(interp.0.borrow().mrb).is_none());
+        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        assert!(rclass.is_none());
     }
 
     #[test]
     fn rclass_for_undef_nested_module() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let scope = Spec::new(&mut interp, "Kernel", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
         let spec = Spec::new(&mut interp, "Foo", Some(scope)).unwrap();
-        assert!(spec.rclass(interp.0.borrow().mrb).is_none());
+        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        assert!(rclass.is_none());
     }
 
     #[test]
     fn rclass_for_root_module() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = crate::interpreter().unwrap();
         let spec = Spec::new(&mut interp, "Kernel", None).unwrap();
-        assert!(spec.rclass(interp.0.borrow().mrb).is_some());
+        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        assert!(rclass.is_some());
     }
 
     #[test]
     fn rclass_for_nested_module() {
-        let mut interp = crate::interpreter().expect("init");
-        let _ = interp
-            .eval(b"module Foo; module Bar; end; end")
-            .expect("eval");
+        let mut interp = crate::interpreter().unwrap();
+        let _ = interp.eval(b"module Foo; module Bar; end; end").unwrap();
         let scope = Spec::new(&mut interp, "Foo", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
         let spec = Spec::new(&mut interp, "Bar", Some(scope)).unwrap();
-        assert!(spec.rclass(interp.0.borrow().mrb).is_some());
+        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        assert!(rclass.is_some());
     }
 
     #[test]
     fn rclass_for_nested_module_under_class() {
-        let mut interp = crate::interpreter().expect("init");
-        let _ = interp
-            .eval(b"class Foo; module Bar; end; end")
-            .expect("eval");
+        let mut interp = crate::interpreter().unwrap();
+        let _ = interp.eval(b"class Foo; module Bar; end; end").unwrap();
         let scope = class::Spec::new("Foo", None, None).unwrap();
         let scope = EnclosingRubyScope::class(&scope);
         let spec = Spec::new(&mut interp, "Bar", Some(scope)).unwrap();
-        assert!(spec.rclass(interp.0.borrow().mrb).is_some());
+        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        assert!(rclass.is_some());
     }
 }
