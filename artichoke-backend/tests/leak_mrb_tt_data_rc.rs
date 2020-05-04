@@ -44,7 +44,7 @@ unsafe extern "C" fn container_initialize(
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
     let inner = Value::new(&guard, inner);
-    let inner = inner.try_into::<String>(&mut guard).unwrap_or_default();
+    let inner = inner.try_into_mut::<String>(&mut guard).unwrap_or_default();
     let container = Container { inner };
     let result = container.try_into_ruby(&mut guard, Some(slf));
     match result {
@@ -64,7 +64,7 @@ impl File for Container {
             .value_is_rust_object()
             .add_method("initialize", container_initialize, sys::mrb_args_req(1))?
             .define()?;
-        interp.0.borrow_mut().def_class::<Self>(spec);
+        interp.def_class::<Self>(spec)?;
         Ok(())
     }
 }

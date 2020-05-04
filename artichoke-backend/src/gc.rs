@@ -211,28 +211,6 @@ mod tests {
     }
 
     #[test]
-    fn arena_clone() {
-        let mut interp = crate::interpreter().unwrap();
-        let baseline_object_count = interp.live_object_count();
-        let arena = interp.create_arena_savepoint();
-        let arena_clone = arena.clone();
-        // restore original before any objects have been allocated
-        arena.restore();
-        for _ in 0..2000 {
-            let value = interp.eval(b"'a'").unwrap();
-            let _ = value.to_s(&mut interp);
-        }
-        arena_clone.restore();
-        interp.full_gc();
-        assert_eq!(
-            interp.live_object_count(),
-            // plus 1 because stack keep is enabled in eval which marks the last
-            // returned value as live.
-            baseline_object_count + 1,
-            "Arena restore + full GC should free unreachable objects",
-        );
-    }
-    #[test]
     fn enable_disable_gc() {
         let mut interp = crate::interpreter().unwrap();
         interp.disable_gc();
