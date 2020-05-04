@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::iter;
 use std::ptr;
 use std::slice;
 
@@ -95,13 +96,13 @@ unsafe extern "C" fn artichoke_ary_splat(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, value);
-    if Array::try_from_ruby(&mut interp, &value).is_ok() {
-        let _ = Artichoke::into_raw(interp);
-        return value.inner();
-    }
-    let result = InlineBuffer::from(vec![value.inner()]);
-    let result = Array(result);
-    let result = result.try_into_ruby(&mut interp, None);
+    let result = if Array::try_from_ruby(&mut interp, &value).is_ok() {
+        Ok(value)
+    } else {
+        let result = InlineBuffer::from_iter(iter::once(value.inner()));
+        let result = Array(result);
+        result.try_into_ruby(&mut interp, None)
+    };
     match result {
         Ok(value) => {
             let _ = Artichoke::into_raw(interp);
