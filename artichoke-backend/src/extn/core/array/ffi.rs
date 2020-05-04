@@ -5,7 +5,7 @@ use std::slice;
 
 use crate::extn::core::array::{Array, ArrayType, InlineBuffer};
 use crate::extn::prelude::*;
-use crate::gc::MrbGarbageCollection;
+use crate::gc::{MrbGarbageCollection, State as GcState};
 
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 #[no_mangle]
@@ -119,9 +119,9 @@ unsafe extern "C" fn artichoke_ary_concat(
     let other = Value::new(&guard, other);
     let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = guard.disable_gc();
+        let prior_gc_state = guard.disable_gc();
         let result = borrow.concat(&mut guard, other);
-        if gc_was_enabled {
+        if let GcState::Enabled = prior_gc_state {
             guard.enable_gc();
         }
         result
@@ -149,9 +149,9 @@ unsafe extern "C" fn artichoke_ary_pop(
     let ary = Value::new(&guard, ary);
     let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = guard.disable_gc();
+        let prior_gc_state = guard.disable_gc();
         let result = borrow.pop(&mut guard);
-        if gc_was_enabled {
+        if let GcState::Enabled = prior_gc_state {
             guard.enable_gc();
         }
         result
@@ -182,9 +182,9 @@ unsafe extern "C" fn artichoke_ary_push(
     let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let idx = array.borrow().len();
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = guard.disable_gc();
+        let prior_gc_state = guard.disable_gc();
         let result = borrow.set(&mut guard, idx, value);
-        if gc_was_enabled {
+        if let GcState::Enabled = prior_gc_state {
             guard.enable_gc();
         }
         result
@@ -214,9 +214,9 @@ unsafe extern "C" fn artichoke_ary_ref(
     let offset = usize::try_from(offset).unwrap_or_default();
     let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let borrow = array.borrow();
-        let gc_was_enabled = guard.disable_gc();
+        let prior_gc_state = guard.disable_gc();
         let result = borrow.get(&mut guard, offset);
-        if gc_was_enabled {
+        if let GcState::Enabled = prior_gc_state {
             guard.enable_gc();
         }
         result
@@ -261,9 +261,9 @@ unsafe extern "C" fn artichoke_ary_set(
             Ok(())
         } else {
             let mut borrow = array.borrow_mut();
-            let gc_was_enabled = guard.disable_gc();
+            let prior_gc_state = guard.disable_gc();
             let result = borrow.set(&mut guard, offset, value.clone());
-            if gc_was_enabled {
+            if let GcState::Enabled = prior_gc_state {
                 guard.enable_gc();
             }
             result
@@ -291,10 +291,10 @@ unsafe extern "C" fn artichoke_ary_shift(
     let array = Value::new(&guard, ary);
     let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &array) {
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = guard.disable_gc();
+        let prior_gc_state = guard.disable_gc();
         let result = borrow.get(&mut guard, 0);
         let _ = borrow.set_slice(&mut guard, 0, 1, &InlineBuffer::default());
-        if gc_was_enabled {
+        if let GcState::Enabled = prior_gc_state {
             guard.enable_gc();
         }
         result
@@ -323,9 +323,9 @@ unsafe extern "C" fn artichoke_ary_unshift(
     let value = Value::new(&guard, value);
     if let Ok(array) = Array::try_from_ruby(&mut guard, &array) {
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = guard.disable_gc();
+        let prior_gc_state = guard.disable_gc();
         let _ = borrow.set_with_drain(&mut guard, 0, 0, value.clone());
-        if gc_was_enabled {
+        if let GcState::Enabled = prior_gc_state {
             guard.enable_gc();
         }
     }

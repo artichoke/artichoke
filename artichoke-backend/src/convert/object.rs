@@ -8,6 +8,7 @@ use crate::def::NotDefinedError;
 use crate::exception::Exception;
 use crate::extn::core::exception::TypeError;
 use crate::ffi::InterpreterExtractError;
+use crate::gc::{MrbGarbageCollection, State as GcState};
 use crate::sys;
 use crate::types::Ruby;
 use crate::value::Value;
@@ -45,6 +46,32 @@ where
         interp: &mut Artichoke,
         slf: Option<sys::mrb_value>,
     ) -> Result<Value, Exception> {
+        // Disable the GC to prevent a collection cycle from re-entering into
+        // Rust code while the `State` is moved out of the `mrb`.
+        //
+        // It is not safe to run with the GC enabled in this method because:
+        //
+        // 1. This method must hold a borrow on the `State` to grab a handle to
+        //    the class spec -> `sys::mrb_data_type`.
+        // 2. Because of (1), the `State` must be moved into the `Artichoke`
+        //    struct.
+        // 3. Because of (2), subsequent mruby FFI calls will have a `NULL` ud
+        //    pointer.
+        // 4. Because of (3), it is not safe to re-enter into any Artichoke
+        //    implemented FFI trampolines that expect to extract an interpreter.
+        // 5. Garbage collection mark functions are one such trampoline that are
+        //    not safe to re-enter.
+        // 6. `Array` is implemented in Rust and implements its GC mark routine
+        //    expecting to extract an intialized `Artichoke`.
+        // 7. Failing to extract an initialized `Artichoke`, `Array` GC mark is
+        //    a no-op.
+        // 6. Values in these `Array`s are deallocated as unreachable, creating
+        //    dangling references that when accessed result in a use-after-free.
+        //
+        // The most expedient way to avoid this is turn off the GC when
+        // allocating with `mrb_data_object_alloc` below.
+        let prior_gc_state = interp.disable_gc();
+
         let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
         let spec = state
             .classes
@@ -72,6 +99,9 @@ where
                 sys::mrb_sys_obj_value(alloc as *mut c_void)
             }
         };
+        if let GcState::Enabled = prior_gc_state {
+            interp.enable_gc();
+        }
 
         Ok(Value::new(interp, obj))
     }

@@ -1,6 +1,6 @@
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
-use crate::gc::MrbGarbageCollection;
+use crate::gc::{MrbGarbageCollection, State as GcState};
 
 pub fn clear(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
@@ -45,9 +45,9 @@ pub fn element_assignment(
         return Ok(interp.convert(None::<Value>));
     }
     let mut borrow = array.borrow_mut();
-    let gc_was_enabled = interp.disable_gc();
+    let prior_gc_state = interp.disable_gc();
     let result = borrow.element_assignment(interp, first, second, third);
-    if gc_was_enabled {
+    if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();
     }
     result
@@ -62,9 +62,9 @@ pub fn pop(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
     }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     let mut borrow = array.borrow_mut();
-    let gc_was_enabled = interp.disable_gc();
+    let prior_gc_state = interp.disable_gc();
     let result = borrow.pop(interp);
-    if gc_was_enabled {
+    if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();
     }
     result
@@ -84,9 +84,9 @@ pub fn concat(
     if let Some(other) = other {
         let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = interp.disable_gc();
+        let prior_gc_state = interp.disable_gc();
         borrow.concat(interp, other)?;
-        if gc_was_enabled {
+        if let GcState::Enabled = prior_gc_state {
             interp.enable_gc();
         }
     }
@@ -103,9 +103,9 @@ pub fn push(interp: &mut Artichoke, ary: Value, value: Value) -> Result<Value, E
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     let idx = array.borrow().len();
     let mut borrow = array.borrow_mut();
-    let gc_was_enabled = interp.disable_gc();
+    let prior_gc_state = interp.disable_gc();
     borrow.set(interp, idx, value)?;
-    if gc_was_enabled {
+    if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();
     }
     Ok(ary)
@@ -120,9 +120,9 @@ pub fn reverse_bang(interp: &mut Artichoke, ary: Value) -> Result<Value, Excepti
     }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     let mut borrow = array.borrow_mut();
-    let gc_was_enabled = interp.disable_gc();
+    let prior_gc_state = interp.disable_gc();
     borrow.reverse(interp)?;
-    if gc_was_enabled {
+    if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();
     }
     Ok(ary)

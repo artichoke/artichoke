@@ -174,6 +174,7 @@ impl<'a> Drop for Guard<'a> {
         unsafe {
             let mrb = self.0.mrb.as_mut();
             if let Some(state) = self.0.state.take() {
+                println!("artichoke guard with state");
                 mrb.ud = Box::into_raw(state) as *mut c_void;
             } else {
                 println!("artichoke guard NO STATE");

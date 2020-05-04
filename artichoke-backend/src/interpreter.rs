@@ -7,7 +7,7 @@ use crate::core::{ConvertMut, Eval};
 use crate::exception::{Exception, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
-use crate::gc::MrbGarbageCollection;
+use crate::gc::{MrbGarbageCollection, State as GcState};
 use crate::state::State;
 use crate::sys;
 use crate::Artichoke;
@@ -33,7 +33,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before
     // init and clean up afterward.
-    interp.disable_gc();
+    let prior_gc_state = interp.disable_gc();
 
     // Initialize Artichoke Core and Standard Library runtime
     println!("here");
@@ -63,8 +63,10 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     interp.create_arena_savepoint().interp().eval(&[])?;
     println!("here");
 
-    interp.enable_gc();
-    interp.full_gc();
+    if let GcState::Enabled = prior_gc_state {
+        interp.enable_gc();
+        interp.full_gc();
+    }
 
     println!("here");
     Ok(interp)
