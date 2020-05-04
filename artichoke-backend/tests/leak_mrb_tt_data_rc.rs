@@ -47,7 +47,10 @@ unsafe extern "C" fn container_initialize(
     let container = Container { inner };
     let result = container.try_into_ruby(&mut interp, Some(slf));
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }

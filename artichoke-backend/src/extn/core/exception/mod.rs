@@ -249,7 +249,9 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .define()?;
     interp.def_class::<Fatal>(fatal_spec)?;
 
+    println!("exception post defines");
     let _ = interp.eval(&include_bytes!("exception.rb")[..])?;
+    println!("exception post eval");
     trace!("Patched Exception onto interpreter");
     trace!("Patched core exception hierarchy onto interpreter");
     Ok(())
@@ -402,12 +404,10 @@ mod tests {
 
     struct Run;
 
-    impl Run {
-        unsafe extern "C" fn run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-            let interp = unwrap_interpreter!(mrb);
-            let exc = RuntimeError::new(&interp, "something went wrong");
-            exception::raise(interp, exc)
-        }
+    unsafe extern "C" fn run_run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        let interp = unwrap_interpreter!(mrb);
+        let exc = RuntimeError::new(&interp, "something went wrong");
+        exception::raise(interp, exc)
     }
 
     impl File for Run {
@@ -418,7 +418,7 @@ mod tests {
         fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
             let spec = class::Spec::new("Run", None, None).unwrap();
             class::Builder::for_spec(interp, &spec)
-                .add_self_method("run", Self::run, sys::mrb_args_none())?
+                .add_self_method("run", run_run, sys::mrb_args_none())?
                 .define()?;
             interp.def_class::<Self>(spec)?;
             Ok(())

@@ -30,26 +30,27 @@ use crate::Artichoke;
 /// [`Rc`]`<`[`RefCell`]`<`[`State`]`>>`.
 pub unsafe fn from_user_data(
     mrb: *mut sys::mrb_state,
-) -> Result<Artichoke, InterpreterExtractError> {
+) -> Result<Artichoke, crate::exception::Exception> {
     let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
         mrb
     } else {
         error!("Attempted to extract Artichoke from null mrb_state");
-        return Err(InterpreterExtractError);
+        return Err(InterpreterExtractError.into());
     };
     let ud = mem::replace(&mut mrb.as_mut().ud, ptr::null_mut());
+    println!("ffi boundary - ud: {:p}", ud);
     let state = if let Some(state) = NonNull::new(ud) {
         state.cast::<State>()
     } else {
         info!("Attempted to extract Artichoke from null mrb_state->ud pointer");
-        return Err(InterpreterExtractError);
+        return Err(ConvertBytesError.into());
     };
-    let state = Some(Box::from_raw(state.as_ptr()));
+    let state = Box::from_raw(state.as_ptr());
     trace!(
         "Extracted Artichoke from user data pointer on {}",
         sys::mrb_sys_state_debug(mrb.as_mut())
     );
-    Ok(Artichoke { mrb, state })
+    Ok(Artichoke::new(mrb, state))
 }
 
 /// Failed to extract Artichoke interpreter at an FFI boundary.

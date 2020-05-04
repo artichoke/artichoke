@@ -65,7 +65,10 @@ unsafe extern "C" fn artichoke_matchdata_begin(
     let begin = Value::new(&interp, begin);
     let result = trampoline::begin(&mut interp, value, begin);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -79,7 +82,10 @@ unsafe extern "C" fn artichoke_matchdata_captures(
     let value = Value::new(&interp, slf);
     let result = trampoline::captures(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -95,7 +101,10 @@ unsafe extern "C" fn artichoke_matchdata_element_reference(
     let len = len.map(|len| Value::new(&interp, len));
     let result = trampoline::element_reference(&mut interp, value, elem, len);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -110,7 +119,10 @@ unsafe extern "C" fn artichoke_matchdata_end(
     let end = Value::new(&interp, end);
     let result = trampoline::end(&mut interp, value, end);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -124,7 +136,10 @@ unsafe extern "C" fn artichoke_matchdata_length(
     let value = Value::new(&interp, slf);
     let result = trampoline::length(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -138,7 +153,10 @@ unsafe extern "C" fn artichoke_matchdata_named_captures(
     let value = Value::new(&interp, slf);
     let result = trampoline::named_captures(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -152,7 +170,10 @@ unsafe extern "C" fn artichoke_matchdata_names(
     let value = Value::new(&interp, slf);
     let result = trampoline::names(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -167,7 +188,10 @@ unsafe extern "C" fn artichoke_matchdata_offset(
     let offset = Value::new(&interp, offset);
     let result = trampoline::offset(&mut interp, value, offset);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -181,7 +205,10 @@ unsafe extern "C" fn artichoke_matchdata_post_match(
     let value = Value::new(&interp, slf);
     let result = trampoline::post_match(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -195,7 +222,10 @@ unsafe extern "C" fn artichoke_matchdata_pre_match(
     let value = Value::new(&interp, slf);
     let result = trampoline::pre_match(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -209,7 +239,10 @@ unsafe extern "C" fn artichoke_matchdata_regexp(
     let value = Value::new(&interp, slf);
     let result = trampoline::regexp(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -223,7 +256,10 @@ unsafe extern "C" fn artichoke_matchdata_string(
     let value = Value::new(&interp, slf);
     let result = trampoline::string(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -237,7 +273,10 @@ unsafe extern "C" fn artichoke_matchdata_to_a(
     let value = Value::new(&interp, slf);
     let result = trampoline::to_a(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -251,7 +290,10 @@ unsafe extern "C" fn artichoke_matchdata_to_s(
     let value = Value::new(&interp, slf);
     let result = trampoline::to_s(&mut interp, value);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }

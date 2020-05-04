@@ -33,7 +33,10 @@ unsafe extern "C" fn artichoke_integer_chr(
     let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
     let result = trampoline::chr(&mut interp, value, encoding);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -48,7 +51,10 @@ unsafe extern "C" fn artichoke_integer_element_reference(
     let bit = Value::new(&interp, bit);
     let result = trampoline::element_reference(&mut interp, value, bit);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -63,7 +69,10 @@ unsafe extern "C" fn artichoke_integer_div(
     let denominator = Value::new(&interp, denominator);
     let result = trampoline::div(&mut interp, value, denominator);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -76,7 +85,10 @@ unsafe extern "C" fn artichoke_integer_size(
     let interp = unwrap_interpreter!(mrb);
     let result = trampoline::size(&interp);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }

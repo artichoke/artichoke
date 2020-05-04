@@ -40,7 +40,10 @@ unsafe extern "C" fn artichoke_time_self_now(
     let mut interp = unwrap_interpreter!(mrb);
     let result = trampoline::now(&mut interp);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -55,7 +58,10 @@ unsafe extern "C" fn artichoke_time_day(
     let time = Value::new(&interp, slf);
     let result = trampoline::day(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -70,7 +76,10 @@ unsafe extern "C" fn artichoke_time_hour(
     let time = Value::new(&interp, slf);
     let result = trampoline::hour(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -85,7 +94,10 @@ unsafe extern "C" fn artichoke_time_minute(
     let time = Value::new(&interp, slf);
     let result = trampoline::minute(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -100,7 +112,10 @@ unsafe extern "C" fn artichoke_time_month(
     let time = Value::new(&interp, slf);
     let result = trampoline::month(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -115,7 +130,10 @@ unsafe extern "C" fn artichoke_time_nanosecond(
     let time = Value::new(&interp, slf);
     let result = trampoline::nanosecond(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -130,7 +148,10 @@ unsafe extern "C" fn artichoke_time_second(
     let time = Value::new(&interp, slf);
     let result = trampoline::second(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -145,7 +166,10 @@ unsafe extern "C" fn artichoke_time_microsecond(
     let time = Value::new(&interp, slf);
     let result = trampoline::microsecond(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -160,7 +184,10 @@ unsafe extern "C" fn artichoke_time_weekday(
     let time = Value::new(&interp, slf);
     let result = trampoline::weekday(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -175,7 +202,10 @@ unsafe extern "C" fn artichoke_time_year_day(
     let time = Value::new(&interp, slf);
     let result = trampoline::year_day(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -190,7 +220,10 @@ unsafe extern "C" fn artichoke_time_year(
     let time = Value::new(&interp, slf);
     let result = trampoline::year(&mut interp, time);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }

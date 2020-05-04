@@ -13,7 +13,10 @@ unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_val
     let result = Array(InlineBuffer::default());
     let result = result.try_into_ruby(&mut interp, None);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -30,7 +33,10 @@ unsafe extern "C" fn artichoke_ary_new_capa(
     ));
     let result = result.try_into_ruby(&mut interp, None);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -50,6 +56,7 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
     let result = result.try_into_ruby(&mut interp, None);
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(value.inner());
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -71,6 +78,7 @@ unsafe extern "C" fn artichoke_ary_new_assoc(
     let result = result.try_into_ruby(&mut interp, None);
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(value.inner());
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -88,13 +96,17 @@ unsafe extern "C" fn artichoke_ary_splat(
     let mut interp = unwrap_interpreter!(mrb);
     let value = Value::new(&interp, value);
     if Array::try_from_ruby(&mut interp, &value).is_ok() {
+        let _ = Artichoke::into_raw(interp);
         return value.inner();
     }
     let result = InlineBuffer::from(vec![value.inner()]);
     let result = Array(result);
     let result = result.try_into_ruby(&mut interp, None);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -122,6 +134,7 @@ unsafe extern "C" fn artichoke_ary_concat(
     };
     match result {
         Ok(()) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary.inner());
             sys::mrb_write_barrier(mrb, basic);
             ary.inner()
@@ -151,6 +164,7 @@ unsafe extern "C" fn artichoke_ary_pop(
     };
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary.inner());
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -183,6 +197,7 @@ unsafe extern "C" fn artichoke_ary_push(
     };
     match result {
         Ok(()) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary.inner());
             sys::mrb_write_barrier(mrb, basic);
             ary.inner()
@@ -213,7 +228,10 @@ unsafe extern "C" fn artichoke_ary_ref(
         Ok(interp.convert(None::<Value>))
     };
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -261,6 +279,7 @@ unsafe extern "C" fn artichoke_ary_set(
     };
     match result {
         Ok(()) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary.inner());
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -290,6 +309,7 @@ unsafe extern "C" fn artichoke_ary_shift(
     };
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -315,6 +335,7 @@ unsafe extern "C" fn artichoke_ary_unshift(
             interp.enable_gc();
         }
     }
+    let _ = Artichoke::into_raw(interp);
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
     value.inner()
@@ -327,12 +348,14 @@ unsafe extern "C" fn artichoke_ary_len(
 ) -> sys::mrb_int {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let ary = Value::new(&interp, ary);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let len = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
         let borrow = array.borrow();
         Int::try_from(borrow.0.len()).unwrap_or_default()
     } else {
         0
-    }
+    };
+    let _ = Artichoke::into_raw(interp);
+    len
 }
 
 #[no_mangle]
@@ -348,6 +371,7 @@ unsafe extern "C" fn artichoke_ary_set_len(
         let mut borrow = array.borrow_mut();
         borrow.0.set_len(len);
     }
+    let _ = Artichoke::into_raw(interp);
 }
 
 #[no_mangle]
@@ -357,12 +381,14 @@ unsafe extern "C" fn artichoke_ary_ptr(
 ) -> *mut sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb, or_else = ptr::null_mut());
     let ary = Value::new(&interp, ary);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let ary_ptr = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
         let mut borrow = array.borrow_mut();
         borrow.0.as_mut_ptr()
     } else {
         ptr::null_mut()
-    }
+    };
+    let _ = Artichoke::into_raw(interp);
+    ary_ptr
 }
 
 #[no_mangle]
@@ -372,11 +398,13 @@ unsafe extern "C" fn artichoke_ary_check(
 ) -> sys::mrb_bool {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let ary = Value::new(&interp, ary);
-    if Array::try_from_ruby(&mut interp, &ary).is_ok() {
+    let check = if Array::try_from_ruby(&mut interp, &ary).is_ok() {
         1
     } else {
         0
-    }
+    };
+    let _ = Artichoke::into_raw(interp);
+    check
 }
 
 #[no_mangle]
@@ -387,6 +415,7 @@ unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::m
         let borrow = array.borrow();
         borrow.gc_mark(&mut interp);
     }
+    let _ = Artichoke::into_raw(interp);
 }
 
 #[no_mangle]
@@ -396,10 +425,12 @@ unsafe extern "C" fn artichoke_gc_mark_ary_size(
 ) -> usize {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let array = Value::new(&interp, ary);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
+    let gc_size = if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
         let borrow = array.borrow();
         borrow.real_children()
     } else {
         0
-    }
+    };
+    let _ = Artichoke::into_raw(interp);
+    gc_size
 }

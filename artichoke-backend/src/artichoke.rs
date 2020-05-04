@@ -1,6 +1,5 @@
 use std::ffi::c_void;
 use std::mem;
-use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
 use crate::ffi::{self, InterpreterExtractError};
@@ -28,6 +27,13 @@ pub struct Artichoke {
 }
 
 impl Artichoke {
+    pub fn new(mrb: NonNull<sys::mrb_state>, state: Box<State>) -> Self {
+        Self {
+            mrb,
+            state: Some(state),
+        }
+    }
+
     /// Execute a a closure by moving the [`State`] into the `mrb` instance.
     ///
     /// This method prepares this interpreter to cross an FFI boundary. When the
@@ -43,11 +49,15 @@ impl Artichoke {
     /// This function is only safe to call if the closure only calls FFI
     /// functions that use a raw `*mut sys::mrb_state`.
     #[must_use]
-    pub unsafe fn with_ffi_boundary<F, T>(&mut self, func: F) -> Result<T, InterpreterExtractError>
+    pub unsafe fn with_ffi_boundary<F, T>(
+        &mut self,
+        func: F,
+    ) -> Result<T, crate::exception::Exception>
     where
         F: FnOnce(*mut sys::mrb_state) -> T,
     {
         if let Some(state) = self.state.take() {
+            println!("ffi boundary - state: {:p}", state);
             // Ensure we don't create multiple mutable references by moving the
             // `mrb` out of the `Artichoke` and converting to a raw pointer.
             //
@@ -76,7 +86,7 @@ impl Artichoke {
             *self = extracted;
             Ok(result)
         } else {
-            Err(InterpreterExtractError)
+            Err(InterpreterExtractError.into())
         }
     }
 
@@ -97,9 +107,12 @@ impl Artichoke {
     /// then call [`Artichoke::close`].
     #[must_use]
     pub unsafe fn into_raw(mut interp: Self) -> *mut sys::mrb_state {
+        println!("artichoke into raw");
         let mrb = interp.mrb.as_mut();
         if let Some(state) = interp.state {
             mrb.ud = Box::into_raw(state) as *mut c_void;
+        } else {
+            println!("artichoke into raw NO STATE");
         }
         mrb
     }

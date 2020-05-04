@@ -22,7 +22,16 @@ impl Eval for Artichoke {
                 .ok_or(InterpreterExtractError)?
                 .parser
                 .context_mut() as *mut _;
-            self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
+            println!("eval before boundary");
+            let r = self.with_ffi_boundary(|mrb| {
+                println!("eval in boundary");
+                println!("{:?}", std::str::from_utf8(code));
+                let r = protect::eval(mrb, context, code);
+                println!("eval post boundary");
+                r
+            })?;
+            println!("eval post post boundary");
+            r
         };
         match result {
             Ok(value) => {
@@ -93,11 +102,13 @@ mod tests {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let mut interp = unwrap_interpreter!(mrb);
-            if let Ok(value) = interp.eval(b"__FILE__") {
-                value.inner()
+            let result = if let Ok(value) = interp.eval(b"__FILE__") {
+                value
             } else {
-                interp.convert(None::<Value>).inner()
-            }
+                interp.convert(None::<Value>)
+            };
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
         }
 
         impl File for NestedEval {

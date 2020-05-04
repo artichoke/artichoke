@@ -27,8 +27,8 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     };
 
     let state = State::new(unsafe { mrb.as_mut() }).ok_or(InterpreterAllocError)?;
-    let state = Some(Box::new(state));
-    let mut interp = Artichoke { mrb, state };
+    let state = Box::new(state);
+    let mut interp = Artichoke::new(mrb, state);
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before
@@ -36,12 +36,18 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     interp.disable_gc();
 
     // Initialize Artichoke Core and Standard Library runtime
+    println!("here");
     extn::init(&mut interp, "mruby")?;
+    println!("here");
 
     // Load mrbgems
-    let arena = interp.create_arena_savepoint();
+    let mut arena = interp.create_arena_savepoint();
     unsafe {
-        sys::mrb_init_mrbgems(mrb.as_mut());
+        println!("here");
+        arena
+            .interp()
+            .with_ffi_boundary(|mrb| sys::mrb_init_mrbgems(mrb))?;
+        println!("here");
     }
     arena.restore();
 
@@ -49,15 +55,18 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
         "Allocated {}",
         sys::mrb_sys_state_debug(unsafe { interp.mrb.as_mut() })
     );
+    println!("here");
 
     // mruby lazily initializes some core objects like top_self and generates a
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
     // predictable initialization behavior.
     interp.create_arena_savepoint().interp().eval(&[])?;
+    println!("here");
 
     interp.enable_gc();
     interp.full_gc();
 
+    println!("here");
     Ok(interp)
 }
 

@@ -41,6 +41,7 @@ unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
     let result = array::trampoline::pop(&mut interp, array);
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -61,7 +62,11 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
         }
     });
     match result {
-        Ok(len) => interp.convert(len).inner(),
+        Ok(len) => {
+            let len = interp.convert(len);
+            let _ = Artichoke::into_raw(interp);
+            len.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -74,6 +79,7 @@ unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -
     let result = array::trampoline::concat(&mut interp, array, other);
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -94,6 +100,7 @@ unsafe extern "C" fn ary_initialize(
     let result = array::trampoline::initialize(&mut interp, array, first, second, block);
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -113,6 +120,7 @@ unsafe extern "C" fn ary_initialize_copy(
     let result = array::trampoline::initialize_copy(&mut interp, array, other);
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -131,6 +139,7 @@ unsafe extern "C" fn ary_reverse_bang(
     let result = array::trampoline::reverse_bang(&mut interp, array);
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
@@ -150,7 +159,10 @@ unsafe extern "C" fn ary_element_reference(
     let array = Value::new(&interp, ary);
     let result = array::trampoline::element_reference(&mut interp, array, elem, len);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -168,6 +180,7 @@ unsafe extern "C" fn ary_element_assignment(
     let result = array::trampoline::element_assignment(&mut interp, array, first, second, third);
     match result {
         Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
             let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
             value.inner()

@@ -29,6 +29,7 @@ impl RustBackedValue for Obj {
 unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let interp = unwrap_interpreter!(mrb);
     interp.0.borrow_mut();
+    let _ = Artichoke::into_raw(interp);
     slf
 }
 

@@ -163,12 +163,14 @@ mod tests {
         let mut interp = unwrap_interpreter!(mrb);
 
         let value = Value::new(&interp, slf);
-        if let Ok(container) = Container::try_from_ruby(&mut interp, &value) {
+        let result = if let Ok(container) = Container::try_from_ruby(&mut interp, &value) {
             let borrow = container.borrow();
-            interp.convert_mut(borrow.inner.as_bytes()).inner()
+            interp.convert_mut(borrow.inner.as_bytes())
         } else {
-            interp.convert(None::<Value>).inner()
-        }
+            interp.convert(None::<Value>)
+        };
+        let _ = Artichoke::into_raw(interp);
+        result.inner()
     }
 
     impl RustBackedValue for Container {

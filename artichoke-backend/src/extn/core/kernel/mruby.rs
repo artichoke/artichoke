@@ -59,7 +59,10 @@ unsafe extern "C" fn artichoke_kernel_integer(
     let base = base.map(|base| Value::new(&interp, base));
     let result = trampoline::integer(&mut interp, arg, base);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -73,7 +76,10 @@ unsafe extern "C" fn artichoke_kernel_load(
     let file = Value::new(&interp, file);
     let result = trampoline::load(&mut interp, file);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -91,7 +97,10 @@ unsafe extern "C" fn artichoke_kernel_p(
         .collect::<Vec<_>>();
     let result = trampoline::p(&mut interp, args);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -109,7 +118,10 @@ unsafe extern "C" fn artichoke_kernel_print(
         .collect::<Vec<_>>();
     let result = trampoline::print(&mut interp, args);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -127,7 +139,10 @@ unsafe extern "C" fn artichoke_kernel_puts(
         .collect::<Vec<_>>();
     let result = trampoline::puts(&mut interp, args);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -141,7 +156,10 @@ unsafe extern "C" fn artichoke_kernel_require(
     let file = Value::new(&interp, file);
     let result = trampoline::require(&mut interp, file);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -155,7 +173,10 @@ unsafe extern "C" fn artichoke_kernel_require_relative(
     let file = Value::new(&interp, file);
     let result = trampoline::require_relative(&mut interp, file);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }

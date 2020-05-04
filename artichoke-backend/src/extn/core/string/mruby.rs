@@ -24,7 +24,10 @@ unsafe extern "C" fn artichoke_string_ord(
     let value = Value::new(&interp, slf);
     let result = trampoline::ord(&mut interp, value);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let _ = Artichoke::into_raw(interp);
+            value.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
@@ -39,7 +42,10 @@ unsafe extern "C" fn artichoke_string_scan(
     let pattern = Value::new(&interp, pattern);
     let result = trampoline::scan(&mut interp, value, pattern, block);
     match result {
-        Ok(result) => result.inner(),
+        Ok(result) => {
+            let _ = Artichoke::into_raw(interp);
+            result.inner()
+        }
         Err(exception) => exception::raise(interp, exception),
     }
 }
