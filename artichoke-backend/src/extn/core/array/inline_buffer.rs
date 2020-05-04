@@ -36,6 +36,15 @@ impl<'a> From<&'a [Value]> for InlineBuffer {
     }
 }
 
+impl FromIterator<sys::mrb_value> for InlineBuffer {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = sys::mrb_value>,
+    {
+        Self(SmallVec::from_iter(iter.into_iter()))
+    }
+}
+
 impl FromIterator<Value> for InlineBuffer {
     fn from_iter<I>(iter: I) -> Self
     where

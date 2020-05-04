@@ -28,16 +28,13 @@ unsafe extern "C" fn artichoke_integer_chr(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let encoding = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
-    let result = trampoline::chr(&mut interp, value, encoding);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let encoding = encoding.map(|encoding| Value::new(guard.interp(), encoding));
+    let result = trampoline::chr(guard.interp(), value, encoding);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -46,16 +43,13 @@ unsafe extern "C" fn artichoke_integer_element_reference(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let bit = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let bit = Value::new(&interp, bit);
-    let result = trampoline::element_reference(&mut interp, value, bit);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let bit = Value::new(guard.interp(), bit);
+    let result = trampoline::element_reference(guard.interp(), value, bit);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -64,16 +58,13 @@ unsafe extern "C" fn artichoke_integer_div(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let denominator = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let denominator = Value::new(&interp, denominator);
-    let result = trampoline::div(&mut interp, value, denominator);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let denominator = Value::new(guard.interp(), denominator);
+    let result = trampoline::div(guard.interp(), value, denominator);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -82,13 +73,10 @@ unsafe extern "C" fn artichoke_integer_size(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let interp = unwrap_interpreter!(mrb);
-    let result = trampoline::size(&interp);
+    let (interp, guard) = unwrap_interpreter!(mrb);
+    let result = trampoline::size(guard.interp());
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }

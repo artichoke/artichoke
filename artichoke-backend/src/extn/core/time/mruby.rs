@@ -37,14 +37,11 @@ unsafe extern "C" fn artichoke_time_self_now(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let result = trampoline::now(&mut interp);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let result = trampoline::now(guard.interp());
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -54,15 +51,12 @@ unsafe extern "C" fn artichoke_time_day(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::day(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::day(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -72,15 +66,12 @@ unsafe extern "C" fn artichoke_time_hour(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::hour(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::hour(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -90,15 +81,12 @@ unsafe extern "C" fn artichoke_time_minute(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::minute(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::minute(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -108,15 +96,12 @@ unsafe extern "C" fn artichoke_time_month(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::month(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::month(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -126,15 +111,12 @@ unsafe extern "C" fn artichoke_time_nanosecond(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::nanosecond(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::nanosecond(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -144,15 +126,12 @@ unsafe extern "C" fn artichoke_time_second(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::second(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::second(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -162,15 +141,12 @@ unsafe extern "C" fn artichoke_time_microsecond(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::microsecond(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::microsecond(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -180,15 +156,12 @@ unsafe extern "C" fn artichoke_time_weekday(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::weekday(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::weekday(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -198,15 +171,12 @@ unsafe extern "C" fn artichoke_time_year_day(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::year_day(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::year_day(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -216,14 +186,11 @@ unsafe extern "C" fn artichoke_time_year(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let time = Value::new(&interp, slf);
-    let result = trampoline::year(&mut interp, time);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let time = Value::new(guard.interp(), slf);
+    let result = trampoline::year(guard.interp(), time);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }

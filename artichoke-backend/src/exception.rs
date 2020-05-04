@@ -7,7 +7,7 @@ use crate::core::{TryConvertMut, Value as _};
 use crate::string;
 use crate::sys;
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, Guard};
 
 #[derive(Debug)]
 pub struct Exception(Box<dyn RubyException>);
@@ -56,9 +56,10 @@ impl From<Box<dyn RubyException>> for Exception {
 /// Because this precondition must hold for all frames between the caller and
 /// the closest [`sys::mrb_protect`] landing pad, this function should only be
 /// called in the entrypoint into Rust from mruby.
-pub unsafe fn raise(mut interp: Artichoke, exception: impl RubyException + fmt::Debug) -> ! {
-    let exc = exception.as_mrb_value(&mut interp);
-    let mrb = Artichoke::into_raw(interp);
+pub unsafe fn raise(guard: Guard<'_>, exception: impl RubyException + fmt::Debug) -> ! {
+    let exc = exception.as_mrb_value(&mut guard);
+    let mrb = guard.mrb.as_mut() as *mut _;
+    drop(guard);
     if let Some(exc) = exc {
         // Any non-`Copy` objects that we haven't cleaned up at this point will
         // leak, so drop everything.

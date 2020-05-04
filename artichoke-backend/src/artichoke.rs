@@ -1,5 +1,6 @@
 use std::ffi::c_void;
 use std::mem;
+use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
 use crate::ffi::{self, InterpreterExtractError};
@@ -125,6 +126,44 @@ impl Artichoke {
                 state.close(mrb);
             }
             sys::mrb_close(mrb);
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Guard<'a>(&'a mut Artichoke);
+
+impl<'a> Guard<'a> {
+    pub fn new(interp: &'a mut Artichoke) -> Self {
+        Self(interp)
+    }
+
+    pub fn interp(&mut self) -> &mut Artichoke {
+        self.0
+    }
+}
+
+impl<'a> Deref for Guard<'a> {
+    type Target = Artichoke;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.0
+    }
+}
+
+impl<'a> DerefMut for Guard<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0
+    }
+}
+
+impl<'a> Drop for Guard<'a> {
+    fn drop(&mut self) {
+        let mrb = self.0.mrb.as_mut();
+        if let Some(state) = self.0.state.take() {
+            mrb.ud = Box::into_raw(state) as *mut c_void;
+        } else {
+            println!("artichoke guard NO STATE");
         }
     }
 }

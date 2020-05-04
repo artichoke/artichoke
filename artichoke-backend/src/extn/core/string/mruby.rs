@@ -20,15 +20,12 @@ unsafe extern "C" fn artichoke_string_ord(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = trampoline::ord(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = trampoline::ord(guard.interp(), value);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -37,15 +34,12 @@ unsafe extern "C" fn artichoke_string_scan(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let pattern = Value::new(&interp, pattern);
-    let result = trampoline::scan(&mut interp, value, pattern, block);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let pattern = Value::new(guard.interp(), pattern);
+    let result = trampoline::scan(guard.interp(), value, pattern, block);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }

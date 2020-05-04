@@ -123,7 +123,7 @@ mod warn;
 #[cfg(test)]
 mod test;
 
-pub use crate::artichoke::Artichoke;
+pub use crate::artichoke::{Artichoke, Guard};
 pub use crate::interpreter::interpreter;
 pub use artichoke_core::prelude as core;
 

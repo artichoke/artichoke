@@ -41,17 +41,14 @@ unsafe extern "C" fn container_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let inner = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let inner = Value::new(&interp, inner);
-    let inner = inner.try_into::<String>(&interp).unwrap_or_default();
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let inner = Value::new(guard.interp(), inner);
+    let inner = inner.try_into::<String>(guard.interp()).unwrap_or_default();
     let container = Container { inner };
-    let result = container.try_into_ruby(&mut interp, Some(slf));
+    let result = container.try_into_ruby(guard.interp(), Some(slf));
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 

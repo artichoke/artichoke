@@ -22,15 +22,14 @@ unsafe extern "C" fn container_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let inner = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let inner = Value::new(&interp, inner);
-    let inner = inner.try_into::<Int>(&interp).unwrap_or_default();
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let inner = Value::new(guard.interp(), inner);
+    let inner = inner.try_into::<Int>(guard.interp()).unwrap_or_default();
     let container = Box::new(Container { inner });
     let result = container
-        .try_into_ruby(&mut interp, Some(slf))
-        .unwrap_or_else(|_| interp.convert(None::<Value>))
+        .try_into_ruby(guard.interp(), Some(slf))
+        .unwrap_or_else(|_| guard.interp().convert(None::<Value>))
         .inner();
-    let _ = Artichoke::into_raw(interp);
     result
 }
 
@@ -38,15 +37,14 @@ unsafe extern "C" fn container_value(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = if let Ok(data) = Box::<Container>::try_from_ruby(&mut interp, &value) {
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = if let Ok(data) = Box::<Container>::try_from_ruby(guard.interp(), &value) {
         let borrow = data.borrow();
-        interp.convert(borrow.inner)
+        guard.interp().convert(borrow.inner)
     } else {
-        interp.convert(None::<Value>)
+        guard.interp().convert(None::<Value>)
     };
-    let _ = Artichoke::into_raw(interp);
     result.inner()
 }
 

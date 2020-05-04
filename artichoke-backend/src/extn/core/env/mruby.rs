@@ -39,14 +39,11 @@ unsafe extern "C" fn artichoke_env_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let result = env::initialize(&mut interp, Some(slf));
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let result = env::initialize(guard.interp(), Some(slf));
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -56,16 +53,13 @@ unsafe extern "C" fn artichoke_env_element_reference(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let name = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
-    let name = Value::new(&interp, name);
-    let result = env::element_reference(&mut interp, obj, &name);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let obj = Value::new(guard.interp(), slf);
+    let name = Value::new(guard.interp(), name);
+    let result = env::element_reference(guard.interp(), obj, &name);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -75,17 +69,14 @@ unsafe extern "C" fn artichoke_env_element_assignment(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (name, value) = mrb_get_args!(mrb, required = 2);
-    let mut interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
-    let name = Value::new(&interp, name);
-    let value = Value::new(&interp, value);
-    let result = env::element_assignment(&mut interp, obj, &name, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let obj = Value::new(guard.interp(), slf);
+    let name = Value::new(guard.interp(), name);
+    let value = Value::new(guard.interp(), value);
+    let result = env::element_assignment(guard.interp(), obj, &name, value);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -95,14 +86,11 @@ unsafe extern "C" fn artichoke_env_to_h(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let obj = Value::new(&interp, slf);
-    let result = env::to_h(&mut interp, obj);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let obj = Value::new(guard.interp(), slf);
+    let result = env::to_h(guard.interp(), obj);
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }

@@ -50,19 +50,16 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, options, encoding) = mrb_get_args!(mrb, required = 1, optional = 2);
-    let mut interp = unwrap_interpreter!(mrb);
-    let into = Value::new(&interp, slf);
-    let pattern = Value::new(&interp, pattern);
-    let options = options.map(|options| Value::new(&interp, options));
-    let encoding = encoding.map(|encoding| Value::new(&interp, encoding));
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let into = Value::new(guard.interp(), slf);
+    let pattern = Value::new(guard.interp(), pattern);
+    let options = options.map(|options| Value::new(guard.interp(), options));
+    let encoding = encoding.map(|encoding| Value::new(guard.interp(), encoding));
     let result =
-        regexp::trampoline::initialize(&mut interp, pattern, options, encoding, Some(into));
+        regexp::trampoline::initialize(guard.interp(), pattern, options, encoding, Some(into));
     match result {
-        Ok(value) => {
-            let _ = Artichoke::into_raw(interp);
-            value.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -80,95 +77,77 @@ unsafe extern "C" fn compile(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
 
 unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let pattern = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let pattern = Value::new(&interp, pattern);
-    let result = regexp::trampoline::escape(&mut interp, pattern);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let pattern = Value::new(guard.interp(), pattern);
+    let result = regexp::trampoline::escape(guard.interp(), pattern);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn union(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let mut interp = unwrap_interpreter!(mrb);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
     let args = args
         .iter()
         .copied()
-        .map(|arg| Value::new(&interp, arg))
+        .map(|arg| Value::new(guard.interp(), arg))
         .collect::<Vec<_>>();
-    let result = regexp::trampoline::union(&mut interp, args);
+    let result = regexp::trampoline::union(guard.interp(), args);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, pos) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let pattern = Value::new(&interp, pattern);
-    let pos = pos.map(|pos| Value::new(&interp, pos));
-    let result = regexp::trampoline::is_match(&mut interp, value, pattern, pos);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let pattern = Value::new(guard.interp(), pattern);
+    let pos = pos.map(|pos| Value::new(guard.interp(), pos));
+    let result = regexp::trampoline::is_match(guard.interp(), value, pattern, pos);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, pos, block) = mrb_get_args!(mrb, required = 1, optional = 1, &block);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let pattern = Value::new(&interp, pattern);
-    let pos = pos.map(|pos| Value::new(&interp, pos));
-    let result = regexp::trampoline::match_(&mut interp, value, pattern, pos, block);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let pattern = Value::new(guard.interp(), pattern);
+    let pos = pos.map(|pos| Value::new(guard.interp(), pos));
+    let result = regexp::trampoline::match_(guard.interp(), value, pattern, pos, block);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let other = Value::new(&interp, other);
-    let result = regexp::trampoline::eql(&mut interp, value, other);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let other = Value::new(guard.interp(), other);
+    let result = regexp::trampoline::eql(guard.interp(), value, other);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn case_compare(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let pattern = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let pattern = Value::new(&interp, pattern);
-    let result = regexp::trampoline::case_compare(&mut interp, value, pattern);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let pattern = Value::new(guard.interp(), pattern);
+    let result = regexp::trampoline::case_compare(guard.interp(), value, pattern);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -177,30 +156,24 @@ unsafe extern "C" fn match_operator(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let pattern = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let pattern = Value::new(&interp, pattern);
-    let result = regexp::trampoline::match_operator(&mut interp, value, pattern);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let pattern = Value::new(guard.interp(), pattern);
+    let result = regexp::trampoline::match_operator(guard.interp(), value, pattern);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn casefold(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::is_casefold(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::is_casefold(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -209,43 +182,34 @@ unsafe extern "C" fn fixed_encoding(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::is_fixed_encoding(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::is_fixed_encoding(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::hash(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::hash(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::inspect(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::inspect(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -254,70 +218,55 @@ unsafe extern "C" fn named_captures(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::named_captures(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::named_captures(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::names(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::names(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::options(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::options(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::source(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::source(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
 unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, slf);
-    let result = regexp::trampoline::to_s(&mut interp, value);
+    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let value = Value::new(guard.interp(), slf);
+    let result = regexp::trampoline::to_s(guard.interp(), value);
     match result {
-        Ok(result) => {
-            let _ = Artichoke::into_raw(interp);
-            result.inner()
-        }
-        Err(exception) => exception::raise(interp, exception),
+        Ok(result) => result.inner(),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
