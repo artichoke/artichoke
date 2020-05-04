@@ -19,6 +19,8 @@ use crate::Artichoke;
 /// the [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, Exception> {
     let raw = unsafe { sys::mrb_open() };
+    debug!("Try initializing mrb interpreter");
+
     let mut mrb = if let Some(mrb) = NonNull::new(raw) {
         mrb
     } else {
@@ -36,39 +38,34 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     let prior_gc_state = interp.disable_gc();
 
     // Initialize Artichoke Core and Standard Library runtime
-    println!("here");
+    debug!("Begin initializing Artichoke Core and Standard Library");
     extn::init(&mut interp, "mruby")?;
-    println!("here");
+    debug!("Succeeded initializing Artichoke Core and Standard Library");
 
     // Load mrbgems
     let mut arena = interp.create_arena_savepoint();
     unsafe {
-        println!("here");
         arena
             .interp()
             .with_ffi_boundary(|mrb| sys::mrb_init_mrbgems(mrb))?;
-        println!("here");
     }
     arena.restore();
 
     debug!(
-        "Allocated {}",
+        "Allocated mrb interpreter: {}",
         sys::mrb_sys_state_debug(unsafe { interp.mrb.as_mut() })
     );
-    println!("here");
 
     // mruby lazily initializes some core objects like top_self and generates a
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
     // predictable initialization behavior.
     interp.create_arena_savepoint().interp().eval(&[])?;
-    println!("here");
 
     if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();
         interp.full_gc();
     }
 
-    println!("here");
     Ok(interp)
 }
 

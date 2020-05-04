@@ -25,11 +25,8 @@ impl ConvertMut<&[u8], Value> for Artichoke {
         let len = value.len();
         // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
         // to worry about the lifetime of the slice passed into this converter.
-        let string = unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_str_new(mrb, raw, len)
-        };
-        Value::new(self, string)
+        let string = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_str_new(mrb, raw, len)) };
+        Value::new(self, string.unwrap())
     }
 }
 
@@ -71,26 +68,27 @@ impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
                 // `mrb_value` to turn a `char *` wrapped in quotes into a
                 // `char *`.
                 let bytes = unsafe {
-                    let mrb = self.mrb.as_mut();
-                    sys::mrb_sys_symbol_name(mrb, value.inner())
+                    self.with_ffi_boundary(|mrb| sys::mrb_sys_symbol_name(mrb, value.inner()))?
                 };
                 let slice = unsafe { CStr::from_ptr(bytes) };
                 Ok(slice.to_bytes())
             }
             Ruby::String => {
                 let bytes = value.inner();
-                let slice = unsafe {
-                    let mrb = self.mrb.as_mut();
-                    let raw = sys::mrb_string_value_ptr(mrb, bytes) as *const u8;
-                    let len = sys::mrb_string_value_len(mrb, bytes);
-                    let len = usize::try_from(len)
-                        .map_err(|_| UnboxRubyError::new(&value, Rust::Bytes))?;
-                    // We can return a borrowed slice because the memory is
-                    // stored on the mruby heap. As long as `value` is
-                    // reachable, this slice points to valid memory.
-                    slice::from_raw_parts(raw, len)
-                };
-                Ok(slice)
+                unsafe {
+                    self.with_ffi_boundary(|mrb| {
+                        let raw = sys::mrb_string_value_ptr(mrb, bytes) as *const u8;
+                        let len = sys::mrb_string_value_len(mrb, bytes);
+                        if let Ok(len) = usize::try_from(len) {
+                            // We can return a borrowed slice because the memory is
+                            // stored on the mruby heap. As long as `value` is
+                            // reachable, this slice points to valid memory.
+                            Ok(slice::from_raw_parts(raw, len))
+                        } else {
+                            Err(UnboxRubyError::new(&value, Rust::Bytes).into())
+                        }
+                    })?
+                }
             }
             _ => Err(Exception::from(UnboxRubyError::new(&value, Rust::Bytes))),
         }

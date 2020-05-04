@@ -1,6 +1,6 @@
 use std::ffi::OsStr;
 
-use crate::core::Eval;
+use crate::core::{Eval, Value as _};
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
@@ -15,6 +15,7 @@ impl Eval for Artichoke {
     type Error = Exception;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
+        trace!("Attempting eval of Ruby source");
         let result = unsafe {
             let context = self
                 .state
@@ -22,16 +23,7 @@ impl Eval for Artichoke {
                 .ok_or(InterpreterExtractError)?
                 .parser
                 .context_mut() as *mut _;
-            println!("eval before boundary");
-            let r = self.with_ffi_boundary(|mrb| {
-                println!("eval in boundary");
-                println!("{:?}", std::str::from_utf8(code));
-                let r = protect::eval(mrb, context, code);
-                println!("eval post boundary");
-                r
-            })?;
-            println!("eval post post boundary");
-            r
+            self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
         };
         match result {
             Ok(value) => {
@@ -42,13 +34,19 @@ impl Eval for Artichoke {
                     // and may result in a segfault.
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
+                    error!("Fatal eval returned unreachable value");
                     Err(Exception::from(Fatal::new(self, "Unreachable Ruby value")))
                 } else {
+                    trace!("Sucessful eval");
                     Ok(value)
                 }
             }
             Err(exception) => {
                 let exception = Value::new(self, exception);
+                debug!(
+                    "Failed eval raised exception: {:?}",
+                    bstr::B(&exception.inspect(self))
+                );
                 Err(exception_handler::last_error(self, exception)?)
             }
         }

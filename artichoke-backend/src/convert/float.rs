@@ -9,11 +9,8 @@ use crate::Artichoke;
 // TODO: when ,mruby is gone, float conversion should not allocate.
 impl ConvertMut<Fp, Value> for Artichoke {
     fn convert_mut(&mut self, value: Fp) -> Value {
-        let float = unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_sys_float_value(mrb, value)
-        };
-        Value::new(self, float)
+        let float = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_sys_float_value(mrb, value)) };
+        Value::new(self, float.unwrap())
     }
 }
 
