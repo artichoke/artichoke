@@ -55,11 +55,12 @@ unsafe extern "C" fn artichoke_securerandom_alphanumeric(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let len = mrb_get_args!(mrb, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let len = len
-        .map(|len| Value::new(guard.interp(), len))
-        .and_then(|len| interp.convert(len));
-    let result = trampoline::alphanumeric(guard.interp(), len);
+        .map(|len| Value::new(&guard, len))
+        .and_then(|len| guard.convert(len));
+    let result = trampoline::alphanumeric(&mut guard, len);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -72,11 +73,12 @@ unsafe extern "C" fn artichoke_securerandom_base64(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let len = mrb_get_args!(mrb, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let len = len
-        .map(|len| Value::new(guard.interp(), len))
-        .and_then(|len| interp.convert(len));
-    let result = trampoline::base64(guard.interp(), len);
+        .map(|len| Value::new(&guard, len))
+        .and_then(|len| guard.convert(len));
+    let result = trampoline::base64(&mut guard, len);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -89,11 +91,12 @@ unsafe extern "C" fn artichoke_securerandom_hex(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let len = mrb_get_args!(mrb, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let len = len
-        .map(|len| Value::new(guard.interp(), len))
-        .and_then(|len| interp.convert(len));
-    let result = trampoline::hex(guard.interp(), len);
+        .map(|len| Value::new(&guard, len))
+        .and_then(|len| guard.convert(len));
+    let result = trampoline::hex(&mut guard, len);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -106,11 +109,12 @@ unsafe extern "C" fn artichoke_securerandom_random_bytes(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let len = mrb_get_args!(mrb, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let len = len
-        .map(|len| Value::new(guard.interp(), len))
-        .and_then(|len| interp.convert(len));
-    let result = trampoline::random_bytes(guard.interp(), len);
+        .map(|len| Value::new(&guard, len))
+        .and_then(|len| guard.convert(len));
+    let result = trampoline::random_bytes(&mut guard, len);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -123,11 +127,12 @@ unsafe extern "C" fn artichoke_securerandom_random_number(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let max = mrb_get_args!(mrb, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let max = max
-        .map(|max| Value::new(guard.interp(), max))
-        .and_then(|max| interp.convert(max));
-    let result = trampoline::random_number(guard.interp(), max);
+        .map(|max| Value::new(&guard, max))
+        .and_then(|max| guard.convert(max));
+    let result = trampoline::random_number(&mut guard, max);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -140,8 +145,9 @@ unsafe extern "C" fn artichoke_securerandom_uuid(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let result = trampoline::uuid(guard.interp());
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let result = trampoline::uuid(&mut guard);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),

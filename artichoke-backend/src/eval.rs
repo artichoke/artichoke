@@ -102,12 +102,12 @@ mod tests {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let mut interp = unwrap_interpreter!(mrb);
-            let result = if let Ok(value) = interp.eval(b"__FILE__") {
+            let mut guard = Guard::new(&mut interp);
+            let result = if let Ok(value) = guard.eval(b"__FILE__") {
                 value
             } else {
-                interp.convert(None::<Value>)
+                guard.convert(None::<Value>)
             };
-            let _ = Artichoke::into_raw(interp);
             result.inner()
         }
 

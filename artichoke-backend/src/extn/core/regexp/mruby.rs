@@ -50,13 +50,13 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, options, encoding) = mrb_get_args!(mrb, required = 1, optional = 2);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let into = Value::new(guard.interp(), slf);
-    let pattern = Value::new(guard.interp(), pattern);
-    let options = options.map(|options| Value::new(guard.interp(), options));
-    let encoding = encoding.map(|encoding| Value::new(guard.interp(), encoding));
-    let result =
-        regexp::trampoline::initialize(guard.interp(), pattern, options, encoding, Some(into));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let into = Value::new(&guard, slf);
+    let pattern = Value::new(&guard, pattern);
+    let options = options.map(|options| Value::new(&guard, options));
+    let encoding = encoding.map(|encoding| Value::new(&guard, encoding));
+    let result = regexp::trampoline::initialize(&mut guard, pattern, options, encoding, Some(into));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -77,9 +77,10 @@ unsafe extern "C" fn compile(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
 
 unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let pattern = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let pattern = Value::new(guard.interp(), pattern);
-    let result = regexp::trampoline::escape(guard.interp(), pattern);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let pattern = Value::new(&guard, pattern);
+    let result = regexp::trampoline::escape(&mut guard, pattern);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -88,13 +89,14 @@ unsafe extern "C" fn escape(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> s
 
 unsafe extern "C" fn union(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let args = args
         .iter()
         .copied()
-        .map(|arg| Value::new(guard.interp(), arg))
+        .map(|arg| Value::new(&guard, arg))
         .collect::<Vec<_>>();
-    let result = regexp::trampoline::union(guard.interp(), args);
+    let result = regexp::trampoline::union(&mut guard, args);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -103,11 +105,12 @@ unsafe extern "C" fn union(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sy
 
 unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, pos) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let pattern = Value::new(guard.interp(), pattern);
-    let pos = pos.map(|pos| Value::new(guard.interp(), pos));
-    let result = regexp::trampoline::is_match(guard.interp(), value, pattern, pos);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let pattern = Value::new(&guard, pattern);
+    let pos = pos.map(|pos| Value::new(&guard, pos));
+    let result = regexp::trampoline::is_match(&mut guard, value, pattern, pos);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -116,11 +119,12 @@ unsafe extern "C" fn match_q(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
 
 unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, pos, block) = mrb_get_args!(mrb, required = 1, optional = 1, &block);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let pattern = Value::new(guard.interp(), pattern);
-    let pos = pos.map(|pos| Value::new(guard.interp(), pos));
-    let result = regexp::trampoline::match_(guard.interp(), value, pattern, pos, block);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let pattern = Value::new(&guard, pattern);
+    let pos = pos.map(|pos| Value::new(&guard, pos));
+    let result = regexp::trampoline::match_(&mut guard, value, pattern, pos, block);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -129,10 +133,11 @@ unsafe extern "C" fn match_(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sy
 
 unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let other = Value::new(guard.interp(), other);
-    let result = regexp::trampoline::eql(guard.interp(), value, other);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let other = Value::new(&guard, other);
+    let result = regexp::trampoline::eql(&mut guard, value, other);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -141,10 +146,11 @@ unsafe extern "C" fn eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::
 
 unsafe extern "C" fn case_compare(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let pattern = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let pattern = Value::new(guard.interp(), pattern);
-    let result = regexp::trampoline::case_compare(guard.interp(), value, pattern);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let pattern = Value::new(&guard, pattern);
+    let result = regexp::trampoline::case_compare(&mut guard, value, pattern);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -156,10 +162,11 @@ unsafe extern "C" fn match_operator(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let pattern = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let pattern = Value::new(guard.interp(), pattern);
-    let result = regexp::trampoline::match_operator(guard.interp(), value, pattern);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let pattern = Value::new(&guard, pattern);
+    let result = regexp::trampoline::match_operator(&mut guard, value, pattern);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -168,9 +175,10 @@ unsafe extern "C" fn match_operator(
 
 unsafe extern "C" fn casefold(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::is_casefold(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::is_casefold(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -182,9 +190,10 @@ unsafe extern "C" fn fixed_encoding(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::is_fixed_encoding(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::is_fixed_encoding(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -193,9 +202,10 @@ unsafe extern "C" fn fixed_encoding(
 
 unsafe extern "C" fn hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::hash(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::hash(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -204,9 +214,10 @@ unsafe extern "C" fn hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys:
 
 unsafe extern "C" fn inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::inspect(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::inspect(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -218,9 +229,10 @@ unsafe extern "C" fn named_captures(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::named_captures(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::named_captures(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -229,9 +241,10 @@ unsafe extern "C" fn named_captures(
 
 unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::names(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::names(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -240,9 +253,10 @@ unsafe extern "C" fn names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys
 
 unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::options(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::options(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -251,9 +265,10 @@ unsafe extern "C" fn options(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
 
 unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::source(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::source(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -262,9 +277,10 @@ unsafe extern "C" fn source(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sy
 
 unsafe extern "C" fn to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = regexp::trampoline::to_s(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = regexp::trampoline::to_s(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),

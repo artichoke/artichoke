@@ -161,15 +161,15 @@ mod tests {
         slf: sys::mrb_value,
     ) -> sys::mrb_value {
         let mut interp = unwrap_interpreter!(mrb);
+        let mut guard = Guard::new(&mut interp);
 
-        let value = Value::new(&interp, slf);
-        let result = if let Ok(container) = Container::try_from_ruby(&mut interp, &value) {
+        let value = Value::new(&guard, slf);
+        let result = if let Ok(container) = Container::try_from_ruby(&mut guard, &value) {
             let borrow = container.borrow();
-            interp.convert_mut(borrow.inner.as_bytes())
+            guard.convert_mut(borrow.inner.as_bytes())
         } else {
-            interp.convert(None::<Value>)
+            guard.convert(None::<Value>)
         };
-        let _ = Artichoke::into_raw(interp);
         result.inner()
     }
 

@@ -28,10 +28,11 @@ unsafe extern "C" fn artichoke_integer_chr(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let encoding = mrb_get_args!(mrb, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let encoding = encoding.map(|encoding| Value::new(guard.interp(), encoding));
-    let result = trampoline::chr(guard.interp(), value, encoding);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let encoding = encoding.map(|encoding| Value::new(&guard, encoding));
+    let result = trampoline::chr(&mut guard, value, encoding);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -43,10 +44,11 @@ unsafe extern "C" fn artichoke_integer_element_reference(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let bit = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let bit = Value::new(guard.interp(), bit);
-    let result = trampoline::element_reference(guard.interp(), value, bit);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let bit = Value::new(&guard, bit);
+    let result = trampoline::element_reference(&mut guard, value, bit);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -58,10 +60,11 @@ unsafe extern "C" fn artichoke_integer_div(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let denominator = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let denominator = Value::new(guard.interp(), denominator);
-    let result = trampoline::div(guard.interp(), value, denominator);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let denominator = Value::new(&guard, denominator);
+    let result = trampoline::div(&mut guard, value, denominator);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -73,8 +76,9 @@ unsafe extern "C" fn artichoke_integer_size(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (interp, guard) = unwrap_interpreter!(mrb);
-    let result = trampoline::size(guard.interp());
+    let mut interp = unwrap_interpreter!(mrb);
+    let guard = Guard::new(&mut interp);
+    let result = trampoline::size(&guard);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),

@@ -36,9 +36,10 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let array = Value::new(guard.interp(), ary);
-    let result = array::trampoline::pop(guard.interp(), array);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    let result = array::trampoline::pop(&mut guard, array);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -51,17 +52,14 @@ unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 
 unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let ary = Value::new(guard.interp(), ary);
-    let result = array::trampoline::len(guard.interp(), ary).and_then(|len| {
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    let result = array::trampoline::len(&mut guard, ary).and_then(|len| {
         if let Ok(len) = sys::mrb_int::try_from(len) {
             Ok(len)
         } else {
-            Err(Fatal::new(
-                guard.interp(),
-                "Array length does not fit in mruby Integer max",
-            )
-            .into())
+            Err(Fatal::new(&mut guard, "Array length does not fit in mruby Integer max").into())
         }
     });
     match result {
@@ -76,10 +74,11 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 
 unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let array = Value::new(guard.interp(), ary);
-    let other = other.map(|other| Value::new(guard.interp(), other));
-    let result = array::trampoline::concat(guard.interp(), array, other);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    let other = other.map(|other| Value::new(&guard, other));
+    let result = array::trampoline::concat(&mut guard, array, other);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -95,11 +94,12 @@ unsafe extern "C" fn ary_initialize(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (first, second, block) = mrb_get_args!(mrb, optional = 2, &block);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let array = Value::new(guard.interp(), ary);
-    let first = first.map(|first| Value::new(guard.interp(), first));
-    let second = second.map(|second| Value::new(guard.interp(), second));
-    let result = array::trampoline::initialize(guard.interp(), array, first, second, block);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    let first = first.map(|first| Value::new(&guard, first));
+    let second = second.map(|second| Value::new(&guard, second));
+    let result = array::trampoline::initialize(&mut guard, array, first, second, block);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -115,10 +115,11 @@ unsafe extern "C" fn ary_initialize_copy(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let array = Value::new(guard.interp(), ary);
-    let other = Value::new(guard.interp(), other);
-    let result = array::trampoline::initialize_copy(guard.interp(), array, other);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    let other = Value::new(&guard, other);
+    let result = array::trampoline::initialize_copy(&mut guard, array, other);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -134,9 +135,10 @@ unsafe extern "C" fn ary_reverse_bang(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let array = Value::new(guard.interp(), ary);
-    let result = array::trampoline::reverse_bang(guard.interp(), array);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    let result = array::trampoline::reverse_bang(&mut guard, array);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
@@ -152,11 +154,12 @@ unsafe extern "C" fn ary_element_reference(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let elem = Value::new(guard.interp(), elem);
-    let len = len.map(|len| Value::new(guard.interp(), len));
-    let array = Value::new(guard.interp(), ary);
-    let result = array::trampoline::element_reference(guard.interp(), array, elem, len);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let elem = Value::new(&guard, elem);
+    let len = len.map(|len| Value::new(&guard, len));
+    let array = Value::new(&guard, ary);
+    let result = array::trampoline::element_reference(&mut guard, array, elem, len);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -168,12 +171,13 @@ unsafe extern "C" fn ary_element_assignment(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (first, second, third) = mrb_get_args!(mrb, required = 2, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let first = Value::new(guard.interp(), first);
-    let second = Value::new(guard.interp(), second);
-    let third = third.map(|third| Value::new(guard.interp(), third));
-    let array = Value::new(guard.interp(), ary);
-    let result = array::trampoline::element_assignment(guard.interp(), array, first, second, third);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let first = Value::new(&guard, first);
+    let second = Value::new(&guard, second);
+    let third = third.map(|third| Value::new(&guard, third));
+    let array = Value::new(&guard, ary);
+    let result = array::trampoline::element_assignment(&mut guard, array, first, second, third);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

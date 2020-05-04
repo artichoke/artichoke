@@ -60,10 +60,11 @@ unsafe extern "C" fn artichoke_matchdata_begin(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let begin = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let begin = Value::new(guard.interp(), begin);
-    let result = trampoline::begin(guard.interp(), value, begin);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let begin = Value::new(&guard, begin);
+    let result = trampoline::begin(&mut guard, value, begin);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -75,9 +76,10 @@ unsafe extern "C" fn artichoke_matchdata_captures(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::captures(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::captures(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -89,11 +91,12 @@ unsafe extern "C" fn artichoke_matchdata_element_reference(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let elem = Value::new(guard.interp(), elem);
-    let len = len.map(|len| Value::new(guard.interp(), len));
-    let result = trampoline::element_reference(guard.interp(), value, elem, len);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let elem = Value::new(&guard, elem);
+    let len = len.map(|len| Value::new(&guard, len));
+    let result = trampoline::element_reference(&mut guard, value, elem, len);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -105,10 +108,11 @@ unsafe extern "C" fn artichoke_matchdata_end(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let end = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let end = Value::new(guard.interp(), end);
-    let result = trampoline::end(guard.interp(), value, end);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let end = Value::new(&guard, end);
+    let result = trampoline::end(&mut guard, value, end);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -120,9 +124,10 @@ unsafe extern "C" fn artichoke_matchdata_length(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::length(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::length(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -134,9 +139,10 @@ unsafe extern "C" fn artichoke_matchdata_named_captures(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::named_captures(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::named_captures(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -148,9 +154,10 @@ unsafe extern "C" fn artichoke_matchdata_names(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::names(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::names(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -162,10 +169,11 @@ unsafe extern "C" fn artichoke_matchdata_offset(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let offset = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let offset = Value::new(guard.interp(), offset);
-    let result = trampoline::offset(guard.interp(), value, offset);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let offset = Value::new(&guard, offset);
+    let result = trampoline::offset(&mut guard, value, offset);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -177,9 +185,10 @@ unsafe extern "C" fn artichoke_matchdata_post_match(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::post_match(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::post_match(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -191,9 +200,10 @@ unsafe extern "C" fn artichoke_matchdata_pre_match(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::pre_match(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::pre_match(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -205,9 +215,10 @@ unsafe extern "C" fn artichoke_matchdata_regexp(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::regexp(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::regexp(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -219,9 +230,10 @@ unsafe extern "C" fn artichoke_matchdata_string(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::string(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::string(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -233,9 +245,10 @@ unsafe extern "C" fn artichoke_matchdata_to_a(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::to_a(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::to_a(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -247,9 +260,10 @@ unsafe extern "C" fn artichoke_matchdata_to_s(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), slf);
-    let result = trampoline::to_s(guard.interp(), value);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, slf);
+    let result = trampoline::to_s(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
         Err(exception) => exception::raise(guard, exception),

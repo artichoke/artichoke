@@ -54,10 +54,11 @@ unsafe extern "C" fn artichoke_kernel_integer(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let arg = Value::new(guard.interp(), arg);
-    let base = base.map(|base| Value::new(guard.interp(), base));
-    let result = trampoline::integer(guard.interp(), arg, base);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let arg = Value::new(&guard, arg);
+    let base = base.map(|base| Value::new(&guard, base));
+    let result = trampoline::integer(&mut guard, arg, base);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -69,9 +70,10 @@ unsafe extern "C" fn artichoke_kernel_load(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let file = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let file = Value::new(guard.interp(), file);
-    let result = trampoline::load(guard.interp(), file);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let file = Value::new(&guard, file);
+    let result = trampoline::load(&mut guard, file);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -83,13 +85,14 @@ unsafe extern "C" fn artichoke_kernel_p(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let args = args
         .iter()
         .copied()
-        .map(|arg| Value::new(guard.interp(), arg))
+        .map(|arg| Value::new(&guard, arg))
         .collect::<Vec<_>>();
-    let result = trampoline::p(guard.interp(), args);
+    let result = trampoline::p(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -101,13 +104,14 @@ unsafe extern "C" fn artichoke_kernel_print(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let args = args
         .iter()
         .copied()
-        .map(|arg| Value::new(guard.interp(), arg))
+        .map(|arg| Value::new(&guard, arg))
         .collect::<Vec<_>>();
-    let result = trampoline::print(guard.interp(), args);
+    let result = trampoline::print(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -119,13 +123,14 @@ unsafe extern "C" fn artichoke_kernel_puts(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let args = args
         .iter()
         .copied()
-        .map(|arg| Value::new(guard.interp(), arg))
+        .map(|arg| Value::new(&guard, arg))
         .collect::<Vec<_>>();
-    let result = trampoline::puts(guard.interp(), args);
+    let result = trampoline::puts(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -137,9 +142,10 @@ unsafe extern "C" fn artichoke_kernel_require(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let file = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let file = Value::new(guard.interp(), file);
-    let result = trampoline::require(guard.interp(), file);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let file = Value::new(&guard, file);
+    let result = trampoline::require(&mut guard, file);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -151,9 +157,10 @@ unsafe extern "C" fn artichoke_kernel_require_relative(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let file = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let file = Value::new(guard.interp(), file);
-    let result = trampoline::require_relative(guard.interp(), file);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let file = Value::new(&guard, file);
+    let result = trampoline::require_relative(&mut guard, file);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),

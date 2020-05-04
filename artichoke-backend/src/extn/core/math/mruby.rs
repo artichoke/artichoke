@@ -55,9 +55,10 @@ unsafe extern "C" fn artichoke_math_acos(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::acos(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::acos(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -69,9 +70,10 @@ unsafe extern "C" fn artichoke_math_acosh(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::acosh(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::acosh(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -83,9 +85,10 @@ unsafe extern "C" fn artichoke_math_asin(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::asin(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::asin(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -97,9 +100,10 @@ unsafe extern "C" fn artichoke_math_asinh(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::asinh(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::asinh(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -111,9 +115,10 @@ unsafe extern "C" fn artichoke_math_atan(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::atan(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::atan(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -125,10 +130,11 @@ unsafe extern "C" fn artichoke_math_atan2(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (value, other) = mrb_get_args!(mrb, required = 2);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let other = Value::new(guard.interp(), other);
-    let result = math::atan2(guard.interp(), value, other).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let other = Value::new(&guard, other);
+    let result = math::atan2(&mut guard, value, other).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -140,9 +146,10 @@ unsafe extern "C" fn artichoke_math_atanh(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::atanh(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::atanh(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -154,9 +161,10 @@ unsafe extern "C" fn artichoke_math_cbrt(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::cbrt(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::cbrt(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -168,9 +176,10 @@ unsafe extern "C" fn artichoke_math_cos(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::cos(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::cos(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -182,9 +191,10 @@ unsafe extern "C" fn artichoke_math_cosh(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::cosh(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::cosh(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -196,9 +206,10 @@ unsafe extern "C" fn artichoke_math_erf(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::erf(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::erf(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -210,9 +221,10 @@ unsafe extern "C" fn artichoke_math_erfc(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::erfc(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::erfc(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -224,9 +236,10 @@ unsafe extern "C" fn artichoke_math_exp(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::exp(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::exp(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -238,9 +251,10 @@ unsafe extern "C" fn artichoke_math_frexp(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::frexp(guard.interp(), value).map(|(fraction, exponent)| {
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::frexp(&mut guard, value).map(|(fraction, exponent)| {
         let fraction = interp.convert_mut(fraction);
         let exponent = interp.convert(exponent);
         interp.convert_mut(&[fraction, exponent][..])
@@ -256,9 +270,10 @@ unsafe extern "C" fn artichoke_math_gamma(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::gamma(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::gamma(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -270,10 +285,11 @@ unsafe extern "C" fn artichoke_math_hypot(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (value, other) = mrb_get_args!(mrb, required = 2);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let other = Value::new(guard.interp(), other);
-    let result = math::hypot(guard.interp(), value, other).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let other = Value::new(&guard, other);
+    let result = math::hypot(&mut guard, value, other).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -285,11 +301,12 @@ unsafe extern "C" fn artichoke_math_ldexp(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (fraction, exponent) = mrb_get_args!(mrb, required = 2);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let fraction = Value::new(guard.interp(), fraction);
-    let exponent = Value::new(guard.interp(), exponent);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let fraction = Value::new(&guard, fraction);
+    let exponent = Value::new(&guard, exponent);
     let result =
-        math::ldexp(guard.interp(), fraction, exponent).map(|result| interp.convert_mut(result));
+        math::ldexp(&mut guard, fraction, exponent).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -301,9 +318,10 @@ unsafe extern "C" fn artichoke_math_lgamma(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::lgamma(guard.interp(), value).map(|(result, sign)| {
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::lgamma(&mut guard, value).map(|(result, sign)| {
         let result = interp.convert_mut(result);
         let sign = interp.convert(sign);
         interp.convert_mut(&[result, sign][..])
@@ -319,10 +337,11 @@ unsafe extern "C" fn artichoke_math_log(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (value, base) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let base = base.map(|base| Value::new(guard.interp(), base));
-    let result = math::log(guard.interp(), value, base).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let base = base.map(|base| Value::new(&guard, base));
+    let result = math::log(&mut guard, value, base).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -334,9 +353,10 @@ unsafe extern "C" fn artichoke_math_log10(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::log10(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::log10(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -348,9 +368,10 @@ unsafe extern "C" fn artichoke_math_log2(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::log2(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::log2(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -362,9 +383,10 @@ unsafe extern "C" fn artichoke_math_sin(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::sin(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::sin(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -376,9 +398,10 @@ unsafe extern "C" fn artichoke_math_sinh(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::sinh(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::sinh(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -390,9 +413,10 @@ unsafe extern "C" fn artichoke_math_sqrt(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::sqrt(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::sqrt(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -404,9 +428,10 @@ unsafe extern "C" fn artichoke_math_tan(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::tan(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::tan(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -418,9 +443,10 @@ unsafe extern "C" fn artichoke_math_tanh(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
-    let (mut interp, guard) = unwrap_interpreter!(mrb);
-    let value = Value::new(guard.interp(), value);
-    let result = math::tanh(guard.interp(), value).map(|result| interp.convert_mut(result));
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = math::tanh(&mut guard, value).map(|result| interp.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),

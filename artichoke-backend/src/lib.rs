@@ -145,5 +145,5 @@ pub mod prelude {
     pub use crate::extn::core::exception::{Exception as _, *};
     pub use crate::gc::MrbGarbageCollection;
     pub use crate::interpreter::interpreter;
-    pub use crate::Artichoke;
+    pub use crate::{Artichoke, Guard};
 }

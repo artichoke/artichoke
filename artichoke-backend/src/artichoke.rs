@@ -143,6 +143,18 @@ impl<'a> Guard<'a> {
     }
 }
 
+impl<'a> AsRef<Artichoke> for Guard<'a> {
+    fn as_ref(&self) -> &Artichoke {
+        &*self.0
+    }
+}
+
+impl<'a> AsMut<Artichoke> for Guard<'a> {
+    fn as_mut(&mut self) -> &mut Artichoke {
+        self.0
+    }
+}
+
 impl<'a> Deref for Guard<'a> {
     type Target = Artichoke;
 
