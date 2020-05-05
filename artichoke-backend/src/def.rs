@@ -560,7 +560,7 @@ mod tests {
                 .unwrap()
                 .define()
                 .unwrap();
-            interp.def_class::<Class>(class);
+            interp.def_class::<Class>(class).unwrap();
             let module = module::Spec::new(&mut interp, "DefineMethodTestModule", None).unwrap();
             module::Builder::for_spec(&mut interp, &module)
                 .add_method("value", value, sys::mrb_args_none())
@@ -569,7 +569,7 @@ mod tests {
                 .unwrap()
                 .define()
                 .unwrap();
-            interp.def_module::<Module>(module);
+            interp.def_module::<Module>(module).unwrap();
 
             let _ = interp
                 .eval(b"class DynamicTestClass; include DefineMethodTestModule; extend DefineMethodTestModule; end")

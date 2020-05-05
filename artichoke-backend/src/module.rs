@@ -266,6 +266,7 @@ mod tests {
         let _ = interp.eval(b"module Foo; module Bar; end; end").unwrap();
         let scope = Spec::new(&mut interp, "Foo", None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
+        let spec = Spec::new(&mut interp, "Bar", Some(scope)).unwrap();
         let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
         assert!(rclass.is_some());
     }

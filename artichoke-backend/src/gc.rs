@@ -173,10 +173,10 @@ mod tests {
     fn arena_restore_on_explicit_restore() {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
-        let arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
-            let value = interp.eval(b"'a'").unwrap();
-            let _ = value.to_s(&mut interp);
+            let value = arena.interp().eval(b"'a'").unwrap();
+            let _ = value.to_s(arena.interp());
         }
         arena.restore();
         interp.full_gc();
@@ -194,10 +194,10 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         {
-            let _arena = interp.create_arena_savepoint();
+            let mut arena = interp.create_arena_savepoint();
             for _ in 0..2000 {
-                let value = interp.eval(b"'a'").unwrap();
-                let _ = value.to_s(&mut interp);
+                let value = arena.interp().eval(b"'a'").unwrap();
+                let _ = value.to_s(arena.interp());
             }
         }
         interp.full_gc();
@@ -214,8 +214,9 @@ mod tests {
     fn enable_disable_gc() {
         let mut interp = crate::interpreter().unwrap();
         interp.disable_gc();
-        let arena = interp.create_arena_savepoint();
-        let _ = interp
+        let mut arena = interp.create_arena_savepoint();
+        let _ = arena
+            .interp()
             .eval(
                 br#"
                 # this value will be garbage collected because it is eventually
@@ -233,10 +234,10 @@ mod tests {
                 "#,
             )
             .unwrap();
-        let live = interp.live_object_count();
-        interp.full_gc();
+        let live = arena.interp().live_object_count();
+        arena.interp().full_gc();
         assert_eq!(
-            interp.live_object_count(),
+            arena.interp().live_object_count(),
             live,
             "GC is disabled. No objects should be collected"
         );
@@ -253,9 +254,9 @@ mod tests {
     #[test]
     fn gc_after_empty_eval() {
         let mut interp = crate::interpreter().unwrap();
-        let arena = interp.create_arena_savepoint();
-        let baseline_object_count = interp.live_object_count();
-        drop(interp.eval(b"").unwrap());
+        let mut arena = interp.create_arena_savepoint();
+        let baseline_object_count = arena.interp().live_object_count();
+        drop(arena.interp().eval(b"").unwrap());
         arena.restore();
         interp.full_gc();
         assert_eq!(interp.live_object_count(), baseline_object_count);
@@ -265,14 +266,14 @@ mod tests {
     fn gc_functional_test() {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
-        let initial_arena = interp.create_arena_savepoint();
+        let mut initial_arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
-            let arena = interp.create_arena_savepoint();
-            let result = interp.eval(b"'gc test'");
+            let mut arena = initial_arena.interp().create_arena_savepoint();
+            let result = arena.interp().eval(b"'gc test'");
             let value = result.unwrap();
-            assert!(!value.is_dead(&mut interp));
+            assert!(!value.is_dead(arena.interp()));
             arena.restore();
-            interp.incremental_gc();
+            initial_arena.interp().incremental_gc();
         }
         initial_arena.restore();
         interp.full_gc();

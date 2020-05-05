@@ -25,10 +25,13 @@
 //! use artichoke_backend::prelude::core::*;
 //! use artichoke_backend::prelude::*;
 //!
-//! let mut interp = artichoke_backend::interpreter().unwrap();
-//! let result = interp.eval(b"10 * 10").unwrap();
-//! let result = result.try_into::<i64>(&interp).unwrap();
+//! # fn main() -> Result<(), Exception> {
+//! let mut interp = artichoke_backend::interpreter()?;
+//! let result = interp.eval(b"10 * 10")?;
+//! let result = result.try_into::<i64>(&interp)?;
 //! assert_eq!(result, 100);
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ### Calling Functions on Ruby Objects
@@ -41,10 +44,14 @@
 //! use artichoke_backend::prelude::core::*;
 //! use artichoke_backend::prelude::*;
 //!
-//! let mut interp = artichoke_backend::interpreter().unwrap();
-//! let result = interp.eval(b"'ruby funcall'").unwrap();
-//! let result = result.funcall::<usize>(&mut interp, "length", &[], None).unwrap();
+//! # fn main() -> Result<(), Exception> {
+//! let mut interp = artichoke_backend::interpreter()?;
+//! let result = interp.eval(b"'ruby funcall'")?;
+//! let result = result.funcall(&mut interp, "length", &[], None)?;
+//! let result = result.try_into::<i64>(&mut interp)?;
 //! assert_eq!(result, 12);
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ## Virtual Filesystem and `Kernel#require`

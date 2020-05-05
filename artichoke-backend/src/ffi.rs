@@ -206,34 +206,34 @@ impl From<Box<ConvertBytesError>> for Box<dyn RubyException> {
 #[cfg(test)]
 mod tests {
     use std::ptr;
-    use std::rc::Rc;
 
-    use crate::ffi::InterpreterExtractError;
+    use crate::ffi;
+    use crate::test::prelude::*;
 
     #[test]
     fn from_user_data_null_pointer() {
-        let err = unsafe { super::from_user_data(ptr::null_mut()) };
+        let err = unsafe { ffi::from_user_data(ptr::null_mut()) };
         assert_eq!(err.err(), Some(InterpreterExtractError));
     }
 
     #[test]
     fn from_user_data_null_user_data() {
-        let interp = crate::interpreter().expect("init");
-        unsafe {
+        let mut interp = crate::interpreter().unwrap();
+        let err = unsafe {
             let mrb = interp.mrb.as_mut();
             // fake null user data
             (*mrb).ud = ptr::null_mut();
-        }
-        let err = unsafe { super::from_user_data(mrb) };
+            ffi::from_user_data(mrb)
+        };
         assert_eq!(err.err(), Some(InterpreterExtractError));
     }
 
     #[test]
     fn from_user_data() {
-        let interp = crate::interpreter().expect("init");
+        let interp = crate::interpreter().unwrap();
         let res = unsafe {
-            let mrb = interp.mrb.as_mut();
-            super::from_user_data(mrb)
+            let mrb = Artichoke::into_raw(interp);
+            ffi::from_user_data(mrb)
         };
         assert!(res.is_ok());
     }

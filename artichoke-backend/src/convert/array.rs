@@ -386,15 +386,13 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(arr.as_slice());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -404,15 +402,13 @@ mod tests {
         }
         // Owned converter
         let value = interp.convert_mut(arr.to_vec());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -428,15 +424,13 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(arr.as_slice());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -446,15 +440,13 @@ mod tests {
         }
         // Owned converter
         let value = interp.convert_mut(arr.to_vec());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -470,15 +462,13 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(arr.as_slice());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -488,15 +478,13 @@ mod tests {
         }
         // Owned converter
         let value = interp.convert_mut(arr.to_vec());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }

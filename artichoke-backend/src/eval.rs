@@ -74,7 +74,7 @@ mod tests {
     fn context_is_restored_after_eval() {
         let mut interp = crate::interpreter().unwrap();
         let context = Context::new(&b"context.rb"[..]).unwrap();
-        interp.push_context(context);
+        interp.push_context(context).unwrap();
         let _ = interp.eval(b"15").unwrap();
         let context = interp.peek_context().unwrap();
         let filename = context.unwrap().filename();
@@ -143,23 +143,26 @@ mod tests {
     fn eval_with_context() {
         let mut interp = crate::interpreter().unwrap();
 
-        interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
+        let context = Context::new(b"source.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
         let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "source.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
 
-        interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
+        let context = Context::new(b"source.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
         let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "source.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
 
-        interp.push_context(Context::new(b"main.rb".as_ref()).unwrap());
+        let context = Context::new(b"main.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
         let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "main.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
     }
 
     #[test]

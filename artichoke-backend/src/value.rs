@@ -580,11 +580,11 @@ mod tests {
     #[test]
     fn is_dead() {
         let mut interp = crate::interpreter().unwrap();
-        let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"'dead'").unwrap();
-        assert!(!live.is_dead(&mut interp));
+        let mut arena = interp.create_arena_savepoint();
+        let live = arena.interp().eval(b"'dead'").unwrap();
+        assert!(!live.is_dead(arena.interp()));
         let dead = live;
-        let live = interp.eval(b"'live'").unwrap();
+        let live = arena.interp().eval(b"'live'").unwrap();
         arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
@@ -597,11 +597,11 @@ mod tests {
     #[test]
     fn immediate_is_dead() {
         let mut interp = crate::interpreter().unwrap();
-        let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"27").unwrap();
-        assert!(!live.is_dead(&mut interp));
+        let mut arena = interp.create_arena_savepoint();
+        let live = arena.interp().eval(b"27").unwrap();
+        assert!(!live.is_dead(arena.interp()));
         let immediate = live;
-        let live = interp.eval(b"64").unwrap();
+        let live = arena.interp().eval(b"64").unwrap();
         arena.restore();
         interp.full_gc();
         // immediate objects are never dead

@@ -159,7 +159,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let mut interp = crate::interpreter().unwrap();
         let value = interp.convert(b);
         let result = value.try_into_mut::<String>(&mut interp);
         result.is_err()
