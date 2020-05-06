@@ -37,6 +37,7 @@ pub struct Artichoke {
 
 impl Artichoke {
     /// Create a new interpreter from an underlying `mrb` and a `State`.
+    #[must_use]
     pub fn new(mrb: NonNull<sys::mrb_state>, state: Box<State>) -> Self {
         let state = Some(state);
         Self { mrb, state }
@@ -56,7 +57,6 @@ impl Artichoke {
     ///
     /// This function is only safe to call if the closure only calls FFI
     /// functions that use a raw `*mut sys::mrb_state`.
-    #[must_use]
     pub unsafe fn with_ffi_boundary<F, T>(&mut self, func: F) -> Result<T, InterpreterExtractError>
     where
         F: FnOnce(*mut sys::mrb_state) -> T,
