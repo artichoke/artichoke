@@ -18,7 +18,7 @@ keywords = ["artichoke", "mri", "cruby", "ruby"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-ansi_term = "0.11" # cannot upgrade until clap 3 is released
+ansi_term = "0.12" # cannot upgrade until clap 3 is released
 rustyline = { version = "6", default-features = false }
 structopt = "0.3.10"
 
