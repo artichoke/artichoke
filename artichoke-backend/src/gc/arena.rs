@@ -23,6 +23,7 @@ use crate::Artichoke;
 /// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
 /// sufficient to ensure objects get collected eventually.
 #[derive(Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct ArenaIndex<'a> {
     index: i32,
     interp: &'a mut Artichoke,

@@ -40,7 +40,6 @@ impl<'a> Builder<'a> {
         self
     }
 
-    #[must_use]
     pub fn with_super_class<T>(mut self, classname: &str) -> Result<Self, Exception>
     where
         T: Any,

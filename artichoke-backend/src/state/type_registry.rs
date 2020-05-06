@@ -18,11 +18,14 @@ where
     T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        f.debug_struct("TypeRegistry")
+            .field("registry", &self.0)
+            .finish()
     }
 }
 
 impl<T> TypeRegistry<T> {
+    #[must_use]
     pub fn new() -> Self {
         Self(HashMap::new())
     }
