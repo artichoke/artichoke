@@ -2,51 +2,16 @@ use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
-/// Arena savepoint that can be restored to ensure mruby objects are reaped.
-///
-/// mruby manages objects created via the C API in a memory construct called
-/// the
-/// [arena](https://github.com/mruby/mruby/blob/master/doc/guides/gc-arena-howto.md).
-/// The arena is a stack and objects stored there are permanently alive to avoid
-/// having to track lifetimes externally to the interperter.
-///
-/// An [`ArenaIndex`] is an index to some position of the stack. When restoring
-/// an `ArenaIndex`, the stack pointer is moved. All objects beyond the pointer
-/// are no longer live and are eligible to be collected at the next GC.
-///
-/// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
-/// sufficient to ensure objects get collected eventually.
-#[derive(Debug)]
-pub struct ArenaIndex<'a> {
-    index: i32,
-    interp: &'a mut Artichoke,
-}
+pub mod arena;
 
-impl<'a> ArenaIndex<'a> {
-    /// Restore the arena stack pointer to its prior index.
-    pub fn restore(self) {
-        drop(self);
-    }
-
-    #[inline]
-    pub fn interp(&mut self) -> &mut Artichoke {
-        self.interp
-    }
-}
-
-impl<'a> Drop for ArenaIndex<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            let mrb = self.interp.mrb.as_mut();
-            sys::mrb_sys_gc_arena_restore(mrb, self.index);
-        }
-    }
-}
+use arena::ArenaIndex;
 
 /// Garbage collection primitives for an mruby interpreter.
 pub trait MrbGarbageCollection {
-    /// Create a savepoint in the GC arena which will allow mruby to deallocate
-    /// all of the objects created via the C API.
+    /// Create a savepoint in the GC arena.
+    ///
+    /// Savepoints allow mruby to deallocate all of the objects created via the
+    /// C API.
     ///
     /// Normally objects created via the C API are marked as permanently alive
     /// ("white" GC color) with a call to
@@ -93,14 +58,7 @@ pub trait MrbGarbageCollection {
 
 impl MrbGarbageCollection for Artichoke {
     fn create_arena_savepoint(&mut self) -> ArenaIndex<'_> {
-        let index = unsafe {
-            self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_arena_save(mrb))
-                .unwrap_or_default()
-        };
-        ArenaIndex {
-            index,
-            interp: self,
-        }
+        ArenaIndex::new(self)
     }
 
     fn live_object_count(&mut self) -> i32 {
