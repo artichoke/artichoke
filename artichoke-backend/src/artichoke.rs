@@ -23,16 +23,23 @@ use crate::sys;
 /// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
 #[derive(Debug)]
 pub struct Artichoke {
+    /// Underlying mruby interpreter.
+    ///
+    /// This is an owned reference to the interpreter via a mutable pointer.
     pub mrb: NonNull<sys::mrb_state>,
+    /// Interpreter state.
+    ///
+    /// This field is an `Option` because the `State` is moved in and out of the
+    /// `Artichoke` struct as the call graph crosses between Rust and C and C to
+    /// Rust.
     pub state: Option<Box<State>>,
 }
 
 impl Artichoke {
+    /// Create a new interpreter from an underlying `mrb` and a `State`.
     pub fn new(mrb: NonNull<sys::mrb_state>, state: Box<State>) -> Self {
-        Self {
-            mrb,
-            state: Some(state),
-        }
+        let state = Some(state);
+        Self { mrb, state }
     }
 
     /// Execute a a closure by moving the [`State`] into the `mrb` instance.
@@ -60,26 +67,35 @@ impl Artichoke {
             //
             // Safety:
             //
-            // - The `Artichoke` struct is partially uninitialized with the
-            //   dangling `NonNull`.
-            // - Function safety conditions declare that `Artichoke` is not
-            //   accessed inside the closure.
-            // - Rust borrowing rules enforce that `Artichoke` is not accessed
-            //   inside the closure.
-            // - This function moves the `State` into the `mrb`.
-            // - If `mrb` re-enters Artichoke via trampoline, a new Artichoke is
-            //   made by moving the `State` out of the `mrb` via an
-            //   `ArtichokeGuard`.
-            // - On drop, `ArtichokeGuard` moves the `State` back into the
-            //   `mrb`.
-            // - On return from `mrb`, here, extract the `State` which should be
-            //   moved back into the `mrb` and replace `self` with the new
-            //   interpreter.
+            // 1. The `Artichoke` struct is partially uninitialized with the
+            //    dangling `NonNull`.
+            // 2. Function safety conditions declare that `Artichoke` is not
+            //    accessed inside the closure.
+            // 3. Rust borrowing rules enforce that `Artichoke` is not accessed
+            //    inside the closure.
+            // 4. This function moves the `State` into the `mrb`.
+            // 5. If `mrb` re-enters `Artichoke` via trampoline, a new
+            //    `Artichoke` is made by moving the `State` out of the `mrb`.
+            // 6. The `Artichoke` in the FFI entrypoint is wrapped in a `Guard`.
+            // 7. On drop, `Guard` moves the `State` back into the `mrb`.
+            // 8. On return from `mrb`, here, extract the `State` which should be
+            //    moved back into the `mrb`.
+            // 9. Replace `self` with the new interpreter.
+
+            // Step 1
             let mrb = mem::replace(&mut self.mrb, NonNull::dangling());
             let mrb = mrb.as_ptr();
+
+            // Step 4
             (*mrb).ud = Box::into_raw(state) as *mut c_void;
+
+            // Steps 5-7
             let result = func(mrb);
+
+            // Step 8
             let extracted = ffi::from_user_data(mrb)?;
+
+            // Step 9
             *self = extracted;
             Ok(result)
         } else {
@@ -125,26 +141,52 @@ impl Artichoke {
     }
 }
 
+/// Interpreter guard that prepares an [`Artichoke`] to re-enter an FFI
+/// boundary.
+///
+/// Artichoke integrates with the mruby VM via many `extern "C" fn` trampolines
+/// that are invoked by mruby to run some portion of the VM in Rust.
+///
+/// These trampolines typically require an [`Artichoke`] interpreter to do
+/// useful work, so they move the [`State`](crate::state::State) out of the
+/// `mrb` userdata pointer into an `Artichoke` struct.
+///
+/// To ensure safety, the `State` must be moved back into the `mrb` userdata
+/// pointer before re-entering the FFI boundary. This guard implements [`Drop`]
+/// to reserialize the `State` into the `mrb` once it goes out of scope.
+///
+/// `Guard` is passed directly to [`exception::raise`](crate::exception::raise).
 #[derive(Debug)]
 pub struct Guard<'a>(&'a mut Artichoke);
 
 impl<'a> Guard<'a> {
+    /// Create a new guard that wraps an interpreter.
+    ///
+    /// This function is most effective when the interpreter is temporarily
+    /// reified and stored on the stack.
     pub fn new(interp: &'a mut Artichoke) -> Self {
         Self(interp)
     }
 
+    /// Access the inner guarded interpreter.
+    ///
+    /// The interpreter is also accessible via [`Deref`], [`DerefMut`],
+    /// [`AsRef`], and [`AsMut`].
+    #[inline]
     pub fn interp(&mut self) -> &mut Artichoke {
         self.0
     }
 }
 
 impl<'a> AsRef<Artichoke> for Guard<'a> {
+    #[inline]
     fn as_ref(&self) -> &Artichoke {
         &*self.0
     }
 }
 
 impl<'a> AsMut<Artichoke> for Guard<'a> {
+    #[inline]
     fn as_mut(&mut self) -> &mut Artichoke {
         self.0
     }
@@ -153,12 +195,14 @@ impl<'a> AsMut<Artichoke> for Guard<'a> {
 impl<'a> Deref for Guard<'a> {
     type Target = Artichoke;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &*self.0
     }
 }
 
 impl<'a> DerefMut for Guard<'a> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.0
     }
