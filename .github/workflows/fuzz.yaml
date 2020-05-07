@@ -23,24 +23,6 @@ jobs:
           profile: minimal
           override: true
 
-      - name: Cache cargo registry
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/registry
-          key: cargo-registry-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ hashFiles('**/Cargo.toml') }}
-
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
         with:
