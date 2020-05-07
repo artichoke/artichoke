@@ -23,19 +23,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set toolchain versions
+        run: |
+          echo "::set-output name=rust::$(cat rust-toolchain)"
+        id: toolchain_versions
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
 
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
+
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
-
-      - name: Install Clang
-        run: sudo apt install clang
-        if: matrix.os == 'ubuntu-latest'
 
       - name: Install Clang
         run: choco install llvm --no-progress
@@ -85,9 +104,6 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
-      - name: Install Clang
-        run: sudo apt install clang
-
       - name: Install Bison
         run: sudo apt install bison
 
@@ -134,8 +150,6 @@ jobs:
   js:
     name: Lint and format JS
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
