@@ -23,33 +23,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set toolchain versions
-        run: |
-          echo "::set-output name=rust::$(cat rust-toolchain)"
-        id: toolchain_versions
-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-
-      - name: Cache cargo registry
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/registry
-          key: cargo-registry-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
@@ -93,34 +70,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set toolchain versions
-        run: |
-          echo "::set-output name=rust::$(cat rust-toolchain)"
-        id: toolchain_versions
-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           components: rustfmt, clippy
-
-      - name: Cache cargo registry
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/registry
-          key: cargo-registry-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job_id }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
