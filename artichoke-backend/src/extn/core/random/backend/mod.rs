@@ -30,7 +30,7 @@ pub trait RandType {
     fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Result<Fp, Exception>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum InternalState {
     Rand { seed: u64 },
