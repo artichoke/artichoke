@@ -40,19 +40,17 @@ impl<'a> Builder<'a> {
         self
     }
 
-    pub fn with_super_class<T>(mut self, classname: &str) -> Result<Self, Exception>
+    pub fn with_super_class<T, U>(mut self, classname: U) -> Result<Self, Exception>
     where
         T: Any,
+        U: Into<Cow<'static, str>>,
     {
         let state = self.interp.state.as_ref().ok_or(InterpreterExtractError)?;
-        let spec = state
-            .classes
-            .get::<T>()
-            .ok_or_else(|| NotDefinedError::super_class(String::from(classname)))?;
+        let spec = state.classes.get::<T>();
         let rclass = unsafe {
             let mrb = self.interp.mrb.as_mut();
-            spec.rclass(mrb)
-                .ok_or_else(|| NotDefinedError::super_class("super class"))?
+            spec.and_then(|spec| spec.rclass(mrb))
+                .ok_or_else(|| NotDefinedError::super_class(classname.into()))?
         };
         self.super_class = Some(rclass);
         Ok(self)
@@ -67,7 +65,7 @@ impl<'a> Builder<'a> {
     where
         T: Into<Cow<'static, str>>,
     {
-        let spec = method::Spec::new(method::Type::Instance, name, method, args)?;
+        let spec = method::Spec::new(method::Type::Instance, name.into(), method, args)?;
         self.methods.insert(spec);
         Ok(self)
     }
@@ -81,7 +79,7 @@ impl<'a> Builder<'a> {
     where
         T: Into<Cow<'static, str>>,
     {
-        let spec = method::Spec::new(method::Type::Class, name, method, args)?;
+        let spec = method::Spec::new(method::Type::Class, name.into(), method, args)?;
         self.methods.insert(spec);
         Ok(self)
     }
@@ -265,7 +263,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let spec = class::Spec::new("RustError", None, None).unwrap();
         class::Builder::for_spec(&mut interp, &spec)
-            .with_super_class::<StandardError>("StandardError")
+            .with_super_class::<StandardError, _>("StandardError")
             .unwrap()
             .define()
             .unwrap();

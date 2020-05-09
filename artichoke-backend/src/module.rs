@@ -38,7 +38,7 @@ impl<'a> Builder<'a> {
     where
         T: Into<Cow<'static, str>>,
     {
-        let spec = method::Spec::new(method::Type::Instance, name, method, args)?;
+        let spec = method::Spec::new(method::Type::Instance, name.into(), method, args)?;
         self.methods.insert(spec);
         Ok(self)
     }
@@ -52,7 +52,7 @@ impl<'a> Builder<'a> {
     where
         T: Into<Cow<'static, str>>,
     {
-        let spec = method::Spec::new(method::Type::Class, name, method, args)?;
+        let spec = method::Spec::new(method::Type::Class, name.into(), method, args)?;
         self.methods.insert(spec);
         Ok(self)
     }
@@ -66,7 +66,7 @@ impl<'a> Builder<'a> {
     where
         T: Into<Cow<'static, str>>,
     {
-        let spec = method::Spec::new(method::Type::Module, name, method, args)?;
+        let spec = method::Spec::new(method::Type::Module, name.into(), method, args)?;
         self.methods.insert(spec);
         Ok(self)
     }

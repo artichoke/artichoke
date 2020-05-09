@@ -44,7 +44,7 @@ impl LoadSources for Artichoke {
             absolute_path = Path::new(RUBY_LOAD_PATH).join(path);
             path = &absolute_path;
         }
-        state.vfs.write_file(path, contents)?;
+        state.vfs.write_file(path, contents.into())?;
         trace!(
             "Added Ruby source to interpreter filesystem -- {}",
             path.display()

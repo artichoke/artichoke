@@ -463,7 +463,7 @@ pub fn tanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     Ok(result)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct DomainError(Cow<'static, str>);
 
 impl DomainError {

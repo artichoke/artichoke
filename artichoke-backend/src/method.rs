@@ -7,7 +7,7 @@ use crate::def::{ConstantNameError, Method};
 use crate::sys;
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Type {
     Class,
     Global,

@@ -6,7 +6,7 @@ use crate::extn::core::regexp;
 use crate::extn::prelude::*;
 
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, Hash, PartialEq, Eq)]
 pub struct Options {
     pub multiline: bool,
     pub ignore_case: bool,

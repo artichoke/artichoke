@@ -17,7 +17,7 @@ impl Globals for Artichoke {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        let sym = self.intern_symbol(name);
+        let sym = self.intern_symbol(name.into());
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_gv_set(mrb, sym, value.inner());
@@ -39,7 +39,7 @@ impl Globals for Artichoke {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        let sym = self.intern_symbol(name);
+        let sym = self.intern_symbol(name.into());
         let nil = self.convert(None::<Value>);
         unsafe {
             let mrb = self.mrb.as_mut();
@@ -52,7 +52,7 @@ impl Globals for Artichoke {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        let sym = self.intern_symbol(name);
+        let sym = self.intern_symbol(name.into());
         let value = unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_gv_get(mrb, sym)
