@@ -76,18 +76,16 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
     leak::Detector::new("smart pointer", &mut interp)
         .with_iterations(ITERATIONS)
         .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks_with_finalizer(
-            |_| {
-                let mut interp = artichoke_backend::interpreter().unwrap();
-                interp
-                    .def_file_for_type::<_, Container>("container")
-                    .unwrap();
+        .check_leaks(|_| {
+            let mut interp = artichoke_backend::interpreter().unwrap();
+            interp
+                .def_file_for_type::<_, Container>("container")
+                .unwrap();
 
-                let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
-                let result = interp.eval(code);
-                assert_eq!(true, result.is_ok());
-                interp.close();
-            },
-            |interp| interp.full_gc(),
-        );
+            let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
+            let result = interp.eval(code);
+            assert_eq!(true, result.is_ok());
+            interp.close();
+        });
+    interp.close();
 }
