@@ -72,37 +72,40 @@ where
         // allocating with `mrb_data_object_alloc` below.
         let prior_gc_state = interp.disable_gc();
 
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
-        let spec = state
-            .classes
-            .get::<Self>()
-            .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
-        let data = Rc::new(RefCell::new(self));
-        let ptr = Rc::into_raw(data);
-        let obj = if let Some(mut slf) = slf {
-            unsafe {
-                sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
-            }
-            slf
-        } else {
-            unsafe {
-                let mrb = interp.mrb.as_mut();
-                let mut rclass = spec
-                    .rclass(mrb)
-                    .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
-                let alloc = sys::mrb_data_object_alloc(
-                    mrb,
-                    rclass.as_mut(),
-                    ptr as *mut c_void,
-                    spec.data_type(),
-                );
-                sys::mrb_sys_obj_value(alloc as *mut c_void)
+        let obj = {
+            let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+            let spec = state
+                .classes
+                .get::<Self>()
+                .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
+
+            let data = Rc::new(RefCell::new(self));
+            let ptr = Rc::into_raw(data);
+
+            if let Some(mut slf) = slf {
+                unsafe {
+                    sys::mrb_sys_data_init(&mut slf, ptr as *mut c_void, spec.data_type());
+                }
+                slf
+            } else {
+                unsafe {
+                    let mrb = interp.mrb.as_mut();
+                    let mut rclass = spec
+                        .rclass(mrb)
+                        .ok_or_else(|| NotDefinedError::class(Self::ruby_type_name()))?;
+                    let alloc = sys::mrb_data_object_alloc(
+                        mrb,
+                        rclass.as_mut(),
+                        ptr as *mut c_void,
+                        spec.data_type(),
+                    );
+                    sys::mrb_sys_obj_value(alloc as *mut c_void)
+                }
             }
         };
         if let GcState::Enabled = prior_gc_state {
             interp.enable_gc();
         }
-
         Ok(Value::new(interp, obj))
     }
 
