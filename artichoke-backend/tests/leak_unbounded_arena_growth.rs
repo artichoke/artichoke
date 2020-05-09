@@ -47,8 +47,8 @@ end
         .check_leaks(|interp| {
             let code = b"bad_code";
             let mut arena = interp.create_arena_savepoint();
-            let result = arena.interp().eval(code).unwrap_err();
-            let backtrace = result.vm_backtrace(arena.interp());
+            let result = arena.eval(code).unwrap_err();
+            let backtrace = result.vm_backtrace(&mut arena);
             assert_eq!(expected, backtrace);
             drop(result);
             arena.restore();
@@ -65,8 +65,8 @@ end
         .check_leaks_with_finalizer(
             |interp| {
                 let mut arena = interp.create_arena_savepoint();
-                let result = arena.interp().eval(b"'a' * 1024 * 1024").unwrap();
-                let display = result.to_s(arena.interp());
+                let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
+                let display = result.to_s(&mut arena);
                 assert_eq!(display, expected.as_bytes());
                 drop(result);
                 arena.restore();
@@ -85,8 +85,8 @@ end
         .check_leaks_with_finalizer(
             |interp| {
                 let mut arena = interp.create_arena_savepoint();
-                let result = arena.interp().eval(b"'a' * 1024 * 1024").unwrap();
-                let debug = result.inspect(arena.interp());
+                let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
+                let debug = result.inspect(&mut arena);
                 assert_eq!(debug, expected);
                 drop(result);
                 arena.restore();

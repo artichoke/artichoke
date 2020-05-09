@@ -117,8 +117,8 @@ impl Value {
         match result {
             Ok(range) => Ok(range),
             Err(exception) => {
-                let exception = Value::new(arena.interp(), exception);
-                Err(exception_handler::last_error(arena.interp(), exception)?)
+                let exception = Value::new(&mut arena, exception);
+                Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
     }
@@ -235,9 +235,9 @@ impl ValueCore for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = arena.interp().intern_symbol(func.as_bytes().to_vec());
+        let func = arena.intern_symbol(func.as_bytes().to_vec());
         let result = unsafe {
-            arena.interp().with_ffi_boundary(|mrb| {
+            arena.with_ffi_boundary(|mrb| {
                 protect::funcall(
                     mrb,
                     self.inner(),
@@ -249,7 +249,7 @@ impl ValueCore for Value {
         };
         match result {
             Ok(value) => {
-                let value = Self::new(arena.interp(), value);
+                let value = Self::new(&mut arena, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -265,8 +265,8 @@ impl ValueCore for Value {
                 }
             }
             Err(exception) => {
-                let exception = Self::new(arena.interp(), exception);
-                Err(exception_handler::last_error(arena.interp(), exception)?)
+                let exception = Self::new(&mut arena, exception);
+                Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
     }
@@ -357,7 +357,7 @@ impl Block {
         };
         match result {
             Ok(value) => {
-                let value = Value::new(arena.interp(), value);
+                let value = Value::new(&mut arena, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -373,8 +373,8 @@ impl Block {
                 }
             }
             Err(exception) => {
-                let exception = Value::new(arena.interp(), exception);
-                Err(exception_handler::last_error(arena.interp(), exception)?)
+                let exception = Value::new(&mut arena, exception);
+                Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
     }
@@ -581,10 +581,10 @@ mod tests {
     fn is_dead() {
         let mut interp = crate::interpreter().unwrap();
         let mut arena = interp.create_arena_savepoint();
-        let live = arena.interp().eval(b"'dead'").unwrap();
-        assert!(!live.is_dead(arena.interp()));
+        let live = arena.eval(b"'dead'").unwrap();
+        assert!(!live.is_dead(&mut arena));
         let dead = live;
-        let live = arena.interp().eval(b"'live'").unwrap();
+        let live = arena.eval(b"'live'").unwrap();
         arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
@@ -598,10 +598,10 @@ mod tests {
     fn immediate_is_dead() {
         let mut interp = crate::interpreter().unwrap();
         let mut arena = interp.create_arena_savepoint();
-        let live = arena.interp().eval(b"27").unwrap();
-        assert!(!live.is_dead(arena.interp()));
+        let live = arena.eval(b"27").unwrap();
+        assert!(!live.is_dead(&mut arena));
         let immediate = live;
-        let live = arena.interp().eval(b"64").unwrap();
+        let live = arena.eval(b"64").unwrap();
         arena.restore();
         interp.full_gc();
         // immediate objects are never dead

@@ -133,8 +133,8 @@ mod tests {
         let baseline_object_count = interp.live_object_count();
         let mut arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
-            let value = arena.interp().eval(b"'a'").unwrap();
-            let _ = value.to_s(arena.interp());
+            let value = arena.eval(b"'a'").unwrap();
+            let _ = value.to_s(&mut arena);
         }
         arena.restore();
         interp.full_gc();
@@ -154,8 +154,8 @@ mod tests {
         {
             let mut arena = interp.create_arena_savepoint();
             for _ in 0..2000 {
-                let value = arena.interp().eval(b"'a'").unwrap();
-                let _ = value.to_s(arena.interp());
+                let value = arena.eval(b"'a'").unwrap();
+                let _ = value.to_s(&mut arena);
             }
         }
         interp.full_gc();
@@ -192,10 +192,10 @@ mod tests {
                 "#,
             )
             .unwrap();
-        let live = arena.interp().live_object_count();
-        arena.interp().full_gc();
+        let live = arena.live_object_count();
+        arena.full_gc();
         assert_eq!(
-            arena.interp().live_object_count(),
+            arena.live_object_count(),
             live,
             "GC is disabled. No objects should be collected"
         );
@@ -213,8 +213,8 @@ mod tests {
     fn gc_after_empty_eval() {
         let mut interp = crate::interpreter().unwrap();
         let mut arena = interp.create_arena_savepoint();
-        let baseline_object_count = arena.interp().live_object_count();
-        drop(arena.interp().eval(b"").unwrap());
+        let baseline_object_count = arena.live_object_count();
+        drop(&mut arena.eval(b"").unwrap());
         arena.restore();
         interp.full_gc();
         assert_eq!(interp.live_object_count(), baseline_object_count);
@@ -226,12 +226,12 @@ mod tests {
         let baseline_object_count = interp.live_object_count();
         let mut initial_arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
-            let mut arena = initial_arena.interp().create_arena_savepoint();
-            let result = arena.interp().eval(b"'gc test'");
+            let mut arena = initial_arena.create_arena_savepoint();
+            let result = arena.eval(b"'gc test'");
             let value = result.unwrap();
-            assert!(!value.is_dead(arena.interp()));
+            assert!(!value.is_dead(&mut arena));
             arena.restore();
-            initial_arena.interp().incremental_gc();
+            initial_arena.incremental_gc();
         }
         initial_arena.restore();
         interp.full_gc();
