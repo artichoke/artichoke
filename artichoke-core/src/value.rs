@@ -17,6 +17,9 @@ where
     /// Concrete type for arguments passed to [`funcall`](Value::funcall).
     type Arg;
 
+    /// Concrete type for results from [`funcall`](Value::funcall).
+    type Value: Value;
+
     /// Concrete type for blocks passed to [`funcall`](Value::funcall).
     type Block;
 
@@ -30,15 +33,13 @@ where
     /// If an exception is raised on the interpreter, then an error is returned.
     ///
     /// If a [`TryConvert`] conversion fails, then an error is returned.
-    fn funcall<T>(
+    fn funcall(
         &self,
         interp: &mut Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
-    ) -> Result<T, Self::Error>
-    where
-        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>;
+    ) -> Result<Self::Value, Self::Error>;
 
     /// Consume `self` and try to convert `self` to type `T` using a
     /// [`TryConvert`] conversion.

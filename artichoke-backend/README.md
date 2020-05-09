@@ -46,7 +46,8 @@ use artichoke_backend::prelude::*;
 fn example() -> Result<(), Exception> {
     let mut interp = artichoke_backend::interpreter()?;
     let s = interp.eval(b"'ruby funcall'")?;
-    let len = s.funcall::<usize>(&mut interp, "length", &[], None)?;
+    let len = s.funcall(&mut interp, "length", &[], None)?;
+    let len = len.try_into::<usize>(&interp)?;
     assert_eq!(12, len);
     Ok(())
 }

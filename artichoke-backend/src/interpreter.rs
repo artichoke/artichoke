@@ -1,15 +1,13 @@
-use std::cell::RefCell;
 use std::error;
-use std::ffi::c_void;
 use std::fmt;
 use std::ptr::NonNull;
-use std::rc::Rc;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, Eval};
 use crate::exception::{Exception, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
-use crate::gc::MrbGarbageCollection;
+use crate::gc::{MrbGarbageCollection, State as GcState};
 use crate::state::State;
 use crate::sys;
 use crate::Artichoke;
@@ -20,7 +18,10 @@ use crate::Artichoke;
 /// initializes an [in memory virtual filesystem](crate::fs::Virtual), and loads
 /// the [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, Exception> {
-    let mut mrb = if let Some(mrb) = NonNull::new(unsafe { sys::mrb_open() }) {
+    let raw = unsafe { sys::mrb_open() };
+    debug!("Try initializing mrb interpreter");
+
+    let mut mrb = if let Some(mrb) = NonNull::new(raw) {
         mrb
     } else {
         error!("Failed to allocate Artichoke interprter");
@@ -28,51 +29,42 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     };
 
     let state = State::new(unsafe { mrb.as_mut() }).ok_or(InterpreterAllocError)?;
-    let api = Rc::new(RefCell::new(state));
-
-    // Transmute the smart pointer that wraps the API and store it in the user
-    // data of the mrb interpreter. After this operation, `Rc::strong_count`
-    // will still be 1.
-    let userdata = Rc::into_raw(api);
-    unsafe {
-        mrb.as_mut().ud = userdata as *mut c_void;
-    }
-
-    // Transmute the void * pointer to the Rc back into the Artichoke type. After this
-    // operation `Rc::strong_count` will still be 1. This dance is required to
-    // avoid leaking Artichoke objects, which will let the `Drop` impl close the mrb
-    // context and interpreter.
-    let mut interp = Artichoke(unsafe { Rc::from_raw(userdata) });
+    let state = Box::new(state);
+    let mut interp = Artichoke::new(mrb, state);
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before
     // init and clean up afterward.
-    interp.disable_gc();
+    let prior_gc_state = interp.disable_gc();
 
     // Initialize Artichoke Core and Standard Library runtime
+    debug!("Begin initializing Artichoke Core and Standard Library");
     extn::init(&mut interp, "mruby")?;
+    debug!("Succeeded initializing Artichoke Core and Standard Library");
 
     // Load mrbgems
-    let arena = interp.create_arena_savepoint();
+    let mut arena = interp.create_arena_savepoint();
     unsafe {
-        sys::mrb_init_mrbgems(mrb.as_mut());
+        arena
+            .interp()
+            .with_ffi_boundary(|mrb| sys::mrb_init_mrbgems(mrb))?;
     }
     arena.restore();
 
     debug!(
-        "Allocated {}",
-        sys::mrb_sys_state_debug(unsafe { mrb.as_mut() })
+        "Allocated mrb interpreter: {}",
+        sys::mrb_sys_state_debug(unsafe { interp.mrb.as_mut() })
     );
 
     // mruby lazily initializes some core objects like top_self and generates a
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
     // predictable initialization behavior.
-    let arena = interp.create_arena_savepoint();
-    let _ = interp.eval(&[])?;
-    arena.restore();
+    interp.create_arena_savepoint().interp().eval(&[])?;
 
-    interp.enable_gc();
-    interp.full_gc();
+    if let GcState::Enabled = prior_gc_state {
+        interp.enable_gc();
+        interp.full_gc();
+    }
 
     Ok(interp)
 }
@@ -105,9 +97,7 @@ impl RubyException for InterpreterAllocError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<Fatal>()?;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp.new_instance::<Fatal>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }

@@ -2,7 +2,7 @@ use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = module::Spec::new(interp, "JSON", None)?;
-    interp.0.borrow_mut().def_module::<Json>(spec);
+    interp.def_module::<Json>(spec)?;
     // NOTE(lopopolo): This setup of the JSON gem in the vfs does not include
     // any of the `json/add` sources for serializing "extra" types like `Time`
     // and `BigDecimal`, not all of which Artichoke supports.

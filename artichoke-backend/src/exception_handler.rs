@@ -10,7 +10,7 @@ use crate::Artichoke;
 ///
 /// This function makes funcalls on the interpreter which are fallible.
 pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Exception, Exception> {
-    let _arena = interp.create_arena_savepoint();
+    let mut arena = interp.create_arena_savepoint();
     // Clear the current exception from the mruby interpreter so subsequent
     // calls to the mruby VM are not tainted by an error they did not
     // generate.
@@ -35,9 +35,11 @@ pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Exception,
     //
     // println!("{:?}", exception);
 
-    let class = exception.funcall::<Value>(interp, "class", &[], None)?;
-    let classname = class.funcall::<&str>(interp, "name", &[], None)?;
-    let message = exception.funcall::<&[u8]>(interp, "message", &[], None)?;
+    let class = exception.funcall(&mut arena, "class", &[], None)?;
+    let classname = class.funcall(&mut arena, "name", &[], None)?;
+    let classname = classname.try_into_mut::<&str>(&mut arena)?;
+    let message = exception.funcall(&mut arena, "message", &[], None)?;
+    let message = message.try_into_mut::<&[u8]>(&mut arena)?;
 
     let exception = CaughtException::new(exception, String::from(classname), message.to_vec());
     debug!("Extracted exception from interpreter: {}", exception);
@@ -74,18 +76,18 @@ mod tests {
     #[test]
     fn raise_does_not_panic_or_segfault() {
         let mut interp = crate::interpreter().expect("init");
-        let _ = interp.eval(br#"raise 'foo'"#);
-        let _ = interp.eval(br#"raise 'foo'"#);
-        let _ = interp.eval(br#"eval(b"raise 'foo'""#);
-        let _ = interp.eval(br#"eval(b"raise 'foo'""#);
-        let _ = interp.eval(br#"require 'foo'"#);
-        let _ = interp.eval(br#"require 'foo'"#);
-        let _ = interp.eval(br#"eval(b"require 'foo'""#);
-        let _ = interp.eval(br#"eval(b"require 'foo'""#);
-        let _ = interp.eval(br#"Regexp.compile(2)"#);
-        let _ = interp.eval(br#"Regexp.compile(2)"#);
-        let _ = interp.eval(br#"eval(b"Regexp.compile(2)""#);
-        let _ = interp.eval(br#"eval(b"Regexp.compile(2)""#);
+        let _ = interp.eval(br#"raise 'foo'"#).unwrap_err();
+        let _ = interp.eval(br#"raise 'foo'"#).unwrap_err();
+        let _ = interp.eval(br#"eval("raise 'foo'")"#).unwrap_err();
+        let _ = interp.eval(br#"eval("raise 'foo'")"#).unwrap_err();
+        let _ = interp.eval(br#"require 'foo'"#).unwrap_err();
+        let _ = interp.eval(br#"require 'foo'"#).unwrap_err();
+        let _ = interp.eval(br#"eval("require 'foo'")"#).unwrap_err();
+        let _ = interp.eval(br#"eval("require 'foo'")"#).unwrap_err();
+        let _ = interp.eval(br#"Regexp.compile(2)"#).unwrap_err();
+        let _ = interp.eval(br#"Regexp.compile(2)"#).unwrap_err();
+        let _ = interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
+        let _ = interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
         let _ = interp.eval(
             br#"
 def fail
@@ -100,7 +102,7 @@ fail
             "#,
         );
         let kernel = interp.eval(br#"Kernel"#).unwrap();
-        let _ = kernel.funcall::<Value>(&mut interp, "raise", &[], None);
-        let _ = kernel.funcall::<Value>(&mut interp, "raise", &[], None);
+        let _ = kernel.funcall(&mut interp, "raise", &[], None).unwrap_err();
+        let _ = kernel.funcall(&mut interp, "raise", &[], None).unwrap_err();
     }
 }

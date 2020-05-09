@@ -1,11 +1,11 @@
 use std::ffi::OsStr;
 
-use crate::core::Eval;
+use crate::core::{Eval, Value as _};
 use crate::exception::Exception;
 use crate::exception_handler;
 use crate::extn::core::exception::Fatal;
-use crate::ffi;
-use crate::sys::{self, protect};
+use crate::ffi::{self, InterpreterExtractError};
+use crate::sys::protect;
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -15,14 +15,17 @@ impl Eval for Artichoke {
     type Error = Exception;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
-        // Ensure the borrow is out of scope by the time we eval code since
-        // Rust-backed files and types may need to mutably borrow the `Artichoke` to
-        // get access to the underlying `ArtichokeState`.
-        let mrb = self.0.borrow().mrb;
-        let context = self.0.borrow_mut().parser.context_mut() as *mut _;
-
-        trace!("Evaling code on {}", sys::mrb_sys_state_debug(mrb));
-        match unsafe { protect::eval(mrb, context, code) } {
+        trace!("Attempting eval of Ruby source");
+        let result = unsafe {
+            let context = self
+                .state
+                .as_mut()
+                .ok_or(InterpreterExtractError)?
+                .parser
+                .context_mut() as *mut _;
+            self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
+        };
+        match result {
             Ok(value) => {
                 let value = Value::new(self, value);
                 if value.is_unreachable() {
@@ -31,13 +34,19 @@ impl Eval for Artichoke {
                     // and may result in a segfault.
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
+                    error!("Fatal eval returned unreachable value");
                     Err(Exception::from(Fatal::new(self, "Unreachable Ruby value")))
                 } else {
+                    trace!("Sucessful eval");
                     Ok(value)
                 }
             }
             Err(exception) => {
                 let exception = Value::new(self, exception);
+                debug!(
+                    "Failed eval raised exception: {:?}",
+                    bstr::B(&exception.inspect(self))
+                );
                 Err(exception_handler::last_error(self, exception)?)
             }
         }
@@ -57,7 +66,7 @@ mod tests {
     fn root_eval_context() {
         let mut interp = crate::interpreter().unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "(eval)");
     }
 
@@ -65,21 +74,19 @@ mod tests {
     fn context_is_restored_after_eval() {
         let mut interp = crate::interpreter().unwrap();
         let context = Context::new(&b"context.rb"[..]).unwrap();
-        interp.push_context(context);
+        interp.push_context(context).unwrap();
         let _ = interp.eval(b"15").unwrap();
-        assert_eq!(
-            // TODO(GH-468): Use `Parser::peek_context`.
-            interp.0.borrow().parser.peek_context().unwrap().filename(),
-            &b"context.rb"[..]
-        );
+        let context = interp.peek_context().unwrap();
+        let filename = context.unwrap().filename();
+        assert_eq!(filename, &b"context.rb"[..]);
     }
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
         let mut interp = crate::interpreter().unwrap();
         let _ = interp.eval(b"15").unwrap();
-        // TODO(GH-468): Use `Parser::peek_context`.
-        assert!(interp.0.borrow().parser.peek_context().is_none());
+        let context = interp.peek_context().unwrap();
+        assert!(context.is_none());
     }
 
     mod nested {
@@ -93,11 +100,13 @@ mod tests {
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
             let mut interp = unwrap_interpreter!(mrb);
-            if let Ok(value) = interp.eval(b"__FILE__") {
-                value.inner()
+            let mut guard = Guard::new(&mut interp);
+            let result = if let Ok(value) = guard.eval(b"__FILE__") {
+                value
             } else {
-                interp.convert(None::<Value>).inner()
-            }
+                guard.convert(None::<Value>)
+            };
+            result.inner()
         }
 
         impl File for NestedEval {
@@ -110,7 +119,7 @@ mod tests {
                 module::Builder::for_spec(interp, &spec)
                     .add_self_method("file", nested_eval_file, sys::mrb_args_none())?
                     .define()?;
-                interp.0.borrow_mut().def_module::<Self>(spec);
+                interp.def_module::<Self>(spec)?;
                 Ok(())
             }
         }
@@ -125,7 +134,7 @@ mod tests {
                 .unwrap();
             let code = br#"require 'nested_eval'; NestedEval.file"#;
             let result = interp.eval(code).unwrap();
-            let result = result.try_into::<&str>(&interp).unwrap();
+            let result = result.try_into_mut::<&str>(&mut interp).unwrap();
             assert_eq!(result, "/src/lib/nested_eval.rb");
         }
     }
@@ -134,23 +143,26 @@ mod tests {
     fn eval_with_context() {
         let mut interp = crate::interpreter().unwrap();
 
-        interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
+        let context = Context::new(b"source.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "source.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
 
-        interp.push_context(Context::new(b"source.rb".as_ref()).unwrap());
+        let context = Context::new(b"source.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "source.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
 
-        interp.push_context(Context::new(b"main.rb".as_ref()).unwrap());
+        let context = Context::new(b"main.rb".as_ref()).unwrap();
+        interp.push_context(context).unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "main.rb");
-        interp.pop_context();
+        interp.pop_context().unwrap();
     }
 
     #[test]
@@ -167,7 +179,7 @@ mod tests {
         assert_eq!("SyntaxError", err.name().as_str());
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval(b"'a' * 10 ").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "a".repeat(10));
     }
 
@@ -180,7 +192,7 @@ mod tests {
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
         let result = interp.eval(b"require 'source'; file").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "/src/lib/source.rb");
     }
 
@@ -191,7 +203,7 @@ mod tests {
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
         let result = interp.eval(b"require 'source'; __FILE__").unwrap();
-        let result = result.try_into::<&str>(&interp).unwrap();
+        let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "(eval)");
     }
 

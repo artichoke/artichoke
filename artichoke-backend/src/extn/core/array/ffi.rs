@@ -1,20 +1,22 @@
 use std::convert::TryFrom;
+use std::iter::{self, FromIterator};
 use std::ptr;
 use std::slice;
 
 use crate::extn::core::array::{Array, ArrayType, InlineBuffer};
 use crate::extn::prelude::*;
-use crate::gc::MrbGarbageCollection;
+use crate::gc::{MrbGarbageCollection, State as GcState};
 
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 #[no_mangle]
 unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let result = Array(InlineBuffer::default());
-    let result = result.try_into_ruby(&mut interp, None);
+    let result = result.try_into_ruby(&mut guard, None);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -25,13 +27,14 @@ unsafe extern "C" fn artichoke_ary_new_capa(
     capa: sys::mrb_int,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let result = Array(InlineBuffer::with_capacity(
         usize::try_from(capa).unwrap_or_default(),
     ));
-    let result = result.try_into_ruby(&mut interp, None);
+    let result = result.try_into_ruby(&mut guard, None);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -43,18 +46,19 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
     vals: *const sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let size = usize::try_from(size).unwrap_or_default();
     let values = slice::from_raw_parts(vals, size);
     let result = InlineBuffer::from(values);
     let result = Array(result);
-    let result = result.try_into_ruby(&mut interp, None);
+    let result = result.try_into_ruby(&mut guard, None);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(value.inner());
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -66,16 +70,17 @@ unsafe extern "C" fn artichoke_ary_new_assoc(
     two: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
     let result = InlineBuffer::from(&[one, two][..]);
     let result = Array(result);
-    let result = result.try_into_ruby(&mut interp, None);
+    let result = result.try_into_ruby(&mut guard, None);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(value.inner());
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -86,16 +91,18 @@ unsafe extern "C" fn artichoke_ary_splat(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
-    let value = Value::new(&interp, value);
-    if Array::try_from_ruby(&mut interp, &value).is_ok() {
-        return value.inner();
-    }
-    let result = InlineBuffer::from(vec![value.inner()]);
-    let result = Array(result);
-    let result = result.try_into_ruby(&mut interp, None);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::new(&guard, value);
+    let result = if Array::try_from_ruby(&mut guard, &value).is_ok() {
+        Ok(value)
+    } else {
+        let result = InlineBuffer::from_iter(iter::once(value.inner()));
+        let result = Array(result);
+        result.try_into_ruby(&mut guard, None)
+    };
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -107,14 +114,15 @@ unsafe extern "C" fn artichoke_ary_concat(
     other: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let other = Value::new(&interp, other);
-    let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    let other = Value::new(&guard, other);
+    let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = interp.disable_gc();
-        let result = borrow.concat(&mut interp, other);
-        if gc_was_enabled {
-            interp.enable_gc();
+        let prior_gc_state = guard.disable_gc();
+        let result = borrow.concat(&mut guard, other);
+        if let GcState::Enabled = prior_gc_state {
+            guard.enable_gc();
         }
         result
     } else {
@@ -126,7 +134,7 @@ unsafe extern "C" fn artichoke_ary_concat(
             sys::mrb_write_barrier(mrb, basic);
             ary.inner()
         }
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -137,17 +145,18 @@ unsafe extern "C" fn artichoke_ary_pop(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = interp.disable_gc();
-        let result = borrow.pop(&interp);
-        if gc_was_enabled {
-            interp.enable_gc();
+        let prior_gc_state = guard.disable_gc();
+        let result = borrow.pop(&guard);
+        if let GcState::Enabled = prior_gc_state {
+            guard.enable_gc();
         }
         result
     } else {
-        Ok(interp.convert(None::<Value>))
+        Ok(guard.convert(None::<Value>))
     };
     match result {
         Ok(value) => {
@@ -155,7 +164,7 @@ unsafe extern "C" fn artichoke_ary_pop(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -167,15 +176,16 @@ unsafe extern "C" fn artichoke_ary_push(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let value = Value::new(&interp, value);
-    let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    let value = Value::new(&guard, value);
+    let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let idx = array.borrow().len();
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = interp.disable_gc();
-        let result = borrow.set(&interp, idx, value);
-        if gc_was_enabled {
-            interp.enable_gc();
+        let prior_gc_state = guard.disable_gc();
+        let result = borrow.set(&guard, idx, value);
+        if let GcState::Enabled = prior_gc_state {
+            guard.enable_gc();
         }
         result
     } else {
@@ -187,7 +197,7 @@ unsafe extern "C" fn artichoke_ary_push(
             sys::mrb_write_barrier(mrb, basic);
             ary.inner()
         }
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -199,22 +209,23 @@ unsafe extern "C" fn artichoke_ary_ref(
     offset: sys::mrb_int,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
     let offset = usize::try_from(offset).unwrap_or_default();
-    let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let borrow = array.borrow();
-        let gc_was_enabled = interp.disable_gc();
-        let result = borrow.get(&interp, offset);
-        if gc_was_enabled {
-            interp.enable_gc();
+        let prior_gc_state = guard.disable_gc();
+        let result = borrow.get(&guard, offset);
+        if let GcState::Enabled = prior_gc_state {
+            guard.enable_gc();
         }
         result
     } else {
-        Ok(interp.convert(None::<Value>))
+        Ok(guard.convert(None::<Value>))
     };
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -227,9 +238,10 @@ unsafe extern "C" fn artichoke_ary_set(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
-    let ary = Value::new(&interp, ary);
-    let value = Value::new(&interp, value);
-    let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    let value = Value::new(&guard, value);
+    let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let offset = if let Ok(offset) = usize::try_from(offset) {
             offset
         } else {
@@ -249,10 +261,10 @@ unsafe extern "C" fn artichoke_ary_set(
             Ok(())
         } else {
             let mut borrow = array.borrow_mut();
-            let gc_was_enabled = interp.disable_gc();
-            let result = borrow.set(&interp, offset, value.clone());
-            if gc_was_enabled {
-                interp.enable_gc();
+            let prior_gc_state = guard.disable_gc();
+            let result = borrow.set(&guard, offset, value.clone());
+            if let GcState::Enabled = prior_gc_state {
+                guard.enable_gc();
             }
             result
         }
@@ -265,7 +277,7 @@ unsafe extern "C" fn artichoke_ary_set(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -275,18 +287,19 @@ unsafe extern "C" fn artichoke_ary_shift(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let result = if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    let result = if let Ok(array) = Array::try_from_ruby(&mut guard, &array) {
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = interp.disable_gc();
-        let result = borrow.get(&interp, 0);
-        let _ = borrow.set_slice(&interp, 0, 1, &InlineBuffer::default());
-        if gc_was_enabled {
-            interp.enable_gc();
+        let prior_gc_state = guard.disable_gc();
+        let result = borrow.get(&guard, 0);
+        let _ = borrow.set_slice(&guard, 0, 1, &InlineBuffer::default());
+        if let GcState::Enabled = prior_gc_state {
+            guard.enable_gc();
         }
         result
     } else {
-        Ok(interp.convert(None::<Value>))
+        Ok(guard.convert(None::<Value>))
     };
     match result {
         Ok(value) => {
@@ -294,7 +307,7 @@ unsafe extern "C" fn artichoke_ary_shift(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -305,14 +318,15 @@ unsafe extern "C" fn artichoke_ary_unshift(
     value: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
-    let array = Value::new(&interp, ary);
-    let value = Value::new(&interp, value);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    let value = Value::new(&guard, value);
+    if let Ok(array) = Array::try_from_ruby(&mut guard, &array) {
         let mut borrow = array.borrow_mut();
-        let gc_was_enabled = interp.disable_gc();
-        let _ = borrow.set_with_drain(&interp, 0, 0, value.clone());
-        if gc_was_enabled {
-            interp.enable_gc();
+        let prior_gc_state = guard.disable_gc();
+        let _ = borrow.set_with_drain(&guard, 0, 0, value.clone());
+        if let GcState::Enabled = prior_gc_state {
+            guard.enable_gc();
         }
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
@@ -326,8 +340,9 @@ unsafe extern "C" fn artichoke_ary_len(
     ary: sys::mrb_value,
 ) -> sys::mrb_int {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
-    let ary = Value::new(&interp, ary);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let borrow = array.borrow();
         Int::try_from(borrow.0.len()).unwrap_or_default()
     } else {
@@ -342,8 +357,9 @@ unsafe extern "C" fn artichoke_ary_set_len(
     len: sys::mrb_int,
 ) {
     let mut interp = unwrap_interpreter!(mrb, or_else = ());
-    let ary = Value::new(&interp, ary);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let len = usize::try_from(len).unwrap_or_default();
         let mut borrow = array.borrow_mut();
         borrow.0.set_len(len);
@@ -356,8 +372,9 @@ unsafe extern "C" fn artichoke_ary_ptr(
     ary: sys::mrb_value,
 ) -> *mut sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb, or_else = ptr::null_mut());
-    let ary = Value::new(&interp, ary);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &ary) {
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    if let Ok(array) = Array::try_from_ruby(&mut guard, &ary) {
         let mut borrow = array.borrow_mut();
         borrow.0.as_mut_ptr()
     } else {
@@ -371,8 +388,9 @@ unsafe extern "C" fn artichoke_ary_check(
     ary: sys::mrb_value,
 ) -> sys::mrb_bool {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
-    let ary = Value::new(&interp, ary);
-    if Array::try_from_ruby(&mut interp, &ary).is_ok() {
+    let mut guard = Guard::new(&mut interp);
+    let ary = Value::new(&guard, ary);
+    if Array::try_from_ruby(&mut guard, &ary).is_ok() {
         1
     } else {
         0
@@ -382,10 +400,11 @@ unsafe extern "C" fn artichoke_ary_check(
 #[no_mangle]
 unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::mrb_value) {
     let mut interp = unwrap_interpreter!(mrb, or_else = ());
-    let array = Value::new(&interp, ary);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    if let Ok(array) = Array::try_from_ruby(&mut guard, &array) {
         let borrow = array.borrow();
-        borrow.gc_mark(&interp);
+        borrow.gc_mark(&mut guard);
     }
 }
 
@@ -395,8 +414,9 @@ unsafe extern "C" fn artichoke_gc_mark_ary_size(
     ary: sys::mrb_value,
 ) -> usize {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
-    let array = Value::new(&interp, ary);
-    if let Ok(array) = Array::try_from_ruby(&mut interp, &array) {
+    let mut guard = Guard::new(&mut interp);
+    let array = Value::new(&guard, ary);
+    if let Ok(array) = Array::try_from_ruby(&mut guard, &array) {
         let borrow = array.borrow();
         borrow.real_children()
     } else {

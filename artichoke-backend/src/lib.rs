@@ -25,10 +25,13 @@
 //! use artichoke_backend::prelude::core::*;
 //! use artichoke_backend::prelude::*;
 //!
-//! let mut interp = artichoke_backend::interpreter().unwrap();
-//! let result = interp.eval(b"10 * 10").unwrap();
-//! let result = result.try_into::<i64>(&interp).unwrap();
+//! # fn main() -> Result<(), Exception> {
+//! let mut interp = artichoke_backend::interpreter()?;
+//! let result = interp.eval(b"10 * 10")?;
+//! let result = result.try_into::<i64>(&interp)?;
 //! assert_eq!(result, 100);
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ### Calling Functions on Ruby Objects
@@ -41,10 +44,14 @@
 //! use artichoke_backend::prelude::core::*;
 //! use artichoke_backend::prelude::*;
 //!
-//! let mut interp = artichoke_backend::interpreter().unwrap();
-//! let result = interp.eval(b"'ruby funcall'").unwrap();
-//! let result = result.funcall::<usize>(&mut interp, "length", &[], None).unwrap();
+//! # fn main() -> Result<(), Exception> {
+//! let mut interp = artichoke_backend::interpreter()?;
+//! let result = interp.eval(b"'ruby funcall'")?;
+//! let result = result.funcall(&mut interp, "length", &[], None)?;
+//! let result = result.try_into::<i64>(&mut interp)?;
 //! assert_eq!(result, 12);
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ## Virtual Filesystem and `Kernel#require`
@@ -83,14 +90,13 @@
 #[macro_use]
 extern crate log;
 
-use std::cell::RefCell;
-use std::rc::Rc;
-
 #[macro_use]
 #[doc(hidden)]
 pub mod macros;
 
+mod artichoke;
 pub mod class;
+pub mod class_registry;
 mod constant;
 pub mod convert;
 pub mod def;
@@ -108,6 +114,7 @@ mod io;
 mod load;
 pub mod method;
 pub mod module;
+pub mod module_registry;
 mod parser;
 #[cfg(feature = "core-random")]
 mod prng;
@@ -123,6 +130,7 @@ mod warn;
 #[cfg(test)]
 mod test;
 
+pub use crate::artichoke::{Artichoke, Guard};
 pub use crate::interpreter::interpreter;
 pub use artichoke_core::prelude as core;
 
@@ -144,53 +152,5 @@ pub mod prelude {
     pub use crate::extn::core::exception::{Exception as _, *};
     pub use crate::gc::MrbGarbageCollection;
     pub use crate::interpreter::interpreter;
-    pub use crate::Artichoke;
-}
-
-/// Interpreter instance.
-///
-/// The interpreter [`State`](state::State) is wrapped in an `Rc<RefCell<_>>`.
-///
-/// The [`Rc`] enables the State to be cloned so it can be stored in the
-/// [`sys::mrb_state`],
-/// [extracted in `extern "C"` functions](ffi::from_user_data), and used in
-/// [`Value`](value::Value) instances.
-///
-/// The [`RefCell`] enables mutable access to the underlying
-/// [`State`](state::State), even across an FFI boundary.
-///
-/// Functionality is added to the interpreter via traits, for example,
-/// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
-#[derive(Debug, Clone)]
-pub struct Artichoke(pub Rc<RefCell<state::State>>); // TODO: this should not be pub
-
-impl Artichoke {
-    /// Consume an interpreter and return the pointer to the underlying
-    /// [`sys::mrb_state`].
-    ///
-    /// This function does not free any interpreter resources. Its intended use
-    /// is to prepare the interpreter to cross over an FFI boundary.
-    ///
-    /// This is an associated function and must be called as
-    /// `Artichoke::into_raw(interp)`.
-    ///
-    /// # Safety
-    ///
-    /// After calling this function, the caller is responsible for properly
-    /// freeing the memory occupied by the interpreter heap. The easiest way to
-    /// do this is to call `ffi::from_user_data` with the returned pointer and
-    /// then call `Artichoke::close`.
-    #[must_use]
-    pub unsafe fn into_raw(interp: Self) -> *mut sys::mrb_state {
-        let mrb = interp.0.borrow_mut().mrb;
-        drop(interp);
-        mrb
-    }
-
-    /// Consume an interpreter and free all
-    /// [live](gc::MrbGarbageCollection::live_object_count)
-    /// [`Value`](value::Value)s.
-    pub fn close(self) {
-        self.0.borrow_mut().close();
-    }
+    pub use crate::{Artichoke, Guard};
 }

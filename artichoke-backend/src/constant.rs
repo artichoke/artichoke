@@ -3,6 +3,7 @@ use std::ffi::CString;
 use crate::core::DefineConstant;
 use crate::def::{ConstantNameError, NotDefinedError};
 use crate::exception::Exception;
+use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -19,8 +20,8 @@ impl DefineConstant for Artichoke {
     ) -> Result<(), Self::Error> {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let mrb = self.0.borrow().mrb;
         unsafe {
+            let mrb = self.mrb.as_mut();
             sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
         }
         Ok(())
@@ -36,13 +37,14 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let borrow = self.0.borrow();
-        let mrb = borrow.mrb;
-        let mut rclass = borrow
-            .class_spec::<T>()
-            .and_then(|spec| spec.rclass(mrb))
-            .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
         unsafe {
+            let mrb = self.mrb.as_mut();
+            let mut rclass = state
+                .classes
+                .get::<T>()
+                .and_then(|spec| spec.rclass(mrb))
+                .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
             sys::mrb_define_const(
                 mrb,
                 rclass.as_mut(),
@@ -63,13 +65,14 @@ impl DefineConstant for Artichoke {
     {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
-        let borrow = self.0.borrow();
-        let mrb = borrow.mrb;
-        let mut rclass = borrow
-            .module_spec::<T>()
-            .and_then(|spec| spec.rclass(mrb))
-            .ok_or_else(|| NotDefinedError::module_constant(String::from(constant)))?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
         unsafe {
+            let mrb = self.mrb.as_mut();
+            let mut rclass = state
+                .modules
+                .get::<T>()
+                .and_then(|spec| spec.rclass(mrb))
+                .ok_or_else(|| NotDefinedError::module_constant(String::from(constant)))?;
             sys::mrb_define_const(
                 mrb,
                 rclass.as_mut(),

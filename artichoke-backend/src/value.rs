@@ -2,6 +2,7 @@ use std::error;
 use std::fmt;
 use std::ptr;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::{Convert, ConvertMut, Intern, TryConvert, Value as ValueCore};
 use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
@@ -66,8 +67,9 @@ impl Value {
             Ok(None) => "nil",
             Err(_) => {
                 if let Ruby::Data | Ruby::Object = self.ruby_type() {
-                    self.funcall::<Self>(interp, "class", &[], None)
-                        .and_then(|class| class.funcall::<&'a str>(interp, "name", &[], None))
+                    self.funcall(interp, "class", &[], None)
+                        .and_then(|class| class.funcall(interp, "name", &[], None))
+                        .and_then(|class| class.try_into_mut(interp))
                         .unwrap_or_default()
                 } else {
                     self.ruby_type().class_name()
@@ -95,8 +97,10 @@ impl Value {
     /// Return whether this object is unreachable by any GC roots.
     #[must_use]
     pub fn is_dead(&self, interp: &mut Artichoke) -> bool {
-        let mrb = interp.0.borrow().mrb;
-        unsafe { sys::mrb_sys_value_is_dead(mrb, self.inner()) }
+        unsafe {
+            let mrb = interp.mrb.as_mut();
+            sys::mrb_sys_value_is_dead(mrb, self.inner())
+        }
     }
 
     pub fn is_range(
@@ -104,12 +108,17 @@ impl Value {
         interp: &mut Artichoke,
         len: Int,
     ) -> Result<Option<protect::Range>, Exception> {
-        let mrb = interp.0.borrow().mrb;
-        match unsafe { protect::is_range(mrb, self.inner(), len) } {
+        let mut arena = interp.create_arena_savepoint();
+        let result = unsafe {
+            arena
+                .interp()
+                .with_ffi_boundary(|mrb| protect::is_range(mrb, self.inner(), len))?
+        };
+        match result {
             Ok(range) => Ok(range),
             Err(exception) => {
-                let exception = Value::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Self::new(&arena, exception);
+                Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
     }
@@ -125,7 +134,7 @@ impl Value {
                 ));
             }
         } else if let Ok(true) = self.respond_to(interp, "to_int") {
-            if let Ok(maybe) = self.funcall::<Self>(interp, "to_int", &[], None) {
+            if let Ok(maybe) = self.funcall(interp, "to_int", &[], None) {
                 if let Ok(int) = maybe.try_into::<Int>(interp) {
                     int
                 } else {
@@ -154,11 +163,11 @@ impl Value {
     }
 
     pub fn implicitly_convert_to_string(&self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
-        let string = if let Ok(string) = self.try_into::<&[u8]>(interp) {
+        let string = if let Ok(string) = self.try_into_mut::<&[u8]>(interp) {
             string
         } else if let Ok(true) = self.respond_to(interp, "to_str") {
-            if let Ok(maybe) = self.funcall::<Self>(interp, "to_str", &[], None) {
-                if let Ok(string) = maybe.try_into::<&[u8]>(interp) {
+            if let Ok(maybe) = self.funcall(interp, "to_str", &[], None) {
+                if let Ok(string) = maybe.try_into_mut::<&[u8]>(interp) {
                     string
                 } else {
                     let mut message = String::from("can't convert ");
@@ -201,19 +210,18 @@ impl Value {
 impl ValueCore for Value {
     type Artichoke = Artichoke;
     type Arg = Self;
+    type Value = Self;
     type Block = Self;
     type Error = Exception;
 
-    fn funcall<T>(
+    fn funcall(
         &self,
         interp: &mut Self::Artichoke,
         func: &str,
         args: &[Self::Arg],
         block: Option<Self::Block>,
-    ) -> Result<T, Self::Error>
-    where
-        Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
-    {
+    ) -> Result<Self::Value, Self::Error> {
+        let mut arena = interp.create_arena_savepoint();
         if args.len() > MRB_FUNCALL_ARGC_MAX {
             let err = ArgCountError::new(args);
             warn!("{}", err);
@@ -227,21 +235,21 @@ impl ValueCore for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = interp.intern_symbol(func.as_bytes().to_vec());
-        let mrb = interp.0.borrow_mut().mrb;
-        let _arena = interp.create_arena_savepoint();
+        let func = arena.intern_symbol(func.as_bytes().to_vec());
         let result = unsafe {
-            protect::funcall(
-                mrb,
-                self.inner(),
-                func,
-                args.as_slice(),
-                block.as_ref().map(Self::inner),
-            )
+            arena.with_ffi_boundary(|mrb| {
+                protect::funcall(
+                    mrb,
+                    self.inner(),
+                    func,
+                    args.as_slice(),
+                    block.as_ref().map(Self::inner),
+                )
+            })?
         };
         match result {
             Ok(value) => {
-                let value = Self::new(interp, value);
+                let value = Self::new(&arena, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -249,33 +257,38 @@ impl ValueCore for Value {
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
                     Err(Exception::from(Fatal::new(
-                        interp,
+                        arena.interp(),
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    value.try_into::<T>(interp)
+                    Ok(value)
                 }
             }
             Err(exception) => {
-                let exception = Self::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Self::new(&arena, exception);
+                Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
     }
 
     fn freeze(&mut self, interp: &mut Self::Artichoke) -> Result<(), Self::Error> {
-        let _ = self.funcall::<Self>(interp, "freeze", &[], None)?;
+        let _ = self.funcall(interp, "freeze", &[], None)?;
         Ok(())
     }
 
     fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool {
-        let mrb = interp.0.borrow_mut().mrb;
-        unsafe { sys::mrb_sys_obj_frozen(mrb, self.inner()) }
+        unsafe {
+            let mrb = interp.mrb.as_mut();
+            sys::mrb_sys_obj_frozen(mrb, self.inner())
+        }
     }
 
     fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
-        self.funcall(interp, "inspect", &[], None)
-            .unwrap_or_default()
+        if let Ok(display) = self.funcall(interp, "inspect", &[], None) {
+            display.try_into_mut(interp).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
     }
 
     fn is_nil(&self) -> bool {
@@ -284,11 +297,16 @@ impl ValueCore for Value {
 
     fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error> {
         let method = interp.convert_mut(method);
-        self.funcall::<bool>(interp, "respond_to?", &[method], None)
+        let respond_to = self.funcall(interp, "respond_to?", &[method], None)?;
+        interp.try_convert(respond_to)
     }
 
     fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
-        self.funcall(interp, "to_s", &[], None).unwrap_or_default()
+        if let Ok(display) = self.funcall(interp, "to_s", &[], None) {
+            display.try_into_mut(interp).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
     }
 }
 
@@ -329,17 +347,17 @@ impl Block {
         self.0
     }
 
-    pub fn yield_arg<T>(&self, interp: &mut Artichoke, arg: &Value) -> Result<T, Exception>
-    where
-        Artichoke: TryConvert<Value, T, Error = Exception>,
-    {
-        let _arena = interp.create_arena_savepoint();
+    pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Exception> {
+        let mut arena = interp.create_arena_savepoint();
 
-        let mrb = interp.0.borrow_mut().mrb;
-        let result = unsafe { protect::block_yield(mrb, self.inner(), arg.inner()) };
+        let result = unsafe {
+            arena
+                .interp()
+                .with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
+        };
         match result {
             Ok(value) => {
-                let value = Value::new(interp, value);
+                let value = Value::new(&arena, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -347,16 +365,16 @@ impl Block {
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
                     Err(Exception::from(Fatal::new(
-                        interp,
+                        arena.interp(),
                         "Unreachable Ruby value",
                     )))
                 } else {
-                    value.try_into::<T>(interp)
+                    Ok(value)
                 }
             }
             Err(exception) => {
-                let exception = Value::new(interp, exception);
-                Err(exception_handler::last_error(interp, exception)?)
+                let exception = Value::new(&arena, exception);
+                Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
     }
@@ -412,9 +430,10 @@ impl RubyException for ArgCountError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.to_string());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<ArgumentError>()?;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp
+            .new_instance::<ArgumentError>(&[message])
+            .ok()
+            .flatten()?;
         Some(value.inner())
     }
 }
@@ -561,11 +580,11 @@ mod tests {
     #[test]
     fn is_dead() {
         let mut interp = crate::interpreter().unwrap();
-        let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"'dead'").unwrap();
-        assert!(!live.is_dead(&mut interp));
+        let mut arena = interp.create_arena_savepoint();
+        let live = arena.eval(b"'dead'").unwrap();
+        assert!(!live.is_dead(&mut arena));
         let dead = live;
-        let live = interp.eval(b"'live'").unwrap();
+        let live = arena.eval(b"'live'").unwrap();
         arena.restore();
         interp.full_gc();
         // unreachable objects are dead after a full garbage collection
@@ -578,11 +597,11 @@ mod tests {
     #[test]
     fn immediate_is_dead() {
         let mut interp = crate::interpreter().unwrap();
-        let arena = interp.create_arena_savepoint();
-        let live = interp.eval(b"27").unwrap();
-        assert!(!live.is_dead(&mut interp));
+        let mut arena = interp.create_arena_savepoint();
+        let live = arena.eval(b"27").unwrap();
+        assert!(!live.is_dead(&mut arena));
         let immediate = live;
-        let live = interp.eval(b"64").unwrap();
+        let live = arena.eval(b"64").unwrap();
         arena.restore();
         interp.full_gc();
         // immediate objects are never dead
@@ -600,16 +619,20 @@ mod tests {
     fn funcall() {
         let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
-        let nil_is_nil = nil.funcall::<bool>(&mut interp, "nil?", &[], None).unwrap();
+        let nil_is_nil = nil
+            .funcall(&mut interp, "nil?", &[], None)
+            .and_then(|value| value.try_into::<bool>(&interp))
+            .unwrap();
         assert!(nil_is_nil);
         let s = interp.convert_mut("foo");
-        let string_is_nil = s.funcall::<bool>(&mut interp, "nil?", &[], None).unwrap();
+        let string_is_nil = s
+            .funcall(&mut interp, "nil?", &[], None)
+            .and_then(|value| value.try_into::<bool>(&interp))
+            .unwrap();
         assert!(!string_is_nil);
         let delim = interp.convert_mut("");
-        let split = s
-            .funcall::<Value>(&mut interp, "split", &[delim], None)
-            .unwrap();
-        let split: Vec<&str> = interp.try_convert_mut(split).unwrap();
+        let split = s.funcall(&mut interp, "split", &[delim], None).unwrap();
+        let split = split.try_into_mut::<Vec<&str>>(&mut interp).unwrap();
         assert_eq!(split, vec!["f", "o", "o"])
     }
 
@@ -618,7 +641,10 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
-        let eql = nil.funcall::<bool>(&mut interp, "==", &[s], None).unwrap();
+        let eql = nil
+            .funcall(&mut interp, "==", &[s], None)
+            .and_then(|value| value.try_into::<bool>(&interp))
+            .unwrap();
         assert!(!eql);
     }
 
@@ -628,7 +654,8 @@ mod tests {
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
         let err = s
-            .funcall::<String>(&mut interp, "+", &[nil], None)
+            .funcall(&mut interp, "+", &[nil], None)
+            .and_then(|value| value.try_into_mut::<String>(&mut interp))
             .unwrap_err();
         assert_eq!("TypeError", err.name().as_str());
         assert_eq!(&b"nil cannot be converted to String"[..], err.message());
@@ -640,7 +667,7 @@ mod tests {
         let nil = interp.convert(None::<Value>);
         let s = interp.convert_mut("foo");
         let err = nil
-            .funcall::<bool>(&mut interp, "garbage_method_name", &[s], None)
+            .funcall(&mut interp, "garbage_method_name", &[s], None)
             .unwrap_err();
         assert_eq!("NoMethodError", err.name().as_str());
         assert_eq!(

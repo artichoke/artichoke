@@ -82,9 +82,8 @@ impl Code {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        Self {
-            content: content.into(),
-        }
+        let content = content.into();
+        Self { content }
     }
 }
 
@@ -105,7 +104,7 @@ impl Entry {
         T: Into<Cow<'static, [u8]>>,
     {
         Self {
-            code: Some(Code::new(content)),
+            code: Some(Code::new(content.into())),
             extension: None,
             required: false,
         }
@@ -123,7 +122,7 @@ impl Entry {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        self.code.replace(Code::new(content));
+        self.code.replace(Code::new(content.into()));
     }
 
     fn set_extension(&mut self, hook: ExtensionHook) {
@@ -238,10 +237,10 @@ impl Virtual {
         let path = absolutize_relative_to(path, &self.cwd);
         match self.fs.entry(path) {
             HashEntry::Occupied(mut entry) => {
-                entry.get_mut().replace_content(buf);
+                entry.get_mut().replace_content(buf.into());
             }
             HashEntry::Vacant(entry) => {
-                entry.insert(Entry::from_code(buf));
+                entry.insert(Entry::from_code(buf.into()));
             }
         }
         Ok(())

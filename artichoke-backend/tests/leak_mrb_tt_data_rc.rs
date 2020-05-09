@@ -25,7 +25,7 @@ mod leak;
 const ITERATIONS: usize = 100;
 const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq)]
 struct Container {
     inner: String,
 }
@@ -42,13 +42,14 @@ unsafe extern "C" fn container_initialize(
 ) -> sys::mrb_value {
     let inner = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let inner = Value::new(&interp, inner);
-    let inner = inner.try_into::<String>(&interp).unwrap_or_default();
+    let mut guard = Guard::new(&mut interp);
+    let inner = Value::new(&guard, inner);
+    let inner = inner.try_into_mut::<String>(&mut guard).unwrap_or_default();
     let container = Container { inner };
-    let result = container.try_into_ruby(&mut interp, Some(slf));
+    let result = container.try_into_ruby(&mut guard, Some(slf));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -63,7 +64,7 @@ impl File for Container {
             .value_is_rust_object()
             .add_method("initialize", container_initialize, sys::mrb_args_req(1))?
             .define()?;
-        interp.0.borrow_mut().def_class::<Self>(spec);
+        interp.def_class::<Self>(spec)?;
         Ok(())
     }
 }
@@ -75,18 +76,16 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
     leak::Detector::new("smart pointer", &mut interp)
         .with_iterations(ITERATIONS)
         .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks_with_finalizer(
-            |_| {
-                let mut interp = artichoke_backend::interpreter().unwrap();
-                interp
-                    .def_file_for_type::<_, Container>("container")
-                    .unwrap();
+        .check_leaks(|_| {
+            let mut interp = artichoke_backend::interpreter().unwrap();
+            interp
+                .def_file_for_type::<_, Container>("container")
+                .unwrap();
 
-                let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
-                let result = interp.eval(code);
-                assert_eq!(true, result.is_ok());
-                interp.close();
-            },
-            |interp| interp.full_gc(),
-        );
+            let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
+            let result = interp.eval(code);
+            result.unwrap();
+            interp.close();
+        });
+    interp.close();
 }

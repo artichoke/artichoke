@@ -2,7 +2,7 @@ use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Monitor", None, None)?;
-    interp.0.borrow_mut().def_class::<Monitor>(spec);
+    interp.def_class::<Monitor>(spec)?;
     interp.def_rb_source_file("monitor.rb", &include_bytes!("vendor/monitor.rb")[..])?;
     Ok(())
 }

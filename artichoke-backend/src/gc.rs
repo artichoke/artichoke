@@ -2,44 +2,16 @@ use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
-/// Arena savepoint that can be restored to ensure mruby objects are reaped.
-///
-/// mruby manages objects created via the C API in a memory construct called
-/// the
-/// [arena](https://github.com/mruby/mruby/blob/master/doc/guides/gc-arena-howto.md).
-/// The arena is a stack and objects stored there are permanently alive to avoid
-/// having to track lifetimes externally to the interperter.
-///
-/// An [`ArenaIndex`] is an index to some position of the stack. When restoring
-/// an `ArenaIndex`, the stack pointer is moved. All objects beyond the pointer
-/// are no longer live and are eligible to be collected at the next GC.
-///
-/// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
-/// sufficient to ensure objects get collected eventually.
-#[derive(Debug, Clone)]
-pub struct ArenaIndex {
-    index: i32,
-    interp: Artichoke,
-}
+pub mod arena;
 
-impl ArenaIndex {
-    /// Restore the arena stack pointer to its prior index.
-    pub fn restore(self) {
-        drop(self);
-    }
-}
-
-impl Drop for ArenaIndex {
-    fn drop(&mut self) {
-        let mrb = self.interp.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_arena_restore(mrb, self.index) };
-    }
-}
+use arena::ArenaIndex;
 
 /// Garbage collection primitives for an mruby interpreter.
 pub trait MrbGarbageCollection {
-    /// Create a savepoint in the GC arena which will allow mruby to deallocate
-    /// all of the objects created via the C API.
+    /// Create a savepoint in the GC arena.
+    ///
+    /// Savepoints allow mruby to deallocate all of the objects created via the
+    /// C API.
     ///
     /// Normally objects created via the C API are marked as permanently alive
     /// ("white" GC color) with a call to
@@ -47,15 +19,15 @@ pub trait MrbGarbageCollection {
     ///
     /// The returned [`ArenaIndex`] implements [`Drop`], so it is sufficient to
     /// let it go out of scope to ensure objects are eventually collected.
-    fn create_arena_savepoint(&self) -> ArenaIndex;
+    fn create_arena_savepoint(&mut self) -> ArenaIndex<'_>;
 
     /// Retrieve the number of live objects on the interpreter heap.
     ///
     /// A live object is reachable via top self, the stack, or the arena.
-    fn live_object_count(&self) -> i32;
+    fn live_object_count(&mut self) -> i32;
 
     /// Mark a [`Value`] as reachable in the mruby garbage collector.
-    fn mark_value(&self, value: &Value);
+    fn mark_value(&mut self, value: &Value);
 
     /// Perform an incremental garbage collection.
     ///
@@ -63,7 +35,7 @@ pub trait MrbGarbageCollection {
     /// [full GC](MrbGarbageCollection::full_gc), but does not guarantee that
     /// all dead objects will be reaped. You may wish to use an incremental GC
     /// if you are operating with an interpreter in a loop.
-    fn incremental_gc(&self);
+    fn incremental_gc(&mut self);
 
     /// Perform a full garbage collection.
     ///
@@ -71,59 +43,84 @@ pub trait MrbGarbageCollection {
     /// expensive than an
     /// [incremental GC](MrbGarbageCollection::incremental_gc). You may wish to
     /// use a full GC if you are memory constrained.
-    fn full_gc(&self);
+    fn full_gc(&mut self);
 
     /// Enable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn enable_gc(&self) -> bool;
+    fn enable_gc(&mut self) -> State;
 
     /// Disable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn disable_gc(&self) -> bool;
+    fn disable_gc(&mut self) -> State;
 }
 
 impl MrbGarbageCollection for Artichoke {
-    fn create_arena_savepoint(&self) -> ArenaIndex {
-        let mrb = self.0.borrow().mrb;
-        ArenaIndex {
-            index: unsafe { sys::mrb_sys_gc_arena_save(mrb) },
-            interp: self.clone(),
+    fn create_arena_savepoint(&mut self) -> ArenaIndex<'_> {
+        ArenaIndex::new(self)
+    }
+
+    fn live_object_count(&mut self) -> i32 {
+        unsafe {
+            self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_live_objects(mrb))
+                .unwrap_or_default()
         }
     }
 
-    fn live_object_count(&self) -> i32 {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_live_objects(mrb) }
+    fn mark_value(&mut self, value: &Value) {
+        unsafe {
+            let _ = self.with_ffi_boundary(|mrb| sys::mrb_sys_safe_gc_mark(mrb, value.inner()));
+        }
     }
 
-    fn mark_value(&self, value: &Value) {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_sys_safe_gc_mark(mrb, value.inner()) }
+    fn incremental_gc(&mut self) {
+        unsafe {
+            let _ = self.with_ffi_boundary(|mrb| {
+                sys::mrb_incremental_gc(mrb);
+            });
+        }
     }
 
-    fn incremental_gc(&self) {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_incremental_gc(mrb) };
+    fn full_gc(&mut self) {
+        unsafe {
+            let _ = self.with_ffi_boundary(|mrb| {
+                sys::mrb_full_gc(mrb);
+            });
+        }
     }
 
-    fn full_gc(&self) {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_full_gc(mrb) };
+    fn enable_gc(&mut self) -> State {
+        unsafe {
+            self.with_ffi_boundary(|mrb| {
+                if sys::mrb_sys_gc_enable(mrb) {
+                    State::Enabled
+                } else {
+                    State::Disabled
+                }
+            })
+            .unwrap_or(State::Disabled)
+        }
     }
 
-    #[allow(clippy::must_use_candidate)]
-    fn enable_gc(&self) -> bool {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_enable(mrb) }
+    fn disable_gc(&mut self) -> State {
+        unsafe {
+            self.with_ffi_boundary(|mrb| {
+                if sys::mrb_sys_gc_disable(mrb) {
+                    State::Enabled
+                } else {
+                    State::Disabled
+                }
+            })
+            .unwrap_or(State::Disabled)
+        }
     }
+}
 
-    #[allow(clippy::must_use_candidate)]
-    fn disable_gc(&self) -> bool {
-        let mrb = self.0.borrow().mrb;
-        unsafe { sys::mrb_sys_gc_disable(mrb) }
-    }
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum State {
+    Disabled,
+    Enabled,
 }
 
 #[cfg(test)]
@@ -134,10 +131,10 @@ mod tests {
     fn arena_restore_on_explicit_restore() {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
-        let arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
-            let value = interp.eval(b"'a'").unwrap();
-            let _ = value.to_s(&mut interp);
+            let value = arena.eval(b"'a'").unwrap();
+            let _ = value.to_s(&mut arena);
         }
         arena.restore();
         interp.full_gc();
@@ -155,10 +152,10 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         {
-            let _arena = interp.create_arena_savepoint();
+            let mut arena = interp.create_arena_savepoint();
             for _ in 0..2000 {
-                let value = interp.eval(b"'a'").unwrap();
-                let _ = value.to_s(&mut interp);
+                let value = arena.eval(b"'a'").unwrap();
+                let _ = value.to_s(&mut arena);
             }
         }
         interp.full_gc();
@@ -172,33 +169,12 @@ mod tests {
     }
 
     #[test]
-    fn arena_clone() {
-        let mut interp = crate::interpreter().unwrap();
-        let baseline_object_count = interp.live_object_count();
-        let arena = interp.create_arena_savepoint();
-        let arena_clone = arena.clone();
-        // restore original before any objects have been allocated
-        arena.restore();
-        for _ in 0..2000 {
-            let value = interp.eval(b"'a'").unwrap();
-            let _ = value.to_s(&mut interp);
-        }
-        arena_clone.restore();
-        interp.full_gc();
-        assert_eq!(
-            interp.live_object_count(),
-            // plus 1 because stack keep is enabled in eval which marks the last
-            // returned value as live.
-            baseline_object_count + 1,
-            "Arena restore + full GC should free unreachable objects",
-        );
-    }
-    #[test]
     fn enable_disable_gc() {
         let mut interp = crate::interpreter().unwrap();
         interp.disable_gc();
-        let arena = interp.create_arena_savepoint();
-        let _ = interp
+        let mut arena = interp.create_arena_savepoint();
+        let _ = arena
+            .interp()
             .eval(
                 br#"
                 # this value will be garbage collected because it is eventually
@@ -216,10 +192,10 @@ mod tests {
                 "#,
             )
             .unwrap();
-        let live = interp.live_object_count();
-        interp.full_gc();
+        let live = arena.live_object_count();
+        arena.full_gc();
         assert_eq!(
-            interp.live_object_count(),
+            arena.live_object_count(),
             live,
             "GC is disabled. No objects should be collected"
         );
@@ -236,9 +212,9 @@ mod tests {
     #[test]
     fn gc_after_empty_eval() {
         let mut interp = crate::interpreter().unwrap();
-        let arena = interp.create_arena_savepoint();
-        let baseline_object_count = interp.live_object_count();
-        drop(interp.eval(b"").unwrap());
+        let mut arena = interp.create_arena_savepoint();
+        let baseline_object_count = arena.live_object_count();
+        drop(&mut arena.eval(b"").unwrap());
         arena.restore();
         interp.full_gc();
         assert_eq!(interp.live_object_count(), baseline_object_count);
@@ -248,14 +224,14 @@ mod tests {
     fn gc_functional_test() {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
-        let initial_arena = interp.create_arena_savepoint();
+        let mut initial_arena = interp.create_arena_savepoint();
         for _ in 0..2000 {
-            let arena = interp.create_arena_savepoint();
-            let result = interp.eval(b"'gc test'");
+            let mut arena = initial_arena.create_arena_savepoint();
+            let result = arena.eval(b"'gc test'");
             let value = result.unwrap();
-            assert!(!value.is_dead(&mut interp));
+            assert!(!value.is_dead(&mut arena));
             arena.restore();
-            interp.incremental_gc();
+            initial_arena.incremental_gc();
         }
         initial_arena.restore();
         interp.full_gc();

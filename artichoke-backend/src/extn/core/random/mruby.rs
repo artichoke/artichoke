@@ -2,7 +2,7 @@ use crate::extn::core::random::{self, trampoline};
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.0.borrow().class_spec::<random::Random>().is_some() {
+    if interp.is_class_defined::<random::Random>() {
         return Ok(());
     }
     let spec = class::Spec::new("Random", None, Some(def::rust_data_free::<random::Random>))?;
@@ -29,7 +29,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))?
         .add_method("seed", artichoke_random_seed, sys::mrb_args_none())?
         .define()?;
-    interp.0.borrow_mut().def_class::<random::Random>(spec);
+    interp.def_class::<random::Random>(spec)?;
 
     let default = random::Random::interpreter_prng_delegate();
     let default = default
@@ -48,12 +48,13 @@ unsafe extern "C" fn artichoke_random_initialize(
 ) -> sys::mrb_value {
     let seed = mrb_get_args!(mrb, optional = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let slf = Value::new(&interp, slf);
-    let seed = seed.map(|seed| Value::new(&interp, seed));
-    let result = trampoline::initialize(&mut interp, seed, slf);
+    let mut guard = Guard::new(&mut interp);
+    let slf = Value::new(&guard, slf);
+    let seed = seed.map(|seed| Value::new(&guard, seed));
+    let result = trampoline::initialize(&mut guard, seed, slf);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -64,12 +65,13 @@ unsafe extern "C" fn artichoke_random_eq(
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let rand = Value::new(&interp, slf);
-    let other = Value::new(&interp, other);
-    let result = trampoline::equal(&mut interp, rand, other);
+    let mut guard = Guard::new(&mut interp);
+    let rand = Value::new(&guard, slf);
+    let other = Value::new(&guard, other);
+    let result = trampoline::equal(&mut guard, rand, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -80,12 +82,13 @@ unsafe extern "C" fn artichoke_random_bytes(
 ) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let rand = Value::new(&interp, slf);
-    let size = Value::new(&interp, size);
-    let result = trampoline::bytes(&mut interp, rand, size);
+    let mut guard = Guard::new(&mut interp);
+    let rand = Value::new(&guard, slf);
+    let size = Value::new(&guard, size);
+    let result = trampoline::bytes(&mut guard, rand, size);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -96,12 +99,13 @@ unsafe extern "C" fn artichoke_random_rand(
 ) -> sys::mrb_value {
     let max = mrb_get_args!(mrb, optional = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let rand = Value::new(&interp, slf);
-    let max = max.map(|max| Value::new(&interp, max));
-    let result = trampoline::rand(&mut interp, rand, max);
+    let mut guard = Guard::new(&mut interp);
+    let rand = Value::new(&guard, slf);
+    let max = max.map(|max| Value::new(&guard, max));
+    let result = trampoline::rand(&mut guard, rand, max);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -112,11 +116,12 @@ unsafe extern "C" fn artichoke_random_seed(
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
-    let rand = Value::new(&interp, slf);
-    let result = trampoline::seed(&mut interp, rand);
+    let mut guard = Guard::new(&mut interp);
+    let rand = Value::new(&guard, slf);
+    let result = trampoline::seed(&mut guard, rand);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -127,10 +132,11 @@ unsafe extern "C" fn artichoke_random_self_new_seed(
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
-    let result = trampoline::new_seed(&mut interp);
+    let mut guard = Guard::new(&mut interp);
+    let result = trampoline::new_seed(&mut guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -141,11 +147,12 @@ unsafe extern "C" fn artichoke_random_self_srand(
 ) -> sys::mrb_value {
     let number = mrb_get_args!(mrb, optional = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let number = number.map(|number| Value::new(&interp, number));
-    let result = trampoline::srand(&mut interp, number);
+    let mut guard = Guard::new(&mut interp);
+    let number = number.map(|number| Value::new(&guard, number));
+    let result = trampoline::srand(&mut guard, number);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }
 
@@ -156,10 +163,11 @@ unsafe extern "C" fn artichoke_random_self_urandom(
 ) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
-    let size = Value::new(&interp, size);
-    let result = trampoline::urandom(&mut interp, size);
+    let mut guard = Guard::new(&mut interp);
+    let size = Value::new(&guard, size);
+    let result = trampoline::urandom(&mut guard, size);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(interp, exception),
+        Err(exception) => exception::raise(guard, exception),
     }
 }

@@ -76,7 +76,7 @@ pub fn parse(interp: &mut Artichoke, value: &Value) -> Result<Encoding, Error> {
         } else {
             Err(Error::InvalidEncoding)
         }
-    } else if let Ok(encoding) = value.try_into::<&str>(interp) {
+    } else if let Ok(encoding) = value.try_into_mut::<&str>(interp) {
         if encoding.contains('u') && encoding.contains('n') {
             return Err(Error::InvalidEncoding);
         }

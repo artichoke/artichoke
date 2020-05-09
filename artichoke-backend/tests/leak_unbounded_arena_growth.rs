@@ -46,11 +46,12 @@ end
         .with_tolerance(LEAK_TOLERANCE)
         .check_leaks(|interp| {
             let code = b"bad_code";
-            let arena = interp.create_arena_savepoint();
-            let result = interp.eval(code).unwrap_err();
-            arena.restore();
-            assert_eq!(expected, result.vm_backtrace(interp));
+            let mut arena = interp.create_arena_savepoint();
+            let result = arena.eval(code).unwrap_err();
+            let backtrace = result.vm_backtrace(&mut arena);
+            assert_eq!(expected, backtrace);
             drop(result);
+            arena.restore();
             interp.incremental_gc();
         });
     interp.close();
@@ -63,12 +64,12 @@ end
         .with_tolerance(LEAK_TOLERANCE)
         .check_leaks_with_finalizer(
             |interp| {
-                let mut interp = interp.clone();
-                let arena = interp.create_arena_savepoint();
-                let result = interp.eval(b"'a' * 1024 * 1024").unwrap();
-                arena.restore();
-                assert_eq!(result.to_s(&mut interp), expected.as_bytes());
+                let mut arena = interp.create_arena_savepoint();
+                let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
+                let display = result.to_s(&mut arena);
+                assert_eq!(display, expected.as_bytes());
                 drop(result);
+                arena.restore();
                 interp.incremental_gc();
             },
             |interp| interp.full_gc(),
@@ -83,11 +84,12 @@ end
         .with_tolerance(LEAK_TOLERANCE)
         .check_leaks_with_finalizer(
             |interp| {
-                let arena = interp.create_arena_savepoint();
-                let result = interp.eval(b"'a' * 1024 * 1024").unwrap();
-                arena.restore();
-                assert_eq!(result.inspect(interp), expected);
+                let mut arena = interp.create_arena_savepoint();
+                let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
+                let debug = result.inspect(&mut arena);
+                assert_eq!(debug, expected);
                 drop(result);
+                arena.restore();
                 interp.incremental_gc();
             },
             |interp| interp.full_gc(),

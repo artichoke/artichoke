@@ -106,10 +106,12 @@ impl Default for PromptConfig {
 }
 
 fn preamble(interp: &mut Artichoke) -> Result<String, Exception> {
-    let description = interp.eval(b"RUBY_DESCRIPTION")?.try_into::<&str>(interp)?;
+    let description = interp
+        .eval(b"RUBY_DESCRIPTION")?
+        .try_into_mut::<&str>(interp)?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")?
-        .try_into::<&str>(interp)?;
+        .try_into_mut::<&str>(interp)?;
     let mut buf = String::with_capacity(description.len() + 2 + compiler.len() + 1);
     buf.push_str(description);
     buf.push_str("\n[");
@@ -146,13 +148,15 @@ where
     let mut interp = crate::interpreter()?;
     writeln!(output, "{}", preamble(&mut interp)?)?;
 
-    interp.reset_parser();
+    interp.reset_parser()?;
     // safety:
-    // Context::new_unchecked requires that REPL_FILENAME have no NUL bytes.
-    // REPL_FILENAME is controlled by this crate and asserts this invariant
-    // with a test.
-    interp.push_context(unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) });
-    let mut parser = Parser::new(&interp).ok_or(ParserAllocError)?;
+    //
+    // - `Context::new_unchecked` requires that its argument has no NUL bytes.
+    // - `REPL_FILENAME` is controlled by this crate.
+    // - A test asserts that `REPL_FILENAME` has no NUL bytes.
+    let context = unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) };
+    interp.push_context(context)?;
+    let mut parser = Parser::new(&mut interp).ok_or(ParserAllocError)?;
 
     let mut rl = Editor::<()>::new();
     // If a code block is open, accumulate code from multiple readlines in this

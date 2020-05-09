@@ -33,7 +33,8 @@ fn funcall_arena() {
         .check_leaks(|interp| {
             // we have to call a function that calls into the Ruby VM, so we
             // can't just use `to_s`.
-            let inspect = s.funcall::<String>(interp, "inspect", &[], None).unwrap();
+            let inspect = s.funcall(interp, "inspect", &[], None).unwrap();
+            let inspect = inspect.try_into_mut::<String>(interp).unwrap();
             assert_eq!(inspect, expected);
             interp.incremental_gc();
         });

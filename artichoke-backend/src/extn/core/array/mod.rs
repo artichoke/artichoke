@@ -26,7 +26,7 @@ impl Array {
         self.0.as_vec(interp)
     }
 
-    fn gc_mark(&self, interp: &Artichoke) {
+    fn gc_mark(&self, interp: &mut Artichoke) {
         self.0.gc_mark(interp)
     }
 
@@ -75,7 +75,7 @@ impl Array {
                             RangeError::new(interp, "bignum too big to convert into `long'")
                         })?;
                         let idx = interp.convert(idx);
-                        let elem = block.yield_arg::<Value>(interp, &idx)?;
+                        let elem = block.yield_arg(interp, &idx)?;
                         buffer.push(elem.inner());
                     }
                     InlineBuffer::from(buffer)

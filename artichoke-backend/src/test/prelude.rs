@@ -11,11 +11,14 @@
 //! The prelude may grow over time as additional items see ubiquitous use.
 
 pub use crate::class;
+pub use crate::class_registry::ClassRegistry;
 pub use crate::convert::RustBackedValue;
-pub use crate::core::{Value as _, *};
+pub use crate::core::{Regexp as _, Value as _, *};
 pub use crate::def::{self, EnclosingRubyScope, NotDefinedError};
 pub use crate::exception;
+pub use crate::ffi::InterpreterExtractError;
 pub use crate::module;
+pub use crate::module_registry::ModuleRegistry;
 pub use crate::prelude::*;
 pub use crate::state::parser::Context;
 pub use crate::string;

@@ -205,7 +205,7 @@ impl TryConvertMut<Value, Vec<Vec<u8>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -224,7 +224,7 @@ impl TryConvertMut<Value, Vec<Option<Vec<u8>>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -243,7 +243,7 @@ impl<'a> TryConvertMut<Value, Vec<&'a [u8]>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -262,7 +262,7 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a [u8]>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -281,7 +281,7 @@ impl TryConvertMut<Value, Vec<String>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -300,7 +300,7 @@ impl TryConvertMut<Value, Vec<Option<String>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -319,7 +319,7 @@ impl<'a> TryConvertMut<Value, Vec<&'a str>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -338,7 +338,7 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a str>>> for Artichoke {
             let array = borrow.as_vec(self);
             let mut buf = Vec::with_capacity(array.len());
             for elem in array {
-                buf.push(self.try_convert(elem)?);
+                buf.push(self.try_convert_mut(elem)?);
             }
             Ok(buf)
         } else {
@@ -386,15 +386,13 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(arr.as_slice());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -404,15 +402,13 @@ mod tests {
         }
         // Owned converter
         let value = interp.convert_mut(arr.to_vec());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -428,15 +424,13 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(arr.as_slice());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -446,15 +440,13 @@ mod tests {
         }
         // Owned converter
         let value = interp.convert_mut(arr.to_vec());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -470,15 +462,13 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(arr.as_slice());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }
@@ -488,15 +478,13 @@ mod tests {
         }
         // Owned converter
         let value = interp.convert_mut(arr.to_vec());
-        let len = value
-            .funcall::<usize>(&mut interp, "length", &[], None)
-            .unwrap();
+        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+        let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
             return false;
         }
-        let empty = value
-            .funcall::<bool>(&mut interp, "empty?", &[], None)
-            .unwrap();
+        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+        let empty = empty.try_into::<bool>(&interp).unwrap();
         if empty != arr.is_empty() {
             return false;
         }

@@ -6,7 +6,7 @@ use crate::extn::core::regexp;
 use crate::extn::prelude::*;
 
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, Hash, PartialEq, Eq)]
 pub struct Options {
     pub multiline: bool,
     pub ignore_case: bool,
@@ -92,7 +92,7 @@ pub fn parse(interp: &mut Artichoke, value: &Value) -> Options {
             Some(false) | None => Options::default(),
             _ => Options::ignore_case(),
         }
-    } else if let Ok(options) = value.try_into::<Option<&str>>(interp) {
+    } else if let Ok(options) = value.try_into_mut::<Option<&str>>(interp) {
         if let Some(options) = options {
             Options {
                 multiline: options.contains('m'),

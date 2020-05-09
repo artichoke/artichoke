@@ -2,15 +2,17 @@ use std::error;
 use std::fmt;
 use std::io;
 
+use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, Io};
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception;
+use crate::ffi::InterpreterExtractError;
 use crate::state::output::Output;
 use crate::sys;
 use crate::Artichoke;
 
 impl Io for Artichoke {
-    type Error = IOError;
+    type Error = Exception;
 
     /// Writes the given bytes to the interpreter stdout stream.
     ///
@@ -20,7 +22,8 @@ impl Io for Artichoke {
     ///
     /// If the output stream encounters an error, an error is returned.
     fn print<T: AsRef<[u8]>>(&mut self, message: T) -> Result<(), Self::Error> {
-        self.0.borrow_mut().output.write_stdout(message.as_ref())?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        state.output.write_stdout(message.as_ref())?;
         Ok(())
     }
 
@@ -33,8 +36,9 @@ impl Io for Artichoke {
     ///
     /// If the output stream encounters an error, an error is returned.
     fn puts<T: AsRef<[u8]>>(&mut self, message: T) -> Result<(), Self::Error> {
-        self.0.borrow_mut().output.write_stdout(message.as_ref())?;
-        self.0.borrow_mut().output.write_stdout(b"\n")?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        state.output.write_stdout(message.as_ref())?;
+        state.output.write_stdout(b"\n")?;
         Ok(())
     }
 }
@@ -89,9 +93,10 @@ impl RubyException for IOError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.inner.to_string());
-        let borrow = interp.0.borrow();
-        let spec = borrow.class_spec::<exception::IOError>()?;
-        let value = spec.new_instance(interp, &[message])?;
+        let value = interp
+            .new_instance::<exception::IOError>(&[message])
+            .ok()
+            .flatten()?;
         Some(value.inner())
     }
 }

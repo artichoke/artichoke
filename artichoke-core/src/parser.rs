@@ -10,29 +10,53 @@ use std::fmt;
 pub trait Parser {
     /// Concrete type for parser context.
     type Context;
+    /// Error type for Parser APIs.
+    type Error: error::Error;
 
     /// Reset parser state to initial values.
-    fn reset_parser(&mut self);
+    ///
+    /// # Errors
+    ///
+    /// If the parser state is inaccessible, an error is returned.
+    fn reset_parser(&mut self) -> Result<(), Self::Error>;
 
     /// Fetch the current line number from the parser state.
-    fn fetch_lineno(&self) -> usize;
+    ///
+    /// # Errors
+    ///
+    /// If the parser state is inaccessible, an error is returned.
+    fn fetch_lineno(&self) -> Result<usize, Self::Error>;
 
     /// Increment line number and return the new value.
     ///
     /// # Errors
     ///
+    /// If the parser state is inaccessible, an error is returned.
+    ///
     /// This function returns [`IncrementLinenoError`] if the increment results
     /// in an overflow of the internal parser line number counter.
-    fn add_fetch_lineno(&mut self, val: usize) -> Result<usize, IncrementLinenoError>;
+    fn add_fetch_lineno(&mut self, val: usize) -> Result<usize, Self::Error>;
 
     /// Set the currently active context by modifying the parser stack.
-    fn push_context(&mut self, context: Self::Context);
+    ///
+    /// # Errors
+    ///
+    /// If the parser state is inaccessible, an error is returned.
+    fn push_context(&mut self, context: Self::Context) -> Result<(), Self::Error>;
 
     /// Remove the current active context and return it.
-    fn pop_context(&mut self) -> Option<Self::Context>;
+    ///
+    /// # Errors
+    ///
+    /// If the parser state is inaccessible, an error is returned.
+    fn pop_context(&mut self) -> Result<Option<Self::Context>, Self::Error>;
 
     /// Return a reference to the currently active context.
-    fn peek_context(&self) -> Option<&Self::Context>;
+    ///
+    /// # Errors
+    ///
+    /// If the parser state is inaccessible, an error is returned.
+    fn peek_context(&self) -> Result<Option<&Self::Context>, Self::Error>;
 }
 
 /// Errors encountered when incrementing line numbers on parser state.
