@@ -85,6 +85,8 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), NotDefinedError> {
+        use sys::mrb_vtype::MRB_TT_DATA;
+
         let mrb = unsafe { self.interp.mrb.as_mut() };
         let mut super_class = if let Some(super_class) = self.super_class {
             super_class
@@ -124,7 +126,7 @@ impl<'a> Builder<'a> {
         // Rust object, mark them as `MRB_TT_DATA`.
         if self.is_mrb_tt_data {
             unsafe {
-                sys::mrb_sys_set_instance_tt(rclass.as_mut(), sys::mrb_vtype::MRB_TT_DATA);
+                sys::mrb_sys_set_instance_tt(rclass.as_mut(), MRB_TT_DATA);
             }
         }
         Ok(())
