@@ -25,7 +25,7 @@ mod leak;
 const ITERATIONS: usize = 100;
 const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq)]
 struct Container {
     inner: String,
 }
@@ -84,7 +84,7 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
 
             let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
             let result = interp.eval(code);
-            assert_eq!(true, result.is_ok());
+            result.unwrap();
             interp.close();
         });
     interp.close();
