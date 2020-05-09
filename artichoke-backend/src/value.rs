@@ -117,7 +117,7 @@ impl Value {
         match result {
             Ok(range) => Ok(range),
             Err(exception) => {
-                let exception = Value::new(&mut arena, exception);
+                let exception = Self::new(&arena, exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
@@ -249,7 +249,7 @@ impl ValueCore for Value {
         };
         match result {
             Ok(value) => {
-                let value = Self::new(&mut arena, value);
+                let value = Self::new(&arena, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -265,7 +265,7 @@ impl ValueCore for Value {
                 }
             }
             Err(exception) => {
-                let exception = Self::new(&mut arena, exception);
+                let exception = Self::new(&arena, exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
@@ -357,7 +357,7 @@ impl Block {
         };
         match result {
             Ok(value) => {
-                let value = Value::new(&mut arena, value);
+                let value = Value::new(&arena, value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -373,7 +373,7 @@ impl Block {
                 }
             }
             Err(exception) => {
-                let exception = Value::new(&mut arena, exception);
+                let exception = Value::new(&arena, exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
