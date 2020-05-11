@@ -120,13 +120,8 @@ impl Artichoke {
     /// then call [`Artichoke::close`].
     #[must_use]
     pub unsafe fn into_raw(mut interp: Self) -> *mut sys::mrb_state {
-        let mrb = interp.mrb.as_mut();
-        if let Some(state) = interp.state {
-            mrb.ud = Box::into_raw(state) as *mut c_void;
-        } else {
-            error!("Called Artichoke::into_raw with no State");
-        }
-        mrb
+        let mut guard = Guard::new(&mut interp);
+        guard.interp().mrb.as_ptr()
     }
 
     /// Consume an interpreter and free all live objects.
@@ -210,14 +205,13 @@ impl<'a> DerefMut for Guard<'a> {
 
 impl<'a> Drop for Guard<'a> {
     fn drop(&mut self) {
+        let state = self.0.state.take();
+        let state = state.unwrap_or_else(|| panic!("Dropping Guard with no State"));
+
         unsafe {
-            let mrb = self.0.mrb.as_mut();
-            if let Some(state) = self.0.state.take() {
-                trace!("Serializing Artichoke State into mrb to prepare for FFI boundary");
-                mrb.ud = Box::into_raw(state) as *mut c_void;
-            } else {
-                error!("Dropping Guard with no State");
-            }
+            trace!("Serializing Artichoke State into mrb to prepare for FFI boundary");
+            let mrb = self.0.mrb.as_ptr();
+            (*mrb).ud = Box::into_raw(state) as *mut c_void;
         }
     }
 }
