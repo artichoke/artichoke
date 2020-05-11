@@ -48,7 +48,10 @@ unsafe extern "C" fn container_initialize(
     let container = Container { inner };
     let result = container.try_into_ruby(&mut guard, Some(slf));
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            drop(guard);
+            value.inner()
+        }
         Err(exception) => exception::raise(guard, exception),
     }
 }
