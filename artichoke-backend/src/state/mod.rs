@@ -14,6 +14,7 @@ pub mod type_registry;
 use prng::Prng;
 use type_registry::TypeRegistry;
 
+/// Container for domain-specific interpreter state.
 #[derive(Debug)]
 pub struct State {
     pub parser: parser::State,
@@ -51,10 +52,5 @@ impl State {
             prng: Prng::default(),
         };
         Some(state)
-    }
-
-    /// Close a [`State`] and free underlying mruby structs and memory.
-    pub fn close(self, mrb: &mut sys::mrb_state) {
-        self.parser.close(mrb);
     }
 }

@@ -71,12 +71,10 @@ impl File for Container {
 
 #[test]
 fn rust_backed_mrb_value_smart_pointer_leak() {
-    // dummy interp, we will instantiate a fresh interp for each detector loop.
-    let mut interp = artichoke_backend::interpreter().unwrap();
-    leak::Detector::new("smart pointer", &mut interp)
+    leak::Looper::new("smart pointer")
         .with_iterations(ITERATIONS)
         .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks(|_| {
+        .check_leaks(|| {
             let mut interp = artichoke_backend::interpreter().unwrap();
             interp
                 .def_file_for_type::<_, Container>("container")
@@ -87,5 +85,4 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
             result.unwrap();
             interp.close();
         });
-    interp.close();
 }

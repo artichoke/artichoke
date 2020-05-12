@@ -65,6 +65,64 @@ impl<'a> Detector<'a> {
     }
 }
 
+#[derive(Debug)]
+pub struct Looper {
+    test: String,
+    iterations: usize,
+    tolerance: i64, // in bytes
+}
+
+impl Looper {
+    pub fn new<T>(test: T) -> Self
+    where
+        T: Into<String>,
+    {
+        Self {
+            test: test.into(),
+            iterations: 0,
+            tolerance: 0,
+        }
+    }
+
+    pub fn with_iterations(mut self, iterations: usize) -> Self {
+        self.iterations = iterations;
+        self
+    }
+
+    pub fn with_tolerance(mut self, tolerance: i64) -> Self {
+        self.tolerance = tolerance;
+        self
+    }
+
+    pub fn check_leaks<F>(self, execute: F)
+    where
+        F: FnMut() -> (),
+    {
+        self.check_leaks_with_finalizer(execute, || {});
+    }
+
+    pub fn check_leaks_with_finalizer<F, G>(self, mut execute: F, finalize: G)
+    where
+        F: FnMut() -> (),
+        G: FnOnce() -> (),
+    {
+        let start_mem = resident_memsize();
+        for _ in 0..self.iterations {
+            execute();
+        }
+        finalize();
+        let end_mem = resident_memsize();
+        assert!(
+            end_mem <= start_mem + self.tolerance,
+            "Plausible memory leak in test {}!\nAfter {} iterations, usage before: {}, usage after: {}",
+            self.test,
+            self.iterations,
+            start_mem,
+            end_mem
+        );
+    }
+}
+
 #[cfg(target_os = "linux")]
 fn resident_memsize() -> i64 {
     let mut out = MaybeUninit::<libc::rusage>::uninit();

@@ -1,5 +1,4 @@
 use std::ffi::c_void;
-use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
@@ -67,8 +66,8 @@ impl Artichoke {
             //
             // Safety:
             //
-            // 1. The `Artichoke` struct is partially uninitialized with the
-            //    dangling `NonNull`.
+            // 1. Extract a `*mut sys::mrb_state` pointer from the `NonNull` mrb
+            //    field.
             // 2. Function safety conditions declare that `Artichoke` is not
             //    accessed inside the closure.
             // 3. Rust borrowing rules enforce that `Artichoke` is not accessed
@@ -83,8 +82,7 @@ impl Artichoke {
             // 9. Replace `self` with the new interpreter.
 
             // Step 1
-            let mrb = mem::replace(&mut self.mrb, NonNull::dangling());
-            let mrb = mrb.as_ptr();
+            let mrb = self.mrb.as_ptr();
 
             // Step 4
             (*mrb).ud = Box::into_raw(state) as *mut c_void;
@@ -96,7 +94,7 @@ impl Artichoke {
             let extracted = ffi::from_user_data(mrb)?;
 
             // Step 9
-            *self = extracted;
+            self.state = extracted.state;
             Ok(result)
         } else {
             Err(InterpreterExtractError)
@@ -120,23 +118,32 @@ impl Artichoke {
     /// then call [`Artichoke::close`].
     #[must_use]
     pub unsafe fn into_raw(mut interp: Self) -> *mut sys::mrb_state {
-        let mrb = interp.mrb.as_mut();
-        if let Some(state) = interp.state {
-            mrb.ud = Box::into_raw(state) as *mut c_void;
-        } else {
-            error!("Called Artichoke::into_raw with no State");
-        }
-        mrb
+        let mut guard = Guard::new(&mut interp);
+        guard.interp().mrb.as_ptr()
     }
 
     /// Consume an interpreter and free all live objects.
     pub fn close(mut self) {
         unsafe {
             let mrb = self.mrb.as_mut();
-            if let Some(state) = self.state {
-                state.close(mrb);
+            if let Some(state) = self.state.take() {
+                // Do not free class and module specs before running the final
+                // garbage collection on `mrb_close`.
+                let State {
+                    parser,
+                    classes,
+                    modules,
+                    ..
+                } = *state;
+
+                parser.close(mrb);
+                sys::mrb_close(mrb);
+
+                drop(classes);
+                drop(modules);
+            } else {
+                sys::mrb_close(mrb);
             }
-            sys::mrb_close(mrb);
         }
     }
 }
@@ -210,14 +217,13 @@ impl<'a> DerefMut for Guard<'a> {
 
 impl<'a> Drop for Guard<'a> {
     fn drop(&mut self) {
+        let state = self.0.state.take();
+        let state = state.unwrap_or_else(|| panic!("Dropping Guard with no State"));
+
         unsafe {
-            let mrb = self.0.mrb.as_mut();
-            if let Some(state) = self.0.state.take() {
-                trace!("Serializing Artichoke State into mrb to prepare for FFI boundary");
-                mrb.ud = Box::into_raw(state) as *mut c_void;
-            } else {
-                error!("Dropping Guard with no State");
-            }
+            trace!("Serializing Artichoke State into mrb to prepare for FFI boundary");
+            let mrb = self.0.mrb.as_ptr();
+            (*mrb).ud = Box::into_raw(state) as *mut c_void;
         }
     }
 }
