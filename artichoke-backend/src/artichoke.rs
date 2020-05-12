@@ -126,10 +126,24 @@ impl Artichoke {
     pub fn close(mut self) {
         unsafe {
             let mrb = self.mrb.as_mut();
-            if let Some(state) = self.state {
-                state.close(mrb);
+            if let Some(state) = self.state.take() {
+                // Do not free class and module specs before running the final
+                // garbage collection on `mrb_close`.
+                let State {
+                    parser,
+                    classes,
+                    modules,
+                    ..
+                } = *state;
+
+                parser.close(mrb);
+                sys::mrb_close(mrb);
+
+                drop(classes);
+                drop(modules);
+            } else {
+                sys::mrb_close(mrb);
             }
-            sys::mrb_close(mrb);
         }
     }
 }
