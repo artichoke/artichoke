@@ -1,0 +1,290 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'artichoke-backend'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=artichoke-backend"
+                ],
+                "filter": {
+                    "name": "artichoke-backend",
+                    "kind": "lib"
+                }
+            },
+            "args": ["${selectedText}"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'gc_stress'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=gc_stress",
+                    "--package=artichoke-backend"
+                ],
+                "filter": {
+                    "name": "gc_stress",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'leak_funcall'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=leak_funcall",
+                    "--package=artichoke-backend"
+                ],
+                "filter": {
+                    "name": "leak_funcall",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'leak_mrb_tt_data_rc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=leak_mrb_tt_data_rc",
+                    "--package=artichoke-backend"
+                ],
+                "filter": {
+                    "name": "leak_mrb_tt_data_rc",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'leak_unbounded_arena_growth'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=leak_unbounded_arena_growth",
+                    "--package=artichoke-backend"
+                ],
+                "filter": {
+                    "name": "leak_unbounded_arena_growth",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'manual'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=manual",
+                    "--package=artichoke-backend"
+                ],
+                "filter": {
+                    "name": "manual",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'artichoke-core'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=artichoke-core"
+                ],
+                "filter": {
+                    "name": "artichoke-core",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'spec-runner'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=spec-runner",
+                    "--package=spec-runner"
+                ],
+                "filter": {
+                    "name": "spec-runner",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'spec-runner'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=spec-runner",
+                    "--package=spec-runner"
+                ],
+                "filter": {
+                    "name": "spec-runner",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'artichoke'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=artichoke"
+                ],
+                "filter": {
+                    "name": "artichoke",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'airb'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=airb",
+                    "--package=artichoke"
+                ],
+                "filter": {
+                    "name": "airb",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'airb'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=airb",
+                    "--package=artichoke"
+                ],
+                "filter": {
+                    "name": "airb",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'artichoke'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=artichoke",
+                    "--package=artichoke"
+                ],
+                "filter": {
+                    "name": "artichoke",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'artichoke'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=artichoke",
+                    "--package=artichoke"
+                ],
+                "filter": {
+                    "name": "artichoke",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'version_numbers'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=version_numbers",
+                    "--package=artichoke"
+                ],
+                "filter": {
+                    "name": "version_numbers",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
