@@ -17,4 +17,4 @@ Metrics:
 Style/Documentation:
   Enabled: false
 Style/SlicingWithRange:
-  Enabled: false
+  Enabled: false # See GH-679.
