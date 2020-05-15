@@ -1,6 +1,6 @@
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
-#![deny(missing_docs, intra_doc_link_resolution_failure)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(missing_docs, intra_doc_link_resolution_failure)]
 #![warn(rust_2018_idioms)]
 #![forbid(unsafe_code)]
 
