@@ -2,13 +2,13 @@
 
 require 'fileutils'
 
-task default: 'lint:all'
+task default: :lint
+
+desc 'Lint and format'
+task lint: %i[lint:format lint:clippy lint:rubocop lint:eslint]
 
 namespace :lint do
-  desc 'Lint and format'
-  task all: %i[format clippy rubocop eslint]
-
-  desc 'Run clippy'
+  desc 'Run Clippy'
   task :clippy do
     roots = Dir.glob('**/{lib,main}.rs')
     roots.each do |root|
@@ -17,7 +17,7 @@ namespace :lint do
     sh 'cargo clippy'
   end
 
-  desc 'Run rubocop'
+  desc 'Run RuboCop'
   task :rubocop do
     sh 'rubocop -a'
   end
@@ -29,7 +29,7 @@ namespace :lint do
     sh 'node scripts/clang-format.js'
   end
 
-  desc 'Run eslint'
+  desc 'Run ESlint'
   task eslint: :deps do
     sh 'npx eslint --fix .'
   end
@@ -56,10 +56,10 @@ namespace :lint do
 
   desc 'Install linting dependencies'
   task :deps do
-    sh 'npm install'
+    sh 'npm ci'
   end
 
-  desc 'Lint with restriction pass (unenforced lints)'
+  desc 'Lint with Clippy restriction pass (unenforced lints)'
   task :restriction do
     sh 'cargo clippy -- ' \
       '-W clippy::dbg_macro ' \
@@ -92,7 +92,7 @@ task :spec do
   sh 'cargo run -q -p spec-runner -- spec-runner/enforced-specs.yaml'
 end
 
-desc 'Run Artichoke Rust tests'
+desc 'Run Artichoke unit tests'
 task :test do
   sh 'cargo test --workspace'
 end

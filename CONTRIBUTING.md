@@ -66,21 +66,26 @@ tasks by running:
 $ bundle exec rake --tasks
 rake doc               # Generate Rust API documentation
 rake doc:open          # Generate Rust API documentation and open it in a web browser
-rake lint:all          # Lint and format
-rake lint:clippy       # Run clippy
+rake lint              # Lint and format
+rake lint:clippy       # Run Clippy
 rake lint:deps         # Install linting dependencies
-rake lint:eslint       # Run eslint
+rake lint:eslint       # Run ESlint
 rake lint:format       # Format sources
 rake lint:links        # Check markdown links
-rake lint:restriction  # Lint with restriction pass (unenforced lints)
-rake lint:rubocop      # Run rubocop
+rake lint:restriction  # Lint with Clippy restriction pass (unenforced lints)
+rake lint:rubocop      # Run RuboCop
 rake spec              # Run enforced ruby/spec suite
-rake test              # Run Artichoke Rust tests
+rake test              # Run Artichoke unit tests
 ```
 
 To lint Ruby sources, Artichoke uses
 [RuboCop](https://github.com/rubocop-hq/rubocop). RuboCop runs as part of the
-`lint:all` task. To run RuboCop by itself, invoke the `lint:rubocop` task.
+`lint` task. To run RuboCop by itself, invoke the `lint:rubocop` task.
+
+```console
+$ bundle exec rake lint
+$ bundle exec rake lint:rubocop
+```
 
 ### Node.js
 
@@ -124,7 +129,7 @@ Once you [configure a development environment](#setup), run the following to
 lint sources:
 
 ```sh
-rake lint:all
+rake lint
 ```
 
 Merges will be blocked by CI if there are lint errors.
