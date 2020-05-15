@@ -4,6 +4,7 @@
 #![warn(missing_debug_implementations)]
 #![warn(rust_2018_idioms)]
 #![forbid(unsafe_code)]
+#![cfg_attr(doc, deny(warnings))]
 
 //! # artichoke-core
 //!

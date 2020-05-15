@@ -4,6 +4,7 @@
 #![warn(intra_doc_link_resolution_failure)]
 #![warn(missing_debug_implementations)]
 #![warn(rust_2018_idioms)]
+#![cfg_attr(doc, deny(warnings))]
 
 //! # artichoke-backend
 //!
