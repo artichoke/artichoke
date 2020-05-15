@@ -26,7 +26,7 @@ use crate::Artichoke;
 /// # Safety
 ///
 /// This function assumes that the user data pointer was created with
-/// [Box::into_raw`] and that the pointer is to a non-free'd
+/// [`Box::into_raw`] and that the pointer is to a non-free'd
 /// [`Box`]`<`[`State`]`>`.
 pub unsafe fn from_user_data(
     mrb: *mut sys::mrb_state,
