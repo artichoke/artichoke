@@ -18,7 +18,7 @@
 //! - A Rust and Ruby implementation of Ruby Core and Standard Library using
 //!   high-quality Rust dependencies and modern Ruby.
 //! - Support for injecting Rust code and types into the interpreter with a
-//!   rubygems-style [`File`](backend::File) API.
+//!   rubygems-style [`File`](backend::prelude::core::File) API.
 //! - The ability to disable parts of the interpreter VM or library functions at
 //!   compile time. For example, deny access to the system environ by disabling
 //!   the `core-env-system` feature.
