@@ -45,6 +45,7 @@ end
 
 class Foo
   attr_accessor :bar, :baz
+
   def initialize(bar, baz)
     @bar = bar
     @baz = baz
