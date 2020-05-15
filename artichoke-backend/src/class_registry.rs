@@ -42,9 +42,9 @@ pub trait ClassRegistry {
 impl ClassRegistry for Artichoke {
     /// Create a class definition bound to a Rust type `T`.
     ///
-    /// Class definitions have the same lifetime as the [`State`] because the
-    /// class def owns the `mrb_data_type` for the type, which must be
-    /// long-lived.
+    /// Class definitions have the same lifetime as the
+    /// [`State`](crate::state::State) because the class def owns the
+    /// `mrb_data_type` for the type, which must be long-lived.
     fn def_class<T>(&mut self, spec: class::Spec) -> Result<(), Exception>
     where
         T: Any,
