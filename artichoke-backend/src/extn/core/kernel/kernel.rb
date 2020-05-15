@@ -117,7 +117,13 @@ module Kernel
   def loop(&block)
     return to_enum :loop unless block
 
-    yield while true # rubocop:disable Style/InfiniteLoop, Lint/LiteralAsCondition
+    # RuboCop's `Style/InfiniteLoop` lint says:
+    #     Use `Kernel#loop` for infinite loops.
+    # Disable this lint since we are _implementing_ `Kernel#loop`.
+    #
+    # rubocop:disable Style/InfiniteLoop
+    yield while true
+    # rubocop:enable Style/InfiniteLoop
   rescue StopIteration => e
     e.result
   end
