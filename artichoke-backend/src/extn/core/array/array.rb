@@ -516,7 +516,7 @@ class Array
     if num.nil?
       return nil if empty?
 
-      while true # rubocop:disable Lint/LiteralAsCondition
+      while true
         idx = 0
         len = length
         while idx < len
