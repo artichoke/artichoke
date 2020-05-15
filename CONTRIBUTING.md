@@ -66,21 +66,26 @@ tasks by running:
 $ bundle exec rake --tasks
 rake doc               # Generate Rust API documentation
 rake doc:open          # Generate Rust API documentation and open it in a web browser
-rake lint:all          # Lint and format
-rake lint:clippy       # Run clippy
+rake lint              # Lint and format
+rake lint:clippy       # Run Clippy
 rake lint:deps         # Install linting dependencies
-rake lint:eslint       # Run eslint
+rake lint:eslint       # Run ESlint
 rake lint:format       # Format sources
 rake lint:links        # Check markdown links
-rake lint:restriction  # Lint with restriction pass (unenforced lints)
-rake lint:rubocop      # Run rubocop
+rake lint:restriction  # Lint with Clippy restriction pass (unenforced lints)
+rake lint:rubocop      # Run RuboCop
 rake spec              # Run enforced ruby/spec suite
-rake test              # Run Artichoke Rust tests
+rake test              # Run Artichoke unit tests
 ```
 
 To lint Ruby sources, Artichoke uses
 [RuboCop](https://github.com/rubocop-hq/rubocop). RuboCop runs as part of the
-`lint:all` task. To run RuboCop by itself, invoke the `lint:rubocop` task.
+`lint` task. To run RuboCop by itself, invoke the `lint:rubocop` task.
+
+```console
+$ bundle exec rake lint
+$ bundle exec rake lint:rubocop
+```
 
 ### Node.js
 
@@ -124,7 +129,7 @@ Once you [configure a development environment](#setup), run the following to
 lint sources:
 
 ```sh
-rake lint:all
+rake lint
 ```
 
 Merges will be blocked by CI if there are lint errors.
@@ -179,26 +184,10 @@ If you need to pull in an updated version of a crate for a bugfix or a new
 feature, update the version number in `Cargo.toml`. See
 [GH-548](https://github.com/artichoke/artichoke/pull/548) for an example.
 
-To update Rust crate dependencies run the following command and check in the
-updated `Cargo.lock` file:
-
-```sh
-cargo update
-```
+Regular dependency bumps are handled by [@dependabot](https://dependabot.com/).
 
 ### Node.js Packages
 
 To see what packages are outdated, you can run `npm outdated`.
 
-To update Node.js package dependencies run the following command and check in
-the updated `package-lock.json` file:
-
-```sh
-npm update
-```
-
-If after running `npm update` there are still outdated packages reported by
-`npm outdated`, there has likely been a major release of a dependency. If you
-would like to update the dependency and deal with any breakage, please do;
-otherwise, please
-[file an issue](https://github.com/artichoke/artichoke/issues/new).
+Dependency bumps are handled by [@dependabot](https://dependabot.com/).
