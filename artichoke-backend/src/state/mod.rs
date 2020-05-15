@@ -33,8 +33,8 @@ impl State {
     /// The state is comprised of several components:
     ///
     /// - [`Class`](crate::class_registry::ClassRegistry) and
-    ///   [`Module`](crate::module_registry::ModModuleRegistry) registries.
-    /// - `Regexp` [global state](Regexp).
+    ///   [`Module`](crate::module_registry::ModuleRegistry) registries.
+    /// - `Regexp` [global state](regexp::State).
     /// - [In-memory virtual filesystem](fs::Virtual).
     /// - [Ruby parser and file context](parser::State).
     /// - [Intepreter-level PRNG](Prng) (behind the `core-random` feature).

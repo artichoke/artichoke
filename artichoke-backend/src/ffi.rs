@@ -20,14 +20,14 @@ use crate::Artichoke;
 /// Extract an [`Artichoke`] interpreter from the user data pointer on a
 /// [`sys::mrb_state`].
 ///
-/// Calling this function will increase the [`Rc::strong_count`] on the
-/// [`Artichoke`] interpreter by one.
+/// Calling this function will move the [`State`] out of the [`sys::mrb_state`]
+/// into the [`Artichoke`] interpreter.
 ///
 /// # Safety
 ///
 /// This function assumes that the user data pointer was created with
-/// [`Rc::into_raw`] and that the pointer is to a non-free'd
-/// [`Rc`]`<`[`RefCell`]`<`[`State`]`>>`.
+/// [`Box::into_raw`] and that the pointer is to a non-free'd
+/// [`Box`]`<`[`State`]`>`.
 pub unsafe fn from_user_data(
     mrb: *mut sys::mrb_state,
 ) -> Result<Artichoke, InterpreterExtractError> {

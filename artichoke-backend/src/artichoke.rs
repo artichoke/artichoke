@@ -8,18 +8,9 @@ use crate::sys;
 
 /// Interpreter instance.
 ///
-/// The interpreter [`State`](state::State) is wrapped in an `Rc<RefCell<_>>`.
-///
-/// The [`Rc`] enables the State to be cloned so it can be stored in the
-/// [`sys::mrb_state`],
-/// [extracted in `extern "C"` functions](ffi::from_user_data), and used in
-/// [`Value`](value::Value) instances.
-///
-/// The [`RefCell`] enables mutable access to the underlying
-/// [`State`](state::State), even across an FFI boundary.
-///
 /// Functionality is added to the interpreter via traits, for example,
-/// [garbage collection](gc::MrbGarbageCollection) or [eval](eval::Eval).
+/// [garbage collection](crate::gc::MrbGarbageCollection) or
+/// [eval](crate::core::Eval).
 #[derive(Debug)]
 pub struct Artichoke {
     /// Underlying mruby interpreter.

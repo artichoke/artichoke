@@ -37,8 +37,8 @@
 //! ### Calling Functions on Ruby Objects
 //!
 //! [`Value`](value::Value)s returned by the `artichoke-backend` interpreter
-//! implement [`Value` from `artichoke-core`](crate::core::prelude::Value),
-//! which enables calling Ruby functions from Rust.
+//! implement [`Value` from `artichoke-core`](crate::core::Value), which enables
+//! calling Ruby functions from Rust.
 //!
 //! ```rust
 //! use artichoke_backend::prelude::core::*;

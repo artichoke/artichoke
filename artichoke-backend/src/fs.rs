@@ -29,7 +29,7 @@ pub const RUBY_LOAD_PATH: &str = "/src/lib";
 ///
 /// This signature is equivalent to the signature for `File::require` as defined
 /// by the `artichoke-backend` implementation of
-/// [`LoadSources`](crate::LoadSources).
+/// [`LoadSources`](crate::core::LoadSources).
 pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Exception>;
 
 #[cfg(test)]
@@ -153,8 +153,8 @@ impl Entry {
 ///   MRI C extension rubygem).
 ///
 /// Sources in `Virtual` are only writable via the
-/// [`LoadSources`](crate::LoadSources) trait. Sources can only be completely
-/// replaced.
+/// [`LoadSources`](crate::core::LoadSources) trait. Sources can only be
+/// completely replaced.
 ///
 /// These APIs are consumed primarily by the `Kernel::require` implementation in
 /// [`extn::core::kernel::require`](crate::extn::core::kernel::require).
