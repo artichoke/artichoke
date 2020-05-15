@@ -9,8 +9,8 @@ use crate::sys;
 /// Interpreter instance.
 ///
 /// Functionality is added to the interpreter via traits, for example,
-/// [garbage collection](crate::prelude::gc::MrbGarbageCollection) or
-/// [eval](crate::prelude::Eval).
+/// [garbage collection](crate::gc::MrbGarbageCollection) or
+/// [eval](crate::core::Eval).
 #[derive(Debug)]
 pub struct Artichoke {
     /// Underlying mruby interpreter.
