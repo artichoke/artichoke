@@ -3,7 +3,6 @@
 #![deny(missing_docs, intra_doc_link_resolution_failure)]
 #![warn(rust_2018_idioms)]
 #![forbid(unsafe_code)]
-#![cfg_attr(doc, deny(warnings))]
 
 //! `spec-runner` is the ruby/spec runner for Artichoke.
 //!
