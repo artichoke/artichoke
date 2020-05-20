@@ -25,7 +25,7 @@ core:
     specs:
       - any
       - append
-      - array
+      - drop
   - suite: comparable
   - suite: string
     specs:

@@ -86,6 +86,8 @@
 //! `HashMap<String, Option<Vec<u8>>>` using an `artichoke-backend` interpreter.
 
 #![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_backend")]
+#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
+#![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
 #[macro_use]
 extern crate log;

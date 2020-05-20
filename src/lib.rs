@@ -79,6 +79,8 @@
 //! [stdlib-mod-securerandom]: https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
 
 #![doc(html_root_url = "https://docs.rs/artichoke/0.1.0-pre.0")]
+#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
+#![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
