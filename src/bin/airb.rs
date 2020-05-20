@@ -5,7 +5,7 @@
 #![warn(rust_2018_idioms)]
 
 //! `airb` is the Artichoke implementation of `irb` and is an interactive Ruby shell
-//! and [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop).
+//! and [REPL][repl].
 //!
 //! `airb` is a readline enabled shell, although it does not persist history.
 //!
@@ -14,6 +14,11 @@
 //! ```shell
 //! cargo run --bin airb
 //! ```
+//!
+//! [repl]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
+
+#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
+#![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
 use artichoke::repl;
 use std::io::{self, Write};

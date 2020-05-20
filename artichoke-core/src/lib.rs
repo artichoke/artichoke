@@ -30,6 +30,8 @@
 //! and [interning `Symbol`s](intern::Intern).
 
 #![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_core")]
+#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
+#![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
 pub mod constant;
 pub mod convert;
