@@ -38,7 +38,7 @@ quickcheck = { version = "0.9", default-features = false }
 quickcheck_macros = "0.9"
 
 [build-dependencies]
-bindgen = { version = "0.53.1", default-features = false, features = ["runtime"] }
+bindgen = { version = "0.54.0", default-features = false, features = ["runtime"] }
 cc = { version = "1.0", features = ["parallel"] }
 chrono = "0.4"
 git2 = "0.13"

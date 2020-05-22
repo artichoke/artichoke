@@ -36,7 +36,7 @@ version = "0.1.0"
 dependencies = [
  "artichoke-core",
  "base64",
- "bindgen",
+ "bindgen 0.54.0",
  "bstr",
  "cc",
  "chrono",
@@ -90,9 +90,29 @@ checksum = "53d1ccbaf7d9ec9537465a97bf19edc1a4e158ecb49fc16178202238c569cc42"
 
 [[package]]
 name = "bindgen"
-version = "0.53.2"
+version = "0.53.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bb26d6a69a335b8cb0e7c7e9775cd5666611dc50a37177c3f2cedcfc040e8c8"
+checksum = "c72a978d268b1d70b0e963217e60fdabd9523a941457a6c42a7315d15c7e89e5"
+dependencies = [
+ "bitflags",
+ "cexpr",
+ "cfg-if",
+ "clang-sys",
+ "lazy_static",
+ "lazycell",
+ "peeking_take_while",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash",
+ "shlex",
+]
+
+[[package]]
+name = "bindgen"
+version = "0.54.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66c0bb6167449588ff70803f4127f0684f9063097eca5016f37eb52b92c2cf36"
 dependencies = [
  "bitflags",
  "cexpr",
@@ -468,7 +488,7 @@ name = "onig_sys"
 version = "69.2.0"
 source = "git+https://github.com/artichoke/rust-onig?rev=11bc679d45b6799df2866cb4c90e1d542c4ba4c0#11bc679d45b6799df2866cb4c90e1d542c4ba4c0"
 dependencies = [
- "bindgen",
+ "bindgen 0.53.3",
  "cc",
  "pkg-config",
 ]
