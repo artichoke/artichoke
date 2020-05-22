@@ -37,8 +37,13 @@ jobs:
         run: sudo apt install bison
         if: matrix.os == 'ubuntu-latest'
 
+      # avoid choco because it takes forever to initialize on first use
+      # instead, install directly from GitHub releases
       - name: Install Bison
-        run: choco install winflexbison3 --no-progress
+        run: |
+          (New-Object System.Net.WebClient).DownloadFile("https://github.com/lexxmark/winflexbison/releases/download/v2.5.22/win_flex_bison-2.5.22.zip","win_flex_bison.zip");
+          Expand-Archive .\win_flex_bison.zip .\win_flex_bison;
+          echo "::add-path::./win_flex_bison"
         if: matrix.os == 'windows-latest'
 
       - name: Compile
