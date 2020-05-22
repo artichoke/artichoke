@@ -33,10 +33,6 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
-      - name: Install Clang
-        run: choco install llvm --no-progress
-        if: matrix.os == 'windows-latest'
-
       - name: Install Bison
         run: sudo apt install bison
         if: matrix.os == 'ubuntu-latest'
