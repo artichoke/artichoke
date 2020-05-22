@@ -43,7 +43,13 @@ jobs:
         run: |
           (New-Object System.Net.WebClient).DownloadFile("https://github.com/lexxmark/winflexbison/releases/download/v2.5.22/win_flex_bison-2.5.22.zip","win_flex_bison.zip");
           Expand-Archive .\win_flex_bison.zip .\win_flex_bison;
-          echo "::add-path::./win_flex_bison"
+          echo "::add-path::${{ github.workspace }}/win_flex_bison"
+        if: matrix.os == 'windows-latest'
+
+      - name: Check Bison
+        run: |
+          win_bison.exe --version
+          win_bison --version
         if: matrix.os == 'windows-latest'
 
       - name: Compile
