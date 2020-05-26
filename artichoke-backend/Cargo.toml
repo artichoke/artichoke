@@ -30,7 +30,8 @@ path = "../artichoke-core"
 
 [dependencies.onig]
 git = "https://github.com/artichoke/rust-onig"
-rev = "11bc679d45b6799df2866cb4c90e1d542c4ba4c0"
+rev = "ec266cae185ef4119008ea0b4799b9abd7161436"
+default-features = false
 
 [dev-dependencies]
 libc = "0.2"
@@ -38,7 +39,7 @@ quickcheck = { version = "0.9", default-features = false }
 quickcheck_macros = "0.9"
 
 [build-dependencies]
-bindgen = { version = "0.53.1", default-features = false, features = ["runtime"] }
+bindgen = { version = "0.54.0", default-features = false, features = ["runtime"] }
 cc = { version = "1.0", features = ["parallel"] }
 chrono = "0.4"
 git2 = "0.13"
