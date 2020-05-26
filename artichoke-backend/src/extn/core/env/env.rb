@@ -80,9 +80,7 @@ class << ENV
   end
 
   def fetch(name, default = (not_set = true))
-    if !not_set && block_given?
-      warn 'warning: block supersedes default value argument'
-    end
+    warn 'warning: block supersedes default value argument' if !not_set && block_given?
 
     name =
       if name.is_a?(String)
@@ -271,9 +269,7 @@ class << ENV
       pairs = h.each_pair.map do |name, value|
         tx = yield(name, value)
         if tx.is_a?(Array)
-          if tx.length != 2
-            raise ArgumentError, "element has wrong array length (expected 2, was #{tx.length})"
-          end
+          raise ArgumentError, "element has wrong array length (expected 2, was #{tx.length})" if tx.length != 2
 
           tx
         elsif tx.respond_to?(:to_ary)

@@ -3,14 +3,10 @@
 module Artichoke
   class Array
     def self.reachable?(src, dest, reachable_objects = nil)
-      unless src.is_a?(::Array)
-        raise ArgumentError, 'reachable requires an Array src'
-      end
+      raise ArgumentError, 'reachable requires an Array src' unless src.is_a?(::Array)
 
       reachable_objects ||= ::Hash.new { |h, k| h[k] = [] }
-      unless reachable_objects.key?(src.object_id)
-        reachable_objects[src.object_id] << src.class
-      end
+      reachable_objects[src.object_id] << src.class unless reachable_objects.key?(src.object_id)
       return true if reachable_objects[dest.object_id].include?(dest.class)
 
       if dest.equal?(nil) || dest.equal?(true) || dest.equal?(false) || dest.is_a?(::Integer) || dest.is_a?(::Float)
@@ -30,9 +26,7 @@ module Artichoke
         end
       end
       dest.instance_variables.each do |iv|
-        if reachable?(src, dest.instance_variable_get(iv), reachable_objects)
-          return true
-        end
+        return true if reachable?(src, dest.instance_variable_get(iv), reachable_objects)
       end
       false
     end
@@ -64,9 +58,7 @@ class Array
   end
 
   def &(other)
-    unless other.is_a?(Array)
-      raise TypeError, "can't convert #{other.class} into Array"
-    end
+    raise TypeError, "can't convert #{other.class} into Array" unless other.is_a?(Array)
 
     hash = {}
     array = []
@@ -103,12 +95,8 @@ class Array
   def +(other)
     ary = other.to_ary if other.respond_to?(:to_ary)
     classname = other.class
-    if other.nil? || other.equal?(false) || other.equal?(true)
-      classname = other.inspect
-    end
-    unless ary.is_a?(Array)
-      raise TypeError, "no implicit conversion of #{classname} into #{self.class}"
-    end
+    classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true)
+    raise TypeError, "no implicit conversion of #{classname} into #{self.class}" unless ary.is_a?(Array)
 
     dup.concat(ary)
   end
@@ -116,12 +104,8 @@ class Array
   def -(other)
     ary = other.to_ary if other.respond_to?(:to_ary)
     classname = other.class
-    if other.nil? || other.equal?(false) || other.equal?(true)
-      classname = other.inspect
-    end
-    unless ary.is_a?(Array)
-      raise TypeError, "no implicit conversion of #{classname} into #{self.class}"
-    end
+    classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true)
+    raise TypeError, "no implicit conversion of #{classname} into #{self.class}" unless ary.is_a?(Array)
 
     hash = {}
     array = []
@@ -162,9 +146,7 @@ class Array
 
       unless cmp.is_a?(Numeric)
         classname = other.class
-        if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
-          classname = other.inspect
-        end
+        classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true) || other.is_a?(Numeric)
         raise ArgumentError, "Comparison of #{self.class} with #{classname} failed"
       end
 
@@ -476,9 +458,7 @@ class Array
 
           other
         else
-          unless other.is_a?(Array)
-            raise TypeError, "no implicit conversion of #{classname} into Array"
-          end
+          raise TypeError, "no implicit conversion of #{classname} into Array" unless other.is_a?(Array)
         end
       self[length, 0] = ary
       idx += 1
@@ -716,17 +696,13 @@ class Array
   end
 
   def fetch(index, default = (not_set = true), &block)
-    if !index.nil? && !not_set && block
-      warn 'block supersedes default value argument'
-    end
+    warn 'block supersedes default value argument' if !index.nil? && !not_set && block
 
     idx = index
     idx += size if idx.negative?
     if idx.negative? || size <= idx
       return block.call(index) if block
-      if not_set
-        raise IndexError, "index #{idx} outside of array bounds: #{-size}...#{size}"
-      end
+      raise IndexError, "index #{idx} outside of array bounds: #{-size}...#{size}" if not_set
 
       return default
     end
@@ -734,9 +710,7 @@ class Array
   end
 
   def fill(arg0 = nil, arg1 = nil, arg2 = nil, &block)
-    if arg0.nil? && arg1.nil? && arg2.nil? && !block
-      raise ArgumentError, 'wrong number of arguments (0 for 1..3)'
-    end
+    raise ArgumentError, 'wrong number of arguments (0 for 1..3)' if arg0.nil? && arg1.nil? && arg2.nil? && !block
 
     beg = len = 0
     if block
@@ -963,9 +937,7 @@ class Array
 
   def join(separator = $,) # rubocop:disable Style/SpecialGlobalVars
     classname = separator.class
-    if separator.equal?(true) || separator.equal?(false)
-      classname = separator.inspect
-    end
+    classname = separator.inspect if separator.equal?(true) || separator.equal?(false)
 
     separator = '' if separator.nil?
     sep = String.try_convert(separator)
@@ -1158,9 +1130,7 @@ class Array
 
   def replace(other)
     classname = other.class
-    if other.equal?(true) || other.equal?(false) || other.nil?
-      classname = other.inspect
-    end
+    classname = other.inspect if other.equal?(true) || other.equal?(false) || other.nil?
     ary =
       if other.is_a?(Array)
         other
@@ -1172,9 +1142,7 @@ class Array
 
         other
       else
-        unless other.is_a?(Array)
-          raise TypeError, "no implicit conversion of #{classname} into Array"
-        end
+        raise TypeError, "no implicit conversion of #{classname} into Array" unless other.is_a?(Array)
       end
     self[0, length] = ary
     self
@@ -1315,9 +1283,7 @@ class Array
       case arg
       when Range
         start = range.begin
-        unless start.is_a?(Integer)
-          raise TypeError, "No implicit conversion of #{start.class} into Integer"
-        end
+        raise TypeError, "No implicit conversion of #{start.class} into Integer" unless start.is_a?(Integer)
 
         len = range.size
         return nil if start.abs > length
@@ -1340,12 +1306,8 @@ class Array
     when 2
       start = args[0]
       len = args[1]
-      unless start.is_a?(Integer)
-        raise TypeError, "No implicit conversion of #{start.class} into Integer"
-      end
-      unless len.is_a?(Integer)
-        raise TypeError, "No implicit conversion of #{len.class} into Integer"
-      end
+      raise TypeError, "No implicit conversion of #{start.class} into Integer" unless start.is_a?(Integer)
+      raise TypeError, "No implicit conversion of #{len.class} into Integer" unless len.is_a?(Integer)
 
       return nil if start.abs > length
 
@@ -1430,17 +1392,11 @@ class Array
       item = block.call(item) if block
 
       classname = item.class
-      if item.equal?(true) || item.equal?(false) || item.nil?
-        classname = item.inspect
-      end
-      unless item.respond_to?(:to_i)
-        raise TypeError, "#{classname} can't be coerced into Integer"
-      end
+      classname = item.inspect if item.equal?(true) || item.equal?(false) || item.nil?
+      raise TypeError, "#{classname} can't be coerced into Integer" unless item.respond_to?(:to_i)
 
       item = item.to_i
-      unless item.is_a?(Integer)
-        raise TypeError, "#{classname} can't be coerced into Integer"
-      end
+      raise TypeError, "#{classname} can't be coerced into Integer" unless item.is_a?(Integer)
 
       sum += item
       idx += 1
@@ -1479,9 +1435,7 @@ class Array
           raise TypeError, "wrong element type #{v.class} at #{idx} (expected array)"
         end
 
-      unless v.length == 2
-        raise ArgumentError, "wrong array length at #{idx} (expected 2, was #{v.length})"
-      end
+      raise ArgumentError, "wrong array length at #{idx} (expected 2, was #{v.length})" unless v.length == 2
 
       key, value = *v
       h[key] = value
@@ -1559,12 +1513,8 @@ class Array
         ary.concat(self[selector])
       else
         classname = selector.class
-        if selector.equal?(true) || selector.equal?(false) || selector.nil?
-          classname = selector.inspect
-        end
-        unless selector.respond_to?(:to_int)
-          raise TypeError, "No implicit conversion from #{classname} to Integer"
-        end
+        classname = selector.inspect if selector.equal?(true) || selector.equal?(false) || selector.nil?
+        raise TypeError, "No implicit conversion from #{classname} to Integer" unless selector.respond_to?(:to_int)
 
         selector = selector.to_int
         unless selector.is_a?(Integer)
@@ -1583,9 +1533,7 @@ class Array
   end
 
   def |(other)
-    unless other.is_a?(Array)
-      raise TypeError, "can't convert #{other.class} into Array"
-    end
+    raise TypeError, "can't convert #{other.class} into Array" unless other.is_a?(Array)
 
     ary = self + other
     ary.uniq! || ary

@@ -102,9 +102,7 @@ class SpecCollector
     elsif state.exception.is_a?(RuntimeError)
       skipped = true if state.message =~ /invalid UTF-8/
     end
-    if state.it == 'does not add a URI method to Object instances'
-      skipped = true
-    end
+    skipped = true if state.it == 'does not add a URI method to Object instances'
     skipped = true if state.it == 'is multi-byte character sensitive'
     skipped = true if state.it =~ /UTF-8/
     skipped = true if state.it =~ /\\u/
