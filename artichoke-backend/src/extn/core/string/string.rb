@@ -113,9 +113,7 @@ class String
 
   def =~(other)
     return other.match(self)&.begin(0) if other.is_a?(Regexp)
-    if other.is_a?(String)
-      raise TypeError, "type mismatch: #{other.class} given"
-    end
+    raise TypeError, "type mismatch: #{other.class} given" if other.is_a?(String)
     return other =~ self if other.respond_to?(:=~)
 
     nil
@@ -123,9 +121,7 @@ class String
 
   alias __old_element_reference []
   def [](*args)
-    if args.empty? || args.length > 2
-      raise ArgumentError, 'wrong number of arguments (given 0, expected 1..2)'
-    end
+    raise ArgumentError, 'wrong number of arguments (given 0, expected 1..2)' if args.empty? || args.length > 2
 
     element =
       if (regexp = args[0]).is_a?(Regexp)
@@ -276,9 +272,7 @@ class String
   end
 
   def delete_prefix(prefix)
-    unless prefix.is_a?(String)
-      raise TypeError, "no implicit conversion of #{prefix.class} into String"
-    end
+    raise TypeError, "no implicit conversion of #{prefix.class} into String" unless prefix.is_a?(String)
 
     return self[prefix.length..-1] if start_with?(prefix)
 
@@ -291,9 +285,7 @@ class String
   end
 
   def delete_suffix(suffix)
-    unless suffix.is_a?(String)
-      raise TypeError, "no implicit conversion of #{suffix.class} into String"
-    end
+    raise TypeError, "no implicit conversion of #{suffix.class} into String" unless suffix.is_a?(String)
 
     return self[0..-suffix.length] if end_with?(suffix)
 
@@ -699,9 +691,7 @@ class String
   def tr(from_str, to_str)
     # TODO: Support character ranges c1-c2
     # TODO: Support backslash escapes
-    if to_str.length.positive?
-      to_str = to_str.rjust(from_str.length, to_str[-1])
-    end
+    to_str = to_str.rjust(from_str.length, to_str[-1]) if to_str.length.positive?
 
     gsub(Regexp.compile("[#{from_str}]")) do |char|
       to_str[from_str.index(char)] || ''
@@ -747,9 +737,7 @@ class String
 
   def upto(max, exclusive = false, &block)
     return to_enum(:upto, max, exclusive) unless block
-    unless max.is_a?(String)
-      raise TypeError, "no implicit conversion of #{max.class} into String"
-    end
+    raise TypeError, "no implicit conversion of #{max.class} into String" unless max.is_a?(String)
 
     len = length
     maxlen = max.length

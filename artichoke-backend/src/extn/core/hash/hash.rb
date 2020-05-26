@@ -14,9 +14,7 @@ class Hash
       elsif o.respond_to?(:to_a)
         h = new
         o.to_a.each do |i|
-          unless i.respond_to?(:to_a)
-            raise ArgumentError, "wrong element type #{i.class} (expected array)"
-          end
+          raise ArgumentError, "wrong element type #{i.class} (expected array)" unless i.respond_to?(:to_a)
 
           k, v = nil
           case i.size
@@ -43,9 +41,7 @@ class Hash
   end
 
   def <(other)
-    unless other.is_a?(Hash)
-      raise TypeError, "can't convert #{other.class} to Hash"
-    end
+    raise TypeError, "can't convert #{other.class} to Hash" unless other.is_a?(Hash)
 
     (size < other.size) && all? do |key, val|
       other.key?(key) && (other[key] == val)
@@ -53,9 +49,7 @@ class Hash
   end
 
   def <=(other)
-    unless other.is_a?(Hash)
-      raise TypeError, "can't convert #{other.class} to Hash"
-    end
+    raise TypeError, "can't convert #{other.class} to Hash" unless other.is_a?(Hash)
 
     (size <= other.size) && all? do |key, val|
       other.key?(key) && (other[key] == val)
@@ -75,9 +69,7 @@ class Hash
   end
 
   def >(other)
-    unless other.is_a?(Hash)
-      raise TypeError, "can't convert #{other.class} to Hash"
-    end
+    raise TypeError, "can't convert #{other.class} to Hash" unless other.is_a?(Hash)
 
     (size > other.size) && other.all? do |key, val|
       key?(key) && (self[key] == val)
@@ -85,9 +77,7 @@ class Hash
   end
 
   def >=(other)
-    unless other.is_a?(Hash)
-      raise TypeError, "can't convert #{other.class} to Hash"
-    end
+    raise TypeError, "can't convert #{other.class} to Hash" unless other.is_a?(Hash)
 
     (size >= other.size) && other.all? do |key, val|
       key?(key) && (self[key] == val)
@@ -247,9 +237,7 @@ class Hash
   end
 
   def merge(other, &block)
-    unless other.is_a?(Hash)
-      raise TypeError, "Hash required (#{other.class} given)"
-    end
+    raise TypeError, "Hash required (#{other.class} given)" unless other.is_a?(Hash)
 
     h = dup
     if block
@@ -267,9 +255,7 @@ class Hash
   end
 
   def merge!(other, &block)
-    unless other.is_a?(Hash)
-      raise TypeError, "Hash required (#{other.class} given)"
-    end
+    raise TypeError, "Hash required (#{other.class} given)" unless other.is_a?(Hash)
 
     if block
       other.each_key do |k|
@@ -305,9 +291,7 @@ class Hash
   end
 
   def replace(hash)
-    unless hash.is_a?(Hash)
-      raise TypeError, "Hash required (#{hash.class} given)"
-    end
+    raise TypeError, "Hash required (#{hash.class} given)" unless hash.is_a?(Hash)
 
     clear
     hash.each_key { |k| self[k] = hash[k] }

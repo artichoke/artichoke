@@ -124,16 +124,12 @@ class Thread
     if @__unwind_with_exception.nil?
       @terminated_with_exception = true
       @value = e
-      if self.class.abort_on_exception || abort_on_exception
-        self.class.__mark_unwind(e)
-      end
+      self.class.__mark_unwind(e) if self.class.abort_on_exception || abort_on_exception
     end
   ensure
     @alive = false unless root
     self.class.__pop_stack unless root
-    if self.class.current == self.class.main && !@__unwind_with_exception.nil?
-      __raise__ @__unwind_with_exception
-    end
+    __raise__ @__unwind_with_exception if self.class.current == self.class.main && !@__unwind_with_exception.nil?
   end
 
   def [](sym)
@@ -176,9 +172,7 @@ class Thread
   alias terminate exit
 
   def fetch(*args)
-    unless [1, 2].include?(args.length)
-      __raise__ ArgumentError, 'Thread#fetch requires 1 or 2 arguments'
-    end
+    __raise__ ArgumentError, 'Thread#fetch requires 1 or 2 arguments' unless [1, 2].include?(args.length)
 
     key = args[0]
     if @fiber_locals.key?(key)

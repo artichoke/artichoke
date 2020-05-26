@@ -531,9 +531,7 @@ class Enumerator
   class Generator
     include Enumerable
     def initialize(&block)
-      unless block.is_a? Proc
-        raise TypeError, "wrong argument type #{self.class} (expected Proc)"
-      end
+      raise TypeError, "wrong argument type #{self.class} (expected Proc)" unless block.is_a? Proc
 
       @proc = block
     end
@@ -661,9 +659,7 @@ module Enumerable
   # use Enumerator to use infinite sequence
   def zip(*args, &block)
     args = args.map do |a|
-      unless a.respond_to?(:each)
-        raise TypeError, "wrong argument type #{a.class} (must respond to :each)"
-      end
+      raise TypeError, "wrong argument type #{a.class} (must respond to :each)" unless a.respond_to?(:each)
 
       a.to_enum(:each)
     end

@@ -19,20 +19,14 @@ def string_match_operator
   raise unless match.nil?
 end
 
-# rubocop:disable Style/GuardClause
 def string_element_reference_regexp
   raise unless 'hello there'[/[aeiou](.)\1/] == 'ell'
   raise unless 'hello there'[/[aeiou](.)\1/, 0] == 'ell'
   raise unless 'hello there'[/[aeiou](.)\1/, 1] == 'l'
   raise unless 'hello there'[/[aeiou](.)\1/, 2].nil?
-  unless 'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'non_vowel'] == 'l'
-    raise
-  end
-  unless 'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'vowel'] == 'e'
-    raise
-  end
+  raise unless 'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'non_vowel'] == 'l'
+  raise unless 'hello there'[/(?<vowel>[aeiou])(?<non_vowel>[^aeiou])/, 'vowel'] == 'e'
 end
-# rubocop:enable Style/GuardClause
 
 def string_scan
   s = 'abababa'

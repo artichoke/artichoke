@@ -62,9 +62,7 @@ module Kernel
   end
 
   def Integer(arg, base = nil, exception: true) # rubocop:disable Naming/MethodName
-    if base&.positive? && arg.is_a?(Numeric)
-      raise ArgumentError, 'base specified for non string value'
-    end
+    raise ArgumentError, 'base specified for non string value' if base&.positive? && arg.is_a?(Numeric)
 
     classname = arg.class
     classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
@@ -148,9 +146,7 @@ module Kernel
   def singleton_method(name)
     m = method(name)
     sc = (class << self; self; end)
-    if m.owner != sc
-      raise NameError, "undefined method '#{name}' for class '#{sc}'"
-    end
+    raise NameError, "undefined method '#{name}' for class '#{sc}'" if m.owner != sc
 
     m
   end

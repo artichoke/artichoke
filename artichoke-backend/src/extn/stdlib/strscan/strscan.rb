@@ -247,9 +247,7 @@ class StringScanner
   end
 
   def scan_full(pattern, advance_pointer_p, return_string_p)
-    unless pattern.is_a?(Regexp)
-      raise TypeError, "wrong argument type #{pattern.class} (expected Regexp)"
-    end
+    raise TypeError, "wrong argument type #{pattern.class} (expected Regexp)" unless pattern.is_a?(Regexp)
 
     previous_charpos = @charpos
     match = pattern.match(@string[@charpos..-1])
@@ -340,9 +338,7 @@ class StringScanner
   end
 
   def unscan
-    if @previous_charpos.nil?
-      raise ScanError, 'unscan failed: previous match record not exist'
-    end
+    raise ScanError, 'unscan failed: previous match record not exist' if @previous_charpos.nil?
 
     @charpos = @previous_charpos
     @previous_charpos = nil

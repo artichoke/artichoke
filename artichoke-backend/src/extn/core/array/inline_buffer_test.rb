@@ -95,7 +95,6 @@ def inline_set
   raise unless a == [1, 2, 3, 'a']
 end
 
-# rubocop:disable Style/GuardClause
 def inline_set_sparse
   # to inline
   a = [1, 2, 3]
@@ -105,39 +104,26 @@ def inline_set_sparse
   # to dynamic
   a = [1, 2, 3]
   a[20] = 'a'
-  unless a == [1, 2, 3, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 'a']
-    raise
-  end
+  raise unless a == [1, 2, 3, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 'a']
 end
-# rubocop:enable Style/GuardClause
 
-# rubocop:disable Style/GuardClause
 def dynamic_set
   a = (1..25).map.to_a
   a[0] = 'a'
-  unless a == ['a', 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == ['a', 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[10] = 'a'
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'a', 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'a', 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[-1] = 'a'
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 'a']
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 'a']
 
   a = (1..25).map.to_a
   a[25] = 'a'
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 'a']
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 'a']
 end
-# rubocop:enable Style/GuardClause
 
 # rubocop:disable Style/GuardClause
 def dynamic_set_sparse
@@ -195,25 +181,18 @@ def inline_set_with_drain
   raise unless a == [1, 2, 3, 4, 5, 6, 7, 'a']
 end
 
-# rubocop:disable Style/GuardClause
 def dynamic_set_with_drain
   a = (1..25).map.to_a
   a[0, 0] = 'a'
-  unless a == ['a', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == ['a', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[1, 0] = 'a'
-  unless a == [1, 'a', 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == [1, 'a', 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[25, 0] = 'a'
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 'a']
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 'a']
 
   a = (1..25).map.to_a
   a[27, 0] = 'a'
@@ -233,15 +212,11 @@ def dynamic_set_with_drain
 
   a = (1..25).map.to_a
   a[1, 1] = 'a'
-  unless a == [1, 'a', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == [1, 'a', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[1, 2] = 'a'
-  unless a == [1, 'a', 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == [1, 'a', 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[1, 24] = 'a'
@@ -253,17 +228,12 @@ def dynamic_set_with_drain
 
   a = (1..25).map.to_a
   a[20, 100] = 'a'
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 'a']
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 'a']
 
   a = (1..25).map.to_a
   a[25, 100] = 'a'
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 'a']
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 'a']
 end
-# rubocop:enable Style/GuardClause
 
 def inline_set_slice
   a = [1, 2, 3]
@@ -316,9 +286,7 @@ def inline_set_slice
 
   a = [1, 2, 3]
   a[0, 100] = (1..25).map.to_a
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = [1, 2, 3]
   a[0, 0] = %w[a b c d e]
@@ -332,21 +300,15 @@ end
 def dynamic_set_slice
   a = (1..25).map.to_a
   a[0, 0] = []
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[0, 0] = %w[a]
-  unless a == ['a', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == ['a', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[0, 0] = %w[a]
-  unless a == ['a', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    raise
-  end
+  raise unless a == ['a', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
   a = (1..25).map.to_a
   a[0, 25] = %w[a]
@@ -405,9 +367,7 @@ def concat
   a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   b = %w[a b c d e f g h i j]
   a.concat(b)
-  unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
-    raise
-  end
+  raise unless a == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']
   raise unless b == %w[a b c d e f g h i j]
 end
 
