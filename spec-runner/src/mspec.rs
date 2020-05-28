@@ -1,5 +1,7 @@
 //! Embedded `MSpec` framework.
 
+use std::path::Path;
+
 use artichoke_backend::prelude::core::*;
 use artichoke_backend::prelude::*;
 
@@ -31,13 +33,12 @@ pub fn run<'a, T>(interp: &mut Artichoke, specs: T) -> Result<bool, Exception>
 where
     T: IntoIterator<Item = &'a str>,
 {
-    interp.def_rb_source_file("/src/spec_helper.rb", &b""[..])?;
     interp.def_rb_source_file("/src/lib/spec_helper.rb", &b""[..])?;
     interp.def_rb_source_file(
-        "/src/test/spec_runner",
+        "/src/lib/test/spec_runner",
         &include_bytes!("spec_runner.rb")[..],
     )?;
-    interp.eval(b"require '/src/test/spec_runner'")?;
+    interp.eval_file(Path::new("/src/lib/test/spec_runner"))?;
     let specs = interp.convert_mut(specs.into_iter().collect::<Vec<_>>());
     let result = interp
         .top_self()
