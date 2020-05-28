@@ -25,7 +25,6 @@ impl Filesystem for Hybrid {
     }
 
     fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
-        println!("read: {}", path.display());
         self.memory
             .read_file(path)
             .or_else(|_| self.native.read_file(path))
@@ -52,7 +51,6 @@ impl Filesystem for Hybrid {
     }
 
     fn mark_required(&mut self, path: &Path) -> io::Result<()> {
-        println!("mark req'd: {}", path.display());
         if path.starts_with(RUBY_LOAD_PATH) {
             self.memory.mark_required(path)
         } else {
