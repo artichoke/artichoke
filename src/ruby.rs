@@ -125,26 +125,7 @@ where
     if let Some(ref fixture) = fixture {
         setup_fixture_hack(&mut interp, fixture)?;
     }
-    let program = match std::fs::read(programfile) {
-        Ok(programfile) => programfile,
-        Err(err) => {
-            return match err.kind() {
-                io::ErrorKind::NotFound => Err(Exception::from(LoadError::new(
-                    &interp,
-                    load_error(programfile, "No such file or directory")?,
-                ))),
-                io::ErrorKind::PermissionDenied => Err(Exception::from(LoadError::new(
-                    &interp,
-                    load_error(programfile, "Permission denied")?,
-                ))),
-                _ => Err(Exception::from(LoadError::new(
-                    &interp,
-                    load_error(programfile, "Could not read file")?,
-                ))),
-            }
-        }
-    };
-    if let Err(ref exc) = interp.eval(program.as_slice()) {
+    if let Err(ref exc) = interp.eval_file(programfile) {
         backtrace::format_cli_trace_into(error, &mut interp, exc)?;
         return Ok(Err(()));
     }
