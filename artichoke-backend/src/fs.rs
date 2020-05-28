@@ -34,13 +34,13 @@ pub const RUBY_LOAD_PATH: &str = "/src/lib";
 /// [`LoadSources`](crate::core::LoadSources).
 pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Exception>;
 
-#[cfg(feature = "native-fs-access")]
+#[cfg(feature = "native-filesystem-access")]
 pub fn filesystem() -> Box<dyn Filesystem> {
     let fs = hybrid::Hybrid::default();
     Box::new(fs)
 }
 
-#[cfg(not(feature = "native-fs-access"))]
+#[cfg(not(feature = "native-filesystem-access"))]
 pub fn filesystem() -> Box<dyn Filesystem> {
     let fs = memory::Memory::default();
     Box::new(fs)
