@@ -1,12 +1,15 @@
 //! Virtual filesystem.
 //!
-//! Artichoke proxies all filesystem access through a
-//! [virtual filesystem](Virtual). The filesystem can store Ruby sources and
-//! [extension hooks](ExtensionHook) in memory and will support proxying to the
-//! host filesystem for reads and writes.
+//! Artichoke proxies all filesystem access through a virtual filesystem. The
+//! filesystem can store Ruby sources and [extension hooks](ExtensionHook) in
+//! memory and will support proxying to the host filesystem for reads and
+//! writes.
 //!
 //! Artichoke uses the virtual filesystem to track metadata about loaded
 //! features.
+//!
+//! Artichoke has several virtual filesystem implementations. Only some of them
+//! support reading from the system fs.
 
 use std::borrow::Cow;
 use std::fmt;
@@ -23,8 +26,11 @@ pub mod native;
 /// Directory at which Ruby sources and extensions are stored in the virtual
 /// filesystem.
 ///
-/// `RUBY_LOAD_PATH` is the default current working directory for [`Virtual`]
-/// filesystems.
+/// `RUBY_LOAD_PATH` is the default current working directory for
+/// [`Memory`](memory::Memory) filesystems.
+///
+/// [`Hybrid`](hybrid::Hybrid) filesystems mount the `Memory` filessytem at
+/// `RUBY_LOAD_PATH`.
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
 /// Function type for extension hooks stored in the virtual filesystem.

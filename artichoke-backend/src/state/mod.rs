@@ -35,7 +35,7 @@ impl State {
     /// - [`Class`](crate::class_registry::ClassRegistry) and
     ///   [`Module`](crate::module_registry::ModuleRegistry) registries.
     /// - `Regexp` [global state](regexp::State).
-    /// - [In-memory virtual filesystem](fs::Virtual).
+    /// - [In-memory virtual filesystem](fs).
     /// - [Ruby parser and file context](parser::State).
     /// - [Intepreter-level PRNG](Prng) (behind the `core-random` feature).
     /// - [IO capturing](output::Strategy) strategy.
