@@ -42,11 +42,13 @@ default = [
   "core-env-system",
   "core-math-extra",
   "core-random",
+  "native-filesystem-access",
   "stdlib-securerandom"
 ]
 core-env-system = ["artichoke-backend/core-env-system"]
 core-math-extra = ["artichoke-backend/core-math-extra"]
 core-random = ["artichoke-backend/core-random"]
+native-filesystem-access = ["artichoke-backend/native-filesystem-access"]
 output-strategy-capture = ["artichoke-backend/output-strategy-capture"]
 output-strategy-null = ["artichoke-backend/output-strategy-null"]
 stdlib-securerandom = ["artichoke-backend/stdlib-securerandom"]

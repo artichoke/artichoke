@@ -1,16 +1,17 @@
 //! Virtual filesystem.
 //!
-//! Artichoke proxies all filesystem access through a
-//! [virtual filesystem](Virtual). The filesystem can store Ruby sources and
-//! [extension hooks](ExtensionHook) in memory and will support proxying to the
-//! host filesystem for reads and writes.
+//! Artichoke proxies all filesystem access through a virtual filesystem. The
+//! filesystem can store Ruby sources and [extension hooks](ExtensionHook) in
+//! memory and will support proxying to the host filesystem for reads and
+//! writes.
 //!
 //! Artichoke uses the virtual filesystem to track metadata about loaded
 //! features.
+//!
+//! Artichoke has several virtual filesystem implementations. Only some of them
+//! support reading from the system fs.
 
 use std::borrow::Cow;
-use std::collections::hash_map::Entry as HashEntry;
-use std::collections::HashMap;
 use std::fmt;
 use std::io;
 use std::path::{Component, Path, PathBuf};
@@ -18,11 +19,18 @@ use std::path::{Component, Path, PathBuf};
 use crate::exception::Exception;
 use crate::Artichoke;
 
+pub mod hybrid;
+pub mod memory;
+pub mod native;
+
 /// Directory at which Ruby sources and extensions are stored in the virtual
 /// filesystem.
 ///
-/// `RUBY_LOAD_PATH` is the default current working directory for [`Virtual`]
-/// filesystems.
+/// `RUBY_LOAD_PATH` is the default current working directory for
+/// [`Memory`](memory::Memory) filesystems.
+///
+/// [`Hybrid`](hybrid::Hybrid) filesystems mount the `Memory` filessytem at
+/// `RUBY_LOAD_PATH`.
 pub const RUBY_LOAD_PATH: &str = "/src/lib";
 
 /// Function type for extension hooks stored in the virtual filesystem.
@@ -32,167 +40,33 @@ pub const RUBY_LOAD_PATH: &str = "/src/lib";
 /// [`LoadSources`](crate::core::LoadSources).
 pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Exception>;
 
-#[cfg(test)]
-mod hook_prototype_tests {
-    use crate::test::prelude::*;
-
-    struct TestFile;
-
-    impl File for TestFile {
-        type Artichoke = Artichoke;
-        type Error = Exception;
-
-        fn require(_interp: &mut Artichoke) -> Result<(), Self::Error> {
-            Ok(())
-        }
-    }
-
-    #[test]
-    fn prototype() {
-        // must compile
-        let _ = super::Extension::new(TestFile::require);
-    }
+#[must_use]
+#[cfg(all(feature = "native-filesystem-access", not(test), not(doctest)))]
+pub fn filesystem() -> Box<dyn Filesystem> {
+    let fs = hybrid::Hybrid::default();
+    Box::new(fs)
 }
 
-struct Extension {
-    hook: ExtensionHook,
+#[must_use]
+#[cfg(all(not(feature = "native-filesystem-access"), not(test), not(doctest)))]
+pub fn filesystem() -> Box<dyn Filesystem> {
+    let fs = memory::Memory::default();
+    Box::new(fs)
 }
 
-impl Extension {
-    fn new(hook: ExtensionHook) -> Self {
-        Self { hook }
-    }
+#[must_use]
+#[cfg(any(doctest, test))]
+pub fn filesystem() -> Box<dyn Filesystem> {
+    let fs = memory::Memory::default();
+    Box::new(fs)
 }
 
-impl fmt::Debug for Extension {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Extension")
-            .field("hook", &"fn(&mut Artichoke) -> Result<(), Exception>")
-            .finish()
-    }
-}
-
-#[derive(Debug)]
-struct Code {
-    content: Cow<'static, [u8]>,
-}
-
-impl Code {
-    fn new<T>(content: T) -> Self
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        let content = content.into();
-        Self { content }
-    }
-}
-
-#[derive(Debug)]
-struct Entry {
-    code: Option<Code>,
-    extension: Option<Extension>,
-    required: bool,
-}
-
-impl Entry {
-    fn default_file_contents() -> &'static [u8] {
-        &b"# virtual source file"[..]
-    }
-
-    fn from_code<T>(content: T) -> Self
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        Self {
-            code: Some(Code::new(content.into())),
-            extension: None,
-            required: false,
-        }
-    }
-
-    fn from_ext(hook: ExtensionHook) -> Self {
-        Self {
-            code: None,
-            extension: Some(Extension::new(hook)),
-            required: false,
-        }
-    }
-
-    fn replace_content<T>(&mut self, content: T)
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        self.code.replace(Code::new(content.into()));
-    }
-
-    fn set_extension(&mut self, hook: ExtensionHook) {
-        self.extension.replace(Extension::new(hook));
-    }
-
-    fn extension(&self) -> Option<ExtensionHook> {
-        self.extension.as_ref().map(|ext| ext.hook)
-    }
-
-    fn is_required(&self) -> bool {
-        self.required
-    }
-
-    fn mark_required(&mut self) {
-        self.required = true;
-    }
-}
-
-/// Virtual filesystem for sources, extensions, and require metadata.
-///
-/// `Virtual` is a [`HashMap`] from paths to an entry struct that contains:
-///
-/// - A bit for whether the path that points to the entry has been required
-///   before.
-/// - Optional binary content representing Ruby source code.
-/// - Optional hook to a Rust function to be executed on `require` (similar to a
-///   MRI C extension rubygem).
-///
-/// Sources in `Virtual` are only writable via the
-/// [`LoadSources`](crate::core::LoadSources) trait. Sources can only be
-/// completely replaced.
-///
-/// These APIs are consumed primarily by the `Kernel::require` implementation in
-/// [`extn::core::kernel::require`](crate::extn::core::kernel::require).
-#[derive(Debug)]
-pub struct Virtual {
-    fs: HashMap<PathBuf, Entry>,
-    cwd: PathBuf,
-}
-
-impl Default for Virtual {
-    /// Virtual filesystem with current working directory set to
-    /// [`RUBY_LOAD_PATH`].
-    fn default() -> Self {
-        Self {
-            fs: HashMap::default(),
-            cwd: PathBuf::from(RUBY_LOAD_PATH),
-        }
-    }
-}
-
-impl Virtual {
-    /// Create a new in memory virtual filesystem.
-    ///
-    /// Sets the current working directory of the VFS to [`RUBY_LOAD_PATH`] for
-    /// storing Ruby source files. This path is searched by
-    /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`](crate::extn::core::kernel::require).
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
+/// Filesystem APIs required by an Artichoke interpreter.
+pub trait Filesystem: fmt::Debug {
     /// Check whether `path` points to a file in the virtual filesystem.
     ///
     /// This API is infallible and will return `false` for non-existent paths.
-    pub fn is_file<P: AsRef<Path>>(&self, path: P) -> bool {
-        let path = absolutize_relative_to(path, &self.cwd);
-        self.fs.contains_key(&path)
-    }
+    fn is_file(&self, path: &Path) -> bool;
 
     /// Read file contents for the file at `path`.
     ///
@@ -204,21 +78,7 @@ impl Virtual {
     ///
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
-    pub fn read_file<P: AsRef<Path>>(&self, path: P) -> io::Result<&[u8]> {
-        let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(ref entry) = self.fs.get(&path) {
-            if let Some(ref code) = entry.code {
-                Ok(code.content.as_ref())
-            } else {
-                Ok(Entry::default_file_contents())
-            }
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "file not found in virtual file system",
-            ))
-        }
-    }
+    fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>>;
 
     /// Write file contents into the virtual file system at `path`.
     ///
@@ -229,34 +89,12 @@ impl Virtual {
     ///
     /// This API is currently infallible but returns [`io::Result`] to reserve
     /// the ability to return errors in the future.
-    pub fn write_file<P, T>(&mut self, path: P, buf: T) -> io::Result<()>
-    where
-        P: AsRef<Path>,
-        T: Into<Cow<'static, [u8]>>,
-    {
-        let path = absolutize_relative_to(path, &self.cwd);
-        match self.fs.entry(path) {
-            HashEntry::Occupied(mut entry) => {
-                entry.get_mut().replace_content(buf.into());
-            }
-            HashEntry::Vacant(entry) => {
-                entry.insert(Entry::from_code(buf.into()));
-            }
-        }
-        Ok(())
-    }
+    fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()>;
 
     /// Retrieve an extension hook for the file at `path`.
     ///
     /// This API is infallible and will return `None` for non-existent paths.
-    pub fn get_extension<P: AsRef<Path>>(&self, path: P) -> Option<ExtensionHook> {
-        let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(entry) = self.fs.get(&path) {
-            entry.extension()
-        } else {
-            None
-        }
-    }
+    fn get_extension(&self, path: &Path) -> Option<ExtensionHook>;
 
     /// Write extension hook into the virtual file system at `path`.
     ///
@@ -267,34 +105,12 @@ impl Virtual {
     ///
     /// This API is currently infallible but returns [`io::Result`] to reserve
     /// the ability to return errors in the future.
-    pub fn register_extension<P: AsRef<Path>>(
-        &mut self,
-        path: P,
-        extension: ExtensionHook,
-    ) -> io::Result<()> {
-        let path = absolutize_relative_to(path, &self.cwd);
-        match self.fs.entry(path) {
-            HashEntry::Occupied(mut entry) => {
-                entry.get_mut().set_extension(extension);
-            }
-            HashEntry::Vacant(entry) => {
-                entry.insert(Entry::from_ext(extension));
-            }
-        }
-        Ok(())
-    }
+    fn register_extension(&mut self, path: &Path, extension: ExtensionHook) -> io::Result<()>;
 
     /// Check whether a file at `path` has been required already.
     ///
     /// This API is infallible and will return `false` for non-existent paths.
-    pub fn is_required<P: AsRef<Path>>(&self, path: P) -> bool {
-        let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(entry) = self.fs.get(&path) {
-            entry.is_required()
-        } else {
-            false
-        }
-    }
+    fn is_required(&self, path: &Path) -> bool;
 
     /// Mark a source at `path` as required on the interpreter.
     ///
@@ -306,18 +122,7 @@ impl Virtual {
     ///
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
-    pub fn mark_required<P: AsRef<Path>>(&mut self, path: P) -> io::Result<()> {
-        let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(entry) = self.fs.get_mut(&path) {
-            entry.mark_required();
-            Ok(())
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "file not found in virtual file system",
-            ))
-        }
-    }
+    fn mark_required(&mut self, path: &Path) -> io::Result<()>;
 }
 
 fn absolutize_relative_to<T, U>(path: T, cwd: U) -> PathBuf

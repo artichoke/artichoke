@@ -1,5 +1,5 @@
 use crate::class;
-use crate::fs;
+use crate::fs::{self, Filesystem};
 use crate::module;
 use crate::sys;
 
@@ -20,7 +20,7 @@ pub struct State {
     pub parser: parser::State,
     pub classes: TypeRegistry<class::Spec>,
     pub modules: TypeRegistry<module::Spec>,
-    pub vfs: fs::Virtual,
+    pub vfs: Box<dyn Filesystem>,
     pub regexp: regexp::State,
     pub output: output::Strategy,
     #[cfg(feature = "core-random")]
@@ -35,7 +35,7 @@ impl State {
     /// - [`Class`](crate::class_registry::ClassRegistry) and
     ///   [`Module`](crate::module_registry::ModuleRegistry) registries.
     /// - `Regexp` [global state](regexp::State).
-    /// - [In-memory virtual filesystem](fs::Virtual).
+    /// - [In-memory virtual filesystem](fs).
     /// - [Ruby parser and file context](parser::State).
     /// - [Intepreter-level PRNG](Prng) (behind the `core-random` feature).
     /// - [IO capturing](output::Strategy) strategy.
@@ -45,7 +45,7 @@ impl State {
             parser,
             classes: TypeRegistry::new(),
             modules: TypeRegistry::new(),
-            vfs: fs::Virtual::new(),
+            vfs: fs::filesystem(),
             regexp: regexp::State::new(),
             output: output::Strategy::new(),
             #[cfg(feature = "core-random")]
