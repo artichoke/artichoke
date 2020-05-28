@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 use crate::extn::prelude::*;
 use crate::ffi;
+use crate::fs::RUBY_LOAD_PATH;
 use crate::state::parser::Context;
 
 const RUBY_EXTENSION: &str = "rb";
@@ -18,7 +19,12 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<bool, Exception> 
         )));
     }
     let file = ffi::bytes_to_os_str(filename)?;
-    let path = Path::new(file);
+    let pathbuf;
+    let mut path = Path::new(file);
+    if path.is_relative() {
+        pathbuf = Path::new(RUBY_LOAD_PATH).join(file);
+        path = pathbuf.as_path();
+    }
     if !interp.source_is_file(path)? {
         let mut message = b"cannot load such file -- ".to_vec();
         message.extend_from_slice(filename);
@@ -51,7 +57,7 @@ pub fn require(
         let mut path = if let Some(ref base) = base {
             base.join(path)
         } else {
-            path.into()
+            Path::new(RUBY_LOAD_PATH).join(path)
         };
         let is_rb = path
             .extension()
