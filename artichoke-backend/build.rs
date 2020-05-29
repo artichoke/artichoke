@@ -370,7 +370,7 @@ mod release {
         emit("RUBY_DESCRIPTION", description);
         emit(
             "ARTICHOKE_COMPILER_VERSION",
-            compiler_version().unwrap_or_else(|| String::new()),
+            compiler_version().unwrap_or_else(String::new),
         );
     }
 
@@ -388,7 +388,7 @@ mod release {
         // 2019-04-06 18:30:21 -0700
         // $ git rev-list --count db318759dad41686be679c87c349fcb5ff0a396c
         // 1
-        let time = 1554600621;
+        let time = 1_554_600_621;
         Some(Utc.timestamp(time, 0))
     }
 
