@@ -10,7 +10,7 @@ task lint: %i[lint:format lint:clippy lint:rubocop lint:eslint]
 namespace :lint do
   desc 'Run Clippy'
   task :clippy do
-    roots = Dir.glob('**/{lib,main}.rs')
+    roots = Dir.glob('**/{build,lib,main}.rs')
     roots.each do |root|
       FileUtils.touch(root)
     end

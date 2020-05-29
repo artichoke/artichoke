@@ -40,11 +40,8 @@ quickcheck_macros = "0.9"
 
 [build-dependencies]
 bindgen = { version = "0.54.0", default-features = false, features = ["runtime"] }
-cc = { version = "1.0", features = ["parallel"] }
+cc = "1.0"
 chrono = "0.4"
-git2 = "0.13"
-num_cpus = "1"
-rustc_version = "0.2.3"
 target-lexicon = "0.10.0"
 
 [features]
