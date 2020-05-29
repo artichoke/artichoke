@@ -24,9 +24,7 @@ multiple-versions = "deny"
 highlight = "all"
 allow = []
 deny = []
-skip = [
-  { name = "semver-parser", version = "< 0.9" },
-]
+skip = []
 skip-tree = []
 
 [sources]

@@ -329,7 +329,9 @@ mod release {
     use chrono::prelude::*;
     use git2::Repository;
     use std::env;
+    use std::ffi::OsString;
     use std::fmt;
+    use std::process::Command;
     use std::str;
     use target_lexicon::Triple;
 
@@ -438,17 +440,9 @@ mod release {
     }
 
     fn compiler_version() -> Option<String> {
-        let metadata = rustc_version::version_meta().ok()?;
-        let compiler_version = if let Some(mut commit) = metadata.commit_hash {
-            commit.truncate(7);
-            format!(
-                "Rust {} (rev {}) on {}",
-                metadata.semver, commit, metadata.host
-            )
-        } else {
-            format!("Rust {} on {}", metadata.semver, metadata.host)
-        };
-        Some(compiler_version)
+        let cmd = env::var_os("RUSTC").unwrap_or_else(|| OsString::from("rustc"));
+        let compiler_version = Command::new(cmd).arg("-V").output().ok()?;
+        String::from_utf8(compiler_version.stdout).ok()
     }
 }
 
