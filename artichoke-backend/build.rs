@@ -9,12 +9,12 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use target_lexicon::Triple;
 
-fn enumerate_sources<T>(path: T, into: &mut Vec<PathBuf>) -> io::Result<()>
+fn enumerate_sources<T>(path: T, paths: &mut Vec<PathBuf>) -> io::Result<()>
 where
     T: AsRef<Path>,
 {
     let mut stack = vec![PathBuf::from(path.as_ref())];
-    into.push(PathBuf::from(path.as_ref()));
+    paths.push(PathBuf::from(path.as_ref()));
     while let Some(from) = stack.pop() {
         for entry in fs::read_dir(from)? {
             let entry = entry?;
@@ -22,7 +22,7 @@ where
             if path.is_dir() {
                 stack.push(path.clone());
             }
-            into.push(path);
+            paths.push(path);
         }
     }
     Ok(())
@@ -37,21 +37,23 @@ mod buildpath {
     }
 
     pub fn build_root() -> PathBuf {
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("artichoke-mruby")
+        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("artichoke-mruby")
     }
 
     pub mod source {
         use std::path::PathBuf;
         use target_lexicon::Triple;
 
-        pub fn rerun_if_changed(target: &Triple, into: &mut Vec<PathBuf>) {
-            into.push(mruby_build_config(target));
-            into.push(mruby_bootstrap_gembox());
-            into.push(mruby_bootstrap_gembox());
-            into.push(mruby_noop());
+        pub fn rerun_if_changed(target: &Triple, paths: &mut Vec<PathBuf>) {
+            paths.push(mruby_build_config(target));
+            paths.push(mruby_bootstrap_gembox());
+            paths.push(mruby_bootstrap_gembox());
+            paths.push(mruby_noop());
 
-            crate::enumerate_sources(mruby_vendored_include_dir(), into).unwrap();
-            crate::enumerate_sources(mruby_vendored_source_dir(), into).unwrap();
+            crate::enumerate_sources(mruby_vendored_include_dir(), paths).unwrap();
+            crate::enumerate_sources(mruby_vendored_source_dir(), paths).unwrap();
+            crate::enumerate_sources(mruby_sys_ext_include_dir(), paths).unwrap();
+            crate::enumerate_sources(mruby_sys_ext_source_dir(), paths).unwrap();
         }
 
         pub fn mruby_vendored_include_dir() -> PathBuf {
@@ -76,6 +78,21 @@ mod buildpath {
 
         pub fn mruby_noop() -> PathBuf {
             super::crate_root().join("scripts").join("noop.rb")
+        }
+
+        pub fn mruby_sys_ext_source_dir() -> PathBuf {
+            super::crate_root().join("mruby-sys")
+        }
+
+        pub fn mruby_sys_ext_include_dir() -> PathBuf {
+            mruby_sys_ext_source_dir().join("include")
+        }
+
+        pub fn mruby_sys_ext_source_file() -> PathBuf {
+            mruby_sys_ext_source_dir()
+                .join("src")
+                .join("mruby-sys")
+                .join("ext.c")
         }
     }
 }
@@ -120,18 +137,6 @@ mod libmruby {
         mruby_source_dir().join("noop.rb")
     }
 
-    pub fn ext_source_dir() -> PathBuf {
-        buildpath::crate_root().join("mruby-sys")
-    }
-
-    fn ext_include_dir() -> PathBuf {
-        ext_source_dir().join("include")
-    }
-
-    fn ext_source_file() -> PathBuf {
-        ext_source_dir().join("src").join("mruby-sys").join("ext.c")
-    }
-
     fn wasm_include_dir() -> PathBuf {
         buildpath::crate_root()
             .join("vendor")
@@ -166,17 +171,17 @@ mod libmruby {
     }
 
     fn bindgen_source_header() -> PathBuf {
-        ext_include_dir().join("mruby-sys.h")
+        buildpath::source::mruby_sys_ext_include_dir().join("mruby-sys.h")
     }
 
     fn generate_mrbgem_config() {
-        let mut gembox = String::from("MRuby::GemBox.new { |conf| ");
+        let mut gembox = String::from("MRuby::GemBox.new do |conf|");
         for gem in gems() {
-            gembox.push_str("conf.gem core: '");
+            gembox.push_str("  conf.gem core: '");
             gembox.push_str(gem);
-            gembox.push_str("';");
+            gembox.push_str("'\n");
         }
-        gembox.push('}');
+        gembox.push_str("end\n");
         fs::write(mruby_generated_gembox(), gembox).unwrap();
     }
 
@@ -189,8 +194,6 @@ mod libmruby {
         let status = Command::new("ruby")
             .arg(mruby_minirake())
             .arg("--verbose")
-            .arg("--jobs")
-            .arg(num_cpus::get().to_string())
             .env("MRUBY_BUILD_DIR", mruby_build_dir())
             .env("MRUBY_CONFIG", mruby_build_config())
             .current_dir(mruby_source_dir())
@@ -201,7 +204,10 @@ mod libmruby {
         }
 
         let mut sources = HashMap::new();
-        sources.insert(ext_source_file(), ext_source_file());
+        sources.insert(
+            buildpath::source::mruby_sys_ext_source_file(),
+            buildpath::source::mruby_sys_ext_source_file(),
+        );
         let mut mruby_sources = vec![];
         crate::enumerate_sources(mruby_source_dir(), &mut mruby_sources).unwrap();
         for source in mruby_sources {
@@ -247,7 +253,7 @@ mod libmruby {
             .warnings(false)
             .files(sources.values())
             .include(mruby_include_dir())
-            .include(ext_include_dir())
+            .include(buildpath::source::mruby_sys_ext_include_dir())
             .define("MRB_DISABLE_STDIO", None)
             .define("MRB_UTF8_STRING", None)
             .define(mrb_int, None)
@@ -282,7 +288,12 @@ mod libmruby {
         let mut bindgen = bindgen::Builder::default()
             .header(bindgen_source_header().to_str().unwrap())
             .clang_arg(format!("-I{}", mruby_include_dir().to_str().unwrap()))
-            .clang_arg(format!("-I{}", ext_include_dir().to_str().unwrap()))
+            .clang_arg(format!(
+                "-I{}",
+                buildpath::source::mruby_sys_ext_include_dir()
+                    .to_str()
+                    .unwrap()
+            ))
             .clang_arg("-DMRB_DISABLE_STDIO")
             .clang_arg("-DMRB_UTF8_STRING")
             .clang_arg(format!("-D{}", mrb_int))
@@ -327,7 +338,6 @@ mod libmruby {
 
 mod release {
     use chrono::prelude::*;
-    use git2::Repository;
     use std::env;
     use std::ffi::OsString;
     use std::fmt;
@@ -337,11 +347,10 @@ mod release {
 
     pub fn build(target: &Triple) {
         let version = env::var("CARGO_PKG_VERSION").unwrap();
-        let repo = Repository::open(crate::buildpath::crate_root().parent().unwrap()).ok();
-        let birth_date = birthdate(repo.as_ref());
+        let birth_date = birthdate();
         let build_date = Utc::now();
         let release_date = Utc.timestamp(build_date.timestamp(), 0).date();
-        let revision_count = revision_count(repo.as_ref());
+        let revision_count = revision_count();
         let platform = platform(target);
         let copyright = copyright(birth_date, build_date);
         let description = description(
@@ -355,15 +364,14 @@ mod release {
         emit("RUBY_RELEASE_YEAR", build_date.year());
         emit("RUBY_RELEASE_MONTH", build_date.month());
         emit("RUBY_RELEASE_DAY", build_date.day());
-        if let Some(revision_count) = revision_count {
-            emit("RUBY_REVISION", revision_count);
-        }
+        emit("RUBY_REVISION", revision_count.unwrap_or(0));
         emit("RUBY_PLATFORM", platform);
         emit("RUBY_COPYRIGHT", copyright);
         emit("RUBY_DESCRIPTION", description);
-        if let Some(compiler_version) = compiler_version() {
-            emit("ARTICHOKE_COMPILER_VERSION", compiler_version);
-        }
+        emit(
+            "ARTICHOKE_COMPILER_VERSION",
+            compiler_version().unwrap_or_else(|| String::new()),
+        );
     }
 
     fn emit<T>(env: &str, value: T)
@@ -373,24 +381,30 @@ mod release {
         println!("cargo:rustc-env={}={}", env, value);
     }
 
-    fn birthdate(repo: Option<&Repository>) -> Option<DateTime<Utc>> {
-        let repo = repo?;
-        let mut revwalk = repo.revwalk().ok()?;
-        revwalk.push_head().ok()?;
-        revwalk
-            .set_sorting(git2::Sort::TIME | git2::Sort::REVERSE)
-            .ok()?;
-        let rev = revwalk.next()?.ok()?;
-        let commit = repo.find_commit(rev).ok()?;
-        let time = commit.time().seconds();
+    fn birthdate() -> Option<DateTime<Utc>> {
+        // $ git show -s --format="%ct" db318759dad41686be679c87c349fcb5ff0a396c
+        // 1554600621
+        // $ git show -s --format="%ci" db318759dad41686be679c87c349fcb5ff0a396c
+        // 2019-04-06 18:30:21 -0700
+        // $ git rev-list --count db318759dad41686be679c87c349fcb5ff0a396c
+        // 1
+        let time = 1554600621;
         Some(Utc.timestamp(time, 0))
     }
 
-    fn revision_count(repo: Option<&Repository>) -> Option<usize> {
-        let repo = repo?;
-        let mut revwalk = repo.revwalk().ok()?;
-        revwalk.push_head().ok();
-        Some(revwalk.count())
+    fn revision_count() -> Option<usize> {
+        let cmd = OsString::from("git");
+        let revision_count = Command::new(cmd)
+            .arg("rev-list")
+            .arg("count")
+            .arg("HEAD")
+            .output()
+            .ok()?;
+        String::from_utf8(revision_count.stdout)
+            .ok()?
+            .trim()
+            .parse()
+            .ok()
     }
 
     fn platform(target: &Triple) -> String {
@@ -485,7 +499,6 @@ mod build {
     pub fn rerun_if_changed(target: &Triple) {
         let mut paths = vec![];
         buildpath::source::rerun_if_changed(target, &mut paths);
-        crate::enumerate_sources(libmruby::ext_source_dir(), &mut paths).unwrap();
 
         for path in paths {
             println!("cargo:rerun-if-changed={}", path.to_str().unwrap());
