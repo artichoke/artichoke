@@ -85,10 +85,12 @@ impl From<Ruby> for NoBlockGiven {
 }
 
 impl NoBlockGiven {
+    #[must_use]
     pub fn new(ruby_type: Ruby) -> Self {
         Self(ruby_type)
     }
 
+    #[must_use]
     pub fn ruby_type(self) -> Ruby {
         self.0
     }

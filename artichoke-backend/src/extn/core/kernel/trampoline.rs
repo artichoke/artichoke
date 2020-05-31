@@ -80,7 +80,7 @@ where
         }
         Ok(interp.convert_mut(result))
     } else {
-        return Ok(Value::nil());
+        Ok(Value::nil())
     }
 }
 
