@@ -91,7 +91,7 @@ unsafe extern "C" fn union(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sy
     let args = mrb_get_args!(mrb, *args);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let args = args.iter().copied().map(Value::from).collect::<Vec<_>>();
+    let args = args.iter().copied().map(Value::from);
     let result = regexp::trampoline::union(&mut guard, args);
     match result {
         Ok(result) => result.inner(),
