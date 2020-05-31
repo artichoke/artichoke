@@ -97,6 +97,7 @@ extern crate log;
 pub mod macros;
 
 mod artichoke;
+pub mod block;
 pub mod class;
 pub mod class_registry;
 mod constant;

@@ -19,6 +19,12 @@ pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 #[derive(Clone, Copy)]
 pub struct Value(sys::mrb_value);
 
+impl From<sys::mrb_value> for Value {
+    fn from(value: sys::mrb_value) -> Self {
+        Self(value)
+    }
+}
+
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Value")
@@ -40,7 +46,7 @@ impl Value {
     #[must_use]
     pub fn new(interp: &Artichoke, value: sys::mrb_value) -> Self {
         let _ = interp;
-        Self(value)
+        Self::from(value)
     }
 
     /// The [`sys::mrb_value`] that this [`Value`] wraps.
@@ -319,64 +325,6 @@ impl Convert<Value, Value> for Artichoke {
 impl ConvertMut<Value, Value> for Artichoke {
     fn convert_mut(&mut self, value: Value) -> Value {
         value
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct Block(sys::mrb_value);
-
-impl fmt::Debug for Block {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "proc")
-    }
-}
-
-impl Block {
-    #[must_use]
-    pub fn new(block: sys::mrb_value) -> Option<Self> {
-        if let Ruby::Nil = types::ruby_from_mrb_value(block) {
-            None
-        } else {
-            Some(Self(block))
-        }
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn inner(&self) -> sys::mrb_value {
-        self.0
-    }
-
-    pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Exception> {
-        let mut arena = interp.create_arena_savepoint();
-
-        let result = unsafe {
-            arena
-                .interp()
-                .with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
-        };
-        match result {
-            Ok(value) => {
-                let value = Value::new(&arena, value);
-                if value.is_unreachable() {
-                    // Unreachable values are internal to the mruby interpreter
-                    // and interacting with them via the C API is unspecified
-                    // and may result in a segfault.
-                    //
-                    // See: https://github.com/mruby/mruby/issues/4460
-                    Err(Exception::from(Fatal::new(
-                        arena.interp(),
-                        "Unreachable Ruby value",
-                    )))
-                } else {
-                    Ok(value)
-                }
-            }
-            Err(exception) => {
-                let exception = Value::new(&arena, exception);
-                Err(exception_handler::last_error(&mut arena, exception)?)
-            }
-        }
     }
 }
 
