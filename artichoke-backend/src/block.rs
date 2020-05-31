@@ -1,7 +1,9 @@
 use std::convert::TryFrom;
+use std::error;
 use std::fmt;
 
-use crate::exception::Exception;
+use crate::class_registry::ClassRegistry;
+use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
@@ -10,8 +12,64 @@ use crate::types::{self, Ruby};
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct NoBlockGiven(Ruby);
+
+impl fmt::Display for NoBlockGiven {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "no block given")
+    }
+}
+
+impl error::Error for NoBlockGiven {}
+
+impl RubyException for IOError {
+    fn message(&self) -> &[u8] {
+        b"no block given"
+    }
+
+    fn name(&self) -> String {
+        String::from("TypeError")
+    }
+
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.inner.to_string());
+        let value = interp
+            .new_instance::<TypeError>(&[message])
+            .ok()
+            .flatten()?;
+        Some(value.inner())
+    }
+}
+
+impl From<NoBlockGiven> for Exception {
+    fn from(exception: NoBlockGiven) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<Box<NoBlockGiven>> for Exception {
+    fn from(exception: Box<NoBlockGiven>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<NoBlockGiven> for Box<dyn RubyException> {
+    fn from(exception: NoBlockGiven) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+impl From<Box<NoBlockGiven>> for Box<dyn RubyException> {
+    fn from(exception: Box<NoBlockGiven>) -> Box<dyn RubyException> {
+        exception
+    }
+}
 
 impl From<sys::mrb_value> for NoBlockGiven {
     fn from(value: sys::mrb_value) -> Self {
