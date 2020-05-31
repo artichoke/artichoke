@@ -13,7 +13,7 @@ impl Convert<Option<Value>, Value> for Artichoke {
         if let Some(value) = value {
             value
         } else {
-            Value::new(self, unsafe { sys::mrb_sys_nil_value() })
+            Value::nil()
         }
     }
 }
@@ -23,7 +23,7 @@ impl Convert<Option<Int>, Value> for Artichoke {
         if let Some(value) = value {
             self.convert(value)
         } else {
-            Value::new(self, unsafe { sys::mrb_sys_nil_value() })
+            Value::nil()
         }
     }
 }
@@ -39,7 +39,7 @@ impl ConvertMut<Option<&[u8]>, Value> for Artichoke {
         if let Some(value) = value {
             self.convert_mut(value)
         } else {
-            Value::new(self, unsafe { sys::mrb_sys_nil_value() })
+            Value::nil()
         }
     }
 }
@@ -55,7 +55,7 @@ impl ConvertMut<Option<&str>, Value> for Artichoke {
         if let Some(value) = value {
             self.convert_mut(value)
         } else {
-            Value::new(self, unsafe { sys::mrb_sys_nil_value() })
+            Value::nil()
         }
     }
 }

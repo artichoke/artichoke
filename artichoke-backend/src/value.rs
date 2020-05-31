@@ -49,6 +49,12 @@ impl Value {
         Self::from(value)
     }
 
+    #[inline]
+    #[must_use]
+    pub fn nil() -> Self {
+        Self::default()
+    }
+
     /// The [`sys::mrb_value`] that this [`Value`] wraps.
     // TODO(GH-251): make `Value::inner` pub(crate).
     #[inline]
@@ -66,7 +72,6 @@ impl Value {
 
     #[must_use]
     pub fn pretty_name<'a>(&self, interp: &mut Artichoke) -> &'a str {
-        let _ = interp;
         match self.try_into(interp) {
             Ok(Some(true)) => "true",
             Ok(Some(false)) => "false",
