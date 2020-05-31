@@ -26,6 +26,22 @@ impl From<sys::mrb_value> for Value {
     }
 }
 
+impl From<Option<sys::mrb_value>> for Value {
+    fn from(value: Option<sys::mrb_value>) -> Self {
+        if let Some(value) = value {
+            Self::from(value)
+        } else {
+            Self::nil()
+        }
+    }
+}
+
+impl From<Option<Value>> for Value {
+    fn from(value: Option<Value>) -> Self {
+        value.unwrap_or_else(Value::nil)
+    }
+}
+
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Value")
