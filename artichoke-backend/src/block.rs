@@ -3,6 +3,7 @@ use std::error;
 use std::fmt;
 
 use crate::class_registry::ClassRegistry;
+use crate::core::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{Fatal, TypeError};
@@ -13,7 +14,7 @@ use crate::value::Value;
 use crate::Artichoke;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct NoBlockGiven(Ruby);
+pub struct NoBlockGiven(Ruby);
 
 impl fmt::Display for NoBlockGiven {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -23,7 +24,7 @@ impl fmt::Display for NoBlockGiven {
 
 impl error::Error for NoBlockGiven {}
 
-impl RubyException for IOError {
+impl RubyException for NoBlockGiven {
     fn message(&self) -> &[u8] {
         b"no block given"
     }
@@ -38,7 +39,7 @@ impl RubyException for IOError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.inner.to_string());
+        let message = interp.convert_mut(self.message());
         let value = interp
             .new_instance::<TypeError>(&[message])
             .ok()
