@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::core::{Convert, Globals, Intern};
+use crate::core::{Globals, Intern};
 use crate::exception::Exception;
 use crate::sys;
 use crate::value::Value;
@@ -40,7 +40,7 @@ impl Globals for Artichoke {
         T: Into<Cow<'static, [u8]>>,
     {
         let sym = self.intern_symbol(name.into());
-        let nil = self.convert(None::<Value>);
+        let nil = Value::nil();
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_gv_set(mrb, sym, nil.inner());
@@ -60,6 +60,6 @@ impl Globals for Artichoke {
         // NOTE: This implementation is not compliant with the spec laid out in
         // the trait documentation. This implementation always returns `Some(_)`
         // even if the global is unset.
-        Ok(Some(Value::new(self, value)))
+        Ok(Some(Value::from(value)))
     }
 }

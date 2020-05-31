@@ -313,7 +313,7 @@ impl RegexpType for Onig {
             if let Some(pos) = pos {
                 pos
             } else {
-                return Ok(interp.convert(None::<Value>));
+                return Ok(Value::nil());
             }
         };
         let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
@@ -323,7 +323,7 @@ impl RegexpType for Onig {
             interp.unset_global_variable(regexp::LAST_MATCH)?;
             interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
             interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
-            return Ok(interp.convert(None::<Value>));
+            return Ok(Value::nil());
         };
 
         if let Some(captures) = self.regex.captures(target) {
@@ -357,7 +357,7 @@ impl RegexpType for Onig {
             interp.unset_global_variable(regexp::LAST_MATCH)?;
             interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
             interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
-            Ok(interp.convert(None::<Value>))
+            Ok(Value::nil())
         }
     }
 

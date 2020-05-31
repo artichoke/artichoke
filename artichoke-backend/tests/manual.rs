@@ -24,7 +24,7 @@ unsafe extern "C" fn container_initialize(
     let inner = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let inner = Value::new(&guard, inner);
+    let inner = Value::from(inner);
     let inner = inner.try_into::<Int>(&mut guard).unwrap_or_default();
     let container = Box::new(Container { inner });
     let result = container
@@ -40,7 +40,7 @@ unsafe extern "C" fn container_value(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let value = Value::new(&guard, slf);
+    let value = Value::from(slf);
     let result = if let Ok(data) = Box::<Container>::try_from_ruby(&mut guard, &value) {
         let borrow = data.borrow();
         guard.interp().convert(borrow.inner)

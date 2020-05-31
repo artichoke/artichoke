@@ -16,8 +16,31 @@ use crate::Artichoke;
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 
 /// Boxed Ruby value in the [`Artichoke`] interpreter.
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct Value(sys::mrb_value);
+
+impl From<sys::mrb_value> for Value {
+    /// Construct a new [`Value`] from a [`sys::mrb_value`].
+    fn from(value: sys::mrb_value) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Option<sys::mrb_value>> for Value {
+    fn from(value: Option<sys::mrb_value>) -> Self {
+        if let Some(value) = value {
+            Self::from(value)
+        } else {
+            Self::nil()
+        }
+    }
+}
+
+impl From<Option<Value>> for Value {
+    fn from(value: Option<Value>) -> Self {
+        value.unwrap_or_else(Value::nil)
+    }
+}
 
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -36,11 +59,20 @@ impl PartialEq for Value {
 }
 
 impl Value {
-    /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
+    /// Create a new, empty Ruby value.
+    ///
+    /// Alias for `Value::default`.
+    #[inline]
     #[must_use]
-    pub fn new(interp: &Artichoke, value: sys::mrb_value) -> Self {
-        let _ = interp;
-        Self(value)
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Create a `nil` Ruby Value.
+    #[inline]
+    #[must_use]
+    pub fn nil() -> Self {
+        Self::default()
     }
 
     /// The [`sys::mrb_value`] that this [`Value`] wraps.
@@ -60,7 +92,6 @@ impl Value {
 
     #[must_use]
     pub fn pretty_name<'a>(&self, interp: &mut Artichoke) -> &'a str {
-        let _ = interp;
         match self.try_into(interp) {
             Ok(Some(true)) => "true",
             Ok(Some(false)) => "false",
@@ -117,7 +148,7 @@ impl Value {
         match result {
             Ok(range) => Ok(range),
             Err(exception) => {
-                let exception = Self::new(&arena, exception);
+                let exception = Self::from(exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
@@ -249,7 +280,7 @@ impl ValueCore for Value {
         };
         match result {
             Ok(value) => {
-                let value = Self::new(&arena, value);
+                let value = Self::from(value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -265,7 +296,7 @@ impl ValueCore for Value {
                 }
             }
             Err(exception) => {
-                let exception = Self::new(&arena, exception);
+                let exception = Self::from(exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
@@ -319,64 +350,6 @@ impl Convert<Value, Value> for Artichoke {
 impl ConvertMut<Value, Value> for Artichoke {
     fn convert_mut(&mut self, value: Value) -> Value {
         value
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct Block(sys::mrb_value);
-
-impl fmt::Debug for Block {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "proc")
-    }
-}
-
-impl Block {
-    #[must_use]
-    pub fn new(block: sys::mrb_value) -> Option<Self> {
-        if let Ruby::Nil = types::ruby_from_mrb_value(block) {
-            None
-        } else {
-            Some(Self(block))
-        }
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn inner(&self) -> sys::mrb_value {
-        self.0
-    }
-
-    pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Exception> {
-        let mut arena = interp.create_arena_savepoint();
-
-        let result = unsafe {
-            arena
-                .interp()
-                .with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
-        };
-        match result {
-            Ok(value) => {
-                let value = Value::new(&arena, value);
-                if value.is_unreachable() {
-                    // Unreachable values are internal to the mruby interpreter
-                    // and interacting with them via the C API is unspecified
-                    // and may result in a segfault.
-                    //
-                    // See: https://github.com/mruby/mruby/issues/4460
-                    Err(Exception::from(Fatal::new(
-                        arena.interp(),
-                        "Unreachable Ruby value",
-                    )))
-                } else {
-                    Ok(value)
-                }
-            }
-            Err(exception) => {
-                let exception = Value::new(&arena, exception);
-                Err(exception_handler::last_error(&mut arena, exception)?)
-            }
-        }
     }
 }
 
@@ -509,7 +482,7 @@ mod tests {
     fn to_s_nil() {
         let mut interp = crate::interpreter().unwrap();
 
-        let value = interp.convert(None::<Value>);
+        let value = Value::nil();
         let string = value.to_s(&mut interp);
         assert_eq!(string, b"");
     }
@@ -518,7 +491,7 @@ mod tests {
     fn inspect_nil() {
         let mut interp = crate::interpreter().unwrap();
 
-        let value = interp.convert(None::<Value>);
+        let value = Value::nil();
         let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"nil");
     }
@@ -618,7 +591,7 @@ mod tests {
     #[test]
     fn funcall() {
         let mut interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         let nil_is_nil = nil
             .funcall(&mut interp, "nil?", &[], None)
             .and_then(|value| value.try_into::<bool>(&interp))
@@ -639,7 +612,7 @@ mod tests {
     #[test]
     fn funcall_different_types() {
         let mut interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let eql = nil
             .funcall(&mut interp, "==", &[s], None)
@@ -651,7 +624,7 @@ mod tests {
     #[test]
     fn funcall_type_error() {
         let mut interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let err = s
             .funcall(&mut interp, "+", &[nil], None)
@@ -664,7 +637,7 @@ mod tests {
     #[test]
     fn funcall_method_not_exists() {
         let mut interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let err = nil
             .funcall(&mut interp, "garbage_method_name", &[s], None)

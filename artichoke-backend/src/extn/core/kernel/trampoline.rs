@@ -27,7 +27,7 @@ where
         let display = value.to_s(interp);
         interp.print(display)?;
     }
-    Ok(interp.convert(None::<Value>))
+    Ok(Value::nil())
 }
 
 pub fn puts<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
@@ -49,31 +49,38 @@ where
         Ok(())
     }
 
-    let mut args = args.into_iter().peekable();
-    if args.peek().is_none() {
-        interp.print(b"\n")?;
-    } else {
+    let mut args = args.into_iter();
+    if let Some(first) = args.next() {
+        puts_foreach(interp, &first)?;
         for value in args {
             puts_foreach(interp, &value)?;
         }
+    } else {
+        interp.print(b"\n")?;
     }
-    Ok(interp.convert(None::<Value>))
+    Ok(Value::nil())
 }
 
 pub fn p<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
 where
     T: IntoIterator<Item = Value>,
 {
-    let args = args.into_iter().collect::<Vec<_>>();
-    for value in &args {
-        let display = value.inspect(interp);
+    let mut args = args.into_iter().peekable();
+    if let Some(first) = args.next() {
+        let display = first.inspect(interp);
         interp.puts(display)?;
-    }
-
-    match args.len() {
-        0 => Ok(interp.convert(None::<Value>)),
-        1 => Ok(interp.convert(args[0].to_owned())),
-        _ => Ok(interp.convert_mut(args)),
+        if args.peek().is_none() {
+            return Ok(first);
+        }
+        let mut result = vec![first];
+        for value in args {
+            let display = value.inspect(interp);
+            interp.puts(display)?;
+            result.push(value)
+        }
+        Ok(interp.convert_mut(result))
+    } else {
+        Ok(Value::nil())
     }
 }
 

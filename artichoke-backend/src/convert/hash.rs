@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::convert::{RustBackedValue, UnboxRubyError};
-use crate::core::{Convert, ConvertMut, TryConvertMut};
+use crate::core::{ConvertMut, TryConvertMut};
 use crate::exception::Exception;
 use crate::extn::core::array::Array;
 use crate::sys;
@@ -23,7 +23,7 @@ impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
             let val = val.inner();
             let _ = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash, key, val)) };
         }
-        Value::new(self, hash)
+        Value::from(hash)
     }
 }
 
@@ -37,7 +37,7 @@ impl ConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
             let val = self.convert_mut(val).inner();
             let _ = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash, key, val)) };
         }
-        Value::new(self, hash)
+        Value::from(hash)
     }
 }
 
@@ -51,7 +51,7 @@ impl ConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
             let val = self.convert_mut(val).inner();
             let _ = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash, key, val)) };
         }
-        Value::new(self, hash)
+        Value::from(hash)
     }
 }
 
@@ -67,9 +67,9 @@ impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke 
                 let _ =
                     unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash, key, val)) };
             }
-            Value::new(self, hash)
+            Value::from(hash)
         } else {
-            self.convert(None::<Value>)
+            Value::nil()
         }
     }
 }
@@ -82,7 +82,7 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
             let hash = value.inner();
             let keys = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_keys(mrb, hash))? };
 
-            let keys = Value::new(self, keys);
+            let keys = Value::from(keys);
             let array = unsafe { Array::try_from_ruby(self, &keys) }?;
             let borrow = array.borrow();
 
@@ -91,7 +91,7 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
                 let value = unsafe {
                     self.with_ffi_boundary(|mrb| sys::mrb_hash_get(mrb, hash, key.inner()))?
                 };
-                pairs.push((key, Value::new(self, value)))
+                pairs.push((key, Value::from(value)))
             }
             Ok(pairs)
         } else {

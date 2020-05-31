@@ -15,7 +15,7 @@ pub fn begin(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, E
             interp,
             "input string too long",
         ))),
-        None => Ok(interp.convert(None::<Value>)),
+        None => Ok(Value::nil()),
     }
 }
 
@@ -25,7 +25,7 @@ pub fn captures(interp: &mut Artichoke, value: Value) -> Result<Value, Exception
     if let Some(captures) = borrow.captures(interp)? {
         Ok(interp.convert_mut(captures))
     } else {
-        Ok(interp.convert(None::<Value>))
+        Ok(Value::nil())
     }
 }
 
@@ -54,7 +54,7 @@ pub fn element_reference(
         if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
             CaptureAt::StartLen(start, len)
         } else {
-            return Ok(interp.convert(None::<Value>));
+            return Ok(Value::nil());
         }
     };
     let matched = borrow.capture_at(interp, at)?;
@@ -72,7 +72,7 @@ pub fn end(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, Exc
             interp,
             "input string too long",
         ))),
-        None => Ok(interp.convert(None::<Value>)),
+        None => Ok(Value::nil()),
     }
 }
 
@@ -166,7 +166,7 @@ pub fn to_a(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
     if let Some(ary) = borrow.to_a(interp)? {
         Ok(interp.convert_mut(ary))
     } else {
-        Ok(interp.convert(None::<Value>))
+        Ok(Value::nil())
     }
 }
 

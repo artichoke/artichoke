@@ -75,7 +75,7 @@ impl ModuleRegistry for Artichoke {
             let mrb = self.mrb.as_mut();
             if let Some(mut rclass) = spec.rclass(mrb) {
                 let module = sys::mrb_sys_module_value(rclass.as_mut());
-                Ok(Some(Value::new(self, module)))
+                Ok(Some(Value::from(module)))
             } else {
                 Ok(None)
             }

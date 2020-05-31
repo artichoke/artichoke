@@ -104,7 +104,7 @@ where
         if let GcState::Enabled = prior_gc_state {
             interp.enable_gc();
         }
-        Ok(Value::new(interp, obj))
+        Ok(Value::from(obj))
     }
 
     /// Try to extract a Rust object from the [`Value`].
@@ -194,12 +194,12 @@ mod tests {
         let mut interp = unwrap_interpreter!(mrb);
         let mut guard = Guard::new(&mut interp);
 
-        let value = Value::new(&guard, slf);
+        let value = Value::from(slf);
         let result = if let Ok(container) = Container::try_from_ruby(&mut guard, &value) {
             let borrow = container.borrow();
             guard.convert_mut(borrow.inner.as_bytes())
         } else {
-            guard.convert(None::<Value>)
+            Value::nil()
         };
         result.inner()
     }

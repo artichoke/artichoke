@@ -144,8 +144,7 @@ mod tests {
 
     #[test]
     fn parse_nil_ruby_type() {
-        let interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         assert_eq!(Ruby::Nil, types::ruby_from_mrb_value(nil.inner()));
     }
 

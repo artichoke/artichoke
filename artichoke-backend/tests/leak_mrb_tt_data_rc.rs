@@ -43,7 +43,7 @@ unsafe extern "C" fn container_initialize(
     let inner = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let inner = Value::new(&guard, inner);
+    let inner = Value::from(inner);
     let inner = inner.try_into_mut::<String>(&mut guard).unwrap_or_default();
     let container = Container { inner };
     let result = container.try_into_ruby(&mut guard, Some(slf));

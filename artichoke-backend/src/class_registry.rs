@@ -82,7 +82,7 @@ impl ClassRegistry for Artichoke {
             let mrb = self.mrb.as_mut();
             if let Some(mut rclass) = spec.rclass(mrb) {
                 let class = sys::mrb_sys_class_value(rclass.as_mut());
-                Ok(Some(Value::new(self, class)))
+                Ok(Some(Value::from(class)))
             } else {
                 Ok(None)
             }
@@ -136,7 +136,7 @@ impl ClassRegistry for Artichoke {
             let mrb = self.mrb.as_mut();
             if let Some(mut rclass) = spec.rclass(mrb) {
                 let value = sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr());
-                Ok(Some(Value::new(self, value)))
+                Ok(Some(Value::from(value)))
             } else {
                 Ok(None)
             }
