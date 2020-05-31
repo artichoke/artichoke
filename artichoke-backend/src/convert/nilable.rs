@@ -3,7 +3,6 @@
 
 use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut};
 use crate::exception::Exception;
-use crate::sys;
 use crate::types::{Int, Ruby};
 use crate::value::Value;
 use crate::Artichoke;

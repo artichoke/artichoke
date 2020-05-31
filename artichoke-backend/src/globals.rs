@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::core::{Convert, Globals, Intern};
+use crate::core::{Globals, Intern};
 use crate::exception::Exception;
 use crate::sys;
 use crate::value::Value;
