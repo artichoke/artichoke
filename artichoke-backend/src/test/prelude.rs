@@ -10,6 +10,7 @@
 //!
 //! The prelude may grow over time as additional items see ubiquitous use.
 
+pub use crate::block::Block;
 pub use crate::class;
 pub use crate::class_registry::ClassRegistry;
 pub use crate::convert::RustBackedValue;
@@ -24,4 +25,4 @@ pub use crate::state::parser::Context;
 pub use crate::string;
 pub use crate::sys;
 pub use crate::types::{Fp, Int};
-pub use crate::value::{Block, Value};
+pub use crate::value::Value;
