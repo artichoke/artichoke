@@ -156,7 +156,7 @@ unsafe extern "C" fn artichoke_ary_pop(
         }
         result
     } else {
-        Ok(guard.convert(None::<Value>))
+        Ok(Value::nil())
     };
     match result {
         Ok(value) => {
@@ -221,7 +221,7 @@ unsafe extern "C" fn artichoke_ary_ref(
         }
         result
     } else {
-        Ok(guard.convert(None::<Value>))
+        Ok(Value::nil())
     };
     match result {
         Ok(value) => value.inner(),
@@ -299,7 +299,7 @@ unsafe extern "C" fn artichoke_ary_shift(
         }
         result
     } else {
-        Ok(guard.convert(None::<Value>))
+        Ok(Value::nil())
     };
     match result {
         Ok(value) => {

@@ -116,7 +116,7 @@ mod tests {
             let result = if let Ok(value) = guard.eval(b"__FILE__") {
                 value
             } else {
-                guard.convert(None::<Value>)
+                Value::nil()
             };
             result.inner()
         }

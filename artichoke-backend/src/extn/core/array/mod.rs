@@ -80,7 +80,7 @@ impl Array {
                     }
                     InlineBuffer::from(buffer)
                 } else {
-                    let default = second.unwrap_or_else(|| interp.convert(None::<Value>));
+                    let default = second.unwrap_or_else(Value::nil);
                     let mut buffer = Vec::with_capacity(len);
                     for _ in 0..len {
                         buffer.push(default.inner());
@@ -108,7 +108,7 @@ impl Array {
         len: Option<Value>,
     ) -> Result<Value, Exception> {
         let (index, len) = match args::element_reference(interp, index, len, self.0.len())? {
-            args::ElementReference::Empty => return Ok(interp.convert(None::<Value>)),
+            args::ElementReference::Empty => return Ok(Value::nil()),
             args::ElementReference::Index(index) => (index, None),
             args::ElementReference::StartLen(index, len) => (index, Some(len)),
         };
@@ -122,11 +122,11 @@ impl Array {
             if let Some(start) = idx {
                 start
             } else {
-                return Ok(interp.convert(None::<Value>));
+                return Ok(Value::nil());
             }
         };
         if start > self.0.len() {
-            return Ok(interp.convert(None::<Value>));
+            return Ok(Value::nil());
         }
         if let Some(len) = len {
             let result = self.0.slice(interp, start, len)?;

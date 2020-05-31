@@ -462,7 +462,7 @@ mod tests {
     fn to_s_nil() {
         let mut interp = crate::interpreter().unwrap();
 
-        let value = interp.convert(None::<Value>);
+        let value = Value::nil();
         let string = value.to_s(&mut interp);
         assert_eq!(string, b"");
     }
@@ -471,7 +471,7 @@ mod tests {
     fn inspect_nil() {
         let mut interp = crate::interpreter().unwrap();
 
-        let value = interp.convert(None::<Value>);
+        let value = Value::nil();
         let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"nil");
     }
@@ -571,7 +571,7 @@ mod tests {
     #[test]
     fn funcall() {
         let mut interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         let nil_is_nil = nil
             .funcall(&mut interp, "nil?", &[], None)
             .and_then(|value| value.try_into::<bool>(&interp))
@@ -592,7 +592,7 @@ mod tests {
     #[test]
     fn funcall_different_types() {
         let mut interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let eql = nil
             .funcall(&mut interp, "==", &[s], None)
@@ -604,7 +604,7 @@ mod tests {
     #[test]
     fn funcall_type_error() {
         let mut interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let err = s
             .funcall(&mut interp, "+", &[nil], None)
@@ -617,7 +617,7 @@ mod tests {
     #[test]
     fn funcall_method_not_exists() {
         let mut interp = crate::interpreter().unwrap();
-        let nil = interp.convert(None::<Value>);
+        let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let err = nil
             .funcall(&mut interp, "garbage_method_name", &[s], None)

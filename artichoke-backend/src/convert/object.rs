@@ -199,7 +199,7 @@ mod tests {
             let borrow = container.borrow();
             guard.convert_mut(borrow.inner.as_bytes())
         } else {
-            guard.convert(None::<Value>)
+            Value::nil()
         };
         result.inner()
     }

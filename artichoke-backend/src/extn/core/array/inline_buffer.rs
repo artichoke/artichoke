@@ -274,7 +274,7 @@ impl InlineBuffer {
             idx if idx < buflen => self.0[index] = elem.inner(),
             idx if idx == buflen => self.0.push(elem.inner()),
             idx => {
-                let nil = interp.convert(None::<Value>).inner();
+                let nil = Value::nil().inner();
                 self.0.reserve(idx + 1 - buflen);
                 for _ in buflen..idx {
                     self.0.push(nil);
@@ -297,7 +297,7 @@ impl InlineBuffer {
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
         match start {
             idx if idx > buflen => {
-                let nil = interp.convert(None::<Value>).inner();
+                let nil = Value::nil().inner();
                 self.0.reserve(start + 1 - buflen);
                 for _ in buflen..start {
                     self.0.push(nil);
@@ -328,7 +328,7 @@ impl InlineBuffer {
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
         match start {
             idx if idx > buflen => {
-                let nil = interp.convert(None::<Value>).inner();
+                let nil = Value::nil().inner();
                 for _ in buflen..idx {
                     self.0.push(nil);
                 }

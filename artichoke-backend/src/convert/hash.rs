@@ -69,7 +69,7 @@ impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke 
             }
             Value::new(self, hash)
         } else {
-            self.convert(None::<Value>)
+            Value::nil()
         }
     }
 }

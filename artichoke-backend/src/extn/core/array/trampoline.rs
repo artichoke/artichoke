@@ -42,7 +42,7 @@ pub fn element_assignment(
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     // TODO: properly handle self-referential sets.
     if ary == first || ary == second || Some(ary) == third {
-        return Ok(interp.convert(None::<Value>));
+        return Ok(Value::nil());
     }
     let mut borrow = array.borrow_mut();
     let prior_gc_state = interp.disable_gc();

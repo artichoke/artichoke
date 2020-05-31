@@ -109,7 +109,7 @@ pub enum CaptureMatch {
 impl ConvertMut<CaptureMatch, Value> for Artichoke {
     fn convert_mut(&mut self, value: CaptureMatch) -> Value {
         match value {
-            CaptureMatch::None => self.convert(None::<Value>),
+            CaptureMatch::None => Value::nil(),
             CaptureMatch::Single(capture) => self.convert_mut(capture),
             CaptureMatch::Range(captures) => self.convert_mut(captures),
         }

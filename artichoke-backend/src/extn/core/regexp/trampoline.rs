@@ -98,7 +98,7 @@ pub fn match_operator(
             interp,
             "string too long",
         ))),
-        None => Ok(interp.convert(None::<Value>)),
+        None => Ok(Value::nil()),
     }
 }
 

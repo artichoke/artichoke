@@ -345,7 +345,7 @@ impl Regexp {
             self.0.match_(interp, pattern, pos, block)
         } else {
             interp.unset_global_variable(LAST_MATCH)?;
-            Ok(interp.convert(None::<Value>))
+            Ok(Value::nil())
         }
     }
 

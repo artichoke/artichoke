@@ -27,7 +27,7 @@ where
         let display = value.to_s(interp);
         interp.print(display)?;
     }
-    Ok(interp.convert(None::<Value>))
+    Ok(Value::nil())
 }
 
 pub fn puts<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
@@ -57,7 +57,7 @@ where
             puts_foreach(interp, &value)?;
         }
     }
-    Ok(interp.convert(None::<Value>))
+    Ok(Value::nil())
 }
 
 pub fn p<T>(interp: &mut Artichoke, args: T) -> Result<Value, Exception>
@@ -70,8 +70,8 @@ where
         interp.puts(display)?;
     }
 
-    match args.len() {
-        0 => Ok(interp.convert(None::<Value>)),
+    match args {
+        0 => Ok(Value::nil()),
         1 => Ok(interp.convert(args[0].to_owned())),
         _ => Ok(interp.convert_mut(args)),
     }
