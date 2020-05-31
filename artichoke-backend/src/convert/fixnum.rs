@@ -35,7 +35,7 @@ impl TryConvert<u64, Value> for Artichoke {
     fn try_convert(&self, value: u64) -> Result<Value, Self::Error> {
         if let Ok(value) = Int::try_from(value) {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
-            Ok(Value::new(self, fixnum))
+            Ok(Value::from(fixnum))
         } else {
             Err(Exception::from(BoxIntoRubyError::new(
                 Rust::UnsignedInt,
@@ -83,7 +83,7 @@ impl Convert<Int, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: Int) -> Value {
         let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
-        Value::new(self, fixnum)
+        Value::from(fixnum)
     }
 }
 

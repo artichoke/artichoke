@@ -11,6 +11,6 @@ impl TopSelf for Artichoke {
             let mrb = self.mrb.as_mut();
             sys::mrb_top_self(mrb)
         };
-        Value::new(self, top_self)
+        Value::from(top_self)
     }
 }

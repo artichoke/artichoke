@@ -147,7 +147,7 @@ impl Block {
         };
         match result {
             Ok(value) => {
-                let value = Value::new(&arena, value);
+                let value = Value::from(value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -163,7 +163,7 @@ impl Block {
                 }
             }
             Err(exception) => {
-                let exception = Value::new(&arena, exception);
+                let exception = Value::from(exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }

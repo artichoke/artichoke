@@ -49,8 +49,8 @@ unsafe extern "C" fn artichoke_random_initialize(
     let seed = mrb_get_args!(mrb, optional = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let slf = Value::new(&guard, slf);
-    let seed = seed.map(|seed| Value::new(&guard, seed));
+    let slf = Value::from(slf);
+    let seed = seed.map(Value::from);
     let result = trampoline::initialize(&mut guard, seed, slf);
     match result {
         Ok(value) => value.inner(),
@@ -66,8 +66,8 @@ unsafe extern "C" fn artichoke_random_eq(
     let other = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let rand = Value::new(&guard, slf);
-    let other = Value::new(&guard, other);
+    let rand = Value::from(slf);
+    let other = Value::from(other);
     let result = trampoline::equal(&mut guard, rand, other);
     match result {
         Ok(value) => value.inner(),
@@ -83,8 +83,8 @@ unsafe extern "C" fn artichoke_random_bytes(
     let size = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let rand = Value::new(&guard, slf);
-    let size = Value::new(&guard, size);
+    let rand = Value::from(slf);
+    let size = Value::from(size);
     let result = trampoline::bytes(&mut guard, rand, size);
     match result {
         Ok(value) => value.inner(),
@@ -100,8 +100,8 @@ unsafe extern "C" fn artichoke_random_rand(
     let max = mrb_get_args!(mrb, optional = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let rand = Value::new(&guard, slf);
-    let max = max.map(|max| Value::new(&guard, max));
+    let rand = Value::from(slf);
+    let max = max.map(Value::from);
     let result = trampoline::rand(&mut guard, rand, max);
     match result {
         Ok(value) => value.inner(),
@@ -117,7 +117,7 @@ unsafe extern "C" fn artichoke_random_seed(
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let rand = Value::new(&guard, slf);
+    let rand = Value::from(slf);
     let result = trampoline::seed(&mut guard, rand);
     match result {
         Ok(value) => value.inner(),
@@ -148,7 +148,7 @@ unsafe extern "C" fn artichoke_random_self_srand(
     let number = mrb_get_args!(mrb, optional = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let number = number.map(|number| Value::new(&guard, number));
+    let number = number.map(Value::from);
     let result = trampoline::srand(&mut guard, number);
     match result {
         Ok(value) => value.inner(),
@@ -164,7 +164,7 @@ unsafe extern "C" fn artichoke_random_self_urandom(
     let size = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let size = Value::new(&guard, size);
+    let size = Value::from(size);
     let result = trampoline::urandom(&mut guard, size);
     match result {
         Ok(value) => value.inner(),

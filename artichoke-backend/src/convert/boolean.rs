@@ -9,9 +9,9 @@ use crate::Artichoke;
 impl Convert<bool, Value> for Artichoke {
     fn convert(&self, value: bool) -> Value {
         if value {
-            Value::new(self, unsafe { sys::mrb_sys_true_value() })
+            Value::from(unsafe { sys::mrb_sys_true_value() })
         } else {
-            Value::new(self, unsafe { sys::mrb_sys_false_value() })
+            Value::from(unsafe { sys::mrb_sys_false_value() })
         }
     }
 }

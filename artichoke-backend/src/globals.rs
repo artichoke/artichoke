@@ -60,6 +60,6 @@ impl Globals for Artichoke {
         // NOTE: This implementation is not compliant with the spec laid out in
         // the trait documentation. This implementation always returns `Some(_)`
         // even if the global is unset.
-        Ok(Some(Value::new(self, value)))
+        Ok(Some(Value::from(value)))
     }
 }

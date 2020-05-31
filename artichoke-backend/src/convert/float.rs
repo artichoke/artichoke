@@ -10,7 +10,7 @@ use crate::Artichoke;
 impl ConvertMut<Fp, Value> for Artichoke {
     fn convert_mut(&mut self, value: Fp) -> Value {
         let float = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_sys_float_value(mrb, value)) };
-        Value::new(self, float.unwrap())
+        Value::from(float.unwrap())
     }
 }
 

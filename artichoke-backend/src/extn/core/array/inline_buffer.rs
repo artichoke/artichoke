@@ -95,7 +95,7 @@ impl ArrayType for InlineBuffer {
 
     fn gc_mark(&self, interp: &mut Artichoke) {
         for elem in self.0.iter().copied() {
-            let value = Value::new(interp, elem);
+            let value = Value::from(elem);
             interp.mark_value(&value);
         }
     }
@@ -209,11 +209,7 @@ impl InlineBuffer {
 
     #[must_use]
     pub fn as_vec(&self, interp: &Artichoke) -> Vec<Value> {
-        self.0
-            .iter()
-            .copied()
-            .map(|value| Value::new(interp, value))
-            .collect()
+        self.0.iter().copied().map(Value::from).collect()
     }
 
     #[must_use]
@@ -251,7 +247,7 @@ impl InlineBuffer {
 
     pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Option<Value>, Exception> {
         let elem = self.0.get(index);
-        Ok(elem.copied().map(|elem| Value::new(interp, elem)))
+        Ok(elem.copied().map(Value::from))
     }
 
     pub fn slice(&self, interp: &Artichoke, start: usize, len: usize) -> Result<Self, Exception> {
@@ -366,7 +362,7 @@ impl InlineBuffer {
 
     pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Exception> {
         let value = self.0.pop();
-        Ok(interp.convert(value.map(|value| Value::new(interp, value))))
+        Ok(interp.convert(value.map(Value::from)))
     }
 
     pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
