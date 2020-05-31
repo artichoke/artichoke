@@ -70,10 +70,10 @@ where
         interp.puts(display)?;
     }
 
-    match args {
-        0 => Ok(Value::nil()),
-        1 => Ok(interp.convert(args[0].to_owned())),
-        _ => Ok(interp.convert_mut(args)),
+    match args.as_slice() {
+        [] => Ok(Value::nil()),
+        [first] => Ok(*first),
+        [args @ ..] => Ok(interp.convert_mut(args)),
     }
 }
 
