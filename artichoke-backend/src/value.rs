@@ -20,6 +20,7 @@ pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 pub struct Value(sys::mrb_value);
 
 impl From<sys::mrb_value> for Value {
+    /// Construct a new [`Value`] from a [`sys::mrb_value`].
     fn from(value: sys::mrb_value) -> Self {
         Self(value)
     }
@@ -42,13 +43,16 @@ impl PartialEq for Value {
 }
 
 impl Value {
-    /// Construct a new [`Value`] from an interpreter and [`sys::mrb_value`].
+    /// Create a new, empty Ruby value.
+    ///
+    /// Alias for `Value::default`.
+    #[inline]
     #[must_use]
-    pub fn new(interp: &Artichoke, value: sys::mrb_value) -> Self {
-        let _ = interp;
-        Self::from(value)
+    pub fn new() -> Self {
+        Self::default()
     }
 
+    /// Create a `nil` Ruby Value.
     #[inline]
     #[must_use]
     pub fn nil() -> Self {
@@ -128,7 +132,7 @@ impl Value {
         match result {
             Ok(range) => Ok(range),
             Err(exception) => {
-                let exception = Self::new(&arena, exception);
+                let exception = Self::from(exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
@@ -260,7 +264,7 @@ impl ValueCore for Value {
         };
         match result {
             Ok(value) => {
-                let value = Self::new(&arena, value);
+                let value = Self::from(value);
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -276,7 +280,7 @@ impl ValueCore for Value {
                 }
             }
             Err(exception) => {
-                let exception = Self::new(&arena, exception);
+                let exception = Self::from(exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
         }
