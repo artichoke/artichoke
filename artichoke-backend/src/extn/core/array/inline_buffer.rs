@@ -209,6 +209,7 @@ impl InlineBuffer {
 
     #[must_use]
     pub fn as_vec(&self, interp: &Artichoke) -> Vec<Value> {
+        let _ = interp;
         self.0.iter().copied().map(Value::from).collect()
     }
 
@@ -246,6 +247,7 @@ impl InlineBuffer {
     }
 
     pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Option<Value>, Exception> {
+        let _ = interp;
         let elem = self.0.get(index);
         Ok(elem.copied().map(Value::from))
     }
