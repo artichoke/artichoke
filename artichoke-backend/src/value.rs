@@ -16,7 +16,7 @@ use crate::Artichoke;
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 
 /// Boxed Ruby value in the [`Artichoke`] interpreter.
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct Value(sys::mrb_value);
 
 impl From<sys::mrb_value> for Value {

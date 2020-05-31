@@ -29,6 +29,12 @@ mod ffi_tests;
 pub use self::args::*;
 pub use self::ffi::*;
 
+impl Default for mrb_value {
+    fn default() -> Self {
+        unsafe { mrb_sys_nil_value() }
+    }
+}
+
 /// Version metadata `String` for embedded mruby.
 #[must_use]
 pub fn mrb_sys_mruby_version(verbose: bool) -> String {
