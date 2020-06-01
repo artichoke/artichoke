@@ -1,3 +1,4 @@
+use bstr::BStr;
 use std::ffi::OsStr;
 use std::path::Path;
 
@@ -45,10 +46,9 @@ impl Eval for Artichoke {
             }
             Err(exception) => {
                 let exception = Value::from(exception);
-                debug!(
-                    "Failed eval raised exception: {:?}",
-                    bstr::B(&exception.inspect(self))
-                );
+                let debug = exception.inspect(self);
+                let loggable = <&BStr>::from(debug.as_slice());
+                debug!("Failed eval raised exception: {:?}", loggable);
                 Err(exception_handler::last_error(self, exception)?)
             }
         }

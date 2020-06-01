@@ -38,6 +38,7 @@
 //! - `SystemStackError`
 //! - `fatal` -- impossible to rescue
 
+use bstr::BStr;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
@@ -257,9 +258,9 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 macro_rules! ruby_exception_impl {
     ($exception:ident) => {
-        #[derive(Clone)]
+        #[derive(Default, Debug, Clone)]
         pub struct $exception {
-            message: Cow<'static, [u8]>,
+            message: Cow<'static, BStr>,
         }
 
         impl $exception {
@@ -269,8 +270,8 @@ macro_rules! ruby_exception_impl {
             {
                 let _ = interp;
                 let message = match message.into() {
-                    Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes()),
-                    Cow::Owned(s) => Cow::Owned(s.into_bytes()),
+                    Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes().into()),
+                    Cow::Owned(s) => Cow::Owned(s.into_bytes().into()),
                 };
                 Self { message }
             }
@@ -280,7 +281,10 @@ macro_rules! ruby_exception_impl {
                 S: Into<Cow<'static, [u8]>>,
             {
                 let _ = interp;
-                let message = message.into();
+                let message = match message.into() {
+                    Cow::Borrowed(s) => Cow::Borrowed(s.into()),
+                    Cow::Owned(s) => Cow::Owned(s.into()),
+                };
                 Self { message }
             }
         }
@@ -331,14 +335,6 @@ macro_rules! ruby_exception_impl {
                 let message = interp.convert_mut(self.message());
                 let value = interp.new_instance::<Self>(&[message]).ok().flatten()?;
                 Some(value.inner())
-            }
-        }
-
-        impl fmt::Debug for $exception {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.debug_struct(stringify!($exception))
-                    .field("message", &bstr::B(self.message.as_ref()))
-                    .finish()
             }
         }
 

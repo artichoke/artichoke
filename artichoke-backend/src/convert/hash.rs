@@ -87,7 +87,7 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
             let borrow = array.borrow();
 
             let mut pairs = Vec::with_capacity(borrow.len());
-            for key in borrow.as_vec(self) {
+            for key in &*borrow {
                 let value = unsafe {
                     self.with_ffi_boundary(|mrb| sys::mrb_hash_get(mrb, hash, key.inner()))?
                 };

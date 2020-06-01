@@ -23,7 +23,8 @@ pub fn element_reference(
 ) -> Result<Value, Exception> {
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     let borrow = array.borrow();
-    borrow.element_reference(interp, first, second)
+    let elem = borrow.element_reference(interp, first, second)?;
+    Ok(interp.convert(elem))
 }
 
 pub fn element_assignment(
@@ -62,12 +63,8 @@ pub fn pop(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
     }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     let mut borrow = array.borrow_mut();
-    let prior_gc_state = interp.disable_gc();
-    let result = borrow.pop(interp);
-    if let GcState::Enabled = prior_gc_state {
-        interp.enable_gc();
-    }
-    result
+    let result = borrow.pop();
+    Ok(interp.convert(result))
 }
 
 pub fn concat(
@@ -84,11 +81,7 @@ pub fn concat(
     if let Some(other) = other {
         let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
         let mut borrow = array.borrow_mut();
-        let prior_gc_state = interp.disable_gc();
         borrow.concat(interp, other)?;
-        if let GcState::Enabled = prior_gc_state {
-            interp.enable_gc();
-        }
     }
     Ok(ary)
 }
@@ -101,13 +94,8 @@ pub fn push(interp: &mut Artichoke, ary: Value, value: Value) -> Result<Value, E
         )));
     }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
-    let idx = array.borrow().len();
     let mut borrow = array.borrow_mut();
-    let prior_gc_state = interp.disable_gc();
-    borrow.set(interp, idx, value)?;
-    if let GcState::Enabled = prior_gc_state {
-        interp.enable_gc();
-    }
+    borrow.push(value);
     Ok(ary)
 }
 
@@ -120,11 +108,7 @@ pub fn reverse_bang(interp: &mut Artichoke, ary: Value) -> Result<Value, Excepti
     }
     let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     let mut borrow = array.borrow_mut();
-    let prior_gc_state = interp.disable_gc();
-    borrow.reverse(interp)?;
-    if let GcState::Enabled = prior_gc_state {
-        interp.enable_gc();
-    }
+    borrow.reverse();
     Ok(ary)
 }
 
@@ -136,12 +120,13 @@ pub fn len(interp: &mut Artichoke, ary: Value) -> Result<usize, Exception> {
 
 pub fn initialize(
     interp: &mut Artichoke,
-    ary: Value,
+    into: Value,
     first: Option<Value>,
     second: Option<Value>,
     block: Option<Block>,
 ) -> Result<Value, Exception> {
-    Array::initialize(interp, first, second, block, ary)
+    let array = Array::initialize(interp, first, second, block)?;
+    array.try_into_ruby(interp, Some(into.inner()))
 }
 
 pub fn initialize_copy(

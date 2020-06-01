@@ -16,7 +16,7 @@ use crate::Artichoke;
 pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 
 /// Boxed Ruby value in the [`Artichoke`] interpreter.
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Value(sys::mrb_value);
 
 impl From<sys::mrb_value> for Value {
@@ -39,14 +39,6 @@ impl From<Option<sys::mrb_value>> for Value {
 impl From<Option<Value>> for Value {
     fn from(value: Option<Value>) -> Self {
         value.unwrap_or_else(Value::nil)
-    }
-}
-
-impl fmt::Debug for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Value")
-            .field("type", &self.ruby_type())
-            .finish()
     }
 }
 
