@@ -7,7 +7,10 @@
 //! with bindgen.
 
 use std::ffi::CStr;
-use std::fmt::Write;
+use std::fmt::{self, Write};
+
+use crate::string;
+use crate::types::{self, Ruby};
 
 mod args;
 #[allow(missing_debug_implementations)]
@@ -32,6 +35,20 @@ pub use self::ffi::*;
 impl Default for mrb_value {
     fn default() -> Self {
         unsafe { mrb_sys_nil_value() }
+    }
+}
+
+impl fmt::Debug for mrb_value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match types::ruby_from_mrb_value(*self) {
+            Ruby::Nil => write!(f, "nil"),
+            Ruby::Bool if unsafe { mrb_sys_value_is_true(*self) } => write!(f, "true"),
+            Ruby::Bool => write!(f, "false"),
+            Ruby::Fixnum => string::format_int_into(f, unsafe { mrb_sys_fixnum_to_cint(*self) })
+                .map_err(string::WriteError::into_inner),
+            Ruby::Float => write!(f, "{}", unsafe { mrb_sys_float_to_cdouble(*self) }),
+            type_tag => write!(f, "<{}>", type_tag),
+        }
     }
 }
 

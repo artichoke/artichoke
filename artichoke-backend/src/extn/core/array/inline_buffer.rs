@@ -1,15 +1,13 @@
 use smallvec::SmallVec;
 use std::cmp;
-use std::fmt;
-use std::iter::{self, FromIterator};
+use std::iter::FromIterator;
+use std::slice;
 
-use crate::extn::core::array::ArrayType;
 use crate::extn::prelude::*;
-use crate::gc::MrbGarbageCollection;
 
 const INLINE_CAPACITY: usize = 8;
 
-#[derive(Clone, Default)]
+#[derive(Default, Debug, Clone)]
 pub struct InlineBuffer(SmallVec<[sys::mrb_value; INLINE_CAPACITY]>);
 
 impl From<Vec<sys::mrb_value>> for InlineBuffer {
@@ -61,10 +59,10 @@ impl FromIterator<Option<Value>> for InlineBuffer {
     where
         I: IntoIterator<Item = Option<Value>>,
     {
-        Self(SmallVec::from_iter(iter.into_iter().map(|elem| {
-            elem.as_ref()
-                .map_or_else(|| Value::nil().inner(), Value::inner)
-        })))
+        Self(SmallVec::from_iter(
+            iter.into_iter()
+                .map(|elem| elem.unwrap_or_else(Value::nil).inner()),
+        ))
     }
 }
 
@@ -73,144 +71,53 @@ impl<'a> FromIterator<&'a Option<Value>> for InlineBuffer {
     where
         I: IntoIterator<Item = &'a Option<Value>>,
     {
-        Self(SmallVec::from_iter(iter.into_iter().map(|elem| {
-            elem.as_ref()
-                .map_or_else(|| Value::nil().inner(), Value::inner)
-        })))
+        Self(SmallVec::from_iter(
+            iter.into_iter()
+                .map(|elem| elem.unwrap_or_else(Value::nil).inner()),
+        ))
     }
 }
 
-impl fmt::Debug for InlineBuffer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list()
-            .entries(iter::repeat("Value").take(self.len()))
-            .finish()
+#[derive(Debug)]
+pub struct Iter<'a>(slice::Iter<'a, sys::mrb_value>);
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let value = self.0.next()?;
+        Some(Value::from(*value))
     }
 }
 
-impl ArrayType for InlineBuffer {
-    fn box_clone(&self) -> Box<dyn ArrayType> {
-        Box::new(self.clone())
-    }
+impl<'a> IntoIterator for &'a InlineBuffer {
+    type Item = Value;
+    type IntoIter = Iter<'a>;
 
-    fn gc_mark(&self, interp: &mut Artichoke) {
-        for elem in self.0.iter().copied() {
-            let value = Value::from(elem);
-            interp.mark_value(&value);
-        }
-    }
-
-    fn real_children(&self) -> usize {
-        self.0.len()
-    }
-
-    fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    fn get(&self, interp: &Artichoke, index: usize) -> Result<Option<Value>, Exception> {
-        Self::get(self, interp, index)
-    }
-
-    fn slice(
-        &self,
-        interp: &Artichoke,
-        start: usize,
-        len: usize,
-    ) -> Result<Box<dyn ArrayType>, Exception> {
-        match Self::slice(self, interp, start, len) {
-            Ok(slice) => Ok(Box::new(slice)),
-            Err(err) => Err(err),
-        }
-    }
-
-    fn set(
-        &mut self,
-        interp: &Artichoke,
-        index: usize,
-        elem: Value,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Exception> {
-        let _ = realloc;
-        Self::set(self, interp, index, elem)
-    }
-
-    fn set_with_drain(
-        &mut self,
-        interp: &Artichoke,
-        start: usize,
-        drain: usize,
-        with: Value,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Exception> {
-        let _ = realloc;
-        Self::set_with_drain(self, interp, start, drain, with)
-    }
-
-    fn set_slice(
-        &mut self,
-        interp: &Artichoke,
-        start: usize,
-        drain: usize,
-        with: Box<dyn ArrayType>,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<usize, Exception> {
-        let _ = realloc;
-        let mut slice = Vec::with_capacity(with.len());
-        for idx in 0..with.len() {
-            if let Some(elem) = with.get(interp, idx)? {
-                slice.push(elem);
-            }
-        }
-        let buffer = Self::from(slice);
-        Self::set_slice(self, interp, start, drain, &buffer)
-    }
-
-    fn concat(
-        &mut self,
-        interp: &Artichoke,
-        other: Box<dyn ArrayType>,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<(), Exception> {
-        let _ = realloc;
-        let mut slice = Vec::with_capacity(other.len());
-        for idx in 0..other.len() {
-            if let Some(elem) = other.get(interp, idx)? {
-                slice.push(elem);
-            }
-        }
-        let buffer = Self::from(slice);
-        Self::concat(self, interp, &buffer)
-    }
-
-    fn pop(
-        &mut self,
-        interp: &Artichoke,
-        realloc: &mut Option<Vec<Box<dyn ArrayType>>>,
-    ) -> Result<Value, Exception> {
-        let _ = realloc;
-        Self::pop(self, interp)
-    }
-
-    fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
-        Self::reverse(self, interp)
+    fn into_iter(self) -> Self::IntoIter {
+        Iter(self.0.iter())
     }
 }
 
 impl InlineBuffer {
+    #[must_use]
+    pub fn new() -> Self {
+        Self(SmallVec::new())
+    }
+
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self(SmallVec::with_capacity(capacity))
     }
 
     #[must_use]
-    pub fn as_vec(&self, interp: &Artichoke) -> Vec<Value> {
-        let _ = interp;
-        self.0.iter().copied().map(Value::from).collect()
+    pub fn iter(&self) -> Iter<'_> {
+        self.into_iter()
+    }
+
+    #[must_use]
+    pub fn as_slice(&self) -> &[sys::mrb_value] {
+        self.0.as_slice()
     }
 
     #[must_use]
@@ -246,136 +153,142 @@ impl InlineBuffer {
         self.0.clear();
     }
 
-    pub fn get(&self, interp: &Artichoke, index: usize) -> Result<Option<Value>, Exception> {
-        let _ = interp;
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn get(&self, index: usize) -> Option<Value> {
         let elem = self.0.get(index);
-        Ok(elem.copied().map(Value::from))
+        elem.copied().map(Value::from)
     }
 
-    pub fn slice(&self, interp: &Artichoke, start: usize, len: usize) -> Result<Self, Exception> {
-        let _ = interp;
+    pub fn slice(&self, start: usize, len: usize) -> Self {
         if self.is_empty() {
-            return Ok(Self::default());
+            return Self::default();
         }
-        let buflen = self.len();
-        if start < buflen {
-            Ok(Self::from(&self.0[start..cmp::min(start + len, buflen)]))
+        if let Some(slice) = self.0.get(start..start + len) {
+            Self::from(slice)
+        } else if let Some(slice) = self.0.get(start..self.0.len()) {
+            Self::from(slice)
         } else {
-            Ok(Self::default())
+            Self::default()
         }
     }
 
-    pub fn set(&mut self, interp: &Artichoke, index: usize, elem: Value) -> Result<(), Exception> {
-        let _ = interp;
-        let buflen = self.len();
-        match index {
-            idx if idx < buflen => self.0[index] = elem.inner(),
-            idx if idx == buflen => self.0.push(elem.inner()),
-            idx => {
-                let nil = Value::nil().inner();
-                self.0.reserve(idx + 1 - buflen);
-                for _ in buflen..idx {
-                    self.0.push(nil);
-                }
-                self.0.push(elem.inner());
+    pub fn set(&mut self, index: usize, elem: Value) {
+        if let Some(cell) = self.0.get_mut(index) {
+            *cell = elem.inner();
+        } else {
+            let nil = Value::nil().inner();
+            let buflen = self.len();
+            // index is *at least* buflen, so this calculation never underflows
+            // and ensures we allocate an additional slot.
+            self.0.reserve(index + 1 - buflen);
+            for _ in buflen..index {
+                self.0.push(nil);
             }
+            self.0.push(elem.inner());
         }
-        Ok(())
     }
 
-    pub fn set_with_drain(
-        &mut self,
-        interp: &Artichoke,
-        start: usize,
-        drain: usize,
-        with: Value,
-    ) -> Result<usize, Exception> {
-        let _ = interp;
+    pub fn set_with_drain(&mut self, start: usize, drain: usize, elem: Value) -> usize {
         let buflen = self.len();
         let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
-        match start {
-            idx if idx > buflen => {
+
+        if let Some(cell) = self.0.get_mut(start) {
+            match drain {
+                0 => self.0.insert(start, elem.inner()),
+                1 => *cell = elem.inner(),
+                _ => {
+                    *cell = elem.inner();
+                    let drain_end_idx = cmp::min(start + drain, buflen);
+                    self.0.drain(start + 1..drain_end_idx);
+                }
+            }
+        } else {
+            let nil = Value::nil().inner();
+            // start is *at least* buflen, so this calculation never underflows
+            // and ensures we allocate an additional slot.
+            self.0.reserve(start + 1 - buflen);
+            for _ in buflen..start {
+                self.0.push(nil);
+            }
+            self.0.push(elem.inner());
+        }
+
+        drained
+    }
+
+    pub fn set_slice(&mut self, start: usize, drain: usize, src: &[sys::mrb_value]) -> usize {
+        let buflen = self.0.len();
+        let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
+
+        if src.len() <= drain {
+            if let Some(slice) = self.0.get_mut(start..start + src.len()) {
+                slice.copy_from_slice(src);
+                if drained - src.len() > 0 {
+                    self.0.drain(start + src.len()..start + drained);
+                }
+            } else if let Some(slice) = self.0.get_mut(start..start + drained) {
+                let (left, right) = src.split_at(drained);
+                slice.copy_from_slice(left);
+                self.0.extend_from_slice(right);
+            } else {
                 let nil = Value::nil().inner();
-                self.0.reserve(start + 1 - buflen);
                 for _ in buflen..start {
                     self.0.push(nil);
                 }
-                self.0.push(with.inner());
+                self.0.extend_from_slice(src);
             }
-            idx if idx == buflen => self.0.push(with.inner()),
-            idx if drain == 0 => self.0.insert(idx, with.inner()),
-            idx if drain == 1 => self.0[idx] = with.inner(),
-            idx => {
-                self.0[idx] = with.inner();
-                self.0.drain(idx + 1..cmp::min(idx + drain, buflen));
+        } else if let Some(slice) = self.0.get_mut(start..start + drain) {
+            let (left, right) = src.split_at(drain);
+            slice.copy_from_slice(left);
+            self.0.insert_from_slice(start + drain, right);
+        } else if let Some(slice) = self.0.get_mut(start..start + drained) {
+            let (left, right) = src.split_at(drained);
+            slice.copy_from_slice(left);
+            self.0.extend_from_slice(right);
+        } else {
+            let nil = Value::nil().inner();
+            for _ in buflen..start {
+                self.0.push(nil);
             }
+            self.0.extend_from_slice(src);
         }
-        Ok(drained)
+
+        drained
     }
 
-    pub fn set_slice(
-        &mut self,
-        interp: &Artichoke,
-        start: usize,
-        drain: usize,
-        with: &Self,
-    ) -> Result<usize, Exception> {
-        let _ = interp;
-        let buflen = self.len();
-        let withlen = with.len();
-        let drained = cmp::min(buflen.checked_sub(start).unwrap_or_default(), drain);
-        match start {
-            idx if idx > buflen => {
-                let nil = Value::nil().inner();
-                for _ in buflen..idx {
-                    self.0.push(nil);
-                }
-                self.0.extend_from_slice(with.0.as_slice());
-            }
-            idx if idx == buflen => self.0.extend_from_slice(with.0.as_slice()),
-            idx => match cmp::min(buflen - idx, drain) {
-                0 => self.0.insert_from_slice(start, with.0.as_slice()),
-                to_drain if to_drain == withlen => {
-                    let end = start + withlen;
-                    self.0[start..end].copy_from_slice(with.0.as_slice());
-                }
-                to_drain if to_drain > withlen => {
-                    let end = start + with.len();
-                    let remaining_drain = to_drain - with.len();
-                    self.0[start..end].copy_from_slice(with.0.as_slice());
-                    self.0.drain(end..end + remaining_drain);
-                }
-                to_drain => {
-                    let (overwrite, insert) = with.0.split_at(to_drain);
-                    let overwrite_until = start + overwrite.len();
-                    self.0[start..overwrite_until].copy_from_slice(overwrite);
-                    self.0.insert_from_slice(overwrite_until, insert);
-                }
-            },
+    pub fn concat<T>(&mut self, other: T)
+    where
+        T: IntoIterator<Item = Value>,
+    {
+        for elem in other {
+            self.0.push(elem.inner());
         }
-        Ok(drained)
     }
 
-    pub fn concat(&mut self, interp: &Artichoke, other: &Self) -> Result<(), Exception> {
-        let _ = interp;
-        self.0.extend_from_slice(other.0.as_slice());
-        Ok(())
+    pub fn pop(&mut self) -> Option<Value> {
+        self.0.pop().map(Value::from)
     }
 
-    pub fn pop(&mut self, interp: &Artichoke) -> Result<Value, Exception> {
-        let value = self.0.pop();
-        Ok(interp.convert(value.map(Value::from)))
+    pub fn push(&mut self, elem: Value) {
+        self.0.push(elem.inner());
     }
 
-    pub fn reverse(&mut self, interp: &Artichoke) -> Result<(), Exception> {
-        let _ = interp;
+    pub fn reverse(&mut self) {
         self.0.reverse();
-        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use bstr::BStr;
+
     use crate::test::prelude::*;
 
     #[test]
@@ -385,7 +298,11 @@ mod tests {
             .eval(&include_bytes!("inline_buffer_test.rb")[..])
             .unwrap();
         let result = interp.eval(b"spec");
-        let result = result.unwrap().try_into::<bool>(&interp).unwrap();
-        assert!(result);
+        if let Err(exc) = result {
+            let backtrace = exc.vm_backtrace(&mut interp);
+            let backtrace = bstr::join("\n", backtrace.unwrap_or_default());
+            let loggable = <&BStr>::from(backtrace.as_slice());
+            panic!("InlineBuffer tests failed with backtrace:\n{:?}", loggable);
+        }
     }
 }
