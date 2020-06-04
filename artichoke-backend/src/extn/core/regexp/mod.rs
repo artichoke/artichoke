@@ -27,6 +27,7 @@ pub use enc::Encoding;
 pub use opts::Options;
 
 use backend::lazy::Lazy;
+#[cfg(feature = "core-regexp-oniguruma")]
 use backend::onig::Onig;
 use backend::regex::utf8::Utf8;
 
@@ -125,17 +126,25 @@ impl Regexp {
         derived_config: Config,
         encoding: Encoding,
     ) -> Result<Self, Exception> {
-        // Patterns must be parsable by Oniguruma.
-        let onig = Onig::new(
-            interp,
-            literal_config.clone(),
-            derived_config.clone(),
-            encoding,
-        )?;
-        if let Ok(regex) = Utf8::new(interp, literal_config, derived_config, encoding) {
+        #[cfg(feature = "core-regexp-oniguruma")]
+        {
+            // Patterns must be parsable by Oniguruma.
+            let onig = Onig::new(
+                interp,
+                literal_config.clone(),
+                derived_config.clone(),
+                encoding,
+            )?;
+            if let Ok(regex) = Utf8::new(interp, literal_config, derived_config, encoding) {
+                Ok(Self(Box::new(regex)))
+            } else {
+                Ok(Self(Box::new(onig)))
+            }
+        }
+        #[cfg(not(feature = "core-regexp-oniguruma"))]
+        {
+            let regex = Utf8::new(interp, literal_config, derived_config, encoding)?;
             Ok(Self(Box::new(regex)))
-        } else {
-            Ok(Self(Box::new(onig)))
         }
     }
 
