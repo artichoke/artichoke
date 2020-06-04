@@ -19,6 +19,7 @@ pub mod backend;
 pub mod enc;
 pub mod mruby;
 pub mod opts;
+pub mod pattern;
 pub mod syntax;
 pub mod trampoline;
 
@@ -181,10 +182,10 @@ impl Regexp {
                 options: options.unwrap_or_default(),
             }
         };
-        let (pattern, options) =
-            opts::parse_pattern(literal_config.pattern.as_slice(), literal_config.options);
+        let pattern = pattern::parse(&literal_config.pattern, literal_config.options);
+        let options = pattern.options();
         let derived_config = Config {
-            pattern: pattern.into(),
+            pattern: pattern.into_pattern().into(),
             options,
         };
         Self::new(
@@ -252,9 +253,10 @@ impl Regexp {
         };
 
         let derived_config = {
-            let (pattern, options) = opts::parse_pattern(pattern.as_slice(), Options::default());
+            let pattern = pattern::parse(&pattern, Options::default());
+            let options = pattern.options();
             Config {
-                pattern: pattern.into(),
+                pattern: pattern.into_pattern().into(),
                 options,
             }
         };
@@ -316,14 +318,7 @@ impl Regexp {
     pub fn is_fixed_encoding(&self, interp: &mut Artichoke) -> bool {
         let _ = interp;
         match self.0.encoding() {
-            Encoding::No => {
-                let bits = self.0.literal_config().options.flags().bits();
-                if let Ok(opts) = Int::try_from(bits) {
-                    (opts & NOENCODING) != 0
-                } else {
-                    false
-                }
-            }
+            Encoding::No => false,
             Encoding::Fixed => true,
             Encoding::None => false,
         }
@@ -403,9 +398,8 @@ impl Regexp {
     #[must_use]
     pub fn options(&self, interp: &mut Artichoke) -> Int {
         let _ = interp;
-        let opts =
-            Int::try_from(self.0.literal_config().options.flags().bits()).unwrap_or_default();
-        opts | self.0.encoding().flags()
+        let opts = self.0.literal_config().options;
+        Int::from(opts) | Int::from(self.0.encoding())
     }
 
     #[inline]
@@ -451,28 +445,26 @@ impl TryConvertMut<(Option<Value>, Option<Value>), (Option<opts::Options>, Optio
     ) -> Result<(Option<opts::Options>, Option<enc::Encoding>), Self::Error> {
         let (options, encoding) = value;
         if let Some(encoding) = encoding {
-            let encoding = match enc::parse(self, &encoding) {
-                Ok(encoding) => Some(encoding),
-                Err(enc::Error::InvalidEncoding) => {
-                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
-                    warning.extend(encoding.to_s(self));
-                    self.warn(warning.as_slice())?;
-                    None
-                }
+            let encoding = if let Ok(encoding) = self.try_convert_mut(encoding) {
+                Some(encoding)
+            } else {
+                let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
+                warning.extend(encoding.to_s(self));
+                self.warn(warning.as_slice())?;
+                None
             };
-            let options = options.map(|options| opts::parse(self, &options));
+            let options = options.map(|options| self.convert_mut(options));
             Ok((options, encoding))
         } else if let Some(options) = options {
-            let encoding = match enc::parse(self, &options) {
-                Ok(encoding) => Some(encoding),
-                Err(enc::Error::InvalidEncoding) => {
-                    let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
-                    warning.extend(options.to_s(self));
-                    self.warn(warning.as_slice())?;
-                    None
-                }
+            let encoding = if let Ok(encoding) = self.try_convert_mut(options) {
+                Some(encoding)
+            } else {
+                let mut warning = Vec::from(&b"encoding option is ignored -- "[..]);
+                warning.extend(options.to_s(self));
+                self.warn(warning.as_slice())?;
+                None
             };
-            let options = opts::parse(self, &options);
+            let options = self.convert_mut(options);
             Ok((Some(options), encoding))
         } else {
             Ok((None, None))

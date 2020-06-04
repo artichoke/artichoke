@@ -100,8 +100,8 @@ impl RegexpType for Lazy {
         let _ = string::format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
-        debug.push_str(self.literal.options.modifier_string().as_str());
-        debug.push_str(self.encoding.string());
+        debug.push_str(self.literal.options.as_display_modifier());
+        debug.push_str(self.encoding.modifier_string());
         debug
     }
 
