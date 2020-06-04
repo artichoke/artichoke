@@ -61,6 +61,29 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
+  build-features:
+    name: Build (non-default features)
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
+
+      - name: Install Bison
+        run: sudo apt install bison
+
       - name: Compile artichoke with no default features
         run: cargo build --verbose --no-default-features
 

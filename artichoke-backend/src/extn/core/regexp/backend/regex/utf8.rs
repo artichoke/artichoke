@@ -166,8 +166,8 @@ impl RegexpType for Utf8 {
         let _ = string::format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
-        debug.push_str(self.literal.options.modifier_string().as_str());
-        debug.push_str(self.encoding.string());
+        debug.push_str(self.literal.options.as_display_modifier());
+        debug.push_str(self.encoding.modifier_string());
         debug
     }
 
@@ -194,8 +194,8 @@ impl RegexpType for Utf8 {
             inspect.extend(self.literal.pattern.iter());
         }
         inspect.push(b'/');
-        inspect.extend(self.literal.options.modifier_string().as_bytes());
-        inspect.extend(self.encoding.string().as_bytes());
+        inspect.extend(self.literal.options.as_display_modifier().as_bytes());
+        inspect.extend(self.encoding.modifier_string().as_bytes());
         inspect
     }
 

@@ -6,6 +6,7 @@ use crate::extn::core::regexp::{Config, Encoding};
 use crate::extn::prelude::*;
 
 pub mod lazy;
+#[cfg(feature = "core-regexp-oniguruma")]
 pub mod onig;
 pub mod regex;
 

@@ -1,4 +1,4 @@
-use onig::{Regex, Syntax};
+use onig::{Regex, RegexOptions, Syntax};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -8,10 +8,26 @@ use std::rc::Rc;
 use std::str;
 
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan};
+use crate::extn::core::regexp::{self, Config, Encoding, Options, Regexp, RegexpType, Scan};
 use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
+
+impl From<Options> for RegexOptions {
+    fn from(opts: Options) -> Self {
+        let mut bits = RegexOptions::REGEX_OPTION_NONE;
+        if opts.multiline {
+            bits |= RegexOptions::REGEX_OPTION_MULTILINE;
+        }
+        if opts.ignore_case {
+            bits |= RegexOptions::REGEX_OPTION_IGNORECASE;
+        }
+        if opts.extended {
+            bits |= RegexOptions::REGEX_OPTION_EXTEND;
+        }
+        bits
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Onig {
@@ -34,7 +50,7 @@ impl Onig {
                 "Oniguruma backend for Regexp only supports UTF-8 patterns",
             )
         })?;
-        let regex = match Regex::with_options(pattern, derived.options.flags(), Syntax::ruby()) {
+        let regex = match Regex::with_options(pattern, derived.options.into(), Syntax::ruby()) {
             Ok(regex) => regex,
             Err(err) if literal.options.literal => {
                 return Err(Exception::from(SyntaxError::new(
@@ -178,8 +194,8 @@ impl RegexpType for Onig {
         let _ = string::format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
-        debug.push_str(self.literal.options.modifier_string().as_str());
-        debug.push_str(self.encoding.string());
+        debug.push_str(self.literal.options.as_display_modifier());
+        debug.push_str(self.encoding.modifier_string());
         debug
     }
 
@@ -206,8 +222,8 @@ impl RegexpType for Onig {
             inspect.extend(self.literal.pattern.iter());
         }
         inspect.push(b'/');
-        inspect.extend(self.literal.options.modifier_string().as_bytes());
-        inspect.extend(self.encoding.string().as_bytes());
+        inspect.extend(self.literal.options.as_display_modifier().as_bytes());
+        inspect.extend(self.encoding.modifier_string().as_bytes());
         inspect
     }
 
