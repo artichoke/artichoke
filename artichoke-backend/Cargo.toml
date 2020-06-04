@@ -32,6 +32,7 @@ path = "../artichoke-core"
 git = "https://github.com/artichoke/rust-onig"
 rev = "ec266cae185ef4119008ea0b4799b9abd7161436"
 default-features = false
+optional = true
 
 [dev-dependencies]
 libc = "0.2"
@@ -49,11 +50,13 @@ default = [
   "core-env-system",
   "core-math-extra",
   "core-random",
+  "core-regexp-oniguruma",
   "stdlib-securerandom"
 ]
 core-env-system = []
 core-math-extra = ["libm"]
 core-random = ["rand", "rand_pcg"]
+core-regexp-oniguruma = ["onig"]
 native-filesystem-access = []
 output-strategy-capture = []
 output-strategy-null = ["output-strategy-capture"]
