@@ -42,7 +42,7 @@ quickcheck_macros = "0.9"
 bindgen = { version = "0.54.0", default-features = false, features = ["runtime"] }
 cc = "1.0"
 chrono = "0.4"
-target-lexicon = "0.10.0"
+target-lexicon = "0.11.0"
 
 [features]
 default = [
