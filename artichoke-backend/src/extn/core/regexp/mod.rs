@@ -318,9 +318,8 @@ impl Regexp {
     pub fn is_fixed_encoding(&self, interp: &mut Artichoke) -> bool {
         let _ = interp;
         match self.0.encoding() {
-            Encoding::No => false,
+            Encoding::No | Encoding::None => false,
             Encoding::Fixed => true,
-            Encoding::None => false,
         }
     }
 

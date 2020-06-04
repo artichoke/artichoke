@@ -13,22 +13,26 @@ pub struct Pattern {
 
 impl Pattern {
     /// Return the pattern as a byte slice.
+    #[must_use]
     pub fn pattern(&self) -> &[u8] {
         self.pattern.as_slice()
     }
 
     /// Consume self and return the inner pattern byte vector.
+    #[must_use]
     pub fn into_pattern(self) -> Vec<u8> {
         self.pattern
     }
 
     /// Return the `Options` parsed when constructing this `Pattern`.
+    #[must_use]
     pub fn options(&self) -> Options {
         self.options
     }
 }
 
 #[inline]
+#[must_use]
 fn build_pattern<T>(pattern: T, options: Options) -> Pattern
 where
     T: IntoIterator<Item = u8>,
@@ -48,7 +52,6 @@ where
     }
 }
 
-// TODO(GH-26): Add tests for `parse_pattern`.
 #[must_use]
 pub fn parse<T: AsRef<[u8]>>(pattern: T, options: Options) -> Pattern {
     let pattern = pattern.as_ref();
