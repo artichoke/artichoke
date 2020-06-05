@@ -346,7 +346,7 @@ impl ConvertMut<Value, Value> for Artichoke {
 }
 
 /// Argument count exceeds maximum allowed by the VM.
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ArgCountError {
     /// Number of arguments given.
     pub given: usize,
@@ -415,14 +415,12 @@ impl From<Box<ArgCountError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<ArgCountError> for Box<dyn RubyException> {
     fn from(exception: ArgCountError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<ArgCountError>> for Box<dyn RubyException> {
     fn from(exception: Box<ArgCountError>) -> Box<dyn RubyException> {
         exception

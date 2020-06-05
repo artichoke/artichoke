@@ -10,17 +10,17 @@ use backend::EnvType;
 
 pub struct Environ(Box<dyn EnvType>);
 
-impl RustBackedValue for Environ {
-    fn ruby_type_name() -> &'static str {
-        "Artichoke::Environ"
-    }
-}
-
 impl fmt::Debug for Environ {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Environ")
             .field("backend", self.0.as_debug())
             .finish()
+    }
+}
+
+impl RustBackedValue for Environ {
+    fn ruby_type_name() -> &'static str {
+        "Artichoke::Environ"
     }
 }
 

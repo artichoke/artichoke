@@ -14,7 +14,7 @@ use crate::backend::Artichoke;
 ///
 /// This enum only encapsulates whether artichoke can parse the code. It may
 /// still have syntactic or semantic errors.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum State {
     /// Internal parser error. This is a fatal error.
     ParseError,

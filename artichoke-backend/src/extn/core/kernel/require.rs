@@ -96,7 +96,7 @@ pub fn require(
     Err(LoadError::new_raw(interp, message).into())
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RelativePath(PathBuf);
 
 impl RelativePath {

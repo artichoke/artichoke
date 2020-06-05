@@ -1,11 +1,12 @@
 //! Regexp pattern parsers.
 
+use bstr::ByteSlice;
 use std::iter;
 
 use crate::extn::core::regexp::Options;
 
 /// A Regexp pattern including its derived `Options`.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Pattern {
     pattern: Vec<u8>,
     options: Options,
@@ -55,26 +56,24 @@ where
 #[must_use]
 pub fn parse<T: AsRef<[u8]>>(pattern: T, options: Options) -> Pattern {
     let pattern = pattern.as_ref();
-    let mut chars = pattern.iter().copied();
+    let mut chars = pattern.bytes().enumerate();
 
     match chars.next() {
-        Some(b'(') => {}
-        Some(_) => return build_pattern(pattern.iter().copied(), options),
+        Some((_, b'(')) => {}
+        Some(_) => return build_pattern(pattern.bytes(), options),
         None => return build_pattern(iter::empty(), options),
     }
     match chars.next() {
-        Some(b'?') => {}
-        Some(_) => return build_pattern(pattern.iter().copied(), options),
+        Some((_, b'?')) => {}
+        Some(_) => return build_pattern(pattern.bytes(), options),
         None => return build_pattern(iter::once(b'('), options),
     }
 
     let orignal_options = options;
     let mut options = options;
     let mut enable_literal_option = true;
-    let mut cursor = 2;
-    let mut chars = chars.zip(2..);
 
-    while let Some((token, _)) = chars.next() {
+    while let Some((_, token)) = chars.next() {
         match token {
             b'-' => enable_literal_option = false,
             b'i' => {
@@ -87,23 +86,25 @@ pub fn parse<T: AsRef<[u8]>>(pattern: T, options: Options) -> Pattern {
                 options.extended = enable_literal_option;
             }
             b':' => break,
-            _ => return build_pattern(pattern.iter().copied(), options),
+            _ => return build_pattern(pattern.bytes(), options),
         }
     }
 
     let mut chars = chars.peekable();
-    if let Some((_, idx)) = chars.peek() {
-        cursor = *idx;
-    }
+    let cursor = if let Some((idx, _)) = chars.peek() {
+        *idx
+    } else {
+        pattern.len()
+    };
 
     let mut nest = 1;
-    while let Some((token, _)) = chars.next() {
+    while let Some((_, token)) = chars.next() {
         if token == b'(' {
             nest += 1;
         } else if token == b')' {
             nest -= 1;
             if nest == 0 && chars.next().is_some() {
-                return build_pattern(pattern.iter().copied(), orignal_options);
+                return build_pattern(pattern.bytes(), orignal_options);
             }
             break;
         }

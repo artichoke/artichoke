@@ -24,7 +24,7 @@ mod tests {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SecureRandom;
 
 pub fn random_bytes(interp: &mut Artichoke, len: Option<Int>) -> Result<Vec<u8>, Exception> {

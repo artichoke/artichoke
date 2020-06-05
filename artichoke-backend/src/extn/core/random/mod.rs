@@ -70,7 +70,16 @@ pub fn urandom(interp: &mut Artichoke, size: Int) -> Result<Vec<u8>, Exception> 
         ))),
     }
 }
+
 pub struct Random(Box<dyn backend::RandType>);
+
+impl fmt::Debug for Random {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Random")
+            .field("backend", self.0.as_debug())
+            .finish()
+    }
+}
 
 impl Random {
     #[must_use]
@@ -185,14 +194,6 @@ impl Random {
 impl RustBackedValue for Random {
     fn ruby_type_name() -> &'static str {
         "Random"
-    }
-}
-
-impl fmt::Debug for Random {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Random")
-            .field("backend", self.0.as_debug())
-            .finish()
     }
 }
 

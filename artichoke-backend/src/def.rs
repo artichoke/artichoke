@@ -197,7 +197,7 @@ impl Hash for EnclosingRubyScope {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ConstantNameError(Cow<'static, str>);
 
 impl ConstantNameError {
@@ -253,21 +253,19 @@ impl From<Box<ConstantNameError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<ConstantNameError> for Box<dyn RubyException> {
     fn from(exception: ConstantNameError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<ConstantNameError>> for Box<dyn RubyException> {
     fn from(exception: Box<ConstantNameError>) -> Box<dyn RubyException> {
         exception
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NotDefinedError {
     EnclosingScope(Cow<'static, str>),
     Super(Cow<'static, str>),
@@ -399,14 +397,12 @@ impl From<Box<NotDefinedError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<NotDefinedError> for Box<dyn RubyException> {
     fn from(exception: NotDefinedError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<NotDefinedError>> for Box<dyn RubyException> {
     fn from(exception: Box<NotDefinedError>) -> Box<dyn RubyException> {
         exception

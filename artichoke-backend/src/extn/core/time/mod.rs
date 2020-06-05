@@ -16,6 +16,14 @@ pub fn factory() -> impl MakeTime {
 
 pub struct Time(Box<dyn TimeType>);
 
+impl fmt::Debug for Time {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Time")
+            .field("backend", self.0.as_debug())
+            .finish()
+    }
+}
+
 impl Time {
     fn inner(&self) -> &dyn TimeType {
         self.0.as_ref()
@@ -25,13 +33,5 @@ impl Time {
 impl RustBackedValue for Time {
     fn ruby_type_name() -> &'static str {
         "Time"
-    }
-}
-
-impl fmt::Debug for Time {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Time")
-            .field("backend", self.0.as_debug())
-            .finish()
     }
 }

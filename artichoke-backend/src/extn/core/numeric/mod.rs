@@ -15,7 +15,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 #[derive(Debug)]
 pub struct Numeric;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Outcome {
     Float(Fp),
     Integer(Int),
@@ -33,7 +33,7 @@ impl ConvertMut<Outcome, Value> for Artichoke {
 
 const MAX_COERCE_DEPTH: u8 = 15;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Coercion {
     Float(Fp, Fp),
     Integer(Int, Int),

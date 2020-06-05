@@ -109,14 +109,12 @@ impl From<Box<IncrementLinenoError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<IncrementLinenoError> for Box<dyn RubyException> {
     fn from(exception: IncrementLinenoError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<IncrementLinenoError>> for Box<dyn RubyException> {
     fn from(exception: Box<IncrementLinenoError>) -> Box<dyn RubyException> {
         exception

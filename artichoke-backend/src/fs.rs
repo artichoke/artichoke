@@ -41,14 +41,14 @@ pub const RUBY_LOAD_PATH: &str = "/src/lib";
 pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Exception>;
 
 #[must_use]
-#[cfg(all(feature = "native-filesystem-access", not(test), not(doctest)))]
+#[cfg(all(feature = "native-filesystem-access", not(any(test, doctest))))]
 pub fn filesystem() -> Box<dyn Filesystem> {
     let fs = hybrid::Hybrid::default();
     Box::new(fs)
 }
 
 #[must_use]
-#[cfg(all(not(feature = "native-filesystem-access"), not(test), not(doctest)))]
+#[cfg(not(any(feature = "native-filesystem-access", test, doctest)))]
 pub fn filesystem() -> Box<dyn Filesystem> {
     let fs = memory::Memory::default();
     Box::new(fs)

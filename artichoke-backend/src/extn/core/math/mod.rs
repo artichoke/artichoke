@@ -463,7 +463,7 @@ pub fn tanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     Ok(result)
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct DomainError(Cow<'static, str>);
 
 impl DomainError {
@@ -516,14 +516,12 @@ impl From<Box<DomainError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<DomainError> for Box<dyn RubyException> {
     fn from(exception: DomainError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<DomainError>> for Box<dyn RubyException> {
     fn from(exception: Box<DomainError>) -> Box<dyn RubyException> {
         exception

@@ -63,7 +63,7 @@ pub trait Parser {
 ///
 /// Errors include overflows of the interpreters line counter.
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum IncrementLinenoError {
     /// An overflow occurred when incrementing the line number.
     ///

@@ -57,7 +57,7 @@ pub unsafe fn from_user_data(
 }
 
 /// Failed to extract Artichoke interpreter at an FFI boundary.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InterpreterExtractError;
 
 impl fmt::Display for InterpreterExtractError {
@@ -104,14 +104,12 @@ impl From<Box<InterpreterExtractError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<InterpreterExtractError> for Box<dyn RubyException> {
     fn from(exception: InterpreterExtractError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<InterpreterExtractError>> for Box<dyn RubyException> {
     fn from(exception: Box<InterpreterExtractError>) -> Box<dyn RubyException> {
         exception
@@ -142,7 +140,7 @@ pub fn os_string_to_bytes(value: OsString) -> Result<Vec<u8>, ConvertBytesError>
     Vec::from_os_string(value).map_err(|_| ConvertBytesError)
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ConvertBytesError;
 
 impl fmt::Display for ConvertBytesError {
@@ -189,14 +187,12 @@ impl From<Box<ConvertBytesError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<ConvertBytesError> for Box<dyn RubyException> {
     fn from(exception: ConvertBytesError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<ConvertBytesError>> for Box<dyn RubyException> {
     fn from(exception: Box<ConvertBytesError>) -> Box<dyn RubyException> {
         exception

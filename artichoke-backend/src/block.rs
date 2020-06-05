@@ -13,7 +13,7 @@ use crate::types::{self, Ruby};
 use crate::value::Value;
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NoBlockGiven(Ruby);
 
 impl fmt::Display for NoBlockGiven {
@@ -96,7 +96,7 @@ impl NoBlockGiven {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Block(sys::mrb_value);
 
 impl From<sys::mrb_value> for Option<Block> {
@@ -114,12 +114,6 @@ impl TryFrom<sys::mrb_value> for Block {
         } else {
             Err(NoBlockGiven::from(value))
         }
-    }
-}
-
-impl fmt::Debug for Block {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "proc")
     }
 }
 

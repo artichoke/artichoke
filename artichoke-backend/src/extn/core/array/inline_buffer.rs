@@ -287,7 +287,7 @@ impl InlineBuffer {
 
 #[cfg(test)]
 mod tests {
-    use bstr::BStr;
+    use bstr::ByteSlice;
 
     use crate::test::prelude::*;
 
@@ -301,8 +301,10 @@ mod tests {
         if let Err(exc) = result {
             let backtrace = exc.vm_backtrace(&mut interp);
             let backtrace = bstr::join("\n", backtrace.unwrap_or_default());
-            let loggable = <&BStr>::from(backtrace.as_slice());
-            panic!("InlineBuffer tests failed with backtrace:\n{:?}", loggable);
+            panic!(
+                "InlineBuffer tests failed with backtrace:\n{:?}",
+                backtrace.as_bstr()
+            );
         }
     }
 }

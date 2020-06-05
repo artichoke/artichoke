@@ -146,7 +146,6 @@ impl From<Box<WriteError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<WriteError> for Box<dyn RubyException> {
     #[inline]
     fn from(exception: WriteError) -> Box<dyn RubyException> {
@@ -154,7 +153,6 @@ impl From<WriteError> for Box<dyn RubyException> {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<WriteError>> for Box<dyn RubyException> {
     #[inline]
     fn from(exception: Box<WriteError>) -> Box<dyn RubyException> {
@@ -226,7 +224,6 @@ impl From<Box<IoWriteError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<IoWriteError> for Box<dyn RubyException> {
     #[inline]
     fn from(exception: IoWriteError) -> Box<dyn RubyException> {
@@ -234,7 +231,6 @@ impl From<IoWriteError> for Box<dyn RubyException> {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<IoWriteError>> for Box<dyn RubyException> {
     #[inline]
     fn from(exception: Box<IoWriteError>) -> Box<dyn RubyException> {

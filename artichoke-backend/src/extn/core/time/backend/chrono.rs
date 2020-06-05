@@ -5,18 +5,31 @@ use crate::extn::core::time::backend::{MakeTime, TimeType};
 use crate::Artichoke;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Chrono<T: 'static + TimeZone>(DateTime<T>);
+pub struct Chrono<T: TimeZone>(DateTime<T>);
 
-#[derive(Debug, Clone, Copy)]
+impl<T> Copy for Chrono<T>
+where
+    T: TimeZone,
+    T::Offset: Copy,
+{
+}
+
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Factory;
 
-impl<T: TimeZone> Chrono<T> {
+impl<T> Chrono<T>
+where
+    T: TimeZone,
+{
     fn new(time: DateTime<T>) -> Self {
         Self(time)
     }
 }
 
-impl<T: 'static + TimeZone + fmt::Debug> TimeType for Chrono<T> {
+impl<T> TimeType for Chrono<T>
+where
+    T: TimeZone + fmt::Debug,
+{
     fn as_debug(&self) -> &dyn fmt::Debug {
         self
     }
