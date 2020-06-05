@@ -6,7 +6,7 @@ use std::fmt;
 use crate::extn::core::env::backend::EnvType;
 use crate::extn::prelude::*;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Memory {
     store: HashMap<Vec<u8>, Vec<u8>>,
 }

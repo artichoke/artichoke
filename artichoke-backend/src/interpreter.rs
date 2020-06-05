@@ -69,7 +69,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     Ok(interp)
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::module_name_repetitions)]
 pub struct InterpreterAllocError;
 
@@ -114,14 +114,12 @@ impl From<Box<InterpreterAllocError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<InterpreterAllocError> for Box<dyn RubyException> {
     fn from(exception: InterpreterAllocError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<InterpreterAllocError>> for Box<dyn RubyException> {
     fn from(exception: Box<InterpreterAllocError>) -> Box<dyn RubyException> {
         exception

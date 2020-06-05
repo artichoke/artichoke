@@ -113,14 +113,12 @@ impl From<Box<IOError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<IOError> for Box<dyn RubyException> {
     fn from(exception: IOError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<IOError>> for Box<dyn RubyException> {
     fn from(exception: Box<IOError>) -> Box<dyn RubyException> {
         exception

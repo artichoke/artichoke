@@ -182,7 +182,7 @@ mod tests {
 
     use crate::test::prelude::*;
 
-    #[derive(Debug, Default, Clone)]
+    #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
     struct Container {
         inner: String,
     }
@@ -210,7 +210,7 @@ mod tests {
         }
     }
 
-    #[derive(Debug, Default, Clone, Copy)]
+    #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
     // this struct is stack allocated
     struct Other {
         _inner: bool,

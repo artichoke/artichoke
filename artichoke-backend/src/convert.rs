@@ -120,14 +120,12 @@ impl From<Box<UnboxRubyError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<UnboxRubyError> for Box<dyn RubyException> {
     fn from(exception: UnboxRubyError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<UnboxRubyError>> for Box<dyn RubyException> {
     fn from(exception: Box<UnboxRubyError>) -> Box<dyn RubyException> {
         exception
@@ -193,14 +191,12 @@ impl From<Box<BoxIntoRubyError>> for Exception {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<BoxIntoRubyError> for Box<dyn RubyException> {
     fn from(exception: BoxIntoRubyError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<Box<BoxIntoRubyError>> for Box<dyn RubyException> {
     fn from(exception: Box<BoxIntoRubyError>) -> Box<dyn RubyException> {
         exception

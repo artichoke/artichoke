@@ -182,7 +182,6 @@ impl RubyException for CaughtException {
     }
 }
 
-#[allow(clippy::use_self)]
 impl From<CaughtException> for Box<dyn RubyException> {
     fn from(exc: CaughtException) -> Self {
         Box::new(exc)

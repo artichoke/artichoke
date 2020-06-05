@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use crate::extn::prelude::*;
 use crate::sys::protect;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ElementReference {
     Empty,
     Index(Int),

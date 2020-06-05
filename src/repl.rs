@@ -30,7 +30,7 @@ mod filename_test {
 /// Failed to initialize parser during REPL boot.
 ///
 /// The parser is needed to properly enter and exit multi-line editing mode.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct ParserAllocError;
 
 impl fmt::Display for ParserAllocError {
@@ -42,7 +42,7 @@ impl fmt::Display for ParserAllocError {
 impl error::Error for ParserAllocError {}
 
 /// Parser processed too many lines of input.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct ParserLineCountError;
 
 impl fmt::Display for ParserLineCountError {
@@ -56,7 +56,7 @@ impl error::Error for ParserLineCountError {}
 /// Internal fatal parser error.
 ///
 /// This is usually an unknown FFI to Rust translation.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct ParserInternalError;
 
 impl fmt::Display for ParserInternalError {
@@ -84,7 +84,7 @@ impl error::Error for UnhandledReadlineError {
 }
 
 /// Configuration for the REPL readline prompt.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PromptConfig {
     /// Basic prompt for start of a new expression.
     pub simple: String,

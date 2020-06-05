@@ -11,7 +11,7 @@ use crate::extn::prelude::*;
 /// Options can be supplied either as an `Integer` object to `Regexp::new` or
 /// inline in Regexp literals like `/artichoke/i`.
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Options {
     /// Multiline mode.
     pub multiline: bool,

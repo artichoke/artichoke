@@ -3,7 +3,7 @@ use std::fmt;
 use crate::extn::core::random::backend::{InternalState, RandType};
 use crate::extn::prelude::*;
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Default;
 
 impl RandType for Default {

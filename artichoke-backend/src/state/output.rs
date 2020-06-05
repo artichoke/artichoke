@@ -33,7 +33,7 @@ pub trait Output: Send + Sync {
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Process;
 
 impl Process {
@@ -57,7 +57,7 @@ impl Output for Process {
     }
 }
 
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Captured {
     stdout: BString,
     stderr: BString,
@@ -117,7 +117,7 @@ impl<'a> Output for &'a mut Captured {
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Null;
 
 impl Null {

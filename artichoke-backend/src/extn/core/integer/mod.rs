@@ -7,7 +7,7 @@ use crate::extn::prelude::*;
 pub mod mruby;
 pub mod trampoline;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Integer(Int);
 
 impl Convert<Integer, Value> for Artichoke {

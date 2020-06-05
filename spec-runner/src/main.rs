@@ -74,7 +74,7 @@ mod mspec;
 mod rubyspec;
 
 /// CLI specification for `spec-runner`.
-#[derive(Debug, StructOpt)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, StructOpt)]
 #[structopt(name = "spec-runner", about = "ruby/spec runner for Artichoke.")]
 struct Opt {
     /// Path to YAML config file.

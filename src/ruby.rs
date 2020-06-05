@@ -29,7 +29,7 @@ mod filename_test {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, StructOpt)]
 #[structopt(name = "artichoke", about = "Artichoke is a Ruby made with Rust.")]
 struct Opt {
     /// print the copyright

@@ -3,7 +3,7 @@
 use std::fmt;
 
 /// Classes of Rust types.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rust {
     /// Rust `bool` type.
     Bool,
@@ -49,7 +49,7 @@ impl fmt::Display for Rust {
 }
 
 /// Classes of Ruby types.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Ruby {
     /// Ruby `Array` type.
     Array,

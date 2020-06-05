@@ -8,7 +8,7 @@ use std::hash::{Hash, Hasher};
 use crate::extn::core::regexp;
 use crate::extn::prelude::*;
 
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InvalidEncodingError;
 
 impl fmt::Display for InvalidEncodingError {

@@ -289,28 +289,24 @@ macro_rules! ruby_exception_impl {
             }
         }
 
-        #[allow(clippy::use_self)]
         impl From<$exception> for exception::Exception {
             fn from(exception: $exception) -> exception::Exception {
                 exception::Exception::from(Box::<dyn RubyException>::from(exception))
             }
         }
 
-        #[allow(clippy::use_self)]
         impl From<Box<$exception>> for exception::Exception {
             fn from(exception: Box<$exception>) -> exception::Exception {
                 exception::Exception::from(Box::<dyn RubyException>::from(exception))
             }
         }
 
-        #[allow(clippy::use_self)]
         impl From<$exception> for Box<dyn RubyException> {
             fn from(exception: $exception) -> Box<dyn RubyException> {
                 Box::new(exception)
             }
         }
 
-        #[allow(clippy::use_self)]
         impl From<Box<$exception>> for Box<dyn RubyException> {
             fn from(exception: Box<$exception>) -> Box<dyn RubyException> {
                 exception

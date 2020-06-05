@@ -18,6 +18,6 @@ pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
 }
 
 /// ruby/spec source code.
-#[derive(RustEmbed)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, RustEmbed)]
 #[folder = "vendor/spec"]
 pub struct Specs;

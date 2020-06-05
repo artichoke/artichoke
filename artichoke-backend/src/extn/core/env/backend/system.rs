@@ -7,7 +7,7 @@ use crate::extn::core::env::backend::EnvType;
 use crate::extn::prelude::*;
 use crate::ffi;
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct System;
 
 impl System {

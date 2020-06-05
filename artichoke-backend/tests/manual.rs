@@ -6,7 +6,7 @@ extern crate artichoke_backend;
 
 use artichoke_backend::extn::prelude::*;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Container {
     inner: i64,
 }
