@@ -98,7 +98,7 @@ fn revision_count() -> Option<usize> {
     let cmd = OsString::from("git");
     let revision_count = Command::new(cmd)
         .arg("rev-list")
-        .arg("count")
+        .arg("--count")
         .arg("HEAD")
         .output()
         .ok()?;
