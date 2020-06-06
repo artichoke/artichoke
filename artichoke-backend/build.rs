@@ -386,7 +386,11 @@ mod build {
         let mut stack = vec![PathBuf::from(from.as_ref())];
         let dest_root = PathBuf::from(to.as_ref());
         let input_root_depth = from.as_ref().components().count();
-        println!("copying {:?} -> {:?}", from.as_ref(), to.as_ref());
+        println!(
+            "copying {} -> {}",
+            from.as_ref().display(),
+            to.as_ref().display()
+        );
 
         while let Some(from) = stack.pop() {
             let dest = from.components().skip(input_root_depth);
@@ -400,10 +404,9 @@ mod build {
                     stack.push(path);
                 } else if let Some(filename) = path.file_name() {
                     let dest = dest.as_path().join(filename);
-                    println!("  copy: {:?} -> {:?}", path, dest);
                     fs::copy(&path, &dest)?;
                 } else {
-                    eprintln!("failed: {:?}", path);
+                    eprintln!("failed to copy: {}", path.display());
                 }
             }
         }
