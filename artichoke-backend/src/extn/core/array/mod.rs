@@ -155,12 +155,12 @@ impl Array {
         block: Option<Block>,
     ) -> Result<Self, Exception> {
         let result = if let Some(first) = first {
-            if let Ok(ary) = unsafe { Self::try_from_ruby(interp, &first) } {
-                ary.borrow().0.clone()
+            if let Ok(ary) = unsafe { Self::unbox_from_value(first, interp) } {
+                ary.0.clone()
             } else if first.respond_to(interp, "to_ary")? {
                 let other = first.funcall(interp, "to_ary", &[], None)?;
-                if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                    other.borrow().0.clone()
+                if let Ok(other) = unsafe { Self::unbox_from_value(other, interp) } {
+                    other.0.clone()
                 } else {
                     let mut message = String::from("can't convert ");
                     message.push_str(first.pretty_name(interp));
@@ -235,7 +235,7 @@ impl Array {
         if let Some(len) = len {
             let result = self.0.slice(start, len);
             let result = Self(result);
-            let result = result.try_into_ruby(interp, None)?;
+            let result = Self::alloc_value(result, interp)?;
             Ok(Some(result))
         } else {
             Ok(self.0.get(start))
@@ -253,12 +253,12 @@ impl Array {
             args::element_assignment(interp, first, second, third, self.0.len())?;
 
         if let Some(drain) = drain {
-            if let Ok(other) = unsafe { Self::try_from_ruby(interp, &elem) } {
-                self.0.set_slice(start, drain, &other.borrow().0.as_slice());
+            if let Ok(other) = unsafe { Self::unbox_from_value(elem, interp) } {
+                self.0.set_slice(start, drain, other.0.as_slice());
             } else if elem.respond_to(interp, "to_ary")? {
                 let other = elem.funcall(interp, "to_ary", &[], None)?;
-                if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-                    self.0.set_slice(start, drain, &other.borrow().0.as_slice());
+                if let Ok(other) = unsafe { Self::unbox_from_value(other, interp) } {
+                    self.0.set_slice(start, drain, other.0.as_slice());
                 } else {
                     let mut message = String::from("can't convert ");
                     message.push_str(elem.pretty_name(interp));
@@ -296,12 +296,12 @@ impl Array {
     }
 
     pub fn concat(&mut self, interp: &mut Artichoke, other: Value) -> Result<(), Exception> {
-        if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-            self.0.concat(&other.borrow().0);
+        if let Ok(other) = unsafe { Self::unbox_from_value(other, interp) } {
+            self.0.concat(&other.0);
         } else if other.respond_to(interp, "to_ary")? {
             let arr = other.funcall(interp, "to_ary", &[], None)?;
-            if let Ok(other) = unsafe { Self::try_from_ruby(interp, &arr) } {
-                self.0.concat(&other.borrow().0);
+            if let Ok(other) = unsafe { Self::unbox_from_value(arr, interp) } {
+                self.0.concat(&other.0);
             } else {
                 let mut message = String::from("can't convert ");
                 message.push_str(other.pretty_name(interp));
@@ -330,11 +330,5 @@ impl Array {
 
     pub fn reverse(&mut self) {
         self.0.reverse();
-    }
-}
-
-impl RustBackedValue for Array {
-    fn ruby_type_name() -> &'static str {
-        "Array"
     }
 }

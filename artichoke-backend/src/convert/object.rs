@@ -1,6 +1,8 @@
 use std::cell::RefCell;
 use std::ffi::c_void;
-use std::mem;
+use std::fmt;
+use std::mem::{self, ManuallyDrop};
+use std::ops::{Deref, DerefMut};
 use std::ptr;
 use std::rc::Rc;
 
@@ -13,6 +15,70 @@ use crate::sys;
 use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
+
+pub struct Guard<T>(ManuallyDrop<Box<T>>);
+
+impl<T> fmt::Debug for Guard<T>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Guard").field("inner", &self.0).finish()
+    }
+}
+
+impl<T> Guard<T> {
+    pub fn new(value: Box<T>) -> Self {
+        Self(ManuallyDrop::new(value))
+    }
+}
+
+impl<T> Drop for Guard<T> {
+    fn drop(&mut self) {}
+}
+
+impl<T> Deref for Guard<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref()
+    }
+}
+
+impl<T> DerefMut for Guard<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0.as_mut()
+    }
+}
+
+pub trait BoxUnboxVmValue {
+    type Unboxed;
+    type IntoBoxed;
+
+    const RUBY_TYPE: &'static str;
+
+    /// # Safety
+    ///
+    /// Implementations may return owned values. These values must not outlive
+    /// the underlying `mrb_value`, which may be garbage collected by mruby.
+    ///
+    /// The values returned by this method should not be stored for more than
+    /// the current FFI trampoline entrypoint.
+    unsafe fn unbox_from_value(
+        value: Value,
+        interp: &mut Artichoke,
+    ) -> Result<Self::Unboxed, Exception>;
+
+    fn alloc_value(value: Self::IntoBoxed, interp: &mut Artichoke) -> Result<Value, Exception>;
+
+    fn box_into_value(
+        value: Self::IntoBoxed,
+        into: Value,
+        interp: &mut Artichoke,
+    ) -> Result<Value, Exception>;
+
+    fn free(data: *mut c_void);
+}
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].
 ///

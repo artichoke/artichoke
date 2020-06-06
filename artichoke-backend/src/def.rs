@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use crate::class;
 use crate::class_registry::ClassRegistry;
-use crate::convert::RustBackedValue;
+use crate::convert::{BoxUnboxVmValue, RustBackedValue};
 use crate::core::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::{NameError, ScriptError};
@@ -41,7 +41,12 @@ where
     T: 'static + RustBackedValue,
 {
     if data.is_null() {
-        panic!(
+        error!(
+            "Received null pointer in rust_data_free<{}>: {:p}",
+            T::ruby_type_name(),
+            data
+        );
+        eprintln!(
             "Received null pointer in rust_data_free<{}>: {:p}",
             T::ruby_type_name(),
             data
@@ -49,6 +54,25 @@ where
     }
     let data = Rc::from_raw(data as *const RefCell<T>);
     drop(data);
+}
+
+pub unsafe extern "C" fn box_unbox_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void)
+where
+    T: 'static + BoxUnboxVmValue,
+{
+    if data.is_null() {
+        error!(
+            "Received null pointer in box_unbox_free<{}>: {:p}",
+            T::RUBY_TYPE,
+            data
+        );
+        eprintln!(
+            "Received null pointer in box_unbox_free<{}>: {:p}",
+            T::RUBY_TYPE,
+            data
+        );
+    }
+    T::free(data);
 }
 
 #[cfg(test)]

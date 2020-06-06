@@ -239,9 +239,9 @@ impl Regexp {
                     patterns.push(extract_pattern(interp, &value)?);
                 }
                 bstr::join(b"|", patterns)
-            } else if let Ok(ary) = unsafe { Array::try_from_ruby(interp, &first) } {
-                let mut patterns = Vec::with_capacity(ary.borrow().len());
-                for value in &*ary.borrow() {
+            } else if let Ok(ary) = unsafe { Array::unbox_from_value(first, interp) } {
+                let mut patterns = Vec::with_capacity(ary.len());
+                for value in &*ary {
                     patterns.push(extract_pattern(interp, &value)?);
                 }
                 bstr::join(b"|", patterns)
