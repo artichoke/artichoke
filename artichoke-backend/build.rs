@@ -42,10 +42,9 @@ mod buildpath {
 
     pub mod source {
         use std::path::PathBuf;
-        use target_lexicon::Triple;
 
-        pub fn rerun_if_changed(target: &Triple, paths: &mut Vec<PathBuf>) {
-            paths.push(mruby_build_config(target));
+        pub fn rerun_if_changed(paths: &mut Vec<PathBuf>) {
+            paths.push(mruby_build_config());
             paths.push(mruby_bootstrap_gembox());
             paths.push(mruby_bootstrap_gembox());
             paths.push(mruby_noop());
@@ -67,8 +66,7 @@ mod buildpath {
             super::crate_root().join("vendor").join("mruby").join("src")
         }
 
-        pub fn mruby_build_config(target: &Triple) -> PathBuf {
-            let _ = target;
+        pub fn mruby_build_config() -> PathBuf {
             super::crate_root().join("mruby_build_config_null.rb")
         }
 
@@ -340,7 +338,6 @@ mod build {
     use std::fs;
     use std::io;
     use std::path::{Path, PathBuf};
-    use target_lexicon::Triple;
 
     use super::{buildpath, libmruby};
 
@@ -348,7 +345,7 @@ mod build {
         let _ = fs::remove_dir_all(buildpath::build_root());
     }
 
-    pub fn setup_build_root(target: &Triple) {
+    pub fn setup_build_root() {
         fs::create_dir_all(buildpath::build_root()).unwrap();
 
         copy_dir_recursive(
@@ -360,7 +357,7 @@ mod build {
         let _ = fs::remove_file(libmruby::mruby_build_config());
         fs::create_dir_all(libmruby::mruby_build_dir()).unwrap();
         fs::copy(
-            buildpath::source::mruby_build_config(target),
+            buildpath::source::mruby_build_config(),
             libmruby::mruby_build_config(),
         )
         .unwrap();
@@ -372,9 +369,9 @@ mod build {
         fs::copy(buildpath::source::mruby_noop(), libmruby::builder_noop()).unwrap();
     }
 
-    pub fn rerun_if_changed(target: &Triple) {
+    pub fn rerun_if_changed() {
         let mut paths = vec![];
-        buildpath::source::rerun_if_changed(target, &mut paths);
+        buildpath::source::rerun_if_changed(&mut paths);
 
         for path in paths {
             println!("cargo:rerun-if-changed={}", path.to_str().unwrap());
@@ -416,9 +413,10 @@ mod build {
 }
 
 fn main() {
-    let target = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
+    let target = env::var_os("TARGET").unwrap();
+    let target = Triple::from_str(target.to_str().unwrap()).unwrap();
     build::clean();
-    build::rerun_if_changed(&target);
-    build::setup_build_root(&target);
+    build::rerun_if_changed();
+    build::setup_build_root();
     libmruby::build(&target);
 }
