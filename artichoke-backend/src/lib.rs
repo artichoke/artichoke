@@ -155,6 +155,7 @@ pub mod prelude {
     pub use crate::exception::{raise, Exception, RubyException};
     pub use crate::extn::core::exception::{Exception as _, *};
     pub use crate::gc::MrbGarbageCollection;
-    pub use crate::interpreter::interpreter;
+    pub use crate::interpreter::{interpreter, interpreter_with_config};
+    pub use crate::release_metadata::ReleaseMetadata;
     pub use crate::{Artichoke, Guard};
 }

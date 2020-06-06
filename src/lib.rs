@@ -92,7 +92,6 @@ doc_comment::doctest!("../artichoke-core/README.md");
 doc_comment::doctest!("../spec-runner/README.md");
 
 pub use artichoke_backend as backend;
-pub use backend::prelude::interpreter;
 
 pub mod backtrace;
 pub mod parser;
@@ -112,4 +111,21 @@ pub mod ruby;
 /// The prelude may grow over time as additional items see ubiquitous use.
 pub mod prelude {
     pub use artichoke_backend::prelude::*;
+
+    pub use crate::interpreter;
+}
+
+/// Create a new Artichoke Ruby interpreter.
+pub fn interpreter() -> Result<prelude::Artichoke, prelude::Exception> {
+    let release = prelude::ReleaseMetadata::new()
+        .with_ruby_copyright(env!("RUBY_COPYRIGHT"))
+        .with_ruby_description(env!("RUBY_DESCRIPTION"))
+        .with_ruby_engine_version(env!("CARGO_PKG_VERSION"))
+        .with_ruby_patchlevel("0")
+        .with_ruby_platform(env!("RUBY_PLATFORM"))
+        .with_ruby_release_date(env!("RUBY_RELEASE_DATE"))
+        .with_ruby_revision(env!("RUBY_REVISION"))
+        .with_ruby_version("2.6.3") // Artichoke targets MRI Ruby 2.6.3
+        .with_artichoke_compiler_version(Some(env!("ARTICHOKE_COMPILER_VERSION")));
+    prelude::interpreter_with_config(release)
 }
