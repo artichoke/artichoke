@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::ffi::c_void;
 use std::fmt;
+use std::marker::PhantomData;
 use std::mem::{self, ManuallyDrop};
 use std::ops::{Deref, DerefMut};
 use std::ptr;
@@ -16,44 +17,47 @@ use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
 
-pub struct Guard<T>(ManuallyDrop<Box<T>>);
+pub struct UnboxedValueGuard<'a, T> {
+    guarded: ManuallyDrop<Box<T>>,
+    phantom: PhantomData<&'a T>,
+}
 
-impl<T> fmt::Debug for Guard<T>
+impl<'a, T> fmt::Debug for UnboxedValueGuard<'a, T>
 where
     T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Guard").field("inner", &self.0).finish()
+        f.debug_struct("UnboxedValueGuard")
+            .field("guarded", &self.guarded)
+            .finish()
     }
 }
 
-impl<T> Guard<T> {
+impl<'a, T> UnboxedValueGuard<'a, T> {
     pub fn new(value: Box<T>) -> Self {
-        Self(ManuallyDrop::new(value))
+        Self {
+            guarded: ManuallyDrop::new(value),
+            phantom: PhantomData,
+        }
     }
 }
 
-impl<T> Drop for Guard<T> {
-    fn drop(&mut self) {}
-}
-
-impl<T> Deref for Guard<T> {
+impl<'a, T> Deref for UnboxedValueGuard<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        self.0.as_ref()
+        self.guarded.as_ref()
     }
 }
 
-impl<T> DerefMut for Guard<T> {
+impl<'a, T> DerefMut for UnboxedValueGuard<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.0.as_mut()
+        self.guarded.as_mut()
     }
 }
 
 pub trait BoxUnboxVmValue {
     type Unboxed;
-    type IntoBoxed;
 
     const RUBY_TYPE: &'static str;
 
@@ -64,15 +68,15 @@ pub trait BoxUnboxVmValue {
     ///
     /// The values returned by this method should not be stored for more than
     /// the current FFI trampoline entrypoint.
-    unsafe fn unbox_from_value(
-        value: Value,
+    unsafe fn unbox_from_value<'a>(
+        value: &'a mut Value,
         interp: &mut Artichoke,
-    ) -> Result<Self::Unboxed, Exception>;
+    ) -> Result<UnboxedValueGuard<'a, Self::Unboxed>, Exception>;
 
-    fn alloc_value(value: Self::IntoBoxed, interp: &mut Artichoke) -> Result<Value, Exception>;
+    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Exception>;
 
     fn box_into_value(
-        value: Self::IntoBoxed,
+        value: Self::Unboxed,
         into: Value,
         interp: &mut Artichoke,
     ) -> Result<Value, Exception>;

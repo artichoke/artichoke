@@ -230,7 +230,7 @@ impl Regexp {
             }
         }
         let mut iter = patterns.into_iter();
-        let pattern = if let Some(first) = iter.next() {
+        let pattern = if let Some(mut first) = iter.next() {
             if let Some(second) = iter.next() {
                 let mut patterns = vec![];
                 patterns.push(extract_pattern(interp, &first)?);
@@ -239,7 +239,7 @@ impl Regexp {
                     patterns.push(extract_pattern(interp, &value)?);
                 }
                 bstr::join(b"|", patterns)
-            } else if let Ok(ary) = unsafe { Array::unbox_from_value(first, interp) } {
+            } else if let Ok(ary) = unsafe { Array::unbox_from_value(&mut first, interp) } {
                 let mut patterns = Vec::with_capacity(ary.len());
                 for value in &*ary {
                     patterns.push(extract_pattern(interp, &value)?);

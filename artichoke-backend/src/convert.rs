@@ -20,7 +20,7 @@ mod nilable;
 mod object;
 mod string;
 
-pub use object::{BoxUnboxVmValue, Guard, RustBackedValue};
+pub use object::{BoxUnboxVmValue, RustBackedValue, UnboxedValueGuard};
 
 /// Provide a fallible converter for types that implement an infallible
 /// conversion.

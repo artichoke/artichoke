@@ -154,12 +154,12 @@ impl Array {
         second: Option<Value>,
         block: Option<Block>,
     ) -> Result<Self, Exception> {
-        let result = if let Some(first) = first {
-            if let Ok(ary) = unsafe { Self::unbox_from_value(first, interp) } {
+        let result = if let Some(mut first) = first {
+            if let Ok(ary) = unsafe { Self::unbox_from_value(&mut first, interp) } {
                 ary.0.clone()
             } else if first.respond_to(interp, "to_ary")? {
-                let other = first.funcall(interp, "to_ary", &[], None)?;
-                if let Ok(other) = unsafe { Self::unbox_from_value(other, interp) } {
+                let mut other = first.funcall(interp, "to_ary", &[], None)?;
+                if let Ok(other) = unsafe { Self::unbox_from_value(&mut other, interp) } {
                     other.0.clone()
                 } else {
                     let mut message = String::from("can't convert ");
@@ -249,15 +249,15 @@ impl Array {
         second: Value,
         third: Option<Value>,
     ) -> Result<Value, Exception> {
-        let (start, drain, elem) =
+        let (start, drain, mut elem) =
             args::element_assignment(interp, first, second, third, self.0.len())?;
 
         if let Some(drain) = drain {
-            if let Ok(other) = unsafe { Self::unbox_from_value(elem, interp) } {
+            if let Ok(other) = unsafe { Self::unbox_from_value(&mut elem, interp) } {
                 self.0.set_slice(start, drain, other.0.as_slice());
             } else if elem.respond_to(interp, "to_ary")? {
-                let other = elem.funcall(interp, "to_ary", &[], None)?;
-                if let Ok(other) = unsafe { Self::unbox_from_value(other, interp) } {
+                let mut other = elem.funcall(interp, "to_ary", &[], None)?;
+                if let Ok(other) = unsafe { Self::unbox_from_value(&mut other, interp) } {
                     self.0.set_slice(start, drain, other.0.as_slice());
                 } else {
                     let mut message = String::from("can't convert ");
@@ -295,12 +295,12 @@ impl Array {
         self.0.set_slice(start, drain, with)
     }
 
-    pub fn concat(&mut self, interp: &mut Artichoke, other: Value) -> Result<(), Exception> {
-        if let Ok(other) = unsafe { Self::unbox_from_value(other, interp) } {
+    pub fn concat(&mut self, interp: &mut Artichoke, mut other: Value) -> Result<(), Exception> {
+        if let Ok(other) = unsafe { Self::unbox_from_value(&mut other, interp) } {
             self.0.concat(&other.0);
         } else if other.respond_to(interp, "to_ary")? {
-            let arr = other.funcall(interp, "to_ary", &[], None)?;
-            if let Ok(other) = unsafe { Self::unbox_from_value(arr, interp) } {
+            let mut arr = other.funcall(interp, "to_ary", &[], None)?;
+            if let Ok(other) = unsafe { Self::unbox_from_value(&mut arr, interp) } {
                 self.0.concat(&other.0);
             } else {
                 let mut message = String::from("can't convert ");

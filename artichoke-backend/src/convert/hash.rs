@@ -82,8 +82,8 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
             let hash = value.inner();
             let keys = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_keys(mrb, hash))? };
 
-            let keys = Value::from(keys);
-            let array = unsafe { Array::unbox_from_value(keys, self) }?;
+            let mut keys = Value::from(keys);
+            let array = unsafe { Array::unbox_from_value(&mut keys, self) }?;
 
             let mut pairs = Vec::with_capacity(array.len());
             for key in &*array {

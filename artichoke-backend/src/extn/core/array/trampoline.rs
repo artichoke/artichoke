@@ -1,22 +1,21 @@
 use std::ffi::c_void;
 use std::ptr;
 
-use crate::convert::Guard as ValueGuard;
+use crate::convert::UnboxedValueGuard;
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
 use crate::sys;
 
 impl BoxUnboxVmValue for Array {
-    type Unboxed = ValueGuard<Array>;
-    type IntoBoxed = Array;
+    type Unboxed = Array;
 
     const RUBY_TYPE: &'static str = "Array";
 
-    unsafe fn unbox_from_value(
-        value: Value,
+    unsafe fn unbox_from_value<'a>(
+        value: &'a mut Value,
         interp: &mut Artichoke,
-    ) -> Result<Self::Unboxed, Exception> {
+    ) -> Result<UnboxedValueGuard<'a, Self::Unboxed>, Exception> {
         // Make sure we have a Data otherwise extraction will fail.
         if value.ruby_type() != Ruby::Data {
             let mut message = String::from("uninitialized ");
@@ -53,10 +52,10 @@ impl BoxUnboxVmValue for Array {
         let value = Box::from_raw(ptr as *mut Self);
         // The underlying basic `ptr` and associated `free` function will be called by the GC.
         // The returned `Box` must not be stored.
-        Ok(ValueGuard::new(value))
+        Ok(UnboxedValueGuard::new(value))
     }
 
-    fn alloc_value(value: Self::IntoBoxed, interp: &mut Artichoke) -> Result<Value, Exception> {
+    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Exception> {
         // Disable the GC to prevent a collection cycle from re-entering into
         // Rust code while the `State` is moved out of the `mrb`.
         //
@@ -114,7 +113,7 @@ impl BoxUnboxVmValue for Array {
     }
 
     fn box_into_value(
-        value: Self::IntoBoxed,
+        value: Self::Unboxed,
         into: Value,
         interp: &mut Artichoke,
     ) -> Result<Value, Exception> {
@@ -142,32 +141,32 @@ impl BoxUnboxVmValue for Array {
     }
 }
 
-pub fn clear(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let mut array = unsafe { Array::unbox_from_value(ary, interp)? };
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.clear();
     Ok(ary)
 }
 
 pub fn element_reference(
     interp: &mut Artichoke,
-    ary: Value,
+    mut ary: Value,
     first: Value,
     second: Option<Value>,
 ) -> Result<Value, Exception> {
-    let array = unsafe { Array::unbox_from_value(ary, interp)? };
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let elem = array.element_reference(interp, first, second)?;
     Ok(interp.convert(elem))
 }
 
 pub fn element_assignment(
     interp: &mut Artichoke,
-    ary: Value,
+    mut ary: Value,
     first: Value,
     second: Value,
     third: Option<Value>,
@@ -182,7 +181,7 @@ pub fn element_assignment(
     if ary == first || ary == second || Some(ary) == third {
         return Ok(Value::nil());
     }
-    let mut array = unsafe { Array::unbox_from_value(ary, interp)? };
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
     let prior_gc_state = interp.disable_gc();
 
@@ -194,21 +193,21 @@ pub fn element_assignment(
     result
 }
 
-pub fn pop(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let mut array = unsafe { Array::unbox_from_value(ary, interp)? };
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = array.pop();
     Ok(interp.convert(result))
 }
 
 pub fn concat(
     interp: &mut Artichoke,
-    ary: Value,
+    mut ary: Value,
     other: Option<Value>,
 ) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
@@ -218,38 +217,38 @@ pub fn concat(
         )));
     }
     if let Some(other) = other {
-        let mut array = unsafe { Array::unbox_from_value(ary, interp)? };
+        let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
         array.concat(interp, other)?;
     }
     Ok(ary)
 }
 
-pub fn push(interp: &mut Artichoke, ary: Value, value: Value) -> Result<Value, Exception> {
+pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let mut array = unsafe { Array::unbox_from_value(ary, interp)? };
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.push(value);
     Ok(ary)
 }
 
-pub fn reverse_bang(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let mut array = unsafe { Array::unbox_from_value(ary, interp)? };
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.reverse();
     Ok(ary)
 }
 
-pub fn len(interp: &mut Artichoke, ary: Value) -> Result<usize, Exception> {
-    let array = unsafe { Array::unbox_from_value(ary, interp)? };
+pub fn len(interp: &mut Artichoke, mut ary: Value) -> Result<usize, Exception> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     Ok(array.len())
 }
 
@@ -267,9 +266,9 @@ pub fn initialize(
 pub fn initialize_copy(
     interp: &mut Artichoke,
     ary: Value,
-    from: Value,
+    mut from: Value,
 ) -> Result<Value, Exception> {
-    let from = unsafe { Array::unbox_from_value(from, interp)? };
+    let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
     let result = from.clone();
     Array::box_into_value(result, ary, interp)
 }

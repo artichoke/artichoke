@@ -87,8 +87,8 @@ unsafe extern "C" fn artichoke_ary_splat(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let value = Value::from(value);
-    let result = if Array::unbox_from_value(value, &mut guard).is_ok() {
+    let mut value = Value::from(value);
+    let result = if Array::unbox_from_value(&mut value, &mut guard).is_ok() {
         Ok(value)
     } else {
         let mut result = Array::with_capacity(1);
@@ -110,9 +110,9 @@ unsafe extern "C" fn artichoke_ary_concat(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
+    let mut ary = Value::from(ary);
     let other = Value::from(other);
-    let result = if let Ok(mut array) = Array::unbox_from_value(ary, &mut guard) {
+    let result = if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
         let prior_gc_state = guard.disable_gc();
 
         let result = array.concat(&mut guard, other);
@@ -142,8 +142,8 @@ unsafe extern "C" fn artichoke_ary_pop(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
-    let result = if let Ok(mut array) = Array::unbox_from_value(ary, &mut guard) {
+    let mut ary = Value::from(ary);
+    let result = if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
         guard.convert(array.pop())
     } else {
         Value::nil()
@@ -162,9 +162,9 @@ unsafe extern "C" fn artichoke_ary_push(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
+    let mut ary = Value::from(ary);
     let value = Value::from(value);
-    if let Ok(mut array) = Array::unbox_from_value(ary, &mut guard) {
+    if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
         array.push(value);
     }
     let basic = sys::mrb_sys_basic_ptr(ary.inner());
@@ -181,9 +181,9 @@ unsafe extern "C" fn artichoke_ary_ref(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
+    let mut ary = Value::from(ary);
     let offset = usize::try_from(offset).unwrap_or_default();
-    let result = if let Ok(array) = Array::unbox_from_value(ary, &mut guard) {
+    let result = if let Ok(array) = Array::unbox_from_value(&mut ary, &mut guard) {
         guard.convert(array.get(offset))
     } else {
         Value::nil()
@@ -201,9 +201,9 @@ unsafe extern "C" fn artichoke_ary_set(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
+    let mut array = Value::from(ary);
     let value = Value::from(value);
-    if let Ok(mut array) = Array::unbox_from_value(ary, &mut guard) {
+    if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let offset = if let Ok(offset) = usize::try_from(offset) {
             offset
         } else {
@@ -219,11 +219,11 @@ unsafe extern "C" fn artichoke_ary_set(
             }
         };
         // TODO: properly handle self-referential sets.
-        if ary != value {
+        if Value::from(ary) != value {
             array.set(offset, value);
         }
     }
-    let basic = sys::mrb_sys_basic_ptr(ary.inner());
+    let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
     value.inner()
 }
@@ -235,8 +235,8 @@ unsafe extern "C" fn artichoke_ary_shift(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let array = Value::from(ary);
-    let result = if let Ok(mut array) = Array::unbox_from_value(array, &mut guard) {
+    let mut array = Value::from(ary);
+    let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let result = array.get(0);
         let _ = array.set_slice(0, 1, &[]);
         guard.convert(result)
@@ -256,9 +256,9 @@ unsafe extern "C" fn artichoke_ary_unshift(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let array = Value::from(ary);
+    let mut array = Value::from(ary);
     let value = Value::from(value);
-    if let Ok(mut array) = Array::unbox_from_value(array, &mut guard) {
+    if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let _ = array.set_with_drain(0, 0, value);
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
@@ -273,8 +273,8 @@ unsafe extern "C" fn artichoke_ary_len(
 ) -> sys::mrb_int {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
-    if let Ok(array) = Array::unbox_from_value(ary, &mut guard) {
+    let mut ary = Value::from(ary);
+    if let Ok(array) = Array::unbox_from_value(&mut ary, &mut guard) {
         Int::try_from(array.len()).unwrap_or_default()
     } else {
         0
@@ -289,8 +289,8 @@ unsafe extern "C" fn artichoke_ary_set_len(
 ) {
     let mut interp = unwrap_interpreter!(mrb, or_else = ());
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
-    if let Ok(mut array) = Array::unbox_from_value(ary, &mut guard) {
+    let mut ary = Value::from(ary);
+    if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
         let len = usize::try_from(len).unwrap_or_default();
         array.0.set_len(len);
     }
@@ -303,8 +303,8 @@ unsafe extern "C" fn artichoke_ary_ptr(
 ) -> *mut sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb, or_else = ptr::null_mut());
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
-    if let Ok(mut array) = Array::unbox_from_value(ary, &mut guard) {
+    let mut ary = Value::from(ary);
+    if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
         array.0.as_mut_ptr()
     } else {
         ptr::null_mut()
@@ -318,8 +318,8 @@ unsafe extern "C" fn artichoke_ary_check(
 ) -> sys::mrb_bool {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let mut guard = Guard::new(&mut interp);
-    let ary = Value::from(ary);
-    if Array::unbox_from_value(ary, &mut guard).is_ok() {
+    let mut ary = Value::from(ary);
+    if Array::unbox_from_value(&mut ary, &mut guard).is_ok() {
         1
     } else {
         0
@@ -330,8 +330,8 @@ unsafe extern "C" fn artichoke_ary_check(
 unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::mrb_value) {
     let mut interp = unwrap_interpreter!(mrb, or_else = ());
     let mut guard = Guard::new(&mut interp);
-    let array = Value::from(ary);
-    if let Ok(array) = Array::unbox_from_value(array, &mut guard) {
+    let mut array = Value::from(ary);
+    if let Ok(array) = Array::unbox_from_value(&mut array, &mut guard) {
         array.gc_mark(&mut guard);
     }
 }
@@ -343,8 +343,8 @@ unsafe extern "C" fn artichoke_gc_mark_ary_size(
 ) -> usize {
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let mut guard = Guard::new(&mut interp);
-    let array = Value::from(ary);
-    if let Ok(array) = Array::unbox_from_value(array, &mut guard) {
+    let mut array = Value::from(ary);
+    if let Ok(array) = Array::unbox_from_value(&mut array, &mut guard) {
         array.real_children()
     } else {
         0
