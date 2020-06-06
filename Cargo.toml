@@ -14,7 +14,7 @@ conditional compilation of the VM and standard library. Artichoke can be used to
 distribute Ruby applications as single-binary artifacts. Artichoke builds on
 Windows, macOS, and Linux, as well as WebAssembly via Emscripten.
 """
-keywords = ["artichoke", "mri", "cruby", "ruby"]
+keywords = ["artichoke", "artichoke-ruby", "mri", "cruby", "ruby"]
 categories = ["command-line-utilities"]
 
 [dependencies]
@@ -34,7 +34,11 @@ target-lexicon = "0.11.0"
 doc-comment = "0.3"
 
 [workspace]
-members = ["artichoke-backend", "artichoke-core", "spec-runner"]
+members = [
+  "artichoke-backend",
+  "artichoke-core",
+  "spec-runner"
+]
 
 [profile.release]
 codegen-units = 1
@@ -49,11 +53,28 @@ default = [
   "native-filesystem-access",
   "stdlib-securerandom"
 ]
+# Enable resolving environment variables with the `ENV` core object using native
+# OS environ. This feature replaces the in-memory backend with `std::env`.
 core-env-system = ["artichoke-backend/core-env-system"]
+# Enable an extra dependency on `libm` to implement some `Math` core APIs for
+# functions not present in `std`.
 core-math-extra = ["artichoke-backend/core-math-extra"]
+# Implement the `Random` core class and add an interpreter-default PRNG to
+# Artichoke. This feature adds dependencies on `rand_core` and `rand_pcg`.
 core-random = ["artichoke-backend/core-random"]
+# Enable an oniguruma engine backend to the `Regexp` core class. With this
+# feature, Regexp patterns must be parsable by oniguruma regardless of the
+# backend they execute on. The `regex` crate backend remains the default as long
+# as it can parse the given pattern.
 core-regexp-oniguruma = ["artichoke-backend/core-regexp-oniguruma"]
+# Extend the Artichoke virtual filesystem to have native/host access.
+# This feature enables requiring sources from local disk.
 native-filesystem-access = ["artichoke-backend/native-filesystem-access"]
+# Override the `stdout` and `stdin` streams to write to an in-memory buffer.
 output-strategy-capture = ["artichoke-backend/output-strategy-capture"]
+# Override the `stdout` and `stdin` streams to write to be discarded.
+# `output-strategy-null` implies the `output-strategy-capture` feature.
 output-strategy-null = ["artichoke-backend/output-strategy-null"]
+# Implement the `SecureRandom` Standard Library package. This feature adds
+# dependencies on `base64`, `hex`, `rand`, `rand_core`, and `uuid`.
 stdlib-securerandom = ["artichoke-backend/stdlib-securerandom"]
