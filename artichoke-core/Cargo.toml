@@ -10,3 +10,6 @@ license = "MIT"
 keywords = ["artichoke", "artichoke-ruby", "ruby"]
 
 [dependencies]
+
+[dev-dependencies]
+doc-comment = "0.3"

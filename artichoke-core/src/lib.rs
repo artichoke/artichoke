@@ -33,6 +33,9 @@
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
+
 pub mod constant;
 pub mod convert;
 pub mod eval;

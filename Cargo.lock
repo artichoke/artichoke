@@ -41,6 +41,7 @@ dependencies = [
  "bstr",
  "cc",
  "chrono",
+ "doc-comment",
  "dtoa",
  "hex",
  "itoa",
@@ -62,6 +63,9 @@ dependencies = [
 [[package]]
 name = "artichoke-core"
 version = "0.1.0"
+dependencies = [
+ "doc-comment",
+]
 
 [[package]]
 name = "atty"
