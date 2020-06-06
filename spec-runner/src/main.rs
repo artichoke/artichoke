@@ -59,7 +59,7 @@
 #[macro_use]
 extern crate rust_embed;
 
-use artichoke_backend::prelude::core::*;
+use artichoke::prelude::core::*;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
@@ -112,7 +112,7 @@ pub fn try_main(config: &Path) -> Result<bool, Box<dyn Error>> {
     let config = str::from_utf8(config.as_slice())?;
     let config = serde_yaml::from_str::<model::Config>(config)?;
 
-    let mut interp = artichoke_backend::interpreter()?;
+    let mut interp = artichoke::interpreter()?;
 
     rubyspec::init(&mut interp)?;
     let mut specs = vec![];

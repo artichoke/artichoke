@@ -2,8 +2,8 @@
 
 use std::path::Path;
 
-use artichoke_backend::prelude::core::*;
-use artichoke_backend::prelude::*;
+use artichoke::prelude::core::*;
+use artichoke::prelude::*;
 
 /// Load `MSpec` sources into the Artichoke virtual filesystem.
 ///
@@ -52,7 +52,7 @@ mod tests {
     // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn mspec_framework_loads() {
-        let mut interp = artichoke_backend::interpreter().unwrap();
+        let mut interp = artichoke::interpreter().unwrap();
         super::init(&mut interp).unwrap();
         // should not panic
         assert!(super::run(&mut interp, vec![]).unwrap());
