@@ -110,7 +110,7 @@ fn revision_count() -> Option<usize> {
 }
 
 fn platform(target: &Triple) -> String {
-    format!("{}-{}", target.architecture, target.operating_system)
+    target.to_string()
 }
 
 fn copyright(birth_date: Date, build_date: Date) -> String {
