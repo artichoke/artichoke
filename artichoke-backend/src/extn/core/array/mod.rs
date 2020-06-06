@@ -4,6 +4,7 @@ use std::iter::FromIterator;
 use crate::extn::prelude::*;
 
 pub mod args;
+mod boxing;
 mod ffi;
 mod inline_buffer;
 pub mod mruby;
