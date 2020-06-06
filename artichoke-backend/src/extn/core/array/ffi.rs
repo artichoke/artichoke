@@ -223,7 +223,7 @@ unsafe extern "C" fn artichoke_ary_set(
         // TODO: properly handle self-referential sets.
         if ary != value {
             let mut borrow = array.borrow_mut();
-            borrow.set(offset, value.clone());
+            borrow.set(offset, value);
         }
     }
     let basic = sys::mrb_sys_basic_ptr(ary.inner());
