@@ -27,6 +27,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
 /// This function takes a customizable configuration for embedding metadata
 /// about how Artichoke was built. Otherwise, it behaves identically to the
 /// [`interpreter`] function.
+#[allow(clippy::module_name_repetitions)]
 pub fn interpreter_with_config<T>(config: T) -> Result<Artichoke, Exception>
 where
     T: ReleaseMetadata,

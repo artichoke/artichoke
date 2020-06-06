@@ -74,55 +74,66 @@ impl<'a> core::ReleaseMetadata for ReleaseMetadata<'a> {
 }
 
 impl<'a> ReleaseMetadata<'a> {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn with_ruby_copyright(mut self, copyright: &'a str) -> Self {
         self.copyright = copyright;
         self
     }
 
+    #[must_use]
     pub fn with_ruby_description(mut self, description: &'a str) -> Self {
         self.description = description;
         self
     }
 
+    #[must_use]
     pub fn with_ruby_engine(mut self, engine: &'a str) -> Self {
         self.engine = engine;
         self
     }
 
+    #[must_use]
     pub fn with_ruby_engine_version(mut self, engine_version: &'a str) -> Self {
         self.engine_version = engine_version;
         self
     }
 
+    #[must_use]
     pub fn with_ruby_patchlevel(mut self, patchlevel: &'a str) -> Self {
         self.patchlevel = patchlevel;
         self
     }
 
+    #[must_use]
     pub fn with_ruby_platform(mut self, platform: &'a str) -> Self {
         self.platform = platform;
         self
     }
 
+    #[must_use]
     pub fn with_ruby_release_date(mut self, release_date: &'a str) -> Self {
         self.release_date = release_date;
         self
     }
 
+    #[must_use]
     pub fn with_ruby_revision(mut self, revision: &'a str) -> Self {
         self.revision = revision;
         self
     }
 
+    #[must_use]
     pub fn with_ruby_version(mut self, ruby_version: &'a str) -> Self {
         self.ruby_version = ruby_version;
         self
     }
 
+    #[must_use]
     pub fn with_artichoke_compiler_version(mut self, compiler_version: Option<&'a str>) -> Self {
         self.compiler_version = compiler_version;
         self

@@ -118,6 +118,14 @@ pub mod prelude {
 pub use artichoke_backend::{Artichoke, Exception};
 
 /// Create a new Artichoke Ruby interpreter.
+///
+/// # Errors
+///
+/// If the underlying Artichoke VM backend cannot be initialized, an error is
+/// returned.
+///
+/// If Artichoke Ruby Core or Standard Library cannot be initialized, an error
+/// is returned.
 pub fn interpreter() -> Result<Artichoke, Exception> {
     let release = prelude::ReleaseMetadata::new()
         .with_ruby_copyright(env!("RUBY_COPYRIGHT"))
