@@ -122,6 +122,7 @@ mod parser;
 #[cfg(feature = "core-random")]
 mod prng;
 mod regexp;
+pub mod release_metadata;
 pub mod state;
 pub mod string;
 pub mod sys;
@@ -134,7 +135,8 @@ mod warn;
 mod test;
 
 pub use crate::artichoke::{Artichoke, Guard};
-pub use crate::interpreter::interpreter;
+pub use crate::exception::{Exception, RubyException};
+pub use crate::interpreter::{interpreter, interpreter_with_config};
 pub use artichoke_core::prelude as core;
 
 /// A "prelude" for users of the `artichoke-backend` crate.
@@ -154,6 +156,7 @@ pub mod prelude {
     pub use crate::exception::{raise, Exception, RubyException};
     pub use crate::extn::core::exception::{Exception as _, *};
     pub use crate::gc::MrbGarbageCollection;
-    pub use crate::interpreter::interpreter;
+    pub use crate::interpreter::{interpreter, interpreter_with_config};
+    pub use crate::release_metadata::ReleaseMetadata;
     pub use crate::{Artichoke, Guard};
 }

@@ -44,6 +44,7 @@ pub mod load;
 pub mod parser;
 pub mod prng;
 pub mod regexp;
+pub mod release_metadata;
 pub mod top_self;
 pub mod types;
 pub mod value;
@@ -72,6 +73,7 @@ pub mod prelude {
     pub use crate::parser::{IncrementLinenoError, Parser};
     pub use crate::prng::Prng;
     pub use crate::regexp::Regexp;
+    pub use crate::release_metadata::ReleaseMetadata;
     pub use crate::top_self::TopSelf;
     pub use crate::types::{Ruby, Rust};
     pub use crate::value::Value;

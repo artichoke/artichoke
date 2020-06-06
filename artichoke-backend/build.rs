@@ -42,10 +42,9 @@ mod buildpath {
 
     pub mod source {
         use std::path::PathBuf;
-        use target_lexicon::Triple;
 
-        pub fn rerun_if_changed(target: &Triple, paths: &mut Vec<PathBuf>) {
-            paths.push(mruby_build_config(target));
+        pub fn rerun_if_changed(paths: &mut Vec<PathBuf>) {
+            paths.push(mruby_build_config());
             paths.push(mruby_bootstrap_gembox());
             paths.push(mruby_bootstrap_gembox());
             paths.push(mruby_noop());
@@ -67,8 +66,7 @@ mod buildpath {
             super::crate_root().join("vendor").join("mruby").join("src")
         }
 
-        pub fn mruby_build_config(target: &Triple) -> PathBuf {
-            let _ = target;
+        pub fn mruby_build_config() -> PathBuf {
             super::crate_root().join("mruby_build_config_null.rb")
         }
 
@@ -336,135 +334,10 @@ mod libmruby {
     }
 }
 
-mod release {
-    use chrono::prelude::*;
-    use std::env;
-    use std::ffi::OsString;
-    use std::fmt;
-    use std::process::Command;
-    use std::str;
-    use target_lexicon::Triple;
-
-    pub fn build(target: &Triple) {
-        let version = env::var("CARGO_PKG_VERSION").unwrap();
-        let birth_date = birthdate();
-        let build_date = Utc::now();
-        let release_date = Utc.timestamp(build_date.timestamp(), 0).date();
-        let revision_count = revision_count();
-        let platform = platform(target);
-        let copyright = copyright(birth_date, build_date);
-        let description = description(
-            version.as_str(),
-            release_date,
-            revision_count,
-            platform.as_str(),
-        );
-
-        emit("RUBY_RELEASE_DATE", release_date.naive_utc());
-        emit("RUBY_RELEASE_YEAR", build_date.year());
-        emit("RUBY_RELEASE_MONTH", build_date.month());
-        emit("RUBY_RELEASE_DAY", build_date.day());
-        emit("RUBY_REVISION", revision_count.unwrap_or(0));
-        emit("RUBY_PLATFORM", platform);
-        emit("RUBY_COPYRIGHT", copyright);
-        emit("RUBY_DESCRIPTION", description);
-        emit(
-            "ARTICHOKE_COMPILER_VERSION",
-            compiler_version().unwrap_or_else(String::new),
-        );
-    }
-
-    fn emit<T>(env: &str, value: T)
-    where
-        T: fmt::Display,
-    {
-        println!("cargo:rustc-env={}={}", env, value);
-    }
-
-    fn birthdate() -> Option<DateTime<Utc>> {
-        // $ git show -s --format="%ct" db318759dad41686be679c87c349fcb5ff0a396c
-        // 1554600621
-        // $ git show -s --format="%ci" db318759dad41686be679c87c349fcb5ff0a396c
-        // 2019-04-06 18:30:21 -0700
-        // $ git rev-list --count db318759dad41686be679c87c349fcb5ff0a396c
-        // 1
-        let time = 1_554_600_621;
-        Some(Utc.timestamp(time, 0))
-    }
-
-    fn revision_count() -> Option<usize> {
-        let cmd = OsString::from("git");
-        let revision_count = Command::new(cmd)
-            .arg("rev-list")
-            .arg("count")
-            .arg("HEAD")
-            .output()
-            .ok()?;
-        String::from_utf8(revision_count.stdout)
-            .ok()?
-            .trim()
-            .parse()
-            .ok()
-    }
-
-    fn platform(target: &Triple) -> String {
-        format!("{}-{}", target.architecture, target.operating_system)
-    }
-
-    fn copyright(birth_date: Option<DateTime<Utc>>, build_date: DateTime<Utc>) -> String {
-        match birth_date {
-            Some(birth) if birth.year() == build_date.year() => format!(
-                "Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
-                birth.year()
-            ),
-            Some(birth) => format!(
-                "Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
-                birth.year(),
-                build_date.year()
-            ),
-            None => format!(
-                "Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
-                build_date.year()
-            ),
-        }
-    }
-
-    fn description(
-        version: &str,
-        release_date: Date<Utc>,
-        revision_count: Option<usize>,
-        platform: &str,
-    ) -> String {
-        if let Some(revision_count) = revision_count {
-            format!(
-                "artichoke {} ({} revision {}) [{}]",
-                version,
-                release_date.naive_utc(),
-                revision_count,
-                platform
-            )
-        } else {
-            format!(
-                "artichoke {} ({}) [{}]",
-                version,
-                release_date.naive_utc(),
-                platform
-            )
-        }
-    }
-
-    fn compiler_version() -> Option<String> {
-        let cmd = env::var_os("RUSTC").unwrap_or_else(|| OsString::from("rustc"));
-        let compiler_version = Command::new(cmd).arg("-V").output().ok()?;
-        String::from_utf8(compiler_version.stdout).ok()
-    }
-}
-
 mod build {
     use std::fs;
     use std::io;
     use std::path::{Path, PathBuf};
-    use target_lexicon::Triple;
 
     use super::{buildpath, libmruby};
 
@@ -472,7 +345,7 @@ mod build {
         let _ = fs::remove_dir_all(buildpath::build_root());
     }
 
-    pub fn setup_build_root(target: &Triple) {
+    pub fn setup_build_root() {
         fs::create_dir_all(buildpath::build_root()).unwrap();
 
         copy_dir_recursive(
@@ -484,7 +357,7 @@ mod build {
         let _ = fs::remove_file(libmruby::mruby_build_config());
         fs::create_dir_all(libmruby::mruby_build_dir()).unwrap();
         fs::copy(
-            buildpath::source::mruby_build_config(target),
+            buildpath::source::mruby_build_config(),
             libmruby::mruby_build_config(),
         )
         .unwrap();
@@ -496,9 +369,9 @@ mod build {
         fs::copy(buildpath::source::mruby_noop(), libmruby::builder_noop()).unwrap();
     }
 
-    pub fn rerun_if_changed(target: &Triple) {
+    pub fn rerun_if_changed() {
         let mut paths = vec![];
-        buildpath::source::rerun_if_changed(target, &mut paths);
+        buildpath::source::rerun_if_changed(&mut paths);
 
         for path in paths {
             println!("cargo:rerun-if-changed={}", path.to_str().unwrap());
@@ -513,7 +386,11 @@ mod build {
         let mut stack = vec![PathBuf::from(from.as_ref())];
         let dest_root = PathBuf::from(to.as_ref());
         let input_root_depth = from.as_ref().components().count();
-        println!("copying {:?} -> {:?}", from.as_ref(), to.as_ref());
+        println!(
+            "copying {} -> {}",
+            from.as_ref().display(),
+            to.as_ref().display()
+        );
 
         while let Some(from) = stack.pop() {
             let dest = from.components().skip(input_root_depth);
@@ -527,10 +404,9 @@ mod build {
                     stack.push(path);
                 } else if let Some(filename) = path.file_name() {
                     let dest = dest.as_path().join(filename);
-                    println!("  copy: {:?} -> {:?}", path, dest);
                     fs::copy(&path, &dest)?;
                 } else {
-                    eprintln!("failed: {:?}", path);
+                    eprintln!("failed to copy: {}", path.display());
                 }
             }
         }
@@ -540,10 +416,10 @@ mod build {
 }
 
 fn main() {
-    let target = Triple::from_str(env::var("TARGET").unwrap().as_str()).unwrap();
+    let target = env::var_os("TARGET").unwrap();
+    let target = Triple::from_str(target.to_str().unwrap()).unwrap();
     build::clean();
-    build::rerun_if_changed(&target);
-    build::setup_build_root(&target);
+    build::rerun_if_changed();
+    build::setup_build_root();
     libmruby::build(&target);
-    release::build(&target);
 }

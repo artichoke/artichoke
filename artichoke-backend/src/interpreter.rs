@@ -3,11 +3,12 @@ use std::fmt;
 use std::ptr::NonNull;
 
 use crate::class_registry::ClassRegistry;
-use crate::core::{ConvertMut, Eval};
+use crate::core::{ConvertMut, Eval, ReleaseMetadata};
 use crate::exception::{Exception, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
 use crate::gc::{MrbGarbageCollection, State as GcState};
+use crate::release_metadata::ReleaseMetadata as ArtichokeBackendReleaseMetadata;
 use crate::state::State;
 use crate::sys;
 use crate::Artichoke;
@@ -18,6 +19,19 @@ use crate::Artichoke;
 /// initializes an [in memory virtual filesystem](crate::fs), and loads the
 /// [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, Exception> {
+    interpreter_with_config(ArtichokeBackendReleaseMetadata::default())
+}
+
+/// Create and initialize an [`Artichoke`] interpreter.
+///
+/// This function takes a customizable configuration for embedding metadata
+/// about how Artichoke was built. Otherwise, it behaves identically to the
+/// [`interpreter`] function.
+#[allow(clippy::module_name_repetitions)]
+pub fn interpreter_with_config<T>(config: T) -> Result<Artichoke, Exception>
+where
+    T: ReleaseMetadata,
+{
     let raw = unsafe { sys::mrb_open() };
     debug!("Try initializing mrb interpreter");
 
@@ -39,7 +53,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
 
     // Initialize Artichoke Core and Standard Library runtime
     debug!("Begin initializing Artichoke Core and Standard Library");
-    extn::init(&mut interp, "mruby")?;
+    extn::init(&mut interp, config)?;
     debug!("Succeeded initializing Artichoke Core and Standard Library");
 
     // Load mrbgems

@@ -16,5 +16,5 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 structopt = "0.3"
 
-[dependencies.artichoke-backend]
-path = "../artichoke-backend"
+[dependencies.artichoke]
+path = ".."
