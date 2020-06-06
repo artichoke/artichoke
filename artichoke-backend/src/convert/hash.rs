@@ -27,17 +27,19 @@ impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
     }
 }
 
-impl ConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Value {
+impl TryConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Result<Value, Self::Error> {
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
         let hash = hash.unwrap();
         for (key, val) in value {
-            let key = self.convert_mut(key).inner();
-            let val = self.convert_mut(val).inner();
+            let key = self.try_convert_mut(key)?.inner();
+            let val = self.try_convert_mut(val)?.inner();
             let _ = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash, key, val)) };
         }
-        Value::from(hash)
+        Ok(Value::from(hash))
     }
 }
 

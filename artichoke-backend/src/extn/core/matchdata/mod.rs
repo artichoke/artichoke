@@ -92,26 +92,28 @@ impl<'a> TryConvertMut<&'a Value, Capture<'a>> for Artichoke {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CaptureAt<'a> {
     GroupIndex(Int),
     GroupName(&'a [u8]),
     StartLen(Int, Int),
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CaptureMatch {
     None,
     Single(Option<Vec<u8>>),
     Range(Vec<Option<Vec<u8>>>),
 }
 
-impl ConvertMut<CaptureMatch, Value> for Artichoke {
-    fn convert_mut(&mut self, value: CaptureMatch) -> Value {
+impl TryConvertMut<CaptureMatch, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: CaptureMatch) -> Result<Value, Self::Error> {
         match value {
-            CaptureMatch::None => Value::nil(),
-            CaptureMatch::Single(capture) => self.convert_mut(capture),
-            CaptureMatch::Range(captures) => self.convert_mut(captures),
+            CaptureMatch::None => Ok(Value::nil()),
+            CaptureMatch::Single(capture) => self.try_convert_mut(capture),
+            CaptureMatch::Range(captures) => self.try_convert_mut(captures),
         }
     }
 }

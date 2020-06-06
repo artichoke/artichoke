@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 
+use crate::extn::core::array::Array;
 use crate::extn::core::matchdata::{CaptureAt, MatchData};
 use crate::extn::prelude::*;
 use crate::sys::protect;
@@ -23,7 +24,7 @@ pub fn captures(interp: &mut Artichoke, value: Value) -> Result<Value, Exception
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
     if let Some(captures) = borrow.captures(interp)? {
-        Ok(interp.convert_mut(captures))
+        interp.try_convert_mut(captures)
     } else {
         Ok(Value::nil())
     }
@@ -58,7 +59,7 @@ pub fn element_reference(
         }
     };
     let matched = borrow.capture_at(interp, at)?;
-    Ok(interp.convert_mut(matched))
+    interp.try_convert_mut(matched)
 }
 
 pub fn end(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, Exception> {
@@ -94,14 +95,14 @@ pub fn named_captures(interp: &mut Artichoke, value: Value) -> Result<Value, Exc
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
     let named_captures = borrow.named_captures(interp)?;
-    Ok(interp.convert_mut(named_captures))
+    interp.try_convert_mut(named_captures)
 }
 
 pub fn names(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
     let names = borrow.names(interp);
-    Ok(interp.convert_mut(names))
+    interp.try_convert_mut(names)
 }
 
 pub fn offset(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, Exception> {
@@ -110,8 +111,8 @@ pub fn offset(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, 
     let capture = interp.try_convert_mut(&at)?;
     if let Some([begin, end]) = borrow.offset(interp, capture)? {
         if let (Ok(begin), Ok(end)) = (Int::try_from(begin), Int::try_from(end)) {
-            // TODO: use a proper assoc 2-tuple
-            Ok(interp.convert_mut(&[begin, end][..]))
+            let ary = Array::assoc(interp.convert(begin), interp.convert(end));
+            Array::alloc_value(ary, interp)
         } else {
             Err(Exception::from(ArgumentError::new(
                 interp,
@@ -119,8 +120,8 @@ pub fn offset(interp: &mut Artichoke, value: Value, at: Value) -> Result<Value, 
             )))
         }
     } else {
-        // TODO: use a proper assoc 2-tuple
-        Ok(interp.convert_mut(&[None::<Value>, None::<Value>][..]))
+        let ary = Array::assoc(Value::nil(), Value::nil());
+        Array::alloc_value(ary, interp)
     }
 }
 
@@ -164,7 +165,7 @@ pub fn to_a(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::try_from_ruby(interp, &value) }?;
     let borrow = data.borrow();
     if let Some(ary) = borrow.to_a(interp)? {
-        Ok(interp.convert_mut(ary))
+        interp.try_convert_mut(ary)
     } else {
         Ok(Value::nil())
     }

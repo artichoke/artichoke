@@ -135,14 +135,14 @@ pub fn named_captures(interp: &mut Artichoke, regexp: Value) -> Result<Value, Ex
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }?;
     let borrow = regexp.borrow();
     let named_captures = borrow.named_captures(interp)?;
-    Ok(interp.convert_mut(named_captures))
+    interp.try_convert_mut(named_captures)
 }
 
 pub fn names(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::try_from_ruby(interp, &regexp) }?;
     let borrow = regexp.borrow();
     let names = borrow.names(interp);
-    Ok(interp.convert_mut(names))
+    interp.try_convert_mut(names)
 }
 
 pub fn options(interp: &mut Artichoke, regexp: Value) -> Result<Value, Exception> {

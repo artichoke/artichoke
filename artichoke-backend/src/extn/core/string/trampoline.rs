@@ -48,7 +48,7 @@ pub fn scan(
     } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
         let haystack = value.try_into_mut::<&[u8]>(interp)?;
         let scan = regexp.borrow().inner().scan(interp, haystack, block)?;
-        Ok(interp.convert_mut(scan).unwrap_or(value))
+        Ok(interp.try_convert_mut(scan)?.unwrap_or(value))
     } else if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
         let string = value.try_into_mut::<&[u8]>(interp)?;
         if let Some(ref block) = block {
@@ -106,7 +106,7 @@ pub fn scan(
             } else {
                 interp.unset_global_variable(regexp::LAST_MATCH)?;
             }
-            Ok(interp.convert_mut(result))
+            interp.try_convert_mut(result)
         }
     } else {
         let mut message = String::from("wrong argument type ");

@@ -39,7 +39,7 @@ where
         &include_bytes!("spec_runner.rb")[..],
     )?;
     interp.eval_file(Path::new("/src/lib/test/spec_runner"))?;
-    let specs = interp.convert_mut(specs.into_iter().collect::<Vec<_>>());
+    let specs = interp.try_convert_mut(specs.into_iter().collect::<Vec<_>>())?;
     let result = interp
         .top_self()
         .funcall(interp, "run_specs", &[specs], None)?;

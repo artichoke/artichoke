@@ -551,7 +551,7 @@ impl RegexpType for Onig {
                         interp.set_global_variable(regexp::nth_match_group(group), &capture)?;
                     }
 
-                    let matched = interp.convert_mut(groups);
+                    let matched = interp.try_convert_mut(groups)?;
                     if let Some(pos) = captures.pos(0) {
                         matchdata.set_region(pos.0..pos.1);
                     }
@@ -605,11 +605,11 @@ impl RegexpType for Onig {
 
                 let mut iter = collected.iter().enumerate();
                 if let Some((_, fullcapture)) = iter.next() {
-                    let fullcapture = interp.convert_mut(fullcapture.as_slice());
+                    let fullcapture = interp.try_convert_mut(fullcapture.as_slice())?;
                     interp.set_global_variable(regexp::LAST_MATCHED_STRING, &fullcapture)?;
                 }
                 for (group, capture) in iter {
-                    let capture = interp.convert_mut(capture.as_slice());
+                    let capture = interp.try_convert_mut(capture.as_slice())?;
                     let group = unsafe { NonZeroUsize::new_unchecked(group) };
                     interp.set_global_variable(regexp::nth_match_group(group), &capture)?;
                 }

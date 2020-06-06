@@ -254,10 +254,10 @@ unsafe extern "C" fn artichoke_math_frexp(
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
     let value = Value::from(value);
-    let result = math::frexp(&mut guard, value).map(|(fraction, exponent)| {
+    let result = math::frexp(&mut guard, value).and_then(|(fraction, exponent)| {
         let fraction = guard.convert_mut(fraction);
         let exponent = guard.convert(exponent);
-        guard.convert_mut(&[fraction, exponent][..])
+        guard.try_convert_mut(&[fraction, exponent][..])
     });
     match result {
         Ok(value) => value.inner(),
@@ -321,10 +321,10 @@ unsafe extern "C" fn artichoke_math_lgamma(
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
     let value = Value::from(value);
-    let result = math::lgamma(&mut guard, value).map(|(result, sign)| {
+    let result = math::lgamma(&mut guard, value).and_then(|(result, sign)| {
         let result = guard.convert_mut(result);
         let sign = guard.convert(sign);
-        guard.convert_mut(&[result, sign][..])
+        guard.try_convert_mut(&[result, sign][..])
     });
     match result {
         Ok(value) => value.inner(),
