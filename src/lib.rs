@@ -115,8 +115,10 @@ pub mod prelude {
     pub use crate::interpreter;
 }
 
+pub use artichoke_backend::{Artichoke, Exception};
+
 /// Create a new Artichoke Ruby interpreter.
-pub fn interpreter() -> Result<prelude::Artichoke, prelude::Exception> {
+pub fn interpreter() -> Result<Artichoke, Exception> {
     let release = prelude::ReleaseMetadata::new()
         .with_ruby_copyright(env!("RUBY_COPYRIGHT"))
         .with_ruby_description(env!("RUBY_DESCRIPTION"))
@@ -127,5 +129,5 @@ pub fn interpreter() -> Result<prelude::Artichoke, prelude::Exception> {
         .with_ruby_revision(env!("RUBY_REVISION"))
         .with_ruby_version("2.6.3") // Artichoke targets MRI Ruby 2.6.3
         .with_artichoke_compiler_version(Some(env!("ARTICHOKE_COMPILER_VERSION")));
-    prelude::interpreter_with_config(release)
+    artichoke_backend::interpreter_with_config(release)
 }
