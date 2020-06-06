@@ -24,9 +24,11 @@ version = "0.1.0-pre.0"
 dependencies = [
  "ansi_term",
  "artichoke-backend",
+ "chrono",
  "doc-comment",
  "rustyline",
  "structopt",
+ "target-lexicon",
  "version-sync",
 ]
 
