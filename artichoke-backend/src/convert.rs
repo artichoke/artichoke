@@ -12,6 +12,7 @@ use crate::Artichoke;
 
 mod array;
 mod boolean;
+mod boxing;
 mod bytes;
 mod fixnum;
 mod float;
@@ -20,7 +21,8 @@ mod nilable;
 mod object;
 mod string;
 
-pub use object::{BoxUnboxVmValue, RustBackedValue, UnboxedValueGuard};
+pub use boxing::{BoxUnboxVmValue, HeapAllocatedData, UnboxedValueGuard};
+pub use object::RustBackedValue;
 
 /// Provide a fallible converter for types that implement an infallible
 /// conversion.

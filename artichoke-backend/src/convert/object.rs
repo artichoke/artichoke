@@ -1,9 +1,6 @@
 use std::cell::RefCell;
 use std::ffi::c_void;
-use std::fmt;
-use std::marker::PhantomData;
-use std::mem::{self, ManuallyDrop};
-use std::ops::{Deref, DerefMut};
+use std::mem;
 use std::ptr;
 use std::rc::Rc;
 
@@ -16,73 +13,6 @@ use crate::sys;
 use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
-
-pub struct UnboxedValueGuard<'a, T> {
-    guarded: ManuallyDrop<Box<T>>,
-    phantom: PhantomData<&'a T>,
-}
-
-impl<'a, T> fmt::Debug for UnboxedValueGuard<'a, T>
-where
-    T: fmt::Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("UnboxedValueGuard")
-            .field("guarded", &self.guarded)
-            .finish()
-    }
-}
-
-impl<'a, T> UnboxedValueGuard<'a, T> {
-    pub fn new(value: Box<T>) -> Self {
-        Self {
-            guarded: ManuallyDrop::new(value),
-            phantom: PhantomData,
-        }
-    }
-}
-
-impl<'a, T> Deref for UnboxedValueGuard<'a, T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        self.guarded.as_ref()
-    }
-}
-
-impl<'a, T> DerefMut for UnboxedValueGuard<'a, T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.guarded.as_mut()
-    }
-}
-
-pub trait BoxUnboxVmValue {
-    type Unboxed;
-
-    const RUBY_TYPE: &'static str;
-
-    /// # Safety
-    ///
-    /// Implementations may return owned values. These values must not outlive
-    /// the underlying `mrb_value`, which may be garbage collected by mruby.
-    ///
-    /// The values returned by this method should not be stored for more than
-    /// the current FFI trampoline entrypoint.
-    unsafe fn unbox_from_value<'a>(
-        value: &'a mut Value,
-        interp: &mut Artichoke,
-    ) -> Result<UnboxedValueGuard<'a, Self::Unboxed>, Exception>;
-
-    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Exception>;
-
-    fn box_into_value(
-        value: Self::Unboxed,
-        into: Value,
-        interp: &mut Artichoke,
-    ) -> Result<Value, Exception>;
-
-    fn free(data: *mut c_void);
-}
 
 /// Provides converters to and from [`Value`] with ruby type of [`Ruby::Data`].
 ///
