@@ -22,8 +22,6 @@
 # binary data into purely printable characters.
 
 module Base64
-  module_function
-
   # Returns the Base64-encoded version of +bin+.
   # This method complies with RFC 2045.
   # Line feeds are added to every 60 encoded characters.
@@ -104,4 +102,11 @@ module Base64
     end
     strict_decode64(str)
   end
+
+  module_function :encode64
+  module_function :decode64
+  module_function :strict_encode64
+  module_function :strict_decode64
+  module_function :urlsafe_encode64
+  module_function :urlsafe_decode64
 end
