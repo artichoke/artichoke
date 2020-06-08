@@ -17,7 +17,7 @@
 pub use crate::block::Block;
 pub use crate::class;
 pub use crate::class_registry::ClassRegistry;
-pub use crate::convert::{BoxUnboxVmValue, RustBackedValue};
+pub use crate::convert::BoxUnboxVmValue;
 pub use crate::core::{Regexp as _, Value as _, *};
 pub use crate::def::{self, EnclosingRubyScope, NotDefinedError};
 pub use crate::exception;

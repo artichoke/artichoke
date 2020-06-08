@@ -18,11 +18,9 @@ mod fixnum;
 mod float;
 mod hash;
 mod nilable;
-mod object;
 mod string;
 
 pub use boxing::{BoxUnboxVmValue, HeapAllocatedData, UnboxedValueGuard};
-pub use object::RustBackedValue;
 
 /// Provide a fallible converter for types that implement an infallible
 /// conversion.
