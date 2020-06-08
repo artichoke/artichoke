@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::extn::core::env::backend::EnvType;
+use crate::extn::core::env::backend::{EnvArgumentError, EnvType};
 use crate::extn::prelude::*;
 use crate::ffi;
 
@@ -22,11 +22,7 @@ impl EnvType for System {
         self
     }
 
-    fn get<'a>(
-        &'a self,
-        interp: &Artichoke,
-        name: &[u8],
-    ) -> Result<Option<Cow<'a, [u8]>>, Exception> {
+    fn get<'a>(&'a self, name: &[u8]) -> Result<Option<Cow<'a, [u8]>>, Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -40,9 +36,8 @@ impl EnvType for System {
             return Ok(None);
         }
         if name.find_byte(b'\0').is_some() {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "bad environment variable name: contains null byte",
+            return Err(Exception::from(EnvArgumentError::new(
+                b"bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
@@ -60,12 +55,7 @@ impl EnvType for System {
         }
     }
 
-    fn put(
-        &mut self,
-        interp: &Artichoke,
-        name: &[u8],
-        value: Option<&[u8]>,
-    ) -> Result<(), Exception> {
+    fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -78,18 +68,16 @@ impl EnvType for System {
                 return Ok(());
             }
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "Invalid argument - setenv()",
+            return Err(Exception::from(EnvArgumentError::new(
+                b"Invalid argument - setenv()",
             )));
         }
         if name.find_byte(b'\0').is_some() {
             if value.is_none() {
                 return Ok(());
             }
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "bad environment variable name: contains null byte",
+            return Err(Exception::from(EnvArgumentError::new(
+                b"bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
@@ -100,13 +88,12 @@ impl EnvType for System {
             message.extend(name.to_vec());
             message.push(b')');
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Exception::from(ArgumentError::new_raw(interp, message)));
+            return Err(Exception::from(EnvArgumentError::from(message)));
         }
         if let Some(value) = value {
             if value.find_byte(b'\0').is_some() {
-                return Err(Exception::from(ArgumentError::new(
-                    interp,
-                    "bad environment variable value: contains null byte",
+                return Err(Exception::from(EnvArgumentError::new(
+                    b"bad environment variable value: contains null byte",
                 )));
             }
             let name = ffi::bytes_to_os_str(name)?;
@@ -120,8 +107,7 @@ impl EnvType for System {
         }
     }
 
-    fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
-        let _ = interp;
+    fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
         let mut map = HashMap::default();
         for (name, value) in std::env::vars_os() {
             let name = ffi::os_string_to_bytes(name)?;

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::extn::core::env::backend::EnvType;
+use crate::extn::core::env::backend::{EnvArgumentError, EnvType};
 use crate::extn::prelude::*;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
@@ -23,11 +23,7 @@ impl EnvType for Memory {
         self
     }
 
-    fn get<'a>(
-        &'a self,
-        interp: &Artichoke,
-        name: &[u8],
-    ) -> Result<Option<Cow<'a, [u8]>>, Exception> {
+    fn get<'a>(&'a self, name: &[u8]) -> Result<Option<Cow<'a, [u8]>>, Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -41,9 +37,8 @@ impl EnvType for Memory {
             return Ok(None);
         }
         if name.find_byte(b'\0').is_some() {
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "bad environment variable name: contains null byte",
+            return Err(Exception::from(EnvArgumentError::new(
+                b"bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
@@ -55,12 +50,7 @@ impl EnvType for Memory {
         }
     }
 
-    fn put(
-        &mut self,
-        interp: &Artichoke,
-        name: &[u8],
-        value: Option<&[u8]>,
-    ) -> Result<(), Exception> {
+    fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Exception> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -73,18 +63,16 @@ impl EnvType for Memory {
                 return Ok(());
             }
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "Invalid argument - setenv()",
+            return Err(Exception::from(EnvArgumentError::new(
+                b"Invalid argument - setenv()",
             )));
         }
         if name.find_byte(b'\0').is_some() {
             if value.is_none() {
                 return Ok(());
             }
-            return Err(Exception::from(ArgumentError::new(
-                interp,
-                "bad environment variable name: contains null byte",
+            return Err(Exception::from(EnvArgumentError::new(
+                b"bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
@@ -95,13 +83,12 @@ impl EnvType for Memory {
             message.extend(name.to_vec());
             message.push(b')');
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Exception::from(ArgumentError::new_raw(interp, message)));
+            return Err(Exception::from(EnvArgumentError::from(message)));
         }
         if let Some(value) = value {
             if value.find_byte(b'\0').is_some() {
-                return Err(Exception::from(ArgumentError::new(
-                    interp,
-                    "bad environment variable value: contains null byte",
+                return Err(Exception::from(EnvArgumentError::new(
+                    b"bad environment variable value: contains null byte",
                 )));
             }
             self.store.insert(name.to_vec(), value.to_vec());
@@ -112,8 +99,7 @@ impl EnvType for Memory {
         }
     }
 
-    fn as_map(&self, interp: &Artichoke) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
-        let _ = interp;
+    fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
         Ok(self.store.clone())
     }
 }
@@ -125,7 +111,6 @@ mod tests {
 
     #[test]
     fn test_hashmap_backend_set_get() {
-        let interp = crate::interpreter().expect("init");
         // given
         let mut backend = Memory::new();
         let env_name = "308a3d98-2f87-46fd-b996-ae471a76b64e";
@@ -133,9 +118,9 @@ mod tests {
 
         // when
         backend
-            .put(&interp, env_name.as_bytes(), Some(env_value.as_bytes()))
+            .put(env_name.as_bytes(), Some(env_value.as_bytes()))
             .unwrap();
-        let value = backend.get(&interp, env_name.as_bytes());
+        let value = backend.get(env_name.as_bytes());
 
         // then
         assert_eq!(
@@ -146,7 +131,6 @@ mod tests {
 
     #[test]
     fn test_hashmap_backend_set_unset() {
-        let interp = crate::interpreter().expect("init");
         // given
         let mut backend = Memory::new();
         let env_name = "7a6885c3-0c17-4310-a5e7-ed971cac69b6";
@@ -154,10 +138,10 @@ mod tests {
 
         // when
         backend
-            .put(&interp, env_name.as_bytes(), Some(env_value.as_bytes()))
+            .put(env_name.as_bytes(), Some(env_value.as_bytes()))
             .unwrap();
-        backend.put(&interp, env_name.as_bytes(), None).unwrap();
-        let value = backend.get(&interp, env_name.as_bytes());
+        backend.put(env_name.as_bytes(), None).unwrap();
+        let value = backend.get(env_name.as_bytes());
 
         // then
         assert!(value.unwrap().is_none());
@@ -165,7 +149,6 @@ mod tests {
 
     #[test]
     fn test_hashmap_backend_to_hashmap() {
-        let interp = crate::interpreter().expect("init");
         // given
         let mut backend = Memory::new();
         let env1_name = "3ab42e94-9b7f-4e96-b9c7-ba1738c61f89";
@@ -174,14 +157,14 @@ mod tests {
         let env2_value = "value2";
 
         // when
-        let size_before = backend.as_map(&interp).unwrap().len();
+        let size_before = backend.to_map().unwrap().len();
         backend
-            .put(&interp, env1_name.as_bytes(), Some(env1_value.as_bytes()))
+            .put(env1_name.as_bytes(), Some(env1_value.as_bytes()))
             .unwrap();
         backend
-            .put(&interp, env2_name.as_bytes(), Some(env2_value.as_bytes()))
+            .put(env2_name.as_bytes(), Some(env2_value.as_bytes()))
             .unwrap();
-        let data = backend.as_map(&interp).unwrap();
+        let data = backend.to_map().unwrap();
         let size_after = data.len();
 
         // then

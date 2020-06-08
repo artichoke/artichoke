@@ -1,5 +1,5 @@
 use crate::extn::core::artichoke;
-use crate::extn::core::env;
+use crate::extn::core::env::{self, trampoline};
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
@@ -13,7 +13,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new(
         "Environ",
         Some(scope),
-        Some(def::rust_data_free::<env::Environ>),
+        Some(def::box_unbox_free::<env::Environ>),
     )?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
@@ -41,7 +41,8 @@ unsafe extern "C" fn artichoke_env_initialize(
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let result = env::initialize(&mut guard, Some(slf));
+    let slf = Value::from(slf);
+    let result = trampoline::initialize(&mut guard, slf);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -58,7 +59,7 @@ unsafe extern "C" fn artichoke_env_element_reference(
     let mut guard = Guard::new(&mut interp);
     let obj = Value::from(slf);
     let name = Value::from(name);
-    let result = env::element_reference(&mut guard, obj, &name);
+    let result = trampoline::element_reference(&mut guard, obj, &name);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -76,7 +77,7 @@ unsafe extern "C" fn artichoke_env_element_assignment(
     let obj = Value::from(slf);
     let name = Value::from(name);
     let value = Value::from(value);
-    let result = env::element_assignment(&mut guard, obj, &name, value);
+    let result = trampoline::element_assignment(&mut guard, obj, &name, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -92,7 +93,7 @@ unsafe extern "C" fn artichoke_env_to_h(
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
     let obj = Value::from(slf);
-    let result = env::to_h(&mut guard, obj);
+    let result = trampoline::to_h(&mut guard, obj);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),

@@ -1,11 +1,16 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::fmt;
 
 use crate::extn::prelude::*;
 
 pub mod backend;
+mod boxing;
 pub mod mruby;
+pub mod trampoline;
 
+use backend::memory::Memory;
+use backend::system::System;
 use backend::EnvType;
 
 pub struct Environ(Box<dyn EnvType>);
@@ -18,66 +23,34 @@ impl fmt::Debug for Environ {
     }
 }
 
-impl RustBackedValue for Environ {
-    fn ruby_type_name() -> &'static str {
-        "Artichoke::Environ"
+impl Environ {
+    pub fn new_system_env() -> Self {
+        Self(Box::new(System::new()))
     }
-}
 
-#[cfg(feature = "core-env-system")]
-pub fn initialize(
-    interp: &mut Artichoke,
-    into: Option<sys::mrb_value>,
-) -> Result<Value, Exception> {
-    use backend::system::System;
+    pub fn new_memory_env() -> Self {
+        Self(Box::new(Memory::new()))
+    }
 
-    let obj = Environ(Box::new(System::new()));
-    let result = obj.try_into_ruby(interp, into)?;
-    Ok(result)
-}
+    pub fn initialize() -> Self {
+        #[cfg(feature = "core-env-system")]
+        let environ = Self::new_system_env();
+        #[cfg(not(feature = "core-env-system"))]
+        let environ = Self::new_memory_env();
 
-#[cfg(not(feature = "core-env-system"))]
-pub fn initialize(
-    interp: &mut Artichoke,
-    into: Option<sys::mrb_value>,
-) -> Result<Value, Exception> {
-    use backend::memory::Memory;
+        environ
+    }
 
-    let obj = Environ(Box::new(Memory::new()));
-    let result = obj.try_into_ruby(interp, into)?;
-    Ok(result)
-}
+    pub fn get(&self, name: &[u8]) -> Result<Option<Cow<'_, [u8]>>, Exception> {
+        self.0.get(name)
+    }
 
-pub fn element_reference(
-    interp: &mut Artichoke,
-    obj: Value,
-    name: &Value,
-) -> Result<Value, Exception> {
-    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
-    let name = name.implicitly_convert_to_string(interp)?;
-    let env = obj.borrow();
-    let result = env.0.get(interp, name)?;
-    let mut result = interp.convert_mut(result.as_ref().map(Cow::as_ref));
-    result.freeze(interp)?;
-    Ok(result)
-}
+    pub fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Exception> {
+        self.0.put(name, value)?;
+        Ok(())
+    }
 
-pub fn element_assignment(
-    interp: &mut Artichoke,
-    obj: Value,
-    name: &Value,
-    value: Value,
-) -> Result<Value, Exception> {
-    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
-    let name = name.implicitly_convert_to_string(interp)?;
-    let env_value = value.implicitly_convert_to_nilable_string(interp)?;
-    obj.borrow_mut().0.put(interp, name, env_value)?;
-    // Return original object, even if we converted it to a `String`.
-    Ok(value)
-}
-
-pub fn to_h(interp: &mut Artichoke, obj: Value) -> Result<Value, Exception> {
-    let obj = unsafe { Environ::try_from_ruby(interp, &obj) }?;
-    let result = obj.borrow().0.as_map(interp)?;
-    Ok(interp.convert_mut(result))
+    pub fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
+        self.0.to_map()
+    }
 }
