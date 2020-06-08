@@ -79,3 +79,4 @@ library:
   - suite: uri
     skip:
       - parse
+  - suite: base64
