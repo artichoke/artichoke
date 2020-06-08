@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use crate::extn::core::array::Array;
 use crate::extn::core::matchdata::{CaptureAt, MatchData};
+use crate::extn::core::regexp::Regexp;
 use crate::extn::prelude::*;
 use crate::sys::protect;
 
@@ -135,10 +136,11 @@ pub fn regexp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Excepti
     // TODO(GH-614): MatchData#regexp needs to return an identical Regexp to the
     // one used to create the match (same object ID).
     //
-    // The `None` here should be replaced with the original `RBasic`.
+    // The `Regexp::alloc_value` here should be replaced with
+    // `Regexp::box_into_value`.
     //
     // See: https://github.com/ruby/spec/pull/727
-    let regexp = regexp.clone().try_into_ruby(interp, None)?;
+    let regexp = Regexp::alloc_value(regexp.clone(), interp)?;
     Ok(regexp)
 }
 

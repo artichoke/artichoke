@@ -8,7 +8,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<regexp::Regexp>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Regexp", None, Some(def::rust_data_free::<regexp::Regexp>))?;
+    let spec = class::Spec::new("Regexp", None, Some(def::box_unbox_free::<regexp::Regexp>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("initialize", initialize, sys::mrb_args_req_and_opt(1, 2))?
@@ -52,11 +52,11 @@ unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
     let (pattern, options, encoding) = mrb_get_args!(mrb, required = 1, optional = 2);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let into = Value::from(slf);
+    let slf = Value::from(slf);
     let pattern = Value::from(pattern);
     let options = options.map(Value::from);
     let encoding = encoding.map(Value::from);
-    let result = regexp::trampoline::initialize(&mut guard, pattern, options, encoding, Some(into));
+    let result = regexp::trampoline::initialize(&mut guard, pattern, options, encoding, slf);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),

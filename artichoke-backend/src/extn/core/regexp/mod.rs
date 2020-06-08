@@ -16,6 +16,7 @@ use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 
 pub mod backend;
+mod boxing;
 pub mod enc;
 pub mod mruby;
 pub mod opts;
@@ -161,27 +162,27 @@ impl Regexp {
 
     pub fn initialize(
         interp: &mut Artichoke,
-        pattern: Value,
+        mut pattern: Value,
         options: Option<opts::Options>,
         encoding: Option<enc::Encoding>,
     ) -> Result<Self, Exception> {
-        let literal_config = if let Ok(regexp) = unsafe { Self::try_from_ruby(interp, &pattern) } {
-            if options.is_some() || encoding.is_some() {
-                interp.warn(&b"flags ignored when initializing from Regexp"[..])?;
-            }
-            let borrow = regexp.borrow();
-            let options = borrow.0.literal_config().options;
-            Config {
-                pattern: borrow.0.literal_config().pattern.clone(),
-                options,
-            }
-        } else {
-            let bytes = pattern.implicitly_convert_to_string(interp)?;
-            Config {
-                pattern: bytes.into(),
-                options: options.unwrap_or_default(),
-            }
-        };
+        let literal_config =
+            if let Ok(regexp) = unsafe { Self::unbox_from_value(&mut pattern, interp) } {
+                if options.is_some() || encoding.is_some() {
+                    interp.warn(&b"flags ignored when initializing from Regexp"[..])?;
+                }
+                let options = regexp.inner().literal_config().options;
+                Config {
+                    pattern: regexp.inner().literal_config().pattern.clone(),
+                    options,
+                }
+            } else {
+                let bytes = pattern.implicitly_convert_to_string(interp)?;
+                Config {
+                    pattern: bytes.into(),
+                    options: options.unwrap_or_default(),
+                }
+            };
         let pattern = pattern::parse(&literal_config.pattern, literal_config.options);
         let options = pattern.options();
         let derived_config = Config {
@@ -212,9 +213,12 @@ impl Regexp {
     where
         T: IntoIterator<Item = Value>,
     {
-        fn extract_pattern(interp: &mut Artichoke, value: &Value) -> Result<Vec<u8>, Exception> {
-            if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &value) } {
-                Ok(regexp.borrow().0.derived_config().pattern.clone().into())
+        fn extract_pattern(
+            interp: &mut Artichoke,
+            value: &mut Value,
+        ) -> Result<Vec<u8>, Exception> {
+            if let Ok(regexp) = unsafe { Regexp::unbox_from_value(value, interp) } {
+                Ok(regexp.inner().derived_config().pattern.clone().into())
             } else {
                 let bytes = value.implicitly_convert_to_string(interp)?;
                 let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
@@ -231,22 +235,22 @@ impl Regexp {
         }
         let mut iter = patterns.into_iter();
         let pattern = if let Some(mut first) = iter.next() {
-            if let Some(second) = iter.next() {
+            if let Some(mut second) = iter.next() {
                 let mut patterns = vec![];
-                patterns.push(extract_pattern(interp, &first)?);
-                patterns.push(extract_pattern(interp, &second)?);
-                for value in iter {
-                    patterns.push(extract_pattern(interp, &value)?);
+                patterns.push(extract_pattern(interp, &mut first)?);
+                patterns.push(extract_pattern(interp, &mut second)?);
+                for mut value in iter {
+                    patterns.push(extract_pattern(interp, &mut value)?);
                 }
                 bstr::join(b"|", patterns)
             } else if let Ok(ary) = unsafe { Array::unbox_from_value(&mut first, interp) } {
                 let mut patterns = Vec::with_capacity(ary.len());
-                for value in &*ary {
-                    patterns.push(extract_pattern(interp, &value)?);
+                for mut value in &*ary {
+                    patterns.push(extract_pattern(interp, &mut value)?);
                 }
                 bstr::join(b"|", patterns)
             } else {
-                extract_pattern(interp, &first)?
+                extract_pattern(interp, &mut first)?
             }
         } else {
             b"(?!)".to_vec()
@@ -284,9 +288,9 @@ impl Regexp {
     }
 
     #[must_use]
-    pub fn eql(&self, interp: &mut Artichoke, other: Value) -> bool {
-        if let Ok(other) = unsafe { Self::try_from_ruby(interp, &other) } {
-            self.inner() == other.borrow().inner()
+    pub fn eql(&self, interp: &mut Artichoke, mut other: Value) -> bool {
+        if let Ok(other) = unsafe { Self::unbox_from_value(&mut other, interp) } {
+            self.inner() == other.inner()
         } else {
             false
         }
@@ -412,12 +416,6 @@ impl Regexp {
     #[must_use]
     pub fn string(&self, interp: &mut Artichoke) -> &[u8] {
         self.0.string(interp)
-    }
-}
-
-impl RustBackedValue for Regexp {
-    fn ruby_type_name() -> &'static str {
-        "Regexp"
     }
 }
 

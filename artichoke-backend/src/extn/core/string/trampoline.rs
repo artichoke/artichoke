@@ -9,13 +9,13 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
 
     let ord = if let Some((start, end, ch)) = string.char_indices().next() {
         if ch == '\u{FFFD}' {
-            let slice = string.get(start..end);
+            let slice = &string[start..end];
             match slice {
-                Some(&[]) => 0,
-                Some(&[a]) => u32::from_le_bytes([a, 0, 0, 0]),
-                Some(&[a, b]) => u32::from_le_bytes([a, b, 0, 0]),
-                Some(&[a, b, c]) => u32::from_le_bytes([a, b, c, 0]),
-                Some(&[a, b, c, d]) => u32::from_le_bytes([a, b, c, d]),
+                [] => 0,
+                [a] => u32::from_le_bytes([*a, 0, 0, 0]),
+                [a, b] => u32::from_le_bytes([*a, *b, 0, 0]),
+                [a, b, c] => u32::from_le_bytes([*a, *b, *c, 0]),
+                [a, b, c, d] => u32::from_le_bytes([*a, *b, *c, *d]),
                 _ => {
                     return Err(Exception::from(ArgumentError::new(
                         interp,
@@ -37,7 +37,7 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
 pub fn scan(
     interp: &mut Artichoke,
     value: Value,
-    pattern: Value,
+    mut pattern: Value,
     block: Option<Block>,
 ) -> Result<Value, Exception> {
     if let Ruby::Symbol = pattern.ruby_type() {
@@ -45,9 +45,9 @@ pub fn scan(
         message.push_str(pattern.pretty_name(interp));
         message.push_str(" (expected Regexp)");
         Err(Exception::from(TypeError::new(interp, message)))
-    } else if let Ok(regexp) = unsafe { Regexp::try_from_ruby(interp, &pattern) } {
+    } else if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut pattern, interp) } {
         let haystack = value.try_into_mut::<&[u8]>(interp)?;
-        let scan = regexp.borrow().inner().scan(interp, haystack, block)?;
+        let scan = regexp.inner().scan(interp, haystack, block)?;
         Ok(interp.try_convert_mut(scan)?.unwrap_or(value))
     } else if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
         let string = value.try_into_mut::<&[u8]>(interp)?;
