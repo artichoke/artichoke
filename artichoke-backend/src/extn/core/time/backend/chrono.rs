@@ -2,7 +2,6 @@ use chrono::{DateTime, Datelike, Local, TimeZone, Timelike, Weekday};
 use std::fmt;
 
 use crate::extn::core::time::backend::{MakeTime, TimeType};
-use crate::Artichoke;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Chrono<T: TimeZone>(DateTime<T>);
@@ -121,8 +120,7 @@ impl MakeTime for Factory {
         self
     }
 
-    fn now(&self, interp: &Artichoke) -> Self::Time {
-        let _ = interp;
+    fn now(&self) -> Self::Time {
         Chrono::new(Local::now())
     }
 }

@@ -5,7 +5,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<time::Time>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Time", None, Some(def::rust_data_free::<time::Time>))?;
+    let spec = class::Spec::new("Time", None, Some(def::box_unbox_free::<time::Time>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_self_method("now", artichoke_time_self_now, sys::mrb_args_none())?

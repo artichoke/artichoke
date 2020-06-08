@@ -1,20 +1,21 @@
+use chrono::Local;
 use std::fmt;
 
-use crate::convert::RustBackedValue;
-
 pub mod backend;
+mod boxing;
 pub mod mruby;
 pub mod trampoline;
 
-use backend::chrono::Factory;
+use backend::chrono::{Chrono, Factory};
 use backend::{MakeTime, TimeType};
 
-#[must_use]
-pub fn factory() -> impl MakeTime {
-    Factory
-}
-
 pub struct Time(Box<dyn TimeType>);
+
+impl From<Chrono<Local>> for Time {
+    fn from(backend: Chrono<Local>) -> Self {
+        Self(Box::new(backend))
+    }
+}
 
 impl fmt::Debug for Time {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -25,13 +26,15 @@ impl fmt::Debug for Time {
 }
 
 impl Time {
-    fn inner(&self) -> &dyn TimeType {
+    pub fn now() -> Self {
+        Self(Box::new(Factory.now()))
+    }
+
+    pub fn inner(&self) -> &dyn TimeType {
         self.0.as_ref()
     }
-}
 
-impl RustBackedValue for Time {
-    fn ruby_type_name() -> &'static str {
-        "Time"
+    pub fn inner_mut(&mut self) -> &dyn TimeType {
+        self.0.as_mut()
     }
 }
