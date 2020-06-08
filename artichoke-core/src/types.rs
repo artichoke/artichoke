@@ -39,7 +39,7 @@ impl fmt::Display for Rust {
             Self::Bytes => write!(f, "Vec<u8>"),
             Self::Float => write!(f, "f64"),
             Self::Map => write!(f, "HashMap"),
-            Self::Object => write!(f, "RustBackedValue"),
+            Self::Object => write!(f, "Heap-allocated object"),
             Self::SignedInt => write!(f, "i64"),
             Self::String => write!(f, "String"),
             Self::UnsignedInt => write!(f, "u64"),
