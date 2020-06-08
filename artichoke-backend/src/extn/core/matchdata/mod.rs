@@ -19,6 +19,7 @@ use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;
 use crate::extn::prelude::*;
 
+mod boxing;
 pub mod mruby;
 pub mod trampoline;
 
@@ -123,12 +124,6 @@ pub struct MatchData {
     haystack: BString,
     regexp: Regexp,
     region: Region,
-}
-
-impl RustBackedValue for MatchData {
-    fn ruby_type_name() -> &'static str {
-        "MatchData"
-    }
 }
 
 impl MatchData {

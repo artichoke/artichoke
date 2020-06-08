@@ -9,7 +9,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new(
         "MatchData",
         None,
-        Some(def::rust_data_free::<matchdata::MatchData>),
+        Some(def::box_unbox_free::<matchdata::MatchData>),
     )?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()

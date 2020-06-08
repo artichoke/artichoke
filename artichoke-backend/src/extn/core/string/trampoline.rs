@@ -58,7 +58,7 @@ pub fn scan(
             if let Some(pos) = string.find(pattern_bytes) {
                 let mut data = matchdata.clone();
                 data.set_region(pos..pos + patlen);
-                let data = data.try_into_ruby(interp, None)?;
+                let data = MatchData::alloc_value(data, interp)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
                 let block_arg = interp.convert_mut(pattern_bytes);
@@ -71,7 +71,7 @@ pub fn scan(
                 for pos in string.find_iter(pattern_bytes) {
                     let mut data = matchdata.clone();
                     data.set_region(offset + pos..offset + pos + patlen);
-                    let data = data.try_into_ruby(interp, None)?;
+                    let data = MatchData::alloc_value(data, interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
                     let block_arg = interp.convert_mut(pattern_bytes);
@@ -101,7 +101,7 @@ pub fn scan(
                     regex,
                     last_pos..last_pos + pattern_bytes.len(),
                 );
-                let data = matchdata.try_into_ruby(interp, None)?;
+                let data = MatchData::alloc_value(matchdata, interp)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
             } else {
                 interp.unset_global_variable(regexp::LAST_MATCH)?;
