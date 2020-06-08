@@ -54,7 +54,9 @@ impl<'a, T> DerefMut for UnboxedValueGuard<'a, T> {
     }
 }
 
-pub trait HeapAllocatedData {}
+pub trait HeapAllocatedData {
+    const RUBY_TYPE: &'static str;
+}
 
 pub trait BoxUnboxVmValue {
     type Unboxed;
@@ -90,7 +92,7 @@ where
 {
     type Unboxed = Self;
 
-    const RUBY_TYPE: &'static str = "Array";
+    const RUBY_TYPE: &'static str = <Self as HeapAllocatedData>::RUBY_TYPE;
 
     unsafe fn unbox_from_value<'a>(
         value: &'a mut Value,
