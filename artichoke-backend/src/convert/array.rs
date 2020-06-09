@@ -404,7 +404,7 @@ mod tests {
     fn arr_int(arr: Vec<Int>) -> bool {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
-        let value = interp.convert_mut(arr.as_slice());
+        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -420,7 +420,7 @@ mod tests {
             return false;
         }
         // Owned converter
-        let value = interp.convert_mut(arr.to_vec());
+        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -442,7 +442,7 @@ mod tests {
     fn arr_utf8(arr: Vec<String>) -> bool {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
-        let value = interp.convert_mut(arr.as_slice());
+        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -458,7 +458,7 @@ mod tests {
             return false;
         }
         // Owned converter
-        let value = interp.convert_mut(arr.to_vec());
+        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -480,7 +480,7 @@ mod tests {
     fn arr_nilable_bstr(arr: Vec<Option<Vec<u8>>>) -> bool {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
-        let value = interp.convert_mut(arr.as_slice());
+        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -496,7 +496,7 @@ mod tests {
             return false;
         }
         // Owned converter
-        let value = interp.convert_mut(arr.to_vec());
+        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {

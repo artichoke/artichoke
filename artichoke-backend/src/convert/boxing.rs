@@ -233,3 +233,109 @@ where
         drop(unboxed);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test::prelude::*;
+
+    // this struct is heap allocated.
+    #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+    struct Container(String);
+
+    unsafe extern "C" fn container_value(
+        mrb: *mut sys::mrb_state,
+        slf: sys::mrb_value,
+    ) -> sys::mrb_value {
+        let mut interp = unwrap_interpreter!(mrb);
+        let mut guard = Guard::new(&mut interp);
+
+        let mut value = Value::from(slf);
+        let result = if let Ok(container) = Container::unbox_from_value(&mut value, &mut guard) {
+            guard.convert_mut(container.0.as_bytes())
+        } else {
+            Value::nil()
+        };
+        result.inner()
+    }
+
+    impl HeapAllocatedData for Container {
+        const RUBY_TYPE: &'static str = "Container";
+    }
+
+    // this struct is stack allocated
+    #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+    struct Flag(bool);
+
+    impl HeapAllocatedData for Box<Flag> {
+        const RUBY_TYPE: &'static str = "Flag";
+    }
+
+    #[test]
+    fn convert_obj_roundtrip() {
+        let mut interp = crate::interpreter().unwrap();
+        let spec =
+            class::Spec::new("Container", None, Some(def::box_unbox_free::<Container>)).unwrap();
+        class::Builder::for_spec(&mut interp, &spec)
+            .value_is_rust_object()
+            .add_method("value", container_value, sys::mrb_args_none())
+            .unwrap()
+            .define()
+            .unwrap();
+        interp.def_class::<Container>(spec).unwrap();
+        let obj = Container(String::from("contained string contents"));
+
+        let mut value = Container::alloc_value(obj, &mut interp).unwrap();
+        let class = value.funcall(&mut interp, "class", &[], None).unwrap();
+        let class_display = class.to_s(&mut interp);
+        assert_eq!(class_display, b"Container");
+
+        let data = unsafe { Container::unbox_from_value(&mut value, &mut interp) }.unwrap();
+
+        let inner = data.0.as_str();
+        assert_eq!(inner, "contained string contents");
+        drop(data);
+
+        let inner = value.funcall(&mut interp, "value", &[], None).unwrap();
+        let inner = inner.try_into_mut::<&str>(&mut interp).unwrap();
+        assert_eq!(inner, "contained string contents");
+    }
+
+    #[test]
+    fn convert_obj_not_data() {
+        let mut interp = crate::interpreter().unwrap();
+
+        let spec =
+            class::Spec::new("Container", None, Some(def::box_unbox_free::<Container>)).unwrap();
+        class::Builder::for_spec(&mut interp, &spec)
+            .value_is_rust_object()
+            .add_method("value", container_value, sys::mrb_args_none())
+            .unwrap()
+            .define()
+            .unwrap();
+        interp.def_class::<Container>(spec).unwrap();
+
+        let spec = class::Spec::new("Flag", None, Some(def::box_unbox_free::<Box<Flag>>)).unwrap();
+        class::Builder::for_spec(&mut interp, &spec)
+            .value_is_rust_object()
+            .define()
+            .unwrap();
+        interp.def_class::<Box<Flag>>(spec).unwrap();
+
+        let mut value = interp.convert_mut("string");
+        let class = value.funcall(&mut interp, "class", &[], None).unwrap();
+        let class_display = class.to_s(&mut interp);
+        assert_eq!(class_display, b"String");
+
+        let data = unsafe { Container::unbox_from_value(&mut value, &mut interp) };
+        assert!(data.is_err());
+
+        let flag = Box::new(Flag::default());
+        let mut value = Box::<Flag>::alloc_value(flag, &mut interp).unwrap();
+        let class = value.funcall(&mut interp, "class", &[], None).unwrap();
+        let class_display = class.to_s(&mut interp);
+        assert_eq!(class_display, b"Flag");
+
+        let data = unsafe { Container::unbox_from_value(&mut value, &mut interp) };
+        assert!(data.is_err());
+    }
+}

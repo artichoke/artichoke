@@ -25,15 +25,11 @@ mod leak;
 const ITERATIONS: usize = 100;
 const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq)]
-struct Container {
-    inner: String,
-}
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+struct Container(String);
 
-impl RustBackedValue for Container {
-    fn ruby_type_name() -> &'static str {
-        "Container"
-    }
+impl HeapAllocatedData for Container {
+    const RUBY_TYPE: &'static str = "Container";
 }
 
 unsafe extern "C" fn container_initialize(
@@ -43,10 +39,11 @@ unsafe extern "C" fn container_initialize(
     let inner = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
+    let slf = Value::from(slf);
     let inner = Value::from(inner);
     let inner = inner.try_into_mut::<String>(&mut guard).unwrap_or_default();
-    let container = Container { inner };
-    let result = container.try_into_ruby(&mut guard, Some(slf));
+    let container = Container(inner);
+    let result = Container::box_into_value(container, slf, &mut guard);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -59,7 +56,7 @@ impl File for Container {
     type Error = Exception;
 
     fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
-        let spec = class::Spec::new("Container", None, Some(def::rust_data_free::<Self>))?;
+        let spec = class::Spec::new("Container", None, Some(def::box_unbox_free::<Self>))?;
         class::Builder::for_spec(interp, &spec)
             .value_is_rust_object()
             .add_method("initialize", container_initialize, sys::mrb_args_req(1))?
