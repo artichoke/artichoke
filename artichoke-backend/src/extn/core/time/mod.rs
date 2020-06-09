@@ -26,10 +26,12 @@ impl fmt::Debug for Time {
 }
 
 impl Time {
+    #[must_use]
     pub fn now() -> Self {
         Self(Box::new(Factory.now()))
     }
 
+    #[must_use]
     pub fn inner(&self) -> &dyn TimeType {
         self.0.as_ref()
     }

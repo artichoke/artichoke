@@ -24,14 +24,17 @@ impl fmt::Debug for Environ {
 }
 
 impl Environ {
+    #[must_use]
     pub fn new_system_env() -> Self {
         Self(Box::new(System::new()))
     }
 
+    #[must_use]
     pub fn new_memory_env() -> Self {
         Self(Box::new(Memory::new()))
     }
 
+    #[must_use]
     pub fn initialize() -> Self {
         #[cfg(feature = "core-env-system")]
         let environ = Self::new_system_env();

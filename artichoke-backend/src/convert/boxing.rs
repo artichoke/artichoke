@@ -32,6 +32,7 @@ where
 }
 
 impl<'a, T> UnboxedValueGuard<'a, T> {
+    #[must_use]
     pub fn new(value: Box<T>) -> Self {
         Self {
             guarded: ManuallyDrop::new(value),
