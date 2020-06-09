@@ -37,8 +37,8 @@ impl EnvType for Memory {
             return Ok(None);
         }
         if name.find_byte(b'\0').is_some() {
-            return Err(Exception::from(EnvArgumentError::new(
-                b"bad environment variable name: contains null byte",
+            return Err(Exception::from(EnvArgumentError::from(
+                "bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
@@ -63,16 +63,16 @@ impl EnvType for Memory {
                 return Ok(());
             }
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Exception::from(EnvArgumentError::new(
-                b"Invalid argument - setenv()",
+            return Err(Exception::from(EnvArgumentError::from(
+                "Invalid argument - setenv()",
             )));
         }
         if name.find_byte(b'\0').is_some() {
             if value.is_none() {
                 return Ok(());
             }
-            return Err(Exception::from(EnvArgumentError::new(
-                b"bad environment variable name: contains null byte",
+            return Err(Exception::from(EnvArgumentError::from(
+                "bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
@@ -87,8 +87,8 @@ impl EnvType for Memory {
         }
         if let Some(value) = value {
             if value.find_byte(b'\0').is_some() {
-                return Err(Exception::from(EnvArgumentError::new(
-                    b"bad environment variable value: contains null byte",
+                return Err(Exception::from(EnvArgumentError::from(
+                    "bad environment variable value: contains null byte",
                 )));
             }
             self.store.insert(name.to_vec(), value.to_vec());

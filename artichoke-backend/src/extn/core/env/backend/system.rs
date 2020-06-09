@@ -1,6 +1,7 @@
 use bstr::ByteSlice;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::env as systemenv;
 use std::fmt;
 
 use crate::extn::core::env::backend::{EnvArgumentError, EnvType};
@@ -36,8 +37,8 @@ impl EnvType for System {
             return Ok(None);
         }
         if name.find_byte(b'\0').is_some() {
-            return Err(Exception::from(EnvArgumentError::new(
-                b"bad environment variable name: contains null byte",
+            return Err(Exception::from(EnvArgumentError::from(
+                "bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
@@ -46,7 +47,7 @@ impl EnvType for System {
             Ok(None)
         } else {
             let name = ffi::bytes_to_os_str(name)?;
-            if let Some(value) = std::env::var_os(name) {
+            if let Some(value) = systemenv::var_os(name) {
                 let value = ffi::os_string_to_bytes(value)?;
                 Ok(Some(value.into()))
             } else {
@@ -68,16 +69,16 @@ impl EnvType for System {
                 return Ok(());
             }
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Exception::from(EnvArgumentError::new(
-                b"Invalid argument - setenv()",
+            return Err(Exception::from(EnvArgumentError::from(
+                "Invalid argument - setenv()",
             )));
         }
         if name.find_byte(b'\0').is_some() {
             if value.is_none() {
                 return Ok(());
             }
-            return Err(Exception::from(EnvArgumentError::new(
-                b"bad environment variable name: contains null byte",
+            return Err(Exception::from(EnvArgumentError::from(
+                "bad environment variable name: contains null byte",
             )));
         }
         if name.find_byte(b'=').is_some() {
@@ -92,24 +93,24 @@ impl EnvType for System {
         }
         if let Some(value) = value {
             if value.find_byte(b'\0').is_some() {
-                return Err(Exception::from(EnvArgumentError::new(
-                    b"bad environment variable value: contains null byte",
+                return Err(Exception::from(EnvArgumentError::from(
+                    "bad environment variable value: contains null byte",
                 )));
             }
             let name = ffi::bytes_to_os_str(name)?;
             let value = ffi::bytes_to_os_str(value)?;
-            std::env::set_var(name, value);
+            systemenv::set_var(name, value);
             Ok(())
         } else {
             let name = ffi::bytes_to_os_str(name)?;
-            std::env::remove_var(name);
+            systemenv::remove_var(name);
             Ok(())
         }
     }
 
     fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
         let mut map = HashMap::default();
-        for (name, value) in std::env::vars_os() {
+        for (name, value) in systemenv::vars_os() {
             let name = ffi::os_string_to_bytes(name)?;
             let value = ffi::os_string_to_bytes(value)?;
             map.insert(name, value);

@@ -1,4 +1,4 @@
-use bstr::BString;
+use bstr::BStr;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::error;
@@ -21,19 +21,31 @@ pub trait EnvType {
 }
 
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct EnvArgumentError(BString);
+pub struct EnvArgumentError(Cow<'static, BStr>);
 
 impl From<Vec<u8>> for EnvArgumentError {
     fn from(message: Vec<u8>) -> Self {
-        Self(message.into())
+        Self(Cow::Owned(message.into()))
+    }
+}
+
+impl From<&'static str> for EnvArgumentError {
+    fn from(message: &'static str) -> Self {
+        Self(Cow::Borrowed(message.into()))
+    }
+}
+
+impl From<&'static [u8]> for EnvArgumentError {
+    fn from(message: &'static [u8]) -> Self {
+        Self(Cow::Borrowed(message.into()))
     }
 }
 
 impl EnvArgumentError {
     #[inline]
     #[must_use]
-    pub fn new(message: &'static [u8]) -> Self {
-        Self(message.into())
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 
@@ -48,7 +60,7 @@ impl error::Error for EnvArgumentError {}
 impl RubyException for EnvArgumentError {
     #[inline]
     fn message(&self) -> &[u8] {
-        self.0.as_slice()
+        self.0.as_ref()
     }
 
     #[inline]
