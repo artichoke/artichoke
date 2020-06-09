@@ -17,7 +17,7 @@ use crate::Artichoke;
 
 pub struct UnboxedValueGuard<'a, T> {
     guarded: ManuallyDrop<Box<T>>,
-    phantom: PhantomData<&'a T>,
+    phantom: PhantomData<&'a mut T>,
 }
 
 impl<'a, T> fmt::Debug for UnboxedValueGuard<'a, T>
