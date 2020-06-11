@@ -5,6 +5,7 @@ use std::fmt;
 use crate::extn::prelude::*;
 
 pub mod backend;
+mod boxing;
 pub mod mruby;
 pub mod trampoline;
 
@@ -109,10 +110,10 @@ impl Random {
         Ok(Self(backend::rand::new(seed.to_reseed())))
     }
 
-    pub fn eql(&self, interp: &mut Artichoke, other: Value) -> Result<bool, Exception> {
-        if let Ok(other) = unsafe { Random::try_from_ruby(interp, &other) } {
+    pub fn eql(&self, interp: &mut Artichoke, mut other: Value) -> Result<bool, Exception> {
+        if let Ok(other) = unsafe { Random::unbox_from_value(&mut other, interp) } {
             let this_seed = self.inner().seed(interp)?;
-            let other_seed = other.borrow().inner().seed(interp)?;
+            let other_seed = other.inner().seed(interp)?;
             Ok(this_seed == other_seed)
         } else {
             Ok(false)
@@ -188,12 +189,6 @@ impl Random {
     pub fn new_seed() -> Int {
         let mut rng = rand::thread_rng();
         rng.gen::<Int>()
-    }
-}
-
-impl RustBackedValue for Random {
-    fn ruby_type_name() -> &'static str {
-        "Random"
     }
 }
 

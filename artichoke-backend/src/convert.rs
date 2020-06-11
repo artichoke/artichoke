@@ -12,15 +12,15 @@ use crate::Artichoke;
 
 mod array;
 mod boolean;
+mod boxing;
 mod bytes;
 mod fixnum;
 mod float;
 mod hash;
 mod nilable;
-mod object;
 mod string;
 
-pub use object::RustBackedValue;
+pub use boxing::{BoxUnboxVmValue, HeapAllocatedData, UnboxedValueGuard};
 
 /// Provide a fallible converter for types that implement an infallible
 /// conversion.

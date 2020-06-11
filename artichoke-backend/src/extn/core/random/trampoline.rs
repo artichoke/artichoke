@@ -8,37 +8,37 @@ pub fn initialize(
 ) -> Result<Value, Exception> {
     let seed = interp.try_convert_mut(seed)?;
     let rand = Random::initialize(interp, seed)?;
-    let rand = rand.try_into_ruby(interp, Some(into.inner()))?;
+    let rand = Random::box_into_value(rand, into, interp)?;
     Ok(rand)
 }
 
-pub fn equal(interp: &mut Artichoke, rand: Value, other: Value) -> Result<Value, Exception> {
-    let rand = unsafe { Random::try_from_ruby(interp, &rand)? };
-    let borrow = rand.borrow();
-    let eql = borrow.eql(interp, other)?;
+pub fn equal(interp: &mut Artichoke, mut rand: Value, other: Value) -> Result<Value, Exception> {
+    let rand = unsafe { Random::unbox_from_value(&mut rand, interp)? };
+    let eql = rand.eql(interp, other)?;
     Ok(interp.convert(eql))
 }
 
-pub fn bytes(interp: &mut Artichoke, rand: Value, size: Value) -> Result<Value, Exception> {
-    let rand = unsafe { Random::try_from_ruby(interp, &rand)? };
-    let mut borrow = rand.borrow_mut();
+pub fn bytes(interp: &mut Artichoke, mut rand: Value, size: Value) -> Result<Value, Exception> {
+    let mut rand = unsafe { Random::unbox_from_value(&mut rand, interp)? };
     let size = size.implicitly_convert_to_int(interp)?;
-    let buf = borrow.bytes(interp, size)?;
+    let buf = rand.bytes(interp, size)?;
     Ok(interp.convert_mut(buf))
 }
 
-pub fn rand(interp: &mut Artichoke, rand: Value, max: Option<Value>) -> Result<Value, Exception> {
-    let rand = unsafe { Random::try_from_ruby(interp, &rand)? };
-    let mut borrow = rand.borrow_mut();
+pub fn rand(
+    interp: &mut Artichoke,
+    mut rand: Value,
+    max: Option<Value>,
+) -> Result<Value, Exception> {
+    let mut rand = unsafe { Random::unbox_from_value(&mut rand, interp)? };
     let max = interp.try_convert_mut(max)?;
-    let num = borrow.rand(interp, max)?;
+    let num = rand.rand(interp, max)?;
     Ok(interp.convert_mut(num))
 }
 
-pub fn seed(interp: &mut Artichoke, rand: Value) -> Result<Value, Exception> {
-    let rand = unsafe { Random::try_from_ruby(interp, &rand)? };
-    let borrow = rand.borrow();
-    let seed = borrow.seed(interp)?;
+pub fn seed(interp: &mut Artichoke, mut rand: Value) -> Result<Value, Exception> {
+    let rand = unsafe { Random::unbox_from_value(&mut rand, interp)? };
+    let seed = rand.seed(interp)?;
     Ok(interp.convert(seed))
 }
 

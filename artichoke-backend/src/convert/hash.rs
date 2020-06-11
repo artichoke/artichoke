@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::convert::{RustBackedValue, UnboxRubyError};
+use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
 use crate::core::{ConvertMut, TryConvertMut};
 use crate::exception::Exception;
 use crate::extn::core::array::Array;
@@ -27,17 +27,19 @@ impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
     }
 }
 
-impl ConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Value {
+impl TryConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Result<Value, Self::Error> {
         let capa = Int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
         let hash = hash.unwrap();
         for (key, val) in value {
-            let key = self.convert_mut(key).inner();
-            let val = self.convert_mut(val).inner();
+            let key = self.try_convert_mut(key)?.inner();
+            let val = self.try_convert_mut(val)?.inner();
             let _ = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash, key, val)) };
         }
-        Value::from(hash)
+        Ok(Value::from(hash))
     }
 }
 
@@ -82,12 +84,11 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
             let hash = value.inner();
             let keys = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_keys(mrb, hash))? };
 
-            let keys = Value::from(keys);
-            let array = unsafe { Array::try_from_ruby(self, &keys) }?;
-            let borrow = array.borrow();
+            let mut keys = Value::from(keys);
+            let array = unsafe { Array::unbox_from_value(&mut keys, self) }?;
 
-            let mut pairs = Vec::with_capacity(borrow.len());
-            for key in &*borrow {
+            let mut pairs = Vec::with_capacity(array.len());
+            for key in &*array {
                 let value = unsafe {
                     self.with_ffi_boundary(|mrb| sys::mrb_hash_get(mrb, hash, key.inner()))?
                 };

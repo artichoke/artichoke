@@ -1,15 +1,13 @@
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::error;
 use std::ffi::c_void;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
-use std::rc::Rc;
 
 use crate::class;
 use crate::class_registry::ClassRegistry;
-use crate::convert::RustBackedValue;
+use crate::convert::BoxUnboxVmValue;
 use crate::core::ConvertMut;
 use crate::exception::{Exception, RubyException};
 use crate::extn::core::exception::{NameError, ScriptError};
@@ -22,52 +20,55 @@ use crate::Artichoke;
 pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void);
 
 /// A generic implementation of a [`Free`] function for
-/// [`mrb_value`](sys::mrb_value)s that store an owned copy of an [`Rc`] smart
+/// [`mrb_value`](sys::mrb_value)s that store an owned copy of a [`Box`] smart
 /// pointer.
 ///
-/// This function calls [`Rc::from_raw`] on the data pointer and drops the
-/// resulting [`Rc`].
+/// This function ultimately calls [`Box::from_raw`] on the data pointer and
+/// drops the resulting [`Box`].
 ///
 /// # Safety
 ///
-/// This function assumes that the data pointer is to an
-/// [`Rc`]`<`[`RefCell`]`<T>>` created by [`Rc::into_raw`]. This fuction bounds
-/// `T` by [`RustBackedValue`] which boxes `T` for the mruby VM like this.
+/// This function assumes that the data pointer is to an [`Box`]`<T>` created by
+/// [`Box::into_raw`]. This fuction bounds `T` by [`BoxUnboxVmValue`] which
+/// boxes `T` for the mruby VM like this.
 ///
 /// This function assumes it is called by the mruby VM as a free function for
 /// an [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
-pub unsafe extern "C" fn rust_data_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void)
+pub unsafe extern "C" fn box_unbox_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void)
 where
-    T: 'static + RustBackedValue,
+    T: 'static + BoxUnboxVmValue,
 {
     if data.is_null() {
-        panic!(
-            "Received null pointer in rust_data_free<{}>: {:p}",
-            T::ruby_type_name(),
+        error!(
+            "Received null pointer in box_unbox_free<{}>: {:p}",
+            T::RUBY_TYPE,
+            data
+        );
+        eprintln!(
+            "Received null pointer in box_unbox_free<{}>: {:p}",
+            T::RUBY_TYPE,
             data
         );
     }
-    let data = Rc::from_raw(data as *const RefCell<T>);
-    drop(data);
+    T::free(data);
 }
 
 #[cfg(test)]
 mod free_test {
-    use crate::convert::RustBackedValue;
+    use crate::convert::HeapAllocatedData;
 
     fn prototype(_func: super::Free) {}
 
+    #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
     struct Data(String);
 
-    impl RustBackedValue for Data {
-        fn ruby_type_name() -> &'static str {
-            "Data"
-        }
+    impl HeapAllocatedData for Data {
+        const RUBY_TYPE: &'static str = "Data";
     }
 
     #[test]
     fn free_prototype() {
-        prototype(super::rust_data_free::<Data>);
+        prototype(super::box_unbox_free::<Data>);
     }
 }
 

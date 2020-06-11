@@ -13,19 +13,27 @@ pub mod regex;
 pub type NilableString = Option<Vec<u8>>;
 pub type NameToCaptureLocations = Vec<(Vec<u8>, Vec<usize>)>;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Scan {
     Collected(Vec<Vec<Option<Vec<u8>>>>),
     Patterns(Vec<Vec<u8>>),
     Haystack,
 }
 
-impl ConvertMut<Scan, Option<Value>> for Artichoke {
-    fn convert_mut(&mut self, from: Scan) -> Option<Value> {
+impl TryConvertMut<Scan, Option<Value>> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, from: Scan) -> Result<Option<Value>, Self::Error> {
         match from {
-            Scan::Collected(collected) => Some(self.convert_mut(collected)),
-            Scan::Patterns(patterns) => Some(self.convert_mut(patterns)),
-            Scan::Haystack => None,
+            Scan::Collected(collected) => {
+                let ary = self.try_convert_mut(collected)?;
+                Ok(Some(ary))
+            }
+            Scan::Patterns(patterns) => {
+                let ary = self.try_convert_mut(patterns)?;
+                Ok(Some(ary))
+            }
+            Scan::Haystack => Ok(None),
         }
     }
 }

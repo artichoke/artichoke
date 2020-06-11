@@ -249,7 +249,7 @@ mod tests {
         let array = interp.eval(b"[1, /./, Object.new]").unwrap();
         assert_eq!(Ruby::Data, types::ruby_from_mrb_value(array.inner()));
         let ary = vec!["a", "b", "c"];
-        let converted = interp.convert_mut(ary);
+        let converted = interp.try_convert_mut(ary).unwrap();
         assert_eq!(Ruby::Data, types::ruby_from_mrb_value(converted.inner()));
     }
 

@@ -2,34 +2,32 @@ use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
 
-pub fn clear(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
-    let mut borrow = array.borrow_mut();
-    borrow.clear();
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    array.clear();
     Ok(ary)
 }
 
 pub fn element_reference(
     interp: &mut Artichoke,
-    ary: Value,
+    mut ary: Value,
     first: Value,
     second: Option<Value>,
 ) -> Result<Value, Exception> {
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
-    let borrow = array.borrow();
-    let elem = borrow.element_reference(interp, first, second)?;
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let elem = array.element_reference(interp, first, second)?;
     Ok(interp.convert(elem))
 }
 
 pub fn element_assignment(
     interp: &mut Artichoke,
-    ary: Value,
+    mut ary: Value,
     first: Value,
     second: Value,
     third: Option<Value>,
@@ -40,36 +38,37 @@ pub fn element_assignment(
             "can't modify frozen Array",
         )));
     }
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
     // TODO: properly handle self-referential sets.
     if ary == first || ary == second || Some(ary) == third {
         return Ok(Value::nil());
     }
-    let mut borrow = array.borrow_mut();
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+
     let prior_gc_state = interp.disable_gc();
-    let result = borrow.element_assignment(interp, first, second, third);
+
+    let result = array.element_assignment(interp, first, second, third);
+
     if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();
     }
     result
 }
 
-pub fn pop(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
-    let mut borrow = array.borrow_mut();
-    let result = borrow.pop();
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let result = array.pop();
     Ok(interp.convert(result))
 }
 
 pub fn concat(
     interp: &mut Artichoke,
-    ary: Value,
+    mut ary: Value,
     other: Option<Value>,
 ) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
@@ -79,43 +78,39 @@ pub fn concat(
         )));
     }
     if let Some(other) = other {
-        let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
-        let mut borrow = array.borrow_mut();
-        borrow.concat(interp, other)?;
+        let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+        array.concat(interp, other)?;
     }
     Ok(ary)
 }
 
-pub fn push(interp: &mut Artichoke, ary: Value, value: Value) -> Result<Value, Exception> {
+pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
-    let mut borrow = array.borrow_mut();
-    borrow.push(value);
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    array.push(value);
     Ok(ary)
 }
 
-pub fn reverse_bang(interp: &mut Artichoke, ary: Value) -> Result<Value, Exception> {
+pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
         return Err(Exception::from(FrozenError::new(
             interp,
             "can't modify frozen Array",
         )));
     }
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
-    let mut borrow = array.borrow_mut();
-    borrow.reverse();
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    array.reverse();
     Ok(ary)
 }
 
-pub fn len(interp: &mut Artichoke, ary: Value) -> Result<usize, Exception> {
-    let array = unsafe { Array::try_from_ruby(interp, &ary) }?;
-    let borrow = array.borrow();
-    Ok(borrow.len())
+pub fn len(interp: &mut Artichoke, mut ary: Value) -> Result<usize, Exception> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    Ok(array.len())
 }
 
 pub fn initialize(
@@ -126,17 +121,15 @@ pub fn initialize(
     block: Option<Block>,
 ) -> Result<Value, Exception> {
     let array = Array::initialize(interp, first, second, block)?;
-    array.try_into_ruby(interp, Some(into.inner()))
+    Array::box_into_value(array, into, interp)
 }
 
 pub fn initialize_copy(
     interp: &mut Artichoke,
     ary: Value,
-    from: Value,
+    mut from: Value,
 ) -> Result<Value, Exception> {
-    let from = unsafe { Array::try_from_ruby(interp, &from) }?;
-    let borrow = from.borrow();
-    let result = borrow.clone();
-    let result = result.try_into_ruby(interp, Some(ary.inner()))?;
-    Ok(result)
+    let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
+    let result = from.clone();
+    Array::box_into_value(result, ary, interp)
 }

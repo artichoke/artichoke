@@ -1,6 +1,6 @@
 use std::iter::FromIterator;
 
-use crate::convert::{RustBackedValue, UnboxRubyError};
+use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
 use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut};
 use crate::exception::Exception;
 use crate::extn::core::array::Array;
@@ -8,187 +8,236 @@ use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
-impl ConvertMut<&[Value], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[Value]) -> Value {
+impl TryConvertMut<&[Value], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[Value]) -> Result<Value, Self::Error> {
         let ary = Array::from(value);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Value>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Value>) -> Value {
+impl TryConvertMut<Vec<Value>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Value>) -> Result<Value, Self::Error> {
         let ary = Array::from(value);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[Option<Value>], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[Option<Value>]) -> Value {
+impl TryConvertMut<&[Option<Value>], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[Option<Value>]) -> Result<Value, Self::Error> {
         let ary = Array::from_iter(value);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Vec<u8>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Vec<u8>>) -> Value {
+impl TryConvertMut<Vec<Vec<u8>>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Vec<u8>>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<&[u8]>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<&[u8]>) -> Value {
+impl TryConvertMut<Vec<&[u8]>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<&[u8]>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[Vec<u8>], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[Vec<u8>]) -> Value {
+impl TryConvertMut<&[Vec<u8>], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[Vec<u8>]) -> Result<Value, Self::Error> {
         let iter = value.iter().map(|item| self.convert_mut(item.as_slice()));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[&[u8]], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[&[u8]]) -> Value {
+impl TryConvertMut<&[&[u8]], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[&[u8]]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<String>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<String>) -> Value {
+impl TryConvertMut<Vec<String>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<String>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<&str>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<&str>) -> Value {
+impl TryConvertMut<Vec<&str>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<&str>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[String], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[String]) -> Value {
+impl TryConvertMut<&[String], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[String]) -> Result<Value, Self::Error> {
         let iter = value.iter().map(|item| self.convert_mut(item.as_str()));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[&str], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[&str]) -> Value {
+impl TryConvertMut<&[&str], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[&str]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Int>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Int>) -> Value {
+impl TryConvertMut<Vec<Int>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Int>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[Int], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[Int]) -> Value {
+impl TryConvertMut<&[Int], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[Int]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[Option<Vec<u8>>], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[Option<Vec<u8>>]) -> Value {
+impl TryConvertMut<&[Option<Vec<u8>>], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[Option<Vec<u8>>]) -> Result<Value, Self::Error> {
         let iter = value.iter().map(|item| self.convert_mut(item.as_deref()));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Option<Vec<u8>>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Option<Vec<u8>>>) -> Value {
+impl TryConvertMut<Vec<Option<Vec<u8>>>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Option<Vec<u8>>>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[Option<&[u8]>], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[Option<&[u8]>]) -> Value {
+impl TryConvertMut<&[Option<&[u8]>], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[Option<&[u8]>]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Option<&[u8]>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Option<&[u8]>>) -> Value {
+impl TryConvertMut<Vec<Option<&[u8]>>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Option<&[u8]>>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Vec<Option<Vec<u8>>>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Vec<Option<Vec<u8>>>>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert_mut(item));
-        let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+impl TryConvertMut<Vec<Vec<Option<Vec<u8>>>>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Vec<Option<Vec<u8>>>>) -> Result<Value, Self::Error> {
+        let ary = value
+            .into_iter()
+            .map(|item| self.try_convert_mut(item))
+            .collect::<Result<Array, _>>()?;
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Vec<Option<&[u8]>>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Vec<Option<&[u8]>>>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert_mut(item));
-        let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+impl TryConvertMut<Vec<Vec<Option<&[u8]>>>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Vec<Option<&[u8]>>>) -> Result<Value, Self::Error> {
+        let ary = value
+            .into_iter()
+            .map(|item| self.try_convert_mut(item))
+            .collect::<Result<Array, _>>()?;
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<&[Option<&str>], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[Option<&str>]) -> Value {
+impl TryConvertMut<&[Option<&str>], Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: &[Option<&str>]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Option<&str>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Option<&str>>) -> Value {
+impl TryConvertMut<Vec<Option<&str>>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Option<&str>>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+        Array::alloc_value(ary, self)
     }
 }
 
-impl ConvertMut<Vec<Vec<Option<&str>>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<Vec<Option<&str>>>) -> Value {
-        let iter = value.into_iter().map(|item| self.convert_mut(item));
-        let ary = Array::from_iter(iter);
-        ary.try_into_ruby(self, None).expect("Array into Value")
+impl TryConvertMut<Vec<Vec<Option<&str>>>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Vec<Vec<Option<&str>>>) -> Result<Value, Self::Error> {
+        let ary = value
+            .into_iter()
+            .map(|item| self.try_convert_mut(item))
+            .collect::<Result<Array, _>>()?;
+        Array::alloc_value(ary, self)
     }
 }
 
 impl TryConvertMut<Value, Vec<Value>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Value>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Value>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            Ok(borrow.iter().collect())
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            Ok(array.iter().collect())
         } else {
             Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
@@ -198,11 +247,10 @@ impl TryConvertMut<Value, Vec<Value>> for Artichoke {
 impl TryConvertMut<Value, Vec<Vec<u8>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Vec<u8>>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Vec<u8>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array
                 .iter()
                 .map(|elem| self.try_convert_mut(elem))
                 .collect()
@@ -215,11 +263,10 @@ impl TryConvertMut<Value, Vec<Vec<u8>>> for Artichoke {
 impl TryConvertMut<Value, Vec<Option<Vec<u8>>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Option<Vec<u8>>>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Option<Vec<u8>>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array
                 .iter()
                 .map(|elem| self.try_convert_mut(elem))
                 .collect()
@@ -232,11 +279,10 @@ impl TryConvertMut<Value, Vec<Option<Vec<u8>>>> for Artichoke {
 impl<'a> TryConvertMut<Value, Vec<&'a [u8]>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<&'a [u8]>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<&'a [u8]>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array
                 .iter()
                 .map(|elem| self.try_convert_mut(elem))
                 .collect()
@@ -249,11 +295,10 @@ impl<'a> TryConvertMut<Value, Vec<&'a [u8]>> for Artichoke {
 impl<'a> TryConvertMut<Value, Vec<Option<&'a [u8]>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Option<&'a [u8]>>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Option<&'a [u8]>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array
                 .iter()
                 .map(|elem| self.try_convert_mut(elem))
                 .collect()
@@ -266,11 +311,10 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a [u8]>>> for Artichoke {
 impl TryConvertMut<Value, Vec<String>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<String>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<String>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array
                 .iter()
                 .map(|elem| self.try_convert_mut(elem))
                 .collect()
@@ -283,11 +327,10 @@ impl TryConvertMut<Value, Vec<String>> for Artichoke {
 impl TryConvertMut<Value, Vec<Option<String>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Option<String>>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Option<String>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array
                 .iter()
                 .map(|elem| self.try_convert_mut(elem))
                 .collect()
@@ -300,11 +343,10 @@ impl TryConvertMut<Value, Vec<Option<String>>> for Artichoke {
 impl<'a> TryConvertMut<Value, Vec<&'a str>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<&'a str>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<&'a str>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array
                 .iter()
                 .map(|elem| self.try_convert_mut(elem))
                 .collect()
@@ -317,11 +359,10 @@ impl<'a> TryConvertMut<Value, Vec<&'a str>> for Artichoke {
 impl<'a> TryConvertMut<Value, Vec<Option<&'a str>>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Option<&'a str>>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Option<&'a str>>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array
                 .iter()
                 .map(|elem| self.try_convert_mut(elem))
                 .collect()
@@ -334,11 +375,10 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a str>>> for Artichoke {
 impl TryConvertMut<Value, Vec<Int>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<Int>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Int>, Self::Error> {
         if let Ruby::Data = value.ruby_type() {
-            let array = unsafe { Array::try_from_ruby(self, &value) }?;
-            let borrow = array.borrow();
-            borrow.iter().map(|elem| self.try_convert(elem)).collect()
+            let array = unsafe { Array::unbox_from_value(&mut value, self)? };
+            array.iter().map(|elem| self.try_convert(elem)).collect()
         } else {
             Err(Exception::from(UnboxRubyError::new(&value, Rust::Vec)))
         }
@@ -364,7 +404,7 @@ mod tests {
     fn arr_int(arr: Vec<Int>) -> bool {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
-        let value = interp.convert_mut(arr.as_slice());
+        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -380,7 +420,7 @@ mod tests {
             return false;
         }
         // Owned converter
-        let value = interp.convert_mut(arr.to_vec());
+        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -402,7 +442,7 @@ mod tests {
     fn arr_utf8(arr: Vec<String>) -> bool {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
-        let value = interp.convert_mut(arr.as_slice());
+        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -418,7 +458,7 @@ mod tests {
             return false;
         }
         // Owned converter
-        let value = interp.convert_mut(arr.to_vec());
+        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -440,7 +480,7 @@ mod tests {
     fn arr_nilable_bstr(arr: Vec<Option<Vec<u8>>>) -> bool {
         let mut interp = crate::interpreter().unwrap();
         // Borrowed converter
-        let value = interp.convert_mut(arr.as_slice());
+        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {
@@ -456,7 +496,7 @@ mod tests {
             return false;
         }
         // Owned converter
-        let value = interp.convert_mut(arr.to_vec());
+        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
         if len != arr.len() {

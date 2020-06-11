@@ -5,7 +5,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<random::Random>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Random", None, Some(def::rust_data_free::<random::Random>))?;
+    let spec = class::Spec::new("Random", None, Some(def::box_unbox_free::<random::Random>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_self_method(
@@ -32,8 +32,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.def_class::<random::Random>(spec)?;
 
     let default = random::Random::interpreter_prng_delegate();
-    let default = default
-        .try_into_ruby(interp, None)
+    let default = random::Random::alloc_value(default, interp)
         .map_err(|_| NotDefinedError::class_constant("Random::DEFAULT"))?;
     interp.define_class_constant::<random::Random>("DEFAULT", default)?;
     let _ = interp.eval(&include_bytes!("random.rb")[..])?;

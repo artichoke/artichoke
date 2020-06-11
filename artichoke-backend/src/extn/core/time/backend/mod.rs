@@ -1,7 +1,5 @@
 use std::fmt;
 
-use crate::Artichoke;
-
 pub mod chrono;
 
 /// Common API for [`Time`](crate::extn::core::time::Time) backends.
@@ -83,5 +81,5 @@ pub trait MakeTime {
     fn as_debug(&self) -> &dyn fmt::Debug;
 
     /// Construct the current time.
-    fn now(&self, interp: &Artichoke) -> Self::Time;
+    fn now(&self) -> Self::Time;
 }

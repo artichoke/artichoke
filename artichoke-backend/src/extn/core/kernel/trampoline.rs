@@ -78,7 +78,7 @@ where
             interp.puts(display)?;
             result.push(value)
         }
-        Ok(interp.convert_mut(result))
+        interp.try_convert_mut(result)
     } else {
         Ok(Value::nil())
     }
