@@ -56,8 +56,8 @@ mod tests {
         let err = interp
             .eval(b"raise ArgumentError.new('waffles')")
             .unwrap_err();
-        assert_eq!("ArgumentError", err.name().as_str());
-        assert_eq!(&b"waffles"[..], err.message());
+        assert_eq!("ArgumentError", err.name().as_ref());
+        assert_eq!(&b"waffles"[..], err.message().as_ref());
         assert_eq!(
             Some(vec![Vec::from(&b"(eval):1"[..])]),
             err.vm_backtrace(&mut interp)
@@ -68,8 +68,8 @@ mod tests {
     fn return_exception_with_no_backtrace() {
         let mut interp = crate::interpreter().expect("init");
         let err = interp.eval(b"def bad; (; end").unwrap_err();
-        assert_eq!("SyntaxError", err.name().as_str());
-        assert_eq!(&b"syntax error"[..], err.message());
+        assert_eq!("SyntaxError", err.name().as_ref());
+        assert_eq!(&b"syntax error"[..], err.message().as_ref());
         assert_eq!(None, err.vm_backtrace(&mut interp));
     }
 

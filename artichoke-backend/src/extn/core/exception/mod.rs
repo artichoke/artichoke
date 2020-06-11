@@ -314,12 +314,12 @@ macro_rules! ruby_exception_impl {
         }
 
         impl RubyException for $exception {
-            fn message(&self) -> &[u8] {
-                self.message.as_ref()
+            fn message(&self) -> Cow<'_, [u8]> {
+                Cow::Borrowed(self.message.as_ref())
             }
 
-            fn name(&self) -> String {
-                String::from(stringify!($exception))
+            fn name(&self) -> Cow<'_, str> {
+                stringify!($exception).into()
             }
 
             fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
@@ -338,7 +338,7 @@ macro_rules! ruby_exception_impl {
             fn fmt(&self, mut f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let classname = self.name();
                 write!(f, "{} (", classname)?;
-                string::format_unicode_debug_into(&mut f, self.message())
+                string::format_unicode_debug_into(&mut f, &self.message())
                     .map_err(string::WriteError::into_inner)?;
                 write!(f, ")")
             }
@@ -420,8 +420,8 @@ mod tests {
         let mut interp = crate::interpreter().expect("init");
         Run::require(&mut interp).unwrap();
         let err = interp.eval(b"Run.run").unwrap_err();
-        assert_eq!("RuntimeError", err.name().as_str());
-        assert_eq!(Vec::from(&b"something went wrong"[..]), err.message());
+        assert_eq!("RuntimeError", err.name().as_ref());
+        assert_eq!(&b"something went wrong"[..], err.message().as_ref());
         assert_eq!(
             Some(vec![Vec::from(&b"(eval):1"[..])]),
             err.vm_backtrace(&mut interp)

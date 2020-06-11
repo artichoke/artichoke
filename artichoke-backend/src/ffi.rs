@@ -3,6 +3,7 @@
 //! These functions are unsafe. Use them carefully.
 
 use bstr::{ByteSlice, ByteVec};
+use std::borrow::Cow;
 use std::error;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
@@ -72,12 +73,12 @@ impl fmt::Display for InterpreterExtractError {
 impl error::Error for InterpreterExtractError {}
 
 impl RubyException for InterpreterExtractError {
-    fn message(&self) -> &[u8] {
-        &b"Failed to extract Artichoke Ruby interpreter from mrb_state"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Failed to extract Artichoke Ruby interpreter from mrb_state")
     }
 
-    fn name(&self) -> String {
-        String::from("fatal")
+    fn name(&self) -> Cow<'_, str> {
+        "fatal".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
@@ -152,12 +153,12 @@ impl fmt::Display for ConvertBytesError {
 impl error::Error for ConvertBytesError {}
 
 impl RubyException for ConvertBytesError {
-    fn message(&self) -> &[u8] {
-        &b"invalid byte sequence"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"invalid byte sequence")
     }
 
-    fn name(&self) -> String {
-        String::from("ArgumentError")
+    fn name(&self) -> Cow<'_, str> {
+        "ArgumentError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

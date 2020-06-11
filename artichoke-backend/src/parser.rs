@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, IncrementLinenoError, Parser};
 use crate::exception::{Exception, RubyException};
@@ -74,12 +76,12 @@ impl Parser for Artichoke {
 }
 
 impl RubyException for IncrementLinenoError {
-    fn message(&self) -> &[u8] {
-        b"parser exceeded maximum line count"
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"parser exceeded maximum line count")
     }
 
-    fn name(&self) -> String {
-        String::from("ScriptError")
+    fn name(&self) -> Cow<'_, str> {
+        "ScriptError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

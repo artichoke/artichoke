@@ -1,4 +1,5 @@
 use bstr::BString;
+use std::borrow::Cow;
 use std::error;
 use std::fmt;
 use std::hint;
@@ -13,12 +14,12 @@ use crate::{Artichoke, Guard};
 pub struct Exception(Box<dyn RubyException>);
 
 impl RubyException for Exception {
-    fn message(&self) -> &[u8] {
+    fn message(&self) -> Cow<'_, [u8]> {
         self.0.message()
     }
 
     /// Class name of the `Exception`.
-    fn name(&self) -> String {
+    fn name(&self) -> Cow<'_, str> {
         self.0.name()
     }
 
@@ -93,10 +94,10 @@ pub trait RubyException: error::Error + 'static {
     ///
     /// This value is a byte slice since Ruby `String`s are equivalent to
     /// `Vec<u8>`.
-    fn message(&self) -> &[u8];
+    fn message(&self) -> Cow<'_, [u8]>;
 
     /// Class name of the `Exception`.
-    fn name(&self) -> String;
+    fn name(&self) -> Cow<'_, str>;
 
     /// Optional backtrace specified by a `Vec` of frames.
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>>;
@@ -106,11 +107,11 @@ pub trait RubyException: error::Error + 'static {
 }
 
 impl RubyException for Box<dyn RubyException> {
-    fn message(&self) -> &[u8] {
+    fn message(&self) -> Cow<'_, [u8]> {
         self.as_ref().message()
     }
 
-    fn name(&self) -> String {
+    fn name(&self) -> Cow<'_, str> {
         self.as_ref().name()
     }
 
@@ -153,7 +154,7 @@ impl fmt::Display for CaughtException {
     fn fmt(&self, mut f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let classname = self.name();
         write!(f, "{} (", classname)?;
-        string::format_unicode_debug_into(&mut f, self.message())
+        string::format_unicode_debug_into(&mut f, &self.message())
             .map_err(string::WriteError::into_inner)?;
         write!(f, ")")
     }
@@ -162,12 +163,12 @@ impl fmt::Display for CaughtException {
 impl error::Error for CaughtException {}
 
 impl RubyException for CaughtException {
-    fn message(&self) -> &[u8] {
-        self.message.as_slice()
+    fn message(&self) -> Cow<'_, [u8]> {
+        self.message.as_slice().into()
     }
 
-    fn name(&self) -> String {
-        self.name.clone()
+    fn name(&self) -> Cow<'_, str> {
+        self.name.as_str().into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

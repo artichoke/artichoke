@@ -59,13 +59,13 @@ impl error::Error for EnvArgumentError {}
 
 impl RubyException for EnvArgumentError {
     #[inline]
-    fn message(&self) -> &[u8] {
-        self.0.as_ref()
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(self.0.as_ref())
     }
 
     #[inline]
-    fn name(&self) -> String {
-        String::from("ArgumentError")
+    fn name(&self) -> Cow<'_, str> {
+        "ArgumentError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::ffi::{CStr, OsStr, OsString};
 use std::slice;
@@ -27,6 +28,12 @@ impl ConvertMut<&[u8], Value> for Artichoke {
         // to worry about the lifetime of the slice passed into this converter.
         let string = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_str_new(mrb, raw, len)) };
         Value::from(string.unwrap())
+    }
+}
+
+impl<'a> ConvertMut<Cow<'a, [u8]>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Cow<'a, [u8]>) -> Value {
+        self.convert_mut(value.as_ref())
     }
 }
 

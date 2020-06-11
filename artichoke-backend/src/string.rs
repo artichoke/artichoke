@@ -7,6 +7,7 @@
 //! Artichoke aims to support ASCII, UTF-8, maybe UTF-8, and binary encodings.
 
 use bstr::ByteSlice;
+use std::borrow::Cow;
 use std::error;
 use std::fmt;
 use std::io;
@@ -111,13 +112,13 @@ impl error::Error for WriteError {
 
 impl RubyException for WriteError {
     #[inline]
-    fn message(&self) -> &[u8] {
-        &b"Unable to write message into destination"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Unable to write message into destination")
     }
 
     #[inline]
-    fn name(&self) -> String {
-        String::from("fatal")
+    fn name(&self) -> Cow<'_, str> {
+        "fatal".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
@@ -189,13 +190,13 @@ impl error::Error for IoWriteError {
 
 impl RubyException for IoWriteError {
     #[inline]
-    fn message(&self) -> &[u8] {
-        &b"Unable to write message"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Unable to write message")
     }
 
     #[inline]
-    fn name(&self) -> String {
-        String::from("fatal")
+    fn name(&self) -> Cow<'_, str> {
+        "fatal".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

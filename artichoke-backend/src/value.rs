@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error;
 use std::fmt;
 use std::ptr;
@@ -380,12 +381,12 @@ impl fmt::Display for ArgCountError {
 impl error::Error for ArgCountError {}
 
 impl RubyException for ArgCountError {
-    fn message(&self) -> &[u8] {
-        &b"Too many arguments"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Too many arguments")
     }
 
-    fn name(&self) -> String {
-        String::from("ArgumentError")
+    fn name(&self) -> Cow<'_, str> {
+        "ArgumentError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
@@ -620,8 +621,11 @@ mod tests {
             .funcall(&mut interp, "+", &[nil], None)
             .and_then(|value| value.try_into_mut::<String>(&mut interp))
             .unwrap_err();
-        assert_eq!("TypeError", err.name().as_str());
-        assert_eq!(&b"nil cannot be converted to String"[..], err.message());
+        assert_eq!("TypeError", err.name().as_ref());
+        assert_eq!(
+            &b"nil cannot be converted to String"[..],
+            err.message().as_ref()
+        );
     }
 
     #[test]
@@ -632,10 +636,10 @@ mod tests {
         let err = nil
             .funcall(&mut interp, "garbage_method_name", &[s], None)
             .unwrap_err();
-        assert_eq!("NoMethodError", err.name().as_str());
+        assert_eq!("NoMethodError", err.name().as_ref());
         assert_eq!(
             &b"undefined method 'garbage_method_name'"[..],
-            err.message()
+            err.message().as_ref()
         );
     }
 }

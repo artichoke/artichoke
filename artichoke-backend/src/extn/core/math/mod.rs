@@ -484,12 +484,12 @@ impl fmt::Display for DomainError {
 impl error::Error for DomainError {}
 
 impl RubyException for DomainError {
-    fn message(&self) -> &[u8] {
-        self.0.as_ref().as_bytes()
+    fn message(&self) -> Cow<'_, [u8]> {
+        self.0.as_ref().as_bytes().into()
     }
 
-    fn name(&self) -> String {
-        String::from("DomainError")
+    fn name(&self) -> Cow<'_, str> {
+        "DomainError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

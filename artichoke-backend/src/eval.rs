@@ -180,14 +180,14 @@ mod tests {
     fn unparseable_code_returns_err_syntax_error() {
         let mut interp = crate::interpreter().unwrap();
         let err = interp.eval(b"'a").unwrap_err();
-        assert_eq!("SyntaxError", err.name().as_str());
+        assert_eq!("SyntaxError", err.name().as_ref());
     }
 
     #[test]
     fn interpreter_is_usable_after_syntax_error() {
         let mut interp = crate::interpreter().unwrap();
         let err = interp.eval(b"'a").unwrap_err();
-        assert_eq!("SyntaxError", err.name().as_str());
+        assert_eq!("SyntaxError", err.name().as_ref());
         // Ensure interpreter is usable after evaling unparseable code
         let result = interp.eval(b"'a' * 10 ").unwrap();
         let result = result.try_into_mut::<&str>(&mut interp).unwrap();
@@ -225,6 +225,6 @@ mod tests {
             .def_rb_source_file("fail.rb", &b"def bad; 'as'.scan(; end"[..])
             .unwrap();
         let err = interp.eval(b"require 'fail'").unwrap_err();
-        assert_eq!("SyntaxError", err.name().as_str());
+        assert_eq!("SyntaxError", err.name().as_ref());
     }
 }
