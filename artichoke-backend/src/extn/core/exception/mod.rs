@@ -428,7 +428,7 @@ mod tests {
     unsafe extern "C" fn run_run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let mut interp = unwrap_interpreter!(mrb);
         let guard = Guard::new(&mut interp);
-        let exc = RuntimeError::new(&guard, "something went wrong");
+        let exc = RuntimeError::from("something went wrong");
         exception::raise(guard, exc)
     }
 
