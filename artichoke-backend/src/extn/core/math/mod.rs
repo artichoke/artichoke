@@ -149,6 +149,7 @@ pub fn cosh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
 
 #[cfg(not(feature = "core-math-extra"))]
 pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+    let _ = interp;
     let _ = value;
     Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
@@ -164,6 +165,7 @@ pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
 
 #[cfg(not(feature = "core-math-extra"))]
 pub fn erfc(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+    let _ = interp;
     let _ = value;
     Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
@@ -185,6 +187,7 @@ pub fn exp(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
 
 #[cfg(not(feature = "core-math-extra"))]
 pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
+    let _ = interp;
     let _ = value;
     Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
@@ -200,6 +203,7 @@ pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exceptio
 
 #[cfg(not(feature = "core-math-extra"))]
 pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+    let _ = interp;
     let _ = value;
     Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
@@ -286,6 +290,7 @@ pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, E
 
 #[cfg(not(feature = "core-math-extra"))]
 pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Fp, Exception> {
+    let _ = interp;
     let _ = fraction;
     let _ = exponent;
     Err(Exception::from(NotImplementedError::from(
@@ -328,6 +333,7 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
 
 #[cfg(not(feature = "core-math-extra"))]
 pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
+    let _ = interp;
     let _ = value;
     Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
