@@ -123,7 +123,6 @@ impl Eq for Regexp {}
 
 impl Regexp {
     pub fn new(
-        interp: &mut Artichoke,
         literal_config: Config,
         derived_config: Config,
         encoding: Encoding,
@@ -131,13 +130,8 @@ impl Regexp {
         #[cfg(feature = "core-regexp-oniguruma")]
         {
             // Patterns must be parsable by Oniguruma.
-            let onig = Onig::new(
-                interp,
-                literal_config.clone(),
-                derived_config.clone(),
-                encoding,
-            )?;
-            if let Ok(regex) = Utf8::new(interp, literal_config, derived_config, encoding) {
+            let onig = Onig::new(literal_config.clone(), derived_config.clone(), encoding)?;
+            if let Ok(regex) = Utf8::new(literal_config, derived_config, encoding) {
                 Ok(Self(Box::new(regex)))
             } else {
                 Ok(Self(Box::new(onig)))
@@ -145,7 +139,7 @@ impl Regexp {
         }
         #[cfg(not(feature = "core-regexp-oniguruma"))]
         {
-            let regex = Utf8::new(interp, literal_config, derived_config, encoding)?;
+            let regex = Utf8::new(literal_config, derived_config, encoding)?;
             Ok(Self(Box::new(regex)))
         }
     }
@@ -156,7 +150,7 @@ impl Regexp {
             pattern: pattern.into(),
             options: Options::default(),
         };
-        let backend = Box::new(Lazy::new(literal_config));
+        let backend = Box::new(Lazy::from(literal_config));
         Self(backend)
     }
 
@@ -189,15 +183,10 @@ impl Regexp {
             pattern: pattern.into_pattern().into(),
             options,
         };
-        Self::new(
-            interp,
-            literal_config,
-            derived_config,
-            encoding.unwrap_or_default(),
-        )
+        Self::new(literal_config, derived_config, encoding.unwrap_or_default())
     }
 
-    pub fn escape(interp: &mut Artichoke, pattern: &[u8]) -> Result<String, Exception> {
+    pub fn escape(pattern: &[u8]) -> Result<String, Exception> {
         if let Ok(pattern) = str::from_utf8(pattern) {
             Ok(syntax::escape(pattern))
         } else {
@@ -261,7 +250,7 @@ impl Regexp {
             pattern: pattern.into(),
             options: Options::default(),
         };
-        Self::new(interp, literal_config, derived_config, Encoding::default())
+        Self::new(literal_config, derived_config, Encoding::default())
     }
 
     #[inline]
@@ -291,8 +280,7 @@ impl Regexp {
 
     #[inline]
     #[must_use]
-    pub fn hash(&self, interp: &mut Artichoke) -> u64 {
-        let _ = interp;
+    pub fn hash(&self) -> u64 {
         let mut s = DefaultHasher::new();
         self.0.hash(&mut s);
         s.finish()
@@ -300,34 +288,27 @@ impl Regexp {
 
     #[inline]
     #[must_use]
-    pub fn inspect(&self, interp: &mut Artichoke) -> Vec<u8> {
-        self.0.inspect(interp)
+    pub fn inspect(&self) -> Vec<u8> {
+        self.0.inspect()
     }
 
     #[inline]
     #[must_use]
-    pub fn is_casefold(&self, interp: &mut Artichoke) -> bool {
-        let _ = interp;
+    pub fn is_casefold(&self) -> bool {
         self.0.literal_config().options.ignore_case
     }
 
     #[must_use]
-    pub fn is_fixed_encoding(&self, interp: &mut Artichoke) -> bool {
-        let _ = interp;
+    pub fn is_fixed_encoding(&self) -> bool {
         match self.0.encoding() {
             Encoding::No | Encoding::None => false,
             Encoding::Fixed => true,
         }
     }
 
-    pub fn is_match(
-        &self,
-        interp: &mut Artichoke,
-        pattern: Option<&[u8]>,
-        pos: Option<Int>,
-    ) -> Result<bool, Exception> {
+    pub fn is_match(&self, pattern: Option<&[u8]>, pos: Option<Int>) -> Result<bool, Exception> {
         if let Some(pattern) = pattern {
-            self.0.is_match(interp, pattern, pos)
+            self.0.is_match(pattern, pos)
         } else {
             Ok(false)
         }
@@ -361,11 +342,8 @@ impl Regexp {
         }
     }
 
-    pub fn named_captures(
-        &self,
-        interp: &mut Artichoke,
-    ) -> Result<NameToCaptureLocations, Exception> {
-        let captures = self.0.named_captures(interp)?;
+    pub fn named_captures(&self) -> Result<NameToCaptureLocations, Exception> {
+        let captures = self.0.named_captures()?;
         let mut converted = Vec::with_capacity(captures.len());
         for (name, indexes) in captures {
             let mut fixnums = Vec::with_capacity(indexes.len());
@@ -383,29 +361,27 @@ impl Regexp {
 
     #[inline]
     #[must_use]
-    pub fn names(&self, interp: &mut Artichoke) -> Vec<Vec<u8>> {
-        self.0.names(interp)
+    pub fn names(&self) -> Vec<Vec<u8>> {
+        self.0.names()
     }
 
     #[inline]
     #[must_use]
-    pub fn options(&self, interp: &mut Artichoke) -> Int {
-        let _ = interp;
+    pub fn options(&self) -> Int {
         let opts = self.0.literal_config().options;
         Int::from(opts) | Int::from(self.0.encoding())
     }
 
     #[inline]
     #[must_use]
-    pub fn source(&self, interp: &mut Artichoke) -> &[u8] {
-        let _ = interp;
+    pub fn source(&self) -> &[u8] {
         self.0.literal_config().pattern.as_slice()
     }
 
     #[inline]
     #[must_use]
-    pub fn string(&self, interp: &mut Artichoke) -> &[u8] {
-        self.0.string(interp)
+    pub fn string(&self) -> &[u8] {
+        self.0.string()
     }
 }
 

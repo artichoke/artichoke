@@ -17,7 +17,7 @@ pub fn initialize(
 
 pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
     let pattern = pattern.implicitly_convert_to_string(interp)?;
-    let pattern = Regexp::escape(interp, pattern)?;
+    let pattern = Regexp::escape(pattern)?;
     Ok(interp.convert_mut(pattern))
 }
 
@@ -42,7 +42,7 @@ pub fn is_match(
     } else {
         None
     };
-    let is_match = regexp.is_match(interp, pattern, pos)?;
+    let is_match = regexp.is_match(pattern, pos)?;
     Ok(interp.convert(is_match))
 }
 
@@ -96,55 +96,55 @@ pub fn match_operator(
 
 pub fn is_casefold(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let is_casefold = regexp.is_casefold(interp);
+    let is_casefold = regexp.is_casefold();
     Ok(interp.convert(is_casefold))
 }
 
 pub fn is_fixed_encoding(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let is_fixed_encoding = regexp.is_fixed_encoding(interp);
+    let is_fixed_encoding = regexp.is_fixed_encoding();
     Ok(interp.convert(is_fixed_encoding))
 }
 
 pub fn hash(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let hash = regexp.hash(interp);
+    let hash = regexp.hash();
     #[allow(clippy::cast_possible_wrap)]
     Ok(interp.convert(hash as Int))
 }
 
 pub fn inspect(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let inspect = regexp.inspect(interp);
+    let inspect = regexp.inspect();
     Ok(interp.convert_mut(inspect))
 }
 
 pub fn named_captures(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let named_captures = regexp.named_captures(interp)?;
+    let named_captures = regexp.named_captures()?;
     interp.try_convert_mut(named_captures)
 }
 
 pub fn names(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let names = regexp.names(interp);
+    let names = regexp.names();
     interp.try_convert_mut(names)
 }
 
 pub fn options(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let opts = regexp.options(interp);
+    let opts = regexp.options();
     Ok(interp.convert(opts))
 }
 
 pub fn source(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let source = regexp.source(interp);
+    let source = regexp.source();
     Ok(interp.convert_mut(source))
 }
 
 pub fn to_s(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let s = regexp.string(interp);
+    let s = regexp.string();
     Ok(interp.convert_mut(s))
 }

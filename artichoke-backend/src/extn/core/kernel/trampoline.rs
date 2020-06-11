@@ -10,7 +10,7 @@ pub fn integer(
     let base = base.and_then(|base| interp.convert(base));
     let arg = interp.try_convert_mut(&arg)?;
     let base = interp.try_convert_mut(base)?;
-    let integer = kernel::integer::method(interp, arg, base)?;
+    let integer = kernel::integer::method(arg, base)?;
     Ok(interp.convert(integer))
 }
 

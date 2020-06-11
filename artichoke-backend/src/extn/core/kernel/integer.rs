@@ -136,7 +136,7 @@ impl<'a> ParseState<'a> {
         Self::Initial(arg)
     }
 
-    fn set_sign(self, interp: &mut Artichoke, sign: Sign) -> Result<Self, Exception> {
+    fn set_sign(self, sign: Sign) -> Result<Self, Exception> {
         match self {
             Self::Sign(arg, _) | Self::Accumulate(arg, _, _) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
@@ -167,7 +167,7 @@ impl<'a> ParseState<'a> {
         }
     }
 
-    fn parse(self, interp: &mut Artichoke) -> Result<(String, Option<Radix>), Exception> {
+    fn parse(self) -> Result<(String, Option<Radix>), Exception> {
         match self {
             Self::Accumulate(arg, sign, mut digits) => {
                 let (mut src, radix) = match digits.as_bytes() {
@@ -225,11 +225,7 @@ impl<'a> ParseState<'a> {
     }
 }
 
-pub fn method<'a>(
-    interp: &mut Artichoke,
-    arg: IntegerString<'a>,
-    radix: Option<Radix>,
-) -> Result<Int, Exception> {
+pub fn method<'a>(arg: IntegerString<'a>, radix: Option<Radix>) -> Result<Int, Exception> {
     let mut state = ParseState::new(arg);
     let mut chars = arg
         .inner()
@@ -262,14 +258,14 @@ pub fn method<'a>(
         }
 
         state = match current {
-            '+' => state.set_sign(interp, Sign::Pos)?,
-            '-' => state.set_sign(interp, Sign::Neg)?,
+            '+' => state.set_sign(Sign::Pos)?,
+            '-' => state.set_sign(Sign::Neg)?,
             digit => state.collect_digit(digit),
         };
         prev = Some(current);
     }
 
-    let (src, src_radix) = state.parse(interp)?;
+    let (src, src_radix) = state.parse()?;
 
     let parsed_int = match (radix, src_radix) {
         (Some(x), Some(y)) if x == y => Int::from_str_radix(src.as_str(), x.as_u32()).ok(),

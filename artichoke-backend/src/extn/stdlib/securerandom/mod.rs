@@ -27,7 +27,7 @@ mod tests {
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SecureRandom;
 
-pub fn random_bytes(interp: &mut Artichoke, len: Option<Int>) -> Result<Vec<u8>, Exception> {
+pub fn random_bytes(len: Option<Int>) -> Result<Vec<u8>, Exception> {
     let len = if let Some(len) = len {
         match usize::try_from(len) {
             Ok(0) => return Ok(Vec::new()),
@@ -106,10 +106,7 @@ impl ConvertMut<RandomNumber, Value> for Artichoke {
     }
 }
 
-pub fn random_number(
-    interp: &mut Artichoke,
-    max: RandomNumberMax,
-) -> Result<RandomNumber, ArgumentError> {
+pub fn random_number(max: RandomNumberMax) -> Result<RandomNumber, ArgumentError> {
     let mut rng = rand::thread_rng();
     match max {
         RandomNumberMax::Float(max) if !max.is_finite() => {
@@ -140,18 +137,18 @@ pub fn random_number(
 }
 
 #[inline]
-pub fn hex(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
-    let bytes = random_bytes(interp, len)?;
+pub fn hex(len: Option<Int>) -> Result<String, Exception> {
+    let bytes = random_bytes(len)?;
     Ok(hex::encode(bytes))
 }
 
 #[inline]
-pub fn base64(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
-    let bytes = random_bytes(interp, len)?;
+pub fn base64(len: Option<Int>) -> Result<String, Exception> {
+    let bytes = random_bytes(len)?;
     Ok(base64::encode(bytes))
 }
 
-pub fn alphanumeric(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
+pub fn alphanumeric(len: Option<Int>) -> Result<String, Exception> {
     let len = if let Some(len) = len {
         match usize::try_from(len) {
             Ok(0) => return Ok(String::new()),
@@ -168,8 +165,7 @@ pub fn alphanumeric(interp: &mut Artichoke, len: Option<Int>) -> Result<String, 
     Ok(string)
 }
 
-pub fn uuid(interp: &mut Artichoke) -> String {
-    let _ = interp;
+pub fn uuid() -> String {
     let uuid = Uuid::new_v4();
     let mut buf = Uuid::encode_buffer();
     let enc = uuid.to_hyphenated().encode_lower(&mut buf);

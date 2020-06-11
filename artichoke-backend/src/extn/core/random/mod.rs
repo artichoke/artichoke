@@ -55,7 +55,7 @@ pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Exception> {
     Ok(old_seed as Int)
 }
 
-pub fn urandom(interp: &mut Artichoke, size: Int) -> Result<Vec<u8>, Exception> {
+pub fn urandom(size: Int) -> Result<Vec<u8>, Exception> {
     match usize::try_from(size) {
         Ok(0) => Ok(Vec::new()),
         Ok(len) => {

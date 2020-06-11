@@ -55,6 +55,6 @@ pub fn srand(interp: &mut Artichoke, seed: Option<Value>) -> Result<Value, Excep
 
 pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Exception> {
     let size = size.implicitly_convert_to_int(interp)?;
-    let buf = random::urandom(interp, size)?;
+    let buf = random::urandom(size)?;
     Ok(interp.convert_mut(buf))
 }
