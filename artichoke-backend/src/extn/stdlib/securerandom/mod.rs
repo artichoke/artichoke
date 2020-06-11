@@ -165,9 +165,10 @@ pub fn alphanumeric(len: Option<Int>) -> Result<String, Exception> {
     Ok(string)
 }
 
+#[must_use]
 pub fn uuid() -> String {
     let uuid = Uuid::new_v4();
     let mut buf = Uuid::encode_buffer();
     let enc = uuid.to_hyphenated().encode_lower(&mut buf);
-    enc.to_owned()
+    String::from(enc)
 }

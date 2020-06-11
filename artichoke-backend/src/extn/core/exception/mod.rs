@@ -264,6 +264,7 @@ macro_rules! ruby_exception_impl {
         }
 
         impl $exception {
+            #[must_use]
             pub fn new() -> Self {
                 // `Exception`s initialized via `raise RuntimeError` or
                 // `RuntimeError.new` have `message` equal to the `Exception`

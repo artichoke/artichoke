@@ -271,6 +271,11 @@ impl MatchData {
         }
     }
 
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len().unwrap_or_default() > 0
+    }
+
     #[inline]
     pub fn len(&self) -> Result<usize, Exception> {
         let haystack = self.matched_region();
@@ -284,6 +289,7 @@ impl MatchData {
     }
 
     #[inline]
+    #[must_use]
     pub fn names(&self) -> Vec<Vec<u8>> {
         self.regexp.names()
     }

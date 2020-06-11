@@ -118,6 +118,7 @@ impl From<&str> for RelativePath {
 }
 
 impl RelativePath {
+    #[must_use]
     pub fn new() -> Self {
         Self::from(RUBY_LOAD_PATH)
     }

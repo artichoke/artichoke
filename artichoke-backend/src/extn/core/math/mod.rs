@@ -451,6 +451,7 @@ impl From<Cow<'static, str>> for DomainError {
 }
 
 impl DomainError {
+    #[must_use]
     pub fn new() -> Self {
         // [2.6.3] > Math::DomainError.new.message
         // => "Math::DomainError"

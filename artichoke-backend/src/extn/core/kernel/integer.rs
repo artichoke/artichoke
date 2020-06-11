@@ -9,10 +9,16 @@ use crate::extn::prelude::*;
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Radix(NonZeroU32);
 
+impl Default for Radix {
+    fn default() -> Self {
+        Self(unsafe { NonZeroU32::new_unchecked(10) })
+    }
+}
+
 impl Radix {
     #[must_use]
     pub fn new() -> Self {
-        Self(unsafe { NonZeroU32::new_unchecked(10) })
+        Self::default()
     }
 
     #[inline]
@@ -225,7 +231,7 @@ impl<'a> ParseState<'a> {
     }
 }
 
-pub fn method<'a>(arg: IntegerString<'a>, radix: Option<Radix>) -> Result<Int, Exception> {
+pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Exception> {
     let mut state = ParseState::new(arg);
     let mut chars = arg
         .inner()
