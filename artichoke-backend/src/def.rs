@@ -219,12 +219,12 @@ impl fmt::Display for ConstantNameError {
 impl error::Error for ConstantNameError {}
 
 impl RubyException for ConstantNameError {
-    fn message(&self) -> &[u8] {
-        &b"Invalid constant name contained a NUL byte"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Invalid constant name contained a NUL byte")
     }
 
-    fn name(&self) -> String {
-        String::from("NameError")
+    fn name(&self) -> Cow<'_, str> {
+        "NameError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
@@ -363,12 +363,16 @@ impl fmt::Display for NotDefinedError {
 impl error::Error for NotDefinedError {}
 
 impl RubyException for NotDefinedError {
-    fn message(&self) -> &[u8] {
-        &b"Class-like not defined"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        let mut message = String::from(self.item_type());
+        message.push(' ');
+        message.push_str(self.fqdn());
+        message.push_str(" not defined");
+        message.into_bytes().into()
     }
 
-    fn name(&self) -> String {
-        String::from("ScriptError")
+    fn name(&self) -> Cow<'_, str> {
+        "ScriptError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error;
 use std::fmt;
 use std::io;
@@ -44,18 +45,11 @@ impl Io for Artichoke {
 }
 
 #[derive(Debug)]
-pub struct IOError {
-    inner: io::Error,
-    message: String,
-}
+pub struct IOError(io::Error);
 
 impl From<io::Error> for IOError {
     fn from(err: io::Error) -> Self {
-        let message = err.to_string();
-        Self {
-            inner: err,
-            message,
-        }
+        Self(err)
     }
 }
 
@@ -67,23 +61,23 @@ impl From<io::Error> for Exception {
 
 impl fmt::Display for IOError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "IOError: {}", self.message)
+        write!(f, "IOError: {}", self.0)
     }
 }
 
 impl error::Error for IOError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        Some(&self.inner)
+        Some(&self.0)
     }
 }
 
 impl RubyException for IOError {
-    fn message(&self) -> &[u8] {
-        self.message.as_bytes()
+    fn message(&self) -> Cow<'_, [u8]> {
+        self.0.to_string().into_bytes().into()
     }
 
-    fn name(&self) -> String {
-        String::from("IOError")
+    fn name(&self) -> Cow<'_, str> {
+        "IOError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
@@ -92,7 +86,7 @@ impl RubyException for IOError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.inner.to_string());
+        let message = interp.convert_mut(self.message());
         let value = interp
             .new_instance::<exception::IOError>(&[message])
             .ok()

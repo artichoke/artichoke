@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
@@ -85,12 +86,12 @@ impl fmt::Display for UnboxRubyError {
 impl error::Error for UnboxRubyError {}
 
 impl RubyException for UnboxRubyError {
-    fn message(&self) -> &[u8] {
-        &b"Failed to convert from Ruby value to Rust type"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Failed to convert from Ruby value to Rust type")
     }
 
-    fn name(&self) -> String {
-        String::from("TypeError")
+    fn name(&self) -> Cow<'_, str> {
+        "TypeError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
@@ -156,12 +157,12 @@ impl fmt::Display for BoxIntoRubyError {
 impl error::Error for BoxIntoRubyError {}
 
 impl RubyException for BoxIntoRubyError {
-    fn message(&self) -> &[u8] {
-        &b"Failed to convert from Rust type to Ruby value"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Failed to convert from Rust type to Ruby value")
     }
 
-    fn name(&self) -> String {
-        String::from("TypeError")
+    fn name(&self) -> Cow<'_, str> {
+        "TypeError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

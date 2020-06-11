@@ -78,7 +78,7 @@ mod tests {
             let err = interp.eval(b"require 'non-existent-source'").unwrap_err();
             assert_eq!(
                 &b"cannot load such file -- non-existent-source"[..],
-                err.message()
+                err.message().as_ref()
             );
             let expected = vec![Vec::from(&b"(eval):1"[..])];
             assert_eq!(Some(expected), err.vm_backtrace(&mut interp),);
@@ -115,7 +115,10 @@ mod tests {
         fn directory_err() {
             let mut interp = crate::interpreter().unwrap();
             let err = interp.eval(b"require '/src'").unwrap_err();
-            assert_eq!(&b"cannot load such file -- /src"[..], err.message());
+            assert_eq!(
+                &b"cannot load such file -- /src"[..],
+                err.message().as_ref()
+            );
             let expected = vec![Vec::from(&b"(eval):1"[..])];
             assert_eq!(Some(expected), err.vm_backtrace(&mut interp));
         }

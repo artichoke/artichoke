@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::error;
 use std::fmt;
@@ -25,12 +26,12 @@ impl fmt::Display for NoBlockGiven {
 impl error::Error for NoBlockGiven {}
 
 impl RubyException for NoBlockGiven {
-    fn message(&self) -> &[u8] {
-        b"no block given"
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"no block given")
     }
 
-    fn name(&self) -> String {
-        String::from("TypeError")
+    fn name(&self) -> Cow<'_, str> {
+        "TypeError".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {

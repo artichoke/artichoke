@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error;
 use std::fmt;
 use std::ptr::NonNull;
@@ -96,12 +97,12 @@ impl fmt::Display for InterpreterAllocError {
 impl error::Error for InterpreterAllocError {}
 
 impl RubyException for InterpreterAllocError {
-    fn message(&self) -> &[u8] {
-        &b"Failed to allocate Artichoke Ruby interpreter"[..]
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Failed to allocate Artichoke Ruby interpreter")
     }
 
-    fn name(&self) -> String {
-        String::from("fatal")
+    fn name(&self) -> Cow<'_, str> {
+        "fatal".into()
     }
 
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
@@ -145,6 +146,6 @@ mod tests {
     #[test]
     fn open_close() {
         let interp = super::interpreter().unwrap();
-        drop(interp);
+        interp.close();
     }
 }

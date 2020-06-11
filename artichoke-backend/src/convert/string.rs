@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::str;
 
 use crate::convert::UnboxRubyError;
@@ -20,6 +21,12 @@ impl ConvertMut<&str, Value> for Artichoke {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
         self.convert_mut(value.as_bytes())
+    }
+}
+
+impl<'a> ConvertMut<Cow<'a, str>, Value> for Artichoke {
+    fn convert_mut(&mut self, value: Cow<'a, str>) -> Value {
+        self.convert_mut(value.as_ref())
     }
 }
 
