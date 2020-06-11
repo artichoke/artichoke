@@ -10,6 +10,11 @@ use crate::extn::prelude::*;
 pub struct Radix(NonZeroU32);
 
 impl Radix {
+    #[must_use]
+    pub fn new() -> Self {
+        Self(unsafe { NonZeroU32::new_unchecked(10) })
+    }
+
     #[inline]
     #[must_use]
     pub fn as_u32(self) -> u32 {
@@ -31,9 +36,9 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
                 }
                 let mut message = String::from("invalid radix ");
                 string::format_int_into(&mut message, radix)?;
-                Err(Exception::from(ArgumentError::new(self, message)))
+                Err(ArgumentError::from(message).into())
             } else {
-                Err(Exception::from(ArgumentError::new(self, "invalid radix")))
+                Err(ArgumentError::from("invalid radix").into())
             }
         } else {
             Ok(None)
@@ -85,7 +90,7 @@ impl<'a> TryConvertMut<&'a Value, IntegerString<'a>> for Artichoke {
             let mut message = String::from("can't convert ");
             message.push_str(value.pretty_name(self));
             message.push_str(" into Integer");
-            TypeError::new(self, message)
+            TypeError::from(message)
         })?;
         if let Some(converted) = IntegerString::from_slice(arg) {
             Ok(converted)
@@ -93,7 +98,7 @@ impl<'a> TryConvertMut<&'a Value, IntegerString<'a>> for Artichoke {
             let mut message = String::from(r#"invalid value for Integer(): ""#);
             string::format_unicode_debug_into(&mut message, arg)?;
             message.push('"');
-            Err(ArgumentError::new(self, message).into())
+            Err(ArgumentError::from(message).into())
         }
     }
 }
@@ -137,7 +142,7 @@ impl<'a> ParseState<'a> {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 string::format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
-                Err(ArgumentError::new(interp, message).into())
+                Err(ArgumentError::from(message).into())
             }
             Self::Initial(arg) => Ok(ParseState::Sign(arg, sign)),
         }
@@ -195,7 +200,7 @@ impl<'a> ParseState<'a> {
                             let mut message = String::from(r#"invalid value for Integer(): ""#);
                             string::format_unicode_debug_into(&mut message, arg.into())?;
                             message.push('"');
-                            return Err(ArgumentError::new(interp, message).into());
+                            return Err(ArgumentError::from(message).into());
                         } else if '0' == first {
                             digits.drain(..1);
                             (digits, Some(Radix(unsafe { NonZeroU32::new_unchecked(8) })))
@@ -214,7 +219,7 @@ impl<'a> ParseState<'a> {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 string::format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
-                Err(ArgumentError::new(interp, message).into())
+                Err(ArgumentError::from(message).into())
             }
         }
     }
@@ -249,7 +254,7 @@ pub fn method<'a>(
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 string::format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
-                return Err(ArgumentError::new(interp, message).into());
+                return Err(ArgumentError::from(message).into());
             } else {
                 prev = Some(current);
                 continue;
@@ -280,6 +285,6 @@ pub fn method<'a>(
         let mut message = String::from(r#"invalid value for Integer(): ""#);
         string::format_unicode_debug_into(&mut message, arg.into())?;
         message.push('"');
-        Err(ArgumentError::new(interp, message).into())
+        Err(ArgumentError::from(message).into())
     }
 }

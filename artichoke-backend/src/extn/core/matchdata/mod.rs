@@ -225,7 +225,7 @@ impl MatchData {
                     let mut message = String::from("undefined group name reference: \"");
                     string::format_unicode_debug_into(&mut message, name)?;
                     message.push('"');
-                    Err(Exception::from(IndexError::new(interp, message)))
+                    Err(IndexError::from(message).into())
                 }
             }
             CaptureAt::StartLen(start, len) => {
@@ -323,7 +323,7 @@ impl MatchData {
                         let mut message = String::from("index ");
                         string::format_int_into(&mut message, index)?;
                         message.push_str(" out of matches");
-                        return Err(Exception::from(IndexError::new(interp, message)));
+                        return Err(IndexError::from(message).into());
                     }
                 }
             }

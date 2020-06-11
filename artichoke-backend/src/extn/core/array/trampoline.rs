@@ -4,10 +4,7 @@ use crate::gc::{MrbGarbageCollection, State as GcState};
 
 pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
-        return Err(Exception::from(FrozenError::new(
-            interp,
-            "can't modify frozen Array",
-        )));
+        return Err(FrozenError::from("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.clear();
@@ -33,10 +30,7 @@ pub fn element_assignment(
     third: Option<Value>,
 ) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
-        return Err(Exception::from(FrozenError::new(
-            interp,
-            "can't modify frozen Array",
-        )));
+        return Err(FrozenError::from("can't modify frozen Array").into());
     }
     // TODO: properly handle self-referential sets.
     if ary == first || ary == second || Some(ary) == third {
@@ -56,10 +50,7 @@ pub fn element_assignment(
 
 pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
-        return Err(Exception::from(FrozenError::new(
-            interp,
-            "can't modify frozen Array",
-        )));
+        return Err(FrozenError::from("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = array.pop();
@@ -72,10 +63,7 @@ pub fn concat(
     other: Option<Value>,
 ) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
-        return Err(Exception::from(FrozenError::new(
-            interp,
-            "can't modify frozen Array",
-        )));
+        return Err(FrozenError::from("can't modify frozen Array").into());
     }
     if let Some(other) = other {
         let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
@@ -86,10 +74,7 @@ pub fn concat(
 
 pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
-        return Err(Exception::from(FrozenError::new(
-            interp,
-            "can't modify frozen Array",
-        )));
+        return Err(FrozenError::from("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.push(value);
@@ -98,10 +83,7 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
 
 pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
     if ary.is_frozen(interp) {
-        return Err(Exception::from(FrozenError::new(
-            interp,
-            "can't modify frozen Array",
-        )));
+        return Err(FrozenError::from("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.reverse();

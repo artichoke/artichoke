@@ -72,7 +72,7 @@ where
         let mut program = vec![];
         input
             .read_to_end(&mut program)
-            .map_err(|_| IOError::new(&interp, "Could not read program from STDIN"))?;
+            .map_err(|_| IOError::from("Could not read program from STDIN"))?;
         if let Err(ref exc) = interp.eval(program.as_slice()) {
             backtrace::format_cli_trace_into(error, &mut interp, exc)?;
             return Ok(Err(()));
@@ -151,10 +151,9 @@ fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Res
     let data = if let Ok(data) = std::fs::read(fixture.as_ref()) {
         data
     } else {
-        return Err(Exception::from(LoadError::new(
-            &interp,
-            load_error(fixture.as_ref(), "No such file or directory")?,
-        )));
+        return Err(
+            LoadError::from(load_error(fixture.as_ref(), "No such file or directory")?).into(),
+        );
     };
     let value = interp.convert_mut(data);
     interp.set_global_variable(&b"$fixture"[..], &value)?;

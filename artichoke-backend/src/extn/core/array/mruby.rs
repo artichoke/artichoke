@@ -59,7 +59,7 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
         if let Ok(len) = sys::mrb_int::try_from(len) {
             Ok(len)
         } else {
-            Err(Fatal::new(&guard, "Array length does not fit in mruby Integer max").into())
+            Err(Fatal::from("Array length does not fit in mruby Integer max").into())
         }
     });
     match result {

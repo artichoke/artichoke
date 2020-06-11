@@ -89,10 +89,7 @@ pub fn match_operator(
     let pos = regexp.match_operator(interp, pattern)?;
     match pos.map(Int::try_from) {
         Some(Ok(pos)) => Ok(interp.convert(pos)),
-        Some(Err(_)) => Err(Exception::from(ArgumentError::new(
-            interp,
-            "string too long",
-        ))),
+        Some(Err(_)) => Err(ArgumentError::from("string too long").into()),
         None => Ok(Value::nil()),
     }
 }

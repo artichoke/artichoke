@@ -152,8 +152,7 @@ impl Value {
             if let Some(int) = int {
                 int
             } else {
-                return Err(TypeError::new(
-                    interp,
+                return Err(TypeError::from(
                     "no implicit conversion from nil to integer",
                 ));
             }
@@ -169,19 +168,19 @@ impl Value {
                     message.push_str("#to_int gives ");
                     message.push_str(maybe.pretty_name(interp));
                     message.push(')');
-                    return Err(TypeError::new(interp, message));
+                    return Err(TypeError::from(message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
                 message.push_str(self.pretty_name(interp));
                 message.push_str(" into Integer");
-                return Err(TypeError::new(interp, message));
+                return Err(TypeError::from(message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
             message.push_str(self.pretty_name(interp));
             message.push_str(" into Integer");
-            return Err(TypeError::new(interp, message));
+            return Err(TypeError::from(message));
         };
         Ok(int)
     }
@@ -201,19 +200,19 @@ impl Value {
                     message.push_str("#to_str gives ");
                     message.push_str(maybe.pretty_name(interp));
                     message.push(')');
-                    return Err(TypeError::new(interp, message));
+                    return Err(TypeError::from(message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
                 message.push_str(self.pretty_name(interp));
                 message.push_str(" into String");
-                return Err(TypeError::new(interp, message));
+                return Err(TypeError::from(message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
             message.push_str(self.pretty_name(interp));
             message.push_str(" into String");
-            return Err(TypeError::new(interp, message));
+            return Err(TypeError::from(message));
         };
         Ok(string)
     }
@@ -280,10 +279,7 @@ impl ValueCore for Value {
                     // and may result in a segfault.
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
-                    Err(Exception::from(Fatal::new(
-                        arena.interp(),
-                        "Unreachable Ruby value",
-                    )))
+                    Err(Fatal::from("Unreachable Ruby value").into())
                 } else {
                     Ok(value)
                 }

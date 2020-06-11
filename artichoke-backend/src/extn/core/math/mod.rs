@@ -19,10 +19,7 @@ fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception>
     match value.ruby_type() {
         Ruby::Float => value.try_into(interp),
         Ruby::Fixnum => value.try_into::<Integer>(interp).map(Integer::as_f64),
-        Ruby::Nil => Err(Exception::from(TypeError::new(
-            interp,
-            "can't convert nil into Float",
-        ))),
+        Ruby::Nil => Err(TypeError::from("can't convert nil into Float").into()),
         _ => {
             // TODO: This should use `numeric::coerce`
             let class_of_numeric = interp
@@ -43,19 +40,19 @@ fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception>
                         message.push_str("#to_f gives ");
                         message.push_str(coerced.pretty_name(interp));
                         message.push(')');
-                        Err(Exception::from(TypeError::new(interp, message)))
+                        Err(TypeError::from(message).into())
                     }
                 } else {
                     let mut message = String::from("can't convert ");
                     message.push_str(value.pretty_name(interp));
                     message.push_str(" into Float");
-                    Err(Exception::from(TypeError::new(interp, message)))
+                    Err(TypeError::from(message).into())
                 }
             } else {
                 let mut message = String::from("can't convert ");
                 message.push_str(value.pretty_name(interp));
                 message.push_str(" into Float");
-                Err(Exception::from(TypeError::new(interp, message)))
+                Err(TypeError::from(message).into())
             }
         }
     }
@@ -68,9 +65,7 @@ pub fn acos(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
     let result = value.acos();
     if result.is_nan() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "acos""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "acos""#).into())
     } else {
         Ok(result)
     }
@@ -83,9 +78,7 @@ pub fn acosh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
     let result = value.acosh();
     if result.is_nan() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "acosh""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "acosh""#).into())
     } else {
         Ok(result)
     }
@@ -98,9 +91,7 @@ pub fn asin(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
     let result = value.asin();
     if result.is_nan() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "asin""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "asin""#).into())
     } else {
         Ok(result)
     }
@@ -132,9 +123,7 @@ pub fn atanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
     let result = value.atanh();
     if result.is_nan() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "atanh""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "atanh""#).into())
     } else {
         Ok(result)
     }
@@ -161,8 +150,7 @@ pub fn cosh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
 #[cfg(not(feature = "core-math-extra"))]
 pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     let _ = value;
-    Err(Exception::from(NotImplementedError::new(
-        interp,
+    Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
@@ -177,8 +165,7 @@ pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
 #[cfg(not(feature = "core-math-extra"))]
 pub fn erfc(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     let _ = value;
-    Err(Exception::from(NotImplementedError::new(
-        interp,
+    Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
@@ -199,8 +186,7 @@ pub fn exp(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
 #[cfg(not(feature = "core-math-extra"))]
 pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
     let _ = value;
-    Err(Exception::from(NotImplementedError::new(
-        interp,
+    Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
@@ -215,8 +201,7 @@ pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exceptio
 #[cfg(not(feature = "core-math-extra"))]
 pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     let _ = value;
-    Err(Exception::from(NotImplementedError::new(
-        interp,
+    Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
@@ -258,9 +243,7 @@ pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     ];
     if value.is_infinite() {
         if value.is_sign_negative() {
-            Err(Exception::from(DomainError::new(
-                r#"Numerical argument is out of domain - "gamma""#,
-            )))
+            Err(DomainError::from(r#"Numerical argument is out of domain - "gamma""#).into())
         } else {
             Ok(float::Float::INFINITY)
         }
@@ -272,9 +255,7 @@ pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
         }
     } else if (value - value.floor()).abs() < f64::EPSILON {
         if value.is_sign_negative() {
-            Err(Exception::from(DomainError::new(
-                r#"Numerical argument is out of domain - "gamma""#,
-            )))
+            Err(DomainError::from(r#"Numerical argument is out of domain - "gamma""#).into())
         } else {
             // TODO: use `approx_unchecked_to` once stabilized instead of `as`
             // cast.
@@ -307,8 +288,7 @@ pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, E
 pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Fp, Exception> {
     let _ = fraction;
     let _ = exponent;
-    Err(Exception::from(NotImplementedError::new(
-        interp,
+    Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
@@ -321,10 +301,7 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
     let exponent = exponent.implicitly_convert_to_int(interp).or_else(|err| {
         if let Ok(exponent) = exponent.try_into::<Fp>(interp) {
             if exponent.is_nan() {
-                Err(Exception::from(RangeError::new(
-                    interp,
-                    "float NaN out of range of integer",
-                )))
+                Err(RangeError::from("float NaN out of range of integer").into())
             } else {
                 // TODO: use `approx_unchecked_to` once stabilized.
                 #[allow(clippy::cast_possible_truncation)]
@@ -340,20 +317,19 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
         let mut message = String::from("integer ");
         string::format_int_into(&mut message, exponent)?;
         message.push_str("too small to convert to `int'");
-        Err(Exception::from(RangeError::new(interp, message)))
+        Err(RangeError::from(message).into())
     } else {
         let mut message = String::from("integer ");
         string::format_int_into(&mut message, exponent)?;
         message.push_str("too big to convert to `int'");
-        Err(Exception::from(RangeError::new(interp, message)))
+        Err(RangeError::from(message).into())
     }
 }
 
 #[cfg(not(feature = "core-math-extra"))]
 pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
     let _ = value;
-    Err(Exception::from(NotImplementedError::new(
-        interp,
+    Err(Exception::from(NotImplementedError::from(
         "enable 'core-math-extra' feature when building Artichoke",
     )))
 }
@@ -362,9 +338,7 @@ pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Excepti
 pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
     let value = value_to_float(interp, value)?;
     if value.is_infinite() && value.is_sign_negative() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "lgamma""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "lgamma""#).into())
     } else {
         let (result, sign) = libm::lgamma_r(value);
         Ok((result, Int::from(sign)))
@@ -386,9 +360,7 @@ pub fn log(interp: &mut Artichoke, value: Value, base: Option<Value>) -> Result<
         value.ln()
     };
     if result.is_nan() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "log""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "log""#).into())
     } else {
         Ok(result)
     }
@@ -401,9 +373,7 @@ pub fn log10(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
     let result = value.log10();
     if result.is_nan() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "log10""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "log10""#).into())
     } else {
         Ok(result)
     }
@@ -416,9 +386,7 @@ pub fn log2(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
     let result = value.log2();
     if result.is_nan() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "log2""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "log2""#).into())
     } else {
         Ok(result)
     }
@@ -443,9 +411,7 @@ pub fn sqrt(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
     let result = value.sqrt();
     if result.is_nan() {
-        Err(Exception::from(DomainError::new(
-            r#"Numerical argument is out of domain - "sqrt""#,
-        )))
+        Err(DomainError::from(r#"Numerical argument is out of domain - "sqrt""#).into())
     } else {
         Ok(result)
     }
@@ -464,14 +430,31 @@ pub fn tanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
 }
 
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-struct DomainError(Cow<'static, str>);
+pub struct DomainError(Cow<'static, str>);
+
+impl From<String> for DomainError {
+    fn from(message: String) -> Self {
+        Self(message.into())
+    }
+}
+
+impl From<&'static str> for DomainError {
+    fn from(message: &'static str) -> Self {
+        Self(message.into())
+    }
+}
+
+impl From<Cow<'static, str>> for DomainError {
+    fn from(message: Cow<'static, str>) -> Self {
+        Self(message)
+    }
+}
 
 impl DomainError {
-    pub fn new<T>(name: T) -> Self
-    where
-        T: Into<Cow<'static, str>>,
-    {
-        Self(name.into())
+    pub fn new() -> Self {
+        // [2.6.3] > Math::DomainError.new.message
+        // => "Math::DomainError"
+        Self::from("Math::DomainError")
     }
 }
 

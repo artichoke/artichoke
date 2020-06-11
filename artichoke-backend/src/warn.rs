@@ -18,17 +18,17 @@ impl Warn for Artichoke {
         if let Err(err) = state.output.write_stderr(b"rb warning: ") {
             let mut message = String::from("Failed to write warning to $stderr: ");
             let _ = write!(&mut message, "{}", err);
-            return Err(IOError::new(self, message).into());
+            return Err(IOError::from(message).into());
         }
         if let Err(err) = state.output.write_stderr(message) {
             let mut message = String::from("Failed to write warning to $stderr: ");
             let _ = write!(&mut message, "{}", err);
-            return Err(IOError::new(self, message).into());
+            return Err(IOError::from(message).into());
         }
         if let Err(err) = state.output.write_stderr(b"\n") {
             let mut message = String::from("Failed to write warning to $stderr: ");
             let _ = write!(&mut message, "{}", err);
-            return Err(IOError::new(self, message).into());
+            return Err(IOError::from(message).into());
         }
         let warning = self
             .module_of::<Warning>()?

@@ -45,25 +45,14 @@ impl Onig {
         encoding: Encoding,
     ) -> Result<Self, Exception> {
         let pattern = str::from_utf8(derived.pattern.as_slice()).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 patterns",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 patterns")
         })?;
         let regex = match Regex::with_options(pattern, derived.options.into(), Syntax::ruby()) {
             Ok(regex) => regex,
             Err(err) if literal.options.literal => {
-                return Err(Exception::from(SyntaxError::new(
-                    interp,
-                    err.description().to_owned(),
-                )))
+                return Err(SyntaxError::from(err.description().to_owned()).into())
             }
-            Err(err) => {
-                return Err(Exception::from(RegexpError::new(
-                    interp,
-                    err.description().to_owned(),
-                )))
-            }
+            Err(err) => return Err(RegexpError::from(err.description().to_owned()).into()),
         };
         let regexp = Self {
             literal,
@@ -93,10 +82,7 @@ impl RegexpType for Onig {
         haystack: &[u8],
     ) -> Result<Option<Vec<NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         if let Some(captures) = self.regex.captures(haystack) {
             let mut result = Vec::with_capacity(captures.len());
@@ -148,10 +134,7 @@ impl RegexpType for Onig {
     ) -> Result<usize, Exception> {
         let result = if let Some(haystack) = haystack {
             let haystack = str::from_utf8(haystack).map_err(|_| {
-                ArgumentError::new(
-                    interp,
-                    "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-                )
+                ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
             })?;
             self.regex
                 .captures(haystack)
@@ -169,10 +152,7 @@ impl RegexpType for Onig {
         haystack: &'a [u8],
     ) -> Result<Option<&'a [u8]>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         let result = self
             .regex
@@ -234,10 +214,7 @@ impl RegexpType for Onig {
 
     fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
@@ -275,10 +252,7 @@ impl RegexpType for Onig {
         pos: Option<Int>,
     ) -> Result<bool, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
@@ -311,10 +285,7 @@ impl RegexpType for Onig {
         block: Option<Block>,
     ) -> Result<Value, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         regexp::clear_capture_globals(interp)?;
         let haystack_char_len = haystack.chars().count();
@@ -383,10 +354,7 @@ impl RegexpType for Onig {
         haystack: &[u8],
     ) -> Result<Option<usize>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
@@ -446,10 +414,7 @@ impl RegexpType for Onig {
         haystack: &[u8],
     ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         if let Some(captures) = self.regex.captures(haystack) {
             let mut map = HashMap::with_capacity(captures.len());
@@ -501,10 +466,7 @@ impl RegexpType for Onig {
         at: usize,
     ) -> Result<Option<(usize, usize)>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         let pos = self
             .regex
@@ -520,10 +482,7 @@ impl RegexpType for Onig {
         block: Option<Block>,
     ) -> Result<Scan, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "Oniguruma backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 haystacks")
         })?;
         regexp::clear_capture_globals(interp)?;
         let mut matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);

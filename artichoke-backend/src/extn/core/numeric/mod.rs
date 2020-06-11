@@ -83,10 +83,7 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
         depth: u8,
     ) -> Result<Coercion, Exception> {
         if depth > MAX_COERCE_DEPTH {
-            return Err(Exception::from(SystemStackError::new(
-                interp,
-                "stack level too deep",
-            )));
+            return Err(SystemStackError::from("stack level too deep").into());
         }
         match (x.ruby_type(), y.ruby_type()) {
             (Ruby::Float, Ruby::Float) => {
@@ -114,19 +111,16 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                         let coerced = y.funcall(interp, "coerce", &[x], None)?;
                         let coerced: Vec<Value> = interp
                             .try_convert_mut(coerced)
-                            .map_err(|_| TypeError::new(interp, "coerce must return [x, y]"))?;
+                            .map_err(|_| TypeError::from("coerce must return [x, y]"))?;
                         let mut coerced = coerced.into_iter();
                         let y = coerced
                             .next()
-                            .ok_or_else(|| TypeError::new(interp, "coerce must return [x, y]"))?;
+                            .ok_or_else(|| TypeError::from("coerce must return [x, y]"))?;
                         let x = coerced
                             .next()
-                            .ok_or_else(|| TypeError::new(interp, "coerce must return [x, y]"))?;
+                            .ok_or_else(|| TypeError::from("coerce must return [x, y]"))?;
                         if coerced.next().is_some() {
-                            Err(Exception::from(TypeError::new(
-                                interp,
-                                "coerce must return [x, y]",
-                            )))
+                            Err(TypeError::from("coerce must return [x, y]").into())
                         } else {
                             do_coerce(interp, x, y, depth + 1)
                         }
@@ -134,12 +128,12 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Ex
                         let mut message = String::from("can't convert ");
                         message.push_str(y.pretty_name(interp));
                         message.push_str(" into Float");
-                        Err(Exception::from(TypeError::new(interp, message)))
+                        Err(TypeError::from(message).into())
                     }
                 } else {
                     let mut message = String::from(y.pretty_name(interp));
                     message.push_str(" can't be coerced into Float");
-                    Err(Exception::from(TypeError::new(interp, message)))
+                    Err(TypeError::from(message).into())
                 }
             }
         }

@@ -103,7 +103,7 @@ where
         if value.ruby_type() != Ruby::Data {
             let mut message = String::from("uninitialized ");
             message.push_str(Self::RUBY_TYPE);
-            return Err(Exception::from(TypeError::new(interp, message)));
+            return Err(TypeError::from(message).into());
         }
 
         let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
@@ -122,7 +122,7 @@ where
             let mut message = String::from("Could not extract ");
             message.push_str(Self::RUBY_TYPE);
             message.push_str(" from receiver");
-            return Err(Exception::from(TypeError::new(interp, message)));
+            return Err(TypeError::from(message).into());
         }
 
         // Copy data pointer out of the `mrb_value` box.
@@ -132,7 +132,7 @@ where
             // `#initialize`. These objects will return a NULL pointer.
             let mut message = String::from("uninitialized ");
             message.push_str(Self::RUBY_TYPE);
-            return Err(Exception::from(TypeError::new(interp, message)));
+            return Err(TypeError::from(message).into());
         }
 
         // Move the data pointer into a `Box`.
