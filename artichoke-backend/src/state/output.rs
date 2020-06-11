@@ -40,7 +40,7 @@ impl Process {
     /// Constructs a new, default `Process` output strategy.
     #[must_use]
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 }
 
@@ -126,7 +126,7 @@ impl Null {
     /// Constructs a new, default `Null` output strategy.
     #[must_use]
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 }
 

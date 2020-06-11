@@ -27,6 +27,11 @@ impl fmt::Debug for Time {
 
 impl Time {
     #[must_use]
+    pub fn new() -> Self {
+        Self::now()
+    }
+
+    #[must_use]
     pub fn now() -> Self {
         Self(Box::new(Factory.now()))
     }

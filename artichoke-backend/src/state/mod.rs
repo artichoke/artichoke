@@ -49,7 +49,7 @@ impl State {
             regexp: regexp::State::new(),
             output: output::Strategy::new(),
             #[cfg(feature = "core-random")]
-            prng: Prng::default(),
+            prng: Prng::new(),
         };
         Some(state)
     }

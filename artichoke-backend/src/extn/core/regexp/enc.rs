@@ -91,6 +91,11 @@ impl fmt::Display for Encoding {
 }
 
 impl Encoding {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Convert an `Encoding` to its bitflag representation.
     ///
     /// Alias for the corresponding `Into<Int>` implementation.

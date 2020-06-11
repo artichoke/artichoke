@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
-use std::fmt;
 use std::ptr::NonNull;
 
 use crate::core::IncrementLinenoError;
@@ -10,18 +9,10 @@ use crate::sys;
 /// Filename of the top eval context.
 pub const TOP_FILENAME: &[u8] = b"(eval)";
 
+#[derive(Debug)]
 pub struct State {
     context: NonNull<sys::mrbc_context>,
     stack: Vec<Context>,
-}
-
-impl fmt::Debug for State {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("parser::State")
-            .field("context", &"non-null mrb_context")
-            .field("stack", &self.stack)
-            .finish()
-    }
 }
 
 impl State {

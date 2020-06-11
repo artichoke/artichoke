@@ -7,13 +7,36 @@ pub struct Prng {
     random: Rand<Rng>,
 }
 
-impl Prng {
-    #[must_use]
-    #[inline]
-    pub fn new(seed: Option<u64>) -> Self {
+impl From<u64> for Prng {
+    fn from(seed: u64) -> Self {
+        Self {
+            random: Rand::new(Some(seed)),
+        }
+    }
+}
+
+impl From<Option<u64>> for Prng {
+    fn from(seed: Option<u64>) -> Self {
         Self {
             random: Rand::new(seed),
         }
+    }
+}
+
+impl Default for Prng {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            random: Rand::new(None),
+        }
+    }
+}
+
+impl Prng {
+    #[must_use]
+    #[inline]
+    pub fn new() -> Self {
+        Self::default()
     }
 
     #[must_use]
@@ -46,12 +69,5 @@ impl Prng {
     #[inline]
     pub fn rand_float(&mut self, max: Option<Fp>) -> Fp {
         self.random.rand_float(max)
-    }
-}
-
-impl Default for Prng {
-    #[inline]
-    fn default() -> Self {
-        Self::new(None)
     }
 }

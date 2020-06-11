@@ -15,8 +15,25 @@ pub enum Seed {
     None,
 }
 
+impl Default for Seed {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+impl From<Int> for Seed {
+    fn from(seed: Int) -> Seed {
+        Seed::New(seed)
+    }
+}
+
 impl Seed {
-    fn to_reseed(self) -> Option<u64> {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn to_reseed(self) -> Option<u64> {
         if let Self::New(seed) = self {
             #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
             Some(seed as u64)
