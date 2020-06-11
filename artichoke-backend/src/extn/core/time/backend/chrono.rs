@@ -13,9 +13,6 @@ where
 {
 }
 
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Factory;
-
 impl<T> Chrono<T>
 where
     T: TimeZone,
@@ -110,6 +107,17 @@ where
 
     fn is_sunday(&self) -> bool {
         self.0.weekday() == Weekday::Sun
+    }
+}
+
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Factory;
+
+impl Factory {
+    /// Constructs a new, default `Factory` for the chrono Time backend.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 

@@ -11,6 +11,14 @@ use crate::extn::prelude::*;
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InvalidEncodingError;
 
+impl InvalidEncodingError {
+    /// Constructs a new, default `InvalidEncodingError`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 impl fmt::Display for InvalidEncodingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Invalid Regexp encoding")

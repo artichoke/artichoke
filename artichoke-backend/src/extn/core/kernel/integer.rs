@@ -1,8 +1,10 @@
 use bstr::ByteSlice;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
+use std::error;
+use std::fmt;
 use std::iter::Iterator;
 use std::num::NonZeroU32;
-use std::str::{self, FromStr};
+use std::str::{self, FromStr, Utf8Error};
 
 use crate::extn::prelude::*;
 
@@ -56,23 +58,65 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
 #[allow(clippy::module_name_repetitions)]
 pub struct IntegerString<'a>(&'a str);
 
+impl<'a> From<&'a str> for IntegerString<'a> {
+    fn from(to_parse: &'a str) -> Self {
+        Self(to_parse)
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for IntegerString<'a> {
+    type Error = NonNulUtf8Error;
+
+    fn try_from(to_parse: &'a [u8]) -> Result<Self, Self::Error> {
+        if to_parse.find_byte(b'\0').is_some() {
+            return Err(NonNulUtf8Error::NulByte);
+        }
+        let to_parse = str::from_utf8(to_parse)?;
+        Ok(to_parse.into())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NonNulUtf8Error {
+    NulByte,
+    InvalidUtf8(Utf8Error),
+}
+
+impl error::Error for NonNulUtf8Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Self::NulByte => None,
+            Self::InvalidUtf8(ref err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for NonNulUtf8Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NulByte => write!(f, "String contained forbidden NUL byte"),
+            Self::InvalidUtf8(_) => write!(f, "String contained invalid UTF-8 bytes"),
+        }
+    }
+}
+
+impl From<Utf8Error> for NonNulUtf8Error {
+    fn from(err: Utf8Error) -> Self {
+        Self::InvalidUtf8(err)
+    }
+}
+
 impl<'a> IntegerString<'a> {
+    /// Constructs a new, default `IntegerString`.
     #[inline]
     #[must_use]
-    pub fn new(string: &'a str) -> Self {
-        Self(string)
+    pub fn new() -> Self {
+        Self::default()
     }
 
     #[must_use]
     pub fn from_slice(arg: &'a [u8]) -> Option<Self> {
-        if arg.find_byte(b'\0').is_some() {
-            return None;
-        }
-        if let Ok(arg) = str::from_utf8(arg) {
-            Some(Self::new(arg))
-        } else {
-            None
-        }
+        arg.try_into().ok()
     }
 
     #[inline]

@@ -167,7 +167,7 @@ pub struct Range {
 
 // `IsRange` must be `Copy` because the we may unwind past the frames in which
 // it is used with `longjmp` which does not allow Rust  to run destructors.
-#[derive(Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy)]
 struct IsRange {
     value: sys::mrb_value,
     len: sys::mrb_int,

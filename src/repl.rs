@@ -31,7 +31,15 @@ mod filename_test {
 ///
 /// The parser is needed to properly enter and exit multi-line editing mode.
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-struct ParserAllocError;
+pub struct ParserAllocError;
+
+impl ParserAllocError {
+    /// Constructs a new, default `ParserAllocError`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 impl fmt::Display for ParserAllocError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -43,7 +51,15 @@ impl error::Error for ParserAllocError {}
 
 /// Parser processed too many lines of input.
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-struct ParserLineCountError;
+pub struct ParserLineCountError;
+
+impl ParserLineCountError {
+    /// Constructs a new, default `ParserLineCountError`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 impl fmt::Display for ParserLineCountError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -57,7 +73,15 @@ impl error::Error for ParserLineCountError {}
 ///
 /// This is usually an unknown FFI to Rust translation.
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-struct ParserInternalError;
+pub struct ParserInternalError;
+
+impl ParserInternalError {
+    /// Constructs a new, default `ParserInternalError`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 impl fmt::Display for ParserInternalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

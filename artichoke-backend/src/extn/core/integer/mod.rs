@@ -34,10 +34,17 @@ impl From<Int> for Integer {
     }
 }
 
-impl From<Integer> for Int {
+impl From<Integer> for i64 {
     #[inline]
     fn from(int: Integer) -> Self {
         int.as_i64()
+    }
+}
+
+impl From<Integer> for f64 {
+    #[inline]
+    fn from(int: Integer) -> Self {
+        int.as_f64()
     }
 }
 
@@ -56,10 +63,11 @@ impl From<Int> for Outcome {
 }
 
 impl Integer {
+    /// Constructs a new, default `Integer`.
     #[inline]
     #[must_use]
-    pub fn new(int: Int) -> Self {
-        Self(int)
+    pub fn new() -> Self {
+        Self::default()
     }
 
     #[inline]

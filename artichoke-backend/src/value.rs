@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::error;
 use std::fmt;
 use std::ptr;
@@ -245,10 +246,9 @@ impl ValueCore for Value {
         block: Option<Self::Block>,
     ) -> Result<Self::Value, Self::Error> {
         let mut arena = interp.create_arena_savepoint();
-        if args.len() > MRB_FUNCALL_ARGC_MAX {
-            let err = ArgCountError::new(args);
-            warn!("{}", err);
-            return Err(err.into());
+        if let Ok(arg_count_error) = ArgCountError::try_from(args) {
+            warn!("{}", arg_count_error);
+            return Err(arg_count_error.into());
         }
         let args = args.iter().map(Self::inner).collect::<Vec<_>>();
         trace!(
@@ -351,13 +351,72 @@ pub struct ArgCountError {
     pub max: usize,
 }
 
+impl TryFrom<Vec<Value>> for ArgCountError {
+    type Error = ();
+
+    fn try_from(args: Vec<Value>) -> Result<Self, Self::Error> {
+        if args.len() > MRB_FUNCALL_ARGC_MAX {
+            Ok(Self {
+                given: args.len(),
+                max: MRB_FUNCALL_ARGC_MAX,
+            })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl TryFrom<Vec<sys::mrb_value>> for ArgCountError {
+    type Error = ();
+
+    fn try_from(args: Vec<sys::mrb_value>) -> Result<Self, Self::Error> {
+        if args.len() > MRB_FUNCALL_ARGC_MAX {
+            Ok(Self {
+                given: args.len(),
+                max: MRB_FUNCALL_ARGC_MAX,
+            })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl TryFrom<&[Value]> for ArgCountError {
+    type Error = ();
+
+    fn try_from(args: &[Value]) -> Result<Self, Self::Error> {
+        if args.len() > MRB_FUNCALL_ARGC_MAX {
+            Ok(Self {
+                given: args.len(),
+                max: MRB_FUNCALL_ARGC_MAX,
+            })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl TryFrom<&[sys::mrb_value]> for ArgCountError {
+    type Error = ();
+
+    fn try_from(args: &[sys::mrb_value]) -> Result<Self, Self::Error> {
+        if args.len() > MRB_FUNCALL_ARGC_MAX {
+            Ok(Self {
+                given: args.len(),
+                max: MRB_FUNCALL_ARGC_MAX,
+            })
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl ArgCountError {
-    pub fn new<T>(args: T) -> Self
-    where
-        T: AsRef<[Value]>,
-    {
+    /// Constructs a new, empty `ArgCountError`.
+    #[must_use]
+    pub fn new() -> Self {
         Self {
-            given: args.as_ref().len(),
+            given: 0,
             max: MRB_FUNCALL_ARGC_MAX,
         }
     }
