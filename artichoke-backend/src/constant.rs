@@ -19,7 +19,7 @@ impl DefineConstant for Artichoke {
         value: Self::Value,
     ) -> Result<(), Self::Error> {
         let name =
-            CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
+            CString::new(constant).map_err(|_| ConstantNameError::from(String::from(constant)))?;
         unsafe {
             let mrb = self.mrb.as_mut();
             sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
@@ -36,7 +36,7 @@ impl DefineConstant for Artichoke {
         T: 'static,
     {
         let name =
-            CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
+            CString::new(constant).map_err(|_| ConstantNameError::from(String::from(constant)))?;
         let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
         unsafe {
             let mrb = self.mrb.as_mut();
@@ -64,7 +64,7 @@ impl DefineConstant for Artichoke {
         T: 'static,
     {
         let name =
-            CString::new(constant).map_err(|_| ConstantNameError::new(String::from(constant)))?;
+            CString::new(constant).map_err(|_| ConstantNameError::from(String::from(constant)))?;
         let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
         unsafe {
             let mrb = self.mrb.as_mut();

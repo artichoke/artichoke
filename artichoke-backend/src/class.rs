@@ -163,7 +163,7 @@ impl Spec {
                 enclosing_scope: enclosing_scope.map(Box::new),
             })
         } else {
-            Err(ConstantNameError::new(name))
+            Err(name.into())
         }
     }
 
