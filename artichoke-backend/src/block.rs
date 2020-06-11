@@ -73,6 +73,12 @@ impl From<Box<NoBlockGiven>> for Box<dyn RubyException> {
     }
 }
 
+impl From<Value> for NoBlockGiven {
+    fn from(value: Value) -> Self {
+        Self(value.ruby_type())
+    }
+}
+
 impl From<sys::mrb_value> for NoBlockGiven {
     fn from(value: sys::mrb_value) -> Self {
         Self(types::ruby_from_mrb_value(value))
@@ -85,10 +91,16 @@ impl From<Ruby> for NoBlockGiven {
     }
 }
 
+impl Default for NoBlockGiven {
+    fn default() -> Self {
+        Self(Ruby::Nil)
+    }
+}
+
 impl NoBlockGiven {
     #[must_use]
-    pub fn new(ruby_type: Ruby) -> Self {
-        Self(ruby_type)
+    pub fn new() -> Self {
+        Self::default()
     }
 
     #[must_use]
@@ -102,7 +114,11 @@ pub struct Block(sys::mrb_value);
 
 impl From<sys::mrb_value> for Option<Block> {
     fn from(value: sys::mrb_value) -> Self {
-        Block::new(value)
+        if let Ruby::Nil = types::ruby_from_mrb_value(value) {
+            None
+        } else {
+            Some(Block(value))
+        }
     }
 }
 
@@ -126,6 +142,11 @@ impl Block {
         } else {
             Some(Self(block))
         }
+    }
+
+    #[must_use]
+    pub unsafe fn new_unchecked(block: sys::mrb_value) -> Self {
+        Self(block)
     }
 
     #[inline]
