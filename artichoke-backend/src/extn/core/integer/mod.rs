@@ -84,9 +84,7 @@ impl Integer {
             let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
             message.extend(encoding.inspect(interp));
             message.extend(b") not supported");
-            Err(Exception::from(NotImplementedError::new_raw(
-                interp, message,
-            )))
+            Err(NotImplementedError::from(message).into())
         } else {
             // When no encoding is supplied, MRI assumes the encoding is
             // either ASCII or ASCII-8BIT.
@@ -127,7 +125,7 @@ impl Integer {
                     let mut message = String::new();
                     string::format_int_into(&mut message, self.as_i64())?;
                     message.push_str(" out of char range");
-                    Err(Exception::from(RangeError::new(&interp, message)))
+                    Err(RangeError::from(message).into())
                 }
             }
         }
@@ -148,10 +146,7 @@ impl Integer {
                 let denom = denominator.try_into::<Int>(interp)?;
                 let value = self.as_i64();
                 if denom == 0 {
-                    Err(Exception::from(ZeroDivisionError::new(
-                        interp,
-                        "divided by 0",
-                    )))
+                    Err(ZeroDivisionError::from("divided by 0").into())
                 } else if value < 0 && (value % denom) != 0 {
                     Ok(((value / denom) - 1).into())
                 } else {
@@ -166,13 +161,10 @@ impl Integer {
                 let x = interp.convert(self);
                 let coerced = numeric::coerce(interp, x, denominator)?;
                 match coerced {
-                    Coercion::Float(_, denom) if denom == 0.0 => Err(Exception::from(
-                        ZeroDivisionError::new(interp, "divided by 0"),
-                    )),
-                    Coercion::Integer(_, 0) => Err(Exception::from(ZeroDivisionError::new(
-                        interp,
-                        "divided by 0",
-                    ))),
+                    Coercion::Float(_, denom) if denom == 0.0 => {
+                        Err(ZeroDivisionError::from("divided by 0").into())
+                    }
+                    Coercion::Integer(_, 0) => Err(ZeroDivisionError::from("divided by 0").into()),
                     Coercion::Float(numer, denom) => Ok((numer / denom).into()),
                     Coercion::Integer(numer, denom) if numer < 0 && (numer % denom) != 0 => {
                         Ok(((numer / denom) - 1).into())

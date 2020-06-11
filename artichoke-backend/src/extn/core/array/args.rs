@@ -27,8 +27,8 @@ pub fn element_reference(
     } else if let Ok(index) = elem.implicitly_convert_to_int(interp) {
         Ok(ElementReference::Index(index))
     } else {
-        let rangelen = Int::try_from(ary_len)
-            .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
+        let rangelen =
+            Int::try_from(ary_len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
         if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
             if let Ok(len) = usize::try_from(len) {
                 Ok(ElementReference::StartLen(start, len))
@@ -64,7 +64,7 @@ pub fn element_assignment(
                 string::format_int_into(&mut message, start)?;
                 message.push_str(" too small for array; minimum: -");
                 string::format_int_into(&mut message, len)?;
-                return Err(Exception::from(IndexError::new(interp, message)));
+                return Err(IndexError::from(message).into());
             }
         };
         let slice_len = second.implicitly_convert_to_int(interp)?;
@@ -74,7 +74,7 @@ pub fn element_assignment(
             let mut message = String::from("negative length (");
             string::format_int_into(&mut message, slice_len)?;
             message.push(')');
-            Err(Exception::from(IndexError::new(interp, message)))
+            Err(IndexError::from(message).into())
         }
     } else if let Ok(index) = first.implicitly_convert_to_int(interp) {
         if let Ok(index) = usize::try_from(index) {
@@ -91,12 +91,12 @@ pub fn element_assignment(
                 string::format_int_into(&mut message, index)?;
                 message.push_str(" too small for array; minimum: -");
                 string::format_int_into(&mut message, len)?;
-                Err(Exception::from(IndexError::new(interp, message)))
+                Err(IndexError::from(message).into())
             }
         }
     } else {
-        let rangelen = Int::try_from(len)
-            .map_err(|_| Fatal::new(interp, "Range length exceeds Integer max"))?;
+        let rangelen =
+            Int::try_from(len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
         if let Some(protect::Range { start, len }) = first.is_range(interp, rangelen)? {
             let start = usize::try_from(start).unwrap_or_else(|_| {
                 unimplemented!("should throw RangeError (-11..1 out of range)")
@@ -116,7 +116,7 @@ pub fn element_assignment(
                 message.push_str("..");
                 string::format_int_into(&mut message, end)?;
                 message.push_str(" out of range");
-                return Err(Exception::from(RangeError::new(interp, message)));
+                return Err(RangeError::from(message).into());
             }
             match (usize::try_from(start), usize::try_from(end)) {
                 (Ok(start), Ok(end)) => Ok((start, end.checked_sub(start), second)),
@@ -132,7 +132,7 @@ pub fn element_assignment(
                         string::format_int_into(&mut message, start)?;
                         message.push_str(" too small for array; minimum: -");
                         string::format_int_into(&mut message, len)?;
-                        Err(Exception::from(IndexError::new(interp, message)))
+                        Err(IndexError::from(message).into())
                     }
                 }
                 (Ok(start), Err(_)) => Ok((start, None, second)),
@@ -141,7 +141,7 @@ pub fn element_assignment(
                     string::format_int_into(&mut message, start)?;
                     message.push_str(" too small for array; minimum: -");
                     string::format_int_into(&mut message, len)?;
-                    Err(Exception::from(IndexError::new(interp, message)))
+                    Err(IndexError::from(message).into())
                 }
             }
         }

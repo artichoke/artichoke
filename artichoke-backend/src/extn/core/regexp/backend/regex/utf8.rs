@@ -21,17 +21,9 @@ pub struct Utf8 {
 }
 
 impl Utf8 {
-    pub fn new(
-        interp: &mut Artichoke,
-        literal: Config,
-        derived: Config,
-        encoding: Encoding,
-    ) -> Result<Self, Exception> {
+    pub fn new(literal: Config, derived: Config, encoding: Encoding) -> Result<Self, Exception> {
         let pattern = str::from_utf8(derived.pattern.as_slice()).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 patterns",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 patterns")
         })?;
         let mut builder = RegexBuilder::new(pattern);
         builder.case_insensitive(derived.options.ignore_case);
@@ -40,9 +32,9 @@ impl Utf8 {
         let regex = match builder.build() {
             Ok(regex) => regex,
             Err(err) if literal.options.literal => {
-                return Err(Exception::from(SyntaxError::new(interp, err.to_string())));
+                return Err(SyntaxError::from(err.to_string()).into());
             }
-            Err(err) => return Err(Exception::from(RegexpError::new(interp, err.to_string()))),
+            Err(err) => return Err(RegexpError::from(err.to_string()).into()),
         };
         let regexp = Self {
             literal,
@@ -66,16 +58,9 @@ impl RegexpType for Utf8 {
         Box::new(self.clone())
     }
 
-    fn captures(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-    ) -> Result<Option<Vec<NilableString>>, Exception> {
+    fn captures(&self, haystack: &[u8]) -> Result<Option<Vec<NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks")
         })?;
         if let Some(captures) = self.regex.captures(haystack) {
             let mut result = Vec::with_capacity(captures.len());
@@ -92,12 +77,7 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn capture_indexes_for_name(
-        &self,
-        interp: &mut Artichoke,
-        name: &[u8],
-    ) -> Result<Option<Vec<usize>>, Exception> {
-        let _ = interp;
+    fn capture_indexes_for_name(&self, name: &[u8]) -> Result<Option<Vec<usize>>, Exception> {
         let mut result = vec![];
         for (index, group) in self.regex.capture_names().enumerate() {
             if Some(name) == group.map(str::as_bytes) {
@@ -111,15 +91,10 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn captures_len(
-        &self,
-        interp: &mut Artichoke,
-        haystack: Option<&[u8]>,
-    ) -> Result<usize, Exception> {
+    fn captures_len(&self, haystack: Option<&[u8]>) -> Result<usize, Exception> {
         let result = if let Some(haystack) = haystack {
             let haystack = str::from_utf8(haystack).map_err(|_| {
-                ArgumentError::new(
-                    interp,
+                ArgumentError::from(
                     "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
                 )
             })?;
@@ -133,16 +108,9 @@ impl RegexpType for Utf8 {
         Ok(result)
     }
 
-    fn capture0<'a>(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &'a [u8],
-    ) -> Result<Option<&'a [u8]>, Exception> {
+    fn capture0<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks")
         })?;
         let result = self
             .regex
@@ -183,8 +151,7 @@ impl RegexpType for Utf8 {
         &self.encoding
     }
 
-    fn inspect(&self, interp: &mut Artichoke) -> Vec<u8> {
-        let _ = interp;
+    fn inspect(&self) -> Vec<u8> {
         // pattern length + 2x '/' + mix + encoding
         let mut inspect = Vec::with_capacity(self.literal.pattern.len() + 2 + 4);
         inspect.push(b'/');
@@ -199,17 +166,13 @@ impl RegexpType for Utf8 {
         inspect
     }
 
-    fn string(&self, interp: &mut Artichoke) -> &[u8] {
-        let _ = interp;
+    fn string(&self) -> &[u8] {
         self.derived.pattern.as_slice()
     }
 
     fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystack",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystack")
         })?;
         regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
@@ -256,17 +219,9 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn is_match(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-        pos: Option<Int>,
-    ) -> Result<bool, Exception> {
+    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystack",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystack")
         })?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
@@ -299,10 +254,7 @@ impl RegexpType for Utf8 {
         block: Option<Block>,
     ) -> Result<Value, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks")
         })?;
         regexp::clear_capture_globals(interp)?;
         let haystack_char_len = haystack.chars().count();
@@ -386,10 +338,7 @@ impl RegexpType for Utf8 {
         haystack: &[u8],
     ) -> Result<Option<usize>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks")
         })?;
         regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
@@ -440,12 +389,12 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn named_captures(&self, interp: &mut Artichoke) -> Result<NameToCaptureLocations, Exception> {
+    fn named_captures(&self) -> Result<NameToCaptureLocations, Exception> {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
         for group in self.regex.capture_names().filter_map(convert::identity) {
-            if let Some(indexes) = self.capture_indexes_for_name(interp, group.as_bytes())? {
+            if let Some(indexes) = self.capture_indexes_for_name(group.as_bytes())? {
                 map.push((group.into(), indexes));
             }
         }
@@ -454,18 +403,14 @@ impl RegexpType for Utf8 {
 
     fn named_captures_for_haystack(
         &self,
-        interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks")
         })?;
         if let Some(captures) = self.regex.captures(haystack) {
             let mut map = HashMap::with_capacity(captures.len());
-            for (group, group_indexes) in self.named_captures(interp)? {
+            for (group, group_indexes) in self.named_captures()? {
                 let capture = group_indexes
                     .iter()
                     .rev()
@@ -483,9 +428,9 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn names(&self, interp: &mut Artichoke) -> Vec<Vec<u8>> {
+    fn names(&self) -> Vec<Vec<u8>> {
         let mut names = vec![];
-        let mut capture_names = self.named_captures(interp).unwrap_or_default();
+        let mut capture_names = self.named_captures().unwrap_or_default();
         capture_names.sort_by(|left, right| {
             let left = left.1.iter().copied().fold(usize::max_value(), usize::min);
             let right = right.1.iter().copied().fold(usize::max_value(), usize::min);
@@ -499,17 +444,9 @@ impl RegexpType for Utf8 {
         names
     }
 
-    fn pos(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-        at: usize,
-    ) -> Result<Option<(usize, usize)>, Exception> {
+    fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks")
         })?;
         let pos = self
             .regex
@@ -526,10 +463,7 @@ impl RegexpType for Utf8 {
         block: Option<Block>,
     ) -> Result<Scan, Exception> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
-            ArgumentError::new(
-                interp,
-                "regex crate utf8 backend for Regexp only supports UTF-8 haystacks",
-            )
+            ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks")
         })?;
         regexp::clear_capture_globals(interp)?;
         let mut matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);

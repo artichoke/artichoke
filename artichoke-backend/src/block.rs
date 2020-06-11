@@ -151,10 +151,7 @@ impl Block {
                     // and may result in a segfault.
                     //
                     // See: https://github.com/mruby/mruby/issues/4460
-                    Err(Exception::from(Fatal::new(
-                        arena.interp(),
-                        "Unreachable Ruby value",
-                    )))
+                    Err(Fatal::from("Unreachable Ruby value").into())
                 } else {
                     Ok(value)
                 }

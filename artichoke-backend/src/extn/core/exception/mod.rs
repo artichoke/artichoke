@@ -38,7 +38,7 @@
 //! - `SystemStackError`
 //! - `fatal` -- impossible to rescue
 
-use bstr::BStr;
+use bstr::{BStr, ByteSlice};
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
@@ -258,30 +258,63 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 macro_rules! ruby_exception_impl {
     ($exception:ident) => {
-        #[derive(Default, Debug, Clone)]
+        #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
         pub struct $exception {
             message: Cow<'static, BStr>,
         }
 
         impl $exception {
-            pub fn new<S>(interp: &Artichoke, message: S) -> Self
-            where
-                S: Into<Cow<'static, str>>,
-            {
-                let _ = interp;
-                let message = match message.into() {
+            #[must_use]
+            pub fn new() -> Self {
+                // `Exception`s initialized via `raise RuntimeError` or
+                // `RuntimeError.new` have `message` equal to the `Exception`
+                // class name.
+                let message = Cow::Borrowed(stringify!($exception).as_bytes().into());
+                Self { message }
+            }
+        }
+
+        impl From<String> for $exception {
+            fn from(message: String) -> Self {
+                let message = Cow::Owned(message.into_bytes().into());
+                Self { message }
+            }
+        }
+
+        impl From<&'static str> for $exception {
+            fn from(message: &'static str) -> Self {
+                let message = Cow::Borrowed(message.as_bytes().into());
+                Self { message }
+            }
+        }
+
+        impl From<Cow<'static, str>> for $exception {
+            fn from(message: Cow<'static, str>) -> Self {
+                let message = match message {
                     Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes().into()),
                     Cow::Owned(s) => Cow::Owned(s.into_bytes().into()),
                 };
                 Self { message }
             }
+        }
 
-            pub fn new_raw<S>(interp: &Artichoke, message: S) -> Self
-            where
-                S: Into<Cow<'static, [u8]>>,
-            {
-                let _ = interp;
-                let message = match message.into() {
+        impl From<Vec<u8>> for $exception {
+            fn from(message: Vec<u8>) -> Self {
+                let message = Cow::Owned(message.into());
+                Self { message }
+            }
+        }
+
+        impl From<&'static [u8]> for $exception {
+            fn from(message: &'static [u8]) -> Self {
+                let message = message.as_bstr().into();
+                Self { message }
+            }
+        }
+
+        impl From<Cow<'static, [u8]>> for $exception {
+            fn from(message: Cow<'static, [u8]>) -> Self {
+                let message = match message {
                     Cow::Borrowed(s) => Cow::Borrowed(s.into()),
                     Cow::Owned(s) => Cow::Owned(s.into()),
                 };
@@ -396,7 +429,7 @@ mod tests {
     unsafe extern "C" fn run_run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
         let mut interp = unwrap_interpreter!(mrb);
         let guard = Guard::new(&mut interp);
-        let exc = RuntimeError::new(&guard, "something went wrong");
+        let exc = RuntimeError::from("something went wrong");
         exception::raise(guard, exc)
     }
 

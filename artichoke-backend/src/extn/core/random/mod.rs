@@ -55,20 +55,17 @@ pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Exception> {
     Ok(old_seed as Int)
 }
 
-pub fn urandom(interp: &mut Artichoke, size: Int) -> Result<Vec<u8>, Exception> {
+pub fn urandom(size: Int) -> Result<Vec<u8>, Exception> {
     match usize::try_from(size) {
         Ok(0) => Ok(Vec::new()),
         Ok(len) => {
             let mut buf = vec![0; len];
             let mut rng = rand::thread_rng();
             rng.try_fill_bytes(&mut buf)
-                .map_err(|err| RuntimeError::new(interp, err.to_string()))?;
+                .map_err(|err| RuntimeError::from(err.to_string()))?;
             Ok(buf)
         }
-        Err(_) => Err(Exception::from(ArgumentError::new(
-            interp,
-            "negative string size (or size too big)",
-        ))),
+        Err(_) => Err(ArgumentError::from("negative string size (or size too big)").into()),
     }
 }
 
@@ -128,10 +125,7 @@ impl Random {
                 self.inner_mut().bytes(interp, &mut buf)?;
                 Ok(buf)
             }
-            Err(_) => Err(Exception::from(ArgumentError::new(
-                interp,
-                "negative string size (or size too big)",
-            ))),
+            Err(_) => Err(ArgumentError::from("negative string size (or size too big)").into()),
         }
     }
 
@@ -143,15 +137,12 @@ impl Random {
         match max {
             RandomNumberMax::Float(max) if !max.is_finite() => {
                 // NOTE: MRI returns `Errno::EDOM` exception class.
-                Err(Exception::from(ArgumentError::new(
-                    interp,
-                    "Numerical argument out of domain",
-                )))
+                Err(ArgumentError::from("Numerical argument out of domain").into())
             }
             RandomNumberMax::Float(max) if max < 0.0 => {
                 let mut message = b"invalid argument - ".to_vec();
                 string::write_float_into(&mut message, max)?;
-                Err(Exception::from(ArgumentError::new_raw(interp, message)))
+                Err(ArgumentError::from(message).into())
             }
             RandomNumberMax::Float(max) if max == 0.0 => {
                 let number = self.inner_mut().rand_float(interp, None)?;
@@ -164,7 +155,7 @@ impl Random {
             RandomNumberMax::Integer(max) if max < 1 => {
                 let mut message = String::from("invalid argument - ");
                 string::format_int_into(&mut message, max)?;
-                Err(Exception::from(ArgumentError::new(interp, message)))
+                Err(ArgumentError::from(message).into())
             }
             RandomNumberMax::Integer(max) => {
                 let number = self.inner_mut().rand_int(interp, max)?;
@@ -227,7 +218,7 @@ impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
                     let max = max.implicitly_convert_to_int(self).map_err(|_| {
                         let mut message = b"invalid argument - ".to_vec();
                         message.extend(max.inspect(self));
-                        ArgumentError::new_raw(self, message)
+                        ArgumentError::from(message)
                     })?;
                     Ok(RandomNumberMax::Integer(max))
                 }

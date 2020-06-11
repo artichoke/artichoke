@@ -27,16 +27,13 @@ mod tests {
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SecureRandom;
 
-pub fn random_bytes(interp: &mut Artichoke, len: Option<Int>) -> Result<Vec<u8>, Exception> {
+pub fn random_bytes(len: Option<Int>) -> Result<Vec<u8>, Exception> {
     let len = if let Some(len) = len {
         match usize::try_from(len) {
             Ok(0) => return Ok(Vec::new()),
             Ok(len) => len,
             Err(_) => {
-                return Err(Exception::from(ArgumentError::new(
-                    interp,
-                    "negative string size (or size too big)",
-                )))
+                return Err(ArgumentError::from("negative string size (or size too big)").into())
             }
         }
     } else {
@@ -45,7 +42,7 @@ pub fn random_bytes(interp: &mut Artichoke, len: Option<Int>) -> Result<Vec<u8>,
     let mut rng = rand::thread_rng();
     let mut bytes = vec![0; len];
     rng.try_fill_bytes(&mut bytes)
-        .map_err(|err| RuntimeError::new(interp, err.to_string()))?;
+        .map_err(|err| RuntimeError::from(err.to_string()))?;
     Ok(bytes)
 }
 
@@ -83,7 +80,7 @@ impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
                     let max = max.implicitly_convert_to_int(self).map_err(|_| {
                         let mut message = b"invalid argument - ".to_vec();
                         message.extend(max.inspect(self).as_slice());
-                        ArgumentError::new_raw(self, message)
+                        ArgumentError::from(message)
                     })?;
                     Ok(RandomNumberMax::Integer(max))
                 }
@@ -109,18 +106,12 @@ impl ConvertMut<RandomNumber, Value> for Artichoke {
     }
 }
 
-pub fn random_number(
-    interp: &mut Artichoke,
-    max: RandomNumberMax,
-) -> Result<RandomNumber, ArgumentError> {
+pub fn random_number(max: RandomNumberMax) -> Result<RandomNumber, ArgumentError> {
     let mut rng = rand::thread_rng();
     match max {
         RandomNumberMax::Float(max) if !max.is_finite() => {
             // NOTE: MRI returns `Errno::EDOM` exception class.
-            Err(ArgumentError::new(
-                interp,
-                "Numerical argument out of domain",
-            ))
+            Err(ArgumentError::from("Numerical argument out of domain"))
         }
         RandomNumberMax::Float(max) if max <= 0.0 => {
             let number = rng.gen_range(0.0, 1.0);
@@ -146,27 +137,24 @@ pub fn random_number(
 }
 
 #[inline]
-pub fn hex(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
-    let bytes = random_bytes(interp, len)?;
+pub fn hex(len: Option<Int>) -> Result<String, Exception> {
+    let bytes = random_bytes(len)?;
     Ok(hex::encode(bytes))
 }
 
 #[inline]
-pub fn base64(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
-    let bytes = random_bytes(interp, len)?;
+pub fn base64(len: Option<Int>) -> Result<String, Exception> {
+    let bytes = random_bytes(len)?;
     Ok(base64::encode(bytes))
 }
 
-pub fn alphanumeric(interp: &mut Artichoke, len: Option<Int>) -> Result<String, Exception> {
+pub fn alphanumeric(len: Option<Int>) -> Result<String, Exception> {
     let len = if let Some(len) = len {
         match usize::try_from(len) {
             Ok(0) => return Ok(String::new()),
             Ok(len) => len,
             Err(_) => {
-                return Err(Exception::from(ArgumentError::new(
-                    interp,
-                    "negative string size (or size too big)",
-                )))
+                return Err(ArgumentError::from("negative string size (or size too big)").into())
             }
         }
     } else {
@@ -177,10 +165,10 @@ pub fn alphanumeric(interp: &mut Artichoke, len: Option<Int>) -> Result<String, 
     Ok(string)
 }
 
-pub fn uuid(interp: &mut Artichoke) -> String {
-    let _ = interp;
+#[must_use]
+pub fn uuid() -> String {
     let uuid = Uuid::new_v4();
     let mut buf = Uuid::encode_buffer();
     let enc = uuid.to_hyphenated().encode_lower(&mut buf);
-    enc.to_owned()
+    String::from(enc)
 }

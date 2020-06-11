@@ -169,12 +169,12 @@ impl Array {
                     message.push_str(first.pretty_name(interp));
                     message.push_str("#to_ary gives ");
                     message.push_str(other.pretty_name(interp));
-                    return Err(Exception::from(TypeError::new(interp, message)));
+                    return Err(TypeError::from(message).into());
                 }
             } else {
                 let len = first.implicitly_convert_to_int(interp)?;
-                let len = usize::try_from(len)
-                    .map_err(|_| ArgumentError::new(interp, "negative array size"))?;
+                let len =
+                    usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
                 if let Some(block) = block {
                     if second.is_some() {
                         interp.warn(&b"warning: block supersedes default value argument"[..])?;
@@ -182,7 +182,7 @@ impl Array {
                     let mut buffer = Vec::with_capacity(len);
                     for idx in 0..len {
                         let idx = Int::try_from(idx).map_err(|_| {
-                            RangeError::new(interp, "bignum too big to convert into `long'")
+                            RangeError::from("bignum too big to convert into `long'")
                         })?;
                         let idx = interp.convert(idx);
                         let elem = block.yield_arg(interp, &idx)?;
@@ -196,10 +196,10 @@ impl Array {
                 }
             }
         } else if second.is_some() {
-            return Err(Exception::from(Fatal::new(
-                interp,
+            return Err(Fatal::from(
                 "default cannot be set if first arg is missing in Array#initialize",
-            )));
+            )
+            .into());
         } else {
             InlineBuffer::default()
         };
@@ -267,7 +267,7 @@ impl Array {
                     message.push_str(elem.pretty_name(interp));
                     message.push_str("#to_ary gives ");
                     message.push_str(other.pretty_name(interp));
-                    return Err(Exception::from(TypeError::new(interp, message)));
+                    return Err(TypeError::from(message).into());
                 }
             } else {
                 self.0.set_with_drain(start, drain, elem);
@@ -310,13 +310,13 @@ impl Array {
                 message.push_str(other.pretty_name(interp));
                 message.push_str("#to_ary gives ");
                 message.push_str(other.pretty_name(interp));
-                return Err(Exception::from(TypeError::new(interp, message)));
+                return Err(TypeError::from(message).into());
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
             message.push_str(other.pretty_name(interp));
             message.push_str(" into Array");
-            return Err(Exception::from(TypeError::new(interp, message)));
+            return Err(TypeError::from(message).into());
         };
         Ok(())
     }

@@ -9,20 +9,17 @@ use crate::sys::protect;
 pub fn begin(interp: &mut Artichoke, mut value: Value, at: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let capture = interp.try_convert_mut(&at)?;
-    let begin = data.begin(interp, capture)?;
+    let begin = data.begin(capture)?;
     match begin.map(Int::try_from) {
         Some(Ok(begin)) => Ok(interp.convert(begin)),
-        Some(Err(_)) => Err(Exception::from(ArgumentError::new(
-            interp,
-            "input string too long",
-        ))),
+        Some(Err(_)) => Err(ArgumentError::from("input string too long").into()),
         None => Ok(Value::nil()),
     }
 }
 
 pub fn captures(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
-    if let Some(captures) = data.captures(interp)? {
+    if let Some(captures) = data.captures()? {
         interp.try_convert_mut(captures)
     } else {
         Ok(Value::nil())
@@ -47,70 +44,61 @@ pub fn element_reference(
     } else {
         // NOTE(lopopolo): Encapsulation is broken here by reaching into the
         // inner regexp.
-        let captures_len = data.regexp.inner().captures_len(interp, None)?;
+        let captures_len = data.regexp.inner().captures_len(None)?;
         let rangelen = Int::try_from(captures_len)
-            .map_err(|_| ArgumentError::new(interp, "input string too long"))?;
+            .map_err(|_| ArgumentError::from("input string too long"))?;
         if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
             CaptureAt::StartLen(start, len)
         } else {
             return Ok(Value::nil());
         }
     };
-    let matched = data.capture_at(interp, at)?;
+    let matched = data.capture_at(at)?;
     interp.try_convert_mut(matched)
 }
 
 pub fn end(interp: &mut Artichoke, mut value: Value, at: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let capture = interp.try_convert_mut(&at)?;
-    let end = data.end(interp, capture)?;
+    let end = data.end(capture)?;
     match end.map(Int::try_from) {
         Some(Ok(end)) => Ok(interp.convert(end)),
-        Some(Err(_)) => Err(Exception::from(ArgumentError::new(
-            interp,
-            "input string too long",
-        ))),
+        Some(Err(_)) => Err(ArgumentError::from("input string too long").into()),
         None => Ok(Value::nil()),
     }
 }
 
 pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
-    let len = data.len(interp)?;
+    let len = data.len()?;
     if let Ok(len) = Int::try_from(len) {
         Ok(interp.convert(len))
     } else {
-        Err(Exception::from(ArgumentError::new(
-            interp,
-            "input string too long",
-        )))
+        Err(ArgumentError::from("input string too long").into())
     }
 }
 
 pub fn named_captures(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
-    let named_captures = data.named_captures(interp)?;
+    let named_captures = data.named_captures()?;
     interp.try_convert_mut(named_captures)
 }
 
 pub fn names(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
-    let names = data.names(interp);
+    let names = data.names();
     interp.try_convert_mut(names)
 }
 
 pub fn offset(interp: &mut Artichoke, mut value: Value, at: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let capture = interp.try_convert_mut(&at)?;
-    if let Some([begin, end]) = data.offset(interp, capture)? {
+    if let Some([begin, end]) = data.offset(capture)? {
         if let (Ok(begin), Ok(end)) = (Int::try_from(begin), Int::try_from(end)) {
             let ary = Array::assoc(interp.convert(begin), interp.convert(end));
             Array::alloc_value(ary, interp)
         } else {
-            Err(Exception::from(ArgumentError::new(
-                interp,
-                "input string too long",
-            )))
+            Err(ArgumentError::from("input string too long").into())
         }
     } else {
         let ary = Array::assoc(Value::nil(), Value::nil());
@@ -153,7 +141,7 @@ pub fn string(interp: &mut Artichoke, mut value: Value) -> Result<Value, Excepti
 
 pub fn to_a(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
-    if let Some(ary) = data.to_a(interp)? {
+    if let Some(ary) = data.to_a()? {
         interp.try_convert_mut(ary)
     } else {
         Ok(Value::nil())
@@ -162,6 +150,6 @@ pub fn to_a(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception
 
 pub fn to_s(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
-    let display = data.to_s(interp)?;
+    let display = data.to_s()?;
     Ok(interp.convert_mut(display))
 }

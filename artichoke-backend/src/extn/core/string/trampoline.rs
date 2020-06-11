@@ -16,12 +16,7 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
                 [a, b] => u32::from_le_bytes([*a, *b, 0, 0]),
                 [a, b, c] => u32::from_le_bytes([*a, *b, *c, 0]),
                 [a, b, c, d] => u32::from_le_bytes([*a, *b, *c, *d]),
-                _ => {
-                    return Err(Exception::from(ArgumentError::new(
-                        interp,
-                        "Unicode out of range",
-                    )))
-                }
+                _ => return Err(ArgumentError::from("Unicode out of range").into()),
             }
         } else {
             // All `char`s are valid `u32`s
@@ -29,7 +24,7 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
             ch as u32
         }
     } else {
-        return Err(Exception::from(ArgumentError::new(interp, "empty string")));
+        return Err(ArgumentError::from("empty string").into());
     };
     Ok(interp.convert(ord))
 }
@@ -44,7 +39,7 @@ pub fn scan(
         let mut message = String::from("wrong argument type ");
         message.push_str(pattern.pretty_name(interp));
         message.push_str(" (expected Regexp)");
-        Err(Exception::from(TypeError::new(interp, message)))
+        Err(TypeError::from(message).into())
     } else if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut pattern, interp) } {
         let haystack = value.try_into_mut::<&[u8]>(interp)?;
         let scan = regexp.inner().scan(interp, haystack, block)?;
@@ -112,6 +107,6 @@ pub fn scan(
         let mut message = String::from("wrong argument type ");
         message.push_str(pattern.pretty_name(interp));
         message.push_str(" (expected Regexp)");
-        Err(Exception::from(TypeError::new(interp, message)))
+        Err(TypeError::from(message).into())
     }
 }

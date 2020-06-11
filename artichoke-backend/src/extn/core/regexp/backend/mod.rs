@@ -49,42 +49,21 @@ pub trait RegexpType {
 
     fn encoding(&self) -> &Encoding;
 
-    fn inspect(&self, interp: &mut Artichoke) -> Vec<u8>;
+    fn inspect(&self) -> Vec<u8>;
 
-    fn string(&self, interp: &mut Artichoke) -> &[u8];
+    fn string(&self) -> &[u8];
 
-    fn captures(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-    ) -> Result<Option<Vec<NilableString>>, Exception>;
+    fn captures(&self, haystack: &[u8]) -> Result<Option<Vec<NilableString>>, Exception>;
 
-    fn capture_indexes_for_name(
-        &self,
-        interp: &mut Artichoke,
-        name: &[u8],
-    ) -> Result<Option<Vec<usize>>, Exception>;
+    fn capture_indexes_for_name(&self, name: &[u8]) -> Result<Option<Vec<usize>>, Exception>;
 
-    fn captures_len(
-        &self,
-        interp: &mut Artichoke,
-        haystack: Option<&[u8]>,
-    ) -> Result<usize, Exception>;
+    fn captures_len(&self, haystack: Option<&[u8]>) -> Result<usize, Exception>;
 
-    fn capture0<'a>(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &'a [u8],
-    ) -> Result<Option<&'a [u8]>, Exception>;
+    fn capture0<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Exception>;
 
     fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Exception>;
 
-    fn is_match(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-        pos: Option<Int>,
-    ) -> Result<bool, Exception>;
+    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Exception>;
 
     fn match_(
         &self,
@@ -100,22 +79,16 @@ pub trait RegexpType {
         haystack: &[u8],
     ) -> Result<Option<usize>, Exception>;
 
-    fn named_captures(&self, interp: &mut Artichoke) -> Result<NameToCaptureLocations, Exception>;
+    fn named_captures(&self) -> Result<NameToCaptureLocations, Exception>;
 
     fn named_captures_for_haystack(
         &self,
-        interp: &mut Artichoke,
         haystack: &[u8],
     ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception>;
 
-    fn names(&self, interp: &mut Artichoke) -> Vec<Vec<u8>>;
+    fn names(&self) -> Vec<Vec<u8>>;
 
-    fn pos(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-        at: usize,
-    ) -> Result<Option<(usize, usize)>, Exception>;
+    fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Exception>;
 
     fn scan(
         &self,

@@ -13,10 +13,7 @@ const RUBY_EXTENSION: &str = "rb";
 pub fn load(interp: &mut Artichoke, filename: Value) -> Result<bool, Exception> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
-        return Err(Exception::from(ArgumentError::new(
-            interp,
-            "path name contains null byte",
-        )));
+        return Err(ArgumentError::from("path name contains null byte").into());
     }
     let file = ffi::bytes_to_os_str(filename)?;
     let pathbuf;
@@ -28,10 +25,10 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<bool, Exception> 
     if !interp.source_is_file(path)? {
         let mut message = b"cannot load such file -- ".to_vec();
         message.extend_from_slice(filename);
-        return Err(LoadError::new_raw(interp, message).into());
+        return Err(LoadError::from(message).into());
     }
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-        .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
+        .ok_or_else(|| ArgumentError::from("path name contains null byte"))?;
     interp.push_context(context)?;
     let result = interp.load_source(path);
     let _ = interp.pop_context()?;
@@ -45,10 +42,7 @@ pub fn require(
 ) -> Result<bool, Exception> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
-        return Err(Exception::from(ArgumentError::new(
-            interp,
-            "path name contains null byte",
-        )));
+        return Err(ArgumentError::from("path name contains null byte").into());
     }
     let file = ffi::bytes_to_os_str(filename)?;
     let path = Path::new(file);
@@ -75,7 +69,7 @@ pub fn require(
     };
     if interp.source_is_file(&path)? {
         let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-            .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
+            .ok_or_else(|| ArgumentError::from("path name contains null byte"))?;
         interp.push_context(context)?;
         let result = interp.require_source(&path);
         let _ = interp.pop_context()?;
@@ -84,7 +78,7 @@ pub fn require(
     if let Some(path) = alternate {
         if interp.source_is_file(&path)? {
             let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-                .ok_or_else(|| ArgumentError::new(interp, "path name contains null byte"))?;
+                .ok_or_else(|| ArgumentError::from("path name contains null byte"))?;
             interp.push_context(context)?;
             let result = interp.require_source(&path);
             let _ = interp.pop_context()?;
@@ -93,18 +87,40 @@ pub fn require(
     }
     let mut message = b"cannot load such file -- ".to_vec();
     message.extend_from_slice(filename);
-    Err(LoadError::new_raw(interp, message).into())
+    Err(LoadError::from(message).into())
 }
 
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RelativePath(PathBuf);
 
-impl RelativePath {
-    pub fn new<T>(path: T) -> Self
-    where
-        T: Into<PathBuf>,
-    {
+impl From<PathBuf> for RelativePath {
+    fn from(path: PathBuf) -> Self {
+        Self(path)
+    }
+}
+
+impl From<&Path> for RelativePath {
+    fn from(path: &Path) -> Self {
         Self(path.into())
+    }
+}
+
+impl From<String> for RelativePath {
+    fn from(path: String) -> Self {
+        Self(path.into())
+    }
+}
+
+impl From<&str> for RelativePath {
+    fn from(path: &str) -> Self {
+        Self(path.into())
+    }
+}
+
+impl RelativePath {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::from(RUBY_LOAD_PATH)
     }
 
     pub fn join<P: AsRef<Path>>(&self, path: P) -> PathBuf {
@@ -114,13 +130,13 @@ impl RelativePath {
     pub fn try_from_interp(interp: &mut Artichoke) -> Result<Self, Exception> {
         let context = interp
             .peek_context()?
-            .ok_or_else(|| Fatal::new(interp, "relative require with no context stack"))?;
+            .ok_or_else(|| Fatal::from("relative require with no context stack"))?;
         let path = ffi::bytes_to_os_str(context.filename())?;
         let path = Path::new(path);
         if let Some(base) = path.parent() {
-            Ok(Self::new(base))
+            Ok(Self::from(base))
         } else {
-            Ok(Self::new("/"))
+            Ok(Self::from("/"))
         }
     }
 }
