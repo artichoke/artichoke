@@ -13,7 +13,9 @@ pub struct Radix(NonZeroU32);
 
 impl Default for Radix {
     fn default() -> Self {
-        Self(unsafe { NonZeroU32::new_unchecked(10) })
+        // Safety:
+        // Constant `10` is non-zero.
+        unsafe { Self::new_unchecked(10) }
     }
 }
 
@@ -24,12 +26,22 @@ impl From<Radix> for u32 {
 }
 
 impl Radix {
-    /// Construct a new, default `Radix`.
+    /// Construct a new `Radix`.
     ///
-    /// Default `Radix` is 10.
+    /// `radix` must be non-zero otherwise `None` is returned.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(radix: u32) -> Option<Self> {
+        NonZeroU32::new(radix).map(Self)
+    }
+
+    /// Construct a new `Radix` without checking the value.
+    ///
+    /// # Safety
+    ///
+    /// The radix must not be zero.
+    #[must_use]
+    pub unsafe fn new_unchecked(radix: u32) -> Self {
+        Self(NonZeroU32::new_unchecked(radix))
     }
 
     /// Extract the `Radix` as the underlying `u32`.
@@ -48,7 +60,7 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
             let num = value.implicitly_convert_to_int(self)?;
             let radix = u32::try_from(num).map_err(|_| ArgumentError::from("invalid radix"))?;
             if (2..=36).contains(&radix) {
-                Ok(NonZeroU32::new(radix).map(Radix))
+                Ok(Radix::new(radix))
             } else {
                 let mut message = String::from("invalid radix ");
                 string::format_int_into(&mut message, radix)?;
@@ -236,19 +248,19 @@ impl<'a> ParseState<'a> {
         let radix = match digits.as_bytes() {
             [b'0', b'b', ..] | [b'0', b'B', ..] => {
                 digits.drain(..2);
-                Some(Radix(unsafe { NonZeroU32::new_unchecked(2) }))
+                Radix::new(2)
             }
             [b'0', b'o', ..] | [b'0', b'O', ..] => {
                 digits.drain(..2);
-                Some(Radix(unsafe { NonZeroU32::new_unchecked(8) }))
+                Radix::new(8)
             }
             [b'0', b'd', ..] | [b'0', b'D', ..] => {
                 digits.drain(..2);
-                Some(Radix(unsafe { NonZeroU32::new_unchecked(10) }))
+                Radix::new(10)
             }
             [b'0', b'x', ..] | [b'0', b'X', ..] => {
                 digits.drain(..2);
-                Some(Radix(unsafe { NonZeroU32::new_unchecked(16) }))
+                Radix::new(16)
             }
             [x, y, ..] => {
                 let first = char::from(*x);
@@ -259,8 +271,7 @@ impl<'a> ParseState<'a> {
                     message.push('"');
                     return Err(ArgumentError::from(message).into());
                 } else if '0' == first {
-                    digits.drain(..1);
-                    Some(Radix(unsafe { NonZeroU32::new_unchecked(8) }))
+                    Radix::new(8)
                 } else {
                     None
                 }
