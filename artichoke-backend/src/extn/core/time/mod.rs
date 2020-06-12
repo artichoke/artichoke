@@ -25,6 +25,12 @@ impl fmt::Debug for Time {
     }
 }
 
+impl Default for Time {
+    fn default() -> Self {
+        Self::now()
+    }
+}
+
 impl Time {
     #[must_use]
     pub fn new() -> Self {

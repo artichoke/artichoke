@@ -97,10 +97,12 @@ impl From<Cow<'static, str>> for Code {
 }
 
 impl Code {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn into_inner(self) -> Cow<'static, [u8]> {
         self.content
     }

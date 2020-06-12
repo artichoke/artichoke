@@ -220,6 +220,7 @@ impl From<Cow<'static, str>> for ConstantNameError {
 }
 
 impl ConstantNameError {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

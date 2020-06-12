@@ -33,6 +33,7 @@ impl Seed {
         Self::default()
     }
 
+    #[must_use]
     pub fn to_reseed(self) -> Option<u64> {
         if let Self::New(seed) = self {
             #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]

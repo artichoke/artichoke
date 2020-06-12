@@ -135,6 +135,7 @@ impl TryFrom<sys::mrb_value> for Block {
 }
 
 impl Block {
+    /// Construct a `Block` from a Ruby value.
     #[must_use]
     pub fn new(block: sys::mrb_value) -> Option<Self> {
         if let Ruby::Nil = types::ruby_from_mrb_value(block) {
@@ -144,6 +145,11 @@ impl Block {
         }
     }
 
+    /// Construct a `Block` from a Ruby value.
+    ///
+    /// # Safety
+    ///
+    /// The block must not be `nil`.
     #[must_use]
     pub unsafe fn new_unchecked(block: sys::mrb_value) -> Self {
         Self(block)

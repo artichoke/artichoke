@@ -38,6 +38,7 @@ pub enum State {
 
 impl State {
     /// Construct a new, default `State`.
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
