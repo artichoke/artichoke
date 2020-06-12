@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 
 /// Config file format for declaring the set of ruby/spec suites to run.
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Config {
     /// Specs for core language features.
     ///
@@ -41,7 +41,7 @@ impl Config {
 }
 
 /// The specs to run for a suite or API group.
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Suite {
     /// Suite name.
     ///
