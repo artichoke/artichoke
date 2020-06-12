@@ -66,7 +66,16 @@ where
     W: fmt::Write,
     I: itoa::Integer,
 {
-    itoa::fmt(f, value).map_err(WriteError)?;
+    itoa::fmt(f, value)?;
+    Ok(())
+}
+
+pub fn write_int_into<W, I>(f: W, value: I) -> Result<(), IoWriteError>
+where
+    W: io::Write,
+    I: itoa::Integer,
+{
+    itoa::write(f, value)?;
     Ok(())
 }
 
@@ -79,7 +88,7 @@ where
     // `format_into_int` above.
     //
     // See: https://github.com/dtolnay/dtoa/issues/18
-    dtoa::write(f, value).map_err(IoWriteError)?;
+    dtoa::write(f, value)?;
     Ok(())
 }
 
@@ -88,6 +97,12 @@ where
 /// This error type wraps a [`fmt::Error`].
 #[derive(Debug, Clone)]
 pub struct WriteError(fmt::Error);
+
+impl From<fmt::Error> for WriteError {
+    fn from(err: fmt::Error) -> Self {
+        Self(err)
+    }
+}
 
 impl WriteError {
     #[inline]
@@ -166,6 +181,12 @@ impl From<Box<WriteError>> for Box<dyn RubyException> {
 /// This error type wraps an [`io::Error`].
 #[derive(Debug)]
 pub struct IoWriteError(io::Error);
+
+impl From<io::Error> for IoWriteError {
+    fn from(err: io::Error) -> Self {
+        Self(err)
+    }
+}
 
 impl IoWriteError {
     #[inline]

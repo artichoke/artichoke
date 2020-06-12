@@ -6,6 +6,14 @@ use crate::extn::prelude::*;
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Default;
 
+impl Default {
+    /// Constructs a new, default `Default` Random backend.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 impl RandType for Default {
     fn as_debug(&self) -> &dyn fmt::Debug {
         self

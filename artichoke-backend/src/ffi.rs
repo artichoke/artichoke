@@ -61,6 +61,14 @@ pub unsafe fn from_user_data(
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InterpreterExtractError;
 
+impl InterpreterExtractError {
+    /// Constructs a new, default `InterpreterExtractError`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 impl fmt::Display for InterpreterExtractError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -143,6 +151,14 @@ pub fn os_string_to_bytes(value: OsString) -> Result<Vec<u8>, ConvertBytesError>
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ConvertBytesError;
+
+impl ConvertBytesError {
+    /// Constructs a new, default `ConvertBytesError`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 impl fmt::Display for ConvertBytesError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

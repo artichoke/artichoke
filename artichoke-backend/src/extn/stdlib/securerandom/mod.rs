@@ -27,6 +27,14 @@ mod tests {
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SecureRandom;
 
+impl SecureRandom {
+    /// Constructs a new, default `SecureRandom`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 pub fn random_bytes(len: Option<Int>) -> Result<Vec<u8>, Exception> {
     let len = if let Some(len) = len {
         match usize::try_from(len) {

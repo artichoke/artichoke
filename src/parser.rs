@@ -37,6 +37,12 @@ pub enum State {
 }
 
 impl State {
+    /// Construct a new, default `State`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Whether this variant indicates a code block is open.
     ///
     /// This method can be used by a REPL to check whether to buffer code or

@@ -7,8 +7,15 @@ use std::path::{Path, PathBuf};
 
 use crate::fs::{absolutize_relative_to, ExtensionHook, Filesystem, RUBY_LOAD_PATH};
 
-struct Extension {
+#[derive(Clone, Copy)]
+pub struct Extension {
     hook: ExtensionHook,
+}
+
+impl From<ExtensionHook> for Extension {
+    fn from(hook: ExtensionHook) -> Self {
+        Self { hook }
+    }
 }
 
 impl Extension {
@@ -25,57 +32,159 @@ impl fmt::Debug for Extension {
     }
 }
 
-#[derive(Debug)]
-struct Code {
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Code {
     content: Cow<'static, [u8]>,
 }
 
-impl Code {
-    fn new<T>(content: T) -> Self
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        let content = content.into();
+impl Default for Code {
+    fn default() -> Self {
+        "# virtual source file".into()
+    }
+}
+
+impl From<Code> for Cow<'static, [u8]> {
+    fn from(code: Code) -> Self {
+        code.into_inner()
+    }
+}
+
+impl From<Vec<u8>> for Code {
+    fn from(content: Vec<u8>) -> Self {
+        Self {
+            content: content.into(),
+        }
+    }
+}
+
+impl From<&'static [u8]> for Code {
+    fn from(content: &'static [u8]) -> Self {
+        Self {
+            content: content.into(),
+        }
+    }
+}
+
+impl From<Cow<'static, [u8]>> for Code {
+    fn from(content: Cow<'static, [u8]>) -> Self {
         Self { content }
     }
 }
 
-#[derive(Debug)]
-struct Entry {
+impl From<String> for Code {
+    fn from(content: String) -> Self {
+        Self {
+            content: content.into_bytes().into(),
+        }
+    }
+}
+
+impl From<&'static str> for Code {
+    fn from(content: &'static str) -> Self {
+        Self {
+            content: content.as_bytes().into(),
+        }
+    }
+}
+
+impl From<Cow<'static, str>> for Code {
+    fn from(content: Cow<'static, str>) -> Self {
+        match content {
+            Cow::Borrowed(content) => Self::from(content.as_bytes()),
+            Cow::Owned(content) => Self::from(content.into_bytes()),
+        }
+    }
+}
+
+impl Code {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[must_use]
+    pub fn into_inner(self) -> Cow<'static, [u8]> {
+        self.content
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct Entry {
     code: Option<Code>,
     extension: Option<Extension>,
     required: bool,
 }
 
+impl From<Code> for Entry {
+    fn from(code: Code) -> Self {
+        let mut entry = Self::default();
+        entry.code = Some(code);
+        entry
+    }
+}
+
+impl From<Vec<u8>> for Entry {
+    fn from(content: Vec<u8>) -> Self {
+        let mut entry = Self::default();
+        entry.code = Some(content.into());
+        entry
+    }
+}
+
+impl From<&'static [u8]> for Entry {
+    fn from(content: &'static [u8]) -> Self {
+        let mut entry = Self::default();
+        entry.code = Some(content.into());
+        entry
+    }
+}
+
+impl From<Cow<'static, [u8]>> for Entry {
+    fn from(content: Cow<'static, [u8]>) -> Self {
+        let mut entry = Self::default();
+        entry.code = Some(content.into());
+        entry
+    }
+}
+
+impl From<String> for Entry {
+    fn from(content: String) -> Self {
+        let mut entry = Self::default();
+        entry.code = Some(content.into());
+        entry
+    }
+}
+
+impl From<&'static str> for Entry {
+    fn from(content: &'static str) -> Self {
+        let mut entry = Self::default();
+        entry.code = Some(content.into());
+        entry
+    }
+}
+
+impl From<Cow<'static, str>> for Entry {
+    fn from(content: Cow<'static, str>) -> Self {
+        let mut entry = Self::default();
+        entry.code = Some(content.into());
+        entry
+    }
+}
+
+impl From<ExtensionHook> for Entry {
+    fn from(hook: ExtensionHook) -> Self {
+        let mut entry = Self::default();
+        entry.extension = Some(hook.into());
+        entry
+    }
+}
+
 impl Entry {
-    fn default_file_contents() -> &'static [u8] {
-        &b"# virtual source file"[..]
-    }
-
-    fn from_code<T>(content: T) -> Self
-    where
-        T: Into<Cow<'static, [u8]>>,
-    {
-        Self {
-            code: Some(Code::new(content.into())),
-            extension: None,
-            required: false,
-        }
-    }
-
-    fn from_ext(hook: ExtensionHook) -> Self {
-        Self {
-            code: None,
-            extension: Some(Extension::new(hook)),
-            required: false,
-        }
-    }
-
     fn replace_content<T>(&mut self, content: T)
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        self.code.replace(Code::new(content.into()));
+        self.code.replace(Code::from(content.into()));
     }
 
     fn set_extension(&mut self, hook: ExtensionHook) {
@@ -182,7 +291,7 @@ impl Filesystem for Memory {
                     Cow::Owned(ref content) => Ok(content.clone().into()),
                 }
             } else {
-                Ok(Entry::default_file_contents().into())
+                Ok(Code::default().into())
             }
         } else {
             Err(io::Error::new(
@@ -208,7 +317,7 @@ impl Filesystem for Memory {
                 entry.get_mut().replace_content(buf);
             }
             HashEntry::Vacant(entry) => {
-                entry.insert(Entry::from_code(buf));
+                entry.insert(Entry::from(buf));
             }
         }
         Ok(())
@@ -242,7 +351,7 @@ impl Filesystem for Memory {
                 entry.get_mut().set_extension(extension);
             }
             HashEntry::Vacant(entry) => {
-                entry.insert(Entry::from_ext(extension));
+                entry.insert(Entry::from(extension));
             }
         }
         Ok(())

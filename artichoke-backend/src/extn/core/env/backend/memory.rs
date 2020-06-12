@@ -12,6 +12,7 @@ pub struct Memory {
 }
 
 impl Memory {
+    /// Constructs a new, default ENV `Memory` backend.
     #[must_use]
     pub fn new() -> Self {
         Self::default()

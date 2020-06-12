@@ -4,6 +4,7 @@ pub struct State {
 }
 
 impl State {
+    /// Constructs a new, default Regexp `State`.
     #[inline]
     #[must_use]
     pub fn new() -> Self {

@@ -1,5 +1,7 @@
 use bstr::ByteSlice;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
+use std::error;
+use std::fmt;
 use std::iter::Iterator;
 use std::num::NonZeroU32;
 use std::str::{self, FromStr};
@@ -11,16 +13,38 @@ pub struct Radix(NonZeroU32);
 
 impl Default for Radix {
     fn default() -> Self {
-        Self(unsafe { NonZeroU32::new_unchecked(10) })
+        // Safety:
+        // Constant `10` is non-zero.
+        unsafe { Self::new_unchecked(10) }
+    }
+}
+
+impl From<Radix> for u32 {
+    fn from(radix: Radix) -> Self {
+        radix.as_u32()
     }
 }
 
 impl Radix {
+    /// Construct a new `Radix`.
+    ///
+    /// `radix` must be non-zero otherwise `None` is returned.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(radix: u32) -> Option<Self> {
+        NonZeroU32::new(radix).map(Self)
     }
 
+    /// Construct a new `Radix` without checking the value.
+    ///
+    /// # Safety
+    ///
+    /// The radix must not be zero.
+    #[must_use]
+    pub unsafe fn new_unchecked(radix: u32) -> Self {
+        Self(NonZeroU32::new_unchecked(radix))
+    }
+
+    /// Extract the `Radix` as the underlying `u32`.
     #[inline]
     #[must_use]
     pub fn as_u32(self) -> u32 {
@@ -34,17 +58,13 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
     fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Option<Radix>, Self::Error> {
         if let Some(value) = value {
             let num = value.implicitly_convert_to_int(self)?;
-            if let Ok(radix) = u32::try_from(num) {
-                if let Some(radix) = NonZeroU32::new(radix) {
-                    if (2..=36).contains(&radix.get()) {
-                        return Ok(Some(Radix(radix)));
-                    }
-                }
+            let radix = u32::try_from(num).map_err(|_| ArgumentError::from("invalid radix"))?;
+            if (2..=36).contains(&radix) {
+                Ok(Radix::new(radix))
+            } else {
                 let mut message = String::from("invalid radix ");
                 string::format_int_into(&mut message, radix)?;
                 Err(ArgumentError::from(message).into())
-            } else {
-                Err(ArgumentError::from("invalid radix").into())
             }
         } else {
             Ok(None)
@@ -56,23 +76,65 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
 #[allow(clippy::module_name_repetitions)]
 pub struct IntegerString<'a>(&'a str);
 
+impl<'a> From<&'a str> for IntegerString<'a> {
+    fn from(to_parse: &'a str) -> Self {
+        Self(to_parse)
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for IntegerString<'a> {
+    type Error = Utf8Error;
+
+    fn try_from(to_parse: &'a [u8]) -> Result<Self, Self::Error> {
+        if to_parse.find_byte(b'\0').is_some() {
+            return Err(Utf8Error::NulByte);
+        }
+        let to_parse = str::from_utf8(to_parse)?;
+        Ok(to_parse.into())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Utf8Error {
+    NulByte,
+    InvalidUtf8(str::Utf8Error),
+}
+
+impl error::Error for Utf8Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Self::NulByte => None,
+            Self::InvalidUtf8(ref err) => Some(err),
+        }
+    }
+}
+
+impl fmt::Display for Utf8Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NulByte => write!(f, "String contained forbidden NUL byte"),
+            Self::InvalidUtf8(_) => write!(f, "String contained invalid UTF-8 bytes"),
+        }
+    }
+}
+
+impl From<str::Utf8Error> for Utf8Error {
+    fn from(err: str::Utf8Error) -> Self {
+        Self::InvalidUtf8(err)
+    }
+}
+
 impl<'a> IntegerString<'a> {
+    /// Constructs a new, default `IntegerString`.
     #[inline]
     #[must_use]
-    pub fn new(string: &'a str) -> Self {
-        Self(string)
+    pub fn new() -> Self {
+        Self::default()
     }
 
     #[must_use]
     pub fn from_slice(arg: &'a [u8]) -> Option<Self> {
-        if arg.find_byte(b'\0').is_some() {
-            return None;
-        }
-        if let Ok(arg) = str::from_utf8(arg) {
-            Some(Self::new(arg))
-        } else {
-            None
-        }
+        arg.try_into().ok()
     }
 
     #[inline]
@@ -109,27 +171,27 @@ impl<'a> TryConvertMut<&'a Value, IntegerString<'a>> for Artichoke {
     }
 }
 
-impl<'a> Into<&'a [u8]> for IntegerString<'a> {
+impl<'a> From<IntegerString<'a>> for &'a [u8] {
     #[inline]
-    fn into(self) -> &'a [u8] {
-        self.as_bytes()
+    fn from(string: IntegerString<'a>) -> &'a [u8] {
+        string.as_bytes()
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 enum Sign {
-    Pos,
-    Neg,
+    Positive,
+    Negative,
 }
 
 impl Default for Sign {
     #[inline]
     fn default() -> Self {
-        Self::Pos
+        Self::Positive
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 enum ParseState<'a> {
     Initial(IntegerString<'a>),
     Sign(IntegerString<'a>, Sign),
@@ -174,60 +236,52 @@ impl<'a> ParseState<'a> {
     }
 
     fn parse(self) -> Result<(String, Option<Radix>), Exception> {
-        match self {
-            Self::Accumulate(arg, sign, mut digits) => {
-                let (mut src, radix) = match digits.as_bytes() {
-                    [b'0', b'b', ..] | [b'0', b'B', ..] => {
-                        digits.drain(..2);
-                        (digits, Some(Radix(unsafe { NonZeroU32::new_unchecked(2) })))
-                    }
-                    [b'0', b'o', ..] | [b'0', b'O', ..] => {
-                        digits.drain(..2);
-                        (digits, Some(Radix(unsafe { NonZeroU32::new_unchecked(8) })))
-                    }
-                    [b'0', b'd', ..] | [b'0', b'D', ..] => {
-                        digits.drain(..2);
-                        (
-                            digits,
-                            Some(Radix(unsafe { NonZeroU32::new_unchecked(10) })),
-                        )
-                    }
-                    [b'0', b'x', ..] | [b'0', b'X', ..] => {
-                        digits.drain(..2);
-                        (
-                            digits,
-                            Some(Radix(unsafe { NonZeroU32::new_unchecked(16) })),
-                        )
-                    }
-                    [x, y, ..] => {
-                        let first = char::from(*x);
-                        let next = char::from(*y);
-                        if !next.is_numeric() && !next.is_alphabetic() {
-                            let mut message = String::from(r#"invalid value for Integer(): ""#);
-                            string::format_unicode_debug_into(&mut message, arg.into())?;
-                            message.push('"');
-                            return Err(ArgumentError::from(message).into());
-                        } else if '0' == first {
-                            digits.drain(..1);
-                            (digits, Some(Radix(unsafe { NonZeroU32::new_unchecked(8) })))
-                        } else {
-                            (digits, None)
-                        }
-                    }
-                    _ => (digits, None),
-                };
-                if let Sign::Neg = sign {
-                    src.insert(0, '-');
-                }
-                Ok((src, radix))
-            }
+        let (arg, sign, mut digits) = match self {
+            Self::Accumulate(arg, sign, digits) => (arg, sign, digits),
             Self::Initial(arg) | Self::Sign(arg, _) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 string::format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
-                Err(ArgumentError::from(message).into())
+                return Err(ArgumentError::from(message).into());
             }
+        };
+        let radix = match digits.as_bytes() {
+            [b'0', b'b', ..] | [b'0', b'B', ..] => {
+                digits.drain(..2);
+                Radix::new(2)
+            }
+            [b'0', b'o', ..] | [b'0', b'O', ..] => {
+                digits.drain(..2);
+                Radix::new(8)
+            }
+            [b'0', b'd', ..] | [b'0', b'D', ..] => {
+                digits.drain(..2);
+                Radix::new(10)
+            }
+            [b'0', b'x', ..] | [b'0', b'X', ..] => {
+                digits.drain(..2);
+                Radix::new(16)
+            }
+            [x, y, ..] => {
+                let first = char::from(*x);
+                let next = char::from(*y);
+                if !next.is_numeric() && !next.is_alphabetic() {
+                    let mut message = String::from(r#"invalid value for Integer(): ""#);
+                    string::format_unicode_debug_into(&mut message, arg.into())?;
+                    message.push('"');
+                    return Err(ArgumentError::from(message).into());
+                } else if '0' == first {
+                    Radix::new(8)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+        if let Sign::Negative = sign {
+            digits.insert(0, '-');
         }
+        Ok((digits, radix))
     }
 }
 
@@ -264,8 +318,8 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Excep
         }
 
         state = match current {
-            '+' => state.set_sign(Sign::Pos)?,
-            '-' => state.set_sign(Sign::Neg)?,
+            '+' => state.set_sign(Sign::Positive)?,
+            '-' => state.set_sign(Sign::Negative)?,
             digit => state.collect_digit(digit),
         };
         prev = Some(current);

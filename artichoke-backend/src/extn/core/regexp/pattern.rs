@@ -13,6 +13,11 @@ pub struct Pattern {
 }
 
 impl Pattern {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Return the pattern as a byte slice.
     #[must_use]
     pub fn pattern(&self) -> &[u8] {

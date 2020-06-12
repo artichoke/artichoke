@@ -60,7 +60,7 @@ where
 }
 
 /// Failed to convert from boxed Ruby value to a Rust type.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UnboxRubyError {
     pub from: Ruby,
     pub into: Rust,
@@ -134,7 +134,7 @@ impl From<Box<UnboxRubyError>> for Box<dyn RubyException> {
 }
 
 /// Failed to convert from Rust type to a boxed Ruby value.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BoxIntoRubyError {
     pub from: Rust,
     pub into: Ruby,

@@ -12,6 +12,7 @@ use crate::ffi;
 pub struct System;
 
 impl System {
+    /// Constructs a new, default ENV `System` backend.
     #[must_use]
     pub fn new() -> Self {
         Self::default()

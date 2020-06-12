@@ -37,9 +37,10 @@ pub trait Output: Send + Sync {
 pub struct Process;
 
 impl Process {
+    /// Constructs a new, default `Process` output strategy.
     #[must_use]
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 }
 
@@ -64,6 +65,7 @@ pub struct Captured {
 }
 
 impl Captured {
+    /// Constructs a new, default `Captured` output strategy.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -121,9 +123,10 @@ impl<'a> Output for &'a mut Captured {
 pub struct Null;
 
 impl Null {
+    /// Constructs a new, default `Null` output strategy.
     #[must_use]
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 }
 

@@ -51,9 +51,15 @@ impl fmt::Display for Options {
 }
 
 impl Options {
+    /// Constructs a new, default `Options`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// An options instance that has only case insensitive mode enabled.
     #[must_use]
-    pub fn ignore_case() -> Self {
+    pub fn with_ignore_case() -> Self {
         let mut opts = Self::default();
         opts.ignore_case = true;
         opts
@@ -120,7 +126,7 @@ impl ConvertMut<Value, Options> for Artichoke {
         } else if let Ok(options) = value.try_into::<Option<bool>>(self) {
             match options {
                 Some(false) | None => Options::default(),
-                _ => Options::ignore_case(),
+                _ => Options::with_ignore_case(),
             }
         } else if let Ok(options) = value.try_into_mut::<&[u8]>(self) {
             Options {
@@ -130,7 +136,7 @@ impl ConvertMut<Value, Options> for Artichoke {
                 literal: false,
             }
         } else {
-            Options::ignore_case()
+            Options::with_ignore_case()
         }
     }
 }

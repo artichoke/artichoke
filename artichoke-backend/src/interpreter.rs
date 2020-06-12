@@ -88,6 +88,14 @@ where
 #[allow(clippy::module_name_repetitions)]
 pub struct InterpreterAllocError;
 
+impl InterpreterAllocError {
+    /// Constructs a new, default `InterpreterAllocError`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 impl fmt::Display for InterpreterAllocError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Failed to allocate Artichoke interpreter")

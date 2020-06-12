@@ -201,12 +201,28 @@ impl Hash for EnclosingRubyScope {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ConstantNameError(Cow<'static, str>);
 
-impl ConstantNameError {
-    pub fn new<T>(name: T) -> Self
-    where
-        T: Into<Cow<'static, str>>,
-    {
+impl From<&'static str> for ConstantNameError {
+    fn from(name: &'static str) -> Self {
         Self(name.into())
+    }
+}
+
+impl From<String> for ConstantNameError {
+    fn from(name: String) -> Self {
+        Self(name.into())
+    }
+}
+
+impl From<Cow<'static, str>> for ConstantNameError {
+    fn from(name: Cow<'static, str>) -> Self {
+        Self(name)
+    }
+}
+
+impl ConstantNameError {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 

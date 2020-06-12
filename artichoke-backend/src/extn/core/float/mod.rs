@@ -193,8 +193,8 @@ impl Float {
 
     #[inline]
     #[must_use]
-    pub fn new(num: Fp) -> Self {
-        Self(num)
+    pub fn new() -> Self {
+        Self::default()
     }
 
     #[inline]

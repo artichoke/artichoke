@@ -44,7 +44,7 @@ impl Spec {
                 args,
             })
         } else {
-            Err(ConstantNameError::new(name))
+            Err(name.into())
         }
     }
 
