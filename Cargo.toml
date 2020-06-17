@@ -20,7 +20,7 @@ categories = ["command-line-utilities"]
 [dependencies]
 ansi_term = "0.11" # cannot upgrade until clap 3 is released
 rustyline = { version = "6", default-features = false }
-structopt = "0.3.10"
+structopt = "0.3.15"
 
 [dependencies.artichoke-backend]
 path = "artichoke-backend"
