@@ -21,7 +21,7 @@ jobs:
         run: |
           curl -sL "$RELEASE" | sudo tar xvz -C /usr/local/bin/ --strip-components=1
         env:
-          RELEASE: "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.6.6/cargo-deny-0.6.6-x86_64-unknown-linux-musl.tar.gz"
+          RELEASE: "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.6.8/cargo-deny-0.6.8-x86_64-unknown-linux-musl.tar.gz"
 
       - name: Run cargo-deny
         run: cargo-deny check

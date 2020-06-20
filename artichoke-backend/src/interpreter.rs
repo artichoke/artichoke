@@ -23,7 +23,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
     interpreter_with_config(ArtichokeBackendReleaseMetadata::default())
 }
 
-/// Create and initialize an [`Artichoke`] interpreter.
+/// Create and initialize an [`Artichoke`] interpreter with build metadata.
 ///
 /// This function takes a customizable configuration for embedding metadata
 /// about how Artichoke was built. Otherwise, it behaves identically to the
