@@ -17,8 +17,8 @@
 //! The registry resembles an append-only [`HashMap`].
 //!
 //! The registry stores module specs behind a [`Box`] pointer to ensure pointers
-//! to the interior of the spec, like the [`CString`] module name, are not
-//! invalidated as the underlying storage reallocates.
+//! to the interior of the spec, like the [`CString`](std::ffi::CString) module
+//! name, are not invalidated as the underlying storage reallocates.
 
 use std::any::{self, Any, TypeId};
 use std::collections::hash_map::{RandomState, Values};
@@ -72,8 +72,8 @@ impl<'a> Iterator for ModuleSpecs<'a> {
 /// The registry resembles an append-only [`HashMap`].
 ///
 /// The registry stores Module specs behind a [`Box`] pointer to ensure pointers
-/// to the interior of the spec, like the [`CString`] module name, are not
-/// invalidated as the underlying storage reallocates.
+/// to the interior of the spec, like the [`CString`](std::ffi::CString) module
+/// name, are not invalidated as the underlying storage reallocates.
 #[derive(Default, Debug)]
 pub struct Registry<S = RandomState>(HashMap<TypeId, Box<Spec>, S>);
 
