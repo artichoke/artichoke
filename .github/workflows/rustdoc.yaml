@@ -38,7 +38,7 @@ jobs:
         run: sudo apt install bison
 
       - name: Build Documentation
-        run: cargo doc --workspace --no-deps
+        run: cargo doc
 
       - name: Copy static content
         run: cp --verbose .github/rustdoc/* target/doc/

@@ -47,6 +47,10 @@ jobs:
         if: matrix.os == 'windows-latest'
 
       - name: Check Bison
+        run: bison --version
+        if: matrix.os != 'windows-latest'
+
+      - name: Check Bison
         run: |
           win_bison.exe --version
           win_bison --version
