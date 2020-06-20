@@ -95,42 +95,41 @@ fn parse_args() -> Result<Args> {
         )
         .with_fixture(matches.value_of_os("fixture").map(PathBuf::from));
 
-    if let Some(mut positional) = matches.values_of_os("programfile") {
-        if let Some(programfile) = positional.next() {
-            args = args.with_programfile(Some(programfile.into()));
+    if let Some(programfile) = matches.value_of_os("programfile") {
+        args = args.with_programfile(Some(PathBuf::from(programfile)));
+        if let Some(argv) = matches.values_of_os("arguments") {
+            let ruby_program_argv = argv.map(OsString::from).collect::<Vec<_>>();
+            args = args.with_argv(ruby_program_argv);
         }
-        let ruby_program_argv = positional.map(OsString::from).collect::<Vec<_>>();
-        args = args.with_argv(ruby_program_argv);
     }
 
     Ok(args)
 }
 
-fn app() -> App<'static, 'static> {
+fn app() -> App<'static> {
     let app = App::new("artichoke");
     let app = app.about("Artichoke is a Ruby made with Rust.");
     let app = app.arg(
-        Arg::with_name("copyright")
+        Arg::new("copyright")
+            .long("copyright")
             .takes_value(false)
-            .multiple(false)
-            .help("print the copyright")
-            .long("copyright"),
+            .help("print the copyright"),
     );
     let app = app.arg(
-        Arg::with_name("commands")
+        Arg::new("commands")
+            .short('e')
             .takes_value(true)
-            .multiple(true)
-            .help(r"one line of script. Several -e's allowed. Omit [programfile]")
-            .short("e"),
+            .multiple_occurrences(true)
+            .help(r"one line of script. Several -e's allowed. Omit [programfile]"),
     );
     let app = app.arg(
-        Arg::with_name("fixture")
+        Arg::new("fixture")
+            .long("with-fixture")
             .takes_value(true)
-            .multiple(false)
-            .help("file whose contents will be read into the `$fixture` global")
-            .long("with-fixture"),
+            .help("file whose contents will be read into the `$fixture` global"),
     );
-    let app = app.arg(Arg::with_name("programfile").takes_value(true).multiple(true));
+    let app = app.arg(Arg::new("programfile"));
+    let app = app.arg(Arg::new("arguments").multiple_values(true));
     let app = app.version(env!("CARGO_PKG_VERSION"));
     app.setting(AppSettings::TrailingVarArg)
 }
@@ -150,12 +149,12 @@ fn app() -> App<'static, 'static> {
 /// corresponds to a `--help` or `--version` request. In which case, the
 /// corresponding output is printed and the current process is exited
 /// successfully.
-fn clap_matches<I, T>(args: I) -> Result<ArgMatches<'static>>
+fn clap_matches<I, T>(args: I) -> Result<ArgMatches>
 where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone,
 {
-    let err = match app().get_matches_from_safe(args) {
+    let err = match app().try_get_matches_from(args) {
         Ok(matches) => return Ok(matches),
         Err(err) => err,
     };
