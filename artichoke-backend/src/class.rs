@@ -13,6 +13,10 @@ use crate::method;
 use crate::sys;
 use crate::Artichoke;
 
+mod registry;
+
+pub use registry::Registry;
+
 #[derive(Debug)]
 pub struct Builder<'a> {
     interp: &'a mut Artichoke,
