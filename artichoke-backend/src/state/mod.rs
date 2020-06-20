@@ -8,18 +8,18 @@ pub mod parser;
 #[cfg(feature = "core-random")]
 pub mod prng;
 pub mod regexp;
-pub mod type_registry;
+pub mod type_association;
 
 #[cfg(feature = "core-random")]
 use prng::Prng;
-use type_registry::TypeRegistry;
+use type_association::TypeAssociation;
 
 /// Container for domain-specific interpreter state.
 #[derive(Debug)]
 pub struct State {
     pub parser: parser::State,
-    pub classes: TypeRegistry<class::Spec>,
-    pub modules: TypeRegistry<module::Spec>,
+    pub classes: TypeAssociation<class::Spec>,
+    pub modules: TypeAssociation<module::Spec>,
     pub vfs: Box<dyn Filesystem>,
     pub regexp: regexp::State,
     pub output: output::Strategy,
@@ -43,8 +43,8 @@ impl State {
         let parser = parser::State::new(mrb)?;
         let state = Self {
             parser,
-            classes: TypeRegistry::new(),
-            modules: TypeRegistry::new(),
+            classes: TypeAssociation::new(),
+            modules: TypeAssociation::new(),
             vfs: fs::filesystem(),
             regexp: regexp::State::new(),
             output: output::Strategy::new(),

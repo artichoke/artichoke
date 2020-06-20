@@ -2,12 +2,8 @@
 //!
 //! Register data associated with a type (e.g. struct, enum, or primitive).
 //!
-//! `TypeRegistry` stores values in a [`Box`] to ensure pointers to values
+//! `TypeAssociation` stores values in a [`Box`] to ensure pointers to values
 //! in the registry are not invalidated.
-//!
-//! Artichoke uses this module to associate Rust implementations of Ruby Core
-//! and standard library with their underlying [class spec](crate::class::Spec)
-//! or [module spec](crate::module::Spec).
 
 use std::any::{Any, TypeId};
 use std::collections::hash_map::{RandomState, Values};
@@ -15,15 +11,15 @@ use std::collections::HashMap;
 use std::hash::BuildHasher;
 use std::iter::FusedIterator;
 
-/// An iterator of all associated values stored in the [`TypeRegistry`].
+/// An iterator of all associated values stored in the [`TypeAssociation`].
 #[derive(Debug, Clone)]
-pub struct Types<'a, T>(Values<'a, TypeId, Box<T>>);
+pub struct AssociatedValues<'a, T>(Values<'a, TypeId, Box<T>>);
 
-impl<'a, T> ExactSizeIterator for Types<'a, T> {}
+impl<'a, T> ExactSizeIterator for AssociatedValues<'a, T> {}
 
-impl<'a, T> FusedIterator for Types<'a, T> {}
+impl<'a, T> FusedIterator for AssociatedValues<'a, T> {}
 
-impl<'a, T> Iterator for Types<'a, T> {
+impl<'a, T> Iterator for AssociatedValues<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -45,18 +41,18 @@ impl<'a, T> Iterator for Types<'a, T> {
 
 /// A [`HashMap`] that uses Rust types as keys.
 ///
-/// Register data associated with a type (e.g. struct, enum, or primitive).
+/// Associate data with a type (e.g. struct, enum, or primitive).
 ///
-/// `TypeRegistry` is append-only; values cannot be removed or modified, only
+/// `TypeAssociation` is append-only; values cannot be removed or modified, only
 /// replaced.
 ///
 /// Artichoke uses this module to associate Rust implementations of Ruby Core
 /// and standard library with their underlying [class spec](crate::class::Spec)
 /// or [module spec](crate::module::Spec).
 #[derive(Default, Debug)]
-pub struct TypeRegistry<T, S = RandomState>(HashMap<TypeId, Box<T>, S>);
+pub struct TypeAssociation<T, S = RandomState>(HashMap<TypeId, Box<T>, S>);
 
-impl<T, S> PartialEq for TypeRegistry<T, S>
+impl<T, S> PartialEq for TypeAssociation<T, S>
 where
     T: PartialEq,
     S: BuildHasher,
@@ -66,44 +62,44 @@ where
     }
 }
 
-impl<T, S> Eq for TypeRegistry<T, S>
+impl<T, S> Eq for TypeAssociation<T, S>
 where
     T: Eq,
     S: BuildHasher,
 {
 }
 
-impl<'a, T, S> IntoIterator for &'a TypeRegistry<T, S> {
+impl<'a, T, S> IntoIterator for &'a TypeAssociation<T, S> {
     type Item = &'a T;
-    type IntoIter = Types<'a, T>;
+    type IntoIter = AssociatedValues<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.types()
+        self.associated_values()
     }
 }
 
-impl<T> TypeRegistry<T, RandomState> {
-    /// Construct a new, empty `TypeRegistry`.
+impl<T> TypeAssociation<T, RandomState> {
+    /// Construct a new, empty `TypeAssociation`.
     #[must_use]
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    /// Construct a new `TypeRegistry` with the given `capacity`.
+    /// Construct a new `TypeAssociation` with the given `capacity`.
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self(HashMap::with_capacity(capacity))
     }
 }
 
-impl<T, S> TypeRegistry<T, S> {
-    /// Construct a new `TypeRegistry` with the given `hash_builder`.
+impl<T, S> TypeAssociation<T, S> {
+    /// Construct a new `TypeAssociation` with the given `hash_builder`.
     #[must_use]
     pub fn with_hasher(hash_builder: S) -> Self {
         Self(HashMap::with_hasher(hash_builder))
     }
 
-    /// Construct a new `TypeRegistry` with the given `capacity` and
+    /// Construct a new `TypeAssociation` with the given `capacity` and
     /// `hash_builder`.
     #[must_use]
     pub fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> Self {
@@ -113,18 +109,18 @@ impl<T, S> TypeRegistry<T, S> {
     /// Returns the number of elements the registry can hold without
     /// reallocating.
     ///
-    /// This number is a lower bound; the `TypeRegistry` might be able to hold
+    /// This number is a lower bound; the `TypeAssociation` might be able to hold
     /// more, but is guaranteed to be able to hold at least this many.
     #[must_use]
     pub fn capacity(&self) -> usize {
         self.0.capacity()
     }
 
-    /// An iterator of all associated values stored in the [`TypeRegistry`] in
+    /// An iterator of all associated values stored in the [`TypeAssociation`] in
     /// arbitrary order.
     #[must_use]
-    pub fn types(&self) -> Types<'_, T> {
-        Types(self.0.values())
+    pub fn associated_values(&self) -> AssociatedValues<'_, T> {
+        AssociatedValues(self.0.values())
     }
 
     /// Returns the number of elements in the registry.
@@ -146,7 +142,7 @@ impl<T, S> TypeRegistry<T, S> {
     }
 }
 
-impl<T, S> TypeRegistry<T, S>
+impl<T, S> TypeAssociation<T, S>
 where
     S: BuildHasher,
 {
@@ -186,7 +182,7 @@ where
     }
 
     /// Reserves `capacity` for at least additional more elements to be inserted
-    /// in the `TypeRegistry`. The collection may reserve more space to avoid
+    /// in the `TypeAssociation`. The collection may reserve more space to avoid
     /// frequent reallocations.
     pub fn reserve(&mut self, additional: usize) {
         self.0.reserve(additional)
