@@ -37,13 +37,17 @@
 use artichoke::ruby;
 use std::io::{self, Write};
 use std::process;
+use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 fn main() {
-    match ruby::entrypoint(io::stdin(), io::stderr()) {
+    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+    match ruby::entrypoint(io::stdin(), &mut stderr) {
         Ok(Ok(())) => {}
         Ok(Err(())) => process::exit(1),
         Err(err) => {
-            let _ = writeln!(io::stderr(), "{}", err);
+            // reset colors
+            let _ = stderr.reset();
+            let _ = writeln!(stderr, "{}", err);
             process::exit(1);
         }
     }

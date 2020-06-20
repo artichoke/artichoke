@@ -9,6 +9,7 @@ use rustyline::Editor;
 use std::error;
 use std::fmt;
 use std::io;
+use termcolor::WriteColor;
 
 use crate::backend::state::parser::Context;
 use crate::backtrace;
@@ -166,7 +167,7 @@ pub fn run<Wout, Werr>(
 ) -> Result<(), Box<dyn error::Error>>
 where
     Wout: io::Write,
-    Werr: io::Write,
+    Werr: io::Write + WriteColor,
 {
     let config = config.unwrap_or_default();
     let mut interp = crate::interpreter()?;

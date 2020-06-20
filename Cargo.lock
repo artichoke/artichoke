@@ -22,13 +22,13 @@ dependencies = [
 name = "artichoke"
 version = "0.1.0-pre.0"
 dependencies = [
- "ansi_term",
  "artichoke-backend",
  "chrono",
  "doc-comment",
  "rustyline",
  "structopt",
  "target-lexicon",
+ "termcolor",
 ]
 
 [[package]]
@@ -699,6 +699,15 @@ name = "target-lexicon"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe2635952a442a01fd4cb53d98858b5e4bb461b02c0d111f22f31772e3e7a8b2"
+
+[[package]]
+name = "termcolor"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb6bfa289a4d7c5766392812c0a1f4c1ba45afa1ad47803c11e1f407d846d75f"
+dependencies = [
+ "winapi-util",
+]
 
 [[package]]
 name = "textwrap"

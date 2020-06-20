@@ -1,7 +1,8 @@
 //! Format Ruby `Exception` backtraces.
 
-use ansi_term::Style;
+use std::error;
 use std::io;
+use termcolor::{ColorSpec, WriteColor};
 
 use crate::prelude::*;
 
@@ -36,35 +37,38 @@ pub fn format_repl_trace_into<W, E>(
     mut error: W,
     interp: &mut Artichoke,
     exc: &E,
-) -> Result<(), Exception>
+) -> Result<(), Box<dyn error::Error>>
 where
-    W: io::Write,
+    W: io::Write + WriteColor,
     E: RubyException,
 {
+    // reset colors
+    error.reset()?;
+
+    // Format backtrace if present
     if let Some(backtrace) = exc.vm_backtrace(interp) {
-        writeln!(
-            error,
-            "{} (most recent call last):",
-            Style::new().bold().paint("Traceback")
-        )?;
+        error.set_color(ColorSpec::new().set_bold(true))?;
+        write!(error, "Traceback")?;
+        error.reset()?;
+        writeln!(error, " (most recent call last):")?;
         for (num, frame) in backtrace.into_iter().enumerate().rev() {
             write!(error, "\t{}: from ", num + 1)?;
             error.write_all(frame.as_slice())?;
             writeln!(error)?;
         }
     }
-    write!(
-        error,
-        "{} {}",
-        Style::new().bold().paint(exc.name()),
-        Style::new().bold().paint("(")
-    )?;
-    Style::new()
-        .bold()
-        .underline()
-        .paint(exc.message())
-        .write_to(&mut error)?;
-    writeln!(error, "{}", Style::new().bold().paint(")"))?;
+
+    // Format exception class and message
+    error.set_color(ColorSpec::new().set_bold(true))?;
+    write!(error, "{} (", exc.name())?;
+    error.set_color(ColorSpec::new().set_bold(true).set_underline(true))?;
+    error.write_all(&exc.message())?;
+    error.set_color(ColorSpec::new().set_bold(true))?;
+    writeln!(error, ")")?;
+
+    // reset colors
+    error.reset()?;
+
     Ok(())
 }
 
@@ -98,18 +102,22 @@ pub fn format_cli_trace_into<W, E>(
     mut error: W,
     interp: &mut Artichoke,
     exc: &E,
-) -> Result<(), Exception>
+) -> Result<(), Box<dyn error::Error>>
 where
-    W: io::Write,
+    W: io::Write + WriteColor,
     E: RubyException,
 {
+    // reset colors
+    error.reset()?;
+
     let mut top = None;
+
+    // Format backtrace if present
     if let Some(backtrace) = exc.vm_backtrace(interp) {
-        writeln!(
-            error,
-            "{} (most recent call last):",
-            Style::new().bold().paint("Traceback")
-        )?;
+        error.set_color(ColorSpec::new().set_bold(true))?;
+        write!(error, "Traceback")?;
+        error.reset()?;
+        writeln!(error, " (most recent call last):")?;
         let mut iter = backtrace.into_iter().enumerate();
         top = iter.next();
         for (num, frame) in iter.rev() {
@@ -118,20 +126,24 @@ where
             writeln!(error)?;
         }
     }
+
     if let Some((_, frame)) = top {
         error.write_all(frame.as_slice())?;
         write!(error, ": ")?;
     }
-    Style::new()
-        .bold()
-        .paint(exc.message())
-        .write_to(&mut error)?;
-    writeln!(
-        error,
-        " {}{}{}",
-        Style::new().bold().paint("("),
-        Style::new().bold().underline().paint(exc.name()),
-        Style::new().bold().paint(")")
-    )?;
+
+    // Format exception class and message
+    error.set_color(ColorSpec::new().set_bold(true))?;
+    error.write_all(&exc.message())?;
+    error.set_color(ColorSpec::new().set_bold(true))?;
+    write!(error, " (")?;
+    error.set_color(ColorSpec::new().set_bold(true).set_underline(true))?;
+    write!(error, "{}", exc.name())?;
+    error.set_color(ColorSpec::new().set_bold(true))?;
+    writeln!(error, ")")?;
+
+    // reset colors
+    error.reset()?;
+
     Ok(())
 }

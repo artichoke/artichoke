@@ -3,10 +3,12 @@
 //! Artichoke's version of the `ruby` CLI. This module is exported as the
 //! `artichoke` binary.
 
+use std::error;
 use std::ffi::{OsStr, OsString};
 use std::io;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
+use termcolor::WriteColor;
 
 use crate::backend::ffi;
 use crate::backend::state::parser::Context;
@@ -53,10 +55,10 @@ struct Opt {
 /// # Errors
 ///
 /// If an exception is raised on the interpreter, then an error is returned.
-pub fn entrypoint<R, W>(mut input: R, error: W) -> Result<Result<(), ()>, Exception>
+pub fn entrypoint<R, W>(mut input: R, error: W) -> Result<Result<(), ()>, Box<dyn error::Error>>
 where
     R: io::Read,
-    W: io::Write,
+    W: io::Write + WriteColor,
 {
     let opt = Opt::from_args();
     if opt.copyright {
@@ -64,7 +66,11 @@ where
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(Ok(()))
     } else if !opt.commands.is_empty() {
-        execute_inline_eval(error, opt.commands, opt.fixture.as_deref())
+        Ok(execute_inline_eval(
+            error,
+            opt.commands,
+            opt.fixture.as_deref(),
+        )?)
     } else if let Some(programfile) = opt.programfile.filter(|file| file != Path::new("-")) {
         execute_program_file(error, programfile.as_path(), opt.fixture.as_deref())
     } else {
@@ -85,9 +91,9 @@ fn execute_inline_eval<W>(
     error: W,
     commands: Vec<OsString>,
     fixture: Option<&Path>,
-) -> Result<Result<(), ()>, Exception>
+) -> Result<Result<(), ()>, Box<dyn error::Error>>
 where
-    W: io::Write,
+    W: io::Write + WriteColor,
 {
     let mut interp = crate::interpreter()?;
     interp.pop_context()?;
@@ -117,9 +123,9 @@ fn execute_program_file<W>(
     error: W,
     programfile: &Path,
     fixture: Option<&Path>,
-) -> Result<Result<(), ()>, Exception>
+) -> Result<Result<(), ()>, Box<dyn error::Error>>
 where
-    W: io::Write,
+    W: io::Write + WriteColor,
 {
     let mut interp = crate::interpreter()?;
     if let Some(ref fixture) = fixture {
