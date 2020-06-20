@@ -23,10 +23,14 @@
 use artichoke::repl;
 use std::io::{self, Write};
 use std::process;
+use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 fn main() {
-    if let Err(err) = repl::run(io::stdout(), io::stderr(), None) {
-        let _ = writeln!(io::stderr(), "{}", err);
+    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+    if let Err(err) = repl::run(io::stdout(), &mut stderr, None) {
+        // reset colors
+        let _ = stderr.reset();
+        let _ = writeln!(stderr, "{}", err);
         process::exit(1);
     }
 }
