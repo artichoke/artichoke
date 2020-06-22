@@ -87,9 +87,10 @@ impl<'a> DerefMut for ArenaIndex<'a> {
 
 impl<'a> Drop for ArenaIndex<'a> {
     fn drop(&mut self) {
-        unsafe {
-            let mrb = self.interp.mrb.as_mut();
-            sys::mrb_sys_gc_arena_restore(mrb, self.index);
-        }
+        let idx = self.index;
+        let _ = unsafe {
+            self.interp
+                .with_ffi_boundary(|mrb| sys::mrb_sys_gc_arena_restore(mrb, idx))
+        };
     }
 }

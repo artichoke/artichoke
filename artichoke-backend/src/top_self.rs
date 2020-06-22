@@ -7,10 +7,7 @@ impl TopSelf for Artichoke {
     type Value = Value;
 
     fn top_self(&mut self) -> Value {
-        let top_self = unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_top_self(mrb)
-        };
-        Value::from(top_self)
+        let top_self = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_top_self(mrb)) };
+        top_self.map(Value::from).unwrap_or_default()
     }
 }

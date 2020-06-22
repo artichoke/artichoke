@@ -50,14 +50,18 @@ impl<'a> Builder<'a> {
         U: Into<Cow<'static, str>>,
     {
         let state = self.interp.state.as_ref().ok_or(InterpreterExtractError)?;
-        let spec = state.classes.get::<T>();
-        let rclass = unsafe {
-            let mrb = self.interp.mrb.as_mut();
-            spec.and_then(|spec| spec.rclass(mrb))
-                .ok_or_else(|| NotDefinedError::super_class(classname.into()))?
+        let rclass = if let Some(spec) = state.classes.get::<T>() {
+            spec.rclass()
+        } else {
+            return Err(NotDefinedError::super_class(classname.into()).into());
         };
-        self.super_class = Some(rclass);
-        Ok(self)
+        let rclass = unsafe { self.interp.with_ffi_boundary(|mrb| rclass.resolve(mrb))? };
+        if let Some(rclass) = rclass {
+            self.super_class = Some(rclass);
+            Ok(self)
+        } else {
+            Err(NotDefinedError::super_class(classname.into()).into())
+        }
     }
 
     pub fn add_method<T>(
@@ -91,41 +95,53 @@ impl<'a> Builder<'a> {
     pub fn define(self) -> Result<(), NotDefinedError> {
         use sys::mrb_vtype::MRB_TT_DATA;
 
-        let mrb = unsafe { self.interp.mrb.as_mut() };
+        let name = self.spec.name_c_str().as_ptr();
+
         let mut super_class = if let Some(super_class) = self.super_class {
             super_class
         } else {
-            let rclass = mrb.object_class;
+            let rclass = unsafe { self.interp.mrb.as_mut().object_class };
             NonNull::new(rclass).ok_or_else(|| NotDefinedError::super_class("Object"))?
         };
-        let mut rclass = if let Some(rclass) = self.spec.rclass(mrb) {
+
+        let rclass = self.spec.rclass();
+        let rclass = unsafe { self.interp.with_ffi_boundary(|mrb| rclass.resolve(mrb)) };
+
+        let mut rclass = if let Ok(Some(rclass)) = rclass {
             rclass
-        } else if let Some(scope) = self.spec.enclosing_scope() {
-            let mut scope_rclass = scope
-                .rclass(mrb)
-                .ok_or_else(|| NotDefinedError::enclosing_scope(scope.fqname().into_owned()))?;
-            let rclass = unsafe {
-                sys::mrb_define_class_under(
-                    mrb,
-                    scope_rclass.as_mut(),
-                    self.spec.name_c_str().as_ptr(),
-                    super_class.as_mut(),
-                )
+        } else if let Some(enclosing_scope) = self.spec.enclosing_scope() {
+            let scope = unsafe {
+                self.interp
+                    .with_ffi_boundary(|mrb| enclosing_scope.rclass(mrb))
             };
-            NonNull::new(rclass)
-                .ok_or_else(|| NotDefinedError::class(self.spec.name.as_ref().to_owned()))?
+            if let Ok(Some(mut scope)) = scope {
+                let rclass = unsafe {
+                    self.interp.with_ffi_boundary(|mrb| {
+                        sys::mrb_define_class_under(mrb, scope.as_mut(), name, super_class.as_mut())
+                    })
+                };
+                let rclass = rclass.map_err(|_| NotDefinedError::class(self.spec.name()))?;
+                NonNull::new(rclass).ok_or_else(|| NotDefinedError::class(self.spec.name()))?
+            } else {
+                return Err(NotDefinedError::enclosing_scope(
+                    enclosing_scope.fqname().into_owned(),
+                ));
+            }
         } else {
             let rclass = unsafe {
-                sys::mrb_define_class(mrb, self.spec.name_c_str().as_ptr(), super_class.as_mut())
+                self.interp
+                    .with_ffi_boundary(|mrb| sys::mrb_define_class(mrb, name, super_class.as_mut()))
             };
-            NonNull::new(rclass)
-                .ok_or_else(|| NotDefinedError::class(self.spec.name.as_ref().to_owned()))?
+            let rclass = rclass.map_err(|_| NotDefinedError::class(self.spec.name()))?;
+            NonNull::new(rclass).ok_or_else(|| NotDefinedError::class(self.spec.name()))?
         };
+
         for method in &self.methods {
             unsafe {
-                method.define(self.interp, rclass.as_mut());
+                method.define(self.interp, rclass.as_mut())?;
             }
         }
+
         // If a `Spec` defines a `Class` whose isntances own a pointer to a
         // Rust object, mark them as `MRB_TT_DATA`.
         if self.is_mrb_tt_data {
@@ -134,6 +150,58 @@ impl<'a> Builder<'a> {
             }
         }
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Rclass {
+    name: CString,
+    enclosing_scope: Option<Box<EnclosingRubyScope>>,
+}
+
+impl Rclass {
+    #[must_use]
+    pub fn new(name: CString, enclosing_scope: Option<Box<EnclosingRubyScope>>) -> Self {
+        Self {
+            name,
+            enclosing_scope,
+        }
+    }
+
+    /// Resolve a type's [`sys::RClass`] using its enclosing scope and name.
+    ///
+    /// # Safety
+    ///
+    /// This function must be called within an [`Artichoke::with_ffi_boundary`]
+    /// closure because the FFI APIs called in this function may require access
+    /// to the Artichoke [`State](crate::state::State).
+    pub unsafe fn resolve(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
+        let class_name = self.name.as_ptr();
+        if let Some(ref scope) = self.enclosing_scope {
+            // short circuit if enclosing scope does not exist.
+            let mut scope = scope.rclass(mrb)?;
+            let is_defined_under = sys::mrb_class_defined_under(mrb, scope.as_mut(), class_name);
+            if is_defined_under == 0 {
+                // Enclosing scope exists.
+                // Class is not defined under the enclosing scope.
+                None
+            } else {
+                // Enclosing scope exists.
+                // Class is defined under the enclosing scope.
+                let class = sys::mrb_class_get_under(mrb, scope.as_mut(), class_name);
+                NonNull::new(class)
+            }
+        } else {
+            let is_defined = sys::mrb_class_defined(mrb, class_name);
+            if is_defined == 0 {
+                // Class does not exist in root scope.
+                None
+            } else {
+                // Class exists in root scope.
+                let class = sys::mrb_class_get(mrb, class_name);
+                NonNull::new(class)
+            }
+        }
     }
 }
 
@@ -177,13 +245,16 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn name_c_str(&self) -> &CStr {
-        self.cstring.as_c_str()
+    pub fn name(&self) -> Cow<'static, str> {
+        match &self.name {
+            Cow::Borrowed(name) => Cow::Borrowed(name),
+            Cow::Owned(name) => name.clone().into(),
+        }
     }
 
     #[must_use]
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
+    pub fn name_c_str(&self) -> &CStr {
+        self.cstring.as_c_str()
     }
 
     #[must_use]
@@ -203,35 +274,9 @@ impl Spec {
         }
     }
 
-    #[allow(clippy::not_unsafe_ptr_arg_deref)]
-    pub fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
-        if let Some(ref scope) = self.enclosing_scope {
-            if let Some(mut scope) = scope.rclass(mrb) {
-                let defined_under = unsafe {
-                    sys::mrb_class_defined_under(mrb, scope.as_mut(), self.name_c_str().as_ptr())
-                };
-                if defined_under == 0 {
-                    // Enclosing scope exists.
-                    // Class is not defined under the enclosing scope.
-                    None
-                } else {
-                    // Enclosing scope exists.
-                    // Class is defined under the enclosing scope.
-                    NonNull::new(unsafe {
-                        sys::mrb_class_get_under(mrb, scope.as_mut(), self.name_c_str().as_ptr())
-                    })
-                }
-            } else {
-                // Enclosing scope does not exist.
-                None
-            }
-        } else if unsafe { sys::mrb_class_defined(mrb, self.cstring.as_ptr()) } == 0 {
-            // Class does not exist in root scope.
-            None
-        } else {
-            // Class exists in root scope.
-            NonNull::new(unsafe { sys::mrb_class_get(mrb, self.name_c_str().as_ptr()) })
-        }
+    #[must_use]
+    pub fn rclass(&self) -> Rclass {
+        Rclass::new(self.cstring.clone(), self.enclosing_scope.clone())
     }
 }
 
@@ -288,7 +333,7 @@ mod tests {
     fn rclass_for_undef_root_class() {
         let mut interp = crate::interpreter().unwrap();
         let spec = class::Spec::new("Foo", None, None).unwrap();
-        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_none());
     }
 
@@ -297,7 +342,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let scope = interp.module_spec::<Kernel>().unwrap().unwrap();
         let spec = class::Spec::new("Foo", Some(EnclosingRubyScope::module(scope)), None).unwrap();
-        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_none());
     }
 
@@ -307,7 +352,7 @@ mod tests {
         let _ = interp.eval(b"module Foo; class Bar; end; end").unwrap();
         let spec = module::Spec::new(&mut interp, "Foo", None).unwrap();
         let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::module(&spec)), None).unwrap();
-        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }
 
@@ -317,7 +362,7 @@ mod tests {
         let _ = interp.eval(b"class Foo; class Bar; end; end").unwrap();
         let spec = class::Spec::new("Foo", None, None).unwrap();
         let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::class(&spec)), None).unwrap();
-        let rclass = spec.rclass(unsafe { interp.mrb.as_mut() });
+        let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }
 }

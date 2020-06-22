@@ -21,8 +21,9 @@ impl DefineConstant for Artichoke {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::from(String::from(constant)))?;
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner());
+            self.with_ffi_boundary(|mrb| {
+                sys::mrb_define_global_const(mrb, name.as_ptr() as *const i8, value.inner())
+            })?;
         }
         Ok(())
     }
@@ -38,21 +39,26 @@ impl DefineConstant for Artichoke {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::from(String::from(constant)))?;
         let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let spec = state
+            .classes
+            .get::<T>()
+            .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
+        let rclass = spec.rclass();
         unsafe {
-            let mrb = self.mrb.as_mut();
-            let mut rclass = state
-                .classes
-                .get::<T>()
-                .and_then(|spec| spec.rclass(mrb))
-                .ok_or_else(|| NotDefinedError::class_constant(String::from(constant)))?;
-            sys::mrb_define_const(
-                mrb,
-                rclass.as_mut(),
-                name.as_ptr() as *const i8,
-                value.inner(),
-            );
+            self.with_ffi_boundary(|mrb| {
+                if let Some(mut rclass) = rclass.resolve(mrb) {
+                    sys::mrb_define_const(
+                        mrb,
+                        rclass.as_mut(),
+                        name.as_ptr() as *const i8,
+                        value.inner(),
+                    );
+                    Ok(())
+                } else {
+                    Err(NotDefinedError::class_constant(String::from(constant)).into())
+                }
+            })?
         }
-        Ok(())
     }
 
     fn define_module_constant<T>(
@@ -66,20 +72,25 @@ impl DefineConstant for Artichoke {
         let name =
             CString::new(constant).map_err(|_| ConstantNameError::from(String::from(constant)))?;
         let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let spec = state
+            .modules
+            .get::<T>()
+            .ok_or_else(|| NotDefinedError::module_constant(String::from(constant)))?;
+        let rclass = spec.rclass();
         unsafe {
-            let mrb = self.mrb.as_mut();
-            let mut rclass = state
-                .modules
-                .get::<T>()
-                .and_then(|spec| spec.rclass(mrb))
-                .ok_or_else(|| NotDefinedError::module_constant(String::from(constant)))?;
-            sys::mrb_define_const(
-                mrb,
-                rclass.as_mut(),
-                name.as_ptr() as *const i8,
-                value.inner(),
-            );
+            self.with_ffi_boundary(|mrb| {
+                if let Some(mut rclass) = rclass.resolve(mrb) {
+                    sys::mrb_define_const(
+                        mrb,
+                        rclass.as_mut(),
+                        name.as_ptr() as *const i8,
+                        value.inner(),
+                    );
+                    Ok(())
+                } else {
+                    Err(NotDefinedError::module_constant(String::from(constant)).into())
+                }
+            })?
         }
-        Ok(())
     }
 }

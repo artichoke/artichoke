@@ -106,18 +106,21 @@ where
             return Err(TypeError::from(message).into());
         }
 
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
-        let spec = state
-            .classes
-            .get::<Self>()
-            .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
+        let mut rclass = {
+            let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+            let spec = state
+                .classes
+                .get::<Self>()
+                .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
+            let rclass = spec.rclass();
+            interp
+                .with_ffi_boundary(|mrb| rclass.resolve(mrb))?
+                .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?
+        };
 
         // Sanity check that the RClass matches.
-        let mrb = interp.mrb.as_mut();
-        let mut rclass = spec
-            .rclass(mrb)
-            .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
-        let value_rclass = sys::mrb_sys_class_of_value(mrb, value.inner());
+        let value_rclass =
+            interp.with_ffi_boundary(|mrb| sys::mrb_sys_class_of_value(mrb, value.inner()))?;
         if !ptr::eq(value_rclass, rclass.as_mut()) {
             let mut message = String::from("Could not extract ");
             message.push_str(Self::RUBY_TYPE);
@@ -126,6 +129,12 @@ where
         }
 
         // Copy data pointer out of the `mrb_value` box.
+        let mrb = interp.mrb.as_mut();
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state
+            .classes
+            .get::<Self>()
+            .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
         let embedded_data_ptr = sys::mrb_data_check_get_ptr(mrb, value.inner(), spec.data_type());
         if embedded_data_ptr.is_null() {
             // `Object#allocate` can be used to create `MRB_TT_DATA` without calling
@@ -169,22 +178,29 @@ where
         // allocating with `mrb_data_object_alloc` below.
         let prior_gc_state = interp.disable_gc();
 
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
-        let spec = state
-            .classes
-            .get::<Self>()
-            .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
+        let mut rclass = {
+            let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+            let spec = state
+                .classes
+                .get::<Self>()
+                .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
+            let rclass = spec.rclass();
+            unsafe { interp.with_ffi_boundary(|mrb| rclass.resolve(mrb)) }?
+                .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?
+        };
 
         // Convert to a raw pointer.
         let data = Box::new(value);
         let ptr = Box::into_raw(data);
 
         // Allocate a new `mrb_value` and inject the raw data pointer.
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let spec = state
+            .classes
+            .get::<Self>()
+            .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
         let obj = unsafe {
             let mrb = interp.mrb.as_mut();
-            let mut rclass = spec
-                .rclass(mrb)
-                .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
             let alloc = sys::mrb_data_object_alloc(
                 mrb,
                 rclass.as_mut(),
