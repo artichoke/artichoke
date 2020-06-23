@@ -76,11 +76,14 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let value = interp.convert_mut(s.clone());
         let string = unsafe {
-            let mrb = interp.mrb.as_mut();
-            let ptr = sys::mrb_string_value_ptr(mrb, value.inner());
-            let len = sys::mrb_string_value_len(mrb, value.inner());
-            let len = usize::try_from(len).unwrap();
-            slice::from_raw_parts(ptr as *const u8, len)
+            interp
+                .with_ffi_boundary(|mrb| {
+                    let ptr = sys::mrb_string_value_ptr(mrb, value.inner());
+                    let len = sys::mrb_string_value_len(mrb, value.inner());
+                    let len = usize::try_from(len).unwrap();
+                    slice::from_raw_parts(ptr as *const u8, len)
+                })
+                .unwrap()
         };
         s.as_bytes() == string
     }

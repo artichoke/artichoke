@@ -122,10 +122,10 @@ impl Value {
     /// Return whether this object is unreachable by any GC roots.
     #[must_use]
     pub fn is_dead(&self, interp: &mut Artichoke) -> bool {
-        unsafe {
-            let mrb = interp.mrb.as_mut();
-            sys::mrb_sys_value_is_dead(mrb, self.inner())
-        }
+        let value = self.inner();
+        let is_dead =
+            unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_sys_value_is_dead(mrb, value)) };
+        is_dead.unwrap_or_default()
     }
 
     pub fn is_range(
@@ -258,7 +258,7 @@ impl ValueCore for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = arena.intern_symbol(func.as_bytes().to_vec());
+        let func = arena.intern_symbol(func.as_bytes().to_vec())?;
         let result = unsafe {
             arena.with_ffi_boundary(|mrb| {
                 protect::funcall(
@@ -297,10 +297,10 @@ impl ValueCore for Value {
     }
 
     fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool {
-        unsafe {
-            let mrb = interp.mrb.as_mut();
-            sys::mrb_sys_obj_frozen(mrb, self.inner())
-        }
+        let value = self.inner();
+        let is_frozen =
+            unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_sys_obj_frozen(mrb, value)) };
+        is_frozen.unwrap_or_default()
     }
 
     fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {

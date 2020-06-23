@@ -145,10 +145,16 @@ impl EnclosingRubyScope {
     ///
     /// The current implemention results in recursive calls to this function
     /// for each enclosing scope.
-    pub fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
+    ///
+    /// # Safety
+    ///
+    /// This function must be called within an [`Artichoke::with_ffi_boundary`]
+    /// closure because the FFI APIs called in this function may require access
+    /// to the Artichoke [`State](crate::state::State).
+    pub unsafe fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         match self {
-            Self::Class { spec } => spec.rclass(mrb),
-            Self::Module { spec } => spec.rclass(mrb),
+            Self::Class { spec } => spec.rclass().resolve(mrb),
+            Self::Module { spec } => spec.rclass().resolve(mrb),
         }
     }
 
@@ -287,6 +293,7 @@ pub enum NotDefinedError {
     EnclosingScope(Cow<'static, str>),
     Super(Cow<'static, str>),
     Class(Cow<'static, str>),
+    Method(Cow<'static, str>),
     Module(Cow<'static, str>),
     GlobalConstant(Cow<'static, str>),
     ClassConstant(Cow<'static, str>),
@@ -313,6 +320,13 @@ impl NotDefinedError {
         T: Into<Cow<'static, str>>,
     {
         Self::Class(item.into())
+    }
+
+    pub fn method<T>(item: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self::Method(item.into())
     }
 
     pub fn module<T>(item: T) -> Self
@@ -352,6 +366,7 @@ impl NotDefinedError {
             | Self::Module(ref fqdn) => fqdn.as_ref(),
             Self::GlobalConstant(ref name)
             | Self::ClassConstant(ref name)
+            | Self::Method(ref name)
             | Self::ModuleConstant(ref name) => name.as_ref(),
         }
     }
@@ -362,6 +377,7 @@ impl NotDefinedError {
             Self::EnclosingScope(_) => "enclosing scope",
             Self::Super(_) => "super class",
             Self::Class(_) => "class",
+            Self::Method(_) => "method",
             Self::Module(_) => "module",
             Self::GlobalConstant(_) => "global constant",
             Self::ClassConstant(_) => "class constant",

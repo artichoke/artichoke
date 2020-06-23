@@ -6,6 +6,7 @@
 //! [symbol]: https://ruby-doc.org/core-2.6.3/Symbol.html
 
 use std::borrow::Cow;
+use std::error;
 
 /// Store and retrieve byte vectors that have the same lifetime as the
 /// interpreter.
@@ -19,10 +20,18 @@ pub trait Intern {
     /// The symbol identifier enables lookups in the underlying storage.
     type Symbol: Copy;
 
+    /// Concrete type for falible operations.
+    type Error: error::Error;
+
     /// Store an immutable byte vector for the life of the interpreter.
     ///
     /// Returns an identifier that enables retrieving the original bytes.
-    fn intern_symbol<T>(&mut self, symbol: T) -> Self::Symbol
+    ///
+    /// # Errors
+    ///
+    /// If the underlying interpreter state is not accessible, an error is
+    /// returned.
+    fn intern_symbol<T>(&mut self, symbol: T) -> Result<Self::Symbol, Self::Error>
     where
         T: Into<Cow<'static, [u8]>>;
 

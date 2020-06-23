@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use crate::def::{ConstantNameError, Method};
+use crate::def::{ConstantNameError, Method, NotDefinedError};
 use crate::sys;
 use crate::Artichoke;
 
@@ -59,6 +59,14 @@ impl Spec {
     }
 
     #[must_use]
+    pub fn name(&self) -> Cow<'static, str> {
+        match &self.name {
+            Cow::Borrowed(name) => Cow::Borrowed(name),
+            Cow::Owned(name) => name.clone().into(),
+        }
+    }
+
+    #[must_use]
     pub fn name_c_str(&self) -> &CStr {
         self.cstring.as_c_str()
     }
@@ -72,38 +80,43 @@ impl Spec {
     ///
     /// This method requires that the [`sys::mrb_state`] has a valid `top_self`
     /// object.
-    pub unsafe fn define(&self, interp: &mut Artichoke, into: &mut sys::RClass) {
-        let mrb = interp.mrb.as_mut();
-        match self.method_type {
-            Type::Class => sys::mrb_define_class_method(
-                mrb,
-                into,
-                self.name_c_str().as_ptr(),
-                Some(self.method),
-                self.args,
-            ),
-            Type::Global => sys::mrb_define_singleton_method(
-                mrb,
-                (*mrb).top_self,
-                self.name_c_str().as_ptr(),
-                Some(self.method),
-                self.args,
-            ),
-            Type::Instance => sys::mrb_define_method(
-                mrb,
-                into,
-                self.name_c_str().as_ptr(),
-                Some(self.method),
-                self.args,
-            ),
-            Type::Module => sys::mrb_define_module_function(
-                mrb,
-                into,
-                self.name_c_str().as_ptr(),
-                Some(self.method),
-                self.args,
-            ),
-        }
+    pub unsafe fn define(
+        &self,
+        interp: &mut Artichoke,
+        into: &mut sys::RClass,
+    ) -> Result<(), NotDefinedError> {
+        interp
+            .with_ffi_boundary(|mrb| match self.method_type {
+                Type::Class => sys::mrb_define_class_method(
+                    mrb,
+                    into,
+                    self.name_c_str().as_ptr(),
+                    Some(self.method),
+                    self.args,
+                ),
+                Type::Global => sys::mrb_define_singleton_method(
+                    mrb,
+                    (*mrb).top_self,
+                    self.name_c_str().as_ptr(),
+                    Some(self.method),
+                    self.args,
+                ),
+                Type::Instance => sys::mrb_define_method(
+                    mrb,
+                    into,
+                    self.name_c_str().as_ptr(),
+                    Some(self.method),
+                    self.args,
+                ),
+                Type::Module => sys::mrb_define_module_function(
+                    mrb,
+                    into,
+                    self.name_c_str().as_ptr(),
+                    Some(self.method),
+                    self.args,
+                ),
+            })
+            .map_err(|_| NotDefinedError::method(self.name()))
     }
 }
 

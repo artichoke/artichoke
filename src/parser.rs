@@ -97,7 +97,11 @@ impl Parser {
         let state = interp.state.as_mut()?;
         let context = state.parser.context_mut();
         let context = NonNull::new(context)?;
-        let parser = unsafe { sys::mrb_parser_new(interp.mrb.as_mut()) };
+        let parser = unsafe {
+            interp
+                .with_ffi_boundary(|mrb| sys::mrb_parser_new(mrb))
+                .ok()?
+        };
         let parser = NonNull::new(parser)?;
         Some(Self { parser, context })
     }

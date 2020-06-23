@@ -71,14 +71,17 @@ impl ModuleRegistry for Artichoke {
         } else {
             return Ok(None);
         };
-        unsafe {
-            let mrb = self.mrb.as_mut();
-            if let Some(mut rclass) = spec.rclass(mrb) {
-                let module = sys::mrb_sys_module_value(rclass.as_mut());
-                Ok(Some(Value::from(module)))
-            } else {
-                Ok(None)
-            }
-        }
+        let rclass = spec.rclass();
+        let module = unsafe {
+            self.with_ffi_boundary(|mrb| {
+                if let Some(mut rclass) = rclass.resolve(mrb) {
+                    let module = sys::mrb_sys_module_value(rclass.as_mut());
+                    Some(Value::from(module))
+                } else {
+                    None
+                }
+            })?
+        };
+        Ok(module)
     }
 }

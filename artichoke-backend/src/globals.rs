@@ -17,10 +17,9 @@ impl Globals for Artichoke {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        let sym = self.intern_symbol(name.into());
+        let sym = self.intern_symbol(name.into())?;
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_gv_set(mrb, sym, value.inner());
+            self.with_ffi_boundary(|mrb| sys::mrb_gv_set(mrb, sym, value.inner()))?;
         }
         Ok(())
     }
@@ -39,11 +38,10 @@ impl Globals for Artichoke {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        let sym = self.intern_symbol(name.into());
+        let sym = self.intern_symbol(name.into())?;
         let nil = Value::nil();
         unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_gv_set(mrb, sym, nil.inner());
+            self.with_ffi_boundary(|mrb| sys::mrb_gv_set(mrb, sym, nil.inner()))?;
         }
         Ok(())
     }
@@ -52,11 +50,8 @@ impl Globals for Artichoke {
     where
         T: Into<Cow<'static, [u8]>>,
     {
-        let sym = self.intern_symbol(name.into());
-        let value = unsafe {
-            let mrb = self.mrb.as_mut();
-            sys::mrb_gv_get(mrb, sym)
-        };
+        let sym = self.intern_symbol(name.into())?;
+        let value = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_gv_get(mrb, sym))? };
         // NOTE: This implementation is not compliant with the spec laid out in
         // the trait documentation. This implementation always returns `Some(_)`
         // even if the global is unset.
