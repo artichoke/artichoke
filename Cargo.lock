@@ -640,6 +640,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "structopt",
+ "termcolor",
 ]
 
 [[package]]

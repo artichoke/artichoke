@@ -68,6 +68,7 @@ use std::path::{Component, Path, PathBuf};
 use std::process;
 use std::str;
 use structopt::StructOpt;
+use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 mod model;
 mod mspec;
@@ -85,11 +86,12 @@ struct Opt {
 /// Main entrypoint.
 pub fn main() {
     let opt = Opt::from_args();
-    match try_main(opt.config.as_path()) {
+    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+    match try_main(&mut stderr, opt.config.as_path()) {
         Ok(true) => process::exit(0),
         Ok(false) => process::exit(1),
         Err(err) => {
-            let _ = writeln!(io::stderr(), "{}", err);
+            let _ = writeln!(&mut stderr, "{}", err);
             process::exit(1);
         }
     }
@@ -107,7 +109,10 @@ pub fn main() {
 /// If an Artichoke interpreter cannot be initialized, an error is returned.
 ///
 /// If the `MSpec` runner returns an error, an error is returned.
-pub fn try_main(config: &Path) -> Result<bool, Box<dyn Error>> {
+pub fn try_main<W>(stderr: W, config: &Path) -> Result<bool, Box<dyn Error>>
+where
+    W: io::Write + WriteColor,
+{
     let config = fs::read(config)?;
     let config = str::from_utf8(config.as_slice())?;
     let config = serde_yaml::from_str::<model::Config>(config)?;
@@ -137,8 +142,15 @@ pub fn try_main(config: &Path) -> Result<bool, Box<dyn Error>> {
         }
     }
     mspec::init(&mut interp)?;
-    let result = mspec::run(&mut interp, specs.iter().map(String::as_str))?;
-    Ok(result)
+    let result = match mspec::run(&mut interp, specs.iter().map(String::as_str)) {
+        Ok(result) => Ok(result),
+        Err(exc) => {
+            artichoke::backtrace::format_cli_trace_into(stderr, &mut interp, &exc)?;
+            Err(exc.into())
+        }
+    };
+    interp.close();
+    result
 }
 
 /// Determine if an embedded ruby/spec should be tested.
