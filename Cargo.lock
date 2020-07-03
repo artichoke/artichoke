@@ -24,7 +24,6 @@ version = "0.1.0-pre.0"
 dependencies = [
  "artichoke-backend",
  "chrono",
- "doc-comment",
  "rustyline",
  "structopt",
  "target-lexicon",
@@ -41,7 +40,6 @@ dependencies = [
  "bstr",
  "cc",
  "chrono",
- "doc-comment",
  "dtoa",
  "hex",
  "intaglio",
@@ -64,9 +62,6 @@ dependencies = [
 [[package]]
 name = "artichoke-core"
 version = "0.1.0"
-dependencies = [
- "doc-comment",
-]
 
 [[package]]
 name = "atty"
@@ -183,12 +178,6 @@ dependencies = [
  "unicode-width",
  "vec_map",
 ]
-
-[[package]]
-name = "doc-comment"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
 
 [[package]]
 name = "dtoa"

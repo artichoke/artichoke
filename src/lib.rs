@@ -82,8 +82,19 @@
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
+// Ensure code blocks in README.md compile
 #[cfg(doctest)]
-doc_comment::doctest!("../README.md");
+macro_rules! readme {
+    ($x:expr) => {
+        #[doc = $x]
+        mod readme {}
+    };
+    () => {
+        readme!(include_str!("../README.md"));
+    };
+}
+#[cfg(doctest)]
+readme!();
 
 pub use artichoke_backend as backend;
 
