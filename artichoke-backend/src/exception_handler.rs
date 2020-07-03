@@ -10,7 +10,8 @@ use crate::Artichoke;
 ///
 /// This function makes funcalls on the interpreter which are fallible.
 pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Exception, Exception> {
-    let mut arena = interp.create_arena_savepoint();
+    let mut arena = interp.create_arena_savepoint()?;
+
     // Clear the current exception from the mruby interpreter so subsequent
     // calls to the mruby VM are not tainted by an error they did not
     // generate.

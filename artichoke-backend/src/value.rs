@@ -136,7 +136,7 @@ impl Value {
         interp: &mut Artichoke,
         len: Int,
     ) -> Result<Option<protect::Range>, Exception> {
-        let mut arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint()?;
         let result = unsafe {
             arena
                 .interp()
@@ -261,7 +261,7 @@ impl ValueCore for Value {
         args: &[Self::Arg],
         block: Option<Self::Block>,
     ) -> Result<Self::Value, Self::Error> {
-        let mut arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint()?;
         if let Ok(arg_count_error) = ArgCountError::try_from(args) {
             warn!("{}", arg_count_error);
             return Err(arg_count_error.into());
@@ -615,7 +615,7 @@ mod tests {
     #[test]
     fn is_dead() {
         let mut interp = crate::interpreter().unwrap();
-        let mut arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint().unwrap();
         let live = arena.eval(b"'dead'").unwrap();
         assert!(!live.is_dead(&mut arena));
         let dead = live;
@@ -632,7 +632,7 @@ mod tests {
     #[test]
     fn immediate_is_dead() {
         let mut interp = crate::interpreter().unwrap();
-        let mut arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint().unwrap();
         let live = arena.eval(b"27").unwrap();
         assert!(!live.is_dead(&mut arena));
         let immediate = live;

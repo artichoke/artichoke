@@ -162,7 +162,7 @@ impl Block {
     }
 
     pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Exception> {
-        let mut arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint()?;
 
         let result = unsafe {
             arena
