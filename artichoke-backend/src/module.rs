@@ -8,6 +8,8 @@ use std::ptr::NonNull;
 
 use crate::core::Intern;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Method, NotDefinedError};
+use crate::exception::Exception;
+use crate::intern::Symbol;
 use crate::method;
 use crate::sys;
 use crate::Artichoke;
@@ -121,7 +123,7 @@ impl<'a> Builder<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rclass {
-    sym: sys::mrb_sym,
+    sym: Symbol,
     name: CString,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }
@@ -129,7 +131,7 @@ pub struct Rclass {
 impl Rclass {
     #[must_use]
     pub fn new(
-        sym: sys::mrb_sym,
+        sym: Symbol,
         name: CString,
         enclosing_scope: Option<Box<EnclosingRubyScope>>,
     ) -> Self {
@@ -155,7 +157,7 @@ impl Rclass {
             let is_defined_under = sys::mrb_const_defined_at(
                 mrb,
                 sys::mrb_sys_obj_value(scope.cast::<c_void>().as_mut()),
-                self.sym,
+                self.sym.into(),
             );
             if is_defined_under == 0 {
                 // Enclosing scope exists.
@@ -171,7 +173,7 @@ impl Rclass {
             let is_defined = sys::mrb_const_defined_at(
                 mrb,
                 sys::mrb_sys_obj_value((*mrb).object_class as *mut c_void),
-                self.sym,
+                self.sym.into(),
             );
             if is_defined == 0 {
                 // Class does not exist in root scope.
@@ -188,7 +190,7 @@ impl Rclass {
 #[derive(Debug, Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
-    sym: sys::mrb_sym,
+    sym: Symbol,
     cstring: CString,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }
@@ -198,28 +200,24 @@ impl Spec {
         interp: &mut Artichoke,
         name: T,
         enclosing_scope: Option<EnclosingRubyScope>,
-    ) -> Result<Self, ConstantNameError>
+    ) -> Result<Self, Exception>
     where
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
         if let Ok(cstring) = CString::new(name.as_ref()) {
             let sym = match name {
-                Cow::Borrowed(name) => interp.intern_symbol(name.as_bytes()),
-                Cow::Owned(ref name) => interp.intern_symbol(name.clone().into_bytes()),
+                Cow::Borrowed(name) => interp.intern_string(name)?,
+                Cow::Owned(ref name) => interp.intern_string(name.clone())?,
             };
-            if let Ok(sym) = sym {
-                Ok(Self {
-                    name,
-                    cstring,
-                    sym,
-                    enclosing_scope: enclosing_scope.map(Box::new),
-                })
-            } else {
-                Err(name.into())
-            }
+            Ok(Self {
+                name,
+                cstring,
+                sym,
+                enclosing_scope: enclosing_scope.map(Box::new),
+            })
         } else {
-            Err(name.into())
+            Err(ConstantNameError::from(name).into())
         }
     }
 

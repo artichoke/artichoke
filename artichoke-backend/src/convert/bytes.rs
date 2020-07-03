@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::convert::TryFrom;
-use std::ffi::{CStr, OsStr, OsString};
+use std::ffi::{OsStr, OsString};
 use std::slice;
 
 use crate::convert::UnboxRubyError;
@@ -33,7 +33,10 @@ impl ConvertMut<&[u8], Value> for Artichoke {
 
 impl<'a> ConvertMut<Cow<'a, [u8]>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Cow<'a, [u8]>) -> Value {
-        self.convert_mut(value.as_ref())
+        match value {
+            Cow::Borrowed(bytes) => self.convert_mut(bytes),
+            Cow::Owned(bytes) => self.convert_mut(bytes),
+        }
     }
 }
 
@@ -55,6 +58,23 @@ impl TryConvertMut<&OsStr, Value> for Artichoke {
     }
 }
 
+impl<'a> TryConvertMut<Cow<'a, OsStr>, Value> for Artichoke {
+    type Error = Exception;
+
+    fn try_convert_mut(&mut self, value: Cow<'a, OsStr>) -> Result<Value, Self::Error> {
+        match value {
+            Cow::Borrowed(value) => {
+                let bytes = ffi::os_str_to_bytes(value)?;
+                Ok(self.convert_mut(bytes))
+            }
+            Cow::Owned(value) => {
+                let bytes = ffi::os_string_to_bytes(value)?;
+                Ok(self.convert_mut(bytes))
+            }
+        }
+    }
+}
+
 impl TryConvertMut<Value, Vec<u8>> for Artichoke {
     type Error = Exception;
 
@@ -67,37 +87,24 @@ impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
     type Error = Exception;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<&'a [u8], Self::Error> {
-        match value.ruby_type() {
-            Ruby::Symbol => {
-                // mruby does not expose an API to get the raw byte contents of a
-                // `Symbol`. For non-literal symbols and non-ASCII symbols,
-                // `sys::mrb_sys_symbol_name` round trips through a `String`
-                // `mrb_value` to turn a `char *` wrapped in quotes into a
-                // `char *`.
-                let bytes = unsafe {
-                    self.with_ffi_boundary(|mrb| sys::mrb_sys_symbol_name(mrb, value.inner()))?
-                };
-                let slice = unsafe { CStr::from_ptr(bytes) };
-                Ok(slice.to_bytes())
+        if let Ruby::String = value.ruby_type() {
+            let bytes = value.inner();
+            unsafe {
+                self.with_ffi_boundary(|mrb| {
+                    let raw = sys::mrb_string_value_ptr(mrb, bytes) as *const u8;
+                    let len = sys::mrb_string_value_len(mrb, bytes);
+                    if let Ok(len) = usize::try_from(len) {
+                        // We can return a borrowed slice because the memory is
+                        // stored on the mruby heap. As long as `value` is
+                        // reachable, this slice points to valid memory.
+                        Ok(slice::from_raw_parts(raw, len))
+                    } else {
+                        Err(UnboxRubyError::new(&value, Rust::Bytes).into())
+                    }
+                })?
             }
-            Ruby::String => {
-                let bytes = value.inner();
-                unsafe {
-                    self.with_ffi_boundary(|mrb| {
-                        let raw = sys::mrb_string_value_ptr(mrb, bytes) as *const u8;
-                        let len = sys::mrb_string_value_len(mrb, bytes);
-                        if let Ok(len) = usize::try_from(len) {
-                            // We can return a borrowed slice because the memory is
-                            // stored on the mruby heap. As long as `value` is
-                            // reachable, this slice points to valid memory.
-                            Ok(slice::from_raw_parts(raw, len))
-                        } else {
-                            Err(UnboxRubyError::new(&value, Rust::Bytes).into())
-                        }
-                    })?
-                }
-            }
-            _ => Err(Exception::from(UnboxRubyError::new(&value, Rust::Bytes))),
+        } else {
+            Err(Exception::from(UnboxRubyError::new(&value, Rust::Bytes)))
         }
     }
 }

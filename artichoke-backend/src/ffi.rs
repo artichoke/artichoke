@@ -45,8 +45,13 @@ pub unsafe fn from_user_data(
     let state = if let Some(state) = NonNull::new(ud) {
         state.cast::<State>()
     } else {
-        warn!("Attempted to extract Artichoke from null mrb_state->ud pointer");
-        return Err(InterpreterExtractError);
+        let alloc_ud = mem::replace(&mut mrb.as_mut().allocf_ud, ptr::null_mut());
+        if let Some(state) = NonNull::new(alloc_ud) {
+            state.cast::<State>()
+        } else {
+            warn!("Attempted to extract Artichoke from null mrb_state->ud pointer");
+            return Err(InterpreterExtractError);
+        }
     };
 
     let state = Box::from_raw(state.as_ptr());

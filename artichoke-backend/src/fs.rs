@@ -125,6 +125,12 @@ pub trait Filesystem: fmt::Debug {
     fn mark_required(&mut self, path: &Path) -> io::Result<()>;
 }
 
+impl Default for Box<dyn Filesystem> {
+    fn default() -> Self {
+        filesystem()
+    }
+}
+
 fn absolutize_relative_to<T, U>(path: T, cwd: U) -> PathBuf
 where
     T: AsRef<Path>,

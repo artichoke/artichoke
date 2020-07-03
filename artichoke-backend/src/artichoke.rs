@@ -17,6 +17,7 @@ pub struct Artichoke {
     ///
     /// This is an owned reference to the interpreter via a mutable pointer.
     pub mrb: NonNull<sys::mrb_state>,
+
     /// Interpreter state.
     ///
     /// This field is an `Option` because the `State` is moved in and out of the
@@ -127,7 +128,9 @@ impl Artichoke {
                     ..
                 } = *state;
 
-                parser.close(mrb);
+                if let Some(parser) = parser {
+                    parser.close(mrb);
+                }
                 sys::mrb_close(mrb);
 
                 drop(classes);

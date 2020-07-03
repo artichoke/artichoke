@@ -40,8 +40,9 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     module::init(interp)?;
     // Some `Exception`s depend on: `attr_accessor` (defined in `Module`)
     exception::init(interp)?;
-    artichoke::init(interp)?;
     comparable::init(interp)?;
+    symbol::mruby::init(interp)?;
+    artichoke::init(interp)?;
     enumerator::init(interp)?;
     env::mruby::init(interp)?;
     hash::init(interp)?;
@@ -60,7 +61,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     range::init(interp)?;
     regexp::mruby::init(interp)?;
     string::mruby::init(interp)?;
-    symbol::init(interp)?;
     thread::init(interp)?;
     time::mruby::init(interp)?;
     warning::init(interp)?;

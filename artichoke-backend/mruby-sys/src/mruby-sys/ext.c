@@ -144,18 +144,9 @@ MRB_API mrb_value mrb_sys_proc_value(struct mrb_state *mrb,
 
 // Manipulate `Symbol`s
 
-MRB_API const char *mrb_sys_symbol_name(struct mrb_state *mrb,
-                                        mrb_value value) {
-  mrb_value sym = mrb_sym2str(mrb, mrb_symbol(value));
-  return mrb_str_to_cstr(mrb, sym);
-}
-
-MRB_API mrb_value mrb_sys_new_symbol(struct mrb_state *mrb, const char *string,
-                                     size_t len) {
+MRB_API mrb_value mrb_sys_new_symbol(mrb_sym id) {
   mrb_value value;
-
-  mrb_symbol(value) = mrb_intern(mrb, string, len);
-
+  mrb_symbol(value) = id;
   value.tt = MRB_TT_SYMBOL;
 
   return value;
@@ -184,12 +175,6 @@ MRB_API void mrb_sys_raise_current_exception(struct mrb_state *mrb) {
   if (mrb->exc) {
     mrb_exc_raise(mrb, mrb_obj_value(mrb->exc));
   }
-}
-
-// TODO: implement this debug function in Rust
-MRB_API mrb_value mrb_sys_value_debug_str(struct mrb_state *mrb,
-                                          mrb_value value) {
-  return mrb_funcall(mrb, value, "inspect", 0);
 }
 
 // Manipulate Array `mrb_value`s

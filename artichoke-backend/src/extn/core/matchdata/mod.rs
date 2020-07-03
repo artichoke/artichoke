@@ -17,6 +17,7 @@ use std::str;
 
 use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;
+use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
 mod boxing;
@@ -80,15 +81,25 @@ pub enum Capture<'a> {
     GroupName(&'a [u8]),
 }
 
-impl<'a> TryConvertMut<&'a Value, Capture<'a>> for Artichoke {
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum CaptureExtract<'a> {
+    GroupIndex(Int),
+    GroupName(&'a [u8]),
+    Symbol(Symbol),
+}
+
+impl<'a> TryConvertMut<&'a mut Value, CaptureExtract<'a>> for Artichoke {
     type Error = TypeError;
 
-    fn try_convert_mut(&mut self, value: &'a Value) -> Result<Capture<'a>, Self::Error> {
-        if let Ok(name) = value.implicitly_convert_to_string(self) {
-            Ok(Capture::GroupName(name))
+    fn try_convert_mut(&mut self, value: &'a mut Value) -> Result<CaptureExtract<'a>, Self::Error> {
+        if let Ok(symbol) = unsafe { Symbol::unbox_from_value(value, self) } {
+            let sym = symbol.id();
+            Ok(CaptureExtract::Symbol(sym.into()))
+        } else if let Ok(name) = value.implicitly_convert_to_string(self) {
+            Ok(CaptureExtract::GroupName(name))
         } else {
             let idx = value.implicitly_convert_to_int(self)?;
-            Ok(Capture::GroupIndex(idx))
+            Ok(CaptureExtract::GroupIndex(idx))
         }
     }
 }

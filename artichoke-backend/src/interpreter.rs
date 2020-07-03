@@ -1,13 +1,14 @@
 use std::borrow::Cow;
 use std::error;
+use std::ffi::c_void;
 use std::fmt;
-use std::ptr::NonNull;
 
 use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, Eval, ReleaseMetadata};
 use crate::exception::{Exception, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
+use crate::ffi;
 use crate::gc::{MrbGarbageCollection, State as GcState};
 use crate::release_metadata::ReleaseMetadata as ArtichokeBackendReleaseMetadata;
 use crate::state::State;
@@ -33,19 +34,19 @@ pub fn interpreter_with_config<T>(config: T) -> Result<Artichoke, Exception>
 where
     T: ReleaseMetadata,
 {
-    let raw = unsafe { sys::mrb_open() };
+    let state = State::new();
+    let state = Box::new(state);
+    let alloc_ud = Box::into_raw(state) as *mut c_void;
+    let raw = unsafe { sys::mrb_open_allocf(Some(sys::mrb_default_allocf), alloc_ud) };
     debug!("Try initializing mrb interpreter");
 
-    let mut mrb = if let Some(mrb) = NonNull::new(raw) {
-        mrb
-    } else {
-        error!("Failed to allocate Artichoke interprter");
-        return Err(Exception::from(InterpreterAllocError));
-    };
+    let mut interp = unsafe { ffi::from_user_data(raw).map_err(|_| InterpreterAllocError)? };
 
-    let state = State::new(unsafe { mrb.as_mut() }).ok_or(InterpreterAllocError)?;
-    let state = Box::new(state);
-    let mut interp = Artichoke::new(mrb, state);
+    if let Some(ref mut state) = interp.state {
+        if let Some(mrb) = unsafe { raw.as_mut() } {
+            state.try_init_parser(mrb)
+        }
+    }
 
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before

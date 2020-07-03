@@ -16,7 +16,7 @@ use crate::value::Value;
 use crate::Artichoke;
 
 pub struct UnboxedValueGuard<'a, T> {
-    guarded: ManuallyDrop<Box<T>>,
+    guarded: ManuallyDrop<T>,
     phantom: PhantomData<&'a mut T>,
 }
 
@@ -33,7 +33,7 @@ where
 
 impl<'a, T> UnboxedValueGuard<'a, T> {
     #[must_use]
-    pub fn new(value: Box<T>) -> Self {
+    pub fn new(value: T) -> Self {
         Self {
             guarded: ManuallyDrop::new(value),
             phantom: PhantomData,
@@ -41,17 +41,26 @@ impl<'a, T> UnboxedValueGuard<'a, T> {
     }
 }
 
-impl<'a, T> Deref for UnboxedValueGuard<'a, T> {
-    type Target = T;
+#[derive(Debug)]
+pub struct HeapAllocated<T>(Box<T>);
 
-    fn deref(&self) -> &Self::Target {
-        self.guarded.as_ref()
+impl<T> HeapAllocated<T> {
+    pub fn new(obj: Box<T>) -> Self {
+        Self(obj)
     }
 }
 
-impl<'a, T> DerefMut for UnboxedValueGuard<'a, T> {
+impl<'a, T> Deref for UnboxedValueGuard<'a, HeapAllocated<T>> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.guarded.deref().0.as_ref()
+    }
+}
+
+impl<'a, T> DerefMut for UnboxedValueGuard<'a, HeapAllocated<T>> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.guarded.as_mut()
+        self.guarded.deref_mut().0.as_mut()
     }
 }
 
@@ -59,8 +68,32 @@ pub trait HeapAllocatedData {
     const RUBY_TYPE: &'static str;
 }
 
+#[derive(Debug)]
+pub struct Immediate<T>(T);
+
+impl<T> Immediate<T> {
+    pub fn new(obj: T) -> Self {
+        Self(obj)
+    }
+}
+
+impl<'a, T> Deref for UnboxedValueGuard<'a, Immediate<T>> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.guarded.deref().0
+    }
+}
+
+impl<'a, T> DerefMut for UnboxedValueGuard<'a, Immediate<T>> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.guarded.deref_mut().0
+    }
+}
+
 pub trait BoxUnboxVmValue {
     type Unboxed;
+    type Guarded;
 
     const RUBY_TYPE: &'static str;
 
@@ -74,7 +107,7 @@ pub trait BoxUnboxVmValue {
     unsafe fn unbox_from_value<'a>(
         value: &'a mut Value,
         interp: &mut Artichoke,
-    ) -> Result<UnboxedValueGuard<'a, Self::Unboxed>, Exception>;
+    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Exception>;
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Exception>;
 
@@ -92,13 +125,14 @@ where
     T: HeapAllocatedData + Sized + 'static,
 {
     type Unboxed = Self;
+    type Guarded = HeapAllocated<Self::Unboxed>;
 
     const RUBY_TYPE: &'static str = <Self as HeapAllocatedData>::RUBY_TYPE;
 
     unsafe fn unbox_from_value<'a>(
         value: &'a mut Value,
         interp: &mut Artichoke,
-    ) -> Result<UnboxedValueGuard<'a, Self::Unboxed>, Exception> {
+    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Exception> {
         // Make sure we have a Data otherwise extraction will fail.
         if value.ruby_type() != Ruby::Data {
             let mut message = String::from("uninitialized ");
@@ -148,7 +182,7 @@ where
         let value = Box::from_raw(embedded_data_ptr as *mut Self);
         // `UnboxedValueGuard` ensures the `Box` wrapper will be forgotten. The
         // mruby GC is responsible for freeing the value.
-        Ok(UnboxedValueGuard::new(value))
+        Ok(UnboxedValueGuard::new(HeapAllocated::new(value)))
     }
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Exception> {

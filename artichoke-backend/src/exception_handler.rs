@@ -33,7 +33,9 @@ pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Exception,
     // Uncommenting the folllowing print statement will at least get you
     // the exception class and message, which should help debugging.
     //
-    // println!("{:?}", exception);
+    // let message = exception.funcall(&mut arena, "message", &[], None)?;
+    // let message = message.try_into_mut::<String>(&mut arena);
+    // println!("{:?}, {:?}", exception, message);
 
     let class = exception.funcall(&mut arena, "class", &[], None)?;
     let classname = class.funcall(&mut arena, "name", &[], None)?;

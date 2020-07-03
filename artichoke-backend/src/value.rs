@@ -2,13 +2,16 @@ use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::error;
 use std::fmt;
+use std::mem;
 use std::ptr;
 
 use crate::class_registry::ClassRegistry;
+use crate::convert::BoxUnboxVmValue;
 use crate::core::{Convert, ConvertMut, Intern, TryConvert, Value as ValueCore};
 use crate::exception::{Exception, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
+use crate::extn::core::symbol::Symbol;
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Int, Ruby};
@@ -189,6 +192,19 @@ impl Value {
     pub fn implicitly_convert_to_string(&self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
         let string = if let Ok(string) = self.try_into_mut::<&[u8]>(interp) {
             string
+        } else if let Ruby::Symbol = self.ruby_type() {
+            let mut value = *self;
+            // Infallible because of Symbol ruby type
+            let sym = unsafe { Symbol::unbox_from_value(&mut value, interp).unwrap() };
+            let bytes = sym.bytes(interp);
+            // Safety:
+            //
+            // Symbols are valid for the lifetime of the interpreter, which is a
+            // longer lifetime than `self`.
+            //
+            // This transmute shrinks the lifetime of the interned bytes to the
+            // lifetime of this `Value`.
+            unsafe { mem::transmute(bytes) }
         } else if let Ok(true) = self.respond_to(interp, "to_str") {
             if let Ok(maybe) = self.funcall(interp, "to_str", &[], None) {
                 if let Ok(string) = maybe.try_into_mut::<&[u8]>(interp) {
@@ -258,13 +274,13 @@ impl ValueCore for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = arena.intern_symbol(func.as_bytes().to_vec())?;
+        let func = arena.intern_string(func.to_string())?;
         let result = unsafe {
             arena.with_ffi_boundary(|mrb| {
                 protect::funcall(
                     mrb,
                     self.inner(),
-                    func,
+                    func.into(),
                     args.as_slice(),
                     block.as_ref().map(Self::inner),
                 )
