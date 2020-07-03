@@ -37,7 +37,6 @@ default-features = false
 optional = true
 
 [dev-dependencies]
-doc-comment = "0.3"
 libc = "0.2"
 quickcheck = { version = "0.9", default-features = false }
 quickcheck_macros = "0.9"

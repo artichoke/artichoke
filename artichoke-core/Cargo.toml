@@ -11,6 +11,3 @@ keywords = ["artichoke", "artichoke-ruby", "ruby"]
 categories = ["data-structures", "rust-patterns"]
 
 [dependencies]
-
-[dev-dependencies]
-doc-comment = "0.3"
