@@ -110,7 +110,7 @@ impl<'a> ArenaIndex<'a> {
         unsafe {
             interp
                 .with_ffi_boundary(|mrb| sys::mrb_sys_gc_arena_save(mrb))
-                .and_then(move |index| Ok(Self { index, interp }))
+                .map(move |index| Self { index, interp })
                 .map_err(|_| IndexError)
         }
     }
