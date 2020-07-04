@@ -26,10 +26,7 @@ impl IndexError {
 
 impl fmt::Display for IndexError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Failed to create internal garbage collection savepoint"
-        )
+        write!(f, "Failed to create internal garbage collection savepoint")
     }
 }
 
