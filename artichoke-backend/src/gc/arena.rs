@@ -1,9 +1,81 @@
 //! Garbage collection arenas for native code.
 
+use std::borrow::Cow;
+use std::error;
+use std::fmt;
 use std::ops::{Deref, DerefMut};
 
+use crate::class_registry::ClassRegistry;
+use crate::core::ConvertMut;
+use crate::exception::{Exception, RubyException};
+use crate::extn::core::exception::Fatal;
 use crate::sys;
 use crate::Artichoke;
+
+/// Failed to extract Artichoke interpreter at an FFI boundary.
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct IndexError;
+
+impl IndexError {
+    /// Constructs a new, default `IndexError`.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl fmt::Display for IndexError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Failed to create internal garbage collection savepoint")
+    }
+}
+
+impl error::Error for IndexError {}
+
+impl RubyException for IndexError {
+    fn message(&self) -> Cow<'_, [u8]> {
+        Cow::Borrowed(b"Failed to create internal garbage collection savepoint")
+    }
+
+    fn name(&self) -> Cow<'_, str> {
+        "fatal".into()
+    }
+
+    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
+        let _ = interp;
+        None
+    }
+
+    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
+        let message = interp.convert_mut(self.message());
+        let value = interp.new_instance::<Fatal>(&[message]).ok().flatten()?;
+        Some(value.inner())
+    }
+}
+
+impl From<IndexError> for Exception {
+    fn from(exception: IndexError) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<Box<IndexError>> for Exception {
+    fn from(exception: Box<IndexError>) -> Self {
+        Self::from(Box::<dyn RubyException>::from(exception))
+    }
+}
+
+impl From<IndexError> for Box<dyn RubyException> {
+    fn from(exception: IndexError) -> Box<dyn RubyException> {
+        Box::new(exception)
+    }
+}
+
+impl From<Box<IndexError>> for Box<dyn RubyException> {
+    fn from(exception: Box<IndexError>) -> Box<dyn RubyException> {
+        exception
+    }
+}
 
 /// Interpreter guard that acts as a GC arena savepoint.
 ///
@@ -31,13 +103,13 @@ pub struct ArenaIndex<'a> {
 
 impl<'a> ArenaIndex<'a> {
     /// Create a new arena savepoint.
-    pub fn new(interp: &'a mut Artichoke) -> Self {
-        let index = unsafe {
+    pub fn new(interp: &'a mut Artichoke) -> Result<Self, IndexError> {
+        unsafe {
             interp
                 .with_ffi_boundary(|mrb| sys::mrb_sys_gc_arena_save(mrb))
-                .unwrap_or_default()
-        };
-        Self { index, interp }
+                .map(move |index| Self { index, interp })
+                .map_err(|_| IndexError)
+        }
     }
 
     /// Restore the arena stack pointer to its prior index.

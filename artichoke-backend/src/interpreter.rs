@@ -59,7 +59,8 @@ where
     debug!("Succeeded initializing Artichoke Core and Standard Library");
 
     // Load mrbgems
-    let mut arena = interp.create_arena_savepoint();
+    let mut arena = interp.create_arena_savepoint()?;
+
     unsafe {
         arena
             .interp()
@@ -75,7 +76,7 @@ where
     // mruby lazily initializes some core objects like top_self and generates a
     // lot of garbage on startup. Eagerly initialize the interpreter to provide
     // predictable initialization behavior.
-    interp.create_arena_savepoint().interp().eval(&[])?;
+    interp.create_arena_savepoint()?.interp().eval(&[])?;
 
     if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();

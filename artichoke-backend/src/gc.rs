@@ -1,3 +1,4 @@
+use crate::gc::arena::IndexError;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -19,7 +20,7 @@ pub trait MrbGarbageCollection {
     ///
     /// The returned [`ArenaIndex`] implements [`Drop`], so it is sufficient to
     /// let it go out of scope to ensure objects are eventually collected.
-    fn create_arena_savepoint(&mut self) -> ArenaIndex<'_>;
+    fn create_arena_savepoint(&mut self) -> Result<ArenaIndex<'_>, IndexError>;
 
     /// Retrieve the number of live objects on the interpreter heap.
     ///
@@ -57,7 +58,7 @@ pub trait MrbGarbageCollection {
 }
 
 impl MrbGarbageCollection for Artichoke {
-    fn create_arena_savepoint(&mut self) -> ArenaIndex<'_> {
+    fn create_arena_savepoint(&mut self) -> Result<ArenaIndex<'_>, IndexError> {
         ArenaIndex::new(self)
     }
 
@@ -131,7 +132,7 @@ mod tests {
     fn arena_restore_on_explicit_restore() {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
-        let mut arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint().unwrap();
         for _ in 0..2000 {
             let value = arena.eval(b"'a'").unwrap();
             let _ = value.to_s(&mut arena);
@@ -152,7 +153,7 @@ mod tests {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         {
-            let mut arena = interp.create_arena_savepoint();
+            let mut arena = interp.create_arena_savepoint().unwrap();
             for _ in 0..2000 {
                 let value = arena.eval(b"'a'").unwrap();
                 let _ = value.to_s(&mut arena);
@@ -172,7 +173,7 @@ mod tests {
     fn enable_disable_gc() {
         let mut interp = crate::interpreter().unwrap();
         interp.disable_gc();
-        let mut arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint().unwrap();
         let _ = arena
             .interp()
             .eval(
@@ -212,7 +213,7 @@ mod tests {
     #[test]
     fn gc_after_empty_eval() {
         let mut interp = crate::interpreter().unwrap();
-        let mut arena = interp.create_arena_savepoint();
+        let mut arena = interp.create_arena_savepoint().unwrap();
         let baseline_object_count = arena.live_object_count();
         drop(&mut arena.eval(b"").unwrap());
         arena.restore();
@@ -224,9 +225,9 @@ mod tests {
     fn gc_functional_test() {
         let mut interp = crate::interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
-        let mut initial_arena = interp.create_arena_savepoint();
+        let mut initial_arena = interp.create_arena_savepoint().unwrap();
         for _ in 0..2000 {
-            let mut arena = initial_arena.create_arena_savepoint();
+            let mut arena = initial_arena.create_arena_savepoint().unwrap();
             let result = arena.eval(b"'gc test'");
             let value = result.unwrap();
             assert!(!value.is_dead(&mut arena));
