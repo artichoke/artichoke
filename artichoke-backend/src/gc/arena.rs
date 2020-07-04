@@ -37,7 +37,7 @@ impl error::Error for IndexError {}
 
 impl RubyException for IndexError {
     fn message(&self) -> Cow<'_, [u8]> {
-        Cow::Borrowed(b"Failed to extract Artichoke Ruby interpreter from mrb_state")
+        Cow::Borrowed(b"Failed to create internal garbage collection savepoint")
     }
 
     fn name(&self) -> Cow<'_, str> {
