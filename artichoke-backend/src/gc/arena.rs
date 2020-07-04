@@ -28,7 +28,7 @@ impl fmt::Display for IndexError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Failed to extract Artichoke Ruby interpreter from mrb_state userdata"
+            "Failed to create internal garbage collection savepoint"
         )
     }
 }
