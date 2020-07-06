@@ -92,14 +92,14 @@ impl<'a> TryConvertMut<&'a mut Value, CaptureExtract<'a>> for Artichoke {
     type Error = TypeError;
 
     fn try_convert_mut(&mut self, value: &'a mut Value) -> Result<CaptureExtract<'a>, Self::Error> {
-        if let Ok(symbol) = unsafe { Symbol::unbox_from_value(value, self) } {
+        if let Ok(idx) = value.implicitly_convert_to_int(self) {
+            Ok(CaptureExtract::GroupIndex(idx))
+        } else if let Ok(symbol) = unsafe { Symbol::unbox_from_value(value, self) } {
             let sym = symbol.id();
             Ok(CaptureExtract::Symbol(sym.into()))
-        } else if let Ok(name) = value.implicitly_convert_to_string(self) {
-            Ok(CaptureExtract::GroupName(name))
         } else {
-            let idx = value.implicitly_convert_to_int(self)?;
-            Ok(CaptureExtract::GroupIndex(idx))
+            let name = value.implicitly_convert_to_string(self)?;
+            Ok(CaptureExtract::GroupName(name))
         }
     }
 }

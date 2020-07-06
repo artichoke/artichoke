@@ -59,7 +59,7 @@ unsafe extern "C" fn artichoke_env_element_reference(
     let mut guard = Guard::new(&mut interp);
     let obj = Value::from(slf);
     let name = Value::from(name);
-    let result = trampoline::element_reference(&mut guard, obj, &name);
+    let result = trampoline::element_reference(&mut guard, obj, name);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -77,7 +77,7 @@ unsafe extern "C" fn artichoke_env_element_assignment(
     let obj = Value::from(slf);
     let name = Value::from(name);
     let value = Value::from(value);
-    let result = trampoline::element_assignment(&mut guard, obj, &name, value);
+    let result = trampoline::element_assignment(&mut guard, obj, name, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),

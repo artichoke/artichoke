@@ -150,23 +150,25 @@ impl<'a> IntegerString<'a> {
     }
 }
 
-impl<'a> TryConvertMut<&'a Value, IntegerString<'a>> for Artichoke {
+impl<'a> TryConvertMut<&'a mut Value, IntegerString<'a>> for Artichoke {
     type Error = Exception;
 
-    fn try_convert_mut(&mut self, value: &'a Value) -> Result<IntegerString<'a>, Self::Error> {
-        let arg = value.implicitly_convert_to_string(self).map_err(|_| {
-            let mut message = String::from("can't convert ");
-            message.push_str(value.pretty_name(self));
-            message.push_str(" into Integer");
-            TypeError::from(message)
-        })?;
-        if let Some(converted) = IntegerString::from_slice(arg) {
-            Ok(converted)
+    fn try_convert_mut(&mut self, value: &'a mut Value) -> Result<IntegerString<'a>, Self::Error> {
+        let mut message = String::from("can't convert ");
+        message.push_str(value.pretty_name(self));
+        message.push_str(" into Integer");
+
+        if let Ok(arg) = value.implicitly_convert_to_string(self) {
+            if let Some(converted) = IntegerString::from_slice(arg) {
+                Ok(converted)
+            } else {
+                let mut message = String::from(r#"invalid value for Integer(): ""#);
+                string::format_unicode_debug_into(&mut message, arg)?;
+                message.push('"');
+                Err(ArgumentError::from(message).into())
+            }
         } else {
-            let mut message = String::from(r#"invalid value for Integer(): ""#);
-            string::format_unicode_debug_into(&mut message, arg)?;
-            message.push('"');
-            Err(ArgumentError::from(message).into())
+            Err(TypeError::from(message).into())
         }
     }
 }

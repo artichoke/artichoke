@@ -10,7 +10,7 @@ use crate::state::parser::Context;
 
 const RUBY_EXTENSION: &str = "rb";
 
-pub fn load(interp: &mut Artichoke, filename: Value) -> Result<bool, Exception> {
+pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Exception> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::from("path name contains null byte").into());
@@ -37,7 +37,7 @@ pub fn load(interp: &mut Artichoke, filename: Value) -> Result<bool, Exception> 
 
 pub fn require(
     interp: &mut Artichoke,
-    filename: Value,
+    mut filename: Value,
     base: Option<RelativePath>,
 ) -> Result<bool, Exception> {
     let filename = filename.implicitly_convert_to_string(interp)?;

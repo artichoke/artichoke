@@ -12,7 +12,7 @@ pub fn initialize(interp: &mut Artichoke, into: Value) -> Result<Value, Exceptio
 pub fn element_reference(
     interp: &mut Artichoke,
     mut environ: Value,
-    name: &Value,
+    mut name: Value,
 ) -> Result<Value, Exception> {
     let environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
     let name = name.implicitly_convert_to_string(interp)?;
@@ -25,8 +25,8 @@ pub fn element_reference(
 pub fn element_assignment(
     interp: &mut Artichoke,
     mut environ: Value,
-    name: &Value,
-    value: Value,
+    mut name: Value,
+    mut value: Value,
 ) -> Result<Value, Exception> {
     let mut environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
     let name = name.implicitly_convert_to_string(interp)?;

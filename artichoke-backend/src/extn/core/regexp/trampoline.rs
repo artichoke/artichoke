@@ -15,7 +15,7 @@ pub fn initialize(
     Regexp::box_into_value(regexp, into, interp)
 }
 
-pub fn escape(interp: &mut Artichoke, pattern: Value) -> Result<Value, Exception> {
+pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Exception> {
     let pattern = pattern.implicitly_convert_to_string(interp)?;
     let pattern = Regexp::escape(pattern)?;
     Ok(interp.convert_mut(pattern))
@@ -32,7 +32,7 @@ where
 pub fn is_match(
     interp: &mut Artichoke,
     mut regexp: Value,
-    pattern: Value,
+    mut pattern: Value,
     pos: Option<Value>,
 ) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
@@ -49,7 +49,7 @@ pub fn is_match(
 pub fn match_(
     interp: &mut Artichoke,
     mut regexp: Value,
-    pattern: Value,
+    mut pattern: Value,
     pos: Option<Value>,
     block: Option<Block>,
 ) -> Result<Value, Exception> {
@@ -82,7 +82,7 @@ pub fn case_compare(
 pub fn match_operator(
     interp: &mut Artichoke,
     mut regexp: Value,
-    pattern: Value,
+    mut pattern: Value,
 ) -> Result<Value, Exception> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let pattern = pattern.implicitly_convert_to_nilable_string(interp)?;
