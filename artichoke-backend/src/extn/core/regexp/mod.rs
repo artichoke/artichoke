@@ -259,7 +259,11 @@ impl Regexp {
         self.0.as_ref()
     }
 
-    pub fn case_compare(&self, interp: &mut Artichoke, other: Value) -> Result<bool, Exception> {
+    pub fn case_compare(
+        &self,
+        interp: &mut Artichoke,
+        mut other: Value,
+    ) -> Result<bool, Exception> {
         let pattern = if let Ok(pattern) = other.implicitly_convert_to_string(interp) {
             pattern
         } else {

@@ -189,13 +189,13 @@ impl Value {
         Ok(int)
     }
 
-    pub fn implicitly_convert_to_string(&self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
+    pub fn implicitly_convert_to_string(
+        &mut self,
+        interp: &mut Artichoke,
+    ) -> Result<&[u8], TypeError> {
         let string = if let Ok(string) = self.try_into_mut::<&[u8]>(interp) {
             string
-        } else if let Ruby::Symbol = self.ruby_type() {
-            let mut value = *self;
-            // Infallible because of Symbol ruby type
-            let sym = unsafe { Symbol::unbox_from_value(&mut value, interp).unwrap() };
+        } else if let Ok(sym) = unsafe { Symbol::unbox_from_value(self, interp) } {
             let bytes = sym.bytes(interp);
             // Safety:
             //
@@ -236,13 +236,14 @@ impl Value {
 
     #[inline]
     pub fn implicitly_convert_to_nilable_string(
-        &self,
+        &mut self,
         interp: &mut Artichoke,
     ) -> Result<Option<&[u8]>, TypeError> {
         if self.is_nil() {
             Ok(None)
         } else {
-            self.implicitly_convert_to_string(interp).map(Some)
+            let string = self.implicitly_convert_to_string(interp)?;
+            Ok(Some(string))
         }
     }
 }
