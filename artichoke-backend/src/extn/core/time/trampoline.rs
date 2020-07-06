@@ -76,3 +76,52 @@ pub fn year(interp: &mut Artichoke, mut time: Value) -> Result<Value, Exception>
     let result = interp.convert(year);
     Ok(result)
 }
+
+pub fn is_sunday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Exception> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let year = time.inner().is_sunday();
+    let result = interp.convert(year);
+    Ok(result)
+}
+
+pub fn is_monday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Exception> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let year = time.inner().is_monday();
+    let result = interp.convert(year);
+    Ok(result)
+}
+
+pub fn is_tuesday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Exception> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let year = time.inner().is_tuesday();
+    let result = interp.convert(year);
+    Ok(result)
+}
+
+pub fn is_wednesday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Exception> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let year = time.inner().is_wednesday();
+    let result = interp.convert(year);
+    Ok(result)
+}
+
+pub fn is_thursday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Exception> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let year = time.inner().is_thursday();
+    let result = interp.convert(year);
+    Ok(result)
+}
+
+pub fn is_friday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Exception> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let year = time.inner().is_friday();
+    let result = interp.convert(year);
+    Ok(result)
+}
+
+pub fn is_saturday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Exception> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let year = time.inner().is_saturday();
+    let result = interp.convert(year);
+    Ok(result)
+}
