@@ -23,6 +23,25 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("wday", artichoke_time_weekday, sys::mrb_args_none())?
         .add_method("yday", artichoke_time_year_day, sys::mrb_args_none())?
         .add_method("year", artichoke_time_year, sys::mrb_args_none())?
+        .add_method("sunday?", artichoke_time_is_sunday, sys::mrb_args_none())?
+        .add_method("monday?", artichoke_time_is_monday, sys::mrb_args_none())?
+        .add_method("tuesday?", artichoke_time_is_tuesday, sys::mrb_args_none())?
+        .add_method(
+            "wednesday?",
+            artichoke_time_is_wednesday,
+            sys::mrb_args_none(),
+        )?
+        .add_method(
+            "thursday?",
+            artichoke_time_is_thursday,
+            sys::mrb_args_none(),
+        )?
+        .add_method("friday?", artichoke_time_is_friday, sys::mrb_args_none())?
+        .add_method(
+            "saturday?",
+            artichoke_time_is_saturday,
+            sys::mrb_args_none(),
+        )?
         .define()?;
     interp.def_class::<time::Time>(spec)?;
 
@@ -200,6 +219,118 @@ unsafe extern "C" fn artichoke_time_year(
     let mut guard = Guard::new(&mut interp);
     let time = Value::from(slf);
     let result = trampoline::year(&mut guard, time);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_time_is_sunday(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let time = Value::from(slf);
+    let result = trampoline::is_sunday(&mut guard, time);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_time_is_monday(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let time = Value::from(slf);
+    let result = trampoline::is_monday(&mut guard, time);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_time_is_tuesday(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let time = Value::from(slf);
+    let result = trampoline::is_tuesday(&mut guard, time);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_time_is_wednesday(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let time = Value::from(slf);
+    let result = trampoline::is_wednesday(&mut guard, time);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_time_is_thursday(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let time = Value::from(slf);
+    let result = trampoline::is_thursday(&mut guard, time);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_time_is_friday(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let time = Value::from(slf);
+    let result = trampoline::is_friday(&mut guard, time);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_time_is_saturday(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let time = Value::from(slf);
+    let result = trampoline::is_saturday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
