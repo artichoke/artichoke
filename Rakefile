@@ -80,13 +80,13 @@ end
 desc 'Generate Rust API documentation'
 task :doc do
   ENV['RUSTDOCFLAGS'] = '-D warnings'
-  sh 'rustup run --install nightly cargo doc --workspace --no-deps'
+  sh 'rustup run --install nightly cargo doc --workspace'
 end
 
 desc 'Generate Rust API documentation and open it in a web browser'
 task :'doc:open' do
   ENV['RUSTDOCFLAGS'] = '-D warnings'
-  sh 'rustup run --install nightly cargo doc --workspace --no-deps --open'
+  sh 'rustup run --install nightly cargo doc --workspace --open'
 end
 
 desc 'Run enforced ruby/spec suite'

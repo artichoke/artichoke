@@ -94,6 +94,14 @@ jobs:
       - name: Compile artichoke with all features
         run: cargo build --verbose --all-features
 
+      - name: Compile spinoso with no default features
+        run: cargo build --verbose --no-default-features
+        working-directory: "spinoso-array"
+
+      - name: Compile spinoso with all features
+        run: cargo build --verbose --all-features
+        working-directory: "spinoso-array"
+
   rust:
     name: Lint and format Rust
     runs-on: ubuntu-latest
