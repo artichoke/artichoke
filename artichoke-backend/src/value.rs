@@ -441,7 +441,7 @@ impl ArgCountError {
 
 impl fmt::Display for ArgCountError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Too many arguments for function call: ")?;
+        f.write_str("Too many arguments for function call: ")?;
         write!(
             f,
             "gave {} arguments, but Artichoke only supports a maximum of {} arguments",

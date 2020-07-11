@@ -234,7 +234,7 @@ impl ConstantNameError {
 
 impl fmt::Display for ConstantNameError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid constant name contained a NUL byte")
+        f.write_str("Invalid constant name contained a NUL byte")
     }
 }
 
@@ -388,7 +388,11 @@ impl NotDefinedError {
 
 impl fmt::Display for NotDefinedError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} '{}' not defined", self.item_type(), self.fqdn())
+        f.write_str(self.item_type())?;
+        f.write_str(" '")?;
+        f.write_str(self.fqdn())?;
+        f.write_str("' not defined")?;
+        Ok(())
     }
 }
 

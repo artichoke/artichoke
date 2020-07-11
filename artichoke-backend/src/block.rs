@@ -19,7 +19,7 @@ pub struct NoBlockGiven(Ruby);
 
 impl fmt::Display for NoBlockGiven {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "no block given")
+        f.write_str("no block given")
     }
 }
 

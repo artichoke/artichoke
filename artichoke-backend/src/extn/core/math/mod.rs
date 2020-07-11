@@ -467,7 +467,7 @@ impl DomainError {
 
 impl fmt::Display for DomainError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        f.write_str(self.0.as_ref())
     }
 }
 

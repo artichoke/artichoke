@@ -33,17 +33,17 @@ pub enum Rust {
 
 impl fmt::Display for Rust {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Rust ")?;
+        f.write_str("Rust ")?;
         match self {
-            Self::Bool => write!(f, "bool"),
-            Self::Bytes => write!(f, "Vec<u8>"),
-            Self::Float => write!(f, "f64"),
-            Self::Map => write!(f, "HashMap"),
-            Self::Object => write!(f, "Heap-allocated object"),
-            Self::SignedInt => write!(f, "i64"),
-            Self::String => write!(f, "String"),
-            Self::UnsignedInt => write!(f, "u64"),
-            Self::Vec => write!(f, "Vec<Value>"),
+            Self::Bool => f.write_str("bool"),
+            Self::Bytes => f.write_str("Vec<u8>"),
+            Self::Float => f.write_str("f64"),
+            Self::Map => f.write_str("HashMap"),
+            Self::Object => f.write_str("Heap-allocated object"),
+            Self::SignedInt => f.write_str("i64"),
+            Self::String => f.write_str("String"),
+            Self::UnsignedInt => f.write_str("u64"),
+            Self::Vec => f.write_str("Vec<Value>"),
         }
     }
 }
@@ -148,6 +148,8 @@ impl Ruby {
 
 impl fmt::Display for Ruby {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ruby {}", self.class_name())
+        f.write_str("Ruby ")?;
+        f.write_str(self.class_name())?;
+        Ok(())
     }
 }

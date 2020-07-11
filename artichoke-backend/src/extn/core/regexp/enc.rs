@@ -21,7 +21,7 @@ impl InvalidEncodingError {
 
 impl fmt::Display for InvalidEncodingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid Regexp encoding")
+        f.write_str("Invalid Regexp encoding")
     }
 }
 
@@ -86,7 +86,7 @@ impl From<&Encoding> for Int {
 
 impl fmt::Display for Encoding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.modifier_string())
+        f.write_str(self.modifier_string())
     }
 }
 

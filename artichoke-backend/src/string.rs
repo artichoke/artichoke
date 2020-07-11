@@ -114,7 +114,7 @@ impl WriteError {
 
 impl fmt::Display for WriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unable to write message into destination")
+        f.write_str("Unable to write message into destination")
     }
 }
 
@@ -198,7 +198,7 @@ impl IoWriteError {
 
 impl fmt::Display for IoWriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unable to write message into destination")
+        f.write_str("Unable to write message into destination")
     }
 }
 

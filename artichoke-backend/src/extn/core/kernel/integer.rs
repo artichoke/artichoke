@@ -112,8 +112,8 @@ impl error::Error for Utf8Error {
 impl fmt::Display for Utf8Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NulByte => write!(f, "String contained forbidden NUL byte"),
-            Self::InvalidUtf8(_) => write!(f, "String contained invalid UTF-8 bytes"),
+            Self::NulByte => f.write_str("String contained forbidden NUL byte"),
+            Self::InvalidUtf8(_) => f.write_str("String contained invalid UTF-8 bytes"),
         }
     }
 }

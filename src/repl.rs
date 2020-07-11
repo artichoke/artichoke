@@ -44,7 +44,7 @@ impl ParserAllocError {
 
 impl fmt::Display for ParserAllocError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Failed to initialize Ruby parser")
+        f.write_str("Failed to initialize Ruby parser")
     }
 }
 
@@ -64,7 +64,7 @@ impl ParserLineCountError {
 
 impl fmt::Display for ParserLineCountError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "The interpreter has parsed too many lines and must exit")
+        f.write_str("The interpreter has parsed too many lines and must exit")
     }
 }
 
@@ -86,7 +86,7 @@ impl ParserInternalError {
 
 impl fmt::Display for ParserInternalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "A fatal parsing error occurred")
+        f.write_str("A fatal parsing error occurred")
     }
 }
 

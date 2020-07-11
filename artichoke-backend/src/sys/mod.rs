@@ -38,12 +38,17 @@ impl Default for mrb_value {
 impl fmt::Debug for mrb_value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match types::ruby_from_mrb_value(*self) {
-            Ruby::Nil => write!(f, "nil"),
-            Ruby::Bool if unsafe { mrb_sys_value_is_true(*self) } => write!(f, "true"),
-            Ruby::Bool => write!(f, "false"),
-            Ruby::Fixnum => string::format_int_into(f, unsafe { mrb_sys_fixnum_to_cint(*self) })
-                .map_err(string::WriteError::into_inner),
-            Ruby::Float => write!(f, "{}", unsafe { mrb_sys_float_to_cdouble(*self) }),
+            Ruby::Nil => f.write_str("nil"),
+            Ruby::Bool if unsafe { mrb_sys_value_is_true(*self) } => f.write_str("true"),
+            Ruby::Bool => f.write_str("false"),
+            Ruby::Fixnum => {
+                let fixnum = unsafe { mrb_sys_fixnum_to_cint(*self) };
+                string::format_int_into(f, fixnum).map_err(string::WriteError::into_inner)
+            }
+            Ruby::Float => {
+                let float = unsafe { mrb_sys_float_to_cdouble(*self) };
+                write!(f, "{}", float)
+            }
             type_tag => write!(f, "<{}>", type_tag),
         }
     }
