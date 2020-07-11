@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::AsRef;
 use std::ffi::{c_void, CStr, CString};
-use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 

@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
-use std::fmt;
 use std::hash::{Hash, Hasher};
 
 use crate::def::{ConstantNameError, Method, NotDefinedError};
