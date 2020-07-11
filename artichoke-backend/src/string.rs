@@ -49,10 +49,9 @@ where
 {
     for (start, end, ch) in string.char_indices() {
         if ch == '\u{FFFD}' {
-            if let Some(slice) = string.get(start..end) {
-                for byte in slice {
-                    write!(f, r"\x{:X}", byte).map_err(WriteError)?;
-                }
+            let slice = &string[start..end];
+            for byte in slice {
+                write!(f, r"\x{:X}", byte).map_err(WriteError)?;
             }
         } else {
             write!(f, "{}", ch.escape_debug()).map_err(WriteError)?;
