@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 class KeyError
-  attr_reader :key
-  attr_reader :receiver
+  attr_reader :key, :receiver
 
   def initialize(message = nil, receiver: nil, key: nil)
     @receiver = receiver
@@ -37,10 +36,10 @@ end
 class UncaughtThrowError
   # @!attribute [r] tag
   #   @return [Symbol] tag object, mostly a Symbol
-  attr_reader :tag
+  #
   # @!attribute [r] value
   #   @return [Array] extra parameters passed in
-  attr_reader :value
+  attr_reader :tag, :value
 
   # @param [Symbol] tag  object to throw
   # @param [Object] value  any object to return to the catch block

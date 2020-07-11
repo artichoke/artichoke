@@ -13,11 +13,7 @@
 class Thread
   alias __raise__ raise
 
-  attr_accessor :abort_on_exception
-  attr_accessor :name
-  attr_accessor :report_on_exception
-
-  attr_accessor :__unwind_with_exception
+  attr_accessor :abort_on_exception, :name, :report_on_exception, :__unwind_with_exception
 
   def self.__mark_unwind(exc)
     @thread_stack.each do |thread|
