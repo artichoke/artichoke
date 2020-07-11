@@ -257,12 +257,6 @@ impl Spec {
     }
 }
 
-impl fmt::Display for Spec {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "artichoke module spec -- {}", self.fqname())
-    }
-}
-
 impl Hash for Spec {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name().hash(state);

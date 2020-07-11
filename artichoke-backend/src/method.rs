@@ -120,17 +120,6 @@ impl Spec {
     }
 }
 
-impl fmt::Display for Spec {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.method_type() {
-            Type::Class => write!(f, "self method spec -- {}", self.name),
-            Type::Global => write!(f, "global method spec -- {}", self.name),
-            Type::Instance => write!(f, "instance method spec -- {}", self.name),
-            Type::Module => write!(f, "module method spec -- {}", self.name),
-        }
-    }
-}
-
 impl Eq for Spec {}
 
 impl PartialEq for Spec {
