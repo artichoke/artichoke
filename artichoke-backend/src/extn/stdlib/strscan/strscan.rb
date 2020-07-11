@@ -7,8 +7,7 @@ class StringScanner
     self
   end
 
-  attr_reader :charpos
-  attr_reader :string
+  attr_reader :charpos, :string
 
   def string=(str)
     @string = String.try_convert(str)
