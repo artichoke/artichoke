@@ -46,7 +46,7 @@ impl From<Options> for Int {
 
 impl fmt::Display for Options {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_display_modifier())
+        f.write_str(self.as_display_modifier())
     }
 }
 

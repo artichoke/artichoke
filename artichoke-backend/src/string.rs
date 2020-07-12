@@ -49,10 +49,9 @@ where
 {
     for (start, end, ch) in string.char_indices() {
         if ch == '\u{FFFD}' {
-            if let Some(slice) = string.get(start..end) {
-                for byte in slice {
-                    write!(f, r"\x{:X}", byte).map_err(WriteError)?;
-                }
+            let slice = &string[start..end];
+            for byte in slice {
+                write!(f, r"\x{:X}", byte).map_err(WriteError)?;
             }
         } else {
             write!(f, "{}", ch.escape_debug()).map_err(WriteError)?;
@@ -114,7 +113,7 @@ impl WriteError {
 
 impl fmt::Display for WriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unable to write message into destination")
+        f.write_str("Unable to write message into destination")
     }
 }
 
@@ -198,7 +197,7 @@ impl IoWriteError {
 
 impl fmt::Display for IoWriteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unable to write message into destination")
+        f.write_str("Unable to write message into destination")
     }
 }
 

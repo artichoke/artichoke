@@ -130,7 +130,7 @@ impl Eq for Box<dyn RegexpType> {}
 
 impl fmt::Debug for &dyn RegexpType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.debug())
+        f.write_str(&self.debug())
     }
 }
 

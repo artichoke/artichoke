@@ -369,11 +369,12 @@ macro_rules! ruby_exception_impl {
 
         impl fmt::Display for $exception {
             fn fmt(&self, mut f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                let classname = self.name();
-                write!(f, "{} (", classname)?;
+                f.write_str(&self.name())?;
+                f.write_str(" (")?;
                 string::format_unicode_debug_into(&mut f, &self.message())
                     .map_err(string::WriteError::into_inner)?;
-                write!(f, ")")
+                f.write_str(")")?;
+                Ok(())
             }
         }
 

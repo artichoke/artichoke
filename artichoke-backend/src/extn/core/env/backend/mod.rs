@@ -51,7 +51,7 @@ impl EnvArgumentError {
 
 impl fmt::Display for EnvArgumentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unable to write message into destination")
+        f.write_str("Unable to write message into destination")
     }
 }
 

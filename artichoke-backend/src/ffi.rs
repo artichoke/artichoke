@@ -76,10 +76,7 @@ impl InterpreterExtractError {
 
 impl fmt::Display for InterpreterExtractError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Failed to extract Artichoke Ruby interpreter from mrb_state userdata"
-        )
+        f.write_str("Failed to extract Artichoke Ruby interpreter from mrb_state userdata")
     }
 }
 
@@ -167,7 +164,7 @@ impl ConvertBytesError {
 
 impl fmt::Display for ConvertBytesError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Could not convert between bytes and platform string")
+        f.write_str("Could not convert between bytes and platform string")
     }
 }
 

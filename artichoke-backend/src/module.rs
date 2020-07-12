@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::AsRef;
 use std::ffi::{c_void, CStr, CString};
-use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
@@ -254,12 +253,6 @@ impl Spec {
     #[must_use]
     pub fn rclass(&self) -> Rclass {
         Rclass::new(self.sym, self.cstring.clone(), self.enclosing_scope.clone())
-    }
-}
-
-impl fmt::Display for Spec {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "artichoke module spec -- {}", self.fqname())
     }
 }
 
