@@ -532,37 +532,16 @@ mod tests {
 
             let root = interp.module_spec::<Root>().unwrap().unwrap();
             assert_eq!(root.fqname().as_ref(), "A");
-            assert_eq!(&format!("{}", root), "artichoke module spec -- A");
             let mod_under_root = interp.module_spec::<ModuleUnderRoot>().unwrap().unwrap();
             assert_eq!(mod_under_root.fqname().as_ref(), "A::B");
-            assert_eq!(
-                &format!("{}", mod_under_root),
-                "artichoke module spec -- A::B"
-            );
             let cls_under_root = interp.class_spec::<ClassUnderRoot>().unwrap().unwrap();
             assert_eq!(cls_under_root.fqname().as_ref(), "A::C");
-            assert_eq!(
-                &format!("{}", cls_under_root),
-                "artichoke class spec -- A::C"
-            );
             let cls_under_mod = interp.class_spec::<ClassUnderModule>().unwrap().unwrap();
             assert_eq!(cls_under_mod.fqname().as_ref(), "A::B::D");
-            assert_eq!(
-                &format!("{}", cls_under_mod),
-                "artichoke class spec -- A::B::D"
-            );
             let mod_under_cls = interp.module_spec::<ModuleUnderClass>().unwrap().unwrap();
             assert_eq!(mod_under_cls.fqname().as_ref(), "A::C::E");
-            assert_eq!(
-                &format!("{}", mod_under_cls),
-                "artichoke module spec -- A::C::E"
-            );
             let cls_under_cls = interp.class_spec::<ClassUnderClass>().unwrap().unwrap();
             assert_eq!(cls_under_cls.fqname().as_ref(), "A::C::F");
-            assert_eq!(
-                &format!("{}", cls_under_cls),
-                "artichoke class spec -- A::C::F"
-            );
         }
     }
 
