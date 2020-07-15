@@ -67,9 +67,10 @@ class SpecCollector
 
   def exception(state)
     skipped = false
-    if state.exception.is_a?(ArgumentError)
+    case state.exception
+    when ArgumentError
       skipped = true if state.message =~ /Oniguruma.*UTF-8/
-    elsif state.exception.is_a?(NoMethodError)
+    when NoMethodError
       skipped = true if state.message =~ /'allocate'/
       skipped = true if state.message =~ /'encoding'/
       skipped = true if state.message =~ /'private_instance_methods'/
@@ -82,24 +83,24 @@ class SpecCollector
       skipped = true if state.message =~ /'untrust'/
       skipped = true if state.message =~ /'untrusted\?'/
       skipped = true if state.message =~ /undefined method 'Rational'/
-    elsif state.exception.is_a?(NameError)
+    when NameError
       skipped = true if state.message =~ /uninitialized constant Bignum/
-    elsif state.exception.is_a?(SpecExpectationNotMetError)
+    when SpecExpectationNotMetError
       skipped = true if state.it =~ /encoding/
       skipped = true if state.it =~ /ASCII/
       skipped = true if state.it =~ /is too big/ # mruby does not have Bignum
       skipped = true if state.it =~ /hexadecimal digits/
-    elsif state.exception.is_a?(SyntaxError)
+    when SyntaxError
       skipped = true if state.it =~ /ASCII/
       skipped = true if state.it =~ /hexadecimal digits/
       skipped = true if state.message =~ /Regexp pattern/
-    elsif state.exception.is_a?(TypeError)
+    when TypeError
       skipped = true if state.it =~ /encoding/
-    elsif state.exception.is_a?(NotImplementedError)
+    when NotImplementedError
       @not_implemented += 1
       @spec_state = "\b#{YELLOW}N#{PLAIN}"
       return
-    elsif state.exception.is_a?(RuntimeError)
+    when RuntimeError
       skipped = true if state.message =~ /invalid UTF-8/
     end
     skipped = true if state.it == 'does not add a URI method to Object instances'
