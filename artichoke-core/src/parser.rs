@@ -1,7 +1,6 @@
 //! Parse code on an Artichoke interpreter.
 
-use std::error;
-use std::fmt;
+use core::fmt;
 
 /// Manage parser state, active filename context, and line number metadata.
 ///
@@ -11,7 +10,7 @@ pub trait Parser {
     /// Concrete type for parser context.
     type Context;
     /// Error type for Parser APIs.
-    type Error: error::Error;
+    type Error;
 
     /// Reset parser state to initial values.
     ///
@@ -80,4 +79,5 @@ impl fmt::Display for IncrementLinenoError {
     }
 }
 
-impl error::Error for IncrementLinenoError {}
+#[cfg(feature = "std")]
+impl std::error::Error for IncrementLinenoError {}

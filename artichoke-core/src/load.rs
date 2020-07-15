@@ -1,8 +1,11 @@
 //! Load Ruby and Rust sources into the VM.
 
-use std::borrow::Cow;
-use std::error;
-use std::path::Path;
+use alloc::borrow::Cow;
+
+#[cfg(feature = "std")]
+type Path = std::path::Path;
+#[cfg(not(feature = "std"))]
+type Path = str;
 
 use crate::file::File;
 
@@ -13,10 +16,10 @@ pub trait LoadSources {
     type Artichoke;
 
     /// Concrete type for errors returned from filesystem IO.
-    type Error: error::Error;
+    type Error;
 
     /// Concrete type for errors returned by `File::require`.
-    type Exception: error::Error;
+    type Exception;
 
     /// Add a Rust extension hook to the virtual filesystem. A stub Ruby file is
     /// added to the filesystem and [`File::require`] will dynamically define

@@ -3,8 +3,7 @@
 //! Global variables can be an arbitrary Ruby value. Variable names must start
 //! with `$`.
 
-use std::borrow::Cow;
-use std::error;
+use alloc::borrow::Cow;
 
 use crate::value::Value;
 
@@ -17,7 +16,7 @@ pub trait Globals {
     type Value: Value;
 
     /// Concrete error type for failures manipulating global variables.
-    type Error: error::Error;
+    type Error;
 
     /// Set global variable pointed to by `name` to the given Ruby value.
     ///

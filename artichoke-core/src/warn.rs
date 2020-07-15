@@ -1,7 +1,5 @@
 //! Emit warnings during interpreter execution.
 
-use std::error;
-
 /// Emit warnings during interpreter execution to stderr.
 ///
 /// Some functionality required to be compliant with ruby/spec is deprecated or
@@ -11,7 +9,7 @@ use std::error;
 /// [warningmod]: https://ruby-doc.org/core-2.6.3/Warning.html#method-i-warn
 pub trait Warn {
     /// Concrete error type for errors encountered when outputting warnings.
-    type Error: error::Error;
+    type Error;
 
     /// Emit a warning message using `Warning#warn`.
     ///

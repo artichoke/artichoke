@@ -1,16 +1,13 @@
 //! Types that implement `Value` can be represented in the Artichoke VM.
 
-use std::error;
+use alloc::vec::Vec;
 
 use crate::convert::{TryConvert, TryConvertMut};
 
 /// A boxed Ruby value owned by the interpreter.
 ///
 /// `Value` is equivalent to an `RValue` in MRI or `mrb_value` in mruby.
-pub trait Value
-where
-    Self: Sized,
-{
+pub trait Value {
     /// Concrete type for Artichoke interpreter.
     type Artichoke;
 
@@ -24,7 +21,7 @@ where
     type Block;
 
     /// Concrete error type for funcall errors.
-    type Error: error::Error;
+    type Error;
 
     /// Call a method on this [`Value`] with arguments and an optional block.
     ///
@@ -49,6 +46,7 @@ where
     /// If a [`TryConvert`] conversion fails, then an error is returned.
     fn try_into<T>(self, interp: &Self::Artichoke) -> Result<T, Self::Error>
     where
+        Self: Sized,
         Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
     {
         interp.try_convert(self)
@@ -62,6 +60,7 @@ where
     /// If a [`TryConvertMut`] conversion fails, then an error is returned.
     fn try_into_mut<T>(self, interp: &mut Self::Artichoke) -> Result<T, Self::Error>
     where
+        Self: Sized,
         Self::Artichoke: TryConvertMut<Self, T, Error = Self::Error>,
     {
         interp.try_convert_mut(self)

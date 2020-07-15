@@ -1,13 +1,11 @@
 //! Interpreter global psuedorandom number generator.
 
-use std::error;
-
 /// Interpreter global psuedorandom number generator.
 ///
 /// Implementors of this trait back the `Random::DEFAULT` PRNG.
 pub trait Prng {
     /// Concrete type for PRNG errors.
-    type Error: error::Error;
+    type Error;
 
     /// Cocnrete type representing the internal state of all PRNG backends.
     type InternalState;

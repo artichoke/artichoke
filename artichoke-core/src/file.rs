@@ -1,7 +1,5 @@
 //! File-backed Rust extensions for the Artichoke VM.
 
-use std::error;
-
 /// Rust extension hook that can be required.
 ///
 /// `File`s are mounted in the interpreter filesystem and can modify interpreter
@@ -11,7 +9,7 @@ pub trait File {
     type Artichoke;
 
     /// Concrete error type for eval functions.
-    type Error: error::Error;
+    type Error;
 
     /// Called when the filename mapped to this type is required by the VM.
     ///

@@ -4,30 +4,72 @@
 #![warn(missing_debug_implementations)]
 #![warn(rust_2018_idioms)]
 #![forbid(unsafe_code)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-//! # artichoke-core
+//! This crate provides a set of traits that, when implemented, comprise a
+//! complete Ruby interpreter.
 //!
-//! `artichoke-core` crate provides a set of traits that, when implemented,
-//! provide a complete Ruby interpreter.
+//! `artichoke-core` is `no_std` + `alloc` with an optional (enabled by default)
+//! `std` feature.
+//!
+//! Interpreters implement the traits in Artichoke Core to indicate which
+//! capabilities they offer. Defining interpreters by their capabilities allows
+//! for interpreter agnostic implementations of Ruby Core and Standard Library.
+//!
+//! # Interpreter APIs
+//!
+//! Artichoke Core defines traits for the following interpreter capabilities:
+//!
+//! - [`DefineConstant`](constant::DefineConstant): Define global, class, and
+//!   module constants to be arbitrary Ruby [`Value`](value::Value)s.
+//! - [`Eval`](eval::Eval): Execute Ruby source code on an interpreter from
+//!   various sources.
+//! - [`Globals`](globals::Globals): Get, set, and unset interpreter-level
+//!   global variables.
+//! - [`Intern`](intern::Intern): Intern bytestrings to a cheap to copy and
+//!   compare symbol type.
+//! - [`Io`](io::Io): External I/O APIs, such as writing to the standard output
+//!   of the current process.
+//! - [`LoadSources`](load::LoadSources): [Require][Kernel#require] source code
+//!   from interpreter disk or [`File`](file::File) gems.
+//! - [`Parser`](parser::Parser): Manipulate the parser state, e.g. setting the
+//!   current filename.
+//! - [`Prng`](prng::Prng): An interpreter-level psuedorandom number generator
+//!   that is the backend for [`Random::DEFAULT`].
+//! - [`Regexp`](regexp::Regexp): Manipulate [`Regexp`] global state.
+//! - [`ReleaseMetadata`](release_metadata::ReleaseMetadata): Enable
+//!   interpreters to describe themselves.
+//! - [`TopSelf`](top_self::TopSelf): Access to the root execution context.
+//! - [`Warn`](warn::Warn): Emit warnings.
+//!
+//! Artichoke Core also describes what capabilities a Ruby
+//! [`Value`](value::Value) must have and how to [convert] between Ruby VM and
+//! Rust types.
+//!
+//! # Examples
 //!
 //! [`artichoke-backend`](https://artichoke.github.io/artichoke/artichoke_backend/)
 //! is one implementation of the `artichoke-core` traits.
 //!
-//! ## Core APIs
+//! To use all of the APIs defined in Artichoke Core, bring the traits into
+//! scope by importing the prelude:
 //!
-//! `artichoke-core` contains traits for the core set of APIs an interpreter
-//! must implement. The traits in `artichoke-core` define:
+//! ```
+//! use artichoke_core::prelude::*;
+//! ```
 //!
-//! - APIs a concrete VM must implement to support the Artichoke runtime and
-//!   frontends.
-//! - How to box polymorphic core types into [Ruby `Value`](value::Value).
-//! - [Interoperability](convert) between the VM backend and the
-//!   Rust-implemented core.
+//! # Crate features
 //!
-//! Some of the core APIs a Ruby implementation must provide are
-//! [evaluating code](eval::Eval),
-//! [converting Rust data structures to boxed `Value`s on the interpreter heap](convert::ConvertMut),
-//! and [interning `Symbol`s](intern::Intern).
+//! All features are enabled by default:
+//!
+//! - **std**: By default, `artichoke-core` is `no_std` + `alloc`. Enabling
+//!   this feature adds several trait methods that depend on `OsStr` and `Path`
+//!   as well as several implementations of `std::error::Error`.
+//!
+//! [Kernel#require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+//! [`Random::DEFAULT`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT
+//! [`Regexp`]: https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
+//! [convert]: crate::convert
 
 #![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_core")]
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
@@ -46,6 +88,8 @@ macro_rules! readme {
 }
 #[cfg(doctest)]
 readme!();
+
+extern crate alloc;
 
 pub mod constant;
 pub mod convert;

@@ -1,6 +1,6 @@
 //! Ruby and Rust type mappings.
 
-use std::fmt;
+use core::fmt;
 
 /// Classes of Rust types.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -75,8 +75,9 @@ pub enum Ruby {
     Float,
     /// Ruby `Hash` type.
     ///
-    /// Similar to a [`HashMap`](std::collections::HashMap), but with remembered
-    /// insertion order.
+    /// Similar to a [`HashMap`], but iterates by insertion order.
+    ///
+    /// [`HashMap`]: https://doc.rust-lang.org/std/collections/struct.HashMap.html
     Hash,
     /// Internal type for non-heap allocated structs.
     InlineStruct,
@@ -95,7 +96,7 @@ pub enum Ruby {
     Proc,
     /// Ruby `Range` type.
     ///
-    /// Similar to a Rust [iterator](std::iter).
+    /// Similar to a Rust [iterator](core::iter).
     Range,
     /// Internal type for the singleton class of an object.
     SingletonClass,
