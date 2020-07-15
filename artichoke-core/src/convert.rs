@@ -1,12 +1,10 @@
 //! Convert between Rust and Ruby objects.
 
-use std::error;
-
 /// Infallible conversion between two types.
 ///
 /// Implementors may not allocate on the interpreter heap.
 ///
-/// See [`std::convert::From`].
+/// See [`core::convert::From`].
 /// See [`ConvertMut`].
 pub trait Convert<T, U> {
     /// Performs the infallible conversion.
@@ -17,12 +15,12 @@ pub trait Convert<T, U> {
 ///
 /// Implementors may not allocate on the interpreter heap.
 ///
-/// See [`std::convert::TryFrom`].
+/// See [`core::convert::TryFrom`].
 /// See [`TryConvertMut`].
 #[allow(clippy::module_name_repetitions)]
 pub trait TryConvert<T, U> {
     /// Error type for failed conversions.
-    type Error: error::Error;
+    type Error;
 
     /// Performs the fallible conversion.
     ///
@@ -37,7 +35,7 @@ pub trait TryConvert<T, U> {
 ///
 /// Implementors may allocate on the interpreter heap.
 ///
-/// See [`std::convert::From`].
+/// See [`core::convert::From`].
 /// See [`Convert`].
 #[allow(clippy::module_name_repetitions)]
 pub trait ConvertMut<T, U> {
@@ -49,11 +47,11 @@ pub trait ConvertMut<T, U> {
 ///
 /// Implementors may allocate on the interpreter heap.
 ///
-/// See [`std::convert::TryFrom`].
+/// See [`core::convert::TryFrom`].
 /// See [`TryConvert`].
 pub trait TryConvertMut<T, U> {
     /// Error type for failed conversions.
-    type Error: error::Error;
+    type Error;
 
     /// Performs the fallible conversion.
     ///

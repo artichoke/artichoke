@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-core"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 description = "Core traits for implementing an Artichoke Ruby interpreter"
@@ -11,3 +11,10 @@ keywords = ["artichoke", "artichoke-ruby", "ruby"]
 categories = ["data-structures", "rust-patterns"]
 
 [dependencies]
+
+[features]
+default = ["std"]
+# By default, `artichoke-core` is `no_std` + `alloc`. This feature enables some
+# APIs that depend on `OsStr` and `Path`, as well as some `std::error::Error`
+# impls.
+std = []

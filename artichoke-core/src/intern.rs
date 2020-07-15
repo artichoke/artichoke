@@ -5,8 +5,7 @@
 //!
 //! [symbol]: https://ruby-doc.org/core-2.6.3/Symbol.html
 
-use std::borrow::Cow;
-use std::error;
+use alloc::borrow::Cow;
 
 /// Store and retrieve bytestrings that have the same lifetime as the
 /// interpreter.
@@ -21,7 +20,7 @@ pub trait Intern {
     type Symbol: Copy;
 
     /// Concrete type for errors returned while interning symbols.
-    type Error: error::Error;
+    type Error;
 
     /// Store an immutable bytestring for the life of the interpreter.
     ///

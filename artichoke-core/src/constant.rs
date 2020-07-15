@@ -3,8 +3,6 @@
 //! Constants can be an arbitrary Ruby value. Constants can be defined globally,
 //! on a class, or on a module.
 
-use std::error;
-
 use crate::value::Value;
 
 /// Deifne constants on an interprter.
@@ -17,7 +15,7 @@ pub trait DefineConstant {
     type Value: Value;
 
     /// Concrete error type for fallible operations.
-    type Error: error::Error;
+    type Error;
 
     /// Define a global constant.
     ///

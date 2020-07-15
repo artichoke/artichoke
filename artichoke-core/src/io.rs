@@ -1,11 +1,9 @@
 //! I/O read and write APIs.
 
-use std::error;
-
 /// Make I/O external to the interpreter.
 pub trait Io {
     /// Concrete error type for errors encountered when reading and writing.
-    type Error: error::Error;
+    type Error;
 
     /// Writes the given bytes to the interpreter stdout stream.
     ///

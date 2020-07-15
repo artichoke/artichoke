@@ -1,12 +1,10 @@
 //! Track `Regexp` global state.
 
-use std::error;
-
 /// Track the state of `Regexp` globals and global interpreter state.
 pub trait Regexp {
     /// Concrete error type for errors encountered when manipulating `Regexp`
     /// state.
-    type Error: error::Error;
+    type Error;
 
     /// Retrieve the current number of set `Regexp` global variables.
     ///
