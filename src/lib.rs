@@ -17,7 +17,7 @@
 //! - A Rust and Ruby implementation of Ruby Core and Standard Library using
 //!   high-quality Rust dependencies and modern Ruby.
 //! - Support for injecting Rust code and types into the interpreter with a
-//!   rubygems-style [`File`](backend::prelude::core::File) API.
+//!   rubygems-style [`File`](prelude::File) API.
 //! - The ability to disable parts of the interpreter VM or library functions at
 //!   compile time. For example, deny access to the system environ by disabling
 //!   the `core-env-system` feature.
@@ -27,22 +27,23 @@
 //! You can create an interpreter and begin executing code on it:
 //!
 //! ```
-//! # use artichoke::prelude::core::*;
-//! # use artichoke::prelude::*;
-//! # fn main() -> Result<(), Exception> {
+//! use artichoke::prelude::*;
+//!
+//! # fn example() -> Result<(), Exception> {
 //! let mut interp = artichoke::interpreter()?;
 //! let result = interp.eval(b"2 + 5")?;
 //! # Ok(())
 //! # }
+//! # example().unwrap();
 //! ```
 //!
 //! Artichoke supports calling Ruby functions from Rust and converting between
 //! Ruby boxed values and Rust native types:
 //!
 //! ```
-//! # use artichoke::prelude::core::*;
-//! # use artichoke::prelude::*;
-//! # fn main() -> Result<(), Exception> {
+//! use artichoke::prelude::*;
+//!
+//! # fn example() -> Result<(), Exception> {
 //! let mut interp = artichoke::interpreter()?;
 //! let s = interp.convert_mut("💎");
 //! let codepoint = s.funcall(&mut interp, "ord", &[] /* args */, None /* block */)?;
@@ -50,6 +51,7 @@
 //! assert_eq!(128142, codepoint);
 //! # Ok(())
 //! # }
+//! # example().unwrap();
 //! ```
 //!
 //! ## Crate Features

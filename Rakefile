@@ -14,7 +14,7 @@ namespace :lint do
     roots.each do |root|
       FileUtils.touch(root)
     end
-    sh 'cargo clippy'
+    sh 'cargo clippy --workspace --all-features'
   end
 
   desc 'Run RuboCop'

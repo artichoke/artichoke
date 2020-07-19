@@ -14,7 +14,6 @@ use crate::backend::ffi;
 use crate::backend::state::parser::Context;
 use crate::backend::string;
 use crate::backtrace;
-use crate::prelude::core::{ConvertMut, Eval, Globals, Parser};
 use crate::prelude::*;
 
 const INLINE_EVAL_SWITCH_FILENAME: &[u8] = b"-e";

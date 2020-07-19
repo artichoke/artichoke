@@ -14,8 +14,7 @@ use termcolor::WriteColor;
 use crate::backend::state::parser::Context;
 use crate::backtrace;
 use crate::parser::{Parser, State};
-use crate::prelude::core::{Eval, Parser as _, Value};
-use crate::prelude::*;
+use crate::prelude::{Parser as _, *};
 
 const REPL_FILENAME: &[u8] = b"(airb)";
 

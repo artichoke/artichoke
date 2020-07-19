@@ -21,7 +21,6 @@ The `artichoke-backend` interpreter implements
 [`Eval` from `artichoke-core`](https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html).
 
 ```rust
-use artichoke_backend::prelude::core::*;
 use artichoke_backend::prelude::*;
 
 fn example() -> Result<(), Exception> {
@@ -40,7 +39,6 @@ fn example() -> Result<(), Exception> {
 which enables calling Ruby functions from Rust.
 
 ```rust
-use artichoke_backend::prelude::core::*;
 use artichoke_backend::prelude::*;
 
 fn example() -> Result<(), Exception> {

@@ -59,7 +59,7 @@
 #[macro_use]
 extern crate rust_embed;
 
-use artichoke::prelude::core::*;
+use artichoke::prelude::*;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
@@ -157,6 +157,7 @@ where
 ///
 /// This function evaluates a ruby/spec source file against the parsed spec
 /// manifest config to determine if the source should be tested.
+#[must_use]
 pub fn is_require_path(config: &model::Config, name: &str) -> Option<()> {
     let path = Path::new(name);
     let mut components = path.components();
