@@ -61,8 +61,7 @@ MRB_API struct RClass *mrb_sys_class_ptr(mrb_value value);
 
 MRB_API struct RClass *mrb_sys_class_to_rclass(mrb_value value);
 
-MRB_API struct RClass *mrb_sys_class_of_value(struct mrb_state *mrb,
-                                              mrb_value value);
+MRB_API struct RClass *mrb_sys_class_of_value(struct mrb_state *mrb, mrb_value value);
 
 // Construct `mrb_value`s
 
@@ -96,13 +95,11 @@ MRB_API mrb_value mrb_sys_new_symbol(mrb_sym id);
 
 MRB_API void mrb_sys_set_instance_tt(struct RClass *class, enum mrb_vtype type);
 
-MRB_API void mrb_sys_data_init(mrb_value *value, void *ptr,
-                               const mrb_data_type *type);
+MRB_API void mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type);
 
 // Raise exceptions and debug info
 
-MRB_API mrb_noreturn void mrb_sys_raise(struct mrb_state *mrb,
-                                        const char *eclass, const char *msg);
+MRB_API mrb_noreturn void mrb_sys_raise(struct mrb_state *mrb, const char *eclass, const char *msg);
 
 MRB_API void mrb_sys_raise_current_exception(struct mrb_state *mrb);
 

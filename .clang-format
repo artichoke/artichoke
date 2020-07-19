@@ -1,0 +1,12 @@
+---
+BasedOnStyle: Google
+IndentWidth: 2
+ColumnLimit: 100
+---
+Language: Cpp
+PointerAlignment: Right
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+BreakBeforeBraces: Linux
+UseTab: Never
+TabWidth: 2
+SortIncludes: false
