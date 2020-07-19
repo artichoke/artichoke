@@ -1,6 +1,5 @@
 //! Embedded copy of ruby/spec suites.
 
-use artichoke::prelude::core::*;
 use artichoke::prelude::*;
 
 /// Load ruby/spec sources into the Artichoke virtual filesystem.

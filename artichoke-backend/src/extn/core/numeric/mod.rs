@@ -57,9 +57,9 @@ pub enum Coercion {
 /// # Examples
 ///
 /// ```
-/// # use artichoke_backend::prelude::core::*;
+/// # use artichoke_backend::prelude::*;
 /// # use artichoke_backend::extn::core::numeric::{self, Coercion};
-/// # fn main() -> Result<(), Box<std::error::Error>> {
+/// # fn example() -> Result<(), Box<std::error::Error>> {
 /// # let mut interp = artichoke_backend::interpreter()?;
 /// let x = interp.convert(1_i64);
 /// let y = interp.convert_mut(2.5_f64);
@@ -72,6 +72,7 @@ pub enum Coercion {
 /// assert_eq!(Coercion::Integer(1, 2), numeric::coerce(&mut interp, x, y)?);
 /// # Ok(())
 /// # }
+/// # example().unwrap();
 /// ```
 ///
 /// [numeric]: https://ruby-doc.org/core-2.6.3/Numeric.html#method-i-coerce

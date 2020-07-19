@@ -2,7 +2,6 @@
 
 use std::path::Path;
 
-use artichoke::prelude::core::*;
 use artichoke::prelude::*;
 
 /// Load `MSpec` sources into the Artichoke virtual filesystem.

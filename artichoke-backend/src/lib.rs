@@ -19,19 +19,19 @@
 //! ### Evaling Source Code
 //!
 //! The `artichoke-backend` interpreter implements
-//! [`Eval` from `artichoke-core`](crate::prelude::core::Eval).
+//! [`Eval` from `artichoke-core`](crate::core::Eval).
 //!
 //! ```rust
-//! use artichoke_backend::prelude::core::*;
 //! use artichoke_backend::prelude::*;
 //!
-//! # fn main() -> Result<(), Exception> {
+//! # fn example() -> Result<(), Exception> {
 //! let mut interp = artichoke_backend::interpreter()?;
 //! let result = interp.eval(b"10 * 10")?;
 //! let result = result.try_into::<i64>(&interp)?;
 //! assert_eq!(result, 100);
 //! # Ok(())
 //! # }
+//! # example().unwrap();
 //! ```
 //!
 //! ### Calling Functions on Ruby Objects
@@ -41,10 +41,9 @@
 //! calling Ruby functions from Rust.
 //!
 //! ```rust
-//! use artichoke_backend::prelude::core::*;
 //! use artichoke_backend::prelude::*;
 //!
-//! # fn main() -> Result<(), Exception> {
+//! # fn example() -> Result<(), Exception> {
 //! let mut interp = artichoke_backend::interpreter()?;
 //! let result = interp.eval(b"'ruby funcall'")?;
 //! let result = result.funcall(&mut interp, "length", &[], None)?;
@@ -52,6 +51,7 @@
 //! assert_eq!(result, 12);
 //! # Ok(())
 //! # }
+//! # example().unwrap();
 //! ```
 //!
 //! ## Virtual Filesystem and `Kernel#require`
@@ -165,7 +165,7 @@ pub use artichoke_core::prelude as core;
 ///
 /// The prelude may grow over time as additional items see ubiquitous use.
 pub mod prelude {
-    pub use crate::core;
+    pub use artichoke_core::prelude::*;
 
     pub use crate::exception::{raise, Exception, RubyException};
     pub use crate::extn::core::exception::{Exception as _, *};
