@@ -11,7 +11,7 @@ keywords = ["artichoke", "artichoke-ruby", "ruby", "ruby-spec", "testing"]
 categories = ["development-tools::testing"]
 
 [dependencies]
-rust-embed = "5.5.0"
+rust-embed = "5.6.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 structopt = "0.3"
