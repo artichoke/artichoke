@@ -181,28 +181,45 @@ impl Array {
         second: Option<Value>,
         block: Option<Block>,
     ) -> Result<Self, Exception> {
-        let result = if let Some(mut first) = first {
-            if let Ok(ary) = unsafe { Self::unbox_from_value(&mut first, interp) } {
-                ary.0.clone()
-            } else if first.respond_to(interp, "to_ary")? {
-                let mut other = first.funcall(interp, "to_ary", &[], None)?;
-                if let Ok(other) = unsafe { Self::unbox_from_value(&mut other, interp) } {
-                    other.0.clone()
+        let vector = match (first, second, block) {
+            (Some(mut array_or_len), default, None) => {
+                if let Ok(len) = array_or_len.try_into::<Int>(interp) {
+                    let len = usize::try_from(len)
+                        .map_err(|_| ArgumentError::from("negative array size"))?;
+                    let default = default.unwrap_or_else(Value::nil);
+                    SpinosoArray::with_len_and_default(len, default.inner())
                 } else {
-                    let mut message = String::from("can't convert ");
-                    message.push_str(first.pretty_name(interp));
-                    message.push_str(" to Array (");
-                    message.push_str(first.pretty_name(interp));
-                    message.push_str("#to_ary gives ");
-                    message.push_str(other.pretty_name(interp));
-                    return Err(TypeError::from(message).into());
+                    let unboxed = unsafe { Self::unbox_from_value(&mut array_or_len, interp) };
+                    if let Ok(ary) = unboxed {
+                        ary.0.clone()
+                    } else if array_or_len.respond_to(interp, "to_ary")? {
+                        let mut other = array_or_len.funcall(interp, "to_ary", &[], None)?;
+                        let unboxed = unsafe { Self::unbox_from_value(&mut other, interp) };
+                        if let Ok(other) = unboxed {
+                            other.0.clone()
+                        } else {
+                            let mut message = String::from("can't convert ");
+                            message.push_str(array_or_len.pretty_name(interp));
+                            message.push_str(" to Array (");
+                            message.push_str(array_or_len.pretty_name(interp));
+                            message.push_str("#to_ary gives ");
+                            message.push_str(other.pretty_name(interp));
+                            return Err(TypeError::from(message).into());
+                        }
+                    } else {
+                        let len = array_or_len.implicitly_convert_to_int(interp)?;
+                        let len = usize::try_from(len)
+                            .map_err(|_| ArgumentError::from("negative array size"))?;
+                        let default = default.unwrap_or_else(Value::nil);
+                        SpinosoArray::with_len_and_default(len, default.inner())
+                    }
                 }
-            } else {
-                let len = first.implicitly_convert_to_int(interp)?;
-                let len =
-                    usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
-                if let Some(block) = block {
-                    if second.is_some() {
+            }
+            (Some(mut array_or_len), default, Some(block)) => {
+                if let Ok(len) = array_or_len.try_into::<Int>(interp) {
+                    let len = usize::try_from(len)
+                        .map_err(|_| ArgumentError::from("negative array size"))?;
+                    if default.is_some() {
                         interp.warn(b"warning: block supersedes default value argument")?;
                     }
                     let mut buffer = SpinosoArray::with_capacity(len);
@@ -216,19 +233,50 @@ impl Array {
                     }
                     buffer
                 } else {
-                    let default = second.unwrap_or_else(Value::nil);
-                    SpinosoArray::with_len_and_default(len, default.inner())
+                    let unboxed = unsafe { Self::unbox_from_value(&mut array_or_len, interp) };
+                    if let Ok(ary) = unboxed {
+                        ary.0.clone()
+                    } else if array_or_len.respond_to(interp, "to_ary")? {
+                        let mut other = array_or_len.funcall(interp, "to_ary", &[], None)?;
+                        let unboxed = unsafe { Self::unbox_from_value(&mut other, interp) };
+                        if let Ok(other) = unboxed {
+                            other.0.clone()
+                        } else {
+                            let mut message = String::from("can't convert ");
+                            message.push_str(array_or_len.pretty_name(interp));
+                            message.push_str(" to Array (");
+                            message.push_str(array_or_len.pretty_name(interp));
+                            message.push_str("#to_ary gives ");
+                            message.push_str(other.pretty_name(interp));
+                            return Err(TypeError::from(message).into());
+                        }
+                    } else {
+                        let len = array_or_len.implicitly_convert_to_int(interp)?;
+                        let len = usize::try_from(len)
+                            .map_err(|_| ArgumentError::from("negative array size"))?;
+                        if default.is_some() {
+                            interp.warn(b"warning: block supersedes default value argument")?;
+                        }
+                        let mut buffer = SpinosoArray::with_capacity(len);
+                        for idx in 0..len {
+                            let idx = Int::try_from(idx).map_err(|_| {
+                                RangeError::from("bignum too big to convert into `long'")
+                            })?;
+                            let idx = interp.convert(idx);
+                            let elem = block.yield_arg(interp, &idx)?;
+                            buffer.push(elem.inner());
+                        }
+                        buffer
+                    }
                 }
             }
-        } else if second.is_some() {
-            return Err(Fatal::from(
-                "default cannot be set if first arg is missing in Array#initialize",
-            )
-            .into());
-        } else {
-            SpinosoArray::default()
+            (None, None, _) => SpinosoArray::new(),
+            (None, Some(_), _) => {
+                let err_msg = "default cannot be set if first arg is missing in Array#initialize";
+                return Err(Fatal::from(err_msg).into());
+            }
         };
-        Ok(Self::from(result))
+        Ok(Self(vector))
     }
 
     fn element_reference(
