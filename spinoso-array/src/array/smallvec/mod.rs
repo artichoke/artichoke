@@ -3,7 +3,6 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp;
-use core::ptr;
 use core::slice::{Iter, IterMut};
 use smallvec::SmallVec;
 
@@ -1144,6 +1143,9 @@ where
         // - Otherwise, overwrite `values` into the vector and remove the
         //   remaining elements we must drain.
         match values.len() {
+            0 => {
+                self.0.drain(index..index + drain);
+            }
             len if len == drain => {
                 let slice = &mut self.0[index..index + drain];
                 slice.copy_from_slice(values);
@@ -1154,93 +1156,11 @@ where
                 slice.copy_from_slice(overwrite);
                 self.0.insert_from_slice(index + drain, insert);
             }
-            0 => {
-                // This unsafe block is necessary to ensure that partial drains
-                // have `O(n)` complexity where `n` is `drain`. `SmallVec` only
-                // exposes [`SmallVec::remove`] to remove a single element.
-                // Calling this API multiple times would make the drain
-                // `O(n^2)`.
-                //
-                // This unsafe code was copied from `SmallVec::remove` and
-                // modified to remove multiple elements.
-                //
-                // Safety:
-                //
-                // We are copying elements from `index + remaining..end`
-                // to `start + index`.
-                //
-                // - Drained elements are read out of the `SmallVec` storage and
-                //   properly dropped.
-                // - `index` is asserted to be within the bounds of the vector.
-                // - `index + remaining` is asserted to be within the bounds of
-                //   the vector.
-                // - The length of the vector is shrunk to `len - remaining`.
-                // - We copy from one element beyond the drain to `index`.
-                // - We copy only the elements beyond the index and the drain.
-                unsafe {
-                    let mut ptr = self.0.as_mut_ptr();
-                    let len = self.0.len();
-                    assert!(index < len);
-                    // `< len` because draining the entire tail is handled above.
-                    assert!(index + drain < len);
-                    // It is not necessary to call `ptr::read` to drop all of
-                    // the to-be-overwritten elements since `SmallArray` imposes
-                    // a `Copy` bound on this method and `Copy` types are not
-                    // allowed to have destructors.
-                    self.0.set_len(len - drain);
-                    ptr = ptr.add(index);
-                    // Shift elements in the vector down by `drain` items we
-                    // have to drain.
-                    let remaining = len - index - drain;
-                    ptr::copy(ptr.add(drain), ptr, remaining);
-                }
-            }
             len => {
                 let slice = &mut self.0[index..index + len];
                 slice.copy_from_slice(values);
-                // Update index and drain to account for the shorter slice we
-                // just inserted.
-                let still_to_drain = drain - values.len();
-                let index = index + len;
-                // This unsafe block is necessary to ensure that partial drains
-                // have `O(n)` complexity where `n` is `drain`. `SmallVec` only
-                // exposes [`SmallVec::remove`] to remove a single element.
-                // Calling this API multiple times would make the drain
-                // `O(n^2)`.
-                //
-                // This unsafe code was copied from `SmallVec::remove` and
-                // modified to remove multiple elements.
-                //
-                // Safety:
-                //
-                // We are copying elements from `index + remaining..end`
-                // to `start + index`.
-                //
-                // - Drained elements are read out of the `SmallVec` storage and
-                //   properly dropped.
-                // - `index` is asserted to be within the bounds of the vector.
-                // - `index + remaining` is asserted to be within the bounds of
-                //   the vector.
-                // - The length of the vector is shrunk to `len - remaining`.
-                // - We copy from one element beyond the drain to `index`.
-                // - We copy only the elements beyond the index and the drain.
-                unsafe {
-                    let mut ptr = self.0.as_mut_ptr();
-                    let len = self.0.len();
-                    assert!(index < len);
-                    // `< len` because draining the entire tail is handled above.
-                    assert!(index + still_to_drain < len);
-                    // It is not necessary to call `ptr::read` to drop all of
-                    // the to-be-overwritten elements since `SmallArray` imposes
-                    // a `Copy` bound on this method and `Copy` types are not
-                    // allowed to have destructors.
-                    self.0.set_len(len - still_to_drain);
-                    ptr = ptr.add(index);
-                    // Shift elements in the vector down by `drain` items we
-                    // have to drain.
-                    let remaining = len - index - still_to_drain;
-                    ptr::copy(ptr.add(still_to_drain), ptr, remaining);
-                }
+                // Drain the remaining elements.
+                self.0.drain(index + len..index + drain);
             }
         }
 
