@@ -880,7 +880,7 @@ impl<T> SmallArray<T> {
 
 impl<T> SmallArray<T>
 where
-    T: Clone,
+    T: Copy,
 {
     /// Construct a new `SmallArray<T>` with length `len` and all elements set
     /// to `default`. The `SmallArray` will have capacity at least `len`.
@@ -897,18 +897,9 @@ where
     #[inline]
     #[must_use]
     pub fn with_len_and_default(len: usize, default: T) -> Self {
-        let mut vec = SmallVec::with_capacity(len);
-        for _ in 0..len {
-            vec.push(default.clone());
-        }
-        Self(vec)
+        Self(SmallVec::from_elem(default, len))
     }
-}
 
-impl<T> SmallArray<T>
-where
-    T: Copy,
-{
     /// Appends the elements of `other` to self.
     ///
     /// Slice version of `extend`. This operation is analogous to "push n".

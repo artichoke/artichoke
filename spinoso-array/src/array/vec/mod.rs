@@ -872,11 +872,7 @@ where
     #[inline]
     #[must_use]
     pub fn with_len_and_default(len: usize, default: T) -> Self {
-        let mut vec = Vec::with_capacity(len);
-        for _ in 0..len {
-            vec.push(default.clone());
-        }
-        Self(vec)
+        Self(alloc::vec![default; len])
     }
 
     /// Appends the elements of `other` to self.
