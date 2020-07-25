@@ -1,47 +1,57 @@
+use spinoso_array::SmallArray as SpinosoArray;
 use std::convert::TryFrom;
 use std::iter::FromIterator;
+use std::slice;
 
 use crate::extn::prelude::*;
 
 pub mod args;
 mod boxing;
 mod ffi;
-mod inline_buffer;
 pub mod mruby;
 pub mod trampoline;
 
-use inline_buffer::InlineBuffer;
-
+/// Contiguous growable vector that implement the [Ruby `Array`] API for
+/// [`sys::mrb_value`] elements.
+///
+/// `Array` is a growable vector with potentially heap-allocated contents.
+/// `Array` implements the small vector optimization using
+/// [`spinoso_array::SmallArray`]. This type can be passed by pointer over FFI
+/// to the underlying mruby VM (this is why it stores `sys::mrb_value` rather
+/// than [`Value`].
+///
+/// `Array` implements [`BoxUnboxVmValue`] which enables it to be serialized to
+/// a mruby value and unboxed to the Rust `Array` type.
 #[derive(Default, Debug, Clone)]
-pub struct Array(InlineBuffer);
+pub struct Array(SpinosoArray<sys::mrb_value>);
 
-impl From<InlineBuffer> for Array {
-    fn from(buffer: InlineBuffer) -> Self {
+impl From<SpinosoArray<sys::mrb_value>> for Array {
+    fn from(buffer: SpinosoArray<sys::mrb_value>) -> Self {
         Self(buffer)
     }
 }
 
 impl From<Vec<sys::mrb_value>> for Array {
     fn from(values: Vec<sys::mrb_value>) -> Self {
-        Self(InlineBuffer::from(values))
+        Self(values.into())
     }
 }
 
 impl From<Vec<Value>> for Array {
     fn from(values: Vec<Value>) -> Self {
-        Self(InlineBuffer::from(values))
+        Self(values.iter().map(Value::inner).collect())
     }
 }
 
 impl<'a> From<&'a [sys::mrb_value]> for Array {
     fn from(values: &'a [sys::mrb_value]) -> Self {
-        Self(InlineBuffer::from(values))
+        Self(values.into())
     }
 }
 
 impl<'a> From<&'a [Value]> for Array {
     fn from(values: &'a [Value]) -> Self {
-        Self(InlineBuffer::from(values))
+        Self(values.iter().map(Value::inner).collect())
     }
 }
 
@@ -50,7 +60,7 @@ impl FromIterator<sys::mrb_value> for Array {
     where
         I: IntoIterator<Item = sys::mrb_value>,
     {
-        Self(InlineBuffer::from_iter(iter.into_iter()))
+        Self(iter.into_iter().collect())
     }
 }
 
@@ -59,7 +69,7 @@ impl FromIterator<Value> for Array {
     where
         I: IntoIterator<Item = Value>,
     {
-        Self(InlineBuffer::from_iter(iter.into_iter()))
+        Self(iter.into_iter().map(|value| value.inner()).collect())
     }
 }
 
@@ -68,7 +78,11 @@ impl FromIterator<Option<Value>> for Array {
     where
         I: IntoIterator<Item = Option<Value>>,
     {
-        Self(InlineBuffer::from_iter(iter.into_iter()))
+        let array = iter
+            .into_iter()
+            .map(|value| value.unwrap_or_default().inner())
+            .collect();
+        Self(array)
     }
 }
 
@@ -77,18 +91,22 @@ impl<'a> FromIterator<&'a Option<Value>> for Array {
     where
         I: IntoIterator<Item = &'a Option<Value>>,
     {
-        Self(InlineBuffer::from_iter(iter.into_iter()))
+        let array = iter
+            .into_iter()
+            .map(|value| value.unwrap_or_default().inner())
+            .collect();
+        Self(array)
     }
 }
 
 #[derive(Debug)]
-pub struct Iter<'a>(inline_buffer::Iter<'a>);
+pub struct Iter<'a>(slice::Iter<'a, sys::mrb_value>);
 
 impl<'a> Iterator for Iter<'a> {
     type Item = Value;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
+        self.0.next().copied().map(Value::from)
     }
 }
 
@@ -104,20 +122,17 @@ impl<'a> IntoIterator for &'a Array {
 impl Array {
     #[must_use]
     pub fn new() -> Self {
-        Self(InlineBuffer::new())
+        Self(SpinosoArray::new())
     }
 
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
-        Self(InlineBuffer::with_capacity(capacity))
+        Self(SpinosoArray::with_capacity(capacity))
     }
 
     #[must_use]
     pub fn assoc(one: Value, two: Value) -> Self {
-        let mut buffer = Self::with_capacity(2);
-        buffer.push(one);
-        buffer.push(two);
-        buffer
+        Self(SpinosoArray::assoc(one.inner(), two.inner()))
     }
 
     #[must_use]
@@ -139,12 +154,23 @@ impl Array {
         self.0.clear();
     }
 
+    /// Mark all elements in the `Array` as reachable to the garbage collector.
+    ///
+    /// This method ensures that the contents of the conained
+    /// [`sys::mrb_value`]s do not get deallocated while this `Array` is alive
+    /// in the mruby VM.
     pub fn gc_mark(&self, interp: &mut Artichoke) {
-        for elem in &self.0 {
+        for elem in self {
             interp.mark_value(&elem);
         }
     }
 
+    /// The count of [`sys::mrb_value`]s in this `Array`.
+    ///
+    /// This method allows for `Array`s with holes or other virtualized
+    /// elements. `Array` does not store virtual elements so this method always
+    /// returns the array's length.
+    #[must_use]
     fn real_children(&self) -> usize {
         self.0.len()
     }
@@ -177,9 +203,9 @@ impl Array {
                     usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
                 if let Some(block) = block {
                     if second.is_some() {
-                        interp.warn(&b"warning: block supersedes default value argument"[..])?;
+                        interp.warn(b"warning: block supersedes default value argument")?;
                     }
-                    let mut buffer = Vec::with_capacity(len);
+                    let mut buffer = SpinosoArray::with_capacity(len);
                     for idx in 0..len {
                         let idx = Int::try_from(idx).map_err(|_| {
                             RangeError::from("bignum too big to convert into `long'")
@@ -188,11 +214,10 @@ impl Array {
                         let elem = block.yield_arg(interp, &idx)?;
                         buffer.push(elem.inner());
                     }
-                    InlineBuffer::from(buffer)
+                    buffer
                 } else {
                     let default = second.unwrap_or_else(Value::nil);
-                    let buffer = vec![default; len];
-                    InlineBuffer::from(buffer)
+                    SpinosoArray::with_len_and_default(len, default.inner())
                 }
             }
         } else if second.is_some() {
@@ -201,7 +226,7 @@ impl Array {
             )
             .into());
         } else {
-            InlineBuffer::default()
+            SpinosoArray::default()
         };
         Ok(Self::from(result))
     }
@@ -235,11 +260,11 @@ impl Array {
         }
         if let Some(len) = len {
             let result = self.0.slice(start, len);
-            let result = Self(result);
+            let result = Self(result.into());
             let result = Self::alloc_value(result, interp)?;
             Ok(Some(result))
         } else {
-            Ok(self.0.get(start))
+            Ok(self.0.get(start).copied().map(Value::from))
         }
     }
 
@@ -270,10 +295,10 @@ impl Array {
                     return Err(TypeError::from(message).into());
                 }
             } else {
-                self.0.set_with_drain(start, drain, elem);
+                self.0.set_with_drain(start, drain, elem.inner());
             }
         } else {
-            self.0.set(start, elem);
+            self.0.set(start, elem.inner());
         }
 
         Ok(elem)
@@ -281,28 +306,28 @@ impl Array {
 
     #[must_use]
     pub fn get(&self, index: usize) -> Option<Value> {
-        self.0.get(index)
+        self.0.get(index).copied().map(Value::from)
     }
 
     pub fn set(&mut self, index: usize, elem: Value) {
-        self.0.set(index, elem);
+        self.0.set(index, elem.inner());
     }
 
-    fn set_with_drain(&mut self, start: usize, drain: usize, with: Value) -> usize {
-        self.0.set_with_drain(start, drain, with)
+    fn set_with_drain(&mut self, start: usize, drain: usize, elem: Value) -> usize {
+        self.0.set_with_drain(start, drain, elem.inner())
     }
 
-    fn set_slice(&mut self, start: usize, drain: usize, with: &[sys::mrb_value]) -> usize {
-        self.0.set_slice(start, drain, with)
+    fn set_slice(&mut self, start: usize, drain: usize, src: &[sys::mrb_value]) -> usize {
+        self.0.set_slice(start, drain, src)
     }
 
     pub fn concat(&mut self, interp: &mut Artichoke, mut other: Value) -> Result<(), Exception> {
         if let Ok(other) = unsafe { Self::unbox_from_value(&mut other, interp) } {
-            self.0.concat(&other.0);
+            self.0.concat(other.0.as_slice());
         } else if other.respond_to(interp, "to_ary")? {
             let mut arr = other.funcall(interp, "to_ary", &[], None)?;
             if let Ok(other) = unsafe { Self::unbox_from_value(&mut arr, interp) } {
-                self.0.concat(&other.0);
+                self.0.concat(other.0.as_slice());
             } else {
                 let mut message = String::from("can't convert ");
                 message.push_str(other.pretty_name(interp));
@@ -322,11 +347,11 @@ impl Array {
     }
 
     pub fn pop(&mut self) -> Option<Value> {
-        self.0.pop()
+        self.0.pop().map(Value::from)
     }
 
     pub fn push(&mut self, elem: Value) {
-        self.0.push(elem)
+        self.0.push(elem.inner())
     }
 
     pub fn reverse(&mut self) {
