@@ -26,6 +26,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("length", ary_len, sys::mrb_args_none())?
         .add_method("pop", ary_pop, sys::mrb_args_none())?
         .add_method("reverse!", ary_reverse_bang, sys::mrb_args_none())?
+        .add_method("shift", ary_shift, sys::mrb_args_opt(1))?
         .add_method("size", ary_len, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<array::Array>(spec)?;
@@ -177,6 +178,23 @@ unsafe extern "C" fn ary_element_assignment(
     let third = third.map(Value::from);
     let array = Value::from(ary);
     let result = array::trampoline::element_assignment(&mut guard, array, first, second, third);
+    match result {
+        Ok(value) => {
+            let basic = sys::mrb_sys_basic_ptr(ary);
+            sys::mrb_write_barrier(mrb, basic);
+            value.inner()
+        }
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+    let count = mrb_get_args!(mrb, optional = 1);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let count = count.map(Value::from);
+    let array = Value::from(ary);
+    let result = array::trampoline::shift(&mut guard, array, count);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

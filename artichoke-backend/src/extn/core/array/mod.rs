@@ -357,4 +357,12 @@ impl Array {
     pub fn reverse(&mut self) {
         self.0.reverse();
     }
+
+    pub fn shift(&mut self) -> Option<Value> {
+        self.0.shift().map(Value::from)
+    }
+
+    pub fn shift_n(&mut self, count: usize) -> Self {
+        Self(self.0.shift_n(count))
+    }
 }

@@ -1228,46 +1228,6 @@ class Array
     replace(result)
   end
 
-  def shift(num = (not_set = true))
-    if not_set
-      result = first
-      self[0, 1] = []
-    else
-      count =
-        if num.is_a?(Integer)
-          num
-        elsif num.nil?
-          raise TypeError, 'no implicit conversion from nil to integer'
-        elsif num.respond_to?(:to_int)
-          classname = num.class
-          classname = num.inspect if index.equal?(false) || index.equal?(true)
-          num = num.to_int
-          unless num.is_a?(Integer)
-            raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})"
-          end
-
-          num
-        else
-          classname = num.class
-          classname = num.inspect if index.equal?(false) || index.equal?(true)
-          raise TypeError, "no implicit conversion of #{classname} into Integer"
-        end
-      raise ArgumentError, 'negative array size' if count.negative?
-
-      return [] if empty?
-
-      if count > length
-        result = dup
-        clear
-        return result
-      end
-
-      result = first(count)
-      self[0, count] = []
-    end
-    result
-  end
-
   def shuffle(_rng = (not_set = true)) # rubocop:disable Lint/UselessAssignment
     raise NotImplementedError, 'TODO implement in Rust'
   end
