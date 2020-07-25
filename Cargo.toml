@@ -34,7 +34,8 @@ target-lexicon = "0.11.0"
 members = [
   "artichoke-backend",
   "artichoke-core",
-  "spec-runner"
+  "spec-runner",
+  "spinoso-array",
 ]
 
 [profile.release]
