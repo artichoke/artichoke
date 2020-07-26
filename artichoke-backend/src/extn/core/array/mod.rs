@@ -414,3 +414,27 @@ impl Array {
         Self(self.0.shift_n(count))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
+
+    const FUNCTIONAL_TEST: &[u8] = include_bytes!("array_functional_test.rb");
+
+    #[test]
+    fn functional_test() {
+        let mut interp = crate::interpreter().unwrap();
+        let _ = interp.eval(FUNCTIONAL_TEST).unwrap();
+        let result = interp.eval(b"spec");
+        if let Err(exc) = result {
+            let backtrace = exc.vm_backtrace(&mut interp);
+            let backtrace = bstr::join("\n", backtrace.unwrap_or_default());
+            panic!(
+                "Array tests failed with backtrace:\n{:?}",
+                backtrace.as_bstr()
+            );
+        }
+    }
+}
