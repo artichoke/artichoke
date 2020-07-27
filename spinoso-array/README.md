@@ -1,4 +1,4 @@
-# intaglio
+# spinoso-array
 
 [![GitHub Actions](https://github.com/artichoke/artichoke/workflows/CI/badge.svg)](https://github.com/artichoke/artichoke/actions)
 [![Discord](https://img.shields.io/discord/607683947496734760)](https://discord.gg/QCe2tp2)
@@ -37,10 +37,13 @@ Then construct and manipulate an `Array` like this:
 
 ```rust
 use spinoso_array::Array;
+
 let mut ary: Array<i32> = Array::from(&[1, 2, 3, 4]);
 assert_eq!(ary.pop(), Some(4));
+
 ary.unshift(0);
 assert_eq!(ary, [0, 1, 2, 3]);
+
 let other = ary.shift_n(10);
 assert_eq!(ary, []);
 assert_eq!(other, [0, 1, 2, 3]);
