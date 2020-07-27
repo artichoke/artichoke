@@ -3,13 +3,15 @@
 // available to all modules within the artichoke-backend crate in addition to
 // being exported.
 
-/// Extract an [`Artichoke`](interpreter::Artichoke) instance from the userdata on a
-/// [`sys::mrb_state`].
+/// Extract an [`Artichoke`] instance from the userdata on a [`sys::mrb_state`].
 ///
 /// If there is an error when extracting the Rust wrapper around the
-/// interpreter, return `nil`.
+/// interpreter, return `nil` or a user-provided default.
 ///
-/// This macro is `unsafe`.
+/// This macro calls `unsafe` functions.
+///
+/// [`Artichoke`]: crate::Artichoke
+/// [`sys::mrb_state`]: crate::sys::mrb_state
 #[macro_export]
 macro_rules! unwrap_interpreter {
     ($mrb:expr, or_else = ()) => {
@@ -31,6 +33,7 @@ macro_rules! unwrap_interpreter {
     };
 }
 
+#[doc(hidden)]
 pub mod argspec {
     pub const NONE: &[u8] = b"\0";
     pub const REQ1: &[u8] = b"o\0";
@@ -48,10 +51,14 @@ pub mod argspec {
 /// Extract [`sys::mrb_value`]s from a [`sys::mrb_state`] to adapt a C
 /// entrypoint to a Rust implementation of a Ruby function.
 ///
-/// This macro exists because argspecs attached to function definitions in the
-/// mruby VM are not validated: <https://github.com/mruby/mruby/issues/4688>.
+/// This macro exists because the mruby VM [does not validate argspecs] attached
+/// to native functions.
 ///
-/// This macro is `unsafe`.
+/// This macro calls `unsafe` functions.
+///
+/// [`sys::mrb_value`]: crate::sys::mrb_value
+/// [`sys::mrb_state`]: crate::sys::mrb_state
+/// [does not validate argspecs]: https://github.com/mruby/mruby/issues/4688
 #[macro_export]
 macro_rules! mrb_get_args {
     ($mrb:expr, none) => {{
