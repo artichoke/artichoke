@@ -27,7 +27,8 @@ unsafe extern "C" fn artichoke_ary_new_capa(
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let result = Array::with_capacity(usize::try_from(capa).unwrap_or_default());
+    let capacity = usize::try_from(capa).unwrap_or_default();
+    let result = Array::with_capacity(capacity);
     let result = Array::alloc_value(result, &mut guard);
     match result {
         Ok(value) => value.inner(),

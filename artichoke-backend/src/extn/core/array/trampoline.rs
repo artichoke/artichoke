@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
@@ -114,4 +116,25 @@ pub fn initialize_copy(
     let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
     let result = from.clone();
     Array::box_into_value(result, ary, interp)
+}
+
+pub fn shift(
+    interp: &mut Artichoke,
+    mut ary: Value,
+    count: Option<Value>,
+) -> Result<Value, Exception> {
+    if ary.is_frozen(interp) {
+        return Err(FrozenError::from("can't modify frozen Array").into());
+    }
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    if let Some(count) = count {
+        let count = count.implicitly_convert_to_int(interp)?;
+        let count =
+            usize::try_from(count).map_err(|_| ArgumentError::from("negative array size"))?;
+        let shifted = array.shift_n(count);
+        Array::alloc_value(shifted, interp)
+    } else {
+        let shifted = array.shift();
+        Ok(interp.convert(shifted))
+    }
 }

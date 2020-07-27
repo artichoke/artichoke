@@ -498,26 +498,6 @@ impl<T> SmallArray<T> {
         self.0.get(index)
     }
 
-    /// Appends the elements of `other` to self.
-    ///
-    /// Alias for `extend`. This operation is analogous to "push n".
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
-    /// ary.concat(vec![7, 8, 9]);
-    /// assert_eq!(ary.len(), 6);
-    /// ```
-    #[inline]
-    pub fn concat<I>(&mut self, other: I)
-    where
-        I: IntoIterator<Item = T>,
-    {
-        self.0.extend(other.into_iter());
-    }
-
     /// Deletes the element at the specified `index`, returning that element, or
     /// [`None`] if the `index` is out of range.
     ///
@@ -581,7 +561,7 @@ impl<T> SmallArray<T> {
     /// assert_eq!(ary.first_n(0), &[]);
     /// assert_eq!(ary.first_n(4), &[1, 2]);
     ///
-    /// ary.concat(vec![3, 4, 5, 6, 7, 8, 9, 10]);
+    /// ary.concat(&[3, 4, 5, 6, 7, 8, 9, 10]);
     /// assert_eq!(ary.first_n(0), &[]);
     /// assert_eq!(ary.first_n(4), &[1, 2, 3, 4]);
     /// ```
@@ -633,7 +613,7 @@ impl<T> SmallArray<T> {
     /// assert_eq!(ary.last_n(0), &[]);
     /// assert_eq!(ary.last_n(4), &[1, 2]);
     ///
-    /// ary.concat(vec![3, 4, 5, 6, 7, 8, 9, 10]);
+    /// ary.concat(&[3, 4, 5, 6, 7, 8, 9, 10]);
     /// assert_eq!(ary.last_n(0), &[]);
     /// assert_eq!(ary.last_n(4), &[7, 8, 9, 10]);
     /// ```
@@ -900,7 +880,7 @@ impl<T> SmallArray<T> {
 
 impl<T> SmallArray<T>
 where
-    T: Clone,
+    T: Copy,
 {
     /// Construct a new `SmallArray<T>` with length `len` and all elements set
     /// to `default`. The `SmallArray` will have capacity at least `len`.
@@ -917,18 +897,26 @@ where
     #[inline]
     #[must_use]
     pub fn with_len_and_default(len: usize, default: T) -> Self {
-        let mut vec = SmallVec::with_capacity(len);
-        for _ in 0..len {
-            vec.push(default.clone());
-        }
-        Self(vec)
+        Self(SmallVec::from_elem(default, len))
     }
-}
 
-impl<T> SmallArray<T>
-where
-    T: Copy,
-{
+    /// Appends the elements of `other` to self.
+    ///
+    /// Slice version of `extend`. This operation is analogous to "push n".
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_array::Array;
+    /// let mut ary = Array::from(&[1, 2, 4]);
+    /// ary.concat(&[7, 8, 9]);
+    /// assert_eq!(ary.len(), 6);
+    /// ```
+    #[inline]
+    pub fn concat(&mut self, other: &[T]) {
+        self.0.extend_from_slice(other);
+    }
+
     /// Prepends the elements of `other` to self.
     ///
     /// To insert one element to the front of the vector, use
