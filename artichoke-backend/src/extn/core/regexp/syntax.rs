@@ -1,19 +1,20 @@
-// This module is forked from Rust regex crate @ 172898a.
+// This module is forked from `regex-syntax` crate @ 26f7318e.
 //
-// https://github.com/rust-lang/regex/blob/172898a4fda4fd6a2d1be9fc7b8a0ea971c84ca6/regex-syntax/src/lib.rs
+// https://github.com/rust-lang/regex/blob/26f7318e2895eae56e95a260e81e2d48b90e7c25/regex-syntax/src/lib.rs
 //
 // MIT Licence
 // Copyright (c) 2014 The Rust Project Developers
+
+#![allow(clippy::match_same_arms)]
 
 //! Helpers for parsing Regexp patterns.
 
 /// Escapes all regular expression meta characters in `text`.
 ///
-/// The string returned may be safely used as a literal in a regular
-/// expression.
+/// The string returned may be safely used as a literal in a regular expression.
 #[must_use]
 pub fn escape(text: &str) -> String {
-    let mut quoted = String::with_capacity(text.len());
+    let mut quoted = String::new();
     escape_into(text, &mut quoted);
     quoted
 }
@@ -23,39 +24,39 @@ pub fn escape(text: &str) -> String {
 /// This will append escape characters into the given buffer. The characters
 /// that are appended are safe to use as a literal in a regular expression.
 pub fn escape_into(text: &str, buf: &mut String) {
+    buf.reserve(text.len());
     for c in text.chars() {
-        if is_meta_character(c) {
-            buf.push('\\');
-            buf.push(c);
-        } else if let Some(escape) = is_non_supported_non_printable_character(c) {
-            buf.push_str(escape.as_str());
-        } else if is_non_printable_character(c) {
-            for c in c.escape_default() {
+        match c {
+            c if is_meta_character(c) => {
+                buf.push('\\');
                 buf.push(c);
             }
-        } else if c == ' ' {
-            buf.push('\\');
-            buf.push(' ');
-        } else {
-            buf.push(c);
+            c if is_non_printable_character(c) => {
+                if let Some(escape) = is_non_supported_non_printable_character(c) {
+                    buf.push_str(escape);
+                } else {
+                    for part in c.escape_default() {
+                        buf.push(part);
+                    }
+                }
+            }
+            c => buf.push(c),
         }
     }
 }
 
 /// Returns true if the given character has significance in a regex.
-///
-/// These are the only characters that are allowed to be escaped, with one
-/// exception: an ASCII space character may be escaped when extended mode (with
-/// the `x` flag) is enabld. In particular, `is_meta_character(' ')` returns
-/// `false`.
-///
-/// Note that the set of characters for which this function returns `true` or
-/// `false` is fixed and won't change in a semver compatible release.
 #[must_use]
 pub fn is_meta_character(c: char) -> bool {
     match c {
-        '\\' | '/' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{' | '}' | '^'
-        | '$' | '#' | '&' | '-' | '~' => true,
+        '\\' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{' | '}' | '^' | '$'
+        | '#' | '&' | '-' | '~' => true,
+        // This match arm differs from `regex-syntax` by including '/'.
+        // Ruby uses '/' to mark `Regexp` literals in source code.
+        '/' => true,
+        // This match arm differs from `regex-syntax` by including ' ' (an ASCII
+        // space character). Ruby always escapes ' ' in calls to `Regexp::escape`.
+        ' ' => true,
         _ => false,
     }
 }
@@ -63,21 +64,34 @@ pub fn is_meta_character(c: char) -> bool {
 /// Returns true if the given character is non-printable and needs to be quoted.
 #[must_use]
 pub fn is_non_printable_character(c: char) -> bool {
-    let form_feed = 0x0C as char; // "\f"
     match c {
         '\n' | '\r' | '\t' => true,
-        c if c == form_feed => true,
+        // form feed aka "\f"
+        '\u{C}' => true,
         _ => false,
     }
 }
 
-/// Returns true if the given character is non-printable and Rust does not support
-/// the escape sequence.
+/// Returns `Some(_)` if the given character is non-printable and Rust does not
+/// support the escape sequence.
 #[must_use]
-pub fn is_non_supported_non_printable_character(c: char) -> Option<String> {
-    let form_feed = 0x0C as char; // "\f"
+pub fn is_non_supported_non_printable_character(c: char) -> Option<&'static str> {
     match c {
-        c if c == form_feed => Some("\\f".to_owned()),
+        // form feed aka "\f"
+        '\u{C}' => Some(r"\f"),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn escape_meta() {
+        assert_eq!(
+            escape(r"\.+*?()|[]{}^$#&-~"),
+            r"\\\.\+\*\?\(\)\|\[\]\{\}\^\$\#\&\-\~".to_string()
+        );
     }
 }
