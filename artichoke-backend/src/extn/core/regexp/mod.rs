@@ -203,16 +203,16 @@ impl Regexp {
             value: &mut Value,
         ) -> Result<Vec<u8>, Exception> {
             if let Ok(regexp) = unsafe { Regexp::unbox_from_value(value, interp) } {
-                Ok(regexp.inner().derived_config().pattern.clone().into())
+                let config = regexp.inner().derived_config();
+                let pattern = config.pattern.clone();
+                Ok(pattern.into())
             } else {
                 let bytes = value.implicitly_convert_to_string(interp)?;
-                let pattern = if let Ok(pattern) = str::from_utf8(bytes) {
-                    pattern
+                if let Ok(pattern) = str::from_utf8(bytes) {
+                    Ok(syntax::escape(pattern).into_bytes())
                 } else {
-                    // drop(bytes);
-                    return Err(ArgumentError::from("invalid encoding (non UTF-8)").into());
-                };
-                Ok(syntax::escape(pattern).into_bytes())
+                    Err(ArgumentError::from("invalid encoding (non UTF-8)").into())
+                }
             }
         }
         let mut iter = patterns.into_iter();
