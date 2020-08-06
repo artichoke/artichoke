@@ -100,7 +100,7 @@ class Thread
     alias start fork
   end
 
-  def initialize(root = false)
+  def initialize(root: false)
     __raise__ ThreadError, 'must be called with a block' unless block_given?
 
     @priority = 0
@@ -340,4 +340,4 @@ class Mutex
 end
 
 # Spawn the special "root" thread that never terminates.
-Thread.new(true) {}
+Thread.new(root: true) {}

@@ -88,7 +88,7 @@ def uri_parse
   raise unless uri.host == 'www.ruby-lang.org'
 end
 
-def uri_regexp(skipped = true)
+def uri_regexp(skipped: true)
   return if skipped
 
   # extract first URI from html_string

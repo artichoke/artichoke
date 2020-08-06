@@ -42,7 +42,7 @@ def reopen
   raise unless r.map { |x| x * 2 } == [2, 4, 6, 8]
 end
 
-def object_extend(skipped = true)
+def object_extend(skipped: true)
   return if skipped
 
   my_hash = {}

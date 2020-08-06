@@ -733,7 +733,7 @@ class String
     raise NotImplementedError
   end
 
-  def upto(max, exclusive = false, &block)
+  def upto(max, exclusive = false, &block) # rubocop:disable Style/OptionalBooleanParameter
     return to_enum(:upto, max, exclusive) unless block
     raise TypeError, "no implicit conversion of #{max.class} into String" unless max.is_a?(String)
 
