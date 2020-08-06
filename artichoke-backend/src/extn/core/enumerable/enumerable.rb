@@ -226,13 +226,15 @@ module Enumerable
       i = args[0].to_i
       raise ArgumentError, 'attempt to take negative size' if i.negative?
 
-      ary = []
-      return ary if i.zero?
+      return [] if i.zero?
+
+      ary = Array.new(i) # Array::with_capacity(i)
+      idx = 0
 
       each do |val|
-        ary << val
-        i -= 1
-        break if i.zero?
+        ary[idx] = val
+        idx += 1
+        break if idx == i
       end
       ary
     else
