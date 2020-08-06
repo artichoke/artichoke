@@ -145,7 +145,7 @@ If you'd like to engage in a discussion outside of GitHub, you can
 
 ## License
 
-artichoke is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
+`artichoke` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 Some portions of Artichoke are derived from third party sources. The READMEs in
 each crate discuss which third party licenses are applicable to the sources and
