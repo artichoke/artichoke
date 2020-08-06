@@ -218,7 +218,7 @@ module Enumerable
   def first(*args)
     case args.length
     when 0
-      each do |val|
+      each do |val| # rubocop:disable Lint/UnreachableLoop
         return val
       end
       nil
