@@ -100,7 +100,7 @@ class Thread
     alias start fork
   end
 
-  def initialize(root: false)
+  def initialize(root: false, &blk)
     __raise__ ThreadError, 'must be called with a block' unless block_given?
 
     @priority = 0
@@ -115,7 +115,7 @@ class Thread
     @terminated_with_exception = nil
     # mruby is not multi-threaded. Threads are executed synchronously.
     @alive = true
-    @value = yield
+    @value = blk.call
   rescue StandardError => e
     if @__unwind_with_exception.nil?
       @terminated_with_exception = true
