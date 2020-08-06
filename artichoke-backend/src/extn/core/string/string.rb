@@ -231,11 +231,9 @@ class String
     "#{left_pad}#{self}#{right_pad}"
   end
 
-  def chars
+  def chars(&blk)
     if block_given?
-      split('').each do |char|
-        yield char
-      end
+      split('').each(&blk)
       self
     else
       split('')
@@ -568,7 +566,7 @@ class String
     self[0..-1] = slice.pack('c*')
   end
 
-  def split(pattern, limit = nil)
+  def split(pattern, limit = nil, &blk)
     parts = []
     return parts if self == ''
 
@@ -607,7 +605,7 @@ class String
         end
       end
     end
-    parts.each { |part| yield part } if block_given?
+    parts.each(&blk) if block_given?
 
     parts
   end
@@ -735,7 +733,7 @@ class String
     raise NotImplementedError
   end
 
-  def upto(max, exclusive = false, &block)
+  def upto(max, exclusive = false, &block) # rubocop:disable Style/OptionalBooleanParameter
     return to_enum(:upto, max, exclusive) unless block
     raise TypeError, "no implicit conversion of #{max.class} into String" unless max.is_a?(String)
 

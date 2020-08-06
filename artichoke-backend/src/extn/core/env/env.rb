@@ -51,28 +51,28 @@ class << ENV
     to_h
   end
 
-  def each
+  def each(&blk)
     return to_enum(:each) unless block_given?
 
-    to_h.each { |key, value| yield key, value }
+    to_h.each(&blk)
   end
 
-  def each_key
+  def each_key(&blk)
     return to_enum(:each_key) unless block_given?
 
-    to_h.each_key { |key| yield key }
+    to_h.each_key(&blk)
   end
 
-  def each_pair
+  def each_pair(&blk)
     return to_enum(:each) unless block_given?
 
-    to_h.each_pair { |key, value| yield key, value }
+    to_h.each_pair(&blk)
   end
 
-  def each_value
+  def each_value(&blk)
     return to_enum(:each_value) unless block_given?
 
-    to_h.each_value { |value| yield value }
+    to_h.each_value(&blk)
   end
 
   def empty?
@@ -107,16 +107,16 @@ class << ENV
     raise KeyError.new("key not found: #{name.inspect}", receiver: self, key: name)
   end
 
-  def filter
+  def filter(&blk)
     return to_enum(:filter) unless block_given?
 
-    to_h.select { |key, value| yield key, value }
+    to_h.select(&blk)
   end
 
-  def filter!
+  def filter!(&blk)
     return to_enum(:filter!) unless block_given?
 
-    select! { |key, value| yield key, value }
+    select!(&blk)
   end
 
   def has_key?(name) # rubocop:disable Naming/PredicateName
@@ -184,10 +184,10 @@ class << ENV
     nil
   end
 
-  def reject
+  def reject(&blk)
     return to_enum(:reject) unless block_given?
 
-    to_h.delete_if { |key, value| yield key, value }
+    to_h.delete_if(&blk)
   end
 
   def reject!
@@ -213,20 +213,18 @@ class << ENV
     select! { |k, _| hash.key?(k) }
   end
 
-  def select
+  def select(&blk)
     return to_enum(:select) unless block_given?
 
-    to_h.select { |key, value| yield key, value }
+    to_h.select(&blk)
   end
 
-  def select!
+  def select!(&blk)
     return to_enum(:select!) unless block_given?
 
     env = to_h
     # collect all the keys where the block evaluates to false
-    to_remove = env.reject do |key, value|
-      yield key, value
-    end
+    to_remove = env.reject(&blk)
 
     # returns nil if no changes were made
     return nil if to_remove.empty?
