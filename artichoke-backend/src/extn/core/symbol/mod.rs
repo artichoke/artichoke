@@ -54,6 +54,19 @@ impl Symbol {
             &[]
         }
     }
+
+    #[must_use]
+    pub fn inspect(self, interp: &'_ mut Artichoke) -> Vec<u8> {
+        if let Ok(Some(bytes)) = interp.lookup_symbol(self.into()) {
+            // pattern length + ':'
+            let mut inspect = Vec::with_capacity(bytes.len() + 1);
+            inspect.push(b':');
+            inspect.extend(bytes);
+            inspect
+        } else {
+            Vec::new()
+        }
+    }
 }
 
 impl From<SymbolId> for Symbol {
