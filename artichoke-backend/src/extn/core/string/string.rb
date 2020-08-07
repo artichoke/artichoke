@@ -692,7 +692,7 @@ class String
     to_str = to_str.rjust(from_str.length, to_str[-1]) if to_str.length.positive?
 
     gsub(Regexp.compile("[#{from_str}]")) do |char|
-      to_str[from_str.index(char)] || ''
+      to_str[from_str.index(char) || index(char)] || to_str[-1] || ''
     end
   end
 

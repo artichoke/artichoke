@@ -7,6 +7,7 @@ def spec
   string_element_reference_regexp
   string_scan
   string_unary_minus
+  string_tr
 
   true
 end
@@ -40,6 +41,10 @@ def string_unary_minus
   s = -'abababa'
   raise unless s.frozen?
   raise unless s.itself == 'abababa'
+end
+
+def string_tr
+  raise unless 'abcd'.tr('a-z', 'xxx') == 'xxxx'
 end
 
 spec if $PROGRAM_NAME == __FILE__
