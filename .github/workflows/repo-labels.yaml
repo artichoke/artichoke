@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - trunk
+      - master
     paths:
       - .github/labels.json
 name: Create Repository Labels
