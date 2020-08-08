@@ -1,10 +1,16 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![warn(missing_docs, intra_doc_link_resolution_failure)]
+#![warn(clippy::cargo)]
+#![allow(unknown_lints)]
+#![warn(broken_intra_doc_links)]
+#![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
+#![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
+#![warn(trivial_casts, trivial_numeric_casts)]
+#![warn(unused_qualifications)]
+#![warn(variant_size_differences)]
 #![forbid(unsafe_code)]
-#![cfg_attr(not(feature = "std"), no_std)]
 
 //! This crate provides a set of traits that, when implemented, comprise a
 //! complete Ruby interpreter.
@@ -71,6 +77,7 @@
 //! [`Regexp`]: https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
 //! [convert]: crate::convert
 
+#![cfg_attr(not(feature = "std"), no_std)]
 #![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_core")]
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]

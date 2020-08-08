@@ -18,6 +18,8 @@ mod args;
 #[allow(non_camel_case_types)]
 #[allow(non_upper_case_globals)]
 #[allow(non_snake_case)]
+#[allow(trivial_casts)]
+#[allow(trivial_numeric_casts)]
 #[allow(clippy::all)]
 #[allow(clippy::pedantic)]
 #[allow(clippy::restriction)]
