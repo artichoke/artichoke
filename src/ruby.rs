@@ -61,7 +61,7 @@ where
 {
     let opt = Opt::from_args();
     if opt.copyright {
-        let mut interp = crate::interpreter()?;
+        let mut interp = interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(Ok(()))
     } else if !opt.commands.is_empty() {
@@ -73,7 +73,7 @@ where
     } else if let Some(programfile) = opt.programfile.filter(|file| file != Path::new("-")) {
         execute_program_file(error, programfile.as_path(), opt.fixture.as_deref())
     } else {
-        let mut interp = crate::interpreter()?;
+        let mut interp = interpreter()?;
         let mut program = vec![];
         input
             .read_to_end(&mut program)
@@ -94,7 +94,7 @@ fn execute_inline_eval<W>(
 where
     W: io::Write + WriteColor,
 {
-    let mut interp = crate::interpreter()?;
+    let mut interp = interpreter()?;
     interp.pop_context()?;
     // safety:
     //
@@ -126,7 +126,7 @@ fn execute_program_file<W>(
 where
     W: io::Write + WriteColor,
 {
-    let mut interp = crate::interpreter()?;
+    let mut interp = interpreter()?;
     if let Some(ref fixture) = fixture {
         setup_fixture_hack(&mut interp, fixture)?;
     }
