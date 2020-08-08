@@ -157,8 +157,8 @@ impl Regexp {
     pub fn initialize(
         interp: &mut Artichoke,
         mut pattern: Value,
-        options: Option<opts::Options>,
-        encoding: Option<enc::Encoding>,
+        options: Option<Options>,
+        encoding: Option<Encoding>,
     ) -> Result<Self, Exception> {
         let literal_config =
             if let Ok(regexp) = unsafe { Self::unbox_from_value(&mut pattern, interp) } {
@@ -398,10 +398,10 @@ impl From<Box<dyn RegexpType>> for Regexp {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Config {
     pattern: BString,
-    options: opts::Options,
+    options: Options,
 }
 
-impl TryConvertMut<(Option<Value>, Option<Value>), (Option<opts::Options>, Option<enc::Encoding>)>
+impl TryConvertMut<(Option<Value>, Option<Value>), (Option<Options>, Option<Encoding>)>
     for Artichoke
 {
     type Error = Exception;
@@ -409,7 +409,7 @@ impl TryConvertMut<(Option<Value>, Option<Value>), (Option<opts::Options>, Optio
     fn try_convert_mut(
         &mut self,
         value: (Option<Value>, Option<Value>),
-    ) -> Result<(Option<opts::Options>, Option<enc::Encoding>), Self::Error> {
+    ) -> Result<(Option<Options>, Option<Encoding>), Self::Error> {
         let (options, encoding) = value;
         if let Some(encoding) = encoding {
             let encoding = if let Ok(encoding) = self.try_convert_mut(encoding) {
