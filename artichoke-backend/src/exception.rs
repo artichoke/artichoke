@@ -62,7 +62,7 @@ where
     T: RubyException + fmt::Debug,
 {
     let exc = exception.as_mrb_value(&mut guard);
-    let mrb = guard.mrb.as_mut() as *mut _;
+    let mrb: *mut sys::mrb_state = guard.mrb.as_mut();
     drop(guard);
     if let Some(exc) = exc {
         // Any non-`Copy` objects that we haven't cleaned up at this point will

@@ -8,6 +8,7 @@ use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::ffi::{self, InterpreterExtractError};
 use crate::state::parser::Context;
+use crate::sys;
 use crate::sys::protect;
 use crate::value::Value;
 use crate::Artichoke;
@@ -22,7 +23,7 @@ impl Eval for Artichoke {
         let result = unsafe {
             let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
             let parser = state.parser.as_mut().ok_or(InterpreterExtractError)?;
-            let context = parser.context_mut() as *mut _;
+            let context: *mut sys::mrbc_context = parser.context_mut();
             self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
         };
         match result {
