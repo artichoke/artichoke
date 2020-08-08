@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/labels.json
+name: Create Repository Labels
+jobs:
+  labels:
+    name: Synchronize repository labels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: lannonbr/issue-label-manager-action@2.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
