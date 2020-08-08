@@ -82,7 +82,7 @@ impl State {
         let filename = context.filename_as_c_str();
         unsafe {
             let ctx = self.context.as_mut();
-            sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
+            sys::mrbc_filename(mrb, ctx, filename.as_ptr());
         }
         self.stack.push(context);
     }
@@ -98,7 +98,7 @@ impl State {
             let filename = current.filename_as_c_str();
             unsafe {
                 let ctx = self.context.as_mut();
-                sys::mrbc_filename(mrb, ctx, filename.as_ptr() as *const i8);
+                sys::mrbc_filename(mrb, ctx, filename.as_ptr());
             }
         } else {
             unsafe {
@@ -120,7 +120,7 @@ fn reset_context_filename(mrb: &mut sys::mrb_state, context: &mut sys::mrbc_cont
     let frame = Context::root();
     let filename = frame.filename_as_c_str();
     unsafe {
-        sys::mrbc_filename(mrb, context, filename.as_ptr() as *const i8);
+        sys::mrbc_filename(mrb, context, filename.as_ptr());
     }
 }
 

@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn parse_bool_ruby_type() {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let yes = interp.convert(true);
         assert_eq!(Ruby::Bool, types::ruby_from_mrb_value(yes.inner()));
         let no = interp.convert(false);
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn parse_fixnum_ruby_type() {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let zero = interp.convert(0_i64);
         assert_eq!(Ruby::Fixnum, types::ruby_from_mrb_value(zero.inner()));
         let thousand = interp.convert(1000_i64);
@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn parse_symbol_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let empty = interp.eval(b":''").unwrap();
         assert_eq!(Ruby::Symbol, types::ruby_from_mrb_value(empty.inner()));
         let utf8 = interp.eval(b":Artichoke").unwrap();
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn parse_float_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let zero = interp.convert_mut(0.0_f64);
         assert_eq!(Ruby::Float, types::ruby_from_mrb_value(zero.inner()));
         let float = interp.convert_mut(1.5_f64);
@@ -188,7 +188,7 @@ mod tests {
 
     #[test]
     fn parse_object_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let object = interp.eval(b"Object.new").unwrap();
         assert_eq!(Ruby::Object, types::ruby_from_mrb_value(object.inner()));
         let env = interp.eval(b"ENV").unwrap();
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn parse_class_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let builtin = interp.eval(b"Object").unwrap();
         assert_eq!(Ruby::Class, types::ruby_from_mrb_value(builtin.inner()));
         let data = interp.eval(b"Array").unwrap();
@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn parse_module_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let builtin = interp.eval(b"Comparable").unwrap();
         assert_eq!(Ruby::Module, types::ruby_from_mrb_value(builtin.inner()));
         let data = interp.eval(b"Math").unwrap();
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn parse_proc_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let literal = interp.eval(b"proc {}").unwrap();
         assert_eq!(Ruby::Proc, types::ruby_from_mrb_value(literal.inner()));
         let proc = interp.eval(b"Proc.new {}").unwrap();
@@ -232,7 +232,7 @@ mod tests {
 
     #[test]
     fn parse_string_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let empty = interp.convert_mut("");
         assert_eq!(Ruby::String, types::ruby_from_mrb_value(empty.inner()));
         let utf8 = interp.convert_mut("Artichoke");
@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn parse_array_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let empty = interp.eval(b"[]").unwrap();
         assert_eq!(Ruby::Data, types::ruby_from_mrb_value(empty.inner()));
         let array = interp.eval(b"[1, /./, Object.new]").unwrap();
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn parse_hash_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let empty = interp.eval(b"{}").unwrap();
         assert_eq!(Ruby::Hash, types::ruby_from_mrb_value(empty.inner()));
         let hash = interp.eval(b"{a: 1, b: [/./]}").unwrap();
@@ -269,7 +269,7 @@ mod tests {
 
     #[test]
     fn parse_range_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let dot2 = interp.eval(b"0..0").unwrap();
         assert_eq!(Ruby::Range, types::ruby_from_mrb_value(dot2.inner()));
         let dot3 = interp.eval(b"0...0").unwrap();
@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn parse_exception_ruby_type() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let root = interp.eval(b"Exception.new").unwrap();
         assert_eq!(Ruby::Exception, types::ruby_from_mrb_value(root.inner()));
         let stderror = interp.eval(b"StandardError.new").unwrap();

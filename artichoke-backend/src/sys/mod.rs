@@ -1,4 +1,6 @@
-#![warn(missing_docs, intra_doc_link_resolution_failure)]
+#![allow(unknown_lints)]
+#![warn(broken_intra_doc_links)]
+#![warn(missing_docs)]
 
 //! Rust bindings for mruby, customized for Artichoke.
 //!
@@ -18,6 +20,8 @@ mod args;
 #[allow(non_camel_case_types)]
 #[allow(non_upper_case_globals)]
 #[allow(non_snake_case)]
+#[allow(trivial_casts)]
+#[allow(trivial_numeric_casts)]
 #[allow(clippy::all)]
 #[allow(clippy::pedantic)]
 #[allow(clippy::restriction)]

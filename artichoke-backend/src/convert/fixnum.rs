@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_into::<Int>(&interp);
@@ -190,14 +190,14 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_fixnum(i: Int) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = interp.convert(i);
         value.ruby_type() == Ruby::Fixnum
     }
 
     #[quickcheck]
     fn fixnum_with_value(i: Int) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = interp.convert(i);
         let inner = value.inner();
         let cint = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
@@ -206,7 +206,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(i: Int) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = interp.convert(i);
         let value = value.try_into::<Int>(&interp).unwrap();
         value == i
@@ -214,7 +214,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = interp.convert(b);
         let value = value.try_into::<Int>(&interp);
         value.is_err()
@@ -222,7 +222,7 @@ mod tests {
 
     #[test]
     fn fixnum_to_usize() {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = Convert::<_, Value>::convert(&interp, 100);
         let value = value.try_into::<usize>(&interp).unwrap();
         assert_eq!(100, value);

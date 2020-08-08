@@ -7,5 +7,5 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct CMath;

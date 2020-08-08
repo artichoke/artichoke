@@ -27,7 +27,6 @@ jobs:
           toolchain: nightly
           profile: minimal
           override: true
-          components: rustfmt, rust-src
 
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1

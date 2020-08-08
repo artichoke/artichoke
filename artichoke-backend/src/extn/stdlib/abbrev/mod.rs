@@ -7,7 +7,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Abbrev;
 
 #[cfg(test)]
@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn functional() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let _ = interp.eval(FUNCTIONAL_TEST).unwrap();
         let result = interp.eval(b"spec");
         if let Err(exc) = result {

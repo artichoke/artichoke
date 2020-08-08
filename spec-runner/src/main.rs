@@ -1,7 +1,15 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![warn(missing_docs, intra_doc_link_resolution_failure)]
+#![warn(clippy::cargo)]
+#![allow(unknown_lints)]
+#![warn(broken_intra_doc_links)]
+#![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
+#![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
+#![warn(trivial_casts, trivial_numeric_casts)]
+#![warn(unused_qualifications)]
+#![warn(variant_size_differences)]
 #![forbid(unsafe_code)]
 
 //! `spec-runner` is the ruby/spec runner for Artichoke.
@@ -63,7 +71,7 @@ use artichoke::prelude::*;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process;
 use std::str;
@@ -111,13 +119,13 @@ pub fn main() {
 /// If the `MSpec` runner returns an error, an error is returned.
 pub fn try_main<W>(stderr: W, config: &Path) -> Result<bool, Box<dyn Error>>
 where
-    W: io::Write + WriteColor,
+    W: Write + WriteColor,
 {
     let config = fs::read(config)?;
     let config = str::from_utf8(config.as_slice())?;
     let config = serde_yaml::from_str::<model::Config>(config)?;
 
-    let mut interp = artichoke::interpreter()?;
+    let mut interp = interpreter()?;
 
     rubyspec::init(&mut interp)?;
     let mut specs = vec![];

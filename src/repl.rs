@@ -169,7 +169,7 @@ where
     Werr: io::Write + WriteColor,
 {
     let config = config.unwrap_or_default();
-    let mut interp = crate::interpreter()?;
+    let mut interp = interpreter()?;
     writeln!(output, "{}", preamble(&mut interp)?)?;
 
     interp.reset_parser()?;

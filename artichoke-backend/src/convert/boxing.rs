@@ -323,7 +323,7 @@ mod tests {
 
     #[test]
     fn convert_obj_roundtrip() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let spec =
             class::Spec::new("Container", None, Some(def::box_unbox_free::<Container>)).unwrap();
         class::Builder::for_spec(&mut interp, &spec)
@@ -353,7 +353,7 @@ mod tests {
 
     #[test]
     fn convert_obj_not_data() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let spec =
             class::Spec::new("Container", None, Some(def::box_unbox_free::<Container>)).unwrap();

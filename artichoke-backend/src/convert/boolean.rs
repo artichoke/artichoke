@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_into::<bool>(&interp);
@@ -54,14 +54,14 @@ mod tests {
 
     #[quickcheck]
     fn convert_to_bool(b: bool) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = interp.convert(b);
         value.ruby_type() == Ruby::Bool
     }
 
     #[quickcheck]
     fn bool_with_value(b: bool) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = interp.convert(b);
         let value = value.inner();
         if b {
@@ -90,7 +90,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip(b: bool) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = interp.convert(b);
         let value = value.try_into::<bool>(&interp).unwrap();
         value == b
@@ -98,7 +98,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let value = interp.convert(i);
         let value = value.try_into::<bool>(&interp);
         value.is_err()

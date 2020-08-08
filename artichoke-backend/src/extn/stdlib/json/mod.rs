@@ -31,7 +31,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Json;
 
 #[cfg(test)]
@@ -46,7 +46,7 @@ mod tests {
     // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn functional() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let _ = interp.eval(FUNCTIONAL_TEST).unwrap();
         let result = interp.eval(b"spec");
         if let Err(exc) = result {

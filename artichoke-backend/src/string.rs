@@ -93,8 +93,8 @@ where
 
 /// Error type for [`format_unicode_debug_into`] and [`format_int_into`].
 ///
-/// This error type wraps a [`fmt::Error`].
-#[derive(Debug, Clone)]
+/// This  error type wraps a [`fmt::Error`].
+#[derive(Debug, Clone, Copy)]
 pub struct WriteError(fmt::Error);
 
 impl From<fmt::Error> for WriteError {

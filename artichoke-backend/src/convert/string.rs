@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_into_mut::<String>(&mut interp);
@@ -76,7 +76,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn convert_to_string(s: String) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(s.clone());
         let string = unsafe {
             interp
@@ -94,14 +94,14 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn string_with_value(s: String) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(s.clone());
         value.to_s(&mut interp) == s.as_bytes()
     }
 
     #[quickcheck]
     fn utf8string(string: String) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(string.as_str());
         let len = value
@@ -164,7 +164,7 @@ mod tests {
     #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
     fn roundtrip(s: String) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(s.clone());
         let value = value.try_into_mut::<String>(&mut interp).unwrap();
         value == s
@@ -172,7 +172,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(b: bool) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let value = interp.convert(b);
         let result = value.try_into_mut::<String>(&mut interp);
         result.is_err()

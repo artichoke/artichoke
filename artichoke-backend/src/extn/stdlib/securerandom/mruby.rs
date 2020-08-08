@@ -6,8 +6,11 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[derive(Debug)]
-pub struct SecureRandomFile;
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SecureRandomFile {
+    // Ensure this type is not constructable
+    _private: (),
+}
 
 impl File for SecureRandomFile {
     type Artichoke = Artichoke;

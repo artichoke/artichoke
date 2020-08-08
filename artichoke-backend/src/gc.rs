@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn arena_restore_on_explicit_restore() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         let mut arena = interp.create_arena_savepoint().unwrap();
         for _ in 0..2000 {
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn arena_restore_on_drop() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         {
             let mut arena = interp.create_arena_savepoint().unwrap();
@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn enable_disable_gc() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp.disable_gc();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let _ = arena
@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn gc_after_empty_eval() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let baseline_object_count = arena.live_object_count();
         drop(&mut arena.eval(b"").unwrap());
@@ -223,7 +223,7 @@ mod tests {
 
     #[test]
     fn gc_functional_test() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let baseline_object_count = interp.live_object_count();
         let mut initial_arena = interp.create_arena_savepoint().unwrap();
         for _ in 0..2000 {

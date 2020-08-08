@@ -12,7 +12,7 @@ pub mod mruby;
 pub const E: Fp = f64::consts::E;
 pub const PI: Fp = f64::consts::PI;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Math;
 
 fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {

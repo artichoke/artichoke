@@ -1,9 +1,16 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
+#![warn(clippy::cargo)]
 #![allow(clippy::missing_errors_doc)]
-#![warn(intra_doc_link_resolution_failure)]
+#![allow(unknown_lints)]
+#![warn(broken_intra_doc_links)]
+// #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
+#![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
+#![warn(trivial_casts, trivial_numeric_casts)]
+#![warn(unused_qualifications)]
+#![warn(variant_size_differences)]
 
 //! # artichoke-backend
 //!
@@ -167,7 +174,7 @@ pub use artichoke_core::prelude as core;
 pub mod prelude {
     pub use artichoke_core::prelude::*;
 
-    pub use crate::exception::{raise, Exception, RubyException};
+    pub use crate::exception::{self, Exception, RubyException};
     pub use crate::extn::core::exception::{Exception as _, *};
     pub use crate::gc::MrbGarbageCollection;
     pub use crate::interpreter::{interpreter, interpreter_with_config};
