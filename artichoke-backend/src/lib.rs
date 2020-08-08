@@ -174,7 +174,7 @@ pub use artichoke_core::prelude as core;
 pub mod prelude {
     pub use artichoke_core::prelude::*;
 
-    pub use crate::exception::{raise, Exception, RubyException};
+    pub use crate::exception::{self, Exception, RubyException};
     pub use crate::extn::core::exception::{Exception as _, *};
     pub use crate::gc::MrbGarbageCollection;
     pub use crate::interpreter::{interpreter, interpreter_with_config};
