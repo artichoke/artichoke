@@ -482,7 +482,7 @@ mod tests {
         #[test]
         fn integration_test() {
             // Setup: define module and class hierarchy
-            let mut interp = crate::interpreter().unwrap();
+            let mut interp = interpreter().unwrap();
             let root = module::Spec::new(&mut interp, "A", None).unwrap();
             let mod_under_root =
                 module::Spec::new(&mut interp, "B", Some(EnclosingRubyScope::module(&root)))
@@ -567,7 +567,7 @@ mod tests {
 
         #[test]
         fn define_method() {
-            let mut interp = crate::interpreter().unwrap();
+            let mut interp = interpreter().unwrap();
             let class = class::Spec::new("DefineMethodTestClass", None, None).unwrap();
             class::Builder::for_spec(&mut interp, &class)
                 .add_method("value", value, sys::mrb_args_none())

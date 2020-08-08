@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn root_eval_context() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let result = interp.eval(b"__FILE__").unwrap();
         let result = result.try_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "(eval)");
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn context_is_restored_after_eval() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let context = Context::new(&b"context.rb"[..]).unwrap();
         interp.push_context(context).unwrap();
         let _ = interp.eval(b"15").unwrap();
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let _ = interp.eval(b"15").unwrap();
         let context = interp.peek_context().unwrap();
         assert!(context.is_none());
@@ -137,7 +137,7 @@ mod tests {
         #[should_panic]
         // this test is known broken
         fn eval_context_is_a_stack() {
-            let mut interp = crate::interpreter().unwrap();
+            let mut interp = interpreter().unwrap();
             interp
                 .def_file_for_type::<_, NestedEval>("nested_eval.rb")
                 .unwrap();
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn eval_with_context() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let context = Context::new(b"source.rb".as_ref()).unwrap();
         interp.push_context(context).unwrap();
@@ -176,14 +176,14 @@ mod tests {
 
     #[test]
     fn unparseable_code_returns_err_syntax_error() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let err = interp.eval(b"'a").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
     }
 
     #[test]
     fn interpreter_is_usable_after_syntax_error() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let err = interp.eval(b"'a").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
         // Ensure interpreter is usable after evaling unparseable code
@@ -196,7 +196,7 @@ mod tests {
     // TODO(GH-528): fix failing tests on Windows.
     #[cfg_attr(target_os = "windows", should_panic)]
     fn file_magic_constant() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn file_not_persistent() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn return_syntax_error() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp
             .def_rb_source_file("fail.rb", &b"def bad; 'as'.scan(; end"[..])
             .unwrap();

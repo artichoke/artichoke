@@ -451,7 +451,7 @@ mod tests {
 
     #[test]
     fn raise() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = interpreter().unwrap();
         Run::require(&mut interp).unwrap();
         let err = interp.eval(b"Run.run").unwrap_err();
         assert_eq!("RuntimeError", err.name().as_ref());

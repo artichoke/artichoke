@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn from_user_data_null_user_data() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let err = unsafe {
             let mrb = interp.mrb.as_mut();
             // fake null user data
@@ -245,7 +245,7 @@ mod tests {
 
     #[test]
     fn from_user_data() {
-        let interp = crate::interpreter().unwrap();
+        let interp = interpreter().unwrap();
         let res = unsafe {
             let mrb = Artichoke::into_raw(interp);
             ffi::from_user_data(mrb)

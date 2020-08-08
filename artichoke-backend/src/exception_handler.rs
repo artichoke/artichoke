@@ -55,7 +55,7 @@ mod tests {
 
     #[test]
     fn return_exception() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = interpreter().unwrap();
         let err = interp
             .eval(b"raise ArgumentError.new('waffles')")
             .unwrap_err();
@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn return_exception_with_no_backtrace() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = interpreter().unwrap();
         let err = interp.eval(b"def bad; (; end").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
         assert_eq!(&b"syntax error"[..], err.message().as_ref());
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn raise_does_not_panic_or_segfault() {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = interpreter().unwrap();
         let _ = interp.eval(br#"raise 'foo'"#).unwrap_err();
         let _ = interp.eval(br#"raise 'foo'"#).unwrap_err();
         let _ = interp.eval(br#"eval("raise 'foo'")"#).unwrap_err();

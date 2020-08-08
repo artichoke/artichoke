@@ -182,7 +182,7 @@ mod test {
     // - Require non-existing file raises and returns `nil`.
     #[test]
     fn functional() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp
             .def_file_for_type::<_, MockSourceFile>("file.rb")
             .unwrap();
@@ -209,7 +209,7 @@ mod test {
 
     #[test]
     fn absolute_path() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp
             .def_rb_source_file("/foo/bar/source.rb", &b"# a source file"[..])
             .unwrap();
@@ -221,7 +221,7 @@ mod test {
 
     #[test]
     fn relative_with_dotted_path() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp
             .def_rb_source_file("/foo/bar/source.rb", &b"require_relative '../bar.rb'"[..])
             .unwrap();
@@ -236,7 +236,7 @@ mod test {
 
     #[test]
     fn directory_err() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let err = interp.eval(b"require '/src'").unwrap_err();
         assert_eq!(
             &b"cannot load such file -- /src"[..],
@@ -248,7 +248,7 @@ mod test {
 
     #[test]
     fn path_defined_as_source_then_extension_file() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp
             .def_rb_source_file("foo.rb", &b"module Foo; RUBY = 3; end"[..])
             .unwrap();
@@ -268,7 +268,7 @@ mod test {
 
     #[test]
     fn path_defined_as_extension_file_then_source() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         interp
             .def_file_for_type::<_, MockExtensionAndSourceFile>("foo.rb")
             .unwrap();

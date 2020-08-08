@@ -393,7 +393,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_into_mut::<Vec<Value>>(&mut interp);
@@ -402,7 +402,7 @@ mod tests {
 
     #[quickcheck]
     fn arr_int(arr: Vec<Int>) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -440,7 +440,7 @@ mod tests {
 
     #[quickcheck]
     fn arr_utf8(arr: Vec<String>) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -478,7 +478,7 @@ mod tests {
 
     #[quickcheck]
     fn arr_nilable_bstr(arr: Vec<Option<Vec<u8>>>) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.try_convert_mut(arr.as_slice()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -516,7 +516,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_err(i: i64) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let value = interp.convert(i);
         let value = value.try_into_mut::<Vec<Value>>(&mut interp);
         value.is_err()

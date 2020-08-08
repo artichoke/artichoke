@@ -507,7 +507,7 @@ mod tests {
 
     #[test]
     fn to_s_true() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = interp.convert(true);
         let string = value.to_s(&mut interp);
@@ -516,7 +516,7 @@ mod tests {
 
     #[test]
     fn inspect_true() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = interp.convert(true);
         let debug = value.inspect(&mut interp);
@@ -525,7 +525,7 @@ mod tests {
 
     #[test]
     fn to_s_false() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = interp.convert(false);
         let string = value.to_s(&mut interp);
@@ -534,7 +534,7 @@ mod tests {
 
     #[test]
     fn inspect_false() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = interp.convert(false);
         let debug = value.inspect(&mut interp);
@@ -543,7 +543,7 @@ mod tests {
 
     #[test]
     fn to_s_nil() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = Value::nil();
         let string = value.to_s(&mut interp);
@@ -552,7 +552,7 @@ mod tests {
 
     #[test]
     fn inspect_nil() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = Value::nil();
         let debug = value.inspect(&mut interp);
@@ -561,7 +561,7 @@ mod tests {
 
     #[test]
     fn to_s_fixnum() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = Convert::<_, Value>::convert(&interp, 255);
         let string = value.to_s(&mut interp);
@@ -570,7 +570,7 @@ mod tests {
 
     #[test]
     fn inspect_fixnum() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = Convert::<_, Value>::convert(&interp, 255);
         let debug = value.inspect(&mut interp);
@@ -579,7 +579,7 @@ mod tests {
 
     #[test]
     fn to_s_string() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = interp.convert_mut("interstate");
         let string = value.to_s(&mut interp);
@@ -588,7 +588,7 @@ mod tests {
 
     #[test]
     fn inspect_string() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = interp.convert_mut("interstate");
         let debug = value.inspect(&mut interp);
@@ -597,7 +597,7 @@ mod tests {
 
     #[test]
     fn to_s_empty_string() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = interp.convert_mut("");
         let string = value.to_s(&mut interp);
@@ -606,7 +606,7 @@ mod tests {
 
     #[test]
     fn inspect_empty_string() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
 
         let value = interp.convert_mut("");
         let debug = value.inspect(&mut interp);
@@ -615,7 +615,7 @@ mod tests {
 
     #[test]
     fn is_dead() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let live = arena.eval(b"'dead'").unwrap();
         assert!(!live.is_dead(&mut arena));
@@ -632,7 +632,7 @@ mod tests {
 
     #[test]
     fn immediate_is_dead() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let live = arena.eval(b"27").unwrap();
         assert!(!live.is_dead(&mut arena));
@@ -653,7 +653,7 @@ mod tests {
 
     #[test]
     fn funcall() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let nil = Value::nil();
         let nil_is_nil = nil
             .funcall(&mut interp, "nil?", &[], None)
@@ -674,7 +674,7 @@ mod tests {
 
     #[test]
     fn funcall_different_types() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let eql = nil
@@ -686,7 +686,7 @@ mod tests {
 
     #[test]
     fn funcall_type_error() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let err = s
@@ -702,7 +702,7 @@ mod tests {
 
     #[test]
     fn funcall_method_not_exists() {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let nil = Value::nil();
         let s = interp.convert_mut("foo");
         let err = nil

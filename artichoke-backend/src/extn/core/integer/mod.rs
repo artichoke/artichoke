@@ -197,7 +197,7 @@ mod tests {
 
     #[quickcheck]
     fn positive_integer_division_vm_opcode(x: u8, y: u8) -> bool {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = interpreter().unwrap();
         match (x, y) {
             (0, 0) => interp.eval(b"0 / 0").is_err(),
             (x, 0) | (0, x) => {
@@ -228,7 +228,7 @@ mod tests {
 
     #[quickcheck]
     fn positive_integer_division_send(x: u8, y: u8) -> bool {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = interpreter().unwrap();
         match (x, y) {
             (0, 0) => interp.eval(b"0.send('/', 0)").is_err(),
             (x, 0) | (0, x) => {
@@ -259,7 +259,7 @@ mod tests {
 
     #[quickcheck]
     fn negative_integer_division_vm_opcode(x: u8, y: u8) -> bool {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = interpreter().unwrap();
         match (x, y) {
             (0, 0) => interp.eval(b"-0 / 0").is_err(),
             (x, 0) | (0, x) => {
@@ -296,7 +296,7 @@ mod tests {
 
     #[quickcheck]
     fn negative_integer_division_send(x: u8, y: u8) -> bool {
-        let mut interp = crate::interpreter().expect("init");
+        let mut interp = interpreter().unwrap();
         match (x, y) {
             (0, 0) => interp.eval(b"-0.send('/', 0)").is_err(),
             (x, 0) | (0, x) => {

@@ -110,7 +110,7 @@ mod tests {
 
     #[quickcheck]
     fn roundtrip_kv(hash: HashMap<Vec<u8>, Vec<u8>>) -> bool {
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(hash.clone());
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
         let len = len.try_into::<usize>(&interp).unwrap();
