@@ -20,7 +20,7 @@
     "description": "Area: Code generation while executing Ruby."
   },
   {
-    "name": "A-codegen",
+    "name": "A-compiler",
     "color": "f7e101",
     "description": "Area: Ruby to Rust/machine-code compiler support."
   },
