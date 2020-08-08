@@ -12,7 +12,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Numeric;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]

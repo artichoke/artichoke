@@ -20,10 +20,10 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Thread;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Mutex;
 
 #[cfg(test)]

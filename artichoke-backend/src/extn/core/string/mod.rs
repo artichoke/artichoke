@@ -1,7 +1,7 @@
 pub mod mruby;
 pub mod trampoline;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct String;
 
 #[cfg(test)]

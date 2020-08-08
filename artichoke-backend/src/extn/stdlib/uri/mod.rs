@@ -35,13 +35,13 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct IpSocket;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct IpAddr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Uri;
 
 #[cfg(test)]

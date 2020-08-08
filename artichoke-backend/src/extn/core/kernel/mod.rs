@@ -3,7 +3,7 @@ pub mod mruby;
 pub mod require;
 pub mod trampoline;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Kernel;
 
 #[cfg(test)]
