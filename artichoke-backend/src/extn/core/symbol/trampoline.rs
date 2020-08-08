@@ -39,3 +39,9 @@ pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exceptio
     let bytes = symbol.bytes(interp).to_vec();
     Ok(interp.convert_mut(bytes))
 }
+
+pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+    let symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? };
+    let inspect = symbol.inspect(interp);
+    Ok(interp.convert_mut(inspect))
+}
