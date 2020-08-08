@@ -135,17 +135,17 @@
     "description": "Area: Interpreter VM implementations."
   },
   {
-    "name": "A-Artichoke",
+    "name": "B-Artichoke",
     "color": "ed95e4",
     "description": "Backend: Implementation of artichoke-core using Rust-native backend."
   },
   {
-    "name": "A-MRI",
+    "name": "B-MRI",
     "color": "ed95e4",
     "description": "Backend: Implementation of artichoke-core using MRI."
   },
   {
-    "name": "A-mruby",
+    "name": "B-mruby",
     "color": "ed95e4",
     "description": "Backend: Implementation of artichoke-core using mruby."
   },
