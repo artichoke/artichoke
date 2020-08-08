@@ -71,7 +71,7 @@ use artichoke::prelude::*;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process;
 use std::str;
@@ -119,13 +119,13 @@ pub fn main() {
 /// If the `MSpec` runner returns an error, an error is returned.
 pub fn try_main<W>(stderr: W, config: &Path) -> Result<bool, Box<dyn Error>>
 where
-    W: io::Write + WriteColor,
+    W: Write + WriteColor,
 {
     let config = fs::read(config)?;
     let config = str::from_utf8(config.as_slice())?;
     let config = serde_yaml::from_str::<model::Config>(config)?;
 
-    let mut interp = artichoke::interpreter()?;
+    let mut interp = interpreter()?;
 
     rubyspec::init(&mut interp)?;
     let mut specs = vec![];
