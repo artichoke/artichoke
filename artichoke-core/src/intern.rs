@@ -22,6 +22,13 @@ pub trait Intern {
     /// Concrete type for errors returned while interning symbols.
     type Error;
 
+    /// The initial `Symbol` index returned by the interner.
+    ///
+    /// Implementing `Intern` requires that symbol identifiers form an
+    /// arithmetic progression with a common difference of 1. The sequence of
+    /// symbol identifiers must be representable by a `Range<u32>`.
+    const SYMBOL_RANGE_START: Self::Symbol;
+
     /// Store an immutable bytestring for the life of the interpreter.
     ///
     /// Returns an identifier that enables retrieving the original bytes.
@@ -90,4 +97,9 @@ pub trait Intern {
     ///
     /// If the symbol store cannot be accessed, an error is returned.
     fn lookup_symbol(&self, symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error>;
+
+    /// Retrieve the number of unique strings interned.
+    ///
+    /// This method should return the length of the underlying symbol table.
+    fn symbol_count(&self) -> usize;
 }
