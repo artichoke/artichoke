@@ -59,6 +59,42 @@ core:
   - suite: string
     specs:
       - scan
+  - suite: symbol
+    specs:
+      - all_symbols
+      # Requires investments to Unicode support in `String`
+      # - capitalize
+      - case_compare
+      - casecmp
+      - comparison
+      # Requires investments to Unicode support in `String`
+      # - downcase
+      - dup
+      # Depends on `Regexp` indexing fixes
+      # - element_reference
+      - empty
+      - encoding
+      - equal_value
+      - id2name
+      # fails with an mruby `SyntaxError`
+      # upstream bug: https://github.com/mruby/mruby/issues/5055
+      # - inspect
+      - intern
+      - length
+      - match
+      - next
+      - size
+      # Depends on `Regexp` indexing fixes
+      # - slice
+      - succ
+      - swapcase
+      - symbol
+      # Requires working `Symbol#inspect` impl
+      # - to_proc
+      - to_s
+      - to_sym
+      # Requires investments to Unicode support in `String`
+      # - upcase
 library:
   - suite: abbrev
   - suite: delegate
