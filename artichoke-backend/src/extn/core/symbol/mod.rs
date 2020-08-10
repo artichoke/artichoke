@@ -1,115 +1,14 @@
 use std::ffi::c_void;
 
 use crate::convert::{Immediate, UnboxedValueGuard};
-use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
-use crate::intern::Symbol as SymbolId;
 
 pub mod ffi;
 pub mod mruby;
 pub mod trampoline;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Symbol(SymbolId);
-
-impl Symbol {
-    pub fn all_symbols(interp: &mut Artichoke) -> Result<Array, Exception> {
-        let all_symbols = interp.all_symbols()?.map(Symbol::from).collect::<Vec<_>>();
-        let array = all_symbols
-            .into_iter()
-            .map(|symbol| Symbol::alloc_value(symbol, interp))
-            .collect::<Result<Vec<Value>, _>>()?;
-        Ok(Array::from(array))
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn id(self) -> SymbolId {
-        self.0
-    }
-
-    #[must_use]
-    pub fn is_empty(self, interp: &mut Artichoke) -> bool {
-        if let Ok(Some(bytes)) = interp.lookup_symbol(self.into()) {
-            bytes.is_empty()
-        } else {
-            true
-        }
-    }
-
-    #[must_use]
-    pub fn len(self, interp: &mut Artichoke) -> usize {
-        if let Ok(Some(bytes)) = interp.lookup_symbol(self.into()) {
-            bytes.len()
-        } else {
-            0_usize
-        }
-    }
-
-    #[must_use]
-    pub fn bytes<'a>(&self, interp: &'a mut Artichoke) -> &'a [u8] {
-        if let Ok(Some(bytes)) = interp.lookup_symbol(self.into()) {
-            bytes
-        } else {
-            &[]
-        }
-    }
-
-    #[must_use]
-    pub fn inspect(self, interp: &'_ mut Artichoke) -> Vec<u8> {
-        if let Ok(Some(bytes)) = interp.lookup_symbol(self.into()) {
-            // pattern length + ':'
-            let mut inspect = Vec::with_capacity(bytes.len() + 1);
-            inspect.push(b':');
-            inspect.extend(bytes);
-            inspect
-        } else {
-            Vec::new()
-        }
-    }
-}
-
-impl From<SymbolId> for Symbol {
-    fn from(id: SymbolId) -> Self {
-        Self(id)
-    }
-}
-
-impl From<intaglio::Symbol> for Symbol {
-    fn from(id: intaglio::Symbol) -> Self {
-        Self(id.into())
-    }
-}
-
-impl From<u32> for Symbol {
-    fn from(id: u32) -> Self {
-        Self(id.into())
-    }
-}
-
-impl From<Symbol> for SymbolId {
-    fn from(sym: Symbol) -> Self {
-        sym.id()
-    }
-}
-
-impl From<&Symbol> for SymbolId {
-    fn from(sym: &Symbol) -> Self {
-        sym.id()
-    }
-}
-
-impl From<Symbol> for u32 {
-    fn from(sym: Symbol) -> Self {
-        sym.id().into()
-    }
-}
-
-impl From<Symbol> for usize {
-    fn from(sym: Symbol) -> Self {
-        sym.id().into()
-    }
-}
+#[doc(inline)]
+pub use spinoso_symbol::Symbol;
 
 impl BoxUnboxVmValue for Symbol {
     type Unboxed = Self;

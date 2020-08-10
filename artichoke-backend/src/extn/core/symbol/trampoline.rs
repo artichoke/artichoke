@@ -1,9 +1,14 @@
+use spinoso_symbol::{CaseFold, InternerAllSymbols};
+
 use crate::extn::core::array::Array;
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
 pub fn all_symbols(interp: &mut Artichoke) -> Result<Value, Exception> {
-    let all_symbols = Symbol::all_symbols(interp)?;
+    let all_symbols = interp
+        .all_symbols()
+        .map(|sym| Symbol::alloc_value(sym, interp))
+        .collect::<Result<Array, Exception>>()?;
     Array::alloc_value(all_symbols, interp)
 }
 
@@ -18,6 +23,35 @@ pub fn equal_equal(
         Ok(interp.convert(eql))
     } else {
         Ok(interp.convert(false))
+    }
+}
+
+pub fn ascii_casecmp(
+    interp: &mut Artichoke,
+    mut value: Value,
+    mut other: Value,
+) -> Result<Value, Exception> {
+    let symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? };
+    if let Ok(other) = unsafe { Symbol::unbox_from_value(&mut other, interp) } {
+        let cmp = spinoso_symbol::ascii_casecmp(interp, symbol.id(), other.id())?;
+        Ok(interp.convert(cmp as Int))
+    } else {
+        Ok(Value::nil())
+    }
+}
+
+pub fn unicode_casecmp(
+    interp: &mut Artichoke,
+    mut value: Value,
+    mut other: Value,
+) -> Result<Value, Exception> {
+    let symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? };
+    if let Ok(other) = unsafe { Symbol::unbox_from_value(&mut other, interp) } {
+        let cmp =
+            spinoso_symbol::unicode_case_eq(interp, symbol.id(), other.id(), CaseFold::new())?;
+        Ok(interp.convert(cmp))
+    } else {
+        Ok(Value::nil())
     }
 }
 
@@ -43,5 +77,6 @@ pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exceptio
 pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
     let symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? };
     let inspect = symbol.inspect(interp);
-    Ok(interp.convert_mut(inspect))
+    let debug = inspect.collect::<String>();
+    Ok(interp.convert_mut(debug))
 }

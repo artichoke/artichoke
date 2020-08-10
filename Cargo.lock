@@ -55,6 +55,7 @@ dependencies = [
  "rand_pcg",
  "regex",
  "spinoso-array",
+ "spinoso-symbol",
  "target-lexicon",
  "uuid",
 ]

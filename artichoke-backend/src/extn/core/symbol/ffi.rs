@@ -41,7 +41,7 @@ unsafe extern "C" fn mrb_intern_cstr(mrb: *mut sys::mrb_state, name: *const i8) 
     let bytes = string.to_bytes_with_nul().to_vec();
     let mut interp = unwrap_interpreter!(mrb, or_else = 0);
     let mut guard = Guard::new(&mut interp);
-    let sym = guard.intern_bytes(bytes);
+    let sym = guard.intern_bytes_with_trailing_nul(bytes);
     let sym = sym.map(u32::from);
     sym.unwrap_or_default()
 }
@@ -89,7 +89,7 @@ unsafe extern "C" fn mrb_check_intern_cstr(
     let bytes = string.to_bytes_with_nul();
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let symbol = if let Ok(Some(sym)) = guard.check_interned_bytes(bytes) {
+    let symbol = if let Ok(Some(sym)) = guard.check_interned_bytes_with_trailing_nul(bytes) {
         Symbol::alloc_value(sym.into(), &mut guard).unwrap_or_default()
     } else {
         Value::nil()
@@ -128,7 +128,7 @@ unsafe extern "C" fn mrb_sym_name_len(
     }
     let mut interp = unwrap_interpreter!(mrb, or_else = ptr::null());
     let guard = Guard::new(&mut interp);
-    if let Ok(Some(bytes)) = guard.lookup_symbol(sym.into()) {
+    if let Ok(Some(bytes)) = guard.lookup_symbol(sym) {
         if !lenp.is_null() {
             if let Ok(len) = sys::mrb_int::try_from(bytes.len()) {
                 ptr::write(lenp, len);
@@ -146,7 +146,7 @@ unsafe extern "C" fn mrb_sym_name_len(
 unsafe extern "C" fn mrb_sym_str(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let value = if let Ok(Some(bytes)) = guard.lookup_symbol(sym.into()) {
+    let value = if let Ok(Some(bytes)) = guard.lookup_symbol(sym) {
         let bytes = bytes.to_vec();
         let mut string = guard.convert_mut(bytes);
         let _ = string.freeze(&mut guard);
@@ -163,7 +163,7 @@ unsafe extern "C" fn mrb_sym_str(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) ->
 unsafe extern "C" fn mrb_sym_name(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -> *const i8 {
     let mut interp = unwrap_interpreter!(mrb, or_else = ptr::null());
     let guard = Guard::new(&mut interp);
-    if let Ok(Some(bytes)) = guard.lookup_symbol_with_trailing_nul(sym.into()) {
+    if let Ok(Some(bytes)) = guard.lookup_symbol_with_trailing_nul(sym) {
         bytes.as_ptr() as *const i8
     } else {
         ptr::null()
@@ -174,7 +174,7 @@ unsafe extern "C" fn mrb_sym_name(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -
 unsafe extern "C" fn mrb_sym_dump(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -> *const i8 {
     let mut interp = unwrap_interpreter!(mrb, or_else = ptr::null());
     let mut guard = Guard::new(&mut interp);
-    if let Ok(Some(bytes)) = guard.lookup_symbol(sym.into()) {
+    if let Ok(Some(bytes)) = guard.lookup_symbol(sym) {
         let bytes = bytes.to_vec();
         // Allocate a buffer with the lifetime of the interpreter and return
         // a pointer to it.

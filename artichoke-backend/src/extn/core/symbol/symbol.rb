@@ -35,24 +35,11 @@ class Symbol
     to_s.capitalize(options).intern
   end
 
-  def casecmp(other)
-    return nil unless other.is_a?(Symbol)
+  # Implemented in native code.
+  # def casecmp(other); end
 
-    # Case-insensitive version of Symbol#<=>. Currently, case-insensitivity only
-    # works on characters A-Z/a-z, not all of Unicode. This is different from
-    # Symbol#casecmp?.
-    lhs = to_s.tr('a-z', 'A-Z')
-    rhs = other.to_s.tr('a-z', 'A-Z')
-    lhs <=> rhs
-  end
-
-  def casecmp?(other)
-    # Returns true if `self` and `other` are equal after Unicode case folding,
-    # false if they are not equal.
-    #
-    # Delegate to String#casecmp? which is also Unicode case folding-aware.
-    to_s.casecmp?(other.to_s)
-  end
+  # Implemented in native code.
+  # def casecmp?(other); end
 
   def downcase(options = (not_set = true))
     return to_s.downcase.intern if not_set
