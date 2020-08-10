@@ -20,3 +20,7 @@ default = ["small-array"]
 # Add a `SmallArray` backend that implements the small vector optimization with
 # the `smallvec` crate.
 small-array = ["smallvec"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
