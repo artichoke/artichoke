@@ -186,6 +186,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "134951f4028bdadb9b84baf4232681efbf277da25144b9b0ad65df75946c422b"
 
 [[package]]
+name = "focaccia"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ede9d748d34b1089e09b1120b8a95f3842b11b99efed5ba5a98381da1455bd8"
+
+[[package]]
 name = "getrandom"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -642,6 +648,15 @@ name = "spinoso-array"
 version = "0.3.0"
 dependencies = [
  "smallvec",
+]
+
+[[package]]
+name = "spinoso-symbol"
+version = "0.1.0"
+dependencies = [
+ "artichoke-core",
+ "bstr",
+ "focaccia",
 ]
 
 [[package]]

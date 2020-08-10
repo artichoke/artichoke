@@ -1,0 +1,32 @@
+[package]
+name = "spinoso-symbol"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+description = """
+Symbol implementation for Ruby Symbol core type in Artichoke Ruby
+"""
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["intern", "no_std", "spinoso", "symbol"]
+categories = ["data-structures", "no-std"]
+
+[dependencies]
+artichoke-core = { version = "0.3", path = "../artichoke-core", default-features = false, optional = true }
+bstr = { version = "0.2", optional = true, default-features = false }
+focaccia = { version = "1.0", optional = true, default-features = false }
+
+[features]
+default = ["artichoke", "std"]
+# Implement the Ruby `Symbol` API from Ruby Core with a generic interpreter
+# defined by the traits in `artichoke-core` with Unicode case folding support.
+artichoke = ["artichoke-core", "bstr", "focaccia"]
+# By default, `spinoso-symbol` is `no_std`. This feature enables
+# `std::error::Error` impls. This feature activates `focaccia/std` to enable
+# `Error` impls on the re-exported error structs.
+std = ["focaccia/std"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
