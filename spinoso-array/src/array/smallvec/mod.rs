@@ -73,6 +73,7 @@ mod impls;
 /// [`first_n`]: SmallArray::first_n
 /// [`last_n`]: SmallArray::last_n
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(docsrs, doc(cfg(feature = "small-array")))]
 pub struct SmallArray<T>(SmallVec<[T; INLINE_CAPACITY]>);
 
 impl<T> Default for SmallArray<T> {

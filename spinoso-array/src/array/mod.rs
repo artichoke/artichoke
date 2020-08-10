@@ -24,4 +24,5 @@ pub mod vec;
 ///
 /// See [`SmallArray`](smallvec::SmallArray).
 #[cfg(feature = "small-array")]
+#[cfg_attr(docsrs, doc(cfg(feature = "small-array")))]
 pub const INLINE_CAPACITY: usize = 8;
