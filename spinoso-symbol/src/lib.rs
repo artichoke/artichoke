@@ -261,7 +261,7 @@ impl Symbol {
     #[must_use]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
-    pub fn bytes<'a, T, U>(self, interner: &'a T) -> &'a [u8]
+    pub fn bytes<T, U>(self, interner: &T) -> &[u8]
     where
         T: Intern<Symbol = U>,
         U: Copy + From<Symbol>,
@@ -284,7 +284,7 @@ impl Symbol {
     #[inline]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
-    pub fn inspect<'a, T, U>(self, interner: &'a T) -> Inspect<'a>
+    pub fn inspect<T, U>(self, interner: &T) -> Inspect<'_>
     where
         T: Intern<Symbol = U>,
         U: Copy + From<Symbol>,
@@ -309,11 +309,16 @@ impl Symbol {
     /// error looking up the symbol in the underlying interner, a default
     /// inspect representation is written.
     ///
+    /// # Errors
+    ///
+    /// If the given writer returns an error as it is being written to, that
+    /// error is returned.
+    ///
     /// [`write_inspect_into`]: Self::write_inspect_into
     #[inline]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
-    pub fn format_inspect_into<'a, T, U, W>(self, interner: &'a T, mut dest: W) -> fmt::Result
+    pub fn format_inspect_into<T, U, W>(self, interner: &T, mut dest: W) -> fmt::Result
     where
         T: Intern<Symbol = U>,
         U: Copy + From<Symbol>,
@@ -339,15 +344,16 @@ impl Symbol {
     /// error looking up the symbol in the underlying interner, a default
     /// inspect representation is written.
     ///
+    /// # Errors
+    ///
+    /// If the given writer returns an error as it is being written to, that
+    /// error is returned.
+    ///
     /// [`format_inspect_into`]: Self::format_inspect_into
     #[inline]
     #[cfg(all(feature = "artichoke", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg((feature = "artichoke"), feature = "std")))]
-    pub fn write_inspect_into<'a, T, U, W>(
-        self,
-        interner: &'a T,
-        mut dest: W,
-    ) -> std::io::Result<()>
+    pub fn write_inspect_into<T, U, W>(self, interner: &T, mut dest: W) -> std::io::Result<()>
     where
         T: Intern<Symbol = U>,
         U: Copy + From<Symbol>,
