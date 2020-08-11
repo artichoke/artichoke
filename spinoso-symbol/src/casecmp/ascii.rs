@@ -1,9 +1,7 @@
-//! ASCII ase folding comparisons for byte content resolved from `Symbol`s.
+//! ASCII case folding comparisons for byte content resolved from `Symbol`s.
 
 use artichoke_core::intern::Intern;
 use core::cmp::Ordering;
-
-use crate::Symbol;
 
 /// Compare the byte contents of two symbols using ASCII case-insensitive
 /// comparison.
@@ -26,7 +24,7 @@ use crate::Symbol;
 pub fn casecmp<T, U>(interner: &T, left: U, right: U) -> Result<Ordering, T::Error>
 where
     T: Intern<Symbol = U>,
-    U: Copy + From<Symbol>,
+    U: Copy,
 {
     let left = interner.lookup_symbol(left)?.unwrap_or_default();
     let right = interner.lookup_symbol(right)?.unwrap_or_default();

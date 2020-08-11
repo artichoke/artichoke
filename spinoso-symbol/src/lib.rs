@@ -261,13 +261,12 @@ impl Symbol {
     #[must_use]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
-    pub fn bytes<'a, T, U>(&self, interner: &'a T) -> &'a [u8]
+    pub fn bytes<'a, T, U>(self, interner: &'a T) -> &'a [u8]
     where
         T: Intern<Symbol = U>,
         U: Copy + From<Symbol>,
     {
-        let sym = *self;
-        if let Ok(Some(bytes)) = interner.lookup_symbol(sym.into()) {
+        if let Ok(Some(bytes)) = interner.lookup_symbol(self.into()) {
             bytes
         } else {
             &[]
@@ -283,16 +282,14 @@ impl Symbol {
     /// error looking up the symbol in the underlying interner, a default
     /// iterator is returned.
     #[inline]
-    #[must_use]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
-    pub fn inspect<'a, T, U>(&self, interner: &'a T) -> Inspect<'a>
+    pub fn inspect<'a, T, U>(self, interner: &'a T) -> Inspect<'a>
     where
         T: Intern<Symbol = U>,
         U: Copy + From<Symbol>,
     {
-        let sym = *self;
-        if let Ok(Some(bytes)) = interner.lookup_symbol(sym.into()) {
+        if let Ok(Some(bytes)) = interner.lookup_symbol(self.into()) {
             Inspect::from(bytes)
         } else {
             Inspect::default()
