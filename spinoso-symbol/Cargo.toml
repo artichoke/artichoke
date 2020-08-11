@@ -19,8 +19,11 @@ focaccia = { version = "1.0", optional = true, default-features = false }
 
 [features]
 default = ["artichoke", "std"]
-# Implement the Ruby `Symbol` API from Ruby Core with a generic interpreter
-# defined by the traits in `artichoke-core` with Unicode case folding support.
+# Implement the Ruby `Symbol` API from Ruby Core with a generic interner defined
+# by the traits in `artichoke-core`. Implement Ruby Core APIs with Unicode case
+# folding support.
+#
+# When this feature is enabled, several types are re-exported from `focaccia`.
 artichoke = ["artichoke-core", "bstr", "focaccia"]
 # By default, `spinoso-symbol` is `no_std`. This feature enables
 # `std::error::Error` impls. This feature activates `focaccia/std` to enable
