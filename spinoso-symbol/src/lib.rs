@@ -18,13 +18,71 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 
-//! Symbol type, etc.
+//! Identifier for interned bytestrings and routines for manipulating the
+//! underlying bytestrings.
+//!
+//! `Symbol` is a `Copy` type based on `u32`. `Symbol` is cheap to copy, store,
+//! and compare. It is suitable for representing indexes into a string interner.
+//!
+//! # Artichoke integration
+//!
+//! This crate has an `artichoke` Cargo feature. When this feature is active,
+//! this crate implements [the `Symbol` API from Ruby Core]. These APIs require
+//! resolving the underlying bytes associated with the `Symbol` via a type that
+//! implements `Intern` from `artichoke-core`.
+//!
+//! APIs that require this feature to be active are highlighted in the
+//! documentation.
+//!
+//! This crate provides an `AllSymbols` iterator for walking all symbols stored
+//! in an [`Intern`]er and an extension trait for constructing it which is
+//! suitable for implementing [`Symbol::all_symbols`] from Ruby Core.
+//!
+//! This crate provides an `Inspect` iterator for converting `Symbol` byte
+//! content to a debug representation suitable for implementing
+//! [`Symbol#inspect`] from Ruby Core.
+//!
+//! # `no_std`
+//!
+//! This crate is `no_std` compatible when built without the `std` feature. This
+//! crate does not depend on [`alloc`].
+//!
+//! # Crate features
+//!
+//! All features are enabled by default.
+//!
+//! - **artichoke** - Enables additional methods, functions, and types for
+//!   implementing APIs from Ruby Core. Dropping this feature removes the
+//!   `artichoke-core`, `bstr`, and `focaccia` dependencies.
+//! - **std** - Enables a dependency on the Rust Standard Library. Activating
+//!   this feature enables [`std::error::Error`] impls on error types in this
+//!   crate.
+//!
+//! [the `Symbol` API from Ruby Core]: https://ruby-doc.org/core-2.6.3/Symbol.html
+//! [`Symbol::all_symbols`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-c-all_symbols
+//! [`Symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
+//! [`alloc`]: https://doc.rust-lang.org/alloc/
+//! [`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html
 
 // `spinoso-symbol` is a `no_std` crate unless the `std` feature is enabled.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
 extern crate alloc;
+
+// Ensure code blocks in README.md compile
+#[cfg(doctest)]
+macro_rules! readme {
+    ($x:expr) => {
+        #[doc = $x]
+        mod readme {}
+    };
+    () => {
+        readme!(include_str!("../README.md"));
+    };
+}
+#[cfg(doctest)]
+readme!();
 
 #[cfg(feature = "artichoke")]
 use artichoke_core::intern::Intern;
