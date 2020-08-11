@@ -302,9 +302,14 @@ impl Symbol {
     ///
     /// This formatter produces strings like `:spinoso` and `:invalid-\xFF-utf8`.
     ///
+    /// To write binary output, use [`write_inspect_into`], which requires the
+    /// `std` feature to be activated.
+    ///
     /// If there symbol does not exist in the underlying interner or there is an
     /// error looking up the symbol in the underlying interner, a default
     /// inspect representation is written.
+    ///
+    /// [`write_inspect_into`]: Self::write_inspect_into
     #[inline]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
@@ -317,6 +322,42 @@ impl Symbol {
         let inspect = self.inspect(interner);
         for ch in inspect {
             dest.write_char(ch)?;
+        }
+        Ok(())
+    }
+
+    /// Write an [`Inspect`] iterator into the given destination using the debug
+    /// representation of the interned byteslice associated with the symbol in
+    /// the underlying interner.
+    ///
+    /// This formatter produces bytestrings like `:spinoso` and
+    /// `:invalid-\xFF-utf8`.
+    ///
+    /// To write to a `String` formatter, use [`format_inspect_into`].
+    ///
+    /// If there symbol does not exist in the underlying interner or there is an
+    /// error looking up the symbol in the underlying interner, a default
+    /// inspect representation is written.
+    ///
+    /// [`format_inspect_into`]: Self::format_inspect_into
+    #[inline]
+    #[cfg(all(feature = "artichoke", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg((feature = "artichoke"), feature = "std")))]
+    pub fn write_inspect_into<'a, T, U, W>(
+        self,
+        interner: &'a T,
+        mut dest: W,
+    ) -> std::io::Result<()>
+    where
+        T: Intern<Symbol = U>,
+        U: Copy + From<Symbol>,
+        W: std::io::Write,
+    {
+        let inspect = self.inspect(interner);
+        let mut buf = [0; 4];
+        for ch in inspect {
+            let utf8 = ch.encode_utf8(&mut buf);
+            dest.write_all(utf8.as_bytes())?;
         }
         Ok(())
     }
