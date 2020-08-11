@@ -295,4 +295,29 @@ impl Symbol {
             Inspect::default()
         }
     }
+
+    /// Write an [`Inspect`] iterator into the given destination using the debug
+    /// representation of the interned byteslice associated with the symbol in
+    /// the underlying interner.
+    ///
+    /// This formatter produces strings like `:spinoso` and `:invalid-\xFF-utf8`.
+    ///
+    /// If there symbol does not exist in the underlying interner or there is an
+    /// error looking up the symbol in the underlying interner, a default
+    /// inspect representation is written.
+    #[inline]
+    #[cfg(feature = "artichoke")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
+    pub fn format_inspect_into<'a, T, U, W>(self, interner: &'a T, mut dest: W) -> fmt::Result
+    where
+        T: Intern<Symbol = U>,
+        U: Copy + From<Symbol>,
+        W: fmt::Write,
+    {
+        let inspect = self.inspect(interner);
+        for ch in inspect {
+            dest.write_char(ch)?;
+        }
+        Ok(())
+    }
 }

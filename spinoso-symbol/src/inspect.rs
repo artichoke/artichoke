@@ -3,13 +3,17 @@ use core::iter::FusedIterator;
 use core::str::Chars;
 
 /// An iterator that yields a debug representation of a `Symbol` and its byte
-/// contents.
+/// contents as a sequence of `char`s.
 ///
 /// This struct is created by the [`inspect`] method on [`Symbol`]. See its
 /// documentation for more.
 ///
+/// To format a `Symbol` directly into a writer, see [`format_inspect_into`].
+///
 /// [`inspect`]: crate::Symbol::inspect
 /// [`Symbol`]: crate::Symbol
+/// [`format_inspect_into`]: crate::Symbol::format_inspect_into
+#[must_use = "Iterator"]
 #[derive(Default, Debug, Clone)]
 #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
 pub struct Inspect<'a>(State<'a>);
@@ -26,6 +30,12 @@ impl<'a> From<&'a [u8]> for Inspect<'a> {
     fn from(value: &'a [u8]) -> Self {
         match value {
             value if value.is_empty() => Self::default(),
+            // This match arm is known to be buggy. UTF-8 well-formedness is a
+            // necessary but not sufficient condition for having an unquoted
+            // debug representation. The byte contents must also be a valid Ruby
+            // identifier.
+            //
+            // See artichoke/artichoke#219.
             value if value.is_utf8() => Self(State::unquoted(value)),
             value => Self(State::quoted(value)),
         }
@@ -40,8 +50,15 @@ impl<'a> Iterator for Inspect<'a> {
     }
 }
 
+impl<'a> DoubleEndedIterator for Inspect<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.next_back()
+    }
+}
+
 impl<'a> FusedIterator for Inspect<'a> {}
 
+#[must_use = "Iterator"]
 #[derive(Debug, Clone)]
 struct State<'a> {
     string: &'a [u8],
@@ -53,6 +70,10 @@ struct State<'a> {
 }
 
 impl<'a> State<'a> {
+    /// Construct a `State` that will not quote byte contents after the initial
+    /// `:`.
+    ///
+    /// This constructor produces inspect contents like `:fred`.
     #[inline]
     fn unquoted(bytes: &'a [u8]) -> Self {
         Self {
@@ -65,6 +86,9 @@ impl<'a> State<'a> {
         }
     }
 
+    /// Construct a `State` that will quote byte contents after the initial `:`.
+    ///
+    /// This constructor produces inspect contents like `:"Spinoso Symbol".
     #[inline]
     fn quoted(bytes: &'a [u8]) -> Self {
         Self {
@@ -79,7 +103,9 @@ impl<'a> State<'a> {
 }
 
 impl<'a> Default for State<'a> {
-    /// The default `State` for [`Inspect`] renders to `:""`.
+    /// Construct a `State` that will render debug output for the empty slice.
+    ///
+    /// This constructor produces inspect contents like `:"Spinoso Symbol".
     #[inline]
     fn default() -> Self {
         Self {
@@ -145,12 +171,65 @@ impl<'a> Iterator for State<'a> {
     }
 }
 
+impl<'a> DoubleEndedIterator for State<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.close_quote {
+            self.close_quote = false;
+            return Some('"');
+        }
+        for cell in self.next.iter_mut().rev() {
+            let mut done = false;
+            let mut next = None;
+            if let Some(ref mut lit) = cell {
+                next = lit.next_back();
+                done = next.is_none();
+            }
+            if done {
+                *cell = None;
+            }
+            if next.is_some() {
+                return next;
+            }
+        }
+        if let Some((start, end, ch)) = self.iter.next_back() {
+            if ch == '\u{FFFD}' {
+                let mut next = None::<char>;
+                let slice = &self.string[start..end];
+                let iter = slice.iter().zip(self.next.iter_mut()).rev().enumerate();
+                for (idx, (&byte, cell)) in iter {
+                    let mut lit = Literal::from(byte);
+                    if idx == 0 {
+                        next = lit.0.next_back();
+                    }
+                    *cell = Some(lit);
+                }
+                return next;
+            } else {
+                return Some(ch);
+            }
+        }
+        if self.open_quote {
+            self.open_quote = false;
+            return Some('"');
+        }
+        if self.sigil {
+            self.sigil = false;
+            return Some(':');
+        }
+        None
+    }
+}
+
 impl<'a> FusedIterator for State<'a> {}
 
+#[must_use = "Iterator"]
 #[derive(Debug, Clone)]
 struct Literal(Chars<'static>);
 
 impl From<u8> for Literal {
+    /// Map from a `u8` to a String literal of a hex escape code.
+    ///
+    /// For example, `\xFF` or `\x0C`.
     #[allow(clippy::too_many_lines)]
     fn from(value: u8) -> Self {
         let escape = match value {
@@ -432,6 +511,16 @@ impl Iterator for Literal {
     fn count(self) -> usize {
         self.0.count()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
+
+    #[inline]
+    fn last(self) -> Option<Self::Item> {
+        self.0.last()
+    }
 }
 
 impl DoubleEndedIterator for Literal {
@@ -560,6 +649,37 @@ mod tests {
     }
 
     #[test]
+    fn empty_backwards() {
+        let mut inspect = Inspect::from("");
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some(':'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+
+        let mut inspect = Inspect::from("");
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+
+        let mut inspect = Inspect::from("");
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+
+        let mut inspect = Inspect::from("");
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+    }
+
+    #[test]
     fn fred() {
         let inspect = Inspect::from("fred");
         let debug = inspect.collect::<String>();
@@ -567,9 +687,48 @@ mod tests {
     }
 
     #[test]
+    fn fred_backwards() {
+        let mut inspect = Inspect::from("fred");
+        assert_eq!(inspect.next_back(), Some('d'));
+        assert_eq!(inspect.next_back(), Some('e'));
+        assert_eq!(inspect.next_back(), Some('r'));
+        assert_eq!(inspect.next_back(), Some('f'));
+        assert_eq!(inspect.next_back(), Some(':'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+    }
+
+    #[test]
     fn invalid_utf8() {
         let inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
         let debug = inspect.collect::<String>();
         assert_eq!(debug, r#":"invalid-\xFF-utf8""#);
+    }
+
+    #[test]
+    fn invalid_utf8_backwards() {
+        let mut inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('8'));
+        assert_eq!(inspect.next_back(), Some('f'));
+        assert_eq!(inspect.next_back(), Some('t'));
+        assert_eq!(inspect.next_back(), Some('u'));
+        assert_eq!(inspect.next_back(), Some('-'));
+        assert_eq!(inspect.next_back(), Some('F'));
+        assert_eq!(inspect.next_back(), Some('F'));
+        assert_eq!(inspect.next_back(), Some('x'));
+        assert_eq!(inspect.next_back(), Some('\\'));
+        assert_eq!(inspect.next_back(), Some('-'));
+        assert_eq!(inspect.next_back(), Some('d'));
+        assert_eq!(inspect.next_back(), Some('i'));
+        assert_eq!(inspect.next_back(), Some('l'));
+        assert_eq!(inspect.next_back(), Some('a'));
+        assert_eq!(inspect.next_back(), Some('v'));
+        assert_eq!(inspect.next_back(), Some('n'));
+        assert_eq!(inspect.next_back(), Some('i'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some(':'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
     }
 }
