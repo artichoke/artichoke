@@ -33,12 +33,9 @@ impl Artichoke {
         let symbol = state.symbols.intern(bytes)?;
         let symbol = u32::from(symbol);
         // mruby expexts symbols to be non-zero.
-        //
-        // Suppressing clippy lint due to rust-lang/rust-clippy#5886
-        #[allow(clippy::or_fun_call)]
         let symbol = symbol
             .checked_add(<Self as Intern>::SYMBOL_RANGE_START)
-            .ok_or(SymbolOverflowError::new())?;
+            .ok_or_else(SymbolOverflowError::new)?;
         Ok(symbol)
     }
 
@@ -51,12 +48,9 @@ impl Artichoke {
         if let Some(symbol) = symbol {
             let symbol = u32::from(symbol);
             // mruby expexts symbols to be non-zero.
-            //
-            // Suppressing clippy lint due to rust-lang/rust-clippy#5886
-            #[allow(clippy::or_fun_call)]
             let symbol = symbol
                 .checked_add(<Self as Intern>::SYMBOL_RANGE_START)
-                .ok_or(SymbolOverflowError::new())?;
+                .ok_or_else(SymbolOverflowError::new)?;
             Ok(Some(symbol))
         } else {
             Ok(None)
@@ -82,12 +76,9 @@ impl Intern for Artichoke {
         let symbol = state.symbols.intern(bytes)?;
         let symbol = u32::from(symbol);
         // mruby expexts symbols to be non-zero.
-        //
-        // Suppressing clippy lint due to rust-lang/rust-clippy#5886
-        #[allow(clippy::or_fun_call)]
         let symbol = symbol
             .checked_add(Self::SYMBOL_RANGE_START)
-            .ok_or(SymbolOverflowError::new())?;
+            .ok_or_else(SymbolOverflowError::new)?;
         Ok(symbol)
     }
 
@@ -99,12 +90,9 @@ impl Intern for Artichoke {
         if let Some(symbol) = symbol {
             let symbol = u32::from(symbol);
             // mruby expexts symbols to be non-zero.
-            //
-            // Suppressing clippy lint due to rust-lang/rust-clippy#5886
-            #[allow(clippy::or_fun_call)]
             let symbol = symbol
                 .checked_add(Self::SYMBOL_RANGE_START)
-                .ok_or(SymbolOverflowError::new())?;
+                .ok_or_else(SymbolOverflowError::new)?;
             Ok(Some(symbol))
         } else {
             Ok(None)
