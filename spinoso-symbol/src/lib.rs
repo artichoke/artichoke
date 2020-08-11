@@ -352,7 +352,7 @@ impl Symbol {
     /// [`format_inspect_into`]: Self::format_inspect_into
     #[inline]
     #[cfg(all(feature = "artichoke", feature = "std"))]
-    #[cfg_attr(docsrs, doc(cfg((feature = "artichoke"), feature = "std")))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "artichoke", feature = "std"))))]
     pub fn write_inspect_into<T, U, W>(self, interner: &T, mut dest: W) -> std::io::Result<()>
     where
         T: Intern<Symbol = U>,
