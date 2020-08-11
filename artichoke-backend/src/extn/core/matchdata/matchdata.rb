@@ -4,7 +4,7 @@ class MatchData
   def ==(other)
     return false unless other.is_a?(MatchData)
     return false unless string == other.string
-    return false unless regexp == other.regexp # rubocop:disable Lint/UriRegexp
+    return false unless regexp == other.regexp
     return false unless offset(0) == other.offset(0)
 
     true
