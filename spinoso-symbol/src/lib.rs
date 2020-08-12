@@ -53,7 +53,10 @@
 //!
 //! - **artichoke** - Enables additional methods, functions, and types for
 //!   implementing APIs from Ruby Core. Dropping this feature removes the
-//!   `artichoke-core`, `bstr`, and `focaccia` dependencies.
+//!   `artichoke-core` and `focaccia` dependencies. Activating this feature also
+//!   activates the **inspect** feature.
+//! - **inspect** - Enables an iterator for generating debug output of a symbol
+//!   bytestring. Dropping this feature removes the `bstr` dependency.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
@@ -108,14 +111,14 @@ mod all_symbols;
 mod casecmp;
 mod convert;
 mod eq;
-#[cfg(feature = "artichoke")]
+#[cfg(feature = "inspect")]
 mod inspect;
 
 #[cfg(feature = "artichoke")]
 pub use all_symbols::{AllSymbols, InternerAllSymbols};
 #[cfg(feature = "artichoke")]
 pub use casecmp::{ascii_casecmp, unicode_case_eq};
-#[cfg(feature = "artichoke")]
+#[cfg(feature = "inspect")]
 pub use inspect::Inspect;
 
 /// Error returned when a symbol identifier overflows.

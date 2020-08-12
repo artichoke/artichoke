@@ -66,7 +66,10 @@ All features are enabled by default.
 
 - **artichoke** - Enables additional methods, functions, and types for
   implementing APIs from Ruby Core. Dropping this feature removes the
-  `artichoke-core`, `bstr`, and `focaccia` dependencies.
+  `artichoke-core` and `focaccia` dependencies. Activating this feature also
+  activates the **inspect** feature.
+- **inspect** - Enables an iterator for generating debug output of a symbol
+  bytestring. Dropping this feature removes the `bstr` dependency.
 - **std** - Enables a dependency on the Rust Standard Library. Activating this
   feature enables [`std::error::Error`] impls on error types in this crate.
 

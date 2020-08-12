@@ -23,8 +23,14 @@ default = ["artichoke", "std"]
 # by the traits in `artichoke-core`. Implement Ruby Core APIs with Unicode case
 # folding support.
 #
+# Enabling this feature activates the `inspect` feature and additionally depends
+# on `bstr`.
+#
 # When this feature is enabled, several types are re-exported from `focaccia`.
-artichoke = ["artichoke-core", "bstr", "focaccia"]
+artichoke = ["artichoke-core", "focaccia", "inspect"]
+# Implement an iterator for printing debug output of a bytestring associated
+# with a `Symbol` that is suitable for implementing `Symbol#inspect`.
+inspect = ["bstr"]
 # By default, `spinoso-symbol` is `no_std`. This feature enables
 # `std::error::Error` impls. This feature activates `focaccia/std` to enable
 # `Error` impls on the re-exported error structs.

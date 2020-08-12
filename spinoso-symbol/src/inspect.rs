@@ -52,7 +52,7 @@ use core::str::Chars;
 /// [`write_inspect_into`]: crate::Symbol::write_inspect_into
 #[must_use = "Iterator"]
 #[derive(Default, Debug, Clone)]
-#[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "inspect")))]
 pub struct Inspect<'a>(State<'a>);
 
 impl<'a> From<&'a str> for Inspect<'a> {
