@@ -25,6 +25,7 @@ rand = { version = "0.7", optional = true }
 rand_pcg = { version = "0.2", optional = true }
 regex = "1"
 spinoso-array = { version = "0.3", path = "../spinoso-array" }
+spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
 uuid = { version = "0.8", optional = true, features = ["v4"] }
 
 [dependencies.artichoke-core]

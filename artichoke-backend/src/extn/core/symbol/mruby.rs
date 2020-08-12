@@ -13,10 +13,20 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
             sys::mrb_args_none(),
         )?
         .add_method("==", artichoke_symbol_equal_equal, sys::mrb_args_req(1))?
+        .add_method(
+            "casecmp",
+            artichoke_symbol_ascii_casecmp,
+            sys::mrb_args_req(1),
+        )?
+        .add_method(
+            "casecmp?",
+            artichoke_symbol_unicode_casecmp,
+            sys::mrb_args_req(1),
+        )?
         .add_method("empty?", artichoke_symbol_empty, sys::mrb_args_none())?
+        .add_method("inspect", artichoke_symbol_inspect, sys::mrb_args_none())?
         .add_method("length", artichoke_symbol_length, sys::mrb_args_none())?
         .add_method("to_s", artichoke_symbol_to_s, sys::mrb_args_none())?
-        .add_method("inspect", artichoke_symbol_inspect, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<symbol::Symbol>(spec)?;
     let _ = interp.eval(&include_bytes!("symbol.rb")[..])?;
@@ -57,6 +67,40 @@ unsafe extern "C" fn artichoke_symbol_equal_equal(
 }
 
 #[no_mangle]
+unsafe extern "C" fn artichoke_symbol_ascii_casecmp(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    let other = mrb_get_args!(mrb, required = 1);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let sym = Value::from(slf);
+    let other = Value::from(other);
+    let result = trampoline::ascii_casecmp(&mut guard, sym, other);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_symbol_unicode_casecmp(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    let other = mrb_get_args!(mrb, required = 1);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let sym = Value::from(slf);
+    let other = Value::from(other);
+    let result = trampoline::unicode_casecmp(&mut guard, sym, other);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
 unsafe extern "C" fn artichoke_symbol_empty(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
@@ -66,6 +110,22 @@ unsafe extern "C" fn artichoke_symbol_empty(
     let mut guard = Guard::new(&mut interp);
     let sym = Value::from(slf);
     let result = trampoline::is_empty(&mut guard, sym);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_symbol_inspect(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let value = Value::from(slf);
+    let result = trampoline::inspect(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
@@ -98,22 +158,6 @@ unsafe extern "C" fn artichoke_symbol_to_s(
     let mut guard = Guard::new(&mut interp);
     let sym = Value::from(slf);
     let result = trampoline::bytes(&mut guard, sym);
-    match result {
-        Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
-    }
-}
-
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_inspect(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
-    let value = Value::from(slf);
-    let result = trampoline::inspect(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),

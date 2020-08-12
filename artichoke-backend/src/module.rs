@@ -8,7 +8,6 @@ use std::ptr::NonNull;
 use crate::core::Intern;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Method, NotDefinedError};
 use crate::exception::Exception;
-use crate::intern::Symbol;
 use crate::method;
 use crate::sys;
 use crate::Artichoke;
@@ -122,18 +121,14 @@ impl<'a> Builder<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rclass {
-    sym: Symbol,
+    sym: u32,
     name: CString,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }
 
 impl Rclass {
     #[must_use]
-    pub fn new(
-        sym: Symbol,
-        name: CString,
-        enclosing_scope: Option<Box<EnclosingRubyScope>>,
-    ) -> Self {
+    pub fn new(sym: u32, name: CString, enclosing_scope: Option<Box<EnclosingRubyScope>>) -> Self {
         Self {
             sym,
             name,
@@ -156,7 +151,7 @@ impl Rclass {
             let is_defined_under = sys::mrb_const_defined_at(
                 mrb,
                 sys::mrb_sys_obj_value(scope.cast::<c_void>().as_mut()),
-                self.sym.into(),
+                self.sym,
             );
             if is_defined_under == 0 {
                 // Enclosing scope exists.
@@ -172,7 +167,7 @@ impl Rclass {
             let is_defined = sys::mrb_const_defined_at(
                 mrb,
                 sys::mrb_sys_obj_value((*mrb).object_class as *mut c_void),
-                self.sym.into(),
+                self.sym,
             );
             if is_defined == 0 {
                 // Class does not exist in root scope.
@@ -189,7 +184,7 @@ impl Rclass {
 #[derive(Debug, Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
-    sym: Symbol,
+    sym: u32,
     cstring: CString,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }

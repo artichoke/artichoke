@@ -281,7 +281,7 @@ impl ValueCore for Value {
                 protect::funcall(
                     mrb,
                     self.inner(),
-                    func.into(),
+                    func,
                     args.as_slice(),
                     block.as_ref().map(Self::inner),
                 )

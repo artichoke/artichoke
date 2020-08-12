@@ -66,18 +66,6 @@ impl Convert<Value, Option<Value>> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Option<bool>> for Artichoke {
-    type Error = Exception;
-
-    fn try_convert(&self, value: Value) -> Result<Option<bool>, Self::Error> {
-        if value.is_nil() {
-            Ok(None)
-        } else {
-            self.try_convert(value).map(Some)
-        }
-    }
-}
-
 impl TryConvertMut<Value, Option<Vec<u8>>> for Artichoke {
     type Error = Exception;
 

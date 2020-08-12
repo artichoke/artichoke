@@ -94,13 +94,27 @@ jobs:
       - name: Compile artichoke with all features
         run: cargo build --verbose --all-features
 
-      - name: Compile spinoso with no default features
+      - name: Compile spinoso-array with no default features
         run: cargo build --verbose --no-default-features
         working-directory: "spinoso-array"
 
-      - name: Compile spinoso with all features
+      - name: Compile spinoso-array with all features
         run: cargo build --verbose --all-features
         working-directory: "spinoso-array"
+
+      - name: Compile spinoso-symbol with no default features
+        run: cargo build --verbose --no-default-features
+        working-directory: "spinoso-symbol"
+
+      - name: Compile spinoso-symbol with all features
+        run: cargo build --verbose --all-features
+        working-directory: "spinoso-symbol"
+
+      - name: Compile spinoso-symbol with some features
+        run: |
+          cargo build --verbose --no-default-features --features inspect
+          cargo build --verbose --no-default-features --features inspect,artichoke
+        working-directory: "spinoso-symbol"
 
   rust:
     name: Lint and format Rust

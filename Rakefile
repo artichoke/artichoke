@@ -29,6 +29,9 @@ namespace :lint do
     sh 'node scripts/clang-format.js'
   end
 
+  desc 'Format sources (alias)'
+  task fmt: :format
+
   desc 'Run ESlint'
   task eslint: :deps do
     sh 'npx eslint --fix .'

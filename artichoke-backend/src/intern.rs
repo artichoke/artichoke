@@ -1,4 +1,3 @@
-use intaglio::bytes::AllSymbols;
 use intaglio::SymbolOverflowError;
 use std::borrow::Cow;
 
@@ -11,61 +10,9 @@ use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::Artichoke;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Symbol(intaglio::Symbol);
-
-impl From<u32> for Symbol {
-    fn from(sym: u32) -> Self {
-        Self(sym.into())
-    }
-}
-
-impl From<intaglio::Symbol> for Symbol {
-    fn from(sym: intaglio::Symbol) -> Self {
-        Self(sym)
-    }
-}
-
-impl From<Symbol> for intaglio::Symbol {
-    fn from(sym: Symbol) -> Self {
-        sym.0
-    }
-}
-
-impl From<Symbol> for u32 {
-    fn from(sym: Symbol) -> Self {
-        sym.0.into()
-    }
-}
-
-impl From<Symbol> for u64 {
-    fn from(sym: Symbol) -> Self {
-        sym.0.into()
-    }
-}
-
-impl From<Symbol> for usize {
-    fn from(sym: Symbol) -> Self {
-        sym.0.into()
-    }
-}
-
 impl Artichoke {
-    /// Return a type that yields all `Symbol`s in the interpreter.
-    pub fn all_symbols(&self) -> Result<AllSymbols<'_>, InterpreterExtractError> {
+    pub fn lookup_symbol_with_trailing_nul(&self, symbol: u32) -> Result<Option<&[u8]>, Exception> {
         let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
-        // this method cannot be part of the `Intern` impl because `AllSymbols`
-        // is generic over the lifetime of the symbol table and GATs are not
-        // stable.
-        Ok(state.symbols.all_symbols())
-    }
-
-    pub fn lookup_symbol_with_trailing_nul(
-        &self,
-        symbol: Symbol,
-    ) -> Result<Option<&[u8]>, Exception> {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
-        let symbol = u32::from(symbol);
         if let Some(symbol) = symbol.checked_sub(1) {
             if let Some(bytes) = state.symbols.get(symbol.into()) {
                 Ok(Some(bytes))
@@ -76,12 +23,47 @@ impl Artichoke {
             Ok(None)
         }
     }
+
+    pub fn intern_bytes_with_trailing_nul<T>(&mut self, bytes: T) -> Result<u32, Exception>
+    where
+        T: Into<Cow<'static, [u8]>>,
+    {
+        let bytes = bytes.into();
+        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let symbol = state.symbols.intern(bytes)?;
+        let symbol = u32::from(symbol);
+        // mruby expexts symbols to be non-zero.
+        let symbol = symbol
+            .checked_add(<Self as Intern>::SYMBOL_RANGE_START)
+            .ok_or_else(SymbolOverflowError::new)?;
+        Ok(symbol)
+    }
+
+    pub fn check_interned_bytes_with_trailing_nul(
+        &self,
+        bytes: &[u8],
+    ) -> Result<Option<u32>, Exception> {
+        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let symbol = state.symbols.check_interned(bytes);
+        if let Some(symbol) = symbol {
+            let symbol = u32::from(symbol);
+            // mruby expexts symbols to be non-zero.
+            let symbol = symbol
+                .checked_add(<Self as Intern>::SYMBOL_RANGE_START)
+                .ok_or_else(SymbolOverflowError::new)?;
+            Ok(Some(symbol))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 impl Intern for Artichoke {
-    type Symbol = Symbol;
+    type Symbol = u32;
 
     type Error = Exception;
+
+    const SYMBOL_RANGE_START: Self::Symbol = 1;
 
     fn intern_bytes<T>(&mut self, bytes: T) -> Result<Self::Symbol, Self::Error>
     where
@@ -89,34 +71,29 @@ impl Intern for Artichoke {
     {
         let bytes = bytes.into();
         let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
-        let trailing_byte = bytes.len().checked_sub(1).and_then(|idx| bytes.get(idx));
-        let symbol = if let Some(&b'\0') = trailing_byte {
-            state.symbols.intern(bytes)?
-        } else {
-            let mut bytes = bytes.into_owned();
-            bytes.push(b'\0');
-            state.symbols.intern(bytes)?
-        };
+        let mut bytes = bytes.into_owned();
+        bytes.push(b'\0');
+        let symbol = state.symbols.intern(bytes)?;
         let symbol = u32::from(symbol);
         // mruby expexts symbols to be non-zero.
-        let symbol = symbol.checked_add(1).ok_or_else(SymbolOverflowError::new)?;
-        Ok(symbol.into())
+        let symbol = symbol
+            .checked_add(Self::SYMBOL_RANGE_START)
+            .ok_or_else(SymbolOverflowError::new)?;
+        Ok(symbol)
     }
 
     fn check_interned_bytes(&self, bytes: &[u8]) -> Result<Option<Self::Symbol>, Self::Error> {
         let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
-        let trailing_byte = bytes.len().checked_sub(1).and_then(|idx| bytes.get(idx));
-        let symbol = if let Some(&b'\0') = trailing_byte {
-            state.symbols.check_interned(bytes)
-        } else {
-            let mut bytes = bytes.to_vec();
-            bytes.push(b'\0');
-            state.symbols.check_interned(&bytes)
-        };
+        let mut bytes = bytes.to_vec();
+        bytes.push(b'\0');
+        let symbol = state.symbols.check_interned(&bytes);
         if let Some(symbol) = symbol {
             let symbol = u32::from(symbol);
-            let symbol = symbol.checked_add(1).ok_or_else(SymbolOverflowError::new)?;
-            Ok(Some(symbol.into()))
+            // mruby expexts symbols to be non-zero.
+            let symbol = symbol
+                .checked_add(Self::SYMBOL_RANGE_START)
+                .ok_or_else(SymbolOverflowError::new)?;
+            Ok(Some(symbol))
         } else {
             Ok(None)
         }
@@ -124,8 +101,7 @@ impl Intern for Artichoke {
 
     fn lookup_symbol(&self, symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error> {
         let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
-        let symbol = u32::from(symbol);
-        if let Some(symbol) = symbol.checked_sub(1) {
+        if let Some(symbol) = symbol.checked_sub(Self::SYMBOL_RANGE_START) {
             if let Some(bytes) = state.symbols.get(symbol.into()) {
                 if bytes.is_empty() {
                     Ok(Some(bytes))
@@ -137,6 +113,14 @@ impl Intern for Artichoke {
             }
         } else {
             Ok(None)
+        }
+    }
+
+    fn symbol_count(&self) -> usize {
+        if let Some(state) = self.state.as_ref() {
+            state.symbols.len()
+        } else {
+            0
         }
     }
 }
