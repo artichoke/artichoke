@@ -730,3 +730,10 @@ MigrationBackup/
 target/
 # Artichoke is an application
 !Cargo.lock
+# Rust binary sources and some ruby/spec fixtures live in `bin/`.
+![Bb]in/
+# Allow ruby/spec shared object fixtures.
+!**/vendor/spec/**/*.dll
+!**/vendor/spec/**/*.so
+!**/vendor/spec/**/*.so.*
+!**/vendor/spec/**/*.dylib
