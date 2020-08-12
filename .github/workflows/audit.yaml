@@ -25,17 +25,3 @@ jobs:
 
       - name: Run cargo-deny
         run: cargo-deny check
-
-  js:
-    name: Audit JS Dependencies
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install Nodejs toolchain
-        run: npm ci
-
-      - name: npm audit
-        run: npm audit
