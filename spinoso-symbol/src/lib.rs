@@ -133,7 +133,7 @@ pub struct SymbolOverflowError {
 
 impl SymbolOverflowError {
     /// The maximum identifier of a `Symbol`.
-    pub const MAX_CAPACITY: usize = u32::MAX as usize;
+    pub const MAX_IDENTIFIER: usize = u32::MAX as usize;
 
     /// Construct a new, default `SymbolOverflowError`.
     #[inline]
@@ -279,7 +279,8 @@ impl Symbol {
     /// Returns an iterator that yields a debug representation of the interned
     /// byteslice associated with the symbol in the underlying interner.
     ///
-    /// This iterator produces strings like `:spinoso` and `:invalid-\xFF-utf8`.
+    /// This iterator produces [`char`] sequences like `:spinoso` and
+    /// `:invalid-\xFF-utf8`.
     ///
     /// If there symbol does not exist in the underlying interner or there is an
     /// error looking up the symbol in the underlying interner, a default
@@ -303,9 +304,9 @@ impl Symbol {
     /// representation of the interned byteslice associated with the symbol in
     /// the underlying interner.
     ///
-    /// This formatter produces strings like `:spinoso` and
-    /// `:invalid-\xFF-utf8`. To see example output of the underlying iterator,
-    /// see the [`Inspect`] documentation.
+    /// This formatter writes content like `:spinoso` and `:invalid-\xFF-utf8`.
+    /// To see example output of the underlying iterator, see the [`Inspect`]
+    /// documentation.
     ///
     /// To write binary output, use [`write_inspect_into`], which requires the
     /// `std` feature to be activated.
@@ -340,9 +341,9 @@ impl Symbol {
     /// representation of the interned byteslice associated with the symbol in
     /// the underlying interner.
     ///
-    /// This formatter produces bytestrings like `:spinoso` and
-    /// `:invalid-\xFF-utf8`.To see example output of the underlying iterator,
-    /// see the [`Inspect`] documentation.
+    /// This formatter writes content like `:spinoso` and `:invalid-\xFF-utf8`.
+    /// To see example output of the underlying iterator, see the [`Inspect`]
+    /// documentation.
     ///
     /// To write to a `String` formatter, use [`format_inspect_into`].
     ///
