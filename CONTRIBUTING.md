@@ -71,6 +71,7 @@ rake lint              # Lint and format
 rake lint:clippy       # Run Clippy
 rake lint:deps         # Install linting dependencies
 rake lint:eslint       # Run ESlint
+rake lint:fmt          # Format sources (alias)
 rake lint:format       # Format sources
 rake lint:links        # Check markdown links
 rake lint:restriction  # Lint with Clippy restriction pass (unenforced lints)
