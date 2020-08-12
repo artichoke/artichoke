@@ -8,11 +8,48 @@ use core::str::Chars;
 /// This struct is created by the [`inspect`] method on [`Symbol`]. See its
 /// documentation for more.
 ///
-/// To format a `Symbol` directly into a writer, see [`format_inspect_into`].
+/// To format a `Symbol` directly into a writer, see [`format_inspect_into`] or
+/// [`write_inspect_into`].
+///
+/// # Examples
+///
+/// To inspect an empty bytestring:
+///
+/// ```
+/// # extern crate alloc;
+/// # use alloc::string::String;
+/// # use spinoso_symbol::Inspect;
+/// let inspect = Inspect::default();
+/// let debug = inspect.collect::<String>();
+/// assert_eq!(debug, r#":"""#);
+/// ```
+///
+/// To inspect a well-formed UTF-8 bytestring:
+///
+/// ```
+/// # extern crate alloc;
+/// # use alloc::string::String;
+/// # use spinoso_symbol::Inspect;
+/// let inspect = Inspect::from("spinoso");
+/// let debug = inspect.collect::<String>();
+/// assert_eq!(debug, ":spinoso");
+/// ```
+///
+/// To inspect a bytestring with invalid UTF-8 bytes:
+///
+/// ```
+/// # extern crate alloc;
+/// # use alloc::string::String;
+/// # use spinoso_symbol::Inspect;
+/// let inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
+/// let debug = inspect.collect::<String>();
+/// assert_eq!(debug, r#":"invalid-\xFF-utf8""#);
+/// ```
 ///
 /// [`inspect`]: crate::Symbol::inspect
 /// [`Symbol`]: crate::Symbol
 /// [`format_inspect_into`]: crate::Symbol::format_inspect_into
+/// [`write_inspect_into`]: crate::Symbol::write_inspect_into
 #[must_use = "Iterator"]
 #[derive(Default, Debug, Clone)]
 #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]

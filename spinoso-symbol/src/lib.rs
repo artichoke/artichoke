@@ -300,7 +300,9 @@ impl Symbol {
     /// representation of the interned byteslice associated with the symbol in
     /// the underlying interner.
     ///
-    /// This formatter produces strings like `:spinoso` and `:invalid-\xFF-utf8`.
+    /// This formatter produces strings like `:spinoso` and
+    /// `:invalid-\xFF-utf8`. To see example output of the underlying iterator,
+    /// see the [`Inspect`] documentation.
     ///
     /// To write binary output, use [`write_inspect_into`], which requires the
     /// `std` feature to be activated.
@@ -336,7 +338,8 @@ impl Symbol {
     /// the underlying interner.
     ///
     /// This formatter produces bytestrings like `:spinoso` and
-    /// `:invalid-\xFF-utf8`.
+    /// `:invalid-\xFF-utf8`.To see example output of the underlying iterator,
+    /// see the [`Inspect`] documentation.
     ///
     /// To write to a `String` formatter, use [`format_inspect_into`].
     ///
