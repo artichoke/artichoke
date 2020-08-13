@@ -5,7 +5,7 @@ require 'fileutils'
 task default: :lint
 
 desc 'Lint and format'
-task lint: %i[lint:format lint:clippy lint:rubocop lint:eslint]
+task lint: %i[lint:format lint:clippy lint:rubocop]
 
 namespace :lint do
   desc 'Run Clippy'
@@ -23,19 +23,14 @@ namespace :lint do
   end
 
   desc 'Format sources'
-  task format: :deps do
+  task :format do
     sh 'cargo fmt -- --color=auto'
-    sh 'npm run fmt'
-    sh 'node scripts/clang-format.js'
+    sh "npx prettier --write '**/*'"
+    sh 'npx github:artichoke/clang-format'
   end
 
   desc 'Format sources (alias)'
   task fmt: :format
-
-  desc 'Run ESlint'
-  task eslint: :deps do
-    sh 'npx eslint --fix .'
-  end
 
   desc 'Check markdown links'
   task :links do
@@ -55,11 +50,6 @@ namespace :lint do
     markdown.each do |source|
       sh "npx markdown-link-check --config .github/markdown-link-check.json #{source}"
     end
-  end
-
-  desc 'Install linting dependencies'
-  task :deps do
-    sh 'npm ci'
   end
 
   desc 'Lint with Clippy restriction pass (unenforced lints)'

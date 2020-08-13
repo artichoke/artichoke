@@ -174,21 +174,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install Nodejs toolchain
-        run: npm ci
-
       - name: Lint and check formatting with clang-format
-        run: node scripts/clang-format.js --check
-
-  js:
-    name: Lint and format JS
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Lint and check formatting with eslint
-        run: npx eslint .
+        run: npx github:artichoke/clang-format --check
 
   text:
     name: Lint and format text
