@@ -70,8 +70,8 @@ cargo build --workspace
 ### C Toolchain
 
 Some artichoke dependencies, like the mruby [`sys`](artichoke-backend/src/sys)
-and [`onig`](https://crates.io/crates/onig), build C static libraries and
-require a C compiler.
+FFI bindings and the [`onig`](https://crates.io/crates/onig) crate, build C
+static libraries and require a C compiler.
 
 Artichoke specifically requires clang. WebAssembly targets require clang-8 or
 newer.
