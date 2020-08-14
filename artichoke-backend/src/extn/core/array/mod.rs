@@ -8,6 +8,7 @@ use crate::extn::prelude::*;
 pub mod args;
 mod boxing;
 mod ffi;
+mod gc;
 pub mod mruby;
 pub mod trampoline;
 
@@ -152,27 +153,6 @@ impl Array {
 
     pub fn clear(&mut self) {
         self.0.clear();
-    }
-
-    /// Mark all elements in the `Array` as reachable to the garbage collector.
-    ///
-    /// This method ensures that the contents of the conained
-    /// [`sys::mrb_value`]s do not get deallocated while this `Array` is alive
-    /// in the mruby VM.
-    pub fn gc_mark(&self, interp: &mut Artichoke) {
-        for elem in self {
-            interp.mark_value(&elem);
-        }
-    }
-
-    /// The count of [`sys::mrb_value`]s in this `Array`.
-    ///
-    /// This method allows for `Array`s with holes or other virtualized
-    /// elements. `Array` does not store virtual elements so this method always
-    /// returns the array's length.
-    #[must_use]
-    fn real_children(&self) -> usize {
-        self.0.len()
     }
 
     pub fn initialize(

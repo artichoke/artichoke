@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use std::ptr;
 use std::slice;
 
+use crate::extn::core::array::gc;
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
@@ -333,7 +334,7 @@ unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::m
     let mut guard = Guard::new(&mut interp);
     let mut array = Value::from(ary);
     if let Ok(array) = Array::unbox_from_value(&mut array, &mut guard) {
-        array.gc_mark(&mut guard);
+        gc::mark(&array, &mut guard);
     }
 }
 
@@ -346,7 +347,7 @@ unsafe extern "C" fn artichoke_gc_mark_ary_size(
     let mut guard = Guard::new(&mut interp);
     let mut array = Value::from(ary);
     if let Ok(array) = Array::unbox_from_value(&mut array, &mut guard) {
-        array.real_children()
+        gc::children(&array)
     } else {
         0
     }
