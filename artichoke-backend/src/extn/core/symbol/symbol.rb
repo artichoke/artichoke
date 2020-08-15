@@ -74,7 +74,18 @@ class Symbol
   end
 
   def to_proc
-    ->(obj, *args, &block) { obj.__send__(self, *args, &block) }
+    pr = lambda do |*args, &block|
+      raise ArgumentError, 'no receiver given' if args.empty?
+
+      obj, *rest = *args
+      obj.__send__(self, *rest, &block)
+    end
+
+    def pr.parameters
+      [[:rest]]
+    end
+
+    pr
   end
 
   # Implemented in native code.
