@@ -1011,3 +1011,40 @@ mod specs {
         assert_eq!(Inspect::from(" ").collect::<String>(), r#":" ""#);
     }
 }
+
+/// Tests generated from symbols loaded at MRI interpreter boot.
+///
+/// # Generation
+///
+/// ```shell
+/// cat <<EOF | ruby --disable-gems --disable-did_you_mean
+/// def boot_identifier_symbols
+///   syms = Symbol.all_symbols.map(&:inspect)
+///   # remove symbols that must be debug wrapped in quotes
+///   syms = syms.reject { |s| s[0..1] == ':"' }
+///
+///   fixture = syms.map { |s| "r##\"#{s}\"##" }
+///   puts fixture.join(",\n")
+/// end
+///
+/// boot_identifier_symbols
+/// EOF
+/// ```
+#[cfg(test)]
+mod functionals {
+    use super::Inspect;
+    use crate::fixtures::{IDENTS, IDENT_INSPECTS};
+
+    #[test]
+    fn mri_symbol_idents() {
+        let pairs = IDENTS.iter().copied().zip(IDENT_INSPECTS.iter().copied());
+        for (sym, expected) in pairs {
+            let inspect = Inspect::from(sym).collect::<String>();
+            assert_eq!(
+                inspect, expected,
+                "Expected '{}', to be the result of '{}'.inspect; got '{}'",
+                expected, sym, inspect,
+            );
+        }
+    }
+}

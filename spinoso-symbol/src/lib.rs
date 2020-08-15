@@ -124,6 +124,9 @@ mod ident;
 #[cfg(feature = "inspect")]
 mod inspect;
 
+#[cfg(test)]
+mod fixtures;
+
 #[cfg(feature = "artichoke")]
 pub use all_symbols::{AllSymbols, InternerAllSymbols};
 #[cfg(feature = "artichoke")]
