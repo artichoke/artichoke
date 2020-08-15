@@ -55,6 +55,29 @@ Most of the functionality in this crate depends on a Ruby interpreter that
 implements [bytestring interning APIs] and requires activating the `artichoke`
 feature.
 
+Without an interpreter, `spinoso-symbol` can determine whether a bytestring is a
+Ruby identifier:
+
+```rust
+use spinoso_symbol::IdentifierType;
+assert_eq!("$spinoso".parse::<IdentifierType>(), Ok(IdentifierType::Global));
+assert_eq!("@features".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
+assert_eq!("artichoke_crates".parse::<IdentifierType>(), Ok(IdentifierType::Local));
+```
+
+And print a debug representation of a bytestring suitable for implementing
+[`Symbol#inspect`]:
+
+```rust
+use spinoso_symbol::Inspect;
+assert_eq!(Inspect::from("spinoso").collect::<String>(), ":spinoso");
+assert_eq!(Inspect::from("@features").collect::<String>(), ":@features");
+assert_eq!(
+    Inspect::from("Artichoke is a Ruby made with Rust").collect::<String>(),
+    r#":"Artichoke is a Ruby made with Rust""#,
+);
+```
+
 ## `no_std`
 
 This crate is `no_std` compatible when built without the `std` feature. This
@@ -69,7 +92,10 @@ All features are enabled by default.
   `artichoke-core` and `focaccia` dependencies. Activating this feature also
   activates the **inspect** feature.
 - **inspect** - Enables an iterator for generating debug output of a symbol
-  bytestring. Dropping this feature removes the `bstr` dependency.
+  bytestring. Activating this feature also activates the **ident-parser**
+  feature.
+- **ident-parser** - Enables a parser to determing the Ruby identifier type, if
+  any, for a bytestring. Dropping this feature removes the `bstr` dependency.
 - **std** - Enables a dependency on the Rust Standard Library. Activating this
   feature enables [`std::error::Error`] impls on error types in this crate.
 
@@ -86,5 +112,6 @@ Lopopolo.
 [`symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
 [bytestring interning apis]:
   https://artichoke.github.io/artichoke/artichoke_core/intern/trait.Intern.html
+[`symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
 [`alloc`]: https://doc.rust-lang.org/alloc/
 [`std::error::error`]: https://doc.rust-lang.org/std/error/trait.Error.html

@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
+#![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
 #![warn(broken_intra_doc_links)]
 #![warn(missing_docs)]
@@ -56,7 +57,11 @@
 //!   `artichoke-core` and `focaccia` dependencies. Activating this feature also
 //!   activates the **inspect** feature.
 //! - **inspect** - Enables an iterator for generating debug output of a symbol
-//!   bytestring. Dropping this feature removes the `bstr` dependency.
+//!   bytestring. Activating this feature also activates the **ident-parser**
+//!   feature.
+//! - **ident-parser** - Enables a parser to determing the Ruby identifier type,
+//!   if any, for a bytestring. Dropping this feature removes the `bstr`
+//!   dependency.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
@@ -70,6 +75,8 @@
 // `spinoso-symbol` is a `no_std` crate unless the `std` feature is enabled.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+// Having access to `String` in tests is convenient to collect `Inspect`
+// iterators for whole content comparisons.
 #[cfg(test)]
 extern crate alloc;
 
@@ -112,13 +119,20 @@ mod all_symbols;
 mod casecmp;
 mod convert;
 mod eq;
+#[cfg(feature = "ident-parser")]
+mod ident;
 #[cfg(feature = "inspect")]
 mod inspect;
+
+#[cfg(test)]
+mod fixtures;
 
 #[cfg(feature = "artichoke")]
 pub use all_symbols::{AllSymbols, InternerAllSymbols};
 #[cfg(feature = "artichoke")]
 pub use casecmp::{ascii_casecmp, unicode_case_eq};
+#[cfg(feature = "ident-parser")]
+pub use ident::{IdentifierType, ParseIdentifierError};
 #[cfg(feature = "inspect")]
 pub use inspect::Inspect;
 

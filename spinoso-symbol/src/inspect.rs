@@ -1,6 +1,9 @@
 use bstr::{ByteSlice, CharIndices};
+use core::convert::TryFrom;
 use core::iter::FusedIterator;
 use core::str::Chars;
+
+use crate::ident::IdentifierType;
 
 /// An iterator that yields a debug representation of a `Symbol` and its byte
 /// contents as a sequence of `char`s.
@@ -67,13 +70,7 @@ impl<'a> From<&'a [u8]> for Inspect<'a> {
     fn from(value: &'a [u8]) -> Self {
         match value {
             value if value.is_empty() => Self::default(),
-            // This match arm is known to be buggy. UTF-8 well-formedness is a
-            // necessary but not sufficient condition for having an unquoted
-            // debug representation. The byte contents must also be a valid Ruby
-            // identifier.
-            //
-            // See artichoke/artichoke#219.
-            value if value.is_utf8() => Self(State::unquoted(value)),
+            value if IdentifierType::try_from(value).is_ok() => Self(State::ident(value)),
             value => Self(State::quoted(value)),
         }
     }
@@ -95,15 +92,35 @@ impl<'a> DoubleEndedIterator for Inspect<'a> {
 
 impl<'a> FusedIterator for Inspect<'a> {}
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+enum LeadingColonSigil {
+    Emit,
+    None,
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+enum Quote {
+    Emit,
+    None,
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+enum EscapeSlash {
+    Emit,
+    None,
+}
+
 #[must_use = "Iterator"]
 #[derive(Debug, Clone)]
 struct State<'a> {
+    is_ident: bool,
     string: &'a [u8],
-    sigil: bool,
-    open_quote: bool,
+    leading_colon_sigil: LeadingColonSigil,
+    open_quote: Quote,
+    escape_slash: EscapeSlash,
     next: [Option<Literal>; 3],
     iter: CharIndices<'a>,
-    close_quote: bool,
+    close_quote: Quote,
 }
 
 impl<'a> State<'a> {
@@ -112,14 +129,16 @@ impl<'a> State<'a> {
     ///
     /// This constructor produces inspect contents like `:fred`.
     #[inline]
-    fn unquoted(bytes: &'a [u8]) -> Self {
+    fn ident(bytes: &'a [u8]) -> Self {
         Self {
+            is_ident: true,
             string: bytes,
-            sigil: true,
-            open_quote: false,
+            leading_colon_sigil: LeadingColonSigil::Emit,
+            open_quote: Quote::None,
+            escape_slash: EscapeSlash::None,
             next: [None, None, None],
             iter: bytes.char_indices(),
-            close_quote: false,
+            close_quote: Quote::None,
         }
     }
 
@@ -129,12 +148,14 @@ impl<'a> State<'a> {
     #[inline]
     fn quoted(bytes: &'a [u8]) -> Self {
         Self {
+            is_ident: false,
             string: bytes,
-            sigil: true,
-            open_quote: true,
+            leading_colon_sigil: LeadingColonSigil::Emit,
+            open_quote: Quote::Emit,
+            escape_slash: EscapeSlash::None,
             next: [None, None, None],
             iter: bytes.char_indices(),
-            close_quote: true,
+            close_quote: Quote::Emit,
         }
     }
 }
@@ -142,17 +163,10 @@ impl<'a> State<'a> {
 impl<'a> Default for State<'a> {
     /// Construct a `State` that will render debug output for the empty slice.
     ///
-    /// This constructor produces inspect contents like `:"Spinoso Symbol".
+    /// This constructor produces inspect contents like `:""`.
     #[inline]
     fn default() -> Self {
-        Self {
-            string: b"",
-            sigil: true,
-            open_quote: true,
-            next: [None, None, None],
-            iter: b"".char_indices(),
-            close_quote: true,
-        }
+        Self::quoted(b"")
     }
 }
 
@@ -161,12 +175,12 @@ impl<'a> Iterator for State<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.sigil {
-            self.sigil = false;
+        if let LeadingColonSigil::Emit = self.leading_colon_sigil {
+            self.leading_colon_sigil = LeadingColonSigil::None;
             return Some(':');
         }
-        if self.open_quote {
-            self.open_quote = false;
+        if let Quote::Emit = self.open_quote {
+            self.open_quote = Quote::None;
             return Some('"');
         }
         for cell in &mut self.next {
@@ -184,24 +198,34 @@ impl<'a> Iterator for State<'a> {
             }
         }
         if let Some((start, end, ch)) = self.iter.next() {
-            if ch == '\u{FFFD}' {
-                let mut next = None::<char>;
-                let slice = &self.string[start..end];
-                let iter = slice.iter().zip(self.next.iter_mut()).enumerate();
-                for (idx, (&byte, cell)) in iter {
-                    let mut lit = Literal::from(byte);
-                    if idx == 0 {
-                        next = lit.0.next();
+            match ch {
+                '\u{FFFD}' => {
+                    let mut next = None::<char>;
+                    let slice = &self.string[start..end];
+                    let iter = slice.iter().zip(self.next.iter_mut()).enumerate();
+                    for (idx, (&byte, cell)) in iter {
+                        let mut lit = Literal::from(byte);
+                        if idx == 0 {
+                            next = lit.next();
+                        }
+                        *cell = Some(lit);
                     }
-                    *cell = Some(lit);
+                    return next;
                 }
-                return next;
-            } else {
-                return Some(ch);
+                '"' if self.is_ident => return Some('"'),
+                '"' => {
+                    self.open_quote = Quote::Emit;
+                    return Some('\\');
+                }
+                ch => return Some(ch),
             }
         }
-        if self.close_quote {
-            self.close_quote = false;
+        if let EscapeSlash::Emit = self.escape_slash {
+            self.escape_slash = EscapeSlash::None;
+            return Some('\\');
+        }
+        if let Quote::Emit = self.close_quote {
+            self.close_quote = Quote::None;
             return Some('"');
         }
         None
@@ -210,9 +234,13 @@ impl<'a> Iterator for State<'a> {
 
 impl<'a> DoubleEndedIterator for State<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.close_quote {
-            self.close_quote = false;
+        if let Quote::Emit = self.close_quote {
+            self.close_quote = Quote::None;
             return Some('"');
+        }
+        if let EscapeSlash::Emit = self.escape_slash {
+            self.escape_slash = EscapeSlash::None;
+            return Some('\\');
         }
         for cell in self.next.iter_mut().rev() {
             let mut done = false;
@@ -229,28 +257,34 @@ impl<'a> DoubleEndedIterator for State<'a> {
             }
         }
         if let Some((start, end, ch)) = self.iter.next_back() {
-            if ch == '\u{FFFD}' {
-                let mut next = None::<char>;
-                let slice = &self.string[start..end];
-                let iter = slice.iter().zip(self.next.iter_mut()).rev().enumerate();
-                for (idx, (&byte, cell)) in iter {
-                    let mut lit = Literal::from(byte);
-                    if idx == 0 {
-                        next = lit.0.next_back();
+            match ch {
+                '\u{FFFD}' => {
+                    let mut next = None::<char>;
+                    let slice = &self.string[start..end];
+                    let iter = slice.iter().zip(self.next.iter_mut()).rev().enumerate();
+                    for (idx, (&byte, cell)) in iter {
+                        let mut lit = Literal::from(byte);
+                        if idx == 0 {
+                            next = lit.next_back();
+                        }
+                        *cell = Some(lit);
                     }
-                    *cell = Some(lit);
+                    return next;
                 }
-                return next;
-            } else {
-                return Some(ch);
+                '"' if self.is_ident => return Some('"'),
+                '"' => {
+                    self.escape_slash = EscapeSlash::Emit;
+                    return Some('"');
+                }
+                ch => return Some(ch),
             }
         }
-        if self.open_quote {
-            self.open_quote = false;
+        if let Quote::Emit = self.open_quote {
+            self.open_quote = Quote::None;
             return Some('"');
         }
-        if self.sigil {
-            self.sigil = false;
+        if let LeadingColonSigil::Emit = self.leading_colon_sigil {
+            self.leading_colon_sigil = LeadingColonSigil::None;
             return Some(':');
         }
         None
@@ -579,6 +613,194 @@ mod tests {
     use super::Inspect;
     use alloc::string::String;
 
+    #[test]
+    fn empty() {
+        let inspect = Inspect::from("");
+        let debug = inspect.collect::<String>();
+        assert_eq!(debug, r#":"""#);
+    }
+
+    #[test]
+    fn empty_backwards() {
+        let mut inspect = Inspect::from("");
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some(':'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+
+        let mut inspect = Inspect::from("");
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+
+        let mut inspect = Inspect::from("");
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+
+        let mut inspect = Inspect::from("");
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+    }
+
+    #[test]
+    fn fred() {
+        let inspect = Inspect::from("fred");
+        let debug = inspect.collect::<String>();
+        assert_eq!(debug, ":fred");
+    }
+
+    #[test]
+    fn fred_backwards() {
+        let mut inspect = Inspect::from("fred");
+        assert_eq!(inspect.next_back(), Some('d'));
+        assert_eq!(inspect.next_back(), Some('e'));
+        assert_eq!(inspect.next_back(), Some('r'));
+        assert_eq!(inspect.next_back(), Some('f'));
+        assert_eq!(inspect.next_back(), Some(':'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+    }
+
+    #[test]
+    fn invalid_utf8() {
+        let inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
+        let debug = inspect.collect::<String>();
+        assert_eq!(debug, r#":"invalid-\xFF-utf8""#);
+    }
+
+    #[test]
+    fn invalid_utf8_backwards() {
+        let mut inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('8'));
+        assert_eq!(inspect.next_back(), Some('f'));
+        assert_eq!(inspect.next_back(), Some('t'));
+        assert_eq!(inspect.next_back(), Some('u'));
+        assert_eq!(inspect.next_back(), Some('-'));
+        assert_eq!(inspect.next_back(), Some('F'));
+        assert_eq!(inspect.next_back(), Some('F'));
+        assert_eq!(inspect.next_back(), Some('x'));
+        assert_eq!(inspect.next_back(), Some('\\'));
+        assert_eq!(inspect.next_back(), Some('-'));
+        assert_eq!(inspect.next_back(), Some('d'));
+        assert_eq!(inspect.next_back(), Some('i'));
+        assert_eq!(inspect.next_back(), Some('l'));
+        assert_eq!(inspect.next_back(), Some('a'));
+        assert_eq!(inspect.next_back(), Some('v'));
+        assert_eq!(inspect.next_back(), Some('n'));
+        assert_eq!(inspect.next_back(), Some('i'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some(':'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
+    }
+
+    #[test]
+    fn quoted() {
+        let mut inspect = Inspect::from(r#"a"b"#);
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('a'));
+        assert_eq!(inspect.next(), Some('\\'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('b'));
+        assert_eq!(inspect.next(), Some('"'));
+
+        assert_eq!(Inspect::from(r#"a"b"#).collect::<String>(), r#":"a\"b""#);
+    }
+
+    #[test]
+    fn quote_backwards() {
+        let mut inspect = Inspect::from(r#"a"b"#);
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('b'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('\\'));
+        assert_eq!(inspect.next_back(), Some('a'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some(':'));
+        assert_eq!(inspect.next_back(), None);
+    }
+
+    #[test]
+    fn quote_double_ended() {
+        let mut inspect = Inspect::from(r#"a"b"#);
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('a'));
+        assert_eq!(inspect.next(), Some('\\'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('b'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next(), None);
+
+        let mut inspect = Inspect::from(r#"a"b"#);
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('a'));
+        assert_eq!(inspect.next(), Some('\\'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('b'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), None);
+
+        let mut inspect = Inspect::from(r#"a"b"#);
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('b'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('a'));
+        assert_eq!(inspect.next(), Some('\\'));
+        assert_eq!(inspect.next(), None);
+
+        let mut inspect = Inspect::from(r#"a"b"#);
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('b'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('a'));
+        assert_eq!(inspect.next(), Some('\\'));
+        assert_eq!(inspect.next_back(), None);
+
+        let mut inspect = Inspect::from(r#"a"b"#);
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('b'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next_back(), Some('\\'));
+
+        let mut inspect = Inspect::from(r#"a"b"#);
+        assert_eq!(inspect.next(), Some(':'));
+        assert_eq!(inspect.next(), Some('"'));
+        assert_eq!(inspect.next(), Some('a'));
+        assert_eq!(inspect.next(), Some('\\'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next(), Some('"'));
+    }
+
+    #[test]
+    fn emoji() {
+        assert_eq!(Inspect::from("💎").collect::<String>(), ":💎");
+        assert_eq!(Inspect::from("$💎").collect::<String>(), ":$💎");
+    }
+}
+
+#[cfg(test)]
+mod specs {
+    use super::Inspect;
+    use alloc::string::String;
+
     // From spec/core/symbol/inspect_spec.rb:
     //
     // ```ruby
@@ -679,93 +901,150 @@ mod tests {
     // ```
 
     #[test]
-    fn empty() {
-        let inspect = Inspect::from("");
-        let debug = inspect.collect::<String>();
-        assert_eq!(debug, r#":"""#);
+    fn specs() {
+        // idents
+        assert_eq!(Inspect::from("fred").collect::<String>(), ":fred");
+        assert_eq!(Inspect::from("fred?").collect::<String>(), ":fred?");
+        assert_eq!(Inspect::from("fred!").collect::<String>(), ":fred!");
+        assert_eq!(Inspect::from("$ruby").collect::<String>(), ":$ruby");
+        assert_eq!(Inspect::from("@ruby").collect::<String>(), ":@ruby");
+        assert_eq!(Inspect::from("@@ruby").collect::<String>(), ":@@ruby");
+
+        // idents can't end in bang or question
+        assert_eq!(Inspect::from("$ruby!").collect::<String>(), r#":"$ruby!""#);
+        assert_eq!(Inspect::from("$ruby?").collect::<String>(), r#":"$ruby?""#);
+        assert_eq!(Inspect::from("@ruby!").collect::<String>(), r#":"@ruby!""#);
+        assert_eq!(Inspect::from("@ruby?").collect::<String>(), r#":"@ruby?""#);
+        assert_eq!(
+            Inspect::from("@@ruby!").collect::<String>(),
+            r#":"@@ruby!""#
+        );
+        assert_eq!(
+            Inspect::from("@@ruby?").collect::<String>(),
+            r#":"@@ruby?""#
+        );
+
+        // globals
+        assert_eq!(Inspect::from("$-w").collect::<String>(), ":$-w");
+        assert_eq!(Inspect::from("$-ww").collect::<String>(), r#":"$-ww""#);
+        assert_eq!(Inspect::from("$+").collect::<String>(), ":$+");
+        assert_eq!(Inspect::from("$~").collect::<String>(), ":$~");
+        assert_eq!(Inspect::from("$:").collect::<String>(), ":$:");
+        assert_eq!(Inspect::from("$?").collect::<String>(), ":$?");
+        assert_eq!(Inspect::from("$<").collect::<String>(), ":$<");
+        assert_eq!(Inspect::from("$_").collect::<String>(), ":$_");
+        assert_eq!(Inspect::from("$/").collect::<String>(), ":$/");
+        assert_eq!(Inspect::from("$\"").collect::<String>(), ":$\"");
+        assert_eq!(Inspect::from("$$").collect::<String>(), ":$$");
+        assert_eq!(Inspect::from("$.").collect::<String>(), ":$.");
+        assert_eq!(Inspect::from("$,").collect::<String>(), ":$,");
+        assert_eq!(Inspect::from("$`").collect::<String>(), ":$`");
+        assert_eq!(Inspect::from("$!").collect::<String>(), ":$!");
+        assert_eq!(Inspect::from("$;").collect::<String>(), ":$;");
+        assert_eq!(Inspect::from("$\\").collect::<String>(), ":$\\");
+        assert_eq!(Inspect::from("$=").collect::<String>(), ":$=");
+        assert_eq!(Inspect::from("$*").collect::<String>(), ":$*");
+        assert_eq!(Inspect::from("$>").collect::<String>(), ":$>");
+        assert_eq!(Inspect::from("$&").collect::<String>(), ":$&");
+        assert_eq!(Inspect::from("$@").collect::<String>(), ":$@");
+        assert_eq!(Inspect::from("$1234").collect::<String>(), ":$1234");
+
+        // symbolic methods
+        assert_eq!(Inspect::from("-@").collect::<String>(), ":-@");
+        assert_eq!(Inspect::from("+@").collect::<String>(), ":+@");
+        assert_eq!(Inspect::from("%").collect::<String>(), ":%");
+        assert_eq!(Inspect::from("&").collect::<String>(), ":&");
+        assert_eq!(Inspect::from("*").collect::<String>(), ":*");
+        assert_eq!(Inspect::from("**").collect::<String>(), ":**");
+        assert_eq!(Inspect::from("/").collect::<String>(), ":/");
+        assert_eq!(Inspect::from("<").collect::<String>(), ":<");
+        assert_eq!(Inspect::from("<=").collect::<String>(), ":<=");
+        assert_eq!(Inspect::from("<=>").collect::<String>(), ":<=>");
+        assert_eq!(Inspect::from("==").collect::<String>(), ":==");
+        assert_eq!(Inspect::from("===").collect::<String>(), ":===");
+        assert_eq!(Inspect::from("=~").collect::<String>(), ":=~");
+        assert_eq!(Inspect::from(">").collect::<String>(), ":>");
+        assert_eq!(Inspect::from(">=").collect::<String>(), ":>=");
+        assert_eq!(Inspect::from(">>").collect::<String>(), ":>>");
+        assert_eq!(Inspect::from("[]").collect::<String>(), ":[]");
+        assert_eq!(Inspect::from("[]=").collect::<String>(), ":[]=");
+        assert_eq!(Inspect::from("<<").collect::<String>(), ":<<");
+        assert_eq!(Inspect::from("^").collect::<String>(), ":^");
+        assert_eq!(Inspect::from("`").collect::<String>(), ":`");
+        assert_eq!(Inspect::from("~").collect::<String>(), ":~");
+        assert_eq!(Inspect::from("|").collect::<String>(), ":|");
+
+        // non-symbol symbolics
+        assert_eq!(Inspect::from("!").collect::<String>(), ":!");
+        assert_eq!(Inspect::from("!=").collect::<String>(), ":!=");
+        assert_eq!(Inspect::from("!~").collect::<String>(), ":!~");
+        assert_eq!(Inspect::from("$").collect::<String>(), r#":"$""#);
+        assert_eq!(Inspect::from("&&").collect::<String>(), r#":"&&""#);
+        assert_eq!(Inspect::from("'").collect::<String>(), r#":"'""#);
+        assert_eq!(Inspect::from(",").collect::<String>(), r#":",""#);
+        assert_eq!(Inspect::from(".").collect::<String>(), r#":".""#);
+        assert_eq!(Inspect::from("..").collect::<String>(), r#":"..""#);
+        assert_eq!(Inspect::from("...").collect::<String>(), r#":"...""#);
+        assert_eq!(Inspect::from(":").collect::<String>(), r#":":""#);
+        assert_eq!(Inspect::from("::").collect::<String>(), r#":"::""#);
+        assert_eq!(Inspect::from(";").collect::<String>(), r#":";""#);
+        assert_eq!(Inspect::from("=").collect::<String>(), r#":"=""#);
+        assert_eq!(Inspect::from("=>").collect::<String>(), r#":"=>""#);
+        assert_eq!(Inspect::from("?").collect::<String>(), r#":"?""#);
+        assert_eq!(Inspect::from("@").collect::<String>(), r#":"@""#);
+        assert_eq!(Inspect::from("||").collect::<String>(), r#":"||""#);
+        assert_eq!(Inspect::from("|||").collect::<String>(), r#":"|||""#);
+        assert_eq!(Inspect::from("++").collect::<String>(), r#":"++""#);
+
+        // quotes
+        assert_eq!(Inspect::from(r#"""#).collect::<String>(), r#":"\"""#);
+        assert_eq!(Inspect::from(r#""""#).collect::<String>(), r#":"\"\"""#);
+
+        assert_eq!(Inspect::from("9").collect::<String>(), r#":"9""#);
+        assert_eq!(
+            Inspect::from("foo bar").collect::<String>(),
+            r#":"foo bar""#
+        );
+        assert_eq!(Inspect::from("*foo").collect::<String>(), r#":"*foo""#);
+        assert_eq!(Inspect::from("foo ").collect::<String>(), r#":"foo ""#);
+        assert_eq!(Inspect::from(" foo").collect::<String>(), r#":" foo""#);
+        assert_eq!(Inspect::from(" ").collect::<String>(), r#":" ""#);
     }
+}
+
+/// Tests generated from symbols loaded at MRI interpreter boot.
+///
+/// # Generation
+///
+/// ```shell
+/// cat <<EOF | ruby --disable-gems --disable-did_you_mean
+/// def boot_identifier_symbols
+///   syms = Symbol.all_symbols.map(&:inspect)
+///   # remove symbols that must be debug wrapped in quotes
+///   syms = syms.reject { |s| s[0..1] == ':"' }
+///
+///   fixture = syms.map { |s| "r##\"#{s}\"##" }
+///   puts fixture.join(",\n")
+/// end
+///
+/// boot_identifier_symbols
+/// EOF
+/// ```
+#[cfg(test)]
+mod functionals {
+    use super::Inspect;
+    use crate::fixtures::{IDENTS, IDENT_INSPECTS};
 
     #[test]
-    fn empty_backwards() {
-        let mut inspect = Inspect::from("");
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some(':'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-
-        let mut inspect = Inspect::from("");
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-
-        let mut inspect = Inspect::from("");
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-
-        let mut inspect = Inspect::from("");
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-    }
-
-    #[test]
-    fn fred() {
-        let inspect = Inspect::from("fred");
-        let debug = inspect.collect::<String>();
-        assert_eq!(debug, ":fred");
-    }
-
-    #[test]
-    fn fred_backwards() {
-        let mut inspect = Inspect::from("fred");
-        assert_eq!(inspect.next_back(), Some('d'));
-        assert_eq!(inspect.next_back(), Some('e'));
-        assert_eq!(inspect.next_back(), Some('r'));
-        assert_eq!(inspect.next_back(), Some('f'));
-        assert_eq!(inspect.next_back(), Some(':'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-    }
-
-    #[test]
-    fn invalid_utf8() {
-        let inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
-        let debug = inspect.collect::<String>();
-        assert_eq!(debug, r#":"invalid-\xFF-utf8""#);
-    }
-
-    #[test]
-    fn invalid_utf8_backwards() {
-        let mut inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('8'));
-        assert_eq!(inspect.next_back(), Some('f'));
-        assert_eq!(inspect.next_back(), Some('t'));
-        assert_eq!(inspect.next_back(), Some('u'));
-        assert_eq!(inspect.next_back(), Some('-'));
-        assert_eq!(inspect.next_back(), Some('F'));
-        assert_eq!(inspect.next_back(), Some('F'));
-        assert_eq!(inspect.next_back(), Some('x'));
-        assert_eq!(inspect.next_back(), Some('\\'));
-        assert_eq!(inspect.next_back(), Some('-'));
-        assert_eq!(inspect.next_back(), Some('d'));
-        assert_eq!(inspect.next_back(), Some('i'));
-        assert_eq!(inspect.next_back(), Some('l'));
-        assert_eq!(inspect.next_back(), Some('a'));
-        assert_eq!(inspect.next_back(), Some('v'));
-        assert_eq!(inspect.next_back(), Some('n'));
-        assert_eq!(inspect.next_back(), Some('i'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some(':'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
+    fn mri_symbol_idents() {
+        let pairs = IDENTS.iter().copied().zip(IDENT_INSPECTS.iter().copied());
+        for (sym, expected) in pairs {
+            let inspect = Inspect::from(sym).collect::<String>();
+            assert_eq!(
+                inspect, expected,
+                "Expected '{}', to be the result of '{}'.inspect; got '{}'",
+                expected, sym, inspect,
+            );
+        }
     }
 }

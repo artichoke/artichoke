@@ -112,6 +112,7 @@ jobs:
 
       - name: Compile spinoso-symbol with some features
         run: |
+          cargo build --verbose --no-default-features --features ident-parser
           cargo build --verbose --no-default-features --features inspect
           cargo build --verbose --no-default-features --features inspect,artichoke
         working-directory: "spinoso-symbol"
