@@ -89,8 +89,7 @@ core:
       - succ
       - swapcase
       - symbol
-      # Requires working `Symbol#inspect` impl
-      # - to_proc
+      - to_proc
       - to_s
       - to_sym
       # Requires investments to Unicode support in `String`
