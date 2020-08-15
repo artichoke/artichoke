@@ -105,7 +105,7 @@ enum Quote {
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-enum EscapeSlash {
+enum Slash {
     Emit,
     None,
 }
@@ -117,7 +117,8 @@ struct State<'a> {
     string: &'a [u8],
     leading_colon_sigil: LeadingColonSigil,
     open_quote: Quote,
-    escape_slash: EscapeSlash,
+    slash: Slash,
+    escape_slash: Slash,
     next: [Option<Literal>; 3],
     iter: CharIndices<'a>,
     close_quote: Quote,
@@ -135,7 +136,8 @@ impl<'a> State<'a> {
             string: bytes,
             leading_colon_sigil: LeadingColonSigil::Emit,
             open_quote: Quote::None,
-            escape_slash: EscapeSlash::None,
+            slash: Slash::None,
+            escape_slash: Slash::None,
             next: [None, None, None],
             iter: bytes.char_indices(),
             close_quote: Quote::None,
@@ -152,7 +154,8 @@ impl<'a> State<'a> {
             string: bytes,
             leading_colon_sigil: LeadingColonSigil::Emit,
             open_quote: Quote::Emit,
-            escape_slash: EscapeSlash::None,
+            slash: Slash::None,
+            escape_slash: Slash::None,
             next: [None, None, None],
             iter: bytes.char_indices(),
             close_quote: Quote::Emit,
@@ -182,6 +185,10 @@ impl<'a> Iterator for State<'a> {
         if let Quote::Emit = self.open_quote {
             self.open_quote = Quote::None;
             return Some('"');
+        }
+        if let Slash::Emit = self.slash {
+            self.slash = Slash::None;
+            return Some('\\');
         }
         for cell in &mut self.next {
             let mut done = false;
@@ -217,11 +224,16 @@ impl<'a> Iterator for State<'a> {
                     self.open_quote = Quote::Emit;
                     return Some('\\');
                 }
+                '\\' if self.is_ident => return Some('\\'),
+                '\\' => {
+                    self.slash = Slash::Emit;
+                    return Some('\\');
+                }
                 ch => return Some(ch),
             }
         }
-        if let EscapeSlash::Emit = self.escape_slash {
-            self.escape_slash = EscapeSlash::None;
+        if let Slash::Emit = self.escape_slash {
+            self.escape_slash = Slash::None;
             return Some('\\');
         }
         if let Quote::Emit = self.close_quote {
@@ -238,8 +250,8 @@ impl<'a> DoubleEndedIterator for State<'a> {
             self.close_quote = Quote::None;
             return Some('"');
         }
-        if let EscapeSlash::Emit = self.escape_slash {
-            self.escape_slash = EscapeSlash::None;
+        if let Slash::Emit = self.escape_slash {
+            self.escape_slash = Slash::None;
             return Some('\\');
         }
         for cell in self.next.iter_mut().rev() {
@@ -273,11 +285,20 @@ impl<'a> DoubleEndedIterator for State<'a> {
                 }
                 '"' if self.is_ident => return Some('"'),
                 '"' => {
-                    self.escape_slash = EscapeSlash::Emit;
+                    self.escape_slash = Slash::Emit;
                     return Some('"');
+                }
+                '\\' if self.is_ident => return Some('\\'),
+                '\\' => {
+                    self.escape_slash = Slash::Emit;
+                    return Some('\\');
                 }
                 ch => return Some(ch),
             }
+        }
+        if let Slash::Emit = self.slash {
+            self.slash = Slash::None;
+            return Some('\\');
         }
         if let Quote::Emit = self.open_quote {
             self.open_quote = Quote::None;
@@ -793,6 +814,29 @@ mod tests {
     fn emoji() {
         assert_eq!(Inspect::from("💎").collect::<String>(), ":💎");
         assert_eq!(Inspect::from("$💎").collect::<String>(), ":$💎");
+    }
+
+    #[test]
+    fn escape_slash() {
+        assert_eq!(Inspect::from("\\").collect::<String>(), r#":"\\""#);
+        assert_eq!(
+            Inspect::from("foo\\bar").collect::<String>(),
+            r#":"foo\\bar""#
+        );
+    }
+
+    #[test]
+    fn escape_slash_backwards() {
+        let mut inspect = Inspect::from("a\\b");
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some('b'));
+        assert_eq!(inspect.next_back(), Some('\\'));
+        assert_eq!(inspect.next_back(), Some('\\'));
+        assert_eq!(inspect.next_back(), Some('a'));
+        assert_eq!(inspect.next_back(), Some('"'));
+        assert_eq!(inspect.next_back(), Some(':'));
+        assert_eq!(inspect.next_back(), None);
+        assert_eq!(inspect.next(), None);
     }
 }
 
