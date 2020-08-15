@@ -201,6 +201,9 @@ pub enum IdentifierType {
     /// assert_eq!("@@1".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
     /// assert_eq!("@@9".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
     /// ```
+    ///
+    /// [`Constant`]: Self::Constant
+    /// [`Local`]: Self::Local
     Class,
     /// Identifier that is an "attribute setter" method name.
     ///
@@ -219,6 +222,7 @@ pub enum IdentifierType {
     /// assert_eq!("ω=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
     /// ```
     ///
+    /// [`Constant`]: Self::Constant
     /// [`Local`]: Self::Local
     AttrSet,
     /// Identifier that is a constant name.
