@@ -9,8 +9,8 @@ Symbol implementation for Ruby Symbol core type in Artichoke Ruby
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
-keywords = ["intern", "no_std", "spinoso", "symbol"]
-categories = ["data-structures", "no-std"]
+keywords = ["ident", "intern", "no_std", "spinoso", "symbol"]
+categories = ["data-structures", "no-std", "parser-implementations"]
 
 [dependencies]
 artichoke-core = { version = "0.3", path = "../artichoke-core", default-features = false, optional = true }
@@ -30,7 +30,9 @@ default = ["artichoke", "std"]
 artichoke = ["artichoke-core", "focaccia", "inspect"]
 # Implement an iterator for printing debug output of a bytestring associated
 # with a `Symbol` that is suitable for implementing `Symbol#inspect`.
-inspect = ["bstr"]
+inspect = ["bstr", "ident-parser"]
+# Add a parser for valid Ruby identifiers.
+ident-parser = ["bstr"]
 # By default, `spinoso-symbol` is `no_std`. This feature enables
 # `std::error::Error` impls. This feature activates `focaccia/std` to enable
 # `Error` impls on the re-exported error structs.
