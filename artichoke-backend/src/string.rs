@@ -43,6 +43,8 @@ use crate::Artichoke;
 ///
 /// This method only returns an error when the given writer returns an
 /// error.
+// TODO: deprecate this method and replace it with something like
+// `spinoso_symbol::Inspect`.
 pub fn format_unicode_debug_into<W>(mut f: W, string: &[u8]) -> Result<(), WriteError>
 where
     W: fmt::Write,

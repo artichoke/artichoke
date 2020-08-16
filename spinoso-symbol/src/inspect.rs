@@ -4,6 +4,7 @@ use core::iter::FusedIterator;
 use core::str::Chars;
 
 use crate::ident::IdentifierType;
+use crate::unicode::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
 
 /// An iterator that yields a debug representation of a `Symbol` and its byte
 /// contents as a sequence of `char`s.
@@ -104,12 +105,6 @@ enum Quote {
     None,
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-enum Slash {
-    Emit,
-    None,
-}
-
 #[must_use = "Iterator"]
 #[derive(Debug, Clone)]
 struct State<'a> {
@@ -117,10 +112,9 @@ struct State<'a> {
     string: &'a [u8],
     leading_colon_sigil: LeadingColonSigil,
     open_quote: Quote,
-    slash: Slash,
-    escape_slash: Slash,
     next: [Option<Literal>; 3],
     iter: CharIndices<'a>,
+    next_back: [Option<Literal>; 3],
     close_quote: Quote,
 }
 
@@ -136,10 +130,9 @@ impl<'a> State<'a> {
             string: bytes,
             leading_colon_sigil: LeadingColonSigil::Emit,
             open_quote: Quote::None,
-            slash: Slash::None,
-            escape_slash: Slash::None,
             next: [None, None, None],
             iter: bytes.char_indices(),
+            next_back: [None, None, None],
             close_quote: Quote::None,
         }
     }
@@ -154,10 +147,9 @@ impl<'a> State<'a> {
             string: bytes,
             leading_colon_sigil: LeadingColonSigil::Emit,
             open_quote: Quote::Emit,
-            slash: Slash::None,
-            escape_slash: Slash::None,
             next: [None, None, None],
             iter: bytes.char_indices(),
+            next_back: [None, None, None],
             close_quote: Quote::Emit,
         }
     }
@@ -186,27 +178,26 @@ impl<'a> Iterator for State<'a> {
             self.open_quote = Quote::None;
             return Some('"');
         }
-        if let Slash::Emit = self.slash {
-            self.slash = Slash::None;
-            return Some('\\');
-        }
         for cell in &mut self.next {
-            let mut done = false;
-            let mut next = None;
-            if let Some(ref mut lit) = cell {
-                next = lit.next();
-                done = next.is_none();
-            }
-            if done {
-                *cell = None;
-            }
+            let next = if let Some(ref mut lit) = cell {
+                lit.next()
+            } else {
+                None
+            };
             if next.is_some() {
                 return next;
+            } else {
+                *cell = None;
             }
         }
         if let Some((start, end, ch)) = self.iter.next() {
             match ch {
-                '\u{FFFD}' => {
+                REPLACEMENT_CHARACTER
+                    if self.string[start..end] == REPLACEMENT_CHARACTER_BYTES[..] =>
+                {
+                    return Some(REPLACEMENT_CHARACTER);
+                }
+                REPLACEMENT_CHARACTER => {
                     let mut next = None::<char>;
                     let slice = &self.string[start..end];
                     let iter = slice.iter().zip(self.next.iter_mut()).enumerate();
@@ -219,22 +210,35 @@ impl<'a> Iterator for State<'a> {
                     }
                     return next;
                 }
-                '"' if self.is_ident => return Some('"'),
-                '"' => {
-                    self.open_quote = Quote::Emit;
-                    return Some('\\');
+                '\0'..='\x1F' => {
+                    let bytes = (ch as u32).to_le_bytes();
+                    let mut lit = Literal::from(bytes[0]);
+                    let next = lit.next();
+                    self.next[0] = Some(lit);
+                    return next;
                 }
-                '\\' if self.is_ident => return Some('\\'),
-                '\\' => {
-                    self.slash = Slash::Emit;
-                    return Some('\\');
+                '"' | '\\' if self.is_ident => return Some(ch),
+                '"' | '\\' => {
+                    let bytes = (ch as u32).to_le_bytes();
+                    let mut lit = Literal::from(bytes[0]);
+                    let next = lit.next();
+                    self.next[0] = Some(lit);
+                    return next;
                 }
                 ch => return Some(ch),
             }
         }
-        if let Slash::Emit = self.escape_slash {
-            self.escape_slash = Slash::None;
-            return Some('\\');
+        for cell in &mut self.next_back {
+            let next = if let Some(ref mut lit) = cell {
+                lit.next()
+            } else {
+                None
+            };
+            if next.is_some() {
+                return next;
+            } else {
+                *cell = None;
+            }
         }
         if let Quote::Emit = self.close_quote {
             self.close_quote = Quote::None;
@@ -250,30 +254,33 @@ impl<'a> DoubleEndedIterator for State<'a> {
             self.close_quote = Quote::None;
             return Some('"');
         }
-        if let Slash::Emit = self.escape_slash {
-            self.escape_slash = Slash::None;
-            return Some('\\');
-        }
-        for cell in self.next.iter_mut().rev() {
-            let mut done = false;
-            let mut next = None;
-            if let Some(ref mut lit) = cell {
-                next = lit.next_back();
-                done = next.is_none();
-            }
-            if done {
-                *cell = None;
-            }
+        for cell in &mut self.next_back.iter_mut().rev() {
+            let next = if let Some(ref mut lit) = cell {
+                lit.next_back()
+            } else {
+                None
+            };
             if next.is_some() {
                 return next;
+            } else {
+                *cell = None;
             }
         }
         if let Some((start, end, ch)) = self.iter.next_back() {
             match ch {
-                '\u{FFFD}' => {
+                REPLACEMENT_CHARACTER
+                    if self.string[start..end] == REPLACEMENT_CHARACTER_BYTES[..] =>
+                {
+                    return Some(REPLACEMENT_CHARACTER);
+                }
+                REPLACEMENT_CHARACTER => {
                     let mut next = None::<char>;
                     let slice = &self.string[start..end];
-                    let iter = slice.iter().zip(self.next.iter_mut()).rev().enumerate();
+                    let iter = slice
+                        .iter()
+                        .zip(self.next_back.iter_mut())
+                        .rev()
+                        .enumerate();
                     for (idx, (&byte, cell)) in iter {
                         let mut lit = Literal::from(byte);
                         if idx == 0 {
@@ -283,22 +290,35 @@ impl<'a> DoubleEndedIterator for State<'a> {
                     }
                     return next;
                 }
-                '"' if self.is_ident => return Some('"'),
-                '"' => {
-                    self.escape_slash = Slash::Emit;
-                    return Some('"');
+                '\0'..='\x1F' => {
+                    let bytes = (ch as u32).to_le_bytes();
+                    let mut lit = Literal::from(bytes[0]);
+                    let next = lit.next_back();
+                    self.next_back[2] = Some(lit);
+                    return next;
                 }
-                '\\' if self.is_ident => return Some('\\'),
-                '\\' => {
-                    self.escape_slash = Slash::Emit;
-                    return Some('\\');
+                '"' | '\\' if self.is_ident => return Some(ch),
+                '"' | '\\' => {
+                    let bytes = (ch as u32).to_le_bytes();
+                    let mut lit = Literal::from(bytes[0]);
+                    let next = lit.next_back();
+                    self.next_back[2] = Some(lit);
+                    return next;
                 }
                 ch => return Some(ch),
             }
         }
-        if let Slash::Emit = self.slash {
-            self.slash = Slash::None;
-            return Some('\\');
+        for cell in self.next.iter_mut().rev() {
+            let next = if let Some(ref mut lit) = cell {
+                lit.next_back()
+            } else {
+                None
+            };
+            if next.is_some() {
+                return next;
+            } else {
+                *cell = None;
+            }
         }
         if let Quote::Emit = self.open_quote {
             self.open_quote = Quote::None;
@@ -321,9 +341,79 @@ struct Literal(Chars<'static>);
 impl From<u8> for Literal {
     /// Map from a `u8` to a String literal of a hex escape code.
     ///
-    /// For example, `\xFF` or `\x0C`.
+    /// For example, `\xFF` or `\f`.
     #[allow(clippy::too_many_lines)]
     fn from(value: u8) -> Self {
+        // Some control character bytes escape to non-hex literals:
+        //
+        // ```console
+        // [2.6.3] > :"\x00"
+        // => :"\x00"
+        // [2.6.3] > :"\x01"
+        // => :"\x01"
+        // [2.6.3] > :"\x02"
+        // => :"\x02"
+        // [2.6.3] > :"\x03"
+        // => :"\x03"
+        // [2.6.3] > :"\x04"
+        // => :"\x04"
+        // [2.6.3] > :"\x05"
+        // => :"\x05"
+        // [2.6.3] > :"\x06"
+        // => :"\x06"
+        // [2.6.3] > :"\x07"
+        // => :"\a"
+        // [2.6.3] > :"\x08"
+        // => :"\b"
+        // [2.6.3] > :"\x09"
+        // => :"\t"
+        // [2.6.3] > :"\x0A"
+        // => :"\n"
+        // [2.6.3] > :"\x0B"
+        // => :"\v"
+        // [2.6.3] > :"\x0C"
+        // => :"\f"
+        // [2.6.3] > :"\x0D"
+        // => :"\r"
+        // [2.6.3] > :"\x0E"
+        // => :"\x0E"
+        // [2.6.3] > :"\x0F"
+        // => :"\x0F"
+        // [2.6.3] > :"\x10"
+        // => :"\x10"
+        // [2.6.3] > :"\x11"
+        // => :"\x11"
+        // [2.6.3] > :"\x12"
+        // => :"\x12"
+        // [2.6.3] > :"\x13"
+        // => :"\x13"
+        // [2.6.3] > :"\x14"
+        // => :"\x14"
+        // [2.6.3] > :"\x15"
+        // => :"\x15"
+        // [2.6.3] > :"\x16"
+        // => :"\x16"
+        // [2.6.3] > :"\x17"
+        // => :"\x17"
+        // [2.6.3] > :"\x18"
+        // => :"\x18"
+        // [2.6.3] > :"\x19"
+        // => :"\x19"
+        // [2.6.3] > :"\x1A"
+        // => :"\x1A"
+        // [2.6.3] > :"\x1B"
+        // => :"\e"
+        // [2.6.3] > :"\x1C"
+        // => :"\x1C"
+        // [2.6.3] > :"\x1D"
+        // => :"\x1D"
+        // [2.6.3] > :"\x1E"
+        // => :"\x1E"
+        // [2.6.3] > :"\x1F"
+        // => :"\x1F"
+        // [2.6.3] > :"\x20"
+        // => :" "
+        // ```
         let escape = match value {
             0 => r"\x00",
             1 => r"\x01",
@@ -332,13 +422,13 @@ impl From<u8> for Literal {
             4 => r"\x04",
             5 => r"\x05",
             6 => r"\x06",
-            7 => r"\x07",
-            8 => r"\x08",
-            9 => r"\x09",
-            10 => r"\x0A",
-            11 => r"\x0B",
-            12 => r"\x0C",
-            13 => r"\x0D",
+            7 => r"\a",
+            8 => r"\b",
+            9 => r"\t",
+            10 => r"\n",
+            11 => r"\v",
+            12 => r"\f",
+            13 => r"\r",
             14 => r"\x0E",
             15 => r"\x0F",
             16 => r"\x10",
@@ -352,14 +442,20 @@ impl From<u8> for Literal {
             24 => r"\x18",
             25 => r"\x19",
             26 => r"\x1A",
-            27 => r"\x1B",
+            27 => r"\e",
             28 => r"\x1C",
             29 => r"\x1D",
             30 => r"\x1E",
             31 => r"\x1F",
             32 => r"\x20",
             33 => r"\x21",
-            34 => r"\x22",
+            // [2.6.3] > '"'.ord
+            // => 34
+            // [2.6.3] > '"'.ord.to_s(16)
+            // => "22"
+            // [2.6.3] > :"\x22"
+            // => :"\""
+            34 => r#"\""#,
             35 => r"\x23",
             36 => r"\x24",
             37 => r"\x25",
@@ -417,7 +513,13 @@ impl From<u8> for Literal {
             89 => r"\x59",
             90 => r"\x5A",
             91 => r"\x5B",
-            92 => r"\x5C",
+            // [2.6.3] > '\\'.ord
+            // => 92
+            // [2.6.3] > '\\'.ord.to_s(16)
+            // => "5c"
+            // [2.6.3] > :"\x5C"
+            // => :"\\"
+            92 => r"\\",
             93 => r"\x5D",
             94 => r"\x5E",
             95 => r"\x5F",
@@ -692,6 +794,14 @@ mod tests {
     }
 
     #[test]
+    fn invalid_utf8_byte() {
+        assert_eq!(
+            Inspect::from(&b"\xFF"[..]).collect::<String>(),
+            r#":"\xFF""#
+        );
+    }
+
+    #[test]
     fn invalid_utf8() {
         let inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
         let debug = inspect.collect::<String>();
@@ -814,6 +924,21 @@ mod tests {
     fn emoji() {
         assert_eq!(Inspect::from("💎").collect::<String>(), ":💎");
         assert_eq!(Inspect::from("$💎").collect::<String>(), ":$💎");
+        assert_eq!(Inspect::from("@💎").collect::<String>(), ":@💎");
+        assert_eq!(Inspect::from("@@💎").collect::<String>(), ":@@💎");
+    }
+
+    #[test]
+    fn unicode_replacement_char() {
+        assert_eq!(Inspect::from("�").collect::<String>(), ":�");
+        assert_eq!(Inspect::from("$�").collect::<String>(), ":$�");
+        assert_eq!(Inspect::from("@�").collect::<String>(), ":@�");
+        assert_eq!(Inspect::from("@@�").collect::<String>(), ":@@�");
+
+        assert_eq!(Inspect::from("abc�").collect::<String>(), ":abc�");
+        assert_eq!(Inspect::from("$abc�").collect::<String>(), ":$abc�");
+        assert_eq!(Inspect::from("@abc�").collect::<String>(), ":@abc�");
+        assert_eq!(Inspect::from("@@abc�").collect::<String>(), ":@@abc�");
     }
 
     #[test]
@@ -837,6 +962,73 @@ mod tests {
         assert_eq!(inspect.next_back(), Some(':'));
         assert_eq!(inspect.next_back(), None);
         assert_eq!(inspect.next(), None);
+    }
+
+    #[test]
+    fn nul() {
+        assert_eq!(Inspect::from("\0").collect::<String>(), r#":"\x00""#);
+    }
+
+    #[test]
+    fn ascii_control() {
+        assert_eq!(Inspect::from("\0").collect::<String>(), r#":"\x00""#);
+        assert_eq!(Inspect::from("\x01").collect::<String>(), r#":"\x01""#);
+        assert_eq!(Inspect::from("\x02").collect::<String>(), r#":"\x02""#);
+        assert_eq!(Inspect::from("\x03").collect::<String>(), r#":"\x03""#);
+        assert_eq!(Inspect::from("\x04").collect::<String>(), r#":"\x04""#);
+        assert_eq!(Inspect::from("\x05").collect::<String>(), r#":"\x05""#);
+        assert_eq!(Inspect::from("\x06").collect::<String>(), r#":"\x06""#);
+        assert_eq!(Inspect::from("\x07").collect::<String>(), r#":"\a""#);
+        assert_eq!(Inspect::from("\x08").collect::<String>(), r#":"\b""#);
+        assert_eq!(Inspect::from("\x09").collect::<String>(), r#":"\t""#);
+        assert_eq!(Inspect::from("\x0A").collect::<String>(), r#":"\n""#);
+        assert_eq!(Inspect::from("\x0B").collect::<String>(), r#":"\v""#);
+        assert_eq!(Inspect::from("\x0C").collect::<String>(), r#":"\f""#);
+        assert_eq!(Inspect::from("\x0D").collect::<String>(), r#":"\r""#);
+        assert_eq!(Inspect::from("\x0E").collect::<String>(), r#":"\x0E""#);
+        assert_eq!(Inspect::from("\x0F").collect::<String>(), r#":"\x0F""#);
+        assert_eq!(Inspect::from("\x10").collect::<String>(), r#":"\x10""#);
+        assert_eq!(Inspect::from("\x11").collect::<String>(), r#":"\x11""#);
+        assert_eq!(Inspect::from("\x12").collect::<String>(), r#":"\x12""#);
+        assert_eq!(Inspect::from("\x13").collect::<String>(), r#":"\x13""#);
+        assert_eq!(Inspect::from("\x14").collect::<String>(), r#":"\x14""#);
+        assert_eq!(Inspect::from("\x15").collect::<String>(), r#":"\x15""#);
+        assert_eq!(Inspect::from("\x16").collect::<String>(), r#":"\x16""#);
+        assert_eq!(Inspect::from("\x17").collect::<String>(), r#":"\x17""#);
+        assert_eq!(Inspect::from("\x18").collect::<String>(), r#":"\x18""#);
+        assert_eq!(Inspect::from("\x19").collect::<String>(), r#":"\x19""#);
+        assert_eq!(Inspect::from("\x1A").collect::<String>(), r#":"\x1A""#);
+        assert_eq!(Inspect::from("\x1B").collect::<String>(), r#":"\e""#);
+        assert_eq!(Inspect::from("\x1C").collect::<String>(), r#":"\x1C""#);
+        assert_eq!(Inspect::from("\x1D").collect::<String>(), r#":"\x1D""#);
+        assert_eq!(Inspect::from("\x1E").collect::<String>(), r#":"\x1E""#);
+        assert_eq!(Inspect::from("\x1F").collect::<String>(), r#":"\x1F""#);
+        assert_eq!(Inspect::from("\x20").collect::<String>(), r#":" ""#);
+    }
+
+    #[test]
+    fn special_escapes() {
+        // double quote
+        assert_eq!(Inspect::from("\x22").collect::<String>(), r#":"\"""#);
+        assert_eq!(Inspect::from("\"").collect::<String>(), r#":"\"""#);
+        // backslash
+        assert_eq!(Inspect::from("\x5C").collect::<String>(), r#":"\\""#);
+        assert_eq!(Inspect::from("\\").collect::<String>(), r#":"\\""#);
+    }
+
+    #[test]
+    fn invalid_utf8_special_global() {
+        assert_eq!(
+            Inspect::from(&b"$-\xFF"[..]).collect::<String>(),
+            r#":"$-\xFF""#
+        );
+    }
+
+    #[test]
+    fn replacement_char_special_global() {
+        assert_eq!(Inspect::from("$-�").collect::<String>(), ":$-�");
+        assert_eq!(Inspect::from("$-�a").collect::<String>(), r#":"$-�a""#);
+        assert_eq!(Inspect::from("$-��").collect::<String>(), r#":"$-��""#);
     }
 }
 
