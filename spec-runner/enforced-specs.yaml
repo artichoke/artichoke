@@ -1,6 +1,9 @@
 ---
 # This config file lists the ruby/specs that are enforced as passing in
 # Artichoke Ruby during CI.
+#
+# The `skip_all` spec is used to force the spec harness to run no tests for the
+# given suite.
 core:
   - suite: array
     specs:
@@ -60,40 +63,22 @@ core:
     specs:
       - scan
   - suite: symbol
-    specs:
-      - all_symbols
+    skip:
+      # Requires investments to Unicode support in `String` and Unicode
+      # titlecase support, which does not exist in `core` or `std`.
+      - capitalize
       # Requires investments to Unicode support in `String`
-      # - capitalize
-      - case_compare
-      - casecmp
-      - comparison
-      # Requires investments to Unicode support in `String`
-      # - downcase
-      - dup
+      - downcase
       # Depends on `Regexp` indexing fixes
-      # - element_reference
-      - empty
-      - encoding
-      - equal_value
-      - id2name
+      - element_reference
       # fails with an mruby `SyntaxError`
       # upstream bug: https://github.com/mruby/mruby/issues/5055
-      # - inspect
-      - intern
-      - length
-      - match
-      - next
-      - size
+      # spinoso-symbol ported these test cases to Rust tests, which pass.
+      - inspect
       # Depends on `Regexp` indexing fixes
-      # - slice
-      - succ
-      - swapcase
-      - symbol
-      - to_proc
-      - to_s
-      - to_sym
+      - slice
       # Requires investments to Unicode support in `String`
-      # - upcase
+      - upcase
 library:
   - suite: abbrev
   - suite: delegate
