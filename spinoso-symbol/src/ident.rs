@@ -53,6 +53,8 @@ use core::convert::TryFrom;
 use core::fmt;
 use core::str::FromStr;
 
+use crate::unicode::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
+
 /// Valid types for Ruby identifiers.
 ///
 /// Spinoso symbol parses bytestrings to determine if they are valid idents for
@@ -518,12 +520,24 @@ fn is_ident_char(ch: char) -> bool {
 /// Empty slices are not valid idents.
 #[inline]
 fn is_ident_until(name: &[u8]) -> Option<usize> {
+    // Empty strings are not idents.
     if name.is_empty() {
         return Some(0);
     }
-    for (start, _, ch) in name.char_indices() {
-        if !is_ident_char(ch) {
-            return Some(start);
+    for (start, end, ch) in name.char_indices() {
+        match ch {
+            // `char_indices` uses the Unicode replacement character to indicate
+            // the current char is invalid UTF-8. However, the replacement
+            // character itself _is_ valid UTF-8 and a valid Ruby identifier.
+            //
+            // If `char_indices` yields a replacement char and the byte span
+            // matches the UTF-8 encoding of the replacement char, continue.
+            REPLACEMENT_CHARACTER if name[start..end] == REPLACEMENT_CHARACTER_BYTES[..] => {}
+            // Otherwise, we've gotten invalid UTF-8, which means this is not an
+            // ident.
+            REPLACEMENT_CHARACTER => return Some(start),
+            ch if !is_ident_char(ch) => return Some(start),
+            _ => {}
         }
     }
     None
@@ -540,6 +554,12 @@ fn is_ident_until(name: &[u8]) -> Option<usize> {
 fn is_next_ident_exhausting(name: &[u8]) -> bool {
     let mut iter = name.char_indices();
     match iter.next() {
+        Some((start, end, REPLACEMENT_CHARACTER))
+            if name[start..end] == REPLACEMENT_CHARACTER_BYTES[..] =>
+        {
+            iter.next().is_none()
+        }
+        Some((_, _, REPLACEMENT_CHARACTER)) => false,
         Some((_, _, ch)) if is_ident_char(ch) => iter.next().is_none(),
         _ => false,
     }
@@ -795,6 +815,54 @@ mod tests {
     fn emoji() {
         assert_eq!(IdentifierType::try_from("💎"), Ok(IdentifierType::Local));
         assert_eq!(IdentifierType::try_from("$💎"), Ok(IdentifierType::Global));
+        assert_eq!(
+            IdentifierType::try_from("@💎"),
+            Ok(IdentifierType::Instance)
+        );
+        assert_eq!(IdentifierType::try_from("@@💎"), Ok(IdentifierType::Class));
+    }
+
+    #[test]
+    fn unicode_replacement_char() {
+        assert_eq!(IdentifierType::try_from("�"), Ok(IdentifierType::Local));
+        assert_eq!(IdentifierType::try_from("$�"), Ok(IdentifierType::Global));
+        assert_eq!(IdentifierType::try_from("@�"), Ok(IdentifierType::Instance));
+        assert_eq!(IdentifierType::try_from("@@�"), Ok(IdentifierType::Class));
+
+        assert_eq!(IdentifierType::try_from("abc�"), Ok(IdentifierType::Local));
+        assert_eq!(
+            IdentifierType::try_from("$abc�"),
+            Ok(IdentifierType::Global)
+        );
+        assert_eq!(
+            IdentifierType::try_from("@abc�"),
+            Ok(IdentifierType::Instance)
+        );
+        assert_eq!(
+            IdentifierType::try_from("@@abc�"),
+            Ok(IdentifierType::Class)
+        );
+    }
+
+    #[test]
+    fn invalid_utf8_special_global() {
+        assert_eq!(
+            IdentifierType::try_from(&b"$-\xFF"[..]),
+            Err(ParseIdentifierError::new())
+        );
+    }
+
+    #[test]
+    fn replacement_char_special_global() {
+        assert_eq!(IdentifierType::try_from("$-�"), Ok(IdentifierType::Global));
+        assert_eq!(
+            IdentifierType::try_from("$-�a"),
+            Err(ParseIdentifierError::new())
+        );
+        assert_eq!(
+            IdentifierType::try_from("$-��"),
+            Err(ParseIdentifierError::new())
+        );
     }
 }
 
