@@ -16,13 +16,13 @@ use super::{NameToCaptureLocations, NilableString};
 impl From<Options> for RegexOptions {
     fn from(opts: Options) -> Self {
         let mut bits = RegexOptions::REGEX_OPTION_NONE;
-        if opts.multiline {
+        if opts.multiline.is_enabled() {
             bits |= RegexOptions::REGEX_OPTION_MULTILINE;
         }
-        if opts.ignore_case {
+        if opts.ignore_case.is_enabled() {
             bits |= RegexOptions::REGEX_OPTION_IGNORECASE;
         }
-        if opts.extended {
+        if opts.extended.is_enabled() {
             bits |= RegexOptions::REGEX_OPTION_EXTEND;
         }
         bits

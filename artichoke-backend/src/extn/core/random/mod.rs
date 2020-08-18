@@ -17,7 +17,7 @@ pub enum Seed {
 
 impl Default for Seed {
     fn default() -> Self {
-        Self::None
+        Self::new()
     }
 }
 
@@ -28,9 +28,10 @@ impl From<Int> for Seed {
 }
 
 impl Seed {
+    /// Construct a an empty seed.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self::None
     }
 
     #[must_use]

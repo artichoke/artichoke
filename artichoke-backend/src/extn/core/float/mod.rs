@@ -191,18 +191,23 @@ impl Float {
     /// [round]: https://doc.rust-lang.org/1.42.0/std/primitive.f64.html#method.round
     pub const ROUNDS: Int = -1;
 
+    /// Construct a new, zero, float.
     #[inline]
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self(0.0)
     }
 
+    /// Return the inner [`f64`].
     #[inline]
     #[must_use]
-    pub fn as_f64(self) -> f64 {
+    pub const fn as_f64(self) -> f64 {
         self.0
     }
 
+    /// Compute the remainder of self and other.
+    ///
+    /// Equivalent to `self.as_f64() % other.as_f64()`.
     #[inline]
     #[must_use]
     pub fn modulo(self, other: Self) -> Self {

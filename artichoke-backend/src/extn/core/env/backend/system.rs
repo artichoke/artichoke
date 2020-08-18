@@ -9,13 +9,15 @@ use crate::extn::prelude::*;
 use crate::ffi;
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct System;
+pub struct System {
+    _private: (),
+}
 
 impl System {
     /// Constructs a new, default ENV `System` backend.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 

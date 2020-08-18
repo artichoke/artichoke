@@ -12,60 +12,38 @@ impl Prng for Artichoke {
     type Float = Fp;
 
     fn prng_fill_bytes(&mut self, buf: &mut [u8]) -> Result<(), Self::Error> {
-        self.state
-            .as_mut()
-            .ok_or(InterpreterExtractError)?
-            .prng
-            .bytes(buf);
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
+        state.prng.bytes(buf);
         Ok(())
     }
 
     fn prng_seed(&self) -> Result<u64, Self::Error> {
-        let seed = self
-            .state
-            .as_ref()
-            .ok_or(InterpreterExtractError)?
-            .prng
-            .seed();
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
+        let seed = state.prng.seed();
         Ok(seed)
     }
 
     fn prng_reseed(&mut self, seed: Option<u64>) -> Result<(), Self::Error> {
-        self.state
-            .as_mut()
-            .ok_or(InterpreterExtractError)?
-            .prng
-            .reseed(seed);
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
+        state.prng.reseed(seed);
         Ok(())
     }
 
     fn prng_internal_state(&self) -> Result<Self::InternalState, Self::Error> {
-        let internal_state = self
-            .state
-            .as_ref()
-            .ok_or(InterpreterExtractError)?
-            .prng
-            .internal_state();
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
+        let internal_state = state.prng.internal_state();
         Ok(internal_state)
     }
 
     fn rand_int(&mut self, max: Self::Int) -> Result<Self::Int, Self::Error> {
-        let next = self
-            .state
-            .as_mut()
-            .ok_or(InterpreterExtractError)?
-            .prng
-            .rand_int(max);
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
+        let next = state.prng.rand_int(max);
         Ok(next)
     }
 
     fn rand_float(&mut self, max: Option<Self::Float>) -> Result<Self::Float, Self::Error> {
-        let next = self
-            .state
-            .as_mut()
-            .ok_or(InterpreterExtractError)?
-            .prng
-            .rand_float(max);
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
+        let next = state.prng.rand_float(max);
         Ok(next)
     }
 }

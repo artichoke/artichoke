@@ -42,7 +42,7 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
         state.modules.insert::<T>(Box::new(spec));
         Ok(())
     }
@@ -55,7 +55,7 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let spec = state.modules.get::<T>();
         Ok(spec)
     }
@@ -64,7 +64,7 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let spec = state.modules.get::<T>();
         let spec = if let Some(spec) = spec {
             spec
@@ -72,16 +72,13 @@ impl ModuleRegistry for Artichoke {
             return Ok(None);
         };
         let rclass = spec.rclass();
-        let module = unsafe {
-            self.with_ffi_boundary(|mrb| {
-                if let Some(mut rclass) = rclass.resolve(mrb) {
-                    let module = sys::mrb_sys_module_value(rclass.as_mut());
-                    Some(Value::from(module))
-                } else {
-                    None
-                }
-            })?
-        };
-        Ok(module)
+        let rclass = unsafe { self.with_ffi_boundary(|mrb| rclass.resolve(mrb))? };
+        if let Some(mut rclass) = rclass {
+            let module = unsafe { sys::mrb_sys_module_value(rclass.as_mut()) };
+            let module = Value::from(module);
+            Ok(Some(module))
+        } else {
+            Ok(None)
+        }
     }
 }

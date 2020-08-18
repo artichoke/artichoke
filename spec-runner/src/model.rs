@@ -25,8 +25,12 @@ pub struct Config {
 
 impl Config {
     /// Construct a new, empty `Config`.
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            language: None,
+            core: None,
+            library: None,
+        }
     }
 
     /// Lookup a suite.
@@ -60,7 +64,11 @@ pub struct Suite {
 
 impl Suite {
     /// Construct a new, empty `Suite`.
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            suite: String::new(),
+            specs: None,
+            skip: None,
+        }
     }
 }

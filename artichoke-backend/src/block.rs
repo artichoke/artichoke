@@ -93,18 +93,22 @@ impl From<Ruby> for NoBlockGiven {
 
 impl Default for NoBlockGiven {
     fn default() -> Self {
-        Self(Ruby::Nil)
+        Self::new()
     }
 }
 
 impl NoBlockGiven {
+    /// Construce a new, empty no block given error.
+    ///
+    /// The inner Ruby type is `nil`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self(Ruby::Nil)
     }
 
+    /// Return the [`Ruby`] type of the object given instead of a block.
     #[must_use]
-    pub fn ruby_type(self) -> Ruby {
+    pub const fn ruby_type(self) -> Ruby {
         self.0
     }
 }

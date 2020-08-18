@@ -16,18 +16,7 @@ pub struct ReleaseMetadata<'a> {
 
 impl<'a> Default for ReleaseMetadata<'a> {
     fn default() -> Self {
-        Self {
-            copyright: "Copyright (c) 2019 Ryan Lopopolo <rjl@hyperbo.la>",
-            description: "Artichoke Ruby",
-            engine: "artichoke-mruby",
-            engine_version: env!("CARGO_PKG_VERSION"),
-            patchlevel: "0",
-            platform: "host",
-            release_date: "",
-            revision: "1",
-            ruby_version: "2.6.3",
-            compiler_version: Some("rustc"),
-        }
+        Self::new()
     }
 }
 
@@ -75,8 +64,19 @@ impl<'a> core::ReleaseMetadata for ReleaseMetadata<'a> {
 
 impl<'a> ReleaseMetadata<'a> {
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            copyright: "Copyright (c) 2019 Ryan Lopopolo <rjl@hyperbo.la>",
+            description: "Artichoke Ruby",
+            engine: "artichoke-mruby",
+            engine_version: env!("CARGO_PKG_VERSION"),
+            patchlevel: "0",
+            platform: "host",
+            release_date: "",
+            revision: "1",
+            ruby_version: "2.6.3",
+            compiler_version: Some("rustc"),
+        }
     }
 
     #[must_use]

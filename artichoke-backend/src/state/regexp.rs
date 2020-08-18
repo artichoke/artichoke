@@ -7,18 +7,20 @@ impl State {
     /// Constructs a new, default Regexp `State`.
     #[inline]
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            active_regexp_globals: 0,
+        }
     }
 
     #[inline]
     pub fn clear(&mut self) {
-        *self = Self::default();
+        *self = Self::new();
     }
 
     #[inline]
     #[must_use]
-    pub fn active_regexp_globals(self) -> usize {
+    pub const fn active_regexp_globals(self) -> usize {
         self.active_regexp_globals
     }
 

@@ -4,13 +4,15 @@ use crate::extn::core::random::backend::{InternalState, RandType};
 use crate::extn::prelude::*;
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Default;
+pub struct Default {
+    _private: (),
+}
 
 impl Default {
     /// Constructs a new, default `Default` Random backend.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
