@@ -17,7 +17,7 @@ pub enum Type {
 #[derive(Debug, Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
-    cstring: CString,
+    cstring: Box<CStr>,
     method_type: Type,
     method: Method,
     args: sys::mrb_aspec,
@@ -34,10 +34,10 @@ impl Spec {
         T: Into<Cow<'static, str>>,
     {
         let name = method_name.into();
-        if let Ok(method_cstr) = CString::new(name.as_ref()) {
+        if let Ok(cstring) = CString::new(name.as_ref()) {
             Ok(Self {
                 name,
-                cstring: method_cstr,
+                cstring: cstring.into_boxed_c_str(),
                 method_type,
                 method,
                 args,
@@ -67,7 +67,7 @@ impl Spec {
 
     #[must_use]
     pub fn name_c_str(&self) -> &CStr {
-        self.cstring.as_c_str()
+        self.cstring.as_ref()
     }
 
     /// Define this method on the class-like pointed to by `into`.

@@ -154,13 +154,13 @@ impl<'a> Builder<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rclass {
-    name: CString,
-    enclosing_scope: Option<Box<EnclosingRubyScope>>,
+    name: Box<CStr>,
+    enclosing_scope: Option<EnclosingRubyScope>,
 }
 
 impl Rclass {
     #[must_use]
-    pub fn new(name: CString, enclosing_scope: Option<Box<EnclosingRubyScope>>) -> Self {
+    pub fn new(name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
         Self {
             name,
             enclosing_scope,
@@ -207,9 +207,9 @@ impl Rclass {
 #[derive(Debug, Clone)]
 pub struct Spec {
     name: Cow<'static, str>,
-    cstring: CString,
+    cstring: Box<CStr>,
     data_type: sys::mrb_data_type,
-    enclosing_scope: Option<Box<EnclosingRubyScope>>,
+    enclosing_scope: Option<EnclosingRubyScope>,
 }
 
 impl Spec {
@@ -223,6 +223,18 @@ impl Spec {
     {
         let name = name.into();
         if let Ok(cstring) = CString::new(name.as_ref()) {
+            let cstring = cstring.into_boxed_c_str();
+            // Safety:
+            //
+            // `data_type` and `cstring` have the same lifetime since they are
+            // stored in the same struct.
+            //
+            // `Spec` does not offer mutable access to these fields.
+            //
+            // This, the `struct_name` pointer in `data_type` will point to
+            // valid memory as long as this `Spec` is not dropped.
+            //
+            // This has implications on drop order of components in the `State`.
             let data_type = sys::mrb_data_type {
                 struct_name: cstring.as_ptr(),
                 dfree: free,
@@ -231,7 +243,7 @@ impl Spec {
                 name,
                 cstring,
                 data_type,
-                enclosing_scope: enclosing_scope.map(Box::new),
+                enclosing_scope,
             })
         } else {
             Err(name.into())
@@ -253,12 +265,12 @@ impl Spec {
 
     #[must_use]
     pub fn name_c_str(&self) -> &CStr {
-        self.cstring.as_c_str()
+        self.cstring.as_ref()
     }
 
     #[must_use]
     pub fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
-        self.enclosing_scope.as_deref()
+        self.enclosing_scope.as_ref()
     }
 
     #[must_use]

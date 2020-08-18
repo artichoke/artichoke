@@ -122,13 +122,13 @@ impl<'a> Builder<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rclass {
     sym: u32,
-    name: CString,
-    enclosing_scope: Option<Box<EnclosingRubyScope>>,
+    name: Box<CStr>,
+    enclosing_scope: Option<EnclosingRubyScope>,
 }
 
 impl Rclass {
     #[must_use]
-    pub fn new(sym: u32, name: CString, enclosing_scope: Option<Box<EnclosingRubyScope>>) -> Self {
+    pub fn new(sym: u32, name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
         Self {
             sym,
             name,
@@ -185,8 +185,8 @@ impl Rclass {
 pub struct Spec {
     name: Cow<'static, str>,
     sym: u32,
-    cstring: CString,
-    enclosing_scope: Option<Box<EnclosingRubyScope>>,
+    cstring: Box<CStr>,
+    enclosing_scope: Option<EnclosingRubyScope>,
 }
 
 impl Spec {
@@ -206,9 +206,9 @@ impl Spec {
             };
             Ok(Self {
                 name,
-                cstring,
+                cstring: cstring.into_boxed_c_str(),
                 sym,
-                enclosing_scope: enclosing_scope.map(Box::new),
+                enclosing_scope,
             })
         } else {
             Err(ConstantNameError::from(name).into())
@@ -225,12 +225,12 @@ impl Spec {
 
     #[must_use]
     pub fn name_c_str(&self) -> &CStr {
-        self.cstring.as_c_str()
+        self.cstring.as_ref()
     }
 
     #[must_use]
     pub fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
-        self.enclosing_scope.as_deref()
+        self.enclosing_scope.as_ref()
     }
 
     #[must_use]
