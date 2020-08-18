@@ -2,6 +2,9 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![allow(clippy::missing_errors_doc)]
+// disable or_fun_call lint until release of:
+// https://github.com/rust-lang/rust-clippy/pull/5889
+#![allow(clippy::or_fun_call)]
 #![allow(unknown_lints)]
 #![warn(broken_intra_doc_links)]
 // #![warn(missing_docs)]
