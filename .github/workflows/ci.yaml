@@ -148,7 +148,9 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --all-features -- -A clippy::or_fun_call'
+          # disable or_fun_call lint until release of:
+          # https://github.com/rust-lang/rust-clippy/pull/5889
+          args: --workspace --all-features -- -A clippy::or_fun_call
 
   ruby:
     name: Lint and format Ruby
