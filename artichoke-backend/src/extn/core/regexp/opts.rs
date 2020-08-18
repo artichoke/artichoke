@@ -152,7 +152,7 @@ impl Options {
 
     /// An options instance that has only case insensitive mode enabled.
     #[must_use]
-    pub fn with_ignore_case() -> Self {
+    pub const fn with_ignore_case() -> Self {
         let mut opts = Self::new();
         opts.ignore_case = RegexpOption::Enabled;
         opts
