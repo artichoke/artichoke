@@ -92,6 +92,46 @@ impl From<Options> for Int {
     }
 }
 
+impl From<Int> for Options {
+    fn from(options: Int) -> Self {
+        Self {
+            multiline: (options & regexp::MULTILINE > 0).into(),
+            ignore_case: (options & regexp::IGNORECASE > 0).into(),
+            extended: (options & regexp::EXTENDED > 0).into(),
+            literal: options & regexp::LITERAL > 0,
+        }
+    }
+}
+
+impl From<Option<bool>> for Options {
+    fn from(options: Option<bool>) -> Self {
+        match options {
+            Some(false) | None => Self::new(),
+            Some(true) => Self::with_ignore_case(),
+        }
+    }
+}
+
+impl From<&[u8]> for Options {
+    fn from(options: &[u8]) -> Self {
+        let multiline = options
+            .find_byte(b'm')
+            .map_or(RegexpOption::Disabled, |_| RegexpOption::Enabled);
+        let ignore_case = options
+            .find_byte(b'i')
+            .map_or(RegexpOption::Disabled, |_| RegexpOption::Enabled);
+        let extended = options
+            .find_byte(b'x')
+            .map_or(RegexpOption::Disabled, |_| RegexpOption::Enabled);
+        Self {
+            multiline,
+            ignore_case,
+            extended,
+            literal: false,
+        }
+    }
+}
+
 impl fmt::Display for Options {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_display_modifier())
@@ -174,35 +214,94 @@ impl ConvertMut<Value, Options> for Artichoke {
         // or-ed together. Otherwise, if options is not nil or false, the regexp
         // will be case insensitive.
         if let Ok(options) = value.implicitly_convert_to_int(self) {
-            Options {
-                multiline: (options & regexp::MULTILINE > 0).into(),
-                ignore_case: (options & regexp::IGNORECASE > 0).into(),
-                extended: (options & regexp::EXTENDED > 0).into(),
-                literal: (options & regexp::LITERAL > 0).into(),
-            }
+            Options::from(options)
         } else if let Ok(options) = value.try_into::<Option<bool>>(self) {
-            match options {
-                Some(false) | None => Options::new(),
-                _ => Options::with_ignore_case(),
-            }
+            Options::from(options)
         } else if let Ok(options) = value.try_into_mut::<&[u8]>(self) {
-            Options {
-                multiline: options
-                    .find_byte(b'm')
-                    .map(|_| RegexpOption::Enabled)
-                    .unwrap_or_default(),
-                ignore_case: options
-                    .find_byte(b'i')
-                    .map(|_| RegexpOption::Enabled)
-                    .unwrap_or_default(),
-                extended: options
-                    .find_byte(b'x')
-                    .map(|_| RegexpOption::Enabled)
-                    .unwrap_or_default(),
-                literal: false,
-            }
+            Options::from(options)
         } else {
             Options::with_ignore_case()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Options, RegexpOption};
+    use crate::extn::core::regexp::{EXTENDED, IGNORECASE, MULTILINE};
+    use crate::test::prelude::*;
+
+    // If options is an `Integer`, it should be one or more of the constants
+    // `Regexp::EXTENDED`, `Regexp::IGNORECASE`, and `Regexp::MULTILINE`, or-ed
+    // together. Otherwise, if options is not `nil` or `false`, the regexp will
+    // be case insensitive.
+    #[test]
+    fn parse_options() {
+        assert_eq!(Options::from(None), Options::new());
+        assert_eq!(Options::from(Some(false)), Options::new());
+        assert_eq!(Options::from(Some(true)), Options::with_ignore_case());
+
+        let mut opts = Options::new();
+        opts.ignore_case = RegexpOption::Enabled;
+        assert_eq!(Options::with_ignore_case(), opts);
+
+        let mut opts = Options::new();
+        opts.extended = RegexpOption::Enabled;
+        assert_eq!(Options::from(EXTENDED), opts);
+        assert_ne!(Options::from(EXTENDED | Int::MAX), opts);
+        assert_eq!(Options::from(EXTENDED | 4096), opts);
+        assert_ne!(Options::from(EXTENDED | IGNORECASE), opts);
+        assert_ne!(Options::from(EXTENDED | MULTILINE), opts);
+        assert_ne!(Options::from(EXTENDED | IGNORECASE | MULTILINE), opts);
+
+        let mut opts = Options::new();
+        opts.ignore_case = RegexpOption::Enabled;
+        assert_eq!(Options::from(IGNORECASE), opts);
+        assert_ne!(Options::from(IGNORECASE | Int::MAX), opts);
+        assert_eq!(Options::from(IGNORECASE | 4096), opts);
+        assert_ne!(Options::from(IGNORECASE | EXTENDED), opts);
+        assert_ne!(Options::from(IGNORECASE | MULTILINE), opts);
+        assert_ne!(Options::from(EXTENDED | IGNORECASE | MULTILINE), opts);
+
+        let mut opts = Options::new();
+        opts.multiline = RegexpOption::Enabled;
+        assert_eq!(Options::from(MULTILINE), opts);
+        assert_ne!(Options::from(MULTILINE | Int::MAX), opts);
+        assert_eq!(Options::from(MULTILINE | 4096), opts);
+        assert_ne!(Options::from(MULTILINE | IGNORECASE), opts);
+        assert_ne!(Options::from(MULTILINE | EXTENDED), opts);
+        assert_ne!(Options::from(EXTENDED | IGNORECASE | MULTILINE), opts);
+
+        let mut opts = Options::new();
+        opts.extended = RegexpOption::Enabled;
+        opts.ignore_case = RegexpOption::Enabled;
+        assert_ne!(Options::from(EXTENDED), opts);
+        assert_ne!(Options::from(IGNORECASE), opts);
+        assert_ne!(Options::from(EXTENDED | Int::MAX), opts);
+        assert_ne!(Options::from(IGNORECASE | Int::MAX), opts);
+        assert_ne!(Options::from(EXTENDED | IGNORECASE | Int::MAX), opts);
+        assert_ne!(Options::from(EXTENDED | 4096), opts);
+        assert_ne!(Options::from(MULTILINE | 4096), opts);
+        assert_ne!(Options::from(EXTENDED | MULTILINE | 4096), opts);
+        assert_eq!(Options::from(EXTENDED | IGNORECASE), opts);
+        assert_ne!(Options::from(EXTENDED | IGNORECASE | MULTILINE), opts);
+
+        let mut opts = Options::new();
+        opts.extended = RegexpOption::Enabled;
+        opts.ignore_case = RegexpOption::Enabled;
+        opts.multiline = RegexpOption::Enabled;
+        assert_ne!(Options::from(EXTENDED), opts);
+        assert_ne!(Options::from(IGNORECASE), opts);
+        assert_ne!(Options::from(MULTILINE), opts);
+        assert_ne!(Options::from(EXTENDED | Int::MAX), opts);
+        assert_ne!(Options::from(IGNORECASE | Int::MAX), opts);
+        assert_ne!(Options::from(MULTILINE | Int::MAX), opts);
+        assert_ne!(Options::from(EXTENDED | 4096), opts);
+        assert_ne!(Options::from(IGNORECASE | 4096), opts);
+        assert_ne!(Options::from(MULTILINE | 4096), opts);
+        assert_ne!(Options::from(EXTENDED | MULTILINE | 4096), opts);
+        assert_ne!(Options::from(EXTENDED | IGNORECASE), opts);
+        assert_ne!(Options::from(MULTILINE | IGNORECASE), opts);
+        assert_eq!(Options::from(EXTENDED | IGNORECASE | MULTILINE), opts);
     }
 }
