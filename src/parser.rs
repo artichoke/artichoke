@@ -39,8 +39,8 @@ pub enum State {
 impl State {
     /// Construct a new, default `State`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self::Valid
     }
 
     /// Whether this variant indicates a code block is open.
@@ -79,7 +79,7 @@ impl State {
 
 impl Default for State {
     fn default() -> Self {
-        Self::Valid
+        Self::new()
     }
 }
 

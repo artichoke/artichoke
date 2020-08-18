@@ -12,7 +12,7 @@ use crate::gc::{MrbGarbageCollection, State as GcState};
 unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let result = Array::default();
+    let result = Array::new();
     let result = Array::alloc_value(result, &mut guard);
     match result {
         Ok(value) => value.inner(),

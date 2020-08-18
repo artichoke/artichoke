@@ -26,7 +26,7 @@ pub mod trampoline;
 
 pub use backend::{NilableString, RegexpType, Scan};
 pub use enc::Encoding;
-pub use opts::Options;
+pub use opts::{Options, RegexpOption};
 
 use backend::lazy::Lazy;
 #[cfg(feature = "core-regexp-oniguruma")]
@@ -148,7 +148,7 @@ impl Regexp {
     pub fn lazy(pattern: Vec<u8>) -> Self {
         let literal_config = Config {
             pattern: pattern.into(),
-            options: Options::default(),
+            options: Options::new(),
         };
         let backend = Box::new(Lazy::from(literal_config));
         Self(backend)
@@ -239,7 +239,7 @@ impl Regexp {
         };
 
         let derived_config = {
-            let pattern = pattern::parse(&pattern, Options::default());
+            let pattern = pattern::parse(&pattern, Options::new());
             let options = pattern.options();
             Config {
                 pattern: pattern.into_pattern().into(),
@@ -248,9 +248,9 @@ impl Regexp {
         };
         let literal_config = Config {
             pattern: pattern.into(),
-            options: Options::default(),
+            options: Options::new(),
         };
-        Self::new(literal_config, derived_config, Encoding::default())
+        Self::new(literal_config, derived_config, Encoding::new())
     }
 
     #[inline]
@@ -299,7 +299,7 @@ impl Regexp {
     #[inline]
     #[must_use]
     pub fn is_casefold(&self) -> bool {
-        self.0.literal_config().options.ignore_case
+        self.0.literal_config().options.ignore_case.is_enabled()
     }
 
     #[must_use]

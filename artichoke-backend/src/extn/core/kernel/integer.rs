@@ -125,11 +125,11 @@ impl From<str::Utf8Error> for Utf8Error {
 }
 
 impl<'a> IntegerString<'a> {
-    /// Constructs a new, default `IntegerString`.
+    /// Constructs a new, empty `IntegerString`.
     #[inline]
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self("")
     }
 
     #[must_use]
@@ -186,10 +186,16 @@ enum Sign {
     Negative,
 }
 
+impl Sign {
+    const fn new() -> Self {
+        Self::Positive
+    }
+}
+
 impl Default for Sign {
     #[inline]
     fn default() -> Self {
-        Self::Positive
+        Self::new()
     }
 }
 
@@ -223,7 +229,7 @@ impl<'a> ParseState<'a> {
             Self::Initial(arg) => {
                 let mut digits = String::new();
                 digits.push(digit);
-                Self::Accumulate(arg, Sign::default(), digits)
+                Self::Accumulate(arg, Sign::new(), digits)
             }
             Self::Sign(arg, sign) => {
                 let mut digits = String::new();

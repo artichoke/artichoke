@@ -39,7 +39,7 @@ pub struct Code {
 
 impl Default for Code {
     fn default() -> Self {
-        "# virtual source file".into()
+        Self::new()
     }
 }
 
@@ -99,7 +99,9 @@ impl From<Cow<'static, str>> for Code {
 impl Code {
     #[must_use]
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            content: Cow::Borrowed(&b"# virtual source file"[..]),
+        }
     }
 
     #[must_use]
@@ -117,7 +119,7 @@ pub struct Entry {
 
 impl From<Code> for Entry {
     fn from(code: Code) -> Self {
-        let mut entry = Self::default();
+        let mut entry = Self::new();
         entry.code = Some(code);
         entry
     }
@@ -125,7 +127,7 @@ impl From<Code> for Entry {
 
 impl From<Vec<u8>> for Entry {
     fn from(content: Vec<u8>) -> Self {
-        let mut entry = Self::default();
+        let mut entry = Self::new();
         entry.code = Some(content.into());
         entry
     }
@@ -133,7 +135,7 @@ impl From<Vec<u8>> for Entry {
 
 impl From<&'static [u8]> for Entry {
     fn from(content: &'static [u8]) -> Self {
-        let mut entry = Self::default();
+        let mut entry = Self::new();
         entry.code = Some(content.into());
         entry
     }
@@ -141,7 +143,7 @@ impl From<&'static [u8]> for Entry {
 
 impl From<Cow<'static, [u8]>> for Entry {
     fn from(content: Cow<'static, [u8]>) -> Self {
-        let mut entry = Self::default();
+        let mut entry = Self::new();
         entry.code = Some(content.into());
         entry
     }
@@ -149,7 +151,7 @@ impl From<Cow<'static, [u8]>> for Entry {
 
 impl From<String> for Entry {
     fn from(content: String) -> Self {
-        let mut entry = Self::default();
+        let mut entry = Self::new();
         entry.code = Some(content.into());
         entry
     }
@@ -157,7 +159,7 @@ impl From<String> for Entry {
 
 impl From<&'static str> for Entry {
     fn from(content: &'static str) -> Self {
-        let mut entry = Self::default();
+        let mut entry = Self::new();
         entry.code = Some(content.into());
         entry
     }
@@ -165,7 +167,7 @@ impl From<&'static str> for Entry {
 
 impl From<Cow<'static, str>> for Entry {
     fn from(content: Cow<'static, str>) -> Self {
-        let mut entry = Self::default();
+        let mut entry = Self::new();
         entry.code = Some(content.into());
         entry
     }
@@ -173,13 +175,21 @@ impl From<Cow<'static, str>> for Entry {
 
 impl From<ExtensionHook> for Entry {
     fn from(hook: ExtensionHook) -> Self {
-        let mut entry = Self::default();
+        let mut entry = Self::new();
         entry.extension = Some(hook.into());
         entry
     }
 }
 
 impl Entry {
+    const fn new() -> Self {
+        Self {
+            code: None,
+            extension: None,
+            required: false,
+        }
+    }
+
     fn replace_content<T>(&mut self, content: T)
     where
         T: Into<Cow<'static, [u8]>>,
@@ -291,7 +301,7 @@ impl Filesystem for Memory {
                     Cow::Owned(ref content) => Ok(content.clone().into()),
                 }
             } else {
-                Ok(Code::default().into())
+                Ok(Code::new().into())
             }
         } else {
             Err(io::Error::new(

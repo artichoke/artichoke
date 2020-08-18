@@ -12,11 +12,9 @@ const DEFAULT_REQUESTED_BYTES: usize = 16;
 
 #[cfg(test)]
 mod tests {
-    fn rng_must_be_cryptographically_secure<T>(_rng: T)
-    where
-        T: rand::CryptoRng,
-    {
-    }
+    use rand::CryptoRng;
+
+    fn rng_must_be_cryptographically_secure<T: CryptoRng>(_rng: T) {}
 
     #[test]
     fn rand_thread_rng_must_be_cryptographically_secure() {
@@ -25,13 +23,15 @@ mod tests {
 }
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SecureRandom;
+pub struct SecureRandom {
+    _private: (),
+}
 
 impl SecureRandom {
     /// Constructs a new, default `SecureRandom`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 

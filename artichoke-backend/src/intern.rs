@@ -12,7 +12,7 @@ use crate::Artichoke;
 
 impl Artichoke {
     pub fn lookup_symbol_with_trailing_nul(&self, symbol: u32) -> Result<Option<&[u8]>, Exception> {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         if let Some(symbol) = symbol.checked_sub(1) {
             if let Some(bytes) = state.symbols.get(symbol.into()) {
                 Ok(Some(bytes))
@@ -29,7 +29,7 @@ impl Artichoke {
         T: Into<Cow<'static, [u8]>>,
     {
         let bytes = bytes.into();
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
         let symbol = state.symbols.intern(bytes)?;
         let symbol = u32::from(symbol);
         // mruby expexts symbols to be non-zero.
@@ -43,7 +43,7 @@ impl Artichoke {
         &self,
         bytes: &[u8],
     ) -> Result<Option<u32>, Exception> {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let symbol = state.symbols.check_interned(bytes);
         if let Some(symbol) = symbol {
             let symbol = u32::from(symbol);
@@ -70,7 +70,7 @@ impl Intern for Artichoke {
         T: Into<Cow<'static, [u8]>>,
     {
         let bytes = bytes.into();
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
         let mut bytes = bytes.into_owned();
         bytes.push(b'\0');
         let symbol = state.symbols.intern(bytes)?;
@@ -83,7 +83,7 @@ impl Intern for Artichoke {
     }
 
     fn check_interned_bytes(&self, bytes: &[u8]) -> Result<Option<Self::Symbol>, Self::Error> {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let mut bytes = bytes.to_vec();
         bytes.push(b'\0');
         let symbol = state.symbols.check_interned(&bytes);
@@ -100,7 +100,7 @@ impl Intern for Artichoke {
     }
 
     fn lookup_symbol(&self, symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error> {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         if let Some(symbol) = symbol.checked_sub(Self::SYMBOL_RANGE_START) {
             if let Some(bytes) = state.symbols.get(symbol.into()) {
                 if bytes.is_empty() {

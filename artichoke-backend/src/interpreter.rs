@@ -21,7 +21,7 @@ use crate::Artichoke;
 /// initializes an [in memory virtual filesystem](crate::fs), and loads the
 /// [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, Exception> {
-    interpreter_with_config(ArtichokeBackendReleaseMetadata::default())
+    interpreter_with_config(ArtichokeBackendReleaseMetadata::new())
 }
 
 /// Create and initialize an [`Artichoke`] interpreter with build metadata.
@@ -40,7 +40,7 @@ where
     let raw = unsafe { sys::mrb_open_allocf(Some(sys::mrb_default_allocf), alloc_ud) };
     debug!("Try initializing mrb interpreter");
 
-    let mut interp = unsafe { ffi::from_user_data(raw).map_err(|_| InterpreterAllocError)? };
+    let mut interp = unsafe { ffi::from_user_data(raw).map_err(|_| InterpreterAllocError::new())? };
 
     if let Some(ref mut state) = interp.state {
         if let Some(mrb) = unsafe { raw.as_mut() } {
@@ -88,13 +88,15 @@ where
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::module_name_repetitions)]
-pub struct InterpreterAllocError;
+pub struct InterpreterAllocError {
+    _private: (),
+}
 
 impl InterpreterAllocError {
     /// Constructs a new, default `InterpreterAllocError`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 

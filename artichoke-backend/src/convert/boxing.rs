@@ -141,7 +141,10 @@ where
         }
 
         let mut rclass = {
-            let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+            let state = interp
+                .state
+                .as_ref()
+                .ok_or(InterpreterExtractError::new())?;
             let spec = state
                 .classes
                 .get::<Self>()
@@ -164,7 +167,10 @@ where
 
         // Copy data pointer out of the `mrb_value` box.
         let mrb = interp.mrb.as_mut();
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = interp
+            .state
+            .as_ref()
+            .ok_or(InterpreterExtractError::new())?;
         let spec = state
             .classes
             .get::<Self>()
@@ -213,7 +219,10 @@ where
         let prior_gc_state = interp.disable_gc();
 
         let mut rclass = {
-            let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+            let state = interp
+                .state
+                .as_ref()
+                .ok_or(InterpreterExtractError::new())?;
             let spec = state
                 .classes
                 .get::<Self>()
@@ -228,7 +237,10 @@ where
         let ptr = Box::into_raw(data);
 
         // Allocate a new `mrb_value` and inject the raw data pointer.
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = interp
+            .state
+            .as_ref()
+            .ok_or(InterpreterExtractError::new())?;
         let spec = state
             .classes
             .get::<Self>()
@@ -257,7 +269,10 @@ where
         into: Value,
         interp: &mut Artichoke,
     ) -> Result<Value, Exception> {
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = interp
+            .state
+            .as_ref()
+            .ok_or(InterpreterExtractError::new())?;
         let spec = state
             .classes
             .get::<Self>()

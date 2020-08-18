@@ -14,13 +14,15 @@ use crate::Artichoke;
 
 /// Failed to extract Artichoke interpreter at an FFI boundary.
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct IndexError;
+pub struct IndexError {
+    _private: (),
+}
 
 impl IndexError {
     /// Constructs a new, default `IndexError`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -108,7 +110,7 @@ impl<'a> ArenaIndex<'a> {
             interp
                 .with_ffi_boundary(|mrb| sys::mrb_sys_gc_arena_save(mrb))
                 .map(move |index| Self { index, interp })
-                .map_err(|_| IndexError)
+                .map_err(|_| IndexError::new())
         }
     }
 

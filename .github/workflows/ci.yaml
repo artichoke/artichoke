@@ -148,7 +148,7 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --all-features
+          args: --workspace --all-features -- -A clippy::or_fun_call'
 
   ruby:
     name: Lint and format Ruby

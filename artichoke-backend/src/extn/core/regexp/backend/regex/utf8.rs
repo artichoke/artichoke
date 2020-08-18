@@ -26,9 +26,9 @@ impl Utf8 {
             ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 patterns")
         })?;
         let mut builder = RegexBuilder::new(pattern);
-        builder.case_insensitive(derived.options.ignore_case);
-        builder.multi_line(derived.options.multiline);
-        builder.ignore_whitespace(derived.options.extended);
+        builder.case_insensitive(derived.options.ignore_case.into());
+        builder.multi_line(derived.options.multiline.into());
+        builder.ignore_whitespace(derived.options.extended.into());
         let regex = match builder.build() {
             Ok(regex) => regex,
             Err(err) if literal.options.literal => {

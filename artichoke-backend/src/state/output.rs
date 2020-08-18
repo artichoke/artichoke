@@ -34,13 +34,15 @@ pub trait Output: Send + Sync {
 }
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Process;
+pub struct Process {
+    _private: (),
+}
 
 impl Process {
     /// Constructs a new, default `Process` output strategy.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -66,6 +68,8 @@ pub struct Captured {
 
 impl Captured {
     /// Constructs a new, default `Captured` output strategy.
+    // This method cannot be const becuase of:
+    // https://github.com/BurntSushi/bstr/issues/73
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -120,13 +124,15 @@ impl<'a> Output for &'a mut Captured {
 }
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Null;
+pub struct Null {
+    _private: (),
+}
 
 impl Null {
     /// Constructs a new, default `Null` output strategy.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 

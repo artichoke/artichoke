@@ -17,7 +17,7 @@ impl LoadSources for Artichoke {
         P: AsRef<Path>,
         T: File<Artichoke = Self::Artichoke, Error = Self::Exception>,
     {
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
         let mut path = path.as_ref();
         let absolute_path;
         if path.is_relative() {
@@ -37,7 +37,7 @@ impl LoadSources for Artichoke {
         P: AsRef<Path>,
         T: Into<Cow<'static, [u8]>>,
     {
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
         let mut path = path.as_ref();
         let absolute_path;
         if path.is_relative() {
@@ -56,7 +56,7 @@ impl LoadSources for Artichoke {
     where
         P: AsRef<Path>,
     {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let is_file = state.vfs.is_file(path.as_ref());
         Ok(is_file)
     }
@@ -66,7 +66,7 @@ impl LoadSources for Artichoke {
         P: AsRef<Path>,
     {
         {
-            let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+            let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
             // Load Rust `File` first because an File may define classes and
             // modules with `LoadSources` and Ruby files can require arbitrary
             // other files, including some child sources that may depend on these
@@ -88,7 +88,7 @@ impl LoadSources for Artichoke {
         P: AsRef<Path>,
     {
         {
-            let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+            let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
             // If a file is already required, short circuit.
             if state.vfs.is_required(path.as_ref()) {
                 return Ok(false);
@@ -105,7 +105,7 @@ impl LoadSources for Artichoke {
         }
         let contents = self.read_source_file_contents(path.as_ref())?.into_owned();
         self.eval(contents.as_ref())?;
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
         state.vfs.mark_required(path.as_ref())?;
         trace!(r#"Successful require of {}"#, path.as_ref().display());
         Ok(true)
@@ -115,7 +115,7 @@ impl LoadSources for Artichoke {
     where
         P: AsRef<Path>,
     {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let contents = state.vfs.read_file(path.as_ref())?;
         Ok(contents.to_vec().into())
     }

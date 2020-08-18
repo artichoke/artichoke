@@ -18,7 +18,7 @@ impl From<Config> for Lazy {
     fn from(config: Config) -> Self {
         Self {
             literal: config,
-            encoding: Encoding::default(),
+            encoding: Encoding::new(),
             regexp: OnceCell::new(),
         }
     }

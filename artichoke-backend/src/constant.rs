@@ -44,7 +44,7 @@ impl DefineConstant for Artichoke {
         } else {
             return Err(ConstantNameError::from(String::from(constant)).into());
         };
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
         let spec = state
             .classes
             .get::<T>()
@@ -77,7 +77,7 @@ impl DefineConstant for Artichoke {
         } else {
             return Err(ConstantNameError::from(String::from(constant)).into());
         };
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
         let spec = state
             .modules
             .get::<T>()

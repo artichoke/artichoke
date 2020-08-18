@@ -14,7 +14,9 @@ namespace :lint do
     roots.each do |root|
       FileUtils.touch(root)
     end
-    sh 'cargo clippy --workspace --all-features'
+    # disable or_fun_call lint until release of:
+    # https://github.com/rust-lang/rust-clippy/pull/5889
+    sh 'cargo clippy --workspace --all-features -- -A clippy::or_fun_call'
   end
 
   desc 'Run RuboCop'

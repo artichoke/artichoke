@@ -63,23 +63,23 @@ impl From<Int> for Outcome {
 }
 
 impl Integer {
-    /// Constructs a new, default `Integer`.
+    /// Constructs a new, default, zero `Integer`.
     #[inline]
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self(0)
     }
 
     #[inline]
     #[must_use]
-    pub fn as_i64(self) -> i64 {
+    pub const fn as_i64(self) -> i64 {
         self.0
     }
 
     #[allow(clippy::cast_precision_loss)]
     #[inline]
     #[must_use]
-    pub fn as_f64(self) -> f64 {
+    pub const fn as_f64(self) -> f64 {
         self.0 as f64
     }
 

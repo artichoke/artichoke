@@ -9,13 +9,15 @@ use crate::extn::core::regexp;
 use crate::extn::prelude::*;
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct InvalidEncodingError;
+pub struct InvalidEncodingError {
+    _private: (),
+}
 
 impl InvalidEncodingError {
     /// Constructs a new, default `InvalidEncodingError`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -44,7 +46,7 @@ pub enum Encoding {
 
 impl Default for Encoding {
     fn default() -> Self {
-        Self::None
+        Self::new()
     }
 }
 
@@ -92,8 +94,8 @@ impl fmt::Display for Encoding {
 
 impl Encoding {
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self::None
     }
 
     /// Convert an `Encoding` to its bitflag representation.
@@ -129,12 +131,12 @@ impl TryConvertMut<Value, Encoding> for Artichoke {
             match encoding {
                 regexp::FIXEDENCODING => Ok(Encoding::Fixed),
                 regexp::NOENCODING => Ok(Encoding::No),
-                0 => Ok(Encoding::default()),
-                _ => Err(InvalidEncodingError),
+                0 => Ok(Encoding::new()),
+                _ => Err(InvalidEncodingError::new()),
             }
         } else if let Ok(encoding) = value.try_into_mut::<&[u8]>(self) {
             if encoding.find_byte(b'u').is_some() && encoding.find_byte(b'n').is_some() {
-                return Err(InvalidEncodingError);
+                return Err(InvalidEncodingError::new());
             }
             let mut enc = None;
             for &flag in encoding {
@@ -142,12 +144,12 @@ impl TryConvertMut<Value, Encoding> for Artichoke {
                     b'u' | b's' | b'e' if enc.is_none() => enc = Some(Encoding::Fixed),
                     b'n' if enc.is_none() => enc = Some(Encoding::No),
                     b'i' | b'm' | b'x' | b'o' => continue,
-                    _ => return Err(InvalidEncodingError),
+                    _ => return Err(InvalidEncodingError::new()),
                 }
             }
             Ok(enc.unwrap_or_default())
         } else {
-            Ok(Encoding::default())
+            Ok(Encoding::new())
         }
     }
 }

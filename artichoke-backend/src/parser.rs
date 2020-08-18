@@ -15,45 +15,63 @@ impl Parser for Artichoke {
 
     fn reset_parser(&mut self) -> Result<(), Self::Error> {
         let mrb = unsafe { self.mrb.as_mut() };
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
-        let parser = state.parser.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
+        let parser = state
+            .parser
+            .as_mut()
+            .ok_or(InterpreterExtractError::new())?;
         parser.reset(mrb);
         Ok(())
     }
 
     fn fetch_lineno(&self) -> Result<usize, Self::Error> {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
-        let parser = state.parser.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
+        let parser = state
+            .parser
+            .as_ref()
+            .ok_or(InterpreterExtractError::new())?;
         let lineno = parser.fetch_lineno();
         Ok(lineno)
     }
 
     fn add_fetch_lineno(&mut self, val: usize) -> Result<usize, Self::Error> {
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
-        let parser = state.parser.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
+        let parser = state
+            .parser
+            .as_mut()
+            .ok_or(InterpreterExtractError::new())?;
         let lineno = parser.add_fetch_lineno(val)?;
         Ok(lineno)
     }
 
     fn push_context(&mut self, context: Self::Context) -> Result<(), Self::Error> {
         let mrb = unsafe { self.mrb.as_mut() };
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
-        let parser = state.parser.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
+        let parser = state
+            .parser
+            .as_mut()
+            .ok_or(InterpreterExtractError::new())?;
         parser.push_context(mrb, context);
         Ok(())
     }
 
     fn pop_context(&mut self) -> Result<Option<Self::Context>, Self::Error> {
         let mrb = unsafe { self.mrb.as_mut() };
-        let state = self.state.as_mut().ok_or(InterpreterExtractError)?;
-        let parser = state.parser.as_mut().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
+        let parser = state
+            .parser
+            .as_mut()
+            .ok_or(InterpreterExtractError::new())?;
         let context = parser.pop_context(mrb);
         Ok(context)
     }
 
     fn peek_context(&self) -> Result<Option<&Self::Context>, Self::Error> {
-        let state = self.state.as_ref().ok_or(InterpreterExtractError)?;
-        let parser = state.parser.as_ref().ok_or(InterpreterExtractError)?;
+        let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
+        let parser = state
+            .parser
+            .as_ref()
+            .ok_or(InterpreterExtractError::new())?;
         let context = parser.peek_context();
         Ok(context)
     }

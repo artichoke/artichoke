@@ -31,13 +31,15 @@ mod filename_test {
 ///
 /// The parser is needed to properly enter and exit multi-line editing mode.
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ParserAllocError;
+pub struct ParserAllocError {
+    _private: (),
+}
 
 impl ParserAllocError {
     /// Constructs a new, default `ParserAllocError`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -51,13 +53,15 @@ impl error::Error for ParserAllocError {}
 
 /// Parser processed too many lines of input.
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ParserLineCountError;
+pub struct ParserLineCountError {
+    _private: (),
+}
 
 impl ParserLineCountError {
     /// Constructs a new, default `ParserLineCountError`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -73,13 +77,15 @@ impl error::Error for ParserLineCountError {}
 ///
 /// This is usually an unknown FFI to Rust translation.
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ParserInternalError;
+pub struct ParserInternalError {
+    _private: (),
+}
 
 impl ParserInternalError {
     /// Constructs a new, default `ParserInternalError`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -180,13 +186,13 @@ where
     // - A test asserts that `REPL_FILENAME` has no NUL bytes.
     let context = unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) };
     interp.push_context(context)?;
-    let mut parser = Parser::new(&mut interp).ok_or(ParserAllocError)?;
+    let mut parser = Parser::new(&mut interp).ok_or(ParserAllocError::new())?;
 
     let mut rl = Editor::<()>::new();
     // If a code block is open, accumulate code from multiple readlines in this
     // mutable `String` buffer.
     let mut buf = String::new();
-    let mut parser_state = State::default();
+    let mut parser_state = State::new();
     loop {
         // Allow shell users to identify that they have an open code block.
         let prompt = if parser_state.is_code_block_open() {
@@ -201,7 +207,7 @@ where
                 buf.push_str(line.as_str());
                 parser_state = parser.parse(buf.as_bytes());
                 if parser_state.is_fatal() {
-                    return Err(Box::new(ParserInternalError));
+                    return Err(Box::new(ParserInternalError::new()));
                 }
                 if parser_state.is_code_block_open() {
                     buf.push('\n');
@@ -226,7 +232,7 @@ where
                     rl.add_history_entry(line);
                     interp
                         .add_fetch_lineno(1)
-                        .map_err(|_| ParserLineCountError)?;
+                        .map_err(|_| ParserLineCountError::new())?;
                 }
                 // Eval successful, so reset the REPL state for the next
                 // expression.
@@ -238,7 +244,7 @@ where
                 // Reset buffered code
                 buf.clear();
                 // clear parser state
-                parser_state = State::default();
+                parser_state = State::new();
                 writeln!(output, "^C")?;
             }
             // Gracefully exit on CTRL-D EOF

@@ -38,7 +38,7 @@ pub unsafe fn from_user_data(
         mrb
     } else {
         error!("Attempted to extract Artichoke from null mrb_state");
-        return Err(InterpreterExtractError);
+        return Err(InterpreterExtractError::new());
     };
 
     let ud = mem::replace(&mut mrb.as_mut().ud, ptr::null_mut());
@@ -50,7 +50,7 @@ pub unsafe fn from_user_data(
             state.cast::<State>()
         } else {
             warn!("Attempted to extract Artichoke from null mrb_state->ud pointer");
-            return Err(InterpreterExtractError);
+            return Err(InterpreterExtractError::new());
         }
     };
 
@@ -64,13 +64,15 @@ pub unsafe fn from_user_data(
 
 /// Failed to extract Artichoke interpreter at an FFI boundary.
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct InterpreterExtractError;
+pub struct InterpreterExtractError {
+    _private: (),
+}
 
 impl InterpreterExtractError {
     /// Constructs a new, default `InterpreterExtractError`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -132,7 +134,7 @@ impl From<Box<InterpreterExtractError>> for Box<dyn RubyException> {
 /// Unsupported platforms fallback to converting through `str`.
 #[inline]
 pub fn bytes_to_os_str(value: &[u8]) -> Result<&OsStr, ConvertBytesError> {
-    value.to_os_str().map_err(|_| ConvertBytesError)
+    value.to_os_str().map_err(|_| ConvertBytesError::new())
 }
 
 /// Convert a platform-specific [`OsStr`] to a byte slice.
@@ -140,7 +142,7 @@ pub fn bytes_to_os_str(value: &[u8]) -> Result<&OsStr, ConvertBytesError> {
 /// Unsupported platforms fallback to converting through `str`.
 #[inline]
 pub fn os_str_to_bytes(value: &OsStr) -> Result<&[u8], ConvertBytesError> {
-    <[u8]>::from_os_str(value).ok_or(ConvertBytesError)
+    <[u8]>::from_os_str(value).ok_or(ConvertBytesError::new())
 }
 
 /// Convert a platform-specific [`OsString`] to a byte vec.
@@ -148,17 +150,19 @@ pub fn os_str_to_bytes(value: &OsStr) -> Result<&[u8], ConvertBytesError> {
 /// Unsupported platforms fallback to converting through `String`.
 #[inline]
 pub fn os_string_to_bytes(value: OsString) -> Result<Vec<u8>, ConvertBytesError> {
-    Vec::from_os_string(value).map_err(|_| ConvertBytesError)
+    Vec::from_os_string(value).map_err(|_| ConvertBytesError::new())
 }
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ConvertBytesError;
+pub struct ConvertBytesError {
+    _private: (),
+}
 
 impl ConvertBytesError {
     /// Constructs a new, default `ConvertBytesError`.
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
@@ -228,7 +232,7 @@ mod tests {
     #[test]
     fn from_user_data_null_pointer() {
         let err = unsafe { ffi::from_user_data(ptr::null_mut()) };
-        assert_eq!(err.err(), Some(InterpreterExtractError));
+        assert_eq!(err.err(), Some(InterpreterExtractError::new()));
     }
 
     #[test]
@@ -240,7 +244,7 @@ mod tests {
             (*mrb).ud = ptr::null_mut();
             ffi::from_user_data(mrb)
         };
-        assert_eq!(err.err(), Some(InterpreterExtractError));
+        assert_eq!(err.err(), Some(InterpreterExtractError::new()));
     }
 
     #[test]

@@ -89,7 +89,7 @@ impl Artichoke {
             self.state = extracted.state;
             Ok(result)
         } else {
-            Err(InterpreterExtractError)
+            Err(InterpreterExtractError::new())
         }
     }
 
