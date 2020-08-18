@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::error;
 use std::ffi::c_void;
 use std::fmt;
-use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
 use crate::class;
@@ -104,39 +103,32 @@ pub type Method =
 /// Because there is no C API to resolve class and module names directly, each
 /// class-like holds a reference to its enclosing scope so it can recursively
 /// resolve its enclosing [`RClass *`](sys::RClass).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum EnclosingRubyScope {
     /// Reference to a Ruby `Class` enclosing scope.
-    Class {
-        /// Shared copy of the underlying [class definition](class::Spec).
-        spec: class::Spec,
-    },
+    Class(Box<class::Spec>),
     /// Reference to a Ruby `Module` enclosing scope.
-    Module {
-        /// Shared copy of the underlying [module definition](module::Spec).
-        spec: module::Spec,
-    },
+    Module(Box<module::Spec>),
 }
 
 impl EnclosingRubyScope {
-    /// Factory for [`EnclosingRubyScope::Class`] that clones an `Rc` smart
-    /// pointer wrapped [`class::Spec`].
+    /// Factory for [`EnclosingRubyScope::Class`] that clones a [`class::Spec`].
     ///
     /// This function is useful when extracting an enclosing scope from the
     /// class registry.
     #[must_use]
     pub fn class(spec: &class::Spec) -> Self {
-        Self::Class { spec: spec.clone() }
+        Self::Class(Box::new(spec.clone()))
     }
 
-    /// Factory for [`EnclosingRubyScope::Module`] that clones an `Rc` smart
-    /// pointer wrapped [`module::Spec`].
+    /// Factory for [`EnclosingRubyScope::Module`] that clones a
+    /// [`module::Spec`].
     ///
     /// This function is useful when extracting an enclosing scope from the
     /// module registry.
     #[must_use]
     pub fn module(spec: &module::Spec) -> Self {
-        Self::Module { spec: spec.clone() }
+        Self::Module(Box::new(spec.clone()))
     }
 
     /// Resolve the [`RClass *`](sys::RClass) of the wrapped class or module.
@@ -153,8 +145,8 @@ impl EnclosingRubyScope {
     /// to the Artichoke [`State](crate::state::State).
     pub unsafe fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         match self {
-            Self::Class { spec } => spec.rclass().resolve(mrb),
-            Self::Module { spec } => spec.rclass().resolve(mrb),
+            Self::Class(spec) => spec.rclass().resolve(mrb),
+            Self::Module(spec) => spec.rclass().resolve(mrb),
         }
     }
 
@@ -177,30 +169,9 @@ impl EnclosingRubyScope {
     #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {
         match self {
-            Self::Class { spec } => spec.fqname(),
-            Self::Module { spec } => spec.fqname(),
+            Self::Class(spec) => spec.fqname(),
+            Self::Module(spec) => spec.fqname(),
         }
-    }
-}
-
-impl Eq for EnclosingRubyScope {}
-
-impl PartialEq for EnclosingRubyScope {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Class { spec: this }, Self::Class { spec: other }) => this == other,
-            (Self::Module { spec: this }, Self::Module { spec: other }) => this == other,
-            _ => false,
-        }
-    }
-}
-
-impl Hash for EnclosingRubyScope {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        match self {
-            Self::Class { spec } => spec.hash(state),
-            Self::Module { spec } => spec.hash(state),
-        };
     }
 }
 
@@ -227,8 +198,8 @@ impl From<Cow<'static, str>> for ConstantNameError {
 
 impl ConstantNameError {
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self(Cow::Borrowed(""))
     }
 }
 
