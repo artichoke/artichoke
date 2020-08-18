@@ -51,6 +51,7 @@ impl fmt::Debug for mrb_value {
             }
             Ruby::Float => {
                 let float = unsafe { mrb_sys_float_to_cdouble(*self) };
+                // dtoa can't write to `fmt::Write` streams.
                 write!(f, "{}", float)
             }
             type_tag => write!(f, "<{}>", type_tag),
@@ -61,24 +62,27 @@ impl fmt::Debug for mrb_value {
 /// Version metadata `String` for embedded mruby.
 #[must_use]
 pub fn mrb_sys_mruby_version(verbose: bool) -> String {
-    if verbose {
-        // Safety:
-        //
-        // - `MRUBY_RUBY_ENGINE` is already a `CString` pulled from bindgen.
-        // - `MRUBY_RUBY_VERSION` is already a `CString` pulled from bindgen.
-        let engine = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_ENGINE) };
-        let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
-        let mut out = String::new();
-        out.push_str(engine.to_str().unwrap_or("unknown"));
-        out.push(' ');
-        out.push_str(version.to_str().unwrap_or("0.0.0"));
-        out.push_str(" [");
-        out.push_str(env!("CARGO_PKG_VERSION"));
-        out.push(']');
-        out
-    } else {
-        String::from(env!("CARGO_PKG_VERSION"))
+    if !verbose {
+        return String::from(env!("CARGO_PKG_VERSION"));
     }
+    let engine = CStr::from_bytes_with_nul(MRUBY_RUBY_ENGINE);
+    let engine = engine
+        .ok()
+        .and_then(|cstr| cstr.to_str().ok())
+        .unwrap_or("unknown");
+    let version = CStr::from_bytes_with_nul(MRUBY_RUBY_VERSION);
+    let version = version
+        .ok()
+        .and_then(|cstr| cstr.to_str().ok())
+        .unwrap_or("0.0.0");
+    let mut out = String::new();
+    out.push_str(engine);
+    out.push(' ');
+    out.push_str(version);
+    out.push_str(" [");
+    out.push_str(env!("CARGO_PKG_VERSION"));
+    out.push(']');
+    out
 }
 
 /// Debug representation for [`mrb_state`].
@@ -92,12 +96,16 @@ pub fn mrb_sys_mruby_version(verbose: bool) -> String {
 ///
 /// This function is infallible and guaranteed not to panic.
 pub fn mrb_sys_state_debug(mrb: *mut mrb_state) -> String {
-    // Safety:
-    //
-    // - `MRUBY_RUBY_ENGINE` is already a `CString` pulled from bindgen.
-    // - `MRUBY_RUBY_VERSION` is already a `CString` pulled from bindgen.
-    let engine = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_ENGINE) };
-    let version = unsafe { CStr::from_bytes_with_nul_unchecked(MRUBY_RUBY_VERSION) };
+    let engine = CStr::from_bytes_with_nul(MRUBY_RUBY_ENGINE);
+    let engine = engine
+        .ok()
+        .and_then(|cstr| cstr.to_str().ok())
+        .unwrap_or("unknown");
+    let version = CStr::from_bytes_with_nul(MRUBY_RUBY_VERSION);
+    let version = version
+        .ok()
+        .and_then(|cstr| cstr.to_str().ok())
+        .unwrap_or("0.0.0");
     let mut debug = String::new();
     // Explicitly supressed error since we are only generating debug info and
     // cannot panic.
@@ -108,25 +116,20 @@ pub fn mrb_sys_state_debug(mrb: *mut mrb_state) -> String {
     let _ = write!(
         &mut debug,
         "{} {} (v{}.{}.{}) interpreter at {:p}",
-        engine.to_str().unwrap_or("unknown"),
-        version.to_str().unwrap_or("0.0.0"),
-        MRUBY_RELEASE_MAJOR,
-        MRUBY_RELEASE_MINOR,
-        MRUBY_RELEASE_TEENY,
-        mrb
+        engine, version, MRUBY_RELEASE_MAJOR, MRUBY_RELEASE_MINOR, MRUBY_RELEASE_TEENY, mrb
     );
     debug
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sys;
+    use crate::test::prelude::*;
 
     #[test]
     fn interpreter_debug() {
         // Since the introduction of Rust symbol table, `mrb_open` cannot be
         // called without an Artichoke `State`.
-        let mut interp = crate::interpreter().unwrap();
+        let mut interp = interpreter().unwrap();
         unsafe {
             let mrb = interp.mrb.as_mut();
             let debug = sys::mrb_sys_state_debug(mrb);
