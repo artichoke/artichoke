@@ -19,6 +19,7 @@ pub enum RegexpOption {
 
 impl RegexpOption {
     /// Construct a new, disabled `RegexpOption`.
+    #[must_use]
     pub const fn new() -> Self {
         Self::Disabled
     }
@@ -26,6 +27,7 @@ impl RegexpOption {
     /// Return whether this option is enabled.
     ///
     /// An option is enabled if it is equal to [`RegexpOption::Enabled`].
+    #[must_use]
     pub fn is_enabled(self) -> bool {
         self == Self::Enabled
     }
