@@ -158,6 +158,68 @@ pub struct Hex<'a> {
     next: Option<u8>,
 }
 
+impl<'a> Hex<'a> {
+    /// Returns the number of remaining hex encoded characters in the iterator.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_securerandom::hex::Hex;
+    /// let iter = Hex::from("");
+    /// assert_eq!(iter.len(), 0);
+    ///
+    /// let mut iter = Hex::from("a");
+    /// assert_eq!(iter.len(), 2);
+    /// assert_eq!(iter.next(), Some('6'));
+    /// assert_eq!(iter.len(), 1);
+    /// assert_eq!(iter.next(), Some('1'));
+    /// assert_eq!(iter.len(), 0);
+    /// assert_eq!(iter.next(), None);
+    /// assert_eq!(iter.len(), 0);
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn len(&self) -> usize {
+        if self.next.is_some() {
+            let remaining_bytes = self.iter.as_slice().len();
+            // Every byte expands to two hexadecimal ASCII `char`s.
+            let remaining_bytes_encoded_len = remaining_bytes.saturating_mul(2);
+            // Add one for the dangling char from the `EncodedByte` iterator.
+            remaining_bytes_encoded_len.saturating_add(1)
+        } else {
+            let remaining_bytes = self.iter.as_slice().len();
+            // Every byte expands to two hexadecimal ASCII `char`s.
+            let remaining_bytes_encoded_len = remaining_bytes.saturating_mul(2);
+            // the only data remaining is unencoded bytes in the slice.
+            remaining_bytes_encoded_len
+        }
+    }
+
+    /// Returns `true` if the iterator will yield no more hex encoded characters.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_securerandom::hex::Hex;
+    /// let iter = Hex::from("");
+    /// assert!(iter.is_empty());
+    ///
+    /// let mut iter = Hex::from("a");
+    /// assert!(!iter.is_empty());
+    /// assert_eq!(iter.next(), Some('6'));
+    /// assert!(!iter.is_empty());
+    /// assert_eq!(iter.next(), Some('1'));
+    /// assert!(iter.is_empty());
+    /// assert_eq!(iter.next(), None);
+    /// assert!(iter.is_empty());
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.iter.as_slice().is_empty() && self.next.is_none()
+    }
+}
+
 impl<'a> From<&'a str> for Hex<'a> {
     #[inline]
     fn from(data: &'a str) -> Self {
@@ -194,24 +256,12 @@ impl<'a> Iterator for Hex<'a> {
 
     #[inline]
     fn count(self) -> usize {
-        if self.next.is_some() {
-            self.iter.count().saturating_mul(2).saturating_add(1)
-        } else {
-            self.iter.count().saturating_mul(2)
-        }
+        self.len()
     }
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let size = if self.next.is_some() {
-            self.iter
-                .as_slice()
-                .len()
-                .saturating_mul(2)
-                .saturating_add(1)
-        } else {
-            self.iter.as_slice().len().saturating_mul(2)
-        };
+        let size = self.len();
         (size, Some(size))
     }
 
