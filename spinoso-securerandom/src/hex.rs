@@ -94,6 +94,10 @@ pub fn encode_into<T: AsRef<[u8]>>(data: T, buf: &mut String) {
 /// spinoso_securerandom::hex::format_into(data, &mut buf);
 /// assert_eq!(buf, "4172746963686f6b652052756279");
 /// ```
+///
+/// # Errors
+///
+/// If the formatter returns an error, that error is returned.
 #[inline]
 pub fn format_into<T, W>(data: T, mut f: W) -> fmt::Result
 where
@@ -125,6 +129,10 @@ where
 /// spinoso_securerandom::hex::write_into(data, &mut buf);
 /// assert_eq!(buf, b"4172746963686f6b652052756279".to_vec());
 /// ```
+///
+/// # Errors
+///
+/// If the destination returns an error, that error is returned.
 #[inline]
 pub fn write_into<T, W>(data: T, mut dest: W) -> io::Result<()>
 where
@@ -189,9 +197,8 @@ impl<'a> Hex<'a> {
         } else {
             let remaining_bytes = self.iter.as_slice().len();
             // Every byte expands to two hexadecimal ASCII `char`s.
-            let remaining_bytes_encoded_len = remaining_bytes.saturating_mul(2);
             // the only data remaining is unencoded bytes in the slice.
-            remaining_bytes_encoded_len
+            remaining_bytes.saturating_mul(2)
         }
     }
 

@@ -18,7 +18,83 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 
-//! etc.
+//! Secure random number generator interface.
+//!
+//! This module implements the [`SecureRandom`] package from the Ruby Standard
+//! Library. It is an interface to secure random number generators which are
+//! suitable for generating session keys in HTTP cookies, etc.
+//!
+//! This implementation of `SecureRandom` supports the system RNG via the
+//! [`getrandom`] crate. This implementation does not depend on OpenSSL.
+//!
+//! # Examples
+//!
+//! Generate cryptographically secure random bytes:
+//!
+//! ```rust
+//! # fn example() -> Result<(), spinoso_securerandom::Error> {
+//! let bytes = spinoso_securerandom::random_bytes(Some(1024))?;
+//! assert_eq!(bytes.len(), 1024);
+//! # Ok(())
+//! # }
+//! # example().unwrap()
+//! ```
+//!
+//! Generate base64-encoded random data:
+//!
+//! ```rust
+//! # fn example() -> Result<(), spinoso_securerandom::Error> {
+//! let bytes = spinoso_securerandom::base64(Some(1024))?;
+//! assert_eq!(bytes.len(), 1368);
+//! assert!(bytes.is_ascii());
+//! # Ok(())
+//! # }
+//! # example().unwrap()
+//! ```
+//!
+//! Generate random floats and integers in a range bounded from zero to a
+//! maximum:
+//!
+//! ```rust
+//! # use spinoso_securerandom::{Max, RandomNumber};
+//! # fn example() -> Result<(), spinoso_securerandom::DomainError> {
+//! let rand = spinoso_securerandom::random_number(Max::None)?;
+//! assert!(matches!(rand, RandomNumber::Float(_)));
+//!
+//! let rand = spinoso_securerandom::random_number(Max::Integer(57))?;
+//! assert!(matches!(rand, RandomNumber::Integer(_)));
+//!
+//! let rand = spinoso_securerandom::random_number(Max::Float(57.0))?;
+//! assert!(matches!(rand, RandomNumber::Float(_)));
+//! # Ok(())
+//! # }
+//! # example().unwrap()
+//! ```
+//!
+//! Generate version 4 random UUIDs:
+//!
+//! ```rust
+//! let bytes = spinoso_securerandom::uuid();
+//! assert_eq!(bytes.len(), 36);
+//! assert!(bytes.is_ascii());
+//! ```
+//!
+//! [`SecureRandom`]: https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
+//! [`getrandom`]: https://crates.io/crates/getrandom
+
+// Ensure code blocks in README.md compile
+#[cfg(doctest)]
+macro_rules! readme {
+    ($x:expr) => {
+        #[doc = $x]
+        mod readme {}
+    };
+    () => {
+        readme!(include_str!("../README.md"));
+    };
+}
+#[cfg(doctest)]
+readme!();
 
 use core::convert::TryFrom;
 use core::fmt;
@@ -201,6 +277,7 @@ impl RandomBytesError {
     /// ```
     #[inline]
     #[must_use]
+    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "OS Error: Failed to generate random bytes"
     }
@@ -250,6 +327,7 @@ impl DomainError {
     /// ```
     #[inline]
     #[must_use]
+    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "Numerical argument out of domain"
     }
@@ -292,6 +370,17 @@ impl SecureRandom {
 ///
 /// If `len` is [`Some`] and non-negative, generate a vector of `len` random
 /// bytes. If `len` is [`None`], generate 16 random bytes.
+///
+/// # Examples
+///
+/// ```rust
+/// # fn example() -> Result<(), spinoso_securerandom::Error> {
+/// let bytes = spinoso_securerandom::random_bytes(Some(1024))?;
+/// assert_eq!(bytes.len(), 1024);
+/// # Ok(())
+/// # }
+/// # example().unwrap()
+/// ```
 ///
 /// # Errors
 ///
@@ -376,6 +465,36 @@ pub enum RandomNumber {
 /// enum documentation for how to bound the random numbers returned by this
 /// function.
 ///
+/// # Examples
+///
+/// ```rust
+/// # use spinoso_securerandom::{Max, RandomNumber};
+/// # fn example() -> Result<(), spinoso_securerandom::DomainError> {
+/// let rand = spinoso_securerandom::random_number(Max::None)?;
+/// assert!(matches!(rand, RandomNumber::Float(_)));
+///
+/// let rand = spinoso_securerandom::random_number(Max::Integer(57))?;
+/// assert!(matches!(rand, RandomNumber::Integer(_)));
+///
+/// let rand = spinoso_securerandom::random_number(Max::Integer(-20))?;
+/// assert!(matches!(rand, RandomNumber::Float(_)));
+///
+/// let rand = spinoso_securerandom::random_number(Max::Integer(0))?;
+/// assert!(matches!(rand, RandomNumber::Float(_)));
+///
+/// let rand = spinoso_securerandom::random_number(Max::Float(57.0))?;
+/// assert!(matches!(rand, RandomNumber::Float(_)));
+///
+/// let rand = spinoso_securerandom::random_number(Max::Float(-20.0))?;
+/// assert!(matches!(rand, RandomNumber::Float(_)));
+///
+/// let rand = spinoso_securerandom::random_number(Max::Float(0.0))?;
+/// assert!(matches!(rand, RandomNumber::Float(_)));
+/// # Ok(())
+/// # }
+/// # example().unwrap()
+/// ```
+///
 /// # Errors
 ///
 /// If the float given in a [`Max::Float`] variant is [`NaN`] or infinite, a
@@ -419,6 +538,18 @@ pub fn random_number(max: Max) -> Result<RandomNumber, DomainError> {
 /// bytes. If `len` is [`None`], generate 16 random bytes. Take the resulting
 /// bytes and hexadecimal encode them.
 ///
+/// # Examples
+///
+/// ```rust
+/// # fn example() -> Result<(), spinoso_securerandom::Error> {
+/// let bytes = spinoso_securerandom::hex(Some(1024))?;
+/// assert_eq!(bytes.len(), 2048);
+/// assert!(bytes.is_ascii());
+/// # Ok(())
+/// # }
+/// # example().unwrap()
+/// ```
+///
 /// # Errors
 ///
 /// If the given length is negative, return an [`ArgumentError`].
@@ -437,6 +568,18 @@ pub fn hex(len: Option<i64>) -> Result<String, Error> {
 /// bytes. If `len` is [`None`], generate 16 random bytes. Take the resulting
 /// bytes and base64 encode them.
 ///
+/// # Examples
+///
+/// ```rust
+/// # fn example() -> Result<(), spinoso_securerandom::Error> {
+/// let bytes = spinoso_securerandom::base64(Some(1024))?;
+/// assert_eq!(bytes.len(), 1368);
+/// assert!(bytes.is_ascii());
+/// # Ok(())
+/// # }
+/// # example().unwrap()
+/// ```
+///
 /// # Errors
 ///
 /// If the given length is negative, return an [`ArgumentError`].
@@ -454,6 +597,18 @@ pub fn base64(len: Option<i64>) -> Result<String, Error> {
 /// If `len` is [`Some`] and non-negative, generate a vector of `len` random
 /// bytes. If `len` is [`None`], generate 16 random bytes. Take the resulting
 /// bytes and base64 encode them.
+///
+/// # Examples
+///
+/// ```rust
+/// # fn example() -> Result<(), spinoso_securerandom::Error> {
+/// let bytes = spinoso_securerandom::urlsafe_base64(Some(1024), false)?;
+/// assert_eq!(bytes.len(), 1366);
+/// assert!(bytes.is_ascii());
+/// # Ok(())
+/// # }
+/// # example().unwrap()
+/// ```
 ///
 /// # Errors
 ///
@@ -476,6 +631,19 @@ pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> 
 /// If `len` is [`Some`] and non-negative, generate a [`String`] of `len`
 /// random ASCII alphanumeric bytes. If `len` is [`None`], generate 16 random
 /// alphanumeric bytes.
+///
+/// # Examples
+///
+/// ```rust
+/// # fn example() -> Result<(), spinoso_securerandom::Error> {
+/// let bytes = spinoso_securerandom::alphanumeric(Some(1024))?;
+/// assert_eq!(bytes.len(), 1024);
+/// assert!(bytes.is_ascii());
+/// assert!(bytes.find(|ch: char| !ch.is_ascii_alphanumeric()).is_none());
+/// # Ok(())
+/// # }
+/// # example().unwrap()
+/// ```
 ///
 /// # Errors
 ///
@@ -505,6 +673,14 @@ pub fn alphanumeric(len: Option<i64>) -> Result<String, Error> {
 /// Generate a version 4 UUID and return a [`String`].
 ///
 /// A version 4 UUID is randomly generated. See [RFC 4122] for details.
+///
+/// # Examples
+///
+/// ```rust
+/// let bytes = spinoso_securerandom::uuid();
+/// assert_eq!(bytes.len(), 36);
+/// assert!(bytes.is_ascii());
+/// ```
 ///
 /// [RFC 4122]: https://tools.ietf.org/html/rfc4122#section-4.4
 #[inline]
@@ -650,6 +826,9 @@ mod tests {
     fn uuid_format() {
         let id = uuid();
         assert_eq!(id.len(), 36);
+        assert!(id
+            .find(|ch: char| ch != '-' && !ch.is_ascii_alphanumeric())
+            .is_none());
         assert!(id.find(char::is_uppercase).is_none());
         assert_eq!(&id[14..15], "4");
     }
