@@ -449,6 +449,28 @@ pub fn base64(len: Option<i64>) -> Result<String, Error> {
     Ok(base64::encode(bytes))
 }
 
+/// Generate a URL-safe base64-encoded [`String`] of random bytes.
+///
+/// If `len` is [`Some`] and non-negative, generate a vector of `len` random
+/// bytes. If `len` is [`None`], generate 16 random bytes. Take the resulting
+/// bytes and base64 encode them.
+///
+/// # Errors
+///
+/// If the given length is negative, return an [`ArgumentError`].
+///
+/// If the underlying source of randomness returns an error, return a
+/// [`RandomBytesError`].
+#[inline]
+pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> {
+    let bytes = random_bytes(len)?;
+    if padding {
+        Ok(base64::encode_config(bytes, base64::URL_SAFE))
+    } else {
+        Ok(base64::encode_config(bytes, base64::URL_SAFE_NO_PAD))
+    }
+}
+
 /// Generate a random sequence of ASCII alphanumeric bytes.
 ///
 /// If `len` is [`Some`] and non-negative, generate a [`String`] of `len`

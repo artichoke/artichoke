@@ -24,8 +24,8 @@ pub mod trampoline;
 
 #[doc(inline)]
 pub use spinoso_securerandom::{
-    alphanumeric, base64, hex, random_bytes, random_number, uuid, ArgumentError, DomainError,
-    Error, Max, RandomBytesError, RandomNumber, SecureRandom,
+    alphanumeric, base64, hex, random_bytes, random_number, urlsafe_base64, uuid, ArgumentError,
+    DomainError, Error, Max, RandomBytesError, RandomNumber, SecureRandom,
 };
 
 impl From<Error> for Exception {
