@@ -652,6 +652,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "spinoso-securerandom"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "rand",
+ "uuid",
+]
+
+[[package]]
 name = "spinoso-symbol"
 version = "0.1.0"
 dependencies = [

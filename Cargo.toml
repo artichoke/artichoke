@@ -36,6 +36,7 @@ members = [
   "artichoke-core",
   "spec-runner",
   "spinoso-array",
+  "spinoso-securerandom",
   "spinoso-symbol",
 ]
 
