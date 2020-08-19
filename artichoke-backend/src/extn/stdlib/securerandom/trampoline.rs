@@ -1,3 +1,5 @@
+//! Glue between mruby FFI and `securerandom` Rust implementation.
+
 use crate::extn::prelude::*;
 use crate::extn::stdlib::securerandom;
 

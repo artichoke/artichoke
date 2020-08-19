@@ -1,3 +1,5 @@
+//! FFI glue between the Rust trampolines and the mruby C interpreter.
+
 use crate::extn::prelude::*;
 use crate::extn::stdlib::securerandom::{self, trampoline};
 

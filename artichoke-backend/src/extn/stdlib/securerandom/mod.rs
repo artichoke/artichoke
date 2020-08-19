@@ -1,3 +1,21 @@
+//! Secure random number generator interface.
+//!
+//! This module implements the [`SecureRandom`] package from the Ruby Standard
+//! Library. It is an interface to secure random number generators which are
+//! suitable for generating session keys in HTTP cookies, etc.
+//!
+//! You can use this library in your application by requiring it:
+//!
+//! ```ruby
+//! require 'securerandom'
+//! ```
+//!
+//! This implementation of `SecureRandom` supports the system RNG via the
+//! [`getrandom`] crate. This implementation does not depend on OpenSSL.
+//!
+//! [`SecureRandom`]: https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
+//! [`getrandom`]: https://crates.io/crates/getrandom
+
 use crate::extn::core::exception as exc;
 use crate::extn::prelude::*;
 
